@@ -4,6 +4,8 @@ read_when:
   - "working with learn plan metadata"
   - "troubleshooting null learn_status or learn_plan_issue"
   - "transforming Plan objects in pipelines"
+  - "understanding created_from_workflow_run_url field"
+  - "adding workflow run backlinks to plans"
 tripwires:
   - action: "reading learn_plan_issue or learn_status"
     warning: "Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects."
@@ -29,6 +31,32 @@ For learn plans, the issue number of the original plan that generated this learn
 
 - `int` - The parent plan's issue number
 - `None` - Not a learn plan, or source unknown
+
+### `created_from_workflow_run_url`
+
+GitHub Actions workflow run URL that created this plan. Provides a backlink from the plan issue to the workflow that generated it.
+
+- **Type**: `string` (nullable)
+- **When populated**: During GitHub Actions workflow execution (e.g., `learn-dispatch.yml`)
+- **Format**: `https://github.com/{owner}/{repo}/actions/runs/{run_id}`
+
+**URL Construction** (in GitHub Actions):
+
+```yaml
+WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+```
+
+**CLI Usage**:
+
+```bash
+erk exec plan-save-to-issue --created-from-workflow-run-url "$WORKFLOW_RUN_URL" ...
+```
+
+This field enables:
+
+- Debugging failed plan creations by linking to the workflow run
+- Tracing provenance of automatically generated plans
+- Quick navigation from plan issue to the workflow that created it
 
 ## Pipeline Stages and Preservation
 

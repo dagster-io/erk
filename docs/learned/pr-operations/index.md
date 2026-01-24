@@ -1,23 +1,7 @@
----
-title: PR Operations Documentation
-read_when:
-  - "working with PR generation or submission"
-  - "understanding commit message generation"
----
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. -->
 
-# PR Operations Documentation
+# Pr Operations Documentation
 
-Documentation for pull request workflows including generation, submission, and context integration.
-
-## Documents in This Category
-
-### Commit Message Generation
-
-**File:** [commit-message-generation.md](commit-message-generation.md)
-
-How PR descriptions are generated from diffs, with plan and objective context priority.
-
-## Related Topics
-
-- [Plan Context Integration](../architecture/plan-context-integration.md) - How plan context is extracted
-- [Plan Lifecycle](../planning/lifecycle.md) - How plans link to PRs
+- **[commit-message-generation.md](commit-message-generation.md)** — understanding how PR descriptions are generated, working with plan context in PR summaries, customizing commit message generation
+- **[pr-submit-phases.md](pr-submit-phases.md)** — understanding the erk pr submit workflow, debugging PR submission issues, working with AI-generated PR descriptions, understanding plan context integration in PRs

@@ -8,6 +8,9 @@ read_when:
   - "hiding system commands from command palette"
   - "get_system_commands method"
   - "removing Keys Quit Screenshot Theme from palette"
+  - "adding emoji prefixes to command palette entries"
+  - "using CommandCategory for command categorization"
+  - "preserving fuzzy match highlighting with Text.assemble()"
 ---
 
 # Textual CommandPalette Guide
@@ -447,6 +450,76 @@ class MyApp(App):
         self.push_screen(IssueScreen())
 ```
 
+## Command Categories and Emoji Prefixes
+
+Erk's TUI command palette uses category-based emoji prefixes to help users quickly identify command types. This is implemented through the `CommandCategory` enum and `CATEGORY_EMOJI` mapping.
+
+### CommandCategory Enum
+
+```python
+class CommandCategory(Enum):
+    ACTION = auto()  # ⚡ Mutative operations
+    OPEN = auto()    # 🔗 Browser navigation
+    COPY = auto()    # 📋 Clipboard operations
+```
+
+### CATEGORY_EMOJI Mapping
+
+```python
+CATEGORY_EMOJI: dict[CommandCategory, str] = {
+    CommandCategory.ACTION: "⚡",
+    CommandCategory.OPEN: "🔗",
+    CommandCategory.COPY: "📋",
+}
+```
+
+### Category Guidelines
+
+| Category | Emoji | Use For                               | Examples                                    |
+| -------- | ----- | ------------------------------------- | ------------------------------------------- |
+| ACTION   | ⚡    | Mutative operations that change state | Close plan, Submit to queue, Land PR        |
+| OPEN     | 🔗    | Browser navigation (opening URLs)     | Open issue, Open PR, Open workflow run      |
+| COPY     | 📋    | Clipboard operations (copying text)   | Copy checkout command, Copy prepare command |
+
+### Dynamic Display Names with get_display_name
+
+Commands can provide context-aware display names through the `get_display_name` callback:
+
+```python
+CommandDefinition(
+    id="copy_checkout",
+    name="erk br co <branch>",  # Fallback static name
+    category=CommandCategory.COPY,
+    # Dynamic name based on context
+    get_display_name=lambda ctx: f"erk br co {ctx.row.worktree_branch}",
+)
+```
+
+When `get_display_name` returns a name like `"erk br co feature-123"`, the palette displays: `📋 erk br co feature-123`
+
+### Text.assemble() for Emoji + Highlighting
+
+When implementing fuzzy search with emoji prefixes, use `Text.assemble()` to preserve Rich text highlighting:
+
+```python
+def _format_highlighted_display(emoji: str, highlighted: object) -> str | Text:
+    """Format highlighted command name with emoji prefix."""
+    if isinstance(highlighted, Text):
+        # Preserve highlighting by assembling Text objects
+        return Text.assemble(f"{emoji} ", highlighted)
+    return f"{emoji} {highlighted}"
+```
+
+This ensures fuzzy match highlighting (e.g., bold characters) is preserved when the emoji prefix is added.
+
+### Erk Implementation
+
+See these files for the canonical implementation:
+
+- `src/erk/tui/commands/types.py` - `CommandCategory` enum, `CommandDefinition` dataclass
+- `src/erk/tui/commands/registry.py` - `CATEGORY_EMOJI` mapping, `get_display_name()` function
+- `src/erk/tui/commands/provider.py` - `_format_highlighted_display()` helper
+
 ## Key Takeaways
 
 1. **Use DiscoveryHit for discover(), Hit for search()** - They have different required fields
@@ -455,3 +528,5 @@ class MyApp(App):
 4. **Capture context late** - Access self.screen/self.app in methods, not closures
 5. **Use functools.partial for parameters** - More reliable than lambdas
 6. **Async generators yield results** - Don't return lists
+7. **Use CommandCategory for emoji prefixes** - ACTION (⚡), OPEN (🔗), COPY (📋)
+8. **Use Text.assemble() for highlighted text** - Preserves fuzzy match highlighting with emoji prefix
