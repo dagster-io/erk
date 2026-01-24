@@ -205,6 +205,7 @@ class ErkContext:
         debug: bool = False,
         repo_root: Path | None = None,
         cwd: Path | None = None,
+        repo_info: RepoInfo | None = None,
     ) -> ErkContext:
         """Create test context with optional pre-configured implementations.
 
@@ -221,6 +222,7 @@ class ErkContext:
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
             cwd: Current working directory (defaults to Path("/fake/worktree"))
+            repo_info: Optional RepoInfo (owner/name). If None, repo_info will be None in context.
 
         Returns:
             ErkContext configured with provided values and test defaults
@@ -244,4 +246,5 @@ class ErkContext:
             debug=debug,
             repo_root=repo_root,
             cwd=cwd,
+            repo_info=repo_info,
         )

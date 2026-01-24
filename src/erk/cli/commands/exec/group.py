@@ -110,6 +110,7 @@ from erk.cli.commands.exec.scripts.track_learn_evaluation import (
 from erk.cli.commands.exec.scripts.track_learn_result import (
     track_learn_result,
 )
+from erk.cli.commands.exec.scripts.trigger_async_learn import trigger_async_learn
 from erk.cli.commands.exec.scripts.tripwires_reminder_hook import (
     tripwires_reminder_hook,
 )
@@ -194,6 +195,7 @@ exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook"
 exec_group.add_command(setup_impl_from_issue, name="setup-impl-from-issue")
 exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
 exec_group.add_command(track_learn_result, name="track-learn-result")
+exec_group.add_command(trigger_async_learn, name="trigger-async-learn")
 exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_dispatch_info, name="update-dispatch-info")
 exec_group.add_command(update_issue_body, name="update-issue-body")

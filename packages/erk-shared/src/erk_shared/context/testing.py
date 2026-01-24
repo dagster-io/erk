@@ -23,6 +23,7 @@ from erk_shared.git.abc import Git
 from erk_shared.git.branch_ops.abc import GitBranchOps
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.abc import GitHubIssues
+from erk_shared.github.types import RepoInfo
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.prompt_executor.abc import PromptExecutor
 
@@ -40,6 +41,7 @@ def context_for_test(
     debug: bool = False,
     repo_root: Path | None = None,
     cwd: Path | None = None,
+    repo_info: RepoInfo | None = None,
 ) -> ErkContext:
     """Create test context with optional pre-configured implementations.
 
@@ -60,6 +62,7 @@ def context_for_test(
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
         cwd: Current working directory (defaults to Path("/fake/worktree"))
+        repo_info: Optional RepoInfo (owner/name). If None, repo_info will be None in context.
 
     Returns:
         ErkContext configured with provided values and test defaults
@@ -178,7 +181,7 @@ def context_for_test(
         plan_list_service=FakePlanListService(),
         cwd=resolved_cwd,
         repo=repo,
-        repo_info=None,
+        repo_info=repo_info,
         global_config=None,
         local_config=LoadedConfig.test(),
         dry_run=False,
