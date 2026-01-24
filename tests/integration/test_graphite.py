@@ -5,6 +5,7 @@ files using actual filesystem operations with tmp_path.
 """
 
 import json
+import time
 from pathlib import Path
 
 import pytest
@@ -150,11 +151,11 @@ def test_graphite_ops_get_all_branches_json_error(tmp_path: Path):
         ops.get_all_branches(git_ops, tmp_path)
 
 
-def test_graphite_ops_get_all_branches_caches_results(tmp_path: Path):
-    """Test that get_all_branches() caches results for repeated calls.
+def test_graphite_ops_get_all_branches_caches_when_mtime_unchanged(tmp_path: Path):
+    """Test that get_all_branches() uses cache when file hasn't changed.
 
-    This test verifies internal caching behavior - the same RealGraphite
-    instance should cache results and not re-read files on subsequent calls.
+    With mtime-based caching, repeated calls without file modification
+    should return the same cached result.
     """
     # Set up real file structure
     git_dir = tmp_path / ".git"
@@ -179,19 +180,51 @@ def test_graphite_ops_get_all_branches_caches_results(tmp_path: Path):
 
     ops = RealGraphite()
 
-    # First call - should read from file
+    # Multiple calls without file change should return cached result
     result1 = ops.get_all_branches(git_ops, tmp_path)
-
-    # Modify the file to verify caching (second call shouldn't read modified file)
-    cache_file.write_text("{}", encoding="utf-8")
-
-    # Second call - should use cache, not read modified file
     result2 = ops.get_all_branches(git_ops, tmp_path)
 
-    # Verify both calls return same result (from cache, not modified file)
     assert result1 == result2
     assert len(result1) == 4
-    assert len(result2) == 4  # Would be 0 if it re-read the modified file
+
+
+def test_graphite_ops_get_all_branches_invalidates_on_mtime_change(tmp_path: Path):
+    """Test that get_all_branches() re-reads when file mtime changes.
+
+    With mtime-based caching, modifying the file should invalidate the cache
+    and cause a re-read on the next call.
+    """
+    git_dir = tmp_path / ".git"
+    git_dir.mkdir()
+    cache_file = git_dir / ".graphite_cache_persist"
+
+    # Initial content with one branch
+    initial_data = {"branches": [["feat-1", {"parentBranchName": "main"}]]}
+    cache_file.write_text(json.dumps(initial_data), encoding="utf-8")
+
+    git_ops = FakeGit(
+        git_common_dirs={tmp_path: git_dir},
+        branch_heads={"feat-1": "abc123"},
+    )
+    ops = RealGraphite()
+
+    result1 = ops.get_all_branches(git_ops, tmp_path)
+    assert "feat-1" in result1
+
+    # Modify file - ensure mtime changes (sleep to ensure different mtime)
+    time.sleep(0.01)
+    new_data = {"branches": [["feat-2", {"parentBranchName": "main"}]]}
+    cache_file.write_text(json.dumps(new_data), encoding="utf-8")
+
+    # Update git_ops with new branch
+    git_ops_updated = FakeGit(
+        git_common_dirs={tmp_path: git_dir},
+        branch_heads={"feat-2": "def456"},
+    )
+
+    result2 = ops.get_all_branches(git_ops_updated, tmp_path)
+    assert "feat-2" in result2
+    assert "feat-1" not in result2
 
 
 def test_graphite_url_construction():
