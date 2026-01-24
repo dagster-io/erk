@@ -132,11 +132,155 @@ DataTable subclass displaying plans with columns:
 | ----------- | --------------------- | --------------------------- |
 | Issue       | `issue_number`        | `#123` link                 |
 | Title       | `title`               | Truncated to 50 chars       |
+| Objective   | `objective_display`   | `#42` or `-`                |
 | PR          | `pr_display`          | `#456 👀` with status emoji |
 | Checks      | `checks_display`      | `✓` or `✗`                  |
 | Worktree    | `worktree_name`       | Name or empty               |
 | Local Impl  | `local_impl_display`  | `2h ago`                    |
 | Remote Impl | `remote_impl_display` | `1d ago`                    |
+
+### Adding a New Column to the Plan Table
+
+When adding a column to the plan table, follow this pattern across three layers:
+
+#### 1. Data Layer: Extend PlanRowData
+
+Add both raw and display fields to `src/erk/tui/data/types.py`:
+
+```python
+@dataclass(frozen=True)
+class PlanRowData:
+    # ... existing fields ...
+    objective_issue: int | None      # Raw data for actions
+    objective_display: str           # Pre-formatted for rendering
+```
+
+#### 2. Data Provider: Extract and Format
+
+In `_build_row_data()`, extract the data and pre-format for display:
+
+```python
+# Extract objective from plan metadata
+objective_issue: int | None = None
+if plan.body:
+    objective_issue = extract_plan_header_objective_issue(plan.body)
+
+# Pre-format for display
+objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
+
+# Include in PlanRowData
+return PlanRowData(
+    # ... other fields ...
+    objective_issue=objective_issue,
+    objective_display=objective_display,
+)
+```
+
+#### 3. Widget Layer: Track Column Index and Render
+
+In `src/erk/tui/widgets/plan_table.py`:
+
+**Track column index:**
+
+```python
+class PlanDataTable(DataTable):
+    def __init__(self, plan_filters: PlanFilters) -> None:
+        # ... existing code ...
+        self._objective_column_index: int | None = None
+        self._pr_column_index: int | None = None
+        # ... other indices ...
+
+    def _setup_columns(self) -> None:
+        col_index = 0
+        self.add_column("plan", key="plan")
+        col_index += 1
+        self.add_column("title", key="title")
+        col_index += 1
+
+        # NEW: Add objective column
+        self.add_column("obj", key="objective")
+        self._objective_column_index = col_index
+        col_index += 1
+
+        # Existing columns follow
+        if self._plan_filters.show_prs:
+            self.add_column("pr", key="pr")
+            self._pr_column_index = col_index
+            col_index += 1
+```
+
+**Render cell with conditional styling:**
+
+```python
+def _row_to_values(self, row: PlanRowData) -> tuple[str | Text, ...]:
+    # Format objective cell with conditional styling
+    objective_cell: str | Text = row.objective_display
+    if row.objective_issue is not None:
+        objective_cell = Text(row.objective_display, style="cyan underline")
+
+    # Build values list in column order
+    values: list[str | Text] = [plan_cell, row.title, objective_cell]
+    # ... add remaining columns ...
+    return tuple(values)
+```
+
+**Handle clicks (if clickable):**
+
+```python
+def on_click(self, event: Click) -> None:
+    # Check objective column - post event if objective issue exists
+    if self._objective_column_index is not None and col_index == self._objective_column_index:
+        if row_index < len(self._rows) and self._rows[row_index].objective_issue is not None:
+            self.post_message(self.ObjectiveClicked(row_index))
+            event.prevent_default()
+            event.stop()
+            return
+    # ... handle other columns ...
+```
+
+#### 4. Update Tests
+
+- Add parameter to `make_plan_row()` factory function
+- Update column count assertions (all indices shift when a column is inserted)
+- Add tests for click handling if the column is interactive
+
+**Why Column Indices Matter:**
+
+When a new column is inserted (e.g., objective column after title), all subsequent column indices shift:
+
+- Before: Plan (0), Title (1), PR (2), Checks (3)
+- After: Plan (0), Title (1), Objective (2), PR (3), Checks (4)
+
+Any code that checks `col_index == 2` for PR clicks now needs to check `col_index == 3`. This is why column indices must be tracked and updated systematically throughout the widget and test code.
+
+### Cell Rendering Patterns
+
+#### Conditional Styling for Interactive Cells
+
+Interactive cells use conditional styling based on data availability:
+
+```python
+def _row_to_values(self, row: PlanRowData) -> list[str | Text]:
+    # Non-clickable: return string
+    if row.objective_issue is None:
+        objective_cell = row.objective_display  # "-"
+    else:
+        # Clickable: return styled Text
+        objective_cell = Text(row.objective_display, style="cyan underline")
+
+    return [..., objective_cell, ...]
+```
+
+**Styling Conventions:**
+
+| Cell Type     | Has Data       | No Data |
+| ------------- | -------------- | ------- |
+| Objective     | cyan underline | "-"     |
+| PR            | cyan underline | "-"     |
+| Issue         | cyan underline | N/A     |
+| Non-clickable | plain string   | "-"     |
+
+This pattern provides visual feedback to users: only underlined cells respond to clicks. See [Interaction Patterns](interaction-patterns.md) for the complete click-to-open pattern.
 
 ### Status Bar
 
