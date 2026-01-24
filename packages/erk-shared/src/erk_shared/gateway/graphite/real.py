@@ -28,6 +28,7 @@ class RealGraphite(Graphite):
     def __init__(self) -> None:
         """Initialize with empty cache for get_all_branches."""
         self._branches_cache: dict[str, BranchMetadata] | None = None
+        self._branches_cache_mtime: float | None = None
 
     def get_graphite_url(self, repo_id: GitHubRepoId, pr_number: int) -> str:
         """Get Graphite PR URL for a pull request.
@@ -77,9 +78,6 @@ class RealGraphite(Graphite):
         if not quiet and result.stderr:
             user_output(result.stderr, nl=False)
 
-        # Invalidate branches cache - gt sync modifies Graphite metadata
-        self._branches_cache = None
-
     def restack(self, repo_root: Path, *, no_interactive: bool, quiet: bool) -> None:
         """Run gt restack to rebase the current stack.
 
@@ -113,9 +111,6 @@ class RealGraphite(Graphite):
         if not quiet and result.stderr:
             user_output(result.stderr, nl=False)
 
-        # Invalidate branches cache - gt restack modifies Graphite metadata
-        self._branches_cache = None
-
     def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -> dict[str, PullRequestInfo]:
         """Get PR information from Graphite's .git/.graphite_pr_info file."""
         git_dir = git_ops.get_git_common_dir(repo_root)
@@ -137,23 +132,28 @@ class RealGraphite(Graphite):
         Reads .git/.graphite_cache_persist and enriches with commit SHAs from git.
         Returns empty dict if cache doesn't exist or git operations fail.
 
-        Results are cached for the lifetime of this instance to avoid redundant
-        file reads and git subprocess calls.
+        Results are cached based on file mtime - the cache is automatically
+        invalidated when the underlying file changes, whether from erk operations
+        or external gt commands.
         """
-        # Return cached result if available
-        if self._branches_cache is not None:
-            return self._branches_cache
-
         git_dir = git_ops.get_git_common_dir(repo_root)
         if git_dir is None:
-            self._branches_cache = {}
-            return self._branches_cache
+            return {}
 
         cache_file = git_dir / ".graphite_cache_persist"
         if not cache_file.exists():
-            self._branches_cache = {}
+            return {}
+
+        # Check if cache is still valid via mtime
+        current_mtime = cache_file.stat().st_mtime
+        if (
+            self._branches_cache is not None
+            and self._branches_cache_mtime is not None
+            and self._branches_cache_mtime == current_mtime
+        ):
             return self._branches_cache
 
+        # Cache miss or stale - recompute
         data = read_graphite_json_file(cache_file, "Graphite cache")
 
         # Get all branch heads from git for enrichment
@@ -167,6 +167,7 @@ class RealGraphite(Graphite):
 
         # parse_graphite_cache expects JSON string, so convert back
         self._branches_cache = parse_graphite_cache(json.dumps(data), git_branch_heads)
+        self._branches_cache_mtime = current_mtime
         return self._branches_cache
 
     def get_branch_stack(self, git_ops: Git, repo_root: Path, branch: str) -> list[str] | None:
@@ -351,6 +352,3 @@ class RealGraphite(Graphite):
 
         if not quiet and result.stderr:
             user_output(result.stderr, nl=False)
-
-        # Invalidate branches cache - gt continue modifies Graphite metadata
-        self._branches_cache = None
