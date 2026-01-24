@@ -84,6 +84,10 @@ jobs:
           gh pr checkout "$PR_NUMBER"
           echo "Checked out PR #$PR_NUMBER"
 
+      - name: Save pre-implementation HEAD
+        id: pre_impl
+        run: echo "head=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
       - name: Address PR review comments
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -110,17 +114,26 @@ jobs:
             echo "Changes pushed successfully"
           fi
 
-      - name: Post status comment to PR
+      - name: Generate and post summary comment
         if: always()
         env:
           PR_NUMBER: ${{ inputs.pr_number }}
-          GH_TOKEN: ${{ github.token }}
+          PRE_HEAD: ${{ steps.pre_impl.outputs.head }}
+          MODEL_NAME: ${{ inputs.model_name }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           JOB_STATUS: ${{ job.status }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "$JOB_STATUS" = "success" ]; then
-            BODY="PR review comments addressed.\n\n[View workflow run]($RUN_URL)"
-          else
-            BODY="Failed to address PR review comments.\n\n[View workflow run]($RUN_URL)"
-          fi
-          gh pr comment "$PR_NUMBER" --body "$(echo -e "$BODY")"
+          # Get incremental diff and pipe to summary generator
+          BODY=$(git diff "$PRE_HEAD"..HEAD | erk exec generate-pr-address-summary \
+            --pr-number "$PR_NUMBER" \
+            --pre-head "$PRE_HEAD" \
+            --model-name "$MODEL_NAME" \
+            --run-url "$RUN_URL" \
+            --job-status "$JOB_STATUS")
+
+          # Post or update comment using existing exec command
+          erk exec post-or-update-pr-summary \
+            --pr-number "$PR_NUMBER" \
+            --marker "<!-- erk:pr-address-run -->" \
+            --body "$BODY"
