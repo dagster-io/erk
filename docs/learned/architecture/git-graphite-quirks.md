@@ -270,6 +270,38 @@ This ensures callers can create multiple branches without unexpected working dir
 
 **Location in Codebase**: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py`
 
+## RestackError Handling Patterns
+
+`gt restack` can fail in two distinct ways, requiring different user responses:
+
+### Error Types
+
+| Error Type         | Meaning                                              | User Action                                             |
+| ------------------ | ---------------------------------------------------- | ------------------------------------------------------- |
+| `restack-conflict` | Merge conflicts during rebase                        | Resolve conflicts manually, run `gt restack --continue` |
+| `restack-failed`   | Other restack failure (permissions, corrupted state) | Check git status, may need `git rebase --abort`         |
+
+### Code Pattern
+
+```python
+from erk_shared.gateway.gt.types import RestackError, RestackSuccess
+
+result = ctx.graphite.restack_idempotent(repo.root, no_interactive=True)
+
+if isinstance(result, RestackError):
+    if result.error_type == "restack-conflict":
+        # Guide user through conflict resolution
+        user_error(f"Conflicts detected: {result.message}")
+        user_output("Resolve conflicts and run: gt restack --continue")
+    else:
+        # Generic failure
+        raise click.ClickException(result.message)
+```
+
+### Reference
+
+Type definitions: `packages/erk-shared/src/erk_shared/gateway/gt/types.py:26-43`
+
 ## Adding New Quirks
 
 When you discover a new edge case, add it to this document with:

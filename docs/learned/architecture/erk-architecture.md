@@ -32,6 +32,8 @@ tripwires:
     warning: "Use ctx.branch_manager instead. Branch mutation methods are in GitBranchOps sub-gateway, accessible only through BranchManager. Query methods (get_current_branch, list_local_branches, etc.) remain on ctx.git."
   - action: "calling ctx.graphite mutation methods (track_branch, delete_branch, submit_branch)"
     warning: "Use ctx.branch_manager instead. Branch mutation methods are in GraphiteBranchOps sub-gateway, accessible only through BranchManager. Query methods (is_branch_tracked, get_parent_branch, etc.) remain on ctx.graphite."
+  - action: "calling GraphiteBranchManager.create_branch() without explicit checkout"
+    warning: "GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch."
 ---
 
 # Erk Architecture Patterns
@@ -1068,6 +1070,44 @@ Use deferred actions via `post_cd_commands` when:
 - Commands are executed in sequence after `cd` succeeds
 - Use `shlex.quote()` for paths to handle special characters safely
 - Commands run in the target directory's context
+
+## Idempotency Patterns
+
+Erk uses two distinct idempotency patterns:
+
+### Passive Idempotency
+
+"If already done, skip silently."
+
+```python
+if ctx.graphite.is_branch_tracked(branch_name):
+    return  # Already tracked, nothing to do
+ctx.graphite.track_branch(branch_name, parent)
+```
+
+**Use when:** The previous operation's side effects are sufficient.
+
+### Active Idempotency
+
+"If already done, re-run safely."
+
+```python
+parent = ctx.branch_manager.get_parent_branch(repo.root, branch_name)
+if parent is not None:  # Already tracked
+    ctx.graphite.sync(repo.root, force=True)
+    ctx.graphite.restack_idempotent(repo.root, no_interactive=True)
+```
+
+**Use when:** Re-running provides value (e.g., sync pulls latest changes, restack updates base).
+
+### Pattern Selection
+
+| Scenario        | Pattern | Reason                       |
+| --------------- | ------- | ---------------------------- |
+| Branch tracking | Passive | Re-tracking has no benefit   |
+| Remote sync     | Active  | New commits may exist        |
+| Restack         | Active  | Parent may have changed      |
+| Squash          | Active  | Additional commits may exist |
 
 ## Design Principles
 

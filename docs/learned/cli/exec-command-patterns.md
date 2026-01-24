@@ -91,6 +91,41 @@ def _build_pr_body(
 
 See `src/erk/cli/commands/exec/scripts/handle_no_changes.py` for the canonical implementation of these patterns.
 
+## Graceful Degradation for Optional Parameters
+
+Some exec scripts accept optional parameters that may not be available in all contexts. Use graceful degradation to avoid blocking workflows.
+
+### Pattern: Optional Session ID
+
+```python
+def validate_session_id(session_id: str | None) -> str | None:
+    """Validate session ID with graceful degradation.
+
+    Returns None if session ID is missing/invalid, allowing
+    the workflow to continue with reduced functionality.
+    """
+    if session_id is None:
+        return None
+    if not session_id.strip():
+        return None
+    return session_id
+
+# Usage in command
+session_id = validate_session_id(ctx.params.get("session_id"))
+if session_id is None:
+    # Continue without session tracking
+    output["session_tracked"] = False
+else:
+    # Track with session ID
+    output["session_tracked"] = True
+```
+
+### When to Use
+
+- Session IDs in hooks (may not be available in all invocation contexts)
+- Optional metadata that enriches but doesn't block functionality
+- Parameters passed through `|| true` shell patterns
+
 ## Related Topics
 
 - [erk exec Commands](erk-exec-commands.md) - Command reference
