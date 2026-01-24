@@ -1,3 +1,12 @@
+# Learn Dispatch Workflow
+#
+# Runs /erk:learn on a completed plan issue to extract insights and patterns
+# from the implementation session. This workflow is triggered asynchronously
+# after a PR lands via `erk exec trigger-async-learn`.
+#
+# Output: Creates a new learn plan issue containing extracted lessons learned,
+# architectural decisions, and reusable patterns from the implementation.
+
 name: learn-dispatch
 run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"
 
