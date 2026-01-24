@@ -42,7 +42,7 @@ class TestCreatePlanIssueSuccess:
         # Verify issue was created with correct title and labels
         assert len(fake_gh.created_issues) == 1
         title, body, labels = fake_gh.created_issues[0]
-        assert title == "My Feature Plan [erk-plan]"
+        assert title == "[erk-plan] My Feature Plan"
         assert labels == ["erk-plan"]
 
         # Verify plan content was added as comment
@@ -103,7 +103,7 @@ class TestCreatePlanIssueSuccess:
         assert result.success is True
         assert result.title == "Correct Title"
         title, _, _ = fake_gh.created_issues[0]
-        assert title == "Correct Title [erk-plan]"
+        assert title == "[erk-plan] Correct Title"
 
     def test_uses_custom_title_tag(self, tmp_path: Path) -> None:
         """Use custom title tag."""
@@ -125,7 +125,7 @@ class TestCreatePlanIssueSuccess:
 
         assert result.success is True
         title, _, _ = fake_gh.created_issues[0]
-        assert title == "My Plan [custom-suffix]"
+        assert title == "[custom-suffix] My Plan"
 
     def test_adds_extra_labels(self, tmp_path: Path) -> None:
         """Add extra labels beyond erk-plan."""

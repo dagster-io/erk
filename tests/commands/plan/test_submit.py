@@ -27,7 +27,7 @@ def test_submit_exits_cleanly_when_parent_branch_untracked() -> None:
         # Create an issue with erk-plan label
         issue = IssueInfo(
             number=123,
-            title="Test Plan [erk-plan]",
+            title="[erk-plan] Test Plan",
             body="Test plan body",
             state="OPEN",
             url="https://github.com/test-owner/test-repo/issues/123",
@@ -107,7 +107,7 @@ def test_submit_succeeds_when_parent_branch_tracked() -> None:
         # Create an issue with erk-plan label
         issue = IssueInfo(
             number=456,
-            title="Test Plan [erk-plan]",
+            title="[erk-plan] Test Plan",
             body="Test plan body",
             state="OPEN",
             url="https://github.com/test-owner/test-repo/issues/456",

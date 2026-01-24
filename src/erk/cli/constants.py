@@ -3,6 +3,12 @@
 # GitHub issue label for erk plans
 ERK_PLAN_LABEL = "erk-plan"
 
+# Title prefix for erk-plan issues (with trailing space for easy stripping)
+ERK_PLAN_TITLE_PREFIX = "[erk-plan] "
+
+# Plan markdown heading prefix (with trailing space for easy stripping)
+PLAN_HEADING_PREFIX = "Plan: "
+
 # GitHub Actions workflow for remote implementation dispatch
 DISPATCH_WORKFLOW_NAME = "erk-impl.yml"
 DISPATCH_WORKFLOW_METADATA_NAME = "erk-impl"

@@ -61,7 +61,7 @@ def test_complete_rejects_non_learn_plan() -> None:
     standard_body = format_plan_header_body_for_test(created_by="user123")
     standard_issue = IssueInfo(
         number=100,
-        title="Standard Plan [erk-plan]",
+        title="[erk-plan] Standard Plan",
         body=standard_body,
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/100",
