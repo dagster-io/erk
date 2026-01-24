@@ -49,16 +49,8 @@ Metadata for an initialized slot:
 ```python
 @dataclass(frozen=True)
 class SlotInfo:
-    name: str                      # e.g., "erk-slot-01"
-    last_objective_id: int | None  # For objective tracking continuity
+    name: str  # e.g., "erk-slot-01"
 ```
-
-**Objective tracking:** The `last_objective_id` field persists across assignment cycles and is updated at two points:
-
-1. **Plan save time** - When `/erk:plan-save --objective-issue=N` is called while in a slot worktree, the slot's objective is updated. This enables tracking multiple plans in the same stack before landing.
-2. **Land time** - When `erk pr land` completes, the objective is recorded before unassigning the slot.
-
-This field is used by `/erk:objective-next-plan` to default the objective issue when creating new plans from the same slot.
 
 ### SlotAssignment
 

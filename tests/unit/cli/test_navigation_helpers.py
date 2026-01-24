@@ -855,7 +855,7 @@ def test_get_slot_name_for_worktree_returns_slot_name(tmp_path: Path) -> None:
     state = PoolState(
         version="1.0",
         pool_size=4,
-        slots=(SlotInfo(name="erk-slot-01", last_objective_id=None),),
+        slots=(SlotInfo(name="erk-slot-01"),),
         assignments=(
             SlotAssignment(
                 slot_name="erk-slot-01",
@@ -882,7 +882,7 @@ def test_get_slot_name_for_worktree_returns_none_for_regular_worktree(tmp_path: 
     state = PoolState(
         version="1.0",
         pool_size=4,
-        slots=(SlotInfo(name="erk-slot-01", last_objective_id=None),),
+        slots=(SlotInfo(name="erk-slot-01"),),
         assignments=(),
     )
     save_pool_state(pool_json_path, state)

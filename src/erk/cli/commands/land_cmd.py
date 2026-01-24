@@ -45,8 +45,6 @@ from erk.core.worktree_pool import (
     PoolState,
     SlotAssignment,
     load_pool_state,
-    save_pool_state,
-    update_slot_objective,
 )
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.gt.cli import render_events
@@ -443,13 +441,6 @@ def _cleanup_slot_with_assignment(
         ):
             user_output("Slot preserved. Branch still exists locally.")
             return
-    # Record objective on slot BEFORE unassigning (so it persists after assignment removed)
-    if cleanup.objective_number is not None:
-        updated_state = update_slot_objective(state, assignment.slot_name, cleanup.objective_number)
-        if cleanup.ctx.dry_run:
-            user_output("[DRY RUN] Would save pool state")
-        else:
-            save_pool_state(cleanup.repo.pool_json_path, updated_state)
     execute_unassign(cleanup.ctx, cleanup.repo, state, assignment)
     # Defensive: ensure branch is released before deletion
     # (handles stale pool state where worktree_path doesn't match actual location)

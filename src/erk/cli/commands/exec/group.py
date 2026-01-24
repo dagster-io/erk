@@ -104,7 +104,6 @@ from erk.cli.commands.exec.scripts.session_id_injector_hook import (
 from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
     setup_impl_from_issue,
 )
-from erk.cli.commands.exec.scripts.slot_objective import slot_objective
 from erk.cli.commands.exec.scripts.track_learn_evaluation import (
     track_learn_evaluation,
 )
@@ -193,7 +192,6 @@ exec_group.add_command(run_review, name="run-review")
 exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
 exec_group.add_command(setup_impl_from_issue, name="setup-impl-from-issue")
-exec_group.add_command(slot_objective, name="slot-objective")
 exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
 exec_group.add_command(track_learn_result, name="track-learn-result")
 exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
