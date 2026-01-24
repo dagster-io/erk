@@ -84,10 +84,12 @@ Use the commit details from the JSON output (subject, body, files_changed) to ca
 
 **Major Changes** (significant features or breaking changes):
 
-- New systems, major capabilities, or architectural improvements
+- New user-facing systems or major capabilities
 - Breaking changes that users need to know about
 - CLI command reorganization or removal
 - Features that warrant special attention in release notes
+
+**IMPORTANT: Major Changes must be USER-VISIBLE.** The test: "Does an end user running `erk` commands see significantly different behavior?" Internal architecture improvements, gateway refactoring, retry mechanisms, schema-driven config, and infrastructure changes are NEVER Major Changes—they are implementation details that should be filtered entirely.
 
 **Major Change Entry Requirements:**
 

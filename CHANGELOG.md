@@ -7,10 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of 0f51810cb -->
+<!-- As of d0dda5c02 -->
 
 ### Added
 
+- Add objective column to TUI plan table with click-to-open functionality (d0dda5c02)
+- Add branch reuse detection in `erk plan submit` with interactive prompt to reuse existing branches (f4d22aedf)
+- Add multi-plan consolidation support to `erk plan replan` command (b33a2d507)
+- Add automatic trunk sync validation in `erk plan submit` (5426a676c)
+- Add `get-pr-commits` and `close-issue-with-comment` exec commands (f63b55f1d)
+- Add `pr-sync-commit` exec command to sync PR title/body from latest commit message (2a819f09a)
+- Display all available config keys in `erk config list` including interactive_claude settings (3da4d7132)
+- Add `erk plan replan` CLI command for re-evaluating existing plans (5a3b37736)
+- Add replan option to TUI command menu with keyboard shortcut "6" (8db9a610f)
+- Show workflow URL for in-progress learn status in `erk plan view` (132666345)
+- Add prepare-and-implement one-liner to plan save output (f05ff663d)
+- Enhance `erk plan view` with branch inference and improved learn status display (7bd37f64b)
+- Add closed PR detection to slot diagnostics and repair (71621b5ff)
+- Auto-detect objective from branch in `erk exec land-execute` command (51b89d5ba)
+- Add `--codespace` isolation mode to `erk prepare` and `erk branch create` commands (bb414451d)
 - Add GitHub Codespaces integration for remote Claude execution with `erk codespace` commands (setup, connect, list, remove, set-default) and `--codespace` flag for `erk implement` (afcdf8b4d)
 - Add `erk objective close` command to close completed objective issues (7bd5a32bd)
 - Add `--allow-dangerously-skip-permissions` flag support for interactive Claude config (fd443b05b)
@@ -18,8 +33,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `erk pr sync` now syncs and restacks already-tracked branches instead of exiting silently (6bf77988e)
+- Detect diverged branches in land command and handle pull safely (9653edbe2)
+- Fix Graphite branch tracking when parent branch diverged from remote (568b68d8f)
+- GraphiteBranchManager now has GitHub fallback for PR lookups when branches aren't in Graphite cache (0bceab0d1)
+- Split `--codespace` into separate `--codespace` (boolean) and `--codespace-name` (string) options (1d91d71e7)
+- Add `--no-session-persistence` flag to Claude CLI invocations for session isolation (e511cafb2)
+- Skip git push when Graphite handles PR submission (0bb27025d)
 - Make erk hooks resilient to erk unavailability by gracefully exiting if erk is not in PATH (159ee8079)
 - Fix TUI land command to execute PR merge instead of just generating script (e167fcf57)
+
+### Fixed
+
+- Fix `setup-impl-from-issue` to checkout newly created branch (0fe2e16e5)
+- Fix `erk plan submit` to validate parent branch is tracked by Graphite before stacking (f6ac8a07f)
+- Fix stale pool.json state handling in branch checkout and slot allocation (c6068b6c4)
+- Fix gist filename handling by using stdin input for `gh gist create` (e2be06252)
+- Fix `download-remote-session` gist URL handling for webpage URLs (49931240f)
+- Fix `update_slot_objective` to create new slot entries (upsert behavior) (35f2901bf)
+- Fix `.erk/bin/` description in `erk init` to say "generated shell scripts" (9463d261b)
+
+### Removed
+
+- Remove `erk planner` command group and associated infrastructure (84d0202c7)
 
 ## [0.6.0] - 2026-01-20 07:57 PT
 
