@@ -5,13 +5,29 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING
 
+from rich.text import Text
 from textual.command import DiscoveryHit, Hit, Hits, Provider
 
-from erk.tui.commands.registry import get_available_commands
+from erk.tui.commands.registry import CATEGORY_EMOJI, get_available_commands, get_display_name
 from erk.tui.commands.types import CommandContext
 
 if TYPE_CHECKING:
     from erk.tui.app import ErkDashApp, PlanDetailScreen
+
+
+def _format_highlighted_display(emoji: str, highlighted: object) -> str | Text:
+    """Format highlighted command name with emoji prefix.
+
+    Args:
+        emoji: Category emoji to prepend
+        highlighted: Highlighted name (Content, str, or Rich Text)
+
+    Returns:
+        Formatted display string or Text object
+    """
+    if isinstance(highlighted, Text):
+        return Text.assemble(f"{emoji} ", highlighted)
+    return f"{emoji} {highlighted}"
 
 
 class MainListCommandProvider(Provider):
@@ -60,11 +76,11 @@ class MainListCommandProvider(Provider):
             return
 
         for cmd in get_available_commands(ctx):
-            shortcut = f" [{cmd.shortcut}]" if cmd.shortcut else ""
+            emoji = CATEGORY_EMOJI[cmd.category]
+            name = get_display_name(cmd, ctx)
             yield DiscoveryHit(
-                f"{cmd.name}{shortcut}",
+                f"{emoji} {name}",
                 partial(self._app.execute_palette_command, cmd.id),
-                help=cmd.description,
             )
 
     async def search(self, query: str) -> Hits:
@@ -83,14 +99,16 @@ class MainListCommandProvider(Provider):
         matcher = self.matcher(query)
 
         for cmd in get_available_commands(ctx):
-            score = matcher.match(cmd.name)
+            name = get_display_name(cmd, ctx)
+            score = matcher.match(name)
             if score > 0:
-                shortcut = f" [{cmd.shortcut}]" if cmd.shortcut else ""
+                emoji = CATEGORY_EMOJI[cmd.category]
+                highlighted = matcher.highlight(name)
+                display = _format_highlighted_display(emoji, highlighted)
                 yield Hit(
                     score,
-                    matcher.highlight(f"{cmd.name}{shortcut}"),
+                    display,
                     partial(self._app.execute_palette_command, cmd.id),
-                    help=cmd.description,
                 )
 
 
@@ -134,11 +152,11 @@ class PlanCommandProvider(Provider):
         """
         ctx = self._get_context()
         for cmd in get_available_commands(ctx):
-            shortcut = f" [{cmd.shortcut}]" if cmd.shortcut else ""
+            emoji = CATEGORY_EMOJI[cmd.category]
+            name = get_display_name(cmd, ctx)
             yield DiscoveryHit(
-                f"{cmd.name}{shortcut}",
+                f"{emoji} {name}",
                 partial(self._detail_screen.execute_command, cmd.id),
-                help=cmd.description,
             )
 
     async def search(self, query: str) -> Hits:
@@ -154,12 +172,14 @@ class PlanCommandProvider(Provider):
         ctx = self._get_context()
 
         for cmd in get_available_commands(ctx):
-            score = matcher.match(cmd.name)
+            name = get_display_name(cmd, ctx)
+            score = matcher.match(name)
             if score > 0:
-                shortcut = f" [{cmd.shortcut}]" if cmd.shortcut else ""
+                emoji = CATEGORY_EMOJI[cmd.category]
+                highlighted = matcher.highlight(name)
+                display = _format_highlighted_display(emoji, highlighted)
                 yield Hit(
                     score,
-                    matcher.highlight(f"{cmd.name}{shortcut}"),
+                    display,
                     partial(self._detail_screen.execute_command, cmd.id),
-                    help=cmd.description,
                 )
