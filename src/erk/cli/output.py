@@ -377,3 +377,119 @@ def stream_fix_conflicts(
         click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
 
     return FixConflictsResult(success=success, error_message=error_message)
+
+
+@dataclass(frozen=True)
+class SyncDivergenceResult:
+    """Result from sync-divergence streaming execution."""
+
+    success: bool
+    error_message: str | None = None
+    requires_interactive: bool = False
+
+
+def stream_sync_divergence(
+    executor: ClaudeExecutor,
+    worktree_path: Path,
+) -> SyncDivergenceResult:
+    """Stream sync-divergence command via Claude executor with live feedback.
+
+    Handles the /erk:sync-divergence command execution with:
+    - Live output streaming with visual feedback
+    - Semantic conflict detection (AskUserQuestion)
+    - Deduped spinner updates
+    - Rich console output with start/end markers
+
+    Args:
+        executor: Claude CLI executor
+        worktree_path: Path to run the divergence sync in
+
+    Returns:
+        SyncDivergenceResult with success status and error details
+    """
+    error_message: str | None = None
+    success = True
+    has_work_events = False
+    last_spinner: str | None = None
+    start_time = time.time()
+
+    # Print start marker with bold styling
+    click.echo(click.style("--- /erk:sync-divergence ---", bold=True))
+    click.echo("")
+
+    for event in executor.execute_command_streaming(
+        command="/erk:sync-divergence",
+        worktree_path=worktree_path,
+        dangerous=True,  # Divergence resolution modifies git state
+    ):
+        match event:
+            case TextEvent(content=content):
+                has_work_events = True
+                click.echo(content)
+            case ToolEvent(summary=summary):
+                has_work_events = True
+                # Check for user input prompts (semantic conflict requiring decision)
+                if "AskUserQuestion" in summary:
+                    click.echo("")
+                    click.echo(
+                        click.style(
+                            "Semantic decision required - requires interactive resolution",
+                            fg="yellow",
+                            bold=True,
+                        )
+                    )
+                    click.echo("")
+                    click.echo("Claude needs your input to resolve this divergence.")
+                    click.echo("Run divergence sync interactively:")
+                    click.echo("")
+                    click.echo(click.style("    claude /erk:sync-divergence", fg="cyan"))
+                    click.echo("")
+                    return SyncDivergenceResult(
+                        success=False,
+                        requires_interactive=True,
+                    )
+                # Tool summaries with icon
+                click.echo(click.style(f"   {summary}", fg="cyan", dim=True))
+            case SpinnerUpdateEvent(status=status):
+                if status != last_spinner:
+                    click.echo(click.style(f"   {status}", dim=True))
+                    last_spinner = status
+            case ErrorEvent(message=msg):
+                click.echo(click.style(f"   {msg}", fg="red"))
+                error_message = msg
+                success = False
+            case NoOutputEvent(diagnostic=diag):
+                click.echo(click.style(f"   {diag}", fg="yellow"))
+                error_message = diag
+                success = False
+            case NoTurnsEvent(diagnostic=diag):
+                click.echo(click.style(f"   {diag}", fg="yellow"))
+                error_message = diag
+                success = False
+            case ProcessErrorEvent(message=msg):
+                click.echo(click.style(f"   {msg}", fg="red"))
+                error_message = msg
+                success = False
+            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | IssueNumberEvent():
+                pass  # PR metadata not relevant for sync-divergence
+
+    # Check for no-work-events failure mode
+    if success and not has_work_events:
+        success = False
+        error_message = (
+            "Claude completed without producing any output - "
+            "check hooks or run 'claude /erk:sync-divergence' directly to debug"
+        )
+        click.echo(click.style(f"   {error_message}", fg="yellow"))
+
+    # Calculate duration and print end marker
+    duration = time.time() - start_time
+    duration_str = format_duration(duration)
+
+    click.echo("")
+    if success:
+        click.echo(click.style(f"--- Done ({duration_str}) ---", fg="green", bold=True))
+    else:
+        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
+
+    return SyncDivergenceResult(success=success, error_message=error_message)

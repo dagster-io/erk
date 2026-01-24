@@ -10,6 +10,7 @@ from erk.cli.commands.pr.fix_conflicts_remote_cmd import pr_fix_conflicts_remote
 from erk.cli.commands.pr.submit_cmd import pr_submit
 from erk.cli.commands.pr.summarize_cmd import pr_summarize
 from erk.cli.commands.pr.sync_cmd import pr_sync
+from erk.cli.commands.pr.sync_divergence_cmd import pr_sync_divergence
 
 
 @click.group("pr")
@@ -25,3 +26,4 @@ pr_group.add_command(pr_fix_conflicts_remote, name="fix-conflicts-remote")
 pr_group.add_command(pr_submit, name="submit")
 pr_group.add_command(pr_summarize, name="summarize")
 pr_group.add_command(pr_sync, name="sync")
+pr_group.add_command(pr_sync_divergence, name="sync-divergence")
