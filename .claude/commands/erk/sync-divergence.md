@@ -44,17 +44,11 @@ Resolve "Branch X has been updated remotely" errors by syncing with remote and h
 
 5. **Execute rebase** (when both sides have commits):
 
-   For Graphite workflows:
-
-   ```bash
-   gt restack --no-interactive
-   ```
-
-   For git-only workflows:
-
    ```bash
    git rebase origin/$BRANCH
    ```
+
+   > **Note:** Do not use `gt restack` here. Graphite's restack only handles parent branch relationships (rebasing onto the parent in your stack), not same-branch remote divergence.
 
 6. **If rebase causes conflicts:**
 
@@ -89,8 +83,8 @@ If there are uncommitted changes when starting:
 
 ### Multiple branches in stack affected
 
-If using Graphite with stacked PRs:
+After syncing one branch, other branches in the stack may need rebasing onto their parents:
 
-- `gt restack --no-interactive` handles the entire stack
-- Conflicts may appear in multiple branches
-- Resolve each in order (downstack to upstack)
+1. First: Sync the diverged branch using `git rebase origin/$BRANCH`
+2. Then: Run `gt restack --no-interactive` to cascade changes through the stack
+3. Conflicts may appear in multiple branches - resolve each in order (downstack to upstack)
