@@ -92,7 +92,12 @@ jobs:
           PR_NUMBER: ${{ inputs.pr_number }}
           MODEL_NAME: ${{ inputs.model_name }}
         run: |
-          claude --model "$MODEL_NAME" --print "/erk:pr-address"
+          claude --print \
+            --model "$MODEL_NAME" \
+            --output-format stream-json \
+            --dangerously-skip-permissions \
+            --verbose \
+            "/erk:pr-address"
 
       - name: Push changes
         env:
