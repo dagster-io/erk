@@ -171,6 +171,60 @@ class FakePlanDataProvider(PlanDataProvider):
 
 See [Textual Async Testing](textual-async.md) for patterns on testing async TUI code.
 
+## Data Shape at Each Layer
+
+Understanding the data shape at each pipeline stage helps debug rendering issues.
+
+### Layer 1: GitHub API Response
+
+Raw JSON from GitHub. Issue titles are plain strings without prefixes:
+
+```json
+{
+  "number": 123,
+  "title": "Add dark mode",
+  "labels": [{ "name": "erk-plan" }, { "name": "erk-learn" }],
+  "body": "<!-- erk-metadata: {...} -->\n\n# Plan content..."
+}
+```
+
+### Layer 2: Gateway/Service Response
+
+`Plan` dataclass with all metadata populated:
+
+| Field              | Type           | Notes                            |
+| ------------------ | -------------- | -------------------------------- |
+| `issue_number`     | `int`          | From API                         |
+| `title`            | `str`          | Raw title, may have prefix added |
+| `labels`           | `list[str]`    | Label names                      |
+| `learn_status`     | `str \| None`  | Derived from labels/metadata     |
+| `learn_plan_issue` | `int \| None`  | From body metadata if learn plan |
+| `pr_number`        | `int \| None`  | Linked PR if exists              |
+| `worktree_path`    | `Path \| None` | Local worktree if exists         |
+
+### Layer 3: PlanRowData (Widget Consumption)
+
+Frozen dataclass with both raw data and pre-formatted display strings:
+
+| Field            | Type  | Notes                             |
+| ---------------- | ----- | --------------------------------- |
+| `issue_number`   | `int` | Same as Plan                      |
+| `title`          | `str` | May be truncated (47 chars + ...) |
+| `full_title`     | `str` | Complete title for modals         |
+| `pr_display`     | `str` | Pre-formatted: "#456 👀"          |
+| `checks_display` | `str` | Pre-formatted: "✓" or "✗"         |
+| `worktree_name`  | `str` | Just the name, not full path      |
+
+See [PlanRowData Field Reference](plan-row-data.md) for complete field list.
+
+### Layer 4: DataTable Cell
+
+Individual cell values passed to `add_row()`:
+
+- Strings are interpreted as Rich markup by default
+- `[bracketed]` text treated as style tags
+- Wrap user data in `Text()` to escape - see [DataTable Markup Escaping](../textual/datatable-markup-escaping.md)
+
 ## Design Principles
 
 1. **Frozen Data Types**: All data types are frozen dataclasses to ensure immutability during table rendering
