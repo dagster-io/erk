@@ -102,12 +102,12 @@ erk plan submit 123 -f
 
 The force flag effectively chooses option 2 ("Delete and create new") from the standard branch detection prompt without asking the user.
 
-| Mode     | Existing Branches Found | Behavior                    |
-| -------- | ----------------------- | --------------------------- |
-| Normal   | Yes                     | Prompts user for decision   |
-| Normal   | No                      | Creates new branch          |
-| `--force` | Yes                     | Deletes all, creates new    |
-| `--force` | No                      | Creates new branch          |
+| Mode      | Existing Branches Found | Behavior                  |
+| --------- | ----------------------- | ------------------------- |
+| Normal    | Yes                     | Prompts user for decision |
+| Normal    | No                      | Creates new branch        |
+| `--force` | Yes                     | Deletes all, creates new  |
+| `--force` | No                      | Creates new branch        |
 
 ## Related Topics
 
