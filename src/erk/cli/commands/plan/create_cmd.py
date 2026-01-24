@@ -88,7 +88,7 @@ def create_plan(
         plan_content=content,
         title=title,
         extra_labels=extra_labels,
-        title_suffix=None,
+        title_tag=None,
         source_repo=source_repo,
         objective_id=None,
         created_from_session=None,

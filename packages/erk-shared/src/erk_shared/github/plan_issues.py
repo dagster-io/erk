@@ -70,7 +70,7 @@ def create_plan_issue(
     *,
     title: str | None,
     extra_labels: list[str] | None,
-    title_suffix: str | None,
+    title_tag: str | None,
     source_repo: str | None,
     objective_id: int | None,
     created_from_session: str | None,
@@ -91,7 +91,7 @@ def create_plan_issue(
         plan_content: The full plan markdown content
         title: Optional title (extracted from H1 if None)
         extra_labels: Additional labels beyond erk-plan (include "erk-learn" for learn plans)
-        title_suffix: Suffix for issue title (defaults based on labels)
+        title_tag: Tag for issue title (defaults based on labels, may be prefix or suffix)
         source_repo: For cross-repo plans, the implementation repo in "owner/repo" format
         objective_id: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
@@ -144,18 +144,18 @@ def create_plan_issue(
             error=label_errors,
         )
 
-    # Step 4: Determine title suffix
-    if title_suffix is None:
+    # Step 4: Determine title tag
+    if title_tag is None:
         if is_learn_plan:
-            title_suffix = "[erk-learn]"
+            title_tag = "[erk-learn]"
         else:
-            title_suffix = "[erk-plan]"
+            title_tag = "[erk-plan]"
 
-    # Build issue title (learn plans put suffix first for visibility)
+    # Build issue title (learn plans put tag first for visibility)
     if is_learn_plan:
-        issue_title = f"{title_suffix} {title}"
+        issue_title = f"{title_tag} {title}"
     else:
-        issue_title = f"{title} {title_suffix}"
+        issue_title = f"{title} {title_tag}"
 
     # Standard and extraction plans: metadata body + plan content in comment
     created_at = datetime.now(UTC).isoformat()
