@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of 8f39b112e -->
+<!-- As of 313d5d763 -->
 
 ### Added
 
+- Add Claude-generated summaries to PR comments for `pr-address` workflow (09cc641b8)
+- Add workflow run URL backlink to plans created from GitHub Actions (b94f43a17)
+- Add `erk pr address-remote` command to trigger PR review comment addressing via GitHub Actions (76e89beef)
 - Add `/erk:sync-divergence` command to resolve diverged branches with intelligent sync/rebase (fde512fcc)
 - Add `-f/--force` flag to `erk plan submit` for non-interactive branch cleanup (59adfd940)
 - Add PR cache polling for immediate status line display after submit (23d165cf4)
@@ -36,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Move `[erk-plan]` marker to start of PR titles for consistency with `[erk-learn]` format (32443861a)
+- Replace text prefixes with emoji category indicators in TUI command palette (313d5d763)
 - Move `[erk-learn]` prefix to beginning of plan issue titles for improved visibility (b848df8e7)
 - Learn workflow now runs automatically in CI after implementation instead of requiring `--async` flag (4e56b7a7c)
 - `erk pr sync` now syncs and restacks already-tracked branches instead of exiting silently (6bf77988e)
@@ -50,6 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix `pr-address` workflow to detect unpushed commits before pushing (da9cc874f)
+- Update PR title with `[no-changes]` prefix when implementation produces no code changes (0f3d50b2c)
 - Fix TUI generating invalid "erk br co None" checkout commands for plans without worktrees (8f39b112e)
 - Fix `erk plan list` not displaying `[erk-learn]` prefix in titles (77f1e89bc)
 - Fix TUI not displaying `[erk-learn]` prefix in plan titles (248429afa)
