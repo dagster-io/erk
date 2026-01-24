@@ -117,9 +117,9 @@ This builds and publishes all packages to PyPI in dependency order.
 After confirming the publish succeeded, merge from the release branch:
 
 ```bash
-# Capture current branch name, then merge to master
+# Capture current branch name, switch to root worktree, then merge
 RELEASE_BRANCH=$(git branch --show-current)
-erk br co master && git merge "$RELEASE_BRANCH" && git push origin master --tags
+source .erk/bin/activate.sh && git merge "$RELEASE_BRANCH" && git push origin master --tags
 ```
 
 > **Note:** If using `erk prepare`, the branch name will be `P{issue}-{slug}-{date}` instead of `release-X.Y.Z`.
