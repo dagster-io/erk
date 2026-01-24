@@ -44,6 +44,43 @@ from erk_shared.gateway.pr.types import (
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.types import GitHubRepoId, PRNotFound
 
+# Set to False to disable polling for PR in Graphite cache after submission.
+# This feature ensures the status line can immediately display the PR number.
+ENABLE_PR_CACHE_POLLING = True
+
+# Polling configuration for PR cache
+PR_CACHE_POLL_MAX_WAIT_SECONDS = 10.0
+PR_CACHE_POLL_INTERVAL_SECONDS = 0.5
+
+
+def _wait_for_pr_in_cache(
+    ctx: ErkContext,
+    repo_root: Path,
+    branch: str,
+    *,
+    max_wait_seconds: float,
+    poll_interval: float,
+) -> bool:
+    """Wait for PR to appear in Graphite cache after submission.
+
+    Args:
+        ctx: Erk context
+        repo_root: Repository root path
+        branch: Branch name to check
+        max_wait_seconds: Maximum time to wait
+        poll_interval: Time between checks
+
+    Returns:
+        True if PR found in cache, False if timeout
+    """
+    start = ctx.time.now()
+    while (ctx.time.now() - start).total_seconds() < max_wait_seconds:
+        prs = ctx.graphite.get_prs_from_graphite(ctx.git, repo_root)
+        if branch in prs:
+            return True
+        ctx.time.sleep(poll_interval)
+    return False
+
 
 @click.command("submit")
 @click.option("--debug", is_flag=True, help="Show diagnostic output")
@@ -211,6 +248,17 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
 
     click.echo(click.style("   PR metadata updated", fg="green"))
     click.echo("")
+
+    # Wait for PR to appear in Graphite cache for immediate status line display
+    # This runs after all Graphite operations so the status line can show the PR number
+    if ENABLE_PR_CACHE_POLLING and graphite_url is not None:
+        _wait_for_pr_in_cache(
+            ctx,
+            Path(repo_root),
+            current_branch,
+            max_wait_seconds=PR_CACHE_POLL_MAX_WAIT_SECONDS,
+            poll_interval=PR_CACHE_POLL_INTERVAL_SECONDS,
+        )
 
     # Success output with clickable URL
     styled_url = click.style(finalize_result.pr_url, fg="cyan", underline=True)

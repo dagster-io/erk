@@ -451,6 +451,8 @@ def test_pr_submit_success(tmp_path: Path) -> None:
                     commit_sha=None,
                 ),
             },
+            # PR info for cache polling - ensures polling finds PR immediately
+            pr_info={"feature": pr_info},
         )
 
         github = FakeGitHub(
@@ -584,6 +586,8 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
                     commit_sha=None,
                 ),
             },
+            # PR info for cache polling - ensures polling finds PR immediately
+            pr_info={"branch-2": pr_info},
         )
 
         github = FakeGitHub(
@@ -874,6 +878,8 @@ def test_pr_submit_shows_graphite_url() -> None:
                     commit_sha=None,
                 ),
             },
+            # PR info for cache polling - ensures polling finds PR immediately
+            pr_info={"feature": pr_info},
         )
 
         github = FakeGitHub(
