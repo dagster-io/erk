@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of d0dda5c02 -->
+<!-- As of 8f39b112e -->
 
 ### Added
 
+- Add `/erk:sync-divergence` command to resolve diverged branches with intelligent sync/rebase (fde512fcc)
+- Add `-f/--force` flag to `erk plan submit` for non-interactive branch cleanup (59adfd940)
+- Add PR cache polling for immediate status line display after submit (23d165cf4)
 - Add objective column to TUI plan table with click-to-open functionality (d0dda5c02)
 - Add branch reuse detection in `erk plan submit` with interactive prompt to reuse existing branches (f4d22aedf)
 - Add multi-plan consolidation support to `erk plan replan` command (b33a2d507)
@@ -33,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Move `[erk-learn]` prefix to beginning of plan issue titles for improved visibility (b848df8e7)
+- Learn workflow now runs automatically in CI after implementation instead of requiring `--async` flag (4e56b7a7c)
 - `erk pr sync` now syncs and restacks already-tracked branches instead of exiting silently (6bf77988e)
 - Detect diverged branches in land command and handle pull safely (9653edbe2)
 - Fix Graphite branch tracking when parent branch diverged from remote (568b68d8f)
@@ -45,6 +50,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix TUI generating invalid "erk br co None" checkout commands for plans without worktrees (8f39b112e)
+- Fix `erk plan list` not displaying `[erk-learn]` prefix in titles (77f1e89bc)
+- Fix TUI not displaying `[erk-learn]` prefix in plan titles (248429afa)
+- Fix branch not visible in `gt ls` after `erk plan submit` due to stale Graphite cache (8b33b6902)
+- Fix diverged local branches during Graphite stack operations with automatic force-update (e04cc18e8)
+- Fix learn-dispatch workflow with missing `--verbose` flag (a5b0501b9)
 - Fix `setup-impl-from-issue` to checkout newly created branch (0fe2e16e5)
 - Fix `erk plan submit` to validate parent branch is tracked by Graphite before stacking (f6ac8a07f)
 - Fix stale pool.json state handling in branch checkout and slot allocation (c6068b6c4)
