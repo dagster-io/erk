@@ -25,6 +25,7 @@ from erk.cli.commands.pr.shared import (
 )
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
+from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import execute_finalize
 from erk_shared.gateway.gt.types import FinalizeResult, PostAnalysisError
@@ -193,6 +194,13 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     # Get commit messages for AI context (only from current branch)
     commit_messages = ctx.git.get_commit_messages_since(cwd, parent_branch)
 
+    # Fetch plan context if branch is linked to a plan issue
+    plan_provider = PlanContextProvider(ctx.github_issues)
+    plan_context = plan_provider.get_plan_context(
+        repo_root=Path(repo_root),
+        branch_name=current_branch,
+    )
+
     # Phase 3: Generate commit message
     click.echo(click.style("Phase 3: Generating PR description", bold=True))
     msg_gen = CommitMessageGenerator(ctx.claude_executor)
@@ -203,6 +211,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
         current_branch=current_branch,
         parent_branch=parent_branch,
         commit_messages=commit_messages,
+        plan_context=plan_context,
         debug=debug,
     )
 

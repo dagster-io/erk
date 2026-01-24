@@ -7,6 +7,7 @@ from erk.core.commit_message_generator import (
     CommitMessageRequest,
     CommitMessageResult,
 )
+from erk.core.plan_context_provider import PlanContext
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from tests.fakes.claude_executor import FakeClaudeExecutor
 
@@ -46,6 +47,8 @@ def test_generate_success(tmp_path: Path) -> None:
         repo_root=tmp_path,
         current_branch="feature-branch",
         parent_branch="main",
+        commit_messages=None,
+        plan_context=None,
     )
 
     # Act
@@ -92,6 +95,8 @@ def test_generate_with_multiline_body(tmp_path: Path) -> None:
         repo_root=tmp_path,
         current_branch="refactor",
         parent_branch="main",
+        commit_messages=None,
+        plan_context=None,
     )
 
     result, _ = _consume_generator(generator, request)
@@ -112,6 +117,8 @@ def test_generate_fails_when_diff_file_not_found(tmp_path: Path) -> None:
         repo_root=tmp_path,
         current_branch="branch",
         parent_branch="main",
+        commit_messages=None,
+        plan_context=None,
     )
 
     result, _ = _consume_generator(generator, request)
@@ -138,6 +145,8 @@ def test_generate_fails_when_diff_file_empty(tmp_path: Path) -> None:
         repo_root=tmp_path,
         current_branch="branch",
         parent_branch="main",
+        commit_messages=None,
+        plan_context=None,
     )
 
     result, _ = _consume_generator(generator, request)
@@ -165,6 +174,8 @@ def test_generate_fails_when_executor_fails(tmp_path: Path) -> None:
         repo_root=tmp_path,
         current_branch="branch",
         parent_branch="main",
+        commit_messages=None,
+        plan_context=None,
     )
 
     result, _ = _consume_generator(generator, request)
@@ -191,6 +202,8 @@ def test_generate_handles_title_only_output(tmp_path: Path) -> None:
         repo_root=tmp_path,
         current_branch="typo-fix",
         parent_branch="main",
+        commit_messages=None,
+        plan_context=None,
     )
 
     result, _ = _consume_generator(generator, request)
@@ -216,6 +229,8 @@ def test_generate_uses_custom_model(tmp_path: Path) -> None:
         repo_root=tmp_path,
         current_branch="branch",
         parent_branch="main",
+        commit_messages=None,
+        plan_context=None,
     )
 
     result, _ = _consume_generator(generator, request)
@@ -246,6 +261,8 @@ def test_generate_strips_code_fence_wrapper(tmp_path: Path) -> None:
         repo_root=tmp_path,
         current_branch="fix-fence",
         parent_branch="main",
+        commit_messages=None,
+        plan_context=None,
     )
 
     result, _ = _consume_generator(generator, request)
@@ -275,6 +292,8 @@ def test_generate_strips_code_fence_with_language_tag(tmp_path: Path) -> None:
         repo_root=tmp_path,
         current_branch="feature",
         parent_branch="main",
+        commit_messages=None,
+        plan_context=None,
     )
 
     result, _ = _consume_generator(generator, request)
@@ -306,6 +325,7 @@ def test_generate_includes_commit_messages_in_prompt(tmp_path: Path) -> None:
             "Initial implementation\n\nAdded basic structure.",
             "Fix bug in parsing\n\nFixed edge case in parser.",
         ],
+        plan_context=None,
     )
 
     result, _ = _consume_generator(generator, request)
@@ -337,6 +357,7 @@ def test_generate_works_without_commit_messages(tmp_path: Path) -> None:
         current_branch="branch",
         parent_branch="main",
         commit_messages=None,
+        plan_context=None,
     )
 
     result, _ = _consume_generator(generator, request)
@@ -370,6 +391,8 @@ def test_generate_passes_system_prompt_separately(tmp_path: Path) -> None:
         repo_root=tmp_path,
         current_branch="feature-branch",
         parent_branch="main",
+        commit_messages=None,
+        plan_context=None,
     )
 
     result, _ = _consume_generator(generator, request)
@@ -392,3 +415,115 @@ def test_generate_passes_system_prompt_separately(tmp_path: Path) -> None:
     assert "feature-branch" in prompt
     assert "main" in prompt
     assert "diff --git" in prompt
+
+
+def test_generate_includes_plan_context_in_prompt(tmp_path: Path) -> None:
+    """Test that plan context is included in the prompt when provided."""
+    diff_file = tmp_path / "test.diff"
+    diff_file.write_text("diff --git a/file.py b/file.py\n-old\n+new", encoding="utf-8")
+
+    plan_context = PlanContext(
+        issue_number=123,
+        plan_content="# Plan: Fix Authentication Bug\n\nFix session expiration.",
+        objective_summary=None,
+    )
+
+    executor = FakeClaudeExecutor(
+        claude_available=True,
+        simulated_prompt_output="Fix authentication session expiration\n\nImplemented fix.",
+    )
+    generator = CommitMessageGenerator(executor)
+    request = CommitMessageRequest(
+        diff_file=diff_file,
+        repo_root=tmp_path,
+        current_branch="P123-fix-auth",
+        parent_branch="main",
+        commit_messages=None,
+        plan_context=plan_context,
+    )
+
+    result, _ = _consume_generator(generator, request)
+
+    assert result.success is True
+    # Verify plan context was included in the prompt
+    assert len(executor.prompt_calls) == 1
+    prompt, _ = executor.prompt_calls[0]
+    assert "Implementation Plan (Issue #123)" in prompt
+    assert "Fix Authentication Bug" in prompt
+    assert "session expiration" in prompt
+    assert "primary source of truth" in prompt
+
+
+def test_generate_includes_plan_context_with_objective_summary(tmp_path: Path) -> None:
+    """Test that objective summary is included when present in plan context."""
+    diff_file = tmp_path / "test.diff"
+    diff_file.write_text("diff content", encoding="utf-8")
+
+    plan_context = PlanContext(
+        issue_number=456,
+        plan_content="# Plan: Add Metrics\n\nAdd usage metrics tracking.",
+        objective_summary="Objective #100: Improve Observability",
+    )
+
+    executor = FakeClaudeExecutor(
+        claude_available=True,
+        simulated_prompt_output="Add usage metrics tracking\n\nImplemented metrics.",
+    )
+    generator = CommitMessageGenerator(executor)
+    request = CommitMessageRequest(
+        diff_file=diff_file,
+        repo_root=tmp_path,
+        current_branch="P456-add-metrics",
+        parent_branch="main",
+        commit_messages=None,
+        plan_context=plan_context,
+    )
+
+    result, _ = _consume_generator(generator, request)
+
+    assert result.success is True
+    assert len(executor.prompt_calls) == 1
+    prompt, _ = executor.prompt_calls[0]
+    assert "Implementation Plan (Issue #456)" in prompt
+    assert "Parent Objective" in prompt
+    assert "Objective #100: Improve Observability" in prompt
+
+
+def test_generate_includes_both_plan_and_commit_messages(tmp_path: Path) -> None:
+    """Test that both plan context and commit messages are included when provided."""
+    diff_file = tmp_path / "test.diff"
+    diff_file.write_text("diff content", encoding="utf-8")
+
+    plan_context = PlanContext(
+        issue_number=789,
+        plan_content="# Plan: Refactor API\n\nSimplify the API layer.",
+        objective_summary=None,
+    )
+
+    executor = FakeClaudeExecutor(
+        claude_available=True,
+        simulated_prompt_output="Refactor API for simplicity\n\nSimplified API layer.",
+    )
+    generator = CommitMessageGenerator(executor)
+    request = CommitMessageRequest(
+        diff_file=diff_file,
+        repo_root=tmp_path,
+        current_branch="P789-refactor-api",
+        parent_branch="main",
+        commit_messages=[
+            "WIP: Started refactoring",
+            "WIP: Continued work",
+        ],
+        plan_context=plan_context,
+    )
+
+    result, _ = _consume_generator(generator, request)
+
+    assert result.success is True
+    assert len(executor.prompt_calls) == 1
+    prompt, _ = executor.prompt_calls[0]
+    # Both should be present
+    assert "Implementation Plan (Issue #789)" in prompt
+    assert "Refactor API" in prompt
+    assert "Developer's Commit Messages" in prompt
+    assert "WIP: Started refactoring" in prompt

@@ -4,7 +4,10 @@ This module contains common functionality used by multiple PR commands
 (summarize, submit) to avoid code duplication.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
@@ -15,6 +18,9 @@ from erk.core.commit_message_generator import (
 )
 from erk.core.context import ErkContext
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+
+if TYPE_CHECKING:
+    from erk.core.plan_context_provider import PlanContext
 
 
 def render_progress(event: ProgressEvent) -> None:
@@ -55,6 +61,7 @@ def run_commit_message_generation(
     current_branch: str,
     parent_branch: str,
     commit_messages: list[str] | None,
+    plan_context: PlanContext | None,
     debug: bool,
 ) -> CommitMessageResult:
     """Run commit message generation and return result.
@@ -66,6 +73,7 @@ def run_commit_message_generation(
         current_branch: Current branch name
         parent_branch: Parent branch name
         commit_messages: Optional list of existing commit messages for context
+        plan_context: Optional plan context from linked erk-plan issue
         debug: Whether to show debug output (currently unused, progress always shown)
 
     Returns:
@@ -80,6 +88,7 @@ def run_commit_message_generation(
             current_branch=current_branch,
             parent_branch=parent_branch,
             commit_messages=commit_messages,
+            plan_context=plan_context,
         )
     ):
         if isinstance(event, ProgressEvent):
