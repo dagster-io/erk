@@ -285,8 +285,67 @@ def _copy_checkout_command(self, row: PlanRowData) -> None:
 | `worktree_name` | `str | None`     | No local worktree exists     |
 | `run_url`       | `str | None`     | No GitHub Actions run        |
 
+## Remote Workflow Commands
+
+Remote workflow commands dispatch GitHub Actions workflows instead of executing locally. Examples include `fix_conflicts_remote` and `address_remote`.
+
+### Characteristics
+
+- **Trigger mechanism**: Call `erk pr <action>-remote <pr_number>` CLI command
+- **Execution model**: Local CLI triggers GitHub workflow dispatch, actual work happens remotely
+- **Output pattern**: Uses streaming subprocess to show dispatch status and workflow URL
+- **No local modifications**: The command only triggers remote execution, doesn't change local state
+
+### Registry Pattern
+
+```python
+CommandDefinition(
+    id="address_remote",
+    name="Address Remote",
+    description="Launch remote PR review addressing",
+    category=CommandCategory.ACTION,
+    shortcut=None,  # Remote commands typically don't have shortcuts
+    is_available=lambda ctx: ctx.row.pr_number is not None,
+    get_display_name=lambda ctx: f"erk pr address-remote {ctx.row.pr_number}",
+)
+```
+
+### Handler Pattern
+
+Remote workflow handlers use streaming subprocess execution with the CLI command:
+
+```python
+elif command_id == "address_remote":
+    if row.pr_number is not None and self._repo_root is not None:
+        self.run_streaming_command(
+            ["erk", "pr", "address-remote", str(row.pr_number)],
+            cwd=self._repo_root,
+            title=f"Address Remote PR #{row.pr_number}",
+        )
+```
+
+### Key Differences from Local Streaming Commands
+
+| Aspect        | Local Streaming        | Remote Workflow                      |
+| ------------- | ---------------------- | ------------------------------------ |
+| Execution     | Runs in subprocess     | Triggers GitHub Actions              |
+| Duration      | Full command time      | Only dispatch time                   |
+| Output        | Command output         | Dispatch confirmation + workflow URL |
+| State changes | May modify local files | No local modifications               |
+
+### Model Parameter Passing
+
+Remote workflows that spawn Claude agents may need model selection. The pattern:
+
+1. CLI command accepts `--model` flag
+2. Workflow dispatch passes model as input parameter
+3. Remote agent uses specified model
+
+For TUI commands needing model selection, add a dialog before dispatch or use a sensible default.
+
 ## Related Topics
 
 - [plan-row-data.md](plan-row-data.md) - Field reference for availability predicates
 - [streaming-output.md](streaming-output.md) - Streaming output panel details
 - [command-palette.md](command-palette.md) - Command palette implementation
+- [command-execution.md](command-execution.md) - Execution strategy decision matrix

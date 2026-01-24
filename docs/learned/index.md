@@ -7,6 +7,7 @@
 
 - [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
 - [ci/](ci/)
+- [claude-code/](claude-code/)
 - [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
 - [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
 - [configuration/](configuration/)
