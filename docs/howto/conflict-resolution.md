@@ -62,6 +62,55 @@ Once conflicts are resolved and the rebase completes, push your changes:
 - **With Graphite**: `gt submit` or `gt ss`
 - **Without Graphite**: `git push --force-with-lease`
 
+## Handling "Branch Updated Remotely" Errors
+
+When `gt submit` fails with "Branch X has been updated remotely", this indicates branch **divergence** - not a merge conflict (yet). Your local branch and the remote branch have both advanced independently.
+
+This commonly happens when:
+
+- CI/autofix added commits to your branch
+- You amended a commit locally after pushing
+- Another tool or workflow pushed to your branch
+
+### Divergence vs Conflicts
+
+| Situation          | What It Means                             | Command to Use           |
+| ------------------ | ----------------------------------------- | ------------------------ |
+| Branch diverged    | Local and remote both have new commits    | `erk pr sync-divergence` |
+| Rebase in progress | Conflict markers in files during a rebase | `erk pr fix-conflicts`   |
+
+### Sync Divergence Command
+
+**CLI command** (outside a Claude session):
+
+```bash
+erk pr sync-divergence --dangerous
+```
+
+**Slash command** (inside a Claude Code session):
+
+```
+/erk:sync-divergence
+```
+
+### How It Works
+
+Claude will:
+
+1. Fetch remote state with `git fetch origin`
+2. Analyze divergence (commits on each side)
+3. If remote has commits you don't have: fast-forward merge
+4. If both sides have commits: rebase your local commits on top of remote
+5. If rebase causes conflicts: resolve them automatically
+6. Push the synchronized branch
+
+### After Sync
+
+Once synced, retry your original operation:
+
+- **With Graphite**: `gt submit` or `gt ss`
+- **Without Graphite**: `git push --force-with-lease`
+
 ## Remote Resolution
 
 Resolve conflicts without checking out the branch locally. A GitHub Actions workflow handles the rebase and conflict resolution.
