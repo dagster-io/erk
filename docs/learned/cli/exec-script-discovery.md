@@ -18,6 +18,7 @@ erk exec <command> -h
 ## Why This Matters
 
 Different exec commands have varied option sets:
+
 - Not all support `--format json`
 - Not all support `--verbose` or `--dry-run`
 - Some have unique flags specific to their function
@@ -36,9 +37,9 @@ Options:
 
 ## Common Patterns
 
-| Flag | Purpose | Availability |
-|------|---------|--------------|
-| `--format json` | Machine-readable output | Most commands |
-| `-h, --help` | Show options | All commands |
-| `--dry-run` | Preview without action | Mutation commands only |
-| `--session-id` | Session tracking | Workflow commands |
+| Flag            | Purpose                 | Availability           |
+| --------------- | ----------------------- | ---------------------- |
+| `--format json` | Machine-readable output | Most commands          |
+| `-h, --help`    | Show options            | All commands           |
+| `--dry-run`     | Preview without action  | Mutation commands only |
+| `--session-id`  | Session tracking        | Workflow commands      |
