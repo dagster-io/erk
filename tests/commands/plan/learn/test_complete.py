@@ -27,7 +27,7 @@ def _make_learn_issue(number: int) -> IssueInfo:
     body = format_plan_header_body_for_test(created_by="user123")
     return IssueInfo(
         number=number,
-        title=f"Learn Plan #{number} [erk-learn]",
+        title=f"[erk-learn] Learn Plan #{number}",
         body=body,
         state="OPEN",
         url=f"https://github.com/test-owner/test-repo/issues/{number}",

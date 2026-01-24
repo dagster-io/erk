@@ -151,8 +151,11 @@ def create_plan_issue(
         else:
             title_suffix = "[erk-plan]"
 
-    # Build issue title
-    issue_title = f"{title} {title_suffix}"
+    # Build issue title (learn plans put suffix first for visibility)
+    if is_learn_plan:
+        issue_title = f"{title_suffix} {title}"
+    else:
+        issue_title = f"{title} {title_suffix}"
 
     # Standard and extraction plans: metadata body + plan content in comment
     created_at = datetime.now(UTC).isoformat()
