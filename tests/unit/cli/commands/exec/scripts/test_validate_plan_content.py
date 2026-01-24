@@ -359,9 +359,7 @@ def test_cli_plan_file_nonexistent() -> None:
     """Test CLI fails gracefully when --plan-file does not exist."""
     runner = CliRunner()
 
-    result = runner.invoke(
-        validate_plan_content, ["--plan-file", "/nonexistent/path/plan.md"]
-    )
+    result = runner.invoke(validate_plan_content, ["--plan-file", "/nonexistent/path/plan.md"])
 
     # click.Path(exists=True) causes non-zero exit code for missing files
     assert result.exit_code != 0
