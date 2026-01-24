@@ -135,6 +135,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before using Path.home() directly in production code** → Read [Exec Script Testing Patterns](testing/exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
 
+**CRITICAL: Before modifying FakeGit.created_branches or FakeGitBranchOps.created_branches tuple format** → Read [Mutation Tracking Test Patterns](testing/mutation-tracking-patterns.md) first. This change cascades to 8+ test files. All assertions unpacking the tuple must be updated.
+
 **CRITICAL: Before modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing/testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.
 
 **CRITICAL: Before implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing/testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. See tests/commands/submit/test_existing_branch_detection.py for examples.
