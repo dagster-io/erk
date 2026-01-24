@@ -672,6 +672,14 @@ class PlanDetailScreen(ModalScreen):
                     title=f"Fix Conflicts Remote PR #{row.pr_number}",
                 )
 
+        elif command_id == "address_remote":
+            if row.pr_number is not None and self._repo_root is not None:
+                self.run_streaming_command(
+                    ["erk", "pr", "address-remote", str(row.pr_number)],
+                    cwd=self._repo_root,
+                    title=f"Address Remote PR #{row.pr_number}",
+                )
+
         elif command_id == "close_plan":
             if row.issue_url:
                 # Dismiss detail screen first, then run async close on main app

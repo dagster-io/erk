@@ -634,6 +634,32 @@ class ErkDashApp(App):
                     )
                 )
 
+        elif command_id == "address_remote":
+            if row.pr_number:
+                executor = RealCommandExecutor(
+                    browser_launch=self._provider.browser.launch,
+                    clipboard_copy=self._provider.clipboard.copy,
+                    close_plan_fn=self._provider.close_plan,
+                    notify_fn=self._notify_with_severity,
+                    refresh_fn=self.action_refresh,
+                    submit_to_queue_fn=self._provider.submit_to_queue,
+                )
+                detail_screen = PlanDetailScreen(
+                    row=row,
+                    clipboard=self._provider.clipboard,
+                    browser=self._provider.browser,
+                    executor=executor,
+                    repo_root=self._provider.repo_root,
+                )
+                self.push_screen(detail_screen)
+                detail_screen.call_after_refresh(
+                    lambda: detail_screen.run_streaming_command(
+                        ["erk", "pr", "address-remote", str(row.pr_number)],
+                        cwd=self._provider.repo_root,
+                        title=f"Address Remote PR #{row.pr_number}",
+                    )
+                )
+
         elif command_id == "close_plan":
             if row.issue_url:
                 # Show starting toast and run async - no modal blocking
