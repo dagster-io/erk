@@ -103,7 +103,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
         run: |
-          if git diff --quiet HEAD; then
+          if [ -z "$(git log --oneline @{upstream}..HEAD 2>/dev/null)" ]; then
             echo "No changes to push"
           else
             git push
