@@ -8,6 +8,7 @@ import click
 from rich.console import Console, Group
 from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
@@ -471,9 +472,9 @@ def _build_plans_table(
             activity_cell = format_relative_time(activity_by_issue[issue_number]) or "-"
 
         # Build row based on which columns are enabled
-        row: list[str] = [
+        row: list[str | Text] = [
             issue_id,
-            title,
+            Text(title),  # Prevent Rich markup interpretation
         ]
         if has_cross_repo_plans:
             # Show just repo name (owner/repo -> repo) for brevity

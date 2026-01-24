@@ -27,11 +27,13 @@ Wrap the title in a `rich.text.Text` object, which prevents Rich from interpreti
 ### Specific Changes
 
 **Line ~10**: Add import
+
 ```python
 from rich.text import Text
 ```
 
 **Lines 474-477**: Update row building
+
 ```python
 # Build row based on which columns are enabled
 row: list[str | Text] = [
