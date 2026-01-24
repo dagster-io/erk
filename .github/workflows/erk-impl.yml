@@ -264,6 +264,7 @@ jobs:
         env:
           BASE_BRANCH: ${{ inputs.base_branch }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
+          ISSUE_TITLE: ${{ inputs.issue_title }}
           PR_NUMBER: ${{ inputs.pr_number }}
           PRE_IMPL_HEAD: ${{ steps.pre_impl.outputs.head }}
           GH_TOKEN: ${{ github.token }}
@@ -294,6 +295,7 @@ jobs:
               --issue-number "$ISSUE_NUMBER" \
               --behind-count "$BEHIND_COUNT" \
               --base-branch "$BASE_BRANCH" \
+              --original-title "$ISSUE_TITLE" \
               --recent-commits "$RECENT_COMMITS" \
               --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 

@@ -14,6 +14,7 @@ from erk.cli.commands.exec.scripts.handle_no_changes import (
     HandleNoChangesError,
     HandleNoChangesSuccess,
     _build_issue_comment,
+    _build_no_changes_title,
     _build_pr_body,
 )
 from erk.cli.commands.exec.scripts.handle_no_changes import (
@@ -120,6 +121,22 @@ def test_build_issue_comment() -> None:
     assert "diagnostic" in comment.lower()
 
 
+def test_build_no_changes_title() -> None:
+    """Test that _build_no_changes_title formats correctly."""
+    title = _build_no_changes_title(
+        issue_number=5799, original_title="Fix RealGraphite Cache Invalidation"
+    )
+
+    assert title == "[no-changes] P5799 Impl Attempt: Fix RealGraphite Cache Invalidation"
+
+
+def test_build_no_changes_title_preserves_original() -> None:
+    """Test that _build_no_changes_title preserves the original title exactly."""
+    title = _build_no_changes_title(issue_number=123, original_title="Add [feature] flag support")
+
+    assert title == "[no-changes] P123 Impl Attempt: Add [feature] flag support"
+
+
 # ============================================================================
 # 2. CLI Command Tests
 # ============================================================================
@@ -143,6 +160,8 @@ def test_cli_success(tmp_path: Path) -> None:
             "5",
             "--base-branch",
             "master",
+            "--original-title",
+            "Fix Some Bug",
             "--recent-commits",
             "abc1234 Fix bug\ndef5678 Add feature",
             "--run-url",
@@ -176,6 +195,8 @@ def test_cli_success_minimal_options(tmp_path: Path) -> None:
             "0",
             "--base-branch",
             "main",
+            "--original-title",
+            "Simple Fix",
         ],
         obj=ctx,
     )
@@ -185,8 +206,8 @@ def test_cli_success_minimal_options(tmp_path: Path) -> None:
     assert output["success"] is True
 
 
-def test_cli_updates_pr_body(tmp_path: Path) -> None:
-    """Test that CLI command updates PR body."""
+def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
+    """Test that CLI command updates PR title and body."""
     github = _create_github_with_issue(456)
 
     ctx = ErkContext.for_test(github=github, repo_root=tmp_path, cwd=tmp_path)
@@ -203,9 +224,17 @@ def test_cli_updates_pr_body(tmp_path: Path) -> None:
             "5",
             "--base-branch",
             "master",
+            "--original-title",
+            "Fix Cache Issue",
         ],
         obj=ctx,
     )
+
+    # Verify PR title was updated
+    assert len(github.updated_pr_titles) == 1
+    pr_number, title = github.updated_pr_titles[0]
+    assert pr_number == 123
+    assert title == "[no-changes] P456 Impl Attempt: Fix Cache Issue"
 
     # Verify PR body was updated (updated_pr_bodies is list of (pr_number, body) tuples)
     assert len(github.updated_pr_bodies) == 1
@@ -233,6 +262,8 @@ def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
             "0",
             "--base-branch",
             "main",
+            "--original-title",
+            "Some Feature",
         ],
         obj=ctx,
     )
@@ -262,6 +293,8 @@ def test_cli_adds_comment_to_issue(tmp_path: Path) -> None:
             "0",
             "--base-branch",
             "main",
+            "--original-title",
+            "Some Feature",
         ],
         obj=ctx,
     )
@@ -347,6 +380,30 @@ def test_cli_requires_base_branch() -> None:
             "456",
             "--behind-count",
             "0",
+            "--original-title",
+            "Some Title",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Missing option" in result.output or "required" in result.output.lower()
+
+
+def test_cli_requires_original_title() -> None:
+    """Test that --original-title is required."""
+    runner = CliRunner()
+
+    result = runner.invoke(
+        handle_no_changes_command,
+        [
+            "--pr-number",
+            "123",
+            "--issue-number",
+            "456",
+            "--behind-count",
+            "0",
+            "--base-branch",
+            "main",
         ],
     )
 
@@ -372,6 +429,8 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
             "0",
             "--base-branch",
             "main",
+            "--original-title",
+            "Some Feature",
         ],
         obj=ctx,
     )
@@ -408,6 +467,8 @@ def test_cli_exits_with_code_0_on_success(tmp_path: Path) -> None:
             "5",
             "--base-branch",
             "master",
+            "--original-title",
+            "Some Feature",
         ],
         obj=ctx,
     )
