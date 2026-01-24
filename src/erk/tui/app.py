@@ -239,6 +239,7 @@ class ErkDashApp(App):
         else:
             # Ensure severity is one of the valid values expected by Textual
             from textual.app import SeverityLevel
+
             if severity in ("information", "warning", "error"):
                 valid_severity: SeverityLevel = severity  # type: ignore[assignment]
                 self.notify(message, severity=valid_severity)
