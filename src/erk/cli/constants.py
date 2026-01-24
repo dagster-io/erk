@@ -16,6 +16,9 @@ DISPATCH_WORKFLOW_METADATA_NAME = "erk-impl"
 # GitHub Actions workflow for remote rebase with conflict resolution
 REBASE_WORKFLOW_NAME = "erk-rebase.yml"
 
+# GitHub Actions workflow for remote PR comment addressing
+PR_ADDRESS_WORKFLOW_NAME = "pr-address.yml"
+
 # Workflow names that trigger the autofix workflow
 # Must match the `name:` field in each .yml file (which should match filename without .yml)
 AUTOFIX_TRIGGER_WORKFLOWS = frozenset(
