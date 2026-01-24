@@ -62,7 +62,7 @@ class GitBranchManager(BranchManager):
         """
         # Create the branch from base_branch without checking it out
         # This allows callers to create worktrees with the branch later
-        self.git_branch_ops.create_branch(repo_root, branch_name, base_branch)
+        self.git_branch_ops.create_branch(repo_root, branch_name, base_branch, force=False)
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Delete a branch using plain Git.

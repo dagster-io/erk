@@ -129,8 +129,8 @@ def test_branch_create_no_slot_only_creates_branch() -> None:
         state = load_pool_state(repo.pool_json_path)
         assert state is None
 
-        # Verify branch was created
-        assert (env.cwd, "feature-test", "main") in git_ops.created_branches
+        # Verify branch was created (tuple is cwd, branch_name, start_point, force)
+        assert (env.cwd, "feature-test", "main", False) in git_ops.created_branches
 
         # Verify Graphite tracking was called
         assert len(graphite_ops.track_branch_calls) == 1
@@ -669,7 +669,8 @@ def test_branch_create_stacks_on_current_branch() -> None:
         assert "Created branch: feature-child" in result.output
 
         # Verify branch was created from feature-parent, not main
-        assert (env.cwd, "feature-child", "feature-parent") in git_ops.created_branches
+        # (tuple is cwd, branch_name, start_point, force)
+        assert (env.cwd, "feature-child", "feature-parent", False) in git_ops.created_branches
 
         # Verify Graphite tracking was called with feature-parent as parent
         assert len(graphite_ops.track_branch_calls) == 1
@@ -768,7 +769,8 @@ def test_branch_create_uses_trunk_when_on_trunk() -> None:
         assert result.exit_code == 0
 
         # Verify branch was created from main (trunk)
-        assert (env.cwd, "new-feature", "main") in git_ops.created_branches
+        # (tuple is cwd, branch_name, start_point, force)
+        assert (env.cwd, "new-feature", "main", False) in git_ops.created_branches
 
         # Verify Graphite tracking was called with main as parent
         assert len(graphite_ops.track_branch_calls) == 1

@@ -35,11 +35,13 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
 
     # Verify branch was created via git (from origin/<current_branch>)
     # Note: submit defaults to current branch as base, not trunk_branch
+    # (tuple is cwd, branch_name, start_point, force)
     assert len(fake_git.created_branches) == 1
-    created_repo, created_branch, created_base = fake_git.created_branches[0]
+    created_repo, created_branch, created_base, created_force = fake_git.created_branches[0]
     assert created_repo == repo_root
     assert created_branch == expected_branch
     assert created_base == "origin/main"  # Uses current branch as base
+    assert created_force is False
 
     # Verify branch was pushed
     assert len(fake_git.pushed_branches) == 1

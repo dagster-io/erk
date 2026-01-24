@@ -78,7 +78,8 @@ def test_slot_unassign_by_slot_name() -> None:
         assert (worktree_path, "__erk-slot-01-br-stub__") in git_ops.checked_out_branches
 
         # Verify placeholder branch was created from trunk
-        assert (env.cwd, "__erk-slot-01-br-stub__", "main") in git_ops.created_branches
+        # (tuple is cwd, branch_name, start_point, force)
+        assert (env.cwd, "__erk-slot-01-br-stub__", "main", False) in git_ops.created_branches
 
 
 def test_slot_unassign_not_found() -> None:

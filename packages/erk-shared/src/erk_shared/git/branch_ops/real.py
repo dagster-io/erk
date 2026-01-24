@@ -23,10 +23,14 @@ class RealGitBranchOps(GitBranchOps):
         """
         self._time = time if time is not None else RealTime()
 
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
+    def create_branch(self, cwd: Path, branch_name: str, start_point: str, *, force: bool) -> None:
         """Create a new branch without checking it out."""
+        cmd = ["git", "branch"]
+        if force:
+            cmd.append("-f")
+        cmd.extend([branch_name, start_point])
         run_subprocess_with_context(
-            cmd=["git", "branch", branch_name, start_point],
+            cmd=cmd,
             operation_context=f"create branch '{branch_name}' from '{start_point}'",
             cwd=cwd,
         )

@@ -137,8 +137,9 @@ def test_submit_deletes_existing_and_creates_new_when_user_declines_reuse(
     assert fake_git._deleted_branches[0] == "P123-implement-feature-x-01-23-0909"
 
     # Verify new branch was created with current timestamp
+    # (tuple is cwd, branch_name, start_point, force)
     assert len(fake_git.created_branches) == 1
-    _, created_branch, _ = fake_git.created_branches[0]
+    _, created_branch, _, _ = fake_git.created_branches[0]
     assert created_branch == "P123-implement-feature-x-01-15-1430"
 
 
@@ -244,8 +245,9 @@ def test_submit_proceeds_normally_when_no_existing_branches(tmp_path: Path) -> N
     assert "issue(s) submitted successfully!" in result.output
 
     # Verify new branch was created
+    # (tuple is cwd, branch_name, start_point, force)
     assert len(fake_git.created_branches) == 1
-    _, created_branch, _ = fake_git.created_branches[0]
+    _, created_branch, _, _ = fake_git.created_branches[0]
     assert created_branch == "P123-implement-feature-x-01-15-1430"
 
 

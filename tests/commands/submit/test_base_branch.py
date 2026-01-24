@@ -62,8 +62,9 @@ def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
     assert base == "feature/parent-branch"  # NOT "master"
 
     # Verify branch was created via git (FakeGit tracks created branches)
+    # (tuple is cwd, branch_name, start_point, force)
     assert len(fake_git.created_branches) == 1
-    created_repo, created_branch, created_base = fake_git.created_branches[0]
+    created_repo, created_branch, created_base, _ = fake_git.created_branches[0]
     assert created_repo == repo_root
     assert created_base == "origin/feature/parent-branch"
 

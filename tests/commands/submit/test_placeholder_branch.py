@@ -36,8 +36,9 @@ def test_submit_from_placeholder_branch_uses_trunk(tmp_path: Path) -> None:
     assert base == "master"  # Should be trunk, NOT __erk-slot-02-br-stub__
 
     # Verify branch was created from trunk
+    # (tuple is cwd, branch_name, start_point, force)
     assert len(fake_git.created_branches) == 1
-    _, _, created_base = fake_git.created_branches[0]
+    _, _, created_base, _ = fake_git.created_branches[0]
     assert created_base == "origin/master"
 
 
@@ -126,6 +127,7 @@ def test_submit_from_unpushed_branch_uses_trunk(tmp_path: Path) -> None:
     assert base == "master"  # Should be trunk, NOT feature/local-only
 
     # Verify branch was created from trunk
+    # (tuple is cwd, branch_name, start_point, force)
     assert len(fake_git.created_branches) == 1
-    _, _, created_base = fake_git.created_branches[0]
+    _, _, created_base, _ = fake_git.created_branches[0]
     assert created_base == "origin/master"

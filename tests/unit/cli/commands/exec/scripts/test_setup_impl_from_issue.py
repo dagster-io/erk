@@ -258,7 +258,8 @@ class TestSetupImplFromIssueBranchManager:
         # Assert: Branch was created
         assert len(fake_git.created_branches) == 1
         created_branch = fake_git.created_branches[0]
-        branch_name = created_branch[1]  # (cwd, branch_name, start_point)
+        # (cwd, branch_name, start_point, force)
+        branch_name = created_branch[1]
         assert branch_name.startswith("P99-")
 
         # Assert: The newly created branch was checked out (KEY ASSERTION)

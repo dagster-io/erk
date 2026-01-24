@@ -244,7 +244,9 @@ class FakeGit(Git):
         self._staged_files: list[str] = []
         self._commits: list[tuple[Path, str, list[str]]] = []
         self._pushed_branches: list[PushedBranch] = []
-        self._created_branches: list[tuple[Path, str, str]] = []  # (cwd, branch_name, start_point)
+        self._created_branches: list[
+            tuple[Path, str, str, bool]
+        ] = []  # (cwd, branch_name, start_point, force)
         self._rebase_continue_calls: list[Path] = []
         self._config_settings: list[tuple[str, str, str]] = []  # (key, value, scope)
         self._created_tags: list[tuple[str, str]] = []  # (tag_name, message)
@@ -388,10 +390,10 @@ class FakeGit(Git):
         return self._deleted_branches.copy()
 
     @property
-    def created_branches(self) -> list[tuple[Path, str, str]]:
+    def created_branches(self) -> list[tuple[Path, str, str, bool]]:
         """Get list of branches created during test.
 
-        Returns list of (cwd, branch_name, start_point) tuples.
+        Returns list of (cwd, branch_name, start_point, force) tuples.
         This property is for test assertions only.
         """
         return self._created_branches.copy()
