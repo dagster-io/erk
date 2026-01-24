@@ -19,6 +19,8 @@ This guide explains the learn workflow in erk: how `/erk:learn` creates document
 
 The learn workflow extracts insights from implementation sessions and creates documentation plans. It's part of erk's knowledge capture system.
 
+**Key change**: Learn no longer writes documentation directly. Instead, it creates a plan issue for human review, which is then implemented through the standard `erk-impl` workflow. This gives humans control over documentation quality while maintaining the unified implementation pattern.
+
 ```
 ┌─────────────────┐     /erk:learn      ┌─────────────────┐
 │  Parent Plan    │ ─────────────────→  │  Learn Plan     │
@@ -115,8 +117,11 @@ See [Agent Delegation](agent-delegation.md#model-selection) for general model se
 The skill:
 
 1. Analyzes sessions associated with the parent plan
-2. Identifies documentation gaps
-3. Creates a learn plan issue (if needed)
+2. Identifies documentation gaps via multi-agent analysis
+3. Creates a learn plan issue (if documentation needed)
+4. The plan issue is queued for human review before implementation
+
+**Note**: Learn runs inline during the `erk-impl` workflow after successful implementation. It does NOT write documentation directly - it creates a plan issue for later review and implementation.
 
 ### Step 2: Track Learn Result
 
@@ -152,9 +157,19 @@ erk exec plan-save-to-issue \
 
 This sets `learned_from_issue` in the learn plan's metadata, creating a bidirectional link.
 
-### Step 4: Implement and Land Learn Plan
+### Step 4: Human Review and Submit
 
-When the learn plan is implemented and the PR is landed via `erk land`:
+After the learn plan issue is created, a human reviews it and decides whether to implement:
+
+1. Review the plan issue - it contains draft content starters and documentation suggestions
+2. Optionally edit the plan to adjust priorities or content
+3. Submit via `erk plan submit` to queue for implementation
+
+### Step 5: Implement and Land Learn Plan
+
+The learn plan is implemented via the normal `erk-impl` workflow (same as any other plan).
+
+When the PR is landed via `erk land`:
 
 1. The land command detects `learned_from_issue` in the plan header
 2. It calls `_update_parent_plan_on_learn_plan_land()`
@@ -241,12 +256,12 @@ The learn workflow detects CI environments to skip interactive prompts:
 **In CI mode:**
 
 - User confirmations are skipped
-- Auto-proceeds to write HIGH and MEDIUM priority documentation
+- Auto-proceeds to save learn plan issue
 - No blocking prompts that would hang the workflow
 
 **In interactive mode:**
 
-- User confirms documentation items before writing
+- User confirms before saving the learn plan
 - Can choose to skip if no valuable insights
 
 See [CI-Aware Commands](../cli/ci-aware-commands.md) for the general CI detection pattern.

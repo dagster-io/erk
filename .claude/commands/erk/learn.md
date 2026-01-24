@@ -580,58 +580,11 @@ Present the synthesized plan to the user. The PlanSynthesizer output already inc
 [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ] && echo "CI_MODE" || echo "INTERACTIVE"
 ```
 
-**If CI mode (CI_MODE)**: Skip user confirmation. Auto-proceed to Step 6 to write all HIGH and MEDIUM priority documentation items. This is expected behavior - CI runs should complete without user interaction.
+**If CI mode (CI_MODE)**: Skip user confirmation. Auto-proceed to Step 6 to save the learn plan. This is expected behavior - CI runs should complete without user interaction.
 
-**If interactive mode (INTERACTIVE)**: Confirm the documentation items to write with the user. Note that files will be written directly (not saved as a plan for later). If the user decides to skip (no valuable insights), proceed to Step 7.
+**If interactive mode (INTERACTIVE)**: Confirm with the user before saving the learn plan. If the user decides to skip (no valuable insights), proceed to Step 7.
 
-### Step 6: Write Documentation
-
-**IMPORTANT:** Load the `learned-docs` skill before writing any documentation.
-
-For each documentation item in the synthesized plan, write the file directly. The draft content starters from PlanSynthesizer provide the foundation.
-
-#### Creating New Documents
-
-Use this structure:
-
-```markdown
----
-title: [Document Title]
-read_when:
-  - "[first condition]"
-  - "[second condition]"
----
-
-# [Title Matching Frontmatter]
-
-[Content following learned-docs patterns]
-```
-
-**Location patterns:**
-
-- CLI commands → `docs/learned/cli/`
-- Architecture patterns → `docs/learned/architecture/`
-- Testing patterns → `docs/learned/testing/`
-- TUI patterns → `docs/learned/tui/`
-- External integrations → `docs/learned/` (root)
-
-#### Updating Existing Documents
-
-Read the existing file first. Add new sections or update existing content while preserving document structure.
-
-#### If Adding Tripwires
-
-If any documentation item includes a tripwire (cross-cutting warning):
-
-1. Add to the relevant doc's frontmatter:
-   ```yaml
-   tripwires:
-     - action: "doing the dangerous thing"
-       warning: "Do the safe thing instead."
-   ```
-2. Run: `erk docs sync` to regenerate `tripwires.md`
-
-#### Validate and Save Learn Plan to GitHub Issue
+### Step 6: Validate and Save Learn Plan to GitHub Issue
 
 First validate the synthesized plan has actionable content:
 
@@ -641,7 +594,7 @@ cat .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md | erk 
 
 Parse the JSON output:
 
-- If `valid: false` → Skip saving, proceed to Step 6b with `completed_no_plan`
+- If `valid: false` → Skip saving, proceed to Step 6a with `completed_no_plan`
 - If `valid: true` → Continue with save below
 
 **If plan is valid**, save it as a GitHub issue:
@@ -665,7 +618,7 @@ Learn plan saved to GitHub issue #<issue_number>
 Raw materials: <gist-url>
 ```
 
-### Step 6b: Track Learn Result on Parent Plan
+### Step 6a: Track Learn Result on Parent Plan
 
 **If plan was valid and saved**, update the parent plan's status to link the two issues:
 

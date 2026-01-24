@@ -68,7 +68,6 @@ Quick reference for all `erk exec` subcommands.
 | `slot-objective`                  | Get the last objective issue for the current slot.                        |
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan issue.                        |
 | `track-learn-result`              | Track learn workflow result on a plan issue.                              |
-| `trigger-async-learn`             | Trigger async learn workflow for a plan issue.                            |
 | `tripwires-reminder-hook`         | Output tripwires reminder for UserPromptSubmit hook.                      |
 | `update-dispatch-info`            | Update dispatch info in GitHub issue plan-header metadata.                |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).       |
@@ -886,18 +885,6 @@ Track learn workflow result on a plan issue.
 | `--status`     | CHOICE  | Yes      | Sentinel.UNSET | Learn workflow result status                                         |
 | `--plan-issue` | INTEGER | No       | Sentinel.UNSET | Learn plan issue number (required if status is completed_with_plan)  |
 | `--plan-pr`    | INTEGER | No       | Sentinel.UNSET | Learn documentation PR number (required if status is pending_review) |
-
-### trigger-async-learn
-
-Trigger async learn workflow for a plan issue.
-
-**Usage:** `erk exec trigger-async-learn` <issue_number>
-
-**Arguments:**
-
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
 
 ### tripwires-reminder-hook
 
