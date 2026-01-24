@@ -1,15 +1,15 @@
 """Submit current branch as a pull request.
 
-Unified PR submission with two-layer architecture:
-1. Core layer: git push + gh pr create (works without Graphite)
-2. Graphite layer: Optional enhancement via gt submit
+Unified PR submission with strategy pattern:
+- GraphiteSubmitStrategy: Uses gt submit (when Graphite authenticated + branch tracked)
+- CoreSubmitStrategy: Uses git push + gh pr create (fallback)
 
 The workflow:
-1. Core submit: git push + gh pr create
-2. Get diff for AI: GitHub API
-3. Fetch plan context: Get plan from linked erk-plan issue
+1. Pre-strategy: WIP commit (if uncommitted changes)
+2. Strategy execution: Push + PR creation
+3. Get diff for AI: GitHub API
 4. Generate: AI-generated commit message via Claude CLI
-5. Graphite enhance: Optional gt submit for stack metadata
+5. Graphite enhance: Optional gt submit for stack metadata (only for Core strategy)
 6. Finalize: Update PR with AI-generated title/body
 """
 
@@ -35,16 +35,15 @@ from erk_shared.gateway.pr.graphite_enhance import (
     execute_graphite_enhance,
     should_enhance_with_graphite,
 )
-from erk_shared.gateway.pr.submit import execute_core_submit
+from erk_shared.gateway.pr.strategy.abc import SubmitStrategy
+from erk_shared.gateway.pr.strategy.core import CoreSubmitStrategy
+from erk_shared.gateway.pr.strategy.graphite import GraphiteSubmitStrategy
+from erk_shared.gateway.pr.strategy.types import SubmitStrategyError, SubmitStrategyResult
 from erk_shared.gateway.pr.types import (
-    CoreSubmitError,
-    CoreSubmitResult,
     GraphiteEnhanceError,
     GraphiteEnhanceResult,
     GraphiteSkipped,
 )
-from erk_shared.github.parsing import parse_git_remote_url
-from erk_shared.github.types import GitHubRepoId, PRNotFound
 
 # Set to False to disable polling for PR in Graphite cache after submission.
 # This feature ensures the status line can immediately display the PR number.
@@ -101,9 +100,9 @@ def _wait_for_pr_in_cache(
 def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool, force: bool) -> None:
     """Submit PR with AI-generated commit message.
 
-    Uses a two-layer architecture:
-    - Core layer (always): git push + gh pr create
-    - Graphite layer (optional): gt submit for stack metadata
+    Uses a strategy pattern for PR submission:
+    - Graphite strategy: gt submit (when Graphite authenticated + branch tracked)
+    - Core strategy: git push + gh pr create (fallback)
 
     The core layer works without Graphite installed. When Graphite is
     available and the branch is tracked, it will enhance the PR with
@@ -124,6 +123,65 @@ def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool, force: bool) -> N
     _execute_pr_submit(ctx, debug=debug, use_graphite=not no_graphite, force=force)
 
 
+def _select_strategy(ctx: ErkContext, cwd: Path, use_graphite: bool) -> SubmitStrategy:
+    """Select the appropriate submission strategy based on context.
+
+    Args:
+        ctx: ErkContext
+        cwd: Working directory
+        use_graphite: Whether Graphite is enabled (not --no-graphite)
+
+    Returns:
+        GraphiteSubmitStrategy if Graphite is authenticated and branch is tracked,
+        CoreSubmitStrategy otherwise
+    """
+    if use_graphite:
+        check_result = should_enhance_with_graphite(ctx, cwd)
+        if check_result.should_enhance:
+            return GraphiteSubmitStrategy()
+
+    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
+    return CoreSubmitStrategy(plans_repo=plans_repo)
+
+
+def _run_strategy(
+    ctx: ErkContext,
+    cwd: Path,
+    strategy: SubmitStrategy,
+    debug: bool,
+    force: bool,
+) -> SubmitStrategyResult | SubmitStrategyError:
+    """Execute a submission strategy and return the result.
+
+    Args:
+        ctx: ErkContext
+        cwd: Working directory
+        strategy: The strategy to execute
+        debug: Whether to show debug output
+        force: Whether to force push
+
+    Returns:
+        SubmitStrategyResult on success, SubmitStrategyError on failure
+    """
+    result: SubmitStrategyResult | SubmitStrategyError | None = None
+
+    for event in strategy.execute(ctx, cwd, force=force):
+        if isinstance(event, ProgressEvent):
+            if debug:
+                render_progress(event)
+        elif isinstance(event, CompletionEvent):
+            result = event.result
+
+    if result is None:
+        return SubmitStrategyError(
+            error_type="strategy-failed",
+            message="Strategy did not complete",
+            details={},
+        )
+
+    return result
+
+
 def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: bool) -> None:
     """Execute PR submission with positively-named parameters."""
     # Verify Claude is available (needed for commit message generation)
@@ -135,34 +193,29 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     cwd = Path.cwd()
     session_id = os.environ.get("SESSION_ID", str(uuid.uuid4()))
 
-    # Determine if Graphite will handle the push (to avoid tracking divergence)
-    graphite_handles_push = False
-    if use_graphite:
-        check_result = should_enhance_with_graphite(ctx, cwd)
-        graphite_handles_push = check_result.should_enhance
+    # Pre-strategy: WIP commit (unified, happens once before any strategy)
+    if ctx.git.has_uncommitted_changes(cwd):
+        click.echo(click.style("   Committing uncommitted changes...", dim=True))
+        ctx.git.add_all(cwd)
+        ctx.git.commit(cwd, "WIP: Prepare for PR submission")
 
-    # Branch on flow: Graphite-first vs standard
-    if graphite_handles_push:
-        # Graphite-first flow: gt submit handles push + PR creation
-        pr_number, base_branch, graphite_url = _run_graphite_first_flow(ctx, cwd, debug, force)
-    else:
-        # Standard flow: core submit handles push + PR creation
-        click.echo(click.style("Phase 1: Creating or Updating PR", bold=True))
-        core_result = _run_core_submit(ctx, cwd, debug, force)
+    # Select and execute strategy
+    strategy = _select_strategy(ctx, cwd, use_graphite)
+    used_graphite_strategy = isinstance(strategy, GraphiteSubmitStrategy)
 
-        if isinstance(core_result, CoreSubmitError):
-            raise click.ClickException(core_result.message)
+    click.echo(click.style("Phase 1: Creating or Updating PR", bold=True))
+    result = _run_strategy(ctx, cwd, strategy, debug, force)
 
-        action = "created" if core_result.was_created else "found (already exists)"
-        click.echo(click.style(f"   PR #{core_result.pr_number} {action}", fg="green"))
-        click.echo("")
+    if isinstance(result, SubmitStrategyError):
+        raise click.ClickException(result.message)
 
-        pr_number = core_result.pr_number
-        base_branch = core_result.base_branch
-        graphite_url = None
+    action = "created" if result.was_created else "found (already exists)"
+    click.echo(click.style(f"   PR #{result.pr_number} {action}", fg="green"))
+    click.echo("")
 
-        # Standard flow: Graphite enhancement happens later (Phase 4)
-        # This handles the case where use_graphite=True but branch isn't tracked yet
+    pr_number = result.pr_number
+    base_branch = result.base_branch
+    graphite_url = result.graphite_url
 
     # Phase 2: Get diff for AI
     click.echo(click.style("Phase 2: Getting diff", bold=True))
@@ -230,9 +283,9 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
 
     click.echo("")
 
-    # Phase 5: Graphite enhancement (only for standard flow, when branch not already tracked)
-    # Skip if graphite_handles_push=True since gt submit already ran
-    if use_graphite and not graphite_handles_push:
+    # Phase 5: Graphite enhancement (only for Core strategy when branch not tracked)
+    # Skip if GraphiteSubmitStrategy was used since gt submit already ran
+    if use_graphite and not used_graphite_strategy:
         click.echo(click.style("Phase 5: Graphite enhancement", bold=True))
         graphite_result = _run_graphite_enhance(
             ctx, cwd=cwd, pr_number=pr_number, debug=debug, force=force
@@ -289,113 +342,6 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
         styled_graphite = click.style(graphite_url, fg="cyan", underline=True)
         clickable_graphite = f"\033]8;;{graphite_url}\033\\{styled_graphite}\033]8;;\033\\"
         click.echo(f"📊 {clickable_graphite}")
-
-
-def _run_graphite_first_flow(
-    ctx: ErkContext,
-    cwd: Path,
-    debug: bool,
-    force: bool,
-) -> tuple[int, str, str]:
-    """Run Graphite-first flow: gt submit handles push and PR creation.
-
-    This flow is used when Graphite is authenticated and the branch is tracked.
-    It avoids the "tracking divergence" issue by letting Graphite control the push.
-
-    Returns:
-        Tuple of (pr_number, base_branch, graphite_url)
-
-    Raises:
-        click.ClickException: If gt submit fails or PR not found after submit
-    """
-    repo_root = ctx.git.get_repository_root(cwd)
-    branch_name = ctx.git.get_current_branch(cwd)
-    if branch_name is None:
-        raise click.ClickException("Not on a branch (detached HEAD state)")
-
-    # Commit any uncommitted changes first
-    if ctx.git.has_uncommitted_changes(cwd):
-        click.echo(click.style("   Committing uncommitted changes...", dim=True))
-        ctx.git.add_all(cwd)
-        ctx.git.commit(cwd, "WIP: Prepare for PR submission")
-
-    # Phase 1: Run gt submit (handles push + PR creation)
-    click.echo(click.style("Phase 1: Graphite Submit", bold=True))
-    click.echo(click.style("   Running gt submit...", dim=True))
-    try:
-        ctx.graphite.submit_stack(
-            repo_root,
-            publish=True,
-            restack=False,
-            quiet=False,
-            force=force,
-        )
-    except RuntimeError as e:
-        raise click.ClickException(f"Graphite submit failed: {e}") from e
-    click.echo(click.style("   Graphite submit completed", fg="green"))
-    click.echo("")
-
-    # Query GitHub to get PR info
-    click.echo(click.style("   Getting PR info...", dim=True))
-    pr_info = ctx.github.get_pr_for_branch(repo_root, branch_name)
-    if isinstance(pr_info, PRNotFound):
-        raise click.ClickException(
-            f"PR not found for branch '{branch_name}' after gt submit.\n"
-            "This may happen if gt submit didn't create a PR. Try running:\n"
-            "  gt submit --publish"
-        )
-
-    # Get parent branch for base_branch
-    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
-    parent_branch = (
-        ctx.branch_manager.get_parent_branch(Path(repo_root), branch_name) or trunk_branch
-    )
-
-    # Get Graphite URL
-    remote_url = ctx.git.get_remote_url(repo_root, "origin")
-    owner, repo_name = parse_git_remote_url(remote_url)
-    repo_id = GitHubRepoId(owner=owner, repo=repo_name)
-    graphite_url = ctx.graphite.get_graphite_url(repo_id, pr_info.number)
-
-    click.echo(click.style(f"   PR #{pr_info.number} ready", fg="green"))
-    click.echo("")
-
-    return pr_info.number, parent_branch, graphite_url
-
-
-def _run_core_submit(
-    ctx: ErkContext,
-    cwd: Path,
-    debug: bool,
-    force: bool,
-) -> CoreSubmitResult | CoreSubmitError:
-    """Run core submit phase (git push + gh pr create)."""
-    result: CoreSubmitResult | CoreSubmitError | None = None
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
-
-    for event in execute_core_submit(
-        ctx,
-        cwd,
-        pr_title="WIP",
-        pr_body="",
-        force=force,
-        plans_repo=plans_repo,
-    ):
-        if isinstance(event, ProgressEvent):
-            if debug:
-                render_progress(event)
-        elif isinstance(event, CompletionEvent):
-            result = event.result
-
-    if result is None:
-        return CoreSubmitError(
-            success=False,
-            error_type="submit-failed",
-            message="Core submit did not complete",
-            details={},
-        )
-
-    return result
 
 
 def _run_diff_extraction(
