@@ -182,11 +182,11 @@ bash /tmp/local_branch_analysis.sh
 
 **Step 2: Categorization:**
 
-| Category | Detection | Action |
-|----------|-----------|--------|
-| **Already merged to master** | 0 commits ahead + `merged=YES` | Auto-flag for deletion |
-| **Stale pointer** | 0 commits ahead + `merged=NO` (pointer to old master) | Auto-flag for deletion |
-| **Has unique commits** | >0 commits ahead | Requires user review in Phase 5 |
+| Category                     | Detection                                             | Action                          |
+| ---------------------------- | ----------------------------------------------------- | ------------------------------- |
+| **Already merged to master** | 0 commits ahead + `merged=YES`                        | Auto-flag for deletion          |
+| **Stale pointer**            | 0 commits ahead + `merged=NO` (pointer to old master) | Auto-flag for deletion          |
+| **Has unique commits**       | >0 commits ahead                                      | Requires user review in Phase 5 |
 
 The first two categories (🟠 AUTO-CLEANUP) are safe to delete without user confirmation - they contain no unique work.
 
@@ -310,9 +310,9 @@ Present the analysis in tables for each category:
 
 These branches contain NO unique work and can be safely deleted:
 
-| Branch | Category | Reason |
-|--------|----------|--------|
-| old-local | Stale pointer | 0 commits ahead, not merged |
+| Branch       | Category       | Reason                      |
+| ------------ | -------------- | --------------------------- |
+| old-local    | Stale pointer  | 0 commits ahead, not merged |
 | merged-local | Already merged | 0 commits ahead, merged=YES |
 
 ## 🔴 SHOULD CLOSE (X PRs)
