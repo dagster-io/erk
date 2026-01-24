@@ -307,3 +307,84 @@ def test_cli_json_structure() -> None:
     assert isinstance(output["details"]["length"], int)
     assert isinstance(output["details"]["has_headers"], bool)
     assert isinstance(output["details"]["has_lists"], bool)
+
+
+# Test --plan-file option
+
+
+def test_cli_plan_file_valid(tmp_path) -> None:
+    """Test CLI reads valid content from --plan-file."""
+    runner = CliRunner()
+    plan = """# My Feature
+
+## Overview
+
+This is a comprehensive implementation plan with headers and sufficient content
+to meet all validation requirements for structure and length.
+
+## Steps
+
+Implementation details here."""
+
+    plan_file = tmp_path / "plan.md"
+    plan_file.write_text(plan, encoding="utf-8")
+
+    result = runner.invoke(validate_plan_content, ["--plan-file", str(plan_file)])
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["valid"] is True
+    assert output["error"] is None
+    assert output["details"]["has_headers"] is True
+
+
+def test_cli_plan_file_invalid_too_short(tmp_path) -> None:
+    """Test CLI returns validation error for short content from --plan-file."""
+    runner = CliRunner()
+    plan = "# Short\n\n- One"
+
+    plan_file = tmp_path / "short.md"
+    plan_file.write_text(plan, encoding="utf-8")
+
+    result = runner.invoke(validate_plan_content, ["--plan-file", str(plan_file)])
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["valid"] is False
+    assert output["error"] is not None
+    assert "too short" in output["error"].lower()
+
+
+def test_cli_plan_file_nonexistent() -> None:
+    """Test CLI fails gracefully when --plan-file does not exist."""
+    runner = CliRunner()
+
+    result = runner.invoke(
+        validate_plan_content, ["--plan-file", "/nonexistent/path/plan.md"]
+    )
+
+    # click.Path(exists=True) causes non-zero exit code for missing files
+    assert result.exit_code != 0
+    assert "does not exist" in result.output.lower() or "invalid" in result.output.lower()
+
+
+def test_cli_stdin_still_works_without_plan_file() -> None:
+    """Test stdin input works when --plan-file is not provided."""
+    runner = CliRunner()
+    plan = """# Feature Plan
+
+## Description
+
+This plan demonstrates that stdin input still works correctly when the
+--plan-file option is not provided. It should validate normally.
+
+## Tasks
+
+- Verify stdin behavior remains unchanged"""
+
+    result = runner.invoke(validate_plan_content, input=plan)
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["valid"] is True
+    assert output["error"] is None
