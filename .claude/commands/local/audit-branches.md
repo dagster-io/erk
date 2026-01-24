@@ -140,7 +140,57 @@ git log master..HEAD --oneline  # from worktree directory
   - Determine: What feature/fix does this implement?
   - Check if that feature exists in master via different implementation
 
-### Phase 4: Deep Content Analysis (for uncertain branches)
+### Phase 4: Local-Only Branch Deep Analysis
+
+For branches without remotes (detected in Phase 1), automatically categorize based on their relationship to master:
+
+**Step 1: Identify local-only branches and their status:**
+
+```bash
+cat <<'SCRIPT' > /tmp/local_branch_analysis.sh
+#!/bin/bash
+echo "| Branch | Ahead of Master | Merged to Master | Category | Last Commit |"
+echo "|--------|-----------------|------------------|----------|-------------|"
+
+for branch in $(git branch --format='%(refname:short)' | grep -v master); do
+  # Skip stub branches
+  [[ "$branch" == "__erk-slot-"* ]] && continue
+
+  # Check if has remote
+  has_remote=$(git branch -r | grep -q "origin/$branch" && echo "YES" || echo "NO")
+  [[ "$has_remote" == "YES" ]] && continue  # Skip branches with remotes
+
+  # Analyze local-only branch
+  ahead=$(git rev-list --count master.."$branch" 2>/dev/null || echo "0")
+  merged=$(git branch --merged master | grep -qE "^\s*$branch$" && echo "YES" || echo "NO")
+  last_commit=$(git log -1 --format="%s" "$branch" 2>/dev/null | head -c 40 || echo "N/A")
+
+  # Categorize
+  if [[ "$merged" == "YES" ]]; then
+    category="🟠 AUTO-CLEANUP (merged)"
+  elif [[ "$ahead" == "0" ]]; then
+    category="🟠 AUTO-CLEANUP (stale pointer)"
+  else
+    category="🔵 NEEDS REVIEW ($ahead commits)"
+  fi
+
+  echo "| $branch | $ahead | $merged | $category | $last_commit... |"
+done
+SCRIPT
+bash /tmp/local_branch_analysis.sh
+```
+
+**Step 2: Categorization:**
+
+| Category | Detection | Action |
+|----------|-----------|--------|
+| **Already merged to master** | 0 commits ahead + `merged=YES` | Auto-flag for deletion |
+| **Stale pointer** | 0 commits ahead + `merged=NO` (pointer to old master) | Auto-flag for deletion |
+| **Has unique commits** | >0 commits ahead | Requires user review in Phase 5 |
+
+The first two categories (🟠 AUTO-CLEANUP) are safe to delete without user confirmation - they contain no unique work.
+
+### Phase 5: Deep Content Analysis (for uncertain branches)
 
 For branches that aren't clearly stale or clearly valuable:
 
@@ -149,7 +199,7 @@ For branches that aren't clearly stale or clearly valuable:
 3. **Check if feature exists in master**: Search for key function/class names
 4. **Assess value**: Is the idea worth reimplementing even if code is stale?
 
-### Phase 5: Blocking Worktree Detection
+### Phase 6: Blocking Worktree Detection
 
 **CRITICAL**: Branches with closed/merged PRs that are checked out in worktrees block automated cleanup via `gt repo sync`. Detect these first.
 
@@ -210,9 +260,15 @@ SCRIPT
 bash /tmp/find_blocking.sh
 ```
 
-### Phase 6: Categorization
+### Phase 7: Categorization
 
 Present branches/PRs in these categories:
+
+**🟠 AUTO-CLEANUP** - Branches safe to delete without user decision
+
+- Local-only branches that are 0 commits ahead of master
+- Local-only branches already merged to master
+- These contain no unique work and can be deleted automatically
 
 **🔴 SHOULD CLOSE** - PRs that should be closed
 
@@ -245,11 +301,20 @@ Present branches/PRs in these categories:
 - Draft PRs with significant work
 - Unclear status
 
-### Phase 7: Present Findings
+### Phase 8: Present Findings
 
 Present the analysis in tables for each category:
 
 ```markdown
+## 🟠 AUTO-CLEANUP (X branches)
+
+These branches contain NO unique work and can be safely deleted:
+
+| Branch | Category | Reason |
+|--------|----------|--------|
+| old-local | Stale pointer | 0 commits ahead, not merged |
+| merged-local | Already merged | 0 commits ahead, merged=YES |
+
 ## 🔴 SHOULD CLOSE (X PRs)
 
 | PR   | Title     | Reason             | Last Updated |
@@ -283,7 +348,7 @@ Present the analysis in tables for each category:
 | #101 | WIP Feature | Conflicting | Rebase needed  |
 ```
 
-### Phase 8: User Interaction
+### Phase 9: User Interaction
 
 After presenting findings, ask the user what they want to do:
 
@@ -291,6 +356,7 @@ After presenting findings, ask the user what they want to do:
 
 Ask which categories to act on:
 
+- "Delete all 🟠 AUTO-CLEANUP branches (no unique work)"
 - "Free all 🟣 BLOCKING WORKTREES (unassign slots / remove non-slots)"
 - "Close all 🔴 SHOULD CLOSE PRs"
 - "Delete all 🟡 CLEANUP branches"
@@ -301,21 +367,91 @@ Ask which categories to act on:
 
 Allow user to exclude specific branches/PRs by number if needed.
 
-### Phase 9: Execution
+### Phase 10: Execution
 
 **IMPORTANT: Confirm before each destructive operation type.**
 
+**Pre-Check: Build Worktree Map**
+
+Before deleting ANY branches, build a map of which branches are in worktrees:
+
+```bash
+cat <<'SCRIPT' > /tmp/build_worktree_map.sh
+#!/bin/bash
+# Build map of branch -> worktree path
+declare -A branch_worktrees
+while read line; do
+  path=$(echo "$line" | awk '{print $1}')
+  branch=$(echo "$line" | grep -oE '\[[^]]+\]' | tr -d '[]')
+  if [[ -n "$branch" ]]; then
+    echo "$branch|$path"
+  fi
+done < <(git worktree list)
+SCRIPT
+bash /tmp/build_worktree_map.sh > /tmp/branch_worktree_map.txt
+```
+
+Then for each branch to delete, check the map first:
+
+```bash
+worktree_path=$(grep "^$branch|" /tmp/branch_worktree_map.txt | cut -d'|' -f2)
+if [ -n "$worktree_path" ]; then
+  echo "Branch $branch is in worktree at $worktree_path - must free first"
+fi
+```
+
 Execute in this order:
+
+**Step 0: Delete AUTO-CLEANUP branches (if selected):**
+
+These branches have no unique work (0 commits ahead of master or already merged). Apply the Branch Deletion Decision Tree for each:
+
+```bash
+for branch in <auto-cleanup-branches>; do
+  # Check worktree map first
+  worktree_path=$(grep "^$branch|" /tmp/branch_worktree_map.txt | cut -d'|' -f2)
+  if [ -n "$worktree_path" ]; then
+    # Free worktree first (see decision tree)
+    if [[ "$worktree_path" =~ erk-slot-[0-9]{2} ]]; then
+      slot=$(basename "$worktree_path")
+      erk slot unassign "$slot" || {
+        (cd "$worktree_path" && git checkout . && git clean -fd)
+        erk slot unassign "$slot"
+      }
+    else
+      git worktree remove --force "$worktree_path"
+    fi
+  fi
+
+  # Now delete the branch
+  if gt log short 2>/dev/null | grep -q "$branch"; then
+    gt delete "$branch" --force --no-interactive
+  else
+    git branch -D "$branch"
+  fi
+done
+```
 
 **Step 1: Free blocking worktrees (if selected):**
 
 This must happen FIRST to unblock automated cleanup.
 
-Unassign slot worktrees:
+Unassign slot worktrees (with uncommitted changes handling):
 
 ```bash
+free_slot_worktree() {
+  local slot=$1
+  local path=$(git worktree list | grep "$slot" | awk '{print $1}')
+
+  if ! erk slot unassign "$slot" 2>/dev/null; then
+    echo "Slot $slot has uncommitted changes, discarding..."
+    (cd "$path" && git checkout . && git clean -fd)
+    erk slot unassign "$slot"
+  fi
+}
+
 for slot in <slot-list>; do
-  erk slot unassign "$slot"
+  free_slot_worktree "$slot"
 done
 ```
 
@@ -396,7 +532,7 @@ git push origin --delete "$branch" 2>/dev/null || true
 git worktree prune
 ```
 
-### Phase 10: Summary
+### Phase 11: Summary
 
 After execution, provide a summary:
 
@@ -416,24 +552,40 @@ After execution, provide a summary:
 - X PRs ready to merge (🟢)
 ```
 
-## Branch Deletion Strategy
+## Branch Deletion Decision Tree
 
-When deleting local branches, the command handles three special cases:
+**CRITICAL**: Before deleting ANY branch, follow this exact sequence:
 
-**Worktree-Bound Branches:**
+```
+1. Is branch in a worktree?
+   └─ Check: git worktree list | grep "\[$branch\]"
 
-- **Slot worktrees** (`erk-slot-NN`): Run `erk slot unassign` to free the branch while keeping the worktree directory for reuse
-- **Vanilla worktrees**: Run `git worktree remove --force` to remove the worktree entirely before deleting the branch
+   YES → Free the worktree FIRST:
+   │  ├─ Is it a slot worktree (erk-slot-NN)?
+   │  │   └─ YES:
+   │  │       1. Try: erk slot unassign <slot>
+   │  │       2. If fails (uncommitted changes):
+   │  │          cd <worktree-path> && git checkout . && git clean -fd
+   │  │       3. Retry: erk slot unassign <slot>
+   │  │
+   │  └─ NO (vanilla worktree):
+   │       └─ git worktree remove --force <path>
+   │
+   NO → Proceed to step 2
 
-**Graphite-Tracked Branches:**
+2. Is branch tracked by Graphite?
+   └─ Check: gt log short 2>/dev/null | grep -q "$branch"
 
-- Use `gt delete -f --no-interactive` instead of `git branch -D`
-- This properly handles Graphite metadata cleanup
-- Automatically re-parents any child branches in the stack
+   YES → gt delete "$branch" --force --no-interactive
+   NO  → git branch -D "$branch"
+```
 
-**Non-Graphite Branches:**
+**Why this order matters:**
 
-- Use standard `git branch -D` for branches not tracked by Graphite
+- Deleting a branch while it's checked out in a worktree will fail
+- `erk slot unassign` preserves the slot directory for reuse; `git worktree remove` deletes it
+- Graphite-tracked branches need `gt delete` to properly clean up metadata and re-parent stacks
+- Non-Graphite branches (local experiments, old migrations) use standard `git branch -D`
 
 ## Key Principles
 
