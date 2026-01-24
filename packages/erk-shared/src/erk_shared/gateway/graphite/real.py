@@ -78,6 +78,9 @@ class RealGraphite(Graphite):
         if not quiet and result.stderr:
             user_output(result.stderr, nl=False)
 
+        # Invalidate branches cache - gt sync modifies Graphite metadata
+        self._branches_cache = None
+
     def restack(self, repo_root: Path, *, no_interactive: bool, quiet: bool) -> None:
         """Run gt restack to rebase the current stack.
 
@@ -110,6 +113,9 @@ class RealGraphite(Graphite):
         # Display stderr in verbose mode after successful execution
         if not quiet and result.stderr:
             user_output(result.stderr, nl=False)
+
+        # Invalidate branches cache - gt restack modifies branch state
+        self._branches_cache = None
 
     def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -> dict[str, PullRequestInfo]:
         """Get PR information from Graphite's .git/.graphite_pr_info file."""
@@ -355,3 +361,6 @@ class RealGraphite(Graphite):
 
         if not quiet and result.stderr:
             user_output(result.stderr, nl=False)
+
+        # Invalidate branches cache - gt continue modifies branch state
+        self._branches_cache = None
