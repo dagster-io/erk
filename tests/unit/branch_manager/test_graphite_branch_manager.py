@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from erk_shared.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
@@ -41,7 +39,10 @@ def test_create_branch_from_origin_when_local_matches_remote() -> None:
     manager.create_branch(REPO_ROOT, "new-feature", "origin/parent-branch")
 
     # The branch should be created and tracked without any delete/recreate
-    assert any(branch == "new-feature" for (_, branch, _) in fake_git_branch_ops.created_branches)
+    # created_branches is now (cwd, branch_name, start_point, force)
+    assert any(
+        branch == "new-feature" for (_, branch, _, _) in fake_git_branch_ops.created_branches
+    )
     # No branches were deleted since local matches remote
     assert "parent-branch" not in fake_git_branch_ops.deleted_branches
     # Track was called with local branch name
@@ -52,10 +53,11 @@ def test_create_branch_from_origin_when_local_matches_remote() -> None:
 
 
 def test_create_branch_from_origin_when_local_diverged() -> None:
-    """Test that create_branch raises when local branch has diverged from remote.
+    """Test that create_branch auto-fixes diverged local branch.
 
-    When the local parent has diverged from origin/parent, we fail with a clear
-    error message rather than silently resetting the local branch.
+    When the local parent has diverged from origin/parent, we force-update
+    the local branch to match remote. This is safe because we've already
+    checked out the new branch being created.
     """
     fake_git = FakeGit(
         current_branches={REPO_ROOT: "main"},
@@ -79,9 +81,27 @@ def test_create_branch_from_origin_when_local_diverged() -> None:
         github=fake_github,
     )
 
-    # Should raise because local has diverged from remote
-    with pytest.raises(RuntimeError, match="has diverged from"):
-        manager.create_branch(REPO_ROOT, "new-feature", "origin/parent-branch")
+    # Should succeed - diverged local branch is force-updated to match remote
+    manager.create_branch(REPO_ROOT, "new-feature", "origin/parent-branch")
+
+    # new-feature should be created from origin/parent-branch
+    # created_branches is (cwd, branch_name, start_point, force)
+    assert any(
+        branch == "new-feature" and start == "origin/parent-branch"
+        for (_, branch, start, _) in fake_git_branch_ops.created_branches
+    )
+
+    # parent-branch should be force-updated to match remote
+    assert any(
+        branch == "parent-branch" and start == "origin/parent-branch" and force is True
+        for (_, branch, start, force) in fake_git_branch_ops.created_branches
+    )
+
+    # Track was called with local branch name
+    assert any(
+        branch == "new-feature" and parent == "parent-branch"
+        for (_, branch, parent) in fake_graphite.track_branch_calls
+    )
 
 
 def test_create_branch_from_origin_when_local_missing() -> None:
@@ -110,11 +130,12 @@ def test_create_branch_from_origin_when_local_missing() -> None:
     # When creating branch from origin/parent-branch (local missing)
     manager.create_branch(REPO_ROOT, "new-feature", "origin/parent-branch")
 
-    # The local branch should be created from remote
+    # The local branch should be created from remote (force=False)
+    # created_branches is (cwd, branch_name, start_point, force)
     created_branches = [
-        (branch, start) for (_, branch, start) in fake_git_branch_ops.created_branches
+        (branch, start, force) for (_, branch, start, force) in fake_git_branch_ops.created_branches
     ]
-    assert ("parent-branch", "origin/parent-branch") in created_branches
+    assert ("parent-branch", "origin/parent-branch", False) in created_branches
 
     # No deletion since branch didn't exist
     assert "parent-branch" not in fake_git_branch_ops.deleted_branches
@@ -155,6 +176,7 @@ def test_create_branch_from_local_branch_no_remote_sync() -> None:
     # Should not delete or recreate parent-branch
     assert "parent-branch" not in fake_git_branch_ops.deleted_branches
     # Only the new-feature branch should be created
-    created_branches = [branch for (_, branch, _) in fake_git_branch_ops.created_branches]
+    # created_branches is (cwd, branch_name, start_point, force)
+    created_branches = [branch for (_, branch, _, _) in fake_git_branch_ops.created_branches]
     assert "parent-branch" not in created_branches
     assert "new-feature" in created_branches

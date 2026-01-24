@@ -21,13 +21,14 @@ class GitBranchOps(ABC):
     """
 
     @abstractmethod
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
+    def create_branch(self, cwd: Path, branch_name: str, start_point: str, *, force: bool) -> None:
         """Create a new branch without checking it out.
 
         Args:
             cwd: Working directory to run command in
             branch_name: Name of the branch to create
             start_point: Commit/branch to base the new branch on
+            force: Use -f flag to move existing branch to the start_point
         """
         ...
 

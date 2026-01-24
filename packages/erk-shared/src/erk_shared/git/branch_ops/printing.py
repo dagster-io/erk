@@ -23,10 +23,10 @@ class PrintingGitBranchOps(PrintingBase, GitBranchOps):
 
     # Inherits __init__, _emit, and _format_command from PrintingBase
 
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
+    def create_branch(self, cwd: Path, branch_name: str, start_point: str, *, force: bool) -> None:
         """Create branch (delegates without printing for now)."""
         # Not used in land-stack
-        self._wrapped.create_branch(cwd, branch_name, start_point)
+        self._wrapped.create_branch(cwd, branch_name, start_point, force=force)
 
     def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
         """Delete branch (delegates without printing for now)."""

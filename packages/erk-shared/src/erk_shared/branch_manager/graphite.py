@@ -85,7 +85,7 @@ class GraphiteBranchManager(BranchManager):
         current_branch = self.git.get_current_branch(repo_root)
 
         # Create the branch from base_branch
-        self.git_branch_ops.create_branch(repo_root, branch_name, base_branch)
+        self.git_branch_ops.create_branch(repo_root, branch_name, base_branch, force=False)
 
         # Checkout the new branch temporarily to track it with Graphite
         # (gt track requires the branch to be checked out)
@@ -111,19 +111,22 @@ class GraphiteBranchManager(BranchManager):
     ) -> None:
         """Ensure local branch matches remote ref for Graphite tracking.
 
+        If the local branch doesn't exist, it is created from the remote ref.
+        If the local branch exists but has diverged from remote, it is
+        force-updated to match remote. This is safe because by the time this
+        method is called, we've already checked out the new branch being
+        created, so we're not on the local_branch.
+
         Args:
             repo_root: Repository root directory
             local_branch: Local branch name (e.g., "feature-branch")
             remote_ref: Remote reference (e.g., "origin/feature-branch")
-
-        Raises:
-            RuntimeError: If local branch has diverged from remote
         """
         local_branches = self.git.list_local_branches(repo_root)
 
         if local_branch not in local_branches:
             # Local doesn't exist - create it from remote
-            self.git_branch_ops.create_branch(repo_root, local_branch, remote_ref)
+            self.git_branch_ops.create_branch(repo_root, local_branch, remote_ref, force=False)
             return
 
         # Check if local differs from remote
@@ -133,17 +136,9 @@ class GraphiteBranchManager(BranchManager):
         if local_sha == remote_sha:
             return  # Already in sync
 
-        # Local and remote diverged - fail with clear instructions
-        raise RuntimeError(
-            f"Local branch '{local_branch}' has diverged from {remote_ref}.\n"
-            f"Graphite requires the local branch to match the remote for stack tracking.\n\n"
-            f"To fix, update your local branch to match remote and restack:\n"
-            f"  git fetch origin && git branch -f {local_branch} {remote_ref}\n"
-            f"  gt restack --downstack\n\n"
-            f"Or if you have local changes to keep, push them first:\n"
-            f"  With Graphite: gt checkout {local_branch} && gt submit\n"
-            f"  With git:      git checkout {local_branch} && git push origin {local_branch}"
-        )
+        # Local and remote diverged - force-update local to match remote
+        # This is safe because we're on the new branch (not this one)
+        self.git_branch_ops.create_branch(repo_root, local_branch, remote_ref, force=True)
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Delete a branch with Graphite metadata cleanup.

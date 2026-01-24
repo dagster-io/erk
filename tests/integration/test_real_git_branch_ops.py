@@ -19,7 +19,7 @@ def test_create_branch_creates_new_branch(git_branch_ops: GitBranchOpsSetup) -> 
     branch_ops, git, repo = git_branch_ops
 
     # Act
-    branch_ops.create_branch(repo, "feature-branch", "main")
+    branch_ops.create_branch(repo, "feature-branch", "main", force=False)
 
     # Assert
     branches = git.list_local_branches(repo)
@@ -47,7 +47,7 @@ def test_create_branch_from_specific_commit(git_branch_ops: GitBranchOpsSetup) -
     first_commit = result.stdout.strip()
 
     # Act: Create branch from first commit
-    branch_ops.create_branch(repo, "from-first", first_commit)
+    branch_ops.create_branch(repo, "from-first", first_commit, force=False)
 
     # Assert: Branch exists and points to first commit
     branches = git.list_local_branches(repo)

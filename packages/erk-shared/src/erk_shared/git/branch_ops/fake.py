@@ -58,18 +58,20 @@ class FakeGitBranchOps(GitBranchOps):
         )
 
         # Mutation tracking
-        self._created_branches: list[tuple[Path, str, str]] = []  # (cwd, branch_name, start_point)
+        self._created_branches: list[
+            tuple[Path, str, str, bool]
+        ] = []  # (cwd, branch_name, start_point, force)
         self._deleted_branches: list[str] = []
         self._checked_out_branches: list[tuple[Path, str]] = []
         self._detached_checkouts: list[tuple[Path, str]] = []
         self._created_tracking_branches: list[tuple[str, str]] = []  # (branch, remote_ref)
 
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
+    def create_branch(self, cwd: Path, branch_name: str, start_point: str, *, force: bool) -> None:
         """Create a new branch without checking it out.
 
         Tracks the branch creation for test assertions via created_branches property.
         """
-        self._created_branches.append((cwd, branch_name, start_point))
+        self._created_branches.append((cwd, branch_name, start_point, force))
 
     def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
         """Delete a local branch (mutates internal state for test assertions).
@@ -146,10 +148,10 @@ class FakeGitBranchOps(GitBranchOps):
             self._local_branches[repo_root].append(branch)
 
     @property
-    def created_branches(self) -> list[tuple[Path, str, str]]:
+    def created_branches(self) -> list[tuple[Path, str, str, bool]]:
         """Get list of branches created during test.
 
-        Returns list of (cwd, branch_name, start_point) tuples.
+        Returns list of (cwd, branch_name, start_point, force) tuples.
         This property is for test assertions only.
         """
         return self._created_branches.copy()
@@ -212,7 +214,7 @@ class FakeGitBranchOps(GitBranchOps):
 
     def link_mutation_tracking(
         self,
-        created_branches: list[tuple[Path, str, str]],
+        created_branches: list[tuple[Path, str, str, bool]],
         deleted_branches: list[str],
         checked_out_branches: list[tuple[Path, str]],
         detached_checkouts: list[tuple[Path, str]],
