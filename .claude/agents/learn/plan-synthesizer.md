@@ -68,7 +68,17 @@ For each item from the gap analysis (non-SKIP items):
    - Include the key points to cover
    - Add source attribution: [Plan], [Impl], or [PR #N]
 
-### Step 5: Format Tripwire Entries
+### Step 5: Format Tripwire Candidates
+
+For items marked as tripwire candidates (score >= 4) in gap analysis:
+
+1. Add `[TRIPWIRE-CANDIDATE]` prefix to item title
+2. Include scoring breakdown showing which criteria were met
+3. Format as ready-to-add tripwire entry with YAML frontmatter
+
+For potential tripwires (score 2-3), include in a separate section without the candidate tag.
+
+### Step 6: Format Tripwire Entries
 
 For each tripwire from gap analysis, format as YAML frontmatter:
 
@@ -95,11 +105,13 @@ Return a complete learn plan markdown:
 
 ## Summary
 
-| Metric                    | Count |
-| ------------------------- | ----- |
-| Documentation items       | N     |
-| Contradictions to resolve | N     |
-| Tripwires to add          | N     |
+| Metric                         | Count |
+| ------------------------------ | ----- |
+| Documentation items            | N     |
+| Contradictions to resolve      | N     |
+| Tripwire candidates (score≥4)  | N     |
+| Potential tripwires (score2-3) | N     |
+| Tripwires to add               | N     |
 
 ## Documentation Items
 
@@ -154,6 +166,34 @@ Errors and failed approaches discovered during implementation:
 **Recommendation:** TRIPWIRE | ADD_TO_DOC | CONTEXT_ONLY
 
 ### 2. ...
+
+## Tripwire Candidates
+
+Items meeting tripwire-worthiness threshold (score >= 4):
+
+### [TRIPWIRE-CANDIDATE] 1. <item title>
+
+**Score:** N/10 (criteria: Non-obvious +2, Cross-cutting +2, ...)
+**Trigger:** Before <action that should trigger the warning>
+**Warning:** <concise warning message>
+**Target doc:** `<path to doc where tripwire should be added>`
+
+**Frontmatter addition:**
+
+```yaml
+tripwires:
+  - action: "<trigger action>"
+    warning: "<warning message>"
+```
+
+## Potential Tripwires
+
+Items with score 2-3 (may warrant promotion with additional context):
+
+### 1. <item title>
+
+**Score:** N/10 (criteria: ...)
+**Notes:** <why it didn't meet threshold, what additional evidence would promote it>
 
 ## Tripwire Additions
 
