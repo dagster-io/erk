@@ -153,10 +153,59 @@ This builds on `run_subprocess_with_context()` and adds:
 
 See [GitHub API Retry Mechanism](github-api-retry-mechanism.md) for the full pattern.
 
+## Error Accumulation Pattern
+
+When streaming stdout line-by-line with `subprocess.Popen()`, stderr must be captured in a background thread to avoid deadlock. This pattern is used in `RealClaudeExecutor.execute_command_streaming()`.
+
+### Why Background Thread for Stderr?
+
+The problem:
+
+1. Process writes to both stdout and stderr
+2. Main thread blocks on `for line in process.stdout`
+3. If stderr buffer fills, process blocks waiting for it to drain
+4. Deadlock: main thread waits for stdout, process waits for stderr
+
+The solution:
+
+```
+Main Thread                          Background Thread
+───────────────────────────────      ──────────────────────────
+process = Popen(stdout=PIPE,
+                stderr=PIPE)
+                                     for line in process.stderr:
+for line in process.stdout:              stderr_parts.append(line)
+    yield parse_event(line)
+
+process.wait()
+stderr_thread.join(timeout=5.0)
+# Use accumulated stderr in error msg
+```
+
+### Implementation Notes
+
+- Use `daemon=True` so thread doesn't prevent process exit
+- Use a timeout on `join()` to avoid hanging on pathological cases
+- Stderr is accumulated as list, joined only when needed for error message
+- See `src/erk/core/claude_executor.py` for the canonical implementation
+
+### When to Use This Pattern
+
+- Streaming stdout with `Popen(stdout=PIPE)` while also capturing stderr
+- Long-running processes where stderr could fill its buffer
+- Real-time event processing that must not block
+
+### When NOT to Use This Pattern
+
+- Simple `subprocess.run(capture_output=True)` - handles this automatically
+- Fire-and-forget processes where stderr is ignored
+- Short-lived commands that complete quickly
+
 ## Summary
 
 - **Gateway layer**: Use `run_subprocess_with_context()` for business logic
 - **CLI layer**: Use `run_with_error_reporting()` for command handlers
 - **GitHub with retry**: Use `execute_gh_command_with_retry()` for network-sensitive operations
+- **Streaming with stderr**: Use background thread accumulation pattern
 - **Keep LBYL**: Don't migrate intentional `check=False` patterns
 - **Never use bare check=True**: Always use one of the wrapper functions
