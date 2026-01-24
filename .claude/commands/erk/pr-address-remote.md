@@ -2,7 +2,7 @@
 description: Trigger remote PR addressing for the last PR mentioned in conversation
 ---
 
-# /erk:pr-address-remote-context
+# /erk:pr-address-remote
 
 ## Goal
 
