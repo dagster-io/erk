@@ -20,6 +20,7 @@ from erk.cli.commands.pr.shared import (
 from erk.core.command_log import get_or_generate_session_id
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
+from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 
@@ -108,6 +109,14 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
 
     # Phase 2: Generate commit message
     click.echo(click.style("Phase 2: Generating commit message", bold=True))
+
+    # Fetch plan context if branch is linked to a plan issue
+    plan_provider = PlanContextProvider(ctx.github_issues)
+    plan_context = plan_provider.get_plan_context(
+        repo_root=Path(repo_root),
+        branch_name=current_branch,
+    )
+
     msg_gen = CommitMessageGenerator(ctx.claude_executor)
     msg_result = run_commit_message_generation(
         generator=msg_gen,
@@ -116,6 +125,7 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
         current_branch=current_branch,
         parent_branch=parent_branch,
         commit_messages=None,
+        plan_context=plan_context,
         debug=debug,
     )
 

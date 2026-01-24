@@ -7,13 +7,19 @@ The commit message prompt is loaded from the shared prompt file at:
 packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
 """
 
+from __future__ import annotations
+
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from erk.core.claude_executor import ClaudeExecutor
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt
+
+if TYPE_CHECKING:
+    from erk.core.plan_context_provider import PlanContext
 
 # Feature flag: Use --system-prompt to replace Claude Code's default system prompt
 # When True: More deterministic, no Claude Code behaviors (passes system prompt separately)
@@ -31,13 +37,15 @@ class CommitMessageRequest:
         current_branch: Name of the current branch
         parent_branch: Name of the parent branch
         commit_messages: Optional list of existing commit messages for context
+        plan_context: Optional plan context from linked erk-plan issue
     """
 
     diff_file: Path
     repo_root: Path
     current_branch: str
     parent_branch: str
-    commit_messages: list[str] | None = None
+    commit_messages: list[str] | None
+    plan_context: PlanContext | None
 
 
 @dataclass(frozen=True)
@@ -129,6 +137,7 @@ class CommitMessageGenerator:
                 current_branch=request.current_branch,
                 parent_branch=request.parent_branch,
                 commit_messages=request.commit_messages,
+                plan_context=request.plan_context,
             )
             result = self._executor.execute_prompt(
                 user_prompt,
@@ -145,6 +154,7 @@ class CommitMessageGenerator:
                 parent_branch=request.parent_branch,
                 repo_root=request.repo_root,
                 commit_messages=request.commit_messages,
+                plan_context=request.plan_context,
             )
             result = self._executor.execute_prompt(
                 prompt,
@@ -183,13 +193,35 @@ class CommitMessageGenerator:
         *,
         current_branch: str,
         parent_branch: str,
-        commit_messages: list[str] | None = None,
+        commit_messages: list[str] | None,
+        plan_context: PlanContext | None,
     ) -> str:
-        """Build the context section with branch info and optional commit messages."""
+        """Build the context section with branch info, commit messages, and plan context."""
         context_section = f"""## Context
 
 - Current branch: {current_branch}
 - Parent branch: {parent_branch}"""
+
+        # Add plan context section if present (highest priority context)
+        if plan_context is not None:
+            context_section += f"""
+
+## Implementation Plan (Issue #{plan_context.issue_number})
+
+The following plan describes the intent and rationale for these changes:
+
+{plan_context.plan_content}"""
+
+            if plan_context.objective_summary is not None:
+                context_section += f"""
+
+### Parent Objective
+
+{plan_context.objective_summary}"""
+
+            context_section += """
+
+Use this plan as the primary source of truth for understanding WHY changes were made."""
 
         # Add commit messages section if present
         if commit_messages:
@@ -213,7 +245,8 @@ and may contain details not visible in the diff alone."""
         diff_content: str,
         current_branch: str,
         parent_branch: str,
-        commit_messages: list[str] | None = None,
+        commit_messages: list[str] | None,
+        plan_context: PlanContext | None,
     ) -> str:
         """Build user prompt with context and diff only (no system prompt).
 
@@ -223,6 +256,7 @@ and may contain details not visible in the diff alone."""
             current_branch=current_branch,
             parent_branch=parent_branch,
             commit_messages=commit_messages,
+            plan_context=plan_context,
         )
 
         return f"""{context_section}
@@ -242,7 +276,8 @@ Generate a commit message for this diff:"""
         current_branch: str,
         parent_branch: str,
         repo_root: Path,
-        commit_messages: list[str] | None = None,
+        commit_messages: list[str] | None,
+        plan_context: PlanContext | None,
     ) -> str:
         """Build the full prompt with system prompt, diff and context.
 
@@ -252,6 +287,7 @@ Generate a commit message for this diff:"""
             current_branch=current_branch,
             parent_branch=parent_branch,
             commit_messages=commit_messages,
+            plan_context=plan_context,
         )
 
         system_prompt = get_commit_message_prompt(repo_root)
