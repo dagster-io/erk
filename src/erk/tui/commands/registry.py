@@ -37,6 +37,11 @@ def _display_fix_conflicts_remote(ctx: CommandContext) -> str:
     return f"erk pr fix-conflicts-remote {ctx.row.pr_number}"
 
 
+def _display_address_remote(ctx: CommandContext) -> str:
+    """Display name for address_remote command."""
+    return f"erk pr address-remote {ctx.row.pr_number}"
+
+
 def _display_open_issue(ctx: CommandContext) -> str:
     """Display name for open_issue command."""
     if ctx.row.issue_url:
@@ -152,6 +157,15 @@ def get_all_commands() -> list[CommandDefinition]:
             shortcut="5",
             is_available=lambda ctx: ctx.row.pr_number is not None,
             get_display_name=_display_fix_conflicts_remote,
+        ),
+        CommandDefinition(
+            id="address_remote",
+            name="Address Remote",
+            description="Launch remote PR review addressing",
+            category=CommandCategory.ACTION,
+            shortcut=None,
+            is_available=lambda ctx: ctx.row.pr_number is not None,
+            get_display_name=_display_address_remote,
         ),
         # === OPENS ===
         CommandDefinition(
