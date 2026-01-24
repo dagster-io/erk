@@ -118,6 +118,11 @@ def _create_plan_saved_issue_marker(session_id: str, repo_root: Path, issue_numb
     default=None,
     help="Parent plan issue number (for learn plans, enables auto-update on land)",
 )
+@click.option(
+    "--created-from-workflow-run-url",
+    default=None,
+    help="GitHub Actions workflow run URL that created this plan (for backlink)",
+)
 @click.pass_context
 def plan_save_to_issue(
     ctx: click.Context,
@@ -128,6 +133,7 @@ def plan_save_to_issue(
     objective_issue: int | None,
     plan_type: str | None,
     learned_from_issue: int | None,
+    created_from_workflow_run_url: str | None,
 ) -> None:
     """Extract plan from ~/.claude/plans/ and create GitHub issue.
 
@@ -201,6 +207,7 @@ def plan_save_to_issue(
         source_repo=source_repo,
         objective_id=objective_issue,
         created_from_session=effective_session_id,
+        created_from_workflow_run_url=created_from_workflow_run_url,
         learned_from_issue=learned_from_issue,
     )
 

@@ -311,6 +311,7 @@ class GitHubPlanStore(PlanBackend):
             source_repo=source_repo_str,
             objective_id=objective_id,
             created_from_session=created_from_session_str,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 

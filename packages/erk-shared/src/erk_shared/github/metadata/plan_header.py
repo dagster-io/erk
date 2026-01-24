@@ -27,6 +27,7 @@ from erk_shared.github.metadata.schemas import (
     CREATED_AT,
     CREATED_BY,
     CREATED_FROM_SESSION,
+    CREATED_FROM_WORKFLOW_RUN_URL,
     LAST_DISPATCHED_AT,
     LAST_DISPATCHED_NODE_ID,
     LAST_DISPATCHED_RUN_ID,
@@ -81,6 +82,7 @@ def create_plan_header_block(
     source_repo: str | None,
     objective_issue: int | None,
     created_from_session: str | None,
+    created_from_workflow_run_url: str | None,
     last_learn_session: str | None,
     last_learn_at: str | None,
     learn_status: LearnStatusValue | None,
@@ -108,7 +110,8 @@ def create_plan_header_block(
         last_remote_impl_session_id: Optional Claude Code session ID for remote implementation
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
-        created_from_session: Optional session ID that created this plan (for learn discovery)
+        created_from_session: Optional session ID that created this plan
+        created_from_workflow_run_url: Optional workflow run URL that created this plan
         last_learn_session: Optional session ID that last invoked learn
         last_learn_at: Optional ISO 8601 timestamp of last learn invocation
         learn_status: Optional learning workflow status
@@ -156,6 +159,10 @@ def create_plan_header_block(
     # Include created_from_session if provided
     if created_from_session is not None:
         data[CREATED_FROM_SESSION] = created_from_session
+
+    # Include created_from_workflow_run_url if provided
+    if created_from_workflow_run_url is not None:
+        data[CREATED_FROM_WORKFLOW_RUN_URL] = created_from_workflow_run_url
 
     # Include last_learn_session if provided
     if last_learn_session is not None:
@@ -208,6 +215,7 @@ def format_plan_header_body(
     source_repo: str | None,
     objective_issue: int | None,
     created_from_session: str | None,
+    created_from_workflow_run_url: str | None,
     last_learn_session: str | None,
     last_learn_at: str | None,
     learn_status: LearnStatusValue | None,
@@ -238,7 +246,8 @@ def format_plan_header_body(
         last_remote_impl_session_id: Optional Claude Code session ID for remote implementation
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
-        created_from_session: Optional session ID that created this plan (for learn discovery)
+        created_from_session: Optional session ID that created this plan
+        created_from_workflow_run_url: Optional workflow run URL that created this plan
         last_learn_session: Optional session ID that last invoked learn
         last_learn_at: Optional ISO 8601 timestamp of last learn invocation
         learn_status: Optional learning workflow status
@@ -268,6 +277,7 @@ def format_plan_header_body(
         source_repo=source_repo,
         objective_issue=objective_issue,
         created_from_session=created_from_session,
+        created_from_workflow_run_url=created_from_workflow_run_url,
         last_learn_session=last_learn_session,
         last_learn_at=last_learn_at,
         learn_status=learn_status,
