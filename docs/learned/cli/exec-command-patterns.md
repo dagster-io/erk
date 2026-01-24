@@ -126,6 +126,56 @@ else:
 - Optional metadata that enriches but doesn't block functionality
 - Parameters passed through `|| true` shell patterns
 
+## Dual Input Handling
+
+Some exec commands accept input from either a file or stdin. This pattern enables both scripted (piped) and direct (file path) usage.
+
+### Pattern: --plan-file Option
+
+```python
+@click.command(name="validate-plan-content")
+@click.option(
+    "--plan-file",
+    type=click.Path(exists=True, path_type=Path),
+    help="Path to plan file. If not provided, reads from stdin.",
+)
+def validate_plan_content(*, plan_file: Path | None) -> None:
+    # Read from file or stdin
+    if plan_file:
+        content = plan_file.read_text(encoding="utf-8")
+    else:
+        content = sys.stdin.read()
+
+    # Process content...
+```
+
+### Usage Examples
+
+```bash
+# Pipe from another command (stdin)
+echo "$plan" | erk exec validate-plan-content
+
+# Read from file (--plan-file)
+erk exec validate-plan-content --plan-file ./plan.md
+```
+
+### Key Principles
+
+1. **File option is optional** - stdin is the default input
+2. **Use `Path | None`** - Type hint reflects optionality
+3. **`exists=True` for file** - Click validates file exists before command runs
+4. **Document both modes** - Show pipe and file examples in docstring
+
+### When to Use
+
+- Commands that process content (plans, prompts, logs)
+- Commands called both interactively and in pipelines
+- Commands where input may come from files or generated content
+
+### Reference Implementation
+
+See `src/erk/cli/commands/exec/scripts/validate_plan_content.py`.
+
 ## Related Topics
 
 - [erk exec Commands](erk-exec-commands.md) - Command reference
