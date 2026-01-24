@@ -45,3 +45,43 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 
 - `list-sessions` - List Claude Code sessions
 - `preprocess-session` - Compress session for analysis
+
+### Learn Workflow Operations
+
+- `track-learn-result` - Update parent plan's learn status
+
+#### track-learn-result Status Values
+
+| Status                | Description                            | When Used                     |
+| --------------------- | -------------------------------------- | ----------------------------- |
+| `not_started`         | Learn not yet run                      | Initial state                 |
+| `pending`             | Learn scheduled                        | Waiting for execution         |
+| `completed_no_plan`   | Learn found no documentation gaps      | No changes needed             |
+| `completed_with_plan` | Learn created documentation plan issue | Gaps identified               |
+| `pending_review`      | Learn plan awaiting review             | Plan created, not implemented |
+| `plan_completed`      | Learn plan implemented and merged      | Documentation updated         |
+
+### Implementation Setup Operations
+
+- `setup-impl-from-issue` - Prepare worktree for plan implementation
+
+#### setup-impl-from-issue
+
+Creates implementation environment from a plan issue:
+
+1. Fetches plan from GitHub issue
+2. Creates/checks out implementation branch (e.g., `P123-feature-01-15-1430`)
+3. Creates `.impl/` folder with plan content
+4. Saves issue reference for PR linking
+
+**Flags:**
+
+- `--no-impl` - Create branch only, skip `.impl/` folder creation
+
+**Branch behavior:**
+
+- If branch exists: Checks out existing branch
+- If on trunk: Creates branch from trunk
+- If on feature branch: Stacks new branch on current branch
+
+**Important:** After `create_branch()`, explicit `checkout_branch()` is called because GraphiteBranchManager restores the original branch after tracking.

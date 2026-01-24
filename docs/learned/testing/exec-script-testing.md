@@ -188,6 +188,39 @@ Using `home_dir: Path | None = None` with fallback `Path.home()` still triggers 
 
 **Source example**: `src/erk/cli/commands/docker_executor.py:build_docker_run_args()`
 
+## Testing Branch Operations
+
+When testing exec scripts that create and checkout branches, use FakeBranchManager to verify the operation sequence.
+
+### Pattern: Verify create_branch + checkout_branch Sequence
+
+```python
+from erk_shared.context.testing import context_for_test
+from erk_shared.branch_manager.fake import FakeBranchManager
+
+def test_setup_creates_and_checks_out_branch(tmp_path: Path) -> None:
+    """Verify branch creation is followed by checkout."""
+    fake_branch_manager = FakeBranchManager(
+        current_branch="main",
+        tracked_branches={"main": None},
+    )
+    ctx = context_for_test(
+        cwd=tmp_path,
+        branch_manager=fake_branch_manager,
+    )
+
+    # Run the command
+    result = runner.invoke(setup_impl_from_issue, ["123"], obj=ctx)
+
+    # Verify branch was created AND checked out
+    assert "P123-" in str(fake_branch_manager.created_branches)
+    assert fake_branch_manager.current_branch.startswith("P123-")
+```
+
+### Why This Matters
+
+GraphiteBranchManager.create_branch() restores the original branch after Graphite tracking. Tests must verify that commands explicitly call checkout_branch() afterward, or they'll silently end up on the wrong branch.
+
 ## Related Documentation
 
 - [CLI Testing Patterns](cli-testing.md) - General CLI testing patterns

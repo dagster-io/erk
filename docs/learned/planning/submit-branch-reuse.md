@@ -70,6 +70,34 @@ See `src/erk/cli/commands/submit.py`:
 - `_find_existing_branches_for_issue()` - Detection logic
 - `_prompt_existing_branch_action()` - User prompt handling
 
+## Force Mode (Non-Interactive)
+
+When `erk plan submit` runs in contexts without interactive stdin (e.g., TUI with `subprocess.DEVNULL`), prompts cause "Aborted!" errors.
+
+The `--force` / `-f` flag bypasses prompts and automatically deletes existing branches:
+
+```bash
+erk plan submit 123 --force
+erk plan submit 123 -f
+```
+
+**Behavior with --force:**
+
+- If existing branches found: Deletes all, creates fresh branch
+- If no existing branches: Creates new branch normally (no message)
+- Never prompts for user input
+
+**Example output:**
+
+```
+Deleting 2 existing branch(es) (--force mode):
+  Deleted: P123-feature-01-10-0900
+  Deleted: P123-feature-01-12-1430
+Creating branch P123-feature-01-15-1600...
+```
+
+**TUI Usage:** All TUI invocations pass `-f` automatically to prevent stdin-related hangs.
+
 ## Related Topics
 
 - [Plan Lifecycle](lifecycle.md) - Full plan submission workflow
