@@ -393,6 +393,7 @@ jobs:
         run: |
           echo "Creating learn plan for #$ISSUE_NUMBER..."
           claude --print \
+            --verbose \
             --model claude-haiku-4-5 \
             --output-format stream-json \
             --dangerously-skip-permissions \
