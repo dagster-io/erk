@@ -51,7 +51,6 @@ def format_prompt_error(
     returncode: int,
     stderr: str,
     stdout: str,
-    stdout_truncate_length: int = 500,
 ) -> str:
     """Format error message for failed prompt execution.
 
@@ -60,8 +59,7 @@ def format_prompt_error(
     Args:
         returncode: Process exit code
         stderr: Standard error output
-        stdout: Standard output (truncated to stdout_truncate_length)
-        stdout_truncate_length: Max characters to include from stdout
+        stdout: Standard output (truncated to 500 characters)
 
     Returns:
         Formatted error string like "Exit code 1 | stderr: ... | stdout: ..."
@@ -70,7 +68,7 @@ def format_prompt_error(
     if stderr and stderr.strip():
         error_parts.append(f"stderr: {stderr.strip()}")
     if stdout and stdout.strip():
-        stdout_preview = stdout.strip()[:stdout_truncate_length]
+        stdout_preview = stdout.strip()[:500]
         error_parts.append(f"stdout: {stdout_preview}")
     return " | ".join(error_parts)
 
