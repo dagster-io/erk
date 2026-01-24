@@ -11,6 +11,8 @@ read_when:
 
 Action-triggered rules that fire when you're about to perform specific actions.
 
+**CRITICAL: Before modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](architecture/claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
+
 **CRITICAL: Before using `--output-format stream-json` with `--print` in Claude CLI** → Read [Claude CLI Integration from Python](architecture/claude-cli-integration.md) first. Must also include `--verbose`. Without it, the command fails with 'stream-json requires --verbose'.
 
 **CRITICAL: Before passing dry_run boolean flags through business logic function parameters** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands.
@@ -102,6 +104,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 **CRITICAL: Before interpolating ${{ }} expressions directly into shell command arguments** → Read [GitHub Actions Security Patterns](ci/github-actions-security.md) first. Use environment variables instead. Direct interpolation allows shell injection. Read [GitHub Actions Security Patterns](ci/github-actions-security.md) first.
 
 **CRITICAL: Before using heredoc (<<) syntax in GitHub Actions YAML** → Read [CI Prompt Patterns](ci/prompt-patterns.md) first. Use `erk exec get-embedded-prompt` instead. Heredocs in YAML `run:` blocks have fragile indentation that causes silent failures.
+
+**CRITICAL: Before creating Claude Code agent commands in .claude/commands/** → Read [Claude Code Agent Command Patterns](claude-code/agent-commands.md) first. Filenames MUST match the command name for discoverability.
 
 **CRITICAL: Before putting checkout-specific helpers in navigation_helpers.py** → Read [Checkout Helpers Module](cli/checkout-helpers.md) first. `src/erk/cli/commands/navigation_helpers.py` imports from `wt.create_cmd`, which creates a cycle if navigation_helpers tries to import from `wt` subpackage. Keep checkout-specific helpers in separate `checkout_helpers.py` module instead.
 

@@ -7,6 +7,7 @@
 - **[at-reference-resolution.md](at-reference-resolution.md)** — Modifying @ reference validation, Debugging broken @ references in symlinked files, Understanding why validation passes but Claude Code fails
 - **[bundled-artifacts.md](bundled-artifacts.md)** — understanding artifact syncing, working with managed artifacts, debugging erk sync
 - **[capability-system.md](capability-system.md)** — creating new erk init capabilities, understanding how erk init works, adding installable features, working with capability tracking in state.toml, understanding how erk doctor filters artifacts by installed capabilities
+- **[claude-cli-error-reporting.md](claude-cli-error-reporting.md)** — handling Claude CLI errors, interpreting PromptResult.error, working with ErrorEvent, NoOutputEvent, NoTurnsEvent, ProcessErrorEvent
 - **[claude-cli-integration.md](claude-cli-integration.md)** — Invoking Claude from Python, Spawning Claude CLI from Python code, Understanding non-interactive vs interactive modes
 - **[claude-cli-progress.md](claude-cli-progress.md)** — adding progress output to Claude operations, wrapping Claude CLI with user feedback, using ProgressEvent or CompletionEvent, converting blocking operations to streaming progress
 - **[claude-executor-patterns.md](claude-executor-patterns.md)** — launching Claude from CLI commands, deciding which ClaudeExecutor method to use, testing code that executes Claude CLI
