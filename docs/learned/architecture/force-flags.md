@@ -12,10 +12,10 @@ Force flags in erk's branch operations exist for **internal optimization**, not 
 
 ## Design Principle: Internal vs External APIs
 
-| Layer                  | Force Flag? | Reason                                              |
-| ---------------------- | ----------- | --------------------------------------------------- |
-| BranchManager (public) | No          | Callers shouldn't decide when to force              |
-| GitBranchOps (internal)| Yes         | BranchManager implementations decide when to force  |
+| Layer                   | Force Flag? | Reason                                             |
+| ----------------------- | ----------- | -------------------------------------------------- |
+| BranchManager (public)  | No          | Callers shouldn't decide when to force             |
+| GitBranchOps (internal) | Yes         | BranchManager implementations decide when to force |
 
 The abstraction boundary protects callers from making dangerous force decisions while enabling internal optimizations.
 
