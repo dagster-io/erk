@@ -83,6 +83,10 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before using fnmatch for gitignore-style glob patterns** → Read [Convention-Based Code Reviews](ci/convention-based-reviews.md) first. Use pathspec library instead. fnmatch doesn't support \*\* recursive globs. Example: pathspec.PathSpec.from_lines('gitignore', patterns)
 
+**CRITICAL: Before implementing change detection without baseline capture** → Read [erk-impl Change Detection](ci/erk-impl-change-detection.md) first. Read this doc first. Always capture baseline state BEFORE mutation, then compare AFTER.
+
+**CRITICAL: Before using generic variable names in change detection logic** → Read [erk-impl Change Detection](ci/erk-impl-change-detection.md) first. Use explicit names (UNCOMMITTED, NEW_COMMITS) not generic ones (CHANGES).
+
 **CRITICAL: Before running prettier on Python files** → Read [Formatter Tools](ci/formatter-tools.md) first. Prettier cannot format Python. Use `ruff format` or `make format` for Python. Prettier only handles Markdown in this project.
 
 **CRITICAL: Before running prettier programmatically on content containing underscore emphasis** → Read [Formatter Tools](ci/formatter-tools.md) first. Prettier converts `__text__` to `**text**` on first pass, then escapes asterisks on second pass. If programmatically applying prettier, run twice to reach stable output.
