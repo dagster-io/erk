@@ -113,6 +113,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before parsing objective roadmap PR column status** → Read [Erk Glossary](glossary.md) first. PR column format is non-standard: empty=pending, #XXXX=done (merged PR), `plan #XXXX`=plan in progress. This is erk-specific, not GitHub convention.
 
+**CRITICAL: Before reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](planning/learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
+
 **CRITICAL: Before modifying learn command to add/remove/reorder agents** → Read [Learn Workflow](planning/learn-workflow.md) first. Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output.
 
 **CRITICAL: Before adding new agents to learn workflow** → Read [Learn Workflow](planning/learn-workflow.md) first. Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition.
@@ -143,4 +145,10 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing/testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. See tests/commands/submit/test_existing_branch_detection.py for examples.
 
+**CRITICAL: Before adding cell values to Textual DataTable** → Read [DataTable Rich Markup Escaping](textual/datatable-markup-escaping.md) first. Always wrap in `Text(value)` if strings contain user data with brackets. Otherwise `[anything]` will be interpreted as Rich markup.
+
 **CRITICAL: Before using subprocess.Popen in TUI code without stdin=subprocess.DEVNULL** → Read [Command Execution Strategies](tui/command-execution.md) first. Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls.
+
+**CRITICAL: Before modifying how plan titles are displayed in TUI** → Read [TUI Plan Title Rendering Pipeline](tui/plan-title-rendering-pipeline.md) first. Ensure `[erk-learn]` prefix is added BEFORE any filtering/sorting stages.
+
+**CRITICAL: Before using title-stripping functions** → Read [TUI Plan Title Rendering Pipeline](tui/plan-title-rendering-pipeline.md) first. Distinguish `_strip_plan_prefixes` (PR creation) vs `_strip_plan_markers` (plan creation) vs `strip_plan_from_filename` (filename handling).

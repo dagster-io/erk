@@ -40,6 +40,7 @@
 - **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
 - **[parallel-agent-pattern.md](parallel-agent-pattern.md)** — launching multiple agents concurrently, using Task with run_in_background, collecting results with TaskOutput, running agents in parallel
 - **[pathlib-symlinks.md](pathlib-symlinks.md)** — Writing file validation code, Debugging unexpected path resolution behavior, Working with symlinked configuration files
+- **[pipeline-transformation-patterns.md](pipeline-transformation-patterns.md)** — designing data transformation pipelines, deciding when to enrich vs filter data, troubleshooting lost metadata in pipelines
 - **[pr-finalization-paths.md](pr-finalization-paths.md)** — debugging PR body content or issue closing, understanding local vs remote PR submission, working with 'Closes #N' in PRs
 - **[pre-destruction-capture.md](pre-destruction-capture.md)** — implementing operations that destroy or transform data, designing pipelines with data capture requirements, working with git squash, rebase, or other destructive operations
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns
