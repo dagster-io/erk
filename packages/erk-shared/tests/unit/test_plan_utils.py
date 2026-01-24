@@ -147,6 +147,12 @@ def test_extract_title_strips_implementation_plan_prefix() -> None:
     assert extract_title_from_plan(plan) == "Refactor Y"
 
 
+def test_extract_title_strips_documentation_plan_prefix() -> None:
+    """Test title extraction strips 'Documentation Plan: ' prefix from H1."""
+    plan = "# Documentation Plan: Learn Workflow\n\nDetails..."
+    assert extract_title_from_plan(plan) == "Learn Workflow"
+
+
 def test_extract_title_strips_plan_prefix_h2() -> None:
     """Test title extraction strips plan prefix from H2."""
     plan = "## Plan: My Feature\n\nDetails..."
