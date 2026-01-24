@@ -9,6 +9,10 @@ tripwires:
     warning: "Bug fixes require regression tests (fails before, passes after). Features require behavior tests."
   - action: "implementing interactive prompts with ctx.console.confirm()"
     warning: "Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. See tests/commands/submit/test_existing_branch_detection.py for examples."
+  - action: "writing test assertions that reference tracking attributes on fake gateway objects"
+    warning: "Verify the fake implementation has all required attributes before writing assertions. Test-driven development requires updating both the test expectations AND the fake in parallel."
+  - action: "creating test files with the same name in different directories"
+    warning: "Stale __pycache__ directories can cause import name collisions in CI. If encountering unexpected import errors, clean __pycache__ with 'find . -type d -name __pycache__ -delete' before pytest runs."
 ---
 
 # Erk Test Reference

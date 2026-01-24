@@ -23,10 +23,29 @@ Implementation may produce no code changes when:
 Instead of failing, the workflow:
 
 1. **Detects no changes**: Checks if the branch has any commits beyond the base
-2. **Creates diagnostic PR**: Updates the PR body with diagnostic information
-3. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)
-4. **Posts issue comment**: Notifies the plan issue with a link to the PR
-5. **Exits gracefully**: Returns exit code 0 (success)
+2. **Updates PR title**: Prefixes title with `[no-changes]` for visibility
+3. **Creates diagnostic PR**: Updates the PR body with diagnostic information
+4. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)
+5. **Posts issue comment**: Notifies the plan issue with a link to the PR
+6. **Exits gracefully**: Returns exit code 0 (success)
+
+## PR Title Format
+
+When a plan implementation produces no code changes, the PR title is automatically prefixed to make it immediately visible in PR lists.
+
+**Format:** `[no-changes] P{issue_number} Impl Attempt: {original_title}`
+
+**Example:**
+
+```
+[no-changes] P5805 Impl Attempt: Update PR Title for No-Changes Scenario
+```
+
+**When applied:** During the `handle-no-changes` workflow step, after the PR body has been updated with diagnostic information.
+
+**Why this matters:** Users reviewing large lists of PRs can immediately identify failed implementations without clicking into each PR. The `[no-changes]` prefix makes it clear that the erk-impl workflow ran but produced no code changes, helping with triage and issue diagnosis.
+
+**Implementation reference:** See `_build_no_changes_title()` in `src/erk/cli/commands/exec/scripts/handle_no_changes.py`.
 
 ## Label Definition
 
