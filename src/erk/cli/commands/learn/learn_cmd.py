@@ -9,20 +9,11 @@ Note: Session data retrieval and tracking are handled by separate exec scripts:
 """
 
 from dataclasses import dataclass
-from pathlib import Path
 
 import click
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk_shared.github.parsing import construct_workflow_run_url
-from erk_shared.github.types import GitHubRepoId
-from erk_shared.learn.trigger_async import (
-    TriggerAsyncLearnNoSessionData,
-    TriggerAsyncLearnNotErkPlan,
-    TriggerAsyncLearnSuccess,
-    trigger_async_learn_workflow,
-)
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_confirm, user_output
 from erk_shared.sessions.discovery import (
@@ -68,60 +59,6 @@ def _extract_issue_number(identifier: str) -> int | None:
     return None
 
 
-def _handle_async_mode(
-    ctx: ErkContext,
-    repo_root: Path,
-    issue_number: int,
-    github_repo: GitHubRepoId | None,
-) -> None:
-    """Handle async mode: enqueue learn job via GitHub Actions.
-
-    Args:
-        ctx: Erk context with gateway dependencies
-        repo_root: Repository root directory
-        issue_number: Plan issue number to learn from
-        github_repo: GitHub repository info for constructing workflow URL
-    """
-
-    def show_progress(msg: str) -> None:
-        user_output(click.style(msg, dim=True))
-
-    result = trigger_async_learn_workflow(
-        github=ctx.github,
-        issues=ctx.issues,
-        repo_root=repo_root,
-        issue_number=issue_number,
-        on_progress=show_progress,
-    )
-
-    if isinstance(result, TriggerAsyncLearnNotErkPlan):
-        user_output(click.style(f"Error: Issue #{issue_number} is not an erk-plan", fg="red"))
-        raise SystemExit(1)
-
-    if isinstance(result, TriggerAsyncLearnNoSessionData):
-        user_output(click.style("Error: No session data available for learning", fg="red"))
-        user_output("The plan issue must have implementation session data before learning.")
-        raise SystemExit(1)
-
-    if isinstance(result, TriggerAsyncLearnSuccess):
-        user_output(click.style("Async learn job enqueued successfully", fg="green", bold=True))
-        user_output(f"Issue: #{result.issue_number}")
-        if github_repo is not None:
-            workflow_url = construct_workflow_run_url(
-                github_repo.owner, github_repo.repo, result.run_id
-            )
-            user_output(f"Workflow run: {workflow_url}")
-        else:
-            user_output(f"Workflow run ID: {result.run_id}")
-        user_output("")
-        user_output(click.style("Learn status: ", dim=True) + click.style("pending", fg="yellow"))
-        return
-
-    # Should never reach here - exhaustive pattern matching
-    msg = f"Unexpected result type: {type(result)}"
-    raise RuntimeError(msg)
-
-
 @click.command("learn")
 @click.argument("issue", type=str, required=False)
 @click.option(
@@ -136,12 +73,6 @@ def _handle_async_mode(
     is_flag=True,
     help="Launch Claude with --dangerously-skip-permissions (skip all permission prompts)",
 )
-@click.option(
-    "--async",
-    "async_mode",
-    is_flag=True,
-    help="Enqueue learn job for background processing instead of interactive launch",
-)
 @click.pass_obj
 def learn_cmd(
     ctx: ErkContext,
@@ -149,7 +80,6 @@ def learn_cmd(
     interactive: bool,
     *,
     dangerous: bool,
-    async_mode: bool,
 ) -> None:
     """Extract insights from sessions associated with a plan.
 
@@ -164,9 +94,6 @@ def learn_cmd(
     By default, displays sessions and prompts to launch Claude interactively
     for insight extraction. Use -i to auto-launch Claude without prompting.
 
-    Use --async to enqueue a background learn job via GitHub Actions instead
-    of launching an interactive Claude session.
-
     Examples:
 
         erk learn                  # Infer from branch
@@ -174,8 +101,6 @@ def learn_cmd(
         erk learn 123
 
         erk learn 123 -i           # Auto-launch Claude
-
-        erk learn 123 --async      # Enqueue for background processing
     """
     # Resolve issue number: explicit argument or infer from branch
     issue_number: int | None = None
@@ -202,11 +127,6 @@ def learn_cmd(
     # Discover repository context
     repo = discover_repo_context(ctx, ctx.cwd)
     repo_root = repo.root
-
-    # Async mode: enqueue for background processing via GitHub Actions
-    if async_mode:
-        _handle_async_mode(ctx, repo_root, issue_number, repo.github)
-        return
 
     # Find sessions for the plan
     sessions_for_plan = find_sessions_for_plan(
