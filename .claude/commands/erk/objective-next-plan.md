@@ -25,31 +25,54 @@ Parse `$ARGUMENTS` to extract the issue reference:
 
 - If argument is a URL: extract issue number from path
 - If argument is a number: use directly
-- If no argument provided: try to get the default from pool.json (see below), then prompt if no default
+- If no argument provided: try to get the default from current branch's plan (see below), then prompt if no default
 
-**Getting default objective from pool.json:**
+**Getting default objective from current branch's plan:**
 
-If no argument is provided, check if we're in a pool slot worktree with a last objective:
+If no argument is provided, check if the current branch is associated with a plan:
 
-```bash
-erk exec slot-objective
-```
+1. Get current branch name:
 
-This returns JSON like:
+   ```bash
+   git rev-parse --abbrev-ref HEAD
+   ```
 
-```json
-{ "objective_issue": 123, "slot_name": "erk-slot-01" }
-```
+2. Check if branch follows the P-prefix pattern (e.g., `P5731-some-title-01-23-2354`):
+   - Pattern: `^P(\d+)-` (case insensitive)
+   - Extract the issue number if matched
 
-Or if not in a slot or no objective:
+3. If plan issue found, get its objective:
 
-```json
-{ "objective_issue": null, "slot_name": null }
-```
+   ```bash
+   erk exec get-plan-metadata <plan-issue-number> objective_issue
+   ```
 
-If `objective_issue` is not null, use it as the default and inform the user: "Using objective #<number> from slot's last objective. Run with explicit argument to override."
+   This returns JSON like:
 
-If no default found or not in a pool slot, prompt user using AskUserQuestion with "What objective issue should I work from?"
+   ```json
+   {
+     "success": true,
+     "value": 123,
+     "issue_number": 5731,
+     "field": "objective_issue"
+   }
+   ```
+
+   or if no objective:
+
+   ```json
+   {
+     "success": true,
+     "value": null,
+     "issue_number": 5731,
+     "field": "objective_issue"
+   }
+   ```
+
+4. If `value` is not null, use it as the default and inform the user:
+   "Using objective #<value> from current branch's plan #<plan-issue>. Run with explicit argument to override."
+
+If no default found from current branch, prompt user using AskUserQuestion with "What objective issue should I work from?"
 
 ### Step 2: Fetch and Validate Issue
 
