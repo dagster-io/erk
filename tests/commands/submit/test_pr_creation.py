@@ -9,25 +9,25 @@ from tests.commands.submit.conftest import create_plan, setup_submit_context
 
 
 def test_strip_plan_markers() -> None:
-    """Test _strip_plan_markers removes 'Plan:' prefix and '[erk-plan]' suffix from titles."""
-    # Strip [erk-plan] suffix only
-    assert _strip_plan_markers("Implement feature X [erk-plan]") == "Implement feature X"
+    """Test _strip_plan_markers removes '[erk-plan]' prefix and 'Plan:' prefix from titles."""
+    # Strip [erk-plan] prefix only
+    assert _strip_plan_markers("[erk-plan] Implement feature X") == "Implement feature X"
     assert _strip_plan_markers("Implement feature X") == "Implement feature X"
-    assert _strip_plan_markers(" [erk-plan]") == ""
+    assert _strip_plan_markers("[erk-plan] ") == ""
     assert _strip_plan_markers("Planning [erk-plan] ahead") == "Planning [erk-plan] ahead"
     # Strip Plan: prefix only
     assert _strip_plan_markers("Plan: Implement feature X") == "Implement feature X"
     assert _strip_plan_markers("Plan: Already has prefix") == "Already has prefix"
-    # Strip both Plan: prefix and [erk-plan] suffix
-    assert _strip_plan_markers("Plan: Implement feature X [erk-plan]") == "Implement feature X"
+    # Strip both [erk-plan] prefix and Plan: prefix
+    assert _strip_plan_markers("[erk-plan] Plan: Implement feature X") == "Implement feature X"
     # No stripping needed
     assert _strip_plan_markers("Regular title") == "Regular title"
 
 
 def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
     """Test submit strips plan markers from issue title when creating PR."""
-    # Plan with "[erk-plan]" suffix (standard format for erk-plan issues)
-    plan = create_plan("123", "Implement feature X [erk-plan]")
+    # Plan with "[erk-plan]" prefix (standard format for erk-plan issues)
+    plan = create_plan("123", "[erk-plan] Implement feature X")
     ctx, _, fake_github, _, _, _ = setup_submit_context(tmp_path, {"123": plan})
 
     runner = CliRunner()

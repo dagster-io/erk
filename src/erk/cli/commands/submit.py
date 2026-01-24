@@ -257,14 +257,14 @@ def _build_workflow_run_url(issue_url: str, run_id: str) -> str:
 
 
 def _strip_plan_markers(title: str) -> str:
-    """Strip 'Plan:' prefix and '[erk-plan]' suffix from issue title for use as PR title."""
+    """Strip '[erk-plan]' prefix and 'Plan:' prefix from issue title for use as PR title."""
     result = title
+    # Strip "[erk-plan] " prefix if present
+    if result.startswith("[erk-plan] "):
+        result = result[11:]  # len("[erk-plan] ") == 11
     # Strip "Plan: " prefix if present
     if result.startswith("Plan: "):
         result = result[6:]
-    # Strip " [erk-plan]" suffix if present
-    if result.endswith(" [erk-plan]"):
-        result = result[:-11]
     return result
 
 
