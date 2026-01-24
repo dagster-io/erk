@@ -279,7 +279,12 @@ After the user approves the plan in Plan Mode:
    - **If the source plan(s) had an `objective_issue`**: Pass it with `/erk:plan-save --objective-issue=<objective_number>`
    - **If consolidating with conflicting objectives**: Use the objective chosen by the user in Step 2.5
    - **Otherwise**: Run `/erk:plan-save` without the flag
-3. Close original issue(s) with comment linking to the new one:
+3. **If `--objective-issue` was used**, verify the link was saved correctly:
+   ```bash
+   erk exec get-plan-metadata <new_issue_number> objective_issue
+   ```
+   If the objective link is missing, warn the user that the plan may not be linked to its objective.
+4. Close original issue(s) with comment linking to the new one:
 
 **Single plan:**
 
