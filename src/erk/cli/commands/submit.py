@@ -16,6 +16,7 @@ from erk.cli.constants import (
     DISPATCH_WORKFLOW_METADATA_NAME,
     DISPATCH_WORKFLOW_NAME,
     ERK_PLAN_LABEL,
+    ERK_PLAN_TITLE_PREFIX,
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -260,8 +261,8 @@ def _strip_plan_markers(title: str) -> str:
     """Strip '[erk-plan]' prefix and 'Plan:' prefix from issue title for use as PR title."""
     result = title
     # Strip "[erk-plan] " prefix if present
-    if result.startswith("[erk-plan] "):
-        result = result[11:]  # len("[erk-plan] ") == 11
+    if result.startswith(ERK_PLAN_TITLE_PREFIX):
+        result = result[len(ERK_PLAN_TITLE_PREFIX) :]
     # Strip "Plan: " prefix if present
     if result.startswith("Plan: "):
         result = result[6:]
