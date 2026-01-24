@@ -268,6 +268,18 @@ During planning, examined the authentication flow:
 
 ## Remote Implementation via GitHub Actions
 
+### How Changes Are Detected
+
+The workflow uses a **dual-check** approach to detect implementation changes:
+
+1. **Pre-implementation**: Captures `git rev-parse HEAD` before the agent runs
+2. **Post-implementation**: Checks both uncommitted changes AND new commits
+3. **Result**: Changes exist if either channel has changes
+
+This dual-check prevents false negatives when agents commit their work without leaving uncommitted changes. See [erk-impl Change Detection](../ci/erk-impl-change-detection.md) for details.
+
+### Submitting for Remote Implementation
+
 For automated implementation via GitHub Actions, use `erk plan submit`:
 
 ```bash
