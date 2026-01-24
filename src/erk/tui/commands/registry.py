@@ -87,7 +87,7 @@ def get_all_commands() -> list[CommandDefinition]:
             name="Copy: erk br co <branch_name>",
             description="Copy checkout command",
             shortcut="c",
-            is_available=lambda ctx: True,
+            is_available=lambda ctx: ctx.row.worktree_branch is not None,
         ),
         CommandDefinition(
             id="copy_pr_checkout",

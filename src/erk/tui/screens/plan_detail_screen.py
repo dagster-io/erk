@@ -322,6 +322,12 @@ class PlanDetailScreen(ModalScreen):
 
     def action_copy_checkout(self) -> None:
         """Copy local checkout command to clipboard."""
+        if self._row.worktree_branch is None:
+            self.notify(
+                "No branch associated with this plan is checked out in a local worktree",
+                severity="warning",
+            )
+            return
         cmd = f"erk br co {self._row.worktree_branch}"
         self._copy_and_notify(cmd)
 
@@ -598,59 +604,65 @@ class PlanDetailScreen(ModalScreen):
             url = row.pr_url or row.issue_url
             if url:
                 executor.open_url(url)
-                executor.notify(f"Opened {url}")
+                executor.notify(f"Opened {url}", severity=None)
 
         elif command_id == "open_issue":
             if row.issue_url:
                 executor.open_url(row.issue_url)
-                executor.notify(f"Opened issue #{row.issue_number}")
+                executor.notify(f"Opened issue #{row.issue_number}", severity=None)
 
         elif command_id == "open_pr":
             if row.pr_url:
                 executor.open_url(row.pr_url)
-                executor.notify(f"Opened PR #{row.pr_number}")
+                executor.notify(f"Opened PR #{row.pr_number}", severity=None)
 
         elif command_id == "open_run":
             if row.run_url:
                 executor.open_url(row.run_url)
-                executor.notify(f"Opened run {row.run_id_display}")
+                executor.notify(f"Opened run {row.run_id_display}", severity=None)
 
         elif command_id == "copy_checkout":
+            if row.worktree_branch is None:
+                executor.notify(
+                    "No branch associated with this plan is checked out in a local worktree",
+                    severity="warning",
+                )
+                return
             cmd = f"erk br co {row.worktree_branch}"
             executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}")
+            executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_pr_checkout":
             cmd = f"erk pr co {row.pr_number}"
             executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}")
+            executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_prepare":
             cmd = f"erk prepare {row.issue_number}"
             executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}")
+            executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_prepare_dangerous":
             cmd = f"erk prepare {row.issue_number} --dangerous"
             executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}")
+            executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_prepare_activate":
             cmd = (
                 f'source "$(erk prepare {row.issue_number} --script)" && erk implement --dangerous'
             )
             executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}")
+            executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_submit":
             cmd = f"erk plan submit {row.issue_number}"
             executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}")
+            executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_replan":
             cmd = f"erk plan replan {row.issue_number}"
             executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}")
+            executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "fix_conflicts_remote":
             if row.pr_number is not None and self._repo_root is not None:
@@ -705,7 +717,7 @@ class PlanDetailScreen(ModalScreen):
         elif command_id == "copy_replan":
             cmd = f"/erk:replan {row.issue_number}"
             executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}")
+            executor.notify(f"Copied: {cmd}", severity=None)
 
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""

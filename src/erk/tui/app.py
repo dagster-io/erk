@@ -227,6 +227,25 @@ class ErkDashApp(App):
             self._activity_by_issue if self._sort_state.key == SortKey.BRANCH_ACTIVITY else None,
         )
 
+    def _notify_with_severity(self, message: str, severity: str | None) -> None:
+        """Wrapper for notify that handles optional severity.
+
+        Args:
+            message: The notification message
+            severity: Optional severity level, uses default if None
+        """
+        if severity is None:
+            self.notify(message)
+        else:
+            # Ensure severity is one of the valid values expected by Textual
+            from textual.app import SeverityLevel
+            if severity in ("information", "warning", "error"):
+                valid_severity: SeverityLevel = severity  # type: ignore[assignment]
+                self.notify(message, severity=valid_severity)
+            else:
+                # Fallback to default severity for unknown values
+                self.notify(message)
+
     def _start_refresh_timer(self) -> None:
         """Start the auto-refresh countdown timer."""
         self._seconds_remaining = int(self._refresh_interval)
@@ -347,7 +366,7 @@ class ErkDashApp(App):
             browser_launch=self._provider.browser.launch,
             clipboard_copy=self._provider.clipboard.copy,
             close_plan_fn=self._provider.close_plan,
-            notify_fn=self.notify,
+            notify_fn=self._notify_with_severity,
             refresh_fn=self.action_refresh,
             submit_to_queue_fn=self._provider.submit_to_queue,
         )
@@ -554,9 +573,7 @@ class ErkDashApp(App):
                 self.notify(f"Opened run {row.run_id_display}")
 
         elif command_id == "copy_checkout":
-            cmd = f"erk br co {row.worktree_branch}"
-            self._provider.clipboard.copy(cmd)
-            self.notify(f"Copied: {cmd}")
+            self._copy_checkout_command(row)
 
         elif command_id == "copy_pr_checkout":
             cmd = f'source "$(erk pr checkout {row.pr_number} --script)" && erk pr sync --dangerous'
@@ -596,7 +613,7 @@ class ErkDashApp(App):
                     browser_launch=self._provider.browser.launch,
                     clipboard_copy=self._provider.clipboard.copy,
                     close_plan_fn=self._provider.close_plan,
-                    notify_fn=self.notify,
+                    notify_fn=self._notify_with_severity,
                     refresh_fn=self.action_refresh,
                     submit_to_queue_fn=self._provider.submit_to_queue,
                 )
@@ -629,7 +646,7 @@ class ErkDashApp(App):
                     browser_launch=self._provider.browser.launch,
                     clipboard_copy=self._provider.clipboard.copy,
                     close_plan_fn=self._provider.close_plan,
-                    notify_fn=self.notify,
+                    notify_fn=self._notify_with_severity,
                     refresh_fn=self.action_refresh,
                     submit_to_queue_fn=self._provider.submit_to_queue,
                 )
@@ -658,7 +675,7 @@ class ErkDashApp(App):
                     browser_launch=self._provider.browser.launch,
                     clipboard_copy=self._provider.clipboard.copy,
                     close_plan_fn=self._provider.close_plan,
-                    notify_fn=self.notify,
+                    notify_fn=self._notify_with_severity,
                     refresh_fn=self.action_refresh,
                     submit_to_queue_fn=self._provider.submit_to_queue,
                 )

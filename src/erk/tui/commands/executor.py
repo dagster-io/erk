@@ -42,11 +42,12 @@ class CommandExecutor(ABC):
         ...
 
     @abstractmethod
-    def notify(self, message: str) -> None:
+    def notify(self, message: str, *, severity: str | None) -> None:
         """Show notification to user.
 
         Args:
             message: The message to display
+            severity: Optional severity level ("information", "warning", "error")
         """
         ...
 

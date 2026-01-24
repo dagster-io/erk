@@ -70,7 +70,7 @@ class FakeCommandExecutor(CommandExecutor):
         self._closed_plans.append((issue_number, issue_url))
         return self._close_plan_return
 
-    def notify(self, message: str) -> None:
+    def notify(self, message: str, *, severity: str | None) -> None:
         """Track notification."""
         self._notifications.append(message)
 

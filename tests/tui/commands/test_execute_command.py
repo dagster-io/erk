@@ -86,6 +86,18 @@ class TestExecuteCommandCopyCommands:
         assert executor.copied_texts == ["erk br co feature-123"]
         assert "Copied: erk br co feature-123" in executor.notifications
 
+    def test_copy_checkout_notifies_when_worktree_branch_none(self) -> None:
+        """copy_checkout shows notification when worktree_branch is None."""
+        row = make_plan_row(123, "Test")  # worktree_branch defaults to None
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row=row, executor=executor)
+        screen.execute_command("copy_checkout")
+        # Should not copy anything
+        assert executor.copied_texts == []
+        # Should show notification
+        expected_msg = "No branch associated with this plan is checked out in a local worktree"
+        assert expected_msg in executor.notifications
+
     def test_copy_pr_checkout_copies_command(self) -> None:
         """copy_pr_checkout copies the PR checkout command."""
         row = make_plan_row(123, "Test", pr_number=456)
