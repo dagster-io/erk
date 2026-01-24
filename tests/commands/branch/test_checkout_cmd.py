@@ -207,7 +207,7 @@ def test_branch_checkout_reuses_inactive_slot() -> None:
         initial_state = PoolState(
             version="1.0",
             pool_size=4,
-            slots=(SlotInfo(name="erk-slot-01", last_objective_id=None),),
+            slots=(SlotInfo(name="erk-slot-01"),),
             assignments=(),
         )
         save_pool_state(env.repo.pool_json_path, initial_state)

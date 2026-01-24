@@ -9,16 +9,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.plan_save_to_issue import (
     plan_save_to_issue,
 )
-from erk.core.repo_discovery import RepoContext
-from erk.core.worktree_pool import (
-    PoolState,
-    SlotAssignment,
-    SlotInfo,
-    load_pool_state,
-    save_pool_state,
-)
 from erk_shared.context.context import ErkContext
-from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.learn.extraction.claude_installation.fake import (
@@ -26,7 +17,6 @@ from erk_shared.learn.extraction.claude_installation.fake import (
     FakeProject,
     FakeSessionData,
 )
-from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 # Valid plan content that passes validation (100+ chars with structure)
 VALID_PLAN_CONTENT = """# Feature Plan
@@ -639,179 +629,6 @@ def test_plan_save_to_issue_preserves_plan_file_after_save(
         assert plan_file.exists(), "Plan file should be preserved after save"
 
 
-def test_plan_save_to_issue_updates_slot_objective_when_in_slot() -> None:
-    """Test slot objective is updated when --objective-issue provided and in slot worktree."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-
-        # Create worktree directory for slot
-        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
-        worktree_path.mkdir(parents=True)
-
-        fake_gh = FakeGitHubIssues()
-        plan_content = VALID_PLAN_CONTENT
-        fake_store = FakeClaudeInstallation.for_test(plans={"slot-test": plan_content})
-
-        # Build worktrees including the slot worktree
-        base_worktrees = env.build_worktrees("main")
-        # Add the slot worktree to the list so get_repository_root can find it
-        base_worktrees[env.cwd].append(
-            WorktreeInfo(path=worktree_path, branch="feature-branch", is_root=False)
-        )
-
-        git_ops = FakeGit(
-            worktrees=base_worktrees,
-            current_branches={worktree_path: "feature-branch"},
-            git_common_dirs={worktree_path: env.git_dir},
-        )
-
-        repo = RepoContext(
-            root=worktree_path,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-            pool_json_path=repo_dir / "pool.json",
-        )
-
-        # Create pool.json with slot
-        state = PoolState(
-            version="1.0",
-            pool_size=4,
-            slots=(SlotInfo(name="erk-slot-01", last_objective_id=None),),
-            assignments=(
-                SlotAssignment(
-                    slot_name="erk-slot-01",
-                    branch_name="feature-branch",
-                    assigned_at="2025-01-01T12:00:00+00:00",
-                    worktree_path=worktree_path,
-                ),
-            ),
-        )
-        save_pool_state(repo.pool_json_path, state)
-
-        test_ctx = env.build_context(
-            cwd=worktree_path,
-            git=git_ops,
-            repo=repo,
-            issues=fake_gh,
-            claude_installation=fake_store,
-        )
-
-        result = runner.invoke(
-            plan_save_to_issue,
-            ["--format", "json", "--objective-issue=456"],
-            obj=test_ctx,
-        )
-
-        assert result.exit_code == 0, f"Failed: {result.output}"
-        output = json.loads(result.output)
-        assert output["success"] is True
-        assert output["slot_name"] == "erk-slot-01"
-        assert output["slot_objective_updated"] is True
-
-        # Verify pool.json was updated
-        updated_state = load_pool_state(repo.pool_json_path)
-        assert updated_state is not None
-        assert updated_state.slots[0].last_objective_id == 456
-
-
-def test_plan_save_to_issue_no_slot_update_when_not_in_slot() -> None:
-    """Test slot fields are absent from output when not in a slot worktree."""
-    fake_gh = FakeGitHubIssues()
-    plan_content = VALID_PLAN_CONTENT
-    fake_store = FakeClaudeInstallation.for_test(plans={"no-slot-test": plan_content})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        plan_save_to_issue,
-        ["--format", "json", "--objective-issue=456"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            claude_installation=fake_store,
-        ),
-    )
-
-    assert result.exit_code == 0, f"Failed: {result.output}"
-    output = json.loads(result.output)
-    assert output["success"] is True
-    # Slot fields should NOT be present when not in a slot
-    assert "slot_name" not in output
-    assert "slot_objective_updated" not in output
-
-
-def test_plan_save_to_issue_no_slot_update_without_objective_flag() -> None:
-    """Test no slot update when --objective-issue not provided."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-
-        # Create worktree directory for slot
-        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
-        worktree_path.mkdir(parents=True)
-
-        fake_gh = FakeGitHubIssues()
-        plan_content = VALID_PLAN_CONTENT
-        fake_store = FakeClaudeInstallation.for_test(plans={"no-flag-test": plan_content})
-
-        git_ops = FakeGit(
-            worktrees=env.build_worktrees("main"),
-            current_branches={worktree_path: "feature-branch"},
-            git_common_dirs={worktree_path: env.git_dir},
-        )
-
-        repo = RepoContext(
-            root=worktree_path,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-            pool_json_path=repo_dir / "pool.json",
-        )
-
-        # Create pool.json with slot that has existing objective
-        state = PoolState(
-            version="1.0",
-            pool_size=4,
-            slots=(SlotInfo(name="erk-slot-01", last_objective_id=123),),
-            assignments=(
-                SlotAssignment(
-                    slot_name="erk-slot-01",
-                    branch_name="feature-branch",
-                    assigned_at="2025-01-01T12:00:00+00:00",
-                    worktree_path=worktree_path,
-                ),
-            ),
-        )
-        save_pool_state(repo.pool_json_path, state)
-
-        test_ctx = env.build_context(
-            cwd=worktree_path,
-            git=git_ops,
-            repo=repo,
-            issues=fake_gh,
-            claude_installation=fake_store,
-        )
-
-        # No --objective-issue flag
-        result = runner.invoke(
-            plan_save_to_issue,
-            ["--format", "json"],
-            obj=test_ctx,
-        )
-
-        assert result.exit_code == 0, f"Failed: {result.output}"
-        output = json.loads(result.output)
-        assert output["success"] is True
-        # Slot fields should NOT be present without --objective-issue
-        assert "slot_name" not in output
-        assert "slot_objective_updated" not in output
-
-        # Verify pool.json was NOT modified
-        unchanged_state = load_pool_state(repo.pool_json_path)
-        assert unchanged_state is not None
-        assert unchanged_state.slots[0].last_objective_id == 123
-
-
 def test_plan_save_to_issue_learned_from_issue_sets_metadata() -> None:
     """Test --learned-from-issue flag sets learned_from_issue in plan metadata."""
     fake_gh = FakeGitHubIssues()
@@ -844,75 +661,6 @@ This plan documents the learnings and insights from the implementation session.
 
     # Verify learned_from_issue is in the metadata block
     assert "learned_from_issue: 123" in body
-
-
-def test_plan_save_to_issue_display_format_shows_slot_update() -> None:
-    """Test display format shows slot objective update message."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-
-        # Create worktree directory for slot
-        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
-        worktree_path.mkdir(parents=True)
-
-        fake_gh = FakeGitHubIssues()
-        plan_content = VALID_PLAN_CONTENT
-        fake_store = FakeClaudeInstallation.for_test(plans={"display-slot-test": plan_content})
-
-        # Build worktrees including the slot worktree
-        base_worktrees = env.build_worktrees("main")
-        # Add the slot worktree to the list so get_repository_root can find it
-        base_worktrees[env.cwd].append(
-            WorktreeInfo(path=worktree_path, branch="feature-branch", is_root=False)
-        )
-
-        git_ops = FakeGit(
-            worktrees=base_worktrees,
-            current_branches={worktree_path: "feature-branch"},
-            git_common_dirs={worktree_path: env.git_dir},
-        )
-
-        repo = RepoContext(
-            root=worktree_path,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-            pool_json_path=repo_dir / "pool.json",
-        )
-
-        # Create pool.json with slot
-        state = PoolState(
-            version="1.0",
-            pool_size=4,
-            slots=(SlotInfo(name="erk-slot-01", last_objective_id=None),),
-            assignments=(
-                SlotAssignment(
-                    slot_name="erk-slot-01",
-                    branch_name="feature-branch",
-                    assigned_at="2025-01-01T12:00:00+00:00",
-                    worktree_path=worktree_path,
-                ),
-            ),
-        )
-        save_pool_state(repo.pool_json_path, state)
-
-        test_ctx = env.build_context(
-            cwd=worktree_path,
-            git=git_ops,
-            repo=repo,
-            issues=fake_gh,
-            claude_installation=fake_store,
-        )
-
-        result = runner.invoke(
-            plan_save_to_issue,
-            ["--format", "display", "--objective-issue=789"],
-            obj=test_ctx,
-        )
-
-        assert result.exit_code == 0, f"Failed: {result.output}"
-        assert "Slot objective updated: erk-slot-01 → #789" in result.output
 
 
 # --- Validation rejection tests ---

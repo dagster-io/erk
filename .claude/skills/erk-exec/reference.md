@@ -65,7 +65,6 @@ Quick reference for all `erk exec` subcommands.
 | `run-review`                      | Run a code review using Claude.                                           |
 | `session-id-injector-hook`        | Inject session ID into conversation context when relevant.                |
 | `setup-impl-from-issue`           | Set up .impl/ folder from GitHub issue in current worktree.               |
-| `slot-objective`                  | Get the last objective issue for the current slot.                        |
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan issue.                        |
 | `track-learn-result`              | Track learn workflow result on a plan issue.                              |
 | `tripwires-reminder-hook`         | Output tripwires reminder for UserPromptSubmit hook.                      |
@@ -846,12 +845,6 @@ Set up .impl/ folder from GitHub issue in current worktree.
 | -------------- | ---- | -------- | ------- | ----------------------------------------------------------------------- |
 | `--session-id` | TEXT | No       | -       | Claude session ID for marker creation                                   |
 | `--no-impl`    | FLAG | No       | -       | Skip .impl/ folder creation (for local execution without file overhead) |
-
-### slot-objective
-
-Get the last objective issue for the current slot.
-
-**Usage:** `erk exec slot-objective`
 
 ### track-learn-evaluation
 
