@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from erk.core.claude_executor import RealClaudeExecutor
+from erk.core.claude_executor import RealClaudeExecutor, format_prompt_error
 from erk.core.output_filter import extract_pr_metadata_from_text
 
 
@@ -544,171 +544,66 @@ https://github.com/dagster-io/erk/pull/1311"""
 
 
 # =============================================================================
-# Tests for execute_prompt error handling
+# Tests for format_prompt_error (pure function)
 # =============================================================================
 
 
-class TestExecutePromptErrorHandling:
-    """Tests for improved error reporting in execute_prompt."""
+class TestFormatPromptError:
+    """Tests for format_prompt_error() - pure function, no fakes needed."""
 
     def test_error_includes_exit_code_and_stderr(self) -> None:
         """Error message includes exit code and stderr."""
-        from dataclasses import dataclass
-        from unittest.mock import patch
+        result = format_prompt_error(
+            returncode=1,
+            stderr="Permission denied",
+            stdout="",
+        )
 
-        @dataclass(frozen=True)
-        class FakeCompletedProcess:
-            returncode: int
-            stdout: str
-            stderr: str
-
-        executor = RealClaudeExecutor(console=None)
-
-        with patch("erk.core.claude_executor.subprocess.run") as mock_run:
-            mock_run.return_value = FakeCompletedProcess(
-                returncode=1,
-                stdout="",
-                stderr="Permission denied",
-            )
-
-            result = executor.execute_prompt(
-                prompt="test",
-                model="haiku",
-                tools=None,
-                cwd=None,
-                system_prompt=None,
-            )
-
-            assert result.success is False
-            assert "Exit code 1" in result.error
-            assert "stderr: Permission denied" in result.error
+        assert "Exit code 1" in result
+        assert "stderr: Permission denied" in result
 
     def test_error_includes_stdout_when_present(self) -> None:
         """Error message includes stdout preview when available."""
-        from dataclasses import dataclass
-        from unittest.mock import patch
+        result = format_prompt_error(
+            returncode=1,
+            stderr="",
+            stdout='{"error": "rate_limited"}',
+        )
 
-        @dataclass(frozen=True)
-        class FakeCompletedProcess:
-            returncode: int
-            stdout: str
-            stderr: str
-
-        executor = RealClaudeExecutor(console=None)
-
-        with patch("erk.core.claude_executor.subprocess.run") as mock_run:
-            mock_run.return_value = FakeCompletedProcess(
-                returncode=1,
-                stdout='{"error": "rate_limited"}',
-                stderr="",
-            )
-
-            result = executor.execute_prompt(
-                prompt="test",
-                model="haiku",
-                tools=None,
-                cwd=None,
-                system_prompt=None,
-            )
-
-            assert result.success is False
-            assert "Exit code 1" in result.error
-            assert 'stdout: {"error": "rate_limited"}' in result.error
+        assert "Exit code 1" in result
+        assert 'stdout: {"error": "rate_limited"}' in result
 
     def test_error_with_both_stderr_and_stdout(self) -> None:
         """Error message includes both stderr and stdout when both present."""
-        from dataclasses import dataclass
-        from unittest.mock import patch
+        result = format_prompt_error(
+            returncode=2,
+            stderr="Some error",
+            stdout="Some output",
+        )
 
-        @dataclass(frozen=True)
-        class FakeCompletedProcess:
-            returncode: int
-            stdout: str
-            stderr: str
-
-        executor = RealClaudeExecutor(console=None)
-
-        with patch("erk.core.claude_executor.subprocess.run") as mock_run:
-            mock_run.return_value = FakeCompletedProcess(
-                returncode=2,
-                stdout="Some output",
-                stderr="Some error",
-            )
-
-            result = executor.execute_prompt(
-                prompt="test",
-                model="haiku",
-                tools=None,
-                cwd=None,
-                system_prompt=None,
-            )
-
-            assert result.success is False
-            assert "Exit code 2" in result.error
-            assert "stderr: Some error" in result.error
-            assert "stdout: Some output" in result.error
+        assert "Exit code 2" in result
+        assert "stderr: Some error" in result
+        assert "stdout: Some output" in result
 
     def test_error_without_stderr_or_stdout(self) -> None:
         """Error message includes only exit code when no output."""
-        from dataclasses import dataclass
-        from unittest.mock import patch
+        result = format_prompt_error(
+            returncode=137,
+            stderr="",
+            stdout="",
+        )
 
-        @dataclass(frozen=True)
-        class FakeCompletedProcess:
-            returncode: int
-            stdout: str
-            stderr: str
-
-        executor = RealClaudeExecutor(console=None)
-
-        with patch("erk.core.claude_executor.subprocess.run") as mock_run:
-            mock_run.return_value = FakeCompletedProcess(
-                returncode=137,
-                stdout="",
-                stderr="",
-            )
-
-            result = executor.execute_prompt(
-                prompt="test",
-                model="haiku",
-                tools=None,
-                cwd=None,
-                system_prompt=None,
-            )
-
-            assert result.success is False
-            assert result.error == "Exit code 137"
+        assert result == "Exit code 137"
 
     def test_stdout_preview_truncated_at_500_chars(self) -> None:
         """Stdout is truncated to 500 chars in error message."""
-        from dataclasses import dataclass
-        from unittest.mock import patch
+        long_output = "x" * 1000
+        result = format_prompt_error(
+            returncode=1,
+            stderr="",
+            stdout=long_output,
+        )
 
-        @dataclass(frozen=True)
-        class FakeCompletedProcess:
-            returncode: int
-            stdout: str
-            stderr: str
-
-        executor = RealClaudeExecutor(console=None)
-
-        with patch("erk.core.claude_executor.subprocess.run") as mock_run:
-            long_output = "x" * 1000
-            mock_run.return_value = FakeCompletedProcess(
-                returncode=1,
-                stdout=long_output,
-                stderr="",
-            )
-
-            result = executor.execute_prompt(
-                prompt="test",
-                model="haiku",
-                tools=None,
-                cwd=None,
-                system_prompt=None,
-            )
-
-            assert result.success is False
-            # stdout should be truncated to 500 chars
-            assert "stdout: " + ("x" * 500) in result.error
-            assert ("x" * 501) not in result.error
+        # stdout should be truncated to 500 chars
+        assert "stdout: " + ("x" * 500) in result
+        assert ("x" * 501) not in result

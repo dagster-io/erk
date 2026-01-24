@@ -46,6 +46,35 @@ STDERR_JOIN_TIMEOUT = 5.0  # 5 seconds (increased from 1.0)
 logger = logging.getLogger(__name__)
 
 
+def format_prompt_error(
+    *,
+    returncode: int,
+    stderr: str,
+    stdout: str,
+    stdout_truncate_length: int = 500,
+) -> str:
+    """Format error message for failed prompt execution.
+
+    Constructs a structured error message from subprocess failure details.
+
+    Args:
+        returncode: Process exit code
+        stderr: Standard error output
+        stdout: Standard output (truncated to stdout_truncate_length)
+        stdout_truncate_length: Max characters to include from stdout
+
+    Returns:
+        Formatted error string like "Exit code 1 | stderr: ... | stdout: ..."
+    """
+    error_parts = [f"Exit code {returncode}"]
+    if stderr and stderr.strip():
+        error_parts.append(f"stderr: {stderr.strip()}")
+    if stdout and stdout.strip():
+        stdout_preview = stdout.strip()[:stdout_truncate_length]
+        error_parts.append(f"stdout: {stdout_preview}")
+    return " | ".join(error_parts)
+
+
 class RealClaudeExecutor(ClaudeExecutor):
     """Production implementation using subprocess and Claude CLI."""
 
@@ -529,17 +558,14 @@ class RealClaudeExecutor(ClaudeExecutor):
         )
 
         if result.returncode != 0:
-            error_parts = [f"Exit code {result.returncode}"]
-            if result.stderr and result.stderr.strip():
-                error_parts.append(f"stderr: {result.stderr.strip()}")
-            if result.stdout and result.stdout.strip():
-                # Include stdout preview (first 500 chars) - may contain error details
-                stdout_preview = result.stdout.strip()[:500]
-                error_parts.append(f"stdout: {stdout_preview}")
             return PromptResult(
                 success=False,
                 output="",
-                error=" | ".join(error_parts),
+                error=format_prompt_error(
+                    returncode=result.returncode,
+                    stderr=result.stderr,
+                    stdout=result.stdout,
+                ),
             )
 
         return PromptResult(
