@@ -101,3 +101,56 @@ def test_real_graphite_is_branch_tracked_constructs_correct_command() -> None:
             text=True,
             check=False,
         )
+
+
+def test_submit_stack_invalidates_branches_cache() -> None:
+    """Verify submit_stack() invalidates the branches cache.
+
+    This is a regression test for a bug where gt ls showed no branches
+    immediately after erk plan submit, because _branches_cache wasn't
+    invalidated after gt submit updated .graphite_cache_persist.
+    """
+    with patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0, stderr="")
+
+        ops = RealGraphite()
+        # Pre-populate cache with stale data
+        ops._branches_cache = {"stale": "data"}  # type: ignore[assignment]
+
+        ops.submit_stack(Path("/test"))
+
+        # Cache should be invalidated after submit_stack
+        assert ops._branches_cache is None
+
+
+def test_sync_invalidates_branches_cache() -> None:
+    """Verify sync() invalidates the branches cache."""
+    with patch("subprocess.run"):
+        ops = RealGraphite()
+        ops._branches_cache = {"stale": "data"}  # type: ignore[assignment]
+
+        ops.sync(Path("/test"), force=False, quiet=False)
+
+        assert ops._branches_cache is None
+
+
+def test_restack_invalidates_branches_cache() -> None:
+    """Verify restack() invalidates the branches cache."""
+    with patch("subprocess.run"):
+        ops = RealGraphite()
+        ops._branches_cache = {"stale": "data"}  # type: ignore[assignment]
+
+        ops.restack(Path("/test"), no_interactive=True, quiet=False)
+
+        assert ops._branches_cache is None
+
+
+def test_continue_restack_invalidates_branches_cache() -> None:
+    """Verify continue_restack() invalidates the branches cache."""
+    with patch("subprocess.run"):
+        ops = RealGraphite()
+        ops._branches_cache = {"stale": "data"}  # type: ignore[assignment]
+
+        ops.continue_restack(Path("/test"))
+
+        assert ops._branches_cache is None

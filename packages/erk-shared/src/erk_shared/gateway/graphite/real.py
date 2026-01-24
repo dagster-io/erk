@@ -322,6 +322,9 @@ class RealGraphite(Graphite):
                 f"gt submit failed (exit code {e.returncode}): {e.stderr or ''}"
             ) from e
 
+        # Invalidate branches cache - gt submit modifies Graphite metadata
+        self._branches_cache = None
+
     def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
         """Check if a branch is tracked by Graphite.
 
