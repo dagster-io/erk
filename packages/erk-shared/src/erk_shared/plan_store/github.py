@@ -268,7 +268,7 @@ class GitHubPlanStore(PlanBackend):
             content: Plan body/description
             labels: Labels to apply (immutable tuple, include "erk-learn" for learn plans)
             metadata: Provider-specific metadata. Supported keys:
-                - title_suffix: str | None
+                - title_tag: str | None
                 - source_repo: str | None
                 - objective_issue: int | None
 
@@ -279,10 +279,10 @@ class GitHubPlanStore(PlanBackend):
             RuntimeError: If plan creation fails completely (no partial success)
         """
         # Extract and convert metadata fields with explicit type handling
-        title_suffix_raw = metadata.get("title_suffix")
-        title_suffix_str: str | None = None
-        if title_suffix_raw is not None:
-            title_suffix_str = str(title_suffix_raw)
+        title_tag_raw = metadata.get("title_tag")
+        title_tag_str: str | None = None
+        if title_tag_raw is not None:
+            title_tag_str = str(title_tag_raw)
 
         source_repo_raw = metadata.get(SOURCE_REPO)
         source_repo_str: str | None = str(source_repo_raw) if source_repo_raw is not None else None
@@ -307,7 +307,7 @@ class GitHubPlanStore(PlanBackend):
             plan_content=content,
             title=title,
             extra_labels=extra_labels if extra_labels else None,
-            title_suffix=title_suffix_str,
+            title_tag=title_tag_str,
             source_repo=source_repo_str,
             objective_id=objective_id,
             created_from_session=created_from_session_str,

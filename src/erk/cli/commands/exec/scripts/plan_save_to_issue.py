@@ -263,7 +263,7 @@ def plan_save_to_issue(
         plan_content=plan,
         title=None,
         extra_labels=extra_labels,
-        title_suffix=None,
+        title_tag=None,
         source_repo=source_repo,
         objective_id=objective_issue,
         created_from_session=effective_session_id,

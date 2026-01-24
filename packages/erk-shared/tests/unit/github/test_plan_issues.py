@@ -26,7 +26,7 @@ class TestCreatePlanIssueSuccess:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -63,7 +63,7 @@ class TestCreatePlanIssueSuccess:
             plan_content=plan_content,
             title=None,
             extra_labels=["erk-learn"],
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -93,7 +93,7 @@ class TestCreatePlanIssueSuccess:
             plan_content=plan_content,
             title="Correct Title",
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -105,8 +105,8 @@ class TestCreatePlanIssueSuccess:
         title, _, _ = fake_gh.created_issues[0]
         assert title == "Correct Title [erk-plan]"
 
-    def test_uses_custom_title_suffix(self, tmp_path: Path) -> None:
-        """Use custom title suffix."""
+    def test_uses_custom_title_tag(self, tmp_path: Path) -> None:
+        """Use custom title tag."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Plan\n\nContent..."
 
@@ -116,7 +116,7 @@ class TestCreatePlanIssueSuccess:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix="[custom-suffix]",
+            title_tag="[custom-suffix]",
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -138,7 +138,7 @@ class TestCreatePlanIssueSuccess:
             plan_content=plan_content,
             title=None,
             extra_labels=["bug", "priority-high"],
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -160,7 +160,7 @@ class TestCreatePlanIssueSuccess:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo="owner/impl-repo",
             objective_id=None,
             created_from_session=None,
@@ -186,7 +186,7 @@ class TestCreatePlanIssueSuccess:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -215,7 +215,7 @@ class TestCreatePlanIssueTitleExtraction:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -235,7 +235,7 @@ class TestCreatePlanIssueTitleExtraction:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -255,7 +255,7 @@ class TestCreatePlanIssueTitleExtraction:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -279,7 +279,7 @@ class TestCreatePlanIssueErrors:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -310,7 +310,7 @@ class TestCreatePlanIssueErrors:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -338,7 +338,7 @@ class TestCreatePlanIssueErrors:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -371,7 +371,7 @@ class TestCreatePlanIssuePartialSuccess:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -401,7 +401,7 @@ class TestCreatePlanIssuePartialSuccess:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -426,7 +426,7 @@ class TestCreatePlanIssueLabelManagement:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -452,7 +452,7 @@ class TestCreatePlanIssueLabelManagement:
             plan_content=plan_content,
             title=None,
             extra_labels=["erk-learn"],
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -477,7 +477,7 @@ class TestCreatePlanIssueLabelManagement:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -499,7 +499,7 @@ class TestCreatePlanIssueLabelManagement:
             plan_content=plan_content,
             title=None,
             extra_labels=["erk-plan", "bug"],  # erk-plan would be duplicate
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -574,8 +574,8 @@ class TestCreateObjectiveIssue:
         assert "erk-objective" in fake_gh.labels
         assert "erk-plan" not in fake_gh.labels
 
-    def test_objective_has_no_title_suffix(self, tmp_path: Path) -> None:
-        """Objective issues have no title suffix."""
+    def test_objective_has_no_title_tag(self, tmp_path: Path) -> None:
+        """Objective issues have no title tag."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\nContent..."
 
@@ -691,7 +691,7 @@ class TestCreatePlanIssueCommandsSection:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -722,7 +722,7 @@ class TestCreatePlanIssueCommandsSection:
             plan_content=plan_content,
             title=None,
             extra_labels=["erk-learn"],
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -752,7 +752,7 @@ class TestCreatePlanIssueCommandsSection:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
-            title_suffix=None,
+            title_tag=None,
             source_repo=None,
             objective_id=None,
             created_from_session=None,
