@@ -82,6 +82,7 @@ jobs:
           ISSUE_NUMBER: ${{ inputs.issue_number }}
         run: |
           claude --print \
+            --verbose \
             --model claude-haiku-4-5 \
             --output-format stream-json \
             --dangerously-skip-permissions \

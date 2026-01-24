@@ -4,6 +4,9 @@ read_when:
   - Invoking Claude from Python
   - Spawning Claude CLI from Python code
   - Understanding non-interactive vs interactive modes
+tripwires:
+  - action: "using `--output-format stream-json` with `--print` in Claude CLI"
+    warning: "Must also include `--verbose`. Without it, the command fails with 'stream-json requires --verbose'."
 ---
 
 # Claude CLI Integration from Python
