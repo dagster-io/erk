@@ -288,3 +288,75 @@ def test_submit_deletes_multiple_existing_branches(tmp_path: Path) -> None:
 
     # Verify new branch was created
     assert len(fake_git.created_branches) == 1
+
+
+def test_submit_force_deletes_existing_branches_and_creates_new(tmp_path: Path) -> None:
+    """Test --force deletes existing branches without prompting."""
+    plan = create_plan("123", "Implement feature X")
+    repo_root = tmp_path / "repo"
+    ctx, fake_git, fake_github, _, _, repo_root = setup_submit_context(
+        tmp_path,
+        {"123": plan},
+        git_kwargs={
+            "current_branches": {repo_root: "main"},
+            "trunk_branches": {repo_root: "master"},
+            "remote_branches": {repo_root: ["origin/main"]},
+            "local_branches": {
+                repo_root: [
+                    "main",
+                    "P123-implement-feature-x-01-23-0900",
+                    "P123-implement-feature-x-01-23-0905",
+                ]
+            },
+        },
+        # NO confirm_responses - force mode should NOT prompt
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123", "-f"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    # Should show force mode message
+    assert "Deleting 2 existing branch(es) (--force mode)" in result.output
+    # Should not show the interactive prompt message
+    assert "Use existing branch" not in result.output
+
+    # Verify both old branches were deleted
+    assert len(fake_git._deleted_branches) == 2
+    assert "P123-implement-feature-x-01-23-0900" in fake_git._deleted_branches
+    assert "P123-implement-feature-x-01-23-0905" in fake_git._deleted_branches
+
+    # Verify new branch was created
+    assert len(fake_git.created_branches) == 1
+    _, created_branch, _, _ = fake_git.created_branches[0]
+    assert created_branch == "P123-implement-feature-x-01-15-1430"
+
+
+def test_submit_force_creates_new_branch_when_none_exist(tmp_path: Path) -> None:
+    """Test --force creates new branch normally when no existing branches."""
+    plan = create_plan("123", "Implement feature X")
+    repo_root = tmp_path / "repo"
+    ctx, fake_git, fake_github, _, _, repo_root = setup_submit_context(
+        tmp_path,
+        {"123": plan},
+        git_kwargs={
+            "current_branches": {repo_root: "main"},
+            "trunk_branches": {repo_root: "master"},
+            "remote_branches": {repo_root: ["origin/main"]},
+            "local_branches": {repo_root: ["main"]},  # No P123-* branches
+        },
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123", "-f"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    # Should not show existing branch prompts
+    assert "Found existing local branch(es)" not in result.output
+    assert "Deleting" not in result.output
+    assert "issue(s) submitted successfully!" in result.output
+
+    # Verify new branch was created normally
+    assert len(fake_git.created_branches) == 1
+    _, created_branch, _, _ = fake_git.created_branches[0]
+    assert created_branch == "P123-implement-feature-x-01-15-1430"

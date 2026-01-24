@@ -672,8 +672,9 @@ class PlanDetailScreen(ModalScreen):
         elif command_id == "submit_to_queue":
             if row.issue_url and self._repo_root is not None:
                 # Use streaming output for submit command
+                # -f flag prevents blocking on existing branch prompts in TUI context
                 self.run_streaming_command(
-                    ["erk", "plan", "submit", str(row.issue_number)],
+                    ["erk", "plan", "submit", str(row.issue_number), "-f"],
                     cwd=self._repo_root,
                     title=f"Submitting Plan #{row.issue_number}",
                 )
