@@ -76,7 +76,7 @@ Quick reference for all `erk exec` subcommands.
 | `upload-session`                  | Upload a session JSONL to GitHub Gist and update plan header.             |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.       |
 | `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                             |
-| `validate-plan-content`           | Validate plan content from stdin.                                         |
+| `validate-plan-content`           | Validate plan content from file or stdin.                                 |
 | `wrap-plan-in-metadata-block`     | Return plan content for issue body.                                       |
 
 ## Commands
@@ -988,9 +988,15 @@ Validate Claude credentials for CI workflows.
 
 ### validate-plan-content
 
-Validate plan content from stdin.
+Validate plan content from file or stdin.
 
 **Usage:** `erk exec validate-plan-content`
+
+**Options:**
+
+| Flag          | Type | Required | Default        | Description                                           |
+| ------------- | ---- | -------- | -------------- | ----------------------------------------------------- |
+| `--plan-file` | PATH | No       | Sentinel.UNSET | Path to plan file. If not provided, reads from stdin. |
 
 ### wrap-plan-in-metadata-block
 

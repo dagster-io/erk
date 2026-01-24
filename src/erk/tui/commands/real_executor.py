@@ -1,9 +1,15 @@
 """Real implementation of CommandExecutor for production use."""
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Protocol
 
 from erk.tui.commands.executor import CommandExecutor
+
+
+class NotifyFn(Protocol):
+    """Protocol for notify function with keyword-only severity parameter."""
+
+    def __call__(self, message: str, severity: str | None) -> None: ...
 
 
 class RealCommandExecutor(CommandExecutor):
@@ -18,7 +24,7 @@ class RealCommandExecutor(CommandExecutor):
         browser_launch: Callable[[str], Any],
         clipboard_copy: Callable[[str], Any],
         close_plan_fn: Callable[[int, str], list[int]],
-        notify_fn: Callable[[str], None],
+        notify_fn: NotifyFn,
         refresh_fn: Callable[[], None],
         submit_to_queue_fn: Callable[[int, str], None],
     ) -> None:
@@ -51,9 +57,9 @@ class RealCommandExecutor(CommandExecutor):
         """Close plan and linked PRs."""
         return self._close_plan_fn(issue_number, issue_url)
 
-    def notify(self, message: str) -> None:
+    def notify(self, message: str, *, severity: str | None) -> None:
         """Show notification to user."""
-        self._notify_fn(message)
+        self._notify_fn(message, severity)
 
     def refresh_data(self) -> None:
         """Trigger data refresh."""
