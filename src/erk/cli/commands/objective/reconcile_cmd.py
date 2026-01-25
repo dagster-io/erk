@@ -38,11 +38,10 @@ def reconcile_objectives(ctx: ErkContext, *, dry_run: bool, objective: int | Non
 
     if objective is not None:
         # Single objective mode - target specific issue
-        try:
-            issue = ctx.github.issues.get_issue(repo.root, objective)
-        except RuntimeError as e:
-            click.echo(f"Error: {e}", err=True)
-            raise SystemExit(1) from None
+        if not ctx.github.issues.issue_exists(repo.root, objective):
+            click.echo(f"Error: Issue #{objective} not found", err=True)
+            raise SystemExit(1)
+        issue = ctx.github.issues.get_issue(repo.root, objective)
         if "erk-objective" not in issue.labels:
             click.echo(f"Error: Issue #{objective} is not an erk-objective", err=True)
             raise SystemExit(1)
