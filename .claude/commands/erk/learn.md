@@ -28,7 +28,24 @@ These docs are "token caches" - preserved reasoning and research so future agent
 
 ## Agent Instructions
 
-### Step 1: Get Session Information
+### Step 1: Validate Plan Type
+
+First, check if the issue is a learn plan. **Learn plans cannot generate additional learn plans** - this would create documentation cycles.
+
+```bash
+erk exec get-issue-body <issue-number>
+```
+
+Parse the JSON output and check the `labels` array. If `erk-learn` is present, stop with this error:
+
+```
+Error: Issue #<issue-number> is a learn plan (has erk-learn label).
+Cannot learn from a learn plan - this would create documentation cycles.
+```
+
+If the issue is NOT a learn plan, proceed to Step 2.
+
+### Step 2: Get Session Information
 
 Run the exec script to get session details:
 
@@ -53,9 +70,9 @@ Parse the JSON output to get:
 
 If no sessions are found, inform the user and stop.
 
-**Note on remote sessions:** Remote sessions appear in `session_sources` with `source_type: "remote"` and `path: null`. These sessions must be downloaded before processing (see Step 3).
+**Note on remote sessions:** Remote sessions appear in `session_sources` with `source_type: "remote"` and `path: null`. These sessions must be downloaded before processing (see Step 4).
 
-### Step 2: Analyze Implementation
+### Step 3: Analyze Implementation
 
 Before analyzing sessions, understand what code actually changed. A smooth implementation with no errors can still add major new capabilities that need documentation.
 
@@ -83,7 +100,7 @@ gh pr diff <pr-number>
 - **Config changes**: New settings, capabilities, or options?
 - **External integrations**: New API calls, dependencies, or tools?
 
-**Save this inventory** - you will reference it in Step 4 to ensure everything new gets documented.
+**Save this inventory** - you will reference it in Step 5 to ensure everything new gets documented.
 
 #### Fetch PR Comments
 
@@ -104,7 +121,7 @@ erk exec get-pr-discussion-comments --pr <pr-number>
 - Alternative approaches discussed
 - False positives or misunderstandings to prevent
 
-### Step 3: Gather and Analyze Sessions
+### Step 4: Gather and Analyze Sessions
 
 #### Check Existing Documentation
 
@@ -134,7 +151,7 @@ These insights are often the most valuable because they represent real friction 
 
 #### Preprocess Sessions
 
-For each session source from Step 1, preprocess to compressed XML format:
+For each session source from Step 2, preprocess to compressed XML format:
 
 **IMPORTANT:** Check `source_type` before processing:
 
@@ -169,7 +186,7 @@ Note: The preprocessor applies deduplication, truncation, and pruning optimizati
 
 #### Save PR Comments
 
-If PR comments were fetched in Step 2, save them for the gist:
+If PR comments were fetched in Step 3, save them for the gist:
 
 ```bash
 erk exec get-pr-review-comments --pr <pr-number> --include-resolved \
@@ -354,7 +371,7 @@ The DocumentationGapIdentifier agent will:
 - Cross-reference against the diff inventory to ensure completeness
 - Classify items: NEW_DOC | UPDATE_EXISTING | TRIPWIRE | SKIP
 - Prioritize by impact: HIGH (gateway methods, contradictions) > MEDIUM (patterns) > LOW (helpers)
-- Produce the MANDATORY enumerated table required by Step 4
+- Produce the MANDATORY enumerated table required by Step 5
 
 Write the DocumentationGapIdentifier output to scratch storage using the Write tool:
 
@@ -384,7 +401,7 @@ Task(
     - session_analysis_paths: [".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<id>.md", ...]
     - diff_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md" (or null if no PR)
     - plan_title: <title from plan issue>
-    - gist_url: <gist URL from Step 3>
+    - gist_url: <gist URL from Step 4>
     - pr_number: <PR number if available, else null>
 )
 ```
@@ -482,7 +499,7 @@ Read each file and mine them thoroughly.
 - External documentation fetched (WebFetch, WebSearch)
 - Error messages and how they were resolved
 
-### Step 4: Review Synthesized Plan
+### Step 5: Review Synthesized Plan
 
 Read the PlanSynthesizer output:
 
@@ -513,7 +530,7 @@ Review the synthesized plan:
 
 #### PR Comment Analysis (Additional)
 
-If PR comments were fetched in Step 2, mine them for additional documentation opportunities not captured by the agents:
+If PR comments were fetched in Step 3, mine them for additional documentation opportunities not captured by the agents:
 
 **Review Comments (Inline)**
 
@@ -556,7 +573,7 @@ Add any additional items from PR comments to the documentation plan.
 
 #### Validation Checkpoint
 
-**⚠️ CHECKPOINT: Before proceeding to Step 5**
+**⚠️ CHECKPOINT: Before proceeding to Step 6**
 
 Verify the PlanSynthesizer output:
 
@@ -574,7 +591,7 @@ If the synthesized plan shows NO documentation items:
 2. Ask: "Would a future agent benefit from this?"
 3. If still no documentation needed, state: "After explicit review of N inventory items, no documentation is needed because [specific reasons for top 3 items]"
 
-Only proceed to Step 7 (skipping Step 5-6) after this explicit justification.
+Only proceed to Step 8 (skipping Step 6-7) after this explicit justification.
 
 #### Outdated Documentation Check (MANDATORY)
 
@@ -604,7 +621,7 @@ grep -r "<removed-feature>" docs/learned/ .claude/commands/ .claude/skills/
 
 **Include outdated doc updates in the documentation plan** alongside new documentation needs.
 
-### Step 5: Present Findings
+### Step 6: Present Findings
 
 Present the synthesized plan to the user. The PlanSynthesizer output already includes:
 
@@ -618,11 +635,11 @@ Present the synthesized plan to the user. The PlanSynthesizer output already inc
 [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ] && echo "CI_MODE" || echo "INTERACTIVE"
 ```
 
-**If CI mode (CI_MODE)**: Skip user confirmation. Auto-proceed to Step 6 to save the learn plan. This is expected behavior - CI runs should complete without user interaction.
+**If CI mode (CI_MODE)**: Skip user confirmation. Auto-proceed to Step 7 to save the learn plan. This is expected behavior - CI runs should complete without user interaction.
 
-**If interactive mode (INTERACTIVE)**: Confirm with the user before saving the learn plan. If the user decides to skip (no valuable insights), proceed to Step 7.
+**If interactive mode (INTERACTIVE)**: Confirm with the user before saving the learn plan. If the user decides to skip (no valuable insights), proceed to Step 8.
 
-### Step 6: Validate and Save Learn Plan to GitHub Issue
+### Step 7: Validate and Save Learn Plan to GitHub Issue
 
 First validate the synthesized plan has actionable content:
 
@@ -632,7 +649,7 @@ cat .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md | erk 
 
 Parse the JSON output:
 
-- If `valid: false` → Skip saving, proceed to Step 6a with `completed_no_plan`
+- If `valid: false` → Skip saving, proceed to Step 7a with `completed_no_plan`
 - If `valid: true` → Continue with save below
 
 **If plan is valid**, save it as a GitHub issue:
@@ -664,7 +681,7 @@ Learn plan saved to GitHub issue #<issue_number>
 Raw materials: <gist-url>
 ```
 
-### Step 6b: Store Tripwire Candidates on Learn Plan Issue
+### Step 7b: Store Tripwire Candidates on Learn Plan Issue
 
 **If plan was valid and saved**, store structured tripwire candidates as a metadata comment:
 
@@ -678,7 +695,7 @@ This stores the tripwire candidates as a machine-readable metadata block comment
 
 Parse the JSON output. If `count` is 0, no comment was added (no candidates found by the extractor). This is normal and not an error.
 
-### Step 6a: Track Learn Result on Parent Plan
+### Step 7a: Track Learn Result on Parent Plan
 
 **If plan was valid and saved**, update the parent plan's status to link the two issues:
 
@@ -700,14 +717,14 @@ erk exec track-learn-result \
     --status completed_no_plan
 ```
 
-### Step 6b: Post-Learn Decision Menu
+### Step 7c: Post-Learn Decision Menu
 
 Present a decision menu to the user for next actions.
 
-**CI Detection**: Reuse the CI check from Step 5:
+**CI Detection**: Reuse the CI check from Step 6:
 
-- If CI_MODE: Auto-select option 1 (submit) and proceed to Step 7
-- If not interactive: Auto-select option 1 (submit) and proceed to Step 7
+- If CI_MODE: Auto-select option 1 (submit) and proceed to Step 8
+- If not interactive: Auto-select option 1 (submit) and proceed to Step 8
 
 **Check for other open learn plans** (for consolidation option):
 
@@ -743,11 +760,11 @@ Post-learn actions:
 - **Submit**: Run `/erk:plan-submit`
 - **Review**: Run `gh issue view <issue_number> --web`, then inform the user they can run `/erk:plan-submit` when ready
 - **Consolidate**: Run `/local:replan-learn-plans`
-- **Done**: Proceed directly to Step 7
+- **Done**: Proceed directly to Step 8
 
-### Step 7: Track Evaluation
+### Step 8: Track Evaluation
 
-**CRITICAL: Always run this step**, regardless of which option was selected in Step 6b.
+**CRITICAL: Always run this step**, regardless of which option was selected in Step 7c.
 
 This ensures `erk land` won't warn about unlearned plans:
 

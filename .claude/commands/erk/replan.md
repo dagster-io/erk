@@ -46,6 +46,9 @@ Validate each issue:
 
 1. Issue exists
 2. Issue has `erk-plan` label
+3. Track if issue has `erk-learn` label (for Step 7)
+
+Store whether ANY issue has the `erk-learn` label. Set `IS_LEARN_PLAN=true` if any source issue has this label.
 
 If any issue is not an erk-plan issue, display error and abort:
 
@@ -276,9 +279,10 @@ After the user approves the plan in Plan Mode:
 
 1. Exit Plan Mode
 2. Run `/erk:plan-save` to create the new GitHub issue:
-   - **If the source plan(s) had an `objective_issue`**: Pass it with `/erk:plan-save --objective-issue=<objective_number>`
+   - **If any source plan(s) had `erk-learn` label** (`IS_LEARN_PLAN=true`): Add `--plan-type=learn` to the command
+   - **If the source plan(s) had an `objective_issue`**: Pass it with `--objective-issue=<objective_number>`
    - **If consolidating with conflicting objectives**: Use the objective chosen by the user in Step 2.5
-   - **Otherwise**: Run `/erk:plan-save` without the flag
+   - **Otherwise**: Run `/erk:plan-save` without flags
 3. **If `--objective-issue` was used**, verify the link was saved correctly:
    ```bash
    erk exec get-plan-metadata <new_issue_number> objective_issue
