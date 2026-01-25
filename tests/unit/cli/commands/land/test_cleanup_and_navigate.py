@@ -973,3 +973,114 @@ def test_cleanup_and_navigate_skip_activation_output_with_up_flag(
     assert len(fake_git.checked_out_branches) == 0, (
         "Should not have checked out any branches when skip_activation_output=True"
     )
+
+
+def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_after_deleting_branch(
+    tmp_path: Path,
+) -> None:
+    """Test that non-slot worktree cleanup checks out trunk after deleting branch.
+
+    Regression test for bug where `erk land` from root worktree left the worktree
+    in detached HEAD state after landing a PR.
+
+    The workflow is:
+    1. Checkout detached HEAD to release the feature branch for deletion
+    2. Delete the feature branch
+    3. NEW: Checkout trunk branch so worktree is not left in detached state
+
+    Without the fix: worktree is left in detached HEAD state
+    With the fix: worktree ends up on trunk branch (main/master)
+    """
+    # Create a non-slot worktree (name doesn't match erk-slot-XX pattern)
+    non_slot_worktree_path = tmp_path / "worktrees" / "my-feature-worktree"
+    non_slot_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    # Create empty pool state (no slot assignments)
+    empty_state = PoolState.test(assignments=())
+    save_pool_state(pool_json_path, empty_state)
+
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [WorktreeInfo(path=non_slot_worktree_path, branch="feature-branch")]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={
+            non_slot_worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+    )
+
+    # Configure FakeGraphite to track the branch so GraphiteBranchManager uses Graphite delete
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=non_slot_worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call _cleanup_and_navigate
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=non_slot_worktree_path,
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            objective_number=None,
+            no_delete=False,
+            skip_activation_output=False,
+            cleanup_confirmed=True,
+        )
+    except SystemExit:
+        pass  # Expected - function raises SystemExit(0) at end
+
+    # Verify detached HEAD at trunk was checked out before deletion
+    detached_calls = [(path, ref) for path, ref in fake_git.detached_checkouts if ref == "main"]
+    assert len(detached_calls) == 1, "Should have checked out detached HEAD at trunk"
+    assert detached_calls[0][0] == non_slot_worktree_path
+
+    # Verify trunk branch was checked out AFTER branch deletion (key assertion!)
+    # This ensures worktree is no longer in detached HEAD state
+    trunk_checkout_calls = [
+        (path, branch) for path, branch in fake_git.checked_out_branches if branch == "main"
+    ]
+    assert len(trunk_checkout_calls) == 1, (
+        "Should have checked out trunk branch after deletion to exit detached HEAD state"
+    )
+    assert trunk_checkout_calls[0][0] == non_slot_worktree_path
+
+    # Verify branch was deleted
+    deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
+    assert "feature-branch" in deleted_branches
