@@ -700,9 +700,54 @@ erk exec track-learn-result \
     --status completed_no_plan
 ```
 
+### Step 6b: Post-Learn Decision Menu
+
+Present a decision menu to the user for next actions.
+
+**CI Detection**: Reuse the CI check from Step 5:
+
+- If CI_MODE: Auto-select option 1 (submit) and proceed to Step 7
+- If not interactive: Auto-select option 1 (submit) and proceed to Step 7
+
+**Check for other open learn plans** (for consolidation option):
+
+```bash
+OTHER_LEARN_COUNT=$(erk exec list-plans --label erk-learn --state open --format json 2>/dev/null | jq '.plans | length')
+```
+
+If the count is > 1 (current plan + at least one other), include the consolidation option.
+
+**Interactive mode**: Present the menu using direct output and wait for user selection.
+
+If other learn plans exist (count > 1):
+
+```
+Post-learn actions:
+  1. Submit for implementation (Recommended) — Queue for remote implementation
+  2. Review in browser — Open issue in web browser for review/editing
+  3. Consolidate with other learn plans — Merge overlapping learn plans
+  4. Done — Finish learn workflow
+```
+
+If no other learn plans (count <= 1):
+
+```
+Post-learn actions:
+  1. Submit for implementation (Recommended) — Queue for remote implementation
+  2. Review in browser — Open issue in web browser for review/editing
+  3. Done — Finish learn workflow
+```
+
+**Execute the selected action:**
+
+- **Submit**: Run `/erk:plan-submit`
+- **Review**: Run `gh issue view <issue_number> --web`, then inform the user they can run `/erk:plan-submit` when ready
+- **Consolidate**: Run `/local:replan-learn-plans`
+- **Done**: Proceed directly to Step 7
+
 ### Step 7: Track Evaluation
 
-**CRITICAL: Always run this step**, regardless of whether you created a plan or skipped.
+**CRITICAL: Always run this step**, regardless of which option was selected in Step 6b.
 
 This ensures `erk land` won't warn about unlearned plans:
 
