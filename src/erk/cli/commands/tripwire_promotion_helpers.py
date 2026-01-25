@@ -12,10 +12,9 @@ from pathlib import Path
 import click
 
 from erk.core.context import ErkContext
-from erk_shared.github.metadata.plan_header import extract_plan_from_comment
-from erk_shared.learn.tripwire_candidates import (
+from erk_shared.github.metadata.tripwire_candidates import (
     TripwireCandidate,
-    extract_tripwire_candidates,
+    extract_tripwire_candidates_from_comments,
 )
 from erk_shared.learn.tripwire_promotion import promote_tripwire_to_frontmatter
 from erk_shared.output.output import user_output
@@ -32,7 +31,7 @@ def extract_tripwire_candidates_from_learn_plan(
     """Extract tripwire candidates from a learn plan issue.
 
     Checks if the issue is a learn plan (has erk-learn label), fetches
-    the first comment's plan body, and extracts tripwire candidates.
+    all comments, and reads structured tripwire-candidates metadata.
 
     Returns empty list on any failure (fail-open).
 
@@ -55,19 +54,13 @@ def extract_tripwire_candidates_from_learn_plan(
     if "erk-learn" not in issue.labels:
         return []
 
-    # Get the first comment (plan body lives there)
+    # Get all comments and scan for tripwire-candidates metadata block
     comments = ctx.issues.get_issue_comments(repo_root, plan_issue_number)
     if not comments:
         logger.debug("No comments on learn plan issue #%d", plan_issue_number)
         return []
 
-    # Extract plan content from the first comment's metadata block
-    plan_content = extract_plan_from_comment(comments[0])
-    if plan_content is None:
-        logger.debug("No plan content found in first comment of issue #%d", plan_issue_number)
-        return []
-
-    return extract_tripwire_candidates(plan_content)
+    return extract_tripwire_candidates_from_comments(comments)
 
 
 def prompt_tripwire_promotion(

@@ -108,6 +108,9 @@ from erk.cli.commands.exec.scripts.session_id_injector_hook import (
 from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
     setup_impl_from_issue,
 )
+from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
+    store_tripwire_candidates,
+)
 from erk.cli.commands.exec.scripts.track_learn_evaluation import (
     track_learn_evaluation,
 )
@@ -199,6 +202,7 @@ exec_group.add_command(run_review, name="run-review")
 exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
 exec_group.add_command(setup_impl_from_issue, name="setup-impl-from-issue")
+exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")
 exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
 exec_group.add_command(track_learn_result, name="track-learn-result")
 exec_group.add_command(trigger_async_learn, name="trigger-async-learn")

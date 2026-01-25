@@ -1,9 +1,9 @@
 """Tests for tripwire promotion in erk land command.
 
 Tests the behavior when landing a learn plan PR that contains tripwire candidates:
-- Learn plan with candidates -> extraction succeeds
+- Learn plan with candidates metadata -> extraction succeeds
 - Non-learn plan -> no candidates (returns empty)
-- No tripwire section -> no candidates
+- No metadata comment -> no candidates
 - Issue not found -> returns empty (fail-open)
 - Force mode -> auto-promotes without prompting
 - Target doc missing -> skips with warning
@@ -19,15 +19,18 @@ from erk.cli.commands.tripwire_promotion_helpers import (
 from erk_shared.context.context import ErkContext
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata.plan_header import format_plan_content_comment
-from erk_shared.learn.tripwire_candidates import TripwireCandidate
+from erk_shared.github.metadata.tripwire_candidates import (
+    TripwireCandidate,
+    render_tripwire_candidates_comment,
+)
 
 
 def _make_learn_plan_issue(
     number: int,
-    plan_content: str,
+    *,
+    tripwire_candidates: list[TripwireCandidate] | None,
 ) -> tuple[IssueInfo, dict[int, list[str]]]:
-    """Create a learn plan issue with plan content in the first comment.
+    """Create a learn plan issue, optionally with a tripwire-candidates metadata comment.
 
     Returns the issue and comments dict suitable for FakeGitHubIssues.
     """
@@ -44,49 +47,29 @@ def _make_learn_plan_issue(
         updated_at=now,
         author="testuser",
     )
-    comment_body = format_plan_content_comment(plan_content)
-    comments = {number: [comment_body]}
-    return issue, comments
+    comments: list[str] = ["<!-- plan body comment -->"]
+    if tripwire_candidates is not None:
+        comments.append(render_tripwire_candidates_comment(tripwire_candidates))
+    return issue, {number: comments}
 
 
-_PLAN_WITH_TRIPWIRES = """\
-## Summary
-
-Learn plan with tripwire candidates.
-
-## Tripwire Additions
-
-### For `architecture/foo.md`
-
-```yaml
-tripwires:
-  - action: "calling foo() directly"
-    warning: "Use the foo_wrapper() instead."
-```
-
-### For `cli/bar.md`
-
-```yaml
-tripwires:
-  - action: "using bar without context"
-    warning: "Pass ctx to bar()."
-```
-"""
-
-_PLAN_WITHOUT_TRIPWIRES = """\
-## Summary
-
-Learn plan without tripwire candidates.
-
-## Insights
-
-Some insights about the codebase.
-"""
+_CANDIDATES = [
+    TripwireCandidate(
+        action="calling foo() directly",
+        warning="Use the foo_wrapper() instead.",
+        target_doc_path="architecture/foo.md",
+    ),
+    TripwireCandidate(
+        action="using bar without context",
+        warning="Pass ctx to bar().",
+        target_doc_path="cli/bar.md",
+    ),
+]
 
 
 def test_extract_candidates_from_learn_plan() -> None:
-    """Extract tripwire candidates from a learn plan issue."""
-    issue, comments = _make_learn_plan_issue(42, _PLAN_WITH_TRIPWIRES)
+    """Extract tripwire candidates from a learn plan issue's metadata comment."""
+    issue, comments = _make_learn_plan_issue(42, tripwire_candidates=_CANDIDATES)
     fake_issues = FakeGitHubIssues(
         issues={42: issue},
         comments=comments,
@@ -133,9 +116,9 @@ def test_extract_candidates_non_learn_plan_returns_empty() -> None:
     assert candidates == []
 
 
-def test_extract_candidates_no_tripwire_section_returns_empty() -> None:
-    """Return empty list when learn plan has no tripwire section."""
-    issue, comments = _make_learn_plan_issue(42, _PLAN_WITHOUT_TRIPWIRES)
+def test_extract_candidates_no_metadata_comment_returns_empty() -> None:
+    """Return empty list when learn plan has no tripwire-candidates metadata comment."""
+    issue, comments = _make_learn_plan_issue(42, tripwire_candidates=None)
     fake_issues = FakeGitHubIssues(
         issues={42: issue},
         comments=comments,

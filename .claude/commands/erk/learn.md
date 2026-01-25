@@ -400,6 +400,37 @@ Write(
 )
 ```
 
+#### Extract Tripwire Candidates (Agent 6)
+
+Launch the TripwireExtractor agent to pull structured tripwire data from the plan:
+
+<!-- Model: haiku - Mechanical extraction of structured data from prose; no creativity needed -->
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Extract tripwire candidates",
+  prompt: |
+    Load and follow the agent instructions in `.claude/agents/learn/tripwire-extractor.md`
+
+    Input:
+    - learn_plan_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md"
+    - gap_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md"
+)
+```
+
+**Note:** This agent runs AFTER PlanSynthesizer completes (sequential dependency).
+
+Write the output to scratch storage using the Write tool:
+
+```
+Write(
+  file_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json",
+  content: <full agent output from TaskOutput>
+)
+```
+
 #### Agent Dependency Graph
 
 ```
@@ -413,6 +444,9 @@ Sequential Tier 1 (depends on Parallel Tier):
 
 Sequential Tier 2 (depends on Sequential Tier 1):
   └─ PlanSynthesizer
+
+Sequential Tier 3 (depends on Sequential Tier 2):
+  └─ TripwireExtractor
 ```
 
 #### Deep Analysis (Manual Fallback)
@@ -461,7 +495,11 @@ The PlanSynthesizer has already:
 - Collected all candidates from the parallel agents via DocumentationGapIdentifier
 - Created a narrative context explaining what was built
 - Generated documentation items with draft content starters
-- Formatted tripwire additions for copy-paste
+- Described tripwire insights naturally in prose
+
+The TripwireExtractor has:
+
+- Extracted structured tripwire candidate data from the plan into `tripwire-candidates.json`
 
 #### Validate the Synthesized Plan
 
@@ -625,6 +663,20 @@ Learn plan saved to GitHub issue #<issue_number>
 
 Raw materials: <gist-url>
 ```
+
+### Step 6b: Store Tripwire Candidates on Learn Plan Issue
+
+**If plan was valid and saved**, store structured tripwire candidates as a metadata comment:
+
+```bash
+erk exec store-tripwire-candidates \
+    --issue <new-learn-plan-issue-number> \
+    --candidates-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json
+```
+
+This stores the tripwire candidates as a machine-readable metadata block comment on the learn plan issue, enabling `erk land` to read them directly without regex parsing.
+
+Parse the JSON output. If `count` is 0, no comment was added (no candidates found by the extractor). This is normal and not an error.
 
 ### Step 6a: Track Learn Result on Parent Plan
 
