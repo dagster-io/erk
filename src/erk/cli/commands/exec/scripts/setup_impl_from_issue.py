@@ -104,32 +104,40 @@ def setup_impl_from_issue(
     # Step 2: Determine base branch and create feature branch
     current_branch = _get_current_branch(git, cwd)
 
-    # Generate branch name from issue
-    timestamp = datetime.now(UTC)
-    branch_name = generate_issue_branch_name(issue_number, plan.title, timestamp)
-
-    # Check if branch already exists
-    local_branches = git.list_local_branches(repo_root)
-
     branch_manager = require_branch_manager(ctx)
 
-    if branch_name in local_branches:
-        # Branch exists - just check it out
-        click.echo(f"Branch '{branch_name}' already exists, checking out...", err=True)
-        branch_manager.checkout_branch(cwd, branch_name)
+    # Check if already on a branch for this issue - reuse it
+    expected_prefix = f"P{issue_number}-"
+    if current_branch.startswith(expected_prefix):
+        # Already on correct branch (e.g., remote workflow re-running with issue arg)
+        click.echo(f"Already on branch for issue #{issue_number}: {current_branch}", err=True)
+        branch_name = current_branch
+        # Skip branch creation - just ensure .impl/ exists (handled below)
     else:
-        # Determine base branch: stack on feature branch, or use trunk
-        if _is_trunk_branch(current_branch):
-            base_branch = current_branch
+        # Generate branch name from issue
+        timestamp = datetime.now(UTC)
+        branch_name = generate_issue_branch_name(issue_number, plan.title, timestamp)
+
+        # Check if branch already exists
+        local_branches = git.list_local_branches(repo_root)
+
+        if branch_name in local_branches:
+            # Branch exists - just check it out
+            click.echo(f"Branch '{branch_name}' already exists, checking out...", err=True)
+            branch_manager.checkout_branch(cwd, branch_name)
         else:
-            # Stack on current feature branch
-            base_branch = current_branch
+            # Determine base branch: stack on feature branch, or use trunk
+            if _is_trunk_branch(current_branch):
+                base_branch = current_branch
+            else:
+                # Stack on current feature branch
+                base_branch = current_branch
 
-        # Create branch using BranchManager (handles Graphite tracking automatically)
-        branch_manager.create_branch(repo_root, branch_name, base_branch)
-        click.echo(f"Created branch '{branch_name}' from '{base_branch}'", err=True)
+            # Create branch using BranchManager (handles Graphite tracking automatically)
+            branch_manager.create_branch(repo_root, branch_name, base_branch)
+            click.echo(f"Created branch '{branch_name}' from '{base_branch}'", err=True)
 
-        branch_manager.checkout_branch(cwd, branch_name)
+            branch_manager.checkout_branch(cwd, branch_name)
 
     # Step 3: Create .impl/ folder with plan content (unless --no-impl)
     impl_path_str: str | None = None
