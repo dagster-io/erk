@@ -148,6 +148,7 @@ Use AskUserQuestion to ask:
 "Plan is ready. What would you like to do?"
 
 Options:
+
 1. **Save to GitHub** - Create issue for later implementation
 2. **Implement now** - Start implementation immediately
 3. **Cancel** - Discard plan
@@ -161,6 +162,7 @@ Use AskUserQuestion to ask:
 "What structure should this objective use?"
 
 Options:
+
 1. **Steelthread** - End-to-end vertical slice first
 2. **Linear** - Sequential phases building on each other
 3. **Single** - One focused deliverable
@@ -175,6 +177,7 @@ Use AskUserQuestion to ask:
 "PR landed successfully. Where would you like to go?"
 
 Options:
+
 1. **Stay here** - Remain in current worktree
 2. **Go to child branch** - Navigate to dependent branch
 3. **Go to main** - Return to main worktree
@@ -204,6 +207,7 @@ When appropriate, suggest a default:
 
 ```markdown
 Options:
+
 1. **Implement now** (recommended)
 2. Save to GitHub
 ```

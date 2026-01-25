@@ -112,16 +112,16 @@ This preserves all other fields while changing only the specified ones.
 
 ## Examples in Codebase
 
-| Dataclass | Purpose | Location |
-|-----------|---------|----------|
-| `LandTarget` | Resolved PR landing info | land_cmd.py |
-| `CleanupContext` | Bundle cleanup parameters | land_cmd.py |
-| `ValidatedIssue` | Issue validation result | submit.py |
-| `SubmitResult` | Submit operation result | submit.py |
-| `WorktreeInfo` | Worktree metadata | erk_shared/git/abc.py |
-| `BranchSyncInfo` | Branch sync status | erk_shared/git/abc.py |
-| `SlotAllocationResult` | Slot allocation outcome | slot/common.py |
-| `NavigationResult` | Navigation outcome | navigation_helpers.py |
+| Dataclass              | Purpose                   | Location              |
+| ---------------------- | ------------------------- | --------------------- |
+| `LandTarget`           | Resolved PR landing info  | land_cmd.py           |
+| `CleanupContext`       | Bundle cleanup parameters | land_cmd.py           |
+| `ValidatedIssue`       | Issue validation result   | submit.py             |
+| `SubmitResult`         | Submit operation result   | submit.py             |
+| `WorktreeInfo`         | Worktree metadata         | erk_shared/git/abc.py |
+| `BranchSyncInfo`       | Branch sync status        | erk_shared/git/abc.py |
+| `SlotAllocationResult` | Slot allocation outcome   | slot/common.py        |
+| `NavigationResult`     | Navigation outcome        | navigation_helpers.py |
 
 ## Design Guidelines
 

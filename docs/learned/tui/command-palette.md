@@ -552,11 +552,11 @@ The command text is dimmed to visually distinguish the searchable label from the
 
 Commands are displayed with three distinct visual tiers:
 
-| Tier | Source | Style | Example |
-|------|--------|-------|---------|
-| 1. Emoji | `CATEGORY_EMOJI[category]` | Normal | ⚡ |
-| 2. Label | `CommandDefinition.description` | Bright | close |
-| 3. Command | `get_display_name(ctx)` | Dimmed | erk plan close 123 |
+| Tier       | Source                          | Style  | Example            |
+| ---------- | ------------------------------- | ------ | ------------------ |
+| 1. Emoji   | `CATEGORY_EMOJI[category]`      | Normal | ⚡                 |
+| 2. Label   | `CommandDefinition.description` | Bright | close              |
+| 3. Command | `get_display_name(ctx)`         | Dimmed | erk plan close 123 |
 
 ### Tier 1: Category Emoji
 

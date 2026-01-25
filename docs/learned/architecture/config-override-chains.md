@@ -122,12 +122,12 @@ class LocalConfig:
 
 ## Examples in Codebase
 
-| Config Option | Location | Default |
-|---------------|----------|---------|
-| `prompt_learn_on_land` | land_cmd.py | True (prompt) |
-| `plans_repo` | submit_cmd.py | Current repo |
-| `graphite_enabled` | navigation_helpers.py | Auto-detect |
-| `interactive_claude` | objective/next_plan_cmd.py | True |
+| Config Option          | Location                   | Default       |
+| ---------------------- | -------------------------- | ------------- |
+| `prompt_learn_on_land` | land_cmd.py                | True (prompt) |
+| `plans_repo`           | submit_cmd.py              | Current repo  |
+| `graphite_enabled`     | navigation_helpers.py      | Auto-detect   |
+| `interactive_claude`   | objective/next_plan_cmd.py | True          |
 
 ## Related Topics
 

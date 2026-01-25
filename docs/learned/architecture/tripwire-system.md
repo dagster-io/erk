@@ -60,10 +60,10 @@ Tripwires catch patterns before they cause bugs. They're preventive, not reactiv
 
 Each tripwire has two required fields:
 
-| Field | Description |
-|-------|-------------|
-| `action` | The pattern that triggers the tripwire (gerund phrase) |
-| `warning` | What to do instead, with context on why |
+| Field     | Description                                            |
+| --------- | ------------------------------------------------------ |
+| `action`  | The pattern that triggers the tripwire (gerund phrase) |
+| `warning` | What to do instead, with context on why                |
 
 ### Writing Effective Actions
 
@@ -101,15 +101,15 @@ warning: "Don't do this."
 
 Tripwires cover common mistake patterns:
 
-| Category | Examples |
-|----------|----------|
-| **Context management** | os.chdir(), context regeneration |
-| **Gateway patterns** | 5-place implementation, subprocess in gateways |
-| **Branch mutations** | Use branch_manager not git/graphite directly |
-| **Time handling** | Use context.time.sleep() not time.sleep() |
-| **Config handling** | local_config precedence over global_config |
-| **GitHub API** | Rate limits, retry mechanisms, GraphQL syntax |
-| **Path resolution** | Use dedicated helpers not path comparisons |
+| Category               | Examples                                       |
+| ---------------------- | ---------------------------------------------- |
+| **Context management** | os.chdir(), context regeneration               |
+| **Gateway patterns**   | 5-place implementation, subprocess in gateways |
+| **Branch mutations**   | Use branch_manager not git/graphite directly   |
+| **Time handling**      | Use context.time.sleep() not time.sleep()      |
+| **Config handling**    | local_config precedence over global_config     |
+| **GitHub API**         | Rate limits, retry mechanisms, GraphQL syntax  |
+| **Path resolution**    | Use dedicated helpers not path comparisons     |
 
 ## Adding New Tripwires
 
@@ -152,12 +152,12 @@ This updates `tripwires.md` with the new rule.
 
 Both guide agent behavior but serve different purposes:
 
-| Aspect | `read_when` | `tripwires` |
-|--------|-------------|-------------|
+| Aspect | `read_when`          | `tripwires`             |
+| ------ | -------------------- | ----------------------- |
 | Timing | Before starting work | Before specific actions |
-| Scope | Topic exploration | Pattern prevention |
-| Tone | "Read this when..." | "CRITICAL: Before..." |
-| Goal | Context building | Mistake prevention |
+| Scope  | Topic exploration    | Pattern prevention      |
+| Tone   | "Read this when..."  | "CRITICAL: Before..."   |
+| Goal   | Context building     | Mistake prevention      |
 
 ## Example Tripwires
 

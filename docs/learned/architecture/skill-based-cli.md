@@ -55,16 +55,20 @@ The skill handles complex agent workflows:
 ## Agent Instructions
 
 ### Step 1: Parse Arguments
+
 Extract issue number from `$ARGUMENTS`...
 
 ### Step 2: Discover Sessions
+
 Find sessions associated with the plan...
 
 ### Step 3: Launch Parallel Agents
+
 Task(subagent_type="session-analyzer", run_in_background=true, ...)
 Task(subagent_type="code-diff-analyzer", run_in_background=true, ...)
 
 ### Step 4: Synthesize Results
+
 Wait for agents, then synthesize into documentation plan...
 ```
 
@@ -127,9 +131,9 @@ The skill receives control and orchestrates agents:
 Launch analysis agents in parallel:
 
 Task(
-  subagent_type: "session-analyzer",
-  run_in_background: true,
-  prompt: "Analyze session at {session_path}. Write results to {output_path}."
+subagent_type: "session-analyzer",
+run_in_background: true,
+prompt: "Analyze session at {session_path}. Write results to {output_path}."
 )
 ```
 

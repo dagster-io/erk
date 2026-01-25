@@ -57,10 +57,10 @@ The `description` field serves as the **display label** in the command palette's
 - Keep it short (1-2 words max)
 - Match the verb in the command when possible
 
-| Good | Bad |
-|------|-----|
-| `"land"` | `"Merge PR and clean up worktree"` |
-| `"close"` | `"Close the plan issue"` |
+| Good         | Bad                                    |
+| ------------ | -------------------------------------- |
+| `"land"`     | `"Merge PR and clean up worktree"`     |
+| `"close"`    | `"Close the plan issue"`               |
 | `"checkout"` | `"Copy checkout command to clipboard"` |
 
 The longer description belongs in docstrings or help text, not in the `description` field.

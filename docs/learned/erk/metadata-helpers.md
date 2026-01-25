@@ -106,11 +106,11 @@ The `extract_leading_issue_number()` utility extracts the issue number from this
 
 When all checks pass, the following fields are updated on the plan issue:
 
-| Field | Value | Purpose |
-|-------|-------|---------|
-| `dispatch_run_id` | GitHub Actions run ID | Link to workflow run |
-| `dispatch_node_id` | GraphQL node ID | API access to run |
-| `dispatch_timestamp` | ISO timestamp | When dispatch occurred |
+| Field                | Value                 | Purpose                |
+| -------------------- | --------------------- | ---------------------- |
+| `dispatch_run_id`    | GitHub Actions run ID | Link to workflow run   |
+| `dispatch_node_id`   | GraphQL node ID       | API access to run      |
+| `dispatch_timestamp` | ISO timestamp         | When dispatch occurred |
 
 ## Related Topics
 

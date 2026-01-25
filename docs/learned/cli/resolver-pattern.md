@@ -48,14 +48,14 @@ def _resolve_land_target_pr(
 
 ## Examples in Codebase
 
-| Function | Input | Output | Location |
-|----------|-------|--------|----------|
-| `_resolve_land_target_current_branch()` | Current context | `LandTarget` | land_cmd.py |
-| `_resolve_land_target_pr()` | PR number | `LandTarget` | land_cmd.py |
-| `_resolve_land_target_branch()` | Branch name | `LandTarget` | land_cmd.py |
-| `_resolve_current_worktree()` | Current path | `Path` | stack/move_cmd.py |
-| `_resolve_session_id()` | Various sources | `str \| None` | exec/scripts/marker.py |
-| `detect_target_type()` | Target string | `TargetInfo` | implement_shared.py |
+| Function                                | Input           | Output        | Location               |
+| --------------------------------------- | --------------- | ------------- | ---------------------- |
+| `_resolve_land_target_current_branch()` | Current context | `LandTarget`  | land_cmd.py            |
+| `_resolve_land_target_pr()`             | PR number       | `LandTarget`  | land_cmd.py            |
+| `_resolve_land_target_branch()`         | Branch name     | `LandTarget`  | land_cmd.py            |
+| `_resolve_current_worktree()`           | Current path    | `Path`        | stack/move_cmd.py      |
+| `_resolve_session_id()`                 | Various sources | `str \| None` | exec/scripts/marker.py |
+| `detect_target_type()`                  | Target string   | `TargetInfo`  | implement_shared.py    |
 
 ## Design Guidelines
 

@@ -47,21 +47,21 @@ Agents that can run simultaneously with no dependencies:
 ### Launch Parallel Agents
 
 Task(
-  subagent_type: "session-analyzer",
-  run_in_background: true,
-  prompt: "Analyze session at {path}. Write to {output_path}."
+subagent_type: "session-analyzer",
+run_in_background: true,
+prompt: "Analyze session at {path}. Write to {output_path}."
 )
 
 Task(
-  subagent_type: "code-diff-analyzer",
-  run_in_background: true,
-  prompt: "Analyze PR diff. Write to diff-analysis.md."
+subagent_type: "code-diff-analyzer",
+run_in_background: true,
+prompt: "Analyze PR diff. Write to diff-analysis.md."
 )
 
 Task(
-  subagent_type: "existing-docs-checker",
-  run_in_background: true,
-  prompt: "Check existing docs. Write to existing-docs-check.md."
+subagent_type: "existing-docs-checker",
+run_in_background: true,
+prompt: "Check existing docs. Write to existing-docs-check.md."
 )
 ```
 
@@ -79,9 +79,9 @@ TaskOutput(task_id="existing-docs-checker", block=true)
 ### Launch Synthesis Agent
 
 Task(
-  subagent_type: "gap-identifier",
-  prompt: "Read session-*.md, diff-analysis.md, existing-docs-check.md.
-           Synthesize into gap-analysis.md."
+subagent_type: "gap-identifier",
+prompt: "Read session-\*.md, diff-analysis.md, existing-docs-check.md.
+Synthesize into gap-analysis.md."
 )
 ```
 
@@ -97,6 +97,7 @@ Writes structured output to known path:
 Write your analysis to: `.erk/scratch/sessions/{session_id}/learn/session-{id}.md`
 
 Structure:
+
 - ## Decisions Made
 - ## Patterns Discovered
 - ## Potential Documentation
@@ -110,6 +111,7 @@ Reads from expected paths:
 ## Input Files
 
 Read these files before analysis:
+
 - `.erk/scratch/sessions/{session_id}/learn/session-*.md`
 - `.erk/scratch/sessions/{session_id}/learn/diff-analysis.md`
 
@@ -120,23 +122,23 @@ Synthesize insights from all inputs.
 
 Different tiers use different models based on task complexity:
 
-| Tier | Model | Task Type |
-|------|-------|-----------|
+| Tier                | Model | Task Type                   |
+| ------------------- | ----- | --------------------------- |
 | Parallel extraction | haiku | Mechanical pattern matching |
-| Sequential dedup | haiku | Rule-based filtering |
-| Creative synthesis | opus | Quality-critical authoring |
+| Sequential dedup    | haiku | Rule-based filtering        |
+| Creative synthesis  | opus  | Quality-critical authoring  |
 
 ```markdown
 Task(
-  subagent_type: "session-analyzer",
-  model: "haiku",  # Cheap, fast extraction
-  ...
+subagent_type: "session-analyzer",
+model: "haiku", # Cheap, fast extraction
+...
 )
 
 Task(
-  subagent_type: "plan-synthesizer",
-  model: "opus",  # High-quality synthesis
-  ...
+subagent_type: "plan-synthesizer",
+model: "opus", # High-quality synthesis
+...
 )
 ```
 
