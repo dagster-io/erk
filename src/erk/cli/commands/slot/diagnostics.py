@@ -41,14 +41,14 @@ def _find_slot_dirs(worktrees_dir: Path, git: Git) -> set[str]:
     Returns:
         Set of slot names (e.g., {"erk-slot-01", "erk-slot-02"})
     """
-    if not git.path_exists(worktrees_dir):
+    if not git.worktree.path_exists(worktrees_dir):
         return set()
 
     result: set[str] = set()
     # Iterate over worktrees_dir contents
     # Use path_exists to validate before iterdir
     for entry in worktrees_dir.iterdir():
-        if entry.name.startswith("erk-slot-") and git.is_dir(entry):
+        if entry.name.startswith("erk-slot-") and git.worktree.is_dir(entry):
             result.add(entry.name)
     return result
 
@@ -87,7 +87,7 @@ def _check_orphan_states(
     """
     issues: list[SyncIssue] = []
     for assignment in assignments:
-        if not ctx.git.path_exists(assignment.worktree_path):
+        if not ctx.git.worktree.path_exists(assignment.worktree_path):
             issues.append(
                 SyncIssue(
                     code="orphan-state",
@@ -235,7 +235,7 @@ def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> 
     repo = discover_repo_context(ctx, repo_root)
 
     # Get git worktrees
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git.worktree.list_worktrees(repo.root)
     git_slots = _get_git_managed_slots(worktrees, repo.worktrees_dir)
 
     # Get filesystem state

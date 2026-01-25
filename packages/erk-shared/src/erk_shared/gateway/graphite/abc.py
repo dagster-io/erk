@@ -254,7 +254,7 @@ class Graphite(ABC):
         if branch not in all_branches:
             raise ValueError(f"Branch '{branch}' is not tracked by Graphite")
 
-        worktrees = git_ops.list_worktrees(repo_root)
+        worktrees = git_ops.worktree.list_worktrees(repo_root)
         current = branch
         while True:
             parent = self.get_parent_branch(git_ops, repo_root, current)

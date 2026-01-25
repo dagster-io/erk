@@ -176,14 +176,14 @@ def test_dryrun_git_add_worktree_prints_message(tmp_path: Path) -> None:
 
     new_wt = tmp_path / "new-worktree"
     # This should print a dry-run message but not create the worktree
-    ctx.git.add_worktree(repo, new_wt, branch="new-feature", ref=None, create_branch=True)
+    ctx.git.worktree.add_worktree(repo, new_wt, branch="new-feature", ref=None, create_branch=True)
 
     # Verify the worktree wasn't actually created
     assert not new_wt.exists()
     from erk_shared.git.real import RealGit
 
     real_ops = RealGit()
-    worktrees = real_ops.list_worktrees(repo)
+    worktrees = real_ops.worktree.list_worktrees(repo)
     assert len(worktrees) == 1  # Only main repo
     assert not any(wt.path == new_wt for wt in worktrees)
 
@@ -205,14 +205,14 @@ def test_dryrun_git_remove_worktree_prints_message(tmp_path: Path) -> None:
     ctx = create_context(dry_run=True)
 
     # Try to remove via dry-run
-    ctx.git.remove_worktree(repo, wt, force=False)
+    ctx.git.worktree.remove_worktree(repo, wt, force=False)
 
     # Verify the worktree still exists
     assert wt.exists()
     from erk_shared.git.real import RealGit
 
     real_ops = RealGit()
-    worktrees = real_ops.list_worktrees(repo)
+    worktrees = real_ops.worktree.list_worktrees(repo)
     assert len(worktrees) == 2
     assert any(wt_info.path == wt for wt_info in worktrees)
 

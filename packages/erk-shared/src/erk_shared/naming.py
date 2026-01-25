@@ -398,7 +398,7 @@ def ensure_unique_worktree_name_with_date(base_name: str, worktrees_dir: Path, g
 
     Adds datetime suffix in format -YY-MM-DD-HHMM to the base name.
     If a worktree with that name exists, increments numeric suffix starting at 2 AFTER the datetime.
-    Uses LBYL pattern: checks via git_ops.path_exists() before operations.
+    Uses LBYL pattern: checks via git_ops.worktree.path_exists() before operations.
 
     This function is used for plan-derived worktrees where multiple worktrees may be
     created from the same plan, requiring datetime-based disambiguation.
@@ -420,14 +420,14 @@ def ensure_unique_worktree_name_with_date(base_name: str, worktrees_dir: Path, g
     candidate_name = f"{base_name}-{date_suffix}"
 
     # Check if the base candidate exists
-    if not git_ops.path_exists(worktrees_dir / candidate_name):
+    if not git_ops.worktree.path_exists(worktrees_dir / candidate_name):
         return candidate_name
 
     # Name exists, find next available number (append after date)
     counter = 2
     while True:
         versioned_name = f"{base_name}-{date_suffix}-{counter}"
-        if not git_ops.path_exists(worktrees_dir / versioned_name):
+        if not git_ops.worktree.path_exists(worktrees_dir / versioned_name):
             return versioned_name
         counter += 1
 
@@ -437,7 +437,7 @@ def ensure_simple_worktree_name(base_name: str, worktrees_dir: Path, git_ops) ->
 
     Returns the simple name if no worktree exists at that path.
     If a worktree already exists, returns the simple name (caller validates branch match).
-    Uses LBYL pattern: checks via git_ops.path_exists() before operations.
+    Uses LBYL pattern: checks via git_ops.worktree.path_exists() before operations.
 
     This function is used for manual checkout operations where predictable names are
     desired (e.g., `erk co feature` → `feature` not `feature-25-11-08`).

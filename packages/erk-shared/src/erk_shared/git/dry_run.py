@@ -8,6 +8,7 @@ from pathlib import Path
 
 from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
 from erk_shared.git.worktree.abc import Worktree
+from erk_shared.git.worktree.dry_run import DryRunWorktree
 from erk_shared.output.output import user_output
 
 # ============================================================================
@@ -22,12 +23,15 @@ class DryRunGit(Git):
     executing (for land-stack operations) or prints what would happen (for other
     operations). Read-only operations are delegated to the wrapped implementation.
 
+    Worktree operations are handled by the DryRunWorktree subgateway, accessible
+    via the worktree property.
+
     Usage:
         real_ops = RealGit()
         noop_ops = DryRunGit(real_ops)
 
-        # No-op or prints message instead of deleting
-        noop_ops.remove_worktree(repo_root, path, force=False)
+        # Worktree operations go through subgateway
+        noop_ops.worktree.remove_worktree(repo_root, path, force=False)
     """
 
     def __init__(self, wrapped: Git) -> None:
@@ -40,8 +44,8 @@ class DryRunGit(Git):
 
     @property
     def worktree(self) -> Worktree:
-        """Access worktree operations subgateway (delegates to wrapped)."""
-        return self._wrapped.worktree
+        """Access worktree operations subgateway (wrapped with DryRunWorktree)."""
+        return DryRunWorktree(self._wrapped.worktree)
 
     # Read-only operations: delegate to wrapped implementation
 
@@ -76,45 +80,6 @@ class DryRunGit(Git):
     def has_uncommitted_changes(self, cwd: Path) -> bool:
         """Check for uncommitted changes (read-only, delegates to wrapped)."""
         return self._wrapped.has_uncommitted_changes(cwd)
-
-    def add_worktree(
-        self,
-        repo_root: Path,
-        path: Path,
-        *,
-        branch: str | None,
-        ref: str | None,
-        create_branch: bool,
-    ) -> None:
-        """Print dry-run message instead of adding worktree."""
-        if branch and create_branch:
-            base_ref = ref or "HEAD"
-            user_output(f"[DRY RUN] Would run: git worktree add -b {branch} {path} {base_ref}")
-        elif branch:
-            user_output(f"[DRY RUN] Would run: git worktree add {path} {branch}")
-        else:
-            base_ref = ref or "HEAD"
-            user_output(f"[DRY RUN] Would run: git worktree add {path} {base_ref}")
-
-    def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
-        """Print dry-run message instead of moving worktree."""
-        user_output(f"[DRY RUN] Would run: git worktree move {old_path} {new_path}")
-
-    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
-        """Print dry-run message instead of removing worktree."""
-        force_flag = "--force " if force else ""
-        user_output(f"[DRY RUN] Would run: git worktree remove {force_flag}{path}")
-
-    def prune_worktrees(self, repo_root: Path) -> None:
-        """Print dry-run message instead of pruning worktrees."""
-        user_output("[DRY RUN] Would run: git worktree prune")
-
-    def safe_chdir(self, path: Path) -> bool:
-        """Print dry-run message instead of changing directory."""
-        would_succeed = self.path_exists(path)
-        if would_succeed:
-            user_output(f"[DRY RUN] Would run: cd {path}")
-        return False  # Never actually change directory in dry-run
 
     def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
         """Get branch head commit SHA (read-only, delegates to wrapped)."""

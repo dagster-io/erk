@@ -73,10 +73,10 @@ class FakeGit(Git):
         )
 
         # Mutation through operation
-        git_ops.add_worktree(repo, wt2, branch="feature")
+        git_ops.worktree.add_worktree(repo, wt2, branch="feature")
 
         # Verify mutation
-        assert len(git_ops.list_worktrees(repo)) == 2
+        assert len(git_ops.worktree.list_worktrees(repo)) == 2
         assert (wt2, "feature") in git_ops.added_worktrees
 
         # Verify sequence of operations

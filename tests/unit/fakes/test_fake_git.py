@@ -25,7 +25,7 @@ def test_fake_gitops_list_worktrees() -> None:
     }
 
     git_ops = FakeGit(worktrees=worktrees)
-    result = git_ops.list_worktrees(repo_root)
+    result = git_ops.worktree.list_worktrees(repo_root)
 
     assert len(result) == 3
     assert result[0].path == repo_root
@@ -40,9 +40,11 @@ def test_fake_gitops_add_worktree(tmp_path: Path) -> None:
     git_ops = FakeGit()
 
     new_wt = repo_root / "new-wt"
-    git_ops.add_worktree(repo_root, new_wt, branch="new-branch", ref=None, create_branch=True)
+    git_ops.worktree.add_worktree(
+        repo_root, new_wt, branch="new-branch", ref=None, create_branch=True
+    )
 
-    worktrees = git_ops.list_worktrees(repo_root)
+    worktrees = git_ops.worktree.list_worktrees(repo_root)
     assert len(worktrees) == 1
     assert worktrees[0].path == new_wt
     assert worktrees[0].branch == "new-branch"
@@ -62,9 +64,9 @@ def test_fake_gitops_remove_worktree() -> None:
         }
     )
 
-    git_ops.remove_worktree(repo_root, wt1, force=False)
+    git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
 
-    worktrees = git_ops.list_worktrees(repo_root)
+    worktrees = git_ops.worktree.list_worktrees(repo_root)
     assert len(worktrees) == 0
 
 
@@ -111,7 +113,7 @@ def test_fake_gitops_worktree_not_found() -> None:
     repo_root = Path("/repo")
     git_ops = FakeGit()
 
-    worktrees = git_ops.list_worktrees(repo_root)
+    worktrees = git_ops.worktree.list_worktrees(repo_root)
     assert len(worktrees) == 0
 
 
@@ -238,10 +240,10 @@ def test_fake_gitops_move_worktree(tmp_path: Path) -> None:
         worktrees={repo_root: [WorktreeInfo(path=old_wt, branch="feature", is_root=False)]}
     )
 
-    git_ops.move_worktree(repo_root, old_wt, new_wt)
+    git_ops.worktree.move_worktree(repo_root, old_wt, new_wt)
 
     # Verify state updated
-    worktrees = git_ops.list_worktrees(repo_root)
+    worktrees = git_ops.worktree.list_worktrees(repo_root)
     assert len(worktrees) == 1
     assert worktrees[0].path == new_wt
     assert worktrees[0].branch == "feature"
@@ -317,7 +319,7 @@ def test_fake_gitops_prune_worktrees_noop() -> None:
     git_ops = FakeGit()
 
     # Should not raise
-    git_ops.prune_worktrees(repo_root)
+    git_ops.worktree.prune_worktrees(repo_root)
 
 
 def test_fake_gitops_removed_worktrees_tracking() -> None:
@@ -335,8 +337,8 @@ def test_fake_gitops_removed_worktrees_tracking() -> None:
         }
     )
 
-    git_ops.remove_worktree(repo_root, wt1, force=False)
-    git_ops.remove_worktree(repo_root, wt2, force=False)
+    git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
+    git_ops.worktree.remove_worktree(repo_root, wt2, force=False)
 
     assert wt1 in git_ops.removed_worktrees
     assert wt2 in git_ops.removed_worktrees
@@ -350,7 +352,7 @@ def test_fake_git_is_worktree_clean_with_clean_worktree() -> None:
         existing_paths={worktree_path},
     )
 
-    result = git_ops.is_worktree_clean(worktree_path)
+    result = git_ops.worktree.is_worktree_clean(worktree_path)
     assert result is True
 
 
@@ -362,7 +364,7 @@ def test_fake_git_is_worktree_clean_with_uncommitted_changes() -> None:
         dirty_worktrees={worktree_path},
     )
 
-    result = git_ops.is_worktree_clean(worktree_path)
+    result = git_ops.worktree.is_worktree_clean(worktree_path)
     assert result is False
 
 
@@ -371,7 +373,7 @@ def test_fake_git_is_worktree_clean_with_nonexistent_path() -> None:
     worktree_path = Path("/repo/nonexistent")
     git_ops = FakeGit()
 
-    result = git_ops.is_worktree_clean(worktree_path)
+    result = git_ops.worktree.is_worktree_clean(worktree_path)
     assert result is False
 
 

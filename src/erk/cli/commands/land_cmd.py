@@ -556,7 +556,7 @@ def _ensure_branch_not_checked_out(
         Path of the worktree where branch was found and detached, or None
         if branch was not checked out anywhere.
     """
-    worktree_path = ctx.git.find_worktree_for_branch(repo_root, branch)
+    worktree_path = ctx.git.worktree.find_worktree_for_branch(repo_root, branch)
     if worktree_path is None:
         return None
 
@@ -925,7 +925,7 @@ def _resolve_land_target_current_branch(
     )
 
     current_worktree_path = Ensure.not_none(
-        ctx.git.find_worktree_for_branch(repo.root, current_branch),
+        ctx.git.worktree.find_worktree_for_branch(repo.root, current_branch),
         f"Cannot find worktree for current branch '{current_branch}'.",
     )
 
@@ -1031,7 +1031,7 @@ def _resolve_land_target_pr(
     is_current_branch = current_branch == branch
 
     # Check if worktree exists for this branch
-    worktree_path = ctx.git.find_worktree_for_branch(main_repo_root, branch)
+    worktree_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, branch)
 
     return LandTarget(
         branch=branch,
@@ -1077,7 +1077,7 @@ def _resolve_land_target_branch(
     is_current_branch = current_branch == branch_name
 
     # Check if worktree exists for this branch
-    worktree_path = ctx.git.find_worktree_for_branch(main_repo_root, branch_name)
+    worktree_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, branch_name)
 
     return LandTarget(
         branch=branch_name,
@@ -1150,7 +1150,9 @@ def _land_target(
     # Step 4: Determine target path for navigation after landing
     if target.target_child_branch is not None:
         # --up mode: navigate to child branch worktree
-        target_path = ctx.git.find_worktree_for_branch(main_repo_root, target.target_child_branch)
+        target_path = ctx.git.worktree.find_worktree_for_branch(
+            main_repo_root, target.target_child_branch
+        )
         if target_path is None:
             # Will auto-create worktree in execute phase
             if repo.worktrees_dir:
@@ -1391,7 +1393,7 @@ def _navigate_after_land(
         # Skip activation output in execute mode (script's cd command handles navigation)
         if skip_activation_output:
             raise SystemExit(0)
-        target_path = ctx.git.find_worktree_for_branch(main_repo_root, target_child_branch)
+        target_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, target_child_branch)
         if target_path is None:
             # Auto-create worktree for child
             target_path, _ = ensure_worktree_for_branch(

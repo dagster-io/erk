@@ -51,7 +51,7 @@ def discover_repo_or_sentinel(
     """
     ops = git_ops if git_ops is not None else RealGit()
 
-    if not ops.path_exists(cwd):
+    if not ops.worktree.path_exists(cwd):
         return NoRepoSentinel(message=f"Start path '{cwd}' does not exist")
 
     cur = cwd.resolve()
@@ -71,10 +71,10 @@ def discover_repo_or_sentinel(
     else:
         for parent in [cur, *cur.parents]:
             git_path = parent / ".git"
-            if not ops.path_exists(git_path):
+            if not ops.worktree.path_exists(git_path):
                 continue
 
-            if ops.is_dir(git_path):
+            if ops.worktree.is_dir(git_path):
                 root = parent
                 main_repo_root = parent
                 break

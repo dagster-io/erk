@@ -83,7 +83,7 @@ def complete_worktree_names(
         names = ["root"] if "root".startswith(incomplete) else []
 
         # Get worktree names from git_ops instead of filesystem iteration
-        worktrees = erk_ctx.git.list_worktrees(repo.root)
+        worktrees = erk_ctx.git.worktree.list_worktrees(repo.root)
         for wt in worktrees:
             if wt.is_root:
                 continue  # Skip root worktree (already added as "root")

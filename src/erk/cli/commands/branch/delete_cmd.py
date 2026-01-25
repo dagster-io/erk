@@ -61,7 +61,7 @@ def get_branch_worktree_info(
     Returns:
         BranchWorktreeInfo with worktree path and slot assignment info
     """
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git.worktree.list_worktrees(repo.root)
     worktree_path = find_worktree_with_branch(worktrees, branch)
 
     slot_assignment: SlotAssignment | None = None

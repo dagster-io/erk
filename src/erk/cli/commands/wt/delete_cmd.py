@@ -161,7 +161,7 @@ def _try_git_worktree_delete(git_ops: Git, repo_root: Path, wt_path: Path) -> bo
         True if git removal succeeded, False otherwise
     """
     try:
-        git_ops.remove_worktree(repo_root, wt_path, force=True)
+        git_ops.worktree.remove_worktree(repo_root, wt_path, force=True)
         return True
     except Exception:
         # Git removal failed - manual cleanup will handle it
@@ -177,7 +177,7 @@ def _prune_worktrees_safe(git_ops: Git, repo_root: Path) -> None:
     and failure doesn't affect the primary operation, we allow silent failure.
     """
     try:
-        git_ops.prune_worktrees(repo_root)
+        git_ops.worktree.prune_worktrees(repo_root)
     except Exception:
         # Prune might fail if there's nothing to prune or other non-critical issues
         pass
@@ -192,11 +192,11 @@ def _escape_worktree_if_inside(
     context if directory was changed (context is immutable), otherwise returns
     the original context.
     """
-    if not ctx.git.path_exists(ctx.cwd):
+    if not ctx.git.worktree.path_exists(ctx.cwd):
         return ctx
 
     current_dir = ctx.cwd.resolve()
-    worktrees = ctx.git.list_worktrees(repo_root)
+    worktrees = ctx.git.worktree.list_worktrees(repo_root)
     current_worktree_path = find_worktree_containing_path(worktrees, current_dir)
 
     if current_worktree_path is None:
@@ -212,7 +212,7 @@ def _escape_worktree_if_inside(
     )
 
     # Change directory using safe_chdir which handles both real and sentinel paths
-    if not dry_run and ctx.git.safe_chdir(repo_root):
+    if not dry_run and ctx.git.worktree.safe_chdir(repo_root):
         # Regenerate context with new cwd (context is immutable)
         return regenerate_context(ctx)
 
@@ -226,7 +226,7 @@ def _collect_branch_to_delete(
 
     Returns the branch name, or None if in detached HEAD state.
     """
-    worktrees = ctx.git.list_worktrees(repo_root)
+    worktrees = ctx.git.worktree.list_worktrees(repo_root)
     worktree_branch = get_worktree_branch(worktrees, wt_path)
 
     if worktree_branch is None:
@@ -355,7 +355,7 @@ def _delete_worktree_directory(ctx: ErkContext, repo: RepoContext, wt_path: Path
     _try_git_worktree_delete(ctx.git, repo.root, wt_path)
 
     # Always manually delete directory if it still exists
-    if not ctx.git.path_exists(wt_path):
+    if not ctx.git.worktree.path_exists(wt_path):
         return False
 
     if ctx.dry_run:

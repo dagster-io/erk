@@ -422,7 +422,7 @@ def write_trunk_to_pyproject(repo_root: Path, trunk: str, git: Git | None = None
 
     # Check existence using git if available (for test compatibility)
     if git is not None:
-        path_exists = git.path_exists(pyproject_path)
+        path_exists = git.worktree.path_exists(pyproject_path)
     else:
         path_exists = pyproject_path.exists()
 
@@ -494,7 +494,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
 
     Example:
         >>> ctx = create_context(dry_run=False, script=False)
-        >>> worktrees = ctx.git.list_worktrees(Path("/repo"))
+        >>> worktrees = ctx.git.worktree.list_worktrees(Path("/repo"))
         >>> erk_root = ctx.global_config.erk_root
     """
     # 1. Capture cwd (no deps)

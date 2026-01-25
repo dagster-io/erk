@@ -44,10 +44,12 @@ def rename_wt(ctx: ErkContext, old_name: str, new_name: str, dry_run: bool) -> N
     Ensure.path_exists(ctx, old_path, f"Worktree not found: {old_path}")
 
     # Validate new path doesn't already exist
-    Ensure.invariant(not ctx.git.path_exists(new_path), f"Destination already exists: {new_path}")
+    Ensure.invariant(
+        not ctx.git.worktree.path_exists(new_path), f"Destination already exists: {new_path}"
+    )
 
     # Move via git worktree move
-    ctx.git.move_worktree(repo.root, old_path, new_path)
+    ctx.git.worktree.move_worktree(repo.root, old_path, new_path)
 
     # Regenerate .env file with updated paths and name
     cfg = ctx.local_config

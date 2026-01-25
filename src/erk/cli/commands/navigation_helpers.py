@@ -177,7 +177,7 @@ def delete_branch_and_worktree(
         os.chdir(main_repo)
 
     # Remove the worktree (already calls prune internally)
-    ctx.git.remove_worktree(main_repo, worktree_path, force=True)
+    ctx.git.worktree.remove_worktree(main_repo, worktree_path, force=True)
     user_output(f"✓ Removed worktree: {click.style(str(worktree_path), fg='green')}")
 
     # Delete the branch using BranchManager abstraction (respects use_graphite config)
@@ -305,7 +305,7 @@ def unallocate_worktree_and_branch(
         user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
     else:
         # Non-slot worktree: delete both
-        ctx.git.remove_worktree(main_repo_root, worktree_path, force=True)
+        ctx.git.worktree.remove_worktree(main_repo_root, worktree_path, force=True)
         ctx.branch_manager.delete_branch(main_repo_root, branch)
         user_output(click.style("✓", fg="green") + " Removed worktree and deleted branch")
 
@@ -352,7 +352,7 @@ def activate_target(
     # Compute relative path to preserve user's position within worktree
     relative_path: Path | None = None
     if preserve_relative_path:
-        worktrees = ctx.git.list_worktrees(repo.root)
+        worktrees = ctx.git.worktree.list_worktrees(repo.root)
         relative_path = compute_relative_path_in_worktree(worktrees, ctx.cwd)
 
     # Determine messaging based on whether this is root or a worktree
@@ -500,7 +500,7 @@ def resolve_up_navigation(
         ctx: Erk context
         repo: Repository context
         current_branch: Current branch name
-        worktrees: List of worktrees from git_ops.list_worktrees()
+        worktrees: List of worktrees from git_ops.worktree.list_worktrees()
 
     Returns:
         Tuple of (target_branch, was_created)
@@ -528,7 +528,7 @@ def resolve_up_navigation(
     target_branch = children[0]
 
     # Check if target branch has a worktree, create if necessary
-    target_wt_path = ctx.git.find_worktree_for_branch(repo.root, target_branch)
+    target_wt_path = ctx.git.worktree.find_worktree_for_branch(repo.root, target_branch)
     if target_wt_path is None:
         # Auto-create worktree for target branch
         _worktree_path, was_created = ensure_worktree_for_branch(ctx, repo, target_branch)
@@ -551,7 +551,7 @@ def resolve_down_navigation(
         ctx: Erk context
         repo: Repository context
         current_branch: Current branch name
-        worktrees: List of worktrees from git_ops.list_worktrees()
+        worktrees: List of worktrees from git_ops.worktree.list_worktrees()
         trunk_branch: Configured trunk branch name, or None for auto-detection
 
     Returns:
@@ -582,7 +582,7 @@ def resolve_down_navigation(
     detected_trunk = ctx.git.detect_trunk_branch(repo.root)
     if parent_branch == detected_trunk:
         # Check if trunk is checked out in root (repo.root path)
-        trunk_wt_path = ctx.git.find_worktree_for_branch(repo.root, detected_trunk)
+        trunk_wt_path = ctx.git.worktree.find_worktree_for_branch(repo.root, detected_trunk)
         if trunk_wt_path is not None and trunk_wt_path == repo.root:
             # Trunk is in root repository, not in a dedicated worktree
             return "root", False
@@ -595,7 +595,7 @@ def resolve_down_navigation(
             return parent_branch, False
     else:
         # Parent is not trunk, check if it has a worktree
-        target_wt_path = ctx.git.find_worktree_for_branch(repo.root, parent_branch)
+        target_wt_path = ctx.git.worktree.find_worktree_for_branch(repo.root, parent_branch)
         if target_wt_path is None:
             # Auto-create worktree for parent branch
             _worktree_path, was_created = ensure_worktree_for_branch(ctx, repo, parent_branch)
@@ -655,7 +655,7 @@ def execute_stack_navigation(
     )
 
     # Get all worktrees
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git.worktree.list_worktrees(repo.root)
 
     # Direction-specific validation for --delete-current
     if direction == "up" and delete_current:
@@ -675,7 +675,7 @@ def execute_stack_navigation(
     current_worktree_path: Path | None = None
     if delete_current:
         current_worktree_path = Ensure.not_none(
-            ctx.git.find_worktree_for_branch(repo.root, current_branch),
+            ctx.git.worktree.find_worktree_for_branch(repo.root, current_branch),
             f"Could not find worktree for branch '{current_branch}'",
         )
 
@@ -728,7 +728,7 @@ def execute_stack_navigation(
         target_path = repo.main_repo_root if repo.main_repo_root else repo.root
     else:
         target_path = Ensure.not_none(
-            ctx.git.find_worktree_for_branch(repo.root, target_name),
+            ctx.git.worktree.find_worktree_for_branch(repo.root, target_name),
             f"Branch '{target_name}' has no worktree. This should not happen.",
         )
 

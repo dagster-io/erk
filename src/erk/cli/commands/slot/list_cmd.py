@@ -140,7 +140,7 @@ def slot_list(ctx: ErkContext) -> None:
         worktree_path = repo.worktrees_dir / slot_name
 
         # Check if worktree exists and get current branch
-        worktree_exists = ctx.git.path_exists(worktree_path)
+        worktree_exists = ctx.git.worktree.path_exists(worktree_path)
 
         actual_branch: str | None = None
         if worktree_exists:

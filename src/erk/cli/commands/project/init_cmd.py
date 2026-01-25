@@ -84,7 +84,7 @@ def init_project(ctx: ErkContext) -> None:
 
     # Check if project.toml already exists
     project_toml_path = ctx.cwd / ".erk" / "project.toml"
-    if ctx.git.path_exists(project_toml_path):
+    if ctx.git.worktree.path_exists(project_toml_path):
         user_output(
             click.style("Error: ", fg="red") + f"Project already initialized: {project_toml_path}"
         )

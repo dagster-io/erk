@@ -20,7 +20,7 @@ def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
     trunk = ctx.git.detect_trunk_branch(repo.root)
 
     # Find root worktree
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git.worktree.list_worktrees(repo.root)
     root_worktree = None
     for wt in worktrees:
         if wt.is_root:

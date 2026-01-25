@@ -105,7 +105,7 @@ def test_delete_prompts_and_aborts_on_no() -> None:
 
         assert_cli_success(result)
         # User aborted, so worktree should still exist (check via git_ops state)
-        assert test_ctx.git.path_exists(wt)
+        assert test_ctx.git.worktree.path_exists(wt)
 
 
 def test_delete_dry_run_does_not_delete() -> None:
@@ -124,7 +124,7 @@ def test_delete_dry_run_does_not_delete() -> None:
             "Would run: git worktree remove",
         )
         # Directory should still exist (check via git_ops state)
-        assert test_ctx.git.path_exists(wt)
+        assert test_ctx.git.worktree.path_exists(wt)
 
 
 def test_delete_dry_run_with_branch() -> None:
@@ -168,7 +168,7 @@ def test_delete_dry_run_with_branch() -> None:
         # No git branch deletion either
         assert len(fake_git_ops.deleted_branches) == 0
         # Directory should still exist (check via git_ops state)
-        assert test_ctx.git.path_exists(wt)
+        assert test_ctx.git.worktree.path_exists(wt)
 
 
 def test_delete_rejects_dot_dot() -> None:
@@ -389,7 +389,7 @@ def test_delete_blocks_when_pending_learn_marker_exists() -> None:
         )
 
         # Verify worktree was NOT deleted
-        assert test_ctx.git.path_exists(wt)
+        assert test_ctx.git.worktree.path_exists(wt)
 
 
 def test_delete_force_bypasses_pending_learn_marker() -> None:
@@ -410,7 +410,7 @@ def test_delete_force_bypasses_pending_learn_marker() -> None:
         assert "Skipping pending learn" in result.output
 
         # Verify worktree was deleted
-        assert not test_ctx.git.path_exists(wt)
+        assert not test_ctx.git.worktree.path_exists(wt)
 
 
 def test_delete_all_closes_pr_and_plan() -> None:

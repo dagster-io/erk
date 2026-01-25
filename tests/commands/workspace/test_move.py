@@ -35,7 +35,7 @@ def test_move_from_current_to_new_worktree() -> None:
         assert "Moving 'feature-x'" in result.output
         assert "✓ Moved 'feature-x'" in result.output
 
-        worktrees = git_ops.list_worktrees(env.cwd)
+        worktrees = git_ops.worktree.list_worktrees(env.cwd)
         assert len(worktrees) == 2
         assert any(wt.path == target_wt and wt.branch == "feature-x" for wt in worktrees)
 

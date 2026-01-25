@@ -40,7 +40,7 @@ def list_stack(ctx: ErkContext) -> None:
         raise SystemExit(1)
 
     # Get worktrees for branch-to-worktree mapping
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git.worktree.list_worktrees(repo.root)
 
     # Build table
     table = Table(show_header=True, header_style="bold", box=None)
