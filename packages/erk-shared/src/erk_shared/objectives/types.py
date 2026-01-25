@@ -61,3 +61,22 @@ class ReconcileAction:
     step_description: str | None
     phase_name: str | None
     reason: str
+
+
+@dataclass(frozen=True)
+class ExecuteResult:
+    """Result of executing a reconcile action.
+
+    Attributes:
+        success: Whether the execution completed successfully
+        plan_issue_number: The created plan issue number if successful, None otherwise
+        plan_issue_url: The created plan issue URL if successful, None otherwise
+        updated_objective_body: The updated objective body if roadmap was updated, None otherwise
+        error: Error message if failed, None if successful
+    """
+
+    success: bool
+    plan_issue_number: int | None
+    plan_issue_url: str | None
+    updated_objective_body: str | None
+    error: str | None

@@ -186,14 +186,152 @@ REASON: Phase 1 complete"""
     assert "create_plan" in result.output
 
 
-def test_reconcile_without_dry_run_shows_error() -> None:
-    """Test that running without --dry-run shows not implemented message."""
+OBJECTIVE_WITH_ROADMAP = """# Test Objective
+
+## Goal
+
+Test objective for reconciler.
+
+## Roadmap
+
+| Step | Description | Status | PR |
+| ---- | ----------- | ------ | -- |
+| 4.1 | Generate plan content | pending | |
+| 4.2 | Create plan issue | pending | |
+"""
+
+GENERATED_PLAN_OUTPUT = """# Step 4.1: Generate Plan Content
+
+**Part of Objective #5934, Step 4.1**
+
+## Goal
+
+Generate plan content from objective step.
+
+## Implementation
+
+Do the thing.
+"""
+
+
+def test_reconcile_live_creates_plan_and_updates_roadmap(tmp_path: Path) -> None:
+    """Test that live reconcile creates plan issue and updates objective roadmap."""
+    issue = _create_issue(
+        5934,
+        labels=["erk-objective", "auto-advance"],
+        title="Test Objective",
+        body=OBJECTIVE_WITH_ROADMAP,
+    )
+    issues_ops = FakeGitHubIssues(
+        username="testuser",
+        issues={5934: issue},
+        labels={"erk-plan"},  # Pre-create label
+        next_issue_number=6001,
+    )
+
+    # FakePromptExecutor returns the same output for all prompts
+    # First call: determine_action (step inference)
+    # Second call: execute_action -> generate_plan_for_step (plan generation)
+    prompt_executor = FakePromptExecutor(
+        output="""NEXT_STEP: yes
+STEP_ID: 4.1
+DESCRIPTION: Generate plan content
+PHASE: Phase 4
+REASON: No previous steps"""
+    )
+
+    ctx = context_for_test(
+        issues=issues_ops,
+        prompt_executor=prompt_executor,
+        cwd=tmp_path,
+        repo=_create_repo_context(tmp_path),
+    )
+
     runner = CliRunner()
-    result = runner.invoke(cli, ["objective", "reconcile"])
+    result = runner.invoke(cli, ["objective", "reconcile"], obj=ctx)
+
+    # Note: The FakePromptExecutor returns inference output, not plan output,
+    # which results in a plan generation that uses the inference response.
+    # This is acceptable for testing the CLI flow.
+
+    assert result.exit_code == 0
+    assert "#5934" in result.output
+    assert "create_plan" in result.output
+    assert "Created" in result.output
+    assert "#6001" in result.output
+
+    # Verify plan issue was created
+    assert len(issues_ops.created_issues) == 1
+
+    # Verify objective roadmap was updated with plan reference
+    objective_updates = [body for num, body in issues_ops.updated_bodies if num == 5934]
+    assert len(objective_updates) == 1
+    assert "plan #6001" in objective_updates[0]
+
+
+def test_reconcile_live_no_actions_when_all_complete(tmp_path: Path) -> None:
+    """Test that live reconcile handles no actions gracefully."""
+    issue = _create_issue(
+        5934,
+        labels=["erk-objective", "auto-advance"],
+        title="Test Objective",
+        body="Completed objective",
+    )
+    issues_ops = FakeGitHubIssues(username="testuser", issues={5934: issue})
+
+    prompt_executor = FakePromptExecutor(
+        output="""NEXT_STEP: no
+STEP_ID: none
+DESCRIPTION: none
+PHASE: none
+REASON: All steps complete"""
+    )
+
+    ctx = context_for_test(
+        issues=issues_ops,
+        prompt_executor=prompt_executor,
+        cwd=tmp_path,
+        repo=_create_repo_context(tmp_path),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["objective", "reconcile"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert "No actions needed" in result.output
+    # No plan issues should have been created
+    assert len(issues_ops.created_issues) == 0
+
+
+def test_reconcile_live_reports_errors(tmp_path: Path) -> None:
+    """Test that live reconcile reports errors with non-zero exit code."""
+    issue = _create_issue(
+        5934,
+        labels=["erk-objective", "auto-advance"],
+        title="Test Objective",
+        body="Test body",
+    )
+    issues_ops = FakeGitHubIssues(username="testuser", issues={5934: issue})
+
+    prompt_executor = FakePromptExecutor(
+        should_fail=True,
+        error="Rate limited by API",
+    )
+
+    ctx = context_for_test(
+        issues=issues_ops,
+        prompt_executor=prompt_executor,
+        cwd=tmp_path,
+        repo=_create_repo_context(tmp_path),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["objective", "reconcile"], obj=ctx)
 
     assert result.exit_code == 1
-    assert "Live execution not yet implemented" in result.output
-    assert "--dry-run" in result.output
+    assert "error" in result.output
+    assert "Rate limited by API" in result.output
+    assert "error(s) occurred" in result.output
 
 
 def test_reconcile_alias_rec_works(tmp_path: Path) -> None:
