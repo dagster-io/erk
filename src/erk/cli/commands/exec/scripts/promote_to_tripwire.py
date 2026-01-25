@@ -86,11 +86,11 @@ def promote_to_tripwire(
             subprocess.run(
                 ["erk", "docs", "sync"],
                 cwd=str(repo_root),
-                check=False,
+                check=True,
                 capture_output=True,
             )
-        except FileNotFoundError:
-            # erk binary not found - non-critical
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            # erk binary not found or sync failed - non-critical
             pass
 
     success_response = PromoteSuccess(
