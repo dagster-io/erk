@@ -14,8 +14,9 @@ import json
 import re
 import subprocess
 from dataclasses import dataclass, replace
+from enum import Enum, auto
 from pathlib import Path
-from typing import Literal, NamedTuple
+from typing import Literal, NamedTuple, assert_never
 
 import click
 
@@ -99,6 +100,79 @@ class CleanupContext:
     objective_number: int | None
     no_delete: bool
     skip_activation_output: bool
+
+
+class CleanupType(Enum):
+    """Classification of cleanup scenario after PR merge."""
+
+    NO_DELETE = auto()
+    NO_WORKTREE = auto()
+    SLOT_ASSIGNED = auto()
+    SLOT_UNASSIGNED = auto()
+    NON_SLOT = auto()
+
+
+@dataclass(frozen=True)
+class ResolvedCleanup:
+    """Result of classifying the cleanup scenario.
+
+    Carries the enum variant plus optional resolved state for the
+    SLOT_ASSIGNED variant (avoids re-resolving pool state after classification).
+    """
+
+    cleanup_type: CleanupType
+    pool_state: PoolState | None
+    assignment: SlotAssignment | None
+
+
+def determine_cleanup_type(
+    *,
+    no_delete: bool,
+    worktree_path: Path | None,
+    pool_json_path: Path,
+    branch: str,
+) -> ResolvedCleanup:
+    """Classify the cleanup scenario for a landed branch.
+
+    Mirrors the dispatch logic in _cleanup_and_navigate but returns an explicit
+    enum variant instead of branching inline. Pure classification — no side effects.
+    """
+    if no_delete:
+        return ResolvedCleanup(
+            cleanup_type=CleanupType.NO_DELETE,
+            pool_state=None,
+            assignment=None,
+        )
+
+    if worktree_path is None:
+        return ResolvedCleanup(
+            cleanup_type=CleanupType.NO_WORKTREE,
+            pool_state=None,
+            assignment=None,
+        )
+
+    state = load_pool_state(pool_json_path)
+    assignment = find_branch_assignment(state, branch) if state is not None else None
+
+    if assignment is not None:
+        return ResolvedCleanup(
+            cleanup_type=CleanupType.SLOT_ASSIGNED,
+            pool_state=state,
+            assignment=assignment,
+        )
+
+    if extract_slot_number(worktree_path.name) is not None:
+        return ResolvedCleanup(
+            cleanup_type=CleanupType.SLOT_UNASSIGNED,
+            pool_state=state,
+            assignment=None,
+        )
+
+    return ResolvedCleanup(
+        cleanup_type=CleanupType.NON_SLOT,
+        pool_state=state,
+        assignment=None,
+    )
 
 
 def _check_learn_status_and_prompt(
@@ -1181,32 +1255,32 @@ def _cleanup_and_navigate(
         skip_activation_output=skip_activation_output,
     )
 
-    # Path 1: --no-delete
-    if cleanup.no_delete:
-        _handle_no_delete(cleanup)
-        return
+    resolved = determine_cleanup_type(
+        no_delete=cleanup.no_delete,
+        worktree_path=cleanup.worktree_path,
+        pool_json_path=repo.pool_json_path,
+        branch=branch,
+    )
 
-    # Path 2: No worktree
-    if cleanup.worktree_path is None:
-        _cleanup_no_worktree(cleanup)
-        _navigate_or_exit(cleanup)
-        return
-
-    # Determine cleanup type for worktree cases
-    state = load_pool_state(repo.pool_json_path)
-    assignment = find_branch_assignment(state, branch) if state is not None else None
-
-    if assignment is not None:
-        # Path 3: Slot with assignment
-        # state is guaranteed non-None since assignment was found in it
-        assert state is not None
-        _cleanup_slot_with_assignment(cleanup, state=state, assignment=assignment)
-    elif extract_slot_number(cleanup.worktree_path.name) is not None:
-        # Path 4: Slot without assignment
-        _cleanup_slot_without_assignment(cleanup, slot_name=cleanup.worktree_path.name)
-    else:
-        # Path 5: Non-slot worktree
-        _cleanup_non_slot_worktree(cleanup)
+    match resolved.cleanup_type:
+        case CleanupType.NO_DELETE:
+            _handle_no_delete(cleanup)
+            return
+        case CleanupType.NO_WORKTREE:
+            _cleanup_no_worktree(cleanup)
+        case CleanupType.SLOT_ASSIGNED:
+            assert resolved.pool_state is not None
+            assert resolved.assignment is not None
+            _cleanup_slot_with_assignment(
+                cleanup, state=resolved.pool_state, assignment=resolved.assignment
+            )
+        case CleanupType.SLOT_UNASSIGNED:
+            assert cleanup.worktree_path is not None
+            _cleanup_slot_without_assignment(cleanup, slot_name=cleanup.worktree_path.name)
+        case CleanupType.NON_SLOT:
+            _cleanup_non_slot_worktree(cleanup)
+        case _:
+            assert_never(resolved.cleanup_type)
 
     _navigate_or_exit(cleanup)
 
