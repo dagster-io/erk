@@ -1,3 +1,11 @@
+---
+title: Beads as Alternative Backend for Objectives and Plans
+read_when:
+  - "considering alternative backends for erk's objectives and plans system"
+  - "evaluating beads CLI for agent-driven issue tracking"
+  - "comparing GitHub vs beads for plan storage"
+---
+
 # Beads as Alternative Backend for Objectives and Plans
 
 This document analyzes [Beads](https://github.com/anthropics/beads) (`bd`) as a potential alternative backend for erk's objectives and plans system, comparing architectures, mapping concepts, and evaluating trade-offs.

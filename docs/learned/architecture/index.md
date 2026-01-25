@@ -5,6 +5,7 @@
 
 - **[abc-convenience-methods.md](abc-convenience-methods.md)** — adding non-abstract methods to gateway ABCs, composing primitive gateway operations into higher-level methods, handling exception type differences between real and fake implementations
 - **[at-reference-resolution.md](at-reference-resolution.md)** — Modifying @ reference validation, Debugging broken @ references in symlinked files, Understanding why validation passes but Claude Code fails
+- **[beads-backend-analysis.md](beads-backend-analysis.md)** — considering alternative backends for erk's objectives and plans system, evaluating beads CLI for agent-driven issue tracking, comparing GitHub vs beads for plan storage
 - **[bundled-artifacts.md](bundled-artifacts.md)** — understanding artifact syncing, working with managed artifacts, debugging erk sync
 - **[capability-system.md](capability-system.md)** — creating new erk init capabilities, understanding how erk init works, adding installable features, working with capability tracking in state.toml, understanding how erk doctor filters artifacts by installed capabilities
 - **[claude-cli-error-reporting.md](claude-cli-error-reporting.md)** — handling Claude CLI errors, interpreting PromptResult.error, working with ErrorEvent, NoOutputEvent, NoTurnsEvent, ProcessErrorEvent
