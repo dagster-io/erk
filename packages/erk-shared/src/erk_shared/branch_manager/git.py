@@ -8,7 +8,6 @@ from pathlib import Path
 from erk_shared.branch_manager.abc import BranchManager
 from erk_shared.branch_manager.types import PrInfo
 from erk_shared.git.abc import Git
-from erk_shared.git.branch_ops.abc import GitBranchOps
 from erk_shared.github.abc import GitHub
 from erk_shared.github.types import PRNotFound
 
@@ -22,7 +21,6 @@ class GitBranchManager(BranchManager):
     """
 
     git: Git
-    git_branch_ops: GitBranchOps
     github: GitHub
 
     def get_pr_for_branch(self, repo_root: Path, branch: str) -> PrInfo | None:
@@ -62,7 +60,7 @@ class GitBranchManager(BranchManager):
         """
         # Create the branch from base_branch without checking it out
         # This allows callers to create worktrees with the branch later
-        self.git_branch_ops.create_branch(repo_root, branch_name, base_branch, force=False)
+        self.git.branch.create_branch(repo_root, branch_name, base_branch, force=False)
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Delete a branch using plain Git.
@@ -72,7 +70,7 @@ class GitBranchManager(BranchManager):
             branch: Branch name to delete
             force: If True, use -D (force delete) instead of -d
         """
-        self.git_branch_ops.delete_branch(repo_root, branch, force=force)
+        self.git.branch.delete_branch(repo_root, branch, force=force)
 
     def submit_branch(self, repo_root: Path, branch: str) -> None:
         """Submit branch via git push.
@@ -150,7 +148,7 @@ class GitBranchManager(BranchManager):
             repo_root: Repository root directory
             branch: Branch name to checkout
         """
-        self.git_branch_ops.checkout_branch(repo_root, branch)
+        self.git.branch.checkout_branch(repo_root, branch)
 
     def checkout_detached(self, repo_root: Path, ref: str) -> None:
         """Checkout a detached HEAD at the given ref.
@@ -159,7 +157,7 @@ class GitBranchManager(BranchManager):
             repo_root: Repository root directory
             ref: Git ref to checkout
         """
-        self.git_branch_ops.checkout_detached(repo_root, ref)
+        self.git.branch.checkout_detached(repo_root, ref)
 
     def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
         """Create a local tracking branch from a remote branch.
@@ -169,7 +167,7 @@ class GitBranchManager(BranchManager):
             branch: Name for the local branch
             remote_ref: Remote reference to track
         """
-        self.git_branch_ops.create_tracking_branch(repo_root, branch, remote_ref)
+        self.git.branch.create_tracking_branch(repo_root, branch, remote_ref)
 
     def is_graphite_managed(self) -> bool:
         """Returns False - this implementation uses plain Git."""

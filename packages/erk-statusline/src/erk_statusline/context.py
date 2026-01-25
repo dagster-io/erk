@@ -17,7 +17,6 @@ from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisab
 from erk_shared.gateway.graphite.real import RealGraphite
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.git.abc import Git
-from erk_shared.git.branch_ops.real import RealGitBranchOps
 from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.real import RealGitHubIssues
@@ -105,14 +104,12 @@ def create_context(cwd: str) -> StatuslineContext:
     issues = RealGitHubIssues(target_repo=None, time=time)
     github = RealGitHub(time, repo_info, issues=issues)
     graphite = resolve_graphite(RealErkInstallation())
-    git_branch_ops = RealGitBranchOps(time)
     graphite_branch_ops = (
         RealGraphiteBranchOps() if not isinstance(graphite, GraphiteDisabled) else None
     )
 
     branch_manager = create_branch_manager(
         git=git,
-        git_branch_ops=git_branch_ops,
         github=github,
         graphite=graphite,
         graphite_branch_ops=graphite_branch_ops,

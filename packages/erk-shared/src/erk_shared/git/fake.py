@@ -6,14 +6,12 @@ in its constructor. Construct instances directly with keyword arguments.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from erk_shared.git.branch_ops.fake import FakeGitBranchOps
 from pathlib import Path
 from typing import NamedTuple
 
 from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
+from erk_shared.git.branch_ops.abc import GitBranchOps
+from erk_shared.git.branch_ops.fake import FakeGitBranchOps
 from erk_shared.git.worktree.abc import Worktree
 from erk_shared.git.worktree.fake import FakeWorktree
 
@@ -133,6 +131,7 @@ class FakeGit(Git):
         rebase_abort_raises: Exception | None = None,
         pull_rebase_raises: Exception | None = None,
         merge_bases: dict[tuple[str, str], str] | None = None,
+        branch_gateway: FakeGitBranchOps | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -262,10 +261,36 @@ class FakeGit(Git):
             dirty_worktrees=self._dirty_worktrees,
         )
 
+        # Branch subgateway - linked to FakeGit's state for test tracking
+        # If a custom branch_gateway is provided, use it (for tests with custom behavior)
+        if branch_gateway is not None:
+            self._branch_gateway = branch_gateway
+        else:
+            self._branch_gateway = FakeGitBranchOps(
+                worktrees=self._worktrees,
+                current_branches=self._current_branches,
+                local_branches=self._local_branches,
+                delete_branch_raises=self._delete_branch_raises,
+                tracking_branch_failures=self._tracking_branch_failures,
+            )
+        # Link mutation tracking so FakeGit properties see mutations from FakeGitBranchOps
+        self._branch_gateway.link_mutation_tracking(
+            created_branches=self._created_branches,
+            deleted_branches=self._deleted_branches,
+            checked_out_branches=self._checked_out_branches,
+            detached_checkouts=self._detached_checkouts,
+            created_tracking_branches=self._created_tracking_branches,
+        )
+
     @property
     def worktree(self) -> Worktree:
         """Access worktree operations subgateway."""
         return self._worktree_gateway
+
+    @property
+    def branch(self) -> GitBranchOps:
+        """Access branch operations subgateway."""
+        return self._branch_gateway
 
     def get_current_branch(self, cwd: Path) -> str | None:
         """Get the currently checked-out branch."""
@@ -850,7 +875,7 @@ class FakeGit(Git):
         return None
 
     def create_linked_branch_ops(self) -> FakeGitBranchOps:
-        """Create a FakeGitBranchOps linked to this FakeGit's state.
+        """Return the FakeGitBranchOps linked to this FakeGit's state.
 
         The returned FakeGitBranchOps shares mutable state and mutation tracking
         with this FakeGit instance. This allows tests to check FakeGit properties
@@ -859,21 +884,6 @@ class FakeGit(Git):
         Returns:
             FakeGitBranchOps with linked state and mutation tracking
         """
-        from erk_shared.git.branch_ops.fake import FakeGitBranchOps
-
-        ops = FakeGitBranchOps(
-            worktrees=self._worktrees,
-            current_branches=self._current_branches,
-            local_branches=self._local_branches,
-            delete_branch_raises=self._delete_branch_raises,
-            tracking_branch_failures=self._tracking_branch_failures,
-        )
-        # Link mutation tracking so FakeGit properties see mutations from FakeGitBranchOps
-        ops.link_mutation_tracking(
-            created_branches=self._created_branches,
-            deleted_branches=self._deleted_branches,
-            checked_out_branches=self._checked_out_branches,
-            detached_checkouts=self._detached_checkouts,
-            created_tracking_branches=self._created_tracking_branches,
-        )
-        return ops
+        # Return the branch gateway that was created in __init__
+        # It's already linked to this FakeGit's state and mutation tracking
+        return self._branch_gateway

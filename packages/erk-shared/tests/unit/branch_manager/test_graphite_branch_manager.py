@@ -24,7 +24,6 @@ def test_delete_branch_uses_graphite_when_tracked_and_not_diverged() -> None:
     fake_git = FakeGit(
         branch_heads={"feature-branch": branch_sha},
     )
-    fake_git_branch_ops = fake_git.create_linked_branch_ops()
     fake_graphite = FakeGraphite(
         branches={
             "feature-branch": BranchMetadata(
@@ -40,7 +39,6 @@ def test_delete_branch_uses_graphite_when_tracked_and_not_diverged() -> None:
 
     manager = GraphiteBranchManager(
         git=fake_git,
-        git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         github=FakeGitHub(),
@@ -60,7 +58,6 @@ def test_delete_branch_falls_back_to_git_when_untracked() -> None:
     fake_git = FakeGit(
         branch_heads={"feature-branch": "abc123"},
     )
-    fake_git_branch_ops = fake_git.create_linked_branch_ops()
     fake_graphite = FakeGraphite(
         branches={},  # Branch not tracked
     )
@@ -68,7 +65,6 @@ def test_delete_branch_falls_back_to_git_when_untracked() -> None:
 
     manager = GraphiteBranchManager(
         git=fake_git,
-        git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         github=FakeGitHub(),
@@ -93,7 +89,6 @@ def test_delete_branch_uses_graphite_even_when_diverged() -> None:
     fake_git = FakeGit(
         branch_heads={"feature-branch": "actual-sha-456"},
     )
-    fake_git_branch_ops = fake_git.create_linked_branch_ops()
     fake_graphite = FakeGraphite(
         branches={
             "feature-branch": BranchMetadata(
@@ -109,7 +104,6 @@ def test_delete_branch_uses_graphite_even_when_diverged() -> None:
 
     manager = GraphiteBranchManager(
         git=fake_git,
-        git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         github=FakeGitHub(),
@@ -133,7 +127,6 @@ def test_delete_branch_uses_graphite_when_commit_sha_is_none() -> None:
     fake_git = FakeGit(
         branch_heads={"feature-branch": "abc123"},
     )
-    fake_git_branch_ops = fake_git.create_linked_branch_ops()
     fake_graphite = FakeGraphite(
         branches={
             "feature-branch": BranchMetadata(
@@ -149,7 +142,6 @@ def test_delete_branch_uses_graphite_when_commit_sha_is_none() -> None:
 
     manager = GraphiteBranchManager(
         git=fake_git,
-        git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         github=FakeGitHub(),
@@ -173,7 +165,6 @@ def test_delete_branch_uses_graphite_when_git_branch_head_is_none() -> None:
     fake_git = FakeGit(
         branch_heads={},  # No branch head known
     )
-    fake_git_branch_ops = fake_git.create_linked_branch_ops()
     fake_graphite = FakeGraphite(
         branches={
             "feature-branch": BranchMetadata(
@@ -189,7 +180,6 @@ def test_delete_branch_uses_graphite_when_git_branch_head_is_none() -> None:
 
     manager = GraphiteBranchManager(
         git=fake_git,
-        git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         github=FakeGitHub(),
@@ -213,13 +203,11 @@ def test_create_branch_tracks_with_graphite() -> None:
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
     )
-    fake_git_branch_ops = fake_git.create_linked_branch_ops()
     fake_graphite = FakeGraphite()
     fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
 
     manager = GraphiteBranchManager(
         git=fake_git,
-        git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         github=FakeGitHub(),
@@ -247,7 +235,6 @@ def test_get_pr_for_branch_returns_from_graphite_cache() -> None:
     repo_root = Path("/repo")
 
     fake_git = FakeGit()
-    fake_git_branch_ops = fake_git.create_linked_branch_ops()
     fake_graphite = FakeGraphite(
         pr_info={
             "feature-branch": PullRequestInfo(
@@ -267,7 +254,6 @@ def test_get_pr_for_branch_returns_from_graphite_cache() -> None:
 
     manager = GraphiteBranchManager(
         git=fake_git,
-        git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         github=fake_github,
@@ -288,7 +274,6 @@ def test_get_pr_for_branch_falls_back_to_github_when_not_in_cache() -> None:
     fake_git = FakeGit(
         remote_urls={(repo_root, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_git_branch_ops = fake_git.create_linked_branch_ops()
     fake_graphite = FakeGraphite(
         pr_info={},  # Branch not in Graphite cache
     )
@@ -315,7 +300,6 @@ def test_get_pr_for_branch_falls_back_to_github_when_not_in_cache() -> None:
 
     manager = GraphiteBranchManager(
         git=fake_git,
-        git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         github=fake_github,
@@ -336,7 +320,6 @@ def test_get_pr_for_branch_returns_none_when_not_found_anywhere() -> None:
     fake_git = FakeGit(
         remote_urls={(repo_root, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_git_branch_ops = fake_git.create_linked_branch_ops()
     fake_graphite = FakeGraphite(
         pr_info={},
     )
@@ -345,7 +328,6 @@ def test_get_pr_for_branch_returns_none_when_not_found_anywhere() -> None:
 
     manager = GraphiteBranchManager(
         git=fake_git,
-        git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         github=fake_github,

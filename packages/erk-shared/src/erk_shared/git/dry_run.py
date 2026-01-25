@@ -7,6 +7,8 @@ operations while delegating read-only operations to the wrapped implementation.
 from pathlib import Path
 
 from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
+from erk_shared.git.branch_ops.abc import GitBranchOps
+from erk_shared.git.branch_ops.dry_run import DryRunGitBranchOps
 from erk_shared.git.worktree.abc import Worktree
 from erk_shared.git.worktree.dry_run import DryRunWorktree
 from erk_shared.output.output import user_output
@@ -46,6 +48,11 @@ class DryRunGit(Git):
     def worktree(self) -> Worktree:
         """Access worktree operations subgateway (wrapped with DryRunWorktree)."""
         return DryRunWorktree(self._wrapped.worktree)
+
+    @property
+    def branch(self) -> GitBranchOps:
+        """Access branch operations subgateway (wrapped with DryRunGitBranchOps)."""
+        return DryRunGitBranchOps(self._wrapped.branch)
 
     # Read-only operations: delegate to wrapped implementation
 

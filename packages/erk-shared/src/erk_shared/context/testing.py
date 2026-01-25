@@ -20,7 +20,6 @@ from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.git.abc import Git
-from erk_shared.git.branch_ops.abc import GitBranchOps
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.types import RepoInfo
@@ -82,7 +81,6 @@ def context_for_test(
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
-    from erk_shared.git.branch_ops.fake import FakeGitBranchOps
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues.fake import FakeGitHubIssues
@@ -113,14 +111,7 @@ def context_for_test(
         resolved_github = github
     resolved_graphite: Graphite = graphite if graphite is not None else FakeGraphite()
 
-    # Create linked sub-gateways so mutation tracking is shared between fakes.
-    # This allows tests to check FakeGit.deleted_branches while mutations go through
-    # BranchManager (which uses FakeGitBranchOps under the hood).
-    if isinstance(resolved_git, FakeGit):
-        resolved_git_branch_ops: GitBranchOps = resolved_git.create_linked_branch_ops()
-    else:
-        resolved_git_branch_ops = FakeGitBranchOps()
-
+    # Create linked sub-gateways for Graphite so mutation tracking is shared.
     if isinstance(resolved_graphite, GraphiteDisabled):
         resolved_graphite_branch_ops: GraphiteBranchOps | None = None
     elif isinstance(resolved_graphite, FakeGraphite):
@@ -161,7 +152,6 @@ def context_for_test(
     )
     return ErkContext(
         git=resolved_git,
-        git_branch_ops=resolved_git_branch_ops,
         github=resolved_github,
         github_admin=FakeGitHubAdmin(),
         claude_installation=resolved_claude_installation,

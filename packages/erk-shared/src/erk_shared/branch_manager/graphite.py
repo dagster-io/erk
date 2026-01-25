@@ -10,7 +10,6 @@ from erk_shared.branch_manager.types import PrInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.git.abc import Git
-from erk_shared.git.branch_ops.abc import GitBranchOps
 from erk_shared.github.abc import GitHub
 from erk_shared.github.types import PRNotFound
 
@@ -25,7 +24,6 @@ class GraphiteBranchManager(BranchManager):
     """
 
     git: Git
-    git_branch_ops: GitBranchOps
     graphite: Graphite
     graphite_branch_ops: GraphiteBranchOps
     github: GitHub
@@ -85,11 +83,11 @@ class GraphiteBranchManager(BranchManager):
         current_branch = self.git.get_current_branch(repo_root)
 
         # Create the branch from base_branch
-        self.git_branch_ops.create_branch(repo_root, branch_name, base_branch, force=False)
+        self.git.branch.create_branch(repo_root, branch_name, base_branch, force=False)
 
         # Checkout the new branch temporarily to track it with Graphite
         # (gt track requires the branch to be checked out)
-        self.git_branch_ops.checkout_branch(repo_root, branch_name)
+        self.git.branch.checkout_branch(repo_root, branch_name)
 
         # Track it with Graphite - use local branch name for parent
         # (gt track doesn't accept remote refs like origin/branch)
@@ -104,7 +102,7 @@ class GraphiteBranchManager(BranchManager):
 
         # Restore original branch so callers can create worktrees with the new branch
         if current_branch is not None:
-            self.git_branch_ops.checkout_branch(repo_root, current_branch)
+            self.git.branch.checkout_branch(repo_root, current_branch)
 
     def _ensure_local_matches_remote(
         self, repo_root: Path, local_branch: str, remote_ref: str
@@ -126,7 +124,7 @@ class GraphiteBranchManager(BranchManager):
 
         if local_branch not in local_branches:
             # Local doesn't exist - create it from remote
-            self.git_branch_ops.create_branch(repo_root, local_branch, remote_ref, force=False)
+            self.git.branch.create_branch(repo_root, local_branch, remote_ref, force=False)
             return
 
         # Check if local differs from remote
@@ -138,7 +136,7 @@ class GraphiteBranchManager(BranchManager):
 
         # Local and remote diverged - force-update local to match remote
         # This is safe because we're on the new branch (not this one)
-        self.git_branch_ops.create_branch(repo_root, local_branch, remote_ref, force=True)
+        self.git.branch.create_branch(repo_root, local_branch, remote_ref, force=True)
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Delete a branch with Graphite metadata cleanup.
@@ -156,7 +154,7 @@ class GraphiteBranchManager(BranchManager):
         # LBYL: Check if branch is tracked by Graphite
         if not self.graphite.is_branch_tracked(repo_root, branch):
             # Branch not in Graphite - use plain git
-            self.git_branch_ops.delete_branch(repo_root, branch, force=force)
+            self.git.branch.delete_branch(repo_root, branch, force=force)
             return
 
         # Branch is tracked - use gt delete which:
@@ -243,7 +241,7 @@ class GraphiteBranchManager(BranchManager):
             repo_root: Repository root directory
             branch: Branch name to checkout
         """
-        self.git_branch_ops.checkout_branch(repo_root, branch)
+        self.git.branch.checkout_branch(repo_root, branch)
 
     def checkout_detached(self, repo_root: Path, ref: str) -> None:
         """Checkout a detached HEAD at the given ref.
@@ -252,7 +250,7 @@ class GraphiteBranchManager(BranchManager):
             repo_root: Repository root directory
             ref: Git ref to checkout
         """
-        self.git_branch_ops.checkout_detached(repo_root, ref)
+        self.git.branch.checkout_detached(repo_root, ref)
 
     def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
         """Create a local tracking branch from a remote branch.
@@ -262,7 +260,7 @@ class GraphiteBranchManager(BranchManager):
             branch: Name for the local branch
             remote_ref: Remote reference to track
         """
-        self.git_branch_ops.create_tracking_branch(repo_root, branch, remote_ref)
+        self.git.branch.create_tracking_branch(repo_root, branch, remote_ref)
 
     def is_graphite_managed(self) -> bool:
         """Returns True - this implementation uses Graphite."""
