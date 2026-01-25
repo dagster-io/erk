@@ -37,6 +37,7 @@
 - **[hook-marker-detection.md](hook-marker-detection.md)** — Adding a new hook managed by erk, Implementing version detection for artifacts, Understanding how hook updates work
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .impl/ or .worker-impl/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
 - **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with issue.json, closing reference lost after erk pr submit
+- **[lbyl-gateway-pattern.md](lbyl-gateway-pattern.md)** — implementing existence checks before gateway operations, adding LBYL validation to CLI commands, understanding issue_exists() and similar methods
 - **[learn-origin-tracking.md](learn-origin-tracking.md)** — understanding how learn PRs are identified, modifying erk pr land behavior, working with erk-skip-learn label
 - **[markers.md](markers.md)** — creating worktree state tracking, adding friction before destructive operations, implementing pending learn workflow
 - **[metadata-blocks.md](metadata-blocks.md)** — working with erk metadata in GitHub issues, parsing or extracting data from issue comments, creating new event types for issue tracking

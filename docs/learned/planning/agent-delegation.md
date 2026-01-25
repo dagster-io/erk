@@ -4,6 +4,9 @@ read_when:
   - "delegating to agents from commands"
   - "implementing command-agent pattern"
   - "workflow orchestration"
+tripwires:
+  - action: "using background agents without waiting for completion before dependent operations"
+    warning: "Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files."
 ---
 
 # Command-Agent Delegation Pattern
@@ -444,6 +447,53 @@ Sequential Tier 2 (depends on Sequential Tier 1)
 | Sequential 2 | PlanSynthesizer                                        | Opus  | Creative authoring       |
 
 See [Learn Workflow](learn-workflow.md#agent-tier-architecture) for the complete implementation.
+
+### Background Agent Synchronization
+
+When spawning background agents that must complete before proceeding, use `TaskOutput` with `block: true` to synchronize.
+
+**Critical requirement:** Commands or workflows that spawn background agents MUST wait for completion before performing dependent operations.
+
+**Pattern:**
+
+```python
+# Step 1: Launch background agents
+Task(
+    subagent_type="session-analyzer",
+    description="Analyze session",
+    run_in_background=True
+)  # Returns agent_id
+
+Task(
+    subagent_type="code-diff-analyzer",
+    description="Analyze code diff",
+    run_in_background=True
+)  # Returns agent_id
+
+# Step 2: CRITICAL - Wait for completion before using results
+TaskOutput(task_id=agent_id_1, block=True)
+TaskOutput(task_id=agent_id_2, block=True)
+
+# Step 3: Now safe to use agent outputs
+```
+
+**Why this matters:**
+
+The `/erk:replan` command consolidates multiple source plans using parallel agents. Step 4e explicitly requires:
+
+> "Use TaskOutput with `block: true` to wait for all agents to complete. Do NOT proceed to Step 5 until ALL agents have finished."
+
+Without this synchronization:
+
+- Dependent agents may read incomplete outputs
+- File-based composition fails with missing data
+- Consolidated plans may be incomplete or corrupted
+
+**Real-world failure mode:**
+
+A replan workflow spawned 3 analysis agents in parallel, then immediately launched the synthesis agent. The synthesis agent found only 1 of 3 expected input files because the parallel agents hadn't finished writing yet.
+
+**Reference:** See `/erk:replan` Step 4e for the canonical implementation of this pattern.
 
 ### Tools Available
 

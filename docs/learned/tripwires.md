@@ -125,6 +125,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 
 **CRITICAL: Before writing PR/issue body generation in exec scripts** → Read [Exec Command Patterns](cli/exec-command-patterns.md) first. Use `_build_pr_body` and `_build_issue_comment` patterns from handle_no_changes.py for consistency and testability.
 
+**CRITICAL: Before displaying user-provided text in Rich CLI tables without escaping** → Read [Objective Commands](cli/objective-commands.md) first. Use `escape_markup(value)` for user data in Rich tables. Brackets like `[text]` are interpreted as style tags and will disappear.
+
 **CRITICAL: Before using click.confirm() after user_output()** → Read [CLI Output Styling Guide](cli/output-styling.md) first. Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed.
 
 **CRITICAL: Before displaying user-provided text in Rich CLI tables** → Read [CLI Output Styling Guide](cli/output-styling.md) first. Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear.
@@ -138,6 +140,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 **CRITICAL: Before adding a function with 5+ parameters** → Read [Code Conventions](conventions.md) first. Load `dignified-python` skill first. Use keyword-only arguments (add `*` after first param). Exception: ABC/Protocol method signatures and Click command callbacks.
 
 **CRITICAL: Before parsing objective roadmap PR column status** → Read [Erk Glossary](glossary.md) first. PR column format is non-standard: empty=pending, #XXXX=done (merged PR), `plan #XXXX`=plan in progress. This is erk-specific, not GitHub convention.
+
+**CRITICAL: Before using background agents without waiting for completion before dependent operations** → Read [Command-Agent Delegation](planning/agent-delegation.md) first. Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files.
 
 **CRITICAL: Before reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](planning/learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
 

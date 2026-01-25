@@ -8,6 +8,7 @@
 - **[checkout-helpers.md](checkout-helpers.md)** — writing checkout commands, creating worktrees in checkout commands, implementing branch checkout logic
 - **[ci-aware-commands.md](ci-aware-commands.md)** — implementing commands that behave differently in CI, checking if code is running in GitHub Actions, skipping user-interactive steps in automated environments
 - **[click-patterns.md](click-patterns.md)** — implementing CLI options with complex behavior, creating flags that optionally accept values, designing CLI flags with default behaviors
+- **[code-review-filtering.md](code-review-filtering.md)** — debugging false positives in code review, understanding keyword-only parameter exceptions, working with ABC/Protocol method validation
 - **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
 - **[pr-sync-divergence.md](pr-sync-divergence.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, syncing local branch with remote tracking branch
@@ -19,6 +20,7 @@
 - **[json-schema.md](json-schema.md)** — adding --json flag to CLI commands, parsing JSON output from erk commands, implementing kit CLI commands with JSON output
 - **[list-formatting.md](list-formatting.md)** — formatting list output, designing list commands, ensuring consistent list display
 - **[local-commands.md](local-commands.md)** — designing local commands, understanding local command taxonomy, creating audit or assessment commands
+- **[objective-commands.md](objective-commands.md)** — working with erk objective commands, implementing objective reconcile functionality, understanding auto-advance objectives
 - **[optional-arguments.md](optional-arguments.md)** — making a CLI argument optional, inferring CLI arguments from context, implementing branch-based argument defaults
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
 - **[subprocess-stdin-patterns.md](subprocess-stdin-patterns.md)** — passing content to CLI tools via stdin, using subprocess with input parameter, CLI flags that only work with stdin
