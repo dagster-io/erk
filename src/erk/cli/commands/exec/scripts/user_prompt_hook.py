@@ -79,7 +79,7 @@ def build_explore_docs_reminder() -> str:
     """
     return """explore-docs: When spawning Explore agents via Task tool, ALWAYS include:
 "FIRST check docs/learned/index.md for existing documentation on this topic.
-Read relevant docs before exploring raw files. Only explore raw codebase for gaps.\""""
+Read relevant docs before exploring raw files. Then explore codebase as necessary.\""""
 
 
 # ============================================================================
