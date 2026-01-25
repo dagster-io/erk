@@ -32,7 +32,7 @@ Read the file at `gap_analysis_path` to get:
 - Contradiction resolutions (HIGH priority)
 - Enumerated table of all items
 - Prioritized action items
-- Tripwire additions
+- Tripwire candidates
 
 ### Step 2: Extract Rich Context
 
@@ -68,25 +68,15 @@ For each item from the gap analysis (non-SKIP items):
    - Include the key points to cover
    - Add source attribution: [Plan], [Impl], or [PR #N]
 
-### Step 5: Format Tripwire Candidates
+### Step 5: Describe Tripwire Insights
 
-For items marked as tripwire candidates (score >= 4) in gap analysis:
+For items identified as tripwire candidates in the gap analysis, discuss them naturally in the plan:
 
-1. Add `[TRIPWIRE-CANDIDATE]` prefix to item title
-2. Include scoring breakdown showing which criteria were met
-3. Format as ready-to-add tripwire entry with YAML frontmatter
+- **Tripwire Candidates section**: Describe each candidate with its score, the action pattern that should trigger it, the warning message, and the target documentation file. Write this in prose — a separate extraction agent will pull out the structured data.
+- **Prevention Insights section**: Describe errors and failed approaches with root cause analysis and prevention recommendations. Note which ones warrant tripwires.
+- **Potential Tripwires section**: Items with borderline scores (2-3) that may warrant promotion with additional context.
 
-For potential tripwires (score 2-3), include in a separate section without the candidate tag.
-
-### Step 6: Format Tripwire Entries
-
-For each tripwire from gap analysis, format as YAML frontmatter:
-
-```yaml
-tripwires:
-  - action: "doing X"
-    warning: "Do Y instead because Z"
-```
+**Important**: Do NOT use a rigid machine-parseable format like `## Tripwire Additions` with YAML code blocks. A separate tripwire extraction agent handles structured extraction. Write naturally and focus on making the plan readable for humans and implementing agents.
 
 ## Output Format
 
@@ -111,7 +101,6 @@ Return a complete learn plan markdown:
 | Contradictions to resolve      | N     |
 | Tripwire candidates (score≥4)  | N     |
 | Potential tripwires (score2-3) | N     |
-| Tripwires to add               | N     |
 
 ## Documentation Items
 
@@ -171,20 +160,14 @@ Errors and failed approaches discovered during implementation:
 
 Items meeting tripwire-worthiness threshold (score >= 4):
 
-### [TRIPWIRE-CANDIDATE] 1. <item title>
+### 1. <item title>
 
 **Score:** N/10 (criteria: Non-obvious +2, Cross-cutting +2, ...)
 **Trigger:** Before <action that should trigger the warning>
 **Warning:** <concise warning message>
 **Target doc:** `<path to doc where tripwire should be added>`
 
-**Frontmatter addition:**
-
-```yaml
-tripwires:
-  - action: "<trigger action>"
-    warning: "<warning message>"
-```
+Describe why this is tripwire-worthy and what harm occurs without it.
 
 ## Potential Tripwires
 
@@ -194,18 +177,6 @@ Items with score 2-3 (may warrant promotion with additional context):
 
 **Score:** N/10 (criteria: ...)
 **Notes:** <why it didn't meet threshold, what additional evidence would promote it>
-
-## Tripwire Additions
-
-Add these to the frontmatter of relevant documents:
-
-### For `<target-doc-path>`
-
-```yaml
-tripwires:
-  - action: "<trigger action>"
-    warning: "<warning message>"
-```
 
 ```
 
@@ -219,5 +190,5 @@ tripwires:
 
 4. **Prioritization drives order**: HIGH items first (contradictions, gateway methods), then MEDIUM, then LOW
 
-5. **Tripwires are formatted for copy-paste**: YAML blocks should be directly usable in frontmatter
+5. **Write tripwire insights naturally**: Describe action patterns, warnings, and target docs in prose. A separate extraction agent handles structured data — do not include `## Tripwire Additions` with YAML code blocks.
 ```

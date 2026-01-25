@@ -36,6 +36,10 @@ from erk.cli.commands.slot.common import (
     get_placeholder_branch_name,
 )
 from erk.cli.commands.slot.unassign_cmd import execute_unassign
+from erk.cli.commands.tripwire_promotion_helpers import (
+    extract_tripwire_candidates_from_learn_plan,
+    prompt_tripwire_promotion,
+)
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -1580,6 +1584,21 @@ def _execute_land(
             plan_issue_number=plan_issue_number,
             pr_number=merged_pr_number,
         )
+
+    # Step 2.75: Prompt tripwire promotion if this is a learn plan
+    if plan_issue_number is not None:
+        candidates = extract_tripwire_candidates_from_learn_plan(
+            ctx,
+            repo_root=main_repo_root,
+            plan_issue_number=plan_issue_number,
+        )
+        if candidates:
+            prompt_tripwire_promotion(
+                ctx,
+                repo_root=main_repo_root,
+                candidates=candidates,
+                force=True,  # Execute mode auto-promotes
+            )
 
     # Step 3: Cleanup (delete branch, unassign slot)
     # Note: Navigation is handled by the activation script's cd command

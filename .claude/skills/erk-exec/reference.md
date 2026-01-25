@@ -66,6 +66,7 @@ Quick reference for all `erk exec` subcommands.
 | `run-review`                      | Run a code review using Claude.                                           |
 | `session-id-injector-hook`        | Inject session ID into conversation context when relevant.                |
 | `setup-impl-from-issue`           | Set up .impl/ folder from GitHub issue in current worktree.               |
+| `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan issue.          |
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan issue.                        |
 | `track-learn-result`              | Track learn workflow result on a plan issue.                              |
 | `trigger-async-learn`             | Trigger async learn workflow for a plan issue.                            |
@@ -865,6 +866,19 @@ Set up .impl/ folder from GitHub issue in current worktree.
 | -------------- | ---- | -------- | ------- | ----------------------------------------------------------------------- |
 | `--session-id` | TEXT | No       | -       | Claude session ID for marker creation                                   |
 | `--no-impl`    | FLAG | No       | -       | Skip .impl/ folder creation (for local execution without file overhead) |
+
+### store-tripwire-candidates
+
+Store tripwire candidates as a metadata comment on a plan issue.
+
+**Usage:** `erk exec store-tripwire-candidates`
+
+**Options:**
+
+| Flag                | Type    | Required | Default        | Description                      |
+| ------------------- | ------- | -------- | -------------- | -------------------------------- |
+| `--issue`           | INTEGER | Yes      | Sentinel.UNSET | Plan issue number                |
+| `--candidates-file` | TEXT    | Yes      | Sentinel.UNSET | Path to tripwire-candidates.json |
 
 ### track-learn-evaluation
 
