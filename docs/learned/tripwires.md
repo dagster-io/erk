@@ -113,6 +113,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 
 **CRITICAL: Before creating Claude Code agent commands in .claude/commands/** → Read [Claude Code Agent Command Patterns](claude-code/agent-commands.md) first. Filenames MUST match the command name for discoverability.
 
+**CRITICAL: Before creating a skill with context: fork without explicit task instructions** → Read [Context Fork Feature for Skills](claude-code/context-fork-feature.md) first. Skills with context: fork need actionable task prompts. Guidelines-only skills return empty output.
+
 **CRITICAL: Before putting checkout-specific helpers in navigation_helpers.py** → Read [Checkout Helpers Module](cli/checkout-helpers.md) first. `src/erk/cli/commands/navigation_helpers.py` imports from `wt.create_cmd`, which creates a cycle if navigation_helpers tries to import from `wt` subpackage. Keep checkout-specific helpers in separate `checkout_helpers.py` module instead.
 
 **CRITICAL: Before adding user-interactive steps (confirmations, prompts) without CI detection** → Read [CI-Aware Commands](cli/ci-aware-commands.md) first. Commands with user interaction must check `in_github_actions()` and skip prompts in CI. Interactive prompts hang indefinitely in GitHub Actions workflows.

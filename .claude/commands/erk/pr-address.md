@@ -27,34 +27,30 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 >
 > See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
 
-### Phase 1: Fetch & Analyze
+### Phase 1: Classify Feedback
 
-#### Step 1: Fetch All Comments
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback with context isolation:
 
-Run both CLI commands to get review comments AND discussion comments:
-
-```bash
-erk exec get-pr-review-comments
-erk exec get-pr-discussion-comments
+```
+/pr-feedback-classifier [--include-resolved if --all was specified]
 ```
 
-#### Step 2: Handle No Comments Case
+Parse the JSON response. The skill returns:
 
-If both `threads` is empty AND `comments` is empty, display: "No unresolved review comments or discussion comments on PR #123."
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `action_summary`, `complexity`
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+- `error`: Error message if `success` is false
 
-#### Step 3: Holistic Analysis
+**Handle errors**: If `success` is false, display the error and exit.
 
-Analyze ALL comments together to understand relationships and complexity.
-
-> See `pr-operations` skill for the **Comment Classification Model** (complexity categories and batch ordering).
-
-#### Step 4: Batch and Prioritize
-
-Group comments into batches ordered by complexity (simplest first). See `pr-operations` skill for the batch ordering table.
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
 
 ### Phase 2: Display Batched Plan
 
-Show the user the batched execution plan:
+Show the user the batched execution plan from the classifier output:
 
 ```
 ## Execution Plan
@@ -77,7 +73,7 @@ Show the user the batched execution plan:
 | 5 | Multiple files | Update all callers of deprecated function |
 | 6 | docs/ | Update documentation per reviewer request |
 
-### Batch 4: Complex Changes (2 comments → 1 unified change)
+### Batch 4: Complex Changes (2 comments -> 1 unified change)
 | # | Location | Summary |
 |---|----------|---------|
 | 7 | impl.py:50 | Fold validate into prepare with union types |
@@ -91,7 +87,7 @@ Show the user the batched execution plan:
 
 ### Phase 3: Execute by Batch
 
-For each batch, execute this workflow:
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
 
 #### Step 1: Address All Comments in the Batch
 
@@ -139,8 +135,8 @@ Outdated threads have `line: null` because the code has changed since the commen
 1. **Read the file** at the path (ignore line number - search for relevant code)
 2. **Check if the issue is already fixed** in the current code
 3. **Take action:**
-   - If already fixed → Proceed directly to Step 4 to resolve the thread
-   - If not fixed → Apply the fix, then proceed to Step 4
+   - If already fixed -> Proceed directly to Step 4 to resolve the thread
+   - If not fixed -> Apply the fix, then proceed to Step 4
 
 **IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
 Do not skip resolution just because no code change was needed.
@@ -171,13 +167,13 @@ git commit -m "Address PR review comments (batch N/M)
 
 #### Step 4: Resolve All Threads in the Batch (MANDATORY)
 
-**This step is NOT optional.** Every thread must be resolved using `erk exec resolve-review-thread`.
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
 
 After committing, resolve each review thread and mark each discussion comment.
 
-**For Review Threads** - use `erk exec resolve-review-thread` (see `pr-operations` skill for examples).
+**For Review Threads** - use `erk exec resolve-review-thread` with the `thread_id` from the JSON (see `pr-operations` skill for examples).
 
-**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with a substantive reply that quotes the original comment and explains what action was taken.
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
 
 #### Step 5: Report Progress
 
@@ -187,8 +183,8 @@ After completing the batch, report:
 ## Batch N Complete
 
 Addressed:
-- ✅ foo.py:42 - Used LBYL pattern
-- ✅ bar.py:15 - Added type annotation
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
 
 Committed: abc1234 "Address PR review comments (batch 1/3)"
 
@@ -200,20 +196,15 @@ Then proceed to the next batch.
 
 ### Phase 4: Final Verification
 
-After all batches complete:
+After all batches complete, re-invoke the classifier to verify all threads are resolved:
 
-#### Step 1: Verify All Threads Resolved
-
-Re-fetch comments to confirm nothing was missed:
-
-```bash
-erk exec get-pr-review-comments
-erk exec get-pr-discussion-comments
+```
+/pr-feedback-classifier
 ```
 
-If any unresolved threads remain, report them.
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items.
 
-#### Step 2: Report Summary
+#### Report Final Summary
 
 ```
 ## All PR Comments Addressed
@@ -232,7 +223,7 @@ Next steps:
 3. Request re-review if needed
 ```
 
-#### Step 3: Handle Any Skipped Comments
+#### Handle Any Skipped Comments
 
 If the user explicitly skipped any comments during the process, list them:
 

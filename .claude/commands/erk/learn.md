@@ -102,24 +102,50 @@ gh pr diff <pr-number>
 
 **Save this inventory** - you will reference it in Step 5 to ensure everything new gets documented.
 
-#### Fetch PR Comments
+#### Analyze PR Comments via Task
 
-If a PR was found for this plan, fetch review comments for analysis:
+If a PR was found for this plan, use a Task to analyze PR comments with context isolation. The Task fetches and classifies comments, returning only the insights needed for documentation planning.
 
-```bash
-# Get inline review comments (code-level feedback)
-erk exec get-pr-review-comments --pr <pr-number> --include-resolved
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Analyze PR comments for docs",
+  prompt: |
+    Analyze PR review comments to identify documentation opportunities.
 
-# Get discussion comments (main PR thread)
-erk exec get-pr-discussion-comments --pr <pr-number>
+    ## Steps
+    1. Run: `erk exec get-pr-review-comments --pr <pr-number> --include-resolved`
+    2. Run: `erk exec get-pr-discussion-comments --pr <pr-number>`
+    3. Classify and summarize the comments
+
+    ## Classification
+    For each comment, identify documentation opportunities:
+    - **False positives**: Reviewer misunderstood something → document to prevent future confusion
+    - **Clarification requests**: "Why does this..." → document the reasoning
+    - **Suggested alternatives**: Discussed but rejected → document the decision
+    - **Edge case questions**: "What happens if..." → document the behavior
+
+    ## Output Format
+
+    ### PR Comment Analysis Summary
+    PR #NNNN: N review threads, M discussion comments analyzed.
+
+    ### Documentation Opportunities from PR Review
+    | # | Source | Insight | Documentation Suggestion |
+    |---|--------|---------|--------------------------|
+    | 1 | Thread at abc.py:42 | Reviewer asked about LBYL pattern | Document when LBYL is required |
+    | 2 | Discussion | Clarified retry behavior | Add to API quirks doc |
+
+    ### Key Insights
+    [Bullet list of the most important documentation opportunities]
+
+    If no comments or no documentation opportunities found, output:
+    "No documentation opportunities identified from PR review comments."
+)
 ```
 
-**Save these for analysis** - PR comments often reveal:
-
-- Edge cases reviewers identified
-- Clarifications about non-obvious behavior
-- Alternative approaches discussed
-- False positives or misunderstandings to prevent
+**Save the Task output** - these insights inform the documentation plan in Step 5.
 
 ### Step 4: Gather and Analyze Sessions
 
