@@ -7,6 +7,7 @@
 - **[architecture.md](architecture.md)** — understanding TUI structure, implementing TUI components, working with TUI data providers
 - **[command-execution.md](command-execution.md)** — executing commands in TUI, choosing between sync and streaming execution, implementing command runners
 - **[command-palette.md](command-palette.md)** — implementing command palette in Textual TUI, creating searchable command menus, adding keyboard-accessible command discovery, working with Textual Provider classes, hiding system commands from command palette, get_system_commands method, removing Keys Quit Screenshot Theme from palette, adding emoji prefixes to command palette entries, using CommandCategory for command categorization, preserving fuzzy match highlighting with Text.assemble()
+- **[menu-patterns.md](menu-patterns.md)** — implementing interactive decision menus, using AskUserQuestion for multi-choice prompts, understanding hook-based decision flow, designing agent-driven workflow decision points
 - **[plan-row-data.md](plan-row-data.md)** — writing command availability predicates, understanding what data is available for TUI commands, checking which PlanRowData fields are nullable
 - **[plan-title-rendering-pipeline.md](plan-title-rendering-pipeline.md)** — debugging why plan titles display incorrectly, troubleshooting missing prefixes in TUI, understanding plan data flow in TUI
 - **[streaming-output.md](streaming-output.md)** — displaying streaming command output in TUI, executing long-running commands with progress, cross-thread UI updates in Textual
