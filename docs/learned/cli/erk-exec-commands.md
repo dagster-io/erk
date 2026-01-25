@@ -6,6 +6,8 @@ read_when:
 tripwires:
   - action: "running any erk exec subcommand"
     warning: "Check syntax with `erk exec <command> -h` first, or load erk-exec skill for workflow guidance."
+  - action: "using erk exec commands in scripts"
+    warning: "Some erk exec subcommands don't support `--format json`. Always check with `erk exec <command> -h` first."
 ---
 
 # erk exec Commands

@@ -129,6 +129,26 @@ Use AskUserQuestion to ask the user:
 
 **Location**: `.claude/hooks/erk/exit_plan_mode_hook.py`
 
+#### Marker State Machine
+
+The exit-plan-mode hook uses markers to track state transitions:
+
+| Marker              | Created By                     | Lifecycle | Effect When Present          |
+| ------------------- | ------------------------------ | --------- | ---------------------------- |
+| `plan-saved`        | `plan-save-to-issue`           | Reusable  | Block exit, show "complete"  |
+| `implement-now`     | Agent (`erk exec marker`)      | One-time  | Allow exit                   |
+| `objective-context` | `/erk:objective-next-plan`     | One-time  | Suggests `--objective-issue` |
+| `incremental-plan`  | `/local:incremental-plan-mode` | One-time  | Allow exit, skip save        |
+
+**Lifecycle semantics:**
+
+- **Reusable markers** persist across hook invocations (not deleted when read)
+- **One-time markers** are consumed (deleted) after being processed
+
+**Critical**: Never delete `plan-saved` marker when blocking. It represents a state ("plan is saved") not a one-time action. Deleting it would enable duplicate plan creation on retry.
+
+See [Session Deduplication](../planning/session-deduplication.md) for the full deduplication pattern.
+
 ## Project-Scoped Hooks
 
 Hooks can be decorated with `@project_scoped` to silently skip execution when not in a managed project (one with `erk.toml`).

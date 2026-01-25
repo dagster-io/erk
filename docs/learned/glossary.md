@@ -1238,6 +1238,36 @@ A frozen dataclass capturing the outcome of running a turn.
 
 **File**: `packages/erk-shared/src/erk_shared/objectives/types.py`
 
+### StepStatus
+
+An enumeration of possible step states in an objective roadmap.
+
+| Status        | Description                             |
+| ------------- | --------------------------------------- |
+| `PENDING`     | Step not yet started                    |
+| `BLOCKED`     | Step explicitly blocked (Status column) |
+| `SKIPPED`     | Step explicitly skipped (Status column) |
+| `DONE`        | Step completed (PR merged)              |
+| `IN_PROGRESS` | Plan in progress for this step          |
+
+**Note**: Status column values (blocked, skipped) override PR column inference.
+
+### ReconcileAction
+
+A frozen dataclass representing the action determined by the reconciler for an objective.
+
+**Fields**:
+
+| Field              | Type          | Description                       |
+| ------------------ | ------------- | --------------------------------- |
+| `action_type`      | `str`         | "create_plan", "none", or "error" |
+| `step_id`          | `str \| None` | Step ID if creating plan          |
+| `step_description` | `str \| None` | Step description                  |
+| `phase_name`       | `str \| None` | Phase containing the step         |
+| `reason`           | `str`         | Human-readable explanation        |
+
+**File**: `packages/erk-shared/src/erk_shared/objectives/types.py`
+
 ### Key Files
 
 | Concern | Location                                                   |

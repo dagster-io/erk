@@ -3,6 +3,7 @@
 
 # Sessions Documentation
 
+- **[agent-session-files.md](agent-session-files.md)** — reading or extracting data from agent session files, working with agent subprocesses in Claude sessions, implementing session log parsing
 - **[agent-type-extraction.md](agent-type-extraction.md)** — extracting agent type from session, finding subagent_type for agent sessions, correlating agent sessions to their Task invocation, displaying agent metadata in session show
 - **[context-analysis.md](context-analysis.md)** — analyzing context consumption, debugging context window blowout, understanding why session ran out of context
 - **[context-optimization.md](context-optimization.md)** — analyzing session efficiency, troubleshooting context limits, reducing context waste
