@@ -79,6 +79,7 @@ def test_cleanup_and_navigate_no_delete_preserves_branch_and_slot(
                 children=[],
                 is_trunk=False,
                 commit_sha=None,
+                graphite_tracked_sha=None,
             ),
         },
     )
@@ -282,6 +283,7 @@ def test_cleanup_and_navigate_no_delete_with_up_flag(tmp_path: Path) -> None:
                 children=["child-branch"],
                 is_trunk=False,
                 commit_sha=None,
+                graphite_tracked_sha=None,
             ),
             "child-branch": BranchMetadata(
                 name="child-branch",
@@ -289,6 +291,7 @@ def test_cleanup_and_navigate_no_delete_with_up_flag(tmp_path: Path) -> None:
                 children=[],
                 is_trunk=False,
                 commit_sha=None,
+                graphite_tracked_sha=None,
             ),
         },
     )

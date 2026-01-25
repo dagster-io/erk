@@ -35,6 +35,7 @@ def _make_branch(name: str, parent: str | None) -> BranchMetadata:
         children=[],
         is_trunk=parent is None,
         commit_sha="abc123",
+        graphite_tracked_sha=None,
     )
 
 

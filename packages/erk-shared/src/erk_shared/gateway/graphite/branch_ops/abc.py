@@ -65,3 +65,17 @@ class GraphiteBranchOps(ABC):
             quiet: If True, pass --quiet flag to gt submit for minimal output
         """
         ...
+
+    @abstractmethod
+    def retrack_branch(self, cwd: Path, branch_name: str) -> None:
+        """Re-track an existing branch to fix Graphite tracking divergence.
+
+        After rebase/restack operations, Graphite's internal SHA tracking
+        (in .graphite_cache_persist) may become stale. This method runs
+        `gt track` on an already-tracked branch to refresh the SHA.
+
+        Args:
+            cwd: Working directory where gt track should run
+            branch_name: Name of the branch to re-track
+        """
+        ...

@@ -39,3 +39,8 @@ class PrintingGraphiteBranchOps(PrintingBase, GraphiteBranchOps):
         """Submit branch with printed output."""
         self._emit(self._format_command(f"gt submit --branch {branch_name} --no-edit"))
         self._wrapped.submit_branch(repo_root, branch_name, quiet=quiet)
+
+    def retrack_branch(self, cwd: Path, branch_name: str) -> None:
+        """Re-track branch with printed output."""
+        self._emit(self._format_command(f"gt track --branch {branch_name}"))
+        self._wrapped.retrack_branch(cwd, branch_name)

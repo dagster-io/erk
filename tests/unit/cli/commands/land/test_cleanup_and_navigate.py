@@ -144,6 +144,7 @@ def test_cleanup_and_navigate_detects_slot_by_branch_name(tmp_path: Path) -> Non
                 children=[],
                 is_trunk=False,
                 commit_sha=None,
+                graphite_tracked_sha=None,
             ),
         },
     )
@@ -257,6 +258,7 @@ def test_cleanup_and_navigate_detects_slot_by_path_pattern_without_assignment(
                 children=[],
                 is_trunk=False,
                 commit_sha=None,
+                graphite_tracked_sha=None,
             ),
         },
     )
@@ -366,6 +368,7 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_before_deleting_
                 children=[],
                 is_trunk=False,
                 commit_sha=None,
+                graphite_tracked_sha=None,
             ),
         },
     )
@@ -574,6 +577,7 @@ def test_cleanup_ensures_branch_not_checked_out_before_delete_with_stale_pool_st
                 children=[],
                 is_trunk=False,
                 commit_sha=None,
+                graphite_tracked_sha=None,
             ),
         },
     )
@@ -742,6 +746,7 @@ def test_cleanup_and_navigate_slot_without_assignment_force_suppresses_warning(
                 children=[],
                 is_trunk=False,
                 commit_sha=None,
+                graphite_tracked_sha=None,
             ),
         },
     )

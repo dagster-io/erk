@@ -78,3 +78,19 @@ class RealGraphiteBranchOps(GraphiteBranchOps):
         # Display stderr in verbose mode after successful execution
         if not quiet and result.stderr:
             user_output(result.stderr, nl=False)
+
+    def retrack_branch(self, cwd: Path, branch_name: str) -> None:
+        """Re-track an existing branch to fix Graphite tracking divergence.
+
+        After rebase/restack operations, Graphite's cached SHA becomes stale.
+        Running `gt track` on the current branch refreshes the SHA tracking.
+
+        Args:
+            cwd: Working directory where gt track should run
+            branch_name: Name of the branch to re-track
+        """
+        run_subprocess_with_context(
+            cmd=["gt", "track", "--branch", branch_name],
+            operation_context=f"re-track branch '{branch_name}' with Graphite",
+            cwd=cwd,
+        )

@@ -30,6 +30,7 @@ class FakeGraphiteBranchOps(GraphiteBranchOps):
         track_branch_raises: Exception | None = None,
         delete_branch_raises: Exception | None = None,
         submit_branch_raises: Exception | None = None,
+        retrack_branch_raises: Exception | None = None,
         tracked_branches: set[str] | None = None,
     ) -> None:
         """Create FakeGraphiteBranchOps with pre-configured state.
@@ -38,17 +39,20 @@ class FakeGraphiteBranchOps(GraphiteBranchOps):
             track_branch_raises: Exception to raise when track_branch() is called
             delete_branch_raises: Exception to raise when delete_branch() is called
             submit_branch_raises: Exception to raise when submit_branch() is called
+            retrack_branch_raises: Exception to raise when retrack_branch() is called
             tracked_branches: Set of branches that are "tracked" by Graphite
         """
         self._track_branch_raises = track_branch_raises
         self._delete_branch_raises = delete_branch_raises
         self._submit_branch_raises = submit_branch_raises
+        self._retrack_branch_raises = retrack_branch_raises
         self._tracked_branches = tracked_branches if tracked_branches is not None else set()
 
         # Mutation tracking
         self._track_branch_calls: list[tuple[Path, str, str]] = []
         self._delete_branch_calls: list[tuple[Path, str]] = []
         self._submit_branch_calls: list[tuple[Path, str, bool]] = []
+        self._retrack_branch_calls: list[tuple[Path, str]] = []
 
     def track_branch(self, cwd: Path, branch_name: str, parent_branch: str) -> None:
         """Track a branch with Graphite (fake implementation).
@@ -106,6 +110,24 @@ class FakeGraphiteBranchOps(GraphiteBranchOps):
         """
         return self._submit_branch_calls.copy()
 
+    def retrack_branch(self, cwd: Path, branch_name: str) -> None:
+        """Re-track a branch (fake implementation).
+
+        Tracks the call and optionally raises configured exception.
+        """
+        self._retrack_branch_calls.append((cwd, branch_name))
+
+        if self._retrack_branch_raises is not None:
+            raise self._retrack_branch_raises
+
+    @property
+    def retrack_branch_calls(self) -> list[tuple[Path, str]]:
+        """Get list of retrack_branch() calls for test assertions.
+
+        Returns list of (cwd, branch_name) tuples.
+        """
+        return self._retrack_branch_calls.copy()
+
     def is_branch_tracked(self, branch: str) -> bool:
         """Check if a branch is tracked (for test setup).
 
@@ -129,6 +151,7 @@ class FakeGraphiteBranchOps(GraphiteBranchOps):
         track_branch_calls: list[tuple[Path, str, str]],
         delete_branch_calls: list[tuple[Path, str]],
         submit_branch_calls: list[tuple[Path, str, bool]],
+        retrack_branch_calls: list[tuple[Path, str]] | None = None,
     ) -> None:
         """Link mutation tracking lists to allow shared tracking with FakeGraphite.
 
@@ -139,7 +162,10 @@ class FakeGraphiteBranchOps(GraphiteBranchOps):
             track_branch_calls: Reference to FakeGraphite's track_branch_calls list
             delete_branch_calls: Reference to FakeGraphite's delete_branch_calls list
             submit_branch_calls: Reference to FakeGraphite's submit_branch_calls list
+            retrack_branch_calls: Reference to FakeGraphite's retrack_branch_calls list
         """
         self._track_branch_calls = track_branch_calls
         self._delete_branch_calls = delete_branch_calls
         self._submit_branch_calls = submit_branch_calls
+        if retrack_branch_calls is not None:
+            self._retrack_branch_calls = retrack_branch_calls

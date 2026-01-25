@@ -61,6 +61,7 @@ def test_submit_exits_cleanly_when_parent_branch_untracked() -> None:
                     children=[],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 # Note: untracked-parent is intentionally NOT in branches dict
                 # so is_branch_tracked() returns False for it
@@ -141,6 +142,7 @@ def test_submit_succeeds_when_parent_branch_tracked() -> None:
                     children=["tracked-parent"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "tracked-parent": BranchMetadata(
                     name="tracked-parent",
@@ -148,6 +150,7 @@ def test_submit_succeeds_when_parent_branch_tracked() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )

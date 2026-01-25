@@ -155,6 +155,7 @@ def test_pr_sync_syncs_remote_when_already_tracked(tmp_path: Path) -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 )
             }
         )
@@ -212,6 +213,7 @@ def test_pr_sync_handles_restack_conflict_when_already_tracked(tmp_path: Path) -
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 )
             },
             restack_raises=RuntimeError(

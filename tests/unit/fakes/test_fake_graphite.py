@@ -322,3 +322,69 @@ def test_fake_graphite_is_branch_tracked_empty_branches() -> None:
     ops = FakeGraphite()
 
     assert ops.is_branch_tracked(Path("/repo"), "any-branch") is False
+
+
+def test_fake_graphite_is_branch_diverged_from_tracking_returns_false_when_not_tracked() -> None:
+    """Test that is_branch_diverged_from_tracking returns False for untracked branches."""
+    ops = FakeGraphite()
+    git_ops = FakeGit()
+
+    result = ops.is_branch_diverged_from_tracking(git_ops, Path("/repo"), "untracked")
+
+    assert result is False
+
+
+def test_fake_graphite_is_branch_diverged_from_tracking_returns_false_when_shas_match() -> None:
+    """Test that is_branch_diverged_from_tracking returns False when SHAs match."""
+    branches = {
+        "feature": BranchMetadata.branch(
+            "feature",
+            "main",
+            commit_sha="abc123",
+            graphite_tracked_sha="abc123",  # SHAs match
+        ),
+    }
+    ops = FakeGraphite(branches=branches)
+    git_ops = FakeGit()
+
+    result = ops.is_branch_diverged_from_tracking(git_ops, Path("/repo"), "feature")
+
+    assert result is False
+
+
+def test_fake_graphite_is_branch_diverged_from_tracking_returns_true_when_shas_differ() -> None:
+    """Test that is_branch_diverged_from_tracking returns True when SHAs differ."""
+    branches = {
+        "feature": BranchMetadata.branch(
+            "feature",
+            "main",
+            commit_sha="abc123",  # Actual git SHA
+            graphite_tracked_sha="old456",  # Graphite's stale cached SHA
+        ),
+    }
+    ops = FakeGraphite(branches=branches)
+    git_ops = FakeGit()
+
+    result = ops.is_branch_diverged_from_tracking(git_ops, Path("/repo"), "feature")
+
+    assert result is True
+
+
+def test_fake_graphite_is_branch_diverged_from_tracking_returns_false_when_sha_is_none() -> None:
+    """Test that is_branch_diverged_from_tracking returns False when SHA is None."""
+    branches = {
+        "feature": BranchMetadata(
+            name="feature",
+            parent="main",
+            children=[],
+            is_trunk=False,
+            commit_sha=None,  # No SHA available
+            graphite_tracked_sha="abc123",
+        ),
+    }
+    ops = FakeGraphite(branches=branches)
+    git_ops = FakeGit()
+
+    result = ops.is_branch_diverged_from_tracking(git_ops, Path("/repo"), "feature")
+
+    assert result is False

@@ -81,6 +81,7 @@ class TestPreAnalysisDetectsMergedParent:
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 ),
                 "feature-parent": BranchMetadata(
                     name="feature-parent",
@@ -88,6 +89,7 @@ class TestPreAnalysisDetectsMergedParent:
                     children=["feature-child"],
                     is_trunk=False,
                     commit_sha="def456",
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -159,6 +161,7 @@ class TestPreAnalysisDetectsMergedParent:
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 ),
                 "feature-parent": BranchMetadata(
                     name="feature-parent",
@@ -166,6 +169,7 @@ class TestPreAnalysisDetectsMergedParent:
                     children=["feature-child"],
                     is_trunk=False,
                     commit_sha="def456",
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -260,6 +264,7 @@ class TestPreAnalysisDetectsMergedParent:
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -267,6 +272,7 @@ class TestPreAnalysisDetectsMergedParent:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha="def456",
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -304,6 +310,7 @@ class TestPreAnalysisDetectsMergedParent:
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 ),
                 "feature-parent": BranchMetadata(
                     name="feature-parent",
@@ -311,6 +318,7 @@ class TestPreAnalysisDetectsMergedParent:
                     children=["feature-child"],
                     is_trunk=False,
                     commit_sha="def456",
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -357,6 +365,7 @@ class TestPreAnalysisCapturesCommitMessages:
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -364,6 +373,7 @@ class TestPreAnalysisCapturesCommitMessages:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha="def456",
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -401,6 +411,7 @@ class TestPreAnalysisCapturesCommitMessages:
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -408,6 +419,7 @@ class TestPreAnalysisCapturesCommitMessages:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha="def456",
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -462,6 +474,7 @@ class TestPreAnalysisIssueLinking:
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -469,6 +482,7 @@ class TestPreAnalysisIssueLinking:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha="def456",
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -525,6 +539,7 @@ class TestPreAnalysisIssueLinking:
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -532,6 +547,7 @@ class TestPreAnalysisIssueLinking:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha="def456",
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -571,6 +587,7 @@ class TestPreAnalysisIssueLinking:
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -578,6 +595,7 @@ class TestPreAnalysisIssueLinking:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha="def456",
+                    graphite_tracked_sha=None,
                 ),
             },
         )

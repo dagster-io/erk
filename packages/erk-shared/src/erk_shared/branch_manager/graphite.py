@@ -100,6 +100,14 @@ class GraphiteBranchManager(BranchManager):
         if base_branch.startswith("origin/"):
             self._ensure_local_matches_remote(repo_root, parent_for_graphite, base_branch)
 
+        # Auto-fix diverged parent before tracking child
+        # (gt track fails if parent is diverged from Graphite's tracking)
+        if self.graphite.is_branch_diverged_from_tracking(self.git, repo_root, parent_for_graphite):
+            # Checkout parent, retrack to fix divergence, then checkout child again
+            self.git_branch_ops.checkout_branch(repo_root, parent_for_graphite)
+            self.graphite_branch_ops.retrack_branch(repo_root, parent_for_graphite)
+            self.git_branch_ops.checkout_branch(repo_root, branch_name)
+
         self.graphite_branch_ops.track_branch(repo_root, branch_name, parent_for_graphite)
 
         # Restore original branch so callers can create worktrees with the new branch
