@@ -19,7 +19,9 @@
 - **[json-schema.md](json-schema.md)** — adding --json flag to CLI commands, parsing JSON output from erk commands, implementing kit CLI commands with JSON output
 - **[list-formatting.md](list-formatting.md)** — formatting list output, designing list commands, ensuring consistent list display
 - **[local-commands.md](local-commands.md)** — designing local commands, understanding local command taxonomy, creating audit or assessment commands
+- **[multi-entry-point-commands.md](multi-entry-point-commands.md)** — designing CLI commands with multiple input types, unifying PR number, branch name, and current context entry points, understanding LandTarget and CleanupContext patterns, refactoring commands to support multiple argument forms
 - **[optional-arguments.md](optional-arguments.md)** — making a CLI argument optional, inferring CLI arguments from context, implementing branch-based argument defaults
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
+- **[resolver-pattern.md](resolver-pattern.md)** — creating thin resolver functions, normalizing different input types to common output, understanding _resolve_\* function naming convention, implementing entry-point-specific resolution logic
 - **[subprocess-stdin-patterns.md](subprocess-stdin-patterns.md)** — passing content to CLI tools via stdin, using subprocess with input parameter, CLI flags that only work with stdin
 - **[template-variables.md](template-variables.md)** — configuring .env templates, using substitution variables in config.toml, setting environment variables per worktree, updating environment when switching worktrees

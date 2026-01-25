@@ -34,13 +34,36 @@ from erk.tui.commands.types import CommandCategory, CommandDefinition
 CommandDefinition(
     id="land_pr",  # Unique identifier
     name="Land PR",  # Display name (used as fallback if no get_display_name)
-    description="Merge PR and clean up worktree",  # Brief description
+    description="land",  # Single-word label for display (shown as "⚡ land: ...")
     category=CommandCategory.ACTION,  # Determines emoji prefix (⚡)
     shortcut="l",  # Optional keyboard shortcut (single char) or None
     is_available=lambda ctx: ctx.row.pr_number is not None and ctx.row.exists_locally,
-    get_display_name=lambda ctx: f"erk land {ctx.row.pr_number}",  # Dynamic name
+    get_display_name=lambda ctx: f"erk land {ctx.row.pr_number}",  # Dynamic command text
 )
 ```
+
+### Description Field as Display Label
+
+The `description` field serves as the **display label** in the command palette's three-tier format:
+
+```
+{emoji} {description}: {get_display_name()}
+⚡ land: erk land 456
+```
+
+**Guidelines for description:**
+
+- Use a **single word** that describes the action
+- Keep it short (1-2 words max)
+- Match the verb in the command when possible
+
+| Good         | Bad                                    |
+| ------------ | -------------------------------------- |
+| `"land"`     | `"Merge PR and clean up worktree"`     |
+| `"close"`    | `"Close the plan issue"`               |
+| `"checkout"` | `"Copy checkout command to clipboard"` |
+
+The longer description belongs in docstrings or help text, not in the `description` field.
 
 **Command Categories** (from `CommandCategory` enum):
 
