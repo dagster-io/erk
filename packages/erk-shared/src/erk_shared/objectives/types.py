@@ -42,3 +42,22 @@ class InferenceError:
     """
 
     message: str
+
+
+@dataclass(frozen=True)
+class ReconcileAction:
+    """Action determined by the reconciler for an objective.
+
+    Attributes:
+        action_type: One of "create_plan", "none", "error"
+        step_id: Step ID if action_type is "create_plan", None otherwise
+        step_description: Step description if action_type is "create_plan"
+        phase_name: Phase name if action_type is "create_plan"
+        reason: Human-readable explanation of why this action was chosen
+    """
+
+    action_type: str  # "create_plan" | "none" | "error"
+    step_id: str | None
+    step_description: str | None
+    phase_name: str | None
+    reason: str
