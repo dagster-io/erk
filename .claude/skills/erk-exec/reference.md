@@ -59,6 +59,7 @@ Quick reference for all `erk exec` subcommands.
 | `post-workflow-started-comment`   | Post a workflow started comment to a GitHub issue.                        |
 | `pr-sync-commit`                  | Sync PR title and body from the latest git commit.                        |
 | `preprocess-session`              | Preprocess session log JSONL to compressed XML format.                    |
+| `promote-to-tripwire`             | Add a tripwire to a documentation file's frontmatter.                     |
 | `quick-submit`                    | Quick commit all changes and submit.                                      |
 | `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.              |
 | `reply-to-discussion-comment`     | Reply to a PR discussion comment with quote and action summary.           |
@@ -775,6 +776,21 @@ Preprocess session log JSONL to compressed XML format.
 | `--max-tokens`     | INTEGER | No       | -       | Split output into multiple files of ~max-tokens each    |
 | `--output-dir`     | PATH    | No       | -       | Directory to write output files (requires --prefix)     |
 | `--prefix`         | TEXT    | No       | -       | Prefix for output filenames (requires --output-dir)     |
+
+### promote-to-tripwire
+
+Add a tripwire to a documentation file's frontmatter.
+
+**Usage:** `erk exec promote-to-tripwire`
+
+**Options:**
+
+| Flag           | Type | Required | Default        | Description                                 |
+| -------------- | ---- | -------- | -------------- | ------------------------------------------- |
+| `--target-doc` | TEXT | Yes      | Sentinel.UNSET | Relative path within docs/learned/          |
+| `--action`     | TEXT | Yes      | Sentinel.UNSET | Action pattern to detect                    |
+| `--warning`    | TEXT | Yes      | Sentinel.UNSET | Warning message to display                  |
+| `--sync`       | FLAG | No       | -              | Run erk docs sync afterward (default: sync) |
 
 ### quick-submit
 
