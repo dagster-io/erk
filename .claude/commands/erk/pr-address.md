@@ -27,34 +27,105 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 >
 > See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
 
-### Phase 1: Fetch & Analyze
+### Phase 1: Fetch & Analyze via Task
 
-#### Step 1: Fetch All Comments
+Use the Task tool to fetch and classify PR feedback with context isolation. The Task returns **prose + structured JSON** so you can act on specific thread IDs.
 
-Run both CLI commands to get review comments AND discussion comments:
+**Determine flags**: If `--all` was specified in the command, include `--include-resolved` in the fetch command.
 
-```bash
-erk exec get-pr-review-comments
-erk exec get-pr-discussion-comments
-```
+````
+Task(
+  subagent_type: "general-purpose",
+  model: "sonnet",
+  description: "Fetch PR review feedback",
+  prompt: |
+    Fetch and classify PR review feedback for the current branch's PR.
 
-#### Step 2: Handle No Comments Case
+    ## Steps
+    1. Get the current branch: `git rev-parse --abbrev-ref HEAD`
+    2. Get the PR number for this branch: `gh pr view --json number,title -q '{number: .number, title: .title}'`
+    3. Run: `erk exec get-pr-review-comments [--include-resolved if --all flag]`
+    4. Run: `erk exec get-pr-discussion-comments`
+    5. Parse and classify the JSON outputs
 
-If both `threads` is empty AND `comments` is empty, display: "No unresolved review comments or discussion comments on PR #123."
+    ## Classification
 
-#### Step 3: Holistic Analysis
+    > See `pr-operations` skill for the **Comment Classification Model**.
 
-Analyze ALL comments together to understand relationships and complexity.
+    For each comment, determine:
+    - **Actionable**: Code changes requested, violations to fix, missing tests
+    - **Informational**: Bot status updates, CI results, Graphite stack comments
+    - **Resolved**: Threads with clarifying follow-up (e.g., "Clarification: this is compliant")
 
-> See `pr-operations` skill for the **Comment Classification Model** (complexity categories and batch ordering).
+    Group actionable items by complexity:
+    - **Local Fix**: Single line change
+    - **Single-File**: Multiple changes in one file
+    - **Cross-Cutting**: Changes across multiple files
+    - **Complex**: Architectural changes or related refactoring
 
-#### Step 4: Batch and Prioritize
+    ## Output Format
 
-Group comments into batches ordered by complexity (simplest first). See `pr-operations` skill for the batch ordering table.
+    ### Summary
+    PR #NNNN "Title": N actionable items, N informational comments skipped.
+
+    ### Actionable Items
+    | # | Thread ID | Type | Path | Line | Issue | Complexity |
+    |---|-----------|------|------|------|-------|------------|
+    | 1 | PRRT_xxx | review | abc.py | 8 | Missing integration tests | Local |
+    | 2 | 12345678 | discussion | - | - | Update docs | Cross-cutting |
+
+    ### Batched Execution Plan
+    **Batch 1: Local Fixes (auto-proceed)**
+    - Item #1: abc.py:8 - Missing tests
+
+    **Batch 2: Cross-Cutting (user confirmation)**
+    - Item #2: Update docs
+
+    ### Structured Data
+    ```json
+    {
+      "pr_number": 5944,
+      "pr_title": "BeadsGateway ABC with list_issues Method",
+      "actionable_threads": [
+        {"thread_id": "PRRT_kwDOPxC3hc5q73Ne", "type": "review", "path": "abc.py", "line": 8, "action": "Add integration tests", "complexity": "local", "is_outdated": false}
+      ],
+      "discussion_actions": [
+        {"comment_id": 12345678, "action": "Update documentation"}
+      ],
+      "informational_count": 12,
+      "batches": [
+        {"name": "Local Fixes", "auto_proceed": true, "items": [1]},
+        {"name": "Cross-Cutting", "auto_proceed": false, "items": [2]}
+      ]
+    }
+    ```
+
+    If no comments found, output:
+    ```json
+    {
+      "pr_number": NNNN,
+      "pr_title": "...",
+      "actionable_threads": [],
+      "discussion_actions": [],
+      "informational_count": 0,
+      "batches": []
+    }
+    ```
+)
+````
+
+**Parse the structured JSON** from the Task output. Extract:
+
+- `pr_number`, `pr_title` for reference
+- `actionable_threads` array with thread IDs
+- `discussion_actions` array with comment IDs
+- `batches` array for execution order
+
+**Handle No Comments Case**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
 
 ### Phase 2: Display Batched Plan
 
-Show the user the batched execution plan:
+Show the user the batched execution plan from the Task output:
 
 ```
 ## Execution Plan
@@ -91,7 +162,7 @@ Show the user the batched execution plan:
 
 ### Phase 3: Execute by Batch
 
-For each batch, execute this workflow:
+For each batch, execute this workflow using the thread IDs from the structured JSON:
 
 #### Step 1: Address All Comments in the Batch
 
@@ -171,13 +242,13 @@ git commit -m "Address PR review comments (batch N/M)
 
 #### Step 4: Resolve All Threads in the Batch (MANDATORY)
 
-**This step is NOT optional.** Every thread must be resolved using `erk exec resolve-review-thread`.
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the structured JSON.
 
 After committing, resolve each review thread and mark each discussion comment.
 
-**For Review Threads** - use `erk exec resolve-review-thread` (see `pr-operations` skill for examples).
+**For Review Threads** - use `erk exec resolve-review-thread` with the `thread_id` from the JSON (see `pr-operations` skill for examples).
 
-**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with a substantive reply that quotes the original comment and explains what action was taken.
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
 
 #### Step 5: Report Progress
 
@@ -198,22 +269,36 @@ Remaining batches: 2
 
 Then proceed to the next batch.
 
-### Phase 4: Final Verification
+### Phase 4: Final Verification via Task
 
-After all batches complete:
+After all batches complete, use a Task to verify all threads are resolved:
 
-#### Step 1: Verify All Threads Resolved
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR threads resolved",
+  prompt: |
+    Verify all PR review threads have been resolved.
 
-Re-fetch comments to confirm nothing was missed:
+    ## Steps
+    1. Run: `erk exec get-pr-review-comments`
+    2. Run: `erk exec get-pr-discussion-comments`
+    3. Count any remaining unresolved items
 
-```bash
-erk exec get-pr-review-comments
-erk exec get-pr-discussion-comments
+    ## Output Format
+
+    ### Verification Summary
+    [One paragraph: total addressed, any remaining unresolved]
+
+    If all resolved: "All N review threads and M discussion comments have been addressed."
+    If any remain: "Warning: N threads remain unresolved: [list thread IDs]"
+)
 ```
 
-If any unresolved threads remain, report them.
+Display the verification summary.
 
-#### Step 2: Report Summary
+#### Report Final Summary
 
 ```
 ## All PR Comments Addressed
@@ -232,7 +317,7 @@ Next steps:
 3. Request re-review if needed
 ```
 
-#### Step 3: Handle Any Skipped Comments
+#### Handle Any Skipped Comments
 
 If the user explicitly skipped any comments during the process, list them:
 
