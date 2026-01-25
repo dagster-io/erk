@@ -156,6 +156,7 @@ def test_connect_with_shell_flag_drops_to_shell(monkeypatch) -> None:
     t_index = args.index("-t")
     remote_command = args[t_index + 1]
 
-    # Should use exec bash, not claude
-    assert "exec bash" in remote_command
+    # Should use simple login shell, not claude or setup commands
+    assert remote_command == "bash -l"
     assert "claude" not in remote_command
+    assert "git pull" not in remote_command

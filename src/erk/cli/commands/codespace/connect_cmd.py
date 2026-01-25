@@ -48,10 +48,10 @@ def connect_codespace(ctx: ErkContext, name: str | None, *, shell: bool) -> None
     #
     # IMPORTANT: The entire remote command (bash -l -c '...') must be a single argument.
     # SSH concatenates command arguments with spaces without preserving grouping.
-    setup_commands = "git pull && uv sync && source .venv/bin/activate"
     if shell:
-        remote_command = f"bash -l -c '{setup_commands} && exec bash'"
+        remote_command = "bash -l"
     else:
+        setup_commands = "git pull && uv sync && source .venv/bin/activate"
         claude_command = "claude --dangerously-skip-permissions"
         remote_command = f"bash -l -c '{setup_commands} && {claude_command}'"
 
