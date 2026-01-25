@@ -6,6 +6,7 @@ issues based on provided criteria.
 
 from erk_shared.gateway.beads.fake import FakeBeadsGateway
 from erk_shared.gateway.beads.types import BeadsIssue
+from erk_shared.gateway.time.fake import FakeTime
 
 
 def _make_issue(
@@ -34,7 +35,7 @@ class TestFakeBeadsGatewayListIssues:
 
     def test_list_issues_empty(self) -> None:
         """Returns empty list when no issues configured."""
-        gateway = FakeBeadsGateway(issues=None)
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=None)
 
         result = gateway.list_issues(labels=None, status=None, limit=None)
 
@@ -46,7 +47,7 @@ class TestFakeBeadsGatewayListIssues:
             _make_issue(id="bd-001", title="First", status="open", labels=()),
             _make_issue(id="bd-002", title="Second", status="closed", labels=()),
         ]
-        gateway = FakeBeadsGateway(issues=issues)
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=issues)
 
         result = gateway.list_issues(labels=None, status=None, limit=None)
 
@@ -60,7 +61,7 @@ class TestFakeBeadsGatewayListIssues:
             _make_issue(id="bd-001", title="Has label", status="open", labels=("erk-plan",)),
             _make_issue(id="bd-002", title="No label", status="open", labels=()),
         ]
-        gateway = FakeBeadsGateway(issues=issues)
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=issues)
 
         result = gateway.list_issues(labels=["erk-plan"], status=None, limit=None)
 
@@ -84,7 +85,7 @@ class TestFakeBeadsGatewayListIssues:
             ),
             _make_issue(id="bd-003", title="Has none", status="open", labels=()),
         ]
-        gateway = FakeBeadsGateway(issues=issues)
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=issues)
 
         result = gateway.list_issues(labels=["erk-plan", "priority"], status=None, limit=None)
 
@@ -98,7 +99,7 @@ class TestFakeBeadsGatewayListIssues:
             _make_issue(id="bd-002", title="Closed", status="closed", labels=()),
             _make_issue(id="bd-003", title="In Progress", status="in_progress", labels=()),
         ]
-        gateway = FakeBeadsGateway(issues=issues)
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=issues)
 
         result = gateway.list_issues(labels=None, status="open", limit=None)
 
@@ -112,7 +113,7 @@ class TestFakeBeadsGatewayListIssues:
             _make_issue(id="bd-002", title="Second", status="open", labels=()),
             _make_issue(id="bd-003", title="Third", status="open", labels=()),
         ]
-        gateway = FakeBeadsGateway(issues=issues)
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=issues)
 
         result = gateway.list_issues(labels=None, status=None, limit=2)
 
@@ -132,7 +133,7 @@ class TestFakeBeadsGatewayListIssues:
             ),
             _make_issue(id="bd-003", title="Open no label", status="open", labels=()),
         ]
-        gateway = FakeBeadsGateway(issues=issues)
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=issues)
 
         result = gateway.list_issues(labels=["erk-plan"], status="open", limit=None)
 
@@ -145,7 +146,7 @@ class TestFakeBeadsGatewayWithEmptyIssues:
 
     def test_empty_list_explicit(self) -> None:
         """Empty list passed explicitly works correctly."""
-        gateway = FakeBeadsGateway(issues=[])
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=[])
 
         result = gateway.list_issues(labels=None, status=None, limit=None)
 
@@ -156,8 +157,83 @@ class TestFakeBeadsGatewayWithEmptyIssues:
         issues = [
             _make_issue(id="bd-001", title="Only one", status="open", labels=()),
         ]
-        gateway = FakeBeadsGateway(issues=issues)
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=issues)
 
         result = gateway.list_issues(labels=None, status=None, limit=100)
 
         assert len(result) == 1
+
+
+class TestFakeBeadsGatewayCreateIssue:
+    """Tests for FakeBeadsGateway.create_issue()."""
+
+    def test_create_issue_basic(self) -> None:
+        """Creates issue with title only."""
+        fake_time = FakeTime()
+        gateway = FakeBeadsGateway(time=fake_time, issues=None)
+
+        result = gateway.create_issue(title="Test Issue", labels=None, description=None)
+
+        assert result.title == "Test Issue"
+        assert result.id.startswith("bd-")
+        assert result.status == "open"
+        assert result.labels == ()
+        assert result.description == ""
+        assert result.created_at == fake_time.now().isoformat()
+        assert result.updated_at == fake_time.now().isoformat()
+
+    def test_create_issue_with_labels(self) -> None:
+        """Labels applied correctly."""
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=None)
+
+        result = gateway.create_issue(
+            title="Labeled Issue",
+            labels=["bug", "priority"],
+            description=None,
+        )
+
+        assert result.labels == ("bug", "priority")
+
+    def test_create_issue_with_description(self) -> None:
+        """Description stored correctly."""
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=None)
+
+        result = gateway.create_issue(
+            title="Described Issue",
+            labels=None,
+            description="This is the body content.",
+        )
+
+        assert result.description == "This is the body content."
+
+    def test_create_issue_generates_unique_ids(self) -> None:
+        """Each call gets unique ID."""
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=None)
+
+        issue1 = gateway.create_issue(title="Issue 1", labels=None, description=None)
+        issue2 = gateway.create_issue(title="Issue 2", labels=None, description=None)
+
+        assert issue1.id != issue2.id
+        assert issue1.id.startswith("bd-")
+        assert issue2.id.startswith("bd-")
+
+    def test_create_issue_appears_in_list(self) -> None:
+        """Created issue found by list_issues."""
+        gateway = FakeBeadsGateway(time=FakeTime(), issues=None)
+
+        created = gateway.create_issue(
+            title="Findable Issue",
+            labels=["test-label"],
+            description=None,
+        )
+
+        # Verify it appears in list_issues
+        all_issues = gateway.list_issues(labels=None, status=None, limit=None)
+        assert len(all_issues) == 1
+        assert all_issues[0].id == created.id
+        assert all_issues[0].title == "Findable Issue"
+
+        # Verify it can be filtered by label
+        labeled = gateway.list_issues(labels=["test-label"], status=None, limit=None)
+        assert len(labeled) == 1
+        assert labeled[0].id == created.id

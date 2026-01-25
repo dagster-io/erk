@@ -31,3 +31,19 @@ class PrintingBeadsGateway(BeadsGateway):
     ) -> list[BeadsIssue]:
         """Delegate read operation silently to wrapped implementation."""
         return self._wrapped.list_issues(labels=labels, status=status, limit=limit)
+
+    def create_issue(
+        self,
+        *,
+        title: str,
+        labels: list[str] | None,
+        description: str | None,
+    ) -> BeadsIssue:
+        """Print the action, then delegate to wrapped implementation."""
+        label_str = f" with labels {labels}" if labels else ""
+        print(f"Creating beads issue: {title!r}{label_str}")
+        return self._wrapped.create_issue(
+            title=title,
+            labels=labels,
+            description=description,
+        )

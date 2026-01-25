@@ -34,3 +34,23 @@ class BeadsGateway(ABC):
             List of BeadsIssue matching the criteria
         """
         ...
+
+    @abstractmethod
+    def create_issue(
+        self,
+        *,
+        title: str,
+        labels: list[str] | None,
+        description: str | None,
+    ) -> BeadsIssue:
+        """Create a new issue.
+
+        Args:
+            title: Issue title (required)
+            labels: Labels to apply (optional)
+            description: Issue body content (optional)
+
+        Returns:
+            The created BeadsIssue with generated ID and timestamps
+        """
+        ...
