@@ -15,19 +15,46 @@ if TYPE_CHECKING:
     from erk.tui.app import ErkDashApp, PlanDetailScreen
 
 
-def _format_highlighted_display(emoji: str, highlighted: object) -> str | Text:
-    """Format highlighted command name with emoji prefix.
+def _format_palette_display(emoji: str, label: str, command_text: str) -> Text:
+    """Format command for palette display with dimmed command text.
+
+    Display format: `{emoji} {label}: {command_text}` where label is bright
+    and command_text is dimmed.
 
     Args:
         emoji: Category emoji to prepend
-        highlighted: Highlighted name (Content, str, or Rich Text)
+        label: Description label (displayed bright)
+        command_text: Command text (displayed dimmed)
 
     Returns:
-        Formatted display string or Text object
+        Styled Text object
     """
-    if isinstance(highlighted, Text):
-        return Text.assemble(f"{emoji} ", highlighted)
-    return f"{emoji} {highlighted}"
+    return Text.assemble(f"{emoji} ", f"{label}: ", (command_text, "dim"))
+
+
+def _format_search_display(emoji: str, highlighted: Text, label_len: int) -> Text:
+    """Format search result with dimmed command text portion.
+
+    Splits highlighted Text at label_len (after the ": "), applies dim style
+    to command portion while preserving fuzzy-match highlights.
+
+    Args:
+        emoji: Category emoji to prepend
+        highlighted: Highlighted text from fuzzy matcher
+        label_len: Length of the label portion (not including ": ")
+
+    Returns:
+        Styled Text object with dim command portion
+    """
+    # Split point is after "label: " (label_len + 2 for ": ")
+    split_at = label_len + 2
+    label_part = highlighted[:split_at]
+    command_part = highlighted[split_at:]
+
+    # Apply dim to command portion (preserves existing highlights)
+    command_part.stylize("dim")
+
+    return Text.assemble(f"{emoji} ", label_part, command_part)
 
 
 class MainListCommandProvider(Provider):
@@ -78,8 +105,9 @@ class MainListCommandProvider(Provider):
         for cmd in get_available_commands(ctx):
             emoji = CATEGORY_EMOJI[cmd.category]
             name = get_display_name(cmd, ctx)
+            display = _format_palette_display(emoji, cmd.description, name)
             yield DiscoveryHit(
-                f"{emoji} {name}",
+                display,
                 partial(self._app.execute_palette_command, cmd.id),
             )
 
@@ -100,11 +128,17 @@ class MainListCommandProvider(Provider):
 
         for cmd in get_available_commands(ctx):
             name = get_display_name(cmd, ctx)
-            score = matcher.match(name)
+            # Match against "label: command_text" format
+            search_text = f"{cmd.description}: {name}"
+            score = matcher.match(search_text)
             if score > 0:
                 emoji = CATEGORY_EMOJI[cmd.category]
-                highlighted = matcher.highlight(name)
-                display = _format_highlighted_display(emoji, highlighted)
+                highlighted = matcher.highlight(search_text)
+                if isinstance(highlighted, Text):
+                    display = _format_search_display(emoji, highlighted, len(cmd.description))
+                else:
+                    # Fallback for non-Text highlight result
+                    display = _format_palette_display(emoji, cmd.description, name)
                 yield Hit(
                     score,
                     display,
@@ -154,8 +188,9 @@ class PlanCommandProvider(Provider):
         for cmd in get_available_commands(ctx):
             emoji = CATEGORY_EMOJI[cmd.category]
             name = get_display_name(cmd, ctx)
+            display = _format_palette_display(emoji, cmd.description, name)
             yield DiscoveryHit(
-                f"{emoji} {name}",
+                display,
                 partial(self._detail_screen.execute_command, cmd.id),
             )
 
@@ -173,11 +208,17 @@ class PlanCommandProvider(Provider):
 
         for cmd in get_available_commands(ctx):
             name = get_display_name(cmd, ctx)
-            score = matcher.match(name)
+            # Match against "label: command_text" format
+            search_text = f"{cmd.description}: {name}"
+            score = matcher.match(search_text)
             if score > 0:
                 emoji = CATEGORY_EMOJI[cmd.category]
-                highlighted = matcher.highlight(name)
-                display = _format_highlighted_display(emoji, highlighted)
+                highlighted = matcher.highlight(search_text)
+                if isinstance(highlighted, Text):
+                    display = _format_search_display(emoji, highlighted, len(cmd.description))
+                else:
+                    # Fallback for non-Text highlight result
+                    display = _format_palette_display(emoji, cmd.description, name)
                 yield Hit(
                     score,
                     display,

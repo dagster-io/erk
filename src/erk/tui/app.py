@@ -586,11 +586,6 @@ class ErkDashApp(App):
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
-        elif command_id == "copy_prepare_dangerous":
-            cmd = f"erk prepare {row.issue_number} --dangerous"
-            self._provider.clipboard.copy(cmd)
-            self.notify(f"Copied: {cmd}")
-
         elif command_id == "copy_prepare_activate":
             cmd = (
                 f'source "$(erk prepare {row.issue_number} --script)" && erk implement --dangerous'
