@@ -244,3 +244,122 @@ This objective is found without session ID.
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["title"] == "No Session Objective"
+
+
+# --- Session deduplication tests ---
+
+
+def test_objective_save_to_issue_idempotency_prevents_duplicates(
+    tmp_path: Path,
+) -> None:
+    """Test that calling objective-save-to-issue twice returns the existing issue."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature"},
+        trunk_branches={tmp_path: "main"},
+    )
+    test_session_id = "idempotency-session"
+
+    plan_content = """# Idempotent Objective
+
+This objective should only be created once.
+
+- Step 1: Do something
+- Step 2: More steps"""
+
+    fake_store = FakeClaudeInstallation.for_test(
+        plans={"idempotent-plan": plan_content},
+        session_slugs={test_session_id: ["idempotent-plan"]},
+    )
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        ctx = ErkContext.for_test(
+            github_issues=fake_gh,
+            git=fake_git,
+            claude_installation=fake_store,
+            cwd=Path(td),
+            repo_root=Path(td),
+        )
+
+        # First call - should create issue
+        result1 = runner.invoke(
+            objective_save_to_issue,
+            ["--format", "json", "--session-id", test_session_id],
+            obj=ctx,
+        )
+
+        assert result1.exit_code == 0, f"First call failed: {result1.output}"
+        output1 = json.loads(result1.output)
+        assert output1["success"] is True
+        assert output1["issue_number"] == 1
+        assert output1.get("skipped_duplicate") is not True
+
+        # Second call - should return existing issue (not create duplicate)
+        result2 = runner.invoke(
+            objective_save_to_issue,
+            ["--format", "json", "--session-id", test_session_id],
+            obj=ctx,
+        )
+
+        assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+        output2 = json.loads(result2.output)
+        assert output2["success"] is True
+        assert output2["issue_number"] == 1  # Same issue number
+        assert output2["skipped_duplicate"] is True
+        assert "already saved objective #1" in output2["message"]
+
+
+def test_objective_save_to_issue_idempotency_display_format(
+    tmp_path: Path,
+) -> None:
+    """Test idempotency with display format shows appropriate message."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature"},
+        trunk_branches={tmp_path: "main"},
+    )
+    test_session_id = "display-idempotency-session"
+
+    plan_content = """# Display Idempotent Objective
+
+This objective tests display format idempotency.
+
+- Step 1: Do something
+- Step 2: More steps"""
+
+    fake_store = FakeClaudeInstallation.for_test(
+        plans={"display-idempotent-plan": plan_content},
+        session_slugs={test_session_id: ["display-idempotent-plan"]},
+    )
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        ctx = ErkContext.for_test(
+            github_issues=fake_gh,
+            git=fake_git,
+            claude_installation=fake_store,
+            cwd=Path(td),
+            repo_root=Path(td),
+        )
+
+        # First call - create issue
+        result1 = runner.invoke(
+            objective_save_to_issue,
+            ["--format", "display", "--session-id", test_session_id],
+            obj=ctx,
+        )
+        assert result1.exit_code == 0
+
+        # Second call with display format - should show skip message
+        result2 = runner.invoke(
+            objective_save_to_issue,
+            ["--format", "display", "--session-id", test_session_id],
+            obj=ctx,
+        )
+
+        assert result2.exit_code == 0
+        assert "already saved objective #1" in result2.output
+        assert "Skipping duplicate creation" in result2.output
