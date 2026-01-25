@@ -23,6 +23,7 @@ class IssueBranchSetup:
         issue_number: GitHub issue number
         issue_url: Full GitHub issue URL
         issue_title: Issue title for reference
+        objective_issue: Linked objective issue number, or None if not linked
         warnings: List of warning messages (e.g., non-OPEN issue)
     """
 
@@ -32,6 +33,7 @@ class IssueBranchSetup:
     issue_number: int
     issue_url: str
     issue_title: str
+    objective_issue: int | None
     warnings: tuple[str, ...] = ()
 
 
@@ -106,5 +108,6 @@ def prepare_plan_for_worktree(
         issue_number=issue_number,
         issue_url=plan.url,
         issue_title=plan.title,
+        objective_issue=plan.objective_id,
         warnings=tuple(warnings),
     )

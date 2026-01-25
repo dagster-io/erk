@@ -38,6 +38,7 @@ from erk_statusline.statusline import (
     get_git_status_via_gateway,
     get_github_repo_via_gateway,
     get_issue_number,
+    get_objective_issue,
     get_pr_info_via_branch_manager,
     get_repo_info,
     get_worktree_info_via_gateway,
@@ -373,7 +374,7 @@ class TestBuildGhLabel:
         )
         github_data = None
 
-        result = build_gh_label(repo_info, github_data)
+        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -403,7 +404,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data)
+        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -433,7 +434,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, issue_number=456)
+        result = build_gh_label(repo_info, github_data, issue_number=456, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -455,7 +456,7 @@ class TestBuildGhLabel:
         )
         github_data = None
 
-        result = build_gh_label(repo_info, github_data, issue_number=None)
+        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -483,7 +484,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data)
+        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
 
         result_text = result.render()
         assert "cmts:" in result_text
@@ -511,7 +512,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data)
+        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
 
         result_text = result.render()
         assert "cmts:" in result_text
@@ -539,10 +540,58 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data)
+        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
 
         result_text = result.render()
         assert "cmts:" not in result_text
+
+    def test_with_objective_issue_includes_obj(self) -> None:
+        """When objective issue is provided, should include obj:#789 in label."""
+        repo_info = RepoInfo(
+            owner="testowner",
+            repo="testrepo",
+            pr_number="123",
+            pr_url="https://app.graphite.dev/github/pr/testowner/testrepo/123/",
+            pr_state="published",
+            has_conflicts=False,
+        )
+        github_data = GitHubData(
+            owner="testowner",
+            repo="testrepo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[],
+            review_thread_counts=(0, 0),
+            from_fallback=False,
+        )
+
+        result = build_gh_label(repo_info, github_data, issue_number=456, objective_issue=789)
+
+        result_text = result.render()
+        # Note: render() includes ANSI codes between labels and numbers
+        assert "plan:" in result_text
+        assert "#456" in result_text
+        assert "obj:" in result_text
+        assert "#789" in result_text
+
+    def test_without_objective_issue_omits_obj(self) -> None:
+        """When objective issue is None, should not include obj: in label."""
+        repo_info = RepoInfo(
+            owner="testowner",
+            repo="testrepo",
+            pr_number="123",
+            pr_url="https://app.graphite.dev/github/pr/testowner/testrepo/123/",
+            pr_state="published",
+            has_conflicts=False,
+        )
+        github_data = None
+
+        result = build_gh_label(repo_info, github_data, issue_number=456, objective_issue=None)
+
+        result_text = result.render()
+        assert "obj:" not in result_text
 
 
 class TestGetIssueNumber:
@@ -625,6 +674,65 @@ class TestGetIssueNumber:
             issue_file.write_text('{"number": "not an int"}')
 
             result = get_issue_number(tmpdir)
+            assert result is None
+
+
+class TestGetObjectiveIssue:
+    """Test objective issue loading from .impl/issue.json."""
+
+    def test_no_git_root_returns_none(self) -> None:
+        """Empty git root should return None."""
+        result = get_objective_issue("")
+        assert result is None
+
+    def test_missing_issue_file_returns_none(self) -> None:
+        """Missing issue.json file should return None."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = get_objective_issue(tmpdir)
+            assert result is None
+
+    def test_valid_issue_json_with_objective_returns_number(self) -> None:
+        """Valid issue.json with objective_issue field should return the number."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            impl_dir = Path(tmpdir) / ".impl"
+            impl_dir.mkdir()
+            issue_file = impl_dir / "issue.json"
+            issue_file.write_text('{"issue_number": 123, "objective_issue": 456}')
+
+            result = get_objective_issue(tmpdir)
+            assert result == 456
+
+    def test_issue_json_without_objective_returns_none(self) -> None:
+        """JSON without objective_issue field should return None."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            impl_dir = Path(tmpdir) / ".impl"
+            impl_dir.mkdir()
+            issue_file = impl_dir / "issue.json"
+            issue_file.write_text('{"issue_number": 123}')
+
+            result = get_objective_issue(tmpdir)
+            assert result is None
+
+    def test_malformed_json_returns_none(self) -> None:
+        """Malformed JSON should return None."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            impl_dir = Path(tmpdir) / ".impl"
+            impl_dir.mkdir()
+            issue_file = impl_dir / "issue.json"
+            issue_file.write_text('{"objective_issue": not valid json}')
+
+            result = get_objective_issue(tmpdir)
+            assert result is None
+
+    def test_non_integer_objective_returns_none(self) -> None:
+        """JSON with non-integer objective_issue field should return None."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            impl_dir = Path(tmpdir) / ".impl"
+            impl_dir.mkdir()
+            issue_file = impl_dir / "issue.json"
+            issue_file.write_text('{"objective_issue": "not an int"}')
+
+            result = get_objective_issue(tmpdir)
             assert result is None
 
 

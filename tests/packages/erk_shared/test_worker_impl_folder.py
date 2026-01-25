@@ -25,6 +25,7 @@ def test_create_worker_impl_folder_success(tmp_path: Path) -> None:
         issue_number=issue_number,
         issue_url=issue_url,
         repo_root=tmp_path,
+        objective_issue=None,
     )
 
     # Verify folder was created
@@ -70,6 +71,7 @@ def test_create_worker_impl_folder_already_exists(tmp_path: Path) -> None:
             issue_number=123,
             issue_url="https://github.com/owner/repo/issues/123",
             repo_root=tmp_path,
+            objective_issue=None,
         )
 
 
@@ -85,6 +87,7 @@ def test_create_worker_impl_folder_repo_root_not_exists(tmp_path: Path) -> None:
             issue_number=123,
             issue_url="https://github.com/owner/repo/issues/123",
             repo_root=nonexistent_path,
+            objective_issue=None,
         )
 
 
@@ -102,6 +105,7 @@ def test_create_worker_impl_folder_repo_root_not_directory(tmp_path: Path) -> No
             issue_number=123,
             issue_url="https://github.com/owner/repo/issues/123",
             repo_root=file_path,
+            objective_issue=None,
         )
 
 
@@ -115,6 +119,7 @@ def test_remove_worker_impl_folder_success(tmp_path: Path) -> None:
         issue_number=123,
         issue_url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
+        objective_issue=None,
     )
 
     worker_impl_folder = tmp_path / ".worker-impl"
@@ -155,6 +160,7 @@ def test_worker_impl_folder_exists_true(tmp_path: Path) -> None:
         issue_number=123,
         issue_url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
+        objective_issue=None,
     )
 
     assert worker_impl_folder_exists(tmp_path) is True
@@ -203,6 +209,7 @@ def example():
         issue_number=456,
         issue_url="https://github.com/owner/repo/issues/456",
         repo_root=tmp_path,
+        objective_issue=None,
     )
 
     plan_file = tmp_path / ".worker-impl" / "plan.md"
@@ -210,3 +217,22 @@ def example():
 
     # Content should be preserved exactly
     assert saved_content == plan_content
+
+
+def test_create_worker_impl_folder_with_objective_issue(tmp_path: Path) -> None:
+    """Test creating .worker-impl/ folder with objective_issue included."""
+    from erk_shared.worker_impl_folder import create_worker_impl_folder
+
+    create_worker_impl_folder(
+        plan_content="# Test Plan\n",
+        issue_number=123,
+        issue_url="https://github.com/owner/repo/issues/123",
+        repo_root=tmp_path,
+        objective_issue=456,
+    )
+
+    issue_file = tmp_path / ".worker-impl" / "issue.json"
+    issue_data = json.loads(issue_file.read_text(encoding="utf-8"))
+
+    assert issue_data["issue_number"] == 123
+    assert issue_data["objective_issue"] == 456

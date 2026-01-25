@@ -224,7 +224,14 @@ def execute_core_submit(
             remote_url = ctx.git.get_remote_url(repo_root, "origin")
             owner, repo_name = parse_git_remote_url(remote_url)
             issue_url = f"https://github.com/{owner}/{repo_name}/issues/{issue_number}"
-            save_issue_reference(impl_dir, issue_number, issue_url)
+            save_issue_reference(
+                impl_dir,
+                issue_number,
+                issue_url,
+                issue_title=None,
+                labels=None,
+                objective_issue=None,  # Auto-repair doesn't have objective context
+            )
             yield ProgressEvent(
                 f"Auto-created .impl/issue.json for issue #{issue_number}", style="info"
             )

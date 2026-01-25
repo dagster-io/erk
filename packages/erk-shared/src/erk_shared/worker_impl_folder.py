@@ -28,6 +28,8 @@ def create_worker_impl_folder(
     issue_number: int,
     issue_url: str,
     repo_root: Path,
+    *,
+    objective_issue: int | None,
 ) -> Path:
     """Create .worker-impl/ folder with all required files.
 
@@ -36,6 +38,7 @@ def create_worker_impl_folder(
         issue_number: GitHub issue number
         issue_url: Full GitHub issue URL
         repo_root: Repository root directory path
+        objective_issue: Optional linked objective issue number
 
     Returns:
         Path to the created .worker-impl/ directory
@@ -65,7 +68,14 @@ def create_worker_impl_folder(
     plan_file.write_text(plan_content, encoding="utf-8")
 
     # Write issue.json using canonical function from impl_folder
-    save_issue_reference(worker_impl_folder, issue_number, issue_url)
+    save_issue_reference(
+        worker_impl_folder,
+        issue_number,
+        issue_url,
+        issue_title=None,
+        labels=None,
+        objective_issue=objective_issue,
+    )
 
     # Write README.md
     readme_content = f"""# .worker-impl/ - Worker Implementation Plan

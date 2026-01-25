@@ -110,3 +110,37 @@ def test_prepare_plan_invalid_identifier_returns_failure() -> None:
     assert isinstance(result, IssueValidationFailed)
     assert "not a valid issue number" in result.message
     assert "not-a-number" in result.message
+
+
+def test_prepare_plan_with_objective_id_populates_objective_issue() -> None:
+    """Plan with objective_id populates IssueBranchSetup.objective_issue."""
+    plan = Plan(
+        plan_identifier="123",
+        title="Test Issue",
+        body="Plan content",
+        state=PlanState.OPEN,
+        url="https://github.com/org/repo/issues/123",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1),
+        updated_at=datetime(2024, 1, 1),
+        metadata={},
+        objective_id=456,
+    )
+    timestamp = datetime(2024, 1, 15, 14, 30)
+
+    result = prepare_plan_for_worktree(plan, timestamp)
+
+    assert isinstance(result, IssueBranchSetup)
+    assert result.objective_issue == 456
+
+
+def test_prepare_plan_without_objective_id_has_none() -> None:
+    """Plan without objective_id results in objective_issue=None."""
+    plan = _make_plan()
+    timestamp = datetime(2024, 1, 15, 14, 30)
+
+    result = prepare_plan_for_worktree(plan, timestamp)
+
+    assert isinstance(result, IssueBranchSetup)
+    assert result.objective_issue is None

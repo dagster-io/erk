@@ -446,6 +446,7 @@ def _create_branch_and_pr(
         issue_number=issue_number,
         issue_url=issue.url,
         repo_root=repo.root,
+        objective_issue=plan.objective_id,
     )
 
     # Stage, commit, and push

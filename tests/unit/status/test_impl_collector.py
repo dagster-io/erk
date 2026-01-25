@@ -51,7 +51,14 @@ def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
     plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
 
     # Save issue reference
-    save_issue_reference(plan_folder, 42, "https://github.com/owner/repo/issues/42")
+    save_issue_reference(
+        plan_folder,
+        42,
+        "https://github.com/owner/repo/issues/42",
+        issue_title=None,
+        labels=None,
+        objective_issue=None,
+    )
 
     git = FakeGit()
     ctx = minimal_context(git, tmp_path)

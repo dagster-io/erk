@@ -124,7 +124,12 @@ def test_save_issue_reference_success(tmp_path: Path) -> None:
 
     # Save issue reference
     save_issue_reference(
-        plan_dir, issue_number=42, issue_url="https://github.com/owner/repo/issues/42"
+        plan_dir,
+        42,
+        "https://github.com/owner/repo/issues/42",
+        issue_title=None,
+        labels=None,
+        objective_issue=None,
     )
 
     # Verify file created
@@ -146,7 +151,9 @@ def test_save_issue_reference_plan_dir_not_exists(tmp_path: Path) -> None:
     # Don't create the directory
 
     with pytest.raises(FileNotFoundError, match="Implementation directory does not exist"):
-        save_issue_reference(impl_dir, 42, "http://url")
+        save_issue_reference(
+            impl_dir, 42, "http://url", issue_title=None, labels=None, objective_issue=None
+        )
 
 
 def test_save_issue_reference_overwrites_existing(tmp_path: Path) -> None:
@@ -155,10 +162,14 @@ def test_save_issue_reference_overwrites_existing(tmp_path: Path) -> None:
     plan_dir.mkdir()
 
     # Save first reference
-    save_issue_reference(plan_dir, 10, "http://url/10")
+    save_issue_reference(
+        plan_dir, 10, "http://url/10", issue_title=None, labels=None, objective_issue=None
+    )
 
     # Overwrite with new reference
-    save_issue_reference(plan_dir, 20, "http://url/20")
+    save_issue_reference(
+        plan_dir, 20, "http://url/20", issue_title=None, labels=None, objective_issue=None
+    )
 
     # Verify latest reference saved
     ref = read_issue_reference(plan_dir)
@@ -172,7 +183,9 @@ def test_save_issue_reference_timestamps(tmp_path: Path) -> None:
     plan_dir = tmp_path / ".impl"
     plan_dir.mkdir()
 
-    save_issue_reference(plan_dir, 1, "http://url")
+    save_issue_reference(
+        plan_dir, 1, "http://url", issue_title=None, labels=None, objective_issue=None
+    )
 
     issue_file = plan_dir / "issue.json"
     data = json.loads(issue_file.read_text(encoding="utf-8"))
@@ -184,13 +197,62 @@ def test_save_issue_reference_timestamps(tmp_path: Path) -> None:
     assert ":" in data["synced_at"]
 
 
+def test_save_issue_reference_with_objective_issue(tmp_path: Path) -> None:
+    """Test save_issue_reference stores objective_issue when provided."""
+    plan_dir = tmp_path / ".impl"
+    plan_dir.mkdir()
+
+    save_issue_reference(
+        plan_dir,
+        42,
+        "https://github.com/owner/repo/issues/42",
+        issue_title="Test issue",
+        labels=None,
+        objective_issue=123,
+    )
+
+    issue_file = plan_dir / "issue.json"
+    data = json.loads(issue_file.read_text(encoding="utf-8"))
+
+    assert data["issue_number"] == 42
+    assert data["objective_issue"] == 123
+
+
+def test_save_issue_reference_without_objective_issue(tmp_path: Path) -> None:
+    """Test save_issue_reference omits objective_issue when None."""
+    plan_dir = tmp_path / ".impl"
+    plan_dir.mkdir()
+
+    save_issue_reference(
+        plan_dir,
+        42,
+        "https://github.com/owner/repo/issues/42",
+        issue_title="Test issue",
+        labels=None,
+        objective_issue=None,
+    )
+
+    issue_file = plan_dir / "issue.json"
+    data = json.loads(issue_file.read_text(encoding="utf-8"))
+
+    assert data["issue_number"] == 42
+    assert "objective_issue" not in data
+
+
 def test_read_issue_reference_success(tmp_path: Path) -> None:
     """Test reading existing issue reference."""
     plan_dir = tmp_path / ".impl"
     plan_dir.mkdir()
 
     # Save reference
-    save_issue_reference(plan_dir, 42, "https://github.com/owner/repo/issues/42")
+    save_issue_reference(
+        plan_dir,
+        42,
+        "https://github.com/owner/repo/issues/42",
+        issue_title=None,
+        labels=None,
+        objective_issue=None,
+    )
 
     # Read it back
     ref = read_issue_reference(plan_dir)
@@ -270,7 +332,9 @@ def test_has_issue_reference_exists(tmp_path: Path) -> None:
     plan_dir = tmp_path / ".impl"
     plan_dir.mkdir()
 
-    save_issue_reference(plan_dir, 42, "http://url")
+    save_issue_reference(
+        plan_dir, 42, "http://url", issue_title=None, labels=None, objective_issue=None
+    )
 
     assert has_issue_reference(plan_dir) is True
 
@@ -299,7 +363,9 @@ def test_issue_reference_roundtrip(tmp_path: Path) -> None:
     # Save reference
     issue_num = 999
     issue_url = "https://github.com/test/repo/issues/999"
-    save_issue_reference(plan_dir, issue_num, issue_url)
+    save_issue_reference(
+        plan_dir, issue_num, issue_url, issue_title=None, labels=None, objective_issue=None
+    )
 
     # Verify has_issue_reference detects it
     assert has_issue_reference(plan_dir) is True
@@ -326,7 +392,9 @@ def test_issue_reference_with_plan_folder(tmp_path: Path) -> None:
     assert has_issue_reference(plan_folder) is False
 
     # Save issue reference
-    save_issue_reference(plan_folder, 42, "http://url/42")
+    save_issue_reference(
+        plan_folder, 42, "http://url/42", issue_title=None, labels=None, objective_issue=None
+    )
 
     # Verify reference exists
     assert has_issue_reference(plan_folder) is True
@@ -682,7 +750,14 @@ def test_validate_issue_linkage_both_match(tmp_path: Path) -> None:
     """Test validation passes when branch and .impl/issue.json match."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
-    save_issue_reference(impl_dir, 42, "https://github.com/org/repo/issues/42")
+    save_issue_reference(
+        impl_dir,
+        42,
+        "https://github.com/org/repo/issues/42",
+        issue_title=None,
+        labels=None,
+        objective_issue=None,
+    )
 
     # Branch name matches issue number
     result = validate_issue_linkage(impl_dir, "P42-add-feature-01-04-1234")
@@ -694,7 +769,14 @@ def test_validate_issue_linkage_mismatch_raises(tmp_path: Path) -> None:
     """Test validation raises ValueError when branch and .impl/issue.json disagree."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
-    save_issue_reference(impl_dir, 99, "https://github.com/org/repo/issues/99")
+    save_issue_reference(
+        impl_dir,
+        99,
+        "https://github.com/org/repo/issues/99",
+        issue_title=None,
+        labels=None,
+        objective_issue=None,
+    )
 
     # Branch says issue 42, but .impl/ says issue 99
     with pytest.raises(ValueError) as exc_info:
@@ -720,7 +802,14 @@ def test_validate_issue_linkage_impl_only(tmp_path: Path) -> None:
     """Test validation returns impl issue when branch has no issue number."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
-    save_issue_reference(impl_dir, 456, "https://github.com/org/repo/issues/456")
+    save_issue_reference(
+        impl_dir,
+        456,
+        "https://github.com/org/repo/issues/456",
+        issue_title=None,
+        labels=None,
+        objective_issue=None,
+    )
 
     # Branch without issue prefix (e.g., main, master, feature-branch)
     result = validate_issue_linkage(impl_dir, "main")
@@ -755,7 +844,14 @@ def test_validate_issue_linkage_worker_impl(tmp_path: Path) -> None:
     """Test validation works with .worker-impl/ folder."""
     worker_impl_dir = tmp_path / ".worker-impl"
     worker_impl_dir.mkdir()
-    save_issue_reference(worker_impl_dir, 555, "https://github.com/org/repo/issues/555")
+    save_issue_reference(
+        worker_impl_dir,
+        555,
+        "https://github.com/org/repo/issues/555",
+        issue_title=None,
+        labels=None,
+        objective_issue=None,
+    )
 
     result = validate_issue_linkage(worker_impl_dir, "P555-worker-feature-01-04-1234")
 
