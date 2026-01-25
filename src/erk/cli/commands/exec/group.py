@@ -90,6 +90,7 @@ from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
 )
 from erk.cli.commands.exec.scripts.pr_sync_commit import pr_sync_commit
 from erk.cli.commands.exec.scripts.preprocess_session import preprocess_session
+from erk.cli.commands.exec.scripts.promote_to_tripwire import promote_to_tripwire
 from erk.cli.commands.exec.scripts.quick_submit import quick_submit
 from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
     rebase_with_conflict_resolution,
@@ -193,6 +194,7 @@ exec_group.add_command(post_pr_inline_comment, name="post-pr-inline-comment")
 exec_group.add_command(pr_sync_commit, name="pr-sync-commit")
 exec_group.add_command(post_workflow_started_comment, name="post-workflow-started-comment")
 exec_group.add_command(preprocess_session, name="preprocess-session")
+exec_group.add_command(promote_to_tripwire, name="promote-to-tripwire")
 exec_group.add_command(quick_submit, name="quick-submit")
 exec_group.add_command(rebase_with_conflict_resolution, name="rebase-with-conflict-resolution")
 exec_group.add_command(resolve_review_thread, name="resolve-review-thread")
