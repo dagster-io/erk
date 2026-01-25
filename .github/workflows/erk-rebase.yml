@@ -130,6 +130,7 @@ jobs:
           fi
 
       - name: Rebase with conflict resolution
+        id: rebase
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -138,10 +139,14 @@ jobs:
           BRANCH_NAME: ${{ inputs.branch_name }}
           MODEL_NAME: ${{ inputs.model_name }}
         run: |
-          erk exec rebase-with-conflict-resolution \
+          REBASE_OUTPUT=$(erk exec rebase-with-conflict-resolution \
             --target-branch "$TARGET_BRANCH" \
             --branch-name "$BRANCH_NAME" \
-            --model "$MODEL_NAME"
+            --model "$MODEL_NAME")
+          # Output is multi-line JSON, need to escape for GitHub output
+          echo "rebase_output<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$REBASE_OUTPUT" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Post status comment to PR
         if: always()
@@ -150,10 +155,35 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           JOB_STATUS: ${{ job.status }}
+          REBASE_OUTPUT: ${{ steps.rebase.outputs.rebase_output }}
+          BRANCH_NAME: ${{ inputs.branch_name }}
+          BASE_BRANCH: ${{ inputs.base_branch }}
         run: |
           if [ "$JOB_STATUS" = "success" ]; then
-            BODY="✅ Remote rebase completed successfully.\n\n[View workflow run]($RUN_URL)"
+            # Parse JSON output for details
+            ACTION=$(echo "$REBASE_OUTPUT" | jq -r '.action // "unknown"')
+            COMMITS_BEHIND=$(echo "$REBASE_OUTPUT" | jq -r '.commits_behind // 0')
+
+            if [ "$ACTION" = "rebased" ]; then
+              DETAIL="Rebased \`$BRANCH_NAME\` onto \`$BASE_BRANCH\`, resolving $COMMITS_BEHIND commits behind."
+            elif [ "$ACTION" = "already-up-to-date" ]; then
+              DETAIL="Branch \`$BRANCH_NAME\` is already up-to-date with \`$BASE_BRANCH\` (no rebase needed)."
+            else
+              DETAIL="Rebase completed."
+            fi
+
+            BODY="✅ Remote rebase completed\n\n$DETAIL\n\n[View workflow run]($RUN_URL)"
           else
-            BODY="❌ Remote rebase failed.\n\n[View workflow run]($RUN_URL)"
+            # Try to extract error details from output if available
+            if [ -n "$REBASE_OUTPUT" ]; then
+              ERROR_MSG=$(echo "$REBASE_OUTPUT" | jq -r '.error // .message // empty' 2>/dev/null)
+              if [ -n "$ERROR_MSG" ]; then
+                BODY="❌ Remote rebase failed\n\nError: $ERROR_MSG\n\n[View workflow run]($RUN_URL)"
+              else
+                BODY="❌ Remote rebase failed\n\n[View workflow run]($RUN_URL)"
+              fi
+            else
+              BODY="❌ Remote rebase failed\n\n[View workflow run]($RUN_URL)"
+            fi
           fi
           gh pr comment "$PR_NUMBER" --body "$(echo -e "$BODY")"
