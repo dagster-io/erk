@@ -900,7 +900,9 @@ def create_wt(
             wt_path / ".impl",
             setup.issue_number,
             setup.issue_url,
-            setup.issue_title,
+            issue_title=setup.issue_title,
+            labels=None,
+            objective_issue=setup.objective_issue,
         )
 
         if not script and not output_json:

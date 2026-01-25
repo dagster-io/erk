@@ -81,6 +81,7 @@ def create_worker_impl_from_issue(
         issue_number=issue_number,
         issue_url=plan.url,
         repo_root=repo_root,
+        objective_issue=plan.objective_id,
     )
 
     # Output structured success result

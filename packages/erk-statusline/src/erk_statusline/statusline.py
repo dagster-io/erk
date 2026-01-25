@@ -232,6 +232,34 @@ def get_issue_number(git_root: str) -> int | None:
     return None
 
 
+def get_objective_issue(git_root: str) -> int | None:
+    """Load objective issue number from .impl/issue.json file.
+
+    Args:
+        git_root: Absolute path to git repository root
+
+    Returns:
+        Objective issue number if file exists and has objective_issue field, None otherwise.
+    """
+    if not git_root:
+        return None
+
+    issue_file = Path(git_root) / ".impl" / "issue.json"
+    if not issue_file.is_file():
+        return None
+
+    try:
+        with open(issue_file, encoding="utf-8") as f:
+            data = json.load(f)
+            objective = data.get("objective_issue")
+            if isinstance(objective, int):
+                return objective
+    except (json.JSONDecodeError, OSError):
+        pass
+
+    return None
+
+
 def find_new_plan_file(git_root: str) -> str | None:
     """Find plan file with erk_plan frontmatter at git root.
 
@@ -1014,7 +1042,11 @@ def build_new_plan_label(filename: str) -> Token:
 
 
 def build_gh_label(
-    repo_info: RepoInfo, github_data: GitHubData | None, issue_number: int | None = None
+    repo_info: RepoInfo,
+    github_data: GitHubData | None,
+    *,
+    issue_number: int | None,
+    objective_issue: int | None,
 ) -> TokenSeq:
     """Build GitHub PR metadata label.
 
@@ -1022,10 +1054,11 @@ def build_gh_label(
         repo_info: Repository and PR information
         github_data: GitHub data from GraphQL query (for checks status and comments)
         issue_number: Optional issue number from .impl/issue.json
+        objective_issue: Optional objective issue number from .impl/issue.json
 
     Returns:
         TokenSeq for the complete GitHub label like:
-        (gh:#123 plan:#456 st:👀💥 chks:✅ cmts:3/5)
+        (gh:#123 plan:#456 obj:#789 st:👀💥 chks:✅ cmts:3/5)
     """
     parts = [Token("(gh:")]
 
@@ -1039,6 +1072,15 @@ def build_gh_label(
                 [
                     Token(" plan:"),
                     Token(f"#{issue_number}", color=Color.BLUE),
+                ]
+            )
+
+        # Add objective issue if available
+        if objective_issue:
+            parts.extend(
+                [
+                    Token(" obj:"),
+                    Token(f"#{objective_issue}", color=Color.BLUE),
                 ]
             )
 
@@ -1113,6 +1155,7 @@ def main():
         new_plan_file = None
         git_root = ""
         issue_number = None
+        objective_issue = None
         github_data = None
 
         if cwd:
@@ -1131,6 +1174,7 @@ def main():
                     relative_cwd = get_relative_cwd(cwd, git_root)
                     new_plan_file = find_new_plan_file(git_root)
                     issue_number = get_issue_number(git_root)
+                    objective_issue = get_objective_issue(git_root)
                     # Fetch GitHub data using gateway for Graphite PR cache
                     github_data = fetch_github_data_via_gateway(ctx, repo_root, branch)
 
@@ -1174,7 +1218,12 @@ def main():
                 *([build_new_plan_label(new_plan_file)] if new_plan_file else []),
                 *([Token("✗")] if is_dirty else []),
                 Token("|"),
-                build_gh_label(repo_info, github_data, issue_number),
+                build_gh_label(
+                    repo_info,
+                    github_data,
+                    issue_number=issue_number,
+                    objective_issue=objective_issue,
+                ),
                 TokenSeq((Token("│ ("), Token(model_code), Token(")"))),
             )
         )

@@ -183,7 +183,14 @@ def _implement_from_issue(
     # Save issue reference for PR linking
     ctx.console.info("Saving issue reference for PR linking...")
     impl_dir = ctx.cwd / ".impl"
-    save_issue_reference(impl_dir, int(issue_number), plan.url, plan.title)
+    save_issue_reference(
+        impl_dir,
+        int(issue_number),
+        plan.url,
+        issue_title=plan.title,
+        labels=None,
+        objective_issue=plan.objective_id,
+    )
     ctx.console.success(f"✓ Saved issue reference: {plan.url}")
 
     # Execute based on mode

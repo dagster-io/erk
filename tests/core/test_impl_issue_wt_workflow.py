@@ -28,7 +28,9 @@ def test_save_and_read_issue_reference(tmp_path: Path) -> None:
     issue_url = "https://github.com/owner/repo/issues/42"
 
     # Save issue reference
-    save_issue_reference(impl_folder, issue_number, issue_url)
+    save_issue_reference(
+        impl_folder, issue_number, issue_url, issue_title=None, labels=None, objective_issue=None
+    )
 
     # Verify file was created
     issue_json = impl_folder / "issue.json"
@@ -48,7 +50,14 @@ def test_save_issue_reference_plan_dir_must_exist(tmp_path: Path) -> None:
     impl_folder = tmp_path / ".impl"  # Doesn't exist
 
     with pytest.raises(FileNotFoundError, match="Implementation directory does not exist"):
-        save_issue_reference(impl_folder, 42, "https://github.com/owner/repo/issues/42")
+        save_issue_reference(
+            impl_folder,
+            42,
+            "https://github.com/owner/repo/issues/42",
+            issue_title=None,
+            labels=None,
+            objective_issue=None,
+        )
 
 
 def test_has_issue_reference_false_when_no_file(tmp_path: Path) -> None:
@@ -64,7 +73,14 @@ def test_has_issue_reference_true_when_file_exists(tmp_path: Path) -> None:
     impl_folder = tmp_path / ".impl"
     impl_folder.mkdir()
 
-    save_issue_reference(impl_folder, 42, "https://github.com/owner/repo/issues/42")
+    save_issue_reference(
+        impl_folder,
+        42,
+        "https://github.com/owner/repo/issues/42",
+        issue_title=None,
+        labels=None,
+        objective_issue=None,
+    )
 
     assert has_issue_reference(impl_folder) is True
 
@@ -101,7 +117,9 @@ Test the workflow.
     assert result.number == 123
 
     # Step 3: Link issue to plan folder
-    save_issue_reference(impl_folder, result.number, result.url)
+    save_issue_reference(
+        impl_folder, result.number, result.url, issue_title=None, labels=None, objective_issue=None
+    )
 
     # Step 4: Verify link was created
     assert has_issue_reference(impl_folder)

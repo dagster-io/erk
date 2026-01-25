@@ -199,7 +199,9 @@ def branch_create(
             impl_path,
             setup.issue_number,
             setup.issue_url,
-            setup.issue_title,
+            issue_title=setup.issue_title,
+            labels=None,
+            objective_issue=setup.objective_issue,
         )
 
         # In script mode, output activation script path and exit

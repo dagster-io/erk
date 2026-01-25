@@ -119,8 +119,10 @@ def save_issue_reference(
     impl_dir: Path,
     issue_number: int,
     issue_url: str,
-    issue_title: str | None = None,
-    labels: list[str] | None = None,
+    *,
+    issue_title: str | None,
+    labels: list[str] | None,
+    objective_issue: int | None,
 ) -> None:
     """Save GitHub issue reference to .impl/issue.json.
 
@@ -130,6 +132,7 @@ def save_issue_reference(
         issue_url: Full GitHub issue URL
         issue_title: Optional issue title for reference
         labels: Optional list of issue labels (used to detect learn plans)
+        objective_issue: Optional linked objective issue number
 
     Raises:
         FileNotFoundError: If impl_dir doesn't exist
@@ -151,6 +154,8 @@ def save_issue_reference(
         data["issue_title"] = issue_title
     if labels is not None:
         data["labels"] = labels
+    if objective_issue is not None:
+        data["objective_issue"] = objective_issue
 
     issue_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
 

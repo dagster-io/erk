@@ -155,7 +155,14 @@ def setup_impl_from_issue(
         )
 
         # Step 4: Save issue reference for PR linking
-        save_issue_reference(impl_path, issue_number, plan.url, plan.title)
+        save_issue_reference(
+            impl_path,
+            issue_number,
+            plan.url,
+            issue_title=plan.title,
+            labels=None,
+            objective_issue=plan.objective_id,
+        )
 
     # Output structured success result
     output: dict[str, str | int | bool | None] = {
