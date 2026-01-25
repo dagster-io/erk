@@ -55,11 +55,27 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_header_learned_from_issue,
     update_plan_header_learn_plan_completed,
 )
-from erk_shared.github.types import BodyText, PRDetails, PRNotFound
+from erk_shared.github.types import BodyText, PRDetails
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.sessions.discovery import find_sessions_for_plan
 from erk_shared.stack.validation import validate_parent_is_trunk
+
+
+@dataclass(frozen=True)
+class LandTarget:
+    """Resolved landing target from any entry point.
+
+    Carries all resolved state needed to land a PR, regardless of how
+    the target was specified (current branch, PR number, or branch name).
+    """
+
+    branch: str
+    pr_details: PRDetails
+    worktree_path: Path | None
+    is_current_branch: bool
+    use_graphite: bool
+    target_child_branch: str | None  # Only set for --up mode
 
 
 @dataclass(frozen=True)
@@ -668,6 +684,392 @@ def check_unresolved_comments(
             raise SystemExit(0)
 
 
+def _validate_pr_for_landing(
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    target: LandTarget,
+    force: bool,
+    script: bool,
+) -> None:
+    """Validate PR is ready to land - shared validation for all entry points.
+
+    This function consolidates validation steps that happen after PR resolution:
+    1. Clean working tree (if landing current branch)
+    2. PR state is OPEN
+    3. PR base is trunk (for non-Graphite paths; Graphite validates via stack)
+    4. Unresolved comments check
+    5. Learn status check (for plan branches)
+
+    Args:
+        ctx: ErkContext
+        repo: Repository context
+        target: Resolved landing target
+        force: If True, skip confirmation prompts
+        script: If True, output no-op activation script on abort
+
+    Raises:
+        SystemExit(1) on validation failure
+    """
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+
+    # 1. Clean working tree check (only for current branch)
+    if target.is_current_branch:
+        check_clean_working_tree(ctx)
+
+    # 2. PR state is OPEN
+    pr_number = target.pr_details.number
+    Ensure.invariant(
+        target.pr_details.state == "OPEN",
+        f"Pull request #{pr_number} is not open (state: {target.pr_details.state}).\n"
+        f"PR #{pr_number} has already been {target.pr_details.state.lower()}.",
+    )
+
+    # 3. PR base is trunk (skip for Graphite - it validates via stack)
+    if not target.use_graphite:
+        trunk = ctx.git.detect_trunk_branch(main_repo_root)
+        Ensure.invariant(
+            target.pr_details.base_ref_name == trunk,
+            f"PR #{pr_number} targets '{target.pr_details.base_ref_name}' "
+            + f"but should target '{trunk}'.\n\n"
+            + "The GitHub PR's base branch has diverged from your local stack.\n"
+            + "Run: gt restack && gt submit\n"
+            + f"Then retry: erk land {target.branch}",
+        )
+
+    # 4. Unresolved comments check
+    check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
+
+    # 5. Learn status check (for plan branches)
+    # Check when: has plan issue AND (is_current_branch OR has worktree)
+    plan_issue_number = extract_leading_issue_number(target.branch)
+    if plan_issue_number is not None and (
+        target.is_current_branch or target.worktree_path is not None
+    ):
+        _check_learn_status_and_prompt(
+            ctx,
+            repo_root=main_repo_root,
+            plan_issue_number=plan_issue_number,
+            force=force,
+            script=script,
+        )
+
+
+def _resolve_land_target_current_branch(
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    up_flag: bool,
+) -> LandTarget:
+    """Resolve landing target when landing current branch.
+
+    Validates Graphite stack for current branch and handles --up preconditions.
+
+    Args:
+        ctx: ErkContext
+        repo: Repository context
+        up_flag: Whether --up flag was passed
+
+    Returns:
+        LandTarget with resolved branch, PR, and navigation target
+
+    Raises:
+        SystemExit(1) on validation failure
+    """
+    # Check clean working tree FIRST (before any other validation)
+    check_clean_working_tree(ctx)
+
+    # Get current branch
+    current_branch = Ensure.not_none(
+        ctx.git.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
+    )
+
+    current_worktree_path = Ensure.not_none(
+        ctx.git.find_worktree_for_branch(repo.root, current_branch),
+        f"Cannot find worktree for current branch '{current_branch}'.",
+    )
+
+    # Validate --up preconditions BEFORE any mutations (fail-fast)
+    target_child_branch: str | None = None
+    if up_flag:
+        # --up requires Graphite for child branch tracking
+        Ensure.invariant(
+            ctx.branch_manager.is_graphite_managed(),
+            "--up flag requires Graphite for child branch tracking.\n\n"
+            + "To enable Graphite: erk config set use_graphite true\n\n"
+            + "Without --up, erk land will navigate to trunk after landing.",
+        )
+
+        children = Ensure.truthy(
+            ctx.branch_manager.get_child_branches(repo.root, current_branch),
+            f"Cannot use --up: branch '{current_branch}' has no children.\n"
+            "Use 'erk land' without --up to return to trunk.",
+        )
+        children_list = ", ".join(f"'{c}'" for c in children)
+        Ensure.invariant(
+            len(children) == 1,
+            f"Cannot use --up: branch '{current_branch}' has multiple children: "
+            f"{children_list}.\n"
+            "Use 'erk land' without --up, then 'erk co <branch>' to choose.",
+        )
+        target_child_branch = children[0]
+
+    # Validate branch is landable via Graphite stack (if Graphite managed)
+    use_graphite = ctx.branch_manager.is_graphite_managed()
+    if use_graphite:
+        parent = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
+        trunk = ctx.git.detect_trunk_branch(repo.root)
+        validation_error = validate_parent_is_trunk(
+            current_branch=current_branch,
+            parent_branch=parent,
+            trunk_branch=trunk,
+        )
+        Ensure.invariant(
+            validation_error is None,
+            validation_error.message if validation_error else "",
+        )
+
+    # Look up PR for current branch
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+    pr_details = Ensure.unwrap_pr(
+        ctx.github.get_pr_for_branch(main_repo_root, current_branch),
+        f"No pull request found for branch '{current_branch}'.",
+    )
+
+    return LandTarget(
+        branch=current_branch,
+        pr_details=pr_details,
+        worktree_path=current_worktree_path,
+        is_current_branch=True,
+        use_graphite=use_graphite,
+        target_child_branch=target_child_branch,
+    )
+
+
+def _resolve_land_target_pr(
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    pr_number: int,
+    up_flag: bool,
+) -> LandTarget:
+    """Resolve landing target when landing by PR number.
+
+    Fetches PR by number, resolves branch name (handles forks), rejects --up.
+
+    Args:
+        ctx: ErkContext
+        repo: Repository context
+        pr_number: PR number to land
+        up_flag: Whether --up flag was passed (rejected for PR landing)
+
+    Returns:
+        LandTarget with resolved branch, PR, and navigation target
+
+    Raises:
+        SystemExit(1) on validation failure
+    """
+    # Validate --up is not used with PR argument
+    Ensure.invariant(
+        not up_flag,
+        "Cannot use --up when specifying a PR.\n"
+        "The --up flag only works when landing the current branch's PR.",
+    )
+
+    # Fetch PR details
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+    pr_details = Ensure.unwrap_pr(
+        ctx.github.get_pr(main_repo_root, pr_number),
+        f"Pull request #{pr_number} not found.",
+    )
+
+    # Resolve branch name (handles fork PRs)
+    branch = resolve_branch_for_pr(ctx, main_repo_root, pr_details)
+
+    # Determine if we're in the target branch's worktree
+    current_branch = ctx.git.get_current_branch(ctx.cwd)
+    is_current_branch = current_branch == branch
+
+    # Check if worktree exists for this branch
+    worktree_path = ctx.git.find_worktree_for_branch(main_repo_root, branch)
+
+    return LandTarget(
+        branch=branch,
+        pr_details=pr_details,
+        worktree_path=worktree_path,
+        is_current_branch=is_current_branch,
+        use_graphite=False,  # Specific PR landing uses GitHub API directly
+        target_child_branch=None,  # No --up for specific PR
+    )
+
+
+def _resolve_land_target_branch(
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    branch_name: str,
+) -> LandTarget:
+    """Resolve landing target when landing by branch name.
+
+    Looks up PR by branch name, determines worktree.
+
+    Args:
+        ctx: ErkContext
+        repo: Repository context
+        branch_name: Branch name to land
+
+    Returns:
+        LandTarget with resolved branch, PR, and navigation target
+
+    Raises:
+        SystemExit(1) on validation failure
+    """
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+
+    # Look up PR for branch
+    pr_details = Ensure.unwrap_pr(
+        ctx.github.get_pr_for_branch(main_repo_root, branch_name),
+        f"No pull request found for branch '{branch_name}'.",
+    )
+
+    # Determine if we're in the target branch's worktree
+    current_branch = ctx.git.get_current_branch(ctx.cwd)
+    is_current_branch = current_branch == branch_name
+
+    # Check if worktree exists for this branch
+    worktree_path = ctx.git.find_worktree_for_branch(main_repo_root, branch_name)
+
+    return LandTarget(
+        branch=branch_name,
+        pr_details=pr_details,
+        worktree_path=worktree_path,
+        is_current_branch=is_current_branch,
+        use_graphite=False,  # Branch landing uses GitHub API directly
+        target_child_branch=None,  # No --up for branch landing
+    )
+
+
+def _land_target(
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    target: LandTarget,
+    script: bool,
+    force: bool,
+    pull_flag: bool,
+    no_delete: bool,
+) -> None:
+    """Unified landing flow for all entry points.
+
+    This function handles the common landing workflow after target resolution:
+    1. Validate PR is ready to land
+    2. Look up objective and slot assignment
+    3. Determine navigation target path
+    4. Handle dry-run mode
+    5. Generate and write execution script
+    6. Display instructions or output script path
+
+    Args:
+        ctx: ErkContext
+        repo: Repository context
+        target: Resolved landing target
+        script: Whether to output machine-readable script path
+        force: Skip confirmation prompts
+        pull_flag: Whether to pull after landing
+        no_delete: Preserve branch after landing
+
+    Raises:
+        SystemExit(0) after outputting script instructions
+        SystemExit(1) on validation failure
+    """
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+    pr_number = target.pr_details.number
+    branch = target.branch
+
+    # Step 1: Validate PR is ready to land
+    _validate_pr_for_landing(ctx, repo=repo, target=target, force=force, script=script)
+
+    # Step 2: Look up objective for branch (needed for script generation)
+    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
+
+    # Step 3: Look up slot assignment (needed for dry-run output)
+    state = load_pool_state(repo.pool_json_path)
+    slot_assignment: SlotAssignment | None = None
+    if state is not None:
+        slot_assignment = find_branch_assignment(state, branch)
+
+    # Step 4: Determine target path for navigation after landing
+    if target.target_child_branch is not None:
+        # --up mode: navigate to child branch worktree
+        target_path = ctx.git.find_worktree_for_branch(main_repo_root, target.target_child_branch)
+        if target_path is None:
+            # Will auto-create worktree in execute phase
+            if repo.worktrees_dir:
+                target_path = repo.worktrees_dir / target.target_child_branch
+            else:
+                target_path = main_repo_root
+    else:
+        # Navigate to trunk/root
+        target_path = main_repo_root
+
+    # Step 5: Handle dry-run mode
+    if ctx.dry_run:
+        user_output(f"Would merge PR #{pr_number} for branch '{branch}'")
+        if slot_assignment is not None:
+            user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
+        user_output(f"Would delete branch '{branch}'")
+        user_output(f"Would navigate to {target_path}")
+        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+        raise SystemExit(0)
+
+    # Step 6: Generate execution script with all pre-validated state
+    # Determine worktree_path: use target's worktree if available, else current cwd
+    worktree_path = target.worktree_path if target.worktree_path else ctx.cwd
+    script_content = render_land_execution_script(
+        pr_number=pr_number,
+        branch=branch,
+        worktree_path=worktree_path,
+        is_current_branch=target.is_current_branch,
+        objective_number=objective_number,
+        use_graphite=target.use_graphite,
+        target_path=target_path,
+    )
+
+    # Write script to .erk/bin/land.sh
+    result = ctx.script_writer.write_worktree_script(
+        script_content,
+        worktree_path=worktree_path,
+        script_name="land",
+        command_name="land",
+        comment=f"land {branch}",
+    )
+
+    # Step 7: Build display flags and output instructions
+    display_flags: list[str] = []
+    if force:
+        display_flags.append("-f")
+    if target.target_child_branch is not None:
+        display_flags.append("--up")
+    if not pull_flag:
+        display_flags.append("--no-pull")
+    if no_delete:
+        display_flags.append("--no-delete")
+
+    if script:
+        # Shell integration mode: output just the path
+        machine_output(str(result.path), nl=False)
+    else:
+        # Interactive mode: show instructions and copy to clipboard
+        print_temp_script_instructions(
+            result.path,
+            instruction="To land the PR:",
+            copy=True,
+            args=[pr_number, branch],
+            extra_flags=display_flags if display_flags else None,
+        )
+    raise SystemExit(0)
+
+
 def _execute_simple_land(
     ctx: ErkContext,
     *,
@@ -1209,493 +1611,34 @@ def land(
 
     repo = discover_repo_context(ctx, ctx.cwd)
 
-    # Determine if landing current branch or a specific target
+    # Phase 1: Resolve landing target based on argument type
     if target is None:
-        # Landing current branch's PR (original behavior)
-        _land_current_branch(
-            ctx,
-            repo=repo,
-            script=script,
-            up_flag=up_flag,
-            force=force,
-            pull_flag=pull_flag,
-            no_delete=no_delete,
-        )
+        # Landing current branch's PR
+        land_target = _resolve_land_target_current_branch(ctx, repo=repo, up_flag=up_flag)
     else:
-        # Parse the target argument
+        # Parse the target argument to determine type
         parsed = parse_argument(target)
 
         if parsed.arg_type == "branch":
             # Landing a PR for a specific branch
-            _land_by_branch(
-                ctx,
-                repo=repo,
-                script=script,
-                force=force,
-                pull_flag=pull_flag,
-                branch_name=target,
-                no_delete=no_delete,
-            )
+            land_target = _resolve_land_target_branch(ctx, repo=repo, branch_name=target)
         else:
             # Landing a specific PR by number or URL
             pr_number = Ensure.not_none(
                 parsed.pr_number,
                 f"Invalid PR identifier: {target}\nExpected a PR number (e.g., 123) or GitHub URL.",
             )
-            _land_specific_pr(
-                ctx,
-                repo=repo,
-                script=script,
-                up_flag=up_flag,
-                force=force,
-                pull_flag=pull_flag,
-                pr_number=pr_number,
-                no_delete=no_delete,
+            land_target = _resolve_land_target_pr(
+                ctx, repo=repo, pr_number=pr_number, up_flag=up_flag
             )
 
-
-def _land_current_branch(
-    ctx: ErkContext,
-    *,
-    repo: RepoContext,
-    script: bool,
-    up_flag: bool,
-    force: bool,
-    pull_flag: bool,
-    no_delete: bool,
-) -> None:
-    """Land the current branch's PR (original behavior)."""
-    check_clean_working_tree(ctx)
-
-    # Get current branch and worktree path before landing
-    current_branch = Ensure.not_none(
-        ctx.git.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
+    # Phase 2: Execute unified landing flow
+    _land_target(
+        ctx,
+        repo=repo,
+        target=land_target,
+        script=script,
+        force=force,
+        pull_flag=pull_flag,
+        no_delete=no_delete,
     )
-
-    current_worktree_path = Ensure.not_none(
-        ctx.git.find_worktree_for_branch(repo.root, current_branch),
-        f"Cannot find worktree for current branch '{current_branch}'.",
-    )
-
-    # Validate --up preconditions BEFORE any mutations (fail-fast)
-    target_child_branch: str | None = None
-    if up_flag:
-        # --up requires Graphite for child branch tracking
-        Ensure.invariant(
-            ctx.branch_manager.is_graphite_managed(),
-            "--up flag requires Graphite for child branch tracking.\n\n"
-            + "To enable Graphite: erk config set use_graphite true\n\n"
-            + "Without --up, erk land will navigate to trunk after landing.",
-        )
-
-        children = Ensure.truthy(
-            ctx.branch_manager.get_child_branches(repo.root, current_branch),
-            f"Cannot use --up: branch '{current_branch}' has no children.\n"
-            "Use 'erk land' without --up to return to trunk.",
-        )
-        children_list = ", ".join(f"'{c}'" for c in children)
-        Ensure.invariant(
-            len(children) == 1,
-            f"Cannot use --up: branch '{current_branch}' has multiple children: "
-            f"{children_list}.\n"
-            "Use 'erk land' without --up, then 'erk co <branch>' to choose.",
-        )
-        target_child_branch = children[0]
-
-    # Validate branch is landable via Graphite stack (if Graphite managed)
-    if ctx.branch_manager.is_graphite_managed():
-        parent = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
-        trunk = ctx.git.detect_trunk_branch(repo.root)
-        validation_error = validate_parent_is_trunk(
-            current_branch=current_branch,
-            parent_branch=parent,
-            trunk_branch=trunk,
-        )
-        Ensure.invariant(
-            validation_error is None,
-            validation_error.message if validation_error else "",
-        )
-
-    # Look up PR for current branch to check unresolved comments BEFORE merge
-    pr_details = ctx.github.get_pr_for_branch(repo.root, current_branch)
-    if not isinstance(pr_details, PRNotFound):
-        check_unresolved_comments(ctx, repo.root, pr_details.number, force=force)
-
-    # Check learn status before any mutations (for plan branches)
-    plan_issue_number = extract_leading_issue_number(current_branch)
-    if plan_issue_number is not None:
-        main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-        _check_learn_status_and_prompt(
-            ctx,
-            repo_root=main_repo_root,
-            plan_issue_number=plan_issue_number,
-            force=force,
-            script=script,
-        )
-
-    # Validate PR exists and is landable
-    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-    unwrapped_pr = Ensure.unwrap_pr(
-        pr_details, f"No pull request found for branch '{current_branch}'."
-    )
-    pr_number = unwrapped_pr.number
-
-    # Validate PR is open (not already merged or closed)
-    Ensure.invariant(
-        unwrapped_pr.state == "OPEN",
-        f"Pull request is not open (state: {unwrapped_pr.state}).\n"
-        f"PR #{pr_number} has already been {unwrapped_pr.state.lower()}.",
-    )
-
-    # Check for linked objective (needed for script generation)
-    objective_number = get_objective_for_branch(ctx, main_repo_root, current_branch)
-
-    # Check for slot assignment (needed for dry-run output)
-    # Note: Confirmation for slot unassign happens in execute phase (_cleanup_and_navigate)
-    state = load_pool_state(repo.pool_json_path)
-    slot_assignment: SlotAssignment | None = None
-    if state is not None:
-        slot_assignment = find_branch_assignment(state, current_branch)
-
-    # Determine target path for navigation after landing
-    if target_child_branch is not None:
-        # --up mode: navigate to child branch worktree
-        target_path = ctx.git.find_worktree_for_branch(main_repo_root, target_child_branch)
-        if target_path is None:
-            # Will auto-create worktree in execute phase
-            if repo.worktrees_dir:
-                target_path = repo.worktrees_dir / target_child_branch
-            else:
-                target_path = main_repo_root
-    else:
-        # Navigate to trunk/root
-        target_path = main_repo_root
-
-    # Handle dry-run mode: show what would happen without generating script
-    if ctx.dry_run:
-        user_output(f"Would merge PR #{pr_number} for branch '{current_branch}'")
-        if slot_assignment is not None:
-            user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
-        user_output(f"Would delete branch '{current_branch}'")
-        user_output(f"Would navigate to {target_path}")
-        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
-        raise SystemExit(0)
-
-    # Generate execution script with all pre-validated state
-    script_content = render_land_execution_script(
-        pr_number=pr_number,
-        branch=current_branch,
-        worktree_path=current_worktree_path,
-        is_current_branch=True,
-        objective_number=objective_number,
-        use_graphite=ctx.branch_manager.is_graphite_managed(),
-        target_path=target_path,
-    )
-
-    # Write script to .erk/bin/land.sh
-    result = ctx.script_writer.write_worktree_script(
-        script_content,
-        worktree_path=current_worktree_path,
-        script_name="land",
-        command_name="land",
-        comment=f"land {current_branch}",
-    )
-
-    # Build extra flags to display in the source command
-    display_flags: list[str] = []
-    if force:
-        display_flags.append("-f")
-    if up_flag:
-        display_flags.append("--up")
-    if not pull_flag:
-        display_flags.append("--no-pull")
-    if no_delete:
-        display_flags.append("--no-delete")
-
-    if script:
-        # Shell integration mode: output just the path
-        machine_output(str(result.path), nl=False)
-    else:
-        # Interactive mode: show instructions and copy to clipboard
-        print_temp_script_instructions(
-            result.path,
-            instruction="To land the PR:",
-            copy=True,
-            args=[pr_number, current_branch],
-            extra_flags=display_flags if display_flags else None,
-        )
-    raise SystemExit(0)
-
-
-def _land_specific_pr(
-    ctx: ErkContext,
-    *,
-    repo: RepoContext,
-    script: bool,
-    up_flag: bool,
-    force: bool,
-    pull_flag: bool,
-    pr_number: int,
-    no_delete: bool,
-) -> None:
-    """Land a specific PR by number."""
-    # Validate --up is not used with PR argument
-    Ensure.invariant(
-        not up_flag,
-        "Cannot use --up when specifying a PR.\n"
-        "The --up flag only works when landing the current branch's PR.",
-    )
-
-    # Fetch PR details
-    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-    pr_details = Ensure.unwrap_pr(
-        ctx.github.get_pr(main_repo_root, pr_number),
-        f"Pull request #{pr_number} not found.",
-    )
-
-    # Resolve branch name (handles fork PRs)
-    branch = resolve_branch_for_pr(ctx, main_repo_root, pr_details)
-
-    # Determine if we're in the target branch's worktree
-    current_branch = ctx.git.get_current_branch(ctx.cwd)
-    is_current_branch = current_branch == branch
-
-    # Check if we're in a worktree for this branch
-    worktree_path = ctx.git.find_worktree_for_branch(main_repo_root, branch)
-
-    # If in target worktree, validate clean working tree
-    if is_current_branch:
-        check_clean_working_tree(ctx)
-
-    # Validate PR state
-    Ensure.invariant(
-        pr_details.state == "OPEN",
-        f"Pull request #{pr_number} is not open (state: {pr_details.state}).",
-    )
-
-    # Validate PR base is trunk
-    trunk = ctx.git.detect_trunk_branch(main_repo_root)
-    Ensure.invariant(
-        pr_details.base_ref_name == trunk,
-        f"PR #{pr_number} targets '{pr_details.base_ref_name}' "
-        + f"but should target '{trunk}'.\n\n"
-        + "The GitHub PR's base branch has diverged from your local stack.\n"
-        + "Run: gt restack && gt submit\n"
-        + f"Then retry: erk land {pr_number}",
-    )
-
-    # Check for unresolved comments BEFORE merge
-    check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
-
-    # Check learn status before any mutations (for plan branches with local worktrees)
-    # Skip for remote-only PRs since there are no local Claude sessions to learn from
-    plan_issue_number = extract_leading_issue_number(branch)
-    if plan_issue_number is not None and worktree_path is not None:
-        _check_learn_status_and_prompt(
-            ctx,
-            repo_root=main_repo_root,
-            plan_issue_number=plan_issue_number,
-            force=force,
-            script=script,
-        )
-
-    # Check for linked objective (needed for script generation)
-    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
-
-    # Check for slot assignment (needed for dry-run output)
-    # Note: Confirmation for slot unassign happens in execute phase (_cleanup_and_navigate)
-    state = load_pool_state(repo.pool_json_path)
-    slot_assignment: SlotAssignment | None = None
-    if state is not None:
-        slot_assignment = find_branch_assignment(state, branch)
-
-    # Determine target path for navigation (no --up for specific PR, always trunk)
-    target_path = main_repo_root
-
-    # Handle dry-run mode
-    if ctx.dry_run:
-        user_output(f"Would merge PR #{pr_number} for branch '{branch}'")
-        if slot_assignment is not None:
-            user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
-        user_output(f"Would delete branch '{branch}'")
-        user_output(f"Would navigate to {target_path}")
-        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
-        raise SystemExit(0)
-
-    # Generate execution script with pre-validated state
-    # Note: specific PR landing doesn't support Graphite path (no stack validation)
-    script_content = render_land_execution_script(
-        pr_number=pr_number,
-        branch=branch,
-        worktree_path=worktree_path,
-        is_current_branch=is_current_branch,
-        objective_number=objective_number,
-        use_graphite=False,  # Specific PR landing uses GitHub API directly
-        target_path=target_path,
-    )
-
-    # Write script to .erk/bin/land.sh (use worktree if available, else repo root)
-    script_dir = worktree_path if worktree_path is not None else main_repo_root
-    result = ctx.script_writer.write_worktree_script(
-        script_content,
-        worktree_path=script_dir,
-        script_name="land",
-        command_name="land",
-        comment=f"land PR #{pr_number}",
-    )
-
-    # Build extra flags to display in the source command
-    display_flags: list[str] = []
-    if force:
-        display_flags.append("-f")
-    if not pull_flag:
-        display_flags.append("--no-pull")
-    if no_delete:
-        display_flags.append("--no-delete")
-
-    if script:
-        # Shell integration mode: output just the path
-        machine_output(str(result.path), nl=False)
-    else:
-        # Interactive mode: show instructions and copy to clipboard
-        print_temp_script_instructions(
-            result.path,
-            instruction=f"To land PR #{pr_number}:",
-            copy=True,
-            args=[pr_number, branch],
-            extra_flags=display_flags if display_flags else None,
-        )
-    raise SystemExit(0)
-
-
-def _land_by_branch(
-    ctx: ErkContext,
-    *,
-    repo: RepoContext,
-    script: bool,
-    force: bool,
-    pull_flag: bool,
-    branch_name: str,
-    no_delete: bool,
-) -> None:
-    """Land a PR for a specific branch."""
-    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-
-    # Look up PR for branch
-    pr_details = Ensure.unwrap_pr(
-        ctx.github.get_pr_for_branch(main_repo_root, branch_name),
-        f"No pull request found for branch '{branch_name}'.",
-    )
-
-    pr_number = pr_details.number
-
-    # Determine if we're in the target branch's worktree
-    current_branch = ctx.git.get_current_branch(ctx.cwd)
-    is_current_branch = current_branch == branch_name
-
-    # Check if worktree exists for this branch
-    worktree_path = ctx.git.find_worktree_for_branch(main_repo_root, branch_name)
-
-    # If in target worktree, validate clean working tree
-    if is_current_branch:
-        check_clean_working_tree(ctx)
-
-    # Validate PR state
-    Ensure.invariant(
-        pr_details.state == "OPEN",
-        f"Pull request #{pr_number} is not open (state: {pr_details.state}).",
-    )
-
-    # Validate PR base is trunk
-    trunk = ctx.git.detect_trunk_branch(main_repo_root)
-    Ensure.invariant(
-        pr_details.base_ref_name == trunk,
-        f"PR #{pr_number} targets '{pr_details.base_ref_name}' "
-        + f"but should target '{trunk}'.\n\n"
-        + "The GitHub PR's base branch has diverged from your local stack.\n"
-        + "Run: gt restack && gt submit\n"
-        + f"Then retry: erk land {branch_name}",
-    )
-
-    # Check for unresolved comments BEFORE merge
-    check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
-
-    # Check learn status before any mutations (for plan branches with local worktrees)
-    # Skip for remote-only PRs since there are no local Claude sessions to learn from
-    plan_issue_number = extract_leading_issue_number(branch_name)
-    if plan_issue_number is not None and worktree_path is not None:
-        _check_learn_status_and_prompt(
-            ctx,
-            repo_root=main_repo_root,
-            plan_issue_number=plan_issue_number,
-            force=force,
-            script=script,
-        )
-
-    # Check for linked objective (needed for script generation)
-    objective_number = get_objective_for_branch(ctx, main_repo_root, branch_name)
-
-    # Check for slot assignment (needed for dry-run output)
-    # Note: Confirmation for slot unassign happens in execute phase (_cleanup_and_navigate)
-    state = load_pool_state(repo.pool_json_path)
-    slot_assignment: SlotAssignment | None = None
-    if state is not None:
-        slot_assignment = find_branch_assignment(state, branch_name)
-
-    # Determine target path for navigation (no --up for branch landing, always trunk)
-    target_path = main_repo_root
-
-    # Handle dry-run mode
-    if ctx.dry_run:
-        user_output(f"Would merge PR #{pr_number} for branch '{branch_name}'")
-        if slot_assignment is not None:
-            user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
-        user_output(f"Would delete branch '{branch_name}'")
-        user_output(f"Would navigate to {target_path}")
-        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
-        raise SystemExit(0)
-
-    # Generate execution script with pre-validated state
-    # Note: branch landing doesn't support Graphite path (no stack validation)
-    script_content = render_land_execution_script(
-        pr_number=pr_number,
-        branch=branch_name,
-        worktree_path=worktree_path,
-        is_current_branch=is_current_branch,
-        objective_number=objective_number,
-        use_graphite=False,  # Branch landing uses GitHub API directly
-        target_path=target_path,
-    )
-
-    # Write script to .erk/bin/land.sh (use worktree if available, else repo root)
-    script_dir = worktree_path if worktree_path is not None else main_repo_root
-    result = ctx.script_writer.write_worktree_script(
-        script_content,
-        worktree_path=script_dir,
-        script_name="land",
-        command_name="land",
-        comment=f"land {branch_name}",
-    )
-
-    # Build extra flags to display in the source command
-    display_flags: list[str] = []
-    if force:
-        display_flags.append("-f")
-    if not pull_flag:
-        display_flags.append("--no-pull")
-    if no_delete:
-        display_flags.append("--no-delete")
-
-    if script:
-        # Shell integration mode: output just the path
-        machine_output(str(result.path), nl=False)
-    else:
-        # Interactive mode: show instructions and copy to clipboard
-        print_temp_script_instructions(
-            result.path,
-            instruction=f"To land branch '{branch_name}':",
-            copy=True,
-            args=[pr_number, branch_name],
-            extra_flags=display_flags if display_flags else None,
-        )
-    raise SystemExit(0)
