@@ -91,7 +91,28 @@ For items extracted from Prevention Insights and Failed Approaches:
 | MEDIUM   | NEW_DOC or UPDATE_EXISTING | Error pattern specific to one area (e.g., specific API quirk)                            |
 | LOW      | Include in related doc     | Minor gotcha, doesn't need standalone doc                                                |
 
-### Step 6: Prioritize by Impact
+### Step 6: Score Tripwire Worthiness
+
+For each item classified as TRIPWIRE or prevention insight with HIGH severity, score its tripwire-worthiness.
+
+**Tripwire-Worthiness Criteria:**
+
+| Criterion             | Score | Check                                                       |
+| --------------------- | ----- | ----------------------------------------------------------- |
+| Non-obvious           | +2    | Error requires context to understand (not clear from code)  |
+| Cross-cutting         | +2    | Applies to 2+ commands or multiple areas of the codebase    |
+| Destructive potential | +2    | Could cause data loss, invalid state, or significant rework |
+| Silent failure        | +2    | No exception thrown; wrong result produced silently         |
+| Repeated pattern      | +1    | Same mistake appears 2+ times in sessions                   |
+| External tool quirk   | +1    | Involves gh, gt, GitHub API, or other external tool         |
+
+**Scoring Thresholds:**
+
+- Score >= 4 → Mark as `[TRIPWIRE-CANDIDATE]`
+- Score 2-3 → Include in "Potential Tripwires" section
+- Score < 2 → Regular documentation item
+
+### Step 7: Prioritize by Impact
 
 Assign priority to each item:
 
@@ -116,7 +137,8 @@ Return a structured report:
 | Already documented (SKIP) | N |
 | New documentation needed | N |
 | Updates to existing docs | N |
-| Tripwire additions | N |
+| Tripwire candidates (score >= 4) | N |
+| Potential tripwires (score 2-3) | N |
 | Contradictions found | N |
 
 ## Contradiction Resolutions (HIGH Priority)
@@ -178,6 +200,22 @@ Items not requiring documentation:
 | ... | Already documented | docs/learned/foo.md |
 | ... | Internal helper | N/A |
 | ... | Pure refactoring | N/A |
+
+## Tripwire Candidates
+
+Items meeting tripwire-worthiness threshold (score >= 4):
+
+| # | Item | Score | Criteria Met | Suggested Trigger |
+|---|------|-------|--------------|-------------------|
+| 1 | Example: Missing --no-interactive | 6 | Non-obvious, Cross-cutting, Silent failure | "Before calling gt commands without --no-interactive" |
+
+## Potential Tripwires
+
+Items with score 2-3 (may warrant tripwire status with additional context):
+
+| # | Item | Score | Criteria Met | Notes |
+|---|------|-------|--------------|-------|
+| 1 | ... | 3 | ... | Why it might not meet threshold |
 
 ## Tripwire Additions
 
