@@ -31,6 +31,7 @@ from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
 from erk_shared.github.plan_issues import create_objective_issue
+from erk_shared.scratch.scratch import get_scratch_dir
 
 
 @click.command(name="objective-save-to-issue")
@@ -58,8 +59,19 @@ def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: 
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)
 
-    # Get plan content
-    plan = claude_installation.get_latest_plan(cwd, session_id=session_id)
+    # Get plan content - priority: scratch directory > Claude plans directory
+    plan: str | None = None
+
+    # Priority 1: Check scratch directory for session-scoped plan
+    if session_id is not None:
+        scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
+        scratch_plan_path = scratch_dir / "plan.md"
+        if scratch_plan_path.exists():
+            plan = scratch_plan_path.read_text(encoding="utf-8")
+
+    # Priority 2: Fall back to Claude installation lookup
+    if plan is None:
+        plan = claude_installation.get_latest_plan(cwd, session_id=session_id)
 
     if not plan:
         if output_format == "display":

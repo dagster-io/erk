@@ -895,3 +895,149 @@ def test_plan_save_to_issue_no_dedup_without_session_id(tmp_path: Path) -> None:
 
         # Both calls created issues (no dedup without session ID)
         assert len(fake_gh.created_issues) == 2
+
+
+# --- Scratch plan priority tests ---
+
+
+def test_plan_save_to_issue_scratch_plan_has_priority_over_claude_plans(tmp_path: Path) -> None:
+    """Test that scratch directory plan takes priority over ~/.claude/plans/ lookup."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature"},
+        trunk_branches={tmp_path: "main"},
+    )
+    test_session_id = "scratch-priority-session"
+
+    # Content in scratch directory (should be used)
+    scratch_plan_content = """# Scratch Plan
+
+This plan is from the scratch directory and should be used.
+
+- Step 1: Do something from scratch
+- Step 2: More scratch steps"""
+
+    # Content in Claude plans directory (should NOT be used)
+    claude_plan_content = """# Claude Plan
+
+This plan is from Claude plans directory and should NOT be used.
+
+- Step 1: Do something from Claude plans
+- Step 2: More Claude plans steps"""
+
+    fake_store = FakeClaudeInstallation.for_test(
+        plans={"session-plan": claude_plan_content},
+        session_slugs={test_session_id: ["session-plan"]},
+    )
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        # Create scratch plan file
+        scratch_dir = Path(td) / ".erk" / "scratch" / "sessions" / test_session_id
+        scratch_dir.mkdir(parents=True)
+        scratch_plan_file = scratch_dir / "plan.md"
+        scratch_plan_file.write_text(scratch_plan_content, encoding="utf-8")
+
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json", "--session-id", test_session_id],
+            obj=ErkContext.for_test(
+                github_issues=fake_gh,
+                git=fake_git,
+                claude_installation=fake_store,
+                cwd=Path(td),
+                repo_root=Path(td),
+            ),
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = json.loads(result.output)
+        assert output["success"] is True
+        # Title should come from scratch plan, not Claude plan
+        assert output["title"] == "Scratch Plan"
+
+        # Verify plan content in comment is from scratch
+        assert len(fake_gh.added_comments) >= 1
+        _issue_num, plan_comment, _comment_id = fake_gh.added_comments[0]
+        assert "from scratch" in plan_comment.lower()
+        assert "Claude plans" not in plan_comment
+
+
+def test_plan_save_to_issue_falls_back_to_claude_plans_when_no_scratch(tmp_path: Path) -> None:
+    """Test fallback to Claude plans when scratch directory has no plan."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature"},
+        trunk_branches={tmp_path: "main"},
+    )
+    test_session_id = "fallback-session"
+
+    # Only Claude plans directory has content
+    claude_plan_content = """# Fallback Plan
+
+This plan is from Claude plans directory as fallback.
+
+- Step 1: Fallback step
+- Step 2: More fallback steps"""
+
+    fake_store = FakeClaudeInstallation.for_test(
+        plans={"fallback-plan": claude_plan_content},
+        session_slugs={test_session_id: ["fallback-plan"]},
+    )
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        # Create empty scratch directory (no plan.md)
+        scratch_dir = Path(td) / ".erk" / "scratch" / "sessions" / test_session_id
+        scratch_dir.mkdir(parents=True)
+        # No plan.md file created
+
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json", "--session-id", test_session_id],
+            obj=ErkContext.for_test(
+                github_issues=fake_gh,
+                git=fake_git,
+                claude_installation=fake_store,
+                cwd=Path(td),
+                repo_root=Path(td),
+            ),
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = json.loads(result.output)
+        assert output["success"] is True
+        # Title should come from Claude plan (fallback)
+        assert output["title"] == "Fallback Plan"
+
+
+def test_plan_save_to_issue_scratch_not_checked_without_session_id() -> None:
+    """Test that scratch is not checked when no session_id is provided."""
+    fake_gh = FakeGitHubIssues()
+    # Only Claude plans directory has content
+    plan_content = """# No Session Plan
+
+This plan is found without session ID.
+
+- Step 1: Basic step
+- Step 2: More steps"""
+
+    fake_store = FakeClaudeInstallation.for_test(plans={"no-session-plan": plan_content})
+
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],  # No --session-id
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["title"] == "No Session Plan"

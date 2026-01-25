@@ -196,11 +196,21 @@ def plan_save_to_issue(
                 )
             return
 
-    # Step 1: Extract plan (priority: plan_file > session_id > most recent)
+    # Step 1: Extract plan (priority: plan_file > scratch directory > Claude plans directory)
+    plan: str | None = None
     if plan_file:
         plan = plan_file.read_text(encoding="utf-8")
     else:
-        plan = claude_installation.get_latest_plan(cwd, session_id=effective_session_id)
+        # Priority 1: Check scratch directory for session-scoped plan
+        if effective_session_id is not None:
+            scratch_dir = get_scratch_dir(effective_session_id, repo_root=repo_root)
+            scratch_plan_path = scratch_dir / "plan.md"
+            if scratch_plan_path.exists():
+                plan = scratch_plan_path.read_text(encoding="utf-8")
+
+        # Priority 2: Fall back to Claude installation lookup
+        if plan is None:
+            plan = claude_installation.get_latest_plan(cwd, session_id=effective_session_id)
 
     if not plan:
         if output_format == "display":
