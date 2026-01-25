@@ -7,6 +7,7 @@ This command handles merge conflicts during CI workflows by:
 3. Starting a rebase
 4. Using Claude to resolve any conflicts
 5. Force pushing after successful rebase
+6. Generating an intelligent summary of the rebase operation
 
 Usage:
     erk exec rebase-with-conflict-resolution \
@@ -15,7 +16,7 @@ Usage:
         --model claude-sonnet-4-5
 
 Output:
-    JSON object with success status
+    Natural language summary suitable for PR comments.
 
 Exit Codes:
     0: Success (rebase completed and pushed, or already up-to-date)
@@ -23,24 +24,18 @@ Exit Codes:
 
 Examples:
     $ erk exec rebase-with-conflict-resolution --target-branch main --branch-name my-feature
-    {
-      "success": true,
-      "action": "rebased",
-      "commits_behind": 3
-    }
+    Rebased `my-feature` onto `main`, resolving 3 commits behind.
+    Resolved merge conflicts in 2 files:
+    - src/config.py: Merged new logging settings with updated timeout values
+    - tests/test_api.py: Combined new test cases with fixture updates
 
     $ erk exec rebase-with-conflict-resolution \
         --target-branch feature-parent --branch-name my-feature
-    {
-      "success": true,
-      "action": "already-up-to-date",
-      "commits_behind": 0
-    }
+    Branch `my-feature` is already up-to-date with `feature-parent` (no rebase needed).
 """
 
-import json
 import subprocess
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -51,16 +46,15 @@ import click
 class RebaseSuccess:
     """Success result for rebase operation."""
 
-    success: bool
     action: Literal["rebased", "already-up-to-date"]
     commits_behind: int
+    conflicts_resolved: tuple[str, ...]
 
 
 @dataclass(frozen=True)
 class RebaseError:
     """Error result when rebase fails."""
 
-    success: bool
     error: Literal["fetch-failed", "rebase-failed", "push-failed"]
     message: str
 
@@ -83,6 +77,81 @@ def _get_commits_behind(target_branch: str) -> int | None:
     if not count_str.isdigit():
         return None
     return int(count_str)
+
+
+def _get_conflicted_files() -> list[str]:
+    """Get list of files with merge conflicts.
+
+    Returns:
+        List of file paths with unmerged changes.
+    """
+    result = subprocess.run(
+        ["git", "diff", "--name-only", "--diff-filter=U"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return []
+    return [f.strip() for f in result.stdout.strip().split("\n") if f.strip()]
+
+
+def _generate_summary(
+    *,
+    branch_name: str,
+    target_branch: str,
+    commits_behind: int,
+    conflicts_resolved: tuple[str, ...],
+    model: str,
+) -> str:
+    """Use Claude to generate an intelligent summary of the rebase.
+
+    Args:
+        branch_name: The branch that was rebased
+        target_branch: The branch rebased onto
+        commits_behind: Number of commits the branch was behind
+        conflicts_resolved: Files that had merge conflicts resolved
+        model: Claude model to use for summary generation
+
+    Returns:
+        Natural language summary suitable for PR comments.
+    """
+    if not conflicts_resolved:
+        conflict_context = "No merge conflicts occurred."
+    else:
+        files_list = "\n".join(f"- {f}" for f in conflicts_resolved)
+        conflict_context = (
+            f"Merge conflicts were automatically resolved in these files:\n{files_list}"
+        )
+
+    prompt = f"""Generate a brief summary for a GitHub PR comment about a rebase.
+
+Context:
+- Branch `{branch_name}` was rebased onto `{target_branch}`
+- The branch was {commits_behind} commit(s) behind
+- {conflict_context}
+
+Requirements:
+- Start with a one-line summary of the rebase
+- If there were conflicts, list the files that had conflicts resolved
+- Keep the tone professional and concise
+- Use markdown formatting (backticks for branch names and file paths)
+- Do not include any preamble or explanation - output ONLY the PR comment text"""
+
+    result = subprocess.run(
+        [
+            "claude",
+            "--print",
+            "--model",
+            model,
+            prompt,
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    return result.stdout.strip()
 
 
 def _is_rebase_in_progress() -> bool:
@@ -147,7 +216,6 @@ def _rebase_with_conflict_resolution_impl(
     )
     if fetch_result.returncode != 0:
         return RebaseError(
-            success=False,
             error="fetch-failed",
             message=f"Failed to fetch origin/{target_branch}: {fetch_result.stderr}",
         )
@@ -156,16 +224,15 @@ def _rebase_with_conflict_resolution_impl(
     commits_behind = _get_commits_behind(target_branch)
     if commits_behind is None:
         return RebaseError(
-            success=False,
             error="fetch-failed",
             message="Failed to determine commits behind target branch",
         )
 
     if commits_behind == 0:
         return RebaseSuccess(
-            success=True,
             action="already-up-to-date",
             commits_behind=0,
+            conflicts_resolved=(),
         )
 
     # Start rebase (may fail with conflicts, which is expected)
@@ -176,10 +243,16 @@ def _rebase_with_conflict_resolution_impl(
         check=False,  # Conflicts expected - we check _is_rebase_in_progress()
     )
 
+    # Track all files that had conflicts across all resolution attempts
+    all_conflicted_files: set[str] = set()
+
     # Loop while rebase has conflicts
     attempt = 0
     while _is_rebase_in_progress() and attempt < max_attempts:
         attempt += 1
+        # Capture conflicted files before resolution
+        conflicted = _get_conflicted_files()
+        all_conflicted_files.update(conflicted)
         # Invoke Claude to fix conflicts
         _invoke_claude_for_conflicts(model)
 
@@ -188,7 +261,6 @@ def _rebase_with_conflict_resolution_impl(
         # Abort rebase and return error
         subprocess.run(["git", "rebase", "--abort"], capture_output=True, check=False)
         return RebaseError(
-            success=False,
             error="rebase-failed",
             message=f"Failed to resolve conflicts after {max_attempts} attempts",
         )
@@ -202,15 +274,14 @@ def _rebase_with_conflict_resolution_impl(
     )
     if push_result.returncode != 0:
         return RebaseError(
-            success=False,
             error="push-failed",
             message=f"Failed to force push: {push_result.stderr}",
         )
 
     return RebaseSuccess(
-        success=True,
         action="rebased",
         commits_behind=commits_behind,
+        conflicts_resolved=tuple(sorted(all_conflicted_files)),
     )
 
 
@@ -228,7 +299,7 @@ def _rebase_with_conflict_resolution_impl(
 @click.option(
     "--model",
     default="claude-sonnet-4-5",
-    help="Claude model to use for conflict resolution",
+    help="Claude model to use for conflict resolution and summary generation",
 )
 @click.option(
     "--max-attempts",
@@ -247,6 +318,8 @@ def rebase_with_conflict_resolution(
     This command is designed for CI workflows where push may fail due to
     branch divergence. It fetches the target branch (trunk or parent for
     stacked PRs), rebases onto it, and uses Claude to resolve any merge conflicts.
+
+    Outputs a natural language summary suitable for PR comments.
     """
     result = _rebase_with_conflict_resolution_impl(
         target_branch=target_branch,
@@ -255,7 +328,21 @@ def rebase_with_conflict_resolution(
         max_attempts=max_attempts,
     )
 
-    click.echo(json.dumps(asdict(result), indent=2))
-
     if isinstance(result, RebaseError):
+        click.echo(f"Error: {result.message}")
         raise SystemExit(1)
+
+    if result.action == "already-up-to-date":
+        click.echo(
+            f"Branch `{branch_name}` is already up-to-date with "
+            f"`{target_branch}` (no rebase needed)."
+        )
+    else:
+        summary = _generate_summary(
+            branch_name=branch_name,
+            target_branch=target_branch,
+            commits_behind=result.commits_behind,
+            conflicts_resolved=result.conflicts_resolved,
+            model=model,
+        )
+        click.echo(summary)
