@@ -20,7 +20,30 @@ Large JSON responses from APIs pollute the main conversation context:
 - The parent agent only needs summary + thread IDs to act
 - Raw JSON stays in context indefinitely, wasting tokens
 
-## Solution: Prose + Structured JSON
+## Preferred Approach: `context: fork`
+
+For reusable classification/fetch patterns, use `context: fork` in skill frontmatter instead of manual Task delegation. See [Context Fork Feature](../claude-code/context-fork-feature.md).
+
+```yaml
+---
+name: pr-feedback-classifier
+context: fork
+---
+```
+
+This runs the skill in an isolated subagent automatically. Benefits:
+
+- **Declarative**: No inline Task prompts in commands
+- **Reusable**: Skill can be invoked from multiple commands
+- **Maintainable**: Classification logic centralized in one place
+
+Manual Task delegation (documented below) is still useful when:
+
+- Dynamic prompt content is needed
+- One-off operations not worth creating a skill
+- Need to pass conversation context to the task
+
+## Legacy Solution: Prose + Structured JSON
 
 The Task returns both human-readable prose AND parseable JSON in a single response:
 
@@ -166,19 +189,13 @@ if json_match:
 
 ## Examples in Codebase
 
-### `/erk:pr-preview-address`
+### `/erk:pr-preview-address` and `/erk:pr-address`
 
-Full Task delegation for preview-only command. Returns prose summary, no JSON needed since no actions are taken.
-
-### `/erk:pr-address`
-
-**Phase 1**: Task returns prose + JSON with thread IDs. Parent parses JSON and uses thread IDs to resolve threads after making fixes.
-
-**Phase 4**: Task returns verification summary only (haiku model). Just confirms all threads resolved.
+These commands now use the `context: fork` approach via the `pr-feedback-classifier` skill. See [Context Fork Feature](../claude-code/context-fork-feature.md).
 
 ### `/erk:learn`
 
-Task analyzes PR comments for documentation opportunities. Returns insights table, not raw comment data.
+Task analyzes PR comments for documentation opportunities. Returns insights table, not raw comment data. This still uses manual Task delegation because it requires dynamic prompt content based on the specific PR being analyzed.
 
 ## Model Selection
 

@@ -27,105 +27,30 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 >
 > See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
 
-### Phase 1: Fetch & Analyze via Task
+### Phase 1: Classify Feedback
 
-Use the Task tool to fetch and classify PR feedback with context isolation. The Task returns **prose + structured JSON** so you can act on specific thread IDs.
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback with context isolation:
 
-**Determine flags**: If `--all` was specified in the command, include `--include-resolved` in the fetch command.
+```
+/pr-feedback-classifier [--include-resolved if --all was specified]
+```
 
-````
-Task(
-  subagent_type: "general-purpose",
-  model: "sonnet",
-  description: "Fetch PR review feedback",
-  prompt: |
-    Fetch and classify PR review feedback for the current branch's PR.
+Parse the JSON response. The skill returns:
 
-    ## Steps
-    1. Get the current branch: `git rev-parse --abbrev-ref HEAD`
-    2. Get the PR number for this branch: `gh pr view --json number,title -q '{number: .number, title: .title}'`
-    3. Run: `erk exec get-pr-review-comments [--include-resolved if --all flag]`
-    4. Run: `erk exec get-pr-discussion-comments`
-    5. Parse and classify the JSON outputs
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `action_summary`, `complexity`
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+- `error`: Error message if `success` is false
 
-    ## Classification
+**Handle errors**: If `success` is false, display the error and exit.
 
-    > See `pr-operations` skill for the **Comment Classification Model**.
-
-    For each comment, determine:
-    - **Actionable**: Code changes requested, violations to fix, missing tests
-    - **Informational**: Bot status updates, CI results, Graphite stack comments
-    - **Resolved**: Threads with clarifying follow-up (e.g., "Clarification: this is compliant")
-
-    Group actionable items by complexity:
-    - **Local Fix**: Single line change
-    - **Single-File**: Multiple changes in one file
-    - **Cross-Cutting**: Changes across multiple files
-    - **Complex**: Architectural changes or related refactoring
-
-    ## Output Format
-
-    ### Summary
-    PR #NNNN "Title": N actionable items, N informational comments skipped.
-
-    ### Actionable Items
-    | # | Thread ID | Type | Path | Line | Issue | Complexity |
-    |---|-----------|------|------|------|-------|------------|
-    | 1 | PRRT_xxx | review | abc.py | 8 | Missing integration tests | Local |
-    | 2 | 12345678 | discussion | - | - | Update docs | Cross-cutting |
-
-    ### Batched Execution Plan
-    **Batch 1: Local Fixes (auto-proceed)**
-    - Item #1: abc.py:8 - Missing tests
-
-    **Batch 2: Cross-Cutting (user confirmation)**
-    - Item #2: Update docs
-
-    ### Structured Data
-    ```json
-    {
-      "pr_number": 5944,
-      "pr_title": "BeadsGateway ABC with list_issues Method",
-      "actionable_threads": [
-        {"thread_id": "PRRT_kwDOPxC3hc5q73Ne", "type": "review", "path": "abc.py", "line": 8, "action": "Add integration tests", "complexity": "local", "is_outdated": false}
-      ],
-      "discussion_actions": [
-        {"comment_id": 12345678, "action": "Update documentation"}
-      ],
-      "informational_count": 12,
-      "batches": [
-        {"name": "Local Fixes", "auto_proceed": true, "items": [1]},
-        {"name": "Cross-Cutting", "auto_proceed": false, "items": [2]}
-      ]
-    }
-    ```
-
-    If no comments found, output:
-    ```json
-    {
-      "pr_number": NNNN,
-      "pr_title": "...",
-      "actionable_threads": [],
-      "discussion_actions": [],
-      "informational_count": 0,
-      "batches": []
-    }
-    ```
-)
-````
-
-**Parse the structured JSON** from the Task output. Extract:
-
-- `pr_number`, `pr_title` for reference
-- `actionable_threads` array with thread IDs
-- `discussion_actions` array with comment IDs
-- `batches` array for execution order
-
-**Handle No Comments Case**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
 
 ### Phase 2: Display Batched Plan
 
-Show the user the batched execution plan from the Task output:
+Show the user the batched execution plan from the classifier output:
 
 ```
 ## Execution Plan
@@ -148,7 +73,7 @@ Show the user the batched execution plan from the Task output:
 | 5 | Multiple files | Update all callers of deprecated function |
 | 6 | docs/ | Update documentation per reviewer request |
 
-### Batch 4: Complex Changes (2 comments → 1 unified change)
+### Batch 4: Complex Changes (2 comments -> 1 unified change)
 | # | Location | Summary |
 |---|----------|---------|
 | 7 | impl.py:50 | Fold validate into prepare with union types |
@@ -162,7 +87,7 @@ Show the user the batched execution plan from the Task output:
 
 ### Phase 3: Execute by Batch
 
-For each batch, execute this workflow using the thread IDs from the structured JSON:
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
 
 #### Step 1: Address All Comments in the Batch
 
@@ -210,8 +135,8 @@ Outdated threads have `line: null` because the code has changed since the commen
 1. **Read the file** at the path (ignore line number - search for relevant code)
 2. **Check if the issue is already fixed** in the current code
 3. **Take action:**
-   - If already fixed → Proceed directly to Step 4 to resolve the thread
-   - If not fixed → Apply the fix, then proceed to Step 4
+   - If already fixed -> Proceed directly to Step 4 to resolve the thread
+   - If not fixed -> Apply the fix, then proceed to Step 4
 
 **IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
 Do not skip resolution just because no code change was needed.
@@ -242,7 +167,7 @@ git commit -m "Address PR review comments (batch N/M)
 
 #### Step 4: Resolve All Threads in the Batch (MANDATORY)
 
-**This step is NOT optional.** Every thread must be resolved using the thread IDs from the structured JSON.
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
 
 After committing, resolve each review thread and mark each discussion comment.
 
@@ -258,8 +183,8 @@ After completing the batch, report:
 ## Batch N Complete
 
 Addressed:
-- ✅ foo.py:42 - Used LBYL pattern
-- ✅ bar.py:15 - Added type annotation
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
 
 Committed: abc1234 "Address PR review comments (batch 1/3)"
 
@@ -269,34 +194,15 @@ Remaining batches: 2
 
 Then proceed to the next batch.
 
-### Phase 4: Final Verification via Task
+### Phase 4: Final Verification
 
-After all batches complete, use a Task to verify all threads are resolved:
+After all batches complete, re-invoke the classifier to verify all threads are resolved:
 
 ```
-Task(
-  subagent_type: "general-purpose",
-  model: "haiku",
-  description: "Verify PR threads resolved",
-  prompt: |
-    Verify all PR review threads have been resolved.
-
-    ## Steps
-    1. Run: `erk exec get-pr-review-comments`
-    2. Run: `erk exec get-pr-discussion-comments`
-    3. Count any remaining unresolved items
-
-    ## Output Format
-
-    ### Verification Summary
-    [One paragraph: total addressed, any remaining unresolved]
-
-    If all resolved: "All N review threads and M discussion comments have been addressed."
-    If any remain: "Warning: N threads remain unresolved: [list thread IDs]"
-)
+/pr-feedback-classifier
 ```
 
-Display the verification summary.
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items.
 
 #### Report Final Summary
 

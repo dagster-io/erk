@@ -6,7 +6,7 @@ description: Preview PR review feedback and planned actions
 
 ## Description
 
-Fetches unresolved PR review comments and discussion comments from the current branch's PR, then displays a summary showing what actions would be taken if `/erk:pr-address` were run. This is a preview-only command that makes no changes.
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
 
 ## Usage
 
@@ -21,79 +21,53 @@ Fetches unresolved PR review comments and discussion comments from the current b
 >
 > Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
 
-### Phase 1: Delegate to Task for Context Isolation
+### Phase 1: Classify Feedback
 
-Use the Task tool to fetch and classify PR feedback. This isolates the raw JSON from the main context, returning only a human-readable summary.
-
-**Determine flags**: If `--all` was specified in the command, include `--include-resolved` in the fetch command.
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
 
 ```
-Task(
-  subagent_type: "general-purpose",
-  model: "sonnet",
-  description: "Fetch PR feedback preview",
-  prompt: |
-    Fetch and classify PR review feedback for the current branch's PR.
-
-    ## Steps
-    1. Get the current branch: `git rev-parse --abbrev-ref HEAD`
-    2. Get the PR number for this branch: `gh pr view --json number -q .number`
-    3. Run: `erk exec get-pr-review-comments [--include-resolved if --all flag]`
-    4. Run: `erk exec get-pr-discussion-comments`
-    5. Parse and classify the JSON outputs
-
-    ## Classification
-
-    > See `pr-operations` skill for the **Comment Classification Model**.
-
-    Determine complexity and proposed action for each:
-    - **Code change**: Requires modification to source files
-    - **Doc update**: Requires documentation changes
-    - **Already resolved**: Issue appears already addressed
-    - **Question to answer**: Needs a reply
-    - **No action**: Acknowledgment, no change needed
-    - **Investigate**: Requires codebase exploration
-
-    ## Output Format
-
-    ### Summary
-    [Human-readable paragraph: PR number, PR title, actionable count, informational count]
-
-    ### PR Feedback Table
-    | # | Type | Location | Summary | Complexity | Proposed Action |
-    |---|------|----------|---------|------------|-----------------|
-    | 1 | Review | foo.py:42 | "Use LBYL pattern" | Local fix | Code change |
-    ...
-
-    ### Execution Plan Preview
-    Show how `/erk:pr-address` would group these items into batches:
-    - Batch 1: Local Fixes
-    - Batch 2: Single-File Changes
-    - Batch 3: Cross-Cutting Changes
-    - Batch 4: Complex Changes
-
-    ### Statistics
-    - Total feedback items: N
-    - Review threads: N (N unresolved, N resolved)
-    - Discussion comments: N
-    - Estimated batches: N
-    - Auto-proceed batches (simple): N
-    - User confirmation batches (complex): N
-
-    If no comments found, output: "No unresolved review comments or discussion comments on PR #NNN."
-
-    ## Important
-    - This is a PREVIEW only - do NOT make any changes
-    - Do NOT resolve threads, reply to comments, or create commits
-    - Just report what would happen if /erk:pr-address were run
-)
+/pr-feedback-classifier [--include-resolved if --all was specified]
 ```
+
+Parse the JSON response.
 
 ### Phase 2: Display Results
 
-Display the Task's output to the user. The summary is already formatted for human consumption.
+**Handle errors**: If `success` is false, display the error and exit.
 
-Add a footer:
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Actionable Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 1 | review | foo.py:42 | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | Add type annotation | local |
+| 3 | discussion | - | Update documentation | cross_cutting |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: foo.py:42 - Use LBYL pattern
+- Item #2: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #3: Update documentation
+
+### Statistics
+- Actionable items: 3
+- Informational skipped: 12
+- Estimated batches: 2
+- Auto-proceed batches: 1
+- User confirmation batches: 1
+```
+
+Add footer:
 
 ```
 To address these comments, run: /erk:pr-address
