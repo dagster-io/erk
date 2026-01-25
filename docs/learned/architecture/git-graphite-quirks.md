@@ -222,40 +222,61 @@ def create_branch(
 
 **Location in Codebase**: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py`
 
-## Parent Branch Divergence Detection
+## Parent Branch Divergence Detection and Auto-Fix
 
 **Surprising Behavior**: When creating a new branch from a remote ref (e.g., `origin/feature-parent`) and the corresponding local branch `feature-parent` exists but has different commits, Graphite's `gt track` can succeed but create an invalid stack relationship (local parent is not an ancestor of the child).
 
 **Why It's Surprising**: Git handles remote vs local refs transparently - creating branches from either just works. Graphite's stack tracking requires the local parent branch to be an ancestor of the new branch, which fails silently if local has diverged from remote.
 
-**Solution**: The `GraphiteBranchManager.create_branch()` method validates parent branch state via `_ensure_local_matches_remote()`:
+### Previous Behavior (before PR #5739)
+
+The `GraphiteBranchManager.create_branch()` method validated parent branch state and raised `RuntimeError` with manual fix instructions.
+
+### Current Behavior (PR #5739 and later)
+
+The `GraphiteBranchManager.create_branch()` method automatically fixes branch divergence via `_ensure_local_matches_remote()`:
 
 1. If local branch doesn't exist, create it from remote
 2. If local exists and matches remote, proceed normally
-3. If local has diverged from remote, fail with clear fix instructions
+3. If local has diverged from remote, **auto-fix by force-updating local to match remote**
 
-**Error Message**:
+**Why Auto-Fix is Safe**:
+
+The force-update happens in a specific context that guarantees safety:
+
+1. **Already on child branch**: We've already created and checked out the new child branch (e.g., `feature-parent/child`)
+2. **Not on parent branch**: The force-update only affects the diverged parent (`feature-parent`)
+3. **Remote is authoritative**: The remote branch (`origin/feature-parent`) represents the correct state for Graphite tracking
+4. **No local work lost**: The diverged local commits are still accessible via `git reflog`
+
+**Code Path** (simplified):
 
 ```
-Local branch 'feature-parent' has diverged from origin/feature-parent.
-Graphite requires the local branch to match the remote for stack tracking.
-
-To fix, update your local branch to match remote and restack:
-  git fetch origin && git branch -f feature-parent origin/feature-parent
-  gt restack --downstack
-
-Or if you have local changes to keep, push them first:
-  With Graphite: gt checkout feature-parent && gt submit
-  With git:      git checkout feature-parent && git push origin feature-parent
+GraphiteBranchManager.create_branch("feature-parent/child", "origin/feature-parent")
+  └─> _ensure_local_matches_remote("feature-parent", "origin/feature-parent")
+        └─> [divergence detected]
+        └─> git_branch_ops.create_branch(..., force=True)  # Auto-fix!
 ```
 
 **When This Happens**:
 
 - User has local commits on parent branch not yet pushed
 - Parent branch was rebased/amended remotely
-- `gt sync` was not run after another user pushed to parent
+- `erk pr sync` restacked branches after remote changes
+
+**Debugging Divergence**:
+
+If unexpected force-updates occur, check git reflog to see the original local state before auto-fix:
+
+```bash
+git reflog show feature-parent
+# Shows: abc123d@{0} HEAD@{0}: branch: force-updated to origin/feature-parent
+#        def456d@{1} HEAD@{1}: commit: original work on feature-parent
+```
 
 **Location in Codebase**: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py` - `_ensure_local_matches_remote()` method
+
+**Related Documentation**: [Force Flag Design in Branch Operations](force-flags.md) - explains why force-update is safe and the implementation pattern
 
 ## Branch Restoration After Graphite Tracking
 

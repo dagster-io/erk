@@ -112,6 +112,141 @@ def resolve_review_thread(self, repo_root: Path, thread_id: str) -> bool:
     return self._wrapped.resolve_review_thread(repo_root, thread_id)
 ```
 
+## Concrete Example: Adding a Parameter to an Existing Method
+
+PR #5739 demonstrates adding a `force: bool` parameter to `GitBranchOps.create_branch()`. This shows the 5-file update pattern for modifying an existing method signature.
+
+### The Change
+
+The `create_branch()` method signature changed from:
+
+```python
+def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None
+```
+
+To:
+
+```python
+def create_branch(self, cwd: Path, branch_name: str, start_point: str, *, force: bool) -> None
+```
+
+This enables callers to force-update branches when needed (e.g., auto-fixing diverged parents).
+
+### Step 1: ABC Signature (abc.py)
+
+Update the abstract method with the new parameter:
+
+```python
+@abstractmethod
+def create_branch(
+    self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+) -> None:
+    """Create a branch, optionally force-updating if it exists.
+
+    Args:
+        cwd: Working directory
+        branch_name: Name of branch to create
+        start_point: Commit/branch to base the new branch on
+        force: Use -f flag to move existing branch to start_point
+    """
+    ...
+```
+
+### Step 2: Real Implementation (real.py)
+
+Pass force flag to subprocess command:
+
+```python
+def create_branch(
+    self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+) -> None:
+    """Create a new branch without checking it out."""
+    cmd = ["git", "branch"]
+    if force:
+        cmd.append("-f")
+    cmd.extend([branch_name, start_point])
+    run_subprocess_with_context(
+        cmd=cmd,
+        operation_context=f"create branch '{branch_name}' from '{start_point}'",
+        cwd=cwd,
+    )
+```
+
+### Step 3: Fake Implementation (fake.py)
+
+Update mutation tracking tuple to include the new parameter:
+
+```python
+def __init__(self, ...) -> None:
+    # Mutation tracking: (cwd, branch_name, start_point, force)
+    self._created_branches: list[tuple[Path, str, str, bool]] = []
+
+def create_branch(
+    self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+) -> None:
+    """Record branch creation for test assertions."""
+    self._created_branches.append((cwd, branch_name, start_point, force))
+
+@property
+def created_branches(self) -> list[tuple[Path, str, str, bool]]:
+    """Get list of branches created during test."""
+    return self._created_branches.copy()
+```
+
+**CRITICAL**: This changes the tuple format from 3-tuple to 4-tuple, affecting all test assertions that unpack this tuple. See [Mutation Tracking Test Patterns](../testing/mutation-tracking-patterns.md) for how to handle cascading updates.
+
+### Step 4: DryRun Implementation (dry_run.py)
+
+No-op in dry-run mode (show what would happen, don't execute):
+
+```python
+def create_branch(
+    self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+) -> None:
+    """Print dry-run message instead of creating branch."""
+    force_flag = " -f" if force else ""
+    user_output(
+        f"[DRY RUN] Would run: git branch{force_flag} {branch_name} {start_point}"
+    )
+```
+
+### Step 5: Printing Implementation (printing.py)
+
+Delegate to wrapped implementation while optionally printing:
+
+```python
+def create_branch(
+    self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+) -> None:
+    """Create branch (delegates to wrapped)."""
+    self._wrapped.create_branch(
+        cwd, branch_name, start_point, force=force
+    )
+```
+
+### Cascade to Callers
+
+All callers must be updated to pass the new parameter. Callers decide when to use `force=True`:
+
+```python
+# In GitBranchManager.create_branch()
+self._git_branch_ops.create_branch(
+    repo_root, branch_name, base_branch, force=False  # Normal creation
+)
+
+# In GraphiteBranchManager._ensure_local_matches_remote()
+self._git_branch_ops.create_branch(
+    repo_root, local_branch, f"origin/{local_branch}", force=True  # Auto-fix divergence
+)
+```
+
+### Key Insights
+
+1. **Parameter consistency**: The same `force` parameter must appear in all 5 implementations
+2. **Tuple expansion**: Fake's mutation tuple expands, affecting 8+ test files
+3. **Caller responsibility**: Each caller decides when to use `force=True`
+4. **Safety properties**: Force-update is only safe in specific contexts (documented in [Force Flag Design](force-flags.md))
+
 ## FakeGateway Pattern for Mutations
 
 When adding a mutation method to a Fake:
