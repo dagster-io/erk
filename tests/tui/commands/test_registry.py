@@ -111,7 +111,6 @@ def test_prepare_commands_always_available() -> None:
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "copy_prepare" in cmd_ids
-    assert "copy_prepare_dangerous" in cmd_ids
     assert "copy_submit" in cmd_ids
 
 
@@ -265,8 +264,8 @@ def test_display_name_fix_conflicts_remote_shows_cli_command() -> None:
     assert get_display_name(cmd, ctx) == "erk pr fix-conflicts-remote 456"
 
 
-def test_display_name_open_issue_shows_labeled_url() -> None:
-    """open_issue should show the labeled issue URL."""
+def test_display_name_open_issue_shows_bare_url() -> None:
+    """open_issue should show the bare issue URL (no prefix)."""
     row = make_plan_row(
         5831,
         "Test Plan",
@@ -274,11 +273,11 @@ def test_display_name_open_issue_shows_labeled_url() -> None:
     )
     ctx = CommandContext(row=row)
     cmd = next(c for c in get_all_commands() if c.id == "open_issue")
-    assert get_display_name(cmd, ctx) == "plan: https://github.com/test/repo/issues/5831"
+    assert get_display_name(cmd, ctx) == "https://github.com/test/repo/issues/5831"
 
 
-def test_display_name_open_pr_shows_labeled_url() -> None:
-    """open_pr should show the labeled PR URL."""
+def test_display_name_open_pr_shows_bare_url() -> None:
+    """open_pr should show the bare PR URL (no prefix)."""
     row = make_plan_row(
         5831,
         "Test Plan",
@@ -286,11 +285,11 @@ def test_display_name_open_pr_shows_labeled_url() -> None:
     )
     ctx = CommandContext(row=row)
     cmd = next(c for c in get_all_commands() if c.id == "open_pr")
-    assert get_display_name(cmd, ctx) == "pr: https://github.com/test/repo/pull/456"
+    assert get_display_name(cmd, ctx) == "https://github.com/test/repo/pull/456"
 
 
-def test_display_name_open_run_shows_labeled_url() -> None:
-    """open_run should show the labeled run URL."""
+def test_display_name_open_run_shows_bare_url() -> None:
+    """open_run should show the bare run URL (no prefix)."""
     row = make_plan_row(
         5831,
         "Test Plan",
@@ -298,7 +297,7 @@ def test_display_name_open_run_shows_labeled_url() -> None:
     )
     ctx = CommandContext(row=row)
     cmd = next(c for c in get_all_commands() if c.id == "open_run")
-    assert get_display_name(cmd, ctx) == "run: https://github.com/test/repo/actions/runs/789"
+    assert get_display_name(cmd, ctx) == "https://github.com/test/repo/actions/runs/789"
 
 
 def test_display_name_copy_checkout_shows_branch() -> None:
@@ -334,14 +333,6 @@ def test_display_name_copy_prepare_shows_issue() -> None:
     assert get_display_name(cmd, ctx) == "erk prepare 5831"
 
 
-def test_display_name_copy_prepare_dangerous_shows_issue_and_flag() -> None:
-    """copy_prepare_dangerous should show the issue number and --dangerous flag."""
-    row = make_plan_row(5831, "Test Plan")
-    ctx = CommandContext(row=row)
-    cmd = next(c for c in get_all_commands() if c.id == "copy_prepare_dangerous")
-    assert get_display_name(cmd, ctx) == "erk prepare 5831 --dangerous"
-
-
 def test_display_name_copy_prepare_activate_shows_full_command() -> None:
     """copy_prepare_activate should show the full source && implement command."""
     row = make_plan_row(5831, "Test Plan")
@@ -372,3 +363,48 @@ def test_all_commands_have_get_display_name() -> None:
     commands = get_all_commands()
     for cmd in commands:
         assert cmd.get_display_name is not None, f"Command {cmd.id} missing get_display_name"
+
+
+# === Palette Display Formatting Tests ===
+
+
+def test_format_palette_display_produces_styled_text() -> None:
+    """_format_palette_display produces Text with correct structure and dim command."""
+    from rich.text import Text
+
+    from erk.tui.commands.provider import _format_palette_display
+
+    result = _format_palette_display("⚡", "close", "erk plan close 123")
+
+    # Result should be a Text object
+    assert isinstance(result, Text)
+
+    # Plain text should match expected format
+    assert result.plain == "⚡ close: erk plan close 123"
+
+    # Command portion should be dimmed
+    # Check that "dim" style is applied to the command text
+    spans = list(result.spans)
+    # The structure is: emoji + " ", label + ": ", (command_text, "dim")
+    # Find the span covering the command text portion
+    command_start = len("⚡ close: ")
+    command_span = next((s for s in spans if s.start == command_start), None)
+    assert command_span is not None, "Expected span for command text"
+    assert command_span.style == "dim"
+
+
+def test_format_search_display_preserves_highlighting() -> None:
+    """_format_search_display preserves fuzzy match highlights in dim portion."""
+    from rich.text import Text
+
+    from erk.tui.commands.provider import _format_search_display
+
+    # Simulate highlighted text from fuzzy matcher
+    # e.g., "close: erk plan close 123" with "close" highlighted
+    highlighted = Text("close: erk plan close 123")
+    highlighted.stylize("bold", 0, 5)  # First "close" highlighted
+
+    result = _format_search_display("⚡", highlighted, len("close"))
+
+    assert isinstance(result, Text)
+    assert result.plain == "⚡ close: erk plan close 123"

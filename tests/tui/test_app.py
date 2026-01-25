@@ -758,30 +758,6 @@ class TestPlanDetailScreenCopyActions:
             assert clipboard.last_copied == "erk prepare 123"
 
     @pytest.mark.asyncio
-    async def test_copy_prepare_dangerous_shortcut_2(self) -> None:
-        """Pressing '2' in detail screen copies prepare --dangerous command."""
-        clipboard = FakeClipboard()
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
-            clipboard=clipboard,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            await pilot.press("space")
-            await pilot.pause()
-            await pilot.pause()
-
-            await pilot.press("2")
-            await pilot.pause()
-
-            assert clipboard.last_copied == "erk prepare 123 --dangerous"
-
-    @pytest.mark.asyncio
     async def test_copy_submit_shortcut_3(self) -> None:
         """Pressing '3' in detail screen copies submit command."""
         clipboard = FakeClipboard()

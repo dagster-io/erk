@@ -45,21 +45,21 @@ def _display_address_remote(ctx: CommandContext) -> str:
 def _display_open_issue(ctx: CommandContext) -> str:
     """Display name for open_issue command."""
     if ctx.row.issue_url:
-        return f"plan: {ctx.row.issue_url}"
+        return ctx.row.issue_url
     return "Issue"
 
 
 def _display_open_pr(ctx: CommandContext) -> str:
     """Display name for open_pr command."""
     if ctx.row.pr_url:
-        return f"pr: {ctx.row.pr_url}"
+        return ctx.row.pr_url
     return "PR"
 
 
 def _display_open_run(ctx: CommandContext) -> str:
     """Display name for open_run command."""
     if ctx.row.run_url:
-        return f"run: {ctx.row.run_url}"
+        return ctx.row.run_url
     return "Workflow Run"
 
 
@@ -83,11 +83,6 @@ def _display_copy_pr_checkout(ctx: CommandContext) -> str:
 def _display_copy_prepare(ctx: CommandContext) -> str:
     """Display name for copy_prepare command."""
     return f"erk prepare {ctx.row.issue_number}"
-
-
-def _display_copy_prepare_dangerous(ctx: CommandContext) -> str:
-    """Display name for copy_prepare_dangerous command."""
-    return f"erk prepare {ctx.row.issue_number} --dangerous"
 
 
 def _display_copy_prepare_activate(ctx: CommandContext) -> str:
@@ -121,7 +116,7 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="close_plan",
             name="Close Plan",
-            description="Close issue and linked PRs",
+            description="close",
             category=CommandCategory.ACTION,
             shortcut=None,
             is_available=lambda _: True,
@@ -130,7 +125,7 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="submit_to_queue",
             name="Submit to Queue",
-            description="Submit for remote AI implementation",
+            description="submit",
             category=CommandCategory.ACTION,
             shortcut="s",
             is_available=lambda ctx: ctx.row.issue_url is not None,
@@ -139,7 +134,7 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="land_pr",
             name="Land PR",
-            description="Merge and delete remote branch",
+            description="land",
             category=CommandCategory.ACTION,
             shortcut=None,
             is_available=lambda ctx: (
@@ -152,7 +147,7 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="fix_conflicts_remote",
             name="Fix Conflicts Remote",
-            description="Launch remote conflict resolution",
+            description="fix-conflicts",
             category=CommandCategory.ACTION,
             shortcut="5",
             is_available=lambda ctx: ctx.row.pr_number is not None,
@@ -161,7 +156,7 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="address_remote",
             name="Address Remote",
-            description="Launch remote PR review addressing",
+            description="address",
             category=CommandCategory.ACTION,
             shortcut=None,
             is_available=lambda ctx: ctx.row.pr_number is not None,
@@ -171,7 +166,7 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="open_issue",
             name="Issue",
-            description="Plan issue",
+            description="plan",
             category=CommandCategory.OPEN,
             shortcut="i",
             is_available=lambda ctx: ctx.row.issue_url is not None,
@@ -180,7 +175,7 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="open_pr",
             name="PR",
-            description="Pull request",
+            description="pr",
             category=CommandCategory.OPEN,
             shortcut="p",
             is_available=lambda ctx: ctx.row.pr_url is not None,
@@ -189,7 +184,7 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="open_run",
             name="Workflow Run",
-            description="GitHub Actions",
+            description="run",
             category=CommandCategory.OPEN,
             shortcut="r",
             is_available=lambda ctx: ctx.row.run_url is not None,
@@ -199,7 +194,7 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="copy_checkout",
             name="erk br co <branch>",
-            description="Checkout branch",
+            description="checkout",
             category=CommandCategory.COPY,
             shortcut="c",
             is_available=lambda ctx: ctx.row.worktree_branch is not None,
@@ -208,7 +203,7 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="copy_pr_checkout",
             name="checkout && sync",
-            description="Activate worktree",
+            description="sync",
             category=CommandCategory.COPY,
             shortcut="e",
             is_available=lambda ctx: ctx.row.pr_number is not None,
@@ -217,25 +212,16 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="copy_prepare",
             name="erk prepare",
-            description="Setup worktree from plan",
+            description="prepare",
             category=CommandCategory.COPY,
             shortcut="1",
             is_available=lambda _: True,
             get_display_name=_display_copy_prepare,
         ),
         CommandDefinition(
-            id="copy_prepare_dangerous",
-            name="erk prepare --dangerous",
-            description="Force overwrite existing",
-            category=CommandCategory.COPY,
-            shortcut="2",
-            is_available=lambda _: True,
-            get_display_name=_display_copy_prepare_dangerous,
-        ),
-        CommandDefinition(
             id="copy_prepare_activate",
             name="prepare && implement",
-            description="One-liner: setup + start",
+            description="implement",
             category=CommandCategory.COPY,
             shortcut="4",
             is_available=lambda _: True,
@@ -244,7 +230,7 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="copy_submit",
             name="erk plan submit",
-            description="Submit to remote queue",
+            description="submit",
             category=CommandCategory.COPY,
             shortcut="3",
             is_available=lambda _: True,
@@ -253,7 +239,7 @@ def get_all_commands() -> list[CommandDefinition]:
         CommandDefinition(
             id="copy_replan",
             name="erk plan replan",
-            description="Re-evaluate against codebase",
+            description="replan",
             category=CommandCategory.COPY,
             shortcut="6",
             is_available=lambda ctx: ctx.row.issue_url is not None,
