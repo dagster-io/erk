@@ -278,6 +278,13 @@ class FakeGraphite(Graphite):
         return self._submit_stack_calls
 
     @property
+    def last_submit_stack_force(self) -> bool | None:
+        """Get the force flag from the most recent submit_stack() call."""
+        if not self._submit_stack_calls:
+            return None
+        return self._submit_stack_calls[-1][4]  # force is the 5th element
+
+    @property
     def delete_branch_calls(self) -> list[tuple[Path, str]]:
         """Get the list of delete_branch() calls made via linked FakeGraphiteBranchOps.
 
