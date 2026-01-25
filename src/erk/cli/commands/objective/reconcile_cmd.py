@@ -14,8 +14,14 @@ from erk_shared.objectives.reconciler import determine_action
 @alias("rec")
 @click.command("reconcile")
 @click.option("--dry-run", is_flag=True, help="Show planned actions without executing")
+@click.option(
+    "--objective",
+    "-o",
+    type=int,
+    help="Target a specific objective by issue number",
+)
 @click.pass_obj
-def reconcile_objectives(ctx: ErkContext, *, dry_run: bool) -> None:
+def reconcile_objectives(ctx: ErkContext, *, dry_run: bool, objective: int | None) -> None:
     """Reconcile auto-advance objectives (determine next actions)."""
     if not dry_run:
         click.echo(
@@ -30,18 +36,31 @@ def reconcile_objectives(ctx: ErkContext, *, dry_run: bool) -> None:
     else:
         repo = discover_repo_context(ctx, ctx.cwd)
 
-    # Fetch objectives with auto-advance label
-    issues = ctx.github.issues.list_issues(
-        repo_root=repo.root,
-        labels=["erk-objective", "auto-advance"],
-        state="open",
-    )
+    if objective is not None:
+        # Single objective mode - target specific issue
+        try:
+            issue = ctx.github.issues.get_issue(repo.root, objective)
+        except RuntimeError as e:
+            click.echo(f"Error: {e}", err=True)
+            raise SystemExit(1) from None
+        if "erk-objective" not in issue.labels:
+            click.echo(f"Error: Issue #{objective} is not an erk-objective", err=True)
+            raise SystemExit(1)
+        issues = [issue]
+        click.echo(f"Analyzing objective #{objective}...\n", err=True)
+    else:
+        # All auto-advance objectives (existing behavior)
+        issues = ctx.github.issues.list_issues(
+            repo_root=repo.root,
+            labels=["erk-objective", "auto-advance"],
+            state="open",
+        )
 
-    if not issues:
-        click.echo("No auto-advance objectives found.", err=True)
-        return
+        if not issues:
+            click.echo("No auto-advance objectives found.", err=True)
+            return
 
-    click.echo("Reconciling auto-advance objectives...\n", err=True)
+        click.echo("Reconciling auto-advance objectives...\n", err=True)
 
     # Build Rich table with columns from plan
     table = Table(show_header=True, header_style="bold", box=None)
