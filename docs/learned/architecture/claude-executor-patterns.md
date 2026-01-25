@@ -4,6 +4,7 @@ read_when:
   - "launching Claude from CLI commands"
   - "deciding which ClaudeExecutor method to use"
   - "testing code that executes Claude CLI"
+  - "choosing between RealClaudeExecutor and RealPromptExecutor"
 ---
 
 # ClaudeExecutor Pattern Documentation
@@ -164,6 +165,63 @@ Key points:
 - **ABC**: `packages/erk-shared/src/erk_shared/core/claude_executor.py`
 - **Real**: `src/erk/core/claude_executor.py` (RealClaudeExecutor)
 - **Fake**: `tests/fakes/claude_executor.py`
+
+## Executor Comparison: ClaudeExecutor vs PromptExecutor
+
+Erk has two distinct executor abstractions for Claude CLI operations:
+
+| Aspect                 | RealClaudeExecutor                                      | RealPromptExecutor                                           |
+| ---------------------- | ------------------------------------------------------- | ------------------------------------------------------------ |
+| **Location**           | `src/erk/core/claude_executor.py`                       | `packages/erk-shared/src/erk_shared/prompt_executor/real.py` |
+| **Scope**              | Full-featured: interactive, streaming, commands         | Single-shot prompts only                                     |
+| **Methods**            | 4 methods (interactive, streaming, prompt, passthrough) | 1 method (execute_prompt)                                    |
+| **Retry logic**        | No built-in retry                                       | Automatic retry on empty output                              |
+| **Error accumulation** | Background thread for stderr                            | Simple capture                                               |
+| **Dependencies**       | Console gateway                                         | Time gateway (for retry delays)                              |
+| **Use case**           | CLI commands launching Claude                           | Programmatic single prompts                                  |
+
+### When to Use Each
+
+**Use RealClaudeExecutor when:**
+
+- Launching Claude interactively (`execute_interactive`)
+- Need real-time streaming events (`execute_command_streaming`)
+- Executing slash commands with metadata extraction (`execute_command`)
+- Running in a CLI context with terminal output
+
+**Use RealPromptExecutor when:**
+
+- Simple single-shot prompts for automation
+- Need automatic retry on transient failures
+- Lightweight operations (no streaming, no metadata)
+- Testability with FakeTime is important
+
+### Error Handling Differences
+
+RealClaudeExecutor uses a background thread to accumulate stderr while streaming stdout:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ RealClaudeExecutor.execute_command_streaming()              │
+├─────────────────────────────────────────────────────────────┤
+│ Main Thread                    │ Background Thread          │
+│ ─────────────────────────────  │ ──────────────────────────│
+│ process = Popen(...)           │                            │
+│ for line in process.stdout:    │ for line in stderr:        │
+│   yield parse(line)            │   stderr_output.append()   │
+│ process.wait()                 │                            │
+│ stderr_thread.join(timeout=5)  │                            │
+│ # Use accumulated stderr       │                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+This is necessary because:
+
+1. Reading stdout blocks until EOF
+2. Stderr could fill its buffer and cause deadlock
+3. The thread accumulates stderr parts for the final error message
+
+RealPromptExecutor uses simple `capture_output=True` since there's no streaming.
 
 ## Related Topics
 
