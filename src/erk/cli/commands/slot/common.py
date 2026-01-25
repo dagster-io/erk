@@ -161,7 +161,7 @@ def find_inactive_slot(
     assigned_slots = {a.slot_name for a in state.assignments}
 
     # Get all worktrees from git (source of truth)
-    worktrees = git.list_worktrees(repo_root)
+    worktrees = git.worktree.list_worktrees(repo_root)
 
     # Build lookup of slot_name -> worktree_path for managed slots
     managed_worktrees: dict[str, Path] = {}
@@ -544,7 +544,7 @@ def allocate_slot_for_branch(
             else:
                 # Worktree doesn't exist (orphaned assignment) - create it
                 worktree_path.mkdir(parents=True, exist_ok=True)
-                ctx.git.add_worktree(
+                ctx.git.worktree.add_worktree(
                     repo.root,
                     worktree_path,
                     branch=branch_name,
@@ -556,7 +556,7 @@ def allocate_slot_for_branch(
             slot_name = generate_slot_name(slot_num)
             worktree_path = repo.worktrees_dir / slot_name
             worktree_path.mkdir(parents=True, exist_ok=True)
-            ctx.git.add_worktree(
+            ctx.git.worktree.add_worktree(
                 repo.root,
                 worktree_path,
                 branch=branch_name,

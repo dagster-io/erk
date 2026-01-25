@@ -23,7 +23,7 @@ def status_cmd(ctx: ErkContext) -> None:
     current_dir = ctx.cwd.resolve()
 
     # Find which worktree we're in
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git.worktree.list_worktrees(repo.root)
     current_worktree_path = None
 
     for wt in worktrees:

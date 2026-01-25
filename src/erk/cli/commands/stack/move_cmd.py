@@ -27,7 +27,7 @@ def _resolve_current_worktree(ctx: ErkContext, repo_root: Path) -> Path:
     Ensure.not_none(ctx.git.get_git_common_dir(ctx.cwd), "Not in a git repository")
 
     cwd = ctx.cwd.resolve()
-    worktrees = ctx.git.list_worktrees(repo_root)
+    worktrees = ctx.git.worktree.list_worktrees(repo_root)
     wt_path = find_worktree_containing_path(worktrees, cwd)
     if wt_path is None:
         user_output(
@@ -66,7 +66,7 @@ def resolve_source_worktree(
 
     if branch:
         # Find worktree containing this branch
-        worktrees = ctx.git.list_worktrees(repo_root)
+        worktrees = ctx.git.worktree.list_worktrees(repo_root)
         wt = Ensure.not_none(
             find_worktree_with_branch(worktrees, branch),
             f"Branch '{branch}' not found in any worktree",
@@ -91,7 +91,7 @@ def detect_operation_type(
 
     Returns MoveOperationType enum value.
     """
-    worktrees = ctx.git.list_worktrees(repo_root)
+    worktrees = ctx.git.worktree.list_worktrees(repo_root)
     operation = determine_move_operation(worktrees, source_wt, target_wt)
     return operation.operation_type
 
@@ -110,7 +110,7 @@ def execute_move(
     Moves the branch from source to target, then switches source to fallback_ref.
     """
     # Validate source has a branch
-    worktrees = ctx.git.list_worktrees(repo_root)
+    worktrees = ctx.git.worktree.list_worktrees(repo_root)
     source_branch = Ensure.not_none(
         get_worktree_branch(worktrees, source_wt), "Source worktree is in detached HEAD state"
     )
@@ -123,7 +123,7 @@ def execute_move(
         )
         raise SystemExit(1)
 
-    target_exists = ctx.git.path_exists(target_wt)
+    target_exists = ctx.git.worktree.path_exists(target_wt)
 
     # To move branch from source to target, we need to avoid having the same branch
     # checked out in two places simultaneously. Strategy:
@@ -146,12 +146,12 @@ def execute_move(
         ctx.branch_manager.checkout_branch(target_wt, source_branch)
     else:
         # Create new worktree with branch
-        ctx.git.add_worktree(
+        ctx.git.worktree.add_worktree(
             repo_root, target_wt, branch=source_branch, ref=None, create_branch=False
         )
 
     # Check if fallback_ref is already checked out elsewhere, and detach it if needed
-    fallback_wt = ctx.git.is_branch_checked_out(repo_root, fallback_ref)
+    fallback_wt = ctx.git.worktree.is_branch_checked_out(repo_root, fallback_ref)
     if fallback_wt is not None and fallback_wt.resolve() != source_wt.resolve():
         # Fallback branch is checked out in another worktree, detach it first
         ctx.branch_manager.checkout_detached(fallback_wt, fallback_ref)
@@ -174,7 +174,7 @@ def execute_swap(
 
     Swaps the branches between source and target worktrees.
     """
-    worktrees = ctx.git.list_worktrees(repo_root)
+    worktrees = ctx.git.worktree.list_worktrees(repo_root)
     source_branch = get_worktree_branch(worktrees, source_wt)
     target_branch = get_worktree_branch(worktrees, target_wt)
 

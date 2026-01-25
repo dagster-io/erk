@@ -120,7 +120,7 @@ class Ensure:
         It checks path existence before any operations that would fail on missing paths.
 
         Supports both real filesystem paths and sentinel paths used in tests by using
-        ctx.git.path_exists, which works with both real paths and test sentinels.
+        ctx.git.worktree.path_exists, which works with both real paths and test sentinels.
 
         Args:
             ctx: Application context with git integration for path checking
@@ -139,7 +139,7 @@ class Ensure:
             >>> # With custom error message
             >>> Ensure.path_exists(ctx, wt_path, f"Worktree not found: {wt_path}")
         """
-        if not ctx.git.path_exists(path):
+        if not ctx.git.worktree.path_exists(path):
             if error_message is None:
                 error_message = f"Path not found: {path}"
             user_output(click.style("Error: ", fg="red") + error_message)
@@ -347,7 +347,7 @@ class Ensure:
             ...     f"Choose a different name or delete the existing path"
             ... )
         """
-        if ctx.git.path_exists(path):
+        if ctx.git.worktree.path_exists(path):
             user_output(click.style("Error: ", fg="red") + error_message)
             raise SystemExit(1)
 

@@ -113,8 +113,8 @@ def slot_init_pool(ctx: ErkContext, count: int | None, *, dry_run: bool) -> None
             worktree_path.mkdir(parents=True, exist_ok=True)
 
         # Create worktree with placeholder branch
-        if not ctx.git.path_exists(worktree_path / ".git"):
-            ctx.git.add_worktree(
+        if not ctx.git.worktree.path_exists(worktree_path / ".git"):
+            ctx.git.worktree.add_worktree(
                 repo.root,
                 worktree_path,
                 branch=placeholder_branch,

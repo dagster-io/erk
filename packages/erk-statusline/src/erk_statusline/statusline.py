@@ -188,7 +188,7 @@ def get_worktree_info_via_gateway(ctx: StatuslineContext, repo_root: Path) -> tu
         - is_linked_worktree: False for root worktree, True for linked worktrees
         - worktree_name: Directory basename of the worktree
     """
-    worktrees = ctx.git.list_worktrees(repo_root)
+    worktrees = ctx.git.worktree.list_worktrees(repo_root)
     if not worktrees:
         return False, ""
 

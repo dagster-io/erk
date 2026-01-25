@@ -23,7 +23,7 @@ def current_wt(ctx: ErkContext) -> None:
         repo = discover_repo_context(ctx, ctx.cwd)
 
     current_dir = ctx.cwd
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git.worktree.list_worktrees(repo.root)
     wt_info = Ensure.not_none(
         find_current_worktree(worktrees, current_dir), "Not in an erk worktree"
     )

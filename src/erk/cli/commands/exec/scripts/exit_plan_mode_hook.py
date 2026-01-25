@@ -570,7 +570,7 @@ def _get_worktree_name(git: Git, repo_root: Path) -> str | None:
     Returns:
         Worktree directory name, or None if not found
     """
-    worktrees = git.list_worktrees(repo_root)
+    worktrees = git.worktree.list_worktrees(repo_root)
     if not worktrees:
         return None
 

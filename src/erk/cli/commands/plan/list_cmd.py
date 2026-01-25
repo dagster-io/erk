@@ -287,7 +287,7 @@ def _build_plans_table(
 
     # Build local worktree mapping from .impl/issue.json files
     worktree_by_issue: dict[int, str] = {}
-    worktrees = ctx.git.list_worktrees(repo_root)
+    worktrees = ctx.git.worktree.list_worktrees(repo_root)
     for worktree in worktrees:
         impl_folder = worktree.path / ".impl"
         if impl_folder.exists() and impl_folder.is_dir():

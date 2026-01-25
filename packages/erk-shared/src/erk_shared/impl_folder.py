@@ -73,7 +73,10 @@ def get_impl_path(worktree_path: Path, git_ops=None) -> Path | None:
         Path to plan.md if exists, None otherwise
     """
     plan_file = worktree_path / ".impl" / "plan.md"
-    path_exists = git_ops.path_exists(plan_file) if git_ops is not None else plan_file.exists()
+    if git_ops is not None:
+        path_exists = git_ops.worktree.path_exists(plan_file)
+    else:
+        path_exists = plan_file.exists()
     if path_exists:
         return plan_file
     return None

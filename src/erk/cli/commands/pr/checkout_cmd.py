@@ -79,7 +79,7 @@ def pr_checkout(
         branch_name = pr.head_ref_name
 
     # Check if branch already exists in a worktree - handle immediately
-    existing_worktree = ctx.git.find_worktree_for_branch(repo.root, branch_name)
+    existing_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
     if existing_worktree is not None:
         navigate_and_display_checkout(
             ctx,

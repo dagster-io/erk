@@ -111,7 +111,7 @@ def _remove_worktree_slot_aware(
         return (None, assignment.slot_name)
     else:
         # Non-slot worktree: remove normally
-        ctx.git.remove_worktree(repo.root, wt.path, force=True)
+        ctx.git.worktree.remove_worktree(repo.root, wt.path, force=True)
         return (wt.path, None)
 
 
@@ -239,7 +239,7 @@ def consolidate_stack(
     # This will be used in create_consolidation_plan() below
 
     # Get all worktrees
-    all_worktrees = ctx.git.list_worktrees(repo.root)
+    all_worktrees = ctx.git.worktree.list_worktrees(repo.root)
 
     # Validate --name argument if provided
     if name is not None:
@@ -271,7 +271,7 @@ def consolidate_stack(
         # Skip current worktree (consolidation target, never removed)
         if wt.path.resolve() == current_worktree.resolve():
             continue
-        if ctx.git.path_exists(wt.path) and ctx.git.has_uncommitted_changes(wt.path):
+        if ctx.git.worktree.path_exists(wt.path) and ctx.git.has_uncommitted_changes(wt.path):
             worktrees_with_changes.append(wt.path)
 
     if worktrees_with_changes:
@@ -308,7 +308,7 @@ def consolidate_stack(
 
             # Create new worktree with original branch
             # (now available since source is on temp branch)
-            ctx.git.add_worktree(
+            ctx.git.worktree.add_worktree(
                 repo.root,
                 new_worktree_path,
                 branch=current_branch,
@@ -322,7 +322,7 @@ def consolidate_stack(
             # This prevents the shell from being in a deleted directory
             # Always change directory regardless of script mode to ensure we're not in
             # the source worktree when it gets deleted
-            if ctx.git.safe_chdir(new_worktree_path):
+            if ctx.git.worktree.safe_chdir(new_worktree_path):
                 # Regenerate context with new cwd (context is immutable)
                 ctx = create_context(dry_run=ctx.dry_run)
                 user_output(click.style("✅ Changed directory to new worktree", fg="green"))
@@ -446,7 +446,7 @@ def consolidate_stack(
 
     # Prune stale worktree metadata after all removals
     # (explicit call now that remove_worktree no longer auto-prunes)
-    ctx.git.prune_worktrees(repo.root)
+    ctx.git.worktree.prune_worktrees(repo.root)
 
     user_output(f"\n{click.style('✅ Consolidation complete', fg='green', bold=True)}")
     user_output()

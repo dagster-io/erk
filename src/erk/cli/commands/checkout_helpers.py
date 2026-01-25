@@ -182,14 +182,14 @@ def ensure_branch_has_worktree(
         is True if the branch was already in a worktree.
     """
     # Check if branch already exists in a worktree
-    existing = ctx.git.find_worktree_for_branch(repo.root, branch_name)
+    existing = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
     if existing is not None:
         return existing, True
 
     # Create worktree (with or without slot)
     if no_slot:
         worktree_path = worktree_path_for(repo.worktrees_dir, branch_name)
-        ctx.git.add_worktree(
+        ctx.git.worktree.add_worktree(
             repo.root,
             worktree_path,
             branch=branch_name,

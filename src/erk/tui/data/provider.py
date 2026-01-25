@@ -462,7 +462,7 @@ class RealPlanDataProvider(PlanDataProvider):
         """
         _ensure_erk_metadata_dir_from_context(self._ctx.repo)
         worktree_by_issue: dict[int, tuple[str, str | None]] = {}
-        worktrees = self._ctx.git.list_worktrees(self._location.root)
+        worktrees = self._ctx.git.worktree.list_worktrees(self._location.root)
         for worktree in worktrees:
             issue_number = (
                 extract_leading_issue_number(worktree.branch) if worktree.branch else None

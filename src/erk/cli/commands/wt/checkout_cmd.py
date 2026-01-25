@@ -55,12 +55,12 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
         return  # activate_root_repo raises SystemExit, but explicit return for clarity
 
     # Get all worktrees for error messages and lookup
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git.worktree.list_worktrees(repo.root)
 
     # Validate worktree exists
     worktree_path = repo.worktrees_dir / worktree_name
 
-    if not ctx.git.path_exists(worktree_path):
+    if not ctx.git.worktree.path_exists(worktree_path):
         # Show available worktrees (use already-fetched worktrees list)
         available_names = ["root"]
         for wt in worktrees:

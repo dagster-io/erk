@@ -30,7 +30,7 @@ def branch_list(ctx: ErkContext) -> None:
     trunk = ctx.git.detect_trunk_branch(repo.root)
 
     # Get worktrees and PR info
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git.worktree.list_worktrees(repo.root)
     prs = ctx.graphite.get_prs_from_graphite(ctx.git, repo.root)
 
     # Build active branches map: branch -> (worktree_name, pr_info)

@@ -204,7 +204,7 @@ def execute_split_plan(
         # Create worktree for existing branch
         # Using create_branch=False since branch already exists
         # The actual behavior depends on the injected Git implementation
-        git_ops.add_worktree(
+        git_ops.worktree.add_worktree(
             plan.repo_root,
             target_path,
             branch=branch,

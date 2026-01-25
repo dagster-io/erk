@@ -104,7 +104,7 @@ def ensure_worktree_for_branch(
                    or worktree name collision with different branch
     """
     # Check if worktree already exists for this branch
-    existing_path = ctx.git.is_branch_checked_out(repo.root, branch)
+    existing_path = ctx.git.worktree.is_branch_checked_out(repo.root, branch)
     if existing_path is not None:
         return existing_path, False
 
@@ -173,9 +173,9 @@ def ensure_worktree_for_branch(
     wt_path = worktree_path_for(repo.worktrees_dir, name)
 
     # Check for name collision with different branch (for non-plan checkouts)
-    if not is_plan_derived and ctx.git.path_exists(wt_path):
+    if not is_plan_derived and ctx.git.worktree.path_exists(wt_path):
         # Worktree exists - check what branch it has
-        worktrees = ctx.git.list_worktrees(repo.root)
+        worktrees = ctx.git.worktree.list_worktrees(repo.root)
         for wt in worktrees:
             if wt.path == wt_path:
                 if wt.branch != branch:
@@ -257,7 +257,7 @@ def add_worktree(
 
     if branch and use_existing_branch:
         # Validate branch is not already checked out
-        existing_path = ctx.git.is_branch_checked_out(repo_root, branch)
+        existing_path = ctx.git.worktree.is_branch_checked_out(repo_root, branch)
         Ensure.invariant(
             not existing_path,
             f"Branch '{branch}' is already checked out at {existing_path}\n"
@@ -268,7 +268,7 @@ def add_worktree(
             f"  • Switch to that worktree: erk br co {branch}",
         )
 
-        ctx.git.add_worktree(repo_root, path, branch=branch, ref=None, create_branch=False)
+        ctx.git.worktree.add_worktree(repo_root, path, branch=branch, ref=None, create_branch=False)
 
         # Pre-flight check: error if existing branch is not Graphite-tracked
         if use_graphite and ref:
@@ -323,11 +323,15 @@ def add_worktree(
                 ],
             )
             ctx.branch_manager.checkout_branch(cwd, original_branch)
-            ctx.git.add_worktree(repo_root, path, branch=branch, ref=None, create_branch=False)
+            ctx.git.worktree.add_worktree(
+                repo_root, path, branch=branch, ref=None, create_branch=False
+            )
         else:
-            ctx.git.add_worktree(repo_root, path, branch=branch, ref=ref, create_branch=True)
+            ctx.git.worktree.add_worktree(
+                repo_root, path, branch=branch, ref=ref, create_branch=True
+            )
     else:
-        ctx.git.add_worktree(repo_root, path, branch=None, ref=ref, create_branch=False)
+        ctx.git.worktree.add_worktree(repo_root, path, branch=None, ref=ref, create_branch=False)
 
 
 def make_env_content(
@@ -723,7 +727,7 @@ def create_wt(
 
     wt_path = worktree_path_for(repo.worktrees_dir, name)
 
-    if ctx.git.path_exists(wt_path):
+    if ctx.git.worktree.path_exists(wt_path):
         if output_json:
             # For JSON output, emit a status: "exists" response with available info
             existing_branch = ctx.git.get_current_branch(wt_path)
@@ -775,7 +779,7 @@ def create_wt(
         )
 
         # Check if target branch is available (not checked out in another worktree)
-        checkout_path = ctx.git.is_branch_checked_out(repo.root, to_branch)
+        checkout_path = ctx.git.worktree.is_branch_checked_out(repo.root, to_branch)
         if checkout_path is not None:
             # Target branch is in use, fall back to detached HEAD
             ctx.branch_manager.checkout_detached(ctx.cwd, current_branch)

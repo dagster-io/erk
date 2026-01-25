@@ -8,6 +8,7 @@ from pathlib import Path
 
 from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
 from erk_shared.git.worktree.abc import Worktree
+from erk_shared.git.worktree.printing import PrintingWorktree
 from erk_shared.printing.base import PrintingBase
 
 # ============================================================================
@@ -34,8 +35,10 @@ class PrintingGit(PrintingBase, Git):
 
     @property
     def worktree(self) -> Worktree:
-        """Access worktree operations subgateway (delegates to wrapped)."""
-        return self._wrapped.worktree
+        """Access worktree operations subgateway (wrapped with PrintingWorktree)."""
+        return PrintingWorktree(
+            self._wrapped.worktree, script_mode=self._script_mode, dry_run=self._dry_run
+        )
 
     # Read-only operations: delegate without printing
 

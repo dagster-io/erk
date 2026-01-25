@@ -193,7 +193,7 @@ def split_cmd(ctx: ErkContext, *, force: bool, dry_run: bool, up: bool, down: bo
     check_uncommitted_changes(ctx, current_worktree, force, dry_run)
 
     # 6. Create split plan
-    all_worktrees = ctx.git.list_worktrees(repo.root)
+    all_worktrees = ctx.git.worktree.list_worktrees(repo.root)
     plan = create_split_plan(
         stack_branches=stack_to_split,
         trunk_branch=trunk_branch,
