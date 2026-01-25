@@ -34,14 +34,14 @@ Examples:
     Branch `my-feature` is already up-to-date with `feature-parent` (no rebase needed).
 """
 
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
 import click
 
-from erk_shared.context.helpers import require_cwd, require_git
+from erk_shared.context.helpers import require_claude_executor, require_cwd, require_git
+from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.git.abc import Git
 
 
@@ -62,45 +62,23 @@ class RebaseError:
     message: str
 
 
-def _get_commits_behind(target_branch: str) -> int | None:
-    """Get number of commits behind target branch.
-
-    Returns:
-        Number of commits behind, or None if command fails.
-    """
-    result = subprocess.run(
-        ["git", "rev-list", "--count", f"HEAD..origin/{target_branch}"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        return None
-    count_str = result.stdout.strip()
-    if not count_str.isdigit():
-        return None
-    return int(count_str)
-
-
-def _generate_summary(
+def _build_summary_prompt(
     *,
     branch_name: str,
     target_branch: str,
     commits_behind: int,
     conflicts_resolved: tuple[str, ...],
-    model: str,
 ) -> str:
-    """Use Claude to generate an intelligent summary of the rebase.
+    """Build the prompt for generating a rebase summary.
 
     Args:
         branch_name: The branch that was rebased
         target_branch: The branch rebased onto
         commits_behind: Number of commits the branch was behind
         conflicts_resolved: Files that had merge conflicts resolved
-        model: Claude model to use for summary generation
 
     Returns:
-        Natural language summary suitable for PR comments.
+        Prompt string for Claude.
     """
     if not conflicts_resolved:
         conflict_context = "No merge conflicts occurred."
@@ -110,7 +88,7 @@ def _generate_summary(
             f"Merge conflicts were automatically resolved in these files:\n{files_list}"
         )
 
-    prompt = f"""Generate a brief summary for a GitHub PR comment about a rebase.
+    return f"""Generate a brief summary for a GitHub PR comment about a rebase.
 
 Context:
 - Branch `{branch_name}` was rebased onto `{target_branch}`
@@ -124,55 +102,87 @@ Requirements:
 - Use markdown formatting (backticks for branch names and file paths)
 - Do not include any preamble or explanation - output ONLY the PR comment text"""
 
-    result = subprocess.run(
-        [
-            "claude",
-            "--print",
-            "--model",
-            model,
-            prompt,
-        ],
-        capture_output=True,
-        text=True,
-        check=False,
+
+def _generate_summary(
+    *,
+    claude_executor: ClaudeExecutor,
+    cwd: Path,
+    branch_name: str,
+    target_branch: str,
+    commits_behind: int,
+    conflicts_resolved: tuple[str, ...],
+    model: str,
+) -> str:
+    """Use Claude to generate an intelligent summary of the rebase.
+
+    Args:
+        claude_executor: Claude CLI executor gateway
+        cwd: Working directory for Claude execution
+        branch_name: The branch that was rebased
+        target_branch: The branch rebased onto
+        commits_behind: Number of commits the branch was behind
+        conflicts_resolved: Files that had merge conflicts resolved
+        model: Claude model to use for summary generation
+
+    Returns:
+        Natural language summary suitable for PR comments.
+    """
+    prompt = _build_summary_prompt(
+        branch_name=branch_name,
+        target_branch=target_branch,
+        commits_behind=commits_behind,
+        conflicts_resolved=conflicts_resolved,
     )
 
-    return result.stdout.strip()
+    result = claude_executor.execute_prompt(
+        prompt,
+        model=model,
+        tools=None,
+        cwd=cwd,
+        system_prompt=None,
+    )
+
+    return result.output.strip()
 
 
-def _invoke_claude_for_conflicts(model: str) -> bool:
+CONFLICT_RESOLUTION_PROMPT = (
+    "Fix all merge conflicts in this repository. "
+    "For each conflicted file, read it, resolve the conflict markers appropriately, "
+    "and save the file. After fixing all conflicts, stage the resolved files with "
+    "'git add' and then run 'git rebase --continue' to continue the rebase."
+)
+
+
+def _invoke_claude_for_conflicts(
+    *,
+    claude_executor: ClaudeExecutor,
+    cwd: Path,
+    model: str,
+) -> bool:
     """Invoke Claude to fix merge conflicts.
+
+    Args:
+        claude_executor: Claude CLI executor gateway
+        cwd: Working directory for Claude execution
+        model: Claude model to use
 
     Returns:
         True if Claude invocation succeeded (exit code 0).
     """
-    prompt = (
-        "Fix all merge conflicts in this repository. "
-        "For each conflicted file, read it, resolve the conflict markers appropriately, "
-        "and save the file. After fixing all conflicts, stage the resolved files with "
-        "'git add' and then run 'git rebase --continue' to continue the rebase."
+    exit_code = claude_executor.execute_prompt_passthrough(
+        CONFLICT_RESOLUTION_PROMPT,
+        model=model,
+        tools=None,
+        cwd=cwd,
+        dangerous=True,
     )
-    result = subprocess.run(
-        [
-            "claude",
-            "--print",
-            "--model",
-            model,
-            "--output-format",
-            "stream-json",
-            "--dangerously-skip-permissions",
-            "--verbose",
-            prompt,
-        ],
-        capture_output=False,  # Let output stream to stdout/stderr
-        check=False,  # We check returncode explicitly below
-    )
-    return result.returncode == 0
+    return exit_code == 0
 
 
 def _rebase_with_conflict_resolution_impl(
     *,
     git: Git,
+    claude_executor: ClaudeExecutor,
     cwd: Path,
     target_branch: str,
     branch_name: str,
@@ -183,6 +193,7 @@ def _rebase_with_conflict_resolution_impl(
 
     Args:
         git: Git gateway for repository operations
+        claude_executor: Claude CLI executor gateway
         cwd: Current working directory (worktree path)
         target_branch: Branch to rebase onto (trunk or parent branch for stacked PRs)
         branch_name: Current branch name for force push
@@ -193,27 +204,24 @@ def _rebase_with_conflict_resolution_impl(
         RebaseSuccess on success, RebaseError on failure
     """
     # Fetch target branch
-    fetch_result = subprocess.run(
-        ["git", "fetch", "origin", target_branch],
-        capture_output=True,
-        text=True,
-        check=False,  # We check returncode explicitly below
-    )
-    if fetch_result.returncode != 0:
+    try:
+        git.fetch_branch(cwd, "origin", target_branch)
+    except Exception as e:
         return RebaseError(
             error="fetch-failed",
-            message=f"Failed to fetch origin/{target_branch}: {fetch_result.stderr}",
+            message=f"Failed to fetch origin/{target_branch}: {e}",
         )
 
-    # Check if behind
-    commits_behind = _get_commits_behind(target_branch)
-    if commits_behind is None:
+    # Check if behind using ahead_behind
+    try:
+        _ahead, behind = git.get_ahead_behind(cwd, branch_name)
+    except Exception:
         return RebaseError(
             error="fetch-failed",
             message="Failed to determine commits behind target branch",
         )
 
-    if commits_behind == 0:
+    if behind == 0:
         return RebaseSuccess(
             action="already-up-to-date",
             commits_behind=0,
@@ -221,15 +229,14 @@ def _rebase_with_conflict_resolution_impl(
         )
 
     # Start rebase (may fail with conflicts, which is expected)
-    subprocess.run(
-        ["git", "rebase", f"origin/{target_branch}"],
-        capture_output=True,
-        text=True,
-        check=False,  # Conflicts expected - we check git.is_rebase_in_progress()
-    )
+    rebase_result = git.rebase_onto(cwd, f"origin/{target_branch}")
 
     # Track all files that had conflicts across all resolution attempts
     all_conflicted_files: set[str] = set()
+
+    # If rebase had conflicts, add them to our tracking
+    if not rebase_result.success:
+        all_conflicted_files.update(rebase_result.conflict_files)
 
     # Loop while rebase has conflicts
     attempt = 0
@@ -239,33 +246,33 @@ def _rebase_with_conflict_resolution_impl(
         conflicted = git.get_conflicted_files(cwd)
         all_conflicted_files.update(conflicted)
         # Invoke Claude to fix conflicts
-        _invoke_claude_for_conflicts(model)
+        _invoke_claude_for_conflicts(
+            claude_executor=claude_executor,
+            cwd=cwd,
+            model=model,
+        )
 
     # Check if rebase completed
     if git.is_rebase_in_progress(cwd):
         # Abort rebase and return error
-        subprocess.run(["git", "rebase", "--abort"], capture_output=True, check=False)
+        git.rebase_abort(cwd)
         return RebaseError(
             error="rebase-failed",
             message=f"Failed to resolve conflicts after {max_attempts} attempts",
         )
 
     # Force push after successful rebase
-    push_result = subprocess.run(
-        ["git", "push", "-f", "origin", branch_name],
-        capture_output=True,
-        text=True,
-        check=False,  # We check returncode explicitly below
-    )
-    if push_result.returncode != 0:
+    try:
+        git.push_to_remote(cwd, "origin", branch_name, force=True, set_upstream=False)
+    except Exception as e:
         return RebaseError(
             error="push-failed",
-            message=f"Failed to force push: {push_result.stderr}",
+            message=f"Failed to force push: {e}",
         )
 
     return RebaseSuccess(
         action="rebased",
-        commits_behind=commits_behind,
+        commits_behind=behind,
         conflicts_resolved=tuple(sorted(all_conflicted_files)),
     )
 
@@ -310,9 +317,11 @@ def rebase_with_conflict_resolution(
     """
     cwd = require_cwd(ctx)
     git = require_git(ctx)
+    claude_executor = require_claude_executor(ctx)
 
     result = _rebase_with_conflict_resolution_impl(
         git=git,
+        claude_executor=claude_executor,
         cwd=cwd,
         target_branch=target_branch,
         branch_name=branch_name,
@@ -331,6 +340,8 @@ def rebase_with_conflict_resolution(
         )
     else:
         summary = _generate_summary(
+            claude_executor=claude_executor,
+            cwd=cwd,
             branch_name=branch_name,
             target_branch=target_branch,
             commits_behind=result.commits_behind,
