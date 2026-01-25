@@ -77,14 +77,12 @@ LEARNED_DOCS_TRIPWIRES = """\
 
 # Tripwires
 
-Action-triggered rules that fire when you're about to perform specific actions.
+Action-triggered rules. You MUST consult these BEFORE taking any matching action.
 
-Tripwires serve as a last line of defense against rule violations. Agents balance
-competing objectives and can inadvertently violate codebase rules despite their
-best efforts. Tripwires catch these cases by triggering when an agent is about
-to take a specific action, prompting them to read the full document before
-proceeding. Code review agents can also use tripwires to detect violations and
-examine the referenced documentation to determine if an issue is real.
+Each tripwire describes an action pattern. Before performing that action, you MUST
+read the linked document first. Tripwires are preventive — they must be checked
+before acting, not after. Code review agents can also use tripwires to detect
+violations and examine the referenced documentation to determine if an issue is real.
 
 <!-- Tripwires are collected from the 'tripwires' frontmatter field in documents. -->
 <!-- Each tripwire should follow this format in your document's frontmatter: -->

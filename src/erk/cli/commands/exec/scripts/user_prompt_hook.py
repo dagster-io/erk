@@ -66,7 +66,10 @@ def build_tripwires_reminder() -> str:
 
     Pure function - returns static string.
     """
-    return "Ensure docs/learned/tripwires.md is loaded and follow its directives."
+    return (
+        "Ensure docs/learned/tripwires.md is loaded and follow its directives.\n"
+        "Before taking ANY action covered by a tripwire, read the linked document FIRST."
+    )
 
 
 # ============================================================================

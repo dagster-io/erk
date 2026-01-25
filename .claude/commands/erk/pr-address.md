@@ -227,6 +227,7 @@ All discussion comments marked with reaction.
 
 Next steps:
 1. Push changes: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:sync-divergence` to resolve. Do NOT use `git pull --rebase`.
 2. Wait for CI to pass
 3. Request re-review if needed
 ```

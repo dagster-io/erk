@@ -13,7 +13,10 @@ def tripwires_reminder_hook(ctx: click.Context, *, hook_ctx: HookContext) -> Non
     if not hook_ctx.is_erk_project:
         return
 
-    click.echo("🚧 Ensure docs/learned/tripwires.md is loaded and follow its directives.")
+    click.echo(
+        "Ensure docs/learned/tripwires.md is loaded and follow its directives.\n"
+        "Before taking ANY action covered by a tripwire, read the linked document FIRST."
+    )
 
 
 if __name__ == "__main__":
