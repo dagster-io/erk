@@ -348,10 +348,18 @@ class FakeGit(Git):
         return fake, fake._branch_ops
 ```
 
-### Reference Implementation
+### Reference Implementations
 
-- Git sub-gateway: `packages/erk-shared/src/erk_shared/git/branch_ops/`
-- Graphite sub-gateway: `packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/`
+Sub-gateways for branch mutations:
+
+- Git branch_ops: `packages/erk-shared/src/erk_shared/git/branch_ops/`
+- Graphite branch_ops: `packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/`
+
+Sub-gateway for worktree operations:
+
+- Git worktree: `packages/erk-shared/src/erk_shared/git/worktree/`
+
+The worktree sub-gateway follows the same 5-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`.
 
 ## Time Injection for Retry-Enabled Gateways
 

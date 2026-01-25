@@ -23,3 +23,4 @@
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
 - **[subprocess-stdin-patterns.md](subprocess-stdin-patterns.md)** — passing content to CLI tools via stdin, using subprocess with input parameter, CLI flags that only work with stdin
 - **[template-variables.md](template-variables.md)** — configuring .env templates, using substitution variables in config.toml, setting environment variables per worktree, updating environment when switching worktrees
+- **[two-phase-validation-model.md](two-phase-validation-model.md)** — implementing commands with multiple confirmations, designing commands that perform destructive mutations, working on erk land or similar multi-step commands

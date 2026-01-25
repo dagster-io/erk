@@ -124,7 +124,8 @@ jobs:
 
   # === Autofix (runs after ALL checks) ===
   autofix:
-    needs: [format, lint, prettier, docs-check, ty, unit-tests, integration-tests]
+    needs:
+      [format, lint, prettier, docs-check, ty, unit-tests, integration-tests]
     if: |
       always() &&
       github.ref_name != 'master' &&
