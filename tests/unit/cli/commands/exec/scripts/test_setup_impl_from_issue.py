@@ -279,3 +279,80 @@ class TestSetupImplFromIssueBranchManager:
         # checked_out_branches are (cwd, branch) tuples
         assert final_checkout[0] == tmp_path
         assert final_checkout[1] == branch_name  # Last checkout is to the new branch
+
+    def test_reuses_current_branch_when_already_on_matching_branch(self, tmp_path: Path) -> None:
+        """When already on a P{issue}-* branch, reuse it instead of creating a new one.
+
+        This prevents the issue where remote implementation workflows re-run
+        with an issue number argument and create a new orphan branch, causing:
+        - PR branch orphaned (commits on old branch, PR points to new branch)
+        - CI failures from branch mismatch
+
+        The fix detects when we're already on a branch matching P{issue_number}-*
+        and reuses it without creating a new branch.
+        """
+        # Arrange: Already on a branch for issue 77
+        existing_branch = "P77-fix-remote-implementation-01-24-2229"
+
+        now = datetime.now(UTC)
+        plan_issue = IssueInfo(
+            number=77,
+            title="Fix Remote Implementation",
+            body="# Plan Content\n\nFix the remote implementation workflow.",
+            state="OPEN",
+            url="https://github.com/test-owner/test-repo/issues/77",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            author="test-author",
+        )
+        fake_issues = FakeGitHubIssues(issues={77: plan_issue})
+
+        # Configure FakeGit with current branch already matching the issue
+        fake_git = FakeGit(
+            current_branches={tmp_path: existing_branch},
+            local_branches=[existing_branch],
+        )
+
+        fake_graphite = FakeGraphite()
+
+        ctx = context_for_test(
+            github_issues=fake_issues,
+            git=fake_git,
+            graphite=fake_graphite,
+            cwd=tmp_path,
+            repo_root=tmp_path,
+        )
+
+        # Act: Invoke command with issue number (simulating remote workflow behavior)
+        runner = CliRunner()
+        result = runner.invoke(
+            setup_impl_from_issue,
+            ["77", "--no-impl"],
+            obj=ctx,
+        )
+
+        # Assert: Command succeeded
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+
+        # Assert: No branch was created (KEY ASSERTION)
+        assert len(fake_git.created_branches) == 0, (
+            "Should NOT create a new branch when already on matching P{issue}-* branch"
+        )
+
+        # Assert: No Graphite track was called
+        assert len(fake_graphite.track_branch_calls) == 0, (
+            "Should NOT track a branch when reusing existing branch"
+        )
+
+        # Assert: Output shows reuse message
+        assert f"Already on branch for issue #77: {existing_branch}" in result.output
+
+        # Assert: Output JSON has the existing branch name
+        output_lines = result.output.strip().split("\n")
+        json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+        output = json.loads(json_line)
+        assert output["success"] is True
+        assert output["branch"] == existing_branch
+        assert output["issue_number"] == 77
