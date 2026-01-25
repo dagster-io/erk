@@ -104,6 +104,18 @@ class CleanupContext:
     objective_number: int | None
     no_delete: bool
     skip_activation_output: bool
+    cleanup_confirmed: bool  # Pre-gathered from validation phase
+
+
+@dataclass(frozen=True)
+class CleanupConfirmation:
+    """Pre-gathered cleanup confirmation result.
+
+    Captures user's response to cleanup prompt during validation phase,
+    allowing all confirmations to be batched upfront before any mutations.
+    """
+
+    proceed: bool  # True = proceed with cleanup, False = preserve
 
 
 class CleanupType(Enum):
@@ -177,6 +189,66 @@ def determine_cleanup_type(
         pool_state=state,
         assignment=None,
     )
+
+
+def _gather_cleanup_confirmation(
+    ctx: ErkContext,
+    *,
+    target: LandTarget,
+    repo: RepoContext,
+    force: bool,
+) -> CleanupConfirmation:
+    """Gather cleanup confirmation upfront during validation.
+
+    Uses determine_cleanup_type() to classify the cleanup scenario,
+    then prompts based on the classification. Returns result for
+    threading through to cleanup functions.
+
+    This consolidates all cleanup-related confirmation prompts into
+    the validation phase, before any mutations occur.
+    """
+    if force or ctx.dry_run:
+        return CleanupConfirmation(proceed=True)
+
+    resolved = determine_cleanup_type(
+        no_delete=False,  # no_delete handled separately in _handle_no_delete
+        worktree_path=target.worktree_path,
+        pool_json_path=repo.pool_json_path,
+        branch=target.branch,
+    )
+
+    match resolved.cleanup_type:
+        case CleanupType.NO_DELETE | CleanupType.NO_WORKTREE:
+            # No confirmation needed
+            return CleanupConfirmation(proceed=True)
+        case CleanupType.SLOT_ASSIGNED:
+            assert resolved.assignment is not None
+            proceed = ctx.console.confirm(
+                f"Unassign slot '{resolved.assignment.slot_name}' "
+                f"and delete branch '{target.branch}'?",
+                default=True,
+            )
+        case CleanupType.SLOT_UNASSIGNED:
+            assert target.worktree_path is not None
+            user_output(
+                click.style("Warning:", fg="yellow")
+                + f" Slot '{target.worktree_path.name}' has no assignment "
+                + "(branch checked out outside erk)."
+            )
+            user_output("  Use `erk pr co` or `erk branch checkout` to track slot usage.")
+            proceed = ctx.console.confirm(
+                f"Release slot '{target.worktree_path.name}' and delete branch '{target.branch}'?",
+                default=True,
+            )
+        case CleanupType.NON_SLOT:
+            proceed = ctx.console.confirm(
+                f"Delete branch '{target.branch}'? (worktree preserved)",
+                default=True,
+            )
+        case _:
+            assert_never(resolved.cleanup_type)
+
+    return CleanupConfirmation(proceed=proceed)
 
 
 def _check_learn_status_and_prompt(
@@ -528,13 +600,9 @@ def _cleanup_slot_with_assignment(
     assignment: SlotAssignment,
 ) -> None:
     """Handle cleanup for slot worktree with assignment: unassign and delete branch."""
-    if not cleanup.force and not cleanup.ctx.dry_run:
-        if not cleanup.ctx.console.confirm(
-            f"Unassign slot '{assignment.slot_name}' and delete branch '{cleanup.branch}'?",
-            default=True,
-        ):
-            user_output("Slot preserved. Branch still exists locally.")
-            return
+    if not cleanup.cleanup_confirmed:
+        user_output("Slot preserved. Branch still exists locally.")
+        return
     execute_unassign(cleanup.ctx, cleanup.repo, state, assignment)
     # Defensive: ensure branch is released before deletion
     # (handles stale pool state where worktree_path doesn't match actual location)
@@ -551,18 +619,9 @@ def _cleanup_slot_without_assignment(
     slot_name: str,
 ) -> None:
     """Handle cleanup for slot worktree without assignment: checkout placeholder, delete branch."""
-    if not cleanup.force and not cleanup.ctx.dry_run:
-        user_output(
-            click.style("Warning:", fg="yellow")
-            + f" Slot '{slot_name}' has no assignment (branch checked out outside erk)."
-        )
-        user_output("  Use `erk pr co` or `erk branch checkout` to track slot usage.")
-        if not cleanup.ctx.console.confirm(
-            f"Release slot '{slot_name}' and delete branch '{cleanup.branch}'?",
-            default=True,
-        ):
-            user_output("Slot preserved. Branch still exists locally.")
-            return
+    if not cleanup.cleanup_confirmed:
+        user_output("Slot preserved. Branch still exists locally.")
+        return
 
     # Checkout placeholder branch before deleting the feature branch
     # worktree_path is guaranteed non-None since we're in a slot worktree
@@ -591,13 +650,9 @@ def _cleanup_non_slot_worktree(cleanup: CleanupContext) -> None:
         "Commit or stash your changes before landing.",
     )
 
-    if not cleanup.force and not cleanup.ctx.dry_run:
-        if not cleanup.ctx.console.confirm(
-            f"Delete branch '{cleanup.branch}'? (worktree preserved)",
-            default=True,
-        ):
-            user_output("Branch preserved.")
-            return
+    if not cleanup.cleanup_confirmed:
+        user_output("Branch preserved.")
+        return
 
     # Checkout detached HEAD at trunk before deleting feature branch
     # (git won't delete a branch that's checked out in any worktree)
@@ -769,7 +824,7 @@ def _validate_pr_for_landing(
     target: LandTarget,
     force: bool,
     script: bool,
-) -> None:
+) -> CleanupConfirmation:
     """Validate PR is ready to land - shared validation for all entry points.
 
     This function consolidates validation steps that happen after PR resolution:
@@ -778,6 +833,7 @@ def _validate_pr_for_landing(
     3. PR base is trunk (for non-Graphite paths; Graphite validates via stack)
     4. Unresolved comments check
     5. Learn status check (for plan branches)
+    6. Cleanup confirmation (batched upfront)
 
     Args:
         ctx: ErkContext
@@ -785,6 +841,9 @@ def _validate_pr_for_landing(
         target: Resolved landing target
         force: If True, skip confirmation prompts
         script: If True, output no-op activation script on abort
+
+    Returns:
+        CleanupConfirmation with user's pre-gathered response
 
     Raises:
         SystemExit(1) on validation failure
@@ -831,6 +890,9 @@ def _validate_pr_for_landing(
             force=force,
             script=script,
         )
+
+    # 6. Gather cleanup confirmation upfront (all confirms batched before mutations)
+    return _gather_cleanup_confirmation(ctx, target=target, repo=repo, force=force)
 
 
 def _resolve_land_target_current_branch(
@@ -1064,8 +1126,17 @@ def _land_target(
     pr_number = target.pr_details.number
     branch = target.branch
 
-    # Step 1: Validate PR is ready to land
-    _validate_pr_for_landing(ctx, repo=repo, target=target, force=force, script=script)
+    # Step 1: Validate PR is ready to land (gathers all confirmations upfront)
+    # The returned confirmation captures whether user approved cleanup.
+    # In script mode, execute phase uses cleanup_confirmed=True (user approved by sourcing).
+    _cleanup_confirmation = _validate_pr_for_landing(
+        ctx, repo=repo, target=target, force=force, script=script
+    )
+    # Note: _cleanup_confirmation is intentionally unused here because _land_target
+    # outputs a script that runs in a separate process. The confirmation has already
+    # been gathered (user was prompted), and the execute phase will use
+    # cleanup_confirmed=True since the user approved by sourcing the script.
+    _ = _cleanup_confirmation
 
     # Step 2: Look up objective for branch (needed for script generation)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
@@ -1221,6 +1292,7 @@ def _cleanup_and_navigate(
     objective_number: int | None,
     no_delete: bool,
     skip_activation_output: bool,
+    cleanup_confirmed: bool,
 ) -> None:
     """Handle worktree/branch cleanup and navigation after PR merge.
 
@@ -1233,13 +1305,14 @@ def _cleanup_and_navigate(
         worktree_path: Path to worktree (None if no worktree exists)
         script: Whether to output activation script
         pull_flag: Whether to pull after landing
-        force: Whether to skip cleanup confirmation
+        force: Whether to skip cleanup confirmation (legacy, kept for compatibility)
         is_current_branch: True if landing from the branch's worktree
         target_child_branch: Target child branch for --up navigation (None for trunk)
         objective_number: Issue number of the objective linked to this branch (if any)
         no_delete: Whether to preserve the branch and slot assignment
         skip_activation_output: If True, skip activation message (used in execute mode
             where the script's cd command handles navigation)
+        cleanup_confirmed: Pre-gathered confirmation from validation phase
     """
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
@@ -1257,6 +1330,7 @@ def _cleanup_and_navigate(
         objective_number=objective_number,
         no_delete=no_delete,
         skip_activation_output=skip_activation_output,
+        cleanup_confirmed=cleanup_confirmed,
     )
 
     resolved = determine_cleanup_type(
@@ -1602,8 +1676,8 @@ def _execute_land(
 
     # Step 3: Cleanup (delete branch, unassign slot)
     # Note: Navigation is handled by the activation script's cd command
-    # Always use force=True in execute mode because user already approved by
-    # sourcing the script. Confirmations happen during validation phase only.
+    # Always use cleanup_confirmed=True in execute mode because user already approved
+    # by sourcing the script. Confirmations happen during validation phase only.
     _cleanup_and_navigate(
         ctx,
         repo=repo,
@@ -1611,12 +1685,13 @@ def _execute_land(
         worktree_path=worktree_path,
         script=script,
         pull_flag=pull_flag,
-        force=True,  # Execute mode skips confirmations (user approved via script)
+        force=True,  # Legacy parameter, kept for compatibility
         is_current_branch=is_current_branch,
         target_child_branch=target_child_branch,
         objective_number=objective_number,
         no_delete=no_delete,
         skip_activation_output=True,  # Script's cd command handles navigation
+        cleanup_confirmed=True,  # Execute mode: user approved via script
     )
 
 

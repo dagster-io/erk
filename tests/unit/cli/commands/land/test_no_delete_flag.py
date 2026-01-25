@@ -113,6 +113,7 @@ def test_cleanup_and_navigate_no_delete_preserves_branch_and_slot(
             objective_number=None,
             no_delete=True,
             skip_activation_output=False,
+            cleanup_confirmed=True,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -204,6 +205,7 @@ def test_cleanup_and_navigate_no_delete_preserves_non_slot_branch(
             objective_number=None,
             no_delete=True,
             skip_activation_output=False,
+            cleanup_confirmed=True,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -322,6 +324,7 @@ def test_cleanup_and_navigate_no_delete_with_up_flag(tmp_path: Path) -> None:
             objective_number=None,
             no_delete=True,
             skip_activation_output=False,
+            cleanup_confirmed=True,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
