@@ -1150,7 +1150,9 @@ def _land_target(
     # Step 4: Determine target path for navigation after landing
     if target.target_child_branch is not None:
         # --up mode: navigate to child branch worktree
-        target_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, target.target_child_branch)
+        target_path = ctx.git.worktree.find_worktree_for_branch(
+            main_repo_root, target.target_child_branch
+        )
         if target_path is None:
             # Will auto-create worktree in execute phase
             if repo.worktrees_dir:
