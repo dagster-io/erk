@@ -97,6 +97,48 @@ def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
     return self._wrapped.get_pr(repo_root, pr_number)
 ```
 
+### LBYL Existence Methods
+
+Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+
+**Examples**: `issue_exists`, `branch_exists`, `pr_exists`
+
+**When to add existence methods:**
+
+- When `get_X()` returns a sentinel (e.g., `PRNotFound`) rather than raising
+- When callers frequently need to validate before operating on a resource
+- When error messages from `get_X()` on missing resources are unclear
+
+**Implementation pattern:**
+
+```python
+# abc.py - Simple boolean return
+@abstractmethod
+def issue_exists(self, repo_root: Path, number: int) -> bool:
+    """Check if an issue exists (read-only)."""
+    ...
+
+# real.py - Lightweight check (avoid fetching full resource)
+def issue_exists(self, repo_root: Path, number: int) -> bool:
+    cmd = ["gh", "issue", "view", str(number), "--json", "number"]
+    result = subprocess.run(cmd, cwd=repo_root, capture_output=True)
+    return result.returncode == 0
+```
+
+**Caller usage (LBYL):**
+
+```python
+# Check existence before fetching
+if not ctx.github.issues.issue_exists(repo.root, issue_number):
+    user_output(f"Error: Issue #{issue_number} not found")
+    raise SystemExit(1)
+
+# Safe to fetch - we know it exists
+issue = ctx.github.issues.get_issue(repo.root, issue_number)
+```
+
+See [LBYL Gateway Pattern](lbyl-gateway-pattern.md) for complete pattern documentation.
+
 ### Mutation Methods
 
 **Examples**: `create_branch`, `merge_pr`, `resolve_review_thread`
