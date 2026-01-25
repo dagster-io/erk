@@ -138,9 +138,12 @@ def _run_docs_sync(repo_root: Path) -> None:
         subprocess.run(
             ["erk", "docs", "sync"],
             cwd=str(repo_root),
-            check=False,
+            check=True,
             capture_output=True,
         )
     except FileNotFoundError:
         # erk binary not found - non-critical
         logger.debug("erk binary not found, skipping docs sync")
+    except subprocess.CalledProcessError:
+        # sync failed - non-critical
+        logger.debug("erk docs sync failed, skipping")

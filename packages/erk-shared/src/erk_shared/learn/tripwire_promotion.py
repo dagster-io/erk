@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import frontmatter
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +83,7 @@ def promote_tripwire_to_frontmatter(
 
     try:
         post = frontmatter.loads(content)
-    except Exception as e:
+    except (ValueError, yaml.YAMLError) as e:
         return PromotionResult(
             success=False,
             target_doc_path=target_doc_path,
@@ -104,14 +105,14 @@ def promote_tripwire_to_frontmatter(
     if raw_tripwires is None:
         tripwires: list[Any] = []
         metadata["tripwires"] = tripwires
-    elif isinstance(raw_tripwires, list):
-        tripwires = cast(list[Any], raw_tripwires)
-    else:
+    elif not isinstance(raw_tripwires, list):
         return PromotionResult(
             success=False,
             target_doc_path=target_doc_path,
             error=f"tripwires key is not a list in {_DOCS_LEARNED_DIR}/{target_doc_path}",
         )
+    else:
+        tripwires = cast(list[Any], raw_tripwires)
 
     # Duplicate detection: check if same action already exists
     if _has_duplicate_action(tripwires, action):
