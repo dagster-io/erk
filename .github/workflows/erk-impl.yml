@@ -205,10 +205,6 @@ jobs:
           else
             echo "implementation_success=false" >> $GITHUB_OUTPUT
           fi
-          if [ -d .worker-impl/ ]; then
-            git rm -rf .worker-impl/
-            echo "Staged .worker-impl/ removal for commit"
-          fi
           exit 0
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -369,6 +365,23 @@ jobs:
             --issue-number "${{ inputs.issue_number }}" \
             --run-id "${{ github.run_id }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Clean up .worker-impl/ after implementation
+        if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+        env:
+          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
+          SUBMITTED_BY: ${{ inputs.submitted_by }}
+        run: |
+          git fetch origin "$BRANCH_NAME"
+          git reset --hard "origin/$BRANCH_NAME"
+          if [ -d .worker-impl/ ]; then
+            git config user.name "$SUBMITTED_BY"
+            git config user.email "$SUBMITTED_BY@users.noreply.github.com"
+            git rm -rf .worker-impl/
+            git commit -m "Remove .worker-impl/ after implementation"
+            git push origin "$BRANCH_NAME"
+            echo "Cleaned up .worker-impl/"
+          fi
 
       - name: Trigger CI workflows
         if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
