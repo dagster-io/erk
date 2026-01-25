@@ -81,6 +81,7 @@ def test_cleanup_and_navigate_uses_plain_git_delete_when_graphite_disabled(
             objective_number=None,
             no_delete=False,
             skip_activation_output=False,
+            cleanup_confirmed=True,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -179,6 +180,7 @@ def test_cleanup_and_navigate_detects_slot_by_branch_name(tmp_path: Path) -> Non
             objective_number=None,
             no_delete=False,
             skip_activation_output=False,
+            cleanup_confirmed=True,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -291,6 +293,7 @@ def test_cleanup_and_navigate_detects_slot_by_path_pattern_without_assignment(
             objective_number=None,
             no_delete=False,
             skip_activation_output=False,
+            cleanup_confirmed=True,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -399,6 +402,7 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_before_deleting_
             objective_number=None,
             no_delete=False,
             skip_activation_output=False,
+            cleanup_confirmed=True,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -488,6 +492,7 @@ def test_cleanup_and_navigate_non_slot_worktree_fails_with_uncommitted_changes(
             objective_number=None,
             no_delete=False,
             skip_activation_output=False,
+            cleanup_confirmed=True,
         )
         pytest.fail("Expected SystemExit(1) for uncommitted changes")
     except SystemExit as e:
@@ -605,6 +610,7 @@ def test_cleanup_ensures_branch_not_checked_out_before_delete_with_stale_pool_st
             objective_number=None,
             no_delete=False,
             skip_activation_output=False,
+            cleanup_confirmed=True,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -770,6 +776,7 @@ def test_cleanup_and_navigate_slot_without_assignment_force_suppresses_warning(
             objective_number=None,
             no_delete=False,
             skip_activation_output=False,
+            cleanup_confirmed=True,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -866,6 +873,7 @@ def test_cleanup_and_navigate_outputs_noop_script_when_not_current_branch(
             objective_number=None,
             no_delete=False,
             skip_activation_output=False,
+            cleanup_confirmed=True,
         )
     except SystemExit as e:
         assert e.code == 0  # Should exit cleanly
@@ -954,6 +962,7 @@ def test_cleanup_and_navigate_skip_activation_output_with_up_flag(
             objective_number=None,
             no_delete=False,
             skip_activation_output=True,  # Execute mode - should skip activation
+            cleanup_confirmed=True,
         )
     except SystemExit as e:
         assert e.code == 0  # Expected - exits cleanly without activation output

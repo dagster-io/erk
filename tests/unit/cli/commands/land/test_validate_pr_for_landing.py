@@ -7,6 +7,7 @@ import pytest
 from erk.cli.commands.land_cmd import LandTarget, _validate_pr_for_landing
 from erk.core.context import context_for_test
 from erk_shared.context.types import RepoContext
+from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
@@ -193,10 +194,18 @@ class TestValidatePrForLandingBaseRef:
 
         fake_git = FakeGit(default_branches={repo_root: "main"})
         fake_github = FakeGitHub()
+        # FakeConsole with confirm_responses for cleanup confirmation prompt
+        fake_console = FakeConsole(
+            is_interactive=True,
+            is_stdout_tty=True,
+            is_stderr_tty=True,
+            confirm_responses=[True],
+        )
         ctx = context_for_test(
             git=fake_git,
             github=fake_github,
             graphite=GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED),
+            console=fake_console,
             cwd=repo_root,
         )
 
@@ -277,10 +286,18 @@ class TestValidatePrForLandingCleanWorkingTree:
             file_statuses={repo_root: ([], ["modified.py"], [])},
         )
         fake_github = FakeGitHub()
+        # FakeConsole with confirm_responses for cleanup confirmation prompt
+        fake_console = FakeConsole(
+            is_interactive=True,
+            is_stdout_tty=True,
+            is_stderr_tty=True,
+            confirm_responses=[True],
+        )
         ctx = context_for_test(
             git=fake_git,
             github=fake_github,
             graphite=GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED),
+            console=fake_console,
             cwd=repo_root,
         )
 
@@ -317,10 +334,18 @@ class TestValidatePrForLandingSuccess:
 
         fake_git = FakeGit(default_branches={repo_root: "main"})
         fake_github = FakeGitHub()
+        # FakeConsole with confirm_responses for cleanup confirmation prompt
+        fake_console = FakeConsole(
+            is_interactive=True,
+            is_stdout_tty=True,
+            is_stderr_tty=True,
+            confirm_responses=[True],
+        )
         ctx = context_for_test(
             git=fake_git,
             github=fake_github,
             graphite=GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED),
+            console=fake_console,
             cwd=repo_root,
         )
 
