@@ -224,7 +224,7 @@ def _gather_cleanup_confirmation(
         case CleanupType.SLOT_ASSIGNED:
             assert resolved.assignment is not None
             proceed = ctx.console.confirm(
-                f"Unassign slot '{resolved.assignment.slot_name}' "
+                f"After landing, unassign slot '{resolved.assignment.slot_name}' "
                 f"and delete branch '{target.branch}'?",
                 default=True,
             )
@@ -237,12 +237,13 @@ def _gather_cleanup_confirmation(
             )
             user_output("  Use `erk pr co` or `erk branch checkout` to track slot usage.")
             proceed = ctx.console.confirm(
-                f"Release slot '{target.worktree_path.name}' and delete branch '{target.branch}'?",
+                f"After landing, release slot '{target.worktree_path.name}' "
+                f"and delete branch '{target.branch}'?",
                 default=True,
             )
         case CleanupType.NON_SLOT:
             proceed = ctx.console.confirm(
-                f"Delete branch '{target.branch}'? (worktree preserved)",
+                f"After landing, delete branch '{target.branch}'? (worktree preserved)",
                 default=True,
             )
         case _:
