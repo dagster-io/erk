@@ -170,7 +170,12 @@ If you launched agents with `run_in_background: true`:
 
 **How to wait:**
 
-For each background agent task_id, use TaskOutput tool with `block: true` to wait for completion, then read the agent's findings from the output.
+For each background agent task_id, use TaskOutput tool with:
+
+- `block: true` to wait for completion
+- `timeout: 600000` (10 minutes)
+
+Then read the agent's findings from the output.
 
 Only after ALL agents have completed should you proceed to Step 5.
 

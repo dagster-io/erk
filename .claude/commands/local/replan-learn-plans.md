@@ -134,7 +134,7 @@ Build the issue list and invoke the replan skill:
 
 Use the Skill tool with `skill: "erk:replan"` and `args: "<space-separated issue numbers>"`.
 
-**IMPORTANT:** The `/erk:replan` skill will launch background Explore agents for deep investigation. Per Step 4e of that skill, you MUST wait for ALL background agents to complete before creating the consolidated plan. Do not proceed to plan creation until every investigation agent has returned its findings.
+**IMPORTANT:** The `/erk:replan` skill will launch background Explore agents for deep investigation. Per Step 4e of that skill, you MUST wait for ALL background agents to complete before creating the consolidated plan. Use `timeout: 600000` (10 minutes) when calling TaskOutput to wait for each agent. Do not proceed to plan creation until every investigation agent has returned its findings.
 
 ---
 
