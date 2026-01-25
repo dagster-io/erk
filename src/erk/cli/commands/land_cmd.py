@@ -682,10 +682,9 @@ def _cleanup_non_slot_worktree(cleanup: CleanupContext) -> None:
         )
     else:
         # Trunk is checked out in another worktree - must stay detached
-        worktree_name = cleanup.worktree_path.name
         user_output(
             click.style("✓", fg="green")
-            + f" Deleted branch (worktree '{worktree_name}' detached at '{trunk_branch}')"
+            + f" Deleted branch ('{cleanup.worktree_path.name}' detached at '{trunk_branch}')"
         )
 
 
