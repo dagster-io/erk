@@ -5,6 +5,13 @@ read_when:
   - "evaluating beads as a git-backed graph issue tracker"
   - "investigating conflict-free concurrent plan creation"
   - "designing agent coordination primitives"
+  - "evaluating beads CLI for agent-driven issue tracking"
+  - "comparing GitHub vs beads for plan storage"
+  - "evaluating beads as a plan storage backend"
+  - "comparing GitHub Issues vs beads for plan management"
+  - "exploring alternative backends to GitHub issues for erk objectives and plans"
+  - "evaluating beads integration for conflict-free concurrent plan creation"
+  - "considering local-first storage solutions for agent planning workflows"
 ---
 
 # Beads as Alternative Backend for Objectives and Plans
