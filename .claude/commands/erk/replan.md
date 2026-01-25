@@ -171,6 +171,7 @@ If you launched agents with `run_in_background: true`:
 **How to wait:**
 
 For each background agent task_id, use TaskOutput tool with:
+
 - `block: true` to wait for completion
 - `timeout: 600000` (10 minutes)
 
