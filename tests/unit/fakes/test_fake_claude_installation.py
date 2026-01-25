@@ -158,3 +158,27 @@ def test_find_session_globally_is_current_always_false() -> None:
 
     assert isinstance(result, FoundSession)
     assert result.session.is_current is False
+
+
+def test_extract_slugs_from_agent_session() -> None:
+    """Test extract_slugs_from_session works with agent session IDs.
+
+    Agent session IDs start with 'agent-'. The fake supports any session_id key
+    in session_slugs, including agent session IDs.
+    """
+    installation = FakeClaudeInstallation.for_test(
+        session_slugs={"agent-a1b2c3d4": ["my-agent-plan"]}
+    )
+
+    slugs = installation.extract_slugs_from_session(Path("/project"), "agent-a1b2c3d4")
+
+    assert slugs == ["my-agent-plan"]
+
+
+def test_extract_slugs_from_agent_session_empty_when_not_configured() -> None:
+    """Test extract_slugs_from_session returns empty for unconfigured agent sessions."""
+    installation = FakeClaudeInstallation.for_test()
+
+    slugs = installation.extract_slugs_from_session(Path("/project"), "agent-unknown")
+
+    assert slugs == []

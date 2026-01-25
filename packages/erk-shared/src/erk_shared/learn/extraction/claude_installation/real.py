@@ -338,12 +338,46 @@ class RealClaudeInstallation(ClaudeInstallation):
 
         return entries
 
+    def _read_agent_session_entries(self, project_dir: Path, agent_id: str) -> list[dict]:
+        """Read all entries from an agent session file.
+
+        Agent session files are named agent-<id>.jsonl and contain entries
+        for that specific agent. Unlike main session files, we read all entries
+        without filtering by sessionId.
+
+        Args:
+            project_dir: Path to project directory
+            agent_id: Agent ID (with or without "agent-" prefix)
+
+        Returns:
+            List of all JSON entries from the agent file
+        """
+        if not agent_id.startswith("agent-"):
+            agent_id = f"agent-{agent_id}"
+
+        agent_file = project_dir / f"{agent_id}.jsonl"
+        if not agent_file.exists():
+            return []
+
+        entries: list[dict] = []
+        with open(agent_file, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                entry = json.loads(line)
+                entries.append(entry)
+        return entries
+
     def extract_slugs_from_session(self, project_cwd: Path, session_id: str) -> list[str]:
         """Extract plan slugs from session log entries.
 
         Searches session logs for entries with the given session ID
         and collects any slug fields found. Slugs indicate plan mode
         was entered and correspond to plan filenames.
+
+        For agent sessions (session_id starting with "agent-"), reads the
+        agent file directly since _iter_session_entries skips agent files.
 
         Args:
             project_cwd: Project working directory (for session lookup hint)
@@ -356,8 +390,11 @@ class RealClaudeInstallation(ClaudeInstallation):
         if project_dir is None:
             return []
 
-        # Read all entries (no line limit) and extract unique slugs
-        entries = self._iter_session_entries(project_dir, session_id, max_lines=None)
+        # For agent sessions, read the agent file directly
+        if session_id.startswith("agent-"):
+            entries = self._read_agent_session_entries(project_dir, session_id)
+        else:
+            entries = self._iter_session_entries(project_dir, session_id, max_lines=None)
 
         slugs: list[str] = []
         seen_slugs: set[str] = set()

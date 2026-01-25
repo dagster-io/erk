@@ -428,3 +428,43 @@ class TestHasProject:
 
         # /test/alpha/subdir should find /test/alpha project
         assert store.has_project(Path("/test/alpha/subdir/deep")) is True
+
+
+class TestExtractSlugsFromAgentSession:
+    """Tests for extracting slugs from agent session files."""
+
+    def test_extracts_slug_from_agent_file(self, mock_claude_home: Path) -> None:
+        """Test that slugs are extracted from agent session files.
+
+        Agent session IDs start with 'agent-' and their logs are stored in
+        separate files named agent-<id>.jsonl. The extract_slugs_from_session
+        method should read these files directly.
+        """
+        install_fixture(mock_claude_home, "project_epsilon", "/test/epsilon")
+
+        store = RealClaudeInstallation()
+        slugs = store.extract_slugs_from_session(Path("/test/epsilon"), "agent-12345678")
+
+        # The agent-12345678.jsonl fixture contains slug "agent-should-be-ignored"
+        assert slugs == ["agent-should-be-ignored"]
+
+    def test_returns_empty_for_nonexistent_agent(self, mock_claude_home: Path) -> None:
+        """Test that nonexistent agent session returns empty list."""
+        install_fixture(mock_claude_home, "project_epsilon", "/test/epsilon")
+
+        store = RealClaudeInstallation()
+        slugs = store.extract_slugs_from_session(Path("/test/epsilon"), "agent-nonexistent")
+
+        assert slugs == []
+
+    def test_main_session_extracts_slugs_normally(self, mock_claude_home: Path) -> None:
+        """Test that main session slug extraction still works."""
+        install_fixture(mock_claude_home, "project_alpha", "/test/alpha")
+
+        store = RealClaudeInstallation()
+        slugs = store.extract_slugs_from_session(
+            Path("/test/alpha"), "aaa11111-2222-3333-4444-555555555555"
+        )
+
+        # The session-aaa... fixture contains slug "alpha-feature-plan"
+        assert slugs == ["alpha-feature-plan"]
