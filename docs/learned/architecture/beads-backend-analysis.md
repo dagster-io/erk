@@ -2,8 +2,9 @@
 title: Beads as Alternative Backend for Objectives and Plans
 read_when:
   - "considering alternative backends for erk's objectives and plans system"
-  - "evaluating beads CLI for agent-driven issue tracking"
-  - "comparing GitHub vs beads for plan storage"
+  - "evaluating beads as a git-backed graph issue tracker"
+  - "investigating conflict-free concurrent plan creation"
+  - "designing agent coordination primitives"
 ---
 
 # Beads as Alternative Backend for Objectives and Plans
