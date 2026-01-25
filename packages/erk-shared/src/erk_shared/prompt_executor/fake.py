@@ -41,12 +41,23 @@ class FakePromptExecutor(PromptExecutor):
         >>> # Third call returns actual output
         >>> result3 = executor.execute_prompt("test")
         >>> assert result3.success and result3.output == "Success!"
+
+    Multiple outputs example (for workflows making sequential LLM calls):
+        >>> executor = FakePromptExecutor(outputs=["First response", "Second response"])
+        >>> result1 = executor.execute_prompt("first call")
+        >>> assert result1.output == "First response"
+        >>> result2 = executor.execute_prompt("second call")
+        >>> assert result2.output == "Second response"
+        >>> # Additional calls return the last output
+        >>> result3 = executor.execute_prompt("third call")
+        >>> assert result3.output == "Second response"
     """
 
     def __init__(
         self,
         *,
         output: str = "[]",
+        outputs: list[str] | None = None,
         error: str | None = None,
         should_fail: bool = False,
         transient_failures: int = 0,
@@ -56,6 +67,11 @@ class FakePromptExecutor(PromptExecutor):
         Args:
             output: Output to return on successful calls. Defaults to empty JSON
                     array for compatibility with step extraction prompts.
+                    Ignored if `outputs` is provided.
+            outputs: Sequence of outputs to return on successive calls.
+                    Each call returns the next output in the list. After the list
+                    is exhausted, returns the last output for subsequent calls.
+                    Takes precedence over `output` if both are provided.
             error: Error message to return on failure (requires should_fail=True)
             should_fail: If True, execute_prompt returns failure
             transient_failures: Number of empty responses to return before success.
@@ -64,6 +80,7 @@ class FakePromptExecutor(PromptExecutor):
                     the configured output.
         """
         self._output = output
+        self._outputs = outputs
         self._error = error
         self._should_fail = should_fail
         self._transient_failures = transient_failures
@@ -117,8 +134,16 @@ class FakePromptExecutor(PromptExecutor):
                 error=None,
             )
 
+        # Determine output to return
+        if self._outputs is not None:
+            # Use outputs sequence - return output at current index, clamping to last
+            output_index = min(self._attempt_count - 1, len(self._outputs) - 1)
+            output_text = self._outputs[output_index]
+        else:
+            output_text = self._output
+
         return PromptResult(
             success=True,
-            output=self._output,
+            output=output_text,
             error=None,
         )
