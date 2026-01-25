@@ -1,9 +1,8 @@
-"""Remote PR review comment addressing workflow.
+"""Address PR review comments with AI-powered resolution.
 
-Triggers a GitHub Actions workflow to:
-1. Checkout the PR branch
-2. Use Claude to address PR review comments
-3. Push any changes
+The address group has two variants:
+- `erk pr address` (default): Local resolution via Claude CLI
+- `erk pr address remote`: Remote resolution via GitHub Actions workflow
 """
 
 import click
@@ -11,13 +10,80 @@ import click
 from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
 from erk.cli.constants import PR_ADDRESS_WORKFLOW_NAME
 from erk.cli.ensure import Ensure
+from erk.cli.help_formatter import ErkCommandGroup
+from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.github.types import PRNotFound
 from erk_shared.output.output import user_output
 
 
-@click.command("address-remote")
+def _run_local_address(ctx: ErkContext, *, dangerous: bool) -> None:
+    """Run local PR comment addressing using Claude CLI."""
+    # Runtime validation: require --dangerous
+    if not dangerous:
+        raise click.UsageError("Missing option '--dangerous'.")
+
+    cwd = ctx.cwd
+
+    # Check Claude availability
+    executor = ctx.claude_executor
+    if not executor.is_claude_available():
+        raise click.ClickException(
+            "Claude CLI is required for addressing PR comments.\n\n"
+            "Install from: https://claude.com/download"
+        )
+
+    click.echo(click.style("Invoking Claude to address PR comments...", fg="yellow"))
+
+    # Execute PR address command via Claude
+    result = stream_command_with_feedback(
+        executor=executor,
+        command="/erk:pr-address",
+        worktree_path=cwd,
+        dangerous=True,
+    )
+
+    if not result.success:
+        raise click.ClickException(result.error_message or "PR comment addressing failed")
+
+    click.echo(click.style("\n✅ PR comments addressed!", fg="green", bold=True))
+
+
+@click.group("address", cls=ErkCommandGroup, invoke_without_command=True)
+@click.option(
+    "-d",
+    "--dangerous",
+    is_flag=True,
+    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+)
+@click.pass_context
+def address_group(ctx: click.Context, *, dangerous: bool) -> None:
+    """Address PR review comments with AI-powered resolution.
+
+    When run without a subcommand, addresses PR review comments on the
+    current branch using Claude.
+
+    Use 'erk pr address remote <pr_number>' to trigger remote addressing via
+    GitHub Actions workflow.
+
+    Examples:
+
+    \b
+      # Address comments locally with Claude
+      erk pr address --dangerous
+
+    \b
+      # Trigger remote comment addressing
+      erk pr address remote 123
+    """
+    if ctx.invoked_subcommand is None:
+        # Run local address when no subcommand given
+        erk_ctx: ErkContext = ctx.obj
+        _run_local_address(erk_ctx, dangerous=dangerous)
+
+
+@address_group.command("remote")
 @click.argument("pr_number", type=int, required=True)
 @click.option(
     "--model",
@@ -26,7 +92,7 @@ from erk_shared.output.output import user_output
     help="Claude model for addressing comments (default: claude-sonnet-4-5).",
 )
 @click.pass_obj
-def pr_address_remote(
+def address_remote(
     ctx: ErkContext,
     pr_number: int,
     *,
@@ -50,11 +116,11 @@ def pr_address_remote(
 
     \b
         # Address review comments on PR #123
-        erk pr address-remote 123
+        erk pr address remote 123
 
     \b
         # Use a specific model
-        erk pr address-remote 123 --model claude-opus-4
+        erk pr address remote 123 --model claude-opus-4
 
     Requirements:
 

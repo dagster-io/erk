@@ -89,7 +89,7 @@ def test_address_remote_triggers_workflow(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["address-remote", "123"], obj=ctx)
+        result = runner.invoke(pr_group, ["address", "remote", "123"], obj=ctx)
 
         assert result.exit_code == 0
         assert "PR #123" in result.output
@@ -119,7 +119,7 @@ def test_address_remote_requires_pr_number(tmp_path: Path) -> None:
         ctx = build_workspace_test_context(env, git=git)
 
         # No PR number argument
-        result = runner.invoke(pr_group, ["address-remote"], obj=ctx)
+        result = runner.invoke(pr_group, ["address", "remote"], obj=ctx)
 
         # Click returns exit code 2 for missing required arguments
         assert result.exit_code == 2
@@ -142,7 +142,7 @@ def test_address_remote_pr_not_found(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["address-remote", "999"], obj=ctx)
+        result = runner.invoke(pr_group, ["address", "remote", "999"], obj=ctx)
 
         assert result.exit_code == 1
         assert "No pull request found with number #999" in result.output
@@ -175,7 +175,7 @@ def test_address_remote_pr_not_open(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["address-remote", "111"], obj=ctx)
+        result = runner.invoke(pr_group, ["address", "remote", "111"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Cannot address comments on CLOSED PR" in result.output
@@ -208,7 +208,7 @@ def test_address_remote_pr_merged(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["address-remote", "222"], obj=ctx)
+        result = runner.invoke(pr_group, ["address", "remote", "222"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Cannot address comments on MERGED PR" in result.output
@@ -241,7 +241,7 @@ def test_address_remote_model_option(tmp_path: Path) -> None:
         ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(
-            pr_group, ["address-remote", "789", "--model", "claude-opus-4"], obj=ctx
+            pr_group, ["address", "remote", "789", "--model", "claude-opus-4"], obj=ctx
         )
 
         assert result.exit_code == 0
@@ -314,7 +314,7 @@ def test_address_remote_updates_dispatch_metadata_for_plan_branch(tmp_path: Path
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["address-remote", "456"], obj=ctx)
+        result = runner.invoke(pr_group, ["address", "remote", "456"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Workflow triggered" in result.output
@@ -360,7 +360,7 @@ def test_address_remote_skips_metadata_for_non_plan_branch(tmp_path: Path) -> No
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["address-remote", "123"], obj=ctx)
+        result = runner.invoke(pr_group, ["address", "remote", "123"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Workflow triggered" in result.output
