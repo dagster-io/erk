@@ -310,7 +310,12 @@ After the user approves the plan in Plan Mode:
    erk exec get-plan-metadata <new_issue_number> objective_issue
    ```
    If the objective link is missing, warn the user that the plan may not be linked to its objective.
-4. Close original issue(s) with comment linking to the new one:
+4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` label:
+   ```bash
+   gh issue edit <new_issue_number> --add-label "erk-consolidated"
+   ```
+   This prevents the consolidated plan from being re-consolidated by `/local:replan-learn-plans`.
+5. Close original issue(s) with comment linking to the new one:
 
 **Single plan:**
 

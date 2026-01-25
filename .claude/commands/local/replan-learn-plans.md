@@ -24,7 +24,7 @@ Queries all open erk-learn plan issues and passes them to `/erk:replan` for cons
 
 ### Step 1: Query Open erk-learn Issues
 
-Fetch all open issues with the `erk-learn` label:
+Fetch all open issues with the `erk-learn` label, including their full label list for filtering:
 
 ```bash
 gh api repos/dagster-io/erk/issues \
@@ -33,23 +33,41 @@ gh api repos/dagster-io/erk/issues \
   -f labels=erk-learn \
   -f state=open \
   -f per_page=100 \
-  --jq '.[] | {number, title, created_at}'
+  --jq '.[] | {number, title, created_at, labels: [.labels[].name]}'
 ```
 
 Note: Uses REST API (not `gh issue list`) to avoid GraphQL rate limits.
 
-Store the results as a list of issues with their numbers and titles.
+### Step 1b: Filter Out Already-Consolidated Plans
+
+From the results, filter out any issues that have the `erk-consolidated` label.
+
+These are plans that were themselves created by a previous consolidation and should not be re-consolidated.
+
+If any issues were filtered out, report to user:
+
+```
+Filtered out N already-consolidated plan(s): #X, #Y, ...
+```
+
+Store the filtered results as a list of issues with their numbers and titles.
 
 ### Step 2: Handle Edge Cases
 
-Based on the number of issues found:
+Based on the number of **filtered** issues (after excluding `erk-consolidated`):
 
 #### 2a: Zero Issues
 
-If no open erk-learn issues found:
+If no open erk-learn issues found (after filtering):
 
 ```
 No open erk-learn plans found. Nothing to replan.
+```
+
+If issues were found but ALL had `erk-consolidated` label:
+
+```
+All N open erk-learn plans are already consolidated. Nothing new to consolidate.
 ```
 
 Stop here.
