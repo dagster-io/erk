@@ -1,0 +1,80 @@
+# Objective Reconciler Workflow
+#
+# Reconciles auto-advance objectives by determining next actionable steps
+# and creating plan issues. When an objective has the `auto-advance` label,
+# this workflow identifies pending steps and generates implementation plans.
+#
+# Trigger: Manual (workflow_dispatch) - cron to be added after validation
+# Output: Creates plan issues linked to objectives, updates roadmap tables
+
+name: objective-reconciler
+run-name: "reconcile-objectives:${{ github.run_attempt }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Preview actions without executing"
+        required: false
+        type: boolean
+        default: false
+      objective:
+        description: "Target specific objective by issue number (optional)"
+        required: false
+        type: string
+
+concurrency:
+  group: reconcile-objectives
+  cancel-in-progress: true
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Validate required secrets
+        env:
+          ERK_PAT: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ERK_PAT" ]; then
+            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured"
+            exit 1
+          fi
+          if [ -z "$ANTHROPIC_KEY" ]; then
+            echo "::error title=Missing Secret::ANTHROPIC_API_KEY secret is required for LLM inference"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup erk
+        run: |
+          cd $GITHUB_WORKSPACE
+          uv tool install -e . --with-editable ./packages/erk-shared
+
+      - name: Run reconcile
+        env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          FLAGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            FLAGS="$FLAGS --dry-run"
+          fi
+          if [ -n "${{ inputs.objective }}" ]; then
+            FLAGS="$FLAGS --objective ${{ inputs.objective }}"
+          fi
+          erk objective reconcile $FLAGS
