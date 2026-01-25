@@ -667,10 +667,26 @@ def _cleanup_non_slot_worktree(cleanup: CleanupContext) -> None:
         cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
     )
     cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch)
-    user_output(
-        click.style("✓", fg="green")
-        + f" Deleted branch (worktree '{cleanup.worktree_path.name}' detached at '{trunk_branch}')"
+
+    # Try to checkout trunk branch after deletion to exit detached HEAD state.
+    # Only possible if trunk is not already checked out in another worktree.
+    trunk_worktree = cleanup.ctx.git.worktree.find_worktree_for_branch(
+        cleanup.main_repo_root, trunk_branch
     )
+    if trunk_worktree is None:
+        # Trunk is not checked out elsewhere - safe to checkout
+        cleanup.ctx.branch_manager.checkout_branch(cleanup.worktree_path, trunk_branch)
+        user_output(
+            click.style("✓", fg="green")
+            + f" Deleted branch (worktree '{cleanup.worktree_path.name}' on '{trunk_branch}')"
+        )
+    else:
+        # Trunk is checked out in another worktree - must stay detached
+        worktree_name = cleanup.worktree_path.name
+        user_output(
+            click.style("✓", fg="green")
+            + f" Deleted branch (worktree '{worktree_name}' detached at '{trunk_branch}')"
+        )
 
 
 def _navigate_or_exit(cleanup: CleanupContext) -> None:
