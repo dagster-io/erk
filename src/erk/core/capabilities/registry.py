@@ -11,6 +11,7 @@ from erk.core.capabilities.permissions import ErkBashPermissionsCapability
 from erk.core.capabilities.reminders import (
     DevrunReminderCapability,
     DignifiedPythonReminderCapability,
+    ExploreDocsReminderCapability,
     TripwiresReminderCapability,
 )
 from erk.core.capabilities.reviews import (
@@ -47,6 +48,7 @@ def _all_capabilities() -> tuple[Capability, ...]:
         # Reminder capabilities - opt-in context injection (required=False)
         DevrunReminderCapability(),
         DignifiedPythonReminderCapability(),
+        ExploreDocsReminderCapability(),
         TripwiresReminderCapability(),
     )
 

@@ -45,3 +45,15 @@ class TripwiresReminderCapability(ReminderCapability):
     @property
     def description(self) -> str:
         return "Remind agent to check tripwires.md"
+
+
+class ExploreDocsReminderCapability(ReminderCapability):
+    """Reminder to include doc-first instructions when spawning Explore agents."""
+
+    @property
+    def reminder_name(self) -> str:
+        return "explore-docs"
+
+    @property
+    def description(self) -> str:
+        return "Remind agent to include doc-first instructions in Explore prompts"

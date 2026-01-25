@@ -72,6 +72,16 @@ def build_tripwires_reminder() -> str:
     )
 
 
+def build_explore_docs_reminder() -> str:
+    """Return explore-docs reminder for doc-first exploration.
+
+    Pure function - returns static string.
+    """
+    return """explore-docs: When spawning Explore agents via Task tool, ALWAYS include:
+"FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Only explore raw codebase for gaps.\""""
+
+
 # ============================================================================
 # I/O Helper Functions
 # ============================================================================
@@ -126,6 +136,9 @@ def user_prompt_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
 
     if is_reminder_installed(hook_ctx.repo_root, "tripwires"):
         context_parts.append(build_tripwires_reminder())
+
+    if is_reminder_installed(hook_ctx.repo_root, "explore-docs"):
+        context_parts.append(build_explore_docs_reminder())
 
     click.echo("\n".join(p for p in context_parts if p))
 
