@@ -55,6 +55,7 @@ class GraphiteSubmitStrategy(SubmitStrategy):
         if branch_name is None:
             yield CompletionEvent(
                 SubmitStrategyError(
+                    status="error",
                     error_type="no_branch",
                     message="Not on a branch (detached HEAD state)",
                     details={},
@@ -75,6 +76,7 @@ class GraphiteSubmitStrategy(SubmitStrategy):
         except RuntimeError as e:
             yield CompletionEvent(
                 SubmitStrategyError(
+                    status="error",
                     error_type="graphite_submit_failed",
                     message=f"Graphite submit failed: {e}",
                     details={"branch": branch_name, "error": str(e)},
@@ -89,6 +91,7 @@ class GraphiteSubmitStrategy(SubmitStrategy):
         if isinstance(pr_info, PRNotFound):
             yield CompletionEvent(
                 SubmitStrategyError(
+                    status="error",
                     error_type="pr_not_found",
                     message=(
                         f"PR not found for branch '{branch_name}' after gt submit.\n"
@@ -116,6 +119,7 @@ class GraphiteSubmitStrategy(SubmitStrategy):
 
         yield CompletionEvent(
             SubmitStrategyResult(
+                status="success",
                 pr_number=pr_info.number,
                 base_branch=parent_branch,
                 graphite_url=graphite_url,

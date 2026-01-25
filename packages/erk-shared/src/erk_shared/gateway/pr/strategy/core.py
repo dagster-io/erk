@@ -13,7 +13,6 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.strategy.abc import StrategyGenerator, SubmitStrategy
 from erk_shared.gateway.pr.strategy.types import SubmitStrategyError, SubmitStrategyResult
 from erk_shared.gateway.pr.submit import execute_core_submit
-from erk_shared.gateway.pr.types import CoreSubmitError, CoreSubmitResult
 
 
 @dataclass(frozen=True)
@@ -72,17 +71,19 @@ class CoreSubmitStrategy(SubmitStrategy):
                 yield event
             elif isinstance(event, CompletionEvent):
                 result = event.result
-                if isinstance(result, CoreSubmitError):
+                if result.status == "error":
                     yield CompletionEvent(
                         SubmitStrategyError(
+                            status="error",
                             error_type=result.error_type,
                             message=result.message,
                             details=result.details,
                         )
                     )
-                elif isinstance(result, CoreSubmitResult):
+                elif result.status == "success":
                     yield CompletionEvent(
                         SubmitStrategyResult(
+                            status="success",
                             pr_number=result.pr_number,
                             base_branch=result.base_branch,
                             graphite_url=None,  # Core never has Graphite URL

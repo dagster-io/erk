@@ -219,13 +219,17 @@ class PostAnalysisResult:
 
 
 @dataclass(frozen=True)
-class PostAnalysisError:
-    """Error result from post-analysis phase."""
+class FinalizeError:
+    """Error result from finalize phase."""
 
-    success: bool
+    status: Literal["error"]
     error_type: PostAnalysisErrorType
     message: str
     details: dict[str, str]
+
+
+# Backwards compatibility alias (to be removed in future)
+PostAnalysisError = FinalizeError
 
 
 @dataclass(frozen=True)
@@ -246,11 +250,11 @@ class PreflightResult:
     commit_messages: list[str] | None = None  # Full commit messages for AI context
 
 
-@dataclass
+@dataclass(frozen=True)
 class FinalizeResult:
     """Result from finalize phase (update PR metadata)."""
 
-    success: bool
+    status: Literal["success"]
     pr_number: int
     pr_url: str
     pr_title: str

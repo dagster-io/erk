@@ -1,6 +1,7 @@
 """Type definitions for unified PR submission operations."""
 
 from dataclasses import dataclass
+from typing import Literal
 
 
 @dataclass(frozen=True)
@@ -11,7 +12,7 @@ class CoreSubmitResult:
     The PR exists on GitHub and is ready for optional Graphite enhancement.
     """
 
-    success: bool
+    status: Literal["success"]
     pr_number: int
     pr_url: str
     branch_name: str
@@ -25,7 +26,7 @@ class CoreSubmitResult:
 class CoreSubmitError:
     """Error from core PR submission."""
 
-    success: bool  # Always False
+    status: Literal["error"]
     error_type: str
     message: str
     details: dict[str, str]
@@ -35,7 +36,7 @@ class CoreSubmitError:
 class GraphiteEnhanceResult:
     """Result from Graphite enhancement (gt submit on existing PR)."""
 
-    success: bool
+    status: Literal["success"]
     graphite_url: str
     message: str
 
@@ -44,7 +45,7 @@ class GraphiteEnhanceResult:
 class GraphiteEnhanceError:
     """Error from Graphite enhancement."""
 
-    success: bool  # Always False
+    status: Literal["error"]
     error_type: str
     message: str
     details: dict[str, str]
@@ -58,6 +59,6 @@ class GraphiteSkipped:
     the user requested --no-graphite.
     """
 
-    success: bool  # Always True
+    status: Literal["skipped"]
     reason: str  # "not_authenticated", "not_tracked", "user_skipped"
     message: str

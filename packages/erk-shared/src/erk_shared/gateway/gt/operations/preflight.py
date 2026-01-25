@@ -15,7 +15,7 @@ from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.pre_analysis import execute_pre_analysis
 from erk_shared.gateway.gt.types import (
-    PostAnalysisError,
+    FinalizeError,
     PreAnalysisError,
     PreAnalysisResult,
     PreflightResult,
@@ -36,13 +36,13 @@ class _SubmitResult(NamedTuple):
 def _execute_submit_only(
     ops: GtKit,
     cwd: Path,
-) -> Generator[ProgressEvent | CompletionEvent[tuple[int, str, str, str] | PostAnalysisError]]:
+) -> Generator[ProgressEvent | CompletionEvent[tuple[int, str, str, str] | FinalizeError]]:
     """Submit branch and wait for PR info, without modifying commit message.
 
     Yields:
         ProgressEvent for status updates
         CompletionEvent with tuple of (pr_number, pr_url, graphite_url, branch_name) on success
-        CompletionEvent with PostAnalysisError on failure
+        CompletionEvent with FinalizeError on failure
     """
     branch_name = ops.git.get_current_branch(cwd) or "unknown"
 
@@ -61,8 +61,8 @@ def _execute_submit_only(
         # Check for merge conflicts
         if "conflict" in combined_lower or "merge conflict" in combined_lower:
             yield CompletionEvent(
-                PostAnalysisError(
-                    success=False,
+                FinalizeError(
+                    status="error",
                     error_type="submit-conflict",
                     message="Merge conflicts detected during stack rebase",
                     details={
@@ -76,8 +76,8 @@ def _execute_submit_only(
 
         # Generic restack failure
         yield CompletionEvent(
-            PostAnalysisError(
-                success=False,
+            FinalizeError(
+                status="error",
                 error_type="submit-failed",
                 message="Failed to restack branch",
                 details={
@@ -136,8 +136,8 @@ def _execute_submit_only(
         no_changes = "does not introduce any changes" in error_message
         if nothing_to_submit or no_changes:
             yield CompletionEvent(
-                PostAnalysisError(
-                    success=False,
+                FinalizeError(
+                    status="error",
                     error_type="submit-empty-parent",
                     message=(
                         "Stack contains an empty parent branch that was already merged. "
@@ -154,8 +154,8 @@ def _execute_submit_only(
 
         if "conflict" in error_lower or "merge conflict" in error_lower:
             yield CompletionEvent(
-                PostAnalysisError(
-                    success=False,
+                FinalizeError(
+                    status="error",
                     error_type="submit-conflict",
                     message="Merge conflicts detected during branch submission",
                     details={
@@ -168,8 +168,8 @@ def _execute_submit_only(
 
         if "merged but the merged commits are not contained" in error_message:
             yield CompletionEvent(
-                PostAnalysisError(
-                    success=False,
+                FinalizeError(
+                    status="error",
                     error_type="submit-merged-parent",
                     message="Parent branches have been merged but are not in main trunk",
                     details={
@@ -182,8 +182,8 @@ def _execute_submit_only(
 
         if "updated remotely" in error_lower or "must sync" in error_lower:
             yield CompletionEvent(
-                PostAnalysisError(
-                    success=False,
+                FinalizeError(
+                    status="error",
                     error_type="submit-diverged",
                     message="Branch has diverged from remote - manual resolution required",
                     details={
@@ -196,8 +196,8 @@ def _execute_submit_only(
 
         if "timed out after 120 seconds" in error_message:
             yield CompletionEvent(
-                PostAnalysisError(
-                    success=False,
+                FinalizeError(
+                    status="error",
                     error_type="submit-timeout",
                     message=(
                         "gt submit timed out after 120 seconds. "
@@ -212,8 +212,8 @@ def _execute_submit_only(
             return
 
         yield CompletionEvent(
-            PostAnalysisError(
-                success=False,
+            FinalizeError(
+                status="error",
                 error_type="submit-failed",
                 message="Failed to submit branch with gt submit",
                 details={
@@ -246,8 +246,8 @@ def _execute_submit_only(
     )
     if isinstance(pr_result, RetriesExhausted):
         yield CompletionEvent(
-            PostAnalysisError(
-                success=False,
+            FinalizeError(
+                status="error",
                 error_type="submit-failed",
                 message="PR was submitted but could not retrieve PR info from GitHub",
                 details={"branch_name": branch_name},
@@ -272,9 +272,7 @@ def execute_preflight(
     ops: GtKit,
     cwd: Path,
     session_id: str,
-) -> Generator[
-    ProgressEvent | CompletionEvent[PreflightResult | PreAnalysisError | PostAnalysisError]
-]:
+) -> Generator[ProgressEvent | CompletionEvent[PreflightResult | PreAnalysisError | FinalizeError]]:
     """Execute preflight phase: auth, squash, submit, get diff.
 
     This combines pre-analysis + submit + diff extraction into a single phase
@@ -289,7 +287,7 @@ def execute_preflight(
 
     Yields:
         ProgressEvent for status updates
-        CompletionEvent with PreflightResult on success, or PreAnalysisError/PostAnalysisError
+        CompletionEvent with PreflightResult on success, or PreAnalysisError/FinalizeError
             on failure
     """
     from erk_shared.gateway.gt.prompts import truncate_diff
@@ -317,7 +315,7 @@ def execute_preflight(
             submit_result = event.result
         else:
             yield event
-    if submit_result is None or isinstance(submit_result, PostAnalysisError):
+    if submit_result is None or isinstance(submit_result, FinalizeError):
         if submit_result is not None:
             yield CompletionEvent(submit_result)
         return

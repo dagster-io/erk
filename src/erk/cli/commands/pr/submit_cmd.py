@@ -29,7 +29,7 @@ from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import execute_finalize
-from erk_shared.gateway.gt.types import FinalizeResult, PostAnalysisError
+from erk_shared.gateway.gt.types import FinalizeError, FinalizeResult
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 from erk_shared.gateway.pr.graphite_enhance import (
     execute_graphite_enhance,
@@ -174,6 +174,7 @@ def _run_strategy(
 
     if result is None:
         return SubmitStrategyError(
+            status="error",
             error_type="strategy-failed",
             message="Strategy did not complete",
             details={},
@@ -206,7 +207,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     click.echo(click.style("Phase 1: Creating or Updating PR", bold=True))
     result = _run_strategy(ctx, cwd, strategy, debug, force)
 
-    if isinstance(result, SubmitStrategyError):
+    if result.status == "error":
         raise click.ClickException(result.message)
 
     action = "created" if result.was_created else "found (already exists)"
@@ -291,14 +292,14 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
             ctx, cwd=cwd, pr_number=pr_number, debug=debug, force=force
         )
 
-        if isinstance(graphite_result, GraphiteEnhanceResult):
+        if graphite_result.status == "success":
             graphite_url = graphite_result.graphite_url
             click.echo("")
-        elif isinstance(graphite_result, GraphiteSkipped):
+        elif graphite_result.status == "skipped":
             if debug:
                 click.echo(click.style(f"   {graphite_result.message}", dim=True))
             click.echo("")
-        elif isinstance(graphite_result, GraphiteEnhanceError):
+        elif graphite_result.status == "error":
             # Graphite errors are warnings, not fatal
             click.echo(click.style(f"   Warning: {graphite_result.message}", fg="yellow"))
             click.echo("")
@@ -315,7 +316,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
         debug=debug,
     )
 
-    if isinstance(finalize_result, PostAnalysisError):
+    if finalize_result.status == "error":
         raise click.ClickException(finalize_result.message)
 
     click.echo(click.style("   PR metadata updated", fg="green"))
@@ -381,7 +382,7 @@ def _run_graphite_enhance(
 
     if result is None:
         return GraphiteSkipped(
-            success=True,
+            status="skipped",
             reason="incomplete",
             message="Graphite enhancement did not complete",
         )
@@ -398,9 +399,9 @@ def _run_finalize(
     body: str,
     diff_file: str,
     debug: bool,
-) -> FinalizeResult | PostAnalysisError:
+) -> FinalizeResult | FinalizeError:
     """Run finalize phase and return result."""
-    result: FinalizeResult | PostAnalysisError | None = None
+    result: FinalizeResult | FinalizeError | None = None
 
     plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
     for event in execute_finalize(
@@ -420,8 +421,8 @@ def _run_finalize(
             result = event.result
 
     if result is None:
-        return PostAnalysisError(
-            success=False,
+        return FinalizeError(
+            status="error",
             error_type="submit-failed",
             message="Finalize did not complete",
             details={},
