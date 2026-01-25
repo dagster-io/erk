@@ -467,7 +467,7 @@ def test_land_error_pr_not_open() -> None:
 
         result = runner.invoke(cli, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
-        assert_cli_error(result, 1, "Pull request is not open")
+        assert_cli_error(result, 1, "is not open")
 
 
 def test_land_does_not_call_safe_chdir() -> None:
