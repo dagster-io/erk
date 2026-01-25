@@ -1053,6 +1053,30 @@ A GitHub label added to PRs that originate from learn plans. When `erk pr land` 
 
 **Related**: [Learn Plan](#learn-plan), [pending-learn](#pending-learn), [Learn Origin Tracking](architecture/learn-origin-tracking.md)
 
+### erk-consolidated
+
+A GitHub label added to issues created by consolidating multiple learn plans. Prevents re-consolidation by `/local:replan-learn-plans`.
+
+**Purpose**: State machine marker that stops the consolidation workflow from picking up its own output.
+
+**Applied by**:
+
+- `/erk:replan` when operating in consolidation mode (multiple source issues)
+
+**Checked by**:
+
+- `/local:replan-learn-plans` - Filters out issues with this label before consolidation
+
+**Lifecycle**:
+
+1. Multiple `erk-learn` issues exist
+2. `/local:replan-learn-plans` consolidates them into single new issue
+3. New issue gets both `erk-learn` and `erk-consolidated` labels
+4. Original issues are closed with reference to new one
+5. Future consolidation runs skip the `erk-consolidated` issue
+
+**Related**: [Consolidation Labels](planning/consolidation-labels.md), [Learn Plan](#learn-plan)
+
 ### pending-learn
 
 A marker state indicating a merged PR is queued for insight extraction. When `erk pr land` completes successfully (and the PR is not from a learn plan), it leaves the worktree in a "pending learn" state for later session analysis.
