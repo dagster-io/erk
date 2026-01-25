@@ -123,6 +123,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 
 **CRITICAL: Before displaying user-provided text in Rich CLI tables** → Read [CLI Output Styling Guide](cli/output-styling.md) first. Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear.
 
+**CRITICAL: Before implementing a command with multiple user confirmations** → Read [Two-Phase Validation Model for Complex Commands](cli/two-phase-validation-model.md) first. Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Inline confirmations cause partial state on decline.
+
 **CRITICAL: Before writing `__all__` to a Python file** → Read [Code Conventions](conventions.md) first. Re-export modules are forbidden. Import directly from where code is defined.
 
 **CRITICAL: Before adding --force flag to a CLI command** → Read [Code Conventions](conventions.md) first. Always include -f as the short form. Pattern: @click.option("-f", "--force", ...)
@@ -142,6 +144,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 **CRITICAL: Before saving a plan with --objective-issue flag** → Read [Plan Lifecycle](planning/lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
 
 **CRITICAL: Before implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](planning/lifecycle.md) first. Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency.
+
+**CRITICAL: Before reusing existing worktrees for remote implementation** → Read [Remote Implementation Idempotency](planning/remote-implementation-idempotency.md) first. Check if worktree already has a branch before creating new one. Reusing worktrees without checking causes PR orphaning.
 
 **CRITICAL: Before writing to /tmp/** → Read [Scratch Storage](planning/scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.
 
