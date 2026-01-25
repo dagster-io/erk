@@ -14,6 +14,8 @@ tripwires:
     warning: "Graphite's `gt track` only accepts local branch names, not remote refs. Use BranchManager.create_branch() which normalizes refs automatically, or strip `origin/` prefix before calling track_branch()."
   - action: "using `gt restack` to resolve branch divergence errors"
     warning: "gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first."
+  - action: "using git pull or git pull --rebase on a Graphite-managed branch"
+    warning: "Use /erk:sync-divergence instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push."
 ---
 
 # Git and Graphite Edge Cases Catalog

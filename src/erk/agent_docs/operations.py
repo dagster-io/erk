@@ -329,7 +329,7 @@ def generate_tripwires_doc(tripwires: list[CollectedTripwire]) -> str:
         "",
         "# Tripwires",
         "",
-        "Action-triggered rules that fire when you're about to perform specific actions.",
+        "Action-triggered rules. You MUST consult these BEFORE taking any matching action.",
         "",
     ]
 
