@@ -150,6 +150,21 @@ Generate plan content from objective step.
 Do the thing.
 """
 
+# Updated roadmap body returned by LLM for roadmap update
+UPDATED_ROADMAP_BODY = """# Test Objective
+
+## Goal
+
+Test objective for reconciler.
+
+## Roadmap
+
+| Step | Description | Status | PR |
+| ---- | ----------- | ------ | -- |
+| 4.1 | Generate plan content | pending | plan #6001 |
+| 4.2 | Create plan issue | pending | |
+"""
+
 
 class TestExecuteAction:
     """Tests for the execute_action function."""
@@ -164,7 +179,8 @@ class TestExecuteAction:
             issues={5934: objective_issue},  # Pre-register objective
         )
 
-        prompt_executor = FakePromptExecutor(output=GENERATED_PLAN_OUTPUT)
+        # First call: plan generation, second call: roadmap update
+        prompt_executor = FakePromptExecutor(outputs=[GENERATED_PLAN_OUTPUT, UPDATED_ROADMAP_BODY])
 
         action = ReconcileAction(
             action_type="create_plan",
@@ -297,7 +313,10 @@ class TestExecuteAction:
             next_issue_number=6001,
         )
 
-        prompt_executor = FakePromptExecutor(output=GENERATED_PLAN_OUTPUT)
+        # First call: plan generation succeeds, second call: roadmap update fails
+        prompt_executor = FakePromptExecutor(
+            outputs=[GENERATED_PLAN_OUTPUT, "ERROR: Table missing 'PR' column"]
+        )
 
         # Objective without PR column - roadmap update will fail
         objective_without_pr_column = """# Objective
@@ -341,7 +360,8 @@ class TestExecuteAction:
             issues={5934: objective_issue},
         )
 
-        prompt_executor = FakePromptExecutor(output=GENERATED_PLAN_OUTPUT)
+        # First call: plan generation, second call: roadmap update
+        prompt_executor = FakePromptExecutor(outputs=[GENERATED_PLAN_OUTPUT, UPDATED_ROADMAP_BODY])
 
         action = ReconcileAction(
             action_type="create_plan",

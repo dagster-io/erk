@@ -170,6 +170,7 @@ def execute_action(
         )
 
     update_result = update_roadmap_with_plan(
+        prompt_executor,
         objective_body,
         step_id=action.step_id,
         plan_issue_number=plan_issue_number,

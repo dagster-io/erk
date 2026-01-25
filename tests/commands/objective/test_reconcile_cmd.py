@@ -213,6 +213,26 @@ Generate plan content from objective step.
 Do the thing.
 """
 
+UPDATED_ROADMAP_BODY = """# Test Objective
+
+## Goal
+
+Test objective for reconciler.
+
+## Roadmap
+
+| Step | Description | Status | PR |
+| ---- | ----------- | ------ | -- |
+| 4.1 | Generate plan content | pending | plan #6001 |
+| 4.2 | Create plan issue | pending | |
+"""
+
+INFERENCE_OUTPUT = """NEXT_STEP: yes
+STEP_ID: 4.1
+DESCRIPTION: Generate plan content
+PHASE: Phase 4
+REASON: No previous steps"""
+
 
 def test_reconcile_live_creates_plan_and_updates_roadmap(tmp_path: Path) -> None:
     """Test that live reconcile creates plan issue and updates objective roadmap."""
@@ -229,15 +249,12 @@ def test_reconcile_live_creates_plan_and_updates_roadmap(tmp_path: Path) -> None
         next_issue_number=6001,
     )
 
-    # FakePromptExecutor returns the same output for all prompts
+    # FakePromptExecutor returns different outputs for sequential calls:
     # First call: determine_action (step inference)
     # Second call: execute_action -> generate_plan_for_step (plan generation)
+    # Third call: execute_action -> update_roadmap_with_plan (roadmap update)
     prompt_executor = FakePromptExecutor(
-        output="""NEXT_STEP: yes
-STEP_ID: 4.1
-DESCRIPTION: Generate plan content
-PHASE: Phase 4
-REASON: No previous steps"""
+        outputs=[INFERENCE_OUTPUT, GENERATED_PLAN_OUTPUT, UPDATED_ROADMAP_BODY]
     )
 
     ctx = context_for_test(
@@ -249,10 +266,6 @@ REASON: No previous steps"""
 
     runner = CliRunner()
     result = runner.invoke(cli, ["objective", "reconcile"], obj=ctx)
-
-    # Note: The FakePromptExecutor returns inference output, not plan output,
-    # which results in a plan generation that uses the inference response.
-    # This is acceptable for testing the CLI flow.
 
     assert result.exit_code == 0
     assert "#5934" in result.output
