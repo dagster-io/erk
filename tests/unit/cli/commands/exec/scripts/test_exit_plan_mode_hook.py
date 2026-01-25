@@ -123,8 +123,13 @@ class TestDetermineExitAction:
         assert result.delete_incremental_plan_marker is True
         assert result.delete_plan_saved_marker is False  # Not touched
 
-    def test_plan_saved_marker_blocks_and_deletes(self) -> None:
-        """Plan-saved marker blocks exit and markers deletion."""
+    def test_plan_saved_marker_blocks_and_preserves(self) -> None:
+        """Plan-saved marker blocks exit but preserves the marker.
+
+        The marker is preserved so subsequent ExitPlanMode calls continue to block
+        with "session complete" instead of prompting the user again (which would
+        cause duplicate plan creation if the agent ignores the block).
+        """
         result = determine_exit_action(
             HookInput.for_test(
                 plan_saved_marker_exists=True,
@@ -133,7 +138,7 @@ class TestDetermineExitAction:
         )
         assert result.action == ExitAction.BLOCK
         assert "Plan already saved to GitHub" in result.message
-        assert result.delete_plan_saved_marker is True
+        assert result.delete_plan_saved_marker is False
         assert result.delete_implement_now_marker is False
 
     def test_no_plan_file_allows_exit(self) -> None:
@@ -167,7 +172,7 @@ class TestDetermineExitAction:
         assert result.delete_objective_context_marker is True
 
     def test_plan_saved_deletes_objective_context_marker_when_present(self) -> None:
-        """Plan-saved marker also deletes objective-context marker if present."""
+        """Plan-saved marker deletes objective-context marker but preserves plan-saved marker."""
         result = determine_exit_action(
             HookInput.for_test(
                 plan_saved_marker_exists=True,
@@ -177,7 +182,9 @@ class TestDetermineExitAction:
             )
         )
         assert result.action == ExitAction.BLOCK
-        assert result.delete_plan_saved_marker is True
+        # Plan-saved marker is preserved (see test_plan_saved_marker_blocks_and_preserves)
+        assert result.delete_plan_saved_marker is False
+        # But objective-context marker is deleted (one-time use)
         assert result.delete_objective_context_marker is True
 
 
@@ -776,7 +783,12 @@ class TestHookIntegration:
         assert not implement_now_marker.exists()  # Marker deleted
 
     def test_plan_saved_marker_flow(self, tmp_path: Path) -> None:
-        """Verify plan-saved marker is actually deleted when present."""
+        """Verify plan-saved marker blocks exit but is preserved for subsequent calls.
+
+        The marker is preserved so subsequent ExitPlanMode calls continue to block
+        with "session complete" instead of prompting the user again (which would
+        cause duplicate plan creation if the agent ignores the block).
+        """
         runner = CliRunner()
         session_id = "session-abc123"
 
@@ -797,7 +809,7 @@ class TestHookIntegration:
 
         assert result.exit_code == 2  # Block
         assert "Plan already saved to GitHub" in result.output
-        assert not plan_saved_marker.exists()  # Marker deleted
+        assert plan_saved_marker.exists()  # Marker preserved for subsequent calls
 
     def test_incremental_plan_marker_flow(self, tmp_path: Path) -> None:
         """Verify incremental-plan marker is deleted and exit is allowed."""
@@ -877,7 +889,7 @@ class TestHookIntegration:
         assert not objective_context_marker.exists()  # Also deleted
 
     def test_objective_context_marker_deleted_on_plan_saved(self, tmp_path: Path) -> None:
-        """Verify objective-context marker is deleted when plan-saved is triggered."""
+        """Verify objective-context marker is deleted but plan-saved marker preserved."""
         runner = CliRunner()
         session_id = "session-abc123"
 
@@ -900,8 +912,8 @@ class TestHookIntegration:
 
         assert result.exit_code == 2  # Block
         assert "Plan already saved to GitHub" in result.output
-        assert not plan_saved_marker.exists()  # Marker deleted
-        assert not objective_context_marker.exists()  # Also deleted
+        assert plan_saved_marker.exists()  # Marker preserved
+        assert not objective_context_marker.exists()  # But objective marker deleted
 
     def test_branch_manager_used_for_pr_lookup(self, tmp_path: Path) -> None:
         """Verify branch_manager is created and used correctly for PR lookups.

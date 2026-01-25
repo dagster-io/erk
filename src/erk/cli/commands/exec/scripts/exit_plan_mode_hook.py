@@ -423,11 +423,13 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
         )
 
     # Plan-saved marker present (user chose "Save to GitHub")
+    # IMPORTANT: Do NOT delete the marker - keep it so subsequent ExitPlanMode calls
+    # continue to block with "session complete" instead of prompting again
     if hook_input.plan_saved_marker_exists:
         return HookOutput(
             ExitAction.BLOCK,
             "✅ Plan already saved to GitHub. Session complete - no further action needed.",
-            delete_plan_saved_marker=True,
+            delete_plan_saved_marker=False,
             delete_objective_context_marker=hook_input.objective_context_marker_exists,
         )
 

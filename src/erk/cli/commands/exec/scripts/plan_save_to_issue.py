@@ -81,6 +81,29 @@ def _create_plan_saved_issue_marker(session_id: str, repo_root: Path, issue_numb
     marker_file.write_text(str(issue_number), encoding="utf-8")
 
 
+def _get_existing_saved_issue(session_id: str, repo_root: Path) -> int | None:
+    """Check if this session already saved a plan and return the issue number.
+
+    This prevents duplicate plan creation when the agent calls plan-save multiple times
+    in the same session.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+
+    Returns:
+        The issue number if plan was already saved, None otherwise.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "plan-saved-issue.marker"
+    if not marker_file.exists():
+        return None
+    content = marker_file.read_text(encoding="utf-8").strip()
+    if not content.isdigit():
+        return None
+    return int(content)
+
+
 @click.command(name="plan-save-to-issue")
 @click.option(
     "--format",
@@ -147,6 +170,31 @@ def plan_save_to_issue(
 
     # session_id comes from --session-id CLI option (or None if not provided)
     effective_session_id = session_id
+
+    # Step 0: Session deduplication check
+    # Prevent duplicate plan creation when the agent calls plan-save multiple times
+    # in the same session (e.g., due to exit-plan-mode-hook loop bug)
+    if effective_session_id is not None:
+        existing_issue = _get_existing_saved_issue(effective_session_id, repo_root)
+        if existing_issue is not None:
+            if output_format == "display":
+                click.echo(
+                    f"This session already saved plan #{existing_issue}. "
+                    "Skipping duplicate creation.",
+                    err=True,
+                )
+            else:
+                click.echo(
+                    json.dumps(
+                        {
+                            "success": True,
+                            "issue_number": existing_issue,
+                            "skipped_duplicate": True,
+                            "message": f"Session already saved plan #{existing_issue}",
+                        }
+                    )
+                )
+            return
 
     # Step 1: Extract plan (priority: plan_file > session_id > most recent)
     if plan_file:
