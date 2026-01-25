@@ -773,3 +773,125 @@ def test_plan_save_to_issue_rejects_whitespace_plan_display_format() -> None:
     assert "Plan validation failed" in result.output
     # Verify no issue was created
     assert len(fake_gh.created_issues) == 0
+
+
+# --- Session deduplication tests ---
+
+
+def test_plan_save_to_issue_skips_duplicate_json_format(tmp_path: Path) -> None:
+    """Test that calling plan-save twice in same session returns existing issue."""
+    fake_gh = FakeGitHubIssues()
+    test_session_id = "duplicate-test-session"
+    plan_content = VALID_PLAN_CONTENT
+    fake_store = FakeClaudeInstallation.for_test(plans={"duplicate-test": plan_content})
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        ctx = ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+            repo_root=Path(td),
+        )
+
+        # First call - creates the issue
+        result1 = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json", "--session-id", test_session_id],
+            obj=ctx,
+        )
+        assert result1.exit_code == 0, f"First call failed: {result1.output}"
+        output1 = json.loads(result1.output)
+        assert output1["success"] is True
+        assert output1["issue_number"] == 1
+        assert "skipped_duplicate" not in output1
+
+        # Second call - should return existing issue without creating new one
+        result2 = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json", "--session-id", test_session_id],
+            obj=ctx,
+        )
+        assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+        output2 = json.loads(result2.output)
+        assert output2["success"] is True
+        assert output2["issue_number"] == 1  # Same issue number
+        assert output2["skipped_duplicate"] is True
+        assert "already saved plan #1" in output2["message"]
+
+        # Verify only one issue was created
+        assert len(fake_gh.created_issues) == 1
+
+
+def test_plan_save_to_issue_skips_duplicate_display_format(tmp_path: Path) -> None:
+    """Test that calling plan-save twice in same session shows skip message in display format."""
+    fake_gh = FakeGitHubIssues()
+    test_session_id = "duplicate-display-session"
+    plan_content = VALID_PLAN_CONTENT
+    fake_store = FakeClaudeInstallation.for_test(plans={"duplicate-display": plan_content})
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        ctx = ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+            repo_root=Path(td),
+        )
+
+        # First call - creates the issue
+        result1 = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "display", "--session-id", test_session_id],
+            obj=ctx,
+        )
+        assert result1.exit_code == 0, f"First call failed: {result1.output}"
+        assert "Plan saved to GitHub issue #1" in result1.output
+
+        # Second call - should skip with message
+        result2 = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "display", "--session-id", test_session_id],
+            obj=ctx,
+        )
+        assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+        assert "already saved plan #1" in result2.output
+        assert "Skipping duplicate" in result2.output
+
+        # Verify only one issue was created
+        assert len(fake_gh.created_issues) == 1
+
+
+def test_plan_save_to_issue_no_dedup_without_session_id(tmp_path: Path) -> None:
+    """Test that deduplication is skipped when no session ID is provided."""
+    fake_gh = FakeGitHubIssues()
+    plan_content = VALID_PLAN_CONTENT
+    fake_store = FakeClaudeInstallation.for_test(plans={"no-dedup-test": plan_content})
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        ctx = ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+            repo_root=Path(td),
+        )
+
+        # First call without session ID
+        result1 = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json"],  # No --session-id
+            obj=ctx,
+        )
+        assert result1.exit_code == 0
+
+        # Second call without session ID - should create another issue
+        # (Note: in reality the plan is consumed, but with fake store it's still there)
+        result2 = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json"],  # No --session-id
+            obj=ctx,
+        )
+        assert result2.exit_code == 0
+        output2 = json.loads(result2.output)
+        assert "skipped_duplicate" not in output2
+
+        # Both calls created issues (no dedup without session ID)
+        assert len(fake_gh.created_issues) == 2
