@@ -103,7 +103,7 @@ def _run_gt_submit(
                 success=False,
                 error_event=CompletionEvent(
                     GraphiteEnhanceError(
-                        success=False,
+                        status="error",
                         error_type="graphite_conflict",
                         message="Merge conflicts detected during Graphite submission",
                         details={"branch": branch_name, "error": str(e)},
@@ -114,7 +114,7 @@ def _run_gt_submit(
             success=False,
             error_event=CompletionEvent(
                 GraphiteEnhanceError(
-                    success=False,
+                    status="error",
                     error_type="graphite_submit_failed",
                     message=f"Failed to enhance PR with Graphite: {e}",
                     details={"branch": branch_name, "error": str(e)},
@@ -163,7 +163,7 @@ def execute_graphite_enhance(
     if branch_name is None:
         yield CompletionEvent(
             GraphiteSkipped(
-                success=True,
+                status="skipped",
                 reason="no_branch",
                 message="Not on a branch, skipping Graphite enhancement",
             )
@@ -177,7 +177,7 @@ def execute_graphite_enhance(
         yield ProgressEvent("Graphite not authenticated, skipping enhancement", style="warning")
         yield CompletionEvent(
             GraphiteSkipped(
-                success=True,
+                status="skipped",
                 reason="not_authenticated",
                 message="Graphite is not authenticated. Run 'gt auth' to enable stack features.",
             )
@@ -192,7 +192,7 @@ def execute_graphite_enhance(
         yield ProgressEvent("Branch not tracked by Graphite, skipping enhancement", style="warning")
         yield CompletionEvent(
             GraphiteSkipped(
-                success=True,
+                status="skipped",
                 reason="not_tracked",
                 message=(
                     f"Branch '{branch_name}' is not tracked by Graphite. "
@@ -218,7 +218,7 @@ def execute_graphite_enhance(
 
     yield CompletionEvent(
         GraphiteEnhanceResult(
-            success=True,
+            status="success",
             graphite_url=graphite_url,
             message="PR enhanced with Graphite stack metadata",
         )

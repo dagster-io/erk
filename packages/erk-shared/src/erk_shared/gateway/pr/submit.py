@@ -94,7 +94,7 @@ def _make_divergence_error(branch_name: str, ahead: int, behind: int) -> CoreSub
         CoreSubmitError with detailed divergence message
     """
     return CoreSubmitError(
-        success=False,
+        status="error",
         error_type="branch_diverged",
         message=(
             f"Branch '{branch_name}' has diverged from remote.\n"
@@ -142,7 +142,7 @@ def execute_core_submit(
     if not is_gh_authed:
         yield CompletionEvent(
             CoreSubmitError(
-                success=False,
+                status="error",
                 error_type="github_auth_failed",
                 message="GitHub CLI is not authenticated. Run 'gh auth login'.",
                 details={},
@@ -157,7 +157,7 @@ def execute_core_submit(
     if branch_name is None:
         yield CompletionEvent(
             CoreSubmitError(
-                success=False,
+                status="error",
                 error_type="no_branch",
                 message="Not on a branch (detached HEAD state)",
                 details={},
@@ -185,7 +185,7 @@ def execute_core_submit(
     if commit_count == 0:
         yield CompletionEvent(
             CoreSubmitError(
-                success=False,
+                status="error",
                 error_type="no_commits",
                 message=f"No commits ahead of {parent_branch}. Nothing to submit.",
                 details={"parent_branch": parent_branch, "branch": branch_name},
@@ -208,7 +208,7 @@ def execute_core_submit(
         # Branch and .impl/issue.json disagree - fail fast
         yield CompletionEvent(
             CoreSubmitError(
-                success=False,
+                status="error",
                 error_type="issue_linkage_mismatch",
                 message=str(e),
                 details={"branch": branch_name},
@@ -266,7 +266,7 @@ def execute_core_submit(
         if "non-fast-forward" in error_str or "rejected" in error_str.lower():
             yield CompletionEvent(
                 CoreSubmitError(
-                    success=False,
+                    status="error",
                     error_type="branch_diverged",
                     message=(
                         f"Branch '{branch_name}' has diverged from remote.\n"
@@ -295,7 +295,7 @@ def execute_core_submit(
             if isinstance(parent_pr, PRNotFound):
                 yield CompletionEvent(
                     CoreSubmitError(
-                        success=False,
+                        status="error",
                         error_type="parent_branch_no_pr",
                         message=(
                             f"Cannot create PR: parent branch '{parent_branch}' "
@@ -349,7 +349,7 @@ def execute_core_submit(
         yield ProgressEvent(f"Created PR #{pr_number}", style="success")
         yield CompletionEvent(
             CoreSubmitResult(
-                success=True,
+                status="success",
                 pr_number=pr_number,
                 pr_url=pr_url,
                 branch_name=branch_name,
@@ -387,7 +387,7 @@ def execute_core_submit(
         yield ProgressEvent(f"Updated existing PR #{pr_number}", style="success")
         yield CompletionEvent(
             CoreSubmitResult(
-                success=True,
+                status="success",
                 pr_number=pr_number,
                 pr_url=pr_url,
                 branch_name=branch_name,

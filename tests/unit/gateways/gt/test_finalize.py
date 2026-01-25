@@ -54,7 +54,7 @@ class TestFinalizeClosingReferencePreservation:
         )
 
         assert isinstance(result, FinalizeResult)
-        assert result.success is True
+        assert result.status == "success"
         # The issue_number should be extracted from the existing PR body
         assert result.issue_number == 123
 
@@ -91,7 +91,7 @@ class TestFinalizeClosingReferencePreservation:
         )
 
         assert isinstance(result, FinalizeResult)
-        assert result.success is True
+        assert result.status == "success"
         # Issue number should be extracted from cross-repo reference
         assert result.issue_number == 456
 
@@ -140,7 +140,7 @@ class TestFinalizeClosingReferencePreservation:
         )
 
         assert isinstance(result, FinalizeResult)
-        assert result.success is True
+        assert result.status == "success"
         # .impl/issue.json value (777) should take precedence over body (999)
         assert result.issue_number == 777
 
@@ -176,7 +176,7 @@ class TestFinalizeClosingReferencePreservation:
         )
 
         assert isinstance(result, FinalizeResult)
-        assert result.success is True
+        assert result.status == "success"
         assert result.issue_number is None
 
     def test_no_closing_reference_when_no_footer(self, tmp_repo: Path) -> None:
@@ -208,7 +208,7 @@ class TestFinalizeClosingReferencePreservation:
         )
 
         assert isinstance(result, FinalizeResult)
-        assert result.success is True
+        assert result.status == "success"
         assert result.issue_number is None
 
     def test_no_closing_reference_when_empty_body(self, tmp_repo: Path) -> None:
@@ -238,5 +238,5 @@ class TestFinalizeClosingReferencePreservation:
         )
 
         assert isinstance(result, FinalizeResult)
-        assert result.success is True
+        assert result.status == "success"
         assert result.issue_number is None

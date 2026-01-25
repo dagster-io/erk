@@ -10,7 +10,7 @@ from pathlib import Path
 
 from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.gateway.gt.types import FinalizeResult, PostAnalysisError
+from erk_shared.gateway.gt.types import FinalizeError, FinalizeResult
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.pr_footer import (
     ClosingReference,
@@ -74,7 +74,7 @@ def execute_finalize(
     pr_body_file: Path | None,
     diff_file: str | None,
     plans_repo: str | None,
-) -> Generator[ProgressEvent | CompletionEvent[FinalizeResult | PostAnalysisError]]:
+) -> Generator[ProgressEvent | CompletionEvent[FinalizeResult | FinalizeError]]:
     """Execute finalize phase: update PR metadata and clean up.
 
     Args:
@@ -188,7 +188,7 @@ def execute_finalize(
 
     yield CompletionEvent(
         FinalizeResult(
-            success=True,
+            status="success",
             pr_number=pr_number,
             pr_url=pr_url,
             pr_title=pr_title,

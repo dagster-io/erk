@@ -112,7 +112,7 @@ class TestExecuteCoreSubmit:
         assert len(completion) == 1
         result = completion[0].result
         assert isinstance(result, CoreSubmitResult)
-        assert result.success is True
+        assert result.status == "success"
         assert result.was_created is True
         assert result.pr_number == 999  # FakeGitHub returns 999
         assert result.branch_name == "feature-branch"
@@ -193,7 +193,7 @@ class TestExecuteCoreSubmit:
         assert len(completion) == 1
         result = completion[0].result
         assert isinstance(result, CoreSubmitResult)
-        assert result.success is True
+        assert result.status == "success"
         assert result.was_created is False  # Updated existing
         assert result.pr_number == 42
         assert result.branch_name == "feature-branch"
@@ -403,7 +403,7 @@ class TestExecuteCoreSubmit:
         assert len(completion) == 1
         result = completion[0].result
         assert isinstance(result, CoreSubmitResult)
-        assert result.success is True
+        assert result.status == "success"
 
     def test_does_not_rebase_when_not_behind(self, tmp_path: Path) -> None:
         """Test that pull_rebase is NOT called when local is not behind remote."""
@@ -436,7 +436,7 @@ class TestExecuteCoreSubmit:
         assert len(completion) == 1
         result = completion[0].result
         assert isinstance(result, CoreSubmitResult)
-        assert result.success is True
+        assert result.status == "success"
 
     def test_rechecks_divergence_after_rebase(self, tmp_path: Path) -> None:
         """Test that divergence is rechecked after rebase succeeds."""
@@ -471,7 +471,7 @@ class TestExecuteCoreSubmit:
         assert len(completion) == 1
         result = completion[0].result
         assert isinstance(result, CoreSubmitResult)
-        assert result.success is True
+        assert result.status == "success"
 
     def test_force_flag_still_works_after_failed_rebase(self, tmp_path: Path) -> None:
         """Test that force flag allows push even when rebase doesn't resolve divergence."""
@@ -503,7 +503,7 @@ class TestExecuteCoreSubmit:
         assert len(completion) == 1
         result = completion[0].result
         assert isinstance(result, CoreSubmitResult)
-        assert result.success is True
+        assert result.status == "success"
 
         # Should have force pushed
         assert len(git._pushed_branches) == 1

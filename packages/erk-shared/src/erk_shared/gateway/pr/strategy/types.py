@@ -6,6 +6,7 @@ common result type so callers can handle results uniformly.
 """
 
 from dataclasses import dataclass
+from typing import Literal
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,7 @@ class SubmitStrategyResult:
     consistent meaning regardless of which strategy produced it.
 
     Attributes:
+        status: Always "success" for type narrowing
         pr_number: The GitHub PR number
         base_branch: The branch the PR targets (parent branch or trunk)
         graphite_url: Graphite visualization URL (None for core strategy)
@@ -24,6 +26,7 @@ class SubmitStrategyResult:
         was_created: True if PR was created, False if updated existing PR
     """
 
+    status: Literal["success"]
     pr_number: int
     base_branch: str
     graphite_url: str | None
@@ -40,11 +43,13 @@ class SubmitStrategyError:
     uses consistent codes across strategies for programmatic handling.
 
     Attributes:
+        status: Always "error" for type narrowing
         error_type: Categorizes the error (e.g., "no_branch", "push_failed")
         message: Human-readable error description
         details: Additional context (strategy-specific, for debugging)
     """
 
+    status: Literal["error"]
     error_type: str
     message: str
     details: dict[str, str]

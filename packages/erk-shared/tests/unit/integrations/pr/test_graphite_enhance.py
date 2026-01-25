@@ -66,7 +66,7 @@ class TestExecuteGraphiteEnhance:
         assert len(completion) == 1
         result = completion[0].result
         assert isinstance(result, GraphiteSkipped)
-        assert result.success is True
+        assert result.status == "skipped"
         assert result.reason == "not_authenticated"
 
     def test_skips_when_branch_not_tracked(self, tmp_path: Path) -> None:
@@ -86,7 +86,7 @@ class TestExecuteGraphiteEnhance:
         assert len(completion) == 1
         result = completion[0].result
         assert isinstance(result, GraphiteSkipped)
-        assert result.success is True
+        assert result.status == "skipped"
         assert result.reason == "not_tracked"
 
     def test_skips_when_not_on_branch(self, tmp_path: Path) -> None:
@@ -129,7 +129,7 @@ class TestExecuteGraphiteEnhance:
         assert len(completion) == 1
         result = completion[0].result
         assert isinstance(result, GraphiteEnhanceResult)
-        assert result.success is True
+        assert result.status == "success"
         assert result.graphite_url.startswith("https://app.graphite.com/")
 
         # Verify submit_stack was called
@@ -161,7 +161,7 @@ class TestExecuteGraphiteEnhance:
         assert len(completion) == 1
         result = completion[0].result
         assert isinstance(result, GraphiteEnhanceError)
-        assert result.success is False
+        assert result.status == "error"
         assert result.error_type == "graphite_submit_failed"
 
     def test_handles_conflict_during_submit(self, tmp_path: Path) -> None:
