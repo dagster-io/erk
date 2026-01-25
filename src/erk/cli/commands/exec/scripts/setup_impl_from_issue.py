@@ -19,7 +19,6 @@ Examples:
 """
 
 import json
-from datetime import UTC, datetime
 from pathlib import Path
 
 import click
@@ -30,6 +29,7 @@ from erk_shared.context.helpers import (
     require_git,
     require_plan_backend,
     require_repo_root,
+    require_time,
 )
 from erk_shared.git.abc import Git
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
@@ -87,6 +87,7 @@ def setup_impl_from_issue(
     repo_root = require_repo_root(ctx)
     git = require_git(ctx)
     plan_backend = require_plan_backend(ctx)
+    time = require_time(ctx)
 
     # Step 1: Fetch plan from GitHub
     try:
@@ -115,7 +116,7 @@ def setup_impl_from_issue(
         # Skip branch creation - just ensure .impl/ exists (handled below)
     else:
         # Generate branch name from issue
-        timestamp = datetime.now(UTC)
+        timestamp = time.now()
         branch_name = generate_issue_branch_name(issue_number, plan.title, timestamp)
 
         # Check if branch already exists
