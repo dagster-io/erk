@@ -35,9 +35,7 @@ _PLAN_IN_PROGRESS_PATTERN = re.compile(r"^\s*plan\s+#(\d+)\s*$", re.IGNORECASE)
 _TABLE_ROW_PATTERN = re.compile(r"^\s*\|(.+)\|\s*$")
 
 
-def _parse_pr_column(
-    pr_cell: str, status_cell: str
-) -> tuple[StepStatus, int | None, int | None]:
+def _parse_pr_column(pr_cell: str, status_cell: str) -> tuple[StepStatus, int | None, int | None]:
     """Parse PR column to determine status, pr_number, and plan_number.
 
     Args:
