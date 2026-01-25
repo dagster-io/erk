@@ -31,3 +31,23 @@ class DryRunBeadsGateway(BeadsGateway):
     ) -> list[BeadsIssue]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.list_issues(labels=labels, status=status, limit=limit)
+
+    def create_issue(
+        self,
+        *,
+        title: str,
+        labels: list[str] | None,
+        description: str | None,
+    ) -> BeadsIssue:
+        """Return a placeholder BeadsIssue without executing anything."""
+        return BeadsIssue(
+            id="bd-dry-run",
+            title=title,
+            description=description if description is not None else "",
+            status="open",
+            labels=tuple(labels) if labels else (),
+            assignee=None,
+            notes="",
+            created_at="dry-run",
+            updated_at="dry-run",
+        )

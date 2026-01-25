@@ -87,3 +87,50 @@ class RealBeadsGateway(BeadsGateway):
             issues = issues[:limit]
 
         return issues
+
+    def create_issue(
+        self,
+        *,
+        title: str,
+        labels: list[str] | None,
+        description: str | None,
+    ) -> BeadsIssue:
+        """Create a new issue using bd CLI.
+
+        Runs: bd create <title> [--label X] [--description Y] --json
+        Parses JSON output into BeadsIssue object.
+        """
+        cmd = ["bd", "create", title, "--json"]
+
+        if labels:
+            for label in labels:
+                cmd.extend(["--label", label])
+
+        if description is not None:
+            cmd.extend(["--description", description])
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=self._cwd,
+            check=False,
+        )
+
+        if result.returncode != 0:
+            msg = f"bd create failed: {result.stderr}"
+            raise RuntimeError(msg)
+
+        data = json.loads(result.stdout)
+
+        return BeadsIssue(
+            id=data["id"],
+            title=data["title"],
+            description=data.get("description", ""),
+            status=data["status"],
+            labels=tuple(data.get("labels", [])),
+            assignee=data.get("assignee"),
+            notes=data.get("notes", ""),
+            created_at=data["created_at"],
+            updated_at=data["updated_at"],
+        )
