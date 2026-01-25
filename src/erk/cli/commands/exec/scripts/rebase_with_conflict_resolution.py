@@ -41,6 +41,9 @@ from typing import Literal
 
 import click
 
+from erk_shared.context.helpers import require_cwd, require_git
+from erk_shared.git.abc import Git
+
 
 @dataclass(frozen=True)
 class RebaseSuccess:
@@ -77,23 +80,6 @@ def _get_commits_behind(target_branch: str) -> int | None:
     if not count_str.isdigit():
         return None
     return int(count_str)
-
-
-def _get_conflicted_files() -> list[str]:
-    """Get list of files with merge conflicts.
-
-    Returns:
-        List of file paths with unmerged changes.
-    """
-    result = subprocess.run(
-        ["git", "diff", "--name-only", "--diff-filter=U"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        return []
-    return [f.strip() for f in result.stdout.strip().split("\n") if f.strip()]
 
 
 def _generate_summary(
@@ -154,12 +140,6 @@ Requirements:
     return result.stdout.strip()
 
 
-def _is_rebase_in_progress() -> bool:
-    """Check if a rebase is currently in progress."""
-    git_dir = Path(".git")
-    return (git_dir / "rebase-merge").is_dir() or (git_dir / "rebase-apply").is_dir()
-
-
 def _invoke_claude_for_conflicts(model: str) -> bool:
     """Invoke Claude to fix merge conflicts.
 
@@ -191,6 +171,9 @@ def _invoke_claude_for_conflicts(model: str) -> bool:
 
 
 def _rebase_with_conflict_resolution_impl(
+    *,
+    git: Git,
+    cwd: Path,
     target_branch: str,
     branch_name: str,
     model: str,
@@ -199,6 +182,8 @@ def _rebase_with_conflict_resolution_impl(
     """Rebase onto target branch and resolve conflicts with Claude.
 
     Args:
+        git: Git gateway for repository operations
+        cwd: Current working directory (worktree path)
         target_branch: Branch to rebase onto (trunk or parent branch for stacked PRs)
         branch_name: Current branch name for force push
         model: Claude model to use for conflict resolution
@@ -240,7 +225,7 @@ def _rebase_with_conflict_resolution_impl(
         ["git", "rebase", f"origin/{target_branch}"],
         capture_output=True,
         text=True,
-        check=False,  # Conflicts expected - we check _is_rebase_in_progress()
+        check=False,  # Conflicts expected - we check git.is_rebase_in_progress()
     )
 
     # Track all files that had conflicts across all resolution attempts
@@ -248,16 +233,16 @@ def _rebase_with_conflict_resolution_impl(
 
     # Loop while rebase has conflicts
     attempt = 0
-    while _is_rebase_in_progress() and attempt < max_attempts:
+    while git.is_rebase_in_progress(cwd) and attempt < max_attempts:
         attempt += 1
         # Capture conflicted files before resolution
-        conflicted = _get_conflicted_files()
+        conflicted = git.get_conflicted_files(cwd)
         all_conflicted_files.update(conflicted)
         # Invoke Claude to fix conflicts
         _invoke_claude_for_conflicts(model)
 
     # Check if rebase completed
-    if _is_rebase_in_progress():
+    if git.is_rebase_in_progress(cwd):
         # Abort rebase and return error
         subprocess.run(["git", "rebase", "--abort"], capture_output=True, check=False)
         return RebaseError(
@@ -286,6 +271,7 @@ def _rebase_with_conflict_resolution_impl(
 
 
 @click.command(name="rebase-with-conflict-resolution")
+@click.pass_context
 @click.option(
     "--target-branch",
     required=True,
@@ -308,6 +294,7 @@ def _rebase_with_conflict_resolution_impl(
     help="Maximum number of conflict resolution attempts",
 )
 def rebase_with_conflict_resolution(
+    ctx: click.Context,
     target_branch: str,
     branch_name: str,
     model: str,
@@ -321,7 +308,12 @@ def rebase_with_conflict_resolution(
 
     Outputs a natural language summary suitable for PR comments.
     """
+    cwd = require_cwd(ctx)
+    git = require_git(ctx)
+
     result = _rebase_with_conflict_resolution_impl(
+        git=git,
+        cwd=cwd,
         target_branch=target_branch,
         branch_name=branch_name,
         model=model,

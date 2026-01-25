@@ -791,12 +791,12 @@ Rebase onto target branch and resolve conflicts with Claude.
 
 **Options:**
 
-| Flag              | Type    | Required | Default             | Description                                                    |
-| ----------------- | ------- | -------- | ------------------- | -------------------------------------------------------------- |
-| `--target-branch` | TEXT    | Yes      | Sentinel.UNSET      | Branch to rebase onto (trunk or parent branch for stacked PRs) |
-| `--branch-name`   | TEXT    | Yes      | Sentinel.UNSET      | Current branch name for force push                             |
-| `--model`         | TEXT    | No       | 'claude-sonnet-4-5' | Claude model to use for conflict resolution                    |
-| `--max-attempts`  | INTEGER | No       | 5                   | Maximum number of conflict resolution attempts                 |
+| Flag              | Type    | Required | Default             | Description                                                        |
+| ----------------- | ------- | -------- | ------------------- | ------------------------------------------------------------------ |
+| `--target-branch` | TEXT    | Yes      | Sentinel.UNSET      | Branch to rebase onto (trunk or parent branch for stacked PRs)     |
+| `--branch-name`   | TEXT    | Yes      | Sentinel.UNSET      | Current branch name for force push                                 |
+| `--model`         | TEXT    | No       | 'claude-sonnet-4-5' | Claude model to use for conflict resolution and summary generation |
+| `--max-attempts`  | INTEGER | No       | 5                   | Maximum number of conflict resolution attempts                     |
 
 ### reply-to-discussion-comment
 
