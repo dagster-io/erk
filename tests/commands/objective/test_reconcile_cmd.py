@@ -211,3 +211,87 @@ def test_reconcile_alias_rec_works(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "No auto-advance objectives found" in result.output
+
+
+def test_reconcile_with_objective_option(tmp_path: Path) -> None:
+    """Test that --objective targets a specific objective without requiring auto-advance."""
+    # Objective without auto-advance label (would normally be skipped)
+    issue = _create_issue(
+        5934,
+        labels=["erk-objective"],  # No auto-advance, but should still work with --objective
+        title="Specific Objective",
+        body="Test objective body",
+    )
+    issues_ops = FakeGitHubIssues(username="testuser", issues={5934: issue})
+    prompt_executor = FakePromptExecutor(
+        output="""NEXT_STEP: yes
+STEP_ID: 2.1
+DESCRIPTION: Create type
+PHASE: Phase 2
+REASON: Phase 1 complete"""
+    )
+
+    ctx = context_for_test(
+        issues=issues_ops,
+        prompt_executor=prompt_executor,
+        cwd=tmp_path,
+        repo=_create_repo_context(tmp_path),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["objective", "reconcile", "--dry-run", "--objective", "5934"], obj=ctx
+    )
+
+    assert result.exit_code == 0
+    assert "Analyzing objective #5934" in result.output
+    assert "#5934" in result.output
+    assert "Specific Objective" in result.output
+    assert "create_plan" in result.output
+
+
+def test_reconcile_objective_not_found(tmp_path: Path) -> None:
+    """Test that --objective with non-existent issue shows error."""
+    # Empty issues - no issue #9999 exists
+    issues_ops = FakeGitHubIssues(username="testuser", issues={})
+
+    ctx = context_for_test(
+        issues=issues_ops,
+        cwd=tmp_path,
+        repo=_create_repo_context(tmp_path),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["objective", "reconcile", "--dry-run", "--objective", "9999"], obj=ctx
+    )
+
+    assert result.exit_code == 1
+    assert "Error:" in result.output
+    assert "#9999 not found" in result.output
+
+
+def test_reconcile_objective_not_erk_objective(tmp_path: Path) -> None:
+    """Test that --objective with non-erk-objective issue shows error."""
+    # Issue exists but lacks erk-objective label
+    issue = _create_issue(
+        5934,
+        labels=["bug"],  # Not an erk-objective
+        title="Regular Bug Issue",
+    )
+    issues_ops = FakeGitHubIssues(username="testuser", issues={5934: issue})
+
+    ctx = context_for_test(
+        issues=issues_ops,
+        cwd=tmp_path,
+        repo=_create_repo_context(tmp_path),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["objective", "reconcile", "--dry-run", "--objective", "5934"], obj=ctx
+    )
+
+    assert result.exit_code == 1
+    assert "Error:" in result.output
+    assert "not an erk-objective" in result.output
