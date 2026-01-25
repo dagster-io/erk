@@ -44,7 +44,7 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 ### Session Operations
 
 - `list-sessions` - List Claude Code sessions
-- `preprocess-session` - Compress session for analysis
+- `preprocess-session` - Compress session for analysis (see syntax below)
 
 ### Learn Workflow Operations
 
@@ -85,3 +85,36 @@ Creates implementation environment from a plan issue:
 - If on feature branch: Stacks new branch on current branch
 
 **Important:** After `create_branch()`, explicit `checkout_branch()` is called because GraphiteBranchManager restores the original branch after tracking.
+
+### Session Preprocessing
+
+#### preprocess-session
+
+Compresses a session JSONL file for agent analysis, achieving ~99% token reduction.
+
+**Syntax:**
+
+```bash
+erk exec preprocess-session <LOG_PATH> [OPTIONS]
+```
+
+**Arguments:**
+
+- `LOG_PATH` - Path to session JSONL file (positional, required)
+
+**Options:**
+
+- `--output <PATH>` - Output path for processed file
+- `--format <FORMAT>` - Output format (xml, json)
+
+**Examples:**
+
+```bash
+# Correct: positional argument first
+erk exec preprocess-session /path/to/session.jsonl --output /tmp/out.xml
+
+# Wrong: options before positional argument
+erk exec preprocess-session --output /tmp/out.xml /path/to/session.jsonl  # Fails!
+```
+
+**Note:** Click expects positional arguments before option flags. Always place the LOG_PATH before any options.

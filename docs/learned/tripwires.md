@@ -41,6 +41,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 
 **CRITICAL: Before calling GraphiteBranchManager.create_branch() without explicit checkout** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
 
+**CRITICAL: Before refactoring to remove gateway fields from ErkContext** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Verify that all factory functions update consistently: `create_branch_manager()`, `create_minimal_context()`, `context_for_test()`, and all test context constructors. Global search+replace is insufficient; manually verify each factory signature.
+
 **CRITICAL: Before adding a new method to Git ABC** → Read [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
 
 **CRITICAL: Before adding a new method to GitHub ABC** → Read [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
@@ -50,6 +52,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 **CRITICAL: Before adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file** → Read [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) first. Must add integration tests in tests/integration/test*real*\*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior.
 
 **CRITICAL: Before using subprocess.run with git command outside of a gateway** → Read [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) first. Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations.
+
+**CRITICAL: Before adding a new subgateway property to any gateway ABC** → Read [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) first. Must implement in all 5 layers: abc.py (abstract property), real.py (returns real implementation), fake.py (returns linked fake for mutation tracking), dry_run.py (wraps underlying property), printing.py (wraps with printing delegation). Reference implementations: git.worktree, git.branch.
 
 **CRITICAL: Before calling gt commands without --no-interactive flag** → Read [Git and Graphite Edge Cases Catalog](architecture/git-graphite-quirks.md) first. Always use `--no-interactive` with gt commands (gt sync, gt submit, gt restack, etc.). Without this flag, gt may prompt for user input and hang indefinitely. Note: `--force` does NOT prevent prompts - you must use `--no-interactive` separately.
 
