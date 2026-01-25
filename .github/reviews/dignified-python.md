@@ -69,6 +69,14 @@ Check each Python file against dignified-python rules:
 
   Only flag as violation if there are 5+ parameters AND no `*` or `*,` line exists in the signature.
 
+**IMPORTANT: Only output entries for VIOLATIONS.** Do NOT:
+
+- Post inline comments for compliant code
+- Include file:line references in the summary for compliant code
+- Create "informational" or "review confirmed correct" entries
+
+If a function has 5+ parameters AND has the `*` marker, it is compliant - skip it entirely without mention.
+
 **CRITICAL: Check for exceptions before flagging violations.**
 
 Many rules have explicit exceptions documented in the skill files you loaded in Step 1. Before flagging a violation, verify that NO exception applies. Common exceptions include:
