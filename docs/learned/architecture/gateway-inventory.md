@@ -32,6 +32,29 @@ GitHub issue operations.
 
 **Fake Features**: In-memory issue storage, comment tracking, state management.
 
+### PromptExecutor (`prompt_executor/`)
+
+Claude CLI single-shot prompt execution for kit commands.
+
+**Key Methods**:
+
+- `execute_prompt()`: Execute a single prompt and return the result
+
+**Fake Features**: Configurable responses, prompt tracking.
+
+### GitHubAdmin (`github_admin/`)
+
+GitHub Actions admin operations.
+
+**Key Methods**:
+
+- `get_workflow_permissions()`: Get current workflow permissions from GitHub API
+- `set_workflow_pr_permissions()`: Enable or disable PR creation via workflow permissions API
+- `check_auth_status()`: Check GitHub CLI authentication status
+- `secret_exists()`: Check if a repository secret exists
+
+**Fake Features**: Configurable permissions, auth state.
+
 ## Higher-Level Abstractions
 
 Located in `packages/erk-shared/src/erk_shared/`:
@@ -94,7 +117,7 @@ User interaction abstraction combining TTY detection, mode-aware output, and use
 
 **When to use**: Any code that needs TTY detection or user confirmation should use `ctx.console` instead of direct stdin/stdout checks or click.confirm().
 
-### ClaudeInstallation (`extraction/claude_installation/`)
+### ClaudeInstallation (`learn/extraction/claude_installation/`)
 
 Gateway for `~/.claude/` filesystem operations (sessions, settings, plans).
 
@@ -120,40 +143,7 @@ Graphite stack management operations.
 
 **Fake Features**: Extensive state injection (branch relationships, PR info), parent/child tracking, submit call tracking.
 
-### Erk Worktree (`erk_wt/`)
-
-Erk worktree kit operations.
-
-**Fake Features**: In-memory worktree state, deletion tracking.
-
 ### ErkInstallation (`gateway/erk_installation/`)
-
-Gateway for `~/.erk/` filesystem operations (config, command history, planners).
-
-**Fake Features**: In-memory config storage, configurable paths.
-
-**When to use**: Any code that needs to read from or write to `~/.erk/` paths should use this gateway instead of `Path.home()` directly.
-
-### Session Store (`extraction/claude_code_session_store/`)
-
-Claude Code session data operations.
-
-**Fake Features**: Configurable session data, project directory injection.
-
-### Claude Installation (`extraction/claude_installation/`)
-
-Consolidated gateway for all `~/.claude/` filesystem operations. Provides settings read/write, session access, and plan file management.
-
-**Key Methods**:
-
-- `read_settings()` / `write_settings()`: Settings file operations with backup
-- `get_settings_path()`: Path to `~/.claude/settings.json`
-- `get_session_log_path()`: Session log path retrieval
-- `get_plan_content()`: Plan file content access
-
-**Fake Features**: In-memory settings storage, mutation tracking via `settings_writes` property.
-
-### Erk Installation (`gateway/erk_installation/`)
 
 Consolidated gateway for all `~/.erk/` filesystem operations. Provides config management, version tracking, and pool state persistence.
 
@@ -166,11 +156,113 @@ Consolidated gateway for all `~/.erk/` filesystem operations. Provides config ma
 
 **Fake Features**: In-memory config/pool state, mutation tracking via `saved_configs`, `pool_saves`, `version_updates` properties.
 
+**When to use**: Any code that needs to read from or write to `~/.erk/` paths should use this gateway instead of `Path.home()` directly.
+
+### Shell (`gateway/shell/`)
+
+Shell detection and tool availability.
+
+**Key Methods**:
+
+- `detect_shell()`: Detect current shell and return configuration file path
+- `get_installed_tool_path()`: Check if a tool is installed and get its path
+- `get_tool_version()`: Get version string of an installed CLI tool
+- `spawn_subshell()`: Spawn an interactive subshell that executes a command
+
+**Fake Features**: Configurable shell type, tool availability.
+
+### Completion (`gateway/completion/`)
+
+Shell completion script generation.
+
+**Key Methods**:
+
+- `generate_bash()`: Generate bash completion script
+- `generate_zsh()`: Generate zsh completion script
+- `generate_fish()`: Generate fish completion script
+- `get_erk_path()`: Get path to erk executable
+
+**Fake Features**: Configurable script output.
+
+### HttpClient (`gateway/http/`)
+
+HTTP client for TUI operations (avoids subprocess overhead).
+
+**Key Methods**:
+
+- `get()`: Send a GET request to the API
+- `post()`: Send a POST request to the API
+- `patch()`: Send a PATCH request to the API
+
+**Fake Features**: Configurable responses, request tracking.
+
+### Codespace (`gateway/codespace/`)
+
+Codespace SSH operations.
+
+**Key Methods**:
+
+- `exec_ssh_interactive()`: Replace current process with SSH session to codespace
+- `run_ssh_command()`: Run SSH command in codespace and return exit code
+
+**Fake Features**: Exit code control, command tracking.
+
 ### Parallel Task Runner (`parallel/`)
 
 Parallel execution abstraction.
 
 **Note**: No fake implementation - uses real ThreadPoolExecutor. Mock at task level instead.
+
+## Sub-Gateways
+
+Sub-gateways are specialized interfaces extracted from main gateways to enforce architectural boundaries (e.g., mutations only through BranchManager).
+
+### GitBranchOps (`git/branch_ops/`)
+
+Git branch mutation operations extracted from the main Git gateway.
+
+**Purpose**: Makes BranchManager the enforced abstraction for branch mutations.
+
+**Key Methods**:
+
+- `create_branch()`: Create a new branch without checking it out
+- `delete_branch()`: Delete a local branch
+- `checkout_branch()`: Checkout a branch
+- `checkout_detached()`: Checkout a detached HEAD at a ref
+- `create_tracking_branch()`: Create a local tracking branch from a remote branch
+
+**Note**: Query operations (get_current_branch, list_local_branches, etc.) remain on the main Git ABC.
+
+### Worktree (`git/worktree/`)
+
+Git worktree operations.
+
+**Key Methods**:
+
+- `list_worktrees()`: List all worktrees in the repository
+- `add_worktree()`: Add a new git worktree
+- `move_worktree()`: Move a worktree to a new location
+- `remove_worktree()`: Remove a worktree
+- `prune_worktrees()`: Prune stale worktree metadata
+- `find_worktree_for_branch()`: Find worktree path for a given branch
+- `is_branch_checked_out()`: Check if a branch is checked out in any worktree
+- `is_worktree_clean()`: Check if worktree has uncommitted changes
+
+**Fake Features**: In-memory worktree state, path existence tracking.
+
+### GraphiteBranchOps (`gateway/graphite/branch_ops/`)
+
+Graphite branch mutation operations extracted from the main Graphite gateway.
+
+**Purpose**: Makes BranchManager the enforced abstraction for Graphite branch mutations.
+
+**Key Methods**:
+
+- `track_branch()`: Register a branch with Graphite (uses `gt track`)
+- `delete_branch()`: Delete a branch using Graphite (uses `gt delete -f`)
+- `submit_branch()`: Submit (force-push) a branch to GitHub (uses `gt submit`)
+
+**Note**: Query operations (get_all_branches, get_branch_stack, etc.) remain on the main Graphite ABC.
 
 ## Implementation Layers
 
