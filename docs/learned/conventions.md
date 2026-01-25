@@ -153,6 +153,40 @@ Grep for "SPECULATIVE: feature-name" to find all related code.
 | **To find all code** | `grep -r "SPECULATIVE: feature-name" src/` |
 | **To remove**        | Delete the module and guarded blocks       |
 
+## AI-Generated Commit Messages
+
+When using AI-generated commit messages (e.g., via `/erk:git-pr-push`), observe these constraints:
+
+### Forbidden Elements
+
+| Element            | Example                         | Reason                |
+| ------------------ | ------------------------------- | --------------------- |
+| Claude attribution | `🤖 Generated with Claude Code` | Noise, not meaningful |
+| Metadata headers   | `---\ntool: claude\n---`        | Not standard format   |
+| Excessive emoji    | `✨🚀🎉 Added feature`          | Distracting           |
+
+### Required Elements
+
+| Element                 | Example                                  | Reason                  |
+| ----------------------- | ---------------------------------------- | ----------------------- |
+| Component-level summary | `Add user authentication to API`         | Clear scope             |
+| Key changes (max 5)     | `- Add login endpoint\n- Add JWT tokens` | Scannable               |
+| Closes reference        | `Closes #123`                            | Auto-close linked issue |
+
+### Example: Good Commit Message
+
+```
+Add user authentication to API
+
+Key changes:
+- Add /login endpoint with JWT token generation
+- Add /logout endpoint with token invalidation
+- Add middleware for token validation
+- Update user model with password hashing
+
+Closes #123
+```
+
 ## Immutable Classes
 
 ### Frozen Dataclasses (Default)

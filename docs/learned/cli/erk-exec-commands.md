@@ -26,6 +26,35 @@ erk exec get-pr-review-comments --pr 123
 erk exec get-pr-review-comments 123
 ```
 
+## Format Flag Support
+
+Not all erk exec commands support the `--format` flag. Always check with `erk exec <command> -h` first.
+
+### Commands with `--format json` Support
+
+| Command              | `--format json` | Notes                           |
+| -------------------- | --------------- | ------------------------------- |
+| `plan-save-to-issue` | ✓               | Returns `{issue_number, title}` |
+| `impl-init`          | ✓               | Returns validation result       |
+| `get-plan-metadata`  | ✓               | Returns specific field value    |
+| `list-sessions`      | ✓               | Returns session list            |
+
+### Commands Without Format Flag
+
+| Command                 | Output Format | Notes                         |
+| ----------------------- | ------------- | ----------------------------- |
+| `get-closing-text`      | Plain text    | Returns closing text or empty |
+| `impl-signal`           | JSON always   | No format flag, always JSON   |
+| `setup-impl-from-issue` | Plain text    | Status messages only          |
+
+### Best Practice
+
+Always check command help before assuming format support:
+
+```bash
+erk exec <command> -h
+```
+
 ## Key Commands by Category
 
 See the `erk-exec` skill for complete workflow guidance and the full command reference.

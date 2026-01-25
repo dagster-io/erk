@@ -49,3 +49,35 @@ make format
 - `make format-check` - Check Python formatting (ruff)
 - `make prettier-check` - Check Markdown formatting (prettier)
 - `make fast-ci` - Runs both checks (among others)
+
+## Transient Artifact Detection
+
+Prettier failures on `.worker-impl/` markdown files serve as cleanup detection:
+
+### The Pattern
+
+When `.worker-impl/` isn't properly cleaned up:
+
+1. Prettier runs during CI
+2. Prettier finds unformatted markdown in `.worker-impl/*.md`
+3. CI fails with formatting errors
+
+### Interpreting the Failure
+
+| Files in Error           | Meaning                                   |
+| ------------------------ | ----------------------------------------- |
+| `.worker-impl/plan.md`   | Remote implementation didn't clean up     |
+| `.worker-impl/README.md` | Same - cleanup step failed or was skipped |
+
+### Recovery
+
+```bash
+# Clean up the transient artifacts
+git rm -rf .worker-impl/
+git commit -m "Remove .worker-impl/ after implementation"
+git push
+```
+
+### Root Cause
+
+See [erk-impl Workflow Patterns](erk-impl-workflow-patterns.md) for why `.worker-impl/` cleanup fails (usually: staged deletion discarded by `git reset --hard`).

@@ -15,6 +15,8 @@
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved
 - **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks
 - **[pr-analysis-pattern.md](pr-analysis-pattern.md)** — analyzing PR changes for documentation, building workflows that inspect PRs
+- **[pr-submission-patterns.md](pr-submission-patterns.md)** — creating PRs programmatically, implementing idempotent PR submission, handling retry logic for PR operations
+- **[reliability-patterns.md](reliability-patterns.md)** — designing cleanup operations in workflows, choosing between agent vs workflow-native operations, implementing multi-layer failure resilience
 - **[remote-implementation-idempotency.md](remote-implementation-idempotency.md)** — implementing remote plan execution, debugging branch creation in remote workflows, working with worktree reuse patterns
 - **[roadmap-updates.md](roadmap-updates.md)** — updating objective roadmap tables, working with update_roadmap_with_plan function, adding plan references to roadmap steps, understanding PR column format in objectives
 - **[scratch-storage.md](scratch-storage.md)** — writing temp files for AI workflows, passing files between processes, understanding scratch directory location
