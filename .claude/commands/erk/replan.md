@@ -152,6 +152,28 @@ If consolidating multiple plans:
 3. **Dependency Ordering**: Order items by dependency across all plans
 4. **Attribution Tracking**: Track which items came from which plan
 
+### Step 4e: Wait for All Background Investigations (CRITICAL)
+
+**BEFORE proceeding to Step 5 or Step 6, you MUST wait for ALL background agents to complete.**
+
+If you launched agents with `run_in_background: true`:
+
+1. **Check agent status**: Use TaskOutput with `block: true` to wait for each background agent
+2. **Collect all results**: Do not proceed until every agent has returned its findings
+3. **Synthesize findings**: Combine results from all agents into a unified investigation summary
+
+**Why this matters:**
+
+- Background agents may discover critical corrections or implementation details
+- Creating the plan before investigations complete leads to incomplete or inaccurate plans
+- The consolidated plan quality depends on having ALL investigation data
+
+**How to wait:**
+
+For each background agent task_id, use TaskOutput tool with `block: true` to wait for completion, then read the agent's findings from the output.
+
+Only after ALL agents have completed should you proceed to Step 5.
+
 ### Step 5: Post Investigation to Original Issue(s)
 
 Before creating the new plan, post investigation findings to each original issue as a comment:
