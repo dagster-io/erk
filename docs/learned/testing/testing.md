@@ -558,8 +558,67 @@ If `confirm()` is called but no responses remain, FakeConsole raises `AssertionE
 
 See `tests/commands/submit/test_existing_branch_detection.py` for comprehensive examples of testing interactive prompts.
 
+## Linked Mutation Tracking in Subgateway Tests
+
+When testing code that uses subgateway properties (like `ctx.git.branch` or `ctx.git.worktree`), FakeGit automatically creates linked fake sub-gateways at initialization.
+
+### How It Works
+
+FakeGit creates its sub-gateway fakes at init time:
+
+```python
+class FakeGit(Git):
+    def __init__(self, ...) -> None:
+        # Linked fakes created at initialization
+        self._branch_ops = FakeGitBranchOps()
+        self._worktree_ops = FakeGitWorktreeOps()
+
+    @property
+    def branch(self) -> GitBranchOps:
+        return self._branch_ops
+
+    @property
+    def worktree(self) -> GitWorktreeOps:
+        return self._worktree_ops
+```
+
+### Testing Pattern
+
+Use the same property access in both production and test code:
+
+```python
+def test_branch_created() -> None:
+    fake_git = FakeGit()
+
+    # Production code uses ctx.git.branch
+    fake_git.branch.create_branch(repo_root, "feature", "main")
+
+    # Test assertions use the same access path
+    assert "feature" in fake_git.branch.created_branches
+```
+
+### Benefits
+
+1. **No manual linking**: FakeGit handles sub-gateway creation automatically
+2. **Shared collections**: Mutations tracked via the linked fake instance
+3. **Consistent access**: Same `git.branch` pattern in production and tests
+4. **Simpler setup**: No need to pass separate `git_branch_ops` to factories
+
+### Best Practice
+
+Always use the property access (`fake_git.branch`) instead of trying to access internal `_branch_ops`:
+
+```python
+# CORRECT: Use property access
+assert fake_git.branch.created_branches == [("feature", "main")]
+
+# WRONG: Don't access private attributes
+assert fake_git._branch_ops.created_branches == [...]  # Fragile
+```
+
 ## Related
 
 - **Testing philosophy**: Load `fake-driven-testing` skill
 - **Rebase conflicts**: [rebase-conflicts.md](rebase-conflicts.md)
 - **Gateway implementation**: [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md)
+- **Flatten pattern**: [Flatten Subgateway Pattern](../architecture/flatten-subgateway-pattern.md)

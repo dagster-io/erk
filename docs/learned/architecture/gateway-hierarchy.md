@@ -164,6 +164,8 @@ branch_manager = create_branch_manager(git=ctx.git, github=ctx.github, graphite=
 pr = branch_manager.get_pr_for_branch(repo_root, branch)
 ```
 
+**Note:** The factory no longer accepts a `git_branch_ops` parameter. BranchManager accesses branch ops through `self.git.branch` internally, using the [flatten subgateway pattern](flatten-subgateway-pattern.md).
+
 This pattern:
 
 - Encapsulates the "which mode" decision

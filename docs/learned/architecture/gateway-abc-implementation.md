@@ -15,6 +15,8 @@ tripwires:
     warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
   - action: "using subprocess.run with git command outside of a gateway"
     warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+  - action: "adding a new subgateway property to any gateway ABC"
+    warning: "Must implement in all 5 layers: abc.py (abstract property), real.py (returns real implementation), fake.py (returns linked fake for mutation tracking), dry_run.py (wraps underlying property), printing.py (wraps with printing delegation). Reference implementations: git.worktree, git.branch."
 ---
 
 # Gateway ABC Implementation Checklist
@@ -274,7 +276,7 @@ Query methods remain on the main gateways for convenience.
 
 ```
 packages/erk-shared/src/erk_shared/git/
-├── abc.py             # Main Git ABC (queries + branch_ops property)
+├── abc.py             # Main Git ABC (queries + branch property)
 ├── branch_ops/        # Sub-gateway for mutations
 │   ├── __init__.py
 │   ├── abc.py         # GitBranchOps ABC
@@ -284,15 +286,20 @@ packages/erk-shared/src/erk_shared/git/
 │   └── printing.py
 ```
 
-### ABC Composition
+### ABC Composition with Flatten Pattern
 
-The main gateway ABC exposes the sub-gateway via a property:
+The main gateway ABC exposes the sub-gateway via a `branch` property (not `branch_ops` field):
 
 ```python
+from typing import TYPE_CHECKING
+
 class Git(ABC):
+    if TYPE_CHECKING:
+        from erk_shared.git.branch_ops.abc import GitBranchOps
+
     @property
     @abstractmethod
-    def branch_ops(self) -> GitBranchOps:
+    def branch(self) -> "GitBranchOps":
         """Return the branch operations sub-gateway."""
         ...
 
@@ -302,18 +309,87 @@ class Git(ABC):
         ...
 ```
 
+The `TYPE_CHECKING` guard prevents circular imports at runtime while providing type hints.
+
+### 5-Layer Implementation
+
+Each layer implements the `branch` property differently:
+
+**abc.py** - Abstract property:
+
+```python
+@property
+@abstractmethod
+def branch(self) -> "GitBranchOps":
+    """Return the branch operations sub-gateway."""
+    ...
+```
+
+**real.py** - Returns existing instance:
+
+```python
+def __init__(self, *, time: Time | None = None) -> None:
+    self._branch_ops = RealGitBranchOps()
+
+@property
+def branch(self) -> GitBranchOps:
+    return self._branch_ops
+```
+
+**fake.py** - Creates linked instance at init, returns same instance:
+
+```python
+def __init__(self, ...) -> None:
+    # Create linked fake for mutation tracking
+    self._branch_ops = FakeGitBranchOps()
+
+@property
+def branch(self) -> GitBranchOps:
+    return self._branch_ops
+```
+
+**dry_run.py** - Lazy wrap underlying property:
+
+```python
+def __init__(self, wrapped: Git) -> None:
+    self._wrapped = wrapped
+    self._branch_ops: GitBranchOps | None = None
+
+@property
+def branch(self) -> GitBranchOps:
+    if self._branch_ops is None:
+        self._branch_ops = DryRunGitBranchOps(self._wrapped.branch)
+    return self._branch_ops
+```
+
+**printing.py** - Wrap with printing delegation:
+
+```python
+def __init__(self, wrapped: Git) -> None:
+    self._wrapped = wrapped
+    self._branch_ops: GitBranchOps | None = None
+
+@property
+def branch(self) -> GitBranchOps:
+    if self._branch_ops is None:
+        self._branch_ops = PrintingGitBranchOps(self._wrapped.branch)
+    return self._branch_ops
+```
+
 ### Query vs Mutation Split
 
-| Category | Where       | Examples                                                                 |
-| -------- | ----------- | ------------------------------------------------------------------------ |
-| Query    | Main ABC    | `get_current_branch()`, `list_local_branches()`, `get_repository_root()` |
-| Mutation | Sub-gateway | `create_branch()`, `delete_branch()`, `checkout_branch()`                |
+| Category | Where            | Examples                                                                 |
+| -------- | ---------------- | ------------------------------------------------------------------------ |
+| Query    | Main ABC         | `get_current_branch()`, `list_local_branches()`, `get_repository_root()` |
+| Mutation | Sub-gateway      | `create_branch()`, `delete_branch()`, `checkout_branch()`                |
+| Access   | `ctx.git.branch` | Property-based access to sub-gateway                                     |
 
 ### Why Split?
 
 1. **Enforcement**: Callers can't bypass BranchManager to mutate branches directly
 2. **Clarity**: Clear distinction between read and write operations
 3. **Testing**: FakeBranchManager can track mutations without full gateway wiring
+4. **Encapsulation**: Sub-gateway is an implementation detail of the main gateway
 
 ### Implementation Checklist
 
@@ -321,37 +397,42 @@ When extracting methods to a sub-gateway:
 
 1. [ ] Create sub-gateway directory (`branch_ops/`)
 2. [ ] Implement 5 files: abc.py, real.py, fake.py, dry_run.py, printing.py
-3. [ ] Add `@property` to main ABC returning sub-gateway
+3. [ ] Add `@property` with `TYPE_CHECKING` guard to main ABC
 4. [ ] Update all 5 main gateway implementations to compose sub-gateway
-5. [ ] Create factory method in Fake to link sub-gateway state
+5. [ ] Ensure Fake creates linked instance at init for mutation tracking
 
 ### FakeGit/FakeGraphite Sub-Gateway Linking
 
-Fakes need special handling to share state between main gateway and sub-gateway:
+Fakes create linked instances at initialization to enable mutation tracking:
 
 ```python
 class FakeGit(Git):
-    def __init__(self) -> None:
+    def __init__(self, ...) -> None:
+        # Create linked fake at init - shared for all property accesses
         self._branch_ops = FakeGitBranchOps()
 
     @property
-    def branch_ops(self) -> GitBranchOps:
+    def branch(self) -> GitBranchOps:
         return self._branch_ops
-
-    @classmethod
-    def create_linked_branch_ops(cls) -> tuple["FakeGit", FakeGitBranchOps]:
-        """Create FakeGit with linked FakeGitBranchOps for testing.
-
-        Returns both so tests can assert on branch_ops mutations.
-        """
-        fake = cls()
-        return fake, fake._branch_ops
 ```
 
-### Reference Implementation
+Tests can assert on sub-gateway mutations via the main fake:
 
-- Git sub-gateway: `packages/erk-shared/src/erk_shared/git/branch_ops/`
-- Graphite sub-gateway: `packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/`
+```python
+def test_branch_created() -> None:
+    fake_git = FakeGit()
+    # Use the property access in both production and test code
+    fake_git.branch.create_branch(repo_root, "feature")
+    assert "feature" in fake_git.branch.created_branches
+```
+
+### Reference Implementations
+
+| Sub-gateway     | Location                                                          |
+| --------------- | ----------------------------------------------------------------- |
+| Git worktree    | `packages/erk-shared/src/erk_shared/git/worktree_ops/`            |
+| Git branch      | `packages/erk-shared/src/erk_shared/git/branch_ops/`              |
+| Graphite branch | `packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/` |
 
 ## Time Injection for Retry-Enabled Gateways
 

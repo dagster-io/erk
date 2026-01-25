@@ -34,6 +34,8 @@ tripwires:
     warning: "Use ctx.branch_manager instead. Branch mutation methods are in GraphiteBranchOps sub-gateway, accessible only through BranchManager. Query methods (is_branch_tracked, get_parent_branch, etc.) remain on ctx.graphite."
   - action: "calling GraphiteBranchManager.create_branch() without explicit checkout"
     warning: "GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch."
+  - action: "refactoring to remove gateway fields from ErkContext"
+    warning: "Verify that all factory functions update consistently: `create_branch_manager()`, `create_minimal_context()`, `context_for_test()`, and all test context constructors. Global search+replace is insufficient; manually verify each factory signature."
 ---
 
 # Erk Architecture Patterns
@@ -1108,6 +1110,31 @@ if parent is not None:  # Already tracked
 | Remote sync     | Active  | New commits may exist        |
 | Restack         | Active  | Parent may have changed      |
 | Squash          | Active  | Additional commits may exist |
+
+## Flatten Subgateway Pattern
+
+Gateway sub-gateways are accessed via properties (`ctx.git.branch`, `ctx.git.worktree`) rather than separate ErkContext fields.
+
+### Pattern Summary
+
+**Before**: `ctx.git_branch_ops.create_branch(...)` (field-based)
+**After**: `ctx.git.branch.create_branch(...)` (property-based)
+
+### Implementations
+
+| Sub-gateway     | Access Pattern     | Purpose                       |
+| --------------- | ------------------ | ----------------------------- |
+| Git worktree    | `ctx.git.worktree` | Worktree add/remove           |
+| Git branch      | `ctx.git.branch`   | Branch create/delete/checkout |
+| Graphite branch | Via BranchManager  | Graphite-managed branches     |
+
+### When to Use
+
+Branch mutations should go through `ctx.branch_manager`, not directly through `ctx.git.branch`. The BranchManager abstraction handles Graphite vs Git mode differences.
+
+**Full documentation**: [Flatten Subgateway Pattern](flatten-subgateway-pattern.md)
+
+**Related objective**: Gateway facade optimization (#5292)
 
 ## Design Principles
 

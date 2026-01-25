@@ -379,3 +379,40 @@ Sequential agents
 - Each agent receives explicit file paths as input
 - Write tool (not bash heredoc) ensures reliable large content writes
 - File existence verified before launching dependent agents
+
+## Troubleshooting
+
+### Session Discovery
+
+When `erk exec get-learn-sessions` returns data, use `session_sources[].path` to access session files, not `planning_session_id`:
+
+```json
+{
+  "planning_session_id": "abc123",
+  "session_sources": [{ "path": "/path/to/session.jsonl", "source": "local" }]
+}
+```
+
+**Why:** The `planning_session_id` is metadata for tracking purposes. Actual session files may be named differently for local vs. remote execution. Always use the `path` field from `session_sources` array.
+
+### Session Preprocessing
+
+The `preprocess-session` command requires positional arguments before options:
+
+```bash
+# CORRECT: path first, then options
+erk exec preprocess-session /path/to/session.jsonl --output /tmp/out.xml
+
+# WRONG: options before path
+erk exec preprocess-session --output /tmp/out.xml /path/to/session.jsonl
+```
+
+Click's argument parser expects positional arguments in order. Run `erk exec preprocess-session -h` to verify syntax.
+
+### Missing Session Files
+
+If session files aren't found after `get-learn-sessions`:
+
+1. Check if `session_sources` array is empty (no sessions associated)
+2. Verify paths exist on disk (local sessions may have been cleaned up)
+3. For remote sessions, ensure gist access is available
