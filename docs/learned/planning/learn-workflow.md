@@ -106,6 +106,26 @@ Depends on Sequential Tier 1:
 
 See [Agent Delegation](agent-delegation.md#model-selection) for general model selection guidance.
 
+### Tier Layering Note
+
+The tier structure follows a funnel pattern:
+
+1. **Parallel tier** - Fan-out: multiple agents extract different aspects simultaneously
+2. **Sequential tier 1** - Synthesis: combine and deduplicate parallel outputs
+3. **Sequential tier 2** - Quality: high-quality narrative generation from synthesized data
+
+Each tier's output feeds into the next. Modifying tier order or moving agents between tiers affects the data flow and model costs.
+
+### Session Preprocessing Validation
+
+Before running learn, sessions are preprocessed via `erk exec preprocess-session`:
+
+1. **Size check**: Sessions larger than 100k characters MUST be preprocessed first
+2. **Token reduction**: Preprocessing achieves ~99% reduction (e.g., 6.2M → 67k chars)
+3. **Validation**: The learn command validates preprocessed output exists before spawning analysis agents
+
+If preprocessing fails or produces malformed output, learn agents will fail to extract meaningful data.
+
 ## The Learn Flow
 
 ### Step 1: Run /erk:learn on Parent Plan

@@ -86,3 +86,24 @@ Path("/tmp/pr-body-1927.txt")
 # RIGHT: AI workflow files in worktree scratch (sessions/<session-id>/)
 scratch_dir / "pr-body.txt"
 ```
+
+## Plan-Specific Storage
+
+Plans created in Claude Code are saved to scratch storage for session-scoped lookup:
+
+```
+.erk/scratch/sessions/{session-id}/plan-*.md
+```
+
+This enables parallel sessions to find their own plans without mtime-based conflicts.
+
+## Session ID Substitution
+
+In Claude commands and skills, use `${CLAUDE_SESSION_ID}` for session ID interpolation:
+
+```bash
+# In skill/command content
+erk exec marker create --session-id "${CLAUDE_SESSION_ID}" ...
+```
+
+**Note**: This substitution only works in skills and commands (since Claude Code 2.1.9). Hooks receive session ID via stdin JSON, not environment variables.

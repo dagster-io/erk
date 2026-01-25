@@ -11,6 +11,10 @@ tripwires:
     warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
   - action: "implementing custom PR/plan relevance assessment logic"
     warning: "Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."
+  - action: "after plan-implement execution completes"
+    warning: "Always clean .worker-impl/ with `git rm -rf .worker-impl/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
+  - action: "implementing PR body generation with checkout footers"
+    warning: "HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``"
 ---
 
 # Plan Lifecycle
@@ -84,6 +88,28 @@ When evaluating whether a plan should be implemented or closed, use the verdict 
 | NEEDS_REVIEW          | Unclear | Manual review required, evidence inconclusive      |
 
 **Usage:** Run `/local:check-relevance <plan-issue-number>` to assess a plan's current relevance before deciding to implement or close it.
+
+### Session Idempotency
+
+Plan save operations are idempotent within a session. The `plan-save-to-issue` command:
+
+1. Checks if a plan issue was already created for this session ID
+2. If found, returns the existing issue instead of creating a duplicate
+3. Uses `_get_existing_saved_issue()` helper to query GitHub
+
+This prevents duplicate issues when retry loops occur (e.g., hook blocking → retry → would-be duplicate).
+
+### Plan Storage Lookup Priority
+
+When looking up plan files, the system checks in order:
+
+| Priority | Location                      | Condition            |
+| -------- | ----------------------------- | -------------------- |
+| 1        | `--plan-file` argument        | Always checked first |
+| 2        | `.erk/scratch/sessions/{id}/` | With `--session-id`  |
+| 3        | `~/.claude/plans/` (by mtime) | Fallback             |
+
+See [Plan Lookup Strategy](plan-lookup-strategy.md) for details on session-scoped lookups.
 
 ---
 

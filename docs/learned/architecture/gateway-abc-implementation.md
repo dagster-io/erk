@@ -396,6 +396,26 @@ This pattern aligns with the [Fake-Driven Testing Architecture](../testing/):
 - **DryRun**: Preview mode for CLI operations
 - **Printing**: Verbose output for debugging
 
+## Reference Implementation: BeadsGateway
+
+For new service integrations, the BeadsGateway (`packages/erk-shared/src/erk_shared/gateway/beads/`) provides a clean 5-file pattern example:
+
+```
+beads/
+├── abc.py        # Abstract interface
+├── real.py       # Production implementation
+├── fake.py       # Test double with builder pattern
+├── dry_run.py    # Preview mode wrapper
+└── printing.py   # Verbose output wrapper
+```
+
+**Key patterns demonstrated:**
+
+- Service integration via HTTP/API calls
+- Test fake with fluent builder for state setup
+- Dry-run wrapper that returns mock success values
+- Printing wrapper that logs then delegates
+
 ## Related Documentation
 
 - [Erk Architecture Patterns](erk-architecture.md) - Dependency injection, dry-run patterns
