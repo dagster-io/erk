@@ -13,7 +13,7 @@ def test_delete_branch_tracks_deletion() -> None:
 
     manager.delete_branch(repo_root, "feature-branch")
 
-    assert manager.deleted_branches == ["feature-branch"]
+    assert manager.deleted_branches == [("feature-branch", False)]
 
 
 def test_delete_branch_tracks_multiple_deletions() -> None:
@@ -25,7 +25,11 @@ def test_delete_branch_tracks_multiple_deletions() -> None:
     manager.delete_branch(repo_root, "branch-2")
     manager.delete_branch(repo_root, "branch-3")
 
-    assert manager.deleted_branches == ["branch-1", "branch-2", "branch-3"]
+    assert manager.deleted_branches == [
+        ("branch-1", False),
+        ("branch-2", False),
+        ("branch-3", False),
+    ]
 
 
 def test_deleted_branches_returns_copy() -> None:
@@ -37,10 +41,24 @@ def test_deleted_branches_returns_copy() -> None:
     branches = manager.deleted_branches
 
     # Modify the returned list
-    branches.append("should-not-appear")
+    branches.append(("should-not-appear", False))
 
     # Verify internal state wasn't modified
-    assert manager.deleted_branches == ["feature-branch"]
+    assert manager.deleted_branches == [("feature-branch", False)]
+
+
+def test_delete_branch_tracks_force_flag() -> None:
+    """Test that delete_branch records the force flag for assertions."""
+    manager = FakeBranchManager()
+    repo_root = Path("/fake/repo")
+
+    manager.delete_branch(repo_root, "soft-delete")
+    manager.delete_branch(repo_root, "force-delete", force=True)
+
+    assert manager.deleted_branches == [
+        ("soft-delete", False),
+        ("force-delete", True),
+    ]
 
 
 def test_create_branch_tracks_creation() -> None:

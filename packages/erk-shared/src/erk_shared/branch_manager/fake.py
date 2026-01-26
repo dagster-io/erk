@@ -29,8 +29,8 @@ class FakeBranchManager(BranchManager):
     child_branches: dict[str, list[str]] = field(default_factory=dict)
     # Track created branches for assertions: list of (branch_name, base_branch) tuples
     _created_branches: list[tuple[str, str]] = field(default_factory=list)
-    # Track deleted branches for assertions
-    _deleted_branches: list[str] = field(default_factory=list)
+    # Track deleted branches for assertions: list of (branch, force) tuples
+    _deleted_branches: list[tuple[str, bool]] = field(default_factory=list)
     # Track submitted branches for assertions
     _submitted_branches: list[str] = field(default_factory=list)
     # Track tracked branches for assertions: list of (branch_name, parent_branch) tuples
@@ -80,9 +80,9 @@ class FakeBranchManager(BranchManager):
         Args:
             repo_root: Repository root directory (unused in fake)
             branch: Branch name to delete
-            force: If True, force delete (unused in fake, but tracked)
+            force: If True, force delete (-D flag)
         """
-        self._deleted_branches.append(branch)
+        self._deleted_branches.append((branch, force))
 
     def submit_branch(self, repo_root: Path, branch: str) -> None:
         """Record branch submission in tracked list.
@@ -202,11 +202,11 @@ class FakeBranchManager(BranchManager):
         return list(self._created_branches)
 
     @property
-    def deleted_branches(self) -> list[str]:
+    def deleted_branches(self) -> list[tuple[str, bool]]:
         """Get list of deleted branches for test assertions.
 
         Returns:
-            List of branch names that were deleted.
+            List of (branch_name, force) tuples for deleted branches.
         """
         return list(self._deleted_branches)
 
