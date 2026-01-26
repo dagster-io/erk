@@ -1,0 +1,12 @@
+# Local Runner Credential Configuration
+# Copy to ~/.erk/local-runner-config.toml and fill in your credentials
+
+[credentials]
+# GitHub Personal Access Token (repo scope)
+github_pat = "ghp_your_token_here"
+
+# Claude Code OAuth Token (from ~/.claude/config.json)
+claude_oauth_token = "your_oauth_token_here"
+
+# Anthropic API Key
+anthropic_api_key = "sk-ant-your_key_here"
