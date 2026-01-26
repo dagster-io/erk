@@ -105,6 +105,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 
 **CRITICAL: Before using generic variable names in change detection logic** → Read [erk-impl Change Detection](ci/erk-impl-change-detection.md) first. Use explicit names (UNCOMMITTED, NEW_COMMITS) not generic ones (CHANGES).
 
+**CRITICAL: Before running `git reset --hard` in workflows after staging cleanup** → Read [erk-impl Workflow Patterns](ci/erk-impl-workflow-patterns.md) first. Verify all cleanup changes are committed BEFORE reset; staged changes without commit will be silently discarded.
+
 **CRITICAL: Before running prettier on Python files** → Read [Formatter Tools](ci/formatter-tools.md) first. Prettier cannot format Python. Use `ruff format` or `make format` for Python. Prettier only handles Markdown in this project.
 
 **CRITICAL: Before running prettier programmatically on content containing underscore emphasis** → Read [Formatter Tools](ci/formatter-tools.md) first. Prettier converts `__text__` to `**text**` on first pass, then escapes asterisks on second pass. If programmatically applying prettier, run twice to reach stable output.
@@ -112,6 +114,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 **CRITICAL: Before using echo with multi-line content to GITHUB_OUTPUT** → Read [GitHub Actions Output Patterns](ci/github-actions-output-patterns.md) first. Multi-line content requires heredoc syntax with EOF delimiter. Simple echo only works for single-line values.
 
 **CRITICAL: Before interpolating ${{ }} expressions directly into shell command arguments** → Read [GitHub Actions Security Patterns](ci/github-actions-security.md) first. Use environment variables instead. Direct interpolation allows shell injection. Read [GitHub Actions Security Patterns](ci/github-actions-security.md) first.
+
+**CRITICAL: Before composing conditions across multiple GitHub Actions workflow steps** → Read [GitHub Actions Workflow Patterns](ci/github-actions-workflow-patterns.md) first. Verify each `steps.step_id.outputs.key` reference exists and matches actual step IDs.
 
 **CRITICAL: Before using heredoc (<<) syntax in GitHub Actions YAML** → Read [CI Prompt Patterns](ci/prompt-patterns.md) first. Use `erk exec get-embedded-prompt` instead. Heredocs in YAML `run:` blocks have fragile indentation that causes silent failures.
 
@@ -166,6 +170,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 **CRITICAL: Before after plan-implement execution completes** → Read [Plan Lifecycle](planning/lifecycle.md) first. Always clean .worker-impl/ with `git rm -rf .worker-impl/` and commit. Transient artifacts cause CI formatter failures (Prettier).
 
 **CRITICAL: Before implementing PR body generation with checkout footers** → Read [Plan Lifecycle](planning/lifecycle.md) first. HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``
+
+**CRITICAL: Before calling commands that depend on `.impl/issue.json` metadata** → Read [Plan Lifecycle](planning/lifecycle.md) first. Verify metadata file exists in worktree; if missing, operations silently return empty values.
 
 **CRITICAL: Before reusing existing worktrees for remote implementation** → Read [Remote Implementation Idempotency](planning/remote-implementation-idempotency.md) first. Check if worktree already has a branch before creating new one. Reusing worktrees without checking causes PR orphaning.
 

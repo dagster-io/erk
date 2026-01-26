@@ -15,6 +15,8 @@ tripwires:
     warning: "Always clean .worker-impl/ with `git rm -rf .worker-impl/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
   - action: "implementing PR body generation with checkout footers"
     warning: "HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``"
+  - action: "calling commands that depend on `.impl/issue.json` metadata"
+    warning: "Verify metadata file exists in worktree; if missing, operations silently return empty values."
 ---
 
 # Plan Lifecycle
@@ -733,6 +735,72 @@ gh run view 1234567890
 # Extract issue from run name (format: "123:abc123")
 gh run view 1234567890 --json displayTitle -q '.displayTitle' | cut -d: -f1
 ```
+
+---
+
+## `.impl/issue.json` Dependency Contract
+
+The `.impl/issue.json` file is a critical worktree setup contract. Several commands depend on it:
+
+### Commands That Read `.impl/issue.json`
+
+| Command                     | Behavior if Missing                         |
+| --------------------------- | ------------------------------------------- |
+| `erk exec get-closing-text` | Returns empty string (PR lacks "Closes #N") |
+| `erk exec impl-signal`      | Fails silently (no GitHub comment posted)   |
+| `/erk:plan-implement`       | Continues without issue tracking            |
+
+### Silent Failure Pattern
+
+The most insidious failure is with `get-closing-text`:
+
+1. Worktree setup skips creating `.impl/issue.json`
+2. Implementation proceeds normally
+3. PR is created without "Closes #N" in commit message
+4. Issue remains open after PR merge
+
+**Detection:** Check PR commit messages for "Closes #N" reference.
+
+**Recovery:** Manually close the issue or amend the commit message.
+
+### Ensuring Contract is Met
+
+When setting up implementation environments:
+
+```bash
+# Always verify after setup
+if [ ! -f .impl/issue.json ]; then
+  echo "ERROR: Missing issue.json - issue linking will fail"
+  exit 1
+fi
+```
+
+---
+
+## Plan Metadata Field Population Lifecycle
+
+Different plan fields are populated at different lifecycle stages:
+
+| Field                    | Planning | Submitted | Implementing | Landed |
+| ------------------------ | -------- | --------- | ------------ | ------ |
+| `issue_number`           | ✓        | ✓         | ✓            | ✓      |
+| `title`                  | ✓        | ✓         | ✓            | ✓      |
+| `created_at`             | ✓        | ✓         | ✓            | ✓      |
+| `created_by`             | ✓        | ✓         | ✓            | ✓      |
+| `branch_name`            | ✗        | ✓         | ✓            | ✓      |
+| `pr_number`              | ✗        | ✓         | ✓            | ✓      |
+| `last_dispatched_at`     | ✗        | ✗         | ✓            | ✓      |
+| `last_dispatched_run_id` | ✗        | ✗         | ✓            | ✓      |
+
+### Why `branch_name` is null During Planning
+
+During the planning stage:
+
+- Plan exists only as a GitHub issue with `erk-plan` label
+- No branch has been created yet
+- Branch is created during `erk plan submit` (Phase 2)
+
+**Implication:** Workflows that need branch information must verify the plan has been submitted (check for `branch_name` field).
 
 ---
 
