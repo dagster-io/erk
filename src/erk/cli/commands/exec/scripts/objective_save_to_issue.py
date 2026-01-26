@@ -19,6 +19,7 @@ Exit Codes:
 """
 
 import json
+from pathlib import Path
 
 import click
 
@@ -32,6 +33,48 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.github.plan_issues import create_objective_issue
 from erk_shared.scratch.scratch import get_scratch_dir
+
+
+def _create_objective_saved_issue_marker(
+    session_id: str, repo_root: Path, issue_number: int
+) -> None:
+    """Create marker file storing the issue number of the saved objective.
+
+    This marker enables idempotency - when the agent calls objective-save-to-issue
+    multiple times in the same session, subsequent calls return the existing issue
+    instead of creating duplicates.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+        issue_number: The GitHub issue number where the objective was saved.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "objective-saved-issue.marker"
+    marker_file.write_text(str(issue_number), encoding="utf-8")
+
+
+def _get_existing_saved_objective(session_id: str, repo_root: Path) -> int | None:
+    """Check if this session already saved an objective and return the issue number.
+
+    This prevents duplicate objective creation when the agent calls
+    objective-save-to-issue multiple times in the same session.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+
+    Returns:
+        The issue number if objective was already saved, None otherwise.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "objective-saved-issue.marker"
+    if not marker_file.exists():
+        return None
+    content = marker_file.read_text(encoding="utf-8").strip()
+    if not content.isdigit():
+        return None
+    return int(content)
 
 
 @click.command(name="objective-save-to-issue")
@@ -51,13 +94,41 @@ from erk_shared.scratch.scratch import get_scratch_dir
 def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: str | None) -> None:
     """Save plan as objective GitHub issue.
 
-    Creates a GitHub issue with erk-plan + erk-objective labels and plan content in body.
+    Creates a GitHub issue with only the erk-objective label (NOT erk-plan).
     """
     # Get dependencies from context
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)
+
+    # Session deduplication check
+    # Prevent duplicate objective creation when the agent calls objective-save-to-issue
+    # multiple times in the same session
+    if session_id is not None:
+        existing_issue = _get_existing_saved_objective(session_id, repo_root)
+        if existing_issue is None:
+            # No duplicate found - continue to main logic
+            pass
+        elif output_format == "display":
+            click.echo(
+                f"This session already saved objective #{existing_issue}. "
+                "Skipping duplicate creation.",
+                err=True,
+            )
+            return
+        else:
+            click.echo(
+                json.dumps(
+                    {
+                        "success": True,
+                        "issue_number": existing_issue,
+                        "skipped_duplicate": True,
+                        "message": f"Session already saved objective #{existing_issue}",
+                    }
+                )
+            )
+            return
 
     # Get plan content - priority: scratch directory > Claude plans directory
     plan: str | None = None
@@ -103,6 +174,10 @@ def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: 
     # Guard for type narrowing
     if result.issue_number is None:
         raise RuntimeError("Unexpected: issue_number is None after success")
+
+    # Create marker file to enable idempotency
+    if session_id is not None:
+        _create_objective_saved_issue_marker(session_id, repo_root, result.issue_number)
 
     if output_format == "display":
         click.echo(f"Objective saved to GitHub issue #{result.issue_number}")

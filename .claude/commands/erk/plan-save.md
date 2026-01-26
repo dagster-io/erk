@@ -1,6 +1,6 @@
 ---
 description: Save the current session's plan to GitHub as an issue
-argument-hint: "[--objective-issue=<number>]"
+argument-hint: "[--objective-issue=<number>] [--plan-type=learn]"
 ---
 
 # /erk:plan-save
@@ -12,6 +12,7 @@ Save the current session's plan to GitHub as an issue with session context.
 ```bash
 /erk:plan-save                           # Standalone plan
 /erk:plan-save --objective-issue=3679    # Plan linked to objective
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
 ```
 
 When creating a plan from an objective (via `/erk:objective-next-plan`), the exit-plan-mode hook will automatically suggest the command with the correct `--objective-issue` flag.
@@ -29,7 +30,7 @@ This separation keeps machine-readable metadata in the body while the human-read
 
 ### Step 1: Parse Arguments
 
-Check `$ARGUMENTS` for the `--objective-issue` flag:
+Check `$ARGUMENTS` for the `--objective-issue` and `--plan-type` flags:
 
 ```
 If $ARGUMENTS contains "--objective-issue=<number>":
@@ -38,14 +39,21 @@ If $ARGUMENTS contains "--objective-issue=<number>":
   - Set OBJECTIVE_FLAG to "--objective-issue=<number>"
 Else:
   - Set OBJECTIVE_FLAG to empty string
+
+If $ARGUMENTS contains "--plan-type=<type>":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=<type>"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
 ```
 
 ### Step 2: Run Save Command
 
-Run this command with the session ID and optional objective flag:
+Run this command with the session ID and optional flags:
 
 ```bash
-erk exec plan-save-to-issue --format json --session-id="${CLAUDE_SESSION_ID}" ${OBJECTIVE_FLAG}
+erk exec plan-save-to-issue --format json --session-id="${CLAUDE_SESSION_ID}" ${OBJECTIVE_FLAG} ${PLAN_TYPE_FLAG}
 ```
 
 Parse the JSON output to extract `issue_number` for verification in Step 3.
