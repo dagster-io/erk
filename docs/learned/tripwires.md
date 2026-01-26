@@ -11,6 +11,12 @@ read_when:
 
 Action-triggered rules. You MUST consult these BEFORE taking any matching action.
 
+**CRITICAL: Before calling ctx.git mutation methods (create_branch, delete_branch, checkout_branch, checkout_detached, create_tracking_branch)** → Read [BranchManager Abstraction](architecture/branch-manager-abstraction.md) first. Use ctx.branch_manager instead. Branch mutation methods are in GitBranchOps sub-gateway, accessible only through BranchManager. Query methods (get_current_branch, list_local_branches, etc.) remain on ctx.git.
+
+**CRITICAL: Before calling ctx.graphite mutation methods (track_branch, delete_branch, submit_branch)** → Read [BranchManager Abstraction](architecture/branch-manager-abstraction.md) first. Use ctx.branch_manager instead. Branch mutation methods are in GraphiteBranchOps sub-gateway, accessible only through BranchManager. Query methods (is_branch_tracked, get_parent_branch, etc.) remain on ctx.graphite.
+
+**CRITICAL: Before GraphiteBranchManager.create_branch() without explicit checkout** → Read [BranchManager Abstraction](architecture/branch-manager-abstraction.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
+
 **CRITICAL: Before modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](architecture/claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
 
 **CRITICAL: Before using `--output-format stream-json` with `--print` in Claude CLI** → Read [Claude CLI Integration from Python](architecture/claude-cli-integration.md) first. Must also include `--verbose`. Without it, the command fails with 'stream-json requires --verbose'.
