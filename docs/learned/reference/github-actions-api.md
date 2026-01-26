@@ -1,16 +1,3 @@
-# Plan: GitHub Actions API Reference Documentation
-
-## Overview
-
-Create comprehensive reference documentation for the GitHub Actions REST API and workflow YAML DSL in `docs/learned/reference/github-actions-api.md`.
-
-## Target File
-
-`docs/learned/reference/github-actions-api.md`
-
-## Document Content
-
-```markdown
 ---
 title: GitHub Actions API Reference
 read_when:
@@ -350,11 +337,10 @@ Customize OpenID Connect subject claims for cloud provider authentication.
 - **GITHUB_TOKEN**: Built-in token in workflow context
 
 ### API Version Header
+
 ```
-
 X-GitHub-Api-Version: 2022-11-28
-
-````
+```
 
 ---
 
@@ -365,10 +351,11 @@ Workflow files must be stored in `.github/workflows/` with `.yml` or `.yaml` ext
 ## Top-Level Keys
 
 ### Metadata
+
 ```yaml
-name: CI Pipeline                    # Display name in Actions tab
+name: CI Pipeline # Display name in Actions tab
 run-name: Deploy to ${{ inputs.env }} # Dynamic run name (supports expressions)
-````
+```
 
 ### Triggers (`on`)
 
@@ -765,17 +752,3 @@ jobs:
 - [Events that trigger workflows](https://docs.github.com/actions/learn-github-actions/events-that-trigger-workflows)
 - [Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts)
 - [Expressions](https://docs.github.com/en/actions/learn-github-actions/expressions)
-
-```
-
-## Implementation Steps
-
-1. Create file `docs/learned/reference/github-actions-api.md` with the content above
-2. Run `erk docs sync` to update the index (if applicable)
-
-## Verification
-
-1. Confirm file exists at correct path
-2. Verify frontmatter is valid YAML
-3. Check markdown renders correctly
-```
