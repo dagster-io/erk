@@ -36,8 +36,7 @@ import click
 
 from erk.review.models import ParsedReview
 from erk.review.parsing import discover_matching_reviews
-from erk_shared.context.helpers import require_cwd
-from erk_shared.subprocess_utils import run_subprocess_with_context
+from erk_shared.context.helpers import require_cwd, require_github
 
 
 @dataclass(frozen=True)
@@ -59,31 +58,6 @@ class DiscoveryError:
     error_type: str
     message: str
     validation_errors: dict[str, list[str]]
-
-
-def _get_pr_changed_files(pr_number: int) -> list[str]:
-    """Get list of files changed in a PR.
-
-    Uses GitHub REST API with pagination to handle large PRs.
-
-    Args:
-        pr_number: PR number to query.
-
-    Returns:
-        List of file paths changed in the PR.
-    """
-    result = run_subprocess_with_context(
-        cmd=[
-            "gh",
-            "api",
-            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/files",
-            "--paginate",
-            "-q",
-            ".[].filename",
-        ],
-        operation_context=f"get changed files for PR #{pr_number}",
-    )
-    return [line.strip() for line in result.stdout.strip().split("\n") if line.strip()]
 
 
 def _review_to_dict(review: ParsedReview) -> dict[str, object]:
@@ -142,11 +116,12 @@ def discover_reviews(
     Output is JSON suitable for GitHub Actions matrix jobs.
     """
     cwd = require_cwd(ctx)
+    github = require_github(ctx)
     reviews_path = cwd / reviews_dir
 
-    # Get files changed in the PR
+    # Get files changed in the PR via gateway
     try:
-        changed_files = _get_pr_changed_files(pr_number)
+        changed_files = github.get_pr_changed_files(cwd, pr_number)
     except RuntimeError as e:
         result = DiscoveryError(
             success=False,

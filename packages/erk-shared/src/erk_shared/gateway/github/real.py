@@ -1598,6 +1598,27 @@ query {{
         )
         return result.stdout
 
+    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -> list[str]:
+        """Get list of files changed in a pull request.
+
+        Uses GitHub REST API with pagination to handle large PRs.
+        """
+        # GH-API-AUDIT: REST - GET pulls/{number}/files
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/files",
+            "--paginate",
+            "-q",
+            ".[].filename",
+        ]
+        result = run_subprocess_with_context(
+            cmd=cmd,
+            operation_context=f"get changed files for PR #{pr_number}",
+            cwd=repo_root,
+        )
+        return [line.strip() for line in result.stdout.strip().split("\n") if line.strip()]
+
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
         """Add a label to a pull request.
 

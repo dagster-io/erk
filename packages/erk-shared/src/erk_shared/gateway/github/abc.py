@@ -468,6 +468,25 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
+    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -> list[str]:
+        """Get list of files changed in a pull request.
+
+        Uses GitHub REST API with pagination to handle large PRs that may
+        have hundreds of changed files.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to query
+
+        Returns:
+            List of file paths changed in the PR.
+
+        Raises:
+            RuntimeError: If gh command fails
+        """
+        ...
+
+    @abstractmethod
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
         """Add a label to a pull request.
 

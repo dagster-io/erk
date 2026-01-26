@@ -208,6 +208,10 @@ class DryRunGitHub(GitHub):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr_diff(repo_root, pr_number)
 
+    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -> list[str]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_changed_files(repo_root, pr_number)
+
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
         """No-op for adding label to PR in dry-run mode."""
         pass
