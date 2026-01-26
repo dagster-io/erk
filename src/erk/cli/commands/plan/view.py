@@ -216,16 +216,15 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
     learn_display = _format_learn_state(learn_status_val, learn_plan_issue_int, learn_plan_pr_int)
     lines.append(_format_field("Status", learn_display))
 
-    # Show workflow URL when learn is in progress
-    if learn_status_val == "pending":
-        learn_run_id_raw = header_info.get(LEARN_RUN_ID)
-        if learn_run_id_raw is not None and plan_url is not None:
-            owner_repo = extract_owner_repo_from_github_url(plan_url)
-            if owner_repo is not None:
-                workflow_url = construct_workflow_run_url(
-                    owner_repo[0], owner_repo[1], str(learn_run_id_raw)
-                )
-                lines.append(_format_field("Workflow", workflow_url))
+    # Show workflow URL when learn run ID is available
+    learn_run_id_raw = header_info.get(LEARN_RUN_ID)
+    if learn_run_id_raw is not None and plan_url is not None:
+        owner_repo = extract_owner_repo_from_github_url(plan_url)
+        if owner_repo is not None:
+            workflow_url = construct_workflow_run_url(
+                owner_repo[0], owner_repo[1], str(learn_run_id_raw)
+            )
+            lines.append(_format_field("Workflow", workflow_url))
 
     if CREATED_FROM_SESSION in header_info:
         lines.append(_format_field("Plan session", str(header_info[CREATED_FROM_SESSION])))
