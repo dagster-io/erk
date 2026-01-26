@@ -623,7 +623,14 @@ class ErkDashApp(App):
                 self.push_screen(detail_screen)
                 detail_screen.call_after_refresh(
                     lambda: detail_screen.run_streaming_command(
-                        ["erk", "pr", "fix-conflicts-remote", str(row.pr_number)],
+                        [
+                            "erk",
+                            "workflow",
+                            "launch",
+                            "pr-fix-conflicts",
+                            "--pr",
+                            str(row.pr_number),
+                        ],
                         cwd=self._provider.repo_root,
                         title=f"Fix Conflicts Remote PR #{row.pr_number}",
                     )
@@ -649,7 +656,7 @@ class ErkDashApp(App):
                 self.push_screen(detail_screen)
                 detail_screen.call_after_refresh(
                     lambda: detail_screen.run_streaming_command(
-                        ["erk", "pr", "address-remote", str(row.pr_number)],
+                        ["erk", "workflow", "launch", "pr-address", "--pr", str(row.pr_number)],
                         cwd=self._provider.repo_root,
                         title=f"Address Remote PR #{row.pr_number}",
                     )
