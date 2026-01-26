@@ -1,30 +1,33 @@
-# Objective Reconciler Sweep Workflow
+# Single Objective Reconciler Workflow
 #
-# Reconciles ALL auto-advance objectives by determining next actionable steps
-# and creating plan issues. Runs on a schedule or manual trigger.
+# Reconciles a specific auto-advance objective by determining next actionable steps
+# and creating plan issues. This workflow is launchable via `erk workflow launch`.
 #
-# For single-objective reconciliation via CLI, use objective-reconcile.yml instead.
-#
-# Trigger: Schedule (cron) or manual workflow_dispatch
-# Output: Creates plan issues linked to objectives, updates roadmap tables
+# Trigger: Manual (workflow_dispatch) via erk workflow launch objective-reconcile --objective <N>
+# Output: Creates plan issues linked to the specified objective, updates roadmap table
 
-name: objective-reconciler
-run-name: "reconcile-objectives-sweep:${{ github.run_attempt }}"
+name: objective-reconcile
+run-name: "reconcile:#${{ inputs.objective }}:${{ inputs.distinct_id }}"
 
 on:
-  schedule:
-    - cron: "0 */6 * * *" # Every 6 hours
   workflow_dispatch:
     inputs:
+      objective:
+        description: "Objective issue number to reconcile"
+        required: true
+        type: string
+      distinct_id:
+        description: "Unique ID for run discovery"
+        required: true
+        type: string
       dry_run:
-        description: "Preview actions without executing"
-        required: false
+        description: "Preview without executing"
         type: boolean
         default: false
 
 concurrency:
-  group: reconcile-objectives-sweep
-  cancel-in-progress: false # Don't cancel scheduled sweeps
+  group: reconcile-objective-${{ github.event.inputs.objective }}
+  cancel-in-progress: true
 
 jobs:
   reconcile:
@@ -33,7 +36,6 @@ jobs:
     permissions:
       contents: read
       issues: write
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,12 +50,12 @@ jobs:
           erk-pat: ${{ secrets.ERK_QUEUE_GH_PAT }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 
-      - name: Run reconcile sweep
+      - name: Reconcile objective
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          FLAGS=""
+          FLAGS="--objective ${{ inputs.objective }}"
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             FLAGS="$FLAGS --dry-run"
           fi
