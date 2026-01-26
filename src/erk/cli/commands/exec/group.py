@@ -18,6 +18,7 @@ from erk.cli.commands.exec.scripts.capture_session_info import (
 )
 from erk.cli.commands.exec.scripts.check_impl import check_impl
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
 from erk.cli.commands.exec.scripts.close_issue_with_comment import (
     close_issue_with_comment,
 )
@@ -211,6 +212,7 @@ exec_group.add_command(update_plan_remote_session, name="update-plan-remote-sess
 exec_group.add_command(upload_learn_materials, name="upload-learn-materials")
 exec_group.add_command(upload_session, name="upload-session")
 exec_group.add_command(ci_update_pr_body)
+exec_group.add_command(ci_verify_autofix, name="ci-verify-autofix")
 exec_group.add_command(close_issue_with_comment, name="close-issue-with-comment")
 exec_group.add_command(user_prompt_hook, name="user-prompt-hook")
 exec_group.add_command(validate_claude_credentials, name="validate-claude-credentials")

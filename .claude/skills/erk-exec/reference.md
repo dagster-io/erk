@@ -14,6 +14,7 @@ Quick reference for all `erk exec` subcommands.
 | `capture-session-info`            | Capture Claude Code session info for CI workflows.                        |
 | `check-impl`                      | Check .impl/ folder structure and validate prerequisites.                 |
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                      |
+| `ci-verify-autofix`               | Run full CI verification after autofix push.                              |
 | `close-issue-with-comment`        | Close a GitHub issue with a comment using REST API.                       |
 | `create-issue-from-session`       | Extract plan from Claude session and create GitHub issue.                 |
 | `create-plan-from-context`        | Create GitHub issue from plan content with erk-plan label.                |
@@ -147,6 +148,19 @@ Update PR body with AI-generated summary and footer.
 | `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | Issue number to close on merge |
 | `--run-id`       | TEXT    | No       | -              | Optional workflow run ID       |
 | `--run-url`      | TEXT    | No       | -              | Optional workflow run URL      |
+
+### ci-verify-autofix
+
+Run full CI verification after autofix push.
+
+**Usage:** `erk exec ci-verify-autofix`
+
+**Options:**
+
+| Flag             | Type | Required | Default        | Description                    |
+| ---------------- | ---- | -------- | -------------- | ------------------------------ |
+| `--original-sha` | TEXT | Yes      | Sentinel.UNSET | SHA before autofix ran         |
+| `--repo`         | TEXT | Yes      | Sentinel.UNSET | GitHub repository (owner/repo) |
 
 ### close-issue-with-comment
 
