@@ -89,7 +89,7 @@ def test_fix_conflicts_remote_triggers_workflow(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["fix-conflicts-remote"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote"], obj=ctx)
 
         assert result.exit_code == 0
         assert "PR #123" in result.output
@@ -135,7 +135,7 @@ def test_fix_conflicts_remote_with_no_squash(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["fix-conflicts-remote", "--no-squash"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote", "--no-squash"], obj=ctx)
 
         assert result.exit_code == 0
 
@@ -172,7 +172,7 @@ def test_fix_conflicts_remote_with_model(tmp_path: Path) -> None:
         ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(
-            pr_group, ["fix-conflicts-remote", "--model", "claude-opus-4"], obj=ctx
+            pr_group, ["fix-conflicts", "remote", "--model", "claude-opus-4"], obj=ctx
         )
 
         assert result.exit_code == 0
@@ -197,7 +197,7 @@ def test_fix_conflicts_remote_fails_when_not_on_branch(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(pr_group, ["fix-conflicts-remote"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Not on a branch" in result.output
@@ -219,7 +219,7 @@ def test_fix_conflicts_remote_fails_when_no_pr_exists(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["fix-conflicts-remote"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote"], obj=ctx)
 
         assert result.exit_code == 1
         assert "No pull request found for branch 'no-pr-branch'" in result.output
@@ -252,7 +252,7 @@ def test_fix_conflicts_remote_fails_when_pr_is_closed(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["fix-conflicts-remote"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Cannot rebase CLOSED PR" in result.output
@@ -285,7 +285,7 @@ def test_fix_conflicts_remote_fails_when_pr_is_merged(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["fix-conflicts-remote"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Cannot rebase MERGED PR" in result.output
@@ -318,7 +318,7 @@ def test_fix_conflicts_remote_uses_correct_base_branch(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["fix-conflicts-remote"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Base branch: release/v1.0" in result.output
@@ -358,7 +358,7 @@ def test_fix_conflicts_remote_with_pr_number_argument(tmp_path: Path) -> None:
         ctx = build_workspace_test_context(env, git=git, github=github)
 
         # Pass PR number as argument
-        result = runner.invoke(pr_group, ["fix-conflicts-remote", "456"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote", "456"], obj=ctx)
 
         assert result.exit_code == 0
         assert "PR #456" in result.output
@@ -388,7 +388,7 @@ def test_fix_conflicts_remote_with_pr_number_not_found(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["fix-conflicts-remote", "999"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote", "999"], obj=ctx)
 
         assert result.exit_code == 1
         assert "No pull request found with number #999" in result.output
@@ -421,7 +421,7 @@ def test_fix_conflicts_remote_with_pr_number_closed(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["fix-conflicts-remote", "111"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote", "111"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Cannot rebase CLOSED PR" in result.output
@@ -456,7 +456,7 @@ def test_fix_conflicts_remote_with_pr_number_on_detached_head(tmp_path: Path) ->
         ctx = build_workspace_test_context(env, git=git, github=github)
 
         # Should work with PR number even though we're on detached HEAD
-        result = runner.invoke(pr_group, ["fix-conflicts-remote", "789"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote", "789"], obj=ctx)
 
         assert result.exit_code == 0
         assert "PR #789" in result.output
@@ -531,7 +531,7 @@ def test_fix_conflicts_remote_updates_dispatch_metadata_for_plan_branch(tmp_path
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["fix-conflicts-remote"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Workflow triggered" in result.output
@@ -577,7 +577,7 @@ def test_fix_conflicts_remote_skips_metadata_for_non_plan_branch(tmp_path: Path)
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["fix-conflicts-remote"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Workflow triggered" in result.output
@@ -624,7 +624,7 @@ def test_fix_conflicts_remote_handles_missing_plan_header_gracefully(tmp_path: P
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["fix-conflicts-remote"], obj=ctx)
+        result = runner.invoke(pr_group, ["fix-conflicts", "remote"], obj=ctx)
 
         # Command should succeed even though plan-header update failed
         assert result.exit_code == 0
