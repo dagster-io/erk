@@ -31,25 +31,24 @@ The `erk objective reconcile` command analyzes objectives and determines next ac
 # Reconcile all auto-advance objectives
 erk objective reconcile
 
-# Target a specific objective
-erk objective reconcile --objective 123
-erk objective reconcile -o 123
+# Target a specific objective (positional argument)
+erk objective reconcile 123
 
 # Preview without executing
 erk objective reconcile --dry-run
-erk objective reconcile -o 123 --dry-run
+erk objective reconcile 123 --dry-run
 ```
 
-### Flags
+### Arguments and Flags
 
-| Flag              | Short | Description                              |
-| ----------------- | ----- | ---------------------------------------- |
-| `--dry-run`       | -     | Show planned actions without executing   |
-| `--objective NUM` | `-o`  | Target a specific objective by issue num |
+| Argument/Flag | Description                                        |
+| ------------- | -------------------------------------------------- |
+| `OBJECTIVE`   | Optional issue number to target specific objective |
+| `--dry-run`   | Show planned actions without executing             |
 
 ### Validation (LBYL Pattern)
 
-The `--objective` flag uses Look Before You Leap validation:
+The positional objective argument uses Look Before You Leap validation:
 
 1. **Check existence**: `issue_exists(repo_root, number)` before fetching
 2. **Check labels**: Verify `erk-objective` label exists
@@ -93,7 +92,7 @@ An **auto-advance objective** is an objective issue with both labels:
 - `erk-objective`
 - `auto-advance`
 
-The reconcile command processes these automatically when run without `--objective`.
+The reconcile command processes these automatically when run without a specific objective argument.
 
 ## Session-Based Idempotency
 
