@@ -7,9 +7,11 @@ Create a `CIRunner` gateway abstraction to replace `monkeypatch.setattr("subproc
 ## Files to Create
 
 ### 1. `packages/erk-shared/src/erk_shared/gateway/ci_runner/__init__.py`
+
 Empty init file for package.
 
 ### 2. `packages/erk-shared/src/erk_shared/gateway/ci_runner/abc.py`
+
 - `CICheckResult` frozen dataclass with `passed: bool` and `error_type: str | None`
 - `CIRunner` ABC with single method:
   ```python
@@ -18,11 +20,13 @@ Empty init file for package.
   ```
 
 ### 3. `packages/erk-shared/src/erk_shared/gateway/ci_runner/real.py`
+
 - `RealCIRunner` implementation using `subprocess.run(cmd, cwd=cwd, check=True, capture_output=False)`
 - Handles `CalledProcessError` → `CICheckResult(passed=False, error_type="command_failed")`
 - Handles `FileNotFoundError` → `CICheckResult(passed=False, error_type="command_not_found")`
 
 ### 4. `packages/erk-shared/src/erk_shared/gateway/ci_runner/fake.py`
+
 - `FakeCIRunner` with constructor params:
   - `failing_checks: set[str] | None` - check names that should fail
   - `missing_commands: set[str] | None` - check names with missing command
@@ -33,12 +37,14 @@ Empty init file for package.
 ### 5. `src/erk/cli/commands/exec/scripts/ci_verify_autofix.py`
 
 **Add import:**
+
 ```python
 from erk_shared.gateway.ci_runner.abc import CICheckResult, CIRunner
 from erk_shared.gateway.ci_runner.real import RealCIRunner
 ```
 
 **Update `_run_check()`:** Add `ci_runner: CIRunner` parameter, replace subprocess.run with:
+
 ```python
 result = ci_runner.run_check(name=name, cmd=cmd, cwd=cwd)
 if not result.passed:
@@ -58,11 +64,13 @@ return result.passed
 **Remove:** All `monkeypatch` usage and inline `MockResult` classes.
 
 **Add import:**
+
 ```python
 from erk_shared.gateway.ci_runner.fake import FakeCIRunner
 ```
 
 **Update tests:** Pass `ci_runner=FakeCIRunner(...)` to `_verify_autofix_impl()`. Configure failures via:
+
 ```python
 ci_runner = FakeCIRunner(failing_checks={"lint"})
 ```
@@ -70,7 +78,9 @@ ci_runner = FakeCIRunner(failing_checks={"lint"})
 ## Files to Add (Tests)
 
 ### 7. `tests/unit/fakes/test_fake_ci_runner.py`
+
 Unit tests for FakeCIRunner:
+
 - Test default behavior (all pass)
 - Test `failing_checks` configuration
 - Test `missing_commands` configuration
@@ -85,6 +95,7 @@ Unit tests for FakeCIRunner:
 ## Verification
 
 1. Run `make test` scoped to the test file:
+
    ```
    uv run pytest tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py -v
    ```

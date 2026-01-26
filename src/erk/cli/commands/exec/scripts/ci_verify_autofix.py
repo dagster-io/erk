@@ -25,7 +25,6 @@ Examples:
 from __future__ import annotations
 
 import json
-import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Literal
@@ -33,6 +32,8 @@ from typing import Literal
 import click
 
 from erk_shared.context.helpers import require_cwd, require_git, require_github
+from erk_shared.gateway.ci_runner.abc import CIRunner
+from erk_shared.gateway.ci_runner.real import RealCIRunner
 from erk_shared.gateway.github.abc import GitHub
 
 # Check definitions: (name, command)
@@ -80,6 +81,7 @@ def _run_check(
     name: str,
     cmd: list[str],
     cwd: Path,
+    ci_runner: CIRunner,
 ) -> bool:
     """Run a single CI check and return whether it passed.
 
@@ -87,25 +89,19 @@ def _run_check(
         name: Check name for logging
         cmd: Command to execute
         cwd: Working directory
+        ci_runner: CI runner gateway for executing checks
 
     Returns:
         True if check passed, False otherwise
     """
     click.echo(f"=== {name.replace('-', ' ').title()} ===", err=True)
-    try:
-        subprocess.run(
-            cmd,
-            cwd=cwd,
-            check=True,
-            capture_output=False,
-        )
-        return True
-    except subprocess.CalledProcessError:
-        click.echo(f"::error::{name} check failed", err=True)
-        return False
-    except FileNotFoundError as e:
-        click.echo(f"::error::{name} command not found: {e}", err=True)
-        return False
+    result = ci_runner.run_check(name=name, cmd=cmd, cwd=cwd)
+    if not result.passed:
+        if result.error_type == "command_not_found":
+            click.echo(f"::error::{name} command not found", err=True)
+        else:
+            click.echo(f"::error::{name} check failed", err=True)
+    return result.passed
 
 
 def _verify_autofix_impl(
@@ -115,6 +111,7 @@ def _verify_autofix_impl(
     cwd: Path,
     current_sha: str,
     github: GitHub,
+    ci_runner: CIRunner,
 ) -> VerifySuccess | VerifyError:
     """Main implementation of CI verification.
 
@@ -124,6 +121,7 @@ def _verify_autofix_impl(
         cwd: Working directory
         current_sha: Current HEAD SHA
         github: GitHub gateway for status reporting
+        ci_runner: CI runner gateway for executing checks
 
     Returns:
         VerifySuccess or VerifyError
@@ -149,7 +147,7 @@ def _verify_autofix_impl(
     any_failed = False
 
     for check_name, check_cmd in CI_CHECKS:
-        passed = _run_check(name=check_name, cmd=check_cmd, cwd=cwd)
+        passed = _run_check(name=check_name, cmd=check_cmd, cwd=cwd, ci_runner=ci_runner)
 
         if not passed:
             any_failed = True
@@ -228,12 +226,14 @@ def ci_verify_autofix(ctx: click.Context, original_sha: str, repo: str) -> None:
         )
         raise SystemExit(1)
 
+    ci_runner = RealCIRunner()
     result = _verify_autofix_impl(
         original_sha=original_sha,
         repo=repo,
         cwd=cwd,
         current_sha=current_sha,
         github=github,
+        ci_runner=ci_runner,
     )
 
     # Convert dataclass to dict for JSON output

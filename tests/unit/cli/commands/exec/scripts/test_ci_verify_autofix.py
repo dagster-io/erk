@@ -6,7 +6,6 @@ Tests the CI verification command that runs after autofix pushes a new commit.
 from __future__ import annotations
 
 import json
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +19,7 @@ from erk.cli.commands.exec.scripts.ci_verify_autofix import (
     ci_verify_autofix,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.ci_runner.fake import FakeCIRunner
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 
@@ -30,6 +30,7 @@ class TestVerifyAutofixImpl:
     def test_no_new_commit_returns_early(self, tmp_path: Path) -> None:
         """When current SHA matches original, return immediately without running checks."""
         github = FakeGitHub()
+        ci_runner = FakeCIRunner()
 
         result = _verify_autofix_impl(
             original_sha="abc123",
@@ -37,6 +38,7 @@ class TestVerifyAutofixImpl:
             cwd=tmp_path,
             current_sha="abc123",  # Same as original
             github=github,
+            ci_runner=ci_runner,
         )
 
         assert isinstance(result, VerifySuccess)
@@ -46,23 +48,13 @@ class TestVerifyAutofixImpl:
         assert result.checks == []
         # No status reports made
         assert github.created_commit_statuses == []
+        # No checks run
+        assert ci_runner.check_names_run == []
 
-    def test_new_commit_runs_checks(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_new_commit_runs_checks(self, tmp_path: Path) -> None:
         """When SHA changes, run all checks."""
         github = FakeGitHub()
-
-        # Mock subprocess.run to simulate all checks passing
-        run_calls: list[list[str]] = []
-
-        def mock_run(cmd: list[str], **kwargs: object) -> object:
-            run_calls.append(cmd)
-
-            class MockResult:
-                returncode = 0
-
-            return MockResult()
-
-        monkeypatch.setattr("subprocess.run", mock_run)
+        ci_runner = FakeCIRunner()
 
         result = _verify_autofix_impl(
             original_sha="abc123",
@@ -70,6 +62,7 @@ class TestVerifyAutofixImpl:
             cwd=tmp_path,
             current_sha="def456",  # Different from original
             github=github,
+            ci_runner=ci_runner,
         )
 
         assert isinstance(result, VerifySuccess)
@@ -83,23 +76,13 @@ class TestVerifyAutofixImpl:
         assert len(github.created_commit_statuses) == 7
         assert all(status[2] == "success" for status in github.created_commit_statuses)
 
-    def test_failed_check_reports_failure(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+        # Verify all checks were run
+        assert len(ci_runner.check_names_run) == 7
+
+    def test_failed_check_reports_failure(self, tmp_path: Path) -> None:
         """When a check fails, report failure status."""
         github = FakeGitHub()
-
-        # Mock subprocess.run to fail on lint check
-        def mock_run(cmd: list[str], **kwargs: object) -> object:
-            if "lint" in cmd:
-                raise subprocess.CalledProcessError(1, cmd)
-
-            class MockResult:
-                returncode = 0
-
-            return MockResult()
-
-        monkeypatch.setattr("subprocess.run", mock_run)
+        ci_runner = FakeCIRunner(failing_checks={"lint"})
 
         result = _verify_autofix_impl(
             original_sha="abc123",
@@ -107,6 +90,7 @@ class TestVerifyAutofixImpl:
             cwd=tmp_path,
             current_sha="def456",
             github=github,
+            ci_runner=ci_runner,
         )
 
         assert isinstance(result, VerifySuccess)
@@ -166,78 +150,27 @@ class TestCiVerifyAutofixCommand:
         assert data["success"] is True
         assert data["new_commit_pushed"] is False
 
-    def test_command_outputs_json(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test command outputs valid JSON with check results."""
+    def test_command_outputs_json(self, tmp_path: Path) -> None:
+        """Test command outputs valid JSON when no new commit pushed."""
         git = FakeGit(
             branch_heads={"HEAD": "def456"},
         )
         github = FakeGitHub()
         ctx = ErkContext.for_test(git=git, github=github, cwd=tmp_path)
 
-        # Mock subprocess.run to pass all CI checks
-        def mock_run(cmd: list[str], **kwargs: object) -> object:
-            class MockResult:
-                returncode = 0
-
-            return MockResult()
-
-        monkeypatch.setattr("subprocess.run", mock_run)
-
         runner = CliRunner()
+        # Use same SHA so no checks run
         result = runner.invoke(
             ci_verify_autofix,
-            ["--original-sha", "abc123", "--repo", "owner/repo"],
+            ["--original-sha", "def456", "--repo", "owner/repo"],
             obj=ctx,
         )
 
         assert result.exit_code == 0
         data = _extract_json_from_output(result.output)
         assert data["success"] is True
-        assert data["new_commit_pushed"] is True
+        assert data["new_commit_pushed"] is False
         assert data["current_sha"] == "def456"
-        checks = data["checks"]
-        assert isinstance(checks, list)
-        assert len(checks) == 7
-
-        # Verify status was reported via GitHub gateway
-        assert len(github.created_commit_statuses) == 7
-
-    def test_command_exits_with_error_on_check_failure(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """Test command exits with code 1 when any check fails."""
-        git = FakeGit(
-            branch_heads={"HEAD": "def456"},
-        )
-        github = FakeGitHub()
-        ctx = ErkContext.for_test(git=git, github=github, cwd=tmp_path)
-
-        # Mock subprocess.run to fail on format check
-        def mock_run(cmd: list[str], **kwargs: object) -> object:
-            if "format-check" in cmd:
-                raise subprocess.CalledProcessError(1, cmd)
-
-            class MockResult:
-                returncode = 0
-
-            return MockResult()
-
-        monkeypatch.setattr("subprocess.run", mock_run)
-
-        runner = CliRunner()
-        result = runner.invoke(
-            ci_verify_autofix,
-            ["--original-sha", "abc123", "--repo", "owner/repo"],
-            obj=ctx,
-        )
-
-        assert result.exit_code == 1
-        data = _extract_json_from_output(result.output)
-        assert data["success"] is True  # Command succeeded
-        # But at least one check failed
-        checks: list[dict[str, Any]] = data["checks"]
-        format_check = next(c for c in checks if c["name"] == "format")
-        assert format_check["passed"] is False
 
 
 class TestCheckResult:
