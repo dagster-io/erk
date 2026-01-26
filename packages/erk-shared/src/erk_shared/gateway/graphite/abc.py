@@ -286,6 +286,38 @@ class Graphite(ABC):
         """
         ...
 
+    def is_branch_diverged_from_tracking(self, git_ops: Git, repo_root: Path, branch: str) -> bool:
+        """Check if branch is diverged from Graphite's tracked SHA.
+
+        Compares Graphite's cached branchRevision with actual git HEAD.
+        Returns True if they differ (branch needs re-tracking).
+
+        This happens when gt restack or other operations create new commit SHAs
+        without updating Graphite's internal tracking. The branch is "diverged"
+        from Graphite's perspective, which can cause gt track on child branches
+        to fail with "Cannot perform this operation on diverged branch."
+
+        Args:
+            git_ops: Git instance for accessing git common directory and branch heads
+            repo_root: Repository root directory
+            branch: Name of the branch to check
+
+        Returns:
+            True if branch is diverged (tracked_revision != commit_sha),
+            False if not diverged or branch is not tracked.
+        """
+        branches = self.get_all_branches(git_ops, repo_root)
+        if branch not in branches:
+            return False  # Not tracked = not diverged
+
+        metadata = branches[branch]
+
+        # If we don't have tracking info, assume not diverged
+        if metadata.tracked_revision is None or metadata.commit_sha is None:
+            return False
+
+        return metadata.tracked_revision != metadata.commit_sha
+
     @abstractmethod
     def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
         """Continue an in-progress gt restack (gt continue).

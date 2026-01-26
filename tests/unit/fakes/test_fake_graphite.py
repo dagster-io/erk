@@ -322,3 +322,95 @@ def test_fake_graphite_is_branch_tracked_empty_branches() -> None:
     ops = FakeGraphite()
 
     assert ops.is_branch_tracked(Path("/repo"), "any-branch") is False
+
+
+def test_fake_graphite_is_branch_diverged_from_tracking_no_divergence() -> None:
+    """Test that is_branch_diverged_from_tracking returns False when SHAs match."""
+    branches = {
+        "main": BranchMetadata.trunk("main", commit_sha="abc123", tracked_revision="abc123"),
+        "feature": BranchMetadata.branch(
+            "feature", "main", commit_sha="def456", tracked_revision="def456"
+        ),
+    }
+    ops = FakeGraphite(branches=branches)
+    git_ops = FakeGit()
+
+    # Both branches have matching SHAs - not diverged
+    assert ops.is_branch_diverged_from_tracking(git_ops, Path("/repo"), "main") is False
+    assert ops.is_branch_diverged_from_tracking(git_ops, Path("/repo"), "feature") is False
+
+
+def test_fake_graphite_is_branch_diverged_from_tracking_with_divergence() -> None:
+    """Test that is_branch_diverged_from_tracking returns True when SHAs differ."""
+    branches = {
+        "main": BranchMetadata.trunk("main", commit_sha="abc123", tracked_revision="abc123"),
+        "feature": BranchMetadata.branch(
+            "feature",
+            "main",
+            commit_sha="new456",  # Actual git SHA (after rebase)
+            tracked_revision="old456",  # Stale Graphite cache
+        ),
+    }
+    ops = FakeGraphite(branches=branches)
+    git_ops = FakeGit()
+
+    # main has matching SHAs - not diverged
+    assert ops.is_branch_diverged_from_tracking(git_ops, Path("/repo"), "main") is False
+
+    # feature has mismatched SHAs - diverged
+    assert ops.is_branch_diverged_from_tracking(git_ops, Path("/repo"), "feature") is True
+
+
+def test_fake_graphite_is_branch_diverged_from_tracking_untracked_branch() -> None:
+    """Test that is_branch_diverged_from_tracking returns False for untracked branch."""
+    branches = {
+        "main": BranchMetadata.trunk("main", commit_sha="abc123"),
+    }
+    ops = FakeGraphite(branches=branches)
+    git_ops = FakeGit()
+
+    # "untracked" is not in branches - not diverged (returns False)
+    assert ops.is_branch_diverged_from_tracking(git_ops, Path("/repo"), "untracked") is False
+
+
+def test_fake_graphite_is_branch_diverged_from_tracking_missing_tracked_revision() -> None:
+    """Test that is_branch_diverged_from_tracking returns False when tracked_revision is None."""
+    branches = {
+        "main": BranchMetadata(
+            name="main",
+            parent=None,
+            children=[],
+            is_trunk=True,
+            commit_sha="abc123",
+            tracked_revision=None,  # No tracked revision
+        ),
+    }
+    ops = FakeGraphite(branches=branches)
+    git_ops = FakeGit()
+
+    # Missing tracked_revision - assume not diverged
+    assert ops.is_branch_diverged_from_tracking(git_ops, Path("/repo"), "main") is False
+
+
+def test_fake_graphite_branch_ops_retrack_branch_tracks_calls() -> None:
+    """Test that retrack_branch tracks calls via retrack_branch_calls property."""
+    ops = FakeGraphite()
+    branch_ops = ops.create_linked_branch_ops()
+
+    branch_ops.retrack_branch(Path("/repo"), "feature-1")
+    branch_ops.retrack_branch(Path("/repo2"), "feature-2")
+
+    assert len(branch_ops.retrack_branch_calls) == 2
+    assert branch_ops.retrack_branch_calls[0] == (Path("/repo"), "feature-1")
+    assert branch_ops.retrack_branch_calls[1] == (Path("/repo2"), "feature-2")
+
+
+def test_fake_graphite_branch_ops_retrack_branch_raises() -> None:
+    """Test that retrack_branch can be configured to raise exceptions."""
+    from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
+
+    test_error = RuntimeError("Retrack failed")
+    branch_ops = FakeGraphiteBranchOps(retrack_branch_raises=test_error)
+
+    with pytest.raises(RuntimeError, match="Retrack failed"):
+        branch_ops.retrack_branch(Path("/repo"), "feature")

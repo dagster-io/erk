@@ -947,3 +947,109 @@ def test_pr_sync_handles_rebase_conflicts_for_stacked_pr(tmp_path: Path) -> None
         assert "erk pr sync --dangerous" in result.output
         # Should NOT track if rebase failed
         assert len(graphite.track_branch_calls) == 0
+
+
+def test_pr_sync_auto_fixes_diverged_branch_after_restack(tmp_path: Path) -> None:
+    """Test that sync auto-fixes Graphite tracking divergence after restack.
+
+    When a branch is restacked, the commit SHA changes but Graphite's internal
+    cache (branchRevision) may still have the old SHA. This causes gt track
+    on child branches to fail. Sync should detect this and retrack the branch.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Setup PR info
+        pr_info = _make_pr_info(123, "feature-branch", title="Feature PR")
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name="feature-branch",
+            title="Feature PR",
+        )
+        github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={123: pr_details},
+        )
+
+        # Branch is already tracked, but has diverged after restack
+        # (tracked_revision != commit_sha)
+        graphite = FakeGraphite(
+            branches={
+                "feature-branch": BranchMetadata(
+                    name="feature-branch",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="new-sha-after-restack",  # Actual git SHA
+                    tracked_revision="old-sha-before-restack",  # Stale cache
+                )
+            }
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "already tracked by Graphite" in result.output
+        assert "Fixing Graphite tracking divergence" in result.output
+        assert "Graphite tracking updated" in result.output
+
+        # Should have retracked the branch
+        assert any(branch == "feature-branch" for (_, branch) in graphite.retrack_branch_calls)
+
+
+def test_pr_sync_skips_retrack_when_not_diverged(tmp_path: Path) -> None:
+    """Test that sync skips retrack when branch is not diverged."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Setup PR info
+        pr_info = _make_pr_info(456, "feature-branch", title="Feature PR")
+        pr_details = _make_pr_details(
+            number=456,
+            head_ref_name="feature-branch",
+            title="Feature PR",
+        )
+        github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={456: pr_details},
+        )
+
+        # Branch is already tracked and NOT diverged (SHAs match)
+        graphite = FakeGraphite(
+            branches={
+                "feature-branch": BranchMetadata(
+                    name="feature-branch",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="same-sha",  # Matches tracked_revision
+                    tracked_revision="same-sha",
+                )
+            }
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "already tracked by Graphite" in result.output
+        # Should NOT show retrack message (not diverged)
+        assert "Fixing Graphite tracking divergence" not in result.output
+
+        # Should NOT have retracked the branch
+        assert len(graphite.retrack_branch_calls) == 0

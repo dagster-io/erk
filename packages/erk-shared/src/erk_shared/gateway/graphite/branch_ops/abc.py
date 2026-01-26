@@ -65,3 +65,22 @@ class GraphiteBranchOps(ABC):
             quiet: If True, pass --quiet flag to gt submit for minimal output
         """
         ...
+
+    @abstractmethod
+    def retrack_branch(self, cwd: Path, branch_name: str) -> None:
+        """Re-track an existing branch to fix Graphite tracking divergence.
+
+        After rebase/restack operations, Graphite's internal cache may have stale
+        SHA references. Running `gt track` on the current branch updates Graphite's
+        branchRevision to match the actual git HEAD.
+
+        This is needed when:
+        - gt restack creates new commit SHAs
+        - The branch is "diverged" from Graphite's perspective
+        - gt track on child branches fails with "diverged branch" error
+
+        Args:
+            cwd: Working directory (must be on the target branch)
+            branch_name: Name of the branch being re-tracked (for logging)
+        """
+        ...

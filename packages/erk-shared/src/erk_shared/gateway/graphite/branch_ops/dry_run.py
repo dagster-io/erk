@@ -41,3 +41,8 @@ class DryRunGraphiteBranchOps(GraphiteBranchOps):
         """No-op for gt submit in dry-run mode."""
         # Do nothing - prevents actual gt submit execution
         pass
+
+    def retrack_branch(self, cwd: Path, branch_name: str) -> None:
+        """No-op for gt track in dry-run mode."""
+        # Do nothing - prevents actual gt track execution
+        pass
