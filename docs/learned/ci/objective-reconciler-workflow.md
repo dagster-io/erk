@@ -106,7 +106,7 @@ The workflow invokes `erk objective reconcile`:
 ```bash
 erk objective reconcile \
   ${DRY_RUN:+--dry-run} \
-  ${OBJECTIVE:+--objective $OBJECTIVE}
+  ${OBJECTIVE:+$OBJECTIVE}
 ```
 
 ### Label Dependencies

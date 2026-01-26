@@ -359,7 +359,7 @@ class PlanDetailScreen(ModalScreen):
         if self._row.pr_number is None or self._repo_root is None:
             return
         self.run_streaming_command(
-            ["erk", "pr", "fix-conflicts-remote", str(self._row.pr_number)],
+            ["erk", "workflow", "launch", "pr-fix-conflicts", "--pr", str(self._row.pr_number)],
             cwd=self._repo_root,
             title=f"Fix Conflicts Remote PR #{self._row.pr_number}",
         )
@@ -656,7 +656,7 @@ class PlanDetailScreen(ModalScreen):
         elif command_id == "fix_conflicts_remote":
             if row.pr_number is not None and self._repo_root is not None:
                 self.run_streaming_command(
-                    ["erk", "pr", "fix-conflicts-remote", str(row.pr_number)],
+                    ["erk", "workflow", "launch", "pr-fix-conflicts", "--pr", str(row.pr_number)],
                     cwd=self._repo_root,
                     title=f"Fix Conflicts Remote PR #{row.pr_number}",
                 )
@@ -664,7 +664,7 @@ class PlanDetailScreen(ModalScreen):
         elif command_id == "address_remote":
             if row.pr_number is not None and self._repo_root is not None:
                 self.run_streaming_command(
-                    ["erk", "pr", "address-remote", str(row.pr_number)],
+                    ["erk", "workflow", "launch", "pr-address", "--pr", str(row.pr_number)],
                     cwd=self._repo_root,
                     title=f"Address Remote PR #{row.pr_number}",
                 )

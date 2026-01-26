@@ -4,6 +4,7 @@
 # Ci Documentation
 
 - **[claude-code-docker.md](claude-code-docker.md)** — Running Claude Code in GitHub Actions containers, Debugging permission errors in CI Docker containers, Choosing between container and container-less CI approaches
+- **[composite-action-patterns.md](composite-action-patterns.md)** — creating reusable GitHub Actions setup steps, using erk-remote-setup composite action, understanding GitHub Actions composite patterns
 - **[containerless-ci.md](containerless-ci.md)** — Setting up Claude Code in GitHub Actions without containers, Comparing container vs container-less CI approaches, Choosing between container and container-less CI approaches
 - **[convention-based-reviews.md](convention-based-reviews.md)** — adding a new code review to CI, understanding how code reviews work, modifying code review behavior
 - **[erk-impl-change-detection.md](erk-impl-change-detection.md)** — maintaining erk-impl workflow, debugging change detection issues, understanding why no-changes was triggered
