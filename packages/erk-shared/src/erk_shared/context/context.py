@@ -13,9 +13,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.branch_manager.abc import BranchManager
-from erk_shared.branch_manager.git import GitBranchManager
-from erk_shared.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.context.types import (
     GlobalConfig,
     LoadedConfig,
@@ -26,6 +23,10 @@ from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.core.codespace_registry import CodespaceRegistry
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.script_writer import ScriptWriter
+from erk_shared.gateway.branch_manager.abc import BranchManager
+from erk_shared.gateway.branch_manager.git import GitBranchManager
+from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
+from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.completion.abc import Completion
 from erk_shared.gateway.console.abc import Console
@@ -40,12 +41,11 @@ from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
+from erk_shared.gateway.prompt_executor.abc import PromptExecutor
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
-from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.store import PlanStore
-from erk_shared.prompt_executor.abc import PromptExecutor
 
 
 @dataclass(frozen=True)

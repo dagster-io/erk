@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from erk_shared.learn.extraction.claude_installation.abc import (
+from erk_shared.gateway.claude_installation.abc import (
     ClaudeInstallation,
     FoundSession,
     Session,

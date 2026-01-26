@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk_shared.branch_manager.graphite import GraphiteBranchManager
+from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub

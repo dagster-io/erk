@@ -17,7 +17,7 @@ GitHub operations use the main GitHub ABC from erk_shared.gateway.github.
 
 from typing import Protocol
 
-from erk_shared.branch_manager.abc import BranchManager
+from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.graphite.abc import Graphite

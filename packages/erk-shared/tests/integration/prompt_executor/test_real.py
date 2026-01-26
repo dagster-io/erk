@@ -15,8 +15,8 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
+from erk_shared.gateway.prompt_executor.real import RETRY_DELAYS, RealPromptExecutor
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.prompt_executor.real import RETRY_DELAYS, RealPromptExecutor
 
 
 @dataclass(frozen=True)

@@ -112,7 +112,7 @@ def test_generate_pr_summary_truncates_large_diff() -> None:
     """Test that large diffs are truncated with warning."""
     from erk_shared.gateway.github.fake import FakeGitHub
     from erk_shared.gateway.gt.prompts import MAX_DIFF_CHARS
-    from erk_shared.prompt_executor.fake import FakePromptExecutor
+    from erk_shared.gateway.prompt_executor.fake import FakePromptExecutor
 
     # Create fake GitHub with very large diff
     large_diff = "+" + "x" * (MAX_DIFF_CHARS + 1000)

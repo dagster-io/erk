@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
+from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.scratch.scratch import get_scratch_dir
 
 

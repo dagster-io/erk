@@ -23,7 +23,7 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.prompt_executor.fake import FakePromptExecutor
+from erk_shared.gateway.prompt_executor.fake import FakePromptExecutor
 
 # ============================================================================
 # 1. Helper Function Tests

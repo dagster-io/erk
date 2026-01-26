@@ -56,7 +56,7 @@ from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
-from erk_shared.prompt_executor.abc import PromptExecutor
+from erk_shared.gateway.prompt_executor.abc import PromptExecutor
 
 
 @dataclass(frozen=True)

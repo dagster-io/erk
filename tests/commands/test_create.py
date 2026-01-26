@@ -556,7 +556,7 @@ def test_create_from_plan_no_graphite_tracking_when_disabled() -> None:
         assert result.exit_code == 0
 
         # Assert: branch_manager is GitBranchManager (not GraphiteBranchManager)
-        from erk_shared.branch_manager.git import GitBranchManager
+        from erk_shared.gateway.branch_manager.git import GitBranchManager
 
         assert isinstance(test_ctx.branch_manager, GitBranchManager), (
             f"Expected GitBranchManager when use_graphite=False, "

@@ -13,8 +13,8 @@ from erk.core.claude_settings import (
     has_erk_statusline,
     remove_erk_statusline,
 )
-from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
-from erk_shared.learn.extraction.claude_installation.real import RealClaudeInstallation
+from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
 
 
 class StatuslineCapability(Capability):

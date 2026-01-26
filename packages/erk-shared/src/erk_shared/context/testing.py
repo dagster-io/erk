@@ -15,6 +15,7 @@ from erk_shared.core.fakes import (
     FakePlanListService,
     FakeScriptWriter,
 )
+from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
@@ -24,8 +25,7 @@ from erk_shared.gateway.github.types import RepoInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
-from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
-from erk_shared.prompt_executor.abc import PromptExecutor
+from erk_shared.gateway.prompt_executor.abc import PromptExecutor
 
 
 def context_for_test(
@@ -74,6 +74,7 @@ def context_for_test(
         >>> git_ops = FakeGit()
         >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
     """
+    from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
@@ -85,11 +86,10 @@ def context_for_test(
     from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.fake import FakeGraphite
+    from erk_shared.gateway.prompt_executor.fake import FakePromptExecutor
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
-    from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.plan_store.github import GitHubPlanStore
-    from erk_shared.prompt_executor.fake import FakePromptExecutor
 
     # Resolve defaults - create issues first since it's composed into github
     # Track whether issues was explicitly passed (for composition logic below)

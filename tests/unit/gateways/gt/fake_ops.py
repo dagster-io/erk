@@ -17,9 +17,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from erk_shared.branch_manager.abc import BranchManager
-from erk_shared.branch_manager.git import GitBranchManager
-from erk_shared.branch_manager.graphite import GraphiteBranchManager
+from erk_shared.gateway.branch_manager.abc import BranchManager
+from erk_shared.gateway.branch_manager.git import GitBranchManager
+from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.abc import GitHub

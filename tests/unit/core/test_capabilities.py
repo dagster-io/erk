@@ -39,7 +39,7 @@ from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
 )
-from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
+from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 
 # =============================================================================
 # Tests for CapabilityResult

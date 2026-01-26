@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from erk_shared.branch_manager.types import PrInfo
+from erk_shared.gateway.branch_manager.types import PrInfo
 
 
 class BranchManager(ABC):

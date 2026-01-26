@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from erk_shared.branch_manager.abc import BranchManager
-from erk_shared.branch_manager.types import PrInfo
+from erk_shared.gateway.branch_manager.abc import BranchManager
+from erk_shared.gateway.branch_manager.types import PrInfo
 
 
 @dataclass(frozen=True)

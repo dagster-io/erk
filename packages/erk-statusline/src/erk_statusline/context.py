@@ -7,8 +7,8 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.branch_manager.abc import BranchManager
-from erk_shared.branch_manager.factory import create_branch_manager
+from erk_shared.gateway.branch_manager.abc import BranchManager
+from erk_shared.gateway.branch_manager.factory import create_branch_manager
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.gateway.git.abc import Git

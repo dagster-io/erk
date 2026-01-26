@@ -6,7 +6,7 @@ requiring actual terminal output or Rich Live functionality.
 
 from rich.console import RenderableType
 
-from erk.core.display.abc import LiveDisplay
+from erk_shared.gateway.live_display.abc import LiveDisplay
 
 
 class FakeLiveDisplay(LiveDisplay):
