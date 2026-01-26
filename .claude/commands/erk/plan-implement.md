@@ -274,7 +274,7 @@ fi
 **Only if .worker-impl/ was present:**
 
 ```bash
-gh pr create --fill --label "ai-generated" || gh pr edit --add-label "ai-generated"
+gh pr create --fill || gh pr edit
 ```
 
 Then validate PR rules:
