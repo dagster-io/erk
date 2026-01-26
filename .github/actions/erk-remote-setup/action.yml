@@ -1,0 +1,66 @@
+name: "Setup Erk Remote Environment"
+description: "Consolidated setup for remote workflow execution"
+
+inputs:
+  erk-pat:
+    description: "ERK_QUEUE_GH_PAT secret"
+    required: true
+  anthropic-api-key:
+    description: "ANTHROPIC_API_KEY secret"
+    required: true
+  claude-code-oauth-token:
+    description: "CLAUDE_CODE_OAUTH_TOKEN secret"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate secrets
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.erk-pat }}" ]; then
+          echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT not configured"
+          exit 1
+        fi
+        if [ -z "${{ inputs.anthropic-api-key }}" ]; then
+          echo "::error title=Missing Secret::ANTHROPIC_API_KEY not configured"
+          exit 1
+        fi
+        if [ -z "${{ inputs.claude-code-oauth-token }}" ]; then
+          echo "::error title=Missing Secret::CLAUDE_CODE_OAUTH_TOKEN not configured"
+          exit 1
+        fi
+
+    - uses: astral-sh/setup-uv@v5
+      with:
+        python-version: "3.13"
+
+    - uses: ./.github/actions/setup-claude-code
+
+    - name: Install prettier
+      shell: bash
+      run: npm install -g prettier
+
+    - name: Install erk
+      shell: bash
+      run: |
+        cd $GITHUB_WORKSPACE
+        if [ -d "./packages/erk-shared" ]; then
+          uv tool install -e . --with-editable ./packages/erk-shared
+        else
+          uv sync --group dev
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
+        fi
+
+    - name: Validate Claude credentials
+      shell: bash
+      env:
+        CLAUDE_CODE_OAUTH_TOKEN: ${{ inputs.claude-code-oauth-token }}
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+      run: erk exec validate-claude-credentials
+
+    - name: Configure git identity
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"

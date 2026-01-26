@@ -256,8 +256,27 @@ def test_workflow_launch_pr_address_requires_pr_option(tmp_path: Path) -> None:
         assert "--pr is required for pr-address" in result.output
 
 
+def test_workflow_launch_objective_reconcile_requires_objective(tmp_path: Path) -> None:
+    """Test objective-reconcile workflow requires --objective option."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git)
+
+        result = runner.invoke(workflow_group, ["launch", "objective-reconcile"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "--objective is required for objective-reconcile" in result.output
+
+
 def test_workflow_launch_objective_reconcile_triggers_workflow(tmp_path: Path) -> None:
-    """Test objective-reconcile workflow trigger."""
+    """Test objective-reconcile workflow trigger with required --objective."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -271,22 +290,25 @@ def test_workflow_launch_objective_reconcile_triggers_workflow(tmp_path: Path) -
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(workflow_group, ["launch", "objective-reconcile"], obj=ctx)
+        result = runner.invoke(
+            workflow_group,
+            ["launch", "objective-reconcile", "--objective", "123"],
+            obj=ctx,
+        )
 
         assert result.exit_code == 0
         assert "Workflow triggered" in result.output
 
-        # Verify workflow was triggered
+        # Verify workflow was triggered with objective
         assert len(github.triggered_workflows) == 1
         workflow, inputs = github.triggered_workflows[0]
         assert workflow == WORKFLOW_COMMAND_MAP["objective-reconcile"]
-        # No inputs for basic call
+        assert inputs["objective"] == "123"
         assert "dry_run" not in inputs
-        assert "objective" not in inputs
 
 
-def test_workflow_launch_objective_reconcile_with_options(tmp_path: Path) -> None:
-    """Test objective-reconcile with --dry-run and --objective options."""
+def test_workflow_launch_objective_reconcile_with_dry_run(tmp_path: Path) -> None:
+    """Test objective-reconcile with --dry-run option."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()

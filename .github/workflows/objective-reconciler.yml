@@ -1,16 +1,19 @@
-# Objective Reconciler Workflow
+# Objective Reconciler Sweep Workflow
 #
-# Reconciles auto-advance objectives by determining next actionable steps
-# and creating plan issues. When an objective has the `auto-advance` label,
-# this workflow identifies pending steps and generates implementation plans.
+# Reconciles ALL auto-advance objectives by determining next actionable steps
+# and creating plan issues. Runs on a schedule or manual trigger.
 #
-# Trigger: Manual (workflow_dispatch) - cron to be added after validation
+# For single-objective reconciliation via CLI, use objective-reconcile.yml instead.
+#
+# Trigger: Schedule (cron) or manual workflow_dispatch
 # Output: Creates plan issues linked to objectives, updates roadmap tables
 
 name: objective-reconciler
-run-name: "reconcile-objectives:${{ github.run_attempt }}"
+run-name: "reconcile-objectives-sweep:${{ github.run_attempt }}"
 
 on:
+  schedule:
+    - cron: "0 */6 * * *" # Every 6 hours
   workflow_dispatch:
     inputs:
       dry_run:
@@ -18,14 +21,10 @@ on:
         required: false
         type: boolean
         default: false
-      objective:
-        description: "Target specific objective by issue number (optional)"
-        required: false
-        type: string
 
 concurrency:
-  group: reconcile-objectives
-  cancel-in-progress: true
+  group: reconcile-objectives-sweep
+  cancel-in-progress: false # Don't cancel scheduled sweeps
 
 jobs:
   reconcile:
@@ -36,36 +35,18 @@ jobs:
       issues: write
 
     steps:
-      - name: Validate required secrets
-        env:
-          ERK_PAT: ${{ secrets.ERK_QUEUE_GH_PAT }}
-          ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          if [ -z "$ERK_PAT" ]; then
-            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured"
-            exit 1
-          fi
-          if [ -z "$ANTHROPIC_KEY" ]; then
-            echo "::error title=Missing Secret::ANTHROPIC_API_KEY secret is required for LLM inference"
-            exit 1
-          fi
-
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.ERK_QUEUE_GH_PAT }}
           fetch-depth: 0
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+      - uses: ./.github/actions/erk-remote-setup
         with:
-          python-version: "3.13"
+          erk-pat: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
-      - name: Setup erk
-        run: |
-          cd $GITHUB_WORKSPACE
-          uv tool install -e . --with-editable ./packages/erk-shared
-
-      - name: Run reconcile
+      - name: Run reconcile sweep
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -73,8 +54,5 @@ jobs:
           FLAGS=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             FLAGS="$FLAGS --dry-run"
-          fi
-          if [ -n "${{ inputs.objective }}" ]; then
-            FLAGS="$FLAGS --objective ${{ inputs.objective }}"
           fi
           erk objective reconcile $FLAGS

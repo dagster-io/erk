@@ -161,17 +161,17 @@ def _trigger_objective_reconcile(
     ctx: ErkContext,
     repo: RepoContext,
     *,
-    objective: int | None,
+    objective: int,
     dry_run: bool,
 ) -> None:
     """Trigger objective-reconcile workflow."""
-    user_output("Triggering objective-reconcile workflow...")
+    user_output(f"Triggering objective-reconcile workflow for objective #{objective}...")
 
-    inputs: dict[str, str] = {}
+    inputs: dict[str, str] = {
+        "objective": str(objective),
+    }
     if dry_run:
         inputs["dry_run"] = "true"
-    if objective is not None:
-        inputs["objective"] = str(objective)
 
     run_id = ctx.github.trigger_workflow(
         repo_root=repo.root,
@@ -258,7 +258,7 @@ def _trigger_plan_implement(
     "--objective",
     "objective_number",
     type=int,
-    help="Objective issue number (optional for objective-reconcile)",
+    help="Objective issue number (required for objective-reconcile)",
 )
 @click.option(
     "--no-squash",
@@ -358,6 +358,12 @@ def workflow_launch(
         assert pr_number is not None
         _trigger_pr_address(ctx, repo, pr_number=pr_number, model=model)
     elif workflow_name == "objective-reconcile":
+        Ensure.invariant(
+            objective_number is not None,
+            "--objective is required for objective-reconcile workflow. "
+            "For sweep mode, use GitHub Actions UI or wait for scheduled run.",
+        )
+        assert objective_number is not None
         _trigger_objective_reconcile(
             ctx,
             repo,

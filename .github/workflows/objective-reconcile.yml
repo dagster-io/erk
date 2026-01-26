@@ -1,0 +1,60 @@
+# Single Objective Reconciler Workflow
+#
+# Reconciles a specific auto-advance objective by determining next actionable steps
+# and creating plan issues. This workflow is launchable via `erk workflow launch`.
+#
+# Trigger: Manual (workflow_dispatch) via erk workflow launch objective-reconcile --objective <N>
+# Output: Creates plan issues linked to the specified objective, updates roadmap table
+
+name: objective-reconcile
+run-name: "reconcile:#${{ inputs.objective }}:${{ inputs.distinct_id }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      objective:
+        description: "Objective issue number to reconcile"
+        required: true
+        type: string
+      distinct_id:
+        description: "Unique ID for run discovery"
+        required: true
+        type: string
+      dry_run:
+        description: "Preview without executing"
+        type: boolean
+        default: false
+
+concurrency:
+  group: reconcile-objective-${{ github.event.inputs.objective }}
+  cancel-in-progress: true
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          fetch-depth: 0
+
+      - uses: ./.github/actions/erk-remote-setup
+        with:
+          erk-pat: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+      - name: Reconcile objective
+        env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          FLAGS="--objective ${{ inputs.objective }}"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            FLAGS="$FLAGS --dry-run"
+          fi
+          erk objective reconcile $FLAGS
