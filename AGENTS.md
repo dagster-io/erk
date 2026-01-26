@@ -19,7 +19,15 @@
 
 **CRITICAL: NEVER commit directly to `master`. Always create a feature branch first.**
 
-@docs/learned/tripwires.md
+### Universal Tripwires
+
+These critical rules apply across all code areas. See [Universal Tripwires](docs/learned/universal-tripwires.md) for the full list.
+
+### Tripwire Routing
+
+Before editing files, load relevant category tripwires.
+
+See [Tripwires Index](docs/learned/tripwires-index.md) for the complete, auto-maintained routing table.
 
 **Load these skills FIRST:**
 

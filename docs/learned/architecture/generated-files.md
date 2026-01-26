@@ -153,7 +153,7 @@ Run the sync command to propagate the tripwire:
 erk docs sync
 ```
 
-This updates `docs/learned/tripwires.md` with all tripwires from all source files.
+This updates category tripwire files (e.g., `docs/learned/architecture/tripwires.md`) with tripwires from source files in each category.
 
 ### Complete Example
 

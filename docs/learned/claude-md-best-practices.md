@@ -178,7 +178,7 @@ Use trigger patterns to route Claude to documentation at the right moment:
 Use consistent notation for linking to related content:
 
 ```markdown
-@docs/learned/tripwires.md
+@docs/learned/cli/tripwires.md
 ```
 
 **Benefits:**

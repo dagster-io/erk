@@ -96,7 +96,8 @@ class SyncResult:
         updated: List of index files that were updated.
         unchanged: List of index files that didn't need changes.
         skipped_invalid: Number of docs skipped due to invalid frontmatter.
-        tripwires_count: Number of tripwires collected and generated.
+        tripwires_count: Total number of tripwires collected and generated.
+        tripwires_by_category: Per-category tripwire counts.
     """
 
     created: tuple[str, ...]
@@ -104,6 +105,7 @@ class SyncResult:
     unchanged: tuple[str, ...]
     skipped_invalid: int
     tripwires_count: int
+    tripwires_by_category: tuple["CategoryTripwireStats", ...]
 
 
 @dataclass(frozen=True)
@@ -121,3 +123,33 @@ class CollectedTripwire:
     warning: str
     doc_path: str
     doc_title: str
+
+
+@dataclass(frozen=True)
+class CategoryTripwireStats:
+    """Statistics about tripwires generated for a category.
+
+    Attributes:
+        category: Category name (e.g., "architecture", "cli").
+        count: Number of tripwires in this category.
+    """
+
+    category: str
+    count: int
+
+
+@dataclass(frozen=True)
+class TripwiresIndexValidationResult:
+    """Result of validating the tripwires index.
+
+    Attributes:
+        is_valid: True if all validation checks passed.
+        errors: List of validation errors.
+        missing_from_index: Category tripwire files not in the index.
+        index_exists: Whether tripwires-index.md exists.
+    """
+
+    is_valid: bool
+    errors: tuple[str, ...]
+    missing_from_index: tuple[str, ...]
+    index_exists: bool

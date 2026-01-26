@@ -13,7 +13,16 @@ enabled: true
 
 ## Step 1: Load Tripwire Index
 
-Read `docs/learned/tripwires.md`. This is the **definitive source** of all tripwires.
+Tripwires are organized by category. Universal tripwires are in `AGENTS.md`. Category-specific tripwires are in `docs/learned/<category>/tripwires.md` (e.g., `docs/learned/architecture/tripwires.md`, `docs/learned/cli/tripwires.md`).
+
+For comprehensive coverage, read these category tripwire files based on the diff:
+
+- Changes in `src/erk/gateway/` or `packages/erk-shared/src/*/gateway/` → Read `docs/learned/architecture/tripwires.md`
+- Changes in `src/erk/cli/` → Read `docs/learned/cli/tripwires.md`
+- Changes in `tests/` → Read `docs/learned/testing/tripwires.md`
+- Changes in `.github/` → Read `docs/learned/ci/tripwires.md`
+- Changes in `src/erk/tui/` → Read `docs/learned/tui/tripwires.md`
+- Planning-related changes → Read `docs/learned/planning/tripwires.md`
 
 Each tripwire follows this format:
 
@@ -39,7 +48,7 @@ Each tripwire's trigger text (e.g., "Before calling os.chdir()") tells you what 
 - Convert natural language to code patterns (e.g., "importing time module" → `import time`)
 - Look for the specific constructs mentioned (e.g., "adding a new method to Git ABC" → new method definitions in `src/erk/gateways/git/abc.py`)
 
-This is DYNAMIC - the tripwires.md file is the single source of truth. New tripwires added there are automatically checked.
+This is DYNAMIC - the category tripwire files are the source of truth. New tripwires added via frontmatter are automatically collected when `erk docs sync` runs.
 
 Track which tripwires matched the diff (triggered tripwires).
 

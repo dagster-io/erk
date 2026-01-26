@@ -86,6 +86,8 @@ def sync_command(*, dry_run: bool, check: bool) -> None:
     # Report tripwires
     if sync_result.tripwires_count > 0:
         click.echo(f"Tripwires: {sync_result.tripwires_count} collected", err=True)
+        for stat in sync_result.tripwires_by_category:
+            click.echo(f"  {stat.category}: {stat.count}", err=True)
         click.echo(err=True)
 
     if sync_result.skipped_invalid > 0:
