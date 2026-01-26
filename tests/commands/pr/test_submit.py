@@ -178,6 +178,7 @@ def test_pr_submit_fails_when_no_commits_ahead() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -185,6 +186,7 @@ def test_pr_submit_fails_when_no_commits_ahead() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -260,6 +262,7 @@ def test_pr_submit_fails_when_commit_message_generation_fails() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -267,6 +270,7 @@ def test_pr_submit_fails_when_commit_message_generation_fails() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -349,6 +353,7 @@ def test_pr_submit_fails_when_pr_update_fails() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -356,6 +361,7 @@ def test_pr_submit_fails_when_pr_update_fails() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -442,6 +448,7 @@ def test_pr_submit_success(tmp_path: Path) -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -449,6 +456,7 @@ def test_pr_submit_success(tmp_path: Path) -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
             # PR info for cache polling - ensures polling finds PR immediately
@@ -570,6 +578,7 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "branch-1": BranchMetadata(
                     name="branch-1",
@@ -577,6 +586,7 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
                     children=["branch-2"],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -584,6 +594,7 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
                     children=["branch-1"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
             # PR info for cache polling - ensures polling finds PR immediately
@@ -678,6 +689,7 @@ def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -685,6 +697,7 @@ def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -775,6 +788,7 @@ def test_pr_submit_short_force_flag() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -782,6 +796,7 @@ def test_pr_submit_short_force_flag() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -869,6 +884,7 @@ def test_pr_submit_shows_graphite_url() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -876,6 +892,7 @@ def test_pr_submit_shows_graphite_url() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
             # PR info for cache polling - ensures polling finds PR immediately
@@ -938,6 +955,7 @@ def test_pr_submit_shows_created_message_for_new_pr() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -945,6 +963,7 @@ def test_pr_submit_shows_created_message_for_new_pr() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -1035,6 +1054,7 @@ def test_pr_submit_fails_when_parent_branch_has_no_pr() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "parent-branch": BranchMetadata(
                     name="parent-branch",
@@ -1042,6 +1062,7 @@ def test_pr_submit_fails_when_parent_branch_has_no_pr() -> None:
                     children=["feature"],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -1049,6 +1070,7 @@ def test_pr_submit_fails_when_parent_branch_has_no_pr() -> None:
                     children=["parent-branch"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -1134,6 +1156,7 @@ def test_pr_submit_shows_found_message_for_existing_pr() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -1141,6 +1164,7 @@ def test_pr_submit_shows_found_message_for_existing_pr() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -1238,6 +1262,7 @@ def test_pr_submit_shows_plan_context_phase() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -1245,6 +1270,7 @@ def test_pr_submit_shows_plan_context_phase() -> None:
                     children=["P5823-add-feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -1386,6 +1412,7 @@ def test_pr_submit_shows_plan_context_with_objective() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -1393,6 +1420,7 @@ def test_pr_submit_shows_plan_context_with_objective() -> None:
                     children=["P5823-add-feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -1545,6 +1573,7 @@ def test_pr_submit_shows_no_plan_message() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -1552,6 +1581,7 @@ def test_pr_submit_shows_no_plan_message() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
             # PR info for cache polling - ensures polling finds PR immediately

@@ -60,6 +60,7 @@ def test_pr_summarize_fails_when_no_commits_ahead() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -67,6 +68,7 @@ def test_pr_summarize_fails_when_no_commits_ahead() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -109,6 +111,7 @@ def test_pr_summarize_fails_when_multiple_commits() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -116,6 +119,7 @@ def test_pr_summarize_fails_when_multiple_commits() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -159,6 +163,7 @@ def test_pr_summarize_success_amends_commit() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -166,6 +171,7 @@ def test_pr_summarize_success_amends_commit() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -224,6 +230,7 @@ def test_pr_summarize_uses_graphite_parent() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "branch-1": BranchMetadata(
                     name="branch-1",
@@ -231,6 +238,7 @@ def test_pr_summarize_uses_graphite_parent() -> None:
                     children=["branch-2"],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -238,6 +246,7 @@ def test_pr_summarize_uses_graphite_parent() -> None:
                     children=["branch-1"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )
@@ -291,6 +300,7 @@ def test_pr_summarize_fails_when_message_generation_fails() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
                 "main": BranchMetadata(
                     name="main",
@@ -298,6 +308,7 @@ def test_pr_summarize_fails_when_message_generation_fails() -> None:
                     children=["feature"],
                     is_trunk=True,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             },
         )

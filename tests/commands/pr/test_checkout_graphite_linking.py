@@ -161,6 +161,7 @@ def test_pr_checkout_skips_graphite_for_already_tracked() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 ),
             }
         )

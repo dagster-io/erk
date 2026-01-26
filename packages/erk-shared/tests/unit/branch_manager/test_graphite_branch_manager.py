@@ -33,6 +33,7 @@ def test_delete_branch_uses_graphite_when_tracked_and_not_diverged() -> None:
                 children=[],
                 is_trunk=False,
                 commit_sha=branch_sha,  # Same SHA - not diverged
+                graphite_tracked_sha=branch_sha,
             ),
         },
     )
@@ -102,6 +103,7 @@ def test_delete_branch_uses_graphite_even_when_diverged() -> None:
                 children=[],
                 is_trunk=False,
                 commit_sha="cached-sha-123",  # Different SHA - diverged
+                graphite_tracked_sha="cached-sha-123",
             ),
         },
     )
@@ -182,6 +184,7 @@ def test_delete_branch_uses_graphite_when_git_branch_head_is_none() -> None:
                 children=[],
                 is_trunk=False,
                 commit_sha="cached-sha-123",
+                graphite_tracked_sha=None,
             ),
         },
     )
@@ -353,3 +356,105 @@ def test_get_pr_for_branch_returns_none_when_not_found_anywhere() -> None:
     result = manager.get_pr_for_branch(repo_root, "no-pr-branch")
 
     assert result is None
+
+
+# --- Parent divergence fix tests ---
+
+
+def test_create_branch_retracks_diverged_parent_before_tracking_child() -> None:
+    """When parent branch is diverged from Graphite's tracking, re-track it first.
+
+    After gt restack, Graphite's cached branchRevision becomes stale. When we try
+    to create a child branch, gt track fails. This test verifies we auto-fix the
+    parent's divergence before tracking the new child.
+    """
+    repo_root = Path("/repo")
+
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+    )
+    fake_git_branch_ops = fake_git.create_linked_branch_ops()
+    # Parent branch "main" has diverged: git SHA != Graphite's cached SHA
+    fake_graphite = FakeGraphite(
+        branches={
+            "main": BranchMetadata(
+                name="main",
+                parent=None,
+                children=[],
+                is_trunk=True,
+                commit_sha="new-sha-after-restack",  # Actual git SHA
+                graphite_tracked_sha="old-sha-before-restack",  # Graphite's stale cached SHA
+            ),
+        },
+    )
+    fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
+
+    manager = GraphiteBranchManager(
+        git=fake_git,
+        git_branch_ops=fake_git_branch_ops,
+        graphite=fake_graphite,
+        graphite_branch_ops=fake_graphite_branch_ops,
+        github=FakeGitHub(),
+    )
+    manager.create_branch(repo_root, "feature-branch", "main")
+
+    # Verify the sequence of checkouts: feature -> main (retrack) -> feature -> main (restore)
+    # The checkout sequence should be:
+    # 1. feature-branch (after git create_branch)
+    # 2. main (to retrack diverged parent)
+    # 3. feature-branch (back to child for track_branch)
+    # 4. main (restore original branch)
+    assert fake_git.checked_out_branches == [
+        (repo_root, "feature-branch"),
+        (repo_root, "main"),
+        (repo_root, "feature-branch"),
+        (repo_root, "main"),
+    ]
+
+    # Verify retrack_branch was called on the diverged parent
+    assert fake_graphite_branch_ops.retrack_branch_calls == [(repo_root, "main")]
+
+    # Verify track_branch was called on the child after fixing parent
+    assert fake_graphite.track_branch_calls == [(repo_root, "feature-branch", "main")]
+
+
+def test_create_branch_does_not_retrack_when_parent_not_diverged() -> None:
+    """When parent branch is not diverged, don't unnecessarily retrack.
+
+    This is the normal case - parent's git SHA matches Graphite's tracking.
+    """
+    repo_root = Path("/repo")
+
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+    )
+    fake_git_branch_ops = fake_git.create_linked_branch_ops()
+    # Parent branch "main" is NOT diverged: SHAs match
+    fake_graphite = FakeGraphite(
+        branches={
+            "main": BranchMetadata(
+                name="main",
+                parent=None,
+                children=[],
+                is_trunk=True,
+                commit_sha="same-sha",
+                graphite_tracked_sha="same-sha",  # SHAs match - not diverged
+            ),
+        },
+    )
+    fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
+
+    manager = GraphiteBranchManager(
+        git=fake_git,
+        git_branch_ops=fake_git_branch_ops,
+        graphite=fake_graphite,
+        graphite_branch_ops=fake_graphite_branch_ops,
+        github=FakeGitHub(),
+    )
+    manager.create_branch(repo_root, "feature-branch", "main")
+
+    # Verify retrack_branch was NOT called (parent not diverged)
+    assert fake_graphite_branch_ops.retrack_branch_calls == []
+
+    # Track should still work
+    assert fake_graphite.track_branch_calls == [(repo_root, "feature-branch", "main")]

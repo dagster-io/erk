@@ -181,6 +181,7 @@ class FakeGraphite(Graphite):
             children=[],
             is_trunk=False,
             commit_sha=None,
+            graphite_tracked_sha=None,
         )
 
         # Also update parent's children list so get_child_branches() works
@@ -194,6 +195,7 @@ class FakeGraphite(Graphite):
                     children=updated_children,
                     is_trunk=parent_metadata.is_trunk,
                     commit_sha=parent_metadata.commit_sha,
+                    graphite_tracked_sha=parent_metadata.graphite_tracked_sha,
                 )
 
     @property

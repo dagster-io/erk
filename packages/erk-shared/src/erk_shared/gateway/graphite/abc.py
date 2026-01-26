@@ -303,6 +303,38 @@ class Graphite(ABC):
         """
         ...
 
+    def is_branch_diverged_from_tracking(self, git: Git, repo_root: Path, branch: str) -> bool:
+        """Check if branch is diverged from Graphite's tracked SHA.
+
+        After rebase/restack operations, Graphite's internal SHA tracking
+        (branchRevision in .graphite_cache_persist) may become stale. This
+        method detects this condition by comparing the cached SHA with the
+        actual git HEAD.
+
+        This is a concrete method that uses get_all_branches() to access
+        branch metadata, including both actual git SHA and Graphite's tracked SHA.
+
+        Args:
+            git: Git instance for accessing git common directory
+            repo_root: Repository root directory
+            branch: Name of the branch to check
+
+        Returns:
+            True if Graphite's tracked SHA differs from actual git HEAD,
+            indicating the branch needs re-tracking with `gt track`.
+            Returns False if branch is not tracked by Graphite.
+        """
+        branches = self.get_all_branches(git, repo_root)
+        if branch not in branches:
+            return False  # Not tracked = not diverged
+
+        metadata = branches[branch]
+        # If either SHA is missing, we can't determine divergence
+        if metadata.commit_sha is None or metadata.graphite_tracked_sha is None:
+            return False
+
+        return metadata.commit_sha != metadata.graphite_tracked_sha
+
     def squash_branch_idempotent(
         self, repo_root: Path, *, quiet: bool = True
     ) -> SquashSuccess | SquashError:

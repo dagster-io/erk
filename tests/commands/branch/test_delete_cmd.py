@@ -426,6 +426,7 @@ def test_delete_branch_uses_graphite_when_tracked() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 ),
             },
         )

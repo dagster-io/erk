@@ -205,6 +205,7 @@ class TestEnsureBranchGraphiteTrackedOrNew:
                     children=[],
                     is_trunk=False,
                     commit_sha="abc123",
+                    graphite_tracked_sha=None,
                 )
             }
         )

@@ -887,6 +887,7 @@ def test_checkout_does_not_track_already_tracked_branch() -> None:
                     children=[],
                     is_trunk=False,
                     commit_sha=None,
+                    graphite_tracked_sha=None,
                 )
             }
         )

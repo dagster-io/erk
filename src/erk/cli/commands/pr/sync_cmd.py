@@ -239,6 +239,15 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
             raise click.ClickException(restack_result.message)
         user_output(click.style("✓", fg="green") + " Branch restacked")
 
+        # Auto-fix Graphite tracking divergence after restack
+        # Restack creates new commit SHAs, but Graphite's cache still points to old SHAs
+        if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo.root, current_branch):
+            user_output("Fixing Graphite tracking divergence...")
+            # graphite_branch_ops is guaranteed non-None when Graphite is managed
+            assert ctx.graphite_branch_ops is not None
+            ctx.graphite_branch_ops.retrack_branch(repo.root, current_branch)
+            user_output(click.style("✓", fg="green") + " Graphite tracking updated")
+
         return
 
     user_output(f"Base branch: {base_branch}")
@@ -294,6 +303,15 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
         # Non-conflict error
         raise click.ClickException(restack_result.message)
     user_output(click.style("✓", fg="green") + " Branch restacked")
+
+    # Auto-fix Graphite tracking divergence after restack
+    # Restack creates new commit SHAs, but Graphite's cache still points to old SHAs
+    if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo.root, current_branch):
+        user_output("Fixing Graphite tracking divergence...")
+        # graphite_branch_ops is guaranteed non-None when Graphite is managed
+        assert ctx.graphite_branch_ops is not None
+        ctx.graphite_branch_ops.retrack_branch(repo.root, current_branch)
+        user_output(click.style("✓", fg="green") + " Graphite tracking updated")
 
     # Step 8: Submit to link with Graphite
     # Force push is required because squashing rewrites history, causing divergence from remote

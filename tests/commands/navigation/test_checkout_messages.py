@@ -32,6 +32,7 @@ def _graphite_with_branch_tracked(branch: str, parent: str = "main") -> FakeGrap
                 children=[],
                 is_trunk=False,
                 commit_sha=None,
+                graphite_tracked_sha=None,
             )
         }
     )
