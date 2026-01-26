@@ -79,11 +79,11 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     from erk_shared.gateway.git.real import RealGit
     from erk_shared.gateway.github.issues.real import RealGitHubIssues
     from erk_shared.gateway.github.real import RealGitHub
+    from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.gateway.time.real import RealTime
-    from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.learn.extraction.claude_installation.real import RealClaudeInstallation
     from erk_shared.plan_store.github import GitHubPlanStore
     from erk_shared.prompt_executor.real import RealPromptExecutor

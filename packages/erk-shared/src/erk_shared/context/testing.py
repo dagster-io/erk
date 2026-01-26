@@ -82,11 +82,11 @@ def context_for_test(
     from erk_shared.gateway.git.fake import FakeGit
     from erk_shared.gateway.github.fake import FakeGitHub
     from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
-    from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.plan_store.github import GitHubPlanStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor

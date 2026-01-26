@@ -3,7 +3,7 @@
 from typing import Any
 
 from erk_shared.gateway.github.types import GitHubRepoLocation
-from erk_shared.github_admin.abc import AuthStatus, GitHubAdmin
+from erk_shared.gateway.github_admin.abc import AuthStatus, GitHubAdmin
 from erk_shared.printing.base import PrintingBase
 
 

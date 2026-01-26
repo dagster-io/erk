@@ -32,9 +32,9 @@ from erk.core.version_check import get_required_version, is_version_mismatch
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.plan_issues import LabelDefinition, get_required_erk_labels
+from erk_shared.gateway.github_admin.abc import GitHubAdmin
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.github_admin.abc import GitHubAdmin
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 
 

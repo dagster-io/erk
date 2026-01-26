@@ -5,7 +5,7 @@ import subprocess
 from typing import Any
 
 from erk_shared.gateway.github.types import GitHubRepoLocation
-from erk_shared.github_admin.abc import AuthStatus, GitHubAdmin
+from erk_shared.gateway.github_admin.abc import AuthStatus, GitHubAdmin
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 

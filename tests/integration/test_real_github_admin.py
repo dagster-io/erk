@@ -8,7 +8,7 @@ import subprocess
 
 from pytest import MonkeyPatch
 
-from erk.core.implementation_queue.github.real import RealGitHubAdmin
+from erk_shared.gateway.github_admin.real import RealGitHubAdmin
 from tests.integration.test_helpers import mock_subprocess_run
 
 # ============================================================================

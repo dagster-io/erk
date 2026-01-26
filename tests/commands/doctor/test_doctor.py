@@ -4,8 +4,8 @@ import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.doctor import doctor_cmd
-from erk.core.implementation_queue.github.abc import AuthStatus
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github_admin.abc import AuthStatus
 from tests.fakes.github_admin import FakeGitHubAdmin
 from tests.fakes.shell import FakeShell
 from tests.test_utils.context_builders import build_workspace_test_context
