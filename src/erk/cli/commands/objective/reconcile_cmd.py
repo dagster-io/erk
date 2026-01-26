@@ -13,15 +13,10 @@ from erk_shared.objectives.reconciler import determine_action, execute_action
 
 @alias("rec")
 @click.command("reconcile")
+@click.argument("objective", type=int, required=False)
 @click.option("--dry-run", is_flag=True, help="Show planned actions without executing")
-@click.option(
-    "--objective",
-    "-o",
-    type=int,
-    help="Target a specific objective by issue number",
-)
 @click.pass_obj
-def reconcile_objectives(ctx: ErkContext, *, dry_run: bool, objective: int | None) -> None:
+def reconcile_objectives(ctx: ErkContext, objective: int | None, *, dry_run: bool) -> None:
     """Reconcile auto-advance objectives (determine next actions)."""
     # Use ctx.repo if it's a valid RepoContext, otherwise discover
     if isinstance(ctx.repo, RepoContext):

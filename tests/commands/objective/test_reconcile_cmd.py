@@ -364,8 +364,8 @@ def test_reconcile_alias_rec_works(tmp_path: Path) -> None:
     assert "No auto-advance objectives found" in result.output
 
 
-def test_reconcile_with_objective_option(tmp_path: Path) -> None:
-    """Test that --objective targets a specific objective without requiring auto-advance."""
+def test_reconcile_with_objective_argument(tmp_path: Path) -> None:
+    """Test that positional argument targets a specific objective without requiring auto-advance."""
     # Objective without auto-advance label (would normally be skipped)
     issue = _create_issue(
         5934,
@@ -390,9 +390,7 @@ REASON: Phase 1 complete"""
     )
 
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["objective", "reconcile", "--dry-run", "--objective", "5934"], obj=ctx
-    )
+    result = runner.invoke(cli, ["objective", "reconcile", "5934", "--dry-run"], obj=ctx)
 
     assert result.exit_code == 0
     assert "Analyzing objective #5934" in result.output
@@ -413,9 +411,7 @@ def test_reconcile_objective_not_found(tmp_path: Path) -> None:
     )
 
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["objective", "reconcile", "--dry-run", "--objective", "9999"], obj=ctx
-    )
+    result = runner.invoke(cli, ["objective", "reconcile", "9999", "--dry-run"], obj=ctx)
 
     assert result.exit_code == 1
     assert "Error:" in result.output
@@ -439,9 +435,7 @@ def test_reconcile_objective_not_erk_objective(tmp_path: Path) -> None:
     )
 
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["objective", "reconcile", "--dry-run", "--objective", "5934"], obj=ctx
-    )
+    result = runner.invoke(cli, ["objective", "reconcile", "5934", "--dry-run"], obj=ctx)
 
     assert result.exit_code == 1
     assert "Error:" in result.output
