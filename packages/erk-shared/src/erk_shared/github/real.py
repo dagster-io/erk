@@ -2086,3 +2086,38 @@ query {{
             )
         except RuntimeError as e:
             return GistCreateError(message=str(e))
+
+    def create_commit_status(
+        self,
+        *,
+        repo: str,
+        sha: str,
+        state: str,
+        context: str,
+        description: str,
+    ) -> bool:
+        """Create a commit status on GitHub via REST API.
+
+        Uses the statuses API endpoint to create a commit status.
+        """
+        # GH-API-AUDIT: REST - POST statuses/{sha}
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{repo}/statuses/{sha}",
+            "-f",
+            f"state={state}",
+            "-f",
+            f"context={context}",
+            "-f",
+            f"description={description}",
+        ]
+
+        try:
+            run_subprocess_with_context(
+                cmd=cmd,
+                operation_context=f"create commit status for {sha[:8]}",
+            )
+            return True
+        except RuntimeError:
+            return False
