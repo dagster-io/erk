@@ -183,21 +183,6 @@ executor = RealPromptExecutor(time=RealTime())
 executor = RealPromptExecutor(time=FakeTime())
 ```
 
-## Usage in Objectives
-
-Plan generation and roadmap updates use `PromptExecutor`:
-
-```python
-from erk_shared.objectives.plan_generator import generate_plan_for_step
-from erk_shared.objectives.roadmap_updater import update_roadmap_with_plan
-
-# Both functions accept PromptExecutor as first parameter
-result = generate_plan_for_step(executor, ...)
-result = update_roadmap_with_plan(executor, ...)
-```
-
 ## Related Documentation
 
-- [Plan Generation Workflow](../objectives/plan-generation-workflow.md) - Uses PromptExecutor for plan generation
-- [Roadmap Updates](../planning/roadmap-updates.md) - Uses PromptExecutor for roadmap updates
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - Full 5-file gateway pattern
