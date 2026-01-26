@@ -15,6 +15,10 @@ tripwires:
     warning: 'Always include -f as the short form. Pattern: @click.option("-f", "--force", ...)'
   - action: "adding a function with 5+ parameters"
     warning: "Load `dignified-python` skill first. Use keyword-only arguments (add `*` after first param). Exception: ABC/Protocol method signatures and Click command callbacks."
+  - action: "changing signatures of shared utility functions"
+    warning: "Ensure all callers (tests, commands, other modules) are updated atomically in the same commit. Missing updates cause test failures and type errors. Run full test suite before committing."
+  - action: "moving internal helper functions to new modules"
+    warning: "Update all test imports atomically. Check for imports of the function name across the codebase and update them in the same commit to prevent ImportError during test collection."
 ---
 
 # Code Conventions

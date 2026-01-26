@@ -153,6 +153,10 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 
 **CRITICAL: Before adding a function with 5+ parameters** → Read [Code Conventions](conventions.md) first. Load `dignified-python` skill first. Use keyword-only arguments (add `*` after first param). Exception: ABC/Protocol method signatures and Click command callbacks.
 
+**CRITICAL: Before changing signatures of shared utility functions** → Read [Code Conventions](conventions.md) first. Ensure all callers (tests, commands, other modules) are updated atomically in the same commit. Missing updates cause test failures and type errors. Run full test suite before committing.
+
+**CRITICAL: Before moving internal helper functions to new modules** → Read [Code Conventions](conventions.md) first. Update all test imports atomically. Check for imports of the function name across the codebase and update them in the same commit to prevent ImportError during test collection.
+
 **CRITICAL: Before parsing objective roadmap PR column status** → Read [Erk Glossary](glossary.md) first. PR column format is non-standard: empty=pending, #XXXX=done (merged PR), `plan #XXXX`=plan in progress. This is erk-specific, not GitHub convention.
 
 **CRITICAL: Before using background agents without waiting for completion before dependent operations** → Read [Command-Agent Delegation](planning/agent-delegation.md) first. Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files.
@@ -204,6 +208,10 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 **CRITICAL: Before modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing/testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.
 
 **CRITICAL: Before implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing/testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. See tests/commands/submit/test_existing_branch_detection.py for examples.
+
+**CRITICAL: Before writing test assertions that reference tracking attributes on fake gateway objects** → Read [Erk Test Reference](testing/testing.md) first. Verify the fake implementation has all required attributes before writing assertions. Test-driven development requires updating both the test expectations AND the fake in parallel.
+
+**CRITICAL: Before creating test files with the same name in different directories** → Read [Erk Test Reference](testing/testing.md) first. Stale **pycache** directories can cause import name collisions in CI. If encountering unexpected import errors, clean **pycache** with 'find . -type d -name **pycache** -delete' before pytest runs.
 
 **CRITICAL: Before adding cell values to Textual DataTable** → Read [DataTable Rich Markup Escaping](textual/datatable-markup-escaping.md) first. Always wrap in `Text(value)` if strings contain user data with brackets. Otherwise `[anything]` will be interpreted as Rich markup.
 
