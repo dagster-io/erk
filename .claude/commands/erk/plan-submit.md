@@ -42,20 +42,24 @@ erk plan submit --local <issue_number>
 ```
 
 **Prerequisites:**
+
 1. Create `~/.erk/local-runner-config.toml` with credentials (see `.erk/local-runner-config.toml.example`)
 2. Install tmux: `brew install tmux` (macOS) or `apt install tmux` (Linux)
 
 **Monitoring:**
+
 - View active runs: `erk local-runner status`
 - Attach to session: `erk local-runner logs <issue_number>`
 - Stop implementation: `erk local-runner stop <issue_number>`
 
 **Benefits:**
+
 - Faster iteration (no GitHub Actions queue)
 - Live debugging via tmux attach
 - Full control over execution environment
 
 **Limitations:**
+
 - No resource limits (uses host CPU/memory)
 - Manual cleanup of worktrees
 - Credentials stored locally
