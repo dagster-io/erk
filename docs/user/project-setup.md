@@ -12,7 +12,7 @@ First, initialize erk in your repository:
 erk init
 ```
 
-This creates the `erk.toml` configuration file in your repository root.
+This creates the `.erk/config.toml` configuration file in your repository.
 
 ## Step 2: Directory Structure
 
@@ -54,7 +54,7 @@ Add these entries to your `.gitignore` to exclude erk's temporary and session-sp
 
 After completing the setup, commit the following files to git:
 
-- **`erk.toml`** - Project configuration (created by `erk init`)
+- **`.erk/config.toml`** - Project configuration (created by `erk init`)
 - **`.claude/`** - Claude Code artifacts (commands, skills, hooks)
 - **`.gitignore`** - Updated exclusions for erk temporary files
 
