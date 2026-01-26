@@ -827,9 +827,14 @@ def _submit_single_issue(
     is_flag=True,
     help="Delete existing branches and create fresh without prompting.",
 )
+@click.option(
+    "--local",
+    is_flag=True,
+    help="Run implementation locally using tmux instead of GitHub Actions.",
+)
 @click.pass_obj
 def submit_cmd(
-    ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None, force: bool
+    ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None, force: bool, local: bool
 ) -> None:
     """Submit issues for remote AI implementation via GitHub Actions.
 
@@ -857,6 +862,28 @@ def submit_cmd(
         repo = ctx.repo
     else:
         repo = discover_repo_context(ctx, ctx.cwd)
+
+    # Delegate to local runner if --local flag is set
+    if local:
+        from erk.cli.local_runner import execute_local_implementation
+
+        # Get GitHub username for attribution
+        _, username, _ = ctx.github.check_auth_status()
+        submitted_by = username or "unknown"
+
+        # Only support single issue for now
+        if len(issue_numbers) != 1:
+            user_output(
+                click.style("Error: ", fg="red")
+                + "Local execution only supports a single issue at a time"
+            )
+            raise SystemExit(1)
+
+        execute_local_implementation(
+            issue_number=issue_numbers[0],
+            submitted_by=submitted_by,
+        )
+        return
 
     # Ensure trunk is synced before any operations
     ensure_trunk_synced(ctx, repo)
