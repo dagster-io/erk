@@ -280,7 +280,7 @@ fake_issues = FakeGitHubIssues(
 )
 
 # With labels
-fake_issues = FakeGitHubIssues(labels={"erk-plan", "ai-generated"})
+fake_issues = FakeGitHubIssues(labels={"erk-plan"})
 
 # Assertions use mutation tracking properties
 assert len(fake_issues.added_comments) == 1
