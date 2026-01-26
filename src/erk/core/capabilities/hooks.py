@@ -18,6 +18,7 @@ from erk.core.claude_settings import (
     get_repo_claude_settings_path,
     has_erk_hook_by_marker,
     has_exit_plan_hook,
+    has_git_lock_check_hook,
     has_user_prompt_hook,
     write_claude_settings,
 )
@@ -26,8 +27,9 @@ from erk.core.claude_settings import (
 class HooksCapability(Capability):
     """Capability to configure erk hooks in Claude Code settings.
 
-    This capability installs the UserPromptSubmit and ExitPlanMode hooks
-    required for erk's session management and plan tracking.
+    This capability installs the UserPromptSubmit, ExitPlanMode, and git lock
+    check hooks required for erk's session management, plan tracking, and
+    stale lock cleanup.
 
     This capability is marked as required=True, meaning it will be
     automatically installed during `erk init` without prompting.
@@ -47,7 +49,7 @@ class HooksCapability(Capability):
 
     @property
     def installation_check_description(self) -> str:
-        return "UserPromptSubmit and ExitPlanMode hooks in .claude/settings.json"
+        return "UserPromptSubmit, ExitPlanMode, and git lock check hooks in .claude/settings.json"
 
     @property
     def artifacts(self) -> list[CapabilityArtifact]:
@@ -60,6 +62,7 @@ class HooksCapability(Capability):
         return [
             ManagedArtifact(name="user-prompt-hook", artifact_type="hook"),
             ManagedArtifact(name="exit-plan-mode-hook", artifact_type="hook"),
+            ManagedArtifact(name="git-lock-check-hook", artifact_type="hook"),
         ]
 
     @property
@@ -68,7 +71,7 @@ class HooksCapability(Capability):
         return True
 
     def is_installed(self, repo_root: Path | None) -> bool:
-        """Check if both erk hooks are configured in settings.json with CURRENT commands.
+        """Check if all erk hooks are configured in settings.json with CURRENT commands.
 
         This checks for exact command match, not just marker presence.
         Old hooks with outdated commands will cause this to return False,
@@ -87,7 +90,11 @@ class HooksCapability(Capability):
             return False
 
         # Check for CURRENT command versions (exact match)
-        return has_user_prompt_hook(settings) and has_exit_plan_hook(settings)
+        return (
+            has_user_prompt_hook(settings)
+            and has_exit_plan_hook(settings)
+            and has_git_lock_check_hook(settings)
+        )
 
     def has_any_erk_hooks(self, repo_root: Path | None) -> bool:
         """Check if ANY erk hooks are present (current or old versions).
@@ -119,8 +126,14 @@ class HooksCapability(Capability):
             marker="ERK_HOOK_ID=exit-plan-mode-hook",
             matcher="ExitPlanMode",
         )
+        has_git_lock = has_erk_hook_by_marker(
+            settings,
+            hook_type="PreToolUse",
+            marker="ERK_HOOK_ID=git-lock-check-hook",
+            matcher="Bash",
+        )
 
-        return has_user_prompt or has_exit_plan
+        return has_user_prompt or has_exit_plan or has_git_lock
 
     def install(self, repo_root: Path | None) -> CapabilityResult:
         """Add or update erk hooks in .claude/settings.json.
@@ -154,7 +167,11 @@ class HooksCapability(Capability):
             created_files.append(".claude/settings.json")
 
         # Check if already installed with CURRENT commands
-        if has_user_prompt_hook(settings) and has_exit_plan_hook(settings):
+        if (
+            has_user_prompt_hook(settings)
+            and has_exit_plan_hook(settings)
+            and has_git_lock_check_hook(settings)
+        ):
             return CapabilityResult(
                 success=True,
                 message="Hooks already configured",

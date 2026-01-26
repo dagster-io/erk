@@ -29,7 +29,8 @@ def get_lock_path(repo_root: Path) -> Path | None:
         repo_root: Repository or worktree root directory
 
     Returns:
-        Path to the index.lock file for this worktree, or None if not in a git repo.
+        Absolute path to the index.lock file for this worktree, or None if not
+        in a git repo.
     """
     result = subprocess.run(
         ["git", "-C", str(repo_root), "rev-parse", "--git-path", "index.lock"],
@@ -41,7 +42,12 @@ def get_lock_path(repo_root: Path) -> Path | None:
     if result.returncode != 0:
         # Not a git repository or git not available
         return None
-    return Path(result.stdout.strip())
+    lock_path_str = result.stdout.strip()
+    # git rev-parse may return relative paths - resolve them against repo_root
+    lock_path = Path(lock_path_str)
+    if lock_path.is_absolute():
+        return lock_path
+    return repo_root / lock_path
 
 
 def wait_for_index_lock(
