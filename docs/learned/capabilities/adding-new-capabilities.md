@@ -6,7 +6,7 @@ read_when:
   - "debugging capability registration"
 tripwires:
   - action: "using `is_reminder_installed()` in hook check"
-    warning: "Capability class MUST be defined in reminders.py AND registered in registry.py @cache tuple. Incomplete registration causes silent hook failures."
+    warning: "Capability class MUST be defined in reminders/ folder AND registered in registry.py @cache tuple. Incomplete registration causes silent hook failures."
 ---
 
 # Adding New Capabilities
@@ -73,7 +73,7 @@ The `user_prompt_hook.py` uses `is_reminder_installed()` to check if capabilitie
 
 When adding a new capability:
 
-- [ ] Class defined in appropriate module (`reminders.py` for reminders)
+- [ ] Class defined in appropriate folder (`reminders/` for reminders)
 - [ ] Class imported in `registry.py`
 - [ ] Instance added to `_all_capabilities()` tuple
 - [ ] Hook integration tested (capability actually fires)

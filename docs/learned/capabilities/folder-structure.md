@@ -1,0 +1,136 @@
+---
+title: Capabilities Folder Structure
+read_when:
+  - "adding new capability implementations"
+  - "deciding where to place capability files"
+  - "understanding capability organization"
+---
+
+# Capabilities Folder Structure
+
+The capabilities system separates **infrastructure** (stable, in `core/capabilities/`) from **implementations** (frequently changing, in `capabilities/<type>/`).
+
+## Directory Layout
+
+```
+src/erk/
+├── core/capabilities/                  # Infrastructure (stable)
+│   ├── base.py                        # ABC and type definitions
+│   ├── registry.py                    # Capability factory (@cache)
+│   ├── detection.py                   # Performance-critical helpers
+│   ├── skill_capability.py            # Base class for skills
+│   ├── reminder_capability.py         # Base class for reminders
+│   └── review_capability.py           # Base class for reviews
+│
+└── capabilities/                       # Implementations (extend here)
+    ├── skills/                        # Skill capabilities (2)
+    │   ├── dignified_python.py
+    │   └── fake_driven_testing.py
+    ├── reminders/                     # Reminder capabilities (4)
+    │   ├── devrun.py
+    │   ├── dignified_python.py
+    │   ├── explore_docs.py
+    │   └── tripwires.py
+    ├── reviews/                       # Review capabilities (3)
+    │   ├── dignified_python.py
+    │   ├── dignified_code_simplifier.py
+    │   └── tripwires.py
+    ├── workflows/                     # Workflow capabilities (2)
+    │   ├── erk_impl.py
+    │   └── learn.py
+    ├── agents/                        # Agent capabilities (1)
+    │   └── devrun.py
+    ├── code_reviews_system.py         # Standalone: complex custom behavior
+    ├── erk_bash_permissions.py        # Standalone: file permissions
+    ├── hooks.py                       # Standalone: hook configuration
+    ├── learned_docs.py                # Standalone: documentation management
+    ├── ruff_format.py                 # Standalone: formatter integration
+    └── statusline.py                  # Standalone: user-level capability
+```
+
+## Placement Decision Criteria
+
+### When to Use Type Folders
+
+Place capability in a type folder (`skills/`, `reminders/`, `reviews/`, `workflows/`, `agents/`) when:
+
+1. **Template pattern applies**: The capability extends a template base class (`SkillCapability`, `ReminderCapability`, `ReviewCapability`)
+2. **Multiple implementations exist**: Two or more capabilities share the same type
+3. **Type-specific behavior**: The capability's behavior is defined by its type
+
+### When to Use Root Level
+
+Place capability at root level (`capabilities/*.py`) when:
+
+1. **Unique behavior**: The capability has custom logic that doesn't fit template patterns
+2. **Single implementation**: Only one capability of this kind exists
+3. **Complex installation**: The capability manages multiple artifacts or has special requirements
+
+## Import Patterns
+
+### Implementation Imports
+
+```python
+# Type-based capabilities (in folders)
+from erk.capabilities.skills.dignified_python import DignifiedPythonCapability
+from erk.capabilities.reminders.devrun import DevrunReminderCapability
+from erk.capabilities.reviews.dignified_python import DignifiedPythonReviewDefCapability
+from erk.capabilities.workflows.learn import LearnWorkflowCapability
+
+# Standalone capabilities (at root)
+from erk.capabilities.hooks import HooksCapability
+from erk.capabilities.statusline import StatuslineCapability
+```
+
+### Infrastructure Imports (Unchanged)
+
+```python
+# Base classes and types
+from erk.core.capabilities.base import Capability, CapabilityResult
+
+# Template base classes
+from erk.core.capabilities.skill_capability import SkillCapability
+from erk.core.capabilities.reminder_capability import ReminderCapability
+from erk.core.capabilities.review_capability import ReviewCapability
+
+# Registry functions
+from erk.core.capabilities.registry import get_capability, list_capabilities
+```
+
+## Adding a New Capability
+
+1. **Determine type**: Does it fit skill/reminder/review/workflow/agent pattern?
+2. **Choose location**: Type folder if template applies, root level if unique
+3. **Create file**: One file per capability, named after the capability
+4. **Register**: Add import and instance to `registry.py`
+
+See type-specific guides:
+- [Adding Skills](adding-skills.md)
+- [Adding Reminders](adding-new-capabilities.md)
+- [Adding Reviews](adding-reviews.md)
+- [Adding Workflows](adding-workflows.md)
+
+## Design Rationale
+
+### Separation of Concerns
+
+| Layer | Location | Changes | Owner |
+|-------|----------|---------|-------|
+| Infrastructure | `core/capabilities/` | Rarely | Core team |
+| Templates | `core/capabilities/*_capability.py` | Rarely | Core team |
+| Implementations | `capabilities/<type>/*.py` | Frequently | Anyone |
+
+### One File Per Capability
+
+Benefits:
+- **Discoverability**: File name matches capability name
+- **Modularity**: Each file is small and focused
+- **Growth**: Easy to add new capabilities
+- **Dependencies**: Clear what each file imports
+
+### Explicit Registry
+
+The registry in `core/capabilities/registry.py` is the single source of truth:
+- No auto-discovery magic
+- Easier debugging
+- Better control over initialization order
