@@ -107,24 +107,27 @@ def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: 
     # multiple times in the same session
     if session_id is not None:
         existing_issue = _get_existing_saved_objective(session_id, repo_root)
-        if existing_issue is not None:
-            if output_format == "display":
-                click.echo(
-                    f"This session already saved objective #{existing_issue}. "
-                    "Skipping duplicate creation.",
-                    err=True,
+        if existing_issue is None:
+            # No duplicate found - continue to main logic
+            pass
+        elif output_format == "display":
+            click.echo(
+                f"This session already saved objective #{existing_issue}. "
+                "Skipping duplicate creation.",
+                err=True,
+            )
+            return
+        else:
+            click.echo(
+                json.dumps(
+                    {
+                        "success": True,
+                        "issue_number": existing_issue,
+                        "skipped_duplicate": True,
+                        "message": f"Session already saved objective #{existing_issue}",
+                    }
                 )
-            else:
-                click.echo(
-                    json.dumps(
-                        {
-                            "success": True,
-                            "issue_number": existing_issue,
-                            "skipped_duplicate": True,
-                            "message": f"Session already saved objective #{existing_issue}",
-                        }
-                    )
-                )
+            )
             return
 
     # Get plan content - priority: scratch directory > Claude plans directory
