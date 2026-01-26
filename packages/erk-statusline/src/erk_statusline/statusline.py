@@ -1099,10 +1099,6 @@ def build_gh_label(
             if repo_info.pr_state in ("published", "draft") and repo_info.has_conflicts:
                 emoji += "💥"
 
-            # Add fallback warning if PR info came from GitHub API instead of Graphite cache
-            if github_data is not None and github_data.from_fallback:
-                emoji += "⚠️"
-
             if emoji:
                 parts.extend(
                     [

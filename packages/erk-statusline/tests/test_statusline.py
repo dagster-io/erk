@@ -593,6 +593,41 @@ class TestBuildGhLabel:
         result_text = result.render()
         assert "obj:" not in result_text
 
+    def test_from_fallback_does_not_show_warning(self) -> None:
+        """When PR data comes from GitHub API fallback, should NOT show warning indicator.
+
+        The fallback indicator was removed because it provides no user value.
+        This test documents the desired behavior: fallback data is displayed
+        identically to cached data.
+        """
+        repo_info = RepoInfo(
+            owner="testowner",
+            repo="testrepo",
+            pr_number="123",
+            pr_url="https://app.graphite.dev/github/pr/testowner/testrepo/123/",
+            pr_state="published",
+            has_conflicts=False,
+        )
+        github_data = GitHubData(
+            owner="testowner",
+            repo="testrepo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[],
+            review_thread_counts=(0, 0),
+            from_fallback=True,  # Data came from GitHub API fallback
+        )
+
+        result = build_gh_label(repo_info, github_data, issue_number=None, objective_issue=None)
+
+        result_text = result.render()
+        # Should NOT contain warning emoji - fallback indicator was removed
+        assert "⚠️" not in result_text
+        # Should still contain normal PR info
+        assert "#123" in result_text
+
 
 class TestGetIssueNumber:
     """Test issue number loading from .impl/issue.json."""
