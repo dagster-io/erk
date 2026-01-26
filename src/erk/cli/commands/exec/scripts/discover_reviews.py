@@ -64,7 +64,7 @@ class DiscoveryError:
 def _get_pr_changed_files(pr_number: int) -> list[str]:
     """Get list of files changed in a PR.
 
-    Uses gh pr diff --name-only to retrieve the file list.
+    Uses GitHub REST API with pagination to handle large PRs.
 
     Args:
         pr_number: PR number to query.
@@ -73,7 +73,14 @@ def _get_pr_changed_files(pr_number: int) -> list[str]:
         List of file paths changed in the PR.
     """
     result = run_subprocess_with_context(
-        cmd=["gh", "pr", "diff", str(pr_number), "--name-only"],
+        cmd=[
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/files",
+            "--paginate",
+            "-q",
+            ".[].filename",
+        ],
         operation_context=f"get changed files for PR #{pr_number}",
     )
     return [line.strip() for line in result.stdout.strip().split("\n") if line.strip()]
