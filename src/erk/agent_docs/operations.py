@@ -4,6 +4,7 @@ This module provides functionality for validating and syncing agent documentatio
 files with frontmatter metadata.
 """
 
+from collections import defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, cast
@@ -12,6 +13,7 @@ from erk.agent_docs.models import (
     AgentDocFrontmatter,
     AgentDocValidationResult,
     CategoryInfo,
+    CategoryTripwireStats,
     CollectedTripwire,
     DocInfo,
     SyncResult,
@@ -308,41 +310,88 @@ def collect_tripwires(project_root: Path) -> list[CollectedTripwire]:
     return tripwires
 
 
-def generate_tripwires_doc(tripwires: list[CollectedTripwire]) -> str:
-    """Generate content for the tripwires.md file.
+def _get_category_from_path(doc_path: str) -> str | None:
+    """Extract category from a doc path.
+
+    Args:
+        doc_path: Relative path like "architecture/erk-architecture.md" or "conventions.md".
+
+    Returns:
+        Category name (e.g., "architecture") or None for root-level docs.
+    """
+    parts = doc_path.split("/")
+    if len(parts) > 1:
+        return parts[0]
+    return None
+
+
+def group_tripwires_by_category(
+    tripwires: list[CollectedTripwire],
+) -> dict[str, list[CollectedTripwire]]:
+    """Group tripwires by their source document's category.
 
     Args:
         tripwires: List of collected tripwires.
 
     Returns:
-        Generated markdown content for the tripwires reference document.
+        Dict mapping category names to lists of tripwires.
+        Root-level docs (no category) are grouped under "uncategorized".
     """
-    # Note: Banner goes AFTER frontmatter so YAML parsing works correctly
+    result: dict[str, list[CollectedTripwire]] = defaultdict(list)
+    for tripwire in tripwires:
+        category = _get_category_from_path(tripwire.doc_path)
+        if category is None:
+            category = "uncategorized"
+        result[category].append(tripwire)
+    return dict(result)
+
+
+def generate_category_tripwires_doc(
+    category: str,
+    tripwires: list[CollectedTripwire],
+) -> str:
+    """Generate tripwires doc for a single category.
+
+    Args:
+        category: Category name (e.g., "architecture", "cli").
+        tripwires: List of tripwires for this category.
+
+    Returns:
+        Generated markdown content for the category tripwires file.
+    """
+    # Title case the category name for display
+    title = category.replace("-", " ").replace("_", " ").title()
+
     lines = [
         "---",
-        "title: Generated Tripwires",
+        f"title: {title} Tripwires",
         "read_when:",
-        '  - "checking tripwire rules"',
+        f'  - "working on {category} code"',
         "---",
         "",
         GENERATED_FILE_BANNER.rstrip(),
+        f"<!-- Generated from {category}/*.md frontmatter -->",
         "",
-        "# Tripwires",
+        f"# {title} Tripwires",
         "",
-        "Action-triggered rules. You MUST consult these BEFORE taking any matching action.",
+        "Action-triggered rules for this category. Consult BEFORE taking any matching action.",
         "",
     ]
 
     if not tripwires:
-        lines.append("*No tripwires defined.*")
+        lines.append("*No tripwires defined for this category.*")
         lines.append("")
         return "\n".join(lines)
 
-    for tripwire in tripwires:
-        # Format: **CRITICAL: Before [action]** → Read [doc-path] first. [warning]
+    # Sort by action for consistent output
+    for tripwire in sorted(tripwires, key=lambda t: t.action):
+        # Use relative path from category directory
+        rel_doc_path = (
+            tripwire.doc_path.split("/", 1)[-1] if "/" in tripwire.doc_path else tripwire.doc_path
+        )
         lines.append(
             f"**CRITICAL: Before {tripwire.action}** → "
-            f"Read [{tripwire.doc_title}]({tripwire.doc_path}) first. "
+            f"Read [{tripwire.doc_title}]({rel_doc_path}) first. "
             f"{tripwire.warning}"
         )
         lines.append("")
@@ -588,9 +637,9 @@ def _update_generated_file(
 def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
     """Sync agent documentation index files from frontmatter.
 
-    Generates index.md files for the root .erk/docs/agent/ directory and
+    Generates index.md files for the root docs/learned/ directory and
     each subdirectory (category) that contains 2+ docs. Also generates
-    the .erk/docs/agent/tripwires.md file from tripwire definitions.
+    per-category tripwires.md files (e.g., architecture/tripwires.md).
 
     Args:
         project_root: Path to the project root.
@@ -607,6 +656,7 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
             unchanged=(),
             skipped_invalid=0,
             tripwires_count=0,
+            tripwires_by_category=(),
         )
 
     uncategorized, categories, invalid_count = collect_valid_docs(project_root)
@@ -643,13 +693,17 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
             dry_run=dry_run,
         )
 
-    # Collect and generate tripwires
+    # Collect and generate per-category tripwire files
     tripwires = collect_tripwires(project_root)
     tripwires_count = len(tripwires)
 
-    if tripwires:
-        tripwires_path = agent_docs_root / "tripwires.md"
-        tripwires_content = generate_tripwires_doc(tripwires)
+    tripwires_by_category = group_tripwires_by_category(tripwires)
+    category_stats: list[CategoryTripwireStats] = []
+
+    for category_name, category_tripwires in sorted(tripwires_by_category.items()):
+        # Generate tripwires file for this category
+        tripwires_path = agent_docs_root / category_name / "tripwires.md"
+        tripwires_content = generate_category_tripwires_doc(category_name, category_tripwires)
         _update_generated_file(
             file_path=tripwires_path,
             content=tripwires_content,
@@ -659,6 +713,9 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
             dry_run=dry_run,
             agent_docs_root=agent_docs_root,
         )
+        category_stats.append(
+            CategoryTripwireStats(category=category_name, count=len(category_tripwires))
+        )
 
     return SyncResult(
         created=tuple(created),
@@ -666,4 +723,5 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
         unchanged=tuple(unchanged),
         skipped_invalid=invalid_count,
         tripwires_count=tripwires_count,
+        tripwires_by_category=tuple(category_stats),
     )

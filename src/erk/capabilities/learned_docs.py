@@ -71,35 +71,6 @@ you need, when you need it.
 <!-- Example: **[my-doc.md](my-doc.md)** — when to read condition 1, condition 2 -->
 """
 
-LEARNED_DOCS_TRIPWIRES = """\
-<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
-<!-- Run 'erk docs sync' to regenerate this file from document frontmatter. -->
-
-# Tripwires
-
-Action-triggered rules. You MUST consult these BEFORE taking any matching action.
-
-Each tripwire describes an action pattern. Before performing that action, you MUST
-read the linked document first. Tripwires are preventive — they must be checked
-before acting, not after. Code review agents can also use tripwires to detect
-violations and examine the referenced documentation to determine if an issue is real.
-
-<!-- Tripwires are collected from the 'tripwires' frontmatter field in documents. -->
-<!-- Each tripwire should follow this format in your document's frontmatter: -->
-<!--
----
-title: "My Document"
-read_when:
-  - "working on feature X"
-tripwires:
-  - trigger: "Before doing action Y"
-    action: "Read this document first. Explains why Y needs special handling."
----
--->
-
-<!-- Currently empty. Add tripwires to your documents and run 'erk docs sync'. -->
-"""
-
 LEARNED_DOCS_SKILL = """\
 ---
 name: learned-docs
@@ -210,11 +181,12 @@ class LearnedDocsCapability(Capability):
 
     @property
     def artifacts(self) -> list[CapabilityArtifact]:
+        # Note: Category tripwires (e.g., architecture/tripwires.md) are auto-generated
+        # by 'erk docs sync' from document frontmatter, not listed here as static artifacts
         return [
             CapabilityArtifact(path="docs/learned/", artifact_type="directory"),
             CapabilityArtifact(path="docs/learned/README.md", artifact_type="file"),
             CapabilityArtifact(path="docs/learned/index.md", artifact_type="file"),
-            CapabilityArtifact(path="docs/learned/tripwires.md", artifact_type="file"),
             CapabilityArtifact(path=".claude/skills/learned-docs/", artifact_type="directory"),
             CapabilityArtifact(path=".claude/skills/learned-docs/SKILL.md", artifact_type="file"),
         ]
@@ -245,9 +217,8 @@ class LearnedDocsCapability(Capability):
 
             (docs_dir / "index.md").write_text(LEARNED_DOCS_INDEX, encoding="utf-8")
             created_files.append("docs/learned/index.md")
-
-            (docs_dir / "tripwires.md").write_text(LEARNED_DOCS_TRIPWIRES, encoding="utf-8")
-            created_files.append("docs/learned/tripwires.md")
+            # Note: Category tripwires (e.g., architecture/tripwires.md) are auto-generated
+            # by 'erk docs sync' from document frontmatter
 
         # Create skill
         skill_dir = repo_root / ".claude" / "skills" / "learned-docs"

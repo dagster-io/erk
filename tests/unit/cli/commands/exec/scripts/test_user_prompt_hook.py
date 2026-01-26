@@ -84,16 +84,10 @@ def test_build_dignified_python_reminder_mentions_no_try_except() -> None:
 # ============================================================================
 
 
-def test_build_tripwires_reminder_mentions_tripwires_file() -> None:
-    """Reminder mentions tripwires.md file."""
+def test_build_tripwires_reminder_mentions_tripwire() -> None:
+    """Reminder mentions tripwire."""
     result = build_tripwires_reminder()
-    assert "tripwires.md" in result
-
-
-def test_build_tripwires_reminder_mentions_docs_path() -> None:
-    """Reminder includes full docs path."""
-    result = build_tripwires_reminder()
-    assert "docs/learned/tripwires.md" in result
+    assert "tripwire" in result.lower()
 
 
 # ============================================================================
@@ -192,7 +186,7 @@ class TestHookIntegration:
         assert f"session: {session_id}" in result.output
         assert "devrun" in result.output
         assert "dignified-python" in result.output
-        assert "tripwires.md" in result.output
+        assert "tripwire" in result.output.lower()
 
     def test_persists_session_id_to_file(self, tmp_path: Path) -> None:
         """Verify hook writes session ID to .erk/scratch/current-session-id."""
@@ -316,7 +310,7 @@ class TestReminderCapabilities:
         result = runner.invoke(user_prompt_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 0
-        assert "tripwires.md" in result.output
+        assert "tripwire" in result.output.lower()
         # devrun should not appear in output (though dignified-python won't appear either)
         assert "NO try/except" not in result.output
 
@@ -337,7 +331,7 @@ class TestReminderCapabilities:
         assert result.exit_code == 0
         # Check devrun-specific content
         assert "Task(subagent_type='devrun')" in result.output
-        assert "tripwires.md" in result.output
+        assert "tripwire" in result.output.lower()
         # dignified-python specific content should be absent
         assert "NO try/except" not in result.output
 
@@ -360,7 +354,7 @@ class TestReminderCapabilities:
         assert "docs/learned/index.md" in result.output
         # Other reminders should be absent
         assert "NO try/except" not in result.output
-        assert "tripwires.md" not in result.output
+        assert "tripwire" not in result.output.lower()
 
     def test_explore_docs_not_included_when_not_installed(self, tmp_path: Path) -> None:
         """Verify explore-docs reminder is NOT included when capability not installed."""
@@ -384,4 +378,4 @@ class TestReminderCapabilities:
         # Other reminders should be present
         assert "devrun" in result.output
         assert "dignified-python" in result.output
-        assert "tripwires.md" in result.output
+        assert "tripwire" in result.output.lower()

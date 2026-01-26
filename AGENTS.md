@@ -19,7 +19,24 @@
 
 **CRITICAL: NEVER commit directly to `master`. Always create a feature branch first.**
 
-@docs/learned/tripwires.md
+### Universal Tripwires
+
+These critical rules apply across all code areas. See [Universal Tripwires](docs/learned/universal-tripwires.md) for the full list.
+
+### Tripwire Routing
+
+Before editing files, load relevant category tripwires:
+
+| Working in                                               | Load first                             |
+| -------------------------------------------------------- | -------------------------------------- |
+| `src/erk/cli/`                                           | docs/learned/cli/tripwires.md          |
+| `src/erk/gateway/`, `packages/erk-shared/src/*/gateway/` | docs/learned/architecture/tripwires.md |
+| `tests/`                                                 | docs/learned/testing/tripwires.md      |
+| `.github/workflows/`, `.github/actions/`                 | docs/learned/ci/tripwires.md           |
+| `src/erk/tui/`                                           | docs/learned/tui/tripwires.md          |
+| `.impl/`, `.worker-impl/`, planning workflows            | docs/learned/planning/tripwires.md     |
+| `~/.claude/projects/`, session analysis                  | docs/learned/sessions/tripwires.md     |
+| Textual framework code                                   | docs/learned/textual/tripwires.md      |
 
 **Load these skills FIRST:**
 

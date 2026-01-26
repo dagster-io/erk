@@ -64,12 +64,11 @@ Behavior changes ALWAYS need tests."""
 def build_tripwires_reminder() -> str:
     """Return tripwires context.
 
-    Pure function - returns static string.
+    Reminds Claude to check category-specific tripwires based on AGENTS.md routing.
+    Universal tripwires are in AGENTS.md, category tripwires in
+    docs/learned/<category>/tripwires.md.
     """
-    return (
-        "Ensure docs/learned/tripwires.md is loaded and follow its directives.\n"
-        "Before taking ANY action covered by a tripwire, read the linked document FIRST."
-    )
+    return "Before taking ANY action covered by a tripwire, read the linked document FIRST."
 
 
 def build_explore_docs_reminder() -> str:

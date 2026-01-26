@@ -150,17 +150,19 @@ def test_learned_docs_install_creates_index(tmp_path: Path) -> None:
     assert "# Agent Documentation" in content
 
 
-def test_learned_docs_install_creates_tripwires(tmp_path: Path) -> None:
-    """Test that install creates tripwires.md in docs/learned/."""
+def test_learned_docs_install_creates_docs_learned_directory(tmp_path: Path) -> None:
+    """Test that install creates docs/learned/ directory.
+
+    Note: Category tripwires (e.g., architecture/tripwires.md) are auto-generated
+    by 'erk docs sync' from document frontmatter, not during capability install.
+    """
     cap = LearnedDocsCapability()
     cap.install(tmp_path)
 
-    tripwires_path = tmp_path / "docs" / "learned" / "tripwires.md"
-    assert tripwires_path.exists()
-    content = tripwires_path.read_text(encoding="utf-8")
-    assert "AUTO-GENERATED FILE" in content
-    assert "erk docs sync" in content
-    assert "# Tripwires" in content
+    docs_dir = tmp_path / "docs" / "learned"
+    assert docs_dir.exists()
+    assert (docs_dir / "README.md").exists()
+    assert (docs_dir / "index.md").exists()
 
 
 def test_learned_docs_install_idempotent(tmp_path: Path) -> None:
@@ -200,12 +202,13 @@ def test_learned_docs_artifacts() -> None:
     cap = LearnedDocsCapability()
     artifacts = cap.artifacts
 
-    assert len(artifacts) == 6
+    # Category tripwires (e.g., architecture/tripwires.md) are auto-generated
+    # by 'erk docs sync', not listed as static artifacts
+    assert len(artifacts) == 5
     paths = [a.path for a in artifacts]
     assert "docs/learned/" in paths
     assert "docs/learned/README.md" in paths
     assert "docs/learned/index.md" in paths
-    assert "docs/learned/tripwires.md" in paths
     assert ".claude/skills/learned-docs/" in paths
     assert ".claude/skills/learned-docs/SKILL.md" in paths
 

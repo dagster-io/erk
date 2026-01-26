@@ -25,6 +25,7 @@
 - [testing/](testing/) — Explore when writing tests or debugging test infrastructure. Add docs here for testing patterns specific to erk.
 - [textual/](textual/) — Explore when working with Textual framework. Add docs here for Textual-specific patterns.
 - [tui/](tui/) — Explore when working on the erk TUI application. Add docs here for TUI feature implementation.
+- [uncategorized/](uncategorized/)
 
 ## Uncategorized
 
@@ -32,4 +33,4 @@
 - **[conventions.md](conventions.md)** — naming functions or variables, creating CLI commands, naming Claude artifacts, moving code between packages, creating imports, creating immutable classes or frozen dataclasses, implementing an ABC with abstract properties
 - **[glossary.md](glossary.md)** — understanding project terminology, confused about domain-specific terms, working with worktrees, plans, or stacks, working with objectives or turns
 - **[guide.md](guide.md)** — navigating erk documentation, finding where documentation lives, understanding doc organization
-- **[tripwires.md](tripwires.md)** — checking tripwire rules
+- **[universal-tripwires.md](universal-tripwires.md)** — starting any coding task, writing new code in erk

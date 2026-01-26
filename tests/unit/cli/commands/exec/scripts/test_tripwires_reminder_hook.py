@@ -25,8 +25,7 @@ def test_tripwires_reminder_hook_outputs_reminder(tmp_path: Path) -> None:
     result = runner.invoke(tripwires_reminder_hook, obj=ctx)
 
     assert result.exit_code == 0
-    assert "tripwires" in result.output
-    assert "docs/learned/tripwires.md" in result.output
+    assert "tripwire" in result.output.lower()
 
 
 def test_tripwires_reminder_hook_exits_successfully(tmp_path: Path) -> None:

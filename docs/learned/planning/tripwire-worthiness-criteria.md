@@ -151,5 +151,5 @@ tripwires:
     warning: "Concise warning with the correct approach"
 ```
 
-3. Run `erk docs sync` to regenerate `tripwires.md`
-4. Verify the tripwire appears in `docs/learned/tripwires.md`
+3. Run `erk docs sync` to regenerate category tripwire files
+4. Verify the tripwire appears in the appropriate category file (e.g., `docs/learned/architecture/tripwires.md`)
