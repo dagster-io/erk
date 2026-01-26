@@ -398,7 +398,7 @@ def _delete_branch_at_error_boundary(
     Uses BranchManager abstraction to handle both Graphite and Git paths transparently.
     """
     try:
-        ctx.branch_manager.delete_branch(repo_root, branch)
+        ctx.branch_manager.delete_branch(repo_root, branch, force=force)
         if not dry_run:
             branch_text = click.style(branch, fg="green")
             user_output(f"✅ Deleted branch: {branch_text}")
