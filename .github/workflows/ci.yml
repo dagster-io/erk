@@ -353,15 +353,31 @@ jobs:
           echo "Autofix pushed new commit $current_sha, running full CI verification..."
           echo ""
 
-          # Report individual check status to GitHub
+          # Report individual check status to GitHub (with retry for commit indexing race)
           report_status() {
             local name="$1"
             local state="$2"
             local desc="$3"
-            gh api repos/${{ github.repository }}/statuses/$current_sha \
-              -f state="$state" \
-              -f context="ci / $name (autofix-verified)" \
-              -f description="$desc"
+            local max_retries=5
+            local retry_delay=2
+
+            for i in $(seq 1 $max_retries); do
+              if gh api repos/${{ github.repository }}/statuses/$current_sha \
+                -f state="$state" \
+                -f context="ci / $name (autofix-verified)" \
+                -f description="$desc" 2>/dev/null; then
+                return 0
+              fi
+
+              if [ $i -lt $max_retries ]; then
+                echo "Status report failed (attempt $i/$max_retries), retrying in ${retry_delay}s..."
+                sleep $retry_delay
+                retry_delay=$((retry_delay * 2))
+              fi
+            done
+
+            echo "Warning: Failed to report status for $name after $max_retries attempts"
+            return 0  # Don't fail the workflow for status reporting issues
           }
 
           failed=false
