@@ -26,6 +26,7 @@ Complete documentation for the erk plan lifecycle from creation through merge.
 ## Table of Contents
 
 - [Executive Summary](#executive-summary)
+- [Understanding Investigation Findings](#understanding-investigation-findings)
 - [Phase 1: Plan Creation](#phase-1-plan-creation)
 - [Phase 2: Plan Submission](#phase-2-plan-submission)
 - [Phase 3: Workflow Dispatch](#phase-3-workflow-dispatch)
@@ -112,6 +113,56 @@ When looking up plan files, the system checks in order:
 | 3        | `~/.claude/plans/` (by mtime) | Fallback             |
 
 See [Plan Lookup Strategy](plan-lookup-strategy.md) for details on session-scoped lookups.
+
+---
+
+## Understanding Investigation Findings
+
+When a plan includes an "Investigation Findings" section, these are **mandatory corrections** that MUST be incorporated, not optional suggestions.
+
+### What Investigation Findings Are
+
+Investigation findings appear in plans (especially erk-learn consolidation plans) after an agent:
+
+1. **Validates original assumptions** - Checks if files exist, features are implemented, APIs work as documented
+2. **Discovers reality mismatches** - Finds when original plans referenced non-existent files, outdated APIs, or completed work
+3. **Documents corrections** - Records what actually exists vs what was planned
+
+**Example from a real plan:**
+
+```markdown
+## Investigation Findings
+
+### Corrections to Original Plans
+
+- **#6134**: `prompt-executor-gateway.md` still references Haiku - confirmed needs update
+- **#6131**: `preprocessing.md` exists (81 lines) - needs UPDATE not CREATE
+- **#6130**: Pattern templates don't exist anywhere - confirmed CREATE needed
+```
+
+### Why They Matter
+
+Without investigation findings, agents would:
+
+- Create duplicate files that already exist
+- Update non-existent files
+- Implement features that are already complete
+- Reference APIs that have changed
+
+Investigation findings **correct the plan** to match current reality.
+
+### How to Use Investigation Findings
+
+When implementing a plan with investigation findings:
+
+1. **Read them first** - Before starting implementation, understand what changed
+2. **Trust them completely** - They reflect actual codebase investigation
+3. **Follow their directives** - "UPDATE not CREATE" means use Edit, not Write
+4. **Don't second-guess** - The investigation was thorough
+
+**Anti-pattern:** Skipping investigation findings and following original plan items that were later corrected.
+
+**Correct pattern:** Use investigation findings to understand what actions to take, then refer to implementation steps for execution order.
 
 ---
 

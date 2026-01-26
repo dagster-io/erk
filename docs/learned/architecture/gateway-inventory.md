@@ -207,6 +207,25 @@ Codespace SSH operations.
 
 **Fake Features**: Exit code control, command tracking.
 
+### CIRunner (`gateway/ci_runner/`)
+
+CI check execution abstraction for automated verification workflows.
+
+**Key Methods**:
+
+- `run_check()`: Execute a CI check command and return result
+
+**Result Type**: `CICheckResult` with fields:
+
+- `passed`: Whether the check succeeded
+- `error_type`: Error type if failed (`"command_not_found"`, `"command_failed"`), None on success
+
+**Fake Features**: Configurable check failures via `failing_checks` set, missing command simulation via `missing_commands` set, execution tracking via `run_calls` property.
+
+**Factory Method**: `FakeCIRunner.create_passing_all()` creates a fake where all checks pass.
+
+**When to use**: Any code running CI checks (pytest, ruff, prettier) should use `ctx.ci_runner` instead of subprocess.run() directly.
+
 ### Parallel Task Runner (`parallel/`)
 
 Parallel execution abstraction.

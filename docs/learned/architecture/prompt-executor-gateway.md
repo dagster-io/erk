@@ -52,10 +52,14 @@ class PromptExecutor(ABC):
         self,
         prompt: str,
         *,
-        model: str = "haiku",
+        model: str,
         cwd: Path | None = None,
     ) -> PromptResult:
-        """Execute a single prompt and return the result."""
+        """Execute a single prompt and return the result.
+
+        Model selection varies by subsystem and use case. Callers should
+        explicitly specify the model based on task complexity and latency needs.
+        """
         ...
 ```
 
@@ -67,7 +71,7 @@ class PromptExecutor(ABC):
 executor = RealPromptExecutor(time=RealTime())
 result = executor.execute_prompt(
     "Generate a commit message for this diff",
-    model="haiku",
+    model="sonnet",  # Model selection based on task complexity
     cwd=repo_root,
 )
 if result.success:

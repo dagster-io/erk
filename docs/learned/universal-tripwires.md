@@ -20,6 +20,8 @@ tripwires:
     warning: "Keep `__init__` lightweight; use factory methods like `from_config_path()`."
   - action: "modifying business logic in src/ without adding a test"
     warning: "Bug fixes require regression tests."
+  - action: "using gh pr diff --name-only in production code"
+    warning: "For PRs with 300+ files, gh pr diff fails with HTTP 406. Use REST API with pagination instead. See github-cli-limits.md."
 ---
 
 # Universal Tripwires
@@ -38,3 +40,4 @@ Each tripwire links to detailed documentation:
 - [Exec Script Testing Patterns](testing/exec-script-testing.md) - Path.home() alternatives
 - [Erk Architecture Patterns](architecture/erk-architecture.md) - Context regeneration, time abstraction, lightweight init
 - [Erk Test Reference](testing/testing.md) - Test requirements
+- [GitHub CLI Limits](architecture/github-cli-limits.md) - gh pr diff size limits and REST API alternatives

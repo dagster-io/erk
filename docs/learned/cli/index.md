@@ -12,6 +12,7 @@
 - **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
 - **[pr-sync-divergence.md](pr-sync-divergence.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, syncing local branch with remote tracking branch
+- **[dependency-injection-patterns.md](dependency-injection-patterns.md)** — writing erk exec scripts, testing exec scripts that use gateways, understanding exec script architecture, migrating exec scripts from subprocess to gateways
 - **[docker-isolation.md](docker-isolation.md)** — running erk implement with --docker flag, building the erk-local Docker image, understanding Docker volume mounts for Claude Code
 - **[erk-exec-commands.md](erk-exec-commands.md)** — running erk exec subcommands, looking up erk exec syntax
 - **[exec-command-patterns.md](exec-command-patterns.md)** — writing exec scripts with PR/issue output, building diagnostic messages, standardizing exec command output
@@ -24,6 +25,8 @@
 - **[objective-commands.md](objective-commands.md)** — working with erk objective commands, implementing objective reconcile functionality, understanding auto-advance objectives
 - **[optional-arguments.md](optional-arguments.md)** — making a CLI argument optional, inferring CLI arguments from context, implementing branch-based argument defaults
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
+- **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub issues, working with .impl/ folders, debugging plan execution failures
+- **[session-management.md](session-management.md)** — using ${CLAUDE_SESSION_ID} in commands, debugging session ID errors, implementing session tracking, writing slash commands that need session context
 - **[subprocess-stdin-patterns.md](subprocess-stdin-patterns.md)** — passing content to CLI tools via stdin, using subprocess with input parameter, CLI flags that only work with stdin
 - **[template-variables.md](template-variables.md)** — configuring .env templates, using substitution variables in config.toml, setting environment variables per worktree, updating environment when switching worktrees
 - **[two-phase-validation-model.md](two-phase-validation-model.md)** — implementing commands with multiple confirmations, designing commands that perform destructive mutations, working on erk land or similar multi-step commands
