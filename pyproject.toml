@@ -69,14 +69,14 @@ packages = ["src/erk"]
 # Agents: devrun only
 ".claude/agents/devrun.md" = "erk/data/claude/agents/devrun.md"
 # Workflows: erk-managed GitHub workflows
-".github/workflows/erk-impl.yml" = "erk/data/github/workflows/erk-impl.yml"
+".github/workflows/plan-implement.yml" = "erk/data/github/workflows/plan-implement.yml"
 # Actions: composite GitHub actions (needed by workflows)
 ".github/actions/setup-claude-erk" = "erk/data/github/actions/setup-claude-erk"
 ".github/actions/setup-claude-code" = "erk/data/github/actions/setup-claude-code"
 # Convention-based code reviews (reviews directory + generic workflow)
 ".github/workflows/code-reviews.yml" = "erk/data/github/workflows/code-reviews.yml"
 ".github/reviews" = "erk/data/github/reviews"
-# CI autofix prompt (used by erk-impl workflow)
+# CI autofix prompt (used by plan-implement workflow)
 ".github/prompts/ci-autofix.md" = "erk/data/github/prompts/ci-autofix.md"
 
 [tool.ruff]

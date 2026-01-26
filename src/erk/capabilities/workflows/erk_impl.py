@@ -16,7 +16,7 @@ class ErkImplWorkflowCapability(Capability):
     """GitHub Action for automated implementation workflow.
 
     Installs:
-    - .github/workflows/erk-impl.yml
+    - .github/workflows/plan-implement.yml
     - .github/actions/setup-claude-code/
     - .github/actions/setup-claude-erk/
     """
@@ -35,13 +35,13 @@ class ErkImplWorkflowCapability(Capability):
 
     @property
     def installation_check_description(self) -> str:
-        return ".github/workflows/erk-impl.yml exists"
+        return ".github/workflows/plan-implement.yml exists"
 
     @property
     def artifacts(self) -> list[CapabilityArtifact]:
         return [
             CapabilityArtifact(
-                path=".github/workflows/erk-impl.yml",
+                path=".github/workflows/plan-implement.yml",
                 artifact_type="file",
             ),
             CapabilityArtifact(
@@ -58,7 +58,7 @@ class ErkImplWorkflowCapability(Capability):
     def managed_artifacts(self) -> list[ManagedArtifact]:
         """Declare workflow and actions as managed artifacts."""
         return [
-            ManagedArtifact(name="erk-impl", artifact_type="workflow"),
+            ManagedArtifact(name="plan-implement", artifact_type="workflow"),
             ManagedArtifact(name="setup-claude-code", artifact_type="action"),
             ManagedArtifact(name="setup-claude-erk", artifact_type="action"),
         ]
@@ -66,7 +66,7 @@ class ErkImplWorkflowCapability(Capability):
     def is_installed(self, repo_root: Path | None) -> bool:
         """Check if the workflow file exists."""
         assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
-        return (repo_root / ".github" / "workflows" / "erk-impl.yml").exists()
+        return (repo_root / ".github" / "workflows" / "plan-implement.yml").exists()
 
     def install(self, repo_root: Path | None) -> CapabilityResult:
         """Install the workflow and related actions."""
@@ -85,9 +85,9 @@ class ErkImplWorkflowCapability(Capability):
         installed_count = 0
 
         # Install workflow
-        workflow_src = bundled_github_dir / "workflows" / "erk-impl.yml"
+        workflow_src = bundled_github_dir / "workflows" / "plan-implement.yml"
         if workflow_src.exists():
-            workflow_dst = repo_root / ".github" / "workflows" / "erk-impl.yml"
+            workflow_dst = repo_root / ".github" / "workflows" / "plan-implement.yml"
             workflow_dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(workflow_src, workflow_dst)
             installed_count += 1
@@ -113,21 +113,21 @@ class ErkImplWorkflowCapability(Capability):
 
         return CapabilityResult(
             success=True,
-            message=f"Installed erk-impl workflow ({installed_count} artifacts)",
+            message=f"Installed plan-implement workflow ({installed_count} artifacts)",
         )
 
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
-        """Remove the erk-impl workflow and related actions."""
+        """Remove the plan-implement workflow and related actions."""
         assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
         from erk.artifacts.state import remove_installed_capability
 
         removed: list[str] = []
 
         # Remove workflow
-        workflow_file = repo_root / ".github" / "workflows" / "erk-impl.yml"
+        workflow_file = repo_root / ".github" / "workflows" / "plan-implement.yml"
         if workflow_file.exists():
             workflow_file.unlink()
-            removed.append(".github/workflows/erk-impl.yml")
+            removed.append(".github/workflows/plan-implement.yml")
 
         # Remove actions
         actions = ["setup-claude-code", "setup-claude-erk"]

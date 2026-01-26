@@ -230,7 +230,7 @@ def test_find_orphaned_workflows_not_detected_when_bundled_exists(
     bundled_github = tmp_path / "bundled" / ".github"
     bundled_workflows = bundled_github / "workflows"
     bundled_workflows.mkdir(parents=True)
-    (bundled_workflows / "erk-impl.yml").write_text("name: Erk Impl", encoding="utf-8")
+    (bundled_workflows / "plan-implement.yml").write_text("name: Erk Impl", encoding="utf-8")
 
     # Create project directory with .claude/ and .github/workflows/
     project_dir = tmp_path / "project"
@@ -238,7 +238,7 @@ def test_find_orphaned_workflows_not_detected_when_bundled_exists(
     project_claude.mkdir(parents=True)
     project_workflows = project_dir / ".github" / "workflows"
     project_workflows.mkdir(parents=True)
-    (project_workflows / "erk-impl.yml").write_text("name: Erk Impl", encoding="utf-8")
+    (project_workflows / "plan-implement.yml").write_text("name: Erk Impl", encoding="utf-8")
 
     monkeypatch.setattr(
         "erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_claude
@@ -262,11 +262,11 @@ def test_find_orphaned_workflows_detected_when_bundled_missing(
     bundled_claude = tmp_path / "bundled" / ".claude"
     bundled_claude.mkdir(parents=True)
 
-    # Create a mock bundled .github/ directory WITHOUT erk-impl.yml
+    # Create a mock bundled .github/ directory WITHOUT plan-implement.yml
     bundled_github = tmp_path / "bundled" / ".github"
     bundled_workflows = bundled_github / "workflows"
     bundled_workflows.mkdir(parents=True)
-    # No erk-impl.yml in bundled - simulates it being removed from erk
+    # No plan-implement.yml in bundled - simulates it being removed from erk
 
     # Create project directory with .claude/ and .github/workflows/ with orphan
     project_dir = tmp_path / "project"
@@ -274,7 +274,7 @@ def test_find_orphaned_workflows_detected_when_bundled_missing(
     project_claude.mkdir(parents=True)
     project_workflows = project_dir / ".github" / "workflows"
     project_workflows.mkdir(parents=True)
-    (project_workflows / "erk-impl.yml").write_text("name: Erk Impl", encoding="utf-8")
+    (project_workflows / "plan-implement.yml").write_text("name: Erk Impl", encoding="utf-8")
 
     monkeypatch.setattr(
         "erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_claude
@@ -285,10 +285,10 @@ def test_find_orphaned_workflows_detected_when_bundled_missing(
 
     result = find_orphaned_artifacts(project_dir)
 
-    # erk-impl.yml is orphaned since it doesn't exist in bundled
+    # plan-implement.yml is orphaned since it doesn't exist in bundled
     assert result.skipped_reason is None
     assert ".github/workflows" in result.orphans
-    assert "erk-impl.yml" in result.orphans[".github/workflows"]
+    assert "plan-implement.yml" in result.orphans[".github/workflows"]
 
 
 def test_find_orphaned_workflows_ignores_user_workflows(

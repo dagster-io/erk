@@ -24,27 +24,28 @@ The built-in `GITHUB_TOKEN` has two limitations that require using a PAT:
 
 **Used in:**
 
-- `learn-dispatch.yml` - Checkout (for push), dispatch to erk-impl
-- `erk-impl.yml` - Checkout (for push)
+- `learn.yml` - Checkout (for push), dispatch to plan-implement
+- `plan-implement.yml` - Checkout (for push)
 
 ### Claude API Secrets
 
-| Secret                    | Purpose                                 | Used in                                                 |
-| ------------------------- | --------------------------------------- | ------------------------------------------------------- |
-| `CLAUDE_CODE_OAUTH_TOKEN` | Claude Code CLI authentication          | erk-impl, dignified-python-review, tripwires-review     |
-| `ANTHROPIC_API_KEY`       | Anthropic API authentication (fallback) | erk-impl, dignified-python-review, tripwires-review, ci |
+| Secret                    | Purpose                                 | Used in                                                       |
+| ------------------------- | --------------------------------------- | ------------------------------------------------------------- |
+| `CLAUDE_CODE_OAUTH_TOKEN` | Claude Code CLI authentication          | plan-implement, dignified-python-review, tripwires-review     |
+| `ANTHROPIC_API_KEY`       | Anthropic API authentication (fallback) | plan-implement, dignified-python-review, tripwires-review, ci |
 
 ## Workflow Overview
 
-| Workflow                      | Trigger               | Purpose                                               |
-| ----------------------------- | --------------------- | ----------------------------------------------------- |
-| `ci.yml`                      | push, PR              | Run tests, linting, type checking                     |
-| `learn-dispatch.yml`          | issue labeled, manual | Create branch and dispatch to erk-impl for extraction |
-| `erk-impl.yml`                | workflow_dispatch     | Execute Claude Code to implement plans                |
-| `dignified-python-review.yml` | PR                    | Automated Python code review                          |
-| `tripwires-review.yml`        | PR                    | Automated tripwire violation detection                |
-| `docs.yml`                    | push to master        | Build and deploy documentation                        |
-| `build-ci-image.yml`          | manual                | Build Docker image for CI                             |
+| Workflow                      | Trigger               | Purpose                                                     |
+| ----------------------------- | --------------------- | ----------------------------------------------------------- |
+| `ci.yml`                      | push, PR              | Run tests, linting, type checking                           |
+| `learn.yml`                   | issue labeled, manual | Create branch and dispatch to plan-implement for extraction |
+| `plan-implement.yml`          | workflow_dispatch     | Execute Claude Code to implement plans                      |
+| `pr-fix-conflicts.yml`        | workflow_dispatch     | Rebase PR with AI-powered conflict resolution               |
+| `dignified-python-review.yml` | PR                    | Automated Python code review                                |
+| `tripwires-review.yml`        | PR                    | Automated tripwire violation detection                      |
+| `docs.yml`                    | push to master        | Build and deploy documentation                              |
+| `build-ci-image.yml`          | manual                | Build Docker image for CI                                   |
 
 ## Repository Settings
 

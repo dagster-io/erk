@@ -1,6 +1,6 @@
 """Unit tests for trigger_async_learn exec script.
 
-Tests triggering the learn-dispatch.yml workflow for async learn.
+Tests triggering the learn.yml workflow for async learn.
 Uses FakeGitHub for dependency injection.
 """
 
@@ -48,7 +48,7 @@ def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
 
     assert len(github.triggered_workflows) == 1
     workflow, inputs = github.triggered_workflows[0]
-    assert workflow == "learn-dispatch.yml"
+    assert workflow == "learn.yml"
     assert inputs["issue_number"] == "456"
 
 

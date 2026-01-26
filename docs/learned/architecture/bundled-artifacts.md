@@ -38,7 +38,7 @@ The `ManagedArtifactType` literal defines valid artifact types:
 | `skill`    | `dignified-python`, `fake-driven-testing` |
 | `command`  | Claude commands                           |
 | `agent`    | `devrun`                                  |
-| `workflow` | `erk-impl`, `learn-dispatch`              |
+| `workflow` | `plan-implement`, `learn`                 |
 | `action`   | `setup-claude-code`, `setup-claude-erk`   |
 | `hook`     | `user-prompt-hook`, `exit-plan-mode-hook` |
 | `prompt`   | `.github/prompts/` files                  |

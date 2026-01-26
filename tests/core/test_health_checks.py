@@ -776,7 +776,7 @@ def test_check_managed_artifacts_actions_required_with_workflows(
     # Mock get_managed_artifacts to return workflow and action only
     # This simplifies the test to only check actions/workflows interaction
     mock_managed: dict[tuple[str, str], str] = {
-        ("erk-impl", "workflow"): "erk-impl-workflow",
+        ("plan-implement", "workflow"): "erk-impl-workflow",
         ("setup-claude-erk", "action"): "erk-impl-workflow",
     }
     monkeypatch.setattr("erk.artifacts.artifact_health.get_managed_artifacts", lambda: mock_managed)
@@ -790,7 +790,7 @@ def test_check_managed_artifacts_actions_required_with_workflows(
     bundled_github = tmp_path / "bundled" / ".github"
     bundled_workflows = bundled_github / "workflows"
     bundled_workflows.mkdir(parents=True)
-    (bundled_workflows / "erk-impl.yml").write_text("name: erk-impl", encoding="utf-8")
+    (bundled_workflows / "plan-implement.yml").write_text("name: plan-implement", encoding="utf-8")
     bundled_actions = bundled_github / "actions" / "setup-claude-erk"
     bundled_actions.mkdir(parents=True)
     (bundled_actions / "action.yml").write_text("name: setup-claude-erk", encoding="utf-8")
@@ -807,7 +807,7 @@ def test_check_managed_artifacts_actions_required_with_workflows(
     # Install workflow (but not action)
     project_workflows = project_dir / ".github" / "workflows"
     project_workflows.mkdir(parents=True)
-    (project_workflows / "erk-impl.yml").write_text("name: erk-impl", encoding="utf-8")
+    (project_workflows / "plan-implement.yml").write_text("name: plan-implement", encoding="utf-8")
 
     monkeypatch.setattr(
         "erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_claude

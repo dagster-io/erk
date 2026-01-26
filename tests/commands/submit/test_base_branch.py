@@ -173,7 +173,7 @@ def test_submit_passes_base_branch_in_workflow_inputs(tmp_path: Path) -> None:
     # Verify workflow was triggered with base_branch in inputs
     assert len(fake_github.triggered_workflows) == 1
     workflow, inputs = fake_github.triggered_workflows[0]
-    assert workflow == "erk-impl.yml"
+    assert workflow == "plan-implement.yml"
     assert inputs["issue_number"] == "456"
     # CRITICAL: base_branch must be passed to workflow for stacked PR support
     assert "base_branch" in inputs

@@ -93,7 +93,7 @@ gh api gists: HTTP 403: Resource not accessible by integration
 
 ### Using Both Tokens Appropriately
 
-From `erk-impl.yml`:
+From `plan-implement.yml`:
 
 ```yaml
 # Repository operations use github.token

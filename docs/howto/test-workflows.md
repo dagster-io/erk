@@ -4,7 +4,7 @@ Test changes to erk's GitHub Actions workflows before merging.
 
 ## Overview
 
-When modifying workflow files like `.github/workflows/erk-impl.yml`, you need to test the actual workflow execution, not just the YAML syntax. This guide shows how to use `erk admin test-erk-impl-gh-workflow` to automate this process.
+When modifying workflow files like `.github/workflows/plan-implement.yml`, you need to test the actual workflow execution, not just the YAML syntax. This guide shows how to use `erk admin test-erk-impl-gh-workflow` to automate this process.
 
 ## Prerequisites
 
@@ -76,7 +76,7 @@ gh issue close 4358
 
 ## When to Use This
 
-- **Modifying erk-impl.yml** - Test before merging changes
+- **Modifying plan-implement.yml** - Test before merging changes
 - **Debugging workflow failures** - Reproduce issues with your fixes
 - **Testing new workflow inputs** - Verify parameter handling
 - **Developing new workflows** - Iterate on workflow logic
@@ -94,7 +94,7 @@ git push origin master:test-branch
 gh pr create --head test-branch --base master --draft --title "Test"
 
 # 3. Trigger with --ref pointing to YOUR branch
-gh workflow run erk-impl.yml \
+gh workflow run plan-implement.yml \
   --ref your-branch-with-workflow-changes \
   -f issue_number=12345 \
   -f submitted_by=your-username \

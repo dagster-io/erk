@@ -154,14 +154,14 @@ def upgrade_repo(ctx: ErkContext) -> None:
     user_output("  erk doctor          # Verify the upgrade")
 
 
-@admin_group.command("test-erk-impl-gh-workflow")
+@admin_group.command("test-plan-implement-gh-workflow")
 @click.option("--issue", "-i", type=int, help="Existing issue number to use")
 @click.option("--watch", "-w", is_flag=True, help="Watch the workflow run after triggering")
 @click.pass_obj
-def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -> None:
-    """Test the erk-impl.yml GitHub Actions workflow.
+def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -> None:
+    """Test the plan-implement.yml GitHub Actions workflow.
 
-    This command automates testing of erk-impl workflow changes by:
+    This command automates testing of plan-implement workflow changes by:
 
     \b
     1. Ensuring the current branch exists on remote
@@ -172,7 +172,7 @@ def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -
     6. Triggering the workflow with --ref set to your branch
     7. Outputting the run URL
 
-    Use this when modifying .github/workflows/erk-impl.yml to test changes.
+    Use this when modifying .github/workflows/plan-implement.yml to test changes.
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 
@@ -201,7 +201,7 @@ def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -
         result = ctx.issues.create_issue(
             repo_root=repo.root,
             title="Test workflow run",
-            body="This issue was created to test the erk-impl workflow. Safe to close.",
+            body="This issue was created to test the plan-implement workflow. Safe to close.",
             labels=["test"],
         )
         issue_number = result.number
@@ -232,7 +232,7 @@ def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -
         repo.root,
         branch=test_branch,
         title="Test workflow run",
-        body="This PR was created to test the erk-impl workflow. Safe to close.",
+        body="This PR was created to test the plan-implement workflow. Safe to close.",
         base="master",
         draft=True,
     )
@@ -244,10 +244,10 @@ def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -
         user_output(click.style("Error: ", fg="red") + "Not authenticated with GitHub")
         raise SystemExit(1)
 
-    user_output(f"Triggering erk-impl workflow from '{current_branch}'...")
+    user_output(f"Triggering plan-implement workflow from '{current_branch}'...")
     ctx.github.trigger_workflow(
         repo_root=repo.root,
-        workflow="erk-impl.yml",
+        workflow="plan-implement.yml",
         ref=current_branch,
         inputs={
             "issue_number": str(issue_number),
@@ -262,11 +262,11 @@ def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -
 
     # Step 7: Get run URL
     ctx.time.sleep(2)  # Give GitHub a moment to create the run
-    runs = ctx.github.list_workflow_runs(repo.root, "erk-impl.yml", limit=1)
+    runs = ctx.github.list_workflow_runs(repo.root, "plan-implement.yml", limit=1)
     if runs:
         run_url = f"https://github.com/{repo_slug}/actions/runs/{runs[0].run_id}"
     else:
-        run_url = f"https://github.com/{repo_slug}/actions/workflows/erk-impl.yml"
+        run_url = f"https://github.com/{repo_slug}/actions/workflows/plan-implement.yml"
 
     user_output("")
     user_output(click.style("Workflow triggered successfully!", fg="green", bold=True))

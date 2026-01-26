@@ -1,7 +1,7 @@
 """Fix merge conflicts with AI-powered resolution.
 
 This command resolves merge conflicts locally using Claude CLI.
-For remote resolution via GitHub Actions, use `erk workflow run pr-fix-conflicts`.
+For remote resolution via GitHub Actions, use `erk launch pr-fix-conflicts`.
 """
 
 import click
@@ -28,7 +28,7 @@ def fix_conflicts(ctx: ErkContext, *, dangerous: bool) -> None:
     For remote resolution via GitHub Actions workflow, use:
 
     \b
-      erk workflow run pr-fix-conflicts [--pr <number>]
+      erk launch pr-fix-conflicts [--pr <number>]
 
     Examples:
 

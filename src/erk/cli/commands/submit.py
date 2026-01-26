@@ -193,8 +193,8 @@ def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
         Returns empty dict if config file or section doesn't exist.
 
     Example:
-        For workflow_name="erk-impl.yml", reads from:
-        .erk/config.toml -> [workflows.erk-impl] section
+        For workflow_name="plan-implement.yml", reads from:
+        .erk/config.toml -> [workflows.plan-implement] section
     """
     config_path = repo_root / ".erk" / "config.toml"
 

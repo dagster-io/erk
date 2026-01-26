@@ -1,4 +1,4 @@
-name: erk-impl
+name: plan-implement
 run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"
 
 on:

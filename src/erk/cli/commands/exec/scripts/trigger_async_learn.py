@@ -1,6 +1,6 @@
 """Trigger async learn workflow for a plan issue.
 
-This exec command triggers the learn-dispatch.yml GitHub Actions workflow
+This exec command triggers the learn.yml GitHub Actions workflow
 to asynchronously run /erk:learn on a plan issue.
 
 Usage:
@@ -28,7 +28,7 @@ import click
 from erk_shared.context.helpers import require_github, require_repo_root
 from erk_shared.github.parsing import construct_workflow_run_url
 
-LEARN_DISPATCH_WORKFLOW = "learn-dispatch.yml"
+LEARN_WORKFLOW = "learn.yml"
 
 
 @dataclass(frozen=True)
@@ -78,7 +78,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
 
     ISSUE_NUMBER is the GitHub issue number to learn from.
 
-    Triggers the learn-dispatch.yml workflow which runs /erk:learn
+    Triggers the learn.yml workflow which runs /erk:learn
     on the specified plan issue asynchronously.
     """
     # Get required dependencies from context
@@ -94,7 +94,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
     repo_root = require_repo_root(ctx)
     github = require_github(ctx)
 
-    # Trigger the learn-dispatch workflow
+    # Trigger the learn workflow
     workflow_inputs = {
         "issue_number": str(issue_number),
     }
@@ -102,7 +102,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
     try:
         run_id = github.trigger_workflow(
             repo_root=repo_root,
-            workflow=LEARN_DISPATCH_WORKFLOW,
+            workflow=LEARN_WORKFLOW,
             inputs=workflow_inputs,
             ref="master",
         )
