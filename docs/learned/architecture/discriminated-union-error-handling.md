@@ -189,4 +189,3 @@ def fetch() -> Data | Error:
 
 - [Not-Found Sentinel Pattern](not-found-sentinel.md) - Specific pattern for lookup operations
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - Gateways often use this pattern
-- [Plan Generation Workflow](../objectives/plan-generation-workflow.md) - Example usage
