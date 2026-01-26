@@ -50,34 +50,15 @@ Place capability at root level (`capabilities/*.py`) when:
 
 ## Import Patterns
 
-### Implementation Imports
+Import paths follow the directory structure:
 
-```python
-# Type-based capabilities (in folders)
-from erk.capabilities.skills.dignified_python import DignifiedPythonCapability
-from erk.capabilities.reminders.devrun import DevrunReminderCapability
-from erk.capabilities.reviews.dignified_python import DignifiedPythonReviewDefCapability
-from erk.capabilities.workflows.learn import LearnWorkflowCapability
+- **Type-based capabilities**: `erk.capabilities.<type>.<name>` (e.g., `erk.capabilities.skills.dignified_python`)
+- **Standalone capabilities**: `erk.capabilities.<name>` (e.g., `erk.capabilities.hooks`)
+- **Base classes**: `erk.core.capabilities.base` for `Capability`, `CapabilityResult`
+- **Template classes**: `erk.core.capabilities.<type>_capability` (e.g., `skill_capability`)
+- **Registry functions**: `erk.core.capabilities.registry` for `get_capability`, `list_capabilities`
 
-# Standalone capabilities (at root)
-from erk.capabilities.hooks import HooksCapability
-from erk.capabilities.statusline import StatuslineCapability
-```
-
-### Infrastructure Imports (Unchanged)
-
-```python
-# Base classes and types
-from erk.core.capabilities.base import Capability, CapabilityResult
-
-# Template base classes
-from erk.core.capabilities.skill_capability import SkillCapability
-from erk.core.capabilities.reminder_capability import ReminderCapability
-from erk.core.capabilities.review_capability import ReviewCapability
-
-# Registry functions
-from erk.core.capabilities.registry import get_capability, list_capabilities
-```
+See `src/erk/core/capabilities/registry.py` for concrete import examples.
 
 ## Adding a New Capability
 

@@ -40,22 +40,10 @@ See `src/erk/capabilities/skills/dignified_python.py` for the canonical pattern.
 
 In `src/erk/core/capabilities/registry.py`:
 
-1. Add import at top:
+1. Add import at top of file
+2. Add instance to the `_all_capabilities()` tuple
 
-```python
-from erk.capabilities.skills.my_skill import MySkillCapability
-```
-
-2. Add instance to `_all_capabilities()` tuple:
-
-```python
-@cache
-def _all_capabilities() -> tuple[Capability, ...]:
-    return (
-        # ... existing capabilities ...
-        MySkillCapability(),
-    )
-```
+See `src/erk/core/capabilities/registry.py` for the registration pattern.
 
 ### Step 3: Bundle the Skill Content
 
