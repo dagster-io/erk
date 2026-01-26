@@ -12,15 +12,15 @@ This document describes the composite actions in `.github/actions/` and patterns
 
 ## Available Composite Actions
 
-| Action                | Purpose                                     | Inputs                                    |
-| --------------------- | ------------------------------------------- | ----------------------------------------- |
-| `erk-remote-setup`    | Full remote workflow environment setup      | `erk-pat`, `anthropic-api-key`, `claude-code-oauth-token` |
-| `setup-claude-code`   | Install Claude Code CLI with caching        | None                                      |
-| `setup-python-uv`     | Install Python and uv, sync dependencies    | `python-version` (default: "3.12")        |
-| `setup-graphite`      | Install Graphite CLI for stack management   | None                                      |
-| `setup-claude-erk`    | Install erk tools (assumes uv/claude exist) | None                                      |
-| `setup-prettier`      | Install Node.js and Prettier                | None                                      |
-| `check-worker-impl`   | Check if `.worker-impl/` folder exists      | None (outputs: `skip`)                    |
+| Action              | Purpose                                     | Inputs                                                    |
+| ------------------- | ------------------------------------------- | --------------------------------------------------------- |
+| `erk-remote-setup`  | Full remote workflow environment setup      | `erk-pat`, `anthropic-api-key`, `claude-code-oauth-token` |
+| `setup-claude-code` | Install Claude Code CLI with caching        | None                                                      |
+| `setup-python-uv`   | Install Python and uv, sync dependencies    | `python-version` (default: "3.12")                        |
+| `setup-graphite`    | Install Graphite CLI for stack management   | None                                                      |
+| `setup-claude-erk`  | Install erk tools (assumes uv/claude exist) | None                                                      |
+| `setup-prettier`    | Install Node.js and Prettier                | None                                                      |
+| `check-worker-impl` | Check if `.worker-impl/` folder exists      | None (outputs: `skip`)                                    |
 
 ## Primary Action: erk-remote-setup
 

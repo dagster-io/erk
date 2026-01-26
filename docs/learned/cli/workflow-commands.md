@@ -12,12 +12,12 @@ The `erk workflow launch` command provides a unified interface for triggering Gi
 
 ## Available Workflows
 
-| Subcommand            | Workflow File            | Description                               |
-| --------------------- | ------------------------ | ----------------------------------------- |
-| `pr-fix-conflicts`    | `erk-rebase.yml`         | Rebase PR with AI-powered conflict resolution |
-| `pr-address`          | `pr-address.yml`         | Address PR review comments remotely       |
-| `objective-reconcile` | `objective-reconcile.yml`| Reconcile auto-advance objectives         |
-| `learn`               | `learn-dispatch.yml`     | Extract documentation from plan session   |
+| Subcommand            | Workflow File             | Description                                   |
+| --------------------- | ------------------------- | --------------------------------------------- |
+| `pr-fix-conflicts`    | `erk-rebase.yml`          | Rebase PR with AI-powered conflict resolution |
+| `pr-address`          | `pr-address.yml`          | Address PR review comments remotely           |
+| `objective-reconcile` | `objective-reconcile.yml` | Reconcile auto-advance objectives             |
+| `learn`               | `learn-dispatch.yml`      | Extract documentation from plan session       |
 
 ## Command Syntax
 
@@ -27,12 +27,12 @@ erk workflow launch <workflow-name> [options]
 
 ### Options by Workflow
 
-| Workflow              | Required Options                  | Optional Options              |
-| --------------------- | --------------------------------- | ----------------------------- |
+| Workflow              | Required Options                  | Optional Options                 |
+| --------------------- | --------------------------------- | -------------------------------- |
 | `pr-fix-conflicts`    | None (infers from current branch) | `--pr`, `--no-squash`, `--model` |
-| `pr-address`          | `--pr`                            | `--model`                     |
-| `objective-reconcile` | `--objective`                     | `--dry-run`                   |
-| `learn`               | `--issue`                         | None                          |
+| `pr-address`          | `--pr`                            | `--model`                        |
+| `objective-reconcile` | `--objective`                     | `--dry-run`                      |
+| `learn`               | `--issue`                         | None                             |
 
 ## Usage Examples
 
@@ -116,10 +116,10 @@ Each workflow has a dedicated handler function that:
 
 The `erk workflow launch` command replaces the previous pattern of separate remote commands:
 
-| Old Command                   | New Command                                     |
-| ----------------------------- | ----------------------------------------------- |
-| `erk pr fix-conflicts-remote` | `erk workflow launch pr-fix-conflicts`          |
-| `erk pr address-remote`       | `erk workflow launch pr-address --pr <number>`  |
+| Old Command                   | New Command                                    |
+| ----------------------------- | ---------------------------------------------- |
+| `erk pr fix-conflicts-remote` | `erk workflow launch pr-fix-conflicts`         |
+| `erk pr address-remote`       | `erk workflow launch pr-address --pr <number>` |
 
 ## Error Handling
 
