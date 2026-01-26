@@ -18,6 +18,7 @@ from erk.agent_docs.models import (
     DocInfo,
     SyncResult,
     Tripwire,
+    TripwiresIndexValidationResult,
 )
 from erk.core.frontmatter import parse_markdown_frontmatter
 from erk_shared.subprocess_utils import run_subprocess_with_context
@@ -74,6 +75,24 @@ CATEGORY_DESCRIPTIONS: dict[str, str] = {
         "Explore when working on the erk TUI application. "
         "Add docs here for TUI feature implementation."
     ),
+}
+
+# Routing hints for tripwires index generation.
+# Maps category name to "Load when working in" text for the routing table.
+# Categories without hints get a generic entry.
+CATEGORY_ROUTING_HINTS: dict[str, str] = {
+    "architecture": "`src/erk/gateway/`, gateways, subprocess",
+    "cli": "`src/erk/cli/`",
+    "testing": "`tests/`",
+    "ci": "`.github/workflows/`, `.github/actions/`",
+    "tui": "`src/erk/tui/`",
+    "planning": "`.impl/`, `.worker-impl/`, planning workflows",
+    "sessions": "`~/.claude/projects/`, session analysis",
+    "textual": "Textual framework code",
+    "hooks": "`.claude/hooks/`, hook development",
+    "commands": "`.claude/commands/`, slash commands",
+    "capabilities": "Claude Code capabilities, tool use",
+    "claude-code": "Claude Code configuration, settings",
 }
 
 # Banner for auto-generated files
@@ -243,9 +262,16 @@ def discover_agent_docs(agent_docs_root: Path) -> list[Path]:
 
     files: list[Path] = []
     for md_file in agent_docs_root.rglob("*.md"):
-        # Skip index files (they are auto-generated)
+        # Skip auto-generated files (index.md, tripwires-index.md, tripwires.md)
         if md_file.name == "index.md":
             continue
+        if md_file.name == "tripwires-index.md":
+            continue
+        # Skip auto-generated tripwires.md files (check for banner)
+        if md_file.name == "tripwires.md":
+            content = md_file.read_text(encoding="utf-8")
+            if "AUTO-GENERATED FILE" in content:
+                continue
         files.append(md_file)
 
     return sorted(files)
@@ -396,6 +422,45 @@ def generate_category_tripwires_doc(
         )
         lines.append("")
 
+    return "\n".join(lines)
+
+
+def generate_tripwires_index(
+    tripwires_by_category: dict[str, list[CollectedTripwire]],
+) -> str:
+    """Generate the tripwires-index.md file content.
+
+    Args:
+        tripwires_by_category: Dict mapping category names to lists of tripwires.
+
+    Returns:
+        Generated markdown content for tripwires-index.md.
+    """
+    lines = [
+        GENERATED_FILE_BANNER.rstrip(),
+        "",
+        "# Tripwires Index",
+        "",
+        "Complete index of category-specific tripwire files.",
+        "",
+        "## Universal Tripwires",
+        "",
+        "Load **first** for any code area: [universal-tripwires.md](universal-tripwires.md)",
+        "",
+        "## Category Tripwires",
+        "",
+        "| Category | Tripwires | Load When Working In |",
+        "| -------- | --------- | -------------------- |",
+    ]
+
+    # Sort categories alphabetically
+    for category in sorted(tripwires_by_category.keys()):
+        tripwires = tripwires_by_category[category]
+        count = len(tripwires)
+        routing_hint = CATEGORY_ROUTING_HINTS.get(category, f"`{category}/` code")
+        lines.append(f"| [{category}]({category}/tripwires.md) | {count} | {routing_hint} |")
+
+    lines.append("")
     return "\n".join(lines)
 
 
@@ -717,6 +782,20 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
             CategoryTripwireStats(category=category_name, count=len(category_tripwires))
         )
 
+    # Generate tripwires index (only if there are tripwires)
+    if tripwires_by_category:
+        tripwires_index_path = agent_docs_root / "tripwires-index.md"
+        tripwires_index_content = generate_tripwires_index(tripwires_by_category)
+        _update_generated_file(
+            file_path=tripwires_index_path,
+            content=tripwires_index_content,
+            created=created,
+            updated=updated,
+            unchanged=unchanged,
+            dry_run=dry_run,
+            agent_docs_root=agent_docs_root,
+        )
+
     return SyncResult(
         created=tuple(created),
         updated=tuple(updated),
@@ -724,4 +803,64 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
         skipped_invalid=invalid_count,
         tripwires_count=tripwires_count,
         tripwires_by_category=tuple(category_stats),
+    )
+
+
+def validate_tripwires_index(project_root: Path) -> TripwiresIndexValidationResult:
+    """Validate that tripwires-index.md is complete and up-to-date.
+
+    Checks that:
+    1. tripwires-index.md exists
+    2. Every tripwires.md file is listed in the index
+
+    Args:
+        project_root: Path to the project root.
+
+    Returns:
+        Validation result with any errors found.
+    """
+    agent_docs_root = project_root / AGENT_DOCS_DIR
+    tripwires_index_path = agent_docs_root / "tripwires-index.md"
+
+    # Check if index exists
+    if not tripwires_index_path.exists():
+        return TripwiresIndexValidationResult(
+            is_valid=False,
+            errors=("tripwires-index.md does not exist. Run 'erk docs sync' to generate it.",),
+            missing_from_index=(),
+            index_exists=False,
+        )
+
+    # Read the index content
+    index_content = tripwires_index_path.read_text(encoding="utf-8")
+
+    # Find all auto-generated tripwires.md files (those with the AUTO-GENERATED banner)
+    tripwire_files = list(agent_docs_root.glob("*/tripwires.md"))
+
+    # Check each auto-generated tripwire file is in the index
+    missing_from_index: list[str] = []
+    for tripwire_file in tripwire_files:
+        # Skip manually-authored tripwires docs (without AUTO-GENERATED banner)
+        file_content = tripwire_file.read_text(encoding="utf-8")
+        if "AUTO-GENERATED FILE" not in file_content:
+            continue
+
+        category = tripwire_file.parent.name
+        # Check for the link format: [category](category/tripwires.md)
+        expected_link = f"[{category}]({category}/tripwires.md)"
+        if expected_link not in index_content:
+            missing_from_index.append(f"{category}/tripwires.md")
+
+    errors: list[str] = []
+    if missing_from_index:
+        errors.append(
+            f"Tripwires index is incomplete. Missing: {', '.join(sorted(missing_from_index))}. "
+            "Run 'erk docs sync' to regenerate."
+        )
+
+    return TripwiresIndexValidationResult(
+        is_valid=len(errors) == 0,
+        errors=tuple(errors),
+        missing_from_index=tuple(sorted(missing_from_index)),
+        index_exists=True,
     )

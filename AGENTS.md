@@ -25,18 +25,9 @@ These critical rules apply across all code areas. See [Universal Tripwires](docs
 
 ### Tripwire Routing
 
-Before editing files, load relevant category tripwires:
+Before editing files, load relevant category tripwires.
 
-| Working in                                               | Load first                             |
-| -------------------------------------------------------- | -------------------------------------- |
-| `src/erk/cli/`                                           | docs/learned/cli/tripwires.md          |
-| `src/erk/gateway/`, `packages/erk-shared/src/*/gateway/` | docs/learned/architecture/tripwires.md |
-| `tests/`                                                 | docs/learned/testing/tripwires.md      |
-| `.github/workflows/`, `.github/actions/`                 | docs/learned/ci/tripwires.md           |
-| `src/erk/tui/`                                           | docs/learned/tui/tripwires.md          |
-| `.impl/`, `.worker-impl/`, planning workflows            | docs/learned/planning/tripwires.md     |
-| `~/.claude/projects/`, session analysis                  | docs/learned/sessions/tripwires.md     |
-| Textual framework code                                   | docs/learned/textual/tripwires.md      |
+See [Tripwires Index](docs/learned/tripwires-index.md) for the complete, auto-maintained routing table.
 
 **Load these skills FIRST:**
 

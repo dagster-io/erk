@@ -136,3 +136,20 @@ class CategoryTripwireStats:
 
     category: str
     count: int
+
+
+@dataclass(frozen=True)
+class TripwiresIndexValidationResult:
+    """Result of validating the tripwires index.
+
+    Attributes:
+        is_valid: True if all validation checks passed.
+        errors: List of validation errors.
+        missing_from_index: Category tripwire files not in the index.
+        index_exists: Whether tripwires-index.md exists.
+    """
+
+    is_valid: bool
+    errors: tuple[str, ...]
+    missing_from_index: tuple[str, ...]
+    index_exists: bool

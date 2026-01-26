@@ -9,7 +9,7 @@ from pathlib import Path
 
 import click
 
-from erk.agent_docs.operations import validate_agent_docs
+from erk.agent_docs.operations import validate_agent_docs, validate_tripwires_index
 
 
 @click.command(name="validate")
@@ -25,6 +25,8 @@ def validate_command(*, verbose: bool) -> None:
     Checks that all markdown files in docs/learned/ have valid frontmatter:
     - title: Human-readable document title
     - read_when: List of conditions when agent should read this doc
+
+    Also validates that tripwires-index.md is complete and up-to-date.
 
     Index files (index.md) are skipped as they are auto-generated.
 
@@ -73,9 +75,24 @@ def validate_command(*, verbose: bool) -> None:
                 for error in validation_result.errors:
                     click.echo(f"    {error}", err=True)
 
+    # Validate tripwires index
+    tripwires_index_result = validate_tripwires_index(project_root)
+    if not tripwires_index_result.is_valid:
+        if verbose or invalid_count == 0:
+            # Only show header if we haven't shown validation errors above
+            click.echo(err=True)
+        status = click.style("FAIL", fg="red")
+        click.echo(f"{status} tripwires-index.md", err=True)
+        for error in tripwires_index_result.errors:
+            click.echo(f"    {error}", err=True)
+    elif verbose:
+        status = click.style("OK", fg="green")
+        click.echo(f"{status} tripwires-index.md", err=True)
+
     # Summary
+    has_errors = invalid_count > 0 or not tripwires_index_result.is_valid
     click.echo(err=True)
-    if invalid_count == 0:
+    if not has_errors:
         click.echo(
             click.style("Agent docs validation: PASSED", fg="green", bold=True),
             err=True,
@@ -92,11 +109,14 @@ def validate_command(*, verbose: bool) -> None:
         click.echo(f"Files validated: {len(results)}", err=True)
         click.echo(f"  Valid: {valid_count}", err=True)
         click.echo(f"  Invalid: {invalid_count}", err=True)
+        if not tripwires_index_result.is_valid:
+            click.echo("  Tripwires index: incomplete", err=True)
         click.echo(err=True)
-        click.echo("Required frontmatter format:", err=True)
-        click.echo("  ---", err=True)
-        click.echo("  title: Document Title", err=True)
-        click.echo("  read_when:", err=True)
-        click.echo('    - "when to read this doc"', err=True)
-        click.echo("  ---", err=True)
+        if invalid_count > 0:
+            click.echo("Required frontmatter format:", err=True)
+            click.echo("  ---", err=True)
+            click.echo("  title: Document Title", err=True)
+            click.echo("  read_when:", err=True)
+            click.echo('    - "when to read this doc"', err=True)
+            click.echo("  ---", err=True)
         raise SystemExit(1)

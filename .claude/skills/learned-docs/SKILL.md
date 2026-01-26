@@ -350,11 +350,12 @@ This validates:
 
 The following files are **auto-generated** from frontmatter metadata:
 
-| File                                   | Source                              |
-| -------------------------------------- | ----------------------------------- |
-| `docs/learned/index.md`                | Frontmatter from all docs           |
-| `docs/learned/<category>/index.md`     | Frontmatter from category           |
-| `docs/learned/<category>/tripwires.md` | `tripwires:` field in category docs |
+| File                                   | Source                                |
+| -------------------------------------- | ------------------------------------- |
+| `docs/learned/index.md`                | Frontmatter from all docs             |
+| `docs/learned/<category>/index.md`     | Frontmatter from category             |
+| `docs/learned/<category>/tripwires.md` | `tripwires:` field in category docs   |
+| `docs/learned/tripwires-index.md`      | Category tripwires with routing hints |
 
 **Never edit these files directly.** Changes will be overwritten.
 
