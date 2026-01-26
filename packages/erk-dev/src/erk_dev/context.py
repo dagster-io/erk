@@ -6,9 +6,9 @@ with fakes instead of mocks.
 
 from dataclasses import dataclass
 
-from erk_shared.git.abc import Git
-from erk_shared.git.dry_run import DryRunGit
-from erk_shared.git.real import RealGit
+from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.dry_run import DryRunGit
+from erk_shared.gateway.git.real import RealGit
 
 
 @dataclass(frozen=True)

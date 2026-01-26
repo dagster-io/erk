@@ -30,14 +30,14 @@ from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.completion.abc import Completion
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
+from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
-from erk_shared.git.abc import Git
-from erk_shared.git.branch_ops.abc import GitBranchOps
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.types import RepoInfo
@@ -229,7 +229,7 @@ class ErkContext:
 
         Example:
             >>> from erk_shared.github.issues import FakeGitHubIssues
-            >>> from erk_shared.git.fake import FakeGit
+            >>> from erk_shared.gateway.git.fake import FakeGit
             >>> github = FakeGitHubIssues()
             >>> git_ops = FakeGit()
             >>> ctx = ErkContext.for_test(github_issues=github, git=git_ops, debug=True)

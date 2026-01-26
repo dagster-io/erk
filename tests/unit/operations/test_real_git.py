@@ -7,7 +7,7 @@ for external tools (git) without actually executing them.
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from erk_shared.git.real import RealGit
+from erk_shared.gateway.git.real import RealGit
 
 
 def test_list_remote_branches() -> None:

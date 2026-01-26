@@ -15,7 +15,7 @@ from tests.commands.submit.conftest import create_plan, setup_submit_context
 
 def test_find_existing_branches_detects_matching_pattern(tmp_path: Path) -> None:
     """Test _find_existing_branches_for_issue finds P{issue}-* branches."""
-    from erk_shared.git.fake import FakeGit
+    from erk_shared.gateway.git.fake import FakeGit
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -42,7 +42,7 @@ def test_find_existing_branches_detects_matching_pattern(tmp_path: Path) -> None
 
 def test_find_existing_branches_returns_empty_when_none_exist(tmp_path: Path) -> None:
     """Test _find_existing_branches_for_issue returns empty list when no matches."""
-    from erk_shared.git.fake import FakeGit
+    from erk_shared.gateway.git.fake import FakeGit
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()

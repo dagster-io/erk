@@ -6,7 +6,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.workflow import workflow_group
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
 from tests.test_utils.context_builders import build_workspace_test_context

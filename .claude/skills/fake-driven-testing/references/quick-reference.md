@@ -327,7 +327,7 @@ fake_claude = FakeClaudeInstallation.for_test(
 Constructor injection with path-keyed dicts.
 
 ```python
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 
 # Minimal setup
 fake_git = FakeGit()

@@ -8,7 +8,7 @@ import click
 
 from erk_dev.commands.bump_version.command import find_repo_root, get_current_version
 from erk_dev.context import ErkDevContext
-from erk_shared.git.abc import Git
+from erk_shared.gateway.git.abc import Git
 
 
 def get_version_tag(git: Git, repo_root: Path, version: str) -> str | None:

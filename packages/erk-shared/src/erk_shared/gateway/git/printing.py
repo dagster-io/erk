@@ -6,9 +6,9 @@ before delegating to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
-from erk_shared.git.worktree.abc import Worktree
-from erk_shared.git.worktree.printing import PrintingWorktree
+from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
+from erk_shared.gateway.git.worktree.abc import Worktree
+from erk_shared.gateway.git.worktree.printing import PrintingWorktree
 from erk_shared.printing.base import PrintingBase
 
 # ============================================================================

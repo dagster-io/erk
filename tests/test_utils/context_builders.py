@@ -6,8 +6,8 @@ ErkContext with appropriate fake implementations.
 """
 
 from erk.core.context import ErkContext
-from erk_shared.git.dry_run import DryRunGit
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.dry_run import DryRunGit
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from tests.fakes.shell import FakeShell
 from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv

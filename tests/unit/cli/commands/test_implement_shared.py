@@ -8,7 +8,7 @@ from erk.cli.commands.implement_shared import (
     extract_plan_from_current_branch,
     validate_flags,
 )
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 

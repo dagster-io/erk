@@ -11,8 +11,8 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
 from erk_shared.gateway.erk_installation.fake import FakeErkInstallation, GlobalConfig
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env
 
 

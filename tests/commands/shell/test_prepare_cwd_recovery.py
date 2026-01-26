@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
 from erk.core.context import ErkContext
 from erk_shared.context.types import GlobalConfig
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from tests.fakes.context import create_test_context
 from tests.fakes.script_writer import FakeScriptWriter
 

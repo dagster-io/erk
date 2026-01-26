@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.git.branch_ops.real import RealGitBranchOps
-from erk_shared.git.real import RealGit
+from erk_shared.gateway.git.branch_ops.real import RealGitBranchOps
+from erk_shared.gateway.git.real import RealGit
 from tests.integration.conftest import GitBranchOpsSetup, init_git_repo
 
 

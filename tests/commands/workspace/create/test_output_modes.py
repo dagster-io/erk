@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.cli.config import LoadedConfig
 from erk.core.repo_discovery import RepoContext
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from tests.commands.workspace.create.conftest import get_current_date_suffix
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 

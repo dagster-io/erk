@@ -9,9 +9,9 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
+from erk_shared.gateway.git.abc import RebaseResult
+from erk_shared.gateway.git.fake import FakeGit, PushedBranch
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
-from erk_shared.git.abc import RebaseResult
-from erk_shared.git.fake import FakeGit, PushedBranch
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
 from tests.test_utils.context_builders import build_workspace_test_context

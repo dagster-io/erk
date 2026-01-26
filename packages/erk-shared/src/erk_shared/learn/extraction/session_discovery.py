@@ -6,7 +6,7 @@ in a project directory.
 
 from pathlib import Path
 
-from erk_shared.git.abc import Git
+from erk_shared.gateway.git.abc import Git
 from erk_shared.learn.extraction.types import BranchContext, SessionInfo
 
 

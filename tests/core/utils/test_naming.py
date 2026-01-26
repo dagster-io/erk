@@ -185,7 +185,7 @@ def test_extract_trailing_number(
 
 def test_ensure_unique_worktree_name_first_time(tmp_path: Path) -> None:
     """Test first-time worktree creation gets only datetime suffix."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
 
     repo_dir = tmp_path / "erks"
     repo_dir.mkdir()
@@ -201,7 +201,7 @@ def test_ensure_unique_worktree_name_first_time(tmp_path: Path) -> None:
 
 def test_ensure_unique_worktree_name_duplicate_same_minute(tmp_path: Path) -> None:
     """Test duplicate worktree in same minute adds -2 after datetime suffix."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
 
     repo_dir = tmp_path / "erks"
     repo_dir.mkdir()
@@ -220,7 +220,7 @@ def test_ensure_unique_worktree_name_duplicate_same_minute(tmp_path: Path) -> No
 
 def test_ensure_unique_worktree_name_multiple_duplicates(tmp_path: Path) -> None:
     """Test multiple duplicates increment correctly."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
 
     repo_dir = tmp_path / "erks"
     repo_dir.mkdir()
@@ -238,7 +238,7 @@ def test_ensure_unique_worktree_name_multiple_duplicates(tmp_path: Path) -> None
 
 def test_ensure_unique_worktree_name_with_existing_number(tmp_path: Path) -> None:
     """Test name with existing number in base preserves it."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
 
     repo_dir = tmp_path / "erks"
     repo_dir.mkdir()

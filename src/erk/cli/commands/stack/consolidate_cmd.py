@@ -15,7 +15,7 @@ from erk.core.consolidation_utils import calculate_stack_range, create_consolida
 from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_pool import load_pool_state
-from erk_shared.git.abc import WorktreeInfo
+from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.output.output import user_output
 
 

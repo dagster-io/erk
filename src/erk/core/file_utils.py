@@ -4,7 +4,7 @@ from pathlib import Path
 
 import frontmatter
 
-from erk_shared.git.abc import Git
+from erk_shared.gateway.git.abc import Git
 
 
 def extract_plan_title(plan_path: Path, git_ops: Git | None = None) -> str | None:

@@ -12,7 +12,7 @@ from erk.cli.commands.stack.split_old.plan import (
     execute_split_plan,
     identify_splittable_branches,
 )
-from erk_shared.git.abc import WorktreeInfo
+from erk_shared.gateway.git.abc import WorktreeInfo
 
 # Tests for identify_splittable_branches function
 

@@ -11,8 +11,8 @@ from erk.cli.commands.wt.list_cmd import (
     _get_impl_issue,
     _get_sync_status,
 )
-from erk_shared.git.abc import BranchSyncInfo
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.abc import BranchSyncInfo
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.github.types import PullRequestInfo
 from tests.fakes.context import create_test_context
 

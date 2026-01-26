@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.fakes.claude_executor import FakeClaudeExecutor

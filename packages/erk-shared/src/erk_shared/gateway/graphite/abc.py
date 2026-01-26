@@ -6,8 +6,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from erk_shared.gateway.git.abc import Git, WorktreeInfo
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.git.abc import Git, WorktreeInfo
 from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 
 if TYPE_CHECKING:

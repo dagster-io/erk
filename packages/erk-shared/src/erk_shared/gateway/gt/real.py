@@ -15,12 +15,12 @@ Design:
 from pathlib import Path
 
 from erk_shared.context.factories import get_repo_info
+from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.real import RealGit
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.real import RealGraphite
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.git.abc import Git
-from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.real import RealGitHub

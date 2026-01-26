@@ -22,7 +22,7 @@ from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
 
 # ============================================================================

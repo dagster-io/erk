@@ -42,7 +42,7 @@ import click
 
 from erk_shared.context.helpers import require_claude_executor, require_cwd, require_git
 from erk_shared.core.claude_executor import ClaudeExecutor
-from erk_shared.git.abc import Git
+from erk_shared.gateway.git.abc import Git
 
 
 @dataclass(frozen=True)

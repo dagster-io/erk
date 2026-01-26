@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from erk.status.collectors.git import GitStatusCollector
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from tests.fakes.context import create_test_context
 
 

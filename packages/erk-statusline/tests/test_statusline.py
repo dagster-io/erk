@@ -10,9 +10,9 @@ from unittest.mock import MagicMock, patch
 
 from erk_shared.branch_manager.fake import FakeBranchManager
 from erk_shared.branch_manager.types import PrInfo
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_statusline.context import StatuslineContext
 from erk_statusline.statusline import (

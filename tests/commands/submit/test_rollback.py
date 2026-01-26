@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from erk.cli.commands.submit import submit_cmd
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from tests.commands.submit.conftest import create_plan
 from tests.test_utils.plan_helpers import create_plan_store_with_plans

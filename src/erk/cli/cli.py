@@ -48,7 +48,7 @@ from erk.core.version_check import (
 )
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
-from erk_shared.git.real import RealGit
+from erk_shared.gateway.git.real import RealGit
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])  # terse help flags
 

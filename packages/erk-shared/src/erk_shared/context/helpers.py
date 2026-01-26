@@ -20,8 +20,8 @@ from erk_shared.branch_manager.abc import BranchManager
 from erk_shared.context.context import ErkContext
 from erk_shared.context.types import LoadedConfig, NoRepoSentinel
 from erk_shared.core.claude_executor import ClaudeExecutor
+from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.time.abc import Time
-from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation

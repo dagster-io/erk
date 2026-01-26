@@ -29,9 +29,9 @@ from erk.status.collectors.git import GitStatusCollector
 from erk.status.collectors.impl import PlanFileCollector
 from erk.status.models.status_data import GitStatus, PlanStatus
 from erk.status.orchestrator import StatusOrchestrator
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.parallel.real import RealParallelTaskRunner
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.fake import FakeGit
 from tests.fakes.context import create_test_context
 from tests.fakes.parallel_task_runner import FakeParallelTaskRunner
 

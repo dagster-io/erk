@@ -40,7 +40,7 @@ from pathlib import Path
 import click
 
 from erk_shared.context.helpers import require_git, require_github, require_repo_root
-from erk_shared.git.abc import Git
+from erk_shared.gateway.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.pr_footer import (
     extract_footer_from_body,

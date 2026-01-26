@@ -9,7 +9,7 @@ from click.testing import CliRunner
 from erk.cli.commands.submit import ERK_PLAN_LABEL, submit_cmd
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
@@ -24,7 +24,7 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     # Create a custom FakeGit with linked branch_ops that cleans up .worker-impl/
     # This simulates the real behavior where checking out a branch without
     # .worker-impl/ removes the folder from the working directory
-    from erk_shared.git.branch_ops.fake import FakeGitBranchOps
+    from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
 
     class FakeGitBranchOpsWithCheckoutCleanup(FakeGitBranchOps):
         def __init__(self, repo_root: Path, **kwargs):

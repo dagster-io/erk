@@ -7,9 +7,9 @@ from erk.core.repo_discovery import RepoContext
 from erk.tui.data.provider import RealPlanDataProvider
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.fake import FakeClipboard
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.http.fake import FakeHttpClient
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import (
     GitHubRepoId,

@@ -13,7 +13,7 @@ from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time, get_pr_status_emoji
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_utils import find_current_worktree
-from erk_shared.git.abc import BranchSyncInfo
+from erk_shared.gateway.git.abc import BranchSyncInfo
 from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.impl_folder import get_impl_path, read_issue_reference
 

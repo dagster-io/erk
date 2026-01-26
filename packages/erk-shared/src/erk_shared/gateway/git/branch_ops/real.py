@@ -2,10 +2,10 @@
 
 from pathlib import Path
 
+from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.git.lock import wait_for_index_lock
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.git.branch_ops.abc import GitBranchOps
-from erk_shared.git.lock import wait_for_index_lock
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 

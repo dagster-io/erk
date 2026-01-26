@@ -31,7 +31,7 @@ from erk_shared.context.helpers import (
     require_repo_root,
     require_time,
 )
-from erk_shared.git.abc import Git
+from erk_shared.gateway.git.abc import Git
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import generate_issue_branch_name
 

@@ -41,7 +41,7 @@ Overview of erk's gateway architecture showing the layered abstraction from low-
 
 ## Responsibility Boundaries
 
-### Git Gateway (`erk_shared.git`)
+### Git Gateway (`erk_shared.gateway.git`)
 
 **Responsibility**: Local repository operations
 

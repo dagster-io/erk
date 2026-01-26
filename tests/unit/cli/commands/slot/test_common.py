@@ -17,8 +17,8 @@ from erk.cli.commands.slot.common import (
 from erk.cli.config import LoadedConfig
 from erk.core.context import context_for_test
 from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
 
 
 class TestGetPoolSize:

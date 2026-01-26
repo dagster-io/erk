@@ -7,8 +7,8 @@ from pathlib import Path
 
 from erk_shared.branch_manager.abc import BranchManager
 from erk_shared.branch_manager.types import PrInfo
-from erk_shared.git.abc import Git
-from erk_shared.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.github.abc import GitHub
 from erk_shared.github.types import PRNotFound
 

@@ -7,6 +7,8 @@ to an existing PR created via git + gh.
 from dataclasses import dataclass
 from pathlib import Path
 
+from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -20,8 +22,6 @@ from erk_shared.gateway.pr.types import (
     GraphiteEnhanceResult,
     GraphiteSkipped,
 )
-from erk_shared.git.abc import Git
-from erk_shared.git.fake import FakeGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.fake import FakeGitHub
 

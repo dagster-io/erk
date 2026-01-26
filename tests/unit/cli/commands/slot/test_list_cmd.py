@@ -5,8 +5,8 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, save_pool_state
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 

@@ -18,7 +18,7 @@ from erk.cli.commands.exec.scripts.pr_sync_commit import (
     pr_sync_commit as pr_sync_commit_command,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
 

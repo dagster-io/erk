@@ -14,10 +14,10 @@ from erk.cli.commands.pr.submit_cmd import (
     _wait_for_pr_in_cache,
 )
 from erk.core.context import context_for_test
+from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.time.abc import Time
-from erk_shared.git.abc import Git
-from erk_shared.git.fake import FakeGit
 from erk_shared.github.types import PullRequestInfo
 
 
