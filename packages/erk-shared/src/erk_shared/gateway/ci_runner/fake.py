@@ -15,12 +15,17 @@ class FakeCIRunner(CIRunner):
     def __init__(
         self,
         *,
-        failing_checks: set[str] | None = None,
-        missing_commands: set[str] | None = None,
-    ):
+        failing_checks: set[str] | None,
+        missing_commands: set[str] | None,
+    ) -> None:
         self._failing_checks = failing_checks if failing_checks is not None else set()
         self._missing_commands = missing_commands if missing_commands is not None else set()
         self._run_calls: list[RunCall] = []
+
+    @classmethod
+    def create_passing_all(cls) -> "FakeCIRunner":
+        """Create a FakeCIRunner where all checks pass."""
+        return cls(failing_checks=None, missing_commands=None)
 
     def run_check(self, *, name: str, cmd: list[str], cwd: Path) -> CICheckResult:
         self._run_calls.append(RunCall(name=name, cmd=cmd, cwd=cwd))

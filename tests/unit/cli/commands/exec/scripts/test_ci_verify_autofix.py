@@ -30,7 +30,7 @@ class TestVerifyAutofixImpl:
     def test_no_new_commit_returns_early(self, tmp_path: Path) -> None:
         """When current SHA matches original, return immediately without running checks."""
         github = FakeGitHub()
-        ci_runner = FakeCIRunner()
+        ci_runner = FakeCIRunner.create_passing_all()
 
         result = _verify_autofix_impl(
             original_sha="abc123",
@@ -54,7 +54,7 @@ class TestVerifyAutofixImpl:
     def test_new_commit_runs_checks(self, tmp_path: Path) -> None:
         """When SHA changes, run all checks."""
         github = FakeGitHub()
-        ci_runner = FakeCIRunner()
+        ci_runner = FakeCIRunner.create_passing_all()
 
         result = _verify_autofix_impl(
             original_sha="abc123",
@@ -82,7 +82,7 @@ class TestVerifyAutofixImpl:
     def test_failed_check_reports_failure(self, tmp_path: Path) -> None:
         """When a check fails, report failure status."""
         github = FakeGitHub()
-        ci_runner = FakeCIRunner(failing_checks={"lint"})
+        ci_runner = FakeCIRunner(failing_checks={"lint"}, missing_commands=None)
 
         result = _verify_autofix_impl(
             original_sha="abc123",

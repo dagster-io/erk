@@ -17,7 +17,7 @@ class TestFakeCIRunner:
 
     def test_default_behavior_all_pass(self, tmp_path: Path) -> None:
         """By default, all checks pass."""
-        runner = FakeCIRunner()
+        runner = FakeCIRunner.create_passing_all()
 
         result = runner.run_check(name="test", cmd=["echo", "test"], cwd=tmp_path)
 
@@ -26,7 +26,7 @@ class TestFakeCIRunner:
 
     def test_failing_checks_configuration(self, tmp_path: Path) -> None:
         """Checks in failing_checks set fail with command_failed error."""
-        runner = FakeCIRunner(failing_checks={"lint", "format"})
+        runner = FakeCIRunner(failing_checks={"lint", "format"}, missing_commands=None)
 
         lint_result = runner.run_check(name="lint", cmd=["make", "lint"], cwd=tmp_path)
         assert lint_result.passed is False
@@ -43,7 +43,7 @@ class TestFakeCIRunner:
 
     def test_missing_commands_configuration(self, tmp_path: Path) -> None:
         """Checks in missing_commands set fail with command_not_found error."""
-        runner = FakeCIRunner(missing_commands={"prettier"})
+        runner = FakeCIRunner(failing_checks=None, missing_commands={"prettier"})
 
         result = runner.run_check(name="prettier", cmd=["prettier", "--check", "."], cwd=tmp_path)
 
@@ -52,7 +52,7 @@ class TestFakeCIRunner:
 
     def test_run_calls_tracking(self, tmp_path: Path) -> None:
         """run_calls property tracks all invocations."""
-        runner = FakeCIRunner()
+        runner = FakeCIRunner.create_passing_all()
 
         runner.run_check(name="lint", cmd=["make", "lint"], cwd=tmp_path)
         runner.run_check(name="test", cmd=["make", "test"], cwd=tmp_path)
@@ -68,7 +68,7 @@ class TestFakeCIRunner:
 
     def test_check_names_run_property(self, tmp_path: Path) -> None:
         """check_names_run property returns list of check names."""
-        runner = FakeCIRunner()
+        runner = FakeCIRunner.create_passing_all()
 
         runner.run_check(name="lint", cmd=["make", "lint"], cwd=tmp_path)
         runner.run_check(name="format", cmd=["make", "format"], cwd=tmp_path)
@@ -78,7 +78,7 @@ class TestFakeCIRunner:
 
     def test_run_calls_returns_copy(self, tmp_path: Path) -> None:
         """run_calls returns a copy, not the internal list."""
-        runner = FakeCIRunner()
+        runner = FakeCIRunner.create_passing_all()
         runner.run_check(name="test", cmd=["echo", "test"], cwd=tmp_path)
 
         calls1 = runner.run_calls
@@ -107,7 +107,7 @@ class TestFakeCIRunner:
 
     def test_empty_run_calls_initially(self, tmp_path: Path) -> None:
         """run_calls is empty before any checks run."""
-        runner = FakeCIRunner()
+        runner = FakeCIRunner.create_passing_all()
 
         assert runner.run_calls == []
         assert runner.check_names_run == []
@@ -118,7 +118,7 @@ class TestRunCallDataclass:
 
     def test_run_call_frozen(self, tmp_path: Path) -> None:
         """Verify RunCall is immutable."""
-        runner = FakeCIRunner()
+        runner = FakeCIRunner.create_passing_all()
         runner.run_check(name="test", cmd=["echo", "test"], cwd=tmp_path)
 
         call = runner.run_calls[0]
