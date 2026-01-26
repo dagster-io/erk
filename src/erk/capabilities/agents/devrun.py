@@ -1,7 +1,4 @@
-"""Agent-based capabilities for erk init.
-
-Agent capabilities install Claude agent definitions.
-"""
+"""DevrunAgentCapability - safe execution agent for dev tools."""
 
 import shutil
 from pathlib import Path

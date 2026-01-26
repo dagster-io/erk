@@ -1,7 +1,4 @@
-"""Hooks capability for erk init.
-
-Capability for configuring Claude Code hooks required by erk.
-"""
+"""HooksCapability - Claude Code hooks for erk."""
 
 import json
 from pathlib import Path

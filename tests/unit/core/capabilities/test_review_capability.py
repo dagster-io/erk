@@ -5,11 +5,11 @@ Tests the review definition installation and preflight checking behavior.
 
 from pathlib import Path
 
-from erk.core.capabilities.reviews import (
+from erk.capabilities.reviews.dignified_code_simplifier import (
     DignifiedCodeSimplifierReviewDefCapability,
-    DignifiedPythonReviewDefCapability,
-    TripwiresReviewDefCapability,
 )
+from erk.capabilities.reviews.dignified_python import DignifiedPythonReviewDefCapability
+from erk.capabilities.reviews.tripwires import TripwiresReviewDefCapability
 
 
 def test_tripwires_review_name() -> None:

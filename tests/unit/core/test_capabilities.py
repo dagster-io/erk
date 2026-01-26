@@ -11,7 +11,16 @@ These tests verify:
 
 from pathlib import Path
 
-from erk.core.capabilities.agents import DevrunAgentCapability
+from erk.capabilities.agents.devrun import DevrunAgentCapability
+from erk.capabilities.erk_bash_permissions import ErkBashPermissionsCapability
+from erk.capabilities.hooks import HooksCapability
+from erk.capabilities.learned_docs import LearnedDocsCapability
+from erk.capabilities.ruff_format import RuffFormatCapability
+from erk.capabilities.skills.dignified_python import DignifiedPythonCapability
+from erk.capabilities.skills.fake_driven_testing import FakeDrivenTestingCapability
+from erk.capabilities.statusline import StatuslineCapability
+from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
+from erk.capabilities.workflows.learn import LearnWorkflowCapability
 from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
@@ -19,9 +28,6 @@ from erk.core.capabilities.base import (
     CapabilityScope,
 )
 from erk.core.capabilities.detection import is_reminder_installed
-from erk.core.capabilities.hooks import HooksCapability
-from erk.core.capabilities.learned_docs import LearnedDocsCapability
-from erk.core.capabilities.permissions import ErkBashPermissionsCapability
 from erk.core.capabilities.registry import (
     get_capability,
     get_managed_artifacts,
@@ -29,13 +35,6 @@ from erk.core.capabilities.registry import (
     list_capabilities,
     list_required_capabilities,
 )
-from erk.core.capabilities.ruff_format import RuffFormatCapability
-from erk.core.capabilities.skills import (
-    DignifiedPythonCapability,
-    FakeDrivenTestingCapability,
-)
-from erk.core.capabilities.statusline import StatuslineCapability
-from erk.core.capabilities.workflows import ErkImplWorkflowCapability, LearnWorkflowCapability
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
@@ -1378,11 +1377,9 @@ def test_is_reminder_installed_with_multiple_reminders(tmp_path: Path) -> None:
 
 def test_reminder_capability_required_is_false() -> None:
     """Test that reminder capabilities have required=False (opt-in)."""
-    from erk.core.capabilities.reminders import (
-        DevrunReminderCapability,
-        DignifiedPythonReminderCapability,
-        TripwiresReminderCapability,
-    )
+    from erk.capabilities.reminders.devrun import DevrunReminderCapability
+    from erk.capabilities.reminders.dignified_python import DignifiedPythonReminderCapability
+    from erk.capabilities.reminders.tripwires import TripwiresReminderCapability
 
     assert DevrunReminderCapability().required is False
     assert DignifiedPythonReminderCapability().required is False
@@ -1391,7 +1388,7 @@ def test_reminder_capability_required_is_false() -> None:
 
 def test_devrun_reminder_capability_properties() -> None:
     """Test DevrunReminderCapability has correct properties."""
-    from erk.core.capabilities.reminders import DevrunReminderCapability
+    from erk.capabilities.reminders.devrun import DevrunReminderCapability
 
     cap = DevrunReminderCapability()
     assert cap.name == "devrun-reminder"
@@ -1403,7 +1400,7 @@ def test_devrun_reminder_capability_properties() -> None:
 
 def test_dignified_python_reminder_capability_properties() -> None:
     """Test DignifiedPythonReminderCapability has correct properties."""
-    from erk.core.capabilities.reminders import DignifiedPythonReminderCapability
+    from erk.capabilities.reminders.dignified_python import DignifiedPythonReminderCapability
 
     cap = DignifiedPythonReminderCapability()
     assert cap.name == "dignified-python-reminder"
@@ -1414,7 +1411,7 @@ def test_dignified_python_reminder_capability_properties() -> None:
 
 def test_tripwires_reminder_capability_properties() -> None:
     """Test TripwiresReminderCapability has correct properties."""
-    from erk.core.capabilities.reminders import TripwiresReminderCapability
+    from erk.capabilities.reminders.tripwires import TripwiresReminderCapability
 
     cap = TripwiresReminderCapability()
     assert cap.name == "tripwires-reminder"
@@ -1425,7 +1422,7 @@ def test_tripwires_reminder_capability_properties() -> None:
 
 def test_reminder_capability_is_installed_false_when_not_in_state(tmp_path: Path) -> None:
     """Test is_installed returns False when not in state.toml."""
-    from erk.core.capabilities.reminders import DevrunReminderCapability
+    from erk.capabilities.reminders.devrun import DevrunReminderCapability
 
     cap = DevrunReminderCapability()
     assert cap.is_installed(tmp_path) is False
@@ -1433,7 +1430,7 @@ def test_reminder_capability_is_installed_false_when_not_in_state(tmp_path: Path
 
 def test_reminder_capability_is_installed_true_when_in_state(tmp_path: Path) -> None:
     """Test is_installed returns True when in state.toml."""
-    from erk.core.capabilities.reminders import DevrunReminderCapability
+    from erk.capabilities.reminders.devrun import DevrunReminderCapability
 
     _write_state_toml(tmp_path, ["devrun"])
 
@@ -1445,7 +1442,7 @@ def test_reminder_capability_install_adds_to_state(tmp_path: Path) -> None:
     """Test install adds reminder to state.toml."""
     import tomli
 
-    from erk.core.capabilities.reminders import DevrunReminderCapability
+    from erk.capabilities.reminders.devrun import DevrunReminderCapability
 
     cap = DevrunReminderCapability()
     result = cap.install(tmp_path)
@@ -1463,7 +1460,7 @@ def test_reminder_capability_install_adds_to_state(tmp_path: Path) -> None:
 
 def test_reminder_capability_install_idempotent(tmp_path: Path) -> None:
     """Test install is idempotent when already in state."""
-    from erk.core.capabilities.reminders import DevrunReminderCapability
+    from erk.capabilities.reminders.devrun import DevrunReminderCapability
 
     _write_state_toml(tmp_path, ["devrun"])
 
@@ -1478,7 +1475,7 @@ def test_reminder_capability_install_preserves_existing_reminders(tmp_path: Path
     """Test install preserves other reminders in state.toml."""
     import tomli
 
-    from erk.core.capabilities.reminders import TripwiresReminderCapability
+    from erk.capabilities.reminders.tripwires import TripwiresReminderCapability
 
     _write_state_toml(tmp_path, ["devrun", "dignified-python"])
 
@@ -1501,7 +1498,7 @@ def test_reminder_capability_install_preserves_other_sections(tmp_path: Path) ->
     import tomli
     import tomli_w
 
-    from erk.core.capabilities.reminders import DevrunReminderCapability
+    from erk.capabilities.reminders.devrun import DevrunReminderCapability
 
     # Create state.toml with other sections
     state_path = tmp_path / ".erk" / "state.toml"
@@ -1521,7 +1518,7 @@ def test_reminder_capability_install_preserves_other_sections(tmp_path: Path) ->
 
 def test_reminder_capability_artifacts_empty() -> None:
     """Test reminder capabilities have no artifacts (state stored in state.toml)."""
-    from erk.core.capabilities.reminders import DevrunReminderCapability
+    from erk.capabilities.reminders.devrun import DevrunReminderCapability
 
     cap = DevrunReminderCapability()
     artifacts = cap.artifacts

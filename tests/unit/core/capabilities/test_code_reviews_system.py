@@ -5,7 +5,7 @@ Tests the unified code reviews workflow infrastructure installation.
 
 from pathlib import Path
 
-from erk.core.capabilities.code_reviews_system import CodeReviewsSystemCapability
+from erk.capabilities.code_reviews_system import CodeReviewsSystemCapability
 
 
 def test_name_is_code_reviews_system() -> None:
