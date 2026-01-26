@@ -19,6 +19,16 @@ REBASE_WORKFLOW_NAME = "erk-rebase.yml"
 # GitHub Actions workflow for remote PR comment addressing
 PR_ADDRESS_WORKFLOW_NAME = "pr-address.yml"
 
+# Workflow command name to actual workflow filename mapping
+# This provides a unified interface via `erk workflow run <name>`
+WORKFLOW_COMMAND_MAP: dict[str, str] = {
+    "plan-implement": DISPATCH_WORKFLOW_NAME,  # erk-impl.yml
+    "pr-fix-conflicts": REBASE_WORKFLOW_NAME,  # erk-rebase.yml
+    "pr-address": PR_ADDRESS_WORKFLOW_NAME,  # pr-address.yml
+    "objective-reconcile": "objective-reconciler.yml",
+    "learn": "learn-dispatch.yml",
+}
+
 # Workflow names that trigger the autofix workflow
 # Must match the `name:` field in each .yml file (which should match filename without .yml)
 AUTOFIX_TRIGGER_WORKFLOWS = frozenset(
