@@ -22,8 +22,8 @@ tripwires:
     warning: "Use git.get_repository_root(cwd) to get the worktree root, then match exactly against known paths. Path comparisons with .exists()/.resolve()/is_relative_to() are fragile."
   - action: "checking isinstance(ctx.graphite, GraphiteDisabled) inline in command code"
     warning: "Use BranchManager abstraction instead. Add a method to BranchManager ABC that handles both Graphite and Git paths. This centralizes the branching logic and enables testing with FakeBranchManager."
-  - action: 'using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code'
-    warning: "Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables."
+  - action: 'using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk Python code'
+    warning: "Erk Python code NEVER has access to this environment variable. Session IDs reach erk through: (1) CLI --session-id flags (common), (2) Hook stdin JSON with sessionId field. Skills can use ${CLAUDE_SESSION_ID} substitution, but this is expanded by Claude Code before erk sees it. See AGENTS.md section 'Session ID Access' for the complete picture."
   - action: "injecting Time dependency into gateway real.py for lock-waiting or retry logic"
     warning: "Accept optional Time in __init__ with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/git/lock.py for pattern."
   - action: "adding file I/O, network calls, or subprocess invocations to a class __init__"
@@ -99,6 +99,16 @@ def slot_repair(ctx: ErkContext, dry_run: bool) -> None:
 - Command performs multiple operations that should all be dry-run
 - Operations span multiple gateways (git + github + filesystem)
 - You need consistent dry-run behavior across the entire operation
+
+### Decision Tree
+
+```
+Is command multi-step or spans multiple gateways?
+├── YES → Use Dependency Injection (DryRunGit/DryRunGitHub wrappers)
+└── NO → Does command have a single mutating operation at the end?
+    ├── YES → Use CLI Preview Flag (--dry-run)
+    └── NO → Reconsider if dry-run is even needed
+```
 
 ### Rationale
 

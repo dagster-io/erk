@@ -108,3 +108,4 @@ When testing cache invalidation, filesystem mtime resolution can cause flaky tes
 
 - [Erk Architecture Patterns](erk-architecture.md) - Context and gateway design
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - Adding new gateway methods
+- [Parallel Session Awareness](../sessions/parallel-session-awareness.md) - Why mtime-based lookups are problematic for session data (different context than cache invalidation)

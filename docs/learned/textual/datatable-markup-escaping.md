@@ -80,3 +80,4 @@ def populate(self, plans: list[PlanRowData]) -> None:
 
 - [Textual API Quirks](quirks.md) - Other Textual gotchas including URL quoting in link tags
 - [TUI Architecture](../tui/architecture.md) - Data flow through the TUI
+- [CLI Output Styling Guide](../cli/output-styling.md) - CLI-specific Rich markup escaping using `escape_markup()`

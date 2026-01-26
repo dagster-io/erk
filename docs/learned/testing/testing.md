@@ -486,7 +486,44 @@ def test_branch_tracked_via_graphite() -> None:
     assert ("feature", "main") in fake_graphite_branch_ops.tracked_branches
 ```
 
-## BranchManager Test Placement
+## Test Placement Decision Tree
+
+Use this decision tree to determine where to place new tests:
+
+```
+What are you testing?
+├── CLI command behavior?
+│   └── tests/commands/<command>/ (unit tests with fakes)
+│
+├── Core/business logic?
+│   └── tests/core/ (unit tests with fakes)
+│
+├── Gateway behavior?
+│   ├── Fake behavior? → tests/unit/<gateway>/
+│   └── Real (subprocess) behavior? → tests/integration/test_real_*.py
+│
+├── TUI component?
+│   └── tests/tui/ (unit tests with fakes)
+│
+├── exec script (erk exec <cmd>)?
+│   └── tests/exec/ (unit tests with fakes)
+│
+└── Multiple components together?
+    └── tests/integration/ (integration tests)
+```
+
+### Test Placement Examples
+
+| Code Location              | Test Location                        | Test Type   |
+| -------------------------- | ------------------------------------ | ----------- |
+| `src/erk/cli/commands/wt/` | `tests/commands/wt/`                 | Unit (fake) |
+| `src/erk/core/branch.py`   | `tests/core/test_branch.py`          | Unit (fake) |
+| `erk_shared/git/real.py`   | `tests/integration/test_real_git.py` | Integration |
+| `erk_shared/git/fake.py`   | `tests/unit/git/test_fake_git.py`    | Unit        |
+| `src/erk/tui/screens/`     | `tests/tui/`                         | Unit (fake) |
+| `src/erk/exec/`            | `tests/exec/`                        | Unit (fake) |
+
+### BranchManager Test Placement
 
 Tests for BranchManager implementations live in:
 

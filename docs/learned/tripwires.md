@@ -31,7 +31,7 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 
 **CRITICAL: Before checking isinstance(ctx.graphite, GraphiteDisabled) inline in command code** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Use BranchManager abstraction instead. Add a method to BranchManager ABC that handles both Graphite and Git paths. This centralizes the branching logic and enables testing with FakeBranchManager.
 
-**CRITICAL: Before using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables.
+**CRITICAL: Before using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk Python code** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Erk Python code NEVER has access to this environment variable. Session IDs reach erk through: (1) CLI --session-id flags (common), (2) Hook stdin JSON with sessionId field. Skills can use ${CLAUDE_SESSION_ID} substitution, but this is expanded by Claude Code before erk sees it. See AGENTS.md section 'Session ID Access' for the complete picture.
 
 **CRITICAL: Before injecting Time dependency into gateway real.py for lock-waiting or retry logic** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Accept optional Time in **init** with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/git/lock.py for pattern.
 

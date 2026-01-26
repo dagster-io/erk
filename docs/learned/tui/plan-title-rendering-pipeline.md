@@ -34,14 +34,21 @@ GitHub returns raw issue/PR data:
 
 At this stage, titles are plain strings without any erk-specific prefixes.
 
-### Stage 2: Middleware Enrichment
+### Stage 2: Middleware Enrichment (BEFORE FILTERING)
 
-The data provider or service layer adds prefixes based on labels:
+**This is the critical stage for prefix addition.** The data provider or service layer adds prefixes based on labels:
 
 - `[erk-learn]` prefix for plans with `erk-learn` label
 - Other metadata enrichment (learn_status, learn_plan_issue)
 
-**Critical**: This must happen BEFORE filtering (Stage 3). If enrichment happens after filtering, filtered-out plans don't get their prefixes, and later re-additions will be missing metadata.
+**Ordering Constraint** (referenced by tripwire):
+
+```
+✅ CORRECT: Stage 1 → Stage 2 (enrich) → Stage 3 (filter)
+❌ WRONG:   Stage 1 → Stage 3 (filter) → Stage 2 (enrich)
+```
+
+If enrichment happens after filtering, filtered-out plans don't get their prefixes, and later re-additions will be missing metadata.
 
 ### Stage 3: Filtering Stage
 
