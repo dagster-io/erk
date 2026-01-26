@@ -54,6 +54,7 @@ class FakeGitHub(GitHub):
         pr_titles: dict[int, str] | None = None,
         pr_bodies_by_number: dict[int, str] | None = None,
         pr_diffs: dict[int, str] | None = None,
+        pr_changed_files: dict[int, list[str]] | None = None,
         merge_should_succeed: bool = True,
         pr_update_should_succeed: bool = True,
         pr_review_threads: dict[int, list[PRReviewThread]] | None = None,
@@ -86,6 +87,7 @@ class FakeGitHub(GitHub):
             pr_titles: Mapping of pr_number -> title for explicit title storage
             pr_bodies_by_number: Mapping of pr_number -> body for explicit body storage
             pr_diffs: Mapping of pr_number -> diff content
+            pr_changed_files: Mapping of pr_number -> list of changed file paths
             merge_should_succeed: Whether merge_pr() should succeed (default True)
             pr_update_should_succeed: Whether PR updates should succeed (default True)
             pr_review_threads: Mapping of pr_number -> list[PRReviewThread]
@@ -126,6 +128,7 @@ class FakeGitHub(GitHub):
         self._pr_titles = pr_titles or {}
         self._pr_bodies_by_number = pr_bodies_by_number or {}
         self._pr_diffs = pr_diffs or {}
+        self._pr_changed_files = pr_changed_files or {}
         self._merge_should_succeed = merge_should_succeed
         self._pr_update_should_succeed = pr_update_should_succeed
         self._pr_review_threads = pr_review_threads or {}
@@ -666,6 +669,13 @@ class FakeGitHub(GitHub):
             "-old\n"
             "+new"
         )
+
+    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -> list[str]:
+        """Get list of files changed in a PR from pre-configured data.
+
+        Returns pre-configured file list or empty list if not configured.
+        """
+        return self._pr_changed_files.get(pr_number, [])
 
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
         """Record label addition in mutation tracking list and update internal state."""

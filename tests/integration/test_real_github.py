@@ -753,6 +753,73 @@ def test_has_pr_label_returns_false_when_label_not_present(monkeypatch: MonkeyPa
 
 
 # ============================================================================
+# get_pr_changed_files() Tests
+# ============================================================================
+
+
+def test_get_pr_changed_files_success(monkeypatch: MonkeyPatch) -> None:
+    """Test get_pr_changed_files uses correct REST API endpoint and parses output."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        # gh api returns one filename per line
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="src/main.py\ntests/test_main.py\nREADME.md\n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub.for_test()
+        result = ops.get_pr_changed_files(Path("/repo"), 123)
+
+        # Verify REST API format: gh api repos/.../pulls/123/files --paginate -q .[].filename
+        assert len(called_with) == 1
+        cmd = called_with[0]
+        assert cmd[0:2] == ["gh", "api"]
+        assert "repos/{owner}/{repo}/pulls/123/files" in cmd[2]
+        assert "--paginate" in cmd
+        assert "-q" in cmd
+        assert ".[].filename" in cmd
+
+        # Verify result
+        assert result == ["src/main.py", "tests/test_main.py", "README.md"]
+
+
+def test_get_pr_changed_files_empty_pr(monkeypatch: MonkeyPatch) -> None:
+    """Test get_pr_changed_files returns empty list for PR with no changed files."""
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub.for_test()
+        result = ops.get_pr_changed_files(Path("/repo"), 456)
+
+        assert result == []
+
+
+def test_get_pr_changed_files_api_failure(monkeypatch: MonkeyPatch) -> None:
+    """Test get_pr_changed_files raises RuntimeError on API failure."""
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        raise subprocess.CalledProcessError(1, cmd, stderr="PR not found")
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub.for_test()
+
+        with pytest.raises(RuntimeError, match="PR not found"):
+            ops.get_pr_changed_files(Path("/repo"), 999)
+
+
+# ============================================================================
 # delete_remote_branch() Tests
 # ============================================================================
 

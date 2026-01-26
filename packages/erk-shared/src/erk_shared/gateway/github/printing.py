@@ -230,6 +230,10 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Get PR diff (read-only, no printing)."""
         return self._wrapped.get_pr_diff(repo_root, pr_number)
 
+    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -> list[str]:
+        """Get list of files changed in PR (read-only, no printing)."""
+        return self._wrapped.get_pr_changed_files(repo_root, pr_number)
+
     def get_issues_with_pr_linkages(
         self,
         *,
