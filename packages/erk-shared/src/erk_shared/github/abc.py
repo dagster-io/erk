@@ -724,3 +724,29 @@ class GitHub(ABC):
             GistCreateError on failure with error message.
         """
         ...
+
+    @abstractmethod
+    def create_commit_status(
+        self,
+        *,
+        repo: str,
+        sha: str,
+        state: str,
+        context: str,
+        description: str,
+    ) -> bool:
+        """Create a commit status on GitHub.
+
+        Sets a commit status (check) for CI verification purposes.
+
+        Args:
+            repo: GitHub repository (owner/repo format)
+            sha: Commit SHA to set status for
+            state: Status state - one of "success", "failure", "pending", "error"
+            context: Context name for the status (e.g., "ci / lint (autofix-verified)")
+            description: Description of the status
+
+        Returns:
+            True on success, False on failure
+        """
+        ...

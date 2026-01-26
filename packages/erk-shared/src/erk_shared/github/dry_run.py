@@ -330,3 +330,18 @@ class DryRunGitHub(GitHub):
             gist_url="https://gist.github.com/dry-run/dry-run-gist-id",
             raw_url=f"https://gist.githubusercontent.com/dry-run/dry-run-gist-id/raw/{filename}",
         )
+
+    def create_commit_status(
+        self,
+        *,
+        repo: str,
+        sha: str,
+        state: str,
+        context: str,
+        description: str,
+    ) -> bool:
+        """No-op for creating commit status in dry-run mode.
+
+        Returns True to indicate success without actually creating status.
+        """
+        return True

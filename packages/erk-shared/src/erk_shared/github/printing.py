@@ -358,3 +358,20 @@ class PrintingGitHub(PrintingBase, GitHub):
         if isinstance(result, GistCreated):
             self._emit(f"-> {click.style(result.gist_url, fg='green')}")
         return result
+
+    def create_commit_status(
+        self,
+        *,
+        repo: str,
+        sha: str,
+        state: str,
+        context: str,
+        description: str,
+    ) -> bool:
+        """Create commit status with printed output."""
+        self._emit(
+            self._format_command(f"gh api repos/{repo}/statuses/{sha[:8]}... -f state={state}")
+        )
+        return self._wrapped.create_commit_status(
+            repo=repo, sha=sha, state=state, context=context, description=description
+        )

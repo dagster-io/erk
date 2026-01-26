@@ -159,6 +159,8 @@ class FakeGitHub(GitHub):
         self._deleted_remote_branches: list[str] = []
         # Ordered log of all mutation operations for testing operation ordering
         self._operation_log: list[tuple[Any, ...]] = []
+        # (repo, sha, state, context, description)
+        self._created_commit_statuses: list[tuple[str, str, str, str, str]] = []
 
     @property
     def issues(self) -> GitHubIssues:
@@ -983,3 +985,27 @@ class FakeGitHub(GitHub):
         Returns list of (filename, content, description, public) tuples.
         """
         return self._created_gists
+
+    def create_commit_status(
+        self,
+        *,
+        repo: str,
+        sha: str,
+        state: str,
+        context: str,
+        description: str,
+    ) -> bool:
+        """Record commit status creation in mutation tracking list.
+
+        Always returns True to simulate successful status creation.
+        """
+        self._created_commit_statuses.append((repo, sha, state, context, description))
+        return True
+
+    @property
+    def created_commit_statuses(self) -> list[tuple[str, str, str, str, str]]:
+        """Read-only access to created commit statuses for test assertions.
+
+        Returns list of (repo, sha, state, context, description) tuples.
+        """
+        return self._created_commit_statuses

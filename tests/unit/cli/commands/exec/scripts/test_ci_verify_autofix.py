@@ -6,8 +6,9 @@ Tests the CI verification command that runs after autofix pushes a new commit.
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import pytest
 from click.testing import CliRunner
@@ -20,63 +21,7 @@ from erk.cli.commands.exec.scripts.ci_verify_autofix import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.time.fake import FakeTime
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-
-# Type alias for the status reporting function used in tests
-StatusReportCallArgs = dict[str, str | Path]
-
-
-def make_tracking_report_fn() -> tuple[Callable[..., bool], list[StatusReportCallArgs]]:
-    """Create a tracking status report function that records calls.
-
-    Returns:
-        Tuple of (report function, list of call records)
-    """
-    calls: list[StatusReportCallArgs] = []
-
-    def report_fn(
-        *,
-        repo: str,
-        sha: str,
-        name: str,
-        state: str,
-        description: str,
-        cwd: Path,
-    ) -> bool:
-        calls.append(
-            {
-                "repo": repo,
-                "sha": sha,
-                "name": name,
-                "state": state,
-                "description": description,
-                "cwd": cwd,
-            }
-        )
-        return True
-
-    return report_fn, calls
-
-
-def make_failing_report_fn() -> Callable[..., bool]:
-    """Create a status report function that always returns False (failed)."""
-
-    def report_fn(
-        *,
-        repo: str,
-        sha: str,
-        name: str,
-        state: str,
-        description: str,
-        cwd: Path,
-    ) -> bool:
-        return False
-
-    return report_fn
+from erk_shared.github.fake import FakeGitHub
 
 
 class TestVerifyAutofixImpl:
@@ -84,14 +29,14 @@ class TestVerifyAutofixImpl:
 
     def test_no_new_commit_returns_early(self, tmp_path: Path) -> None:
         """When current SHA matches original, return immediately without running checks."""
-        report_fn, calls = make_tracking_report_fn()
+        github = FakeGitHub()
 
         result = _verify_autofix_impl(
             original_sha="abc123",
             repo="owner/repo",
             cwd=tmp_path,
             current_sha="abc123",  # Same as original
-            report_status_fn=report_fn,
+            github=github,
         )
 
         assert isinstance(result, VerifySuccess)
@@ -99,11 +44,12 @@ class TestVerifyAutofixImpl:
         assert result.new_commit_pushed is False
         assert result.current_sha == "abc123"
         assert result.checks == []
-        assert calls == []  # No status reports made
+        # No status reports made
+        assert github.created_commit_statuses == []
 
     def test_new_commit_runs_checks(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """When SHA changes, run all checks."""
-        report_fn, calls = make_tracking_report_fn()
+        github = FakeGitHub()
 
         # Mock subprocess.run to simulate all checks passing
         run_calls: list[list[str]] = []
@@ -123,7 +69,7 @@ class TestVerifyAutofixImpl:
             repo="owner/repo",
             cwd=tmp_path,
             current_sha="def456",  # Different from original
-            report_status_fn=report_fn,
+            github=github,
         )
 
         assert isinstance(result, VerifySuccess)
@@ -133,17 +79,15 @@ class TestVerifyAutofixImpl:
         assert len(result.checks) == 7  # All 7 CI checks
         assert all(check.passed for check in result.checks)
 
-        # Verify status reports were made for all checks
-        assert len(calls) == 7
-        assert all(call["state"] == "success" for call in calls)
+        # Verify status reports were made for all checks via GitHub gateway
+        assert len(github.created_commit_statuses) == 7
+        assert all(status[2] == "success" for status in github.created_commit_statuses)
 
     def test_failed_check_reports_failure(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """When a check fails, report failure status."""
-        import subprocess
-
-        report_fn, calls = make_tracking_report_fn()
+        github = FakeGitHub()
 
         # Mock subprocess.run to fail on lint check
         def mock_run(cmd: list[str], **kwargs: object) -> object:
@@ -162,7 +106,7 @@ class TestVerifyAutofixImpl:
             repo="owner/repo",
             cwd=tmp_path,
             current_sha="def456",
-            report_status_fn=report_fn,
+            github=github,
         )
 
         assert isinstance(result, VerifySuccess)
@@ -173,37 +117,9 @@ class TestVerifyAutofixImpl:
         lint_check = next(c for c in result.checks if c.name == "lint")
         assert lint_check.passed is False
 
-        # Verify failure status was reported
-        lint_call = next(c for c in calls if c["name"] == "lint")
-        assert lint_call["state"] == "failure"
-
-    def test_status_report_failure_tracked(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """When status report fails, track in result."""
-        report_fn = make_failing_report_fn()
-
-        # Mock subprocess.run to pass all checks
-        def mock_run(cmd: list[str], **kwargs: object) -> object:
-            class MockResult:
-                returncode = 0
-
-            return MockResult()
-
-        monkeypatch.setattr("subprocess.run", mock_run)
-
-        result = _verify_autofix_impl(
-            original_sha="abc123",
-            repo="owner/repo",
-            cwd=tmp_path,
-            current_sha="def456",
-            report_status_fn=report_fn,
-        )
-
-        assert isinstance(result, VerifySuccess)
-        # All checks passed but status reports failed
-        assert all(check.passed for check in result.checks)
-        assert all(not check.status_reported for check in result.checks)
+        # Verify failure status was reported via GitHub gateway
+        lint_status = next(s for s in github.created_commit_statuses if "lint" in s[3])
+        assert lint_status[2] == "failure"  # state
 
 
 def _extract_json_from_output(output: str) -> dict[str, Any]:
@@ -235,10 +151,8 @@ class TestCiVerifyAutofixCommand:
         git = FakeGit(
             branch_heads={"HEAD": "abc123"},
         )
-        time_impl = FakeTime()
-        ctx = ErkContext.for_test(git=git, cwd=tmp_path)
-        # Inject time into context
-        ctx = _inject_time(ctx, time_impl)
+        github = FakeGitHub()
+        ctx = ErkContext.for_test(git=git, github=github, cwd=tmp_path)
 
         runner = CliRunner()
         result = runner.invoke(
@@ -257,22 +171,11 @@ class TestCiVerifyAutofixCommand:
         git = FakeGit(
             branch_heads={"HEAD": "def456"},
         )
-        time_impl = FakeTime()
-        ctx = ErkContext.for_test(git=git, cwd=tmp_path)
-        ctx = _inject_time(ctx, time_impl)
+        github = FakeGitHub()
+        ctx = ErkContext.for_test(git=git, github=github, cwd=tmp_path)
 
-        # Mock subprocess.run to pass all checks and skip gh status reports
+        # Mock subprocess.run to pass all CI checks
         def mock_run(cmd: list[str], **kwargs: object) -> object:
-            # For gh api calls, just succeed silently
-            if cmd[0] == "gh":
-
-                class MockResult:
-                    returncode = 0
-                    stdout = b""
-                    stderr = b""
-
-                return MockResult()
-
             class MockResult:
                 returncode = 0
 
@@ -296,18 +199,18 @@ class TestCiVerifyAutofixCommand:
         assert isinstance(checks, list)
         assert len(checks) == 7
 
+        # Verify status was reported via GitHub gateway
+        assert len(github.created_commit_statuses) == 7
+
     def test_command_exits_with_error_on_check_failure(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test command exits with code 1 when any check fails."""
-        import subprocess
-
         git = FakeGit(
             branch_heads={"HEAD": "def456"},
         )
-        time_impl = FakeTime()
-        ctx = ErkContext.for_test(git=git, cwd=tmp_path)
-        ctx = _inject_time(ctx, time_impl)
+        github = FakeGitHub()
+        ctx = ErkContext.for_test(git=git, github=github, cwd=tmp_path)
 
         # Mock subprocess.run to fail on format check
         def mock_run(cmd: list[str], **kwargs: object) -> object:
@@ -316,8 +219,6 @@ class TestCiVerifyAutofixCommand:
 
             class MockResult:
                 returncode = 0
-                stdout = b""
-                stderr = b""
 
             return MockResult()
 
@@ -337,16 +238,6 @@ class TestCiVerifyAutofixCommand:
         checks: list[dict[str, Any]] = data["checks"]
         format_check = next(c for c in checks if c["name"] == "format")
         assert format_check["passed"] is False
-
-
-def _inject_time(ctx: ErkContext, time_impl: FakeTime) -> ErkContext:
-    """Inject a FakeTime into an ErkContext.
-
-    This is a helper to work around the frozen dataclass.
-    """
-    from dataclasses import replace
-
-    return replace(ctx, time=time_impl)
 
 
 class TestCheckResult:
