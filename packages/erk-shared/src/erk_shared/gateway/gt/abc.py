@@ -11,16 +11,16 @@ Design:
 - Return values match existing subprocess patterns (str | None, bool, etc.)
 - LBYL pattern: operations check state, return None/False on failure
 
-Note: Git operations are provided by the core Git interface from erk_shared.git.abc.
+Note: Git operations are provided by the core Git interface from erk_shared.gateway.git.abc.
 GitHub operations use the main GitHub ABC from erk_shared.github.
 """
 
 from typing import Protocol
 
 from erk_shared.branch_manager.abc import BranchManager
+from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.time.abc import Time
-from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 
 

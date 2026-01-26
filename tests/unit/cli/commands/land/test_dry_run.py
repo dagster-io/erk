@@ -9,9 +9,9 @@ from erk.cli.commands.land_cmd import _cleanup_and_navigate
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.fake import FakeGit
 from erk_shared.github.types import GitHubRepoId
 from tests.test_utils.env_helpers import erk_inmem_env
 

@@ -8,7 +8,7 @@ from erk.cli.commands.slot.common import generate_slot_name
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment
-from erk_shared.git.abc import Git, WorktreeInfo
+from erk_shared.gateway.git.abc import Git, WorktreeInfo
 from erk_shared.github.types import PRNotFound
 
 # Type alias for sync issue codes - using Literal for type safety

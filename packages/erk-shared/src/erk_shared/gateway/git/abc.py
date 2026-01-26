@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
-    from erk_shared.git.worktree.abc import Worktree
+    from erk_shared.gateway.git.worktree.abc import Worktree
 
 
 class BranchDivergence(NamedTuple):

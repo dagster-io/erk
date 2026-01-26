@@ -54,7 +54,7 @@ from typing import Literal
 import click
 
 from erk_shared.context.helpers import require_git, require_repo_root
-from erk_shared.git.abc import Git
+from erk_shared.gateway.git.abc import Git
 
 
 @dataclass(frozen=True)

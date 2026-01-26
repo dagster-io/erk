@@ -3,8 +3,8 @@
 import subprocess
 from pathlib import Path
 
+from erk_shared.gateway.git.lock import get_lock_path, wait_for_index_lock
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.git.lock import get_lock_path, wait_for_index_lock
 
 
 def create_git_repo(path: Path) -> None:

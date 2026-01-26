@@ -5,8 +5,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 
 
 class FakeGitBranchOps(GitBranchOps):

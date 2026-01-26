@@ -13,11 +13,11 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.context import context_for_test, create_context
 from erk_shared.context.types import GlobalConfig
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.dry_run import DryRunGit
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.dry_run import DryRunGit
-from erk_shared.git.fake import FakeGit
 from erk_shared.github.dry_run import DryRunGitHub
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.dry_run import DryRunGitHubIssues
@@ -180,7 +180,7 @@ def test_dryrun_git_add_worktree_prints_message(tmp_path: Path) -> None:
 
     # Verify the worktree wasn't actually created
     assert not new_wt.exists()
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
 
     real_ops = RealGit()
     worktrees = real_ops.worktree.list_worktrees(repo)
@@ -209,7 +209,7 @@ def test_dryrun_git_remove_worktree_prints_message(tmp_path: Path) -> None:
 
     # Verify the worktree still exists
     assert wt.exists()
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
 
     real_ops = RealGit()
     worktrees = real_ops.worktree.list_worktrees(repo)
@@ -225,7 +225,7 @@ def test_dryrun_git_checkout_branch_is_blocked(tmp_path: Path) -> None:
 
     # Create a new branch
     subprocess.run(["git", "branch", "feature"], cwd=repo, check=True)
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
 
     real_ops = RealGit()
     assert real_ops.get_current_branch(repo) == "main"
@@ -268,7 +268,7 @@ def test_dryrun_graphite_operations(tmp_path: Path) -> None:
     assert url.startswith("https://app.graphite.dev/") or url.startswith(
         "https://app.graphite.com/"
     )
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
 
     git_ops = RealGit()
     prs = ctx.graphite.get_prs_from_graphite(git_ops, repo)

@@ -12,7 +12,7 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.console.abc import Console
-from erk_shared.git.abc import Git
+from erk_shared.gateway.git.abc import Git
 from erk_shared.output.output import user_output
 
 

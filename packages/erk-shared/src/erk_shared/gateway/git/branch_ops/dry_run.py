@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk_shared.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.output.output import user_output
 
 

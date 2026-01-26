@@ -7,13 +7,13 @@ and writes it to a scratch file for AI analysis.
 from pathlib import Path
 
 from erk_shared.context.testing import context_for_test
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import (
     execute_diff_extraction,
     filter_diff_excluded_files,
 )
-from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 
 # --- Tests for filter_diff_excluded_files ---

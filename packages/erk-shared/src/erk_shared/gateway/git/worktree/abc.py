@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 # Re-export WorktreeInfo from the main git.abc module for backwards compatibility
-from erk_shared.git.abc import WorktreeInfo
+from erk_shared.gateway.git.abc import WorktreeInfo
 
 
 class Worktree(ABC):

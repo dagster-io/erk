@@ -10,12 +10,12 @@ import re
 import subprocess
 from pathlib import Path
 
+from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
+from erk_shared.gateway.git.lock import wait_for_index_lock
+from erk_shared.gateway.git.worktree.abc import Worktree
+from erk_shared.gateway.git.worktree.real import RealWorktree
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
-from erk_shared.git.lock import wait_for_index_lock
-from erk_shared.git.worktree.abc import Worktree
-from erk_shared.git.worktree.real import RealWorktree
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 

@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from subprocess import DEVNULL
 
+from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.parsing import (
     parse_graphite_cache,
@@ -13,7 +14,6 @@ from erk_shared.gateway.graphite.parsing import (
     read_graphite_json_file,
 )
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.git.abc import Git
 from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.output.output import user_output
 from erk_shared.subprocess_utils import run_subprocess_with_context

@@ -19,7 +19,7 @@ from erk_shared.core.fakes import (
 
 if TYPE_CHECKING:
     from erk_shared.context.context import ErkContext
-    from erk_shared.git.abc import Git
+    from erk_shared.gateway.git.abc import Git
     from erk_shared.github.types import RepoInfo
 
 
@@ -75,12 +75,12 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.real import ScriptConsole
     from erk_shared.gateway.erk_installation.real import RealErkInstallation
+    from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+    from erk_shared.gateway.git.real import RealGit
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.gateway.time.real import RealTime
-    from erk_shared.git.branch_ops.fake import FakeGitBranchOps
-    from erk_shared.git.real import RealGit
     from erk_shared.github.issues.real import RealGitHubIssues
     from erk_shared.github.real import RealGitHub
     from erk_shared.github_admin.fake import FakeGitHubAdmin

@@ -8,8 +8,8 @@ from erk.cli.cli import cli
 from erk.cli.config import LoadedConfig
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import create_plan_store_with_plans

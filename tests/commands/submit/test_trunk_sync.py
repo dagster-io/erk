@@ -5,7 +5,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.submit import ERK_PLAN_LABEL, submit_cmd
-from erk_shared.git.abc import WorktreeInfo
+from erk_shared.gateway.git.abc import WorktreeInfo
 from tests.commands.submit.conftest import create_plan, setup_submit_context
 
 

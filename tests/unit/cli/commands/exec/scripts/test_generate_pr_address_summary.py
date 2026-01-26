@@ -18,7 +18,7 @@ from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
     generate_pr_address_summary,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.prompt_executor.fake import FakePromptExecutor
 
 

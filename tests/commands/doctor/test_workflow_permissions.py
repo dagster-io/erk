@@ -3,7 +3,7 @@
 from click.testing import CliRunner
 
 from erk.core.health_checks import check_workflow_permissions
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from tests.fakes.github_admin import FakeGitHubAdmin
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 

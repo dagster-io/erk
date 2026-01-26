@@ -9,12 +9,12 @@ from pathlib import Path
 
 import pytest
 
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.disabled import (
     GraphiteDisabled,
     GraphiteDisabledError,
     GraphiteDisabledReason,
 )
-from erk_shared.git.fake import FakeGit
 from erk_shared.github.types import GitHubRepoId
 
 

@@ -19,8 +19,8 @@ from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo, save_pool_state
 from erk_shared.context.types import GlobalConfig
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
 from tests.fakes.script_writer import FakeScriptWriter
 
 

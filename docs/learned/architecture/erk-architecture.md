@@ -516,8 +516,8 @@ __all__ = [
 **From consumers:**
 
 ```python
-# Import from top-level package (uses __init__.py re-exports)
-from erk_shared.git import Git, RealGit, FakeGit
+# Import from gateway subpackages
+from erk_shared.gateway.git import Git, RealGit, FakeGit
 from erk_shared.github import GitHub, RealGitHub, FakeGitHub
 ```
 
@@ -525,7 +525,7 @@ from erk_shared.github import GitHub, RealGitHub, FakeGitHub
 
 ```python
 # DON'T import from implementation files directly
-from erk_shared.git.real import RealGit  # Bypasses __init__.py
+from erk_shared.gateway.git.real import RealGit  # Bypasses __init__.py
 ```
 
 ### Testing All Four Layers

@@ -9,8 +9,8 @@ from pathlib import Path
 # Re-export context types from erk_shared for backwards compatibility
 from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
 from erk_shared.context.types import RepoContext as RepoContext
-from erk_shared.git.abc import Git
-from erk_shared.git.real import RealGit
+from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.real import RealGit
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.types import GitHubRepoId
 

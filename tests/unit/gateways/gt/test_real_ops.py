@@ -50,7 +50,7 @@ class TestRealGtKitOps:
         git_ops = ops.git
 
         # Verify return type matches interface contract
-        from erk_shared.git.real import RealGit
+        from erk_shared.gateway.git.real import RealGit
 
         assert isinstance(git_ops, RealGit)
 

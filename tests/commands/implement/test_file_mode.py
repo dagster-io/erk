@@ -3,7 +3,7 @@
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env

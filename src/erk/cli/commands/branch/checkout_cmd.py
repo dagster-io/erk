@@ -20,7 +20,7 @@ from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_utils import compute_relative_path_in_worktree
-from erk_shared.git.abc import WorktreeInfo
+from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.output.output import user_output
 
 

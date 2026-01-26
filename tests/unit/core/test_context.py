@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from erk.core.context import context_for_test, create_context, regenerate_context
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 
 
 def test_regenerate_context_updates_cwd(tmp_path: Path) -> None:

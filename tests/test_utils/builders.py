@@ -35,10 +35,10 @@ from typing import Any
 
 from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PullRequestInfo
 from tests.fakes.shell import FakeShell

@@ -63,7 +63,7 @@ def test_check_returns_info_when_no_origin_remote() -> None:
     """Test that check returns info-level when no origin remote configured."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        from erk_shared.git.fake import FakeGit
+        from erk_shared.gateway.git.fake import FakeGit
 
         # FakeGit with no remote URLs configured - will raise ValueError
         git = FakeGit(
@@ -87,7 +87,7 @@ def test_check_returns_info_when_not_github_repo() -> None:
     """Test that check returns info-level for non-GitHub repositories."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        from erk_shared.git.fake import FakeGit
+        from erk_shared.gateway.git.fake import FakeGit
 
         # Non-GitHub remote URL
         git = FakeGit(
@@ -111,7 +111,7 @@ def test_check_handles_https_github_url() -> None:
     """Test that check works with HTTPS GitHub URLs."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        from erk_shared.git.fake import FakeGit
+        from erk_shared.gateway.git.fake import FakeGit
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},

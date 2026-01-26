@@ -20,7 +20,7 @@ from pathlib import Path
 
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
-from erk_shared.git.real import RealGit
+from erk_shared.gateway.git.real import RealGit
 
 # Environment variable to disable command logging
 ENV_DISABLE_LOG = "ERK_NO_COMMAND_LOG"

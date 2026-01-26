@@ -7,8 +7,8 @@ is disabled (use_graphite=False), proving graceful degradation.
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from tests.fakes.shell import FakeShell
 from tests.test_utils.cli_helpers import assert_cli_success

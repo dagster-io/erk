@@ -90,10 +90,10 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.script_writer import RealScriptWriter
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.gateway.git.abc import Git, WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.git.abc import Git, WorktreeInfo
-from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import GitHubRepoId
 from tests.fakes.script_writer import FakeScriptWriter
@@ -460,7 +460,7 @@ class ErkIsolatedFsEnv:
                 remote_urls={(self.cwd, "origin"): "https://github.com/owner/repo.git"},
             )
         else:
-            from erk_shared.git.dry_run import DryRunGit
+            from erk_shared.gateway.git.dry_run import DryRunGit
 
             unwrapped_ops = git._wrapped if isinstance(git, DryRunGit) else git
 
@@ -496,7 +496,7 @@ class ErkIsolatedFsEnv:
 
         # Wrap with DryRunGit for dry-run mode (only if not already wrapped)
         if dry_run:
-            from erk_shared.git.dry_run import DryRunGit
+            from erk_shared.gateway.git.dry_run import DryRunGit
 
             if not isinstance(git, DryRunGit):
                 git = DryRunGit(git)
@@ -910,7 +910,7 @@ class ErkInMemEnv:
                 remote_urls={(self.cwd, "origin"): "https://github.com/owner/repo.git"},
             )
         else:
-            from erk_shared.git.dry_run import DryRunGit
+            from erk_shared.gateway.git.dry_run import DryRunGit
 
             unwrapped_ops = git._wrapped if isinstance(git, DryRunGit) else git
             worktree_paths = {
@@ -937,7 +937,7 @@ class ErkInMemEnv:
 
         # Wrap with DryRunGit for dry-run mode (only if not already wrapped)
         if dry_run:
-            from erk_shared.git.dry_run import DryRunGit
+            from erk_shared.gateway.git.dry_run import DryRunGit
 
             if not isinstance(git, DryRunGit):
                 git = DryRunGit(git)

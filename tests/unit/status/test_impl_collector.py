@@ -8,7 +8,7 @@ from pathlib import Path
 
 from erk.core.context import minimal_context
 from erk.status.collectors.impl import PlanFileCollector
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 
 

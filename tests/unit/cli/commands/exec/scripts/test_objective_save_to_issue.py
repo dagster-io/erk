@@ -9,7 +9,7 @@ from erk.cli.commands.exec.scripts.objective_save_to_issue import (
     objective_save_to_issue,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.learn.extraction.claude_installation.fake import (
     FakeClaudeInstallation,

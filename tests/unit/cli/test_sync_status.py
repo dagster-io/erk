@@ -14,7 +14,7 @@ from erk.cli.commands.checkout_helpers import (
     format_sync_status,
 )
 from erk.core.context import ErkContext
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 
 
 class TestFormatSyncStatus:

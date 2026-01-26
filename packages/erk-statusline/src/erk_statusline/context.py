@@ -11,14 +11,14 @@ from erk_shared.branch_manager.abc import BranchManager
 from erk_shared.branch_manager.factory import create_branch_manager
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
+from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.branch_ops.real import RealGitBranchOps
+from erk_shared.gateway.git.real import RealGit
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.real import RealGraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.real import RealGraphite
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.git.abc import Git
-from erk_shared.git.branch_ops.real import RealGitBranchOps
-from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.parsing import parse_git_remote_url

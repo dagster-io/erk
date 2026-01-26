@@ -87,8 +87,8 @@ def setup_submit_context(
     """
     from erk_shared.context.types import GlobalConfig
     from erk_shared.gateway.console.fake import FakeConsole
+    from erk_shared.gateway.git.fake import FakeGit
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
 
     repo_root = tmp_path / "repo"

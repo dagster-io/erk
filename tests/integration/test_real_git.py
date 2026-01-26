@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.git.real import RealGit
+from erk_shared.gateway.git.real import RealGit
 from tests.integration.conftest import (
     GitSetup,
     GitWithDetached,
@@ -109,7 +109,7 @@ def test_detect_trunk_branch_master(
     tmp_path: Path,
 ) -> None:
     """Test detecting trunk branch when it's master using real git."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -128,7 +128,7 @@ def test_detect_trunk_branch_with_remote_head(
     tmp_path: Path,
 ) -> None:
     """Test detecting trunk branch using remote HEAD with real git."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -154,7 +154,7 @@ def test_detect_trunk_branch_neither_exists(
     tmp_path: Path,
 ) -> None:
     """Test trunk branch detection returns 'main' when neither main nor master exist."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -175,7 +175,7 @@ def test_detect_trunk_branch_neither_exists(
 
 def test_validate_trunk_branch_exists(tmp_path: Path) -> None:
     """Test validate_trunk_branch succeeds when branch exists."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -190,7 +190,7 @@ def test_validate_trunk_branch_exists(tmp_path: Path) -> None:
 
 def test_validate_trunk_branch_not_exists(tmp_path: Path) -> None:
     """Test validate_trunk_branch raises RuntimeError when branch doesn't exist."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -284,7 +284,7 @@ def test_add_worktree_from_specific_ref(
     tmp_path: Path,
 ) -> None:
     """Test adding worktree from specific ref using real git."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -400,7 +400,7 @@ def test_remove_worktree_called_from_worktree_path(
     The fix is to resolve the main git directory BEFORE deleting the worktree,
     and use that path for the prune command.
     """
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     # Setup: Create main repo and a worktree
@@ -443,7 +443,7 @@ def test_find_main_git_dir_from_worktree(
     tmp_path: Path,
 ) -> None:
     """Test _find_main_git_dir correctly resolves main repo from a worktree."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     # Setup: Create main repo and a worktree
@@ -476,7 +476,7 @@ def test_find_main_git_dir_from_main_repo(
     tmp_path: Path,
 ) -> None:
     """Test _find_main_git_dir returns repo_root when called on main repo."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -496,7 +496,7 @@ def test_find_main_git_dir_from_main_repo(
 
 def test_get_commit_messages_since_returns_messages(tmp_path: Path) -> None:
     """Test get_commit_messages_since returns full commit messages."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -535,7 +535,7 @@ def test_get_commit_messages_since_returns_messages(tmp_path: Path) -> None:
 
 def test_get_commit_messages_since_returns_empty_for_no_commits(tmp_path: Path) -> None:
     """Test get_commit_messages_since returns empty list when no commits ahead."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -554,7 +554,7 @@ def test_get_commit_messages_since_returns_empty_for_no_commits(tmp_path: Path) 
 
 def test_get_commit_messages_since_returns_empty_for_invalid_branch(tmp_path: Path) -> None:
     """Test get_commit_messages_since returns empty list for nonexistent branch."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -573,7 +573,7 @@ def test_get_commit_messages_since_returns_empty_for_invalid_branch(tmp_path: Pa
 
 def test_has_uncommitted_changes_clean(tmp_path: Path) -> None:
     """Test has_uncommitted_changes returns False when working directory is clean."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -592,7 +592,7 @@ def test_has_uncommitted_changes_clean(tmp_path: Path) -> None:
 
 def test_has_uncommitted_changes_with_modifications(tmp_path: Path) -> None:
     """Test has_uncommitted_changes returns True when files are modified."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -614,7 +614,7 @@ def test_has_uncommitted_changes_with_modifications(tmp_path: Path) -> None:
 
 def test_add_all_stages_files(tmp_path: Path) -> None:
     """Test add_all stages all files in the repository."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -646,7 +646,7 @@ def test_add_all_stages_files(tmp_path: Path) -> None:
 
 def test_commit_creates_commit(tmp_path: Path) -> None:
     """Test commit creates a commit with the given message."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -676,7 +676,7 @@ def test_commit_creates_commit(tmp_path: Path) -> None:
 
 def test_amend_commit_modifies_commit(tmp_path: Path) -> None:
     """Test amend_commit modifies the last commit message."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -709,7 +709,7 @@ def test_amend_commit_with_backticks(tmp_path: Path) -> None:
 
     This tests edge case behavior around shell quoting that could cause issues.
     """
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -740,7 +740,7 @@ def test_amend_commit_with_backticks(tmp_path: Path) -> None:
 
 def test_count_commits_ahead(tmp_path: Path) -> None:
     """Test count_commits_ahead counts commits since base branch."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -767,7 +767,7 @@ def test_count_commits_ahead(tmp_path: Path) -> None:
 
 def test_check_merge_conflicts_detects_conflicts(tmp_path: Path) -> None:
     """Test check_merge_conflicts detects conflicting changes between branches."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -801,7 +801,7 @@ def test_check_merge_conflicts_detects_conflicts(tmp_path: Path) -> None:
 
 def test_check_merge_conflicts_no_conflicts(tmp_path: Path) -> None:
     """Test check_merge_conflicts returns False when branches can merge cleanly."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.gateway.git.real import RealGit
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"

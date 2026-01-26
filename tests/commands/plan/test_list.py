@@ -389,7 +389,7 @@ def test_plan_list_sort_issue_default() -> None:
 
 def test_plan_list_sort_activity_with_local_branch() -> None:
     """Test that --sort activity puts plans with recent local branch activity first."""
-    from erk_shared.git.abc import WorktreeInfo
+    from erk_shared.gateway.git.abc import WorktreeInfo
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     # Plan 1: older issue, but has local branch with recent activity
@@ -440,7 +440,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         )
 
         # Build FakeGit with worktree and branch commit times
-        from erk_shared.git.fake import FakeGit
+        from erk_shared.gateway.git.fake import FakeGit
 
         git = FakeGit(
             worktrees={
@@ -477,7 +477,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
 
 def test_plan_list_sort_activity_orders_by_recency() -> None:
     """Test that --sort activity orders multiple local branches by recency."""
-    from erk_shared.git.abc import WorktreeInfo
+    from erk_shared.gateway.git.abc import WorktreeInfo
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     # Plan 1: has local branch with older commit
@@ -537,7 +537,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         )
 
         # Build FakeGit - issue 2's branch has MORE RECENT commit
-        from erk_shared.git.fake import FakeGit
+        from erk_shared.gateway.git.fake import FakeGit
 
         git = FakeGit(
             worktrees={

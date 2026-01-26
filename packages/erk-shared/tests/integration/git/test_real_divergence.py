@@ -7,7 +7,7 @@ are constructed and output is parsed correctly.
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from erk_shared.git.real import RealGit
+from erk_shared.gateway.git.real import RealGit
 
 
 class TestIsBranchDivergedFromRemote:

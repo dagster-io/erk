@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from erk.core.worktree_utils import find_worktree_with_branch
-from erk_shared.git.abc import WorktreeInfo
+from erk_shared.gateway.git.abc import WorktreeInfo
 
 
 def test_finds_worktree_with_branch() -> None:

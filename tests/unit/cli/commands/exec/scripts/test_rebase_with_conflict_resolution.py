@@ -19,8 +19,8 @@ from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
 from erk_shared.context.context import ErkContext
 from erk_shared.core.claude_executor import PromptResult
 from erk_shared.core.fakes import FakeClaudeExecutor
-from erk_shared.git.abc import RebaseResult
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.abc import RebaseResult
+from erk_shared.gateway.git.fake import FakeGit
 
 
 def test_build_summary_prompt_no_conflicts() -> None:

@@ -9,13 +9,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from erk_shared.git.branch_ops.fake import FakeGitBranchOps
+    from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
 from pathlib import Path
 from typing import NamedTuple
 
-from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
-from erk_shared.git.worktree.abc import Worktree
-from erk_shared.git.worktree.fake import FakeWorktree
+from erk_shared.gateway.git.abc import (
+    BranchDivergence,
+    BranchSyncInfo,
+    Git,
+    RebaseResult,
+    WorktreeInfo,
+)
+from erk_shared.gateway.git.worktree.abc import Worktree
+from erk_shared.gateway.git.worktree.fake import FakeWorktree
 
 
 class PushedBranch(NamedTuple):
@@ -859,7 +865,7 @@ class FakeGit(Git):
         Returns:
             FakeGitBranchOps with linked state and mutation tracking
         """
-        from erk_shared.git.branch_ops.fake import FakeGitBranchOps
+        from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
 
         ops = FakeGitBranchOps(
             worktrees=self._worktrees,

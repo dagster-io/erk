@@ -3,7 +3,7 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.learn.extraction.session_discovery import (
     discover_sessions,
     encode_path_to_project_folder,

@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.worktree.abc import Worktree
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.printing.base import PrintingBase
 
 

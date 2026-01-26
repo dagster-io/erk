@@ -24,8 +24,8 @@ from click.testing import CliRunner
 from erk.cli.commands.status import status_cmd
 from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
 from tests.fakes.context import create_test_context
 from tests.test_utils.builders import WorktreeScenario
 

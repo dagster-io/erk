@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from erk.core.context import ErkContext
-from erk_shared.git.abc import WorktreeInfo
+from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.output.output import user_output
 
 

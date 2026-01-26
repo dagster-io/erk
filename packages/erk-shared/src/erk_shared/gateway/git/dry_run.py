@@ -6,9 +6,9 @@ operations while delegating read-only operations to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
-from erk_shared.git.worktree.abc import Worktree
-from erk_shared.git.worktree.dry_run import DryRunWorktree
+from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
+from erk_shared.gateway.git.worktree.abc import Worktree
+from erk_shared.gateway.git.worktree.dry_run import DryRunWorktree
 from erk_shared.output.output import user_output
 
 # ============================================================================

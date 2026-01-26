@@ -10,9 +10,9 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
 from tests.fakes.claude_executor import FakeClaudeExecutor
