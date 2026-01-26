@@ -45,11 +45,11 @@ Use this template when documenting decisions between two valid approaches. The p
 
 ## Decision Matrix
 
-| Factor | Option 1 | Option 2 |
-|--------|----------|----------|
-| [Criterion 1] | [Value] | [Value] |
-| [Criterion 2] | [Value] | [Value] |
-| [Criterion 3] | [Value] | [Value] |
+| Factor        | Option 1 | Option 2 |
+| ------------- | -------- | -------- |
+| [Criterion 1] | [Value]  | [Value]  |
+| [Criterion 2] | [Value]  | [Value]  |
+| [Criterion 3] | [Value]  | [Value]  |
 
 ## Examples
 
@@ -157,7 +157,7 @@ When there are three options, extend the table:
 
 ```markdown
 | Factor | Option 1 | Option 2 | Option 3 |
-|--------|----------|----------|----------|
+| ------ | -------- | -------- | -------- |
 ```
 
 But consider: Are all three truly alternatives? Often two are closely related and can be combined.

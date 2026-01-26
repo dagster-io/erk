@@ -49,14 +49,14 @@ Common patterns to look for:
 
 What external operation is being simulated?
 
-| Mocked Operation | Gateway to Use |
-|------------------|----------------|
-| `subprocess.run(["gh", ...])` | GitHub gateway |
-| `subprocess.run(["git", ...])` | Git gateway |
-| `subprocess.run(["pytest", ...])` | CIRunner gateway |
-| `Path.home()` | ClaudeInstallation or ErkInstallation |
-| `time.sleep()` | Time gateway |
-| `webbrowser.open()` | Browser gateway |
+| Mocked Operation                  | Gateway to Use                        |
+| --------------------------------- | ------------------------------------- |
+| `subprocess.run(["gh", ...])`     | GitHub gateway                        |
+| `subprocess.run(["git", ...])`    | Git gateway                           |
+| `subprocess.run(["pytest", ...])` | CIRunner gateway                      |
+| `Path.home()`                     | ClaudeInstallation or ErkInstallation |
+| `time.sleep()`                    | Time gateway                          |
+| `webbrowser.open()`               | Browser gateway                       |
 
 ### Step 3: Check If Gateway Exists
 

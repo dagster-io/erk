@@ -13,14 +13,14 @@ The `${CLAUDE_SESSION_ID}` environment variable is available in **some** but not
 
 ## Availability by Context
 
-| Context | ${CLAUDE_SESSION_ID} Available | Notes |
-|---------|-------------------------------|-------|
-| Slash commands | ✅ Yes | String substitution by Claude Code |
-| Skills | ✅ Yes | String substitution by Claude Code |
-| Direct agent invocation | ✅ Yes | If agent was spawned by Claude Code |
-| Exec scripts called directly | ❌ No | Running `erk exec foo` from shell has no session |
-| Background processes | ❌ No | Detached from Claude context |
-| CI/CD workflows | ❌ No | No interactive Claude session |
+| Context                      | ${CLAUDE_SESSION_ID} Available | Notes                                            |
+| ---------------------------- | ------------------------------ | ------------------------------------------------ |
+| Slash commands               | ✅ Yes                         | String substitution by Claude Code               |
+| Skills                       | ✅ Yes                         | String substitution by Claude Code               |
+| Direct agent invocation      | ✅ Yes                         | If agent was spawned by Claude Code              |
+| Exec scripts called directly | ❌ No                          | Running `erk exec foo` from shell has no session |
+| Background processes         | ❌ No                          | Detached from Claude context                     |
+| CI/CD workflows              | ❌ No                          | No interactive Claude session                    |
 
 ## String Substitution vs Environment Variable
 

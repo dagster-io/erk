@@ -37,14 +37,14 @@ Erk supports two workflows: **planless** (direct coding) and **planning** (plan-
 
 ## Decision Matrix
 
-| Factor | Planless | Planning |
-|--------|----------|----------|
-| **Time estimate** | <2 hours | >2 hours |
-| **Files affected** | 1-4 | 5+ |
-| **Approach clarity** | Obvious | Uncertain |
-| **Research needed** | None | Codebase exploration required |
-| **Architectural impact** | Isolated | Cross-cutting |
-| **Reusability** | One-off | Pattern worth documenting |
+| Factor                   | Planless | Planning                      |
+| ------------------------ | -------- | ----------------------------- |
+| **Time estimate**        | <2 hours | >2 hours                      |
+| **Files affected**       | 1-4      | 5+                            |
+| **Approach clarity**     | Obvious  | Uncertain                     |
+| **Research needed**      | None     | Codebase exploration required |
+| **Architectural impact** | Isolated | Cross-cutting                 |
+| **Reusability**          | One-off  | Pattern worth documenting     |
 
 ## Signs You Should Be Planning
 

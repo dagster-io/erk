@@ -38,10 +38,10 @@ gh api \
 
 ### Key Differences
 
-| Method | Pagination | Size Limit | Failure Mode |
-|--------|------------|------------|--------------|
-| `gh pr diff --name-only` | No | ~300 files | HTTP 406 error |
-| `gh api repos/.../pulls/.../files` | Yes (`--paginate`) | No limit | None |
+| Method                             | Pagination         | Size Limit | Failure Mode   |
+| ---------------------------------- | ------------------ | ---------- | -------------- |
+| `gh pr diff --name-only`           | No                 | ~300 files | HTTP 406 error |
+| `gh api repos/.../pulls/.../files` | Yes (`--paginate`) | No limit   | None           |
 
 ## Implementation Pattern
 

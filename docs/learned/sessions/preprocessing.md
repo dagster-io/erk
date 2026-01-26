@@ -12,11 +12,11 @@ The `erk exec preprocess-session` command compresses JSONL session logs to XML f
 
 Real-world compression performance from erk sessions:
 
-| Session Type | JSONL Size | XML Size | Reduction | Ratio |
-|--------------|------------|----------|-----------|-------|
-| Planning session | 157 KB | 25 KB | 132 KB | 84% |
-| Implementation session | 420 KB | 68 KB | 352 KB | 84% |
-| Large implementation | 1.2 MB | 195 KB | 1.0 MB | 84% |
+| Session Type           | JSONL Size | XML Size | Reduction | Ratio |
+| ---------------------- | ---------- | -------- | --------- | ----- |
+| Planning session       | 157 KB     | 25 KB    | 132 KB    | 84%   |
+| Implementation session | 420 KB     | 68 KB    | 352 KB    | 84%   |
+| Large implementation   | 1.2 MB     | 195 KB   | 1.0 MB    | 84%   |
 
 **Key insight:** Preprocessing achieves consistent ~84% size reduction regardless of session size.
 

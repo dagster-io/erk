@@ -19,7 +19,7 @@ Session metadata stored in `.erk/scratch/session-registry/` may have incomplete 
 {
   "session_id": "abc123",
   "issue_number": 1234,
-  "branch_name": null,  // ← Missing!
+  "branch_name": null, // ← Missing!
   "pr_number": null,
   "start_time": "2024-01-15T10:00:00Z"
 }

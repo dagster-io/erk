@@ -90,11 +90,11 @@ fi
 
 ## Remote vs Local Execution
 
-| Execution Mode | .worker-impl/ Present | .impl/ Present | Session Upload |
-|----------------|-----------------------|----------------|----------------|
-| Local agent | No | Yes | Via `erk exec upload-session` |
-| Remote agent | Yes | Yes | Automatic via erk-remote |
-| Plan mode → implement now | No | Yes | Via `erk exec upload-session` |
+| Execution Mode            | .worker-impl/ Present | .impl/ Present | Session Upload                |
+| ------------------------- | --------------------- | -------------- | ----------------------------- |
+| Local agent               | No                    | Yes            | Via `erk exec upload-session` |
+| Remote agent              | Yes                   | Yes            | Automatic via erk-remote      |
+| Plan mode → implement now | No                    | Yes            | Via `erk exec upload-session` |
 
 ## Session Upload for Async Learn
 
