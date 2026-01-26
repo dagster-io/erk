@@ -32,6 +32,7 @@ class FakeGraphite(Graphite):
         restack_raises: Exception | None = None,
         submit_branch_raises: Exception | None = None,
         track_branch_raises: Exception | None = None,
+        retrack_branch_raises: Exception | None = None,
         squash_branch_raises: Exception | None = None,
         submit_stack_raises: Exception | None = None,
         continue_restack_raises: Exception | None = None,
@@ -50,6 +51,7 @@ class FakeGraphite(Graphite):
             restack_raises: Exception to raise when restack() is called
             submit_branch_raises: Exception to raise when submit_branch() is called
             track_branch_raises: Exception to raise when track_branch() is called
+            retrack_branch_raises: Exception to raise when retrack_branch() is called
             squash_branch_raises: Exception to raise when squash_branch() is called
             submit_stack_raises: Exception to raise when submit_stack() is called
             continue_restack_raises: Exception to raise when continue_restack() is called
@@ -65,6 +67,7 @@ class FakeGraphite(Graphite):
         self._restack_raises = restack_raises
         self._submit_branch_raises = submit_branch_raises
         self._track_branch_raises = track_branch_raises
+        self._retrack_branch_raises = retrack_branch_raises
         self._squash_branch_raises = squash_branch_raises
         self._submit_stack_raises = submit_stack_raises
         self._continue_restack_raises = continue_restack_raises
@@ -73,6 +76,7 @@ class FakeGraphite(Graphite):
         self._restack_calls: list[tuple[Path, bool, bool]] = []
         self._submit_branch_calls: list[tuple[Path, str, bool]] = []
         self._track_branch_calls: list[tuple[Path, str, str]] = []
+        self._retrack_branch_calls: list[tuple[Path, str]] = []
         self._squash_branch_calls: list[tuple[Path, bool]] = []
         self._submit_stack_calls: list[tuple[Path, bool, bool, bool, bool]] = []
         self._continue_restack_calls: list[tuple[Path, bool]] = []
@@ -300,6 +304,17 @@ class FakeGraphite(Graphite):
         return self._track_branch_calls
 
     @property
+    def retrack_branch_calls(self) -> list[tuple[Path, str]]:
+        """Get the list of retrack_branch() calls made via linked FakeGraphiteBranchOps.
+
+        Returns list of (cwd, branch_name) tuples.
+
+        Note: This list is populated when mutations happen through
+        FakeGraphiteBranchOps created via create_linked_branch_ops().
+        """
+        return self._retrack_branch_calls
+
+    @property
     def submit_branch_calls(self) -> list[tuple[Path, str, bool]]:
         """Get the list of submit_branch() calls made via linked FakeGraphiteBranchOps.
 
@@ -358,6 +373,7 @@ class FakeGraphite(Graphite):
             track_branch_raises=self._track_branch_raises,
             delete_branch_raises=self._delete_branch_raises,
             submit_branch_raises=self._submit_branch_raises,
+            retrack_branch_raises=self._retrack_branch_raises,
             tracked_branches=tracked_branches,
         )
         # Link mutation tracking so FakeGraphite properties see mutations from FakeGraphiteBranchOps
@@ -365,5 +381,6 @@ class FakeGraphite(Graphite):
             track_branch_calls=self._track_branch_calls,
             delete_branch_calls=self._delete_branch_calls,
             submit_branch_calls=self._submit_branch_calls,
+            retrack_branch_calls=self._retrack_branch_calls,
         )
         return ops

@@ -97,8 +97,13 @@ def parse_graphite_cache(
         if not isinstance(info, dict):
             continue
 
-        # Get commit SHA from git (not stored in cache)
+        # Get actual commit SHA from git
         commit_sha = git_branch_heads.get(branch_name, "")
+
+        # Get Graphite's tracked revision from cache (may differ after rebase/restack)
+        tracked_revision = info.get("branchRevision")
+        if not isinstance(tracked_revision, str):
+            tracked_revision = None
 
         parent = info.get("parentBranchName")
         if not isinstance(parent, str | None):
@@ -118,6 +123,7 @@ def parse_graphite_cache(
             children=children,
             is_trunk=is_trunk,
             commit_sha=commit_sha,
+            tracked_revision=tracked_revision,
         )
 
     return result

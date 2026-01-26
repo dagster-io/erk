@@ -4,6 +4,7 @@ from pathlib import Path
 
 from erk_shared.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
@@ -180,3 +181,104 @@ def test_create_branch_from_local_branch_no_remote_sync() -> None:
     created_branches = [branch for (_, branch, _, _) in fake_git_branch_ops.created_branches]
     assert "parent-branch" not in created_branches
     assert "new-feature" in created_branches
+
+
+def test_create_branch_auto_fixes_diverged_parent() -> None:
+    """Test that create_branch auto-fixes diverged parent before tracking child.
+
+    When the parent branch has a mismatch between actual git SHA and Graphite's
+    tracked revision, create_branch should checkout the parent, retrack it,
+    then proceed with tracking the child.
+    """
+    fake_git = FakeGit(
+        current_branches={REPO_ROOT: "main"},
+        worktrees={REPO_ROOT: [WorktreeInfo(path=REPO_ROOT, branch="main", is_root=True)]},
+        local_branches={REPO_ROOT: ["main", "parent-branch"]},
+        branch_heads={
+            "parent-branch": "actual-sha-after-rebase",
+        },
+    )
+    fake_git_branch_ops = fake_git.create_linked_branch_ops()
+
+    # Parent branch is diverged: tracked_revision != commit_sha
+    branches = {
+        "main": BranchMetadata.trunk("main", children=["parent-branch"], commit_sha="main-sha"),
+        "parent-branch": BranchMetadata.branch(
+            "parent-branch",
+            "main",
+            commit_sha="actual-sha-after-rebase",  # Actual git SHA
+            tracked_revision="stale-sha-from-cache",  # Graphite's stale cache
+        ),
+    }
+    fake_graphite = FakeGraphite(branches=branches)
+    fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
+    fake_github = FakeGitHub()
+
+    manager = GraphiteBranchManager(
+        git=fake_git,
+        git_branch_ops=fake_git_branch_ops,
+        graphite=fake_graphite,
+        graphite_branch_ops=fake_graphite_branch_ops,
+        github=fake_github,
+    )
+
+    # Create branch from diverged parent
+    manager.create_branch(REPO_ROOT, "new-feature", "parent-branch")
+
+    # Parent branch should have been retracked
+    assert any(
+        branch == "parent-branch" for (_, branch) in fake_graphite_branch_ops.retrack_branch_calls
+    )
+
+    # New feature should be tracked
+    assert any(
+        branch == "new-feature" and parent == "parent-branch"
+        for (_, branch, parent) in fake_graphite.track_branch_calls
+    )
+
+
+def test_create_branch_skips_retrack_when_parent_not_diverged() -> None:
+    """Test that create_branch does not retrack parent when not diverged."""
+    fake_git = FakeGit(
+        current_branches={REPO_ROOT: "main"},
+        worktrees={REPO_ROOT: [WorktreeInfo(path=REPO_ROOT, branch="main", is_root=True)]},
+        local_branches={REPO_ROOT: ["main", "parent-branch"]},
+        branch_heads={
+            "parent-branch": "same-sha",
+        },
+    )
+    fake_git_branch_ops = fake_git.create_linked_branch_ops()
+
+    # Parent branch is NOT diverged: tracked_revision == commit_sha
+    branches = {
+        "main": BranchMetadata.trunk("main", children=["parent-branch"], commit_sha="main-sha"),
+        "parent-branch": BranchMetadata.branch(
+            "parent-branch",
+            "main",
+            commit_sha="same-sha",  # Same as tracked
+            tracked_revision="same-sha",
+        ),
+    }
+    fake_graphite = FakeGraphite(branches=branches)
+    fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
+    fake_github = FakeGitHub()
+
+    manager = GraphiteBranchManager(
+        git=fake_git,
+        git_branch_ops=fake_git_branch_ops,
+        graphite=fake_graphite,
+        graphite_branch_ops=fake_graphite_branch_ops,
+        github=fake_github,
+    )
+
+    # Create branch from non-diverged parent
+    manager.create_branch(REPO_ROOT, "new-feature", "parent-branch")
+
+    # Parent should NOT have been retracked (no divergence)
+    assert len(fake_graphite_branch_ops.retrack_branch_calls) == 0
+
+    # New feature should still be tracked
+    assert any(
+        branch == "new-feature" and parent == "parent-branch"
+        for (_, branch, parent) in fake_graphite.track_branch_calls
+    )
