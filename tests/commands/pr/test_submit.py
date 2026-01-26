@@ -11,10 +11,10 @@ from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRDetails, PullRequestInfo
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -1185,8 +1185,8 @@ def test_pr_submit_shows_plan_context_phase() -> None:
     """
     from datetime import UTC, datetime
 
-    from erk_shared.github.issues.fake import FakeGitHubIssues
-    from erk_shared.github.issues.types import IssueComment, IssueInfo
+    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -1333,8 +1333,8 @@ def test_pr_submit_shows_plan_context_with_objective() -> None:
     """
     from datetime import UTC, datetime
 
-    from erk_shared.github.issues.fake import FakeGitHubIssues
-    from erk_shared.github.issues.types import IssueComment, IssueInfo
+    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:

@@ -38,7 +38,7 @@ import click
 from erk_shared.context.helpers import require_github, require_repo_root
 
 if TYPE_CHECKING:
-    from erk_shared.github.abc import GitHub
+    from erk_shared.gateway.github.abc import GitHub
 
 T = TypeVar("T")
 

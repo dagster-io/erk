@@ -1,6 +1,6 @@
 """Utility functions for PR handling."""
 
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.gateway.github.types import PullRequestInfo
 
 
 def select_display_pr(prs: list[PullRequestInfo]) -> PullRequestInfo | None:

@@ -10,10 +10,10 @@ from pathlib import Path
 
 from erk_shared.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRDetails, PullRequestInfo
 
 
 def test_delete_branch_uses_graphite_when_tracked_and_not_diverged() -> None:

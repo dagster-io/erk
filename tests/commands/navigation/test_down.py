@@ -397,8 +397,8 @@ def test_down_delete_current_success() -> None:
         )
 
         # PR for feature-2 is merged
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.types import PullRequestInfo
+        from erk_shared.gateway.github.fake import FakeGitHub
+        from erk_shared.gateway.github.types import PullRequestInfo
 
         github_ops = FakeGitHub(
             prs={
@@ -527,8 +527,8 @@ def test_down_delete_current_pr_open() -> None:
         )
 
         # PR for feature-2 is OPEN (active work in progress)
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.types import PRDetails, PullRequestInfo
+        from erk_shared.gateway.github.fake import FakeGitHub
+        from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
         github_ops = FakeGitHub(
             prs={
@@ -618,8 +618,8 @@ def test_down_delete_current_force_with_open_pr_confirmed() -> None:
         )
 
         # PR for feature-2 is OPEN
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.types import PRDetails, PullRequestInfo
+        from erk_shared.gateway.github.fake import FakeGitHub
+        from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
         github_ops = FakeGitHub(
             prs={
@@ -726,8 +726,8 @@ def test_down_delete_current_force_with_open_pr_declined() -> None:
         )
 
         # PR for feature-2 is OPEN
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.types import PRDetails, PullRequestInfo
+        from erk_shared.gateway.github.fake import FakeGitHub
+        from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
         github_ops = FakeGitHub(
             prs={
@@ -819,8 +819,8 @@ def test_down_delete_current_force_with_open_pr_close_confirmed() -> None:
         )
 
         # PR for feature-2 is OPEN
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.types import PRDetails, PullRequestInfo
+        from erk_shared.gateway.github.fake import FakeGitHub
+        from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
         github_ops = FakeGitHub(
             prs={
@@ -927,8 +927,8 @@ def test_down_delete_current_force_with_open_pr_close_declined() -> None:
         )
 
         # PR for feature-2 is OPEN
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.types import PRDetails, PullRequestInfo
+        from erk_shared.gateway.github.fake import FakeGitHub
+        from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
         github_ops = FakeGitHub(
             prs={
@@ -1035,8 +1035,8 @@ def test_down_delete_current_pr_closed() -> None:
         )
 
         # PR for feature-2 is CLOSED (abandoned/rejected work)
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.types import PullRequestInfo
+        from erk_shared.gateway.github.fake import FakeGitHub
+        from erk_shared.gateway.github.types import PullRequestInfo
 
         github_ops = FakeGitHub(
             prs={
@@ -1114,7 +1114,7 @@ def test_down_delete_current_no_pr() -> None:
         )
 
         # No PR for feature-2
-        from erk_shared.github.fake import FakeGitHub
+        from erk_shared.gateway.github.fake import FakeGitHub
 
         github_ops = FakeGitHub(prs={})
 
@@ -1173,8 +1173,8 @@ def test_down_delete_current_trunk_in_root() -> None:
         )
 
         # PR for feature-1 is merged
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.types import PullRequestInfo
+        from erk_shared.gateway.github.fake import FakeGitHub
+        from erk_shared.gateway.github.types import PullRequestInfo
 
         github_ops = FakeGitHub(
             prs={
@@ -1269,8 +1269,8 @@ def test_down_delete_current_slot_aware_unassigns_slot() -> None:
         )
 
         # PR for feature-2 is merged
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.types import PullRequestInfo
+        from erk_shared.gateway.github.fake import FakeGitHub
+        from erk_shared.gateway.github.types import PullRequestInfo
 
         github_ops = FakeGitHub(
             prs={

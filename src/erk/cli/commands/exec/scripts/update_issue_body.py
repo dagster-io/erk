@@ -27,7 +27,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_repo_root,
 )
-from erk_shared.github.types import BodyFile, BodyText
+from erk_shared.gateway.github.types import BodyFile, BodyText
 
 
 @click.command(name="update-issue-body")

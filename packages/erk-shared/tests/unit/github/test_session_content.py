@@ -2,7 +2,7 @@
 
 import re
 
-from erk_shared.github.metadata.session import (
+from erk_shared.gateway.github.metadata.session import (
     extract_prompts_from_session_prompts_block,
     render_session_exchanges_block,
     render_session_prompts_block,

@@ -4,7 +4,7 @@ This module provides functions to extract session IDs from comments that
 contain erk metadata blocks for implementation and learn events.
 """
 
-from erk_shared.github.metadata.core import extract_metadata_value
+from erk_shared.gateway.github.metadata.core import extract_metadata_value
 
 
 def extract_implementation_sessions(comments: list[str]) -> list[str]:

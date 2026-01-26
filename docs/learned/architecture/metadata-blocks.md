@@ -21,10 +21,10 @@ Metadata blocks are wrapped in HTML comments with a collapsible details element 
 
 ## Parsing Blocks
 
-Use functions from `erk_shared.github.metadata.core`:
+Use functions from `erk_shared.gateway.github.metadata.core`:
 
 ```python
-from erk_shared.github.metadata.core import (
+from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,      # Find specific block by key
     extract_metadata_value,   # Get single field from block
     parse_metadata_blocks,    # Parse all blocks in text
@@ -44,7 +44,7 @@ session_id = extract_metadata_value(comment, "impl-started", "session_id")
 Use `create_metadata_block()` and `render_metadata_block()`:
 
 ```python
-from erk_shared.github.metadata.core import (
+from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,
     render_metadata_block,
 )
@@ -130,7 +130,7 @@ candidates:
     target_doc_path: "architecture/erk-architecture.md"
 ```
 
-Functions in `erk_shared.github.metadata.tripwire_candidates`:
+Functions in `erk_shared.gateway.github.metadata.tripwire_candidates`:
 
 - `render_tripwire_candidates_comment()` - Create comment body
 - `extract_tripwire_candidates_from_comments()` - Parse from comments

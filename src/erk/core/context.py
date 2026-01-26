@@ -52,6 +52,13 @@ from erk_shared.gateway.git.branch_ops.dry_run import DryRunGitBranchOps
 from erk_shared.gateway.git.branch_ops.real import RealGitBranchOps
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.real import RealGit
+from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.dry_run import DryRunGitHub
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.real import RealGitHubIssues
+from erk_shared.gateway.github.parsing import parse_git_remote_url
+from erk_shared.gateway.github.real import RealGitHub
+from erk_shared.gateway.github.types import RepoInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.branch_ops.dry_run import DryRunGraphiteBranchOps
@@ -65,13 +72,6 @@ from erk_shared.gateway.graphite.real import RealGraphite
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.github.abc import GitHub
-from erk_shared.github.dry_run import DryRunGitHub
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.real import RealGitHubIssues
-from erk_shared.github.parsing import parse_git_remote_url
-from erk_shared.github.real import RealGitHub
-from erk_shared.github.types import RepoInfo
 from erk_shared.github_admin.abc import GitHubAdmin
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.output.output import user_output
@@ -108,12 +108,12 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
     from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
-    from erk_shared.github.fake import FakeGitHub
-    from erk_shared.github.issues.fake import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.prompt_executor.fake import FakePromptExecutor
@@ -235,14 +235,14 @@ def context_for_test(
     from erk_shared.gateway.git.branch_ops.dry_run import DryRunGitBranchOps
     from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
     from erk_shared.gateway.git.fake import FakeGit
+    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
     from erk_shared.gateway.graphite.branch_ops.dry_run import DryRunGraphiteBranchOps
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
-    from erk_shared.github.fake import FakeGitHub
-    from erk_shared.github.issues.fake import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.prompt_executor.fake import FakePromptExecutor

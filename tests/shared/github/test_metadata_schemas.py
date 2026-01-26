@@ -6,7 +6,7 @@ Tests all validator methods for all schema classes in metadata.py.
 
 import pytest
 
-from erk_shared.github.metadata.schemas import (
+from erk_shared.gateway.github.metadata.schemas import (
     CREATED_AT,
     CREATED_BY,
     CREATED_FROM_SESSION,

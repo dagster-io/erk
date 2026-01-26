@@ -16,11 +16,11 @@ from erk.cli.commands.objective_helpers import check_and_display_plan_issue_clos
 from erk.core.context import context_for_test
 from erk_shared.context.types import LoadedConfig
 from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import BodyContent
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.types import BodyContent
 
 
 def _create_issue(number: int, state: str) -> IssueInfo:

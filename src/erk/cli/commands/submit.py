@@ -23,24 +23,24 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata.core import (
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
     render_erk_issue_event,
 )
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_branch_name,
     extract_plan_header_learned_from_issue,
     update_plan_header_dispatch,
 )
-from erk_shared.github.parsing import (
+from erk_shared.gateway.github.parsing import (
     construct_pr_url,
     construct_workflow_run_url,
     extract_owner_repo_from_github_url,
 )
-from erk_shared.github.pr_footer import build_pr_body_footer
-from erk_shared.github.types import BodyText, PRNotFound
+from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+from erk_shared.gateway.github.types import BodyText, PRNotFound
+from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL
 from erk_shared.naming import (
     format_branch_timestamp_suffix,
     sanitize_worktree_name,

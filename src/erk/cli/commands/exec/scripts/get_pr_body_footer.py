@@ -41,7 +41,7 @@ Examples:
 
 import click
 
-from erk_shared.github.pr_footer import build_pr_body_footer
+from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 
 
 @click.command(name="get-pr-body-footer")

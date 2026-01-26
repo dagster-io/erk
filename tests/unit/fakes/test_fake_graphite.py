@@ -9,10 +9,10 @@ from pathlib import Path
 import pytest
 
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 
 
 def test_fake_graphite_ops_initialization() -> None:

@@ -11,7 +11,7 @@ from datetime import datetime
 
 import click
 
-from erk_shared.github.types import PullRequestInfo, WorkflowRun
+from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
 
 
 def get_visible_length(text: str) -> int:

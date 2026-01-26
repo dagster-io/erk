@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Self
 
-from erk_shared.github.types import GitHubRepoId
+from erk_shared.gateway.github.types import GitHubRepoId
 
 # Claude CLI permission modes:
 # - "default": Default mode with permission prompts

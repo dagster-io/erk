@@ -27,11 +27,9 @@ from erk.tui.data.types import PlanFilters
 from erk.tui.sorting.types import SortKey, SortState
 from erk_shared.gateway.browser.real import RealBrowserLauncher
 from erk_shared.gateway.clipboard.real import RealClipboard
-from erk_shared.gateway.http.auth import fetch_github_token
-from erk_shared.gateway.http.real import RealHttpClient
-from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_local_impl_at,
     extract_plan_header_local_impl_event,
     extract_plan_header_objective_issue,
@@ -39,7 +37,9 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_header_source_repo,
     extract_plan_header_worktree_name,
 )
-from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
+from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
+from erk_shared.gateway.http.auth import fetch_github_token
+from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan, PlanState

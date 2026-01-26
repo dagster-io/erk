@@ -268,7 +268,7 @@ def test_real_database_with_mocking(monkeypatch) -> None:
 Constructor injection only - NO mutation methods like `add_issue()`.
 
 ```python
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.gateway.github.issues import FakeGitHubIssues
 from tests.test_utils.github_helpers import create_test_issue
 
 # Empty fake

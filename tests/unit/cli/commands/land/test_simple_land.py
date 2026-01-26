@@ -7,9 +7,9 @@ import pytest
 from erk.cli.commands.land_cmd import _execute_simple_land
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRDetails
 
 
 def test_execute_simple_land_merges_pr_without_graphite(tmp_path: Path) -> None:

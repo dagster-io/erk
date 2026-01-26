@@ -2,7 +2,7 @@
 
 import pytest
 
-from erk_shared.github.metadata_blocks import ImplementationStatusSchema
+from erk_shared.gateway.github.metadata_blocks import ImplementationStatusSchema
 
 
 def test_schema_validation_accepts_valid_data() -> None:

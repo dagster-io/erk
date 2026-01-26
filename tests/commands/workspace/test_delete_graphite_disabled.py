@@ -9,7 +9,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeGitHub
 from tests.fakes.shell import FakeShell
 from tests.test_utils.cli_helpers import assert_cli_success
 from tests.test_utils.env_helpers import erk_inmem_env

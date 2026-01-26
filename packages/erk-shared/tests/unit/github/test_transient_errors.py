@@ -2,7 +2,7 @@
 
 import pytest
 
-from erk_shared.github.transient_errors import TRANSIENT_ERROR_PATTERNS, is_transient_error
+from erk_shared.gateway.github.transient_errors import TRANSIENT_ERROR_PATTERNS, is_transient_error
 
 
 def test_io_timeout_detected() -> None:

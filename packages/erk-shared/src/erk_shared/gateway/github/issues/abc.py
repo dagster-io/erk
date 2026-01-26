@@ -3,13 +3,13 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from erk_shared.github.issues.types import (
+from erk_shared.gateway.github.issues.types import (
     CreateIssueResult,
     IssueComment,
     IssueInfo,
     PRReference,
 )
-from erk_shared.github.types import BodyContent
+from erk_shared.gateway.github.types import BodyContent
 
 
 class GitHubIssues(ABC):

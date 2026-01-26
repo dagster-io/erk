@@ -15,14 +15,14 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.metadata.core import format_plan_commands_section
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.metadata.core import format_plan_commands_section
+from erk_shared.gateway.github.metadata.plan_header import (
     format_plan_content_comment,
     format_plan_header_body,
     update_plan_header_comment_id,
 )
-from erk_shared.github.types import BodyText
+from erk_shared.gateway.github.types import BodyText
 from erk_shared.plan_utils import extract_title_from_plan
 
 # Label configurations

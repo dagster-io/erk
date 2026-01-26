@@ -12,9 +12,9 @@ from pathlib import Path
 import pytest
 from pytest import MonkeyPatch
 
+from erk_shared.gateway.github.abc import GistCreated, GistCreateError
+from erk_shared.gateway.github.real import RealGitHub
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.github.abc import GistCreated, GistCreateError
-from erk_shared.github.real import RealGitHub
 from tests.integration.test_helpers import mock_subprocess_run
 
 # ============================================================================
@@ -853,7 +853,7 @@ def test_list_prs_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        from erk_shared.github.types import RepoInfo
+        from erk_shared.gateway.github.types import RepoInfo
 
         ops = RealGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.list_prs(Path("/repo"), state="open")
@@ -903,7 +903,7 @@ def test_list_prs_with_closed_state(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        from erk_shared.github.types import RepoInfo
+        from erk_shared.gateway.github.types import RepoInfo
 
         ops = RealGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.list_prs(Path("/repo"), state="closed")
@@ -942,7 +942,7 @@ def test_list_prs_merged_state(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        from erk_shared.github.types import RepoInfo
+        from erk_shared.gateway.github.types import RepoInfo
 
         ops = RealGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.list_prs(Path("/repo"), state="all")
@@ -957,7 +957,7 @@ def test_list_prs_api_failure_returns_empty(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("API failure")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        from erk_shared.github.types import RepoInfo
+        from erk_shared.gateway.github.types import RepoInfo
 
         ops = RealGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.list_prs(Path("/repo"), state="open")
@@ -1006,7 +1006,7 @@ def test_get_open_prs_with_base_branch_success(monkeypatch: MonkeyPatch) -> None
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        from erk_shared.github.types import RepoInfo
+        from erk_shared.gateway.github.types import RepoInfo
 
         ops = RealGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.get_open_prs_with_base_branch(Path("/repo"), "main")
@@ -1040,7 +1040,7 @@ def test_get_open_prs_with_base_branch_empty_result(monkeypatch: MonkeyPatch) ->
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        from erk_shared.github.types import RepoInfo
+        from erk_shared.gateway.github.types import RepoInfo
 
         ops = RealGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.get_open_prs_with_base_branch(Path("/repo"), "feature-1")
@@ -1057,7 +1057,7 @@ def test_get_open_prs_with_base_branch_api_failure_returns_empty(
         raise RuntimeError("API failure")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        from erk_shared.github.types import RepoInfo
+        from erk_shared.gateway.github.types import RepoInfo
 
         ops = RealGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.get_open_prs_with_base_branch(Path("/repo"), "main")

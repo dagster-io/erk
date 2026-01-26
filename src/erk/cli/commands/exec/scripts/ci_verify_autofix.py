@@ -33,7 +33,7 @@ from typing import Literal
 import click
 
 from erk_shared.context.helpers import require_cwd, require_git, require_github
-from erk_shared.github.abc import GitHub
+from erk_shared.gateway.github.abc import GitHub
 
 # Check definitions: (name, command)
 CI_CHECKS = [

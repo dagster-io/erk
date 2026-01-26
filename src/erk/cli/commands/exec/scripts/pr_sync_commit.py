@@ -41,13 +41,13 @@ import click
 
 from erk_shared.context.helpers import require_git, require_github, require_repo_root
 from erk_shared.gateway.git.abc import Git
-from erk_shared.github.abc import GitHub
-from erk_shared.github.pr_footer import (
+from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.pr_footer import (
     extract_footer_from_body,
     extract_header_from_body,
     rebuild_pr_body,
 )
-from erk_shared.github.types import BodyFile, PRNotFound
+from erk_shared.gateway.github.types import BodyFile, PRNotFound
 
 
 @dataclass(frozen=True)

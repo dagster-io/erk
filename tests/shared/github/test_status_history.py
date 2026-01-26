@@ -4,7 +4,7 @@ Layer 3 (Pure Unit Tests): Tests for pure status history construction logic.
 Zero dependencies on external systems.
 """
 
-from erk_shared.github.status_history import build_status_history, extract_workflow_run_id
+from erk_shared.gateway.github.status_history import build_status_history, extract_workflow_run_id
 
 
 class TestExtractWorkflowRunId:

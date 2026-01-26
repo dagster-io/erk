@@ -118,11 +118,11 @@ This validates:
 
 ## Python API
 
-Key functions in `erk_shared.github.metadata`:
+Key functions in `erk_shared.gateway.github.metadata`:
 
 ```python
 # Create plan-header for issue body
-from erk_shared.github.metadata import format_plan_header_body
+from erk_shared.gateway.github.metadata import format_plan_header_body
 
 body = format_plan_header_body(
     created_at=timestamp,
@@ -130,17 +130,17 @@ body = format_plan_header_body(
 )
 
 # Create plan-body for first comment
-from erk_shared.github.metadata import format_plan_content_comment
+from erk_shared.gateway.github.metadata import format_plan_content_comment
 
 comment = format_plan_content_comment(plan_content)
 
 # Extract plan from comment
-from erk_shared.github.metadata import extract_plan_from_comment
+from erk_shared.gateway.github.metadata import extract_plan_from_comment
 
 plan = extract_plan_from_comment(comment_body)
 
 # Find metadata block
-from erk_shared.github.metadata import find_metadata_block
+from erk_shared.gateway.github.metadata import find_metadata_block
 
 block = find_metadata_block(issue_body, "plan-header")
 if block:

@@ -8,7 +8,7 @@ from erk.cli.commands.exec.scripts.create_plan_from_context import (
     create_plan_from_context,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 
 
 def test_create_plan_issue_success() -> None:

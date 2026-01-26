@@ -1,6 +1,6 @@
 """Tests for metadata block rendering."""
 
-from erk_shared.github.metadata_blocks import (
+from erk_shared.gateway.github.metadata_blocks import (
     MetadataBlock,
     parse_metadata_blocks,
     render_metadata_block,

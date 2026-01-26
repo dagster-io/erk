@@ -41,8 +41,8 @@ from typing import Literal
 import click
 
 from erk_shared.context.helpers import require_github, require_issues, require_repo_root
-from erk_shared.github.abc import GistCreateError
-from erk_shared.github.types import BodyText
+from erk_shared.gateway.github.abc import GistCreateError
+from erk_shared.gateway.github.types import BodyText
 
 
 @click.command(name="upload-session")
@@ -121,7 +121,7 @@ def upload_session(
         result["issue_number"] = issue_number
 
         # Import here to avoid circular imports
-        from erk_shared.github.metadata.plan_header import (
+        from erk_shared.gateway.github.metadata.plan_header import (
             update_plan_header_session_gist,
         )
 

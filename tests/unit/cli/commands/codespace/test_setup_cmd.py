@@ -36,7 +36,7 @@ def test_setup_derives_name_from_repo_info() -> None:
     runner = CliRunner()
 
     codespace_registry = FakeCodespaceRegistry()
-    from erk_shared.github.types import RepoInfo
+    from erk_shared.gateway.github.types import RepoInfo
 
     ctx = context_for_test(
         codespace_registry=codespace_registry,

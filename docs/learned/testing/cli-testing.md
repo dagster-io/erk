@@ -23,7 +23,7 @@ Erk CLI commands use Click's context system (`@click.pass_context`) to receive d
 ```python
 from click.testing import CliRunner
 from erk_shared.context import ErkContext
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.gateway.github.issues import FakeGitHubIssues
 
 def test_my_command() -> None:
     """Test command with fake dependencies."""

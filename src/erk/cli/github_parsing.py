@@ -1,17 +1,17 @@
 """CLI-level wrappers for GitHub URL parsing with error handling.
 
 This module provides CLI-friendly wrappers around the shared parsing functions
-in erk_shared.github.parsing. These wrappers handle user input (not just URLs)
+in erk_shared.gateway.github.parsing. These wrappers handle user input (not just URLs)
 and raise SystemExit(1) with appropriate error messages for invalid input.
 
 Two-layer architecture:
-- erk_shared.github.parsing: Pure parsing functions, return None on failure (LBYL-friendly)
+- erk_shared.gateway.github.parsing: Pure parsing functions, return None on failure (LBYL-friendly)
 - src/erk/cli/github_parsing.py: CLI wrappers that raise SystemExit(1)
 """
 
 import click
 
-from erk_shared.github.parsing import (
+from erk_shared.gateway.github.parsing import (
     parse_issue_number_from_url,
     parse_pr_number_from_url,
 )

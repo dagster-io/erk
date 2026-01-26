@@ -6,8 +6,8 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.cli.commands.plan.list_cmd import dash
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -60,7 +60,7 @@ def test_dash_command_routes_to_interactive_mode() -> None:
     """
     from unittest.mock import patch
 
-    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeGitHub
 
     # Arrange
     plan1 = Plan(
@@ -102,7 +102,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
     """
     from unittest.mock import patch
 
-    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeGitHub
 
     # Arrange
     open_plan = Plan(

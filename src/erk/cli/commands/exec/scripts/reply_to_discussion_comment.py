@@ -35,7 +35,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.github.checks import GitHubChecks
+from erk_shared.gateway.github.checks import GitHubChecks
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,
     GitHubAPIFailed,

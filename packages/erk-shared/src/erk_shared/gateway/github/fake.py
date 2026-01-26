@@ -8,10 +8,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from erk_shared.github.abc import GistCreated, GistCreateError, GitHub
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.types import (
+from erk_shared.gateway.github.abc import GistCreated, GistCreateError, GitHub
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import (
     BodyContent,
     BodyFile,
     BodyText,
@@ -119,7 +119,7 @@ class FakeGitHub(GitHub):
         if issues_gateway is not None:
             self._issues_gateway = issues_gateway
         else:
-            from erk_shared.github.issues.fake import FakeGitHubIssues
+            from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 
             self._issues_gateway = FakeGitHubIssues()
         self._issues_data = issues_data or []

@@ -14,10 +14,10 @@ from erk.core.context import (
 from erk.core.script_writer import ScriptWriter
 from erk_shared.gateway.completion.fake import FakeCompletion
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.shell.fake import FakeShell
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues.abc import GitHubIssues
 
 
 def create_test_context(

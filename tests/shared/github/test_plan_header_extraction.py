@@ -6,8 +6,8 @@ zero dependencies.
 
 import pytest
 
-from erk_shared.github.metadata.core import find_metadata_block, render_metadata_block
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+from erk_shared.gateway.github.metadata.plan_header import (
     create_plan_header_block,
     extract_plan_header_branch_name,
     extract_plan_header_last_learn_at,
@@ -26,7 +26,7 @@ from erk_shared.github.metadata.plan_header import (
     update_plan_header_remote_impl_event,
     update_plan_header_worktree_and_branch,
 )
-from erk_shared.github.metadata.schemas import PlanHeaderSchema
+from erk_shared.gateway.github.metadata.schemas import PlanHeaderSchema
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 # === Schema Validation Tests ===

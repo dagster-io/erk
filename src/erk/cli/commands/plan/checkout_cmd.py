@@ -195,7 +195,7 @@ def _checkout_pr(
     script: bool,
 ) -> None:
     """Fetch and checkout a PR that references the plan issue."""
-    from erk_shared.github.types import PRNotFound
+    from erk_shared.gateway.github.types import PRNotFound
 
     # Get PR details
     ctx.console.info(f"Fetching PR #{pr_number}...")

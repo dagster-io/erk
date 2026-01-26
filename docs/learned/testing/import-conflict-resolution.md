@@ -19,7 +19,7 @@ You consolidated imports in one branch:
 from .local_helpers import parse_url
 
 # After: shared module
-from erk_shared.github.parsing import parse_url
+from erk_shared.gateway.github.parsing import parse_url
 ```
 
 When rebasing other branches that still use the old imports, conflicts appear.
@@ -32,7 +32,7 @@ Conflict markers typically look like:
 
 ```python
 <<<<<<< HEAD
-from erk_shared.github.parsing import parse_pr_number, parse_issue_number
+from erk_shared.gateway.github.parsing import parse_pr_number, parse_issue_number
 =======
 from .github_helpers import parse_pr_number
 from .issue_helpers import parse_issue_number
@@ -53,7 +53,7 @@ If the shared module exists and has the functions, use HEAD's version:
 
 ```python
 # Resolution: use the consolidated import
-from erk_shared.github.parsing import parse_pr_number, parse_issue_number
+from erk_shared.gateway.github.parsing import parse_pr_number, parse_issue_number
 ```
 
 ### Step 4: Remove Obsolete Local Helpers
@@ -87,7 +87,7 @@ Starting conflict:
 
 ```python
 <<<<<<< HEAD
-from erk_shared.github.parsing import (
+from erk_shared.gateway.github.parsing import (
     parse_pr_number,
     parse_issue_number,
     parse_repo_from_url,
@@ -101,7 +101,7 @@ from .issue_parser import parse_issue_number
 Resolution:
 
 ```python
-from erk_shared.github.parsing import (
+from erk_shared.gateway.github.parsing import (
     parse_pr_number,
     parse_issue_number,
     parse_repo_from_url,

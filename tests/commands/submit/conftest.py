@@ -6,8 +6,8 @@ from pathlib import Path
 from erk.cli.commands.submit import ERK_PLAN_LABEL
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
-from erk_shared.github.metadata.core import render_metadata_block
-from erk_shared.github.metadata.types import MetadataBlock
+from erk_shared.gateway.github.metadata.core import render_metadata_block
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
@@ -88,8 +88,8 @@ def setup_submit_context(
     from erk_shared.context.types import GlobalConfig
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.git.fake import FakeGit
+    from erk_shared.gateway.github.fake import FakeGitHub
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.github.fake import FakeGitHub
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()

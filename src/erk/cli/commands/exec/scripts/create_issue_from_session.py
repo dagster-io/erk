@@ -32,7 +32,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.github.plan_issues import create_plan_issue
+from erk_shared.gateway.github.plan_issues import create_plan_issue
 
 
 @click.command(name="create-issue-from-session")

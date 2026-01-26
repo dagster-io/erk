@@ -25,8 +25,8 @@ Examples:
 import click
 
 from erk_shared.context.helpers import require_github, require_repo_root
-from erk_shared.github.pr_footer import build_remote_execution_note
-from erk_shared.github.types import PRNotFound
+from erk_shared.gateway.github.pr_footer import build_remote_execution_note
+from erk_shared.gateway.github.types import PRNotFound
 
 
 @click.command(name="add-remote-execution-note")

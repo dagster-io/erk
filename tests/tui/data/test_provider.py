@@ -9,13 +9,13 @@ from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.http.fake import FakeHttpClient
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import (
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
     PullRequestInfo,
 )
+from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.context import create_test_context
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -249,7 +249,7 @@ class TestClosePlan:
         )
 
         # Configure fake GitHub to return empty PR linkages
-        from erk_shared.github.fake import FakeGitHub
+        from erk_shared.gateway.github.fake import FakeGitHub
 
         github = FakeGitHub(pr_issue_linkages={})
 
@@ -305,8 +305,8 @@ class TestClosePlan:
         )
 
         # Configure fake GitHub to return linked PRs
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.types import PullRequestInfo
+        from erk_shared.gateway.github.fake import FakeGitHub
+        from erk_shared.gateway.github.types import PullRequestInfo
 
         github = FakeGitHub(
             pr_issue_linkages={

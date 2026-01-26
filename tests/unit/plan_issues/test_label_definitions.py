@@ -3,7 +3,7 @@
 Pure unit tests (Layer 3) - no dependencies on fakes or external systems.
 """
 
-from erk_shared.github.plan_issues import get_erk_label_definitions, get_required_erk_labels
+from erk_shared.gateway.github.plan_issues import get_erk_label_definitions, get_required_erk_labels
 
 
 def test_get_erk_label_definitions_returns_four_labels() -> None:

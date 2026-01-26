@@ -35,7 +35,7 @@ from pathlib import Path
 import click
 
 from erk_shared.context.helpers import require_github
-from erk_shared.github.abc import GistCreateError
+from erk_shared.gateway.github.abc import GistCreateError
 
 
 @click.command(name="upload-learn-materials")

@@ -94,7 +94,7 @@ The sentinel provides:
 The `PRNotFound` sentinel in erk demonstrates this pattern:
 
 ```python
-from erk_shared.github.types import PRNotFound, PRDetails
+from erk_shared.gateway.github.types import PRNotFound, PRDetails
 
 # PRNotFound preserves lookup context
 @dataclass(frozen=True)

@@ -564,7 +564,7 @@ A sentinel class returned when a PR lookup fails to find a PR.
 **Usage Pattern**:
 
 ```python
-from erk_shared.github.types import PRNotFound
+from erk_shared.gateway.github.types import PRNotFound
 
 pr = github.get_pr_for_branch(repo_root, branch)
 if isinstance(pr, PRNotFound):

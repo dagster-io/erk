@@ -4,14 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.github.metadata.core import render_metadata_block
-from erk_shared.github.metadata.tripwire_candidates import (
+from erk_shared.gateway.github.metadata.core import render_metadata_block
+from erk_shared.gateway.github.metadata.tripwire_candidates import (
     TripwireCandidate,
     extract_tripwire_candidates_from_comments,
     render_tripwire_candidates_comment,
     validate_candidates_json,
 )
-from erk_shared.github.metadata.types import MetadataBlock
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 
 
 def test_render_and_extract_roundtrip() -> None:

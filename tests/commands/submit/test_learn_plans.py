@@ -5,9 +5,9 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.submit import get_learn_plan_parent_branch, is_issue_learn_plan, submit_cmd
+from erk_shared.gateway.github.metadata.core import render_metadata_block
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL
-from erk_shared.github.metadata.core import render_metadata_block
-from erk_shared.github.metadata.types import MetadataBlock
 from tests.commands.submit.conftest import (
     create_plan,
     make_learn_plan_body,

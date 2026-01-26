@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from erk_shared.gateway.github.issues.real import RealGitHubIssues
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.github.issues.real import RealGitHubIssues
 
 
 @pytest.fixture

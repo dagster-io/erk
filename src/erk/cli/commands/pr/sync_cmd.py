@@ -34,10 +34,10 @@ import click
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.events import CompletionEvent
 from erk_shared.gateway.gt.operations.squash import execute_squash
 from erk_shared.gateway.gt.types import RestackError, SquashError, SquashSuccess
-from erk_shared.github.types import PRNotFound
 from erk_shared.output.output import user_output
 
 

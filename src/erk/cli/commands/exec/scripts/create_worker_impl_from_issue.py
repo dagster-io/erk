@@ -26,8 +26,8 @@ from pathlib import Path
 
 import click
 
+from erk_shared.gateway.github.issues.real import RealGitHubIssues
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.worker_impl_folder import create_worker_impl_folder
 

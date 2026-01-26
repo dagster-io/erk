@@ -7,9 +7,9 @@ providing reliable test doubles for CLI tests.
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.types import (
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
     PRDetails,

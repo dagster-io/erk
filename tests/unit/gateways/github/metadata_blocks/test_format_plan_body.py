@@ -1,6 +1,6 @@
 """Tests for format_plan_issue_body_simple function."""
 
-from erk_shared.github.metadata.core import format_plan_issue_body_simple
+from erk_shared.gateway.github.metadata.core import format_plan_issue_body_simple
 
 
 def test_format_plan_issue_body_simple_basic() -> None:

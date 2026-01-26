@@ -8,8 +8,8 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
 from erk_shared.context.context import ErkContext
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 
 
 def _make_issue(

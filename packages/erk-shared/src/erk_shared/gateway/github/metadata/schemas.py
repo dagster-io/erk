@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from erk_shared.github.metadata.types import MetadataBlockSchema
+from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
 
 
 @dataclass(frozen=True)

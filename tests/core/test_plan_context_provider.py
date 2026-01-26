@@ -4,9 +4,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.core.plan_context_provider import PlanContext, PlanContextProvider
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueComment, IssueInfo
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+from erk_shared.gateway.github.metadata.plan_header import (
     format_plan_content_comment,
     format_plan_header_body,
 )

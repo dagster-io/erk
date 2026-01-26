@@ -2,7 +2,7 @@
 
 import pytest
 
-from erk_shared.github.metadata_blocks import (
+from erk_shared.gateway.github.metadata_blocks import (
     ImplementationStatusSchema,
     MetadataBlock,
     create_metadata_block,

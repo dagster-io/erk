@@ -43,13 +43,13 @@ from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
 from erk_shared.env import in_github_actions
-from erk_shared.github.metadata.core import render_erk_issue_event
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.metadata.core import render_erk_issue_event
+from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_local_impl_event,
     update_plan_header_remote_impl,
     update_plan_header_worktree_and_branch,
 )
-from erk_shared.github.types import BodyText
+from erk_shared.gateway.github.types import BodyText
 from erk_shared.impl_folder import (
     read_issue_reference,
     write_local_run_state,

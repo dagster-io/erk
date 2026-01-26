@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.types import (
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import (
     BodyContent,
     GitHubRepoLocation,
     PRDetails,
@@ -37,7 +37,7 @@ class GistCreateError:
 
 
 if TYPE_CHECKING:
-    from erk_shared.github.issues.abc import GitHubIssues
+    from erk_shared.gateway.github.issues.abc import GitHubIssues
 
 
 class GitHub(ABC):

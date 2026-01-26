@@ -30,10 +30,10 @@ from datetime import UTC
 import click
 
 from erk_shared.context.helpers import require_issues, require_repo_root, require_time
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_remote_impl_event,
 )
-from erk_shared.github.types import BodyText
+from erk_shared.gateway.github.types import BodyText
 
 
 @dataclass(frozen=True)

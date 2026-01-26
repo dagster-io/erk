@@ -12,7 +12,7 @@ from pathlib import Path
 import click
 
 from erk.core.context import ErkContext
-from erk_shared.github.metadata.tripwire_candidates import (
+from erk_shared.gateway.github.metadata.tripwire_candidates import (
     TripwireCandidate,
     extract_tripwire_candidates_from_comments,
 )

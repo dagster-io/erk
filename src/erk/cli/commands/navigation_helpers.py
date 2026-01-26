@@ -22,7 +22,7 @@ from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.debug import debug_log
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.github.types import PRNotFound
+from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.scratch.markers import PENDING_LEARN_MARKER, marker_exists
 

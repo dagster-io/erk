@@ -7,8 +7,8 @@ associated with a plan issue.
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_created_from_session,
     extract_plan_header_last_learn_session,
     extract_plan_header_last_session_id,

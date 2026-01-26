@@ -21,8 +21,8 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 import click
 
+from erk_shared.gateway.github.types import PRDetails, PRNotFound
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
-from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,
     GitHubAPIFailed,

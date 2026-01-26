@@ -9,10 +9,10 @@ from erk_shared.branch_manager.abc import BranchManager
 from erk_shared.branch_manager.types import PrInfo
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
-from erk_shared.github.abc import GitHub
-from erk_shared.github.types import PRNotFound
 
 
 @dataclass(frozen=True)

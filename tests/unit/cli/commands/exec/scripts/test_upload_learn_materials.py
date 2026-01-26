@@ -11,7 +11,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.upload_learn_materials import upload_learn_materials
 from erk_shared.context.context import ErkContext
-from erk_shared.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeGitHub
 
 # ============================================================================
 # Success Cases (Layer 4: Business Logic over Fakes)

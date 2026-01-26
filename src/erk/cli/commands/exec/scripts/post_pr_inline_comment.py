@@ -30,7 +30,7 @@ from pathlib import Path
 import click
 
 from erk_shared.context.helpers import require_github, require_repo_root
-from erk_shared.github.parsing import execute_gh_command
+from erk_shared.gateway.github.parsing import execute_gh_command
 
 
 @dataclass(frozen=True)

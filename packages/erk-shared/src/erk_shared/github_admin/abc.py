@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
-from erk_shared.github.types import GitHubRepoLocation
+from erk_shared.gateway.github.types import GitHubRepoLocation
 
 
 @dataclass(frozen=True)

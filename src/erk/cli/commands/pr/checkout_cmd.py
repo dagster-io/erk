@@ -20,7 +20,7 @@ from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
-from erk_shared.github.types import PRNotFound
+from erk_shared.gateway.github.types import PRNotFound
 
 
 @alias("co")

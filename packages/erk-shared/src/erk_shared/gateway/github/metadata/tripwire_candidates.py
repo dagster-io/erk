@@ -9,11 +9,11 @@ import json
 import logging
 from dataclasses import dataclass
 
-from erk_shared.github.metadata.core import (
+from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,
     render_metadata_block,
 )
-from erk_shared.github.metadata.types import MetadataBlock
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 
 logger = logging.getLogger(__name__)
 

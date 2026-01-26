@@ -12,16 +12,16 @@ Design:
 - LBYL pattern: operations check state, return None/False on failure
 
 Note: Git operations are provided by the core Git interface from erk_shared.gateway.git.abc.
-GitHub operations use the main GitHub ABC from erk_shared.github.
+GitHub operations use the main GitHub ABC from erk_shared.gateway.github.
 """
 
 from typing import Protocol
 
 from erk_shared.branch_manager.abc import BranchManager
 from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.time.abc import Time
-from erk_shared.github.abc import GitHub
 
 
 class GtKit(Protocol):
@@ -34,7 +34,7 @@ class GtKit(Protocol):
     git, github, and graphite attributes (like ErkContext) can be used directly
     without explicit inheritance.
 
-    GitHub operations use the main GitHub ABC from erk_shared.github which
+    GitHub operations use the main GitHub ABC from erk_shared.gateway.github which
     provides methods that take repo_root as a parameter rather than operating
     on the "current" branch.
 

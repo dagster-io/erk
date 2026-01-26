@@ -17,7 +17,7 @@ from dataclasses import asdict, dataclass
 import click
 
 from erk_shared.context.helpers import require_issues, require_repo_root
-from erk_shared.github.metadata.tripwire_candidates import (
+from erk_shared.gateway.github.metadata.tripwire_candidates import (
     render_tripwire_candidates_comment,
     validate_candidates_json,
 )

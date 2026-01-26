@@ -17,8 +17,8 @@ from erk.cli.commands.exec.scripts.resolve_review_thread import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRDetails, PRReviewComment, PRReviewThread
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PRDetails, PRReviewComment, PRReviewThread
 
 
 def make_thread(

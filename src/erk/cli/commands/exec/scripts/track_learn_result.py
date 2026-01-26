@@ -27,9 +27,9 @@ from dataclasses import asdict, dataclass
 import click
 
 from erk_shared.context.helpers import require_issues, require_repo_root
-from erk_shared.github.metadata.plan_header import update_plan_header_learn_result
-from erk_shared.github.metadata.schemas import LearnStatusValue
-from erk_shared.github.types import BodyText
+from erk_shared.gateway.github.metadata.plan_header import update_plan_header_learn_result
+from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
+from erk_shared.gateway.github.types import BodyText
 
 
 @dataclass(frozen=True)

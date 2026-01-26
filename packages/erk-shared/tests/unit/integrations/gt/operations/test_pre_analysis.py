@@ -7,6 +7,8 @@ detection of merged parent branches.
 from pathlib import Path
 
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.gt.events import CompletionEvent
@@ -14,8 +16,6 @@ from erk_shared.gateway.gt.operations.pre_analysis import execute_pre_analysis
 from erk_shared.gateway.gt.types import PreAnalysisError, PreAnalysisResult
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRDetails, PullRequestInfo
 
 
 class FakeGtKit:

@@ -7,9 +7,9 @@ backed by FakeGitHubIssues.
 
 from datetime import UTC
 
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata.plan_header import format_plan_header_body
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 

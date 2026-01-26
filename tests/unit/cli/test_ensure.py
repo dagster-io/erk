@@ -7,11 +7,11 @@ import pytest
 
 from erk.cli.ensure import Ensure
 from erk_shared.context.testing import context_for_test
+from erk_shared.gateway.github.types import PRDetails, PRNotFound
 from erk_shared.gateway.graphite.disabled import (
     GraphiteDisabled,
     GraphiteDisabledReason,
 )
-from erk_shared.github.types import PRDetails, PRNotFound
 
 
 class TestEnsureNotNone:

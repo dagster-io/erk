@@ -16,9 +16,9 @@ from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
 from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
 
 
 class TestGetCurrentBranch:

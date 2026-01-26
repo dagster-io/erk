@@ -10,8 +10,8 @@ from click.testing import CliRunner
 from erk.cli.commands.run.logs_cmd import logs_run
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import WorkflowRun
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import WorkflowRun
 from tests.fakes.context import create_test_context
 
 

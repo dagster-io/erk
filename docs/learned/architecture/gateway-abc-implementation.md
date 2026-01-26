@@ -214,7 +214,7 @@ class RealGitHub(GitHub):
     def for_test(cls, *, time: Time | None = None, repo_info: RepoInfo | None = None) -> "RealGitHub":
         """Factory for tests that need Real implementation with sensible defaults."""
         from erk_shared.gateway.time.fake import FakeTime
-        from erk_shared.github.issues import RealGitHubIssues
+        from erk_shared.gateway.github.issues import RealGitHubIssues
         effective_time = time if time is not None else FakeTime()
         return cls(
             time=effective_time,

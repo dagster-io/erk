@@ -11,6 +11,9 @@ from collections.abc import Generator
 from pathlib import Path
 from typing import NamedTuple
 
+from erk_shared.gateway.github.parsing import parse_git_remote_url
+from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, with_retries
+from erk_shared.gateway.github.types import GitHubRepoId, PRDetails, PRNotFound
 from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.pre_analysis import execute_pre_analysis
@@ -20,9 +23,6 @@ from erk_shared.gateway.gt.types import (
     PreAnalysisResult,
     PreflightResult,
 )
-from erk_shared.github.parsing import parse_git_remote_url
-from erk_shared.github.retry import RetriesExhausted, RetryRequested, with_retries
-from erk_shared.github.types import GitHubRepoId, PRDetails, PRNotFound
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 
 

@@ -9,7 +9,7 @@ Test organization:
 - TestRealGtKitOps: Composite operations (2 accessor methods)
 
 Note: Git operations are now tested via the core Git interface in erk_shared.git.
-GitHub operations are now tested via the main GitHub interface in erk_shared.github.
+GitHub operations are now tested via the main GitHub interface in erk_shared.gateway.github.
 """
 
 import subprocess
@@ -56,7 +56,7 @@ class TestRealGtKitOps:
 
     def test_github(self, git_repo: Path) -> None:
         """Test github attribute returns a GitHub implementation."""
-        from erk_shared.github.abc import GitHub
+        from erk_shared.gateway.github.abc import GitHub
 
         ops = RealGtKit(git_repo)
 

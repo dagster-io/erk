@@ -1,6 +1,6 @@
 """Tests for GitHub URL parsing utilities."""
 
-from erk_shared.github.parsing import (
+from erk_shared.gateway.github.parsing import (
     construct_issue_url,
     construct_pr_url,
     construct_workflow_run_url,
