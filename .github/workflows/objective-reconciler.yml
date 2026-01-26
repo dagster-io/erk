@@ -12,8 +12,9 @@ name: objective-reconciler
 run-name: "reconcile-objectives-sweep:${{ github.run_attempt }}"
 
 on:
-  schedule:
-    - cron: "0 */6 * * *" # Every 6 hours
+  # Uncomment to enable automatic reconciliation every 15 minutes:
+  # schedule:
+  #   - cron: "*/15 * * * *" # Every 15 minutes
   workflow_dispatch:
     inputs:
       dry_run:
