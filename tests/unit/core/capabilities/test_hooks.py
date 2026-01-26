@@ -7,7 +7,7 @@ particularly the marker-based detection that enables hook updates.
 import json
 from pathlib import Path
 
-from erk.core.capabilities.hooks import HooksCapability
+from erk.capabilities.hooks import HooksCapability
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,

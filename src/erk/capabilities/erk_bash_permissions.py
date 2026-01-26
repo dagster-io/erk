@@ -1,7 +1,4 @@
-"""Permission-based capabilities for erk init.
-
-Capabilities that modify .claude/settings.json permissions.
-"""
+"""ErkBashPermissionsCapability - Bash(erk:*) permission capability."""
 
 import json
 from pathlib import Path

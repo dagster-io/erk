@@ -2,27 +2,27 @@
 
 from functools import cache
 
-from erk.core.capabilities.agents import DevrunAgentCapability
-from erk.core.capabilities.base import Capability
-from erk.core.capabilities.code_reviews_system import CodeReviewsSystemCapability
-from erk.core.capabilities.hooks import HooksCapability
-from erk.core.capabilities.learned_docs import LearnedDocsCapability
-from erk.core.capabilities.permissions import ErkBashPermissionsCapability
-from erk.core.capabilities.reminders import (
-    DevrunReminderCapability,
-    DignifiedPythonReminderCapability,
-    ExploreDocsReminderCapability,
-    TripwiresReminderCapability,
-)
-from erk.core.capabilities.reviews import (
+from erk.capabilities.agents.devrun import DevrunAgentCapability
+from erk.capabilities.code_reviews_system import CodeReviewsSystemCapability
+from erk.capabilities.erk_bash_permissions import ErkBashPermissionsCapability
+from erk.capabilities.hooks import HooksCapability
+from erk.capabilities.learned_docs import LearnedDocsCapability
+from erk.capabilities.reminders.devrun import DevrunReminderCapability
+from erk.capabilities.reminders.dignified_python import DignifiedPythonReminderCapability
+from erk.capabilities.reminders.explore_docs import ExploreDocsReminderCapability
+from erk.capabilities.reminders.tripwires import TripwiresReminderCapability
+from erk.capabilities.reviews.dignified_code_simplifier import (
     DignifiedCodeSimplifierReviewDefCapability,
-    DignifiedPythonReviewDefCapability,
-    TripwiresReviewDefCapability,
 )
-from erk.core.capabilities.ruff_format import RuffFormatCapability
-from erk.core.capabilities.skills import DignifiedPythonCapability, FakeDrivenTestingCapability
-from erk.core.capabilities.statusline import StatuslineCapability
-from erk.core.capabilities.workflows import ErkImplWorkflowCapability, LearnWorkflowCapability
+from erk.capabilities.reviews.dignified_python import DignifiedPythonReviewDefCapability
+from erk.capabilities.reviews.tripwires import TripwiresReviewDefCapability
+from erk.capabilities.ruff_format import RuffFormatCapability
+from erk.capabilities.skills.dignified_python import DignifiedPythonCapability
+from erk.capabilities.skills.fake_driven_testing import FakeDrivenTestingCapability
+from erk.capabilities.statusline import StatuslineCapability
+from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
+from erk.capabilities.workflows.learn import LearnWorkflowCapability
+from erk.core.capabilities.base import Capability
 
 
 @cache

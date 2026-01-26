@@ -17,19 +17,22 @@ Capabilities in erk follow a 3-file pattern. This guide covers how to add new ca
 
 Adding a new capability requires changes to 3 files:
 
-| File                  | Purpose                                      |
-| --------------------- | -------------------------------------------- |
-| `reminders.py`        | Define the capability class                  |
-| `registry.py`         | Register capability in `_all_capabilities()` |
-| `user_prompt_hook.py` | Hook checks for installed capabilities       |
+| File                                    | Purpose                                      |
+| --------------------------------------- | -------------------------------------------- |
+| `src/erk/capabilities/<type>/<name>.py` | Define the capability class                  |
+| `src/erk/core/capabilities/registry.py` | Register capability in `_all_capabilities()` |
+| `user_prompt_hook.py`                   | Hook checks for installed capabilities       |
 
 ## Example: Adding a Reminder Capability
 
 ### Step 1: Define the Capability Class
 
-In `src/erk/core/capabilities/reminders.py`:
+Create `src/erk/capabilities/reminders/my_reminder.py`:
 
 ```python
+from erk.core.capabilities.reminder_capability import ReminderCapability
+
+
 class MyNewReminderCapability(ReminderCapability):
     """Reminder to do something specific."""
 
@@ -49,7 +52,7 @@ In `src/erk/core/capabilities/registry.py`:
 1. Add import at top:
 
    ```python
-   from erk.core.capabilities.reminders import MyNewReminderCapability
+   from erk.capabilities.reminders.my_reminder import MyNewReminderCapability
    ```
 
 2. Add to the `_all_capabilities()` tuple:
@@ -81,7 +84,7 @@ Capabilities can fail silently if registration is incomplete:
 
 | Missing Step                    | Symptom                                 |
 | ------------------------------- | --------------------------------------- |
-| Class not in `reminders.py`     | Import error in registry                |
+| Class file not created          | Import error in registry                |
 | Not registered in `registry.py` | `is_reminder_installed()` returns False |
 | Wrong `reminder_name` return    | Hook checks wrong marker file           |
 

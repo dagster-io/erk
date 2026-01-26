@@ -1,8 +1,4 @@
-"""Ruff format capability for auto-formatting Python files after Write/Edit.
-
-This capability installs a PostToolUse hook that automatically runs
-`uv run ruff format` on Python files whenever Claude uses Write or Edit tools.
-"""
+"""RuffFormatCapability - auto-format Python files after Write/Edit."""
 
 import json
 from pathlib import Path
