@@ -18,4 +18,3 @@
 - **[session-store-testing.md](session-store-testing.md)** — testing code that reads session data, using FakeClaudeCodeSessionStore, mocking session ID lookup
 - **[subprocess-testing.md](subprocess-testing.md)** — testing code that uses subprocess, creating fakes for process execution, avoiding subprocess mocks in tests
 - **[testing.md](testing.md)** — writing tests for erk, using erk fakes, running erk test commands
-- **[tripwires.md](tripwires.md)** — working on testing code

@@ -14,4 +14,3 @@
 - **[raw-session-processing.md](raw-session-processing.md)** — processing issues with erk-raw-session label, extracting documentation from landed PR sessions, understanding raw session issue format
 - **[session-hierarchy.md](session-hierarchy.md)** — understanding Claude Code session structure, working with parent and agent sessions, finding session files on disk, correlating agent logs to parent sessions, implementing session-scoped file discovery
 - **[tools.md](tools.md)** — finding session logs, inspecting agent execution, debugging session issues
-- **[tripwires.md](tripwires.md)** — working on sessions code

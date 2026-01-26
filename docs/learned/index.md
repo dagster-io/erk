@@ -25,7 +25,6 @@
 - [testing/](testing/) — Explore when writing tests or debugging test infrastructure. Add docs here for testing patterns specific to erk.
 - [textual/](textual/) — Explore when working with Textual framework. Add docs here for Textual-specific patterns.
 - [tui/](tui/) — Explore when working on the erk TUI application. Add docs here for TUI feature implementation.
-- [uncategorized/](uncategorized/)
 
 ## Uncategorized
 
