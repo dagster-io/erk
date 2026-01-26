@@ -3,4 +3,4 @@
 Re-exports FakeGitHubAdmin from erk_shared for backwards compatibility.
 """
 
-from erk_shared.github_admin.fake import FakeGitHubAdmin as FakeGitHubAdmin
+from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin as FakeGitHubAdmin

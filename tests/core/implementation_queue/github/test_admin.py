@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from erk.core.implementation_queue.github.abc import AuthStatus
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+from erk_shared.gateway.github_admin.abc import AuthStatus
 from tests.fakes.github_admin import FakeGitHubAdmin
 
 REPO_ROOT = Path("/test/repo")
