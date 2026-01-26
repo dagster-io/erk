@@ -6,7 +6,7 @@ Tests for both FakeLabelCache (in-memory) and RealLabelCache (disk-based) implem
 import json
 from pathlib import Path
 
-from erk_shared.github.issues.label_cache import (
+from erk_shared.gateway.github.issues.label_cache import (
     FakeLabelCache,
     RealLabelCache,
 )

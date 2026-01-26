@@ -9,10 +9,10 @@ from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.metadata.core import find_metadata_block
-from erk_shared.github.metadata.plan_header import extract_plan_from_comment
-from erk_shared.github.metadata.schemas import PlanHeaderSchema
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
+from erk_shared.gateway.github.metadata.schemas import PlanHeaderSchema
 from erk_shared.output.output import user_output
 
 

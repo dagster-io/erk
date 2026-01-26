@@ -30,10 +30,10 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk.core.version_check import get_required_version, is_version_mismatch
 from erk.core.worktree_pool import load_pool_state
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.plan_issues import LabelDefinition, get_required_erk_labels
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.plan_issues import LabelDefinition, get_required_erk_labels
 from erk_shared.github_admin.abc import GitHubAdmin
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 
@@ -311,8 +311,8 @@ def check_workflow_permissions(ctx: ErkContext, repo_root: Path, admin: GitHubAd
         )
 
     # Parse GitHub owner/repo from remote URL
-    from erk_shared.github.parsing import parse_git_remote_url
-    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+    from erk_shared.gateway.github.parsing import parse_git_remote_url
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 
     try:
         owner_repo = parse_git_remote_url(remote_url)
@@ -383,8 +383,8 @@ def check_erk_queue_pat_secret(ctx: ErkContext, repo_root: Path, admin: GitHubAd
         )
 
     # Parse GitHub owner/repo from remote URL
-    from erk_shared.github.parsing import parse_git_remote_url
-    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+    from erk_shared.gateway.github.parsing import parse_git_remote_url
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 
     try:
         owner_repo = parse_git_remote_url(remote_url)
@@ -458,8 +458,8 @@ def check_anthropic_api_secret(ctx: ErkContext, repo_root: Path, admin: GitHubAd
         )
 
     # Parse GitHub owner/repo from remote URL
-    from erk_shared.github.parsing import parse_git_remote_url
-    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+    from erk_shared.gateway.github.parsing import parse_git_remote_url
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 
     try:
         owner_repo = parse_git_remote_url(remote_url)
@@ -1533,7 +1533,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
 
         # Check plans_repo labels if configured
         from erk.cli.config import load_config as load_repo_config
-        from erk_shared.github.issues.real import RealGitHubIssues
+        from erk_shared.gateway.github.issues.real import RealGitHubIssues
 
         repo_config = load_repo_config(repo_root)
         if repo_config.plans_repo is not None:

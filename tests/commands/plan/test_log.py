@@ -6,9 +6,9 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata.core import (
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata.core import (
     create_implementation_status_block,
     create_plan_block,
     create_submission_queued_block,

@@ -5,16 +5,16 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from erk_shared.gateway.time.abc import Time
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.label_cache import RealLabelCache
-from erk_shared.github.issues.types import (
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.label_cache import RealLabelCache
+from erk_shared.gateway.github.issues.types import (
     CreateIssueResult,
     IssueComment,
     IssueInfo,
     PRReference,
 )
-from erk_shared.github.types import BodyContent, BodyFile, BodyText
+from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
+from erk_shared.gateway.time.abc import Time
 from erk_shared.subprocess_utils import execute_gh_command_with_retry
 
 

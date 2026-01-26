@@ -19,11 +19,11 @@ from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.types import PRDetails, PullRequestInfo
 from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env
 

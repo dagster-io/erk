@@ -17,11 +17,11 @@ from collections.abc import Generator
 from pathlib import Path
 
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.parsing import parse_git_remote_url
+from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.types import CoreSubmitError, CoreSubmitResult
-from erk_shared.github.parsing import parse_git_remote_url
-from erk_shared.github.pr_footer import build_pr_body_footer
-from erk_shared.github.types import PRNotFound
 from erk_shared.impl_folder import (
     has_issue_reference,
     save_issue_reference,

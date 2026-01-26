@@ -10,12 +10,12 @@ from pathlib import Path
 import pytest
 
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.gateway.graphite.disabled import (
     GraphiteDisabled,
     GraphiteDisabledError,
     GraphiteDisabledReason,
 )
-from erk_shared.github.types import GitHubRepoId
 
 
 def test_graphite_disabled_is_frozen() -> None:

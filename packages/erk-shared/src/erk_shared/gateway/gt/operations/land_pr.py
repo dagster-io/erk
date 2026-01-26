@@ -9,10 +9,10 @@ This script safely lands a single PR from a worktree stack by:
 from collections.abc import Generator
 from pathlib import Path
 
+from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
-from erk_shared.github.types import PRNotFound
 from erk_shared.stack.validation import validate_parent_is_trunk
 
 

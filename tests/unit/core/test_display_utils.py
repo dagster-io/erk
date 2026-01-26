@@ -12,7 +12,7 @@ from erk.core.display_utils import (
     format_worktree_line,
     get_workflow_run_state,
 )
-from erk_shared.github.types import WorkflowRun
+from erk_shared.gateway.github.types import WorkflowRun
 
 
 def test_copy_to_clipboard_osc52_basic() -> None:

@@ -8,8 +8,8 @@ from datetime import UTC, datetime
 
 import pytest
 
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.types import BodyText
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.types import BodyText
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
 
@@ -526,7 +526,7 @@ def test_fake_github_issues_get_comment_by_id_from_added_comments() -> None:
 
 def test_fake_github_issues_get_comment_by_id_from_preconfigured() -> None:
     """Test get_comment_by_id retrieves comments from pre-configured _comments_with_urls."""
-    from erk_shared.github.issues.types import IssueComment
+    from erk_shared.gateway.github.issues.types import IssueComment
 
     pre_configured = {42: create_test_issue(42, "Test", "Body", url="http://url/42")}
     comments_with_urls = {
@@ -934,7 +934,7 @@ def test_get_prs_referencing_issue_empty() -> None:
 
 def test_get_prs_referencing_issue_returns_configured_prs() -> None:
     """Test get_prs_referencing_issue returns pre-configured PRs."""
-    from erk_shared.github.issues.types import PRReference
+    from erk_shared.gateway.github.issues.types import PRReference
 
     pr_refs = {
         42: [
@@ -960,7 +960,7 @@ def test_get_prs_referencing_issue_returns_configured_prs() -> None:
 
 def test_get_prs_referencing_issue_different_issue_numbers() -> None:
     """Test get_prs_referencing_issue returns correct PRs for each issue."""
-    from erk_shared.github.issues.types import PRReference
+    from erk_shared.gateway.github.issues.types import PRReference
 
     pr_refs = {
         10: [PRReference(number=100, state="OPEN", is_draft=True)],

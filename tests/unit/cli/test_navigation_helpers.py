@@ -908,8 +908,8 @@ def test_get_slot_name_for_worktree_returns_none_without_pool_file(tmp_path: Pat
 
 def test_validate_for_deletion_passes_when_all_checks_pass(tmp_path: Path) -> None:
     """Test validate_for_deletion passes when working tree is clean and PR is merged."""
-    from erk_shared.github.fake import FakeGitHub
-    from erk_shared.github.types import PullRequestInfo
+    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.types import PullRequestInfo
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -965,7 +965,7 @@ def test_validate_for_deletion_passes_when_all_checks_pass(tmp_path: Path) -> No
 
 def test_validate_for_deletion_blocks_with_uncommitted_changes(tmp_path: Path) -> None:
     """Test validate_for_deletion blocks when uncommitted changes exist."""
-    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeGitHub
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()

@@ -34,9 +34,9 @@ from erk_shared.context.helpers import (
     require_repo_root,
     require_time,
 )
+from erk_shared.gateway.github.metadata.plan_header import update_plan_header_learn_event
+from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
-from erk_shared.github.metadata.plan_header import update_plan_header_learn_event
-from erk_shared.github.types import BodyText
 from erk_shared.learn.tracking import track_learn_invocation
 from erk_shared.naming import extract_leading_issue_number
 

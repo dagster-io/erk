@@ -139,7 +139,7 @@ def test_secret_exists_returns_true_when_secret_found(monkeypatch: MonkeyPatch) 
     """Test secret_exists returns True when secret is found."""
     from pathlib import Path
 
-    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         # Verify command structure
@@ -167,7 +167,7 @@ def test_secret_exists_returns_false_when_secret_not_found(monkeypatch: MonkeyPa
     """Test secret_exists returns False when secret returns 404."""
     from pathlib import Path
 
-    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         return subprocess.CompletedProcess(
@@ -192,7 +192,7 @@ def test_secret_exists_returns_none_on_permission_error(monkeypatch: MonkeyPatch
     """Test secret_exists returns None when user lacks permission."""
     from pathlib import Path
 
-    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         return subprocess.CompletedProcess(
@@ -217,7 +217,7 @@ def test_secret_exists_returns_none_on_timeout(monkeypatch: MonkeyPatch) -> None
     """Test secret_exists returns None when gh command times out."""
     from pathlib import Path
 
-    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise subprocess.TimeoutExpired(cmd, 10)
@@ -237,7 +237,7 @@ def test_secret_exists_returns_none_on_os_error(monkeypatch: MonkeyPatch) -> Non
     """Test secret_exists returns None when gh not found."""
     from pathlib import Path
 
-    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+    from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise OSError("No such file or directory: 'gh'")

@@ -19,10 +19,9 @@ from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
-from erk_shared.gateway.http.abc import HttpClient
-from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
     extract_plan_header_learn_plan_issue,
@@ -34,7 +33,13 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
 )
-from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
+from erk_shared.gateway.github.types import (
+    GitHubRepoId,
+    GitHubRepoLocation,
+    PullRequestInfo,
+    WorkflowRun,
+)
+from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.types import Plan, PlanState
 

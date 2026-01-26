@@ -13,9 +13,9 @@ if TYPE_CHECKING:
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
 
 from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 
 
 class FakeGraphite(Graphite):

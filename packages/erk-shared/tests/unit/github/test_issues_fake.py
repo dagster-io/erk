@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueComment
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueComment
 
 
 class TestFakeGitHubIssuesComments:

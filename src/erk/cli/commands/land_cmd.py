@@ -52,15 +52,15 @@ from erk.core.worktree_pool import (
     load_pool_state,
 )
 from erk_shared.gateway.console.real import InteractiveConsole
-from erk_shared.gateway.gt.cli import render_events
-from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
-from erk_shared.gateway.gt.types import LandPrError
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_learn_status,
     extract_plan_header_learned_from_issue,
     update_plan_header_learn_plan_completed,
 )
-from erk_shared.github.types import BodyText, PRDetails
+from erk_shared.gateway.github.types import BodyText, PRDetails
+from erk_shared.gateway.gt.cli import render_events
+from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
+from erk_shared.gateway.gt.types import LandPrError
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.sessions.discovery import find_sessions_for_plan

@@ -6,9 +6,9 @@ label by converting LLM inference results into actionable reconciliation decisio
 
 from pathlib import Path
 
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.plan_issues import create_plan_issue
-from erk_shared.github.types import BodyText
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.plan_issues import create_plan_issue
+from erk_shared.gateway.github.types import BodyText
 from erk_shared.objectives.next_step_inference import infer_next_step
 from erk_shared.objectives.plan_generator import (
     PlanGenerationError,

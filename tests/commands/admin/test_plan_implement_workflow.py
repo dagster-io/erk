@@ -6,10 +6,10 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.types import WorkflowRun
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.types import WorkflowRun
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 

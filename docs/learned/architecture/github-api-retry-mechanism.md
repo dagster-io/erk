@@ -63,7 +63,7 @@ See `erk_shared/github/transient_errors.py` for the canonical pattern list.
 The retry mechanism uses a return-value control flow pattern via `with_retries()`:
 
 ```python
-from erk_shared.github.retry import with_retries, RetryRequested, RetriesExhausted
+from erk_shared.gateway.github.retry import with_retries, RetryRequested, RetriesExhausted
 
 def fetch_with_retry() -> str | RetryRequested:
     try:

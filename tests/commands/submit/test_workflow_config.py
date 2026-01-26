@@ -154,7 +154,7 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     from erk.core.context import context_for_test
     from erk.core.repo_discovery import RepoContext
     from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeGitHub
     from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
     fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})

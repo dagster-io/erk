@@ -2,11 +2,11 @@
 
 from pathlib import Path
 
-from erk_shared.github.abc import GistCreated, GistCreateError, GitHub
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.dry_run import DryRunGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.types import (
+from erk_shared.gateway.github.abc import GistCreated, GistCreateError, GitHub
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import (
     BodyContent,
     GitHubRepoLocation,
     PRDetails,

@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRReviewComment, PRReviewThread
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PRReviewComment, PRReviewThread
 
 
 def test_fake_get_pr_review_threads_returns_configured_threads() -> None:

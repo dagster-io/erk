@@ -18,9 +18,8 @@ from pathlib import Path
 from typing import Any
 
 from erk_shared.debug import debug_log
-from erk_shared.gateway.time.abc import Time
-from erk_shared.github.abc import GistCreated, GistCreateError, GitHub
-from erk_shared.github.graphql_queries import (
+from erk_shared.gateway.github.abc import GistCreated, GistCreateError, GitHub
+from erk_shared.gateway.github.graphql_queries import (
     ADD_REVIEW_THREAD_REPLY_MUTATION,
     GET_ISSUES_WITH_PR_LINKAGES_QUERY,
     GET_PR_REVIEW_THREADS_QUERY,
@@ -28,15 +27,15 @@ from erk_shared.github.graphql_queries import (
     ISSUE_PR_LINKAGE_FRAGMENT,
     RESOLVE_REVIEW_THREAD_MUTATION,
 )
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.parsing import (
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.parsing import (
     execute_gh_command_with_retry,
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,
 )
-from erk_shared.github.retry import RetriesExhausted, RetryRequested, with_retries
-from erk_shared.github.types import (
+from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, with_retries
+from erk_shared.gateway.github.types import (
     BRANCH_NOT_AVAILABLE,
     DISPLAY_TITLE_NOT_AVAILABLE,
     BodyContent,
@@ -55,6 +54,7 @@ from erk_shared.github.types import (
     WorkflowRunConclusion,
     WorkflowRunStatus,
 )
+from erk_shared.gateway.time.abc import Time
 from erk_shared.output.output import user_output
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
@@ -117,8 +117,8 @@ class RealGitHub(GitHub):
         Returns:
             RealGitHub configured with FakeGitHubIssues
         """
+        from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
         from erk_shared.gateway.time.fake import FakeTime
-        from erk_shared.github.issues.fake import FakeGitHubIssues
 
         return cls(
             time=time if time is not None else FakeTime(),

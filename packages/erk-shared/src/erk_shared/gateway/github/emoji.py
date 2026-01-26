@@ -4,7 +4,7 @@ This module provides emoji constants and formatting functions for displaying
 GitHub PR states, checks status, and merge conflicts in CLI output.
 """
 
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.gateway.github.types import PullRequestInfo
 
 # PR state emojis (aligned with erk-statusline conventions)
 PR_STATE_EMOJIS = {

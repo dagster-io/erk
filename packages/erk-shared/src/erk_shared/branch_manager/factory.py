@@ -7,10 +7,10 @@ from erk_shared.branch_manager.git import GitBranchManager
 from erk_shared.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
-from erk_shared.github.abc import GitHub
 
 
 def create_branch_manager(

@@ -7,8 +7,8 @@ enabling more accurate PR descriptions that understand the "why" behind changes.
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
     extract_plan_header_objective_issue,

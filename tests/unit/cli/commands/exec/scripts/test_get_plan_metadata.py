@@ -11,8 +11,8 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
 from erk_shared.context.context import ErkContext
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 
 
 def make_plan_header_body(

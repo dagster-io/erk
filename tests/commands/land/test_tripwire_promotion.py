@@ -17,9 +17,9 @@ from erk.cli.commands.tripwire_promotion_helpers import (
     prompt_tripwire_promotion,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata.tripwire_candidates import (
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata.tripwire_candidates import (
     TripwireCandidate,
     render_tripwire_candidates_comment,
 )

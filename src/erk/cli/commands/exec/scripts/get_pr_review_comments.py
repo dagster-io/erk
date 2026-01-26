@@ -33,7 +33,7 @@ import click
 
 from erk.cli.script_output import exit_with_error
 from erk_shared.context.helpers import get_current_branch, require_github, require_repo_root
-from erk_shared.github.types import PRDetails, PRNotFound, PRReviewThread
+from erk_shared.gateway.github.types import PRDetails, PRNotFound, PRReviewThread
 
 
 class ReviewCommentDict(TypedDict):

@@ -70,7 +70,7 @@ def test_generate_pr_summary_exits_on_context_not_initialized() -> None:
 
 def test_generate_pr_summary_exits_on_empty_diff() -> None:
     """Test that command exits when PR diff is empty."""
-    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeGitHub
 
     # Create fake GitHub that returns empty diff
     fake_github = FakeGitHub(pr_diffs={123: ""})
@@ -90,7 +90,7 @@ def test_generate_pr_summary_exits_on_empty_diff() -> None:
 
 def test_generate_pr_summary_exits_on_whitespace_only_diff() -> None:
     """Test that command exits when PR diff is whitespace only."""
-    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeGitHub
 
     # Create fake GitHub that returns whitespace-only diff
     fake_github = FakeGitHub(pr_diffs={123: "   \n\t\n  "})
@@ -110,8 +110,8 @@ def test_generate_pr_summary_exits_on_whitespace_only_diff() -> None:
 
 def test_generate_pr_summary_truncates_large_diff() -> None:
     """Test that large diffs are truncated with warning."""
+    from erk_shared.gateway.github.fake import FakeGitHub
     from erk_shared.gateway.gt.prompts import MAX_DIFF_CHARS
-    from erk_shared.github.fake import FakeGitHub
     from erk_shared.prompt_executor.fake import FakePromptExecutor
 
     # Create fake GitHub with very large diff

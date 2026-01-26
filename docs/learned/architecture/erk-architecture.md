@@ -518,7 +518,7 @@ __all__ = [
 ```python
 # Import from gateway subpackages
 from erk_shared.gateway.git import Git, RealGit, FakeGit
-from erk_shared.github import GitHub, RealGitHub, FakeGitHub
+from erk_shared.gateway.github import GitHub, RealGitHub, FakeGitHub
 ```
 
 **Not this:**

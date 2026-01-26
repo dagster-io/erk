@@ -4,10 +4,15 @@ import re
 from pathlib import Path
 from typing import Any
 
+from erk_shared.gateway.github.retry import (
+    RETRY_DELAYS,
+    RetriesExhausted,
+    RetryRequested,
+    with_retries,
+)
+from erk_shared.gateway.github.transient_errors import is_transient_error
+from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 from erk_shared.gateway.time.abc import Time
-from erk_shared.github.retry import RETRY_DELAYS, RetriesExhausted, RetryRequested, with_retries
-from erk_shared.github.transient_errors import is_transient_error
-from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 

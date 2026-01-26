@@ -16,10 +16,10 @@ from click.testing import CliRunner
 from erk.cli.commands.plan.list_cmd import dash
 from erk.cli.commands.plan.view import view_plan
 from erk.core.services.plan_list_service import RealPlanListService
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.types import GitHubRepoLocation, PullRequestInfo
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import GitHubRepoLocation, PullRequestInfo
 from erk_shared.plan_store.github import GitHubPlanStore
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -60,7 +60,7 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
                 return [], {}  # Return empty results
 
         github = TrackingGitHub()
-        from erk_shared.github.issues.fake import FakeGitHubIssues
+        from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 
         plan_list_service = RealPlanListService(github, FakeGitHubIssues())
         ctx = env.build_context(github=github, plan_list_service=plan_list_service)

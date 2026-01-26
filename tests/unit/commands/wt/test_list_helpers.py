@@ -13,7 +13,7 @@ from erk.cli.commands.wt.list_cmd import (
 )
 from erk_shared.gateway.git.abc import BranchSyncInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.gateway.github.types import PullRequestInfo
 from tests.fakes.context import create_test_context
 
 

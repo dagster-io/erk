@@ -16,13 +16,13 @@ from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.dry_run import DryRunGitHub
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.types import BodyText, GitHubRepoId
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.github.dry_run import DryRunGitHub
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues.dry_run import DryRunGitHubIssues
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.types import BodyText, GitHubRepoId
 from tests.fakes.shell import FakeShell
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path

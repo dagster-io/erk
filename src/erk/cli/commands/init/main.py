@@ -37,11 +37,11 @@ from erk.core.repo_discovery import (
 )
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.console.real import InteractiveConsole
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.real import RealGitHubIssues
+from erk_shared.gateway.github.plan_issues import get_erk_label_definitions
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.real import RealGitHubIssues
-from erk_shared.github.plan_issues import get_erk_label_definitions
 from erk_shared.learn.extraction.claude_installation.real import RealClaudeInstallation
 from erk_shared.output.output import user_output
 

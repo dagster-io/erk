@@ -9,8 +9,8 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.core.typing_utils import narrow_to_literal
-from erk_shared.github.metadata.core import find_metadata_block
-from erk_shared.github.metadata.schemas import (
+from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.gateway.github.metadata.schemas import (
     BRANCH_NAME,
     CREATED_BY,
     CREATED_FROM_SESSION,
@@ -32,7 +32,7 @@ from erk_shared.github.metadata.schemas import (
     WORKTREE_NAME,
     LearnStatusValue,
 )
-from erk_shared.github.parsing import (
+from erk_shared.gateway.github.parsing import (
     construct_workflow_run_url,
     extract_owner_repo_from_github_url,
 )

@@ -27,6 +27,8 @@ from erk.cli.commands.pr.shared import (
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContextProvider
+from erk_shared.gateway.github.parsing import parse_git_remote_url
+from erk_shared.gateway.github.types import GitHubRepoId, PRNotFound
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import execute_finalize
 from erk_shared.gateway.gt.types import FinalizeResult, PostAnalysisError
@@ -43,8 +45,6 @@ from erk_shared.gateway.pr.types import (
     GraphiteEnhanceResult,
     GraphiteSkipped,
 )
-from erk_shared.github.parsing import parse_git_remote_url
-from erk_shared.github.types import GitHubRepoId, PRNotFound
 
 # Set to False to disable polling for PR in Graphite cache after submission.
 # This feature ensures the status line can immediately display the PR number.

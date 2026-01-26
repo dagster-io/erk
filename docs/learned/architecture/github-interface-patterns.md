@@ -80,7 +80,7 @@ The REST API returns field names that differ from GraphQL and internal conventio
 The `RealGitHub.get_pr()` method in `packages/erk-shared/src/erk_shared/github/real.py` implements this pattern, returning a `PRDetails` dataclass with all commonly-needed fields.
 
 ```python
-from erk_shared.github.types import PRDetails
+from erk_shared.gateway.github.types import PRDetails
 
 # Single API call gets everything
 pr = github.get_pr(owner, repo, pr_number)

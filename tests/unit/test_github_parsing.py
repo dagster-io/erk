@@ -2,7 +2,7 @@
 
 import pytest
 
-from erk_shared.github.parsing import (
+from erk_shared.gateway.github.parsing import (
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,
     parse_git_remote_url,

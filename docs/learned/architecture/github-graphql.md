@@ -143,8 +143,8 @@ Benefits:
 ## Implementation Pattern
 
 ```python
-from erk_shared.github.graphql_queries import GET_PR_REVIEW_THREADS_QUERY
-from erk_shared.github.parsing import execute_gh_command
+from erk_shared.gateway.github.graphql_queries import GET_PR_REVIEW_THREADS_QUERY
+from erk_shared.gateway.github.parsing import execute_gh_command
 
 def get_pr_review_threads(self, repo_root: Path, pr_number: int) -> list[PRReviewThread]:
     repo_info = self.get_repo_info(repo_root)

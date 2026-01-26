@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata_blocks import (
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata_blocks import (
     find_metadata_block,
     parse_metadata_blocks,
 )

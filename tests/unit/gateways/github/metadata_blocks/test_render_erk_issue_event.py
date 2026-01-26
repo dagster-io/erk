@@ -1,6 +1,6 @@
 """Tests for render_erk_issue_event function."""
 
-from erk_shared.github.metadata_blocks import (
+from erk_shared.gateway.github.metadata_blocks import (
     create_implementation_status_block,
     render_erk_issue_event,
 )

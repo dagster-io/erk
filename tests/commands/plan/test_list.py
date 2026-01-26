@@ -5,9 +5,9 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -236,7 +236,7 @@ def test_plan_list_empty_results() -> None:
 
 def test_plan_list_runs_flag_shows_run_columns() -> None:
     """Test that --runs flag enables run columns."""
-    from erk_shared.github.types import WorkflowRun
+    from erk_shared.gateway.github.types import WorkflowRun
 
     plan_body = """<!-- erk:metadata-block:plan-header -->
 <details>
@@ -290,7 +290,7 @@ last_dispatched_node_id: 'WFR_all_flag'
 
 def test_plan_list_short_runs_flag() -> None:
     """Test that -r short flag works same as --runs."""
-    from erk_shared.github.types import WorkflowRun
+    from erk_shared.gateway.github.types import WorkflowRun
 
     plan_body = """<!-- erk:metadata-block:plan-header -->
 <details>

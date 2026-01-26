@@ -6,8 +6,8 @@ import pytest
 
 from erk.cli.commands.land_cmd import _update_parent_learn_status_if_learn_plan
 from erk.core.context import context_for_test
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_learn_plan_pr,
     extract_plan_header_learn_status,
 )

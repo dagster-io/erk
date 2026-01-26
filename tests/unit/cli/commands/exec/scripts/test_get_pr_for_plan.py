@@ -11,10 +11,10 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
 from erk_shared.context.context import ErkContext
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.types import PRDetails, PullRequestInfo
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
 
 def make_plan_header_body(

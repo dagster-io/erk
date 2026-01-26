@@ -3,11 +3,11 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata.core import render_metadata_block
-from erk_shared.github.metadata.plan_header import format_plan_header_body
-from erk_shared.github.metadata.types import MetadataBlock
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata.core import render_metadata_block
+from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.sessions.discovery import (
     SessionsForPlan,
     find_sessions_for_plan,

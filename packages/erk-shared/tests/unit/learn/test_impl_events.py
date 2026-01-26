@@ -1,7 +1,7 @@
 """Tests for impl_events extraction functions."""
 
-from erk_shared.github.metadata.core import render_metadata_block
-from erk_shared.github.metadata.types import MetadataBlock
+from erk_shared.gateway.github.metadata.core import render_metadata_block
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.learn.impl_events import (
     extract_implementation_sessions,
     extract_learn_sessions,

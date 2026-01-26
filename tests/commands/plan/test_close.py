@@ -5,9 +5,9 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo, PRReference
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context

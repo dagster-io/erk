@@ -1,6 +1,6 @@
 """Unit tests for PR footer utilities."""
 
-from erk_shared.github.pr_footer import (
+from erk_shared.gateway.github.pr_footer import (
     ClosingReference,
     build_pr_body_footer,
     extract_closing_reference,

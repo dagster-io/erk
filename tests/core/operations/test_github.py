@@ -1,8 +1,11 @@
 """Tests for GitHub operations."""
 
-from erk_shared.github.parsing import _parse_github_pr_url, extract_owner_repo_from_github_url
-from erk_shared.github.real import RealGitHub
-from erk_shared.github.types import GitHubRepoId
+from erk_shared.gateway.github.parsing import (
+    _parse_github_pr_url,
+    extract_owner_repo_from_github_url,
+)
+from erk_shared.gateway.github.real import RealGitHub
+from erk_shared.gateway.github.types import GitHubRepoId
 
 
 def test_parse_github_pr_url_valid_urls() -> None:
@@ -170,7 +173,7 @@ def test_build_issue_pr_linkage_query_structure() -> None:
 
 def test_issues_with_pr_linkages_query_structure() -> None:
     """Test that issues with PR linkages query uses timeline events."""
-    from erk_shared.github.graphql_queries import GET_ISSUES_WITH_PR_LINKAGES_QUERY
+    from erk_shared.gateway.github.graphql_queries import GET_ISSUES_WITH_PR_LINKAGES_QUERY
 
     query = GET_ISSUES_WITH_PR_LINKAGES_QUERY
 

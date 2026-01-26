@@ -15,9 +15,9 @@ from erk.core.display_utils import (
     format_workflow_outcome,
     format_workflow_run_id,
 )
-from erk_shared.github.emoji import format_checks_cell
-from erk_shared.github.parsing import github_repo_location_from_url
-from erk_shared.github.types import GitHubRepoId
+from erk_shared.gateway.github.emoji import format_checks_cell
+from erk_shared.gateway.github.parsing import github_repo_location_from_url
+from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.output.output import user_output
 
 

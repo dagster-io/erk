@@ -7,10 +7,10 @@ then submits via Graphite or git push. Returns the PR URL for easy access.
 from collections.abc import Generator
 from pathlib import Path
 
+from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.types import QuickSubmitError, QuickSubmitSuccess
-from erk_shared.github.types import PRNotFound
 
 
 def execute_quick_submit(

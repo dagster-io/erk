@@ -10,8 +10,8 @@ from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.github.fake import FakeGitHub
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 

@@ -12,8 +12,8 @@ from erk.cli.commands.exec.scripts.add_remote_execution_note import (
     add_remote_execution_note,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRDetails
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PRDetails
 
 
 def _make_pr_details(pr_number: int, body: str) -> PRDetails:

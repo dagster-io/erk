@@ -13,8 +13,8 @@ from erk.cli.commands.exec.scripts.close_issue_with_comment import (
     close_issue_with_comment,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 
 
 def _make_issue(

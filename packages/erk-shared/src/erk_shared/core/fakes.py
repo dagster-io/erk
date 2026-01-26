@@ -18,7 +18,7 @@ from erk_shared.core.claude_executor import (
 from erk_shared.core.codespace_registry import CodespaceRegistry, RegisteredCodespace
 from erk_shared.core.plan_list_service import PlanListData, PlanListService
 from erk_shared.core.script_writer import ScriptResult, ScriptWriter
-from erk_shared.github.types import GitHubRepoLocation
+from erk_shared.gateway.github.types import GitHubRepoLocation
 
 
 class InteractiveCall(NamedTuple):

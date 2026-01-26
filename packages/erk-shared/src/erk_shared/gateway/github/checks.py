@@ -7,9 +7,9 @@ error conditions.
 
 from pathlib import Path
 
-from erk_shared.github.abc import GitHub
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.types import PRDetails, PRNotFound
+from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.types import PRDetails, PRNotFound
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,
     GitHubAPIFailed,

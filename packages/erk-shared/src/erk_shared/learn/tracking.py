@@ -7,8 +7,8 @@ on a plan issue, creating a trail of extraction sessions.
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.metadata.core import (
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,
     render_erk_issue_event,
 )

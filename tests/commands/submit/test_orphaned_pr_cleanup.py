@@ -7,9 +7,9 @@ from click.testing import CliRunner
 from erk.cli.commands.submit import _close_orphaned_draft_prs, submit_cmd
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import PRReference
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import PRReference
 from tests.commands.submit.conftest import create_plan, setup_submit_context
 
 

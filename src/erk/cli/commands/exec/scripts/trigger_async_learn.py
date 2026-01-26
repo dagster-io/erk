@@ -26,7 +26,7 @@ from dataclasses import asdict, dataclass
 import click
 
 from erk_shared.context.helpers import require_github, require_repo_root
-from erk_shared.github.parsing import construct_workflow_run_url
+from erk_shared.gateway.github.parsing import construct_workflow_run_url
 
 LEARN_WORKFLOW = "learn.yml"
 

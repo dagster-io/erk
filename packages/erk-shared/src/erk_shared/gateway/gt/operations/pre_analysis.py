@@ -14,10 +14,10 @@ import subprocess
 from collections.abc import Generator
 from pathlib import Path
 
+from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.types import PreAnalysisError, PreAnalysisResult
-from erk_shared.github.types import PRNotFound
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 
 

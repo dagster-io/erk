@@ -39,8 +39,8 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.github.metadata.session import render_session_exchanges_block
-from erk_shared.github.plan_issues import create_plan_issue
+from erk_shared.gateway.github.metadata.session import render_session_exchanges_block
+from erk_shared.gateway.github.plan_issues import create_plan_issue
 from erk_shared.learn.extraction.session_schema import extract_session_exchanges_from_jsonl
 from erk_shared.output.next_steps import format_next_steps_plain
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session

@@ -10,8 +10,8 @@ from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
     store_tripwire_candidates,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 
 
 def _write_candidates_file(tmp_path: Path, candidates: list[dict[str, str]]) -> Path:

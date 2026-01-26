@@ -613,8 +613,8 @@ def test_slot_repair_dry_run_branch_mismatch() -> None:
 
 def test_slot_repair_repairs_closed_pr() -> None:
     """Test repair fixes closed-pr issues by removing the assignment."""
-    from erk_shared.github.fake import FakeGitHub
-    from erk_shared.github.types import PRDetails, PullRequestInfo
+    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -699,8 +699,8 @@ def test_slot_repair_repairs_closed_pr() -> None:
 
 def test_slot_repair_repairs_merged_pr() -> None:
     """Test repair fixes merged-pr issues by removing the assignment."""
-    from erk_shared.github.fake import FakeGitHub
-    from erk_shared.github.types import PRDetails, PullRequestInfo
+    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -785,8 +785,8 @@ def test_slot_repair_repairs_merged_pr() -> None:
 
 def test_slot_repair_skips_open_pr() -> None:
     """Test repair does NOT flag slots with open PRs."""
-    from erk_shared.github.fake import FakeGitHub
-    from erk_shared.github.types import PRDetails, PullRequestInfo
+    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -869,7 +869,7 @@ def test_slot_repair_skips_open_pr() -> None:
 
 def test_slot_repair_skips_branch_without_pr() -> None:
     """Test repair does NOT flag slots where no PR exists."""
-    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeGitHub
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:

@@ -1,6 +1,6 @@
 """Tests for format_plan_content_comment and extract_plan_from_comment."""
 
-from erk_shared.github.metadata.plan_header import (
+from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     format_plan_content_comment,
 )

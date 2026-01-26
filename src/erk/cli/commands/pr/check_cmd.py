@@ -4,11 +4,11 @@ import click
 
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.pr.submit import (
     has_checkout_footer_for_pr,
     has_issue_closing_reference,
 )
-from erk_shared.github.types import PRNotFound
 from erk_shared.impl_folder import read_issue_reference, validate_issue_linkage
 from erk_shared.output.output import user_output
 

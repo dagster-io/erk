@@ -145,8 +145,8 @@ config_store = FakeConfigStore(
 ### FakeGitHub
 
 ```python
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRDetails, PullRequestInfo
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
 github = FakeGitHub(
     prs: dict[str, PullRequestInfo] = {},  # Branch -> PR info

@@ -6,14 +6,14 @@ from typing import Any
 
 import yaml
 
-from erk_shared.github.metadata.schemas import (
+from erk_shared.gateway.github.metadata.schemas import (
     ImplementationStatusSchema,
     PlanSchema,
     SubmissionQueuedSchema,
     WorkflowStartedSchema,
     WorktreeCreationSchema,
 )
-from erk_shared.github.metadata.types import (
+from erk_shared.gateway.github.metadata.types import (
     MetadataBlock,
     MetadataBlockSchema,
     RawMetadataBlock,

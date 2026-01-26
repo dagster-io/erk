@@ -11,8 +11,8 @@ Tests cover:
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.objectives.reconciler import determine_action, execute_action
 from erk_shared.objectives.types import ReconcileAction
 from erk_shared.prompt_executor.fake import FakePromptExecutor

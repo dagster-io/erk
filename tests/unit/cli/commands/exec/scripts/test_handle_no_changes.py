@@ -21,9 +21,9 @@ from erk.cli.commands.exec.scripts.handle_no_changes import (
     handle_no_changes as handle_no_changes_command,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 
 
 def _create_github_with_issue(issue_number: int) -> FakeGitHub:

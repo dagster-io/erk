@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.learn.tracking import track_learn_invocation
 from tests.test_utils.github_helpers import create_test_issue
 

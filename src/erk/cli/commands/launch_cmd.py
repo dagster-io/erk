@@ -17,7 +17,7 @@ from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
-from erk_shared.github.types import PRNotFound
+from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import user_output
 
 

@@ -12,10 +12,10 @@ import logging
 
 from erk_shared.core.plan_list_service import PlanListData as PlanListData
 from erk_shared.core.plan_list_service import PlanListService
-from erk_shared.github.abc import GitHub
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.metadata.plan_header import extract_plan_header_dispatch_info
-from erk_shared.github.types import GitHubRepoLocation, WorkflowRun
+from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+from erk_shared.gateway.github.types import GitHubRepoLocation, WorkflowRun
 
 
 class RealPlanListService(PlanListService):

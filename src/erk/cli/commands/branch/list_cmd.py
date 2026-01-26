@@ -8,7 +8,7 @@ from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time, get_pr_status_emoji
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.gateway.github.types import PullRequestInfo
 
 
 @alias("ls")

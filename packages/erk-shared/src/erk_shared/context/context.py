@@ -32,15 +32,15 @@ from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.types import RepoInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
-from erk_shared.github.abc import GitHub
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.types import RepoInfo
 from erk_shared.github_admin.abc import GitHubAdmin
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.plan_store.backend import PlanBackend
@@ -228,7 +228,7 @@ class ErkContext:
             ErkContext configured with provided values and test defaults
 
         Example:
-            >>> from erk_shared.github.issues import FakeGitHubIssues
+            >>> from erk_shared.gateway.github.issues import FakeGitHubIssues
             >>> from erk_shared.gateway.git.fake import FakeGit
             >>> github = FakeGitHubIssues()
             >>> git_ops = FakeGit()

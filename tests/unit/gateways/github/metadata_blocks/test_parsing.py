@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from erk_shared.github.metadata_blocks import (
+from erk_shared.gateway.github.metadata_blocks import (
     extract_metadata_value,
     extract_raw_metadata_blocks,
     find_metadata_block,

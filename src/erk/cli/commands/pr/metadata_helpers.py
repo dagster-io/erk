@@ -10,9 +10,9 @@ from typing import TYPE_CHECKING
 
 import click
 
-from erk_shared.github.metadata.core import find_metadata_block
-from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
-from erk_shared.github.types import BodyText
+from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.gateway.github.metadata.plan_header import update_plan_header_dispatch
+from erk_shared.gateway.github.types import BodyText
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 

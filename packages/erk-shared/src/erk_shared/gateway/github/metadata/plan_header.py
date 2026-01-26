@@ -14,7 +14,7 @@ Optional fields (added over time, backward compatible):
 import re
 from typing import Any
 
-from erk_shared.github.metadata.core import (
+from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,
     create_plan_body_block,
     find_metadata_block,
@@ -22,7 +22,7 @@ from erk_shared.github.metadata.core import (
     render_plan_body_block,
     replace_metadata_block_in_body,
 )
-from erk_shared.github.metadata.schemas import (
+from erk_shared.gateway.github.metadata.schemas import (
     BRANCH_NAME,
     CREATED_AT,
     CREATED_BY,
@@ -59,7 +59,7 @@ from erk_shared.github.metadata.schemas import (
     PlanHeaderSchema,
     SessionSourceValue,
 )
-from erk_shared.github.metadata.types import MetadataBlock
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 
 
 def create_plan_header_block(
@@ -318,7 +318,7 @@ def extract_plan_from_comment(comment_body: str) -> str | None:
         Extracted plan content, or None if markers not found
     """
     # Import here to avoid circular dependency
-    from erk_shared.github.metadata.core import extract_raw_metadata_blocks
+    from erk_shared.gateway.github.metadata.core import extract_raw_metadata_blocks
 
     # Try new format first (plan-body metadata block)
     raw_blocks = extract_raw_metadata_blocks(comment_body)

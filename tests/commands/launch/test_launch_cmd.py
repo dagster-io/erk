@@ -9,8 +9,8 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 from erk.cli.cli import cli
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRDetails, PullRequestInfo
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
 
 def _make_pr_info(

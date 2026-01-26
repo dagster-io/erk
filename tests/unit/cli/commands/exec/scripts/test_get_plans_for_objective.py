@@ -9,8 +9,8 @@ from erk.cli.commands.exec.scripts.get_plans_for_objective import (
     get_plans_for_objective,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 
 
 def _make_plan_header(

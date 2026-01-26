@@ -21,7 +21,7 @@ from erk.cli.commands.exec.scripts.ci_verify_autofix import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeGitHub
 
 
 class TestVerifyAutofixImpl:

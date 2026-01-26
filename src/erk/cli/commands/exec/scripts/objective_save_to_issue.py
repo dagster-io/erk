@@ -31,7 +31,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.github.plan_issues import create_objective_issue
+from erk_shared.gateway.github.plan_issues import create_objective_issue
 from erk_shared.scratch.scratch import get_scratch_dir
 
 

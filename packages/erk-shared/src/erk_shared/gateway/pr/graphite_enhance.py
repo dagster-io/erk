@@ -16,14 +16,14 @@ from pathlib import Path
 from typing import NamedTuple
 
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.parsing import parse_git_remote_url
+from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.types import (
     GraphiteEnhanceError,
     GraphiteEnhanceResult,
     GraphiteSkipped,
 )
-from erk_shared.github.parsing import parse_git_remote_url
-from erk_shared.github.types import GitHubRepoId
 
 
 class GraphiteCheckResult(NamedTuple):

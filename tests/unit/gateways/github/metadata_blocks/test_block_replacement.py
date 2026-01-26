@@ -2,7 +2,7 @@
 
 import pytest
 
-from erk_shared.github.metadata.core import replace_metadata_block_in_body
+from erk_shared.gateway.github.metadata.core import replace_metadata_block_in_body
 
 
 def test_replace_metadata_block_in_body_simple() -> None:

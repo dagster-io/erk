@@ -4,8 +4,8 @@ import subprocess
 
 from pytest import MonkeyPatch
 
+from erk_shared.gateway.github.issues.real import RealGitHubIssues
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.github.issues.real import RealGitHubIssues
 from tests.integration.test_helpers import mock_subprocess_run
 
 

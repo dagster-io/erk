@@ -21,7 +21,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_repo_root,
 )
-from erk_shared.github.metadata.core import find_metadata_block
+from erk_shared.gateway.github.metadata.core import find_metadata_block
 
 
 @click.command(name="get-plans-for-objective")

@@ -7,8 +7,8 @@ The real implementation remains in erk.core.services.plan_list_service.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.types import GitHubRepoLocation, PullRequestInfo, WorkflowRun
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import GitHubRepoLocation, PullRequestInfo, WorkflowRun
 
 
 @dataclass(frozen=True)

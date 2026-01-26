@@ -13,8 +13,8 @@ from erk.cli.commands.exec.scripts.trigger_async_learn import (
     trigger_async_learn as trigger_async_learn_command,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import RepoInfo
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import RepoInfo
 
 
 def test_trigger_async_learn_success(tmp_path: Path) -> None:

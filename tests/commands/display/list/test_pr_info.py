@@ -10,8 +10,8 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PullRequestInfo
 from tests.test_utils.builders import PullRequestInfoBuilder
 from tests.test_utils.env_helpers import erk_inmem_env
 

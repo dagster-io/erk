@@ -29,7 +29,7 @@ from dataclasses import asdict, dataclass
 import click
 
 from erk_shared.context.helpers import require_github, require_repo_root
-from erk_shared.github.types import BodyText
+from erk_shared.gateway.github.types import BodyText
 
 
 @dataclass(frozen=True)

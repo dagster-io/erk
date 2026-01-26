@@ -4,7 +4,7 @@ Tests the canonical build_pr_body_footer, build_remote_execution_note, and
 header/footer extraction functions.
 """
 
-from erk_shared.github.pr_footer import (
+from erk_shared.gateway.github.pr_footer import (
     build_pr_body_footer,
     build_remote_execution_note,
     extract_footer_from_body,

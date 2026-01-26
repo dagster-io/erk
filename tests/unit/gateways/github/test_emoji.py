@@ -1,6 +1,6 @@
 """Unit tests for GitHub emoji formatting functions."""
 
-from erk_shared.github.emoji import (
+from erk_shared.gateway.github.emoji import (
     CHECKS_FAILING_EMOJI,
     CHECKS_PASSING_EMOJI,
     CHECKS_PENDING_EMOJI,
@@ -11,7 +11,7 @@ from erk_shared.github.emoji import (
     get_issue_state_emoji,
     get_pr_status_emoji,
 )
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.gateway.github.types import PullRequestInfo
 
 
 def test_pr_state_emojis_constants() -> None:

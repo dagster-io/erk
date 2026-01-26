@@ -5,9 +5,9 @@ import warnings
 from pathlib import Path
 from typing import Any
 
+from erk_shared.gateway.github.parsing import _parse_github_pr_url
+from erk_shared.gateway.github.types import PullRequestInfo
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.github.parsing import _parse_github_pr_url
-from erk_shared.github.types import PullRequestInfo
 
 
 def read_graphite_json_file(file_path: Path, description: str) -> dict[str, Any]:

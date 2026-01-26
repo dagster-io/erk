@@ -11,9 +11,14 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import IO, Any
 
+from erk_shared.gateway.github.retry import (
+    RETRY_DELAYS,
+    RetriesExhausted,
+    RetryRequested,
+    with_retries,
+)
+from erk_shared.gateway.github.transient_errors import is_transient_error
 from erk_shared.gateway.time.abc import Time
-from erk_shared.github.retry import RETRY_DELAYS, RetriesExhausted, RetryRequested, with_retries
-from erk_shared.github.transient_errors import is_transient_error
 
 logger = logging.getLogger(__name__)
 

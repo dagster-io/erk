@@ -8,17 +8,17 @@ This phase handles:
 from collections.abc import Generator
 from pathlib import Path
 
-from erk_shared.gateway.gt.abc import GtKit
-from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.gateway.gt.types import FinalizeResult, PostAnalysisError
-from erk_shared.github.parsing import parse_git_remote_url
-from erk_shared.github.pr_footer import (
+from erk_shared.gateway.github.parsing import parse_git_remote_url
+from erk_shared.gateway.github.pr_footer import (
     ClosingReference,
     build_pr_body_footer,
     extract_closing_reference,
     extract_footer_from_body,
 )
-from erk_shared.github.types import BodyText, GitHubRepoId, PRNotFound
+from erk_shared.gateway.github.types import BodyText, GitHubRepoId, PRNotFound
+from erk_shared.gateway.gt.abc import GtKit
+from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateway.gt.types import FinalizeResult, PostAnalysisError
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 
 # Label added to PRs that originate from learn plans.

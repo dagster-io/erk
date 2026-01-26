@@ -24,19 +24,19 @@ This document describes the two-layer architecture for parsing GitHub URLs and e
                     ▼
 ┌─────────────────────────────────────────────┐
 │            Pure Parsing Layer                │
-│   erk_shared.github.parsing                  │
+│   erk_shared.gateway.github.parsing                  │
 │   - Returns int | None                       │
 │   - No side effects                          │
 │   - Reusable across contexts                 │
 └─────────────────────────────────────────────┘
 ```
 
-## Layer 1: Pure Parsing (`erk_shared.github.parsing`)
+## Layer 1: Pure Parsing (`erk_shared.gateway.github.parsing`)
 
 The foundational layer provides pure parsing functions:
 
 ```python
-from erk_shared.github.parsing import (
+from erk_shared.gateway.github.parsing import (
     parse_pr_number,
     parse_issue_number,
     parse_repo_from_url,
@@ -116,15 +116,15 @@ pr_num = parse_pr_identifier("https://github.com/owner/repo/pull/42")  # URL -> 
 
 ## Canonical Import Locations
 
-| Function                 | Import From                 | Returns        |
-| ------------------------ | --------------------------- | -------------- |
-| `parse_pr_number`        | `erk_shared.github.parsing` | `int \| None`  |
-| `parse_issue_number`     | `erk_shared.github.parsing` | `int \| None`  |
-| `parse_repo_from_url`    | `erk_shared.github.parsing` | `str \| None`  |
-| `require_pr_number`      | `erk.cli.github_parsing`    | `int` or exits |
-| `require_issue_number`   | `erk.cli.github_parsing`    | `int` or exits |
-| `parse_issue_identifier` | `erk.cli.github_parsing`    | `int` or exits |
-| `parse_pr_identifier`    | `erk.cli.github_parsing`    | `int` or exits |
+| Function                 | Import From                         | Returns        |
+| ------------------------ | ----------------------------------- | -------------- |
+| `parse_pr_number`        | `erk_shared.gateway.github.parsing` | `int \| None`  |
+| `parse_issue_number`     | `erk_shared.gateway.github.parsing` | `int \| None`  |
+| `parse_repo_from_url`    | `erk_shared.gateway.github.parsing` | `str \| None`  |
+| `require_pr_number`      | `erk.cli.github_parsing`            | `int` or exits |
+| `require_issue_number`   | `erk.cli.github_parsing`            | `int` or exits |
+| `parse_issue_identifier` | `erk.cli.github_parsing`            | `int` or exits |
+| `parse_pr_identifier`    | `erk.cli.github_parsing`            | `int` or exits |
 
 ## Usage Guidelines
 
@@ -150,7 +150,7 @@ Use the pure parsing functions:
 
 ```python
 # In src/erk_shared/services/pr_service.py
-from erk_shared.github.parsing import parse_pr_number
+from erk_shared.gateway.github.parsing import parse_pr_number
 
 def process_pr(url_or_number: str) -> Result:
     pr_number = parse_pr_number(url_or_number)
@@ -164,7 +164,7 @@ def process_pr(url_or_number: str) -> Result:
 Use pure functions for predictable testing:
 
 ```python
-from erk_shared.github.parsing import parse_pr_number
+from erk_shared.gateway.github.parsing import parse_pr_number
 
 def test_parse_pr_number_from_url():
     result = parse_pr_number("https://github.com/owner/repo/pull/42")
@@ -192,7 +192,7 @@ Use the shared module instead.
 
 ```python
 # BAD - don't re-export
-from erk_shared.github.parsing import parse_pr_number
+from erk_shared.gateway.github.parsing import parse_pr_number
 __all__ = ["parse_pr_number"]  # Re-exporting
 ```
 
