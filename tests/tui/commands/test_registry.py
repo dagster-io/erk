@@ -257,11 +257,11 @@ def test_display_name_land_pr_shows_cli_command() -> None:
 
 
 def test_display_name_fix_conflicts_remote_shows_cli_command() -> None:
-    """fix_conflicts_remote should show the CLI command with PR number."""
+    """fix_conflicts_remote should show the workflow launch command with PR number."""
     row = make_plan_row(5831, "Test Plan", pr_number=456)
     ctx = CommandContext(row=row)
     cmd = next(c for c in get_all_commands() if c.id == "fix_conflicts_remote")
-    assert get_display_name(cmd, ctx) == "erk pr fix-conflicts-remote 456"
+    assert get_display_name(cmd, ctx) == "erk workflow launch pr-fix-conflicts --pr 456"
 
 
 def test_display_name_open_issue_shows_bare_url() -> None:

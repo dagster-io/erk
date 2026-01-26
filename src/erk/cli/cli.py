@@ -35,6 +35,7 @@ from erk.cli.commands.run import run_group
 from erk.cli.commands.slot import slot_group
 from erk.cli.commands.stack import stack_group
 from erk.cli.commands.up import up_cmd
+from erk.cli.commands.workflow import workflow_group
 from erk.cli.commands.wt import wt_group
 from erk.cli.help_formatter import ErkCommandGroup
 from erk.core.command_log import get_cli_args, log_command_start, register_exit_handler
@@ -204,6 +205,7 @@ cli.add_command(slot_group)
 cli.add_command(run_group)
 cli.add_command(stack_group)
 cli.add_command(up_cmd)
+cli.add_command(workflow_group)
 cli.add_command(wt_group)
 cli.add_command(prepare_cwd_recovery_cmd)
 

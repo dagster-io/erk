@@ -34,12 +34,12 @@ def _display_land_pr(ctx: CommandContext) -> str:
 
 def _display_fix_conflicts_remote(ctx: CommandContext) -> str:
     """Display name for fix_conflicts_remote command."""
-    return f"erk pr fix-conflicts remote {ctx.row.pr_number}"
+    return f"erk workflow launch pr-fix-conflicts --pr {ctx.row.pr_number}"
 
 
 def _display_address_remote(ctx: CommandContext) -> str:
     """Display name for address_remote command."""
-    return f"erk pr address remote {ctx.row.pr_number}"
+    return f"erk workflow launch pr-address --pr {ctx.row.pr_number}"
 
 
 def _display_open_issue(ctx: CommandContext) -> str:
