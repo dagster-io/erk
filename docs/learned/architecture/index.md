@@ -34,6 +34,7 @@
 - **[github-issue-autoclose.md](github-issue-autoclose.md)** — implementing PR-to-issue linking, debugging why issues didn't auto-close after PR merge, understanding closing keyword behavior, working with plan issue closure detection
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
 - **[github-pr-linkage-api.md](github-pr-linkage-api.md)** — querying PRs linked to an issue, understanding how GitHub tracks issue-PR relationships, debugging why a PR doesn't show as linked to an issue, working with CrossReferencedEvent or closingIssuesReferences
+- **[github-token-requirements.md](github-token-requirements.md)** — setting up GitHub authentication for erk, debugging 403 errors from GitHub API, troubleshooting permission denied errors with gh CLI
 - **[graphite-cache-invalidation.md](graphite-cache-invalidation.md)** — implementing mtime-based cache invalidation, caching Graphite branch metadata, optimizing repeated calls to git or graphite operations
 - **[hook-marker-detection.md](hook-marker-detection.md)** — Adding a new hook managed by erk, Implementing version detection for artifacts, Understanding how hook updates work
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .impl/ or .worker-impl/ folders, understanding remote implementation workflow, debugging plan visibility in PRs

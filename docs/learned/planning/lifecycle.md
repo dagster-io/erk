@@ -105,11 +105,13 @@ This prevents duplicate issues when retry loops occur (e.g., hook blocking → r
 
 When looking up plan files, the system checks in order:
 
-| Priority | Location                      | Condition            |
-| -------- | ----------------------------- | -------------------- |
-| 1        | `--plan-file` argument        | Always checked first |
-| 2        | `.erk/scratch/sessions/{id}/` | With `--session-id`  |
-| 3        | `~/.claude/plans/` (by mtime) | Fallback             |
+| Priority | Location                      | Condition                |
+| -------- | ----------------------------- | ------------------------ |
+| 1        | `--plan-file` argument        | Always checked first     |
+| 2        | `.erk/scratch/sessions/{id}/` | With `--session-id`      |
+| 3        | `~/.claude/plans/` (by mtime) | **Legacy fallback only** |
+
+> **Warning**: Mtime-based lookup (priority 3) is provided for backwards compatibility but can return incorrect results when multiple sessions run in parallel. Always prefer session-scoped lookup (priority 1-2) when session ID is available. See [Parallel Session Awareness](../sessions/parallel-session-awareness.md) for details on why mtime-based lookups are problematic.
 
 See [Plan Lookup Strategy](plan-lookup-strategy.md) for details on session-scoped lookups.
 
@@ -548,9 +550,13 @@ This is needed because workflow dispatch doesn't trigger PR workflows.
 
 ### Auto-Close on Merge
 
-GitHub automatically closes the linked issue when the PR is merged if the commit message contains "Closes #N" or similar keywords.
+GitHub automatically closes linked issues when a PR is merged through two separate mechanisms:
 
-The `gt finalize` command (used during PR finalization) adds the closing keyword to the commit message, ensuring the issue is closed when the PR merges.
+1. **PR Body Keywords** (recommended): Including "Closes #N" in the **initial** PR body at creation time. This also sets the `willCloseTarget: true` GraphQL field, which enables the 🔗 indicator in `erk plan list`.
+
+2. **Commit Message Keywords**: The commit message can contain "Closes #N", which GitHub processes at merge time. However, this does NOT set `willCloseTarget` (that field is only set at PR creation based on the initial PR body).
+
+**Important**: `erk plan submit` uses mechanism #1, including "Closes #N" in the initial `create_pr()` call. This ensures both auto-close AND the `willCloseTarget` field are properly set. See [GitHub PR Linkage API](../architecture/github-pr-linkage-api.md) for details on the `willCloseTarget` timing behavior.
 
 ---
 
@@ -566,8 +572,8 @@ Branches are named with the issue number prefix (e.g., `123-feature-name-01-15-1
 
 PRs are linked to issues through:
 
-- **PR body**: Contains `**Plan:** #<issue_number>` reference
-- **Commit message**: The `gt finalize` command adds "Closes #N" keyword to ensure issue closure on merge
+- **PR body**: Contains `**Plan:** #<issue_number>` reference and "Closes #N" keyword (set at PR creation time)
+- **Closing keywords**: Must be in initial PR body to set `willCloseTarget: true` for the 🔗 indicator
 
 ### Issue → Workflow Run
 
@@ -801,6 +807,10 @@ During the planning stage:
 - Branch is created during `erk plan submit` (Phase 2)
 
 **Implication:** Workflows that need branch information must verify the plan has been submitted (check for `branch_name` field).
+
+### Learn Plan Fields
+
+Learn plans have additional metadata fields (`learn_status`, `learn_plan_issue`, `created_from_workflow_run_url`) not shown in the table above. See [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) for details.
 
 ---
 
