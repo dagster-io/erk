@@ -14,39 +14,21 @@ The capabilities system separates **infrastructure** (stable, in `core/capabilit
 
 ```
 src/erk/
-├── core/capabilities/                  # Infrastructure (stable)
-│   ├── base.py                        # ABC and type definitions
-│   ├── registry.py                    # Capability factory (@cache)
-│   ├── detection.py                   # Performance-critical helpers
-│   ├── skill_capability.py            # Base class for skills
-│   ├── reminder_capability.py         # Base class for reminders
-│   └── review_capability.py           # Base class for reviews
+├── core/capabilities/       # Infrastructure (stable)
+│   ├── base.py              # ABC and type definitions
+│   ├── registry.py          # Capability factory (@cache)
+│   ├── *_capability.py      # Template base classes (skill, reminder, review)
 │
-└── capabilities/                       # Implementations (extend here)
-    ├── skills/                        # Skill capabilities (2)
-    │   ├── dignified_python.py
-    │   └── fake_driven_testing.py
-    ├── reminders/                     # Reminder capabilities (4)
-    │   ├── devrun.py
-    │   ├── dignified_python.py
-    │   ├── explore_docs.py
-    │   └── tripwires.py
-    ├── reviews/                       # Review capabilities (3)
-    │   ├── dignified_python.py
-    │   ├── dignified_code_simplifier.py
-    │   └── tripwires.py
-    ├── workflows/                     # Workflow capabilities (2)
-    │   ├── erk_impl.py
-    │   └── learn.py
-    ├── agents/                        # Agent capabilities (1)
-    │   └── devrun.py
-    ├── code_reviews_system.py         # Standalone: complex custom behavior
-    ├── erk_bash_permissions.py        # Standalone: file permissions
-    ├── hooks.py                       # Standalone: hook configuration
-    ├── learned_docs.py                # Standalone: documentation management
-    ├── ruff_format.py                 # Standalone: formatter integration
-    └── statusline.py                  # Standalone: user-level capability
+└── capabilities/            # Implementations (extend here)
+    ├── skills/              # Skill capabilities
+    ├── reminders/           # Reminder capabilities
+    ├── reviews/             # Review capabilities
+    ├── workflows/           # Workflow capabilities
+    ├── agents/              # Agent capabilities
+    └── *.py                 # Standalone capabilities (at root)
 ```
+
+To see current files in each folder, use `ls src/erk/capabilities/<type>/`.
 
 ## Placement Decision Criteria
 

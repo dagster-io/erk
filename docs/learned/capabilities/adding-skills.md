@@ -29,25 +29,12 @@ src/erk/capabilities/skills/<skill_name>.py
 
 ### Step 1: Create the Capability File
 
-Create `src/erk/capabilities/skills/my_skill.py`:
+Create `src/erk/capabilities/skills/my_skill.py`.
 
-```python
-"""MySkillCapability - description of what this skill does."""
+See `src/erk/capabilities/skills/dignified_python.py` for the canonical pattern. Skill capabilities require only two properties:
 
-from erk.core.capabilities.skill_capability import SkillCapability
-
-
-class MySkillCapability(SkillCapability):
-    """Brief description of the skill."""
-
-    @property
-    def skill_name(self) -> str:
-        return "my-skill"
-
-    @property
-    def description(self) -> str:
-        return "Human-readable description for CLI output"
-```
+- `skill_name` - The directory name under `.claude/skills/`
+- `description` - Human-readable description
 
 ### Step 2: Register in Registry
 
@@ -97,25 +84,9 @@ You only implement:
 - `skill_name` - The directory name under `.claude/skills/`
 - `description` - Human-readable description
 
-## Example: DignifiedPythonCapability
+## Example
 
-```python
-"""DignifiedPythonCapability - Python coding standards skill."""
-
-from erk.core.capabilities.skill_capability import SkillCapability
-
-
-class DignifiedPythonCapability(SkillCapability):
-    """Python coding standards skill (LBYL, modern types, ABCs)."""
-
-    @property
-    def skill_name(self) -> str:
-        return "dignified-python"
-
-    @property
-    def description(self) -> str:
-        return "Python coding standards (LBYL, modern types, ABCs)"
-```
+See `src/erk/capabilities/skills/dignified_python.py` for a complete example (~16 lines).
 
 This installs:
 

@@ -30,29 +30,12 @@ src/erk/capabilities/reviews/<review_name>.py
 
 ### Step 1: Create the Capability File
 
-Create `src/erk/capabilities/reviews/my_review.py`:
+Create `src/erk/capabilities/reviews/my_review.py`.
 
-```python
-"""MyReviewCapability - description of what this review checks."""
+See `src/erk/capabilities/reviews/dignified_python.py` for the canonical pattern. Review capabilities require only two properties:
 
-from erk.core.capabilities.review_capability import ReviewCapability
-
-
-class MyReviewCapability(ReviewCapability):
-    """Brief description of the code review.
-
-    Reviews code for specific patterns or standards.
-    Requires: code-reviews-system capability
-    """
-
-    @property
-    def review_name(self) -> str:
-        return "my-review"
-
-    @property
-    def description(self) -> str:
-        return "Human-readable description for CLI output"
-```
+- `review_name` - The filename (without .md extension)
+- `description` - Human-readable description
 
 ### Step 2: Register in Registry
 
@@ -105,43 +88,11 @@ You only implement:
 
 ## Preflight Check
 
-ReviewCapability automatically checks that `code-reviews-system` capability is installed before allowing installation. This ensures the GitHub Actions workflow exists to run reviews.
+ReviewCapability automatically checks that `code-reviews-system` capability is installed before allowing installation. This ensures the GitHub Actions workflow exists to run reviews. See `src/erk/core/capabilities/review_capability.py` for the base class implementation.
 
-```python
-def preflight(self, repo_root: Path | None) -> CapabilityResult:
-    """Check that code-reviews-system capability is installed."""
-    workflow_path = repo_root / ".github" / "workflows" / "code-reviews.yml"
-    if not workflow_path.exists():
-        return CapabilityResult(
-            success=False,
-            message="Requires 'code-reviews-system' capability to be installed first",
-        )
-    return CapabilityResult(success=True, message="")
-```
+## Example
 
-## Example: DignifiedPythonReviewDefCapability
-
-```python
-"""DignifiedPythonReviewDefCapability - dignified Python code review."""
-
-from erk.core.capabilities.review_capability import ReviewCapability
-
-
-class DignifiedPythonReviewDefCapability(ReviewCapability):
-    """Dignified Python code review definition.
-
-    Reviews Python code for adherence to dignified-python standards.
-    Requires: code-reviews-system capability
-    """
-
-    @property
-    def review_name(self) -> str:
-        return "dignified-python"
-
-    @property
-    def description(self) -> str:
-        return "Dignified Python style code review"
-```
+See `src/erk/capabilities/reviews/dignified_python.py` for a complete example.
 
 This installs:
 

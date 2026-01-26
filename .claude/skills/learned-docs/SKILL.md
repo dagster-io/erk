@@ -193,6 +193,27 @@ Remove ALL Python `def` functions that:
 
 **Even if the function doesn't exist in production today**, it could be added later, creating divergence.
 
+### Class Templates and File Listings
+
+Also REMOVE:
+
+**Class templates:**
+
+- Full class definitions showing "how to implement X"
+- Method implementations from base classes
+- Example classes that duplicate actual implementations
+
+**Directory/file listings with counts:**
+
+- Lines like `├── skills/  (2 files)` - counts go stale
+- Exhaustive file listings enumerating every file
+
+**Replace with:**
+
+- Source references: "See `path/to/example.py` for the pattern"
+- Structural trees without counts showing organization
+- CLI commands: "Use `ls dir/` to see current files"
+
 ### What to KEEP (Narrow Exceptions)
 
 - **JSON/YAML format examples**: Showing data structure, not processing code
@@ -210,6 +231,8 @@ Before keeping a Python code block, ask:
 3. Does it encode a convention (field name, path pattern, prefix)? → REMOVE
 4. Is it teaching a third-party API (Click, pytest, Rich)? → KEEP
 5. Is it showing data FORMAT (not processing)? → KEEP
+6. Does it show a class template? → REMOVE, reference source
+7. Does it list files with counts? → REMOVE counts, use structural tree
 
 ### Replacement Format
 
