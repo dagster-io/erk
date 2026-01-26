@@ -37,9 +37,6 @@ jobs:
 
       - uses: ./.github/actions/erk-remote-setup
         with:
-          install-prettier: "true"
-          git-user-name: "github-actions[bot]"
-          git-user-email: "github-actions[bot]@users.noreply.github.com"
           erk-pat: ${{ secrets.ERK_QUEUE_GH_PAT }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

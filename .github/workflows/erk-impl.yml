@@ -65,17 +65,8 @@ jobs:
           token: ${{ secrets.ERK_QUEUE_GH_PAT }}
           fetch-depth: 0
 
-      - name: Repo-specific CI setup
-        id: ci_setup
-        if: hashFiles('.github/actions/erk-impl-setup/action.yml') != ''
-        uses: ./.github/actions/erk-impl-setup
-
       - uses: ./.github/actions/erk-remote-setup
         with:
-          python-version: ${{ steps.ci_setup.outputs.python-version || '3.13' }}
-          install-prettier: "true"
-          git-user-name: ${{ inputs.submitted_by }}
-          git-user-email: ${{ inputs.submitted_by }}@users.noreply.github.com
           erk-pat: ${{ secrets.ERK_QUEUE_GH_PAT }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

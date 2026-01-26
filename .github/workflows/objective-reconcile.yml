@@ -44,11 +44,9 @@ jobs:
 
       - uses: ./.github/actions/erk-remote-setup
         with:
-          install-claude-code: "false"
-          validate-claude-credentials: "false"
-          require-anthropic-key: "true"
           erk-pat: ${{ secrets.ERK_QUEUE_GH_PAT }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
       - name: Reconcile objective
         env:
