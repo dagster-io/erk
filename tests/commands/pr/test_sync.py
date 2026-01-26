@@ -12,6 +12,7 @@ from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
 from tests.test_utils.context_builders import build_workspace_test_context
+from erk_shared.git.abc import RebaseResult
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -526,8 +527,6 @@ def test_pr_sync_squash_raises_unexpected_error(tmp_path: Path) -> None:
         )
 
         # Squash raises unexpected error via CalledProcessError (what execute_squash catches)
-        import subprocess
-
         error = subprocess.CalledProcessError(1, "gt squash")
         error.stdout = ""
         error.stderr = "unexpected squash error"
@@ -924,8 +923,6 @@ def test_pr_sync_handles_rebase_conflicts_for_stacked_pr(tmp_path: Path) -> None
         graphite = FakeGraphite(branches={})
 
         # Configure rebase to return conflict
-        from erk_shared.git.abc import RebaseResult
-
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "child-branch"},

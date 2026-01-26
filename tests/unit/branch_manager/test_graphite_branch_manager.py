@@ -5,6 +5,7 @@ from pathlib import Path
 from erk_shared.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 
@@ -189,8 +190,6 @@ def test_create_branch_auto_fixes_diverged_parent() -> None:
     tracked revision, create_branch should checkout the parent, retrack it,
     then proceed with tracking the child.
     """
-    from erk_shared.gateway.graphite.types import BranchMetadata
-
     fake_git = FakeGit(
         current_branches={REPO_ROOT: "main"},
         worktrees={REPO_ROOT: [WorktreeInfo(path=REPO_ROOT, branch="main", is_root=True)]},
@@ -240,8 +239,6 @@ def test_create_branch_auto_fixes_diverged_parent() -> None:
 
 def test_create_branch_skips_retrack_when_parent_not_diverged() -> None:
     """Test that create_branch does not retrack parent when not diverged."""
-    from erk_shared.gateway.graphite.types import BranchMetadata
-
     fake_git = FakeGit(
         current_branches={REPO_ROOT: "main"},
         worktrees={REPO_ROOT: [WorktreeInfo(path=REPO_ROOT, branch="main", is_root=True)]},

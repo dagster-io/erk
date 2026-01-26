@@ -11,6 +11,7 @@ import pytest
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.fake import FakeGit
+from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
 from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 
 
@@ -407,8 +408,6 @@ def test_fake_graphite_branch_ops_retrack_branch_tracks_calls() -> None:
 
 def test_fake_graphite_branch_ops_retrack_branch_raises() -> None:
     """Test that retrack_branch can be configured to raise exceptions."""
-    from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
-
     test_error = RuntimeError("Retrack failed")
     branch_ops = FakeGraphiteBranchOps(retrack_branch_raises=test_error)
 
