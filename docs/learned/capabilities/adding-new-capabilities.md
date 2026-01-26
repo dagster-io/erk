@@ -6,7 +6,7 @@ read_when:
   - "debugging capability registration"
 tripwires:
   - action: "using `is_reminder_installed()` in hook check"
-    warning: "Capability class MUST be defined in reminders.py AND registered in registry.py @cache tuple. Incomplete registration causes silent hook failures."
+    warning: "Capability class MUST be defined in reminders/ folder AND registered in registry.py @cache tuple. Incomplete registration causes silent hook failures."
 ---
 
 # Adding New Capabilities
@@ -27,43 +27,19 @@ Adding a new capability requires changes to 3 files:
 
 ### Step 1: Define the Capability Class
 
-Create `src/erk/capabilities/reminders/my_reminder.py`:
+Create `src/erk/capabilities/reminders/my_reminder.py`.
 
-```python
-from erk.core.capabilities.reminder_capability import ReminderCapability
+See `src/erk/capabilities/reminders/devrun.py` for the canonical pattern. Reminder capabilities require only two properties:
 
-
-class MyNewReminderCapability(ReminderCapability):
-    """Reminder to do something specific."""
-
-    @property
-    def reminder_name(self) -> str:
-        return "my-reminder"
-
-    @property
-    def description(self) -> str:
-        return "Remind agent to do something"
-```
+- `reminder_name` - The marker file name
+- `description` - Human-readable description
 
 ### Step 2: Register in Registry
 
 In `src/erk/core/capabilities/registry.py`:
 
-1. Add import at top:
-
-   ```python
-   from erk.capabilities.reminders.my_reminder import MyNewReminderCapability
-   ```
-
-2. Add to the `_all_capabilities()` tuple:
-   ```python
-   @cache
-   def _all_capabilities() -> tuple[Capability, ...]:
-       return (
-           # ... existing capabilities ...
-           MyNewReminderCapability(),  # Add here
-       )
-   ```
+1. Add import at top
+2. Add instance to the `_all_capabilities()` tuple
 
 ### Step 3: Hook Integration
 
@@ -73,7 +49,7 @@ The `user_prompt_hook.py` uses `is_reminder_installed()` to check if capabilitie
 
 When adding a new capability:
 
-- [ ] Class defined in appropriate module (`reminders.py` for reminders)
+- [ ] Class defined in appropriate folder (`reminders/` for reminders)
 - [ ] Class imported in `registry.py`
 - [ ] Instance added to `_all_capabilities()` tuple
 - [ ] Hook integration tested (capability actually fires)
