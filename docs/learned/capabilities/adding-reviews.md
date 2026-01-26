@@ -13,6 +13,7 @@ Reviews are capabilities that install code review definition files. They follow 
 ## Overview
 
 Review capabilities:
+
 - Install `.claude/reviews/<name>.md` files
 - Are project-level (require repo context)
 - Use the `ReviewCapability` base class
@@ -87,6 +88,7 @@ The review definition file contains instructions for Claude on how to review cod
 ## What ReviewCapability Provides
 
 The base class handles:
+
 - `name` property (returns `"review-{review_name}"`)
 - `scope` property (returns `"project"`)
 - `artifacts` property (tracks the review file)
@@ -97,6 +99,7 @@ The base class handles:
 - `uninstall()` (removes the file)
 
 You only implement:
+
 - `review_name` - The filename (without .md extension)
 - `description` - Human-readable description
 
@@ -141,6 +144,7 @@ class DignifiedPythonReviewDefCapability(ReviewCapability):
 ```
 
 This installs:
+
 - `.claude/reviews/dignified-python.md` file
 - CLI name: `review-dignified-python`
 

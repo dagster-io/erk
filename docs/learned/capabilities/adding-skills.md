@@ -13,6 +13,7 @@ Skills are capabilities that install Claude skill directories to external projec
 ## Overview
 
 Skill capabilities:
+
 - Install `.claude/skills/<name>/` directories
 - Are project-level (require repo context)
 - Use the `SkillCapability` base class
@@ -82,6 +83,7 @@ src/erk/bundled/.claude/skills/my-skill/
 ## What SkillCapability Provides
 
 The base class handles:
+
 - `name` property (returns `skill_name`)
 - `scope` property (returns `"project"`)
 - `artifacts` property (tracks the skill directory)
@@ -91,6 +93,7 @@ The base class handles:
 - `uninstall()` (removes the directory)
 
 You only implement:
+
 - `skill_name` - The directory name under `.claude/skills/`
 - `description` - Human-readable description
 
@@ -115,6 +118,7 @@ class DignifiedPythonCapability(SkillCapability):
 ```
 
 This installs:
+
 - `.claude/skills/dignified-python/` directory
 - CLI name: `dignified-python`
 

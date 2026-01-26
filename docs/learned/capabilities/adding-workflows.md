@@ -13,6 +13,7 @@ Workflows are capabilities that install GitHub Actions workflow files. They are 
 ## Overview
 
 Workflow capabilities:
+
 - Install `.github/workflows/<name>.yml` files
 - Are project-level (require repo context)
 - Extend `Capability` directly (no template)
@@ -172,6 +173,7 @@ src/erk/bundled/.github/workflows/my-workflow.yml
 ## Why No Template Base Class?
 
 Unlike skills, reminders, and reviews, workflows:
+
 - Have varied installation patterns (single file, multiple files, etc.)
 - May require preflight checks for dependencies
 - Often have unique error handling requirements
@@ -184,6 +186,7 @@ Each workflow capability is different enough that a template would add complexit
 See `src/erk/capabilities/workflows/learn.py` for a complete example.
 
 Key patterns:
+
 - Uses `get_bundled_github_dir()` to find source files
 - Creates parent directories with `mkdir(parents=True, exist_ok=True)`
 - Uses `shutil.copy2()` to preserve file metadata

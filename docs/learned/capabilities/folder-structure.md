@@ -105,6 +105,7 @@ from erk.core.capabilities.registry import get_capability, list_capabilities
 4. **Register**: Add import and instance to `registry.py`
 
 See type-specific guides:
+
 - [Adding Skills](adding-skills.md)
 - [Adding Reminders](adding-new-capabilities.md)
 - [Adding Reviews](adding-reviews.md)
@@ -114,15 +115,16 @@ See type-specific guides:
 
 ### Separation of Concerns
 
-| Layer | Location | Changes | Owner |
-|-------|----------|---------|-------|
-| Infrastructure | `core/capabilities/` | Rarely | Core team |
-| Templates | `core/capabilities/*_capability.py` | Rarely | Core team |
-| Implementations | `capabilities/<type>/*.py` | Frequently | Anyone |
+| Layer           | Location                            | Changes    | Owner     |
+| --------------- | ----------------------------------- | ---------- | --------- |
+| Infrastructure  | `core/capabilities/`                | Rarely     | Core team |
+| Templates       | `core/capabilities/*_capability.py` | Rarely     | Core team |
+| Implementations | `capabilities/<type>/*.py`          | Frequently | Anyone    |
 
 ### One File Per Capability
 
 Benefits:
+
 - **Discoverability**: File name matches capability name
 - **Modularity**: Each file is small and focused
 - **Growth**: Easy to add new capabilities
@@ -131,6 +133,7 @@ Benefits:
 ### Explicit Registry
 
 The registry in `core/capabilities/registry.py` is the single source of truth:
+
 - No auto-discovery magic
 - Easier debugging
 - Better control over initialization order
