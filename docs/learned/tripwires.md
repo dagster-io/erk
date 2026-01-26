@@ -61,6 +61,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 
 **CRITICAL: Before using git pull or git pull --rebase on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](architecture/git-graphite-quirks.md) first. Use /erk:sync-divergence instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push.
 
+**CRITICAL: Before comparing git SHA to Graphite's tracked SHA for divergence detection** → Read [Git and Graphite Edge Cases Catalog](architecture/git-graphite-quirks.md) first. Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches.
+
 **CRITICAL: Before using gh issue create in production code** → Read [GitHub API Rate Limits](architecture/github-api-rate-limits.md) first. Use REST API via `gh api repos/{owner}/{repo}/issues -X POST` instead. `gh issue create` uses GraphQL which has separate (often exhausted) rate limits.
 
 **CRITICAL: Before using gh pr create in production code** → Read [GitHub API Rate Limits](architecture/github-api-rate-limits.md) first. Use REST API via `gh api repos/{owner}/{repo}/pulls -X POST` instead. `gh pr create` uses GraphQL which has separate (often exhausted) rate limits.
@@ -86,6 +88,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 **CRITICAL: Before passing array or object variables to gh api graphql with -F and json.dumps()** → Read [GitHub GraphQL API Patterns](architecture/github-graphql.md) first. Arrays and objects require special gh syntax: arrays use -f key[]=value1 -f key[]=value2, objects use -f key[subkey]=value. Using -F key=[...] or -F key={...} passes them as literal strings, not typed values.
 
 **CRITICAL: Before implementing mtime-based cache invalidation** → Read [Graphite Cache Invalidation](architecture/graphite-cache-invalidation.md) first. Use triple-check guard pattern: (cache exists) AND (mtime exists) AND (mtime matches). Partial checks cause stale data bugs.
+
+**CRITICAL: Before calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](architecture/multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
 
 **CRITICAL: Before checking if get_pr_for_branch() returned a PR** → Read [Not-Found Sentinel Pattern](architecture/not-found-sentinel.md) first. Use `isinstance(pr, PRNotFound)` not `pr is not None`. PRNotFound is a sentinel object, not None.
 
@@ -182,6 +186,8 @@ Action-triggered rules. You MUST consult these BEFORE taking any matching action
 **CRITICAL: Before analyzing sessions larger than 100k characters** → Read [Scratch Storage](planning/scratch-storage.md) first. Use `erk exec preprocess-session` first. Achieves ~99% token reduction (e.g., 6.2M -> 67k chars). Critical for fitting large sessions in agent context windows.
 
 **CRITICAL: Before modifying marker deletion behavior in exit-plan-mode hook** → Read [Session-Based Plan Deduplication](planning/session-deduplication.md) first. Reusable markers (plan-saved) must persist; one-time markers (implement-now, objective-context) are consumed. Deleting reusable markers breaks state machines and enables retry loops that create duplicates.
+
+**CRITICAL: Before using session-scoped markers in exec scripts** → Read [Session-Based Plan Deduplication](planning/session-deduplication.md) first. Session markers enable idempotency in command retries. Always write markers AFTER successful operation completion, never before. Use triple-check guard on marker read: file exists AND content is valid AND expected type (numeric for issue numbers).
 
 **CRITICAL: Before reading or extracting data from agent session files** → Read [Agent Session Files](sessions/agent-session-files.md) first. Agent session files use `agent-` prefix and require dedicated reading logic. Check `session_id.startswith("agent-")` and route to `_read_agent_session_entries()`. Using generic `_iter_session_entries()` skips agent files silently.
 

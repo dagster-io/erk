@@ -221,6 +221,58 @@ def test_setup_creates_and_checks_out_branch(tmp_path: Path) -> None:
 
 GraphiteBranchManager.create_branch() restores the original branch after Graphite tracking. Tests must verify that commands explicitly call checkout_branch() afterward, or they'll silently end up on the wrong branch.
 
+## Testing Idempotent Commands
+
+Commands that support `--session-id` for deduplication need tests verifying idempotency behavior.
+
+### Pattern: Two Sequential Invocations
+
+```python
+def test_command_is_idempotent_within_session(tmp_path: Path) -> None:
+    """Verify second invocation returns skipped_duplicate."""
+    runner = CliRunner()
+    ctx = ErkContext.for_test(cwd=tmp_path)
+    session_id = "test-session-123"
+
+    # First invocation - executes normally
+    result1 = runner.invoke(
+        my_command,
+        ["--session-id", session_id, "--format", "json"],
+        obj=ctx,
+    )
+    assert result1.exit_code == 0
+    data1 = json.loads(result1.output)
+    assert data1.get("skipped_duplicate") is not True  # First run executes
+
+    # Second invocation - should be deduplicated
+    result2 = runner.invoke(
+        my_command,
+        ["--session-id", session_id, "--format", "json"],
+        obj=ctx,
+    )
+    assert result2.exit_code == 0
+    data2 = json.loads(result2.output)
+    assert data2.get("skipped_duplicate") is True  # Second run skipped
+```
+
+### Assertions to Verify
+
+1. **First invocation**: `skipped_duplicate` is `False` or absent
+2. **Second invocation**: `skipped_duplicate` is `True`
+3. **Exit code**: Both invocations succeed (exit code 0)
+4. **Side effects**: Only the first invocation creates resources
+
+### Format-Specific Testing
+
+Some commands have different output formats. Test idempotency in both:
+
+```python
+@pytest.mark.parametrize("format_flag", ["--format=json", "--format=text"])
+def test_idempotency_all_formats(format_flag: str, tmp_path: Path) -> None:
+    # Test with each output format
+    ...
+```
+
 ## Related Documentation
 
 - [CLI Testing Patterns](cli-testing.md) - General CLI testing patterns

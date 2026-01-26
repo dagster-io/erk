@@ -15,4 +15,5 @@
 - **[github-actions-security.md](github-actions-security.md)** — writing or modifying GitHub Actions workflow files, passing dynamic values to shell commands in workflows, using user-controlled input in GitHub Actions run blocks
 - **[github-actions-workflow-patterns.md](github-actions-workflow-patterns.md)** — writing GitHub Actions workflows, debugging workflow conditions, composing step conditions
 - **[github-token-scopes.md](github-token-scopes.md)** — deciding which token to use in GitHub Actions workflows, encountering permission errors with github.token, understanding why gist creation or user API calls fail
+- **[objective-reconciler-workflow.md](objective-reconciler-workflow.md)** — understanding automated objective advancement, configuring objective reconciler GitHub Action, debugging objective auto-advance issues
 - **[prompt-patterns.md](prompt-patterns.md)** — Using Claude Code in GitHub Actions workflows, Creating multi-line prompts in CI YAML, Adding new prompts to the erk bundle
