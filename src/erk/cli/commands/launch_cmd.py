@@ -1,13 +1,13 @@
 """Trigger GitHub Actions workflows via unified interface.
 
 Usage examples:
-    erk workflow launch objective-reconcile
-    erk workflow launch objective-reconcile --objective 123 --dry-run
-    erk workflow launch pr-address --pr 456
-    erk workflow launch pr-fix-conflicts --pr 456
-    erk workflow launch pr-fix-conflicts --pr 456 --no-squash
-    erk workflow launch plan-implement --issue 789
-    erk workflow launch learn --issue 789
+    erk launch objective-reconcile
+    erk launch objective-reconcile --objective 123 --dry-run
+    erk launch pr-address --pr 456
+    erk launch pr-fix-conflicts --pr 456
+    erk launch pr-fix-conflicts --pr 456 --no-squash
+    erk launch plan-implement --issue 789
+    erk launch learn --issue 789
 """
 
 import click
@@ -276,7 +276,7 @@ def _trigger_plan_implement(
     help="Claude model to use (for workflows that support it)",
 )
 @click.pass_obj
-def workflow_launch(
+def launch(
     ctx: ErkContext,
     workflow_name: str,
     *,
@@ -301,27 +301,27 @@ def workflow_launch(
 
     \b
       # Fix conflicts on current branch's PR
-      erk workflow launch pr-fix-conflicts
+      erk launch pr-fix-conflicts
 
     \b
       # Fix conflicts on specific PR
-      erk workflow launch pr-fix-conflicts --pr 123
+      erk launch pr-fix-conflicts --pr 123
 
     \b
       # Address PR review comments
-      erk workflow launch pr-address --pr 456
+      erk launch pr-address --pr 456
 
     \b
       # Reconcile all objectives
-      erk workflow launch objective-reconcile
+      erk launch objective-reconcile
 
     \b
       # Reconcile specific objective in dry-run mode
-      erk workflow launch objective-reconcile --objective 789 --dry-run
+      erk launch objective-reconcile --objective 789 --dry-run
 
     \b
       # Trigger learn for a plan issue
-      erk workflow launch learn --issue 123
+      erk launch learn --issue 123
 
     Requirements:
 

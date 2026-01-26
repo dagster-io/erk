@@ -196,7 +196,7 @@ def test_discover_top_level_commands(tmp_path: Path) -> None:
 
 
 def test_discover_nested_namespaced_commands(tmp_path: Path) -> None:
-    """Discovers commands with nested namespaces (e.g., erk:plan-implement)."""
+    """Discovers commands with nested namespaces (e.g., erk:system:impl-execute)."""
     cmd_dir = tmp_path / ".claude" / "commands" / "erk" / "system"
     cmd_dir.mkdir(parents=True)
     cmd_file = cmd_dir / "impl-execute.md"
@@ -205,7 +205,8 @@ def test_discover_nested_namespaced_commands(tmp_path: Path) -> None:
     result = discover_artifacts(tmp_path)
 
     assert len(result) == 1
-    assert result[0].name == "erk:plan-implement"
+    # Command name reflects the full path structure
+    assert result[0].name == "erk:system:impl-execute"
     assert result[0].artifact_type == "command"
     assert result[0].path == cmd_file
 
@@ -216,7 +217,7 @@ def test_discover_workflows_finds_all_workflows(tmp_path: Path) -> None:
     workflows_dir.mkdir(parents=True)
 
     # Create an erk-managed workflow
-    erk_workflow = workflows_dir / "erk-impl.yml"
+    erk_workflow = workflows_dir / "plan-implement.yml"
     erk_workflow.write_text("name: Erk Impl", encoding="utf-8")
 
     # Create user workflows (should be discovered too)
@@ -231,7 +232,7 @@ def test_discover_workflows_finds_all_workflows(tmp_path: Path) -> None:
     # All workflows should be discovered
     assert len(result) == 3
     workflow_names = {w.name for w in result}
-    assert workflow_names == {"erk-impl", "user-ci", "test"}
+    assert workflow_names == {"plan-implement", "user-ci", "test"}
     assert all(w.artifact_type == "workflow" for w in result)
 
 
@@ -241,7 +242,7 @@ def test_discover_workflows_without_claude_dir(tmp_path: Path) -> None:
     workflows_dir.mkdir(parents=True)
 
     # Create erk-managed workflow
-    erk_workflow = workflows_dir / "erk-impl.yml"
+    erk_workflow = workflows_dir / "plan-implement.yml"
     erk_workflow.write_text("name: Erk Impl", encoding="utf-8")
 
     result = discover_artifacts(tmp_path)
@@ -330,7 +331,7 @@ def test_is_erk_managed_workflow_badge_logic(tmp_path: Path) -> None:
     workflows_dir.mkdir(parents=True)
 
     # Create erk-managed workflow
-    erk_workflow = workflows_dir / "erk-impl.yml"
+    erk_workflow = workflows_dir / "plan-implement.yml"
     erk_workflow.write_text("name: Erk Impl", encoding="utf-8")
 
     # Create user workflow
@@ -340,7 +341,7 @@ def test_is_erk_managed_workflow_badge_logic(tmp_path: Path) -> None:
     artifacts = discover_artifacts(tmp_path)
 
     # Find erk-managed workflow
-    erk_artifact = next(a for a in artifacts if a.name == "erk-impl")
+    erk_artifact = next(a for a in artifacts if a.name == "plan-implement")
     assert is_erk_managed(erk_artifact) is True
 
     # Find user workflow
@@ -619,14 +620,17 @@ def test_discover_prompts_ignores_non_markdown(tmp_path: Path) -> None:
 
 
 def test_is_erk_managed_prompt(tmp_path: Path) -> None:
-    """Verifies erk-managed prompts are correctly identified."""
+    """Verifies prompts are not tracked by capability system.
+
+    Prompts aren't declared as managed artifacts by any capability,
+    so all prompts are considered user-owned.
+    """
     prompts_dir = tmp_path / ".github" / "prompts"
     prompts_dir.mkdir(parents=True)
 
-    # Create erk-managed prompt
+    # Create prompts - neither will be erk-managed since prompts
+    # aren't tracked by the capability system
     (prompts_dir / "dignified-python-review.md").write_text("# Review", encoding="utf-8")
-
-    # Create user prompt
     (prompts_dir / "my-custom-prompt.md").write_text("# Custom", encoding="utf-8")
 
     artifacts = discover_artifacts(tmp_path)
@@ -635,7 +639,8 @@ def test_is_erk_managed_prompt(tmp_path: Path) -> None:
     erk_prompt = next(p for p in prompt_artifacts if p.name == "dignified-python-review")
     user_prompt = next(p for p in prompt_artifacts if p.name == "my-custom-prompt")
 
-    assert is_erk_managed(erk_prompt) is True
+    # Prompts aren't tracked by capabilities, so none are erk-managed
+    assert is_erk_managed(erk_prompt) is False
     assert is_erk_managed(user_prompt) is False
 
 

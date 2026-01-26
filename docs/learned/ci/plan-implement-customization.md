@@ -10,7 +10,7 @@ read_when:
 
 ## Overview
 
-The `erk-impl.yml` workflow supports per-repository customization via local composite actions. This allows repos to install system dependencies, set environment variables, or specify Python versions without modifying the shared workflow.
+The `plan-implement.yml` workflow supports per-repository customization via local composite actions. This allows repos to install system dependencies, set environment variables, or specify Python versions without modifying the shared workflow.
 
 ## Extension Point
 

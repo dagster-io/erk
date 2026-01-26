@@ -1,7 +1,7 @@
 """Address PR review comments with AI-powered resolution.
 
 This command addresses PR review comments locally using Claude CLI.
-For remote resolution via GitHub Actions, use `erk workflow run pr-address`.
+For remote resolution via GitHub Actions, use `erk launch pr-address`.
 """
 
 import click
@@ -27,7 +27,7 @@ def address(ctx: ErkContext, *, dangerous: bool) -> None:
     For remote resolution via GitHub Actions workflow, use:
 
     \b
-      erk workflow run pr-address --pr <number>
+      erk launch pr-address --pr <number>
 
     Examples:
 

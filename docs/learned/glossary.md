@@ -1113,7 +1113,7 @@ Plan-header metadata fields for tracking uploaded session logs. Added in PR #540
 These fields are set by:
 
 - `erk exec upload-session` - Uploads session JSONL to gist and updates plan-header
-- GitHub Actions workflow (`erk-impl.yml`) - Automatically uploads session after remote implementation
+- GitHub Actions workflow (`plan-implement.yml`) - Automatically uploads session after remote implementation
 
 These fields are read by:
 

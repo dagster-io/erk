@@ -19,7 +19,7 @@ This guide explains the learn workflow in erk: how `/erk:learn` creates document
 
 The learn workflow extracts insights from implementation sessions and creates documentation plans. It's part of erk's knowledge capture system.
 
-**Key change**: Learn no longer writes documentation directly. Instead, it creates a plan issue for human review, which is then implemented through the standard `erk-impl` workflow. This gives humans control over documentation quality while maintaining the unified implementation pattern.
+**Key change**: Learn no longer writes documentation directly. Instead, it creates a plan issue for human review, which is then implemented through the standard `plan-implement` workflow. This gives humans control over documentation quality while maintaining the unified implementation pattern.
 
 ```
 ┌─────────────────┐     /erk:learn      ┌─────────────────┐
@@ -141,7 +141,7 @@ The skill:
 3. Creates a learn plan issue (if documentation needed)
 4. The plan issue is queued for human review before implementation
 
-**Note**: Learn runs inline during the `erk-impl` workflow after successful implementation. It does NOT write documentation directly - it creates a plan issue for later review and implementation.
+**Note**: Learn runs inline during the `plan-implement` workflow after successful implementation. It does NOT write documentation directly - it creates a plan issue for later review and implementation.
 
 ### Step 2: Track Learn Result
 
@@ -187,7 +187,7 @@ After the learn plan issue is created, a human reviews it and decides whether to
 
 ### Step 5: Implement and Land Learn Plan
 
-The learn plan is implemented via the normal `erk-impl` workflow (same as any other plan).
+The learn plan is implemented via the normal `plan-implement` workflow (same as any other plan).
 
 When the PR is landed via `erk land`:
 

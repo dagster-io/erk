@@ -7,7 +7,7 @@
 # Output: Creates a new learn plan issue containing extracted lessons learned,
 # architectural decisions, and reusable patterns from the implementation.
 
-name: learn-dispatch
+name: learn
 run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"
 
 on:

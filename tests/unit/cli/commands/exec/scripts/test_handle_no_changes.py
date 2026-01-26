@@ -1,6 +1,6 @@
 """Unit tests for handle_no_changes exec CLI command.
 
-Tests the no-changes scenario handling for erk-impl workflow.
+Tests the no-changes scenario handling for plan-implement workflow.
 Uses FakeGitHub for dependency injection.
 """
 

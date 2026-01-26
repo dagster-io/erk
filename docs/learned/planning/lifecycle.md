@@ -330,7 +330,7 @@ expected_workflow: erk-impl
 
 ## Phase 3: Workflow Dispatch
 
-The `erk-impl.yml` workflow handles remote implementation.
+The `plan-implement.yml` workflow handles remote implementation.
 
 ### Workflow Inputs
 
@@ -700,7 +700,7 @@ BRANCH=$(git branch -r | grep "origin/123-" | head -1 | sed 's/origin\///')
 gh pr list --head "$BRANCH"
 
 # Find workflow runs
-gh run list --workflow=erk-impl.yml | grep "123:"
+gh run list --workflow=plan-implement.yml | grep "123:"
 ```
 
 ### From Branch Name

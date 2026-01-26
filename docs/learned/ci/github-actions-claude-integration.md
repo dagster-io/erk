@@ -92,7 +92,7 @@ The `--dangerously-skip-permissions` flag bypasses all interactive permission pr
 
 ## Canonical Example
 
-See `.github/workflows/learn-dispatch.yml` for a complete working example.
+See `.github/workflows/learn.yml` for a complete working example.
 
 ## Common Errors
 
@@ -109,8 +109,8 @@ All Claude-invoking workflows should use the same flag pattern for consistency:
 
 | Workflow             | `--print` | `--verbose` | `--output-format` | `--dangerously-skip-permissions` |
 | -------------------- | --------- | ----------- | ----------------- | -------------------------------- |
-| erk-impl.yml         | Yes       | Yes         | stream-json       | Yes                              |
-| learn-dispatch.yml   | Yes       | Yes         | stream-json       | Yes                              |
+| plan-implement.yml   | Yes       | Yes         | stream-json       | Yes                              |
+| learn.yml            | Yes       | Yes         | stream-json       | Yes                              |
 | pr-address.yml       | Yes       | Yes         | stream-json       | Yes                              |
 | ci.yml (AI lint fix) | Yes       | Yes         | stream-json       | Yes                              |
 

@@ -1,16 +1,16 @@
-"""Tests for erk workflow launch command."""
+"""Tests for erk launch command."""
 
 from pathlib import Path
 
 from click.testing import CliRunner
+from tests.test_utils.context_builders import build_workspace_test_context
+from tests.test_utils.env_helpers import erk_isolated_fs_env
 
-from erk.cli.commands.workflow import workflow_group
+from erk.cli.cli import cli
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
-from tests.test_utils.context_builders import build_workspace_test_context
-from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def _make_pr_info(
@@ -71,7 +71,7 @@ def test_workflow_launch_unknown_workflow(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(workflow_group, ["launch", "unknown-workflow"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "unknown-workflow"], obj=ctx)
 
         assert result.exit_code == 2
         assert "Unknown workflow 'unknown-workflow'" in result.output
@@ -103,7 +103,7 @@ def test_workflow_launch_pr_fix_conflicts_triggers_workflow(tmp_path: Path) -> N
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(workflow_group, ["launch", "pr-fix-conflicts"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "pr-fix-conflicts"], obj=ctx)
 
         assert result.exit_code == 0
         assert "PR #123" in result.output
@@ -147,9 +147,7 @@ def test_workflow_launch_pr_fix_conflicts_with_pr_option(tmp_path: Path) -> None
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(
-            workflow_group, ["launch", "pr-fix-conflicts", "--pr", "456"], obj=ctx
-        )
+        result = runner.invoke(cli, ["launch", "pr-fix-conflicts", "--pr", "456"], obj=ctx)
 
         assert result.exit_code == 0
         assert "PR #456" in result.output
@@ -186,9 +184,7 @@ def test_workflow_launch_pr_fix_conflicts_with_no_squash(tmp_path: Path) -> None
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(
-            workflow_group, ["launch", "pr-fix-conflicts", "--no-squash"], obj=ctx
-        )
+        result = runner.invoke(cli, ["launch", "pr-fix-conflicts", "--no-squash"], obj=ctx)
 
         assert result.exit_code == 0
 
@@ -224,7 +220,7 @@ def test_workflow_launch_pr_address_triggers_workflow(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(workflow_group, ["launch", "pr-address", "--pr", "123"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "pr-address", "--pr", "123"], obj=ctx)
 
         assert result.exit_code == 0
         assert "PR #123" in result.output
@@ -250,7 +246,7 @@ def test_workflow_launch_pr_address_requires_pr_option(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(workflow_group, ["launch", "pr-address"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "pr-address"], obj=ctx)
 
         assert result.exit_code == 1
         assert "--pr is required for pr-address" in result.output
@@ -269,7 +265,7 @@ def test_workflow_launch_objective_reconcile_requires_objective(tmp_path: Path) 
 
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(workflow_group, ["launch", "objective-reconcile"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "objective-reconcile"], obj=ctx)
 
         assert result.exit_code == 1
         assert "--objective is required for objective-reconcile" in result.output
@@ -291,7 +287,7 @@ def test_workflow_launch_objective_reconcile_triggers_workflow(tmp_path: Path) -
         ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(
-            workflow_group,
+            cli,
             ["launch", "objective-reconcile", "--objective", "123"],
             obj=ctx,
         )
@@ -323,7 +319,7 @@ def test_workflow_launch_objective_reconcile_with_dry_run(tmp_path: Path) -> Non
         ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(
-            workflow_group,
+            cli,
             ["launch", "objective-reconcile", "--objective", "789", "--dry-run"],
             obj=ctx,
         )
@@ -352,7 +348,7 @@ def test_workflow_launch_learn_triggers_workflow(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(workflow_group, ["launch", "learn", "--issue", "123"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "learn", "--issue", "123"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Workflow triggered" in result.output
@@ -377,7 +373,7 @@ def test_workflow_launch_learn_requires_issue_option(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(workflow_group, ["launch", "learn"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "learn"], obj=ctx)
 
         assert result.exit_code == 1
         assert "--issue is required for learn" in result.output
@@ -396,9 +392,7 @@ def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -> Non
 
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(
-            workflow_group, ["launch", "plan-implement", "--issue", "123"], obj=ctx
-        )
+        result = runner.invoke(cli, ["launch", "plan-implement", "--issue", "123"], obj=ctx)
 
         assert result.exit_code == 2
         assert "erk plan submit" in result.output
@@ -431,7 +425,7 @@ def test_workflow_launch_with_model_option(tmp_path: Path) -> None:
         ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(
-            workflow_group,
+            cli,
             ["launch", "pr-address", "--pr", "123", "--model", "claude-opus-4"],
             obj=ctx,
         )
@@ -470,7 +464,7 @@ def test_workflow_launch_pr_fix_conflicts_closed_pr_fails(tmp_path: Path) -> Non
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(workflow_group, ["launch", "pr-fix-conflicts"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "pr-fix-conflicts"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Cannot rebase CLOSED PR" in result.output

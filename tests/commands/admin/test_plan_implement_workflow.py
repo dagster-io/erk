@@ -1,4 +1,4 @@
-"""Tests for admin test-erk-impl-gh-workflow command."""
+"""Tests for admin test-plan-implement-gh-workflow command."""
 
 from datetime import datetime
 
@@ -94,7 +94,7 @@ def test_creates_empty_commit_before_pr() -> None:
         # Run the command
         result = runner.invoke(
             cli,
-            ["admin", "test-erk-impl-gh-workflow", "--issue", "999"],
+            ["admin", "test-plan-implement-gh-workflow", "--issue", "999"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -126,7 +126,7 @@ def test_creates_empty_commit_before_pr() -> None:
         # Verify workflow was triggered via fake's mutation tracking
         assert len(fake_github.triggered_workflows) == 1
         workflow, inputs = fake_github.triggered_workflows[0]
-        assert workflow == "erk-impl.yml"
+        assert workflow == "plan-implement.yml"
 
         # Verify output shows success
         assert "Workflow triggered successfully!" in result.output
@@ -180,7 +180,7 @@ def test_creates_issue_when_not_provided() -> None:
         # Run the command WITHOUT --issue flag
         result = runner.invoke(
             cli,
-            ["admin", "test-erk-impl-gh-workflow"],
+            ["admin", "test-plan-implement-gh-workflow"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -191,7 +191,7 @@ def test_creates_issue_when_not_provided() -> None:
         assert len(fake_issues.created_issues) == 1
         title, body, labels = fake_issues.created_issues[0]
         assert title == "Test workflow run"
-        assert "test the erk-impl workflow" in body
+        assert "test the plan-implement workflow" in body
         assert "test" in labels
 
         # Verify output shows success

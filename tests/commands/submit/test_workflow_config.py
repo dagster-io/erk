@@ -13,7 +13,7 @@ def test_load_workflow_config_file_not_found(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    result = load_workflow_config(repo_root, "erk-impl.yml")
+    result = load_workflow_config(repo_root, "plan-implement.yml")
 
     assert result == {}
 
@@ -110,7 +110,7 @@ def test_load_workflow_config_missing_workflows_section(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    result = load_workflow_config(repo_root, "erk-impl.yml")
+    result = load_workflow_config(repo_root, "plan-implement.yml")
 
     assert result == {}
 
@@ -123,14 +123,14 @@ def test_load_workflow_config_missing_specific_workflow(tmp_path: Path) -> None:
     config_dir = repo_root / ".erk"
     config_dir.mkdir(parents=True)
 
-    # Create config.toml with [workflows] but not [workflows.erk-impl]
+    # Create config.toml with [workflows] but not [workflows.plan-implement]
     config_file = config_dir / "config.toml"
     config_file.write_text(
         '[workflows.other-workflow]\nsome_key = "some_value"\n',
         encoding="utf-8",
     )
 
-    result = load_workflow_config(repo_root, "erk-impl.yml")
+    result = load_workflow_config(repo_root, "plan-implement.yml")
 
     assert result == {}
 
@@ -145,7 +145,7 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     config_dir.mkdir(parents=True)
     config_file = config_dir / "config.toml"
     config_file.write_text(
-        '[workflows.erk-impl]\nmodel_name = "claude-sonnet-4-5"\n',
+        '[workflows.plan-implement]\nmodel_name = "claude-sonnet-4-5"\n',
         encoding="utf-8",
     )
 
@@ -189,7 +189,7 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     # Verify workflow was triggered with config inputs
     assert len(fake_github.triggered_workflows) == 1
     workflow, inputs = fake_github.triggered_workflows[0]
-    assert workflow == "erk-impl.yml"
+    assert workflow == "plan-implement.yml"
     # Required inputs
     assert inputs["issue_number"] == "123"
     assert inputs["submitted_by"] == "test-user"

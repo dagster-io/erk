@@ -239,7 +239,7 @@ name: Implement Issue ${{ inputs.issue_number }}
 **Files to modify:**
 
 - `src/erk/cli/commands/submit.py` - Remove `distinct_id` generation and polling
-- `.github/workflows/erk-impl.yml` - Add comment posting, remove from run-name
+- `.github/workflows/plan-implement.yml` - Add comment posting, remove from run-name
 - `packages/erk-shared/src/erk_shared/distinct_id.py` - Delete (no longer needed)
 
 ---
@@ -570,7 +570,7 @@ def submit(issue_number: int) -> None:
 
     # Dispatch workflow (that's it!)
     dispatch_workflow(
-        workflow="erk-impl.yml",
+        workflow="plan-implement.yml",
         inputs={
             "issue_number": issue_number,
             "submitted_by": get_current_user(),
@@ -612,7 +612,7 @@ jobs:
 | File                                                       | Change                                                                 |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `src/erk/cli/commands/submit.py`                           | Remove branch/PR creation, `distinct_id`, simplify to dispatch-only    |
-| `.github/workflows/erk-impl.yml`                           | Add run comment, branch creation, `.impl/` reconstruction, PR creation |
+| `.github/workflows/plan-implement.yml`                     | Add run comment, branch creation, `.impl/` reconstruction, PR creation |
 | `packages/erk-shared/src/erk_shared/worker_impl_folder.py` | Delete (no longer needed)                                              |
 | `packages/erk-shared/src/erk_shared/distinct_id.py`        | Delete (no longer needed)                                              |
 | `packages/erk-shared/src/erk_shared/impl_folder.py`        | Add `reconstruct_from_issue()`                                         |

@@ -37,7 +37,7 @@ For learn plans, the issue number of the original plan that generated this learn
 GitHub Actions workflow run URL that created this plan. Provides a backlink from the plan issue to the workflow that generated it.
 
 - **Type**: `string` (nullable)
-- **When populated**: During GitHub Actions workflow execution (e.g., `learn-dispatch.yml`)
+- **When populated**: During GitHub Actions workflow execution (e.g., `learn.yml`)
 - **Format**: `https://github.com/{owner}/{repo}/actions/runs/{run_id}`
 
 **URL Construction** (in GitHub Actions):

@@ -342,7 +342,7 @@ def test_derive_branch_name_from_title(title: str, expected: str) -> None:
 def test_derive_branch_name_truncates_to_30_chars() -> None:
     """Branch names from titles should truncate to 30 characters maximum.
 
-    This matches the workflow logic in erk-impl.yml which uses:
+    This matches the workflow logic in plan-implement.yml which uses:
     BRANCH_NAME="${BRANCH_NAME:0:30}"
     """
     # Exactly 30 characters

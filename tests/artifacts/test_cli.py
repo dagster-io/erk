@@ -79,7 +79,7 @@ class TestListCommand:
             result = runner.invoke(list_cmd, color=True)
 
         assert result.exit_code == 0
-        assert "erk:plan-implement" in result.output
+        assert "erk:system:impl-execute" in result.output
         assert "[erk]" in result.output
 
     def test_list_shows_erk_indicator_for_bundled_skill(self, tmp_path: Path) -> None:

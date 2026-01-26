@@ -56,7 +56,7 @@ Sessions are uploaded via `erk exec upload-session`:
 2. Create secret gist with descriptive filename (`session-{id}.jsonl`)
 3. Optionally update plan-header metadata with gist info
 
-The CI workflow (`erk-impl.yml`) uploads sessions after implementation:
+The CI workflow (`plan-implement.yml`) uploads sessions after implementation:
 
 ```bash
 erk exec upload-session \

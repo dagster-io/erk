@@ -1,4 +1,4 @@
-"""LearnWorkflowCapability - GitHub Action for learn documentation workflow."""
+"""LearnWorkflowCapability - GitHub Action for learn workflow."""
 
 import shutil
 from pathlib import Path
@@ -16,7 +16,7 @@ class LearnWorkflowCapability(Capability):
     """GitHub Action for learn documentation workflow.
 
     Installs:
-    - .github/workflows/learn-dispatch.yml
+    - .github/workflows/learn.yml
     """
 
     @property
@@ -33,25 +33,25 @@ class LearnWorkflowCapability(Capability):
 
     @property
     def installation_check_description(self) -> str:
-        return ".github/workflows/learn-dispatch.yml exists"
+        return ".github/workflows/learn.yml exists"
 
     @property
     def artifacts(self) -> list[CapabilityArtifact]:
         return [
             CapabilityArtifact(
-                path=".github/workflows/learn-dispatch.yml",
+                path=".github/workflows/learn.yml",
                 artifact_type="file",
             ),
         ]
 
     @property
     def managed_artifacts(self) -> list[ManagedArtifact]:
-        """Declare learn-dispatch workflow as managed artifact."""
-        return [ManagedArtifact(name="learn-dispatch", artifact_type="workflow")]
+        """Declare learn workflow as managed artifact."""
+        return [ManagedArtifact(name="learn", artifact_type="workflow")]
 
     def is_installed(self, repo_root: Path | None) -> bool:
         assert repo_root is not None, "LearnWorkflowCapability requires repo_root"
-        return (repo_root / ".github" / "workflows" / "learn-dispatch.yml").exists()
+        return (repo_root / ".github" / "workflows" / "learn.yml").exists()
 
     def install(self, repo_root: Path | None) -> CapabilityResult:
         assert repo_root is not None, "LearnWorkflowCapability requires repo_root"
@@ -65,14 +65,14 @@ class LearnWorkflowCapability(Capability):
                 message="Bundled .github/ not found in erk package",
             )
 
-        workflow_src = bundled_github_dir / "workflows" / "learn-dispatch.yml"
+        workflow_src = bundled_github_dir / "workflows" / "learn.yml"
         if not workflow_src.exists():
             return CapabilityResult(
                 success=False,
-                message="learn-dispatch.yml not found in erk package",
+                message="learn.yml not found in erk package",
             )
 
-        workflow_dst = repo_root / ".github" / "workflows" / "learn-dispatch.yml"
+        workflow_dst = repo_root / ".github" / "workflows" / "learn.yml"
         workflow_dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(workflow_src, workflow_dst)
 
@@ -81,15 +81,15 @@ class LearnWorkflowCapability(Capability):
 
         return CapabilityResult(
             success=True,
-            message="Installed learn-dispatch workflow",
+            message="Installed learn workflow",
         )
 
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
-        """Remove the learn-dispatch workflow."""
+        """Remove the learn workflow."""
         assert repo_root is not None, "LearnWorkflowCapability requires repo_root"
         from erk.artifacts.state import remove_installed_capability
 
-        workflow_file = repo_root / ".github" / "workflows" / "learn-dispatch.yml"
+        workflow_file = repo_root / ".github" / "workflows" / "learn.yml"
 
         # Remove from installed capabilities
         remove_installed_capability(repo_root, self.name)
@@ -103,5 +103,5 @@ class LearnWorkflowCapability(Capability):
         workflow_file.unlink()
         return CapabilityResult(
             success=True,
-            message="Removed .github/workflows/learn-dispatch.yml",
+            message="Removed .github/workflows/learn.yml",
         )

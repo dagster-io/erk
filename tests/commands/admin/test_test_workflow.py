@@ -1,4 +1,4 @@
-"""Tests for test-erk-impl-gh-workflow command."""
+"""Tests for test-plan-implement-gh-workflow command."""
 
 from pathlib import Path
 from typing import Any
@@ -82,7 +82,7 @@ def test_empty_commit_created_before_pr_creation() -> None:
 
         result = runner.invoke(
             cli,
-            ["admin", "test-erk-impl-gh-workflow", "--issue", "123"],
+            ["admin", "test-plan-implement-gh-workflow", "--issue", "123"],
             obj=test_ctx,
         )
 

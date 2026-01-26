@@ -366,7 +366,7 @@ def test_erk_impl_workflow_capability_properties() -> None:
     cap = ErkImplWorkflowCapability()
     assert cap.name == "erk-impl-workflow"
     assert "GitHub Action" in cap.description
-    assert "erk-impl.yml" in cap.installation_check_description
+    assert "plan-implement.yml" in cap.installation_check_description
 
 
 def test_erk_impl_workflow_artifacts() -> None:
@@ -376,7 +376,7 @@ def test_erk_impl_workflow_artifacts() -> None:
 
     assert len(artifacts) == 3
     paths = [a.path for a in artifacts]
-    assert ".github/workflows/erk-impl.yml" in paths
+    assert ".github/workflows/plan-implement.yml" in paths
     assert ".github/actions/setup-claude-code/" in paths
     assert ".github/actions/setup-claude-erk/" in paths
 
@@ -390,7 +390,7 @@ def test_erk_impl_workflow_is_installed(tmp_path: Path) -> None:
 
     # Installed when workflow file exists
     (tmp_path / ".github" / "workflows").mkdir(parents=True)
-    (tmp_path / ".github" / "workflows" / "erk-impl.yml").write_text("", encoding="utf-8")
+    (tmp_path / ".github" / "workflows" / "plan-implement.yml").write_text("", encoding="utf-8")
     assert cap.is_installed(tmp_path) is True
 
 
@@ -406,7 +406,7 @@ def test_learn_workflow_capability_properties() -> None:
     cap = LearnWorkflowCapability()
     assert cap.name == "learn-workflow"
     assert "documentation" in cap.description.lower() or "learn" in cap.description.lower()
-    assert "learn-dispatch.yml" in cap.installation_check_description
+    assert "learn.yml" in cap.installation_check_description
 
 
 def test_learn_workflow_artifacts() -> None:
@@ -416,7 +416,7 @@ def test_learn_workflow_artifacts() -> None:
 
     assert len(artifacts) == 1
     paths = [a.path for a in artifacts]
-    assert ".github/workflows/learn-dispatch.yml" in paths
+    assert ".github/workflows/learn.yml" in paths
 
 
 def test_learn_workflow_is_installed(tmp_path: Path) -> None:
@@ -428,7 +428,7 @@ def test_learn_workflow_is_installed(tmp_path: Path) -> None:
 
     # Installed when workflow file exists
     (tmp_path / ".github" / "workflows").mkdir(parents=True)
-    (tmp_path / ".github" / "workflows" / "learn-dispatch.yml").write_text("", encoding="utf-8")
+    (tmp_path / ".github" / "workflows" / "learn.yml").write_text("", encoding="utf-8")
     assert cap.is_installed(tmp_path) is True
 
 
@@ -1583,7 +1583,7 @@ def test_workflow_capability_managed_artifacts() -> None:
     # Workflow + 2 actions
     assert len(managed) == 3
     names = {(a.name, a.artifact_type) for a in managed}
-    assert ("erk-impl", "workflow") in names
+    assert ("plan-implement", "workflow") in names
     assert ("setup-claude-code", "action") in names
     assert ("setup-claude-erk", "action") in names
 
@@ -1664,14 +1664,14 @@ def test_get_managed_artifacts_maps_to_capability_name() -> None:
     # Check a few known mappings
     assert managed[("dignified-python", "skill")] == "dignified-python"
     assert managed[("devrun", "agent")] == "devrun-agent"
-    assert managed[("erk-impl", "workflow")] == "erk-impl-workflow"
+    assert managed[("plan-implement", "workflow")] == "erk-impl-workflow"
 
 
 def test_is_capability_managed_returns_true_for_known_artifacts() -> None:
     """Test is_capability_managed returns True for artifacts declared by capabilities."""
     assert is_capability_managed("dignified-python", "skill") is True
     assert is_capability_managed("devrun", "agent") is True
-    assert is_capability_managed("erk-impl", "workflow") is True
+    assert is_capability_managed("plan-implement", "workflow") is True
     assert is_capability_managed("user-prompt-hook", "hook") is True
     assert is_capability_managed("ruff-format-hook", "hook") is True
     assert is_capability_managed("tripwires", "review") is True

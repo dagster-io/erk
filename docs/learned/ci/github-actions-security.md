@@ -56,5 +56,5 @@ This pattern applies to:
 
 ## Reference
 
-- Fixed in: `.github/workflows/learn-dispatch.yml` (commit 777e954dd)
+- Fixed in: `.github/workflows/learn.yml` (commit 777e954dd)
 - CodeQL rule: `actions/code-injection`

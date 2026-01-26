@@ -1,4 +1,4 @@
-name: erk-rebase
+name: pr-fix-conflicts
 run-name: "rebase:${{ inputs.branch_name }}:${{ inputs.distinct_id }}"
 
 on:

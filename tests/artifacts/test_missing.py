@@ -139,16 +139,16 @@ def test_find_missing_artifacts_skip_no_claude_dir(tmp_path: Path, monkeypatch) 
 
 def test_find_missing_artifacts_missing_workflow(tmp_path: Path, monkeypatch) -> None:
     """Bundled workflow missing locally."""
-    # Bundled has erk-impl.yml
+    # Bundled has plan-implement.yml
     bundled_workflows = tmp_path / "bundled" / ".github" / "workflows"
     bundled_workflows.mkdir(parents=True)
-    (bundled_workflows / "erk-impl.yml").write_text("workflow")
+    (bundled_workflows / "plan-implement.yml").write_text("workflow")
 
     # Bundled .claude also needs to exist to prevent no-bundled-dir skip
     bundled_claude = tmp_path / "bundled" / ".claude"
     bundled_claude.mkdir(parents=True)
 
-    # Project missing erk-impl.yml
+    # Project missing plan-implement.yml
     project_workflows = tmp_path / "project" / ".github" / "workflows"
     project_workflows.mkdir(parents=True)
 
@@ -172,7 +172,7 @@ def test_find_missing_artifacts_missing_workflow(tmp_path: Path, monkeypatch) ->
     result = find_missing_artifacts(tmp_path / "project")
 
     assert ".github/workflows" in result.missing
-    assert "erk-impl.yml" in result.missing[".github/workflows"]
+    assert "plan-implement.yml" in result.missing[".github/workflows"]
 
 
 def test_find_missing_artifacts_missing_hooks_no_settings(tmp_path: Path, monkeypatch) -> None:

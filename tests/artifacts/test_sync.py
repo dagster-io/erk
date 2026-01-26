@@ -3,17 +3,19 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from erk.artifacts.sync import (
-    ArtifactSyncConfig,
+from erk.artifacts.paths import (
     _get_erk_package_dir,
     _is_editable_install,
+    get_bundled_claude_dir,
+    get_bundled_github_dir,
+)
+from erk.artifacts.sync import (
+    ArtifactSyncConfig,
     _sync_actions,
     _sync_commands,
     _sync_directory_artifacts,
     _sync_hooks,
     _sync_workflows,
-    get_bundled_claude_dir,
-    get_bundled_github_dir,
     sync_artifacts,
     sync_dignified_review,
 )
@@ -125,7 +127,7 @@ def test_is_editable_install_returns_true_for_src_layout() -> None:
     """Returns True when erk package is not in site-packages."""
     _get_erk_package_dir.cache_clear()
     with patch(
-        "erk.artifacts.sync._get_erk_package_dir",
+        "erk.artifacts.paths._get_erk_package_dir",
         return_value=Path("/home/user/code/erk/src/erk"),
     ):
         assert _is_editable_install() is True
@@ -136,7 +138,7 @@ def test_is_editable_install_returns_false_for_site_packages() -> None:
     """Returns False when erk package is in site-packages."""
     _get_erk_package_dir.cache_clear()
     with patch(
-        "erk.artifacts.sync._get_erk_package_dir",
+        "erk.artifacts.paths._get_erk_package_dir",
         return_value=Path("/home/user/.venv/lib/python3.11/site-packages/erk"),
     ):
         assert _is_editable_install() is False
@@ -148,7 +150,7 @@ def test_get_bundled_claude_dir_editable_install() -> None:
     _get_erk_package_dir.cache_clear()
     get_bundled_claude_dir.cache_clear()
     with patch(
-        "erk.artifacts.sync._get_erk_package_dir",
+        "erk.artifacts.paths._get_erk_package_dir",
         return_value=Path("/home/user/code/erk/src/erk"),
     ):
         result = get_bundled_claude_dir()
@@ -162,7 +164,7 @@ def test_get_bundled_claude_dir_wheel_install() -> None:
     _get_erk_package_dir.cache_clear()
     get_bundled_claude_dir.cache_clear()
     with patch(
-        "erk.artifacts.sync._get_erk_package_dir",
+        "erk.artifacts.paths._get_erk_package_dir",
         return_value=Path("/home/user/.venv/lib/python3.11/site-packages/erk"),
     ):
         result = get_bundled_claude_dir()
@@ -176,7 +178,7 @@ def test_get_bundled_github_dir_editable_install() -> None:
     _get_erk_package_dir.cache_clear()
     get_bundled_github_dir.cache_clear()
     with patch(
-        "erk.artifacts.sync._get_erk_package_dir",
+        "erk.artifacts.paths._get_erk_package_dir",
         return_value=Path("/home/user/code/erk/src/erk"),
     ):
         result = get_bundled_github_dir()
@@ -190,7 +192,7 @@ def test_get_bundled_github_dir_wheel_install() -> None:
     _get_erk_package_dir.cache_clear()
     get_bundled_github_dir.cache_clear()
     with patch(
-        "erk.artifacts.sync._get_erk_package_dir",
+        "erk.artifacts.paths._get_erk_package_dir",
         return_value=Path("/home/user/.venv/lib/python3.11/site-packages/erk"),
     ):
         result = get_bundled_github_dir()
@@ -209,7 +211,7 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
     bundled_github = tmp_path / "bundled_github"
     bundled_workflows = bundled_github / "workflows"
     bundled_workflows.mkdir(parents=True)
-    (bundled_workflows / "erk-impl.yml").write_text("name: Erk Impl", encoding="utf-8")
+    (bundled_workflows / "plan-implement.yml").write_text("name: Erk Impl", encoding="utf-8")
     (bundled_workflows / "other-workflow.yml").write_text("name: Other", encoding="utf-8")
 
     # Create target directory
@@ -226,11 +228,11 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
     result = sync_artifacts(target_dir, force=False, config=config)
 
     assert result.success is True
-    # erk-impl.yml (hooks are handled by HooksCapability, not artifact sync)
+    # plan-implement.yml (hooks are handled by HooksCapability, not artifact sync)
     assert result.artifacts_installed == 1
 
-    # Verify erk-impl.yml was copied
-    copied_workflow = target_dir / ".github" / "workflows" / "erk-impl.yml"
+    # Verify plan-implement.yml was copied
+    copied_workflow = target_dir / ".github" / "workflows" / "plan-implement.yml"
     assert copied_workflow.exists()
     assert copied_workflow.read_text(encoding="utf-8") == "name: Erk Impl"
 
@@ -531,11 +533,13 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
     target_dir = tmp_path / "project"
     target_dir.mkdir()
 
+    # Use code-reviews-system since that's the capability that owns the actions
+    # in the managed artifacts registry (actions can only be registered once)
     config = ArtifactSyncConfig(
         bundled_claude_dir=bundled_claude,
         bundled_github_dir=bundled_github,
         current_version="1.0.0",
-        installed_capabilities=frozenset({"erk-impl-workflow"}),
+        installed_capabilities=frozenset({"code-reviews-system"}),
         sync_capabilities=False,
     )
     result = sync_artifacts(target_dir, force=False, config=config)
