@@ -16,6 +16,8 @@ tripwires:
     warning: "gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first."
   - action: "using git pull or git pull --rebase on a Graphite-managed branch"
     warning: "Use /erk:sync-divergence instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push."
+  - action: "comparing git SHA to Graphite's tracked SHA for divergence detection"
+    warning: "Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches."
 ---
 
 # Git and Graphite Edge Cases Catalog
@@ -305,6 +307,49 @@ if isinstance(result, RestackError):
 ### Reference
 
 Type definitions: `packages/erk-shared/src/erk_shared/gateway/gt/types.py:26-43`
+
+## Graphite SHA Tracking Divergence
+
+**Problem**: Graphite's `.graphite_cache_persist` file stores a `branchRevision` SHA for each tracked branch. After rebase or restack operations, the actual git SHA changes but Graphite's tracked SHA becomes stale.
+
+**Why It's Surprising**: Users expect Graphite to stay synchronized with git operations, but Graphite's cache can fall behind, causing submission failures or incorrect stack relationships.
+
+### Detection Pattern
+
+Compare the git commit SHA against Graphite's tracked SHA:
+
+```python
+def is_graphite_tracking_diverged(
+    commit_sha: str | None,
+    graphite_tracked_sha: str | None,
+) -> bool:
+    """Check if Graphite tracking has diverged from git."""
+    # CRITICAL: Both must be non-None for valid comparison
+    if commit_sha is None or graphite_tracked_sha is None:
+        return False  # Can't determine divergence
+    return commit_sha != graphite_tracked_sha
+```
+
+The `None` check is critical - returning `False` when either value is `None` avoids false negatives on new branches that haven't been tracked yet.
+
+### Auto-Fix Pattern
+
+Use `retrack_branch()` to resynchronize:
+
+```python
+if is_graphite_tracking_diverged(commit_sha, graphite_tracked_sha):
+    # Re-track to update Graphite's SHA
+    ctx.graphite.retrack_branch(repo_root, branch_name)
+```
+
+### When Divergence Occurs
+
+- After `git rebase` outside of Graphite
+- After amending commits
+- After `gt restack` if cache update fails
+- After force-push from another machine
+
+**Location in Codebase**: See `packages/erk-shared/src/erk_shared/gateway/graphite/` for tracking operations.
 
 ## Adding New Quirks
 

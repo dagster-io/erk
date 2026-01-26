@@ -122,6 +122,43 @@ git worktree list
 gt ls
 ```
 
+## Worktree State After Landing PRs
+
+When `erk pr land` completes, it deletes the feature branch and attempts to checkout trunk (master). However, this checkout may fail if trunk is already checked out in another worktree.
+
+### Expected Behavior Table
+
+| Worktree Type   | Trunk Available | Result               |
+| --------------- | --------------- | -------------------- |
+| Root worktree   | Always          | Checked out on trunk |
+| Linked worktree | Yes             | Checked out on trunk |
+| Linked worktree | No (held)       | Detached HEAD state  |
+
+### Why Checkout May Fail
+
+Git enforces a single-checkout constraint: a branch can only be checked out in one worktree at a time. When landing from a linked worktree while the root worktree holds trunk, the post-land checkout fails silently, leaving the worktree in detached HEAD state.
+
+### Recovering from Detached HEAD
+
+When a worktree is left in detached HEAD after landing:
+
+```bash
+# Check current state
+git status  # Shows "HEAD detached at ..."
+
+# Option 1: Checkout any available branch
+git checkout other-feature-branch
+
+# Option 2: Create a new branch for new work
+git checkout -b new-feature
+
+# Option 3: Navigate to root worktree for trunk operations
+cd /path/to/root/worktree
+git checkout master
+```
+
+This is expected behavior, not an error. The PR was successfully landed; only the post-land navigation was skipped.
+
 ## Common Errors and Solutions
 
 ### "branch is currently checked out in another worktree"

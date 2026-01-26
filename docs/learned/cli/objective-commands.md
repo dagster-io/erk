@@ -95,6 +95,38 @@ An **auto-advance objective** is an objective issue with both labels:
 
 The reconcile command processes these automatically when run without `--objective`.
 
+## Session-Based Idempotency
+
+Some objective commands support session-based deduplication to prevent double-execution during retries.
+
+### Behavior with `--session-id`
+
+When `--session-id` is provided:
+
+1. The command checks if it already ran for this session
+2. If previously executed, returns early with `skipped_duplicate: true`
+3. If not, executes normally and records the session
+
+### JSON Response with Deduplication
+
+```json
+{
+  "success": true,
+  "skipped_duplicate": true,
+  "message": "Already executed in this session"
+}
+```
+
+### Scope
+
+Session-based deduplication is:
+
+- **Within session**: Same session ID gets deduplicated
+- **Cross-session**: Different sessions execute independently
+- **Opt-in**: Only active when `--session-id` is provided
+
+This prevents issues like duplicate plan creation when hooks retry or Claude retries a blocked command.
+
 ## Related Documentation
 
 - [CLI Output Styling Guide](output-styling.md) - Table formatting and Rich escaping
