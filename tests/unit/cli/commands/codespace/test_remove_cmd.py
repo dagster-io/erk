@@ -6,10 +6,10 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.codespace.registry_fake import FakeCodespaceRegistry
-from erk.core.codespace.registry_real import RealCodespaceRegistry
-from erk.core.codespace.types import RegisteredCodespace
 from erk.core.context import context_for_test
+from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
+from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
+from erk_shared.gateway.codespace_registry.real import RealCodespaceRegistry
 from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 
 

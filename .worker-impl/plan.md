@@ -9,9 +9,11 @@ Consolidate CodespaceRegistry into `erk_shared/gateway/codespace_registry/` foll
 ## Current State
 
 **ABC + types location:**
+
 - `packages/erk-shared/src/erk_shared/core/codespace_registry.py` (ABC + RegisteredCodespace dataclass)
 
 **Implementations location:**
+
 - `src/erk/core/codespace/registry_real.py` (RealCodespaceRegistry + standalone mutation functions)
 - `src/erk/core/codespace/registry_fake.py` (FakeCodespaceRegistry)
 - `src/erk/core/codespace/registry_abc.py` (re-export shim)
@@ -33,18 +35,19 @@ packages/erk-shared/src/erk_shared/gateway/codespace_registry/
 
 From `rg "from erk_shared\.core\.codespace_registry|from erk\.core\.codespace"`:
 
-| Category | Files |
-|----------|-------|
-| Core context | `src/erk/core/context.py`, `packages/erk-shared/src/erk_shared/context/context.py` |
-| CLI commands | `src/erk/cli/commands/codespace/*.py`, `src/erk/cli/commands/codespace_executor.py` |
-| Tests | `tests/unit/cli/commands/codespace/*.py`, `tests/unit/core/codespace/*.py`, `tests/commands/implement/test_issue_mode.py` |
-| Fakes | `packages/erk-shared/src/erk_shared/core/fakes.py` |
+| Category     | Files                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Core context | `src/erk/core/context.py`, `packages/erk-shared/src/erk_shared/context/context.py`                                        |
+| CLI commands | `src/erk/cli/commands/codespace/*.py`, `src/erk/cli/commands/codespace_executor.py`                                       |
+| Tests        | `tests/unit/cli/commands/codespace/*.py`, `tests/unit/core/codespace/*.py`, `tests/commands/implement/test_issue_mode.py` |
+| Fakes        | `packages/erk-shared/src/erk_shared/core/fakes.py`                                                                        |
 
 ## Implementation Steps
 
 ### Step 1: Create gateway/codespace_registry/ directory structure
 
 Create new directory with files:
+
 - `__init__.py` - docstring only
 - `abc.py` - move ABC + RegisteredCodespace from `erk_shared/core/codespace_registry.py`
 - `real.py` - move from `src/erk/core/codespace/registry_real.py`
@@ -53,6 +56,7 @@ Create new directory with files:
 ### Step 2: Update imports in moved files
 
 In `real.py`:
+
 ```python
 # OLD
 from erk.core.codespace.registry_abc import CodespaceRegistry
@@ -63,6 +67,7 @@ from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, Registe
 ```
 
 In `fake.py`:
+
 ```python
 # OLD
 from erk.core.codespace.registry_abc import CodespaceRegistry
@@ -75,6 +80,7 @@ from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, Registe
 ### Step 3: Update ALL import sites
 
 **Pattern for each file:**
+
 ```python
 # OLD patterns
 from erk_shared.core.codespace_registry import CodespaceRegistry, RegisteredCodespace
@@ -90,11 +96,12 @@ from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
 ### Step 4: Delete old locations
 
 - Delete `packages/erk-shared/src/erk_shared/core/codespace_registry.py`
-- Delete `src/erk/core/codespace/` directory entirely (registry_abc.py, registry_real.py, registry_fake.py, types.py, __init__.py)
+- Delete `src/erk/core/codespace/` directory entirely (registry_abc.py, registry_real.py, registry_fake.py, types.py, **init**.py)
 
 ### Step 5: Update erk_shared/core/fakes.py
 
 Update the FakeCodespaceRegistry import in the fakes module:
+
 ```python
 # OLD
 from erk_shared.core.codespace_registry import CodespaceRegistry
@@ -106,12 +113,14 @@ from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry
 ## Files to Modify
 
 **Create (4 files):**
+
 - `packages/erk-shared/src/erk_shared/gateway/codespace_registry/__init__.py`
 - `packages/erk-shared/src/erk_shared/gateway/codespace_registry/abc.py`
 - `packages/erk-shared/src/erk_shared/gateway/codespace_registry/real.py`
 - `packages/erk-shared/src/erk_shared/gateway/codespace_registry/fake.py`
 
 **Delete (5 files):**
+
 - `packages/erk-shared/src/erk_shared/core/codespace_registry.py`
 - `src/erk/core/codespace/__init__.py`
 - `src/erk/core/codespace/registry_abc.py`
@@ -120,6 +129,7 @@ from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry
 - `src/erk/core/codespace/types.py`
 
 **Update imports (~20 files):**
+
 - `src/erk/core/context.py`
 - `packages/erk-shared/src/erk_shared/context/context.py`
 - `packages/erk-shared/src/erk_shared/core/fakes.py`
@@ -140,10 +150,12 @@ from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry
 ## Verification
 
 1. **Import check:** Verify no imports from old locations
+
    ```bash
    rg "from erk_shared\.core\.codespace_registry" --type py
    rg "from erk\.core\.codespace" --type py
    ```
+
    Both should return empty.
 
 2. **Run CI:** `make all-ci` passes

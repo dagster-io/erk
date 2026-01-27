@@ -15,7 +15,6 @@ import tomlkit
 
 from erk.cli.config import load_config, load_local_config, merge_configs_with_local
 from erk.core.claude_executor import RealClaudeExecutor
-from erk.core.codespace.registry_real import RealCodespaceRegistry
 from erk.core.completion import RealCompletion
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
@@ -34,13 +33,14 @@ from erk_shared.context.types import RepoContext as RepoContext
 
 # Import ABCs and fakes from erk_shared.core
 from erk_shared.core.claude_executor import ClaudeExecutor
-from erk_shared.core.codespace_registry import CodespaceRegistry
 from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.codespace.real import RealCodespace
+from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry
+from erk_shared.gateway.codespace_registry.real import RealCodespaceRegistry
 from erk_shared.gateway.completion.abc import Completion
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.console.real import InteractiveConsole, ScriptConsole
@@ -102,9 +102,9 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from tests.fakes.claude_executor import FakeClaudeExecutor
     from tests.fakes.script_writer import FakeScriptWriter
 
-    from erk.core.codespace.registry_fake import FakeCodespaceRegistry
     from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.gateway.codespace.fake import FakeCodespace
+    from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
@@ -227,9 +227,9 @@ def context_for_test(
     from tests.fakes.script_writer import FakeScriptWriter
     from tests.test_utils.paths import sentinel_path
 
-    from erk.core.codespace.registry_fake import FakeCodespaceRegistry
     from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.gateway.codespace.fake import FakeCodespace
+    from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation

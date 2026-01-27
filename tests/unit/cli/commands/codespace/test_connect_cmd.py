@@ -5,9 +5,9 @@ from datetime import datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.codespace.registry_fake import FakeCodespaceRegistry
-from erk.core.codespace.types import RegisteredCodespace
 from erk.core.context import context_for_test
+from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
+from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
 
 
 def test_connect_shows_error_when_no_codespaces() -> None:

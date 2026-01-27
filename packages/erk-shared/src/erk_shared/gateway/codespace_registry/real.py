@@ -12,8 +12,7 @@ from pathlib import Path
 
 import tomlkit
 
-from erk.core.codespace.registry_abc import CodespaceRegistry
-from erk.core.codespace.types import RegisteredCodespace
+from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, RegisteredCodespace
 
 SCHEMA_VERSION = 1
 

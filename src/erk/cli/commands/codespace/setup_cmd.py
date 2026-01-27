@@ -5,9 +5,9 @@ import subprocess
 
 import click
 
-from erk.core.codespace.registry_real import register_codespace, set_default_codespace
-from erk.core.codespace.types import RegisteredCodespace
 from erk.core.context import ErkContext
+from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
+from erk_shared.gateway.codespace_registry.real import register_codespace, set_default_codespace
 
 
 def _find_codespace_by_display_name(display_name: str) -> dict | None:

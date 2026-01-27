@@ -4,13 +4,13 @@ from datetime import datetime
 
 import pytest
 
-from erk.core.codespace.registry_real import (
+from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
+from erk_shared.gateway.codespace_registry.real import (
     RealCodespaceRegistry,
     register_codespace,
     set_default_codespace,
     unregister_codespace,
 )
-from erk.core.codespace.types import RegisteredCodespace
 
 
 class TestRealCodespaceRegistry:

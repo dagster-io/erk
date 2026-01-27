@@ -241,9 +241,9 @@ def test_auto_detect_fails_on_non_plan_branch() -> None:
 
 def test_implement_codespace_mode_skips_local_impl_creation() -> None:
     """Test that codespace mode skips local .impl/ creation and passes issue to codespace."""
-    from erk.core.codespace.registry_fake import FakeCodespaceRegistry
-    from erk.core.codespace.types import RegisteredCodespace
     from erk_shared.gateway.codespace.fake import FakeCodespace
+    from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
+    from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
 
     plan_issue = create_sample_plan_issue("123")
 
@@ -291,9 +291,9 @@ def test_implement_codespace_mode_skips_local_impl_creation() -> None:
 
 def test_implement_codespace_mode_passes_issue_number_to_remote() -> None:
     """Test that codespace mode passes issue number to remote command."""
-    from erk.core.codespace.registry_fake import FakeCodespaceRegistry
-    from erk.core.codespace.types import RegisteredCodespace
     from erk_shared.gateway.codespace.fake import FakeCodespace
+    from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
+    from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
 
     plan_issue = create_sample_plan_issue("456")
 

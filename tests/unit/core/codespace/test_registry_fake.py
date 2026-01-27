@@ -4,8 +4,8 @@ from datetime import datetime
 
 import pytest
 
-from erk.core.codespace.registry_fake import FakeCodespaceRegistry
-from erk.core.codespace.types import RegisteredCodespace
+from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
+from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
 
 
 class TestFakeCodespaceRegistry:
