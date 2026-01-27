@@ -1,6 +1,5 @@
 """Production implementation of Git branch operations using subprocess."""
 
-import subprocess
 from pathlib import Path
 
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
@@ -42,10 +41,10 @@ class RealGitBranchOps(GitBranchOps):
         Idempotent: if branch doesn't exist, returns successfully.
         """
         # LBYL: Check if branch exists before attempting delete
-        check_result = subprocess.run(
-            ["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
+        check_result = run_subprocess_with_context(
+            cmd=["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
+            operation_context=f"check if branch '{branch_name}' exists",
             cwd=cwd,
-            capture_output=True,
             check=False,
         )
         if check_result.returncode != 0:
