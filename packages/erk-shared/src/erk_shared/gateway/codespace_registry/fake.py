@@ -3,8 +3,7 @@
 Stores codespace data in memory without touching filesystem.
 """
 
-from erk.core.codespace.registry_abc import CodespaceRegistry
-from erk.core.codespace.types import RegisteredCodespace
+from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, RegisteredCodespace
 
 
 class FakeCodespaceRegistry(CodespaceRegistry):

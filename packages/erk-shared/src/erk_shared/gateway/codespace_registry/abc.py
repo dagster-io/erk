@@ -8,7 +8,7 @@ Claude Code remotely. Unlike planners, codespaces have a simpler structure
 with just name, gh_name, and created_at fields.
 
 The ABC is read-only. Mutation operations are standalone functions in the
-real implementation module (registry_real.py).
+real implementation module (real.py).
 """
 
 from abc import ABC, abstractmethod

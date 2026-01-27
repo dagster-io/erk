@@ -15,8 +15,8 @@ from typing import NoReturn
 
 import click
 
-from erk_shared.core.codespace_registry import CodespaceRegistry, RegisteredCodespace
 from erk_shared.gateway.codespace.abc import Codespace
+from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, RegisteredCodespace
 
 
 class CodespaceNotFoundError(Exception):

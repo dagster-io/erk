@@ -2,8 +2,8 @@
 
 import click
 
-from erk.core.codespace.registry_real import unregister_codespace
 from erk.core.context import ErkContext
+from erk_shared.gateway.codespace_registry.real import unregister_codespace
 
 
 @click.command("remove")

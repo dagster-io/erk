@@ -3,8 +3,8 @@
 import click
 
 from erk.cli.ensure import Ensure
-from erk.core.codespace.registry_real import set_default_codespace
 from erk.core.context import ErkContext
+from erk_shared.gateway.codespace_registry.real import set_default_codespace
 
 
 @click.command("set-default")

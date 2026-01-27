@@ -20,7 +20,6 @@ from erk_shared.context.types import (
     RepoContext,
 )
 from erk_shared.core.claude_executor import ClaudeExecutor
-from erk_shared.core.codespace_registry import CodespaceRegistry
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.gateway.branch_manager.abc import BranchManager
@@ -28,6 +27,7 @@ from erk_shared.gateway.branch_manager.git import GitBranchManager
 from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.codespace.abc import Codespace
+from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry
 from erk_shared.gateway.completion.abc import Completion
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
