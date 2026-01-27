@@ -206,7 +206,47 @@ Note: This plan is being consolidated with #<other_numbers> into a unified plan.
 
 **Always create a new plan issue**, regardless of implementation status.
 
+#### 6a: Gather Investigation Context
+
+Before entering Plan Mode, collect all investigation findings from Steps 4-5:
+
+1. **Investigation status per plan**: Completion percentages (e.g., "4/11 items implemented")
+2. **Specific discoveries**: File paths, line numbers, commit hashes, PR numbers
+3. **Corrections found**: What the original plan(s) got wrong
+4. **Codebase evidence**: Actual function names, class signatures, config values
+
+For consolidation mode, also gather:
+
+- **Overlap analysis**: Which items appeared in multiple plans
+- **Merge decisions**: Why items were combined or kept separate
+- **Attribution map**: Which source plan contributed each item
+
+#### 6b: Enter Plan Mode with Full Context
+
 Use EnterPlanMode to create an updated plan.
+
+**CRITICAL:** The plan content MUST include the investigation findings, not just summarize them. Each implementation step should have:
+
+- **Specific file paths** (e.g., `docs/learned/architecture/gateway-inventory.md:45`)
+- **What to change** (not "update X" but "add entry for CommandExecutor with ABC at line 105")
+- **Evidence** (commit hashes, PR numbers, current line numbers)
+- **Verification criteria** (how to confirm the step is complete)
+
+**Anti-pattern (sparse):**
+
+```
+1. Update gateway documentation
+2. Add missing tripwires
+```
+
+**Correct pattern (comprehensive):**
+
+```
+1. **Update gateway-inventory.md** (`docs/learned/architecture/gateway-inventory.md`)
+   - Add missing entries: CommandExecutor (abc.py:105), PlanDataProvider (abc.py:142)
+   - Fix import paths at lines 45, 67 (change `erk.gateways.` → `erk.gateway.`)
+   - Verification: All gateways in `src/erk/gateway/` have entries
+```
 
 ---
 
