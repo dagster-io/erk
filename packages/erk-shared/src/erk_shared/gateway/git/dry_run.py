@@ -6,7 +6,7 @@ operations while delegating read-only operations to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.abc import Git, RebaseResult
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.dry_run import DryRunGitBranchOps
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
@@ -17,9 +17,10 @@ from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.dry_run import DryRunGitRemoteOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
 from erk_shared.gateway.git.status_ops.dry_run import DryRunGitStatusOps
+from erk_shared.gateway.git.tag_ops.abc import GitTagOps
+from erk_shared.gateway.git.tag_ops.dry_run import DryRunGitTagOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.dry_run import DryRunWorktree
-from erk_shared.output.output import user_output
 
 # ============================================================================
 # No-op Wrapper
@@ -82,6 +83,11 @@ class DryRunGit(Git):
         """Access rebase operations subgateway (wrapped with DryRunGitRebaseOps)."""
         return DryRunGitRebaseOps(self._wrapped.rebase)
 
+    @property
+    def tag(self) -> GitTagOps:
+        """Access tag operations subgateway (wrapped with DryRunGitTagOps)."""
+        return DryRunGitTagOps(self._wrapped.tag)
+
     # Read-only operations: delegate to wrapped implementation
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
@@ -108,17 +114,13 @@ class DryRunGit(Git):
         """Get git user.name (read-only, delegates to wrapped)."""
         return self._wrapped.get_git_user_name(cwd)
 
-    def tag_exists(self, repo_root: Path, tag_name: str) -> bool:
-        """Check if tag exists (read-only, delegates to wrapped)."""
-        return self._wrapped.tag_exists(repo_root, tag_name)
+    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
+        """No-op for rebase in dry-run mode. Returns success."""
+        return RebaseResult(success=True, conflict_files=())
 
-    def create_tag(self, repo_root: Path, tag_name: str, message: str) -> None:
-        """Print dry-run message instead of creating tag."""
-        user_output(f"[DRY RUN] Would run: git tag -a {tag_name} -m '{message}'")
-
-    def push_tag(self, repo_root: Path, remote: str, tag_name: str) -> None:
-        """Print dry-run message instead of pushing tag."""
-        user_output(f"[DRY RUN] Would run: git push {remote} {tag_name}")
+    def rebase_abort(self, cwd: Path) -> None:
+        """No-op for rebase abort in dry-run mode."""
+        pass
 
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
         """Get merge base (read-only, delegates to wrapped)."""

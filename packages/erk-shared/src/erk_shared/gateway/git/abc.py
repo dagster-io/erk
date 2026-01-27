@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
     from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
     from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+    from erk_shared.gateway.git.tag_ops.abc import GitTagOps
     from erk_shared.gateway.git.worktree.abc import Worktree
 
 
@@ -136,6 +137,12 @@ class Git(ABC):
         """Access rebase operations subgateway."""
         ...
 
+    @property
+    @abstractmethod
+    def tag(self) -> GitTagOps:
+        """Access tag operations subgateway."""
+        ...
+
     @abstractmethod
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory."""
@@ -184,43 +191,34 @@ class Git(ABC):
         ...
 
     @abstractmethod
-    def tag_exists(self, repo_root: Path, tag_name: str) -> bool:
-        """Check if a git tag exists.
+    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
+        """Rebase the current branch onto a target ref.
+
+        Runs `git rebase <target_ref>` to replay current branch commits on top
+        of the target ref.
 
         Args:
-            repo_root: Path to the repository root
-            tag_name: Tag name to check (e.g., 'v1.0.0')
+            cwd: Working directory (must be in a git repository)
+            target_ref: The ref to rebase onto (e.g., "origin/main", branch name)
 
         Returns:
-            True if the tag exists, False otherwise
+            RebaseResult with success flag and any conflict files.
+            If conflicts occur, the rebase will be left in progress.
         """
         ...
 
     @abstractmethod
-    def create_tag(self, repo_root: Path, tag_name: str, message: str) -> None:
-        """Create an annotated git tag.
+    def rebase_abort(self, cwd: Path) -> None:
+        """Abort an in-progress rebase operation.
+
+        Runs `git rebase --abort` to cancel a rebase that has conflicts
+        and restore the branch to its original state.
 
         Args:
-            repo_root: Path to the repository root
-            tag_name: Tag name to create (e.g., 'v1.0.0')
-            message: Tag message
+            cwd: Working directory (must have a rebase in progress)
 
         Raises:
-            subprocess.CalledProcessError: If git command fails
-        """
-        ...
-
-    @abstractmethod
-    def push_tag(self, repo_root: Path, remote: str, tag_name: str) -> None:
-        """Push a tag to a remote.
-
-        Args:
-            repo_root: Path to the repository root
-            remote: Remote name (e.g., 'origin')
-            tag_name: Tag name to push
-
-        Raises:
-            subprocess.CalledProcessError: If git command fails
+            subprocess.CalledProcessError: If no rebase is in progress
         """
         ...
 

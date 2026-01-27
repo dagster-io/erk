@@ -35,14 +35,14 @@ def release_tag_command(ctx: click.Context, push: bool, dry_run: bool) -> None:
 
     tag_name = f"v{current_version}"
 
-    if git.tag_exists(repo_root, tag_name):
+    if git.tag.tag_exists(repo_root, tag_name):
         click.echo(f"Tag {tag_name} already exists")
         return
 
     message = f"Release {current_version}"
-    git.create_tag(repo_root, tag_name, message)
+    git.tag.create_tag(repo_root, tag_name, message)
     click.echo(f"Created tag: {tag_name}")
 
     if push:
-        git.push_tag(repo_root, "origin", tag_name)
+        git.tag.push_tag(repo_root, "origin", tag_name)
         click.echo("Pushed tag to origin")
