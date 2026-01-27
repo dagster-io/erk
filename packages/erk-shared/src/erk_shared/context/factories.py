@@ -76,7 +76,6 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.real import ScriptConsole
     from erk_shared.gateway.erk_installation.real import RealErkInstallation
-    from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
     from erk_shared.gateway.git.real import RealGit
     from erk_shared.gateway.github.issues.real import RealGitHubIssues
     from erk_shared.gateway.github.real import RealGitHub
@@ -120,14 +119,12 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
 
     # Use fake implementations for erk-specific services that erk-kits doesn't need
     fake_graphite = FakeGraphite()
-    fake_git_branch_ops = FakeGitBranchOps()
     # Create issues first, then compose into github
     time = RealTime()
     github_issues = RealGitHubIssues(target_repo=None, time=time)
     fake_time = FakeTime()
     return ErkContext(
         git=git,
-        git_branch_ops=fake_git_branch_ops,
         github=RealGitHub(time=time, repo_info=repo_info, issues=github_issues),
         github_admin=FakeGitHubAdmin(),
         claude_installation=RealClaudeInstallation(),

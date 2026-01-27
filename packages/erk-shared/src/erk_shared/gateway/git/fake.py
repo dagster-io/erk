@@ -6,10 +6,6 @@ in its constructor. Construct instances directly with keyword arguments.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
 from pathlib import Path
 from typing import NamedTuple
 
@@ -20,6 +16,8 @@ from erk_shared.gateway.git.abc import (
     RebaseResult,
     WorktreeInfo,
 )
+from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.fake import FakeWorktree
 
@@ -268,10 +266,32 @@ class FakeGit(Git):
             dirty_worktrees=self._dirty_worktrees,
         )
 
+        # Branch operations subgateway - linked to FakeGit's state
+        self._branch_gateway = FakeGitBranchOps(
+            worktrees=self._worktrees,
+            current_branches=self._current_branches,
+            local_branches=self._local_branches,
+            delete_branch_raises=self._delete_branch_raises,
+            tracking_branch_failures=self._tracking_branch_failures,
+        )
+        # Link mutation tracking so FakeGit properties see mutations from FakeGitBranchOps
+        self._branch_gateway.link_mutation_tracking(
+            created_branches=self._created_branches,
+            deleted_branches=self._deleted_branches,
+            checked_out_branches=self._checked_out_branches,
+            detached_checkouts=self._detached_checkouts,
+            created_tracking_branches=self._created_tracking_branches,
+        )
+
     @property
     def worktree(self) -> Worktree:
         """Access worktree operations subgateway."""
         return self._worktree_gateway
+
+    @property
+    def branch(self) -> GitBranchOps:
+        """Access branch operations subgateway."""
+        return self._branch_gateway
 
     def get_current_branch(self, cwd: Path) -> str | None:
         """Get the currently checked-out branch."""
@@ -856,7 +876,7 @@ class FakeGit(Git):
         return None
 
     def create_linked_branch_ops(self) -> FakeGitBranchOps:
-        """Create a FakeGitBranchOps linked to this FakeGit's state.
+        """Return the FakeGitBranchOps linked to this FakeGit's state.
 
         The returned FakeGitBranchOps shares mutable state and mutation tracking
         with this FakeGit instance. This allows tests to check FakeGit properties
@@ -864,22 +884,9 @@ class FakeGit(Git):
 
         Returns:
             FakeGitBranchOps with linked state and mutation tracking
-        """
-        from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
 
-        ops = FakeGitBranchOps(
-            worktrees=self._worktrees,
-            current_branches=self._current_branches,
-            local_branches=self._local_branches,
-            delete_branch_raises=self._delete_branch_raises,
-            tracking_branch_failures=self._tracking_branch_failures,
-        )
-        # Link mutation tracking so FakeGit properties see mutations from FakeGitBranchOps
-        ops.link_mutation_tracking(
-            created_branches=self._created_branches,
-            deleted_branches=self._deleted_branches,
-            checked_out_branches=self._checked_out_branches,
-            detached_checkouts=self._detached_checkouts,
-            created_tracking_branches=self._created_tracking_branches,
-        )
-        return ops
+        Note:
+            This method now returns the same instance as self.branch, which is
+            already linked during __init__.
+        """
+        return self._branch_gateway

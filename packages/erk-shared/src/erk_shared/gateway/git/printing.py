@@ -7,6 +7,8 @@ before delegating to the wrapped implementation.
 from pathlib import Path
 
 from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
+from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.git.branch_ops.printing import PrintingGitBranchOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.printing import PrintingWorktree
 from erk_shared.printing.base import PrintingBase
@@ -38,6 +40,13 @@ class PrintingGit(PrintingBase, Git):
         """Access worktree operations subgateway (wrapped with PrintingWorktree)."""
         return PrintingWorktree(
             self._wrapped.worktree, script_mode=self._script_mode, dry_run=self._dry_run
+        )
+
+    @property
+    def branch(self) -> GitBranchOps:
+        """Access branch operations subgateway (wrapped with PrintingGitBranchOps)."""
+        return PrintingGitBranchOps(
+            self._wrapped.branch, script_mode=self._script_mode, dry_run=self._dry_run
         )
 
     # Read-only operations: delegate without printing
