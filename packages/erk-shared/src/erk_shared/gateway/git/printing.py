@@ -152,7 +152,6 @@ class PrintingGit(PrintingBase, Git):
         """Get diff to branch (read-only, no printing)."""
         return self._wrapped.get_diff_to_branch(cwd, branch)
 
-
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """Set git config with printed output."""
         self._emit(self._format_command(f"git config --{scope} {key} {value}"))

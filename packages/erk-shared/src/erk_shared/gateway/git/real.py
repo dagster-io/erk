@@ -138,7 +138,6 @@ class RealGit(Git):
         )
         return result.stdout
 
-
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """Set a git configuration value."""
         run_subprocess_with_context(

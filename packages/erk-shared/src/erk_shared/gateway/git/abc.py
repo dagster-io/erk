@@ -156,7 +156,6 @@ class Git(ABC):
         """Get diff between branch and HEAD."""
         ...
 
-
     @abstractmethod
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """Set a git configuration value.

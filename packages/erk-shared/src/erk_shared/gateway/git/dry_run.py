@@ -100,7 +100,6 @@ class DryRunGit(Git):
         """Get diff to branch (read-only, delegates to wrapped)."""
         return self._wrapped.get_diff_to_branch(cwd, branch)
 
-
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """No-op for setting git config in dry-run mode."""
         pass

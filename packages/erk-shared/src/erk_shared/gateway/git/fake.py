@@ -599,7 +599,6 @@ class FakeGit(Git):
         """Get diff between branch and HEAD."""
         return self._diff_to_branch.get((cwd, branch), "")
 
-
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """Record git config set for test assertions."""
         self._config_settings.append((key, value, scope))
