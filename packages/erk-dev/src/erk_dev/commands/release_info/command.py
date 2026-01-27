@@ -23,7 +23,7 @@ def get_version_tag(git: Git, repo_root: Path, version: str) -> str | None:
         Tag name (e.g., 'v0.2.6') if it exists, None otherwise.
     """
     tag_name = f"v{version}"
-    if git.tag_exists(repo_root, tag_name):
+    if git.tag.tag_exists(repo_root, tag_name):
         return tag_name
     return None
 

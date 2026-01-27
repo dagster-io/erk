@@ -27,6 +27,8 @@ from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
 from erk_shared.gateway.git.status_ops.fake import FakeGitStatusOps
+from erk_shared.gateway.git.tag_ops.abc import GitTagOps
+from erk_shared.gateway.git.tag_ops.fake import FakeGitTagOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.fake import FakeWorktree
 
@@ -374,6 +376,17 @@ class FakeGit(Git):
             rebase_abort_calls=self._rebase_abort_calls,
         )
 
+        # Tag operations subgateway - linked to FakeGit's state
+        self._tag_gateway = FakeGitTagOps(
+            existing_tags=self._existing_tags,
+        )
+        # Link mutation tracking so FakeGit properties see mutations from FakeGitTagOps
+        self._tag_gateway.link_mutation_tracking(
+            existing_tags=self._existing_tags,
+            created_tags=self._created_tags,
+            pushed_tags=self._pushed_tags,
+        )
+
     @property
     def worktree(self) -> Worktree:
         """Access worktree operations subgateway."""
@@ -403,6 +416,11 @@ class FakeGit(Git):
     def rebase(self) -> GitRebaseOps:
         """Access rebase operations subgateway."""
         return self._rebase_gateway
+
+    @property
+    def tag(self) -> GitTagOps:
+        """Access tag operations subgateway."""
+        return self._tag_gateway
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory.
@@ -618,19 +636,6 @@ class FakeGit(Git):
         """Get the configured git user.name."""
         return self._git_user_name
 
-    def tag_exists(self, repo_root: Path, tag_name: str) -> bool:
-        """Check if a git tag exists in the fake state."""
-        return tag_name in self._existing_tags
-
-    def create_tag(self, repo_root: Path, tag_name: str, message: str) -> None:
-        """Create an annotated git tag (mutates internal state)."""
-        self._existing_tags.add(tag_name)
-        self._created_tags.append((tag_name, message))
-
-    def push_tag(self, repo_root: Path, remote: str, tag_name: str) -> None:
-        """Push a tag to a remote (tracks mutation)."""
-        self._pushed_tags.append((remote, tag_name))
-
     @property
     def created_tags(self) -> list[tuple[str, str]]:
         """Get list of tags created during test.
@@ -693,6 +698,14 @@ class FakeGit(Git):
         if (ref2, ref1) in self._merge_bases:
             return self._merge_bases[(ref2, ref1)]
         return None
+
+    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
+        """Delegate to rebase subgateway."""
+        return self._rebase_gateway.rebase_onto(cwd, target_ref)
+
+    def rebase_abort(self, cwd: Path) -> None:
+        """Delegate to rebase subgateway."""
+        self._rebase_gateway.rebase_abort(cwd)
 
     def create_linked_branch_ops(self) -> FakeGitBranchOps:
         """Return the FakeGitBranchOps linked to this FakeGit's state.

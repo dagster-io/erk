@@ -6,7 +6,7 @@ before delegating to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git
+from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.printing import PrintingGitBranchOps
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
@@ -17,6 +17,8 @@ from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.printing import PrintingGitRemoteOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
 from erk_shared.gateway.git.status_ops.printing import PrintingGitStatusOps
+from erk_shared.gateway.git.tag_ops.abc import GitTagOps
+from erk_shared.gateway.git.tag_ops.printing import PrintingGitTagOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.printing import PrintingWorktree
 from erk_shared.printing.base import PrintingBase
@@ -83,6 +85,13 @@ class PrintingGit(PrintingBase, Git):
         """Access rebase operations subgateway (wrapped with PrintingGitRebaseOps)."""
         return PrintingGitRebaseOps(
             self._wrapped.rebase, script_mode=self._script_mode, dry_run=self._dry_run
+        )
+
+    @property
+    def tag(self) -> GitTagOps:
+        """Access tag operations subgateway (wrapped with PrintingGitTagOps)."""
+        return PrintingGitTagOps(
+            self._wrapped.tag, script_mode=self._script_mode, dry_run=self._dry_run
         )
 
     # Read-only operations: delegate without printing
@@ -169,25 +178,21 @@ class PrintingGit(PrintingBase, Git):
             repo_root, branch, trunk, limit=limit
         )
 
-    def tag_exists(self, repo_root: Path, tag_name: str) -> bool:
-        """Check if tag exists (read-only, no printing)."""
-        return self._wrapped.tag_exists(repo_root, tag_name)
-
-    def create_tag(self, repo_root: Path, tag_name: str, message: str) -> None:
-        """Create tag with printed output."""
-        self._emit(self._format_command(f"git tag -a {tag_name} -m '{message}'"))
-        self._wrapped.create_tag(repo_root, tag_name, message)
-
-    def push_tag(self, repo_root: Path, remote: str, tag_name: str) -> None:
-        """Push tag with printed output."""
-        self._emit(self._format_command(f"git push {remote} {tag_name}"))
-        self._wrapped.push_tag(repo_root, remote, tag_name)
-
     def is_branch_diverged_from_remote(
         self, cwd: Path, branch: str, remote: str
     ) -> BranchDivergence:
         """Check branch divergence (read-only, no printing)."""
         return self._wrapped.branch.is_branch_diverged_from_remote(cwd, branch, remote)
+
+    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
+        """Rebase onto target ref with printed output."""
+        self._emit(self._format_command(f"git rebase {target_ref}"))
+        return self._wrapped.rebase_onto(cwd, target_ref)
+
+    def rebase_abort(self, cwd: Path) -> None:
+        """Abort rebase with printed output."""
+        self._emit(self._format_command("git rebase --abort"))
+        self._wrapped.rebase_abort(cwd)
 
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
         """Get merge base (read-only, no printing)."""
