@@ -1,12 +1,15 @@
-"""Git rebase operations sub-gateway.
+"""Git rebase operations subgateway."""
 
-This module provides a separate gateway for rebase operations,
-including rebase onto, continue, abort, and rebase status checking.
+from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+from erk_shared.gateway.git.rebase_ops.dry_run import DryRunGitRebaseOps
+from erk_shared.gateway.git.rebase_ops.fake import FakeGitRebaseOps
+from erk_shared.gateway.git.rebase_ops.printing import PrintingGitRebaseOps
+from erk_shared.gateway.git.rebase_ops.real import RealGitRebaseOps
 
-Import from submodules:
-- abc: GitRebaseOps
-- real: RealGitRebaseOps
-- fake: FakeGitRebaseOps
-- dry_run: DryRunGitRebaseOps
-- printing: PrintingGitRebaseOps
-"""
+__all__ = [
+    "GitRebaseOps",
+    "RealGitRebaseOps",
+    "FakeGitRebaseOps",
+    "DryRunGitRebaseOps",
+    "PrintingGitRebaseOps",
+]
