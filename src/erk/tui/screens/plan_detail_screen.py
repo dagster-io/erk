@@ -15,12 +15,12 @@ from textual.screen import ModalScreen
 from textual.timer import Timer
 from textual.widgets import Label
 
-from erk.tui.commands.executor import CommandExecutor
 from erk.tui.commands.provider import PlanCommandProvider
 from erk.tui.data.types import PlanRowData
 from erk.tui.widgets.clickable_link import ClickableLink
 from erk.tui.widgets.command_output import CommandOutputPanel
 from erk.tui.widgets.copyable_label import CopyableLabel
+from erk_shared.gateway.command_executor.abc import CommandExecutor
 
 if TYPE_CHECKING:
     from erk_shared.gateway.browser.abc import BrowserLauncher

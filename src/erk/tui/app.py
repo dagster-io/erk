@@ -16,8 +16,6 @@ from textual.screen import Screen
 from textual.widgets import Header, Input, Label
 
 from erk.tui.commands.provider import MainListCommandProvider
-from erk.tui.commands.real_executor import RealCommandExecutor
-from erk.tui.data.provider import PlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
@@ -28,6 +26,8 @@ from erk.tui.sorting.logic import sort_plans
 from erk.tui.sorting.types import BranchActivity, SortKey, SortState
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
+from erk_shared.gateway.command_executor.real import RealCommandExecutor
+from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
 
 def _build_github_url(issue_url: str, resource_type: str, number: int) -> str:

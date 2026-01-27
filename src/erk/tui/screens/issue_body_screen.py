@@ -9,7 +9,7 @@ from textual.containers import Container, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Label, Markdown
 
-from erk.tui.data.provider import PlanDataProvider
+from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
 
 class IssueBodyScreen(ModalScreen):
