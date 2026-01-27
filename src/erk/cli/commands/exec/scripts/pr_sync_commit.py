@@ -111,7 +111,7 @@ def _sync_pr_from_commit(
     existing_body = pr_result.body
 
     # Get commit message (title and body)
-    full_message = git.get_head_commit_message_full(repo_root)
+    full_message = git.commit.get_head_commit_message_full(repo_root)
     lines = full_message.strip().split("\n", 1)
     commit_title = lines[0].strip()
     commit_body = lines[1].strip() if len(lines) > 1 else ""

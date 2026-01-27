@@ -34,7 +34,7 @@ def execute_quick_submit(
     # Step 1: Stage all changes
     yield ProgressEvent("Staging all changes...")
     try:
-        ops.git.add_all(cwd)
+        ops.git.commit.add_all(cwd)
     except Exception as e:
         yield CompletionEvent(
             QuickSubmitError(
@@ -54,7 +54,7 @@ def execute_quick_submit(
     if has_changes:
         yield ProgressEvent("Committing changes...")
         try:
-            ops.git.commit(cwd, "update")
+            ops.git.commit.commit(cwd, "update")
             committed = True
         except Exception as e:
             yield CompletionEvent(

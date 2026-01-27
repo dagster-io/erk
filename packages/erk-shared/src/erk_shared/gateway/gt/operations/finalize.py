@@ -162,7 +162,7 @@ def execute_finalize(
     commit_message = pr_title
     if pr_body:
         commit_message = f"{pr_title}\n\n{pr_body}"
-    ops.git.amend_commit(repo_root, commit_message)
+    ops.git.commit.amend_commit(repo_root, commit_message)
     yield ProgressEvent("Local commit message updated", style="success")
 
     # Clean up temp diff file

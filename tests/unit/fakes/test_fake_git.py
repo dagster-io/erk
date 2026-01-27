@@ -262,13 +262,13 @@ def test_fake_gitops_get_branch_head() -> None:
 
 
 def test_fake_gitops_get_commit_message() -> None:
-    """Test get_commit_message returns message from dict."""
+    """Test get_commit_message returns message from dict via commit subgateway."""
     repo_root = Path("/repo")
     git_ops = FakeGit(commit_messages={"abc123": "Initial commit", "def456": "Add feature"})
 
-    assert git_ops.get_commit_message(repo_root, "abc123") == "Initial commit"
-    assert git_ops.get_commit_message(repo_root, "def456") == "Add feature"
-    assert git_ops.get_commit_message(repo_root, "unknown") is None
+    assert git_ops.commit.get_commit_message(repo_root, "abc123") == "Initial commit"
+    assert git_ops.commit.get_commit_message(repo_root, "def456") == "Add feature"
+    assert git_ops.commit.get_commit_message(repo_root, "unknown") is None
 
 
 def test_fake_gitops_get_ahead_behind() -> None:
@@ -300,16 +300,16 @@ def test_fake_gitops_get_recent_commits() -> None:
     git_ops = FakeGit(recent_commits={cwd: commits})
 
     # Default limit is 5
-    result = git_ops.get_recent_commits(cwd, limit=5)
+    result = git_ops.commit.get_recent_commits(cwd, limit=5)
     assert len(result) == 5
     assert result[0]["sha"] == "abc123"
 
     # Custom limit
-    result = git_ops.get_recent_commits(cwd, limit=3)
+    result = git_ops.commit.get_recent_commits(cwd, limit=3)
     assert len(result) == 3
 
     # No commits configured
-    result = git_ops.get_recent_commits(Path("/other"), limit=5)
+    result = git_ops.commit.get_recent_commits(Path("/other"), limit=5)
     assert result == []
 
 
@@ -442,7 +442,7 @@ def test_fake_git_get_commit_messages_since_returns_configured_messages() -> Non
     ]
     git_ops = FakeGit(commit_messages_since={(cwd, "main"): messages})
 
-    result = git_ops.get_commit_messages_since(cwd, "main")
+    result = git_ops.commit.get_commit_messages_since(cwd, "main")
 
     assert result == messages
 
@@ -452,7 +452,7 @@ def test_fake_git_get_commit_messages_since_returns_empty_for_unknown_branch() -
     cwd = Path("/repo")
     git_ops = FakeGit()
 
-    result = git_ops.get_commit_messages_since(cwd, "main")
+    result = git_ops.commit.get_commit_messages_since(cwd, "main")
 
     assert result == []
 
@@ -464,7 +464,7 @@ def test_fake_git_get_commit_messages_since_returns_empty_for_unknown_cwd() -> N
     messages = ["Some commit"]
     git_ops = FakeGit(commit_messages_since={(cwd, "main"): messages})
 
-    result = git_ops.get_commit_messages_since(other_cwd, "main")
+    result = git_ops.commit.get_commit_messages_since(other_cwd, "main")
 
     assert result == []
 

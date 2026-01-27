@@ -191,7 +191,7 @@ class GraphiteBranchManager(BranchManager):
             repo_root: Repository root directory
             message: Commit message
         """
-        self.git.commit(repo_root, message)
+        self.git.commit.commit(repo_root, message)
 
     def get_branch_stack(self, repo_root: Path, branch: str) -> list[str] | None:
         """Get stack from Graphite's local cache.

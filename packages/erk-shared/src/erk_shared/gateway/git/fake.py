@@ -18,6 +18,8 @@ from erk_shared.gateway.git.abc import (
 )
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+from erk_shared.gateway.git.commit_ops.fake import CommitRecord, FakeGitCommitOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
 from erk_shared.gateway.git.worktree.abc import Worktree
@@ -252,7 +254,7 @@ class FakeGit(Git):
         self._pulled_branches: list[tuple[str, str, bool]] = []
         self._created_tracking_branches: list[tuple[str, str]] = []
         self._staged_files: list[str] = []
-        self._commits: list[tuple[Path, str, list[str]]] = []
+        self._commits: list[CommitRecord] = []
         self._pushed_branches: list[PushedBranch] = []
         self._created_branches: list[
             tuple[Path, str, str, bool]
@@ -315,6 +317,27 @@ class FakeGit(Git):
             pull_rebase_calls=self._pull_rebase_calls,
         )
 
+        # Commit operations subgateway - linked to FakeGit's state
+        self._commit_gateway = FakeGitCommitOps(
+            commit_messages=self._commit_messages,
+            recent_commits=self._recent_commits,
+            commit_messages_since=self._commit_messages_since,
+            head_commit_messages_full=self._head_commit_messages_full,
+            commits_ahead=self._commits_ahead,
+            add_all_raises=self._add_all_raises,
+            dirty_worktrees=self._dirty_worktrees,
+        )
+        # Link mutation tracking so FakeGit properties see mutations from FakeGitCommitOps
+        self._commit_gateway.link_mutation_tracking(
+            staged_files=self._staged_files,
+            commits=self._commits,
+        )
+        # Link mutable state so changes propagate back to FakeGit
+        self._commit_gateway.link_state(
+            commits_ahead=self._commits_ahead,
+            dirty_worktrees=self._dirty_worktrees,
+        )
+
     @property
     def worktree(self) -> Worktree:
         """Access worktree operations subgateway."""
@@ -329,6 +352,11 @@ class FakeGit(Git):
     def remote(self) -> GitRemoteOps:
         """Access remote operations subgateway."""
         return self._remote_gateway
+
+    @property
+    def commit(self) -> GitCommitOps:
+        """Access commit operations subgateway."""
+        return self._commit_gateway
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory.
@@ -362,18 +390,9 @@ class FakeGit(Git):
         staged, modified, untracked = self._file_statuses.get(cwd, ([], [], []))
         return bool(staged or modified or untracked)
 
-    def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
-        """Get the commit message for a given commit SHA."""
-        return self._commit_messages.get(commit_sha)
-
     def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
         """Get lists of staged, modified, and untracked files."""
         return self._file_statuses.get(cwd, ([], [], []))
-
-    def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
-        """Get recent commit information."""
-        commits = self._recent_commits.get(cwd, [])
-        return commits[:limit]
 
     @property
     def deleted_branches(self) -> list[str]:
@@ -476,37 +495,18 @@ class FakeGit(Git):
             raise FileNotFoundError(f"No content for {path}")
         return self._file_contents[path]
 
-    def stage_files(self, cwd: Path, paths: list[str]) -> None:
-        """Record staged files for commit."""
-        self._staged_files.extend(paths)
-
-    def commit(self, cwd: Path, message: str) -> None:
-        """Record commit with staged changes.
-
-        Also updates commits_ahead for the parent branch if state is tracked.
-        This ensures that test scenarios where uncommitted changes are committed
-        result in the expected commit count increase.
-        """
-        self._commits.append((cwd, message, list(self._staged_files)))
-        self._staged_files = []  # Clear staged files after commit
-
-        # Update commits_ahead for all tracked parent branches at this cwd
-        for (path, base_branch), count in list(self._commits_ahead.items()):
-            if path == cwd:
-                self._commits_ahead[(cwd, base_branch)] = count + 1
-
     @property
     def staged_files(self) -> list[str]:
         """Read-only access to currently staged files for test assertions."""
         return self._staged_files
 
     @property
-    def commits(self) -> list[tuple[Path, str, list[str]]]:
+    def commits(self) -> list[CommitRecord]:
         """Read-only access to commits for test assertions.
 
-        Returns list of (cwd, message, staged_files) tuples.
+        Returns list of CommitRecord objects with cwd, message, and staged_files.
         """
-        return self._commits
+        return list(self._commits)
 
     @property
     def pushed_branches(self) -> list[PushedBranch]:
@@ -516,27 +516,6 @@ class FakeGit(Git):
         remote, branch, set_upstream, force.
         """
         return self._pushed_branches
-
-    def add_all(self, cwd: Path) -> None:
-        """Stage all changes for commit (git add -A).
-
-        Also clears dirty worktree state since changes are now staged.
-        Raises configured exception if add_all_raises was set.
-        """
-        if self._add_all_raises is not None:
-            raise self._add_all_raises
-        # Clear dirty state - changes are staged for commit
-        self._dirty_worktrees.discard(cwd)
-
-    def amend_commit(self, cwd: Path, message: str) -> None:
-        """Amend the current commit with a new message."""
-        # In the fake, replace last commit message if commits exist
-        if self._commits:
-            last_commit = self._commits[-1]
-            self._commits[-1] = (last_commit[0], message, last_commit[2])
-        else:
-            # If no commits tracked yet, create one to track the amend
-            self._commits.append((cwd, message, []))
 
     def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
         """Count commits in HEAD that are not in base_branch."""
@@ -614,10 +593,6 @@ class FakeGit(Git):
         """Get list of rebase_continue calls for test assertions."""
         return list(self._rebase_continue_calls)
 
-    def get_commit_messages_since(self, cwd: Path, base_branch: str) -> list[str]:
-        """Get full commit messages for commits in HEAD but not in base_branch."""
-        return self._commit_messages_since.get((cwd, base_branch), [])
-
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """Record git config set for test assertions."""
         self._config_settings.append((key, value, scope))
@@ -630,25 +605,6 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return self._config_settings.copy()
-
-    def get_head_commit_message_full(self, cwd: Path) -> str:
-        """Get the full commit message (subject + body) of HEAD.
-
-        Returns:
-            Full commit message from head_commit_messages_full if configured,
-            or the message from the most recent commit if commits were created,
-            or empty string as fallback.
-        """
-        # Check configured messages first
-        if cwd in self._head_commit_messages_full:
-            return self._head_commit_messages_full[cwd]
-
-        # Fallback: return message from most recent commit at this cwd
-        for commit_cwd, message, _files in reversed(self._commits):
-            if commit_cwd == cwd:
-                return message
-
-        return ""
 
     def get_git_user_name(self, cwd: Path) -> str | None:
         """Get the configured git user.name."""

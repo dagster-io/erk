@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
     from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
     from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
     from erk_shared.gateway.git.worktree.abc import Worktree
 
@@ -115,6 +116,12 @@ class Git(ABC):
         """Access remote operations subgateway."""
         ...
 
+    @property
+    @abstractmethod
+    def commit(self) -> GitCommitOps:
+        """Access commit operations subgateway."""
+        ...
+
     @abstractmethod
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory."""
@@ -141,19 +148,6 @@ class Git(ABC):
         ...
 
     @abstractmethod
-    def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
-        """Get the commit message for a given commit SHA.
-
-        Args:
-            repo_root: Path to the git repository root
-            commit_sha: Commit SHA to query
-
-        Returns:
-            First line of commit message, or None if commit doesn't exist.
-        """
-        ...
-
-    @abstractmethod
     def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
         """Get lists of staged, modified, and untracked files.
 
@@ -163,57 +157,6 @@ class Git(ABC):
         Returns:
             Tuple of (staged, modified, untracked) file lists
         """
-        ...
-
-    @abstractmethod
-    def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
-        """Get recent commit information.
-
-        Args:
-            cwd: Working directory
-            limit: Maximum number of commits to retrieve
-
-        Returns:
-            List of commit info dicts with keys: sha, message, author, date
-        """
-        ...
-
-    @abstractmethod
-    def stage_files(self, cwd: Path, paths: list[str]) -> None:
-        """Stage specific files for commit.
-
-        Args:
-            cwd: Working directory
-            paths: List of file paths to stage (relative to cwd)
-
-        Raises:
-            subprocess.CalledProcessError: If git command fails
-        """
-        ...
-
-    @abstractmethod
-    def commit(self, cwd: Path, message: str) -> None:
-        """Create a commit with staged changes.
-
-        Always uses --allow-empty to support creating commits even with no staged changes.
-
-        Args:
-            cwd: Working directory
-            message: Commit message
-
-        Raises:
-            subprocess.CalledProcessError: If git command fails
-        """
-        ...
-
-    @abstractmethod
-    def add_all(self, cwd: Path) -> None:
-        """Stage all changes for commit (git add -A)."""
-        ...
-
-    @abstractmethod
-    def amend_commit(self, cwd: Path, message: str) -> None:
-        """Amend the current commit with a new message."""
         ...
 
     @abstractmethod
@@ -277,21 +220,6 @@ class Git(ABC):
         ...
 
     @abstractmethod
-    def get_commit_messages_since(self, cwd: Path, base_branch: str) -> list[str]:
-        """Get full commit messages for commits in HEAD but not in base_branch.
-
-        Returns commits in chronological order (oldest first).
-
-        Args:
-            cwd: Working directory
-            base_branch: Branch to compare against (e.g., parent branch)
-
-        Returns:
-            List of full commit messages (subject + body) for each unique commit
-        """
-        ...
-
-    @abstractmethod
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """Set a git configuration value.
 
@@ -303,21 +231,6 @@ class Git(ABC):
 
         Raises:
             subprocess.CalledProcessError: If git command fails
-        """
-        ...
-
-    @abstractmethod
-    def get_head_commit_message_full(self, cwd: Path) -> str:
-        """Get the full commit message (subject + body) of HEAD commit.
-
-        Uses git log -1 --format=%B HEAD to get the complete message.
-        Note: Existing get_commit_message() only returns subject line (%s).
-
-        Args:
-            cwd: Working directory
-
-        Returns:
-            Full commit message including subject and body
         """
         ...
 

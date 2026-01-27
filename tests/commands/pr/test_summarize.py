@@ -191,7 +191,7 @@ def test_pr_summarize_success_amends_commit() -> None:
 
         # Verify commit was amended (amend_commit adds or updates in git.commits)
         assert len(git.commits) == 1
-        commit_message = git.commits[0][1]
+        commit_message = git.commits[0].message
         assert "Add awesome feature" in commit_message
         assert "awesome new feature" in commit_message
 

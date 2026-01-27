@@ -145,7 +145,7 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
     else:
         commit_message = title
 
-    ctx.git.amend_commit(cwd, commit_message)
+    ctx.git.commit.amend_commit(cwd, commit_message)
     click.echo(click.style("   Commit amended", fg="green"))
     click.echo("")
 

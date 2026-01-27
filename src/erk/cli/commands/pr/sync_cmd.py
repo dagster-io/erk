@@ -66,7 +66,7 @@ def _update_commit_message_from_pr(ctx: ErkContext, repo_root: Path, pr_number: 
         if pr.body:
             commit_message = f"{pr.title}\n\n{pr.body}"
         user_output("Updating commit message from PR...")
-        ctx.git.amend_commit(repo_root, commit_message)
+        ctx.git.commit.amend_commit(repo_root, commit_message)
         user_output(click.style("✓", fg="green") + " Commit message updated")
 
 

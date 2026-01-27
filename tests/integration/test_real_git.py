@@ -524,7 +524,7 @@ def test_get_commit_messages_since_returns_messages(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    messages = git_ops.get_commit_messages_since(repo, "main")
+    messages = git_ops.commit.get_commit_messages_since(repo, "main")
 
     # Assert: Should have 2 messages in chronological order
     assert len(messages) == 2
@@ -546,7 +546,7 @@ def test_get_commit_messages_since_returns_empty_for_no_commits(tmp_path: Path) 
     git_ops = RealGit()
 
     # Act: main..main has no commits
-    messages = git_ops.get_commit_messages_since(repo, "main")
+    messages = git_ops.commit.get_commit_messages_since(repo, "main")
 
     # Assert
     assert messages == []
@@ -565,7 +565,7 @@ def test_get_commit_messages_since_returns_empty_for_invalid_branch(tmp_path: Pa
     git_ops = RealGit()
 
     # Act: nonexistent base branch
-    messages = git_ops.get_commit_messages_since(repo, "nonexistent")
+    messages = git_ops.commit.get_commit_messages_since(repo, "nonexistent")
 
     # Assert: Returns empty list (graceful degradation)
     assert messages == []
@@ -629,7 +629,7 @@ def test_add_all_stages_files(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    git_ops.add_all(repo)
+    git_ops.commit.add_all(repo)
 
     # Assert: Verify files are staged
     result = subprocess.run(
@@ -661,7 +661,7 @@ def test_commit_creates_commit(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    git_ops.commit(repo, "Test commit message")
+    git_ops.commit.commit(repo, "Test commit message")
 
     # Assert: Verify commit was created
     result = subprocess.run(
@@ -691,7 +691,7 @@ def test_amend_commit_modifies_commit(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    git_ops.amend_commit(repo, "Amended commit message")
+    git_ops.commit.amend_commit(repo, "Amended commit message")
 
     # Assert: Verify commit was amended
     result = subprocess.run(
@@ -725,7 +725,7 @@ def test_amend_commit_with_backticks(tmp_path: Path) -> None:
 
     # Act: Amend with backticks in message
     message_with_backticks = "feat: add `some_function()` implementation"
-    git_ops.amend_commit(repo, message_with_backticks)
+    git_ops.commit.amend_commit(repo, message_with_backticks)
 
     # Assert: Verify message was set correctly
     result = subprocess.run(

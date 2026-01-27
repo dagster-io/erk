@@ -1,6 +1,8 @@
 """Tests for admin test-plan-implement-gh-workflow command."""
 
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 from click.testing import CliRunner
 
@@ -11,6 +13,33 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import WorkflowRun
 from erk_shared.gateway.time.fake import FakeTime
 from tests.test_utils.env_helpers import erk_isolated_fs_env
+
+
+class CommitBeforePRTrackingGitHub(FakeGitHub):
+    """FakeGitHub that verifies commits exist before PR creation.
+
+    This class stores a reference to the git fake so it can check
+    the commit count when create_pr is called.
+    """
+
+    def __init__(self, git: FakeGit, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._git = git
+        self.commit_count_when_pr_created: int | None = None
+
+    def create_pr(
+        self,
+        repo_root: Path,
+        branch: str,
+        title: str,
+        body: str,
+        base: str | None = None,
+        *,
+        draft: bool = False,
+    ) -> int:
+        # Record commit count at the time create_pr is called
+        self.commit_count_when_pr_created = len(self._git.commits)
+        return super().create_pr(repo_root, branch, title, body, base, draft=draft)
 
 
 def test_creates_empty_commit_before_pr() -> None:
@@ -31,9 +60,6 @@ def test_creates_empty_commit_before_pr() -> None:
         erk_dir = env.root_worktree / ".erk"
         erk_dir.mkdir(parents=True, exist_ok=True)
 
-        # Track order of operations to verify commit happens before PR creation
-        call_order: list[str] = []
-
         # Set up FakeGit with required state
         git = FakeGit(
             current_branches={env.cwd: "my-feature-branch"},
@@ -44,17 +70,10 @@ def test_creates_empty_commit_before_pr() -> None:
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
 
-        # Track when commit happens
-        original_commit = git.commit
-
-        def tracked_commit(cwd, message):
-            call_order.append("commit")
-            return original_commit(cwd, message)
-
-        git.commit = tracked_commit
-
         # Set up FakeGitHub with workflow runs for list_workflow_runs
-        fake_github = FakeGitHub(
+        # Use tracking version that records commit count when PR is created
+        fake_github = CommitBeforePRTrackingGitHub(
+            git=git,
             workflow_runs=[
                 WorkflowRun(
                     run_id="12345",
@@ -66,15 +85,6 @@ def test_creates_empty_commit_before_pr() -> None:
                 ),
             ],
         )
-
-        # Track when create_pr happens
-        original_create_pr = fake_github.create_pr
-
-        def tracked_create_pr(repo_root, branch, title, body, base=None, *, draft=False):
-            call_order.append("create_pr")
-            return original_create_pr(repo_root, branch, title, body, base, draft=draft)
-
-        fake_github.create_pr = tracked_create_pr
 
         # Set up FakeTime with a fixed timestamp for deterministic test branch name
         fake_time = FakeTime(current_time=datetime(2024, 1, 15, 10, 30, 0))
@@ -101,22 +111,17 @@ def test_creates_empty_commit_before_pr() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        # Verify the commit was created BEFORE the PR
-        assert "commit" in call_order, "Expected commit to be called"
-        assert "create_pr" in call_order, "Expected create_pr to be called"
-
-        commit_index = call_order.index("commit")
-        create_pr_index = call_order.index("create_pr")
-
-        assert commit_index < create_pr_index, (
-            f"Expected commit (index {commit_index}) to happen before "
-            f"create_pr (index {create_pr_index}). Order was: {call_order}"
+        # CRITICAL: Verify at least one commit existed BEFORE PR creation
+        assert fake_github.commit_count_when_pr_created is not None, "PR was never created"
+        assert fake_github.commit_count_when_pr_created >= 1, (
+            f"REGRESSION: Empty commit must happen BEFORE PR creation. "
+            f"Got {fake_github.commit_count_when_pr_created} commits when PR was created. "
+            f"Expected at least 1."
         )
 
         # Verify the git.commits list has our commit
         assert len(git.commits) == 1, f"Expected 1 commit, got {len(git.commits)}"
-        cwd, message, staged_files = git.commits[0]
-        assert message == "Test workflow run", f"Got '{message}'"
+        assert git.commits[0].message == "Test workflow run", f"Got '{git.commits[0].message}'"
 
         # Verify PR was created via fake's mutation tracking
         assert len(fake_github.created_prs) == 1, f"Got {len(fake_github.created_prs)}"

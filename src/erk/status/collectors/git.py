@@ -53,7 +53,7 @@ class GitStatusCollector(StatusCollector):
         ahead, behind = ctx.git.branch.get_ahead_behind(worktree_path, branch)
 
         # Get recent commits
-        commit_dicts = ctx.git.get_recent_commits(worktree_path, limit=5)
+        commit_dicts = ctx.git.commit.get_recent_commits(worktree_path, limit=5)
         recent_commits = [
             CommitInfo(
                 sha=c["sha"],
