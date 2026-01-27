@@ -18,6 +18,7 @@ Validation rules for `erk learn` workflow to prevent invalid configurations and 
 **A learn plan MUST target an issue with `erk-plan` label, NOT `erk-learn` label.**
 
 This prevents cycles where:
+
 - Issue A (erk-learn) analyzes Issue B (erk-learn)
 - Issue B analyzes Issue A
 - Or longer cycles: A → B → C → A
@@ -61,12 +62,13 @@ For special cases (meta-analysis of learn workflow itself):
 
 Understanding the labels helps prevent confusion:
 
-| Label | Stage | Purpose |
-|-------|-------|---------|
-| `erk-plan` | Implementation plan | Work to be done (code changes) |
-| `erk-learn` | Documentation plan | Documentation to be written (from completed work) |
+| Label       | Stage               | Purpose                                           |
+| ----------- | ------------------- | ------------------------------------------------- |
+| `erk-plan`  | Implementation plan | Work to be done (code changes)                    |
+| `erk-learn` | Documentation plan  | Documentation to be written (from completed work) |
 
 **Flow:**
+
 1. Create `erk-plan` issue → Implement code → Land PR → Mark plan as complete
 2. Create `erk-learn` issue → Extract insights from session → Write docs → Mark learn complete
 
@@ -83,6 +85,7 @@ packages/erk/src/erk/learn/validation.py
 **Function:** `validate_learn_target(issue_number: int, github: GitHub) -> ValidationResult`
 
 **Called by:**
+
 - `erk learn <issue>` command
 - Automatic learn plan creation after PR land
 - Learn plan queue processor

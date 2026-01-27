@@ -136,6 +136,7 @@ class PrintingGit(Git):
 ## Before and After
 
 **Before (verbose, coupled):**
+
 ```python
 # Direct subgateway access
 ctx.git_branch_ops.create_branch(repo_root, "feature-branch")
@@ -144,6 +145,7 @@ ctx.git_branch_ops.delete_branch(repo_root, "old-branch")
 ```
 
 **After (clean, hierarchical):**
+
 ```python
 # Through parent gateway property
 ctx.git.branch.create_branch(repo_root, "feature-branch")
@@ -165,9 +167,9 @@ When adding a subgateway property:
 
 - [ ] Add TYPE_CHECKING import in ABC layer
 - [ ] Define abstract property in ABC class
-- [ ] Instantiate concrete subgateway in Real.__init__
+- [ ] Instantiate concrete subgateway in Real.**init**
 - [ ] Return instance via property in Real layer
-- [ ] Create linked fake subgateway in Fake.__init__ with shared state
+- [ ] Create linked fake subgateway in Fake.**init** with shared state
 - [ ] Return fake instance via property in Fake layer
 - [ ] Wrap subgateway in DryRun layer property
 - [ ] Wrap subgateway in Printing layer property
@@ -177,14 +179,17 @@ When adding a subgateway property:
 ## Common Pitfalls
 
 **Double property access:** `ctx.git.branch.branch.create_branch()` - calling property twice.
+
 - **Cause:** Forgetting that `branch` IS the subgateway, not a namespace
 - **Prevention:** Add "Double .branch.branch" tripwire
 
 **Broken fake linkage:** Mutations through subgateway not visible in parent queries.
+
 - **Cause:** Fake subgateway not sharing state with parent
 - **Fix:** Pass parent's state containers by reference to fake subgateway
 
 **Missing wrapper layers:** DryRun or Printing doesn't wrap the subgateway.
+
 - **Cause:** Forgetting to update all 5 layers
 - **Fix:** Use the 5-layer checklist above
 

@@ -84,8 +84,8 @@ The `force` parameter controls `-D` (force delete) vs `-d` (safe delete) behavio
 
 ## Implementation Files
 
-| Implementation          | Location                                                        |
-| ----------------------- | --------------------------------------------------------------- |
+| Implementation          | Location                                                                |
+| ----------------------- | ----------------------------------------------------------------------- |
 | ABC                     | `packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py`      |
 | Graphite implementation | `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` |
 | Git implementation      | `packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py`      |

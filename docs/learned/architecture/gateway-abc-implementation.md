@@ -215,7 +215,7 @@ def delete_branch(self, repo_root: Path, branch_name: str) -> None:
     )
 ```
 
-**Key principle**: Use LBYL *to implement* idempotency for operations that would otherwise fail on missing resources. This is different from operations that are *already* idempotent (like `git fetch`), which don't need LBYL checks.
+**Key principle**: Use LBYL _to implement_ idempotency for operations that would otherwise fail on missing resources. This is different from operations that are _already_ idempotent (like `git fetch`), which don't need LBYL checks.
 
 See the canonical implementation at `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:38-59`.
 

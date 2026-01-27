@@ -37,6 +37,7 @@ Start live display mode. Begins capturing terminal updates.
 Update the display with new content.
 
 **Args:**
+
 - `renderable`: Any Rich renderable object (Text, Table, Panel, etc.)
 
 ### stop() -> None

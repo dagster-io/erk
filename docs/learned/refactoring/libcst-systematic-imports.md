@@ -206,6 +206,7 @@ For complex transformations across many files, use the `libcst-refactor` agent v
 ```
 
 The agent:
+
 - Scans the codebase for matching patterns
 - Generates transformation code
 - Applies changes with verification

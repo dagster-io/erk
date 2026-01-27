@@ -73,74 +73,92 @@ Raw content from a session and its agent logs. Contains raw JSONL strings - prep
 ### Session Operations
 
 **`has_project(project_cwd: Path) -> bool`**
+
 - Check if a Claude Code project exists for the given working directory
 
 **`find_sessions(project_cwd, *, current_session_id, min_size, limit, include_agents) -> list[Session]`**
+
 - Find sessions for a project, sorted by modified time (newest first)
 - Configurable filtering by size and agent inclusion
 
 **`read_session(project_cwd, session_id, *, include_agents) -> SessionContent | None`**
+
 - Read raw session content as JSONL strings
 - Optionally include agent subprocess logs
 
 **`get_session(project_cwd, session_id) -> Session | SessionNotFound`**
+
 - Get a specific session by ID
 - Returns sentinel object on not found (discriminated union pattern)
 
 **`get_session_path(project_cwd, session_id) -> Path | None`**
+
 - Get the file path for a session
 - Returns None if session doesn't exist
 
 **`find_session_globally(session_id) -> FoundSession | SessionNotFound`**
+
 - Find a session by ID across all project directories
 - Used when session ID is known but project is not (e.g., from GitHub metadata)
 
 ### Settings Operations
 
 **`get_settings_path() -> Path`**
+
 - Return path to global Claude settings file (`~/.claude/settings.json`)
 
 **`get_local_settings_path() -> Path`**
+
 - Return path to local Claude settings file (`~/.claude/settings.local.json`)
 
 **`settings_exists() -> bool`**
+
 - Check if global settings file exists
 
 **`read_settings() -> dict`**
+
 - Read and parse global Claude settings
 - Returns empty dict if file doesn't exist or is invalid
 
 **`write_settings(settings: dict) -> Path | None`**
+
 - Write settings to `~/.claude/settings.json` with backup
 - Returns path to backup file if created, None if no backup needed
 
 ### Plan Operations
 
 **`get_plans_dir_path() -> Path`**
+
 - Return path to `~/.claude/plans/` directory
 
 **`get_latest_plan(project_cwd, *, session_id) -> str | None`**
+
 - Get the latest plan from `~/.claude/plans/`, optionally session-scoped
 - Returns plan content as markdown string
 
 **`find_plan_for_session(project_cwd, session_id) -> Path | None`**
+
 - Find plan file path for session using slug lookup
 - Searches session logs for slug entries
 
 **`extract_slugs_from_session(project_cwd, session_id) -> list[str]`**
+
 - Extract plan slugs from session log entries
 - Slugs indicate plan mode was entered and correspond to plan filenames
 
 **`extract_planning_agent_ids(project_cwd, session_id) -> list[str]`**
+
 - Extract agent IDs for Task invocations with `subagent_type='Plan'`
 - Returns agent IDs in format `["agent-<id>", ...]`
 
 ### Projects Directory Operations
 
 **`projects_dir_exists() -> bool`**
+
 - Check if `~/.claude/projects/` directory exists
 
 **`get_projects_dir_path() -> Path`**
+
 - Return path to `~/.claude/projects/` directory
 
 ## Usage Pattern

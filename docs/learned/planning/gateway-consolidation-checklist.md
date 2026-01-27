@@ -57,16 +57,18 @@ git mv packages/erk-shared/src/erk_shared/tui/commands/fake_executor.py \
 Update relative imports within the gateway package:
 
 **Before:**
+
 ```python
 from erk_shared.tui.commands.executor import CommandExecutor
 ```
 
 **After:**
+
 ```python
 from erk_shared.gateway.command_executor.abc import CommandExecutor
 ```
 
-### 5. Create __init__.py
+### 5. Create **init**.py
 
 Add `__init__.py` with re-exports for clean imports:
 
@@ -91,12 +93,14 @@ grep -r "from erk_shared.tui.commands.executor" packages/ src/
 Update systematically using LibCST or manual editing:
 
 **Before:**
+
 ```python
 from erk_shared.tui.commands.executor import CommandExecutor
 from erk_shared.tui.commands.real_executor import RealCommandExecutor
 ```
 
 **After:**
+
 ```python
 from erk_shared.gateway.command_executor import CommandExecutor, RealCommandExecutor
 ```
@@ -175,7 +179,7 @@ if TYPE_CHECKING:
 
 **Fix:** Update test imports to match new paths.
 
-### Missing __init__.py
+### Missing **init**.py
 
 **Symptom:** `ModuleNotFoundError: No module named 'erk_shared.gateway.X'`
 

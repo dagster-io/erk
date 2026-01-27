@@ -103,10 +103,10 @@ def my_command(ctx: ErkContext, issue_number: int) -> None:
 **Skip LBYL when:**
 
 - You need the resource data anyway (just handle NotFound inline)
-- The operation is *already* idempotent (e.g., `git fetch` always succeeds)
+- The operation is _already_ idempotent (e.g., `git fetch` always succeeds)
 - Performance is critical and you want to avoid extra API calls
 
-**Use LBYL to *implement* idempotency when:**
+**Use LBYL to _implement_ idempotency when:**
 
 - The operation would fail on missing resources (e.g., `git branch -D` fails if branch doesn't exist)
 - You want to make it idempotent by checking first and returning early if missing

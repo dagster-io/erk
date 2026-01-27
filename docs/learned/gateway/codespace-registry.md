@@ -58,6 +58,7 @@ List all registered codespaces.
 Get a codespace by its friendly name.
 
 **Args:**
+
 - `name`: Friendly name of the codespace
 
 **Returns:** `RegisteredCodespace` if found, `None` otherwise.
@@ -83,6 +84,7 @@ Mutation operations are **standalone functions** in `real.py`, not on the ABC:
 Register a new codespace.
 
 **Args:**
+
 - `name`: Friendly name for the codespace
 - `gh_name`: GitHub codespace name
 
@@ -93,6 +95,7 @@ Register a new codespace.
 Remove a codespace registration.
 
 **Args:**
+
 - `name`: Friendly name of the codespace to remove
 
 **Raises:** Error if codespace doesn't exist.
@@ -102,6 +105,7 @@ Remove a codespace registration.
 Set the default codespace.
 
 **Args:**
+
 - `name`: Friendly name of the codespace, or `None` to clear default
 
 **Raises:** Error if name is provided but codespace doesn't exist.
