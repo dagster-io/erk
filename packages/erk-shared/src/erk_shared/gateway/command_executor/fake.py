@@ -1,6 +1,6 @@
 """Fake command executor for testing TUI command palette."""
 
-from erk.tui.commands.executor import CommandExecutor
+from erk_shared.gateway.command_executor.abc import CommandExecutor
 
 
 class FakeCommandExecutor(CommandExecutor):

@@ -17,7 +17,7 @@ from erk.tui.data.types import PlanFilters
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 from erk_shared.gateway.clipboard.fake import FakeClipboard
-from tests.fakes.plan_data_provider import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
 
 
 class TestErkDashAppCompose:

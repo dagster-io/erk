@@ -21,7 +21,6 @@ from erk.core.display_utils import (
 from erk.core.pr_utils import select_display_pr
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.tui.app import ErkDashApp
-from erk.tui.data.provider import RealPlanDataProvider
 from erk.tui.data.types import PlanFilters
 from erk.tui.sorting.types import SortKey, SortState
 from erk_shared.gateway.browser.real import RealBrowserLauncher
@@ -40,6 +39,7 @@ from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, Pu
 from erk_shared.gateway.http.auth import fetch_github_token
 from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.gateway.live_display.abc import LiveDisplay
+from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan, PlanState

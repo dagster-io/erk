@@ -4,7 +4,7 @@ from rich.text import Text
 
 from erk.tui.data.types import PlanFilters
 from erk.tui.widgets.plan_table import PlanDataTable, _strip_rich_markup
-from tests.fakes.plan_data_provider import make_plan_row
+from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
 
 def _text_to_str(value: str | Text) -> str:

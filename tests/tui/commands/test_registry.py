@@ -2,7 +2,7 @@
 
 from erk.tui.commands.registry import get_all_commands, get_available_commands, get_display_name
 from erk.tui.commands.types import CommandCategory, CommandContext
-from tests.fakes.plan_data_provider import make_plan_row
+from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
 
 def test_all_commands_have_unique_ids() -> None:

@@ -1,7 +1,7 @@
 """Tests for filter_plans logic."""
 
 from erk.tui.filtering.logic import filter_plans
-from tests.fakes.plan_data_provider import make_plan_row
+from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
 
 def test_filter_by_title_substring() -> None:

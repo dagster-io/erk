@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from typing import Any, Protocol
 
-from erk.tui.commands.executor import CommandExecutor
+from erk_shared.gateway.command_executor.abc import CommandExecutor
 
 
 class NotifyFn(Protocol):

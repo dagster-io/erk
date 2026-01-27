@@ -68,7 +68,7 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
         # Act: Run the dash command
         # Mock ErkDashApp to prevent Textual TUI from launching and trigger data fetch
         # (Textual apps hang in test environments without a real terminal)
-        from erk.tui.data.provider import PlanDataProvider
+        from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
         captured_provider: PlanDataProvider | None = None
         captured_filters = None

@@ -4,7 +4,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.core.repo_discovery import RepoContext
-from erk.tui.data.provider import RealPlanDataProvider
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.git.abc import WorktreeInfo
@@ -16,6 +15,7 @@ from erk_shared.gateway.github.types import (
     PullRequestInfo,
 )
 from erk_shared.gateway.http.fake import FakeHttpClient
+from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.context import create_test_context
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test

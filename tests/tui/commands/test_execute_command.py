@@ -4,8 +4,8 @@ from pathlib import Path
 
 from erk.tui.app import PlanDetailScreen
 from erk.tui.data.types import PlanRowData
-from tests.fakes.command_executor import FakeCommandExecutor
-from tests.fakes.plan_data_provider import make_plan_row
+from erk_shared.gateway.command_executor.fake import FakeCommandExecutor
+from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
 
 class TestExecuteCommandBrowserCommands:

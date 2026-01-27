@@ -2,13 +2,13 @@
 
 from pathlib import Path
 
-from erk.tui.data.provider import PlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
 from erk_shared.gateway.clipboard.fake import FakeClipboard
+from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
 
 class FakePlanDataProvider(PlanDataProvider):
