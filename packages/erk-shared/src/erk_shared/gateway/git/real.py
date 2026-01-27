@@ -16,6 +16,8 @@ from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
 from erk_shared.gateway.git.commit_ops.real import RealGitCommitOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.real import RealGitRemoteOps
+from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+from erk_shared.gateway.git.status_ops.real import RealGitStatusOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.real import RealWorktree
 from erk_shared.gateway.time.abc import Time
@@ -40,6 +42,7 @@ class RealGit(Git):
         self._branch = RealGitBranchOps(time=self._time)
         self._remote = RealGitRemoteOps(time=self._time)
         self._commit = RealGitCommitOps(time=self._time)
+        self._status = RealGitStatusOps()
 
     @property
     def worktree(self) -> Worktree:
@@ -61,6 +64,11 @@ class RealGit(Git):
         """Access commit operations subgateway."""
         return self._commit
 
+    @property
+    def status(self) -> GitStatusOps:
+        """Access status operations subgateway."""
+        return self._status
+
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory."""
         result = subprocess.run(
@@ -78,66 +86,6 @@ class RealGit(Git):
             git_dir = cwd / git_dir
 
         return git_dir.resolve()
-
-    def has_staged_changes(self, repo_root: Path) -> bool:
-        """Check if the repository has staged changes."""
-        result = subprocess.run(
-            ["git", "diff", "--cached", "--quiet"],
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode in (0, 1):
-            return result.returncode == 1
-        result.check_returncode()
-        return False
-
-    def has_uncommitted_changes(self, cwd: Path) -> bool:
-        """Check if a worktree has uncommitted changes."""
-        result = subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            return False
-        return bool(result.stdout.strip())
-
-    def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
-        """Get lists of staged, modified, and untracked files."""
-        result = run_subprocess_with_context(
-            cmd=["git", "status", "--porcelain"],
-            operation_context="get file status",
-            cwd=cwd,
-        )
-
-        staged = []
-        modified = []
-        untracked = []
-
-        for line in result.stdout.splitlines():
-            if not line:
-                continue
-
-            status_code = line[:2]
-            filename = line[3:]
-
-            # Check if file is staged (first character is not space)
-            if status_code[0] != " " and status_code[0] != "?":
-                staged.append(filename)
-
-            # Check if file is modified (second character is not space)
-            if status_code[1] != " " and status_code[1] != "?":
-                modified.append(filename)
-
-            # Check if file is untracked
-            if status_code == "??":
-                untracked.append(filename)
-
-        return staged, modified, untracked
 
     def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
         """Count commits in HEAD that are not in base_branch."""
@@ -178,40 +126,6 @@ class RealGit(Git):
             cwd=cwd,
         )
         return result.stdout
-
-    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
-        """Check if merging would have conflicts using git merge-tree."""
-        result = subprocess.run(
-            ["git", "merge-tree", "--write-tree", base_branch, head_branch],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        return result.returncode != 0
-
-    def get_conflicted_files(self, cwd: Path) -> list[str]:
-        """Parse git status --porcelain for UU/AA/DD/AU/UA/DU/UD status codes."""
-        result = subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            return []
-
-        conflict_codes = {"UU", "AA", "DD", "AU", "UA", "DU", "UD"}
-        conflicted = []
-        for line in result.stdout.strip().split("\n"):
-            if not line:
-                continue
-            status = line[:2]
-            if status in conflict_codes:
-                # File path starts at position 3
-                conflicted.append(line[3:])
-        return conflicted
 
     def is_rebase_in_progress(self, cwd: Path) -> bool:
         """Check for .git/rebase-merge or .git/rebase-apply directories."""
@@ -297,7 +211,7 @@ class RealGit(Git):
             return RebaseResult(success=True, conflict_files=())
 
         # Rebase failed - get conflict files
-        conflict_files = self.get_conflicted_files(cwd)
+        conflict_files = self.status.get_conflicted_files(cwd)
         return RebaseResult(success=False, conflict_files=tuple(conflict_files))
 
     def rebase_abort(self, cwd: Path) -> None:

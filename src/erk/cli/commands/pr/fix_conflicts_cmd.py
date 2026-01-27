@@ -55,7 +55,7 @@ def fix_conflicts(ctx: ErkContext, *, dangerous: bool) -> None:
     cwd = ctx.cwd
 
     # Check for conflicts
-    conflicted_files = ctx.git.get_conflicted_files(cwd)
+    conflicted_files = ctx.git.status.get_conflicted_files(cwd)
     if not conflicted_files:
         click.echo("No merge conflicts detected.")
         return

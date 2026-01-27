@@ -122,7 +122,7 @@ def test_fake_gitops_has_uncommitted_changes_no_changes() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit(file_statuses={cwd: ([], [], [])})
 
-    assert not git_ops.has_uncommitted_changes(cwd)
+    assert not git_ops.status.has_uncommitted_changes(cwd)
 
 
 def test_fake_gitops_has_uncommitted_changes_staged() -> None:
@@ -130,7 +130,7 @@ def test_fake_gitops_has_uncommitted_changes_staged() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit(file_statuses={cwd: (["file.txt"], [], [])})
 
-    assert git_ops.has_uncommitted_changes(cwd)
+    assert git_ops.status.has_uncommitted_changes(cwd)
 
 
 def test_fake_gitops_has_uncommitted_changes_modified() -> None:
@@ -138,7 +138,7 @@ def test_fake_gitops_has_uncommitted_changes_modified() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit(file_statuses={cwd: ([], ["file.txt"], [])})
 
-    assert git_ops.has_uncommitted_changes(cwd)
+    assert git_ops.status.has_uncommitted_changes(cwd)
 
 
 def test_fake_gitops_has_uncommitted_changes_untracked() -> None:
@@ -146,7 +146,7 @@ def test_fake_gitops_has_uncommitted_changes_untracked() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit(file_statuses={cwd: ([], [], ["file.txt"])})
 
-    assert git_ops.has_uncommitted_changes(cwd)
+    assert git_ops.status.has_uncommitted_changes(cwd)
 
 
 def test_fake_gitops_has_uncommitted_changes_all_types() -> None:
@@ -154,7 +154,7 @@ def test_fake_gitops_has_uncommitted_changes_all_types() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit(file_statuses={cwd: (["staged.txt"], ["modified.txt"], ["untracked.txt"])})
 
-    assert git_ops.has_uncommitted_changes(cwd)
+    assert git_ops.status.has_uncommitted_changes(cwd)
 
 
 def test_fake_gitops_has_uncommitted_changes_unknown_path() -> None:
@@ -162,7 +162,7 @@ def test_fake_gitops_has_uncommitted_changes_unknown_path() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit()
 
-    assert not git_ops.has_uncommitted_changes(cwd)
+    assert not git_ops.status.has_uncommitted_changes(cwd)
 
 
 # ========================================
@@ -175,7 +175,7 @@ def test_fake_gitops_get_file_status_empty() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit(file_statuses={cwd: ([], [], [])})
 
-    staged, modified, untracked = git_ops.get_file_status(cwd)
+    staged, modified, untracked = git_ops.status.get_file_status(cwd)
 
     assert staged == []
     assert modified == []
@@ -187,7 +187,7 @@ def test_fake_gitops_get_file_status_staged_only() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit(file_statuses={cwd: (["file.txt"], [], [])})
 
-    staged, modified, untracked = git_ops.get_file_status(cwd)
+    staged, modified, untracked = git_ops.status.get_file_status(cwd)
 
     assert staged == ["file.txt"]
     assert modified == []
@@ -199,7 +199,7 @@ def test_fake_gitops_get_file_status_modified_only() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit(file_statuses={cwd: ([], ["file.txt"], [])})
 
-    staged, modified, untracked = git_ops.get_file_status(cwd)
+    staged, modified, untracked = git_ops.status.get_file_status(cwd)
 
     assert staged == []
     assert modified == ["file.txt"]
@@ -211,7 +211,7 @@ def test_fake_gitops_get_file_status_untracked_only() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit(file_statuses={cwd: ([], [], ["file.txt"])})
 
-    staged, modified, untracked = git_ops.get_file_status(cwd)
+    staged, modified, untracked = git_ops.status.get_file_status(cwd)
 
     assert staged == []
     assert modified == []
@@ -223,7 +223,7 @@ def test_fake_gitops_get_file_status_mixed() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit(file_statuses={cwd: (["a.txt"], ["b.txt"], ["c.txt"])})
 
-    staged, modified, untracked = git_ops.get_file_status(cwd)
+    staged, modified, untracked = git_ops.status.get_file_status(cwd)
 
     assert staged == ["a.txt"]
     assert modified == ["b.txt"]

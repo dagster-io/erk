@@ -13,6 +13,8 @@ from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
 from erk_shared.gateway.git.commit_ops.printing import PrintingGitCommitOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.printing import PrintingGitRemoteOps
+from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+from erk_shared.gateway.git.status_ops.printing import PrintingGitStatusOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.printing import PrintingWorktree
 from erk_shared.printing.base import PrintingBase
@@ -67,6 +69,13 @@ class PrintingGit(PrintingBase, Git):
             self._wrapped.commit, script_mode=self._script_mode, dry_run=self._dry_run
         )
 
+    @property
+    def status(self) -> GitStatusOps:
+        """Access status operations subgateway (wrapped with PrintingGitStatusOps)."""
+        return PrintingGitStatusOps(
+            self._wrapped.status, script_mode=self._script_mode, dry_run=self._dry_run
+        )
+
     # Read-only operations: delegate without printing
 
     def get_current_branch(self, cwd: Path) -> str | None:
@@ -93,14 +102,6 @@ class PrintingGit(PrintingBase, Git):
         """Get git common directory (read-only, no printing)."""
         return self._wrapped.get_git_common_dir(cwd)
 
-    def has_staged_changes(self, repo_root: Path) -> bool:
-        """Check for staged changes (read-only, no printing)."""
-        return self._wrapped.has_staged_changes(repo_root)
-
-    def has_uncommitted_changes(self, cwd: Path) -> bool:
-        """Check for uncommitted changes (read-only, no printing)."""
-        return self._wrapped.has_uncommitted_changes(cwd)
-
     def get_ahead_behind(self, cwd: Path, branch: str) -> tuple[int, int]:
         """Get ahead/behind counts (read-only, no printing)."""
         return self._wrapped.branch.get_ahead_behind(cwd, branch)
@@ -122,10 +123,6 @@ class PrintingGit(PrintingBase, Git):
         """Get branch head (read-only, no printing)."""
         return self._wrapped.branch.get_branch_head(repo_root, branch)
 
-    def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
-        """Get file status (read-only, no printing)."""
-        return self._wrapped.get_file_status(cwd)
-
     def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
         """Get branch issue (read-only, no printing)."""
         return self._wrapped.branch.get_branch_issue(repo_root, branch)
@@ -145,14 +142,6 @@ class PrintingGit(PrintingBase, Git):
     def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
         """Get diff to branch (read-only, no printing)."""
         return self._wrapped.get_diff_to_branch(cwd, branch)
-
-    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
-        """Check merge conflicts (read-only, no printing)."""
-        return self._wrapped.check_merge_conflicts(cwd, base_branch, head_branch)
-
-    def get_conflicted_files(self, cwd: Path) -> list[str]:
-        """Get conflicted files (read-only, no printing)."""
-        return self._wrapped.get_conflicted_files(cwd)
 
     def is_rebase_in_progress(self, cwd: Path) -> bool:
         """Check if rebase in progress (read-only, no printing)."""

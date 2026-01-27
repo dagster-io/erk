@@ -243,7 +243,7 @@ def _rebase_with_conflict_resolution_impl(
     while git.is_rebase_in_progress(cwd) and attempt < max_attempts:
         attempt += 1
         # Capture conflicted files before resolution
-        conflicted = git.get_conflicted_files(cwd)
+        conflicted = git.status.get_conflicted_files(cwd)
         all_conflicted_files.update(conflicted)
         # Invoke Claude to fix conflicts
         _invoke_claude_for_conflicts(

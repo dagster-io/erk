@@ -314,7 +314,7 @@ def _run_graphite_first_flow(
         raise click.ClickException("Not on a branch (detached HEAD state)")
 
     # Commit any uncommitted changes first
-    if ctx.git.has_uncommitted_changes(cwd):
+    if ctx.git.status.has_uncommitted_changes(cwd):
         click.echo(click.style("   Committing uncommitted changes...", dim=True))
         ctx.git.commit.add_all(cwd)
         ctx.git.commit.commit(cwd, "WIP: Prepare for PR submission")

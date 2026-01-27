@@ -176,7 +176,7 @@ def find_inactive_slot(
         if slot_name in managed_worktrees and slot_name not in assigned_slots:
             wt_path = managed_worktrees[slot_name]
             # Skip slots with uncommitted changes
-            if git.has_uncommitted_changes(wt_path):
+            if git.status.has_uncommitted_changes(wt_path):
                 continue
             return (slot_name, wt_path)
 
@@ -282,7 +282,7 @@ def _validate_existing_assignment(
         )
 
     # Worktree has a different branch - need to fix
-    if ctx.git.has_uncommitted_changes(existing.worktree_path):
+    if ctx.git.status.has_uncommitted_changes(existing.worktree_path):
         user_output(
             click.style("Error: ", fg="red")
             + f"Cannot checkout '{branch_name}' in {existing.slot_name}: "

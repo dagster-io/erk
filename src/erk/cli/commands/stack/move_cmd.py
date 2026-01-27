@@ -116,7 +116,7 @@ def execute_move(
     )
 
     # Check for uncommitted changes in source
-    if ctx.git.has_uncommitted_changes(source_wt) and not force:
+    if ctx.git.status.has_uncommitted_changes(source_wt) and not force:
         user_output(
             f"Error: Uncommitted changes in source worktree '{source_wt.name}'.\n"
             f"Commit, stash, or use --force to override."
@@ -135,7 +135,7 @@ def execute_move(
 
     if target_exists:
         # Target exists - check for uncommitted changes
-        if ctx.git.has_uncommitted_changes(target_wt) and not force:
+        if ctx.git.status.has_uncommitted_changes(target_wt) and not force:
             user_output(
                 f"Error: Uncommitted changes in target worktree '{target_wt.name}'.\n"
                 f"Commit, stash, or use --force to override."
@@ -183,7 +183,9 @@ def execute_swap(
         raise SystemExit(1)
 
     # Check for uncommitted changes
-    if ctx.git.has_uncommitted_changes(source_wt) or ctx.git.has_uncommitted_changes(target_wt):
+    if ctx.git.status.has_uncommitted_changes(source_wt) or ctx.git.status.has_uncommitted_changes(
+        target_wt
+    ):
         if not force:
             user_output(
                 "Error: Uncommitted changes detected in one or more worktrees.\n"

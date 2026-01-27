@@ -172,7 +172,7 @@ def get_git_status_via_gateway(ctx: StatuslineContext) -> tuple[str, bool]:
     if branch is None:
         return "", False
 
-    is_dirty = ctx.git.has_uncommitted_changes(ctx.cwd)
+    is_dirty = ctx.git.status.has_uncommitted_changes(ctx.cwd)
     return branch, is_dirty
 
 

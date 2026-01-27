@@ -192,7 +192,7 @@ def slot_list(ctx: ErkContext) -> None:
 
         # Format changes display
         changes_display: str
-        if worktree_exists and ctx.git.has_uncommitted_changes(worktree_path):
+        if worktree_exists and ctx.git.status.has_uncommitted_changes(worktree_path):
             changes_display = "[yellow]dirty[/yellow]"
         else:
             changes_display = "[dim]-[/dim]"

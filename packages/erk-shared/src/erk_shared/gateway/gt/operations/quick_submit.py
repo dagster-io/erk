@@ -47,7 +47,7 @@ def execute_quick_submit(
 
     # Step 2: Check if there are staged changes
     yield ProgressEvent("Checking for staged changes...")
-    has_changes = ops.git.has_staged_changes(cwd)
+    has_changes = ops.git.status.has_staged_changes(cwd)
     committed = False
 
     # Step 3: Commit if there are staged changes
