@@ -28,18 +28,15 @@ class FakeGitConfigOps(GitConfigOps):
         *,
         user_names: dict[Path, str | None] | None = None,
         config_values: dict[tuple[Path, str], str] | None = None,
-        git_user_name: str | None = None,
     ) -> None:
         """Create FakeGitConfigOps with pre-configured state.
 
         Args:
             user_names: Mapping of cwd -> user.name value
             config_values: Mapping of (cwd, key) -> config value
-            git_user_name: Default git user.name value to return
         """
         self._user_names = user_names if user_names is not None else {}
         self._config_values = config_values if config_values is not None else {}
-        self._git_user_name = git_user_name
 
         # Mutation tracking
         self._config_sets: list[ConfigSetRecord] = []
@@ -68,8 +65,7 @@ class FakeGitConfigOps(GitConfigOps):
         for path in list(cwd.parents):
             if path in self._user_names:
                 return self._user_names[path]
-        # Fall back to default
-        return self._git_user_name
+        return None
 
     # ============================================================================
     # Mutation Tracking Properties
@@ -101,15 +97,12 @@ class FakeGitConfigOps(GitConfigOps):
         *,
         user_names: dict[Path, str | None],
         config_values: dict[tuple[Path, str], str],
-        git_user_name: str | None,
     ) -> None:
         """Link this fake's state to FakeGit's state.
 
         Args:
             user_names: FakeGit's user names mapping
             config_values: FakeGit's config values mapping
-            git_user_name: Default git user.name value
         """
         self._user_names = user_names
         self._config_values = config_values
-        self._git_user_name = git_user_name

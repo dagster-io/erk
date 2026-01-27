@@ -15,23 +15,19 @@ class FakeGitAnalysisOps(GitAnalysisOps):
         self,
         *,
         commits_ahead: dict[tuple[Path, str], int] | None = None,
-        merge_bases: dict[tuple[str, str], str] | None = None,
+        merge_bases: dict[tuple[Path, str, str], str | None] | None = None,
         diffs: dict[tuple[Path, str], str] | None = None,
     ) -> None:
         """Create FakeGitAnalysisOps with pre-configured state.
 
         Args:
             commits_ahead: Mapping of (cwd, base_branch) -> commit count
-            merge_bases: Mapping of (ref1, ref2) -> merge base SHA
+            merge_bases: Mapping of (repo_root, ref1, ref2) -> merge base SHA
             diffs: Mapping of (cwd, branch) -> diff string
         """
-        self._commits_ahead: dict[tuple[Path, str], int] = (
-            commits_ahead if commits_ahead is not None else {}
-        )
-        self._merge_bases: dict[tuple[str, str], str] = (
-            merge_bases if merge_bases is not None else {}
-        )
-        self._diffs: dict[tuple[Path, str], str] = diffs if diffs is not None else {}
+        self._commits_ahead = commits_ahead if commits_ahead is not None else {}
+        self._merge_bases = merge_bases if merge_bases is not None else {}
+        self._diffs = diffs if diffs is not None else {}
 
     # ============================================================================
     # Query Operations
@@ -42,15 +38,8 @@ class FakeGitAnalysisOps(GitAnalysisOps):
         return self._commits_ahead.get((cwd, base_branch), 0)
 
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
-        """Get the merge base commit SHA between two refs.
-
-        Checks both (ref1, ref2) and (ref2, ref1) key orderings.
-        """
-        if (ref1, ref2) in self._merge_bases:
-            return self._merge_bases[(ref1, ref2)]
-        if (ref2, ref1) in self._merge_bases:
-            return self._merge_bases[(ref2, ref1)]
-        return None
+        """Get the merge base commit SHA between two refs."""
+        return self._merge_bases.get((repo_root, ref1, ref2))
 
     def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
         """Get diff between branch and HEAD."""
@@ -64,7 +53,7 @@ class FakeGitAnalysisOps(GitAnalysisOps):
         self,
         *,
         commits_ahead: dict[tuple[Path, str], int],
-        merge_bases: dict[tuple[str, str], str],
+        merge_bases: dict[tuple[Path, str, str], str | None],
         diffs: dict[tuple[Path, str], str],
     ) -> None:
         """Link this fake's state to FakeGit's state.

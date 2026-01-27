@@ -114,7 +114,7 @@ class FakeGit(Git):
         current_branches: dict[Path, str | None] | None = None,
         default_branches: dict[Path, str] | None = None,
         trunk_branches: dict[Path, str] | None = None,
-        git_common_dirs: dict[Path, Path] | None = None,
+        git_common_dirs: dict[Path, Path | None] | None = None,
         branch_heads: dict[str, str] | None = None,
         commit_messages: dict[str, str] | None = None,
         staged_repos: set[Path] | None = None,
@@ -155,7 +155,7 @@ class FakeGit(Git):
         rebase_onto_result: RebaseResult | None = None,
         rebase_abort_raises: Exception | None = None,
         pull_rebase_raises: Exception | None = None,
-        merge_bases: dict[tuple[str, str], str] | None = None,
+        merge_bases: dict[tuple[Path, str, str], str | None] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -236,6 +236,15 @@ class FakeGit(Git):
         self._dirty_worktrees = dirty_worktrees or set()
         self._branch_last_commit_times = branch_last_commit_times or {}
         self._repository_roots = repository_roots or {}
+        # Auto-populate repository_roots from git_common_dirs if not explicitly provided
+        # This maintains backward compatibility with tests that only set git_common_dirs
+        # The repo root is the parent of the .git directory
+        if not self._repository_roots and self._git_common_dirs:
+            for cwd, git_dir in self._git_common_dirs.items():
+                if cwd not in self._repository_roots and git_dir is not None:
+                    # git_dir is like /repo/.git, so repo_root is its parent
+                    repo_root = git_dir.parent
+                    self._repository_roots[cwd] = repo_root
         self._diff_to_branch = diff_to_branch or {}
         self._merge_conflicts = merge_conflicts or {}
         self._commits_ahead = commits_ahead or {}
@@ -259,6 +268,16 @@ class FakeGit(Git):
         self._rebase_abort_raises = rebase_abort_raises
         self._pull_rebase_raises = pull_rebase_raises
         self._merge_bases = merge_bases or {}
+
+        # ConfigOps state - initialize empty dictionaries for config
+        # git_user_name param is a convenience - we'll convert it to the dict structure
+        self._user_names: dict[Path, str | None] = {}
+        self._config_values: dict[tuple[Path, str], str] = {}
+        if git_user_name is not None:
+            # Store at "global" scope using a sentinel Path
+            global_path = Path("/")
+            self._user_names[global_path] = git_user_name
+            self._config_values[(global_path, "user.name")] = git_user_name
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -287,7 +306,6 @@ class FakeGit(Git):
         self._repo_gateway.link_state(
             repository_roots=self._repository_roots,
             git_common_dirs=self._git_common_dirs,
-            worktrees=self._worktrees,
         )
 
         # Analysis operations subgateway
@@ -299,11 +317,10 @@ class FakeGit(Git):
         )
 
         # Config operations subgateway
-        self._config_gateway = FakeGitConfigOps(git_user_name=git_user_name)
+        self._config_gateway = FakeGitConfigOps()
         self._config_gateway.link_state(
-            user_names={},
-            config_values={},
-            git_user_name=git_user_name,
+            user_names=self._user_names,
+            config_values=self._config_values,
         )
         self._config_gateway.link_mutation_tracking(
             config_sets=self._config_sets_records,

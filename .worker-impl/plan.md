@@ -8,15 +8,15 @@
 
 Evaluate and resolve the 7 remaining methods on Git ABC after Phases 5-7 complete:
 
-| Method | Callsites | Category | Decision |
-|--------|-----------|----------|----------|
-| `get_repository_root` | 21+ | Repo | **Extract to RepoOps** |
-| `get_git_common_dir` | 4 | Repo | **Extract to RepoOps** |
-| `count_commits_ahead` | 5 | Analysis | **Extract to AnalysisOps** |
-| `get_merge_base` | 1 | Analysis | **Extract to AnalysisOps** |
-| `get_diff_to_branch` | 1 | Analysis | **Extract to AnalysisOps** |
-| `config_set` | 1 | Config | **Extract to ConfigOps** |
-| `get_git_user_name` | 0 | Config | **Extract to ConfigOps** |
+| Method                | Callsites | Category | Decision                   |
+| --------------------- | --------- | -------- | -------------------------- |
+| `get_repository_root` | 21+       | Repo     | **Extract to RepoOps**     |
+| `get_git_common_dir`  | 4         | Repo     | **Extract to RepoOps**     |
+| `count_commits_ahead` | 5         | Analysis | **Extract to AnalysisOps** |
+| `get_merge_base`      | 1         | Analysis | **Extract to AnalysisOps** |
+| `get_diff_to_branch`  | 1         | Analysis | **Extract to AnalysisOps** |
+| `config_set`          | 1         | Config   | **Extract to ConfigOps**   |
+| `get_git_user_name`   | 0         | Config   | **Extract to ConfigOps**   |
 
 **Result:** Pure facade with 10 subgateway properties (existing 7 + new 3).
 
@@ -1275,6 +1275,7 @@ Delete the wrapper implementations of the 7 methods.
 #### 9.1 RepoOps migrations (25 callsites)
 
 Search and replace pattern:
+
 - `git.get_repository_root(` → `git.repo.get_repository_root(`
 - `git.get_git_common_dir(` → `git.repo.get_git_common_dir(`
 
@@ -1309,6 +1310,7 @@ packages/erk-statusline/src/erk_statusline/context.py
 #### 9.2 AnalysisOps migrations (8 callsites)
 
 Search and replace pattern:
+
 - `git.count_commits_ahead(` → `git.analysis.count_commits_ahead(`
 - `git.get_merge_base(` → `git.analysis.get_merge_base(`
 - `git.get_diff_to_branch(` → `git.analysis.get_diff_to_branch(`
@@ -1328,6 +1330,7 @@ packages/erk-shared/src/erk_shared/gateway/pr/diff_extraction.py
 #### 9.3 ConfigOps migrations (1 callsite)
 
 Search and replace pattern:
+
 - `git.config_set(` → `git.config.config_set(`
 - `git.get_git_user_name(` → `git.config.get_git_user_name(`
 
@@ -1437,6 +1440,7 @@ packages/erk-shared/src/erk_shared/gateway/git/printing.py
 **Skills to load:** `dignified-python`, `fake-driven-testing`
 
 **Prior art:**
+
 - Phase 3: #6171 (Remote Subgateway)
 - Phase 4: #6180 (Commit Subgateway)
 - Phase 5: #6179 (Status Subgateway)

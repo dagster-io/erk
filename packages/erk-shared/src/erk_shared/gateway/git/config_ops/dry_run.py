@@ -22,7 +22,6 @@ class DryRunGitConfigOps(GitConfigOps):
 
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str) -> None:
         """No-op for config_set in dry-run mode."""
-        pass  # Do nothing - prevents actual config change
 
     # ============================================================================
     # Query Operations (delegate to wrapped implementation)
