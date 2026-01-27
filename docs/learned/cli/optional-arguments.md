@@ -93,7 +93,7 @@ When inference fails, provide actionable error messages:
 ## Example Commands Using This Pattern
 
 - `erk learn [ISSUE]` - Infers issue from branch name
-- `erk pr land [BRANCH]` - Infers branch from current checkout
+- `erk land [BRANCH]` - Infers branch from current checkout
 
 ## Related Topics
 

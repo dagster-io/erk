@@ -13,6 +13,7 @@
 - **[claude-cli-integration.md](claude-cli-integration.md)** — Invoking Claude from Python, Spawning Claude CLI from Python code, Understanding non-interactive vs interactive modes
 - **[claude-cli-progress.md](claude-cli-progress.md)** — adding progress output to Claude operations, wrapping Claude CLI with user feedback, using ProgressEvent or CompletionEvent, converting blocking operations to streaming progress
 - **[claude-executor-patterns.md](claude-executor-patterns.md)** — launching Claude from CLI commands, deciding which ClaudeExecutor method to use, testing code that executes Claude CLI, choosing between RealClaudeExecutor and RealPromptExecutor
+- **[claude-installation-gateway.md](claude-installation-gateway.md)** — working with Claude Code session logs, accessing ~/.claude/ directory, implementing session analysis features, working with plan files
 - **[cli-binary-ops-pattern.md](cli-binary-ops-pattern.md)** — wrapping external CLI binary, testing subprocess calls, creating fake for external tool
 - **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
@@ -21,6 +22,7 @@
 - **[erk-shared-package.md](erk-shared-package.md)** — deciding where to put new utilities, moving code between packages
 - **[erk-statusline.md](erk-statusline.md)** — modifying the Claude Code status line, adding new status indicators to the statusline, understanding how statusline fetches GitHub data, working with Token/TokenSeq patterns, debugging statusline performance
 - **[event-progress-pattern.md](event-progress-pattern.md)** — implementing operations that need progress reporting, separating business logic from UI output, building testable CLI operations, using ProgressEvent or CompletionEvent
+- **[flatten-subgateway-pattern.md](flatten-subgateway-pattern.md)** — creating or migrating subgateways, exposing subgateway operations through parent gateway, working with gateway hierarchies, implementing property-based subgateway access
 - **[gateway-abc-implementation.md](gateway-abc-implementation.md)** — adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite), implementing new gateway operations, composing one gateway inside another (e.g., GitHub composing GitHubIssues)
 - **[gateway-hierarchy.md](gateway-hierarchy.md)** — understanding gateway relationships, deciding which gateway to use for an operation, understanding BranchManager abstraction, understanding GraphiteDisabled sentinel pattern, querying both Graphite and GitHub for completeness, understanding dual-source patterns
 - **[gateway-inventory.md](gateway-inventory.md)** — understanding available gateways, adding a new gateway, creating test doubles for external services
@@ -41,7 +43,8 @@
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .impl/ or .worker-impl/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
 - **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with issue.json, closing reference lost after erk pr submit
 - **[lbyl-gateway-pattern.md](lbyl-gateway-pattern.md)** — implementing existence checks before gateway operations, adding LBYL validation to CLI commands, understanding issue_exists() and similar methods
-- **[learn-origin-tracking.md](learn-origin-tracking.md)** — understanding how learn PRs are identified, modifying erk pr land behavior, working with erk-skip-learn label
+- **[learn-origin-tracking.md](learn-origin-tracking.md)** — understanding how learn PRs are identified, modifying erk land behavior, working with erk-skip-learn label
+- **[live-display-gateway.md](live-display-gateway.md)** — implementing live-updating terminal displays, working with TUI real-time updates, showing progress indicators
 - **[markers.md](markers.md)** — creating worktree state tracking, adding friction before destructive operations, implementing pending learn workflow
 - **[metadata-blocks.md](metadata-blocks.md)** — working with erk metadata in GitHub issues, parsing or extracting data from issue comments, creating new event types for issue tracking
 - **[multi-worktree-state.md](multi-worktree-state.md)** — checkout operations in multi-worktree repositories, landing PRs with worktree cleanup, understanding git single-checkout constraint, debugging checkout failures across worktrees

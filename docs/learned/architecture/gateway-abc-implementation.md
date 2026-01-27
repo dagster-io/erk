@@ -183,6 +183,64 @@ class FakeGitHub(GitHub):
         return self._thread_replies
 ```
 
+### Idempotent Mutations
+
+**Pattern**: Some mutations should be idempotent - they succeed whether or not the resource exists. Examples: deleting a branch that's already gone, closing a PR that's already closed.
+
+**Implementation**: Use LBYL (Look Before You Leap) to check existence before attempting the operation:
+
+```python
+# real.py - Check existence first, return early if missing
+def delete_branch(self, repo_root: Path, branch_name: str) -> None:
+    """Delete a local branch.
+
+    Idempotent: if branch doesn't exist, returns successfully.
+    """
+    # LBYL check - does branch exist?
+    result = run_subprocess_with_context(
+        ["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
+        cwd=repo_root,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        # Branch doesn't exist - already in desired state
+        return
+
+    # Branch exists - proceed with deletion
+    run_subprocess_with_context(
+        ["git", "branch", "-D", branch_name],
+        cwd=repo_root,
+        check=True,
+    )
+```
+
+**Key principle**: Use LBYL _to implement_ idempotency for operations that would otherwise fail on missing resources. This is different from operations that are _already_ idempotent (like `git fetch`), which don't need LBYL checks.
+
+See the canonical implementation at `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:38-59`.
+
+**5-file verification checklist** for idempotent behavioral changes:
+
+1. **ABC** (`abc.py`) - Update docstring to document idempotent behavior
+2. **Real** (`real.py`) - Add LBYL check and early return
+3. **Fake** (`fake.py`) - Verify fake already handles idempotency (usually does)
+4. **Integration test** (`tests/integration/test_real_*.py`) - Add test for missing resource case
+5. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+
+**Example integration test**:
+
+```python
+def test_delete_branch_idempotent_when_branch_missing() -> None:
+    """delete_branch should succeed even if branch doesn't exist."""
+    ctx = create_context(dry_run=False, script_mode=True)
+    repo_root = create_temp_git_repo()
+
+    # Don't create the branch - just try to delete it
+    ctx.git.branch.delete_branch(repo_root, "nonexistent-branch")
+
+    # Should not raise - idempotent operation
+```
+
 ## Gateway Composition
 
 When one gateway composes another (e.g., GitHub composes GitHubIssues), follow these patterns:

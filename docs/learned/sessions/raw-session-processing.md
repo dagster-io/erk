@@ -12,7 +12,7 @@ Raw session issues capture session context from landed PRs for future documentat
 
 ## What Are Raw Session Issues?
 
-When a PR is landed with `erk pr land --extract`, the session context is:
+When a PR is landed with `erk land --extract`, the session context is:
 
 1. Preprocessed into XML format
 2. Uploaded to a GitHub issue as comments

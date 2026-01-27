@@ -60,7 +60,7 @@ def checkout_or_skip(ctx: ErkContext, repo_root: Path, branch: str) -> bool:
 
 ## Example: Land Command Cleanup
 
-The `erk pr land` command demonstrates this pattern. After landing a PR:
+The `erk land` command demonstrates this pattern. After landing a PR:
 
 1. Delete the feature branch
 2. Try to checkout trunk (master)
