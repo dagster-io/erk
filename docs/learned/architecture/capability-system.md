@@ -198,12 +198,11 @@ Required capabilities don't need tracking—they're always installed and always 
 
 ## CLI Commands
 
-| Command                             | Purpose                   |
-| ----------------------------------- | ------------------------- |
-| `erk init capability list`          | Show all capabilities     |
-| `erk init capability check <name>`  | Check installation status |
-| `erk init capability add <name>`    | Install capability        |
-| `erk init capability remove <name>` | Uninstall capability      |
+| Command                             | Purpose                                                    |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `erk init capability list [name]`   | Show all capabilities with status, or detailed view of one |
+| `erk init capability add <name>`    | Install capability                                         |
+| `erk init capability remove <name>` | Uninstall capability                                       |
 
 ## Related Topics
 
