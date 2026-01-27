@@ -371,6 +371,85 @@ Graphite branch mutation operations extracted from the main Graphite gateway.
 
 **Note**: Query operations (get_all_branches, get_branch_stack, etc.) remain on the main Graphite ABC.
 
+### GitRemoteOps (`git/remote_ops/`)
+
+Git remote operations extracted from the main Git gateway (Phase 3 of #6169).
+
+**Key Methods**:
+
+- `fetch_branch()`: Fetch specific branch from remote
+- `pull_branch()`: Pull with optional fast-forward-only flag
+- `fetch_pr_ref()`: Fetch GitHub PR references
+- `push_to_remote()`: Push with upstream tracking and force options
+- `pull_rebase()`: Pull with rebase integration
+- `get_remote_url()`: Query remote repository URLs
+
+**Fake Features**: Mutation tracking for fetched/pushed branches, exception injection.
+
+**Access Pattern**: `git.remote.method_name()` - exposed via property on main Git gateway.
+
+### GitCommitOps (`git/commit_ops/`)
+
+Git commit operations extracted from the main Git gateway (Phase 4 of #6169).
+
+**Key Methods**:
+
+- Mutations: `stage_files()`, `commit()`, `add_all()`, `amend_commit()`
+- Queries: `get_commit_message()`, `get_recent_commits()`, `get_commits_since_base()`, `worktree_is_dirty()`, `count_commits_ahead()`
+
+**Fake Features**: `CommitRecord` frozen dataclass for mutation tracking, staging semantics (accumulate/clear).
+
+**Access Pattern**: `git.commit.method_name()`
+
+### GitStatusOps (`git/status_ops/`)
+
+Git status query operations extracted from the main Git gateway (Phase 5 of #6169).
+
+**Purpose**: Separates read-only status queries from mutable operations.
+
+**Key Methods**:
+
+- `has_staged_changes()`: Check for staged changes
+- `has_uncommitted_changes()`: Check for any uncommitted changes
+- `get_file_status()`: Returns (staged, modified, untracked) file lists
+- `check_merge_conflicts()`: Merge conflict detection
+- `get_conflicted_files()`: List files with conflict markers
+
+**Note**: All query-only; no mutations. DryRun and Printing wrappers are simple pass-through delegators.
+
+**Access Pattern**: `git.status.method_name()`
+
+### GitRebaseOps (`git/rebase_ops/`)
+
+Git rebase operations extracted from the main Git gateway (Phase 6 of #6169).
+
+**Key Methods**:
+
+- `rebase_onto()`: Rebase current branch onto target ref
+- `rebase_continue()`: Continue in-progress rebase
+- `rebase_abort()`: Abort in-progress rebase
+- `is_rebase_in_progress()`: Check if rebase in progress
+
+**Fake Features**: In-memory rebase state, mutation tracking, configurable results/exceptions, `link_mutation_tracking()` method.
+
+**Note**: Uses callback DI pattern - RealGitRebaseOps receives `get_git_common_dir` and `get_conflicted_files` as Callables.
+
+**Access Pattern**: `git.rebase.method_name()`
+
+### GitTagOps (`git/tag_ops/`)
+
+Git tag operations extracted from the main Git gateway (Phase 7 of #6169).
+
+**Key Methods**:
+
+- `tag_exists()`: Query operation - check if a tag exists
+- `create_tag()`: Create an annotated git tag
+- `push_tag()`: Push a tag to a remote repository
+
+**Fake Features**: In-memory tag state with linked mutation tracking. Parent FakeGit shares `_created_tags` and `_pushed_tags` containers with FakeGitTagOps.
+
+**Access Pattern**: `git.tag.method_name()`
+
 ## Implementation Layers
 
 Each gateway typically has these implementations:

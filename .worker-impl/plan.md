@@ -4,13 +4,13 @@
 
 ## Source Plans
 
-| # | Title | Items Merged |
-|---|-------|--------------|
-| 6175 | Phase 3 - Remote Subgateway Extraction | 7 items |
-| 6183 | Phase 4 - Commit Subgateway Extraction | 10 items |
-| 6185 | Phase 5 - Status Subgateway Extraction | 4 items |
-| 6187 | Phase 6 - Rebase Subgateway Extraction | 5 items |
-| 6188 | Phase 7 - Tag Subgateway Extraction | 6 items |
+| #    | Title                                  | Items Merged |
+| ---- | -------------------------------------- | ------------ |
+| 6175 | Phase 3 - Remote Subgateway Extraction | 7 items      |
+| 6183 | Phase 4 - Commit Subgateway Extraction | 10 items     |
+| 6185 | Phase 5 - Status Subgateway Extraction | 4 items      |
+| 6187 | Phase 6 - Rebase Subgateway Extraction | 5 items      |
+| 6188 | Phase 7 - Tag Subgateway Extraction    | 6 items      |
 
 ## Context
 
@@ -27,11 +27,13 @@ Phases 3-7 of the Gateway Decomposition Initiative (#6169) systematically extrac
 ## Investigation Findings
 
 ### What Exists
+
 - `docs/learned/architecture/gateway-inventory.md` - has Sub-Gateways section but outdated
 - `docs/learned/architecture/flatten-subgateway-pattern.md` - comprehensive pattern doc with GitBranchOps example
 - `docs/learned/architecture/gateway-abc-implementation.md` - documents 5-layer pattern
 
 ### What's Missing (Overlap Identified)
+
 1. **Gateway Inventory entries** - All 5 phases need entries (highest overlap)
 2. **Phase timeline document** - All phases reference needing this
 3. **Tripwires for old-style access** - All phases need warnings about moved methods
@@ -52,6 +54,7 @@ Add 5 new subsections under "## Sub-Gateways" after line 372 (after GraphiteBran
 Git remote operations extracted from the main Git gateway (Phase 3 of #6169).
 
 **Key Methods**:
+
 - `fetch_branch()`: Fetch specific branch from remote
 - `pull_branch()`: Pull with optional fast-forward-only flag
 - `fetch_pr_ref()`: Fetch GitHub PR references
@@ -68,6 +71,7 @@ Git remote operations extracted from the main Git gateway (Phase 3 of #6169).
 Git commit operations extracted from the main Git gateway (Phase 4 of #6169).
 
 **Key Methods**:
+
 - Mutations: `stage_files()`, `commit()`, `add_all()`, `amend_commit()`
 - Queries: `get_commit_message()`, `get_recent_commits()`, `get_commits_since_base()`, `worktree_is_dirty()`, `count_commits_ahead()`
 
@@ -82,6 +86,7 @@ Git status query operations extracted from the main Git gateway (Phase 5 of #616
 **Purpose**: Separates read-only status queries from mutable operations.
 
 **Key Methods**:
+
 - `has_staged_changes()`: Check for staged changes
 - `has_uncommitted_changes()`: Check for any uncommitted changes
 - `get_file_status()`: Returns (staged, modified, untracked) file lists
@@ -97,6 +102,7 @@ Git status query operations extracted from the main Git gateway (Phase 5 of #616
 Git rebase operations extracted from the main Git gateway (Phase 6 of #6169).
 
 **Key Methods**:
+
 - `rebase_onto()`: Rebase current branch onto target ref
 - `rebase_continue()`: Continue in-progress rebase
 - `rebase_abort()`: Abort in-progress rebase
@@ -113,6 +119,7 @@ Git rebase operations extracted from the main Git gateway (Phase 6 of #6169).
 Git tag operations extracted from the main Git gateway (Phase 7 of #6169).
 
 **Key Methods**:
+
 - `tag_exists()`: Query operation - check if a tag exists
 - `create_tag()`: Create an annotated git tag
 - `push_tag()`: Push a tag to a remote repository
@@ -149,14 +156,14 @@ The monolithic Git gateway originally contained all git operations. This initiat
 
 ## Phase Timeline
 
-| Phase | Subgateway | Operations Extracted | PR | Status |
-|-------|------------|---------------------|-----|--------|
-| Phase 2 | GitBranchOps | create_branch, delete_branch, checkout_branch, checkout_detached, create_tracking_branch | (earlier) | Complete |
-| Phase 3 | GitRemoteOps | fetch_branch, pull_branch, fetch_pr_ref, push_to_remote, pull_rebase, get_remote_url | #6171 | Complete |
-| Phase 4 | GitCommitOps | stage_files, commit, add_all, amend_commit, get_commit_message, get_recent_commits, etc. | #6180 | Complete |
-| Phase 5 | GitStatusOps | has_staged_changes, has_uncommitted_changes, get_file_status, check_merge_conflicts, get_conflicted_files | #6179 | Complete |
-| Phase 6 | GitRebaseOps | rebase_onto, rebase_continue, rebase_abort, is_rebase_in_progress | #6182 | Complete |
-| Phase 7 | GitTagOps | tag_exists, create_tag, push_tag | #6186 | Complete |
+| Phase   | Subgateway   | Operations Extracted                                                                                      | PR        | Status   |
+| ------- | ------------ | --------------------------------------------------------------------------------------------------------- | --------- | -------- |
+| Phase 2 | GitBranchOps | create_branch, delete_branch, checkout_branch, checkout_detached, create_tracking_branch                  | (earlier) | Complete |
+| Phase 3 | GitRemoteOps | fetch_branch, pull_branch, fetch_pr_ref, push_to_remote, pull_rebase, get_remote_url                      | #6171     | Complete |
+| Phase 4 | GitCommitOps | stage_files, commit, add_all, amend_commit, get_commit_message, get_recent_commits, etc.                  | #6180     | Complete |
+| Phase 5 | GitStatusOps | has_staged_changes, has_uncommitted_changes, get_file_status, check_merge_conflicts, get_conflicted_files | #6179     | Complete |
+| Phase 6 | GitRebaseOps | rebase_onto, rebase_continue, rebase_abort, is_rebase_in_progress                                         | #6182     | Complete |
+| Phase 7 | GitTagOps    | tag_exists, create_tag, push_tag                                                                          | #6186     | Complete |
 
 ## Pattern
 
@@ -171,11 +178,11 @@ Each phase follows the same extraction pattern:
 
 ## Subgateway Variants
 
-| Variant | Example | DryRun Behavior | Printing Behavior |
-|---------|---------|-----------------|-------------------|
-| Mutation-focused | GitBranchOps, GitTagOps | No-op, return success | Log then delegate |
-| Query-only | GitStatusOps | Pass-through delegate | Pass-through delegate |
-| Mixed | GitRemoteOps, GitCommitOps | Mutations no-op, queries delegate | Mutations log, queries delegate |
+| Variant          | Example                    | DryRun Behavior                   | Printing Behavior               |
+| ---------------- | -------------------------- | --------------------------------- | ------------------------------- |
+| Mutation-focused | GitBranchOps, GitTagOps    | No-op, return success             | Log then delegate               |
+| Query-only       | GitStatusOps               | Pass-through delegate             | Pass-through delegate           |
+| Mixed            | GitRemoteOps, GitCommitOps | Mutations no-op, queries delegate | Mutations log, queries delegate |
 
 ## Related
 
@@ -209,16 +216,16 @@ Add new section before "## GitBranchOps Tripwires":
 
 **CRITICAL:** The following methods have been moved from the Git ABC to subgateways:
 
-| Old API | New API | Phase |
-|---------|---------|-------|
-| `git.fetch_branch()` | `git.remote.fetch_branch()` | Phase 3 |
-| `git.push_to_remote()` | `git.remote.push_to_remote()` | Phase 3 |
-| `git.commit()` | `git.commit.commit()` | Phase 4 |
-| `git.stage_files()` | `git.commit.stage_files()` | Phase 4 |
+| Old API                    | New API                           | Phase   |
+| -------------------------- | --------------------------------- | ------- |
+| `git.fetch_branch()`       | `git.remote.fetch_branch()`       | Phase 3 |
+| `git.push_to_remote()`     | `git.remote.push_to_remote()`     | Phase 3 |
+| `git.commit()`             | `git.commit.commit()`             | Phase 4 |
+| `git.stage_files()`        | `git.commit.stage_files()`        | Phase 4 |
 | `git.has_staged_changes()` | `git.status.has_staged_changes()` | Phase 5 |
-| `git.rebase_onto()` | `git.rebase.rebase_onto()` | Phase 6 |
-| `git.tag_exists()` | `git.tag.tag_exists()` | Phase 7 |
-| `git.create_tag()` | `git.tag.create_tag()` | Phase 7 |
+| `git.rebase_onto()`        | `git.rebase.rebase_onto()`        | Phase 6 |
+| `git.tag_exists()`         | `git.tag.tag_exists()`            | Phase 7 |
+| `git.create_tag()`         | `git.tag.create_tag()`            | Phase 7 |
 
 Calling the old API will raise `AttributeError`. Always use the subgateway property.
 ```
@@ -239,6 +246,7 @@ Add new section after "## Example: Git Branch Operations":
 When a subgateway contains only query operations (no mutations), the DryRun and Printing wrapper layers can be simplified to pure pass-through delegation.
 
 **Example:** GitStatusOps contains only query methods (`has_staged_changes`, `get_file_status`, etc.), so:
+
 - `DryRunGitStatusOps` simply delegates to the wrapped implementation
 - `PrintingGitStatusOps` simply delegates without logging
 
@@ -257,7 +265,7 @@ See [Gateway Decomposition Phases](gateway-decomposition-phases.md) for the full
 
 Add new section after "## Time Injection for Retry-Enabled Gateways":
 
-```markdown
+````markdown
 ## Callback Injection for Subgateway Dependencies
 
 When a subgateway needs to call methods from sibling subgateways or the parent gateway, use callback injection to avoid circular imports.
@@ -276,10 +284,12 @@ class RealGitRebaseOps(GitRebaseOps):
         self._get_git_common_dir = get_git_common_dir
         self._get_conflicted_files = get_conflicted_files
 ```
+````
 
 ### Why Not Direct Imports?
 
 Direct imports would create circular dependencies:
+
 - `rebase_ops/real.py` imports `status_ops/abc.py`
 - `status_ops/real.py` imports common types
 - Common types import `git/abc.py`
@@ -290,7 +300,8 @@ Callback injection breaks this cycle by deferring the dependency to runtime.
 ### Reference Implementation
 
 `RealGitRebaseOps` in `packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py` demonstrates this pattern.
-```
+
+````
 
 **Verification**: Check that callback DI is documented.
 
@@ -304,7 +315,7 @@ Add entry for new document:
 
 ```markdown
 | gateway-decomposition-phases.md | architecture | Timeline of Git gateway decomposition phases 3-7 | Understanding gateway extraction history |
-```
+````
 
 **Verification**: Check that index includes new doc.
 
@@ -332,6 +343,7 @@ The following items from individual plans are **NOT included** in this consolida
 ## Verification
 
 After implementation:
+
 1. `grep -r "GitRemoteOps\|GitCommitOps\|GitStatusOps\|GitRebaseOps\|GitTagOps" docs/learned/architecture/gateway-inventory.md` should find all 5
 2. `ls docs/learned/architecture/gateway-decomposition-phases.md` should exist
 3. `grep "git.remote.fetch_branch" docs/learned/architecture/tripwires.md` should find migration tripwire

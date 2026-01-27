@@ -487,6 +487,40 @@ class RealGitHub(GitHub):
 
 See [GitHub API Retry Mechanism](github-api-retry-mechanism.md) for the full retry pattern.
 
+## Callback Injection for Subgateway Dependencies
+
+When a subgateway needs to call methods from sibling subgateways or the parent gateway, use callback injection to avoid circular imports.
+
+### Pattern
+
+Pass parent methods as `Callable` parameters in the constructor:
+
+```python
+class RealGitRebaseOps(GitRebaseOps):
+    def __init__(
+        self,
+        get_git_common_dir: Callable[[Path], Path],
+        get_conflicted_files: Callable[[Path], list[str]],
+    ) -> None:
+        self._get_git_common_dir = get_git_common_dir
+        self._get_conflicted_files = get_conflicted_files
+```
+
+### Why Not Direct Imports?
+
+Direct imports would create circular dependencies:
+
+- `rebase_ops/real.py` imports `status_ops/abc.py`
+- `status_ops/real.py` imports common types
+- Common types import `git/abc.py`
+- `git/abc.py` imports `rebase_ops/abc.py`
+
+Callback injection breaks this cycle by deferring the dependency to runtime.
+
+### Reference Implementation
+
+`RealGitRebaseOps` in `packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py` demonstrates this pattern.
+
 ## Integration with Fake-Driven Testing
 
 This pattern aligns with the [Fake-Driven Testing Architecture](../testing/):

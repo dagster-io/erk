@@ -24,6 +24,7 @@
 - **[event-progress-pattern.md](event-progress-pattern.md)** — implementing operations that need progress reporting, separating business logic from UI output, building testable CLI operations, using ProgressEvent or CompletionEvent
 - **[flatten-subgateway-pattern.md](flatten-subgateway-pattern.md)** — creating or migrating subgateways, exposing subgateway operations through parent gateway, working with gateway hierarchies, implementing property-based subgateway access
 - **[gateway-abc-implementation.md](gateway-abc-implementation.md)** — adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite), implementing new gateway operations, composing one gateway inside another (e.g., GitHub composing GitHubIssues)
+- **[gateway-decomposition-phases.md](gateway-decomposition-phases.md)** — understanding the gateway decomposition initiative, planning new subgateway extractions, reviewing architectural history
 - **[gateway-hierarchy.md](gateway-hierarchy.md)** — understanding gateway relationships, deciding which gateway to use for an operation, understanding BranchManager abstraction, understanding GraphiteDisabled sentinel pattern, querying both Graphite and GitHub for completeness, understanding dual-source patterns
 - **[gateway-inventory.md](gateway-inventory.md)** — understanding available gateways, adding a new gateway, creating test doubles for external services
 - **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
