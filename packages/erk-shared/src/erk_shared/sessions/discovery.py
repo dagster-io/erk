@@ -7,6 +7,10 @@ associated with a plan issue.
 from dataclasses import dataclass
 from pathlib import Path
 
+from erk_shared.gateway.claude_installation.abc import (
+    ClaudeInstallation,
+    FoundSession,
+)
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_created_from_session,
@@ -18,10 +22,6 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_remote_impl_run_id,
     extract_plan_header_remote_impl_session_id,
     extract_plan_header_session_gist_url,
-)
-from erk_shared.learn.extraction.claude_installation.abc import (
-    ClaudeInstallation,
-    FoundSession,
 )
 from erk_shared.learn.impl_events import (
     extract_implementation_sessions,

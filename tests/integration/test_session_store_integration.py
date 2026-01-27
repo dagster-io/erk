@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.learn.extraction.claude_installation.real import (
+from erk_shared.gateway.claude_installation.real import (
     RealClaudeInstallation,
 )
 

@@ -3,7 +3,7 @@
 from rich.console import Console, RenderableType
 from rich.live import Live
 
-from erk.core.display.abc import LiveDisplay
+from erk_shared.gateway.live_display.abc import LiveDisplay
 
 
 class RealLiveDisplay(LiveDisplay):

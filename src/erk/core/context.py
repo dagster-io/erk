@@ -38,6 +38,7 @@ from erk_shared.core.codespace_registry import CodespaceRegistry
 from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.script_writer import ScriptWriter
+from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.codespace.real import RealCodespace
 from erk_shared.gateway.completion.abc import Completion
@@ -70,15 +71,14 @@ from erk_shared.gateway.graphite.disabled import (
 )
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.real import RealGraphite
+from erk_shared.gateway.prompt_executor.abc import PromptExecutor
+from erk_shared.gateway.prompt_executor.real import RealPromptExecutor
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
-from erk_shared.prompt_executor.abc import PromptExecutor
-from erk_shared.prompt_executor.real import RealPromptExecutor
 
 
 def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
@@ -103,6 +103,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from tests.fakes.script_writer import FakeScriptWriter
 
     from erk.core.codespace.registry_fake import FakeCodespaceRegistry
+    from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
@@ -113,10 +114,9 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.fake import FakeGraphite
+    from erk_shared.gateway.prompt_executor.fake import FakePromptExecutor
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
-    from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
-    from erk_shared.prompt_executor.fake import FakePromptExecutor
 
     fake_issues = FakeGitHubIssues()
     fake_github = FakeGitHub(issues_gateway=fake_issues)
@@ -228,6 +228,7 @@ def context_for_test(
     from tests.test_utils.paths import sentinel_path
 
     from erk.core.codespace.registry_fake import FakeCodespaceRegistry
+    from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
@@ -242,10 +243,9 @@ def context_for_test(
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
     from erk_shared.gateway.graphite.fake import FakeGraphite
+    from erk_shared.gateway.prompt_executor.fake import FakePromptExecutor
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
-    from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
-    from erk_shared.prompt_executor.fake import FakePromptExecutor
 
     if git is None:
         git = FakeGit()
@@ -598,7 +598,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         github = DryRunGitHub(github)
 
     # 10. Create claude installation and prompt executor
-    from erk_shared.learn.extraction.claude_installation.real import RealClaudeInstallation
+    from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
 
     real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
     prompt_executor: PromptExecutor = RealPromptExecutor(time)

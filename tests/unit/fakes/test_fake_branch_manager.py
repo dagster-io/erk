@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from erk_shared.branch_manager.fake import FakeBranchManager
-from erk_shared.branch_manager.types import PrInfo
+from erk_shared.gateway.branch_manager.fake import FakeBranchManager
+from erk_shared.gateway.branch_manager.types import PrInfo
 
 
 def test_delete_branch_tracks_deletion() -> None:

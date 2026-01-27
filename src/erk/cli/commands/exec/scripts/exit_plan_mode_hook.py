@@ -54,9 +54,9 @@ from typing import Self
 import click
 
 from erk.hooks.decorators import HookContext, hook_command
-from erk_shared.branch_manager.abc import BranchManager
+from erk_shared.gateway.branch_manager.abc import BranchManager
+from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.abc import Git
-from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
 

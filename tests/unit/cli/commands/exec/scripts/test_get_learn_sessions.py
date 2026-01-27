@@ -11,13 +11,13 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.learn.extraction.claude_installation.fake import (
+from erk_shared.gateway.claude_installation.fake import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
 )
+from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 

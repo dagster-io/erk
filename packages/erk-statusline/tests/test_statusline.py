@@ -8,8 +8,8 @@ import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from erk_shared.branch_manager.fake import FakeBranchManager
-from erk_shared.branch_manager.types import PrInfo
+from erk_shared.gateway.branch_manager.fake import FakeBranchManager
+from erk_shared.gateway.branch_manager.types import PrInfo
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub

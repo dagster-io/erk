@@ -12,7 +12,6 @@ from rich.text import Text
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk.core.display.abc import LiveDisplay
 from erk.core.display_utils import (
     format_relative_time,
     format_workflow_outcome,
@@ -40,6 +39,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
 from erk_shared.gateway.http.auth import fetch_github_token
 from erk_shared.gateway.http.real import RealHttpClient
+from erk_shared.gateway.live_display.abc import LiveDisplay
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan, PlanState

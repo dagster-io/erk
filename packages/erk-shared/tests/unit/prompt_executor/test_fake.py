@@ -8,8 +8,8 @@ For RealPromptExecutor subprocess integration tests, see:
 tests/integration/prompt_executor/test_real.py
 """
 
-from erk_shared.prompt_executor.fake import FakePromptExecutor
-from erk_shared.prompt_executor.real import RETRY_DELAYS
+from erk_shared.gateway.prompt_executor.fake import FakePromptExecutor
+from erk_shared.gateway.prompt_executor.real import RETRY_DELAYS
 
 
 class TestRetryDelaysConstants:

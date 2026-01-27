@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.prompt_executor.abc import PromptExecutor, PromptResult
+from erk_shared.gateway.prompt_executor.abc import PromptExecutor, PromptResult
 
 
 @dataclass(frozen=True)

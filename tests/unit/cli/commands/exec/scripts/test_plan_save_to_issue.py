@@ -10,13 +10,13 @@ from erk.cli.commands.exec.scripts.plan_save_to_issue import (
     plan_save_to_issue,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.learn.extraction.claude_installation.fake import (
+from erk_shared.gateway.claude_installation.fake import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
 )
+from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 
 # Valid plan content that passes validation (100+ chars with structure)
 VALID_PLAN_CONTENT = """# Feature Plan
