@@ -1,0 +1,59 @@
+"""Real implementation of git analysis operations."""
+
+import subprocess
+from pathlib import Path
+
+from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+from erk_shared.subprocess_utils import run_subprocess_with_context
+
+
+class RealGitAnalysisOps(GitAnalysisOps):
+    """Real implementation of Git analysis operations using subprocess."""
+
+    # ============================================================================
+    # Query Operations
+    # ============================================================================
+
+    def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
+        """Count commits in HEAD that are not in base_branch."""
+        result = subprocess.run(
+            ["git", "rev-list", "--count", f"{base_branch}..HEAD"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return 0
+        count_str = result.stdout.strip()
+        if not count_str:
+            return 0
+        return int(count_str)
+
+    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
+        """Get the merge base commit SHA between two refs."""
+        result = subprocess.run(
+            ["git", "merge-base", ref1, ref2],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+        return result.stdout.strip()
+
+    def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
+        """Get diff between branch and HEAD.
+
+        Uses two-dot syntax (branch..HEAD) to compare the actual tree states,
+        not the merge-base. This is correct for PR diffs because it shows
+        "what will change when merged" rather than "all changes since the
+        merge-base" which can include rebased commits with different SHAs.
+        """
+        result = run_subprocess_with_context(
+            cmd=["git", "diff", f"{branch}..HEAD"],
+            operation_context=f"get diff to branch '{branch}'",
+            cwd=cwd,
+        )
+        return result.stdout

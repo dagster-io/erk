@@ -17,10 +17,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
+    from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
     from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
     from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    from erk_shared.gateway.git.config_ops.abc import GitConfigOps
     from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
     from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
     from erk_shared.gateway.git.status_ops.abc import GitStatusOps
     from erk_shared.gateway.git.tag_ops.abc import GitTagOps
     from erk_shared.gateway.git.worktree.abc import Worktree
@@ -143,51 +146,22 @@ class Git(ABC):
         """Access tag operations subgateway."""
         ...
 
+    @property
     @abstractmethod
-    def get_git_common_dir(self, cwd: Path) -> Path | None:
-        """Get the common git directory."""
+    def repo(self) -> GitRepoOps:
+        """Access repository location operations subgateway."""
         ...
 
+    @property
     @abstractmethod
-    def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
-        """Count commits in HEAD that are not in base_branch."""
+    def analysis(self) -> GitAnalysisOps:
+        """Access branch analysis operations subgateway."""
         ...
 
+    @property
     @abstractmethod
-    def get_repository_root(self, cwd: Path) -> Path:
-        """Get the repository root directory."""
-        ...
-
-    @abstractmethod
-    def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
-        """Get diff between branch and HEAD."""
-        ...
-
-    @abstractmethod
-    def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
-        """Set a git configuration value.
-
-        Args:
-            cwd: Working directory
-            key: Configuration key (e.g., "user.name", "user.email")
-            value: Configuration value
-            scope: Configuration scope ("local", "global", or "system")
-
-        Raises:
-            subprocess.CalledProcessError: If git command fails
-        """
-        ...
-
-    @abstractmethod
-    def get_git_user_name(self, cwd: Path) -> str | None:
-        """Get the configured git user.name.
-
-        Args:
-            cwd: Working directory
-
-        Returns:
-            The configured user.name, or None if not set
-        """
+    def config(self) -> GitConfigOps:
+        """Access configuration operations subgateway."""
         ...
 
     @abstractmethod
@@ -219,22 +193,5 @@ class Git(ABC):
 
         Raises:
             subprocess.CalledProcessError: If no rebase is in progress
-        """
-        ...
-
-    @abstractmethod
-    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
-        """Get the merge base commit SHA between two refs.
-
-        The merge base is the best common ancestor of two commits, which is
-        useful for determining how branches have diverged.
-
-        Args:
-            repo_root: Path to the git repository root
-            ref1: First ref (branch name, commit SHA, or remote ref like origin/main)
-            ref2: Second ref (branch name, commit SHA, or remote ref like origin/main)
-
-        Returns:
-            Commit SHA of the merge base, or None if refs have no common ancestor
         """
         ...

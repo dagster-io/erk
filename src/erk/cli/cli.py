@@ -133,11 +133,11 @@ def _show_version_warning() -> None:
         # Check if we're in a git repo using LBYL pattern
         # (get_git_common_dir returns None gracefully, get_repository_root raises)
         git = RealGit()
-        git_dir = git.get_git_common_dir(Path.cwd())
+        git_dir = git.repo.get_git_common_dir(Path.cwd())
         if git_dir is None:
             return
 
-        repo_root = git.get_repository_root(Path.cwd())
+        repo_root = git.repo.get_repository_root(Path.cwd())
         if repo_root is None:
             return
 

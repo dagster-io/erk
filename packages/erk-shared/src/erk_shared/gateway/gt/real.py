@@ -52,7 +52,7 @@ class RealGtKit:
         self.git = RealGit()
 
         # Compute repo_info from cwd
-        repo_root = self.git.get_repository_root(cwd)
+        repo_root = self.git.repo.get_repository_root(cwd)
         repo_info = get_repo_info(self.git, repo_root)
 
         # Create issues first, then compose into github

@@ -54,7 +54,7 @@ def _extract_closing_ref_from_pr(
 
     Used to preserve closing references when .impl/issue.json is missing.
     """
-    repo_root = ops.git.get_repository_root(cwd)
+    repo_root = ops.git.repo.get_repository_root(cwd)
     current_pr = ops.github.get_pr(repo_root, pr_number)
     if isinstance(current_pr, PRNotFound) or not current_pr.body:
         return None
@@ -142,7 +142,7 @@ def execute_finalize(
     final_body = pr_body + metadata_section
 
     # Get repo root for GitHub operations
-    repo_root = ops.git.get_repository_root(cwd)
+    repo_root = ops.git.repo.get_repository_root(cwd)
 
     # Update PR metadata
     yield ProgressEvent("Updating PR metadata... (gh pr edit)")

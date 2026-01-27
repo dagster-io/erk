@@ -152,7 +152,7 @@ def execute_core_submit(
     yield ProgressEvent(f"Authenticated as {gh_username}", style="success")
 
     # Step 2: Get repository root and current branch
-    repo_root = ctx.git.get_repository_root(cwd)
+    repo_root = ctx.git.repo.get_repository_root(cwd)
     branch_name = ctx.git.branch.get_current_branch(cwd)
     if branch_name is None:
         yield CompletionEvent(
@@ -181,7 +181,7 @@ def execute_core_submit(
         ctx.branch_manager.get_parent_branch(Path(repo_root), branch_name) or trunk_branch
     )
 
-    commit_count = ctx.git.count_commits_ahead(cwd, parent_branch)
+    commit_count = ctx.git.analysis.count_commits_ahead(cwd, parent_branch)
     if commit_count == 0:
         yield CompletionEvent(
             CoreSubmitError(

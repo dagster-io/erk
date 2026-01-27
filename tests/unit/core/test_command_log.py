@@ -39,13 +39,13 @@ def test_get_current_branch_returns_none_outside_git_repo() -> None:
     """Test _get_current_branch returns None when not in a git repository."""
     with patch("erk.core.command_log.RealGit") as mock_git_class:
         mock_git = mock_git_class.return_value
-        mock_git.get_git_common_dir.return_value = None
+        mock_git.repo.get_git_common_dir.return_value = None
 
         result = _get_current_branch(Path("/some/non-git/path"))
 
         assert result is None
-        mock_git.get_git_common_dir.assert_called_once_with(Path("/some/non-git/path"))
-        mock_git.get_repository_root.assert_not_called()
+        mock_git.repo.get_git_common_dir.assert_called_once_with(Path("/some/non-git/path"))
+        mock_git.repo.get_repository_root.assert_not_called()
 
 
 def test_log_command_start_returns_none_when_disabled(tmp_path: Path) -> None:

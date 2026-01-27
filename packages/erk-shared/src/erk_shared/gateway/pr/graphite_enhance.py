@@ -158,7 +158,7 @@ def execute_graphite_enhance(
             - GraphiteEnhanceError on failure
             - GraphiteSkipped if enhancement was skipped (not authenticated, not tracked)
     """
-    repo_root = ctx.git.get_repository_root(cwd)
+    repo_root = ctx.git.repo.get_repository_root(cwd)
     branch_name = ctx.git.branch.get_current_branch(cwd)
     if branch_name is None:
         yield CompletionEvent(
@@ -251,7 +251,7 @@ def should_enhance_with_graphite(
         return GraphiteCheckResult(should_enhance=False, reason="not_authenticated")
 
     # Check if branch is tracked
-    repo_root = ctx.git.get_repository_root(cwd)
+    repo_root = ctx.git.repo.get_repository_root(cwd)
     branch_name = ctx.git.branch.get_current_branch(cwd)
     if branch_name is None:
         return GraphiteCheckResult(should_enhance=False, reason="no_branch")

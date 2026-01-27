@@ -119,7 +119,7 @@ class RealGraphite(Graphite):
 
     def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -> dict[str, PullRequestInfo]:
         """Get PR information from Graphite's .git/.graphite_pr_info file."""
-        git_dir = git_ops.get_git_common_dir(repo_root)
+        git_dir = git_ops.repo.get_git_common_dir(repo_root)
         if git_dir is None:
             return {}
 
@@ -142,7 +142,7 @@ class RealGraphite(Graphite):
         invalidated when the underlying file changes, whether from erk operations
         or external gt commands.
         """
-        git_dir = git_ops.get_git_common_dir(repo_root)
+        git_dir = git_ops.repo.get_git_common_dir(repo_root)
         if git_dir is None:
             return {}
 

@@ -24,7 +24,7 @@ def _resolve_current_worktree(ctx: ErkContext, repo_root: Path) -> Path:
 
     Raises SystemExit if not in a git repository or not in any worktree.
     """
-    Ensure.not_none(ctx.git.get_git_common_dir(ctx.cwd), "Not in a git repository")
+    Ensure.not_none(ctx.git.repo.get_git_common_dir(ctx.cwd), "Not in a git repository")
 
     cwd = ctx.cwd.resolve()
     worktrees = ctx.git.worktree.list_worktrees(repo_root)

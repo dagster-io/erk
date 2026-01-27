@@ -65,10 +65,10 @@ def _get_current_branch(cwd: Path) -> str | None:
     git = RealGit()
     # get_git_common_dir returns None gracefully when outside a git repo,
     # whereas get_repository_root raises RuntimeError
-    git_dir = git.get_git_common_dir(cwd)
+    git_dir = git.repo.get_git_common_dir(cwd)
     if git_dir is None:
         return None
-    repo_root = git.get_repository_root(cwd)
+    repo_root = git.repo.get_repository_root(cwd)
     return git.branch.get_current_branch(repo_root)
 
 

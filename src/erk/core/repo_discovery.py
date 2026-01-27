@@ -61,13 +61,13 @@ def discover_repo_or_sentinel(
     root: Path | None = None
     main_repo_root: Path | None = None
 
-    git_common_dir = ops.get_git_common_dir(cur)
+    git_common_dir = ops.repo.get_git_common_dir(cur)
     if git_common_dir is not None:
         # We're in a git repository (possibly a worktree)
         # git_common_dir points to the main repo's .git directory
         main_repo_root = git_common_dir.parent.resolve()
         # Use --show-toplevel to get the actual worktree root
-        root = ops.get_repository_root(cur)
+        root = ops.repo.get_repository_root(cur)
     else:
         for parent in [cur, *cur.parents]:
             git_path = parent / ".git"

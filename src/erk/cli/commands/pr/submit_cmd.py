@@ -181,7 +181,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     click.echo("")
 
     # Get branch info for AI context
-    repo_root = ctx.git.get_repository_root(cwd)
+    repo_root = ctx.git.repo.get_repository_root(cwd)
     current_branch = ctx.git.branch.get_current_branch(cwd)
     if current_branch is None:
         raise click.ClickException("Not on a branch (detached HEAD state)")
@@ -308,7 +308,7 @@ def _run_graphite_first_flow(
     Raises:
         click.ClickException: If gt submit fails or PR not found after submit
     """
-    repo_root = ctx.git.get_repository_root(cwd)
+    repo_root = ctx.git.repo.get_repository_root(cwd)
     branch_name = ctx.git.branch.get_current_branch(cwd)
     if branch_name is None:
         raise click.ClickException("Not on a branch (detached HEAD state)")

@@ -205,7 +205,7 @@ def test_validate_trunk_branch_not_exists(tmp_path: Path) -> None:
 
 def test_get_git_common_dir_from_main_repo(git_ops: GitSetup) -> None:
     """Test getting git common dir from main repository."""
-    git_dir = git_ops.git.get_git_common_dir(git_ops.repo)
+    git_dir = git_ops.git.repo.get_git_common_dir(git_ops.repo)
 
     assert git_dir is not None
     assert git_dir == git_ops.repo / ".git"
@@ -215,7 +215,7 @@ def test_get_git_common_dir_from_worktree(git_ops_with_worktrees: GitWithWorktre
     """Test getting git common dir from worktree returns shared .git directory."""
     wt = git_ops_with_worktrees.worktrees[0]
 
-    git_dir = git_ops_with_worktrees.git.get_git_common_dir(wt)
+    git_dir = git_ops_with_worktrees.git.repo.get_git_common_dir(wt)
 
     assert git_dir is not None
     assert git_dir == git_ops_with_worktrees.repo / ".git"
@@ -226,7 +226,7 @@ def test_get_git_common_dir_non_git_directory(git_ops: GitSetup, tmp_path: Path)
     non_git = tmp_path / "not-a-repo"
     non_git.mkdir()
 
-    git_dir = git_ops.git.get_git_common_dir(non_git)
+    git_dir = git_ops.git.repo.get_git_common_dir(non_git)
 
     assert git_dir is None
 
@@ -759,7 +759,7 @@ def test_count_commits_ahead(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    count = git_ops.count_commits_ahead(repo, "main")
+    count = git_ops.analysis.count_commits_ahead(repo, "main")
 
     # Assert
     assert count == 3
@@ -1260,7 +1260,7 @@ def test_get_merge_base_returns_common_ancestor(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    merge_base = git_ops.get_merge_base(repo, "main", "feature")
+    merge_base = git_ops.analysis.get_merge_base(repo, "main", "feature")
 
     # Assert: Merge base should be the initial commit
     assert merge_base == initial_commit
@@ -1298,7 +1298,7 @@ def test_get_merge_base_with_diverged_branches(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    merge_base = git_ops.get_merge_base(repo, "main", "feature")
+    merge_base = git_ops.analysis.get_merge_base(repo, "main", "feature")
 
     # Assert: Merge base should still be the initial commit
     assert merge_base == initial_commit
@@ -1324,7 +1324,7 @@ def test_get_merge_base_same_branch(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    merge_base = git_ops.get_merge_base(repo, "main", "main")
+    merge_base = git_ops.analysis.get_merge_base(repo, "main", "main")
 
     # Assert: Merge base of a branch with itself is the branch tip
     assert merge_base == current_commit
@@ -1340,7 +1340,7 @@ def test_get_merge_base_nonexistent_ref(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act: Try to get merge base with nonexistent branch
-    merge_base = git_ops.get_merge_base(repo, "main", "nonexistent-branch")
+    merge_base = git_ops.analysis.get_merge_base(repo, "main", "nonexistent-branch")
 
     # Assert: Should return None (graceful degradation)
     assert merge_base is None

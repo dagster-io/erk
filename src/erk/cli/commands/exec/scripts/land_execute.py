@@ -122,7 +122,7 @@ def land_execute(
 
     # Resolve --up to target child branch at execution time
     resolved_target_child = target_child
-    repo_root = erk_ctx.git.get_repository_root(erk_ctx.cwd)
+    repo_root = erk_ctx.git.repo.get_repository_root(erk_ctx.cwd)
     if up_flag and target_child is None:
         children = erk_ctx.branch_manager.get_child_branches(repo_root, branch)
         if not children:

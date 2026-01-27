@@ -916,7 +916,7 @@ def check_repository(ctx: ErkContext) -> CheckResult:
     """Check repository setup."""
     # First check if we're in a git repo using git_common_dir
     # (get_repository_root raises on non-git dirs, but git_common_dir returns None)
-    git_dir = ctx.git.get_git_common_dir(ctx.cwd)
+    git_dir = ctx.git.repo.get_git_common_dir(ctx.cwd)
     if git_dir is None:
         return CheckResult(
             name="repository",
@@ -925,7 +925,7 @@ def check_repository(ctx: ErkContext) -> CheckResult:
         )
 
     # Now safe to get repo root
-    repo_root = ctx.git.get_repository_root(ctx.cwd)
+    repo_root = ctx.git.repo.get_repository_root(ctx.cwd)
 
     # Check for .erk directory at repo root
     erk_dir = repo_root / ".erk"
@@ -1508,9 +1508,9 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
 
     # Check Claude settings, gitignore, and GitHub checks if we're in a repo
     # (get_git_common_dir returns None if not in a repo)
-    git_dir = ctx.git.get_git_common_dir(ctx.cwd)
+    git_dir = ctx.git.repo.get_git_common_dir(ctx.cwd)
     if git_dir is not None:
-        repo_root = ctx.git.get_repository_root(ctx.cwd)
+        repo_root = ctx.git.repo.get_repository_root(ctx.cwd)
         results.append(check_claude_erk_permission(repo_root))
         results.append(check_claude_settings(repo_root))
         results.append(check_user_prompt_hook(repo_root))

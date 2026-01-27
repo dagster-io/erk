@@ -7,14 +7,20 @@ before delegating to the wrapped implementation.
 from pathlib import Path
 
 from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
+from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+from erk_shared.gateway.git.analysis_ops.printing import PrintingGitAnalysisOps
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.printing import PrintingGitBranchOps
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
 from erk_shared.gateway.git.commit_ops.printing import PrintingGitCommitOps
+from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+from erk_shared.gateway.git.config_ops.printing import PrintingGitConfigOps
 from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
 from erk_shared.gateway.git.rebase_ops.printing import PrintingGitRebaseOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.printing import PrintingGitRemoteOps
+from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+from erk_shared.gateway.git.repo_ops.printing import PrintingGitRepoOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
 from erk_shared.gateway.git.status_ops.printing import PrintingGitStatusOps
 from erk_shared.gateway.git.tag_ops.abc import GitTagOps
@@ -94,6 +100,27 @@ class PrintingGit(PrintingBase, Git):
             self._wrapped.tag, script_mode=self._script_mode, dry_run=self._dry_run
         )
 
+    @property
+    def repo(self) -> GitRepoOps:
+        """Access repository location operations subgateway."""
+        return PrintingGitRepoOps(
+            self._wrapped.repo, script_mode=self._script_mode, dry_run=self._dry_run
+        )
+
+    @property
+    def analysis(self) -> GitAnalysisOps:
+        """Access branch analysis operations subgateway."""
+        return PrintingGitAnalysisOps(
+            self._wrapped.analysis, script_mode=self._script_mode, dry_run=self._dry_run
+        )
+
+    @property
+    def config(self) -> GitConfigOps:
+        """Access configuration operations subgateway."""
+        return PrintingGitConfigOps(
+            self._wrapped.config, script_mode=self._script_mode, dry_run=self._dry_run
+        )
+
     # Read-only operations: delegate without printing
 
     def get_current_branch(self, cwd: Path) -> str | None:
@@ -115,10 +142,6 @@ class PrintingGit(PrintingBase, Git):
     def list_remote_branches(self, repo_root: Path) -> list[str]:
         """List remote branches (read-only, no printing)."""
         return self._wrapped.branch.list_remote_branches(repo_root)
-
-    def get_git_common_dir(self, cwd: Path) -> Path | None:
-        """Get git common directory (read-only, no printing)."""
-        return self._wrapped.get_git_common_dir(cwd)
 
     def get_ahead_behind(self, cwd: Path, branch: str) -> tuple[int, int]:
         """Get ahead/behind counts (read-only, no printing)."""
@@ -149,27 +172,6 @@ class PrintingGit(PrintingBase, Git):
         """Get branch last commit time (read-only, no printing)."""
         return self._wrapped.branch.get_branch_last_commit_time(repo_root, branch, trunk)
 
-    def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
-        """Count commits ahead (read-only, no printing)."""
-        return self._wrapped.count_commits_ahead(cwd, base_branch)
-
-    def get_repository_root(self, cwd: Path) -> Path:
-        """Get repository root (read-only, no printing)."""
-        return self._wrapped.get_repository_root(cwd)
-
-    def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
-        """Get diff to branch (read-only, no printing)."""
-        return self._wrapped.get_diff_to_branch(cwd, branch)
-
-    def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
-        """Set git config with printed output."""
-        self._emit(self._format_command(f"git config --{scope} {key} {value}"))
-        self._wrapped.config_set(cwd, key, value, scope=scope)
-
-    def get_git_user_name(self, cwd: Path) -> str | None:
-        """Get git user.name (read-only, no printing)."""
-        return self._wrapped.get_git_user_name(cwd)
-
     def get_branch_commits_with_authors(
         self, repo_root: Path, branch: str, trunk: str, *, limit: int = 50
     ) -> list[dict[str, str]]:
@@ -193,7 +195,3 @@ class PrintingGit(PrintingBase, Git):
         """Abort rebase with printed output."""
         self._emit(self._format_command("git rebase --abort"))
         self._wrapped.rebase_abort(cwd)
-
-    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
-        """Get merge base (read-only, no printing)."""
-        return self._wrapped.get_merge_base(repo_root, ref1, ref2)

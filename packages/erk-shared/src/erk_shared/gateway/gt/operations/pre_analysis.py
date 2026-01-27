@@ -122,7 +122,7 @@ def execute_pre_analysis(
 
     # Step 2: Get parent branch
     yield ProgressEvent("Getting parent branch...")
-    repo_root = ops.git.get_repository_root(cwd)
+    repo_root = ops.git.repo.get_repository_root(cwd)
     parent_branch = ops.graphite.get_parent_branch(ops.git, repo_root, branch_name)
 
     if parent_branch is None:
@@ -209,7 +209,7 @@ def execute_pre_analysis(
 
     # Step 5: Count commits in branch
     yield ProgressEvent(f"Counting commits ahead of {parent_branch}...")
-    commit_count = ops.git.count_commits_ahead(cwd, parent_branch)
+    commit_count = ops.git.analysis.count_commits_ahead(cwd, parent_branch)
 
     if commit_count == 0:
         yield CompletionEvent(
