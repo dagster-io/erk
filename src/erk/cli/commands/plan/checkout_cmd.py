@@ -232,10 +232,10 @@ def _checkout_pr(
         remote_branches = ctx.git.branch.list_remote_branches(repo.root)
         remote_ref = f"origin/{branch_name}"
         if remote_ref in remote_branches:
-            ctx.git.fetch_branch(repo.root, "origin", branch_name)
+            ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
             ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
         else:
-            ctx.git.fetch_pr_ref(
+            ctx.git.remote.fetch_pr_ref(
                 repo_root=repo.root,
                 remote="origin",
                 pr_number=pr_number,

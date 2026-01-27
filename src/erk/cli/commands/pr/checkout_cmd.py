@@ -111,7 +111,7 @@ def pr_checkout(
     # For cross-repository PRs, always fetch via refs/pull/<n>/head
     # For same-repo PRs, check if branch exists locally first
     if pr.is_cross_repository:
-        ctx.git.fetch_pr_ref(
+        ctx.git.remote.fetch_pr_ref(
             repo_root=repo.root, remote="origin", pr_number=pr_number, local_branch=branch_name
         )
     else:
@@ -120,10 +120,10 @@ def pr_checkout(
             remote_branches = ctx.git.branch.list_remote_branches(repo.root)
             remote_ref = f"origin/{branch_name}"
             if remote_ref in remote_branches:
-                ctx.git.fetch_branch(repo.root, "origin", branch_name)
+                ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
                 ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
             else:
-                ctx.git.fetch_pr_ref(
+                ctx.git.remote.fetch_pr_ref(
                     repo_root=repo.root,
                     remote="origin",
                     pr_number=pr_number,
@@ -143,7 +143,7 @@ def pr_checkout(
         local_branches = ctx.git.branch.list_local_branches(repo.root)
         if pr.base_ref_name not in local_branches:
             ctx.console.info(f"Fetching base branch '{pr.base_ref_name}'...")
-            ctx.git.fetch_branch(repo.root, "origin", pr.base_ref_name)
+            ctx.git.remote.fetch_branch(repo.root, "origin", pr.base_ref_name)
             ctx.branch_manager.create_tracking_branch(
                 repo.root, pr.base_ref_name, f"origin/{pr.base_ref_name}"
             )

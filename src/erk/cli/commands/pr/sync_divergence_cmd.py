@@ -61,7 +61,7 @@ def pr_sync_divergence(ctx: ErkContext, *, dangerous: bool) -> None:
 
     # Fetch to get latest remote state
     click.echo(click.style("Fetching remote state...", fg="yellow"))
-    ctx.git.fetch_branch(cwd, "origin", current_branch)
+    ctx.git.remote.fetch_branch(cwd, "origin", current_branch)
 
     # Check divergence status
     divergence = ctx.git.branch.is_branch_diverged_from_remote(cwd, current_branch, "origin")

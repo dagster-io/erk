@@ -1442,7 +1442,7 @@ def _navigate_after_land(
             trunk_branch = ctx.git.branch.detect_trunk_branch(main_repo_root)
 
             # Fetch first to get latest remote state
-            ctx.git.fetch_branch(main_repo_root, "origin", trunk_branch)
+            ctx.git.remote.fetch_branch(main_repo_root, "origin", trunk_branch)
 
             # Check if local branch can be fast-forwarded
             divergence = ctx.git.branch.is_branch_diverged_from_remote(
@@ -1460,7 +1460,7 @@ def _navigate_after_land(
             elif divergence.behind > 0:
                 user_output(f"Pulling latest changes from origin/{trunk_branch}...")
                 try:
-                    ctx.git.pull_branch(main_repo_root, "origin", trunk_branch, ff_only=True)
+                    ctx.git.remote.pull_branch(main_repo_root, "origin", trunk_branch, ff_only=True)
                 except RuntimeError:
                     # Fallback if pull still fails for unexpected reasons
                     user_output(

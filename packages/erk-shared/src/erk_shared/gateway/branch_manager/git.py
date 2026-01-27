@@ -83,7 +83,7 @@ class GitBranchManager(BranchManager):
             repo_root: Repository root directory
             branch: Branch name to push
         """
-        self.git.push_to_remote(repo_root, "origin", branch, set_upstream=True, force=True)
+        self.git.remote.push_to_remote(repo_root, "origin", branch, set_upstream=True, force=True)
 
     def commit(self, repo_root: Path, message: str) -> None:
         """Create a commit using git.

@@ -9,6 +9,8 @@ from pathlib import Path
 from erk_shared.gateway.git.abc import Git, RebaseResult
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.dry_run import DryRunGitBranchOps
+from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+from erk_shared.gateway.git.remote_ops.dry_run import DryRunGitRemoteOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.dry_run import DryRunWorktree
 from erk_shared.output.output import user_output
@@ -54,6 +56,11 @@ class DryRunGit(Git):
         """Access branch operations subgateway (wrapped with DryRunGitBranchOps)."""
         return DryRunGitBranchOps(self._wrapped.branch)
 
+    @property
+    def remote(self) -> GitRemoteOps:
+        """Access remote operations subgateway (wrapped with DryRunGitRemoteOps)."""
+        return DryRunGitRemoteOps(self._wrapped.remote)
+
     # Read-only operations: delegate to wrapped implementation
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
@@ -80,23 +87,6 @@ class DryRunGit(Git):
         """Get recent commits (read-only, delegates to wrapped)."""
         return self._wrapped.get_recent_commits(cwd, limit=limit)
 
-    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
-        """No-op for fetching branch in dry-run mode."""
-        # Do nothing - prevents actual fetch execution
-        pass
-
-    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
-        """No-op for pulling branch in dry-run mode."""
-        # Do nothing - prevents actual pull execution
-        pass
-
-    def fetch_pr_ref(
-        self, *, repo_root: Path, remote: str, pr_number: int, local_branch: str
-    ) -> None:
-        """No-op for fetching PR ref in dry-run mode."""
-        # Do nothing - prevents actual fetch execution
-        pass
-
     def stage_files(self, cwd: Path, paths: list[str]) -> None:
         """No-op for staging files in dry-run mode."""
         # Do nothing - prevents actual file staging
@@ -105,19 +95,6 @@ class DryRunGit(Git):
     def commit(self, cwd: Path, message: str) -> None:
         """No-op for committing in dry-run mode."""
         # Do nothing - prevents actual commit creation
-        pass
-
-    def push_to_remote(
-        self,
-        cwd: Path,
-        remote: str,
-        branch: str,
-        *,
-        set_upstream: bool = False,
-        force: bool = False,
-    ) -> None:
-        """No-op for pushing in dry-run mode."""
-        # Do nothing - prevents actual push execution
         pass
 
     def add_all(self, cwd: Path) -> None:
@@ -145,10 +122,6 @@ class DryRunGit(Git):
     def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
         """Check merge conflicts (read-only, delegates to wrapped)."""
         return self._wrapped.check_merge_conflicts(cwd, base_branch, head_branch)
-
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
-        """Get remote URL (read-only, delegates to wrapped)."""
-        return self._wrapped.get_remote_url(repo_root, remote)
 
     def get_conflicted_files(self, cwd: Path) -> list[str]:
         """Get conflicted files (read-only, delegates to wrapped)."""
@@ -197,10 +170,6 @@ class DryRunGit(Git):
 
     def rebase_abort(self, cwd: Path) -> None:
         """No-op for rebase abort in dry-run mode."""
-        pass
-
-    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
-        """No-op for pull --rebase in dry-run mode."""
         pass
 
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:

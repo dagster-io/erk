@@ -13,6 +13,8 @@ from erk_shared.gateway.git.abc import Git, RebaseResult
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.real import RealGitBranchOps
 from erk_shared.gateway.git.lock import wait_for_index_lock
+from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+from erk_shared.gateway.git.remote_ops.real import RealGitRemoteOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.real import RealWorktree
 from erk_shared.gateway.time.abc import Time
@@ -35,6 +37,7 @@ class RealGit(Git):
         self._time = time if time is not None else RealTime()
         self._worktree = RealWorktree()
         self._branch = RealGitBranchOps(time=self._time)
+        self._remote = RealGitRemoteOps(time=self._time)
 
     @property
     def worktree(self) -> Worktree:
@@ -45,6 +48,11 @@ class RealGit(Git):
     def branch(self) -> GitBranchOps:
         """Access branch operations subgateway."""
         return self._branch
+
+    @property
+    def remote(self) -> GitRemoteOps:
+        """Access remote operations subgateway."""
+        return self._remote
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory."""
@@ -169,43 +177,6 @@ class RealGit(Git):
 
         return commits
 
-    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
-        """Fetch a specific branch from a remote."""
-        run_subprocess_with_context(
-            cmd=["git", "fetch", remote, branch],
-            operation_context=f"fetch branch '{branch}' from remote '{remote}'",
-            cwd=repo_root,
-        )
-
-    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
-        """Pull a specific branch from a remote."""
-        # Wait for index lock if another git operation is in progress
-        wait_for_index_lock(repo_root, self._time)
-
-        cmd = ["git", "pull"]
-        if ff_only:
-            cmd.append("--ff-only")
-        cmd.extend([remote, branch])
-
-        run_subprocess_with_context(
-            cmd=cmd,
-            operation_context=f"pull branch '{branch}' from remote '{remote}'",
-            cwd=repo_root,
-        )
-
-    def fetch_pr_ref(
-        self, *, repo_root: Path, remote: str, pr_number: int, local_branch: str
-    ) -> None:
-        """Fetch a PR ref into a local branch.
-
-        Uses GitHub's special refs/pull/<number>/head reference.
-        """
-        run_subprocess_with_context(
-            cmd=["git", "fetch", remote, f"pull/{pr_number}/head:{local_branch}"],
-            operation_context=f"fetch PR #{pr_number} into branch '{local_branch}'",
-            cwd=repo_root,
-        )
-
     def stage_files(self, cwd: Path, paths: list[str]) -> None:
         """Stage specific files for commit."""
         # Wait for index lock if another git operation is in progress
@@ -225,29 +196,6 @@ class RealGit(Git):
         run_subprocess_with_context(
             cmd=["git", "commit", "--allow-empty", "-m", message],
             operation_context="create commit",
-            cwd=cwd,
-        )
-
-    def push_to_remote(
-        self,
-        cwd: Path,
-        remote: str,
-        branch: str,
-        *,
-        set_upstream: bool = False,
-        force: bool = False,
-    ) -> None:
-        """Push a branch to a remote."""
-        cmd = ["git", "push"]
-        if set_upstream:
-            cmd.append("-u")
-        if force:
-            cmd.append("--force")
-        cmd.extend([remote, branch])
-
-        run_subprocess_with_context(
-            cmd=cmd,
-            operation_context=f"push branch '{branch}' to remote '{remote}'",
             cwd=cwd,
         )
 
@@ -317,26 +265,6 @@ class RealGit(Git):
             check=False,
         )
         return result.returncode != 0
-
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
-        """Get the URL for a git remote.
-
-        Raises:
-            ValueError: If remote doesn't exist or has no URL
-        """
-        result = subprocess.run(
-            ["git", "remote", "get-url", remote],
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            raise ValueError(f"Remote '{remote}' not found in repository")
-        url = result.stdout.strip()
-        if not url:
-            raise ValueError(f"Remote '{remote}' has no URL configured")
-        return url
 
     def get_conflicted_files(self, cwd: Path) -> list[str]:
         """Parse git status --porcelain for UU/AA/DD/AU/UA/DU/UD status codes."""
@@ -478,14 +406,6 @@ class RealGit(Git):
         run_subprocess_with_context(
             cmd=["git", "rebase", "--abort"],
             operation_context="abort rebase",
-            cwd=cwd,
-        )
-
-    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
-        """Pull and rebase from remote branch."""
-        run_subprocess_with_context(
-            cmd=["git", "pull", "--rebase", remote, branch],
-            operation_context=f"pull --rebase {remote} {branch}",
             cwd=cwd,
         )
 

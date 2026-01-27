@@ -526,7 +526,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     repo_info: RepoInfo | None = None
     if not isinstance(repo, NoRepoSentinel):
         try:
-            remote_url = git.get_remote_url(repo.root)
+            remote_url = git.remote.get_remote_url(repo.root, "origin")
             owner, name = parse_git_remote_url(remote_url)
             repo_info = RepoInfo(owner=owner, name=name)
         except ValueError:

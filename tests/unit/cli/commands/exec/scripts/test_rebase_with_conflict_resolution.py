@@ -180,12 +180,7 @@ def test_rebase_fails_after_max_attempts(tmp_path: Path) -> None:
 
 def test_rebase_fetch_failure(tmp_path: Path) -> None:
     """Test error handling when fetch fails."""
-
-    class FetchFailingGit(FakeGit):
-        def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
-            raise RuntimeError("Network error")
-
-    fake_git = FetchFailingGit()
+    fake_git = FakeGit(fetch_branch_raises=RuntimeError("Network error"))
     fake_claude = FakeClaudeExecutor()
 
     result = _rebase_with_conflict_resolution_impl(
@@ -308,12 +303,7 @@ def test_cli_successful_rebase_generates_summary(tmp_path: Path) -> None:
 
 def test_cli_error_exit_code(tmp_path: Path) -> None:
     """Test CLI exits with code 1 on error."""
-
-    class FetchFailingGit(FakeGit):
-        def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
-            raise RuntimeError("Network error")
-
-    fake_git = FetchFailingGit()
+    fake_git = FakeGit(fetch_branch_raises=RuntimeError("Network error"))
     fake_claude = FakeClaudeExecutor()
 
     test_ctx = ErkContext.for_test(

@@ -205,7 +205,7 @@ def _rebase_with_conflict_resolution_impl(
     """
     # Fetch target branch
     try:
-        git.fetch_branch(cwd, "origin", target_branch)
+        git.remote.fetch_branch(cwd, "origin", target_branch)
     except Exception as e:
         return RebaseError(
             error="fetch-failed",
@@ -263,7 +263,7 @@ def _rebase_with_conflict_resolution_impl(
 
     # Force push after successful rebase
     try:
-        git.push_to_remote(cwd, "origin", branch_name, force=True, set_upstream=False)
+        git.remote.push_to_remote(cwd, "origin", branch_name, force=True, set_upstream=False)
     except Exception as e:
         return RebaseError(
             error="push-failed",

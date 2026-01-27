@@ -970,7 +970,7 @@ def test_pull_rebase_integrates_remote_commits(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act: Pull with rebase
-    git_ops.pull_rebase(local_repo, "origin", "main")
+    git_ops.remote.pull_rebase(local_repo, "origin", "main")
 
     # Assert: Local should now have both files
     assert (local_repo / "local_file.txt").exists()

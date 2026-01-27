@@ -302,7 +302,7 @@ def check_workflow_permissions(ctx: ErkContext, repo_root: Path, admin: GitHubAd
     """
     # Need GitHub identity to check permissions
     try:
-        remote_url = ctx.git.get_remote_url(repo_root, "origin")
+        remote_url = ctx.git.remote.get_remote_url(repo_root, "origin")
     except ValueError:
         return CheckResult(
             name="workflow-permissions",
@@ -373,7 +373,7 @@ def check_erk_queue_pat_secret(ctx: ErkContext, repo_root: Path, admin: GitHubAd
 
     # Need GitHub identity to check secrets
     try:
-        remote_url = ctx.git.get_remote_url(repo_root, "origin")
+        remote_url = ctx.git.remote.get_remote_url(repo_root, "origin")
     except ValueError:
         return CheckResult(
             name="erk-queue-pat-secret",
@@ -448,7 +448,7 @@ def check_anthropic_api_secret(ctx: ErkContext, repo_root: Path, admin: GitHubAd
 
     # Need GitHub identity to check secrets
     try:
-        remote_url = ctx.git.get_remote_url(repo_root, "origin")
+        remote_url = ctx.git.remote.get_remote_url(repo_root, "origin")
     except ValueError:
         return CheckResult(
             name="anthropic-api-secret",

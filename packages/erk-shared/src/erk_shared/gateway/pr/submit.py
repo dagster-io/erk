@@ -221,7 +221,7 @@ def execute_core_submit(
         # create it so future operations don't need to re-derive it
         if not has_issue_reference(impl_dir) and impl_dir.exists():
             # Get repo info from git remote URL
-            remote_url = ctx.git.get_remote_url(repo_root, "origin")
+            remote_url = ctx.git.remote.get_remote_url(repo_root, "origin")
             owner, repo_name = parse_git_remote_url(remote_url)
             issue_url = f"https://github.com/{owner}/{repo_name}/issues/{issue_number}"
             save_issue_reference(
@@ -246,7 +246,7 @@ def execute_core_submit(
             f"Branch is {divergence.behind} commit(s) behind remote, rebasing...",
             style="info",
         )
-        ctx.git.pull_rebase(cwd, "origin", branch_name)
+        ctx.git.remote.pull_rebase(cwd, "origin", branch_name)
         # Re-check divergence after rebase
         divergence = ctx.git.branch.is_branch_diverged_from_remote(cwd, branch_name, "origin")
 
@@ -267,7 +267,7 @@ def execute_core_submit(
     push_msg = "Force pushing branch to origin..." if force else "Pushing branch to origin..."
     yield ProgressEvent(push_msg)
     try:
-        ctx.git.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=force)
+        ctx.git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=force)
     except RuntimeError as e:
         error_str = str(e)
         if "non-fast-forward" in error_str or "rejected" in error_str.lower():

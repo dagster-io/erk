@@ -320,7 +320,7 @@ def branch_checkout(ctx: ErkContext, branch: str, no_slot: bool, force: bool, sc
                         user_output(
                             f"Branch '{branch}' exists on origin, creating local tracking branch..."
                         )
-                        ctx.git.fetch_branch(repo.root, "origin", branch)
+                        ctx.git.remote.fetch_branch(repo.root, "origin", branch)
                         ctx.branch_manager.create_tracking_branch(repo.root, branch, remote_ref)
                     else:
                         user_output(

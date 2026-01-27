@@ -53,7 +53,7 @@ def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
         raise SystemExit(1)
 
     # Check 3: Sync trunk with remote
-    ctx.git.fetch_branch(repo.root, "origin", trunk)
+    ctx.git.remote.fetch_branch(repo.root, "origin", trunk)
 
     local_sha = ctx.git.branch.get_branch_head(repo.root, trunk)
     remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{trunk}")
@@ -69,7 +69,7 @@ def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
     if merge_base == local_sha:
         # Local is behind remote - safe to fast-forward
         user_output(f"Syncing {trunk} with origin/{trunk}...")
-        ctx.git.pull_branch(repo.root, "origin", trunk, ff_only=True)
+        ctx.git.remote.pull_branch(repo.root, "origin", trunk, ff_only=True)
         user_output(click.style("✓", fg="green") + f" {trunk} synced with origin/{trunk}")
     elif merge_base == remote_sha:
         # Local is ahead of remote - user has local commits
