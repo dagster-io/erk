@@ -35,7 +35,10 @@ def test_validate_trunk_branch_exists_in_trunk_branches() -> None:
     """validate_trunk_branch succeeds when branch is in trunk_branches dict."""
     repo_root = sentinel_path()
 
-    git_ops = FakeGit(trunk_branches={repo_root: "master"})
+    git_ops = FakeGit(
+        trunk_branches={repo_root: "master"},
+        local_branches={repo_root: ["master"]},
+    )
 
     assert git_ops.branch.validate_trunk_branch(repo_root, "master") == "master"
 

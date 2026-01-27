@@ -452,7 +452,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             trunk_branches={env.cwd: "main"},
             branch_last_commit_times={
-                "feature-for-issue-1": "2025-01-20T12:00:00+00:00",
+                (env.cwd, "feature-for-issue-1", "main"): "2025-01-20T12:00:00+00:00",
             },
         )
 
@@ -549,9 +549,10 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
             },
             git_common_dirs={env.cwd: env.git_dir},
             trunk_branches={env.cwd: "main"},
+            # Older commit for issue 1, newer commit for issue 2
             branch_last_commit_times={
-                "feature-for-issue-1": "2025-01-20T10:00:00+00:00",  # Older commit
-                "feature-for-issue-2": "2025-01-20T14:00:00+00:00",  # Newer commit
+                (env.cwd, "feature-for-issue-1", "main"): "2025-01-20T10:00:00+00:00",
+                (env.cwd, "feature-for-issue-2", "main"): "2025-01-20T14:00:00+00:00",
             },
         )
 

@@ -190,13 +190,10 @@ def test_submit_learn_plan_uses_parent_branch_when_available(tmp_path: Path) -> 
     )
 
     ctx, fake_git, _, _, _, repo_root = setup_submit_context(
-        tmp_path, {"5637": parent_plan, "5652": learn_plan}
+        tmp_path,
+        {"5637": parent_plan, "5652": learn_plan},
+        remote_branch_refs=["origin/P5637-add-feature-01-23-0433", "origin/master"],
     )
-
-    # Configure parent branch to exist on remote (format: {repo_root: ["origin/branch", ...]})
-    fake_git._remote_branches = {
-        repo_root: ["origin/P5637-add-feature-01-23-0433", "origin/master"]
-    }
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["5652"], obj=ctx)
@@ -219,11 +216,10 @@ def test_submit_learn_plan_falls_back_when_parent_branch_not_on_remote(tmp_path:
     )
 
     ctx, fake_git, _, _, _, repo_root = setup_submit_context(
-        tmp_path, {"5637": parent_plan, "5652": learn_plan}
+        tmp_path,
+        {"5637": parent_plan, "5652": learn_plan},
+        remote_branch_refs=["origin/master"],
     )
-
-    # Parent branch does NOT exist on remote - only master
-    fake_git._remote_branches = {repo_root: ["origin/master"]}
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["5652"], obj=ctx)
@@ -245,17 +241,14 @@ def test_submit_skips_parent_detection_when_base_explicitly_provided(tmp_path: P
     )
 
     ctx, fake_git, _, _, _, repo_root = setup_submit_context(
-        tmp_path, {"5637": parent_plan, "5652": learn_plan}
-    )
-
-    # Configure branches (custom-base exists on remote)
-    fake_git._remote_branches = {
-        repo_root: [
+        tmp_path,
+        {"5637": parent_plan, "5652": learn_plan},
+        remote_branch_refs=[
             "origin/P5637-add-feature-01-23-0433",
             "origin/master",
             "origin/custom-base",
-        ]
-    }
+        ],
+    )
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["5652", "--base", "custom-base"], obj=ctx)
