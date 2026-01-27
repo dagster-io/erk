@@ -163,7 +163,7 @@ This handles all cases:
 
 **When to Use**: Apply lock-waiting to operations that modify the index (`checkout`, `add`, `commit`, `reset`, etc.) when running concurrent git commands in the same worktree or when updating shared refs across worktrees.
 
-**Implementation Reference**: `packages/erk-shared/src/erk_shared/git/lock.py`
+**Implementation Reference**: `packages/erk-shared/src/erk_shared/gateway/git/lock.py`
 
 ## Graphite Interactive Mode Hangs
 
