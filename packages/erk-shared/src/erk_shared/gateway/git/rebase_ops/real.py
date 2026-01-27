@@ -43,12 +43,10 @@ class RealGitRebaseOps(GitRebaseOps):
 
     def rebase_continue(self, cwd: Path) -> None:
         """Run git rebase --continue."""
-        subprocess.run(
-            ["git", "rebase", "--continue"],
+        run_subprocess_with_context(
+            cmd=["git", "rebase", "--continue"],
+            operation_context="continue rebase",
             cwd=cwd,
-            check=True,
-            capture_output=True,
-            text=True,
             env={**os.environ, "GIT_EDITOR": "true"},  # Auto-accept commit messages
         )
 
