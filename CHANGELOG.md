@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of: `cbc36bae1` -->
+
+### Major Changes
+
+- **Top-level `erk launch` command**: Unified workflow launcher moved from `erk workflow launch` to `erk launch`, providing shorter commands for triggering remote workflows. (4335f65e6)
+
+### Changed
+
+- Fix discover-reviews for large PRs by switching to REST API with pagination (ab3ff4e58)
+- Auto-fix Graphite tracking divergence in sync and branch creation (8b8b06b53)
+- Fix detached HEAD state after landing PR from root worktree (8a952099c)
+
+### Fixed
+
+- Fix objective reconcile plan quality by using Claude with codebase context instead of Haiku (aa7302f32)
+- Fix TUI workflow launch commands (2b43daa99)
+- Fix `erk br delete` not force-deleting merged PR branches (a6262db0c)
+- Fix objective-save-to-issue plan lookup bug (f1b1843dd)
+- Fix remote implementation creates wrong branch (c7e2a08fe)
+
+### Removed
+
+- Remove fallback indicator from statusline (9307c8d30)
+
 ## [0.7.0] - 2026-01-24 15:12 PT
 
 ### Release Overview
