@@ -82,6 +82,67 @@ tool_events = [e for e in events if isinstance(e, ToolEvent)]
 assert len(tool_events) == 2
 ```
 
+## FakeCIRunner Pattern
+
+The `FakeCIRunner` demonstrates the pattern for testing CI check execution:
+
+### Constructor Injection
+
+Configure check failures via sets:
+
+```python
+# All checks pass
+runner = FakeCIRunner.create_passing_all()
+
+# Specific checks fail
+runner = FakeCIRunner(
+    failing_checks={"pytest", "ruff"},
+    missing_commands=None,
+)
+
+# Simulate missing tools
+runner = FakeCIRunner(
+    failing_checks=None,
+    missing_commands={"prettier"},
+)
+```
+
+### Result Structure
+
+`CICheckResult` has two fields:
+
+- `passed`: Whether check succeeded
+- `error_type`: `"command_not_found"`, `"command_failed"`, or None
+
+### Tracking Calls for Assertions
+
+```python
+runner = FakeCIRunner.create_passing_all()
+result = runner.run_check(name="pytest", cmd=["pytest"], cwd=Path("/repo"))
+
+# Assert the call was made
+assert len(runner.run_calls) == 1
+assert runner.check_names_run == ["pytest"]
+```
+
+### Testing Failure Scenarios
+
+```python
+# Test command failure handling
+runner = FakeCIRunner(failing_checks={"ruff"}, missing_commands=None)
+result = runner.run_check(name="ruff", cmd=["ruff", "check"], cwd=Path("/repo"))
+
+assert not result.passed
+assert result.error_type == "command_failed"
+
+# Test missing command handling
+runner = FakeCIRunner(failing_checks=None, missing_commands={"prettier"})
+result = runner.run_check(name="prettier", cmd=["prettier", "--check"], cwd=Path("/repo"))
+
+assert not result.passed
+assert result.error_type == "command_not_found"
+```
+
 ## Gateway Testing Pattern
 
 For general subprocess operations, the gateway pattern applies:

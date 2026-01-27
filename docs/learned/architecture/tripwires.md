@@ -100,6 +100,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using gh pr create in production code** → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. Use REST API via `gh api repos/{owner}/{repo}/pulls -X POST` instead. `gh pr create` uses GraphQL which has separate (often exhausted) rate limits.
 
+**CRITICAL: Before using gh pr diff --name-only in production code** → Read [GitHub CLI Limits](github-cli-limits.md) first. For PRs with 300+ files, gh pr diff fails with HTTP 406. Use REST API with pagination instead.
+
 **CRITICAL: Before using gh pr view --json merged** → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
 
 **CRITICAL: Before using git pull or git pull --rebase on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Use /erk:sync-divergence instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push.

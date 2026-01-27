@@ -13,14 +13,14 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 
 | Category                                    | Tripwires | Load When Working In                          |
 | ------------------------------------------- | --------- | --------------------------------------------- |
-| [architecture](architecture/tripwires.md)   | 48        | `src/erk/gateway/`, gateways, subprocess      |
+| [architecture](architecture/tripwires.md)   | 49        | `src/erk/gateway/`, gateways, subprocess      |
 | [capabilities](capabilities/tripwires.md)   | 1         | Claude Code capabilities, tool use            |
 | [ci](ci/tripwires.md)                       | 11        | `.github/workflows/`, `.github/actions/`      |
 | [claude-code](claude-code/tripwires.md)     | 2         | Claude Code configuration, settings           |
 | [cli](cli/tripwires.md)                     | 10        | `src/erk/cli/`                                |
 | [planning](planning/tripwires.md)           | 17        | `.impl/`, `.worker-impl/`, planning workflows |
 | [sessions](sessions/tripwires.md)           | 3         | `~/.claude/projects/`, session analysis       |
-| [testing](testing/tripwires.md)             | 5         | `tests/`                                      |
+| [testing](testing/tripwires.md)             | 6         | `tests/`                                      |
 | [textual](textual/tripwires.md)             | 1         | Textual framework code                        |
 | [tui](tui/tripwires.md)                     | 4         | `src/erk/tui/`                                |
-| [uncategorized](uncategorized/tripwires.md) | 12        | `uncategorized/` code                         |
+| [uncategorized](uncategorized/tripwires.md) | 13        | `uncategorized/` code                         |

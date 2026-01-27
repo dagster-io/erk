@@ -34,4 +34,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using bare subprocess.run with check=True** → Read [Universal Tripwires](universal-tripwires.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI).
 
+**CRITICAL: Before using gh pr diff --name-only in production code** → Read [Universal Tripwires](universal-tripwires.md) first. For PRs with 300+ files, gh pr diff fails with HTTP 406. Use REST API with pagination instead. See github-cli-limits.md.
+
 **CRITICAL: Before writing `__all__` to a Python file** → Read [Code Conventions](conventions.md) first. Re-export modules are forbidden. Import directly from where code is defined.
