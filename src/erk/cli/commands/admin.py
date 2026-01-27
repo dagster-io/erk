@@ -226,7 +226,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
     user_output(f"Adding initial commit to '{test_branch}'...")
     ctx.git.remote.fetch_branch(repo.root, "origin", test_branch)
     ctx.branch_manager.checkout_branch(repo.root, test_branch)
-    ctx.git.commit(repo.root, "Test workflow run")
+    ctx.git.commit.commit(repo.root, "Test workflow run")
     ctx.git.remote.push_to_remote(repo.root, "origin", test_branch, set_upstream=False, force=False)
     ctx.branch_manager.checkout_branch(repo.root, current_branch)
     user_output(click.style("✓", fg="green") + f" Initial commit added to '{test_branch}'")

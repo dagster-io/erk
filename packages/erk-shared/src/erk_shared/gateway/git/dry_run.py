@@ -9,6 +9,8 @@ from pathlib import Path
 from erk_shared.gateway.git.abc import Git, RebaseResult
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.dry_run import DryRunGitBranchOps
+from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+from erk_shared.gateway.git.commit_ops.dry_run import DryRunGitCommitOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.dry_run import DryRunGitRemoteOps
 from erk_shared.gateway.git.worktree.abc import Worktree
@@ -61,6 +63,11 @@ class DryRunGit(Git):
         """Access remote operations subgateway (wrapped with DryRunGitRemoteOps)."""
         return DryRunGitRemoteOps(self._wrapped.remote)
 
+    @property
+    def commit(self) -> GitCommitOps:
+        """Access commit operations subgateway (wrapped with DryRunGitCommitOps)."""
+        return DryRunGitCommitOps(self._wrapped.commit)
+
     # Read-only operations: delegate to wrapped implementation
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
@@ -75,37 +82,9 @@ class DryRunGit(Git):
         """Check for uncommitted changes (read-only, delegates to wrapped)."""
         return self._wrapped.has_uncommitted_changes(cwd)
 
-    def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
-        """Get commit message (read-only, delegates to wrapped)."""
-        return self._wrapped.get_commit_message(repo_root, commit_sha)
-
     def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
         """Get file status (read-only, delegates to wrapped)."""
         return self._wrapped.get_file_status(cwd)
-
-    def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
-        """Get recent commits (read-only, delegates to wrapped)."""
-        return self._wrapped.get_recent_commits(cwd, limit=limit)
-
-    def stage_files(self, cwd: Path, paths: list[str]) -> None:
-        """No-op for staging files in dry-run mode."""
-        # Do nothing - prevents actual file staging
-        pass
-
-    def commit(self, cwd: Path, message: str) -> None:
-        """No-op for committing in dry-run mode."""
-        # Do nothing - prevents actual commit creation
-        pass
-
-    def add_all(self, cwd: Path) -> None:
-        """No-op for staging all changes in dry-run mode."""
-        # Do nothing - prevents actual staging
-        pass
-
-    def amend_commit(self, cwd: Path, message: str) -> None:
-        """No-op for amending commit in dry-run mode."""
-        # Do nothing - prevents actual commit amendment
-        pass
 
     def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
         """Count commits ahead (read-only, delegates to wrapped)."""
@@ -136,17 +115,9 @@ class DryRunGit(Git):
         # Do nothing - prevents actual rebase continue
         pass
 
-    def get_commit_messages_since(self, cwd: Path, base_branch: str) -> list[str]:
-        """Get commit messages since base branch (read-only, delegates to wrapped)."""
-        return self._wrapped.get_commit_messages_since(cwd, base_branch)
-
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """No-op for setting git config in dry-run mode."""
         pass
-
-    def get_head_commit_message_full(self, cwd: Path) -> str:
-        """Get full commit message (read-only, delegates to wrapped)."""
-        return self._wrapped.get_head_commit_message_full(cwd)
 
     def get_git_user_name(self, cwd: Path) -> str | None:
         """Get git user.name (read-only, delegates to wrapped)."""

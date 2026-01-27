@@ -9,6 +9,8 @@ from pathlib import Path
 from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.printing import PrintingGitBranchOps
+from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+from erk_shared.gateway.git.commit_ops.printing import PrintingGitCommitOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.printing import PrintingGitRemoteOps
 from erk_shared.gateway.git.worktree.abc import Worktree
@@ -58,6 +60,13 @@ class PrintingGit(PrintingBase, Git):
             self._wrapped.remote, script_mode=self._script_mode, dry_run=self._dry_run
         )
 
+    @property
+    def commit(self) -> GitCommitOps:
+        """Access commit operations subgateway (wrapped with PrintingGitCommitOps)."""
+        return PrintingGitCommitOps(
+            self._wrapped.commit, script_mode=self._script_mode, dry_run=self._dry_run
+        )
+
     # Read-only operations: delegate without printing
 
     def get_current_branch(self, cwd: Path) -> str | None:
@@ -104,10 +113,6 @@ class PrintingGit(PrintingBase, Git):
         """Get all branch sync info (read-only, no printing)."""
         return self._wrapped.branch.get_all_branch_sync_info(repo_root)
 
-    def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
-        """Get recent commits (read-only, no printing)."""
-        return self._wrapped.get_recent_commits(cwd, limit=limit)
-
     def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
         """Check if branch exists on remote (delegates to wrapped implementation)."""
         # Read-only operation, no output needed
@@ -117,10 +122,6 @@ class PrintingGit(PrintingBase, Git):
         """Get branch head (read-only, no printing)."""
         return self._wrapped.branch.get_branch_head(repo_root, branch)
 
-    def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
-        """Get commit message (read-only, no printing)."""
-        return self._wrapped.get_commit_message(repo_root, commit_sha)
-
     def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
         """Get file status (read-only, no printing)."""
         return self._wrapped.get_file_status(cwd)
@@ -129,32 +130,9 @@ class PrintingGit(PrintingBase, Git):
         """Get branch issue (read-only, no printing)."""
         return self._wrapped.branch.get_branch_issue(repo_root, branch)
 
-    def stage_files(self, cwd: Path, paths: list[str]) -> None:
-        """Stage files with printed output."""
-        self._emit(self._format_command(f"git add {' '.join(paths)}"))
-        self._wrapped.stage_files(cwd, paths)
-
-    def commit(self, cwd: Path, message: str) -> None:
-        """Commit with printed output."""
-        # Truncate message for display
-        display_msg = message[:50] + "..." if len(message) > 50 else message
-        self._emit(self._format_command(f'git commit --allow-empty -m "{display_msg}"'))
-        self._wrapped.commit(cwd, message)
-
     def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
         """Get branch last commit time (read-only, no printing)."""
         return self._wrapped.branch.get_branch_last_commit_time(repo_root, branch, trunk)
-
-    def add_all(self, cwd: Path) -> None:
-        """Stage all changes with printed output."""
-        self._emit(self._format_command("git add -A"))
-        self._wrapped.add_all(cwd)
-
-    def amend_commit(self, cwd: Path, message: str) -> None:
-        """Amend commit with printed output."""
-        display_msg = message[:50] + "..." if len(message) > 50 else message
-        self._emit(self._format_command(f'git commit --amend -m "{display_msg}"'))
-        self._wrapped.amend_commit(cwd, message)
 
     def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
         """Count commits ahead (read-only, no printing)."""
@@ -184,18 +162,10 @@ class PrintingGit(PrintingBase, Git):
         """Continue rebase (delegates without printing for now)."""
         self._wrapped.rebase_continue(cwd)
 
-    def get_commit_messages_since(self, cwd: Path, base_branch: str) -> list[str]:
-        """Get commit messages since base branch (read-only, no printing)."""
-        return self._wrapped.get_commit_messages_since(cwd, base_branch)
-
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """Set git config with printed output."""
         self._emit(self._format_command(f"git config --{scope} {key} {value}"))
         self._wrapped.config_set(cwd, key, value, scope=scope)
-
-    def get_head_commit_message_full(self, cwd: Path) -> str:
-        """Get full commit message (read-only, no printing)."""
-        return self._wrapped.get_head_commit_message_full(cwd)
 
     def get_git_user_name(self, cwd: Path) -> str | None:
         """Get git user.name (read-only, no printing)."""

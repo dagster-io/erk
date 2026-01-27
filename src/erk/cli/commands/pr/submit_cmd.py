@@ -193,7 +193,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     )
 
     # Get commit messages for AI context (only from current branch)
-    commit_messages = ctx.git.get_commit_messages_since(cwd, parent_branch)
+    commit_messages = ctx.git.commit.get_commit_messages_since(cwd, parent_branch)
 
     # Phase 3: Fetch plan context
     click.echo(click.style("Phase 3: Fetching plan context", bold=True))
@@ -316,8 +316,8 @@ def _run_graphite_first_flow(
     # Commit any uncommitted changes first
     if ctx.git.has_uncommitted_changes(cwd):
         click.echo(click.style("   Committing uncommitted changes...", dim=True))
-        ctx.git.add_all(cwd)
-        ctx.git.commit(cwd, "WIP: Prepare for PR submission")
+        ctx.git.commit.add_all(cwd)
+        ctx.git.commit.commit(cwd, "WIP: Prepare for PR submission")
 
     # Phase 1: Run gt submit (handles push + PR creation)
     click.echo(click.style("Phase 1: Graphite Submit", bold=True))

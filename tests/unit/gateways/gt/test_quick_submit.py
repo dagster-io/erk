@@ -163,7 +163,7 @@ class TestQuickSubmitMutationTracking:
         assert isinstance(git, FakeGit)
         # The commit method tracks calls in _commits
         assert len(git.commits) == 1
-        assert git.commits[0][1] == "update"  # commit message
+        assert git.commits[0].message == "update"  # commit message
 
     def test_quick_submit_calls_submit_stack(self, tmp_repo: Path) -> None:
         """Test that quick-submit calls graphite submit_stack."""

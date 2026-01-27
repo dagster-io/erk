@@ -7,6 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.abc import RebaseResult
+from erk_shared.gateway.git.commit_ops.fake import CommitRecord
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
@@ -92,7 +93,7 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
             commits_ahead={(env.cwd, "main"): 2},  # Multiple commits to squash
         )
         # Simulate an existing commit that will be amended
-        git._commits.append((env.cwd, "Original message", []))
+        git._commits.append(CommitRecord(cwd=env.cwd, message="Original message", staged_files=()))
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
@@ -116,7 +117,7 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
 
         # Verify commit message was updated from PR
         assert len(git.commits) == 1
-        assert git.commits[0][1] == "Add awesome feature\n\nThis PR adds an awesome feature."
+        assert git.commits[0].message == "Add awesome feature\n\nThis PR adds an awesome feature."
 
         # Verify restack was called
         assert len(graphite.restack_calls) == 1
@@ -616,7 +617,7 @@ def test_pr_sync_updates_commit_with_title_only(tmp_path: Path) -> None:
             current_branches={env.cwd: "title-only-branch"},
             commits_ahead={(env.cwd, "main"): 2},  # Commits to squash
         )
-        git._commits.append((env.cwd, "Original message", []))
+        git._commits.append(CommitRecord(cwd=env.cwd, message="Original message", staged_files=()))
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
@@ -627,7 +628,7 @@ def test_pr_sync_updates_commit_with_title_only(tmp_path: Path) -> None:
 
         # Verify commit message is just the title (no body)
         assert len(git.commits) == 1
-        assert git.commits[0][1] == "Just a title"
+        assert git.commits[0].message == "Just a title"
 
 
 def test_pr_sync_skips_commit_update_when_no_title(tmp_path: Path) -> None:
@@ -655,7 +656,7 @@ def test_pr_sync_skips_commit_update_when_no_title(tmp_path: Path) -> None:
             current_branches={env.cwd: "no-title-branch"},
             commits_ahead={(env.cwd, "main"): 2},  # Commits to squash
         )
-        git._commits.append((env.cwd, "Original message", []))
+        git._commits.append(CommitRecord(cwd=env.cwd, message="Original message", staged_files=()))
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
@@ -667,7 +668,7 @@ def test_pr_sync_skips_commit_update_when_no_title(tmp_path: Path) -> None:
 
         # Original message should be preserved
         assert len(git.commits) == 1
-        assert git.commits[0][1] == "Original message"
+        assert git.commits[0].message == "Original message"
 
 
 def test_pr_sync_handles_restack_conflict_gracefully(tmp_path: Path) -> None:
@@ -704,7 +705,7 @@ def test_pr_sync_handles_restack_conflict_gracefully(tmp_path: Path) -> None:
             existing_paths={env.cwd, env.repo.worktrees_dir},
             commits_ahead={(env.cwd, "main"): 2},
         )
-        git._commits.append((env.cwd, "Original message", []))
+        git._commits.append(CommitRecord(cwd=env.cwd, message="Original message", staged_files=()))
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
@@ -754,7 +755,7 @@ def test_pr_sync_handles_restack_unmerged_files_gracefully(tmp_path: Path) -> No
             existing_paths={env.cwd, env.repo.worktrees_dir},
             commits_ahead={(env.cwd, "main"): 2},
         )
-        git._commits.append((env.cwd, "Original message", []))
+        git._commits.append(CommitRecord(cwd=env.cwd, message="Original message", staged_files=()))
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
@@ -796,7 +797,7 @@ def test_pr_sync_raises_non_conflict_restack_error(tmp_path: Path) -> None:
             existing_paths={env.cwd, env.repo.worktrees_dir},
             commits_ahead={(env.cwd, "main"): 2},
         )
-        git._commits.append((env.cwd, "Original message", []))
+        git._commits.append(CommitRecord(cwd=env.cwd, message="Original message", staged_files=()))
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
@@ -843,7 +844,7 @@ def test_pr_sync_rebases_onto_parent_before_tracking_stacked_pr(tmp_path: Path) 
             trunk_branches={env.cwd: "main"},
             commits_ahead={(env.cwd, "main"): 2},
         )
-        git._commits.append((env.cwd, "Original message", []))
+        git._commits.append(CommitRecord(cwd=env.cwd, message="Original message", staged_files=()))
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
@@ -887,7 +888,7 @@ def test_pr_sync_skips_rebase_for_trunk_based_pr(tmp_path: Path) -> None:
             trunk_branches={env.cwd: "main"},
             commits_ahead={(env.cwd, "main"): 2},
         )
-        git._commits.append((env.cwd, "Original message", []))
+        git._commits.append(CommitRecord(cwd=env.cwd, message="Original message", staged_files=()))
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 

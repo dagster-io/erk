@@ -169,8 +169,8 @@ def execute_core_submit(
     # Step 3: Check for uncommitted changes and commit if present
     if ctx.git.has_uncommitted_changes(cwd):
         yield ProgressEvent("Found uncommitted changes, staging and committing...")
-        ctx.git.add_all(cwd)
-        ctx.git.commit(cwd, "WIP: Prepare for PR submission")
+        ctx.git.commit.add_all(cwd)
+        ctx.git.commit.commit(cwd, "WIP: Prepare for PR submission")
         yield ProgressEvent("Created WIP commit", style="success")
 
     # Step 4: Verify there are commits to push

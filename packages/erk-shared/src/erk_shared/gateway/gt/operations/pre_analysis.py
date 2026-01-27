@@ -76,7 +76,7 @@ def execute_pre_analysis(
     if ops.git.has_uncommitted_changes(cwd):
         yield ProgressEvent("Staging uncommitted changes... (git add -A)")
         try:
-            ops.git.add_all(cwd)
+            ops.git.commit.add_all(cwd)
             yield ProgressEvent("Changes staged", style="success")
         except subprocess.CalledProcessError:
             yield CompletionEvent(
@@ -91,7 +91,7 @@ def execute_pre_analysis(
 
         yield ProgressEvent("Committing staged changes... (git commit)")
         try:
-            ops.git.commit(cwd, "WIP: Prepare for submission")
+            ops.git.commit.commit(cwd, "WIP: Prepare for submission")
             uncommitted_changes_committed = True
             yield ProgressEvent("Uncommitted changes committed", style="success")
         except subprocess.CalledProcessError:
@@ -223,7 +223,7 @@ def execute_pre_analysis(
         return
 
     # Step 5b: Capture commit messages BEFORE squashing (for AI context)
-    commit_messages = ops.git.get_commit_messages_since(cwd, parent_branch)
+    commit_messages = ops.git.commit.get_commit_messages_since(cwd, parent_branch)
 
     # Step 6: Run gt squash only if 2+ commits
     squashed = False
@@ -276,11 +276,11 @@ def execute_pre_analysis(
         issue_ref = read_issue_reference(impl_dir)
         if issue_ref is not None:
             issue_number = issue_ref.issue_number
-            current_msg = ops.git.get_head_commit_message_full(cwd)
+            current_msg = ops.git.commit.get_head_commit_message_full(cwd)
             closing_text = f"Closes #{issue_number}"
             if closing_text not in current_msg:
                 new_msg = f"{current_msg.rstrip()}\n\n{closing_text}"
-                ops.git.amend_commit(cwd, new_msg)
+                ops.git.commit.amend_commit(cwd, new_msg)
                 yield ProgressEvent(f"Added '{closing_text}' to commit message", style="success")
 
     # Build success message
