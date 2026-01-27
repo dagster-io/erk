@@ -699,6 +699,14 @@ class FakeGit(Git):
             return self._merge_bases[(ref2, ref1)]
         return None
 
+    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
+        """Delegate to rebase subgateway."""
+        return self._rebase_gateway.rebase_onto(cwd, target_ref)
+
+    def rebase_abort(self, cwd: Path) -> None:
+        """Delegate to rebase subgateway."""
+        self._rebase_gateway.rebase_abort(cwd)
+
     def create_linked_branch_ops(self) -> FakeGitBranchOps:
         """Return the FakeGitBranchOps linked to this FakeGit's state.
 
