@@ -186,3 +186,17 @@ def test_create_tracking_branch_from_remote(tmp_path: Path) -> None:
         check=True,
     )
     assert result.stdout.strip() == "origin"
+
+
+def test_delete_branch_idempotent_when_branch_missing(
+    git_branch_ops: GitBranchOpsSetup,
+) -> None:
+    """Test that delete_branch succeeds when branch doesn't exist (idempotent)."""
+    branch_ops, git, repo = git_branch_ops
+
+    # Act: Try to delete a branch that doesn't exist
+    # Should not raise - idempotent behavior
+    branch_ops.delete_branch(repo, "nonexistent-branch", force=False)
+
+    # Assert: No error was raised, operation succeeded
+    # (If we got here, the test passed)

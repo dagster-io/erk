@@ -1,5 +1,6 @@
 """Production implementation of Git branch operations using subprocess."""
 
+import subprocess
 from pathlib import Path
 
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
@@ -36,7 +37,21 @@ class RealGitBranchOps(GitBranchOps):
         )
 
     def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-        """Delete a local branch."""
+        """Delete a local branch.
+
+        Idempotent: if branch doesn't exist, returns successfully.
+        """
+        # LBYL: Check if branch exists before attempting delete
+        check_result = subprocess.run(
+            ["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
+            cwd=cwd,
+            capture_output=True,
+            check=False,
+        )
+        if check_result.returncode != 0:
+            # Branch doesn't exist - goal achieved
+            return
+
         flag = "-D" if force else "-d"
         run_subprocess_with_context(
             cmd=["git", "branch", flag, branch_name],
