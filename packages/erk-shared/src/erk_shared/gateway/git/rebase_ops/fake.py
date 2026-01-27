@@ -17,7 +17,7 @@ class FakeGitRebaseOps(GitRebaseOps):
 
     Constructor Injection:
     ---------------------
-    - rebase_in_progress: Initial state for is_rebase_in_progress()
+    - rebase_in_progress: Initial state for is_rebase_in_progress() (bool or callable)
     - rebase_onto_result: Result to return from rebase_onto()
     - rebase_continue_raises: Exception to raise when rebase_continue() is called
     - rebase_continue_clears_rebase: If True, rebase_continue() clears rebase state
@@ -34,7 +34,7 @@ class FakeGitRebaseOps(GitRebaseOps):
     def __init__(
         self,
         *,
-        rebase_in_progress: bool | None = None,
+        rebase_in_progress: bool | Callable[[Path], bool] | None = None,
         rebase_onto_result: RebaseResult | None = None,
         rebase_continue_raises: Exception | None = None,
         rebase_continue_clears_rebase: bool | None = None,
@@ -43,13 +43,24 @@ class FakeGitRebaseOps(GitRebaseOps):
         """Create FakeGitRebaseOps with pre-configured state.
 
         Args:
-            rebase_in_progress: Initial state for is_rebase_in_progress()
+            rebase_in_progress: Initial state for is_rebase_in_progress().
+                Can be a bool or a callable(cwd) -> bool for dynamic behavior.
             rebase_onto_result: Result to return from rebase_onto()
             rebase_continue_raises: Exception to raise when rebase_continue() is called
             rebase_continue_clears_rebase: If True, rebase_continue() clears rebase state
             rebase_abort_raises: Exception to raise when rebase_abort() is called
         """
-        self._rebase_in_progress = rebase_in_progress if rebase_in_progress is not None else False
+        # Handle rebase_in_progress as bool or callable
+        if rebase_in_progress is None:
+            self._rebase_in_progress: bool | None = False
+            self._rebase_in_progress_callable: Callable[[Path], bool] | None = None
+        elif callable(rebase_in_progress):
+            self._rebase_in_progress = None
+            self._rebase_in_progress_callable = rebase_in_progress
+        else:
+            self._rebase_in_progress = rebase_in_progress
+            self._rebase_in_progress_callable = None
+
         self._rebase_onto_result = rebase_onto_result
         self._rebase_continue_raises = rebase_continue_raises
         self._rebase_continue_clears_rebase = (
@@ -77,11 +88,12 @@ class FakeGitRebaseOps(GitRebaseOps):
         """Continue an in-progress rebase.
 
         Tracks call for test assertions. Raises configured exception if set.
+        Note: rebase_continue_clears_rebase only affects boolean state, not callables.
         """
         if self._rebase_continue_raises is not None:
             raise self._rebase_continue_raises
         self._rebase_continue_calls.append(cwd)
-        if self._rebase_continue_clears_rebase:
+        if self._rebase_continue_clears_rebase and self._rebase_in_progress_callable is None:
             self._rebase_in_progress = False
 
     def rebase_abort(self, cwd: Path) -> None:
@@ -94,7 +106,15 @@ class FakeGitRebaseOps(GitRebaseOps):
             raise self._rebase_abort_raises
 
     def is_rebase_in_progress(self, cwd: Path) -> bool:
-        """Check if a rebase is in progress."""
+        """Check if a rebase is in progress.
+
+        Returns the result of the callable if one was provided, otherwise
+        returns the boolean state.
+        """
+        if self._rebase_in_progress_callable is not None:
+            return self._rebase_in_progress_callable(cwd)
+        # _rebase_in_progress is guaranteed to be bool when callable is None
+        assert self._rebase_in_progress is not None
         return self._rebase_in_progress
 
     # ============================================================================

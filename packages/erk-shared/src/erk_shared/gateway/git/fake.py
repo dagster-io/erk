@@ -6,6 +6,7 @@ in its constructor. Construct instances directly with keyword arguments.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import NamedTuple
 
@@ -132,7 +133,7 @@ class FakeGit(Git):
         pull_branch_raises: Exception | None = None,
         branch_issues: dict[str, int | None] | None = None,
         conflicted_files: list[str] | None = None,
-        rebase_in_progress: bool = False,
+        rebase_in_progress: bool | Callable[[Path], bool] = False,
         rebase_continue_raises: Exception | None = None,
         rebase_continue_clears_rebase: bool = False,
         commit_messages_since: dict[tuple[Path, str], list[str]] | None = None,
@@ -185,7 +186,8 @@ class FakeGit(Git):
             pull_branch_raises: Exception to raise when pull_branch() is called
             branch_issues: Mapping of branch name -> issue number for get_branch_issue()
             conflicted_files: List of file paths with merge conflicts
-            rebase_in_progress: Whether a rebase is currently in progress
+            rebase_in_progress: Whether a rebase is currently in progress.
+                Can be a bool or a callable(cwd) -> bool for dynamic behavior.
             rebase_continue_raises: Exception to raise when rebase_continue() is called
             rebase_continue_clears_rebase: If True, rebase_continue() clears the rebase state
             commit_messages_since: Mapping of (cwd, base_branch) -> list of commit messages
