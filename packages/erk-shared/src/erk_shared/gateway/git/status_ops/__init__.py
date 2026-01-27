@@ -1,15 +1,12 @@
-"""Git status operations subgateway."""
+"""Git status operations sub-gateway.
 
-from erk_shared.gateway.git.status_ops.abc import GitStatusOps
-from erk_shared.gateway.git.status_ops.dry_run import DryRunGitStatusOps
-from erk_shared.gateway.git.status_ops.fake import FakeGitStatusOps
-from erk_shared.gateway.git.status_ops.printing import PrintingGitStatusOps
-from erk_shared.gateway.git.status_ops.real import RealGitStatusOps
+This module provides a separate gateway for status query operations,
+including uncommitted changes detection and merge conflict checking.
 
-__all__ = [
-    "GitStatusOps",
-    "RealGitStatusOps",
-    "FakeGitStatusOps",
-    "DryRunGitStatusOps",
-    "PrintingGitStatusOps",
-]
+Import from submodules:
+- abc: GitStatusOps
+- real: RealGitStatusOps
+- fake: FakeGitStatusOps
+- dry_run: DryRunGitStatusOps
+- printing: PrintingGitStatusOps
+"""
