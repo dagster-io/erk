@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
+    from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
     from erk_shared.gateway.git.worktree.abc import Worktree
 
 
@@ -99,6 +100,12 @@ class Git(ABC):
     @abstractmethod
     def worktree(self) -> Worktree:
         """Access worktree operations subgateway."""
+        ...
+
+    @property
+    @abstractmethod
+    def branch(self) -> GitBranchOps:
+        """Access branch operations subgateway."""
         ...
 
     @abstractmethod

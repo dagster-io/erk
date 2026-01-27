@@ -32,7 +32,6 @@ from erk_shared.gateway.completion.abc import Completion
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.types import RepoInfo
@@ -68,8 +67,7 @@ class ErkContext:
     """
 
     # Gateway integrations (from erk_shared)
-    git: Git
-    git_branch_ops: GitBranchOps  # Sub-gateway for branch mutations
+    git: Git  # Note: branch ops accessed via git.branch subgateway
     github: GitHub  # Note: issues accessed via github.issues property
     github_admin: GitHubAdmin  # GitHub Actions admin operations
     graphite: Graphite
@@ -180,14 +178,12 @@ class ErkContext:
         if isinstance(graphite, GraphiteDisabled):
             return GitBranchManager(
                 git=self.git,
-                git_branch_ops=self.git_branch_ops,
                 github=self.github,
             )
         if self.graphite_branch_ops is None:
             raise RuntimeError("graphite_branch_ops must be set when Graphite is enabled")
         return GraphiteBranchManager(
             git=self.git,
-            git_branch_ops=self.git_branch_ops,
             graphite=self.graphite,
             graphite_branch_ops=self.graphite_branch_ops,
             github=self.github,

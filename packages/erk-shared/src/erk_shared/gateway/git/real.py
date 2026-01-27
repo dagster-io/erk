@@ -11,6 +11,8 @@ import subprocess
 from pathlib import Path
 
 from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
+from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.git.branch_ops.real import RealGitBranchOps
 from erk_shared.gateway.git.lock import wait_for_index_lock
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.real import RealWorktree
@@ -33,11 +35,17 @@ class RealGit(Git):
         """
         self._time = time if time is not None else RealTime()
         self._worktree = RealWorktree()
+        self._branch = RealGitBranchOps(time=self._time)
 
     @property
     def worktree(self) -> Worktree:
         """Access worktree operations subgateway."""
         return self._worktree
+
+    @property
+    def branch(self) -> GitBranchOps:
+        """Access branch operations subgateway."""
+        return self._branch
 
     def get_current_branch(self, cwd: Path) -> str | None:
         """Get the currently checked-out branch."""
