@@ -19,7 +19,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [claude-code](claude-code/tripwires.md)     | 2         | Claude Code configuration, settings           |
 | [cli](cli/tripwires.md)                     | 11        | `src/erk/cli/`                                |
 | [gateway](gateway/tripwires.md)             | 1         | `gateway/` code                               |
-| [planning](planning/tripwires.md)           | 18        | `.impl/`, `.worker-impl/`, planning workflows |
+| [planning](planning/tripwires.md)           | 19        | `.impl/`, `.worker-impl/`, planning workflows |
 | [sessions](sessions/tripwires.md)           | 4         | `~/.claude/projects/`, session analysis       |
 | [testing](testing/tripwires.md)             | 6         | `tests/`                                      |
 | [textual](textual/tripwires.md)             | 1         | Textual framework code                        |
