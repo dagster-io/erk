@@ -107,12 +107,12 @@ def execute_diff_extraction(
         ProgressEvent for status updates
         CompletionEvent with Path to diff file on success, None on failure
     """
-    repo_root = ctx.git.get_repository_root(cwd)
+    repo_root = ctx.git.repo.get_repository_root(cwd)
 
     yield ProgressEvent(f"Getting diff for PR #{pr_number}...")
 
     # Use local git diff - no size limits unlike GitHub API
-    pr_diff = ctx.git.get_diff_to_branch(cwd, base_branch)
+    pr_diff = ctx.git.analysis.get_diff_to_branch(cwd, base_branch)
     diff_lines = len(pr_diff.splitlines())
     yield ProgressEvent(f"Diff retrieved ({diff_lines} lines)", style="success")
 

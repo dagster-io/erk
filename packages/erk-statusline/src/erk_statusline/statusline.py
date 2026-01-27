@@ -154,7 +154,7 @@ def get_git_root_via_gateway(ctx: StatuslineContext) -> Path | None:
         Path to git root, or None if not in git repo.
     """
     try:
-        return ctx.git.get_repository_root(ctx.cwd)
+        return ctx.git.repo.get_repository_root(ctx.cwd)
     except (ValueError, OSError):
         return None
 

@@ -66,7 +66,7 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
     if current_branch is None:
         raise click.ClickException("Not on a branch (detached HEAD state)")
 
-    repo_root = ctx.git.get_repository_root(cwd)
+    repo_root = ctx.git.repo.get_repository_root(cwd)
     trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
 
     # Get parent branch (Graphite-aware, falls back to trunk)
@@ -75,7 +75,7 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
     )
 
     # Count commits ahead of parent
-    commits_ahead = ctx.git.count_commits_ahead(cwd, parent_branch)
+    commits_ahead = ctx.git.analysis.count_commits_ahead(cwd, parent_branch)
 
     if commits_ahead == 0:
         raise click.ClickException(

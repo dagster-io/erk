@@ -17,14 +17,20 @@ from erk_shared.gateway.git.abc import (
     RebaseResult,
     WorktreeInfo,
 )
+from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+from erk_shared.gateway.git.analysis_ops.fake import FakeGitAnalysisOps
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
 from erk_shared.gateway.git.commit_ops.fake import CommitRecord, FakeGitCommitOps
+from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+from erk_shared.gateway.git.config_ops.fake import ConfigSetRecord, FakeGitConfigOps
 from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
 from erk_shared.gateway.git.rebase_ops.fake import FakeGitRebaseOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
+from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+from erk_shared.gateway.git.repo_ops.fake import FakeGitRepoOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
 from erk_shared.gateway.git.status_ops.fake import FakeGitStatusOps
 from erk_shared.gateway.git.tag_ops.abc import GitTagOps
@@ -274,6 +280,34 @@ class FakeGit(Git):
         self._rebase_onto_calls: list[tuple[Path, str]] = []  # (cwd, target_ref)
         self._rebase_abort_calls: list[Path] = []
         self._pull_rebase_calls: list[tuple[Path, str, str]] = []  # (cwd, remote, branch)
+        self._config_sets_records: list[ConfigSetRecord] = []
+
+        # Repo operations subgateway
+        self._repo_gateway = FakeGitRepoOps()
+        self._repo_gateway.link_state(
+            repository_roots=self._repository_roots,
+            git_common_dirs=self._git_common_dirs,
+            worktrees=self._worktrees,
+        )
+
+        # Analysis operations subgateway
+        self._analysis_gateway = FakeGitAnalysisOps()
+        self._analysis_gateway.link_state(
+            commits_ahead=self._commits_ahead,
+            merge_bases=self._merge_bases,
+            diffs=self._diff_to_branch,
+        )
+
+        # Config operations subgateway
+        self._config_gateway = FakeGitConfigOps(git_user_name=git_user_name)
+        self._config_gateway.link_state(
+            user_names={},
+            config_values={},
+            git_user_name=git_user_name,
+        )
+        self._config_gateway.link_mutation_tracking(
+            config_sets=self._config_sets_records,
+        )
 
         # Worktree subgateway
         self._worktree_gateway = FakeWorktree(
@@ -422,28 +456,20 @@ class FakeGit(Git):
         """Access tag operations subgateway."""
         return self._tag_gateway
 
-    def get_git_common_dir(self, cwd: Path) -> Path | None:
-        """Get the common git directory.
+    @property
+    def repo(self) -> GitRepoOps:
+        """Access repository location operations subgateway."""
+        return self._repo_gateway
 
-        Mimics `git rev-parse --git-common-dir` behavior:
-        1. First checks explicit mapping for cwd or ancestors
-        2. Handles symlink resolution differences (e.g., /var vs /private/var on macOS)
-        3. Returns None if not in a git repository
-        """
-        # Build a resolved-key lookup for symlink handling
-        resolved_lookup = {k.resolve(): v for k, v in self._git_common_dirs.items()}
-        resolved_cwd = cwd.resolve()
+    @property
+    def analysis(self) -> GitAnalysisOps:
+        """Access branch analysis operations subgateway."""
+        return self._analysis_gateway
 
-        # Check exact match first
-        if resolved_cwd in resolved_lookup:
-            return resolved_lookup[resolved_cwd]
-
-        # Walk up parent directories to find a match
-        for parent in resolved_cwd.parents:
-            if parent in resolved_lookup:
-                return resolved_lookup[parent]
-
-        return None
+    @property
+    def config(self) -> GitConfigOps:
+        """Access configuration operations subgateway."""
+        return self._config_gateway
 
     @property
     def deleted_branches(self) -> list[str]:
@@ -568,73 +594,10 @@ class FakeGit(Git):
         """
         return self._pushed_branches
 
-    def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
-        """Count commits in HEAD that are not in base_branch."""
-        return self._commits_ahead.get((cwd, base_branch), 0)
-
-    def get_repository_root(self, cwd: Path) -> Path:
-        """Get the repository root directory.
-
-        Mimics `git rev-parse --show-toplevel` behavior:
-        1. First checks explicit repository_roots mapping
-        2. Falls back to finding the deepest worktree path that contains cwd
-        3. Falls back to deriving root from git_common_dirs (parent of .git directory)
-        4. Returns cwd as last resort if no match found
-        5. Handles symlink resolution differences (e.g., /var vs /private/var on macOS)
-        """
-        resolved_cwd = cwd.resolve()
-
-        # Check explicit mapping first (with symlink resolution)
-        resolved_roots = {k.resolve(): v for k, v in self._repository_roots.items()}
-        if resolved_cwd in resolved_roots:
-            return resolved_roots[resolved_cwd]
-
-        # Infer from worktrees: find the deepest worktree path that contains cwd
-        # This mimics git --show-toplevel returning the worktree root from subdirectories
-        best_match: Path | None = None
-        for worktree_list in self._worktrees.values():
-            for wt_info in worktree_list:
-                wt_path = wt_info.path.resolve()
-                # Check if cwd is the worktree path or a subdirectory of it
-                if resolved_cwd == wt_path or wt_path in resolved_cwd.parents:
-                    # Prefer deeper paths (more specific match)
-                    if best_match is None or len(wt_path.parts) > len(best_match.parts):
-                        best_match = wt_path
-
-        if best_match is not None:
-            return best_match
-
-        # Fallback: derive from git_common_dirs (parent of .git directory is repo root)
-        # This handles the case where we're in a subdirectory of a normal repo (not a worktree)
-        git_common_dir = self.get_git_common_dir(cwd)
-        if git_common_dir is not None:
-            # For normal repos, git_common_dir is the .git directory
-            # Its parent is the repository root
-            return git_common_dir.parent
-
-        # Last resort: return cwd itself
-        return cwd
-
-    def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
-        """Get diff between branch and HEAD."""
-        return self._diff_to_branch.get((cwd, branch), "")
-
-    def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
-        """Record git config set for test assertions."""
-        self._config_settings.append((key, value, scope))
-
     @property
-    def config_settings(self) -> list[tuple[str, str, str]]:
-        """Get list of config settings applied during test.
-
-        Returns list of (key, value, scope) tuples.
-        This property is for test assertions only.
-        """
-        return self._config_settings.copy()
-
-    def get_git_user_name(self, cwd: Path) -> str | None:
-        """Get the configured git user.name."""
-        return self._git_user_name
+    def config_sets(self) -> list[ConfigSetRecord]:
+        """Read-only access to config_set operations for test assertions."""
+        return self._config_gateway.config_sets
 
     @property
     def created_tags(self) -> list[tuple[str, str]]:
@@ -687,17 +650,6 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return self._rebase_gateway.rebase_continue_calls
-
-    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
-        """Get the merge base commit SHA between two refs.
-
-        Checks both (ref1, ref2) and (ref2, ref1) key orderings.
-        """
-        if (ref1, ref2) in self._merge_bases:
-            return self._merge_bases[(ref1, ref2)]
-        if (ref2, ref1) in self._merge_bases:
-            return self._merge_bases[(ref2, ref1)]
-        return None
 
     def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
         """Delegate to rebase subgateway."""

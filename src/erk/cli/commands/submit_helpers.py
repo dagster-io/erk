@@ -64,7 +64,7 @@ def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
     # Check if we can fast-forward (local is ancestor of remote)
     # Use merge-base to determine relationship
     # If merge-base == local_sha, local is behind and can fast-forward
-    merge_base = ctx.git.get_merge_base(repo.root, trunk, f"origin/{trunk}")
+    merge_base = ctx.git.analysis.get_merge_base(repo.root, trunk, f"origin/{trunk}")
 
     if merge_base == local_sha:
         # Local is behind remote - safe to fast-forward

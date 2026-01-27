@@ -38,7 +38,7 @@ def execute_land_pr(
 
     # Step 2: Get parent branch
     yield ProgressEvent("Getting parent branch...")
-    repo_root = ops.git.get_repository_root(cwd)
+    repo_root = ops.git.repo.get_repository_root(cwd)
     parent = ops.graphite.get_parent_branch(ops.git, repo_root, branch_name)
 
     if parent is None:

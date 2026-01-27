@@ -50,7 +50,7 @@ def _execute_submit_only(
     yield ProgressEvent("Rebasing stack... (gt restack)")
     restack_start = time.time()
     try:
-        repo_root = ops.git.get_repository_root(cwd)
+        repo_root = ops.git.repo.get_repository_root(cwd)
         ops.graphite.restack(repo_root, no_interactive=True, quiet=False)
     except subprocess.CalledProcessError as e:
         # Check for restack errors (conflicts, etc.)
@@ -227,7 +227,7 @@ def _execute_submit_only(
     yield ProgressEvent("Branch submitted to Graphite", style="success")
 
     # Wait for PR info
-    repo_root = ops.git.get_repository_root(cwd)
+    repo_root = ops.git.repo.get_repository_root(cwd)
 
     yield ProgressEvent("Waiting for PR info from GitHub API... (gh pr view)")
 
@@ -332,7 +332,7 @@ def execute_preflight(
     branch_name = str(submit_result[3])
 
     # Step 3: Get PR diff from GitHub API
-    repo_root = ops.git.get_repository_root(cwd)
+    repo_root = ops.git.repo.get_repository_root(cwd)
     yield ProgressEvent(f"Getting PR diff from GitHub... (gh pr diff {pr_number})")
     pr_diff = ops.github.get_pr_diff(repo_root, pr_number)
     diff_lines = len(pr_diff.splitlines())

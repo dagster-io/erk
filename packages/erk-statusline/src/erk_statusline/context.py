@@ -91,7 +91,7 @@ def create_context(cwd: str) -> StatuslineContext:
     # Note: try/except is acceptable at CLI entry point boundary per LBYL conventions
     repo_info: RepoInfo | None = None
     try:
-        repo_root = git.get_repository_root(cwd_path)
+        repo_root = git.repo.get_repository_root(cwd_path)
         remote_url = git.remote.get_remote_url(repo_root, "origin")
         owner, name = parse_git_remote_url(remote_url)
         repo_info = RepoInfo(owner=owner, name=name)

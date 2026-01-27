@@ -95,7 +95,7 @@ def test_fake_gitops_get_git_common_dir() -> None:
 
     git_ops = FakeGit(git_common_dirs={cwd: git_dir})
 
-    common_dir = git_ops.get_git_common_dir(cwd)
+    common_dir = git_ops.repo.get_git_common_dir(cwd)
     assert common_dir == git_dir
 
 

@@ -325,7 +325,7 @@ def find_assignment_by_worktree(state: PoolState, git: Git, cwd: Path) -> SlotAs
     Returns:
         SlotAssignment if cwd is within a managed slot, None otherwise
     """
-    worktree_root = git.get_repository_root(cwd)
+    worktree_root = git.repo.get_repository_root(cwd)
     for assignment in state.assignments:
         if assignment.worktree_path == worktree_root:
             return assignment

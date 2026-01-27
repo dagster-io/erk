@@ -29,7 +29,7 @@ def pr_check(ctx: ErkContext) -> None:
     )
 
     # Get repo root for GitHub operations
-    repo_root = ctx.git.get_repository_root(ctx.cwd)
+    repo_root = ctx.git.repo.get_repository_root(ctx.cwd)
 
     # Get PR for branch
     pr = ctx.github.get_pr_for_branch(repo_root, branch)

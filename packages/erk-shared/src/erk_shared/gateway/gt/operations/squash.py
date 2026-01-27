@@ -28,14 +28,14 @@ def execute_squash(
         CompletionEvent with SquashSuccess if squash succeeded or was unnecessary,
         or SquashError if squash failed.
     """
-    repo_root = ops.git.get_repository_root(cwd)
+    repo_root = ops.git.repo.get_repository_root(cwd)
 
     # Step 1: Get trunk branch and count commits for progress reporting
     yield ProgressEvent("Detecting trunk branch...")
     trunk = ops.git.branch.detect_trunk_branch(repo_root)
 
     yield ProgressEvent(f"Counting commits ahead of {trunk}...")
-    commit_count = ops.git.count_commits_ahead(cwd, trunk)
+    commit_count = ops.git.analysis.count_commits_ahead(cwd, trunk)
     if commit_count == 0:
         yield CompletionEvent(
             SquashError(

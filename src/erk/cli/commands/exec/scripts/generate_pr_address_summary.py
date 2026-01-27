@@ -218,7 +218,7 @@ def _count_commits(git, repo_root, pre_head: str) -> int:
         Number of commits added
     """
     # count_commits_ahead accepts any ref (branch or commit SHA)
-    return git.count_commits_ahead(repo_root, pre_head)
+    return git.analysis.count_commits_ahead(repo_root, pre_head)
 
 
 @click.command(name="generate-pr-address-summary")
