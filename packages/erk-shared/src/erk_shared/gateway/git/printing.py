@@ -6,7 +6,7 @@ before delegating to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git
+from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.printing import PrintingGitBranchOps
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
@@ -183,6 +183,16 @@ class PrintingGit(PrintingBase, Git):
     ) -> BranchDivergence:
         """Check branch divergence (read-only, no printing)."""
         return self._wrapped.branch.is_branch_diverged_from_remote(cwd, branch, remote)
+
+    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
+        """Rebase onto target ref with printed output."""
+        self._emit(self._format_command(f"git rebase {target_ref}"))
+        return self._wrapped.rebase_onto(cwd, target_ref)
+
+    def rebase_abort(self, cwd: Path) -> None:
+        """Abort rebase with printed output."""
+        self._emit(self._format_command("git rebase --abort"))
+        self._wrapped.rebase_abort(cwd)
 
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
         """Get merge base (read-only, no printing)."""
