@@ -103,8 +103,21 @@ def my_command(ctx: ErkContext, issue_number: int) -> None:
 **Skip LBYL when:**
 
 - You need the resource data anyway (just handle NotFound inline)
-- The operation is idempotent (e.g., "delete if exists")
+- The operation is *already* idempotent (e.g., `git fetch` always succeeds)
 - Performance is critical and you want to avoid extra API calls
+
+**Use LBYL to *implement* idempotency when:**
+
+- The operation would fail on missing resources (e.g., `git branch -D` fails if branch doesn't exist)
+- You want to make it idempotent by checking first and returning early if missing
+- Example: `delete_branch()` checks if branch exists, returns early if not, proceeds with deletion if yes
+
+**Decision tree:**
+
+1. Does the operation fail if resource is missing? **NO** → Skip LBYL (already idempotent)
+2. Does the operation fail if resource is missing? **YES** → Should it be idempotent?
+   - **YES** → Use LBYL to check existence and return early
+   - **NO** → Let it fail (error is appropriate)
 
 ## Existing Implementations
 

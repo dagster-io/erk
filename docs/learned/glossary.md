@@ -1031,7 +1031,7 @@ A special type of implementation plan created by `/erk:learn`. Learn plans captu
 
 ### erk-skip-learn
 
-A GitHub label added to PRs that originate from learn plans. When `erk pr land` detects this label, it automatically skips creating the pending-learn marker and deletes the worktree immediately.
+A GitHub label added to PRs that originate from learn plans. When `erk land` detects this label, it automatically skips creating the pending-learn marker and deletes the worktree immediately.
 
 **Purpose**: Prevents infinite extraction loops where extracting insights from a learn-originated PR would lead to another learn plan.
 
@@ -1042,7 +1042,7 @@ A GitHub label added to PRs that originate from learn plans. When `erk pr land` 
 
 **Checked by**:
 
-- `erk pr land` - Skips insight extraction if label present
+- `erk land` - Skips insight extraction if label present
 
 **Design Decision**: Labels are used instead of PR body markers because:
 
@@ -1079,13 +1079,13 @@ A GitHub label added to issues created by consolidating multiple learn plans. Pr
 
 ### pending-learn
 
-A marker state indicating a merged PR is queued for insight extraction. When `erk pr land` completes successfully (and the PR is not from a learn plan), it leaves the worktree in a "pending learn" state for later session analysis.
+A marker state indicating a merged PR is queued for insight extraction. When `erk land` completes successfully (and the PR is not from a learn plan), it leaves the worktree in a "pending learn" state for later session analysis.
 
 **Purpose**: Queue merged PRs for documentation extraction to capture learnings.
 
 **Lifecycle**:
 
-1. PR merges via `erk pr land`
+1. PR merges via `erk land`
 2. If not learn-originated → worktree marked as pending-learn
 3. User runs learn workflow later to capture insights
 4. Worktree deleted after learning complete

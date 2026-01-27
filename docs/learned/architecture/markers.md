@@ -18,7 +18,7 @@ Markers provide friction before destructive operations. They persist across sess
 
 | Marker          | Created By    | Cleared By                                    | Purpose                                          |
 | --------------- | ------------- | --------------------------------------------- | ------------------------------------------------ |
-| `pending-learn` | `erk pr land` | `erk plan learn`, `create-learn-plan` kit CLI | Block worktree deletion until insights extracted |
+| `pending-learn` | `erk land` | `erk plan learn`, `create-learn-plan` kit CLI | Block worktree deletion until insights extracted |
 
 ## API
 
@@ -37,7 +37,7 @@ Located in `erk_shared/scratch/markers.py`:
 
 ## Example: Pending Learn Flow
 
-1. `erk pr land` merges PR → creates `pending-learn` marker
+1. `erk land` merges PR → creates `pending-learn` marker
 2. User tries `erk wt delete` → blocked with "run learn first"
 3. User runs learn → marker deleted
 4. User can now delete worktree

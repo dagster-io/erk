@@ -124,7 +124,7 @@ gt ls
 
 ## Worktree State After Landing PRs
 
-When `erk pr land` completes, it deletes the feature branch and attempts to checkout trunk (master). However, this checkout may fail if trunk is already checked out in another worktree.
+When `erk land` completes, it deletes the feature branch and attempts to checkout trunk (master). However, this checkout may fail if trunk is already checked out in another worktree.
 
 ### Expected Behavior Table
 
