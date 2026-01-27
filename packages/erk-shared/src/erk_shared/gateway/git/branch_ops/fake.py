@@ -228,57 +228,6 @@ class FakeGitBranchOps(GitBranchOps):
         """
         return self._created_tracking_branches.copy()
 
-    # Methods to share state with FakeGit
-    def link_state_from_git(
-        self,
-        worktrees: dict[Path, list[WorktreeInfo]],
-        current_branches: dict[Path, str | None],
-        local_branches: dict[Path, list[str]],
-        remote_branches: dict[Path, list[str]],
-        branch_heads: dict[str, str],
-        trunk_branches: dict[Path, str],
-        ahead_behind: dict[tuple[Path, str], tuple[int, int]],
-        branch_divergence: dict[tuple[Path, str, str], BranchDivergence],
-        branch_sync_info: dict[Path, dict[str, BranchSyncInfo]],
-        branch_issues: dict[str, int | None],
-        behind_commit_authors: dict[tuple[Path, str], list[str]],
-        branch_last_commit_times: dict[tuple[Path, str, str], str | None],
-        branch_commits_with_authors: dict[tuple[Path, str, str, int], list[dict[str, str]]],
-    ) -> None:
-        """Link mutable state from FakeGit to keep in sync.
-
-        This allows FakeGitBranchOps to operate on the same state as FakeGit
-        when both are used together.
-
-        Args:
-            worktrees: Reference to FakeGit's worktrees dict
-            current_branches: Reference to FakeGit's current_branches dict
-            local_branches: Reference to FakeGit's local_branches dict
-            remote_branches: Reference to FakeGit's remote_branches dict
-            branch_heads: Reference to FakeGit's branch_heads dict
-            trunk_branches: Reference to FakeGit's trunk_branches dict
-            ahead_behind: Reference to FakeGit's ahead_behind dict
-            branch_divergence: Reference to FakeGit's branch_divergence dict
-            branch_sync_info: Reference to FakeGit's branch_sync_info dict
-            branch_issues: Reference to FakeGit's branch_issues dict
-            behind_commit_authors: Reference to FakeGit's behind_commit_authors dict
-            branch_last_commit_times: Reference to FakeGit's branch_last_commit_times dict
-            branch_commits_with_authors: Reference to FakeGit's branch_commits_with_authors dict
-        """
-        self._worktrees = worktrees
-        self._current_branches = current_branches
-        self._local_branches = local_branches
-        self._remote_branches = remote_branches
-        self._branch_heads = branch_heads
-        self._trunk_branches = trunk_branches
-        self._ahead_behind = ahead_behind
-        self._branch_divergence = branch_divergence
-        self._branch_sync_info = branch_sync_info
-        self._branch_issues = branch_issues
-        self._behind_commit_authors = behind_commit_authors
-        self._branch_last_commit_times = branch_last_commit_times
-        self._branch_commits_with_authors = branch_commits_with_authors
-
     def link_mutation_tracking(
         self,
         created_branches: list[tuple[Path, str, str, bool]],
