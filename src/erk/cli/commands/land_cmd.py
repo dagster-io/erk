@@ -646,7 +646,7 @@ def _cleanup_non_slot_worktree(cleanup: CleanupContext) -> None:
 
     # Check for uncommitted changes before switching branches
     Ensure.invariant(
-        not cleanup.ctx.git.has_uncommitted_changes(cleanup.worktree_path),
+        not cleanup.ctx.git.status.has_uncommitted_changes(cleanup.worktree_path),
         f"Worktree has uncommitted changes at {cleanup.worktree_path}.\n"
         "Commit or stash your changes before landing.",
     )

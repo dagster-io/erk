@@ -54,7 +54,7 @@ def execute_unassign(
         SystemExit: If worktree has uncommitted changes or placeholder branch cannot be determined
     """
     # Check for uncommitted changes before switching branches
-    if ctx.git.has_uncommitted_changes(assignment.worktree_path):
+    if ctx.git.status.has_uncommitted_changes(assignment.worktree_path):
         user_output(
             f"Error: Worktree has uncommitted changes at {assignment.worktree_path}.\n"
             "Commit or stash your changes before unassigning."

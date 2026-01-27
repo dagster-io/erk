@@ -13,6 +13,8 @@ from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
 from erk_shared.gateway.git.commit_ops.dry_run import DryRunGitCommitOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.dry_run import DryRunGitRemoteOps
+from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+from erk_shared.gateway.git.status_ops.dry_run import DryRunGitStatusOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.dry_run import DryRunWorktree
 from erk_shared.output.output import user_output
@@ -68,23 +70,16 @@ class DryRunGit(Git):
         """Access commit operations subgateway (wrapped with DryRunGitCommitOps)."""
         return DryRunGitCommitOps(self._wrapped.commit)
 
+    @property
+    def status(self) -> GitStatusOps:
+        """Access status operations subgateway (wrapped with DryRunGitStatusOps)."""
+        return DryRunGitStatusOps(self._wrapped.status)
+
     # Read-only operations: delegate to wrapped implementation
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get git common directory (read-only, delegates to wrapped)."""
         return self._wrapped.get_git_common_dir(cwd)
-
-    def has_staged_changes(self, repo_root: Path) -> bool:
-        """Check for staged changes (read-only, delegates to wrapped)."""
-        return self._wrapped.has_staged_changes(repo_root)
-
-    def has_uncommitted_changes(self, cwd: Path) -> bool:
-        """Check for uncommitted changes (read-only, delegates to wrapped)."""
-        return self._wrapped.has_uncommitted_changes(cwd)
-
-    def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
-        """Get file status (read-only, delegates to wrapped)."""
-        return self._wrapped.get_file_status(cwd)
 
     def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
         """Count commits ahead (read-only, delegates to wrapped)."""
@@ -97,14 +92,6 @@ class DryRunGit(Git):
     def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
         """Get diff to branch (read-only, delegates to wrapped)."""
         return self._wrapped.get_diff_to_branch(cwd, branch)
-
-    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
-        """Check merge conflicts (read-only, delegates to wrapped)."""
-        return self._wrapped.check_merge_conflicts(cwd, base_branch, head_branch)
-
-    def get_conflicted_files(self, cwd: Path) -> list[str]:
-        """Get conflicted files (read-only, delegates to wrapped)."""
-        return self._wrapped.get_conflicted_files(cwd)
 
     def is_rebase_in_progress(self, cwd: Path) -> bool:
         """Check if rebase in progress (read-only, delegates to wrapped)."""

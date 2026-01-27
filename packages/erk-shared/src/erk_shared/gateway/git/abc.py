@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
     from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
     from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    from erk_shared.gateway.git.status_ops.abc import GitStatusOps
     from erk_shared.gateway.git.worktree.abc import Worktree
 
 
@@ -122,41 +123,15 @@ class Git(ABC):
         """Access commit operations subgateway."""
         ...
 
+    @property
+    @abstractmethod
+    def status(self) -> GitStatusOps:
+        """Access status operations subgateway."""
+        ...
+
     @abstractmethod
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory."""
-        ...
-
-    @abstractmethod
-    def has_staged_changes(self, repo_root: Path) -> bool:
-        """Check if the repository has staged changes."""
-        ...
-
-    @abstractmethod
-    def has_uncommitted_changes(self, cwd: Path) -> bool:
-        """Check if a worktree has uncommitted changes.
-
-        Uses git status --porcelain to detect any uncommitted changes.
-        Returns False if git command fails (worktree might be in invalid state).
-
-        Args:
-            cwd: Working directory to check
-
-        Returns:
-            True if there are any uncommitted changes (staged, modified, or untracked)
-        """
-        ...
-
-    @abstractmethod
-    def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
-        """Get lists of staged, modified, and untracked files.
-
-        Args:
-            cwd: Working directory
-
-        Returns:
-            Tuple of (staged, modified, untracked) file lists
-        """
         ...
 
     @abstractmethod
@@ -172,25 +147,6 @@ class Git(ABC):
     @abstractmethod
     def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
         """Get diff between branch and HEAD."""
-        ...
-
-    @abstractmethod
-    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
-        """Check if merging would have conflicts using git merge-tree."""
-        ...
-
-    @abstractmethod
-    def get_conflicted_files(self, cwd: Path) -> list[str]:
-        """Get list of files with merge conflicts from git status --porcelain.
-
-        Returns file paths with conflict status codes (UU, AA, DD, AU, UA, DU, UD).
-
-        Args:
-            cwd: Working directory
-
-        Returns:
-            List of file paths with conflicts
-        """
         ...
 
     @abstractmethod

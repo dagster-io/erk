@@ -22,6 +22,8 @@ from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
 from erk_shared.gateway.git.commit_ops.fake import CommitRecord, FakeGitCommitOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
+from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+from erk_shared.gateway.git.status_ops.fake import FakeGitStatusOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.fake import FakeWorktree
 
@@ -338,6 +340,21 @@ class FakeGit(Git):
             dirty_worktrees=self._dirty_worktrees,
         )
 
+        # Status operations subgateway - linked to FakeGit's state
+        self._status_gateway = FakeGitStatusOps(
+            staged_repos=self._repos_with_staged_changes,
+            file_statuses=self._file_statuses,
+            merge_conflicts=self._merge_conflicts,
+            conflicted_files=self._conflicted_files,
+        )
+        # Link state so FakeGit modifications are visible to status subgateway
+        self._status_gateway.link_state(
+            staged_repos=self._repos_with_staged_changes,
+            file_statuses=self._file_statuses,
+            merge_conflicts=self._merge_conflicts,
+            conflicted_files=self._conflicted_files,
+        )
+
     @property
     def worktree(self) -> Worktree:
         """Access worktree operations subgateway."""
@@ -357,6 +374,11 @@ class FakeGit(Git):
     def commit(self) -> GitCommitOps:
         """Access commit operations subgateway."""
         return self._commit_gateway
+
+    @property
+    def status(self) -> GitStatusOps:
+        """Access status operations subgateway."""
+        return self._status_gateway
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory.
@@ -380,19 +402,6 @@ class FakeGit(Git):
                 return resolved_lookup[parent]
 
         return None
-
-    def has_staged_changes(self, repo_root: Path) -> bool:
-        """Report whether the repository has staged changes."""
-        return repo_root in self._repos_with_staged_changes
-
-    def has_uncommitted_changes(self, cwd: Path) -> bool:
-        """Check if a worktree has uncommitted changes."""
-        staged, modified, untracked = self._file_statuses.get(cwd, ([], [], []))
-        return bool(staged or modified or untracked)
-
-    def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
-        """Get lists of staged, modified, and untracked files."""
-        return self._file_statuses.get(cwd, ([], [], []))
 
     @property
     def deleted_branches(self) -> list[str]:
@@ -567,14 +576,6 @@ class FakeGit(Git):
     def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
         """Get diff between branch and HEAD."""
         return self._diff_to_branch.get((cwd, branch), "")
-
-    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
-        """Check if merging would have conflicts using git merge-tree."""
-        return self._merge_conflicts.get((base_branch, head_branch), False)
-
-    def get_conflicted_files(self, cwd: Path) -> list[str]:
-        """Get list of files with merge conflicts."""
-        return list(self._conflicted_files)
 
     def is_rebase_in_progress(self, cwd: Path) -> bool:
         """Check if a rebase is in progress."""

@@ -300,7 +300,7 @@ def add_worktree(
             if original_branch is None:
                 raise ValueError("Cannot create graphite branch from detached HEAD")
             Ensure.invariant(
-                not ctx.git.has_staged_changes(repo_root),
+                not ctx.git.status.has_staged_changes(repo_root),
                 "Staged changes detected. "
                 "Graphite cannot create a branch while staged changes are present.\n"
                 "`gt create --no-interactive` attempts to commit staged files but fails when "

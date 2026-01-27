@@ -271,7 +271,9 @@ def consolidate_stack(
         # Skip current worktree (consolidation target, never removed)
         if wt.path.resolve() == current_worktree.resolve():
             continue
-        if ctx.git.worktree.path_exists(wt.path) and ctx.git.has_uncommitted_changes(wt.path):
+        if ctx.git.worktree.path_exists(wt.path) and ctx.git.status.has_uncommitted_changes(
+            wt.path
+        ):
             worktrees_with_changes.append(wt.path)
 
     if worktrees_with_changes:

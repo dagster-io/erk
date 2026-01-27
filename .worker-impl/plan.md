@@ -9,19 +9,20 @@ Extract status query operations from Git ABC into a dedicated `git/status_ops/` 
 ## Key Insight: All Read-Only
 
 All 5 status methods are **read-only queries** - they don't mutate state. This simplifies:
+
 - FakeGitStatusOps: No mutation tracking needed (unlike remote_ops)
 - DryRunGitStatusOps: Simply delegates everything (no no-ops)
 - PrintingGitStatusOps: Simply delegates without printing (read-only ops don't print)
 
 ## Methods to Extract
 
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `has_staged_changes` | `(repo_root: Path) -> bool` | Check if repo has staged changes |
-| `has_uncommitted_changes` | `(cwd: Path) -> bool` | Check if worktree has uncommitted changes |
-| `get_file_status` | `(cwd: Path) -> tuple[list[str], list[str], list[str]]` | Get staged, modified, untracked files |
-| `check_merge_conflicts` | `(cwd: Path, base_branch: str, head_branch: str) -> bool` | Check if merge would have conflicts |
-| `get_conflicted_files` | `(cwd: Path) -> list[str]` | Get list of files with merge conflicts |
+| Method                    | Signature                                                 | Purpose                                   |
+| ------------------------- | --------------------------------------------------------- | ----------------------------------------- |
+| `has_staged_changes`      | `(repo_root: Path) -> bool`                               | Check if repo has staged changes          |
+| `has_uncommitted_changes` | `(cwd: Path) -> bool`                                     | Check if worktree has uncommitted changes |
+| `get_file_status`         | `(cwd: Path) -> tuple[list[str], list[str], list[str]]`   | Get staged, modified, untracked files     |
+| `check_merge_conflicts`   | `(cwd: Path, base_branch: str, head_branch: str) -> bool` | Check if merge would have conflicts       |
+| `get_conflicted_files`    | `(cwd: Path) -> list[str]`                                | Get list of files with merge conflicts    |
 
 ---
 
@@ -480,6 +481,7 @@ class PrintingGitStatusOps(PrintingBase, GitStatusOps):
 **File:** `packages/erk-shared/src/erk_shared/gateway/git/abc.py`
 
 Add import at top (in TYPE_CHECKING block):
+
 ```python
 if TYPE_CHECKING:
     from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
@@ -489,6 +491,7 @@ if TYPE_CHECKING:
 ```
 
 Add property after `remote` property (around line 117):
+
 ```python
     @property
     @abstractmethod
@@ -502,17 +505,20 @@ Add property after `remote` property (around line 117):
 **File:** `packages/erk-shared/src/erk_shared/gateway/git/real.py`
 
 Add imports:
+
 ```python
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
 from erk_shared.gateway.git.status_ops.real import RealGitStatusOps
 ```
 
 In `__init__`, add:
+
 ```python
 self._status = RealGitStatusOps()
 ```
 
 Add property:
+
 ```python
     @property
     def status(self) -> GitStatusOps:
@@ -525,12 +531,14 @@ Add property:
 **File:** `packages/erk-shared/src/erk_shared/gateway/git/fake.py`
 
 Add imports:
+
 ```python
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
 from erk_shared.gateway.git.status_ops.fake import FakeGitStatusOps
 ```
 
 In `__init__`, after remote_gateway creation (around line 316), add:
+
 ```python
         # Status operations subgateway - linked to FakeGit's state
         self._status_gateway = FakeGitStatusOps(
@@ -549,6 +557,7 @@ In `__init__`, after remote_gateway creation (around line 316), add:
 ```
 
 Add property after `remote` property:
+
 ```python
     @property
     def status(self) -> GitStatusOps:
@@ -561,12 +570,14 @@ Add property after `remote` property:
 **File:** `packages/erk-shared/src/erk_shared/gateway/git/dry_run.py`
 
 Add imports:
+
 ```python
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
 from erk_shared.gateway.git.status_ops.dry_run import DryRunGitStatusOps
 ```
 
 Add property after `remote` property:
+
 ```python
     @property
     def status(self) -> GitStatusOps:
@@ -579,12 +590,14 @@ Add property after `remote` property:
 **File:** `packages/erk-shared/src/erk_shared/gateway/git/printing.py`
 
 Add imports:
+
 ```python
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
 from erk_shared.gateway.git.status_ops.printing import PrintingGitStatusOps
 ```
 
 Add property after `remote` property:
+
 ```python
     @property
     def status(self) -> GitStatusOps:
@@ -597,10 +610,12 @@ Add property after `remote` property:
 ### Step 12: Migrate Callsites
 
 Replace all `git.has_staged_changes(` with `git.status.has_staged_changes(`:
+
 - `src/erk/cli/commands/wt/create_cmd.py:303`
 - `packages/erk-shared/src/erk_shared/gateway/gt/operations/quick_submit.py:50`
 
 Replace all `git.has_uncommitted_changes(` with `git.status.has_uncommitted_changes(`:
+
 - `src/erk/cli/commands/navigation_helpers.py:67`
 - `src/erk/cli/commands/pr/submit_cmd.py:317`
 - `src/erk/cli/commands/submit_helpers.py:48`
@@ -616,18 +631,22 @@ Replace all `git.has_uncommitted_changes(` with `git.status.has_uncommitted_chan
 - `packages/erk-shared/src/erk_shared/gateway/pr/submit.py:170`
 
 Replace all `git.get_file_status(` with `git.status.get_file_status(`:
+
 - `src/erk/status/collectors/git.py:49`
 
 Replace all `git.check_merge_conflicts(` with `git.status.check_merge_conflicts(`:
+
 - `packages/erk-shared/src/erk_shared/gateway/gt/operations/pre_analysis.py:199`
 
 Replace all `git.get_conflicted_files(` with `git.status.get_conflicted_files(`:
+
 - `src/erk/cli/commands/pr/fix_conflicts_cmd.py:58`
 - `src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py:246`
 
 ### Step 13: Remove Status Methods from Git ABC and Implementations
 
 **From `abc.py`** - Remove these method declarations:
+
 - `has_staged_changes` (lines 124-126)
 - `has_uncommitted_changes` (lines 128-141)
 - `get_file_status` (lines 157-165)
@@ -635,6 +654,7 @@ Replace all `git.get_conflicted_files(` with `git.status.get_conflicted_files(`:
 - `get_conflicted_files` (lines 239-251)
 
 **From `real.py`** - Remove these method implementations:
+
 - `has_staged_changes` (lines 75-87)
 - `has_uncommitted_changes` (lines 89-100)
 - `get_file_status` (lines 116-147)
@@ -642,6 +662,7 @@ Replace all `git.get_conflicted_files(` with `git.status.get_conflicted_files(`:
 - `get_conflicted_files` (lines 269-290)
 
 **From `fake.py`** - Remove these method implementations:
+
 - `has_staged_changes` (lines 356-358)
 - `has_uncommitted_changes` (lines 360-363)
 - `get_file_status` (lines 369-371)
@@ -649,6 +670,7 @@ Replace all `git.get_conflicted_files(` with `git.status.get_conflicted_files(`:
 - `get_conflicted_files` (lines 596-598)
 
 **From `dry_run.py`** - Remove these delegation methods:
+
 - `has_staged_changes` (lines 70-72)
 - `has_uncommitted_changes` (lines 74-76)
 - `get_file_status` (lines 82-84)
@@ -656,6 +678,7 @@ Replace all `git.get_conflicted_files(` with `git.status.get_conflicted_files(`:
 - `get_conflicted_files` (lines 126-128)
 
 **From `printing.py`** - Remove these delegation methods:
+
 - `has_staged_changes` (lines 87-89)
 - `has_uncommitted_changes` (lines 91-93)
 - `get_file_status` (lines 124-126)
@@ -665,6 +688,7 @@ Replace all `git.get_conflicted_files(` with `git.status.get_conflicted_files(`:
 ### Step 14: Update Tests
 
 **Update existing fake tests** in `tests/unit/fakes/test_fake_git.py`:
+
 - Change `git_ops.has_uncommitted_changes(cwd)` to `git_ops.status.has_uncommitted_changes(cwd)`
 - Change `git_ops.get_file_status(cwd)` to `git_ops.status.get_file_status(cwd)`
 
@@ -798,6 +822,7 @@ class TestLinkState:
 ## Files Summary
 
 **New files (7):**
+
 ```
 packages/erk-shared/src/erk_shared/gateway/git/status_ops/
 ├── __init__.py
@@ -811,6 +836,7 @@ tests/unit/fakes/test_fake_git_status_ops.py
 ```
 
 **Modified files:**
+
 - `packages/erk-shared/src/erk_shared/gateway/git/abc.py`
 - `packages/erk-shared/src/erk_shared/gateway/git/real.py`
 - `packages/erk-shared/src/erk_shared/gateway/git/fake.py`

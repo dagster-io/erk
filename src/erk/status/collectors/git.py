@@ -46,7 +46,7 @@ class GitStatusCollector(StatusCollector):
             return None
 
         # Get git status
-        staged, modified, untracked = ctx.git.get_file_status(worktree_path)
+        staged, modified, untracked = ctx.git.status.get_file_status(worktree_path)
         clean = len(staged) == 0 and len(modified) == 0 and len(untracked) == 0
 
         # Get ahead/behind counts

@@ -73,7 +73,7 @@ def execute_pre_analysis(
 
     # Step 0c: Check for and commit uncommitted changes
     uncommitted_changes_committed = False
-    if ops.git.has_uncommitted_changes(cwd):
+    if ops.git.status.has_uncommitted_changes(cwd):
         yield ProgressEvent("Staging uncommitted changes... (git add -A)")
         try:
             ops.git.commit.add_all(cwd)
@@ -196,7 +196,7 @@ def execute_pre_analysis(
 
     else:
         # No PR yet - fallback to local git merge-tree check
-        if ops.git.check_merge_conflicts(cwd, parent_branch, branch_name):
+        if ops.git.status.check_merge_conflicts(cwd, parent_branch, branch_name):
             has_conflicts = True
             conflict_details = {
                 "parent_branch": parent_branch,

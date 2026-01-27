@@ -64,7 +64,7 @@ def check_clean_working_tree(ctx: ErkContext) -> None:
     Raises SystemExit if uncommitted changes found.
     """
     Ensure.invariant(
-        not ctx.git.has_uncommitted_changes(ctx.cwd),
+        not ctx.git.status.has_uncommitted_changes(ctx.cwd),
         "Cannot delete current branch with uncommitted changes.\n"
         "Please commit or stash your changes first.",
     )

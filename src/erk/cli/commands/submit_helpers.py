@@ -45,7 +45,7 @@ def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
         raise SystemExit(1)
 
     # Check 2: Root worktree must be clean
-    if ctx.git.has_uncommitted_changes(repo.root):
+    if ctx.git.status.has_uncommitted_changes(repo.root):
         user_output(
             click.style("Error: ", fg="red") + "Root worktree has uncommitted changes.\n\n"
             "Please commit or stash changes before running erk plan submit."

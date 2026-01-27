@@ -62,7 +62,7 @@ def check_uncommitted_changes(
         SystemExit: If uncommitted changes detected
     """
     if not force and not dry_run:
-        if ctx.git.has_uncommitted_changes(current_worktree):
+        if ctx.git.status.has_uncommitted_changes(current_worktree):
             user_output(click.style("❌ Error: Uncommitted changes detected", fg="red", bold=True))
             user_output("\nCommit or stash changes before running split")
             raise SystemExit(1)
