@@ -7,6 +7,7 @@
 
 - [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
 - [capabilities/](capabilities/)
+- [checklists/](checklists/)
 - [ci/](ci/)
 - [claude-code/](claude-code/)
 - [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
@@ -28,6 +29,7 @@
 - [testing/](testing/) — Explore when writing tests or debugging test infrastructure. Add docs here for testing patterns specific to erk.
 - [textual/](textual/) — Explore when working with Textual framework. Add docs here for Textual-specific patterns.
 - [tui/](tui/) — Explore when working on the erk TUI application. Add docs here for TUI feature implementation.
+- [workflows/](workflows/)
 
 ## Uncategorized
 
