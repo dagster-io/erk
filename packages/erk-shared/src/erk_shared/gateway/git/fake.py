@@ -20,6 +20,8 @@ from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
 from erk_shared.gateway.git.commit_ops.fake import CommitRecord, FakeGitCommitOps
+from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+from erk_shared.gateway.git.rebase_ops.fake import FakeGitRebaseOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
@@ -355,6 +357,21 @@ class FakeGit(Git):
             conflicted_files=self._conflicted_files,
         )
 
+        # Rebase operations subgateway - linked to FakeGit's state
+        self._rebase_gateway = FakeGitRebaseOps(
+            rebase_in_progress=rebase_in_progress,
+            rebase_onto_result=rebase_onto_result,
+            rebase_continue_raises=rebase_continue_raises,
+            rebase_continue_clears_rebase=rebase_continue_clears_rebase,
+            rebase_abort_raises=rebase_abort_raises,
+        )
+        # Link mutation tracking
+        self._rebase_gateway.link_mutation_tracking(
+            rebase_onto_calls=self._rebase_onto_calls,
+            rebase_continue_calls=self._rebase_continue_calls,
+            rebase_abort_calls=self._rebase_abort_calls,
+        )
+
     @property
     def worktree(self) -> Worktree:
         """Access worktree operations subgateway."""
@@ -379,6 +396,11 @@ class FakeGit(Git):
     def status(self) -> GitStatusOps:
         """Access status operations subgateway."""
         return self._status_gateway
+
+    @property
+    def rebase(self) -> GitRebaseOps:
+        """Access rebase operations subgateway."""
+        return self._rebase_gateway
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory.
@@ -577,22 +599,6 @@ class FakeGit(Git):
         """Get diff between branch and HEAD."""
         return self._diff_to_branch.get((cwd, branch), "")
 
-    def is_rebase_in_progress(self, cwd: Path) -> bool:
-        """Check if a rebase is in progress."""
-        return self._rebase_in_progress
-
-    def rebase_continue(self, cwd: Path) -> None:
-        """Continue an in-progress rebase."""
-        if self._rebase_continue_raises is not None:
-            raise self._rebase_continue_raises
-        self._rebase_continue_calls.append(cwd)
-        if self._rebase_continue_clears_rebase:
-            self._rebase_in_progress = False
-
-    @property
-    def rebase_continue_calls(self) -> list[Path]:
-        """Get list of rebase_continue calls for test assertions."""
-        return list(self._rebase_continue_calls)
 
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """Record git config set for test assertions."""
@@ -642,43 +648,6 @@ class FakeGit(Git):
         """
         return self._pushed_tags.copy()
 
-    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
-        """Rebase the current branch onto a target ref.
-
-        Returns the configured rebase_onto_result if set, otherwise returns success.
-        Tracks call for test assertions.
-        """
-        self._rebase_onto_calls.append((cwd, target_ref))
-        if self._rebase_onto_result is not None:
-            return self._rebase_onto_result
-        return RebaseResult(success=True, conflict_files=())
-
-    def rebase_abort(self, cwd: Path) -> None:
-        """Abort an in-progress rebase operation.
-
-        Tracks call for test assertions. Raises configured exception if set.
-        """
-        self._rebase_abort_calls.append(cwd)
-        if self._rebase_abort_raises is not None:
-            raise self._rebase_abort_raises
-
-    @property
-    def rebase_onto_calls(self) -> list[tuple[Path, str]]:
-        """Get list of rebase_onto calls for test assertions.
-
-        Returns list of (cwd, target_ref) tuples.
-        This property is for test assertions only.
-        """
-        return list(self._rebase_onto_calls)
-
-    @property
-    def rebase_abort_calls(self) -> list[Path]:
-        """Get list of rebase_abort calls for test assertions.
-
-        This property is for test assertions only.
-        """
-        return list(self._rebase_abort_calls)
-
     @property
     def pull_rebase_calls(self) -> list[tuple[Path, str, str]]:
         """Get list of pull_rebase calls for test assertions.
@@ -687,6 +656,31 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return list(self._pull_rebase_calls)
+
+    @property
+    def rebase_onto_calls(self) -> list[tuple[Path, str]]:
+        """Get list of rebase_onto calls for test assertions.
+
+        Returns list of (cwd, target_ref) tuples.
+        This property is for test assertions only.
+        """
+        return self._rebase_gateway.rebase_onto_calls
+
+    @property
+    def rebase_abort_calls(self) -> list[Path]:
+        """Get list of rebase_abort calls for test assertions.
+
+        This property is for test assertions only.
+        """
+        return self._rebase_gateway.rebase_abort_calls
+
+    @property
+    def rebase_continue_calls(self) -> list[Path]:
+        """Get list of rebase_continue calls for test assertions.
+
+        This property is for test assertions only.
+        """
+        return self._rebase_gateway.rebase_continue_calls
 
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
         """Get the merge base commit SHA between two refs.

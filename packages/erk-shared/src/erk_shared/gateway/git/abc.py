@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, NamedTuple
 if TYPE_CHECKING:
     from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
     from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
     from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
     from erk_shared.gateway.git.status_ops.abc import GitStatusOps
     from erk_shared.gateway.git.worktree.abc import Worktree
@@ -129,6 +130,12 @@ class Git(ABC):
         """Access status operations subgateway."""
         ...
 
+    @property
+    @abstractmethod
+    def rebase(self) -> GitRebaseOps:
+        """Access rebase operations subgateway."""
+        ...
+
     @abstractmethod
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory."""
@@ -149,31 +156,6 @@ class Git(ABC):
         """Get diff between branch and HEAD."""
         ...
 
-    @abstractmethod
-    def is_rebase_in_progress(self, cwd: Path) -> bool:
-        """Check if rebase in progress (.git/rebase-merge or .git/rebase-apply).
-
-        Handles worktrees by checking git common dir.
-
-        Args:
-            cwd: Working directory
-
-        Returns:
-            True if a rebase is in progress
-        """
-        ...
-
-    @abstractmethod
-    def rebase_continue(self, cwd: Path) -> None:
-        """Continue an in-progress rebase (git rebase --continue).
-
-        Args:
-            cwd: Working directory
-
-        Raises:
-            subprocess.CalledProcessError: If continue fails (e.g., unresolved conflicts)
-        """
-        ...
 
     @abstractmethod
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
@@ -240,38 +222,6 @@ class Git(ABC):
 
         Raises:
             subprocess.CalledProcessError: If git command fails
-        """
-        ...
-
-    @abstractmethod
-    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
-        """Rebase the current branch onto a target ref.
-
-        Runs `git rebase <target_ref>` to replay current branch commits on top
-        of the target ref.
-
-        Args:
-            cwd: Working directory (must be in a git repository)
-            target_ref: The ref to rebase onto (e.g., "origin/main", branch name)
-
-        Returns:
-            RebaseResult with success flag and any conflict files.
-            If conflicts occur, the rebase will be left in progress.
-        """
-        ...
-
-    @abstractmethod
-    def rebase_abort(self, cwd: Path) -> None:
-        """Abort an in-progress rebase operation.
-
-        Runs `git rebase --abort` to cancel a rebase that has conflicts
-        and restore the branch to its original state.
-
-        Args:
-            cwd: Working directory (must have a rebase in progress)
-
-        Raises:
-            subprocess.CalledProcessError: If no rebase is in progress
         """
         ...
 

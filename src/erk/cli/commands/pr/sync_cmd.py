@@ -95,7 +95,7 @@ def _git_only_sync(
 
     # Rebase onto origin/<base>
     user_output(f"Rebasing onto origin/{base_branch}...")
-    rebase_result = ctx.git.rebase_onto(repo.root, f"origin/{base_branch}")
+    rebase_result = ctx.git.rebase.rebase_onto(repo.root, f"origin/{base_branch}")
 
     if not rebase_result.success:
         # Conflict occurred - provide instructions
@@ -263,7 +263,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
     if base_branch != trunk_branch:
         user_output(f"Rebasing onto {base_branch}...")
-        rebase_result = ctx.git.rebase_onto(repo.root, base_branch)
+        rebase_result = ctx.git.rebase.rebase_onto(repo.root, base_branch)
         if not rebase_result.success:
             user_output(click.style("\nRebase paused due to merge conflicts.", fg="yellow"))
             if rebase_result.conflict_files:

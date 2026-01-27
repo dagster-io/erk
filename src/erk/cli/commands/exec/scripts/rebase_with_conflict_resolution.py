@@ -229,7 +229,7 @@ def _rebase_with_conflict_resolution_impl(
         )
 
     # Start rebase (may fail with conflicts, which is expected)
-    rebase_result = git.rebase_onto(cwd, f"origin/{target_branch}")
+    rebase_result = git.rebase.rebase_onto(cwd, f"origin/{target_branch}")
 
     # Track all files that had conflicts across all resolution attempts
     all_conflicted_files: set[str] = set()
@@ -240,7 +240,7 @@ def _rebase_with_conflict_resolution_impl(
 
     # Loop while rebase has conflicts
     attempt = 0
-    while git.is_rebase_in_progress(cwd) and attempt < max_attempts:
+    while git.rebase.is_rebase_in_progress(cwd) and attempt < max_attempts:
         attempt += 1
         # Capture conflicted files before resolution
         conflicted = git.status.get_conflicted_files(cwd)
@@ -253,9 +253,9 @@ def _rebase_with_conflict_resolution_impl(
         )
 
     # Check if rebase completed
-    if git.is_rebase_in_progress(cwd):
+    if git.rebase.is_rebase_in_progress(cwd):
         # Abort rebase and return error
-        git.rebase_abort(cwd)
+        git.rebase.rebase_abort(cwd)
         return RebaseError(
             error="rebase-failed",
             message=f"Failed to resolve conflicts after {max_attempts} attempts",
