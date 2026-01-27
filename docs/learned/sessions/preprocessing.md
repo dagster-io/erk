@@ -101,7 +101,95 @@ This ensures:
 2. Session IDs are in filenames (traceable)
 3. Output goes to scratch storage (organized)
 
+## Token Compression Ratios
+
+Session preprocessing achieves **71-92% token compression**:
+
+| Raw Tokens | Preprocessed Tokens | Compression Ratio |
+| ---------- | ------------------- | ----------------- |
+| 100K       | 25K                 | 75%               |
+| 50K        | 14K                 | 72%               |
+| 200K       | 58K                 | 71%               |
+| 30K        | 9K                  | 70%               |
+
+**Average:** ~75% compression
+
+### What Gets Compressed by Type
+
+| Content Type         | Compression |
+| -------------------- | ----------- |
+| Repeated system msgs | 95%+        |
+| Tool outputs         | 60-80%      |
+| User messages        | 10-20%      |
+| Assistant responses  | 20-40%      |
+
+### Implications
+
+A 100K raw session:
+
+- **After preprocessing:** ~25K tokens
+- **If > 20K:** Split into 2 parts (part1: 20K, part2: 5K)
+- **Total files:** 2 files
+
+Even very large sessions (200K raw) typically fit in 3-4 parts after preprocessing.
+
+## Multi-Part File Handling
+
+### Part Numbering
+
+Multi-part files use 1-indexed numbering:
+
+```
+<session_id>.part1.jsonl
+<session_id>.part2.jsonl
+<session_id>.part3.jsonl
+```
+
+### Downstream Processing Patterns
+
+#### Pattern 1: Check for Parts
+
+```bash
+SESSION_ID="abc123-def456-789"
+BASE_FILE=~/.claude/projects/erk/sessions/${SESSION_ID}.jsonl
+
+if [ -f "${BASE_FILE}" ]; then
+  # Single-file session
+  SESSION_FILES="${BASE_FILE}"
+elif [ -f "${BASE_FILE%.jsonl}.part1.jsonl" ]; then
+  # Multi-part session
+  SESSION_FILES="${BASE_FILE%.jsonl}.part*.jsonl"
+else
+  echo "Session ${SESSION_ID} not found"
+fi
+```
+
+#### Pattern 2: Sequential Processing
+
+Process parts in order:
+
+```bash
+for part in ${SESSION_ID}.part*.jsonl; do
+  echo "Processing $part"
+  # Analyze part
+done
+```
+
+#### Pattern 3: Combined Analysis
+
+Combine parts for full session analysis:
+
+```bash
+# Concatenate all parts
+cat ${SESSION_ID}.part*.jsonl > ${SESSION_ID}.combined.jsonl
+
+# Analyze combined session
+analyze-session ${SESSION_ID}.combined.jsonl
+```
+
 ## Related Documentation
 
+- [Session Lifecycle](lifecycle.md) - Session file persistence and availability
+- [Session Discovery](discovery-fallback.md) - Enumerating and finding sessions
 - [tools.md](tools.md) - Session analysis tools overview
 - [layout.md](layout.md) - Session log format specification

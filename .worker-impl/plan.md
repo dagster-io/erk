@@ -34,6 +34,7 @@ https://gist.github.com/schrockn/94ea7b548499e08d3de34647b93effee
 Create a new documentation file that explains the context preservation pattern for replan workflows. This is the foundational document that describes why Steps 6a-6b were added.
 
 **Key sections:**
+
 - Problem statement: sparse plans and their failures
 - Solution overview: explicit context gathering
 - Step 6a walkthrough: what to collect
@@ -53,6 +54,7 @@ Create a new documentation file that explains the context preservation pattern f
 Create example-driven guidance showing the difference between sparse and comprehensive plan content. This prevents future agents from creating empty-looking plans.
 
 **Key sections:**
+
 - Generic file references vs. specific paths
 - Missing evidence vs. citations with line numbers
 - Vague verification vs. testable criteria
@@ -72,6 +74,7 @@ Create example-driven guidance showing the difference between sparse and compreh
 Add section to existing lifecycle documentation explaining when plan-header metadata fields are populated and how to handle graceful failures.
 
 **Key additions:**
+
 - Table of required fields by phase (Planning/Submitted/Implementing)
 - Explanation of graceful failure pattern (`no-branch-in-plan`)
 - Validation checklist before plan dispatch
@@ -90,6 +93,7 @@ Add section to existing lifecycle documentation explaining when plan-header meta
 Document the non-obvious fact that session files are session-scoped, not persistent across Claude Code interactions.
 
 **Key sections:**
+
 - Session-scoped persistence principle
 - Implications for learn workflows
 - Fallback patterns and discovery mechanisms
@@ -109,6 +113,7 @@ Document the non-obvious fact that session files are session-scoped, not persist
 Create documentation for preventing duplicate PR creation.
 
 **Key sections:**
+
 - Why duplicate PRs are problematic
 - Pattern: query before create
 - Commands for checking existing PRs (`gh pr list`, `gh pr view`)
@@ -130,6 +135,7 @@ Create documentation for preventing duplicate PR creation.
 Document specific prompt structures that reliably elicit investigation context.
 
 **Key sections:**
+
 - CRITICAL tag pattern for mandatory requirements
 - Gather-Then-Enter two-phase prompting structure
 - Anti-pattern: direct plan mode without gathering
@@ -148,6 +154,7 @@ Document specific prompt structures that reliably elicit investigation context.
 Create actionable checklist for verifying context preservation.
 
 **Key sections:**
+
 - Pre-plan-mode verification (discoveries, file paths, evidence, corrections)
 - Plan content verification (specific files, testable criteria, no placeholders)
 - Post-plan review (executability by other agents)
@@ -165,6 +172,7 @@ Create actionable checklist for verifying context preservation.
 Document the proper delegation pattern for running CI commands via devrun.
 
 **Key sections:**
+
 - Run-Report-Fix-Verify pattern
 - devrun restrictions (read-only, no auto-fixing)
 - Forbidden prompts vs. required patterns
@@ -184,6 +192,7 @@ Document the proper delegation pattern for running CI commands via devrun.
 Document how to handle Prettier formatting for markdown files in CI workflows.
 
 **Key sections:**
+
 - Problem: multi-line markdown edits trigger Prettier failures
 - Solution: pre-emptive `make prettier` via devrun
 - Anti-pattern: manual formatting attempts
@@ -202,6 +211,7 @@ Document how to handle Prettier formatting for markdown files in CI workflows.
 Document the pattern of loading diff analysis skills before committing.
 
 **Key sections:**
+
 - Why skill-generated messages are better (strategic, component-aware)
 - Pattern: load skill → analyze changes → generate message → commit
 - Comparison: hand-written vs. skill-generated
@@ -220,6 +230,7 @@ Document the pattern of loading diff analysis skills before committing.
 Document the git-only PR submission workflow as alternative to Graphite.
 
 **Key sections:**
+
 - When to use git-only vs. Graphite
 - Workflow steps: analyze → skill load → commit → push → create PR
 - PR validation and existing PR detection
@@ -238,6 +249,7 @@ Document the git-only PR submission workflow as alternative to Graphite.
 Document session preprocessing behavior and token limits.
 
 **Key sections:**
+
 - 20K token limit for single-file sessions
 - Multi-part file pattern (part1, part2, part3)
 - Downstream handling requirements
@@ -258,6 +270,7 @@ Document session preprocessing behavior and token limits.
 Create reference guide for plan type selection.
 
 **Key sections:**
+
 - Purpose, label, and focus of each type
 - Differences table (base branch, output, context)
 - When to use each type
@@ -275,6 +288,7 @@ Create reference guide for plan type selection.
 Document how to structure system reminders for replan workflows.
 
 **Key sections:**
+
 - Purpose of reminders in workflow
 - Pattern: concise, specific, verifiable
 - Example reminders for context gathering
@@ -292,6 +306,7 @@ Document how to structure system reminders for replan workflows.
 Document how to enumerate and fallback for missing sessions.
 
 **Key sections:**
+
 - Discovery pattern using `erk exec list-sessions`
 - Fallback strategy: log → continue → reduce scope
 - Never fail entirely pattern
