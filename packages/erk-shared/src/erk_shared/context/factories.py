@@ -40,7 +40,7 @@ def get_repo_info(git: Git, repo_root: Path) -> RepoInfo | None:
     from erk_shared.gateway.github.types import RepoInfo
 
     try:
-        remote_url = git.remote.get_remote_url(repo_root)
+        remote_url = git.remote.get_remote_url(repo_root, "origin")
         owner, name = parse_git_remote_url(remote_url)
         return RepoInfo(owner=owner, name=name)
     except ValueError:

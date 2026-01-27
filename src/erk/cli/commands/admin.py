@@ -190,7 +190,9 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
 
     # Step 1: Ensure current branch exists on remote
     user_output(f"Ensuring branch '{current_branch}' exists on remote...")
-    ctx.git.remote.push_to_remote(repo.root, "origin", current_branch, set_upstream=True)
+    ctx.git.remote.push_to_remote(
+        repo.root, "origin", current_branch, set_upstream=True, force=False
+    )
     user_output(click.style("✓", fg="green") + f" Branch '{current_branch}' pushed to origin")
 
     # Step 2: Find or create test issue
@@ -214,7 +216,9 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
 
     user_output(f"Creating test branch '{test_branch}'...")
     # Push master to the test branch using refspec syntax
-    ctx.git.remote.push_to_remote(repo.root, "origin", f"master:{test_branch}")
+    ctx.git.remote.push_to_remote(
+        repo.root, "origin", f"master:{test_branch}", set_upstream=False, force=False
+    )
     user_output(click.style("✓", fg="green") + f" Test branch '{test_branch}' created")
 
     # Step 4: Add an empty commit to the test branch
@@ -223,7 +227,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
     ctx.git.remote.fetch_branch(repo.root, "origin", test_branch)
     ctx.branch_manager.checkout_branch(repo.root, test_branch)
     ctx.git.commit(repo.root, "Test workflow run")
-    ctx.git.remote.push_to_remote(repo.root, "origin", test_branch)
+    ctx.git.remote.push_to_remote(repo.root, "origin", test_branch, set_upstream=False, force=False)
     ctx.branch_manager.checkout_branch(repo.root, current_branch)
     user_output(click.style("✓", fg="green") + f" Initial commit added to '{test_branch}'")
 

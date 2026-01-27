@@ -92,7 +92,7 @@ def create_context(cwd: str) -> StatuslineContext:
     repo_info: RepoInfo | None = None
     try:
         repo_root = git.get_repository_root(cwd_path)
-        remote_url = git.remote.get_remote_url(repo_root)
+        remote_url = git.remote.get_remote_url(repo_root, "origin")
         owner, name = parse_git_remote_url(remote_url)
         repo_info = RepoInfo(owner=owner, name=name)
     except (ValueError, subprocess.CalledProcessError):

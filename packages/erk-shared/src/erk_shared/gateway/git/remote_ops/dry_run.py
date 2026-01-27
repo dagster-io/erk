@@ -62,8 +62,8 @@ class DryRunGitRemoteOps(GitRemoteOps):
         remote: str,
         branch: str,
         *,
-        set_upstream: bool = False,
-        force: bool = False,
+        set_upstream: bool,
+        force: bool,
     ) -> None:
         """No-op for pushing in dry-run mode."""
         # Do nothing - prevents actual push execution
@@ -77,6 +77,6 @@ class DryRunGitRemoteOps(GitRemoteOps):
     # Query Operations (delegate to wrapped implementation)
     # ============================================================================
 
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+    def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get remote URL (read-only, delegates to wrapped)."""
         return self._wrapped.get_remote_url(repo_root, remote)

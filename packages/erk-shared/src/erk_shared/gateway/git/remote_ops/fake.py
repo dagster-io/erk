@@ -39,6 +39,7 @@ class FakeGitRemoteOps(GitRemoteOps):
         self,
         *,
         remote_urls: dict[tuple[Path, str], str] | None = None,
+        fetch_branch_raises: Exception | None = None,
         pull_branch_raises: Exception | None = None,
         push_to_remote_raises: Exception | None = None,
         pull_rebase_raises: Exception | None = None,
@@ -47,11 +48,14 @@ class FakeGitRemoteOps(GitRemoteOps):
 
         Args:
             remote_urls: Mapping of (repo_root, remote_name) -> remote URL
+            fetch_branch_raises: Exception to raise when fetch_branch() is called
             pull_branch_raises: Exception to raise when pull_branch() is called
             push_to_remote_raises: Exception to raise when push_to_remote() is called
             pull_rebase_raises: Exception to raise when pull_rebase() is called
         """
-        self._remote_urls = remote_urls or {}
+        # Use `is None` check to preserve empty dict reference from FakeGit
+        self._remote_urls = remote_urls if remote_urls is not None else {}
+        self._fetch_branch_raises = fetch_branch_raises
         self._pull_branch_raises = pull_branch_raises
         self._push_to_remote_raises = push_to_remote_raises
         self._pull_rebase_raises = pull_rebase_raises
@@ -65,6 +69,8 @@ class FakeGitRemoteOps(GitRemoteOps):
 
     def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
         """Fetch a specific branch from a remote (tracks mutation)."""
+        if self._fetch_branch_raises is not None:
+            raise self._fetch_branch_raises
         self._fetched_branches.append((remote, branch))
 
     def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
@@ -90,8 +96,8 @@ class FakeGitRemoteOps(GitRemoteOps):
         remote: str,
         branch: str,
         *,
-        set_upstream: bool = False,
-        force: bool = False,
+        set_upstream: bool,
+        force: bool,
     ) -> None:
         """Record push to remote, or raise if failure configured."""
         # Import at runtime to avoid circular dependency
@@ -112,7 +118,7 @@ class FakeGitRemoteOps(GitRemoteOps):
         if self._pull_rebase_raises is not None:
             raise self._pull_rebase_raises
 
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+    def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get the URL for a git remote.
 
         Raises:

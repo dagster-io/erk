@@ -57,8 +57,8 @@ class PrintingGitRemoteOps(PrintingBase, GitRemoteOps):
         remote: str,
         branch: str,
         *,
-        set_upstream: bool = False,
-        force: bool = False,
+        set_upstream: bool,
+        force: bool,
     ) -> None:
         """Push to remote with printed output."""
         upstream_flag = "-u " if set_upstream else ""
@@ -75,6 +75,6 @@ class PrintingGitRemoteOps(PrintingBase, GitRemoteOps):
     # Query Operations (delegate without printing)
     # ============================================================================
 
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+    def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get remote URL (read-only, no printing)."""
         return self._wrapped.get_remote_url(repo_root, remote)

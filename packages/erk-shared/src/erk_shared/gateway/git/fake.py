@@ -122,6 +122,7 @@ class FakeGit(Git):
         commits_ahead: dict[tuple[Path, str], int] | None = None,
         remote_urls: dict[tuple[Path, str], str] | None = None,
         add_all_raises: Exception | None = None,
+        fetch_branch_raises: Exception | None = None,
         pull_branch_raises: Exception | None = None,
         branch_issues: dict[str, int | None] | None = None,
         conflicted_files: list[str] | None = None,
@@ -174,6 +175,7 @@ class FakeGit(Git):
             commits_ahead: Mapping of (cwd, base_branch) -> commit count
             remote_urls: Mapping of (repo_root, remote_name) -> remote URL
             add_all_raises: Exception to raise when add_all() is called
+            fetch_branch_raises: Exception to raise when fetch_branch() is called
             pull_branch_raises: Exception to raise when pull_branch() is called
             branch_issues: Mapping of branch name -> issue number for get_branch_issue()
             conflicted_files: List of file paths with merge conflicts
@@ -223,6 +225,7 @@ class FakeGit(Git):
         self._commits_ahead = commits_ahead or {}
         self._remote_urls = remote_urls or {}
         self._add_all_raises = add_all_raises
+        self._fetch_branch_raises = fetch_branch_raises
         self._pull_branch_raises = pull_branch_raises
         self._branch_issues = branch_issues or {}
         self._conflicted_files = conflicted_files or []
@@ -299,6 +302,7 @@ class FakeGit(Git):
         # Remote operations subgateway - linked to FakeGit's state
         self._remote_gateway = FakeGitRemoteOps(
             remote_urls=self._remote_urls,
+            fetch_branch_raises=self._fetch_branch_raises,
             pull_branch_raises=self._pull_branch_raises,
             push_to_remote_raises=self._push_to_remote_raises,
             pull_rebase_raises=self._pull_rebase_raises,

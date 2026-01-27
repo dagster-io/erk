@@ -452,7 +452,7 @@ def _create_branch_and_pr(
     # Stage, commit, and push
     ctx.git.stage_files(repo.root, [".worker-impl"])
     ctx.git.commit(repo.root, f"Add plan for issue #{issue_number}")
-    ctx.git.remote.push_to_remote(repo.root, "origin", branch_name, set_upstream=True)
+    ctx.git.remote.push_to_remote(repo.root, "origin", branch_name, set_upstream=True, force=False)
     user_output(click.style("✓", fg="green") + " Branch pushed to remote")
 
     # Create draft PR
@@ -577,7 +577,9 @@ def _submit_single_issue(
                 repo.root,
                 f"[erk-plan] Initialize implementation for issue #{issue_number}",
             )
-            ctx.git.remote.push_to_remote(repo.root, "origin", branch_name)
+            ctx.git.remote.push_to_remote(
+                repo.root, "origin", branch_name, set_upstream=False, force=False
+            )
             user_output(click.style("✓", fg="green") + " Placeholder commit pushed")
 
             # Now create the PR

@@ -115,7 +115,9 @@ def _git_only_sync(
 
     # Force push to origin
     user_output(f"Force pushing to origin/{current_branch}...")
-    ctx.git.remote.push_to_remote(repo.root, "origin", current_branch, force=True)
+    ctx.git.remote.push_to_remote(
+        repo.root, "origin", current_branch, set_upstream=False, force=True
+    )
     user_output(click.style("✓", fg="green") + f" PR #{pr_number} synchronized")
 
     user_output(f"\nBranch '{current_branch}' is now up to date with origin/{base_branch}.")

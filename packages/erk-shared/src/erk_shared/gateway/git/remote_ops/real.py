@@ -63,8 +63,8 @@ class RealGitRemoteOps(GitRemoteOps):
         remote: str,
         branch: str,
         *,
-        set_upstream: bool = False,
-        force: bool = False,
+        set_upstream: bool,
+        force: bool,
     ) -> None:
         """Push a branch to a remote."""
         cmd = ["git", "push"]
@@ -88,7 +88,7 @@ class RealGitRemoteOps(GitRemoteOps):
             cwd=cwd,
         )
 
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+    def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get the URL for a git remote.
 
         Raises:

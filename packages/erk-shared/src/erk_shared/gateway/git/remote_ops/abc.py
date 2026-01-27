@@ -69,8 +69,8 @@ class GitRemoteOps(ABC):
         remote: str,
         branch: str,
         *,
-        set_upstream: bool = False,
-        force: bool = False,
+        set_upstream: bool,
+        force: bool,
     ) -> None:
         """Push a branch to a remote.
 
@@ -109,12 +109,12 @@ class GitRemoteOps(ABC):
     # ============================================================================
 
     @abstractmethod
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+    def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get the URL for a git remote.
 
         Args:
             repo_root: Path to the repository root
-            remote: Remote name (defaults to "origin")
+            remote: Remote name (e.g., "origin")
 
         Returns:
             Remote URL as a string
