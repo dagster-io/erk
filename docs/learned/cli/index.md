@@ -26,6 +26,8 @@
 - **[optional-arguments.md](optional-arguments.md)** — making a CLI argument optional, inferring CLI arguments from context, implementing branch-based argument defaults
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
 - **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub issues, working with .impl/ folders, debugging plan execution failures
+- **[pr-operations.md](pr-operations.md)** — creating PRs programmatically, implementing PR submission workflows, preventing duplicate PR creation
+- **[pr-submission.md](pr-submission.md)** — submitting PRs without Graphite, using /erk:git-pr-push command, understanding PR creation workflows
 - **[session-management.md](session-management.md)** — using ${CLAUDE_SESSION_ID} in commands, debugging session ID errors, implementing session tracking, writing slash commands that need session context
 - **[subprocess-stdin-patterns.md](subprocess-stdin-patterns.md)** — passing content to CLI tools via stdin, using subprocess with input parameter, CLI flags that only work with stdin
 - **[template-variables.md](template-variables.md)** — configuring .env templates, using substitution variables in config.toml, setting environment variables per worktree, updating environment when switching worktrees

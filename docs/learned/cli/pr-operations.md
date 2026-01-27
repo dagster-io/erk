@@ -1,5 +1,5 @@
 ---
-title: PR Operations: Duplicate Prevention and Detection
+title: "PR Operations: Duplicate Prevention and Detection"
 read_when:
   - "creating PRs programmatically"
   - "implementing PR submission workflows"

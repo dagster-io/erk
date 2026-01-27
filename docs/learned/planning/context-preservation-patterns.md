@@ -1,5 +1,5 @@
 ---
-title: Context Preservation Patterns: Anti-Patterns vs. Correct Patterns
+title: "Context Preservation Patterns: Anti-Patterns vs. Correct Patterns"
 read_when:
   - "writing implementation plans"
   - "creating consolidated plans"
