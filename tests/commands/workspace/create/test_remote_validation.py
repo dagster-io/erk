@@ -96,11 +96,11 @@ def test_create_proceeds_with_warning_when_remote_check_fails() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        # Override list_remote_branches to raise exception
+        # Override list_remote_branches on the branch gateway to raise exception
         def failing_list_remote_branches(repo_root):
             raise Exception("Network error")
 
-        git_ops.list_remote_branches = failing_list_remote_branches
+        git_ops.branch.list_remote_branches = failing_list_remote_branches
 
         test_ctx = env.build_context(git=git_ops)
 

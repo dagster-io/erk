@@ -27,7 +27,7 @@ def branch_list(ctx: ErkContext) -> None:
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # Detect trunk branch for last commit calculation
-    trunk = ctx.git.detect_trunk_branch(repo.root)
+    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
 
     # Get worktrees and PR info
     worktrees = ctx.git.worktree.list_worktrees(repo.root)
@@ -68,7 +68,7 @@ def branch_list(ctx: ErkContext) -> None:
             state_cell = pr.state
 
         # Get last commit time for this branch
-        timestamp = ctx.git.get_branch_last_commit_time(repo.root, branch, trunk)
+        timestamp = ctx.git.branch.get_branch_last_commit_time(repo.root, branch, trunk)
         last_cell = format_relative_time(timestamp) if timestamp is not None else "-"
 
         table.add_row(

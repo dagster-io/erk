@@ -304,7 +304,7 @@ def move_stack(
     else:
         # Auto-detect default branch if using 'main' default and it doesn't exist
         if ref == "main":
-            detected_default = ctx.git.detect_trunk_branch(repo.root)
+            detected_default = ctx.git.branch.detect_trunk_branch(repo.root)
             ref = detected_default
 
         execute_move(ctx, repo.root, source_wt, target_wt, ref, force=force)

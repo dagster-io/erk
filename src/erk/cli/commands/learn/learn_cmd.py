@@ -111,7 +111,7 @@ def learn_cmd(
             raise SystemExit(1)
     else:
         # Try to infer from current branch
-        branch = ctx.git.get_current_branch(ctx.cwd)
+        branch = ctx.git.branch.get_current_branch(ctx.cwd)
         if branch is not None:
             issue_number = extract_leading_issue_number(branch)
 

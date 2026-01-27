@@ -117,11 +117,11 @@ def complete_branch_names(
         branch_names = set()
 
         # Add local branches
-        local_branches = erk_ctx.git.list_local_branches(repo.root)
+        local_branches = erk_ctx.git.branch.list_local_branches(repo.root)
         branch_names.update(local_branches)
 
         # Add remote branches with prefix stripped
-        remote_branches = erk_ctx.git.list_remote_branches(repo.root)
+        remote_branches = erk_ctx.git.branch.list_remote_branches(repo.root)
         for remote_branch in remote_branches:
             # Strip remote prefix (e.g., 'origin/feature' -> 'feature')
             if "/" in remote_branch:

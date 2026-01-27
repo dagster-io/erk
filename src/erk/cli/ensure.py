@@ -202,7 +202,7 @@ class Ensure:
         Example:
             >>> Ensure.git_branch_exists(ctx, repo.root, "feature-branch")
         """
-        local_branches = ctx.git.list_local_branches(repo_root)
+        local_branches = ctx.git.branch.list_local_branches(repo_root)
         if branch not in local_branches:
             user_output(
                 click.style("Error: ", fg="red")
@@ -682,7 +682,7 @@ class Ensure:
             return
 
         # Check if branch exists locally
-        local_branches = ctx.git.list_local_branches(repo_root)
+        local_branches = ctx.git.branch.list_local_branches(repo_root)
         if branch not in local_branches:
             # Branch doesn't exist - will be created and tracked, so no issue
             return

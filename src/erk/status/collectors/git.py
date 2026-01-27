@@ -41,7 +41,7 @@ class GitStatusCollector(StatusCollector):
         Returns:
             GitStatus with repository information or None if collection fails
         """
-        branch = ctx.git.get_current_branch(worktree_path)
+        branch = ctx.git.branch.get_current_branch(worktree_path)
         if branch is None:
             return None
 
@@ -50,7 +50,7 @@ class GitStatusCollector(StatusCollector):
         clean = len(staged) == 0 and len(modified) == 0 and len(untracked) == 0
 
         # Get ahead/behind counts
-        ahead, behind = ctx.git.get_ahead_behind(worktree_path, branch)
+        ahead, behind = ctx.git.branch.get_ahead_behind(worktree_path, branch)
 
         # Get recent commits
         commit_dicts = ctx.git.get_recent_commits(worktree_path, limit=5)

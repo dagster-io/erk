@@ -55,7 +55,7 @@ def test_list_worktrees_detached_head(git_ops_with_detached: GitWithDetached) ->
 
 def test_get_current_branch_normal(git_ops: GitSetup) -> None:
     """Test getting current branch in normal checkout."""
-    branch = git_ops.git.get_current_branch(git_ops.repo)
+    branch = git_ops.git.branch.get_current_branch(git_ops.repo)
 
     assert branch == "main"
 
@@ -65,7 +65,7 @@ def test_get_current_branch_after_checkout(git_ops: GitSetup) -> None:
     # Create and checkout new branch
     subprocess.run(["git", "checkout", "-b", "feature"], cwd=git_ops.repo, check=True)
 
-    branch = git_ops.git.get_current_branch(git_ops.repo)
+    branch = git_ops.git.branch.get_current_branch(git_ops.repo)
 
     assert branch == "feature"
 
@@ -83,7 +83,7 @@ def test_get_current_branch_detached_head(git_ops: GitSetup) -> None:
     commit_hash = result.stdout.strip()
     subprocess.run(["git", "checkout", commit_hash], cwd=git_ops.repo, check=True)
 
-    branch = git_ops.git.get_current_branch(git_ops.repo)
+    branch = git_ops.git.branch.get_current_branch(git_ops.repo)
 
     assert branch is None
 
@@ -93,14 +93,14 @@ def test_get_current_branch_non_git_directory(git_ops: GitSetup, tmp_path: Path)
     non_git = tmp_path / "not-a-repo"
     non_git.mkdir()
 
-    branch = git_ops.git.get_current_branch(non_git)
+    branch = git_ops.git.branch.get_current_branch(non_git)
 
     assert branch is None
 
 
 def test_detect_trunk_branch_main(git_ops: GitSetup) -> None:
     """Test detecting trunk branch when it's main."""
-    trunk_branch = git_ops.git.detect_trunk_branch(git_ops.repo)
+    trunk_branch = git_ops.git.branch.detect_trunk_branch(git_ops.repo)
 
     assert trunk_branch == "main"
 
@@ -119,7 +119,7 @@ def test_detect_trunk_branch_master(
     init_git_repo(repo, "master")
     git_ops = RealGit()
 
-    trunk_branch = git_ops.detect_trunk_branch(repo)
+    trunk_branch = git_ops.branch.detect_trunk_branch(repo)
 
     assert trunk_branch == "master"
 
@@ -145,7 +145,7 @@ def test_detect_trunk_branch_with_remote_head(
 
     git_ops = RealGit()
 
-    trunk_branch = git_ops.detect_trunk_branch(repo)
+    trunk_branch = git_ops.branch.detect_trunk_branch(repo)
 
     assert trunk_branch == "main"
 
@@ -169,7 +169,7 @@ def test_detect_trunk_branch_neither_exists(
     git_ops = RealGit()
 
     # New behavior: returns "main" as final fallback
-    trunk_branch = git_ops.detect_trunk_branch(repo)
+    trunk_branch = git_ops.branch.detect_trunk_branch(repo)
     assert trunk_branch == "main"
 
 
@@ -183,7 +183,7 @@ def test_validate_trunk_branch_exists(tmp_path: Path) -> None:
     init_git_repo(repo, "main")
 
     git_ops = RealGit()
-    result = git_ops.validate_trunk_branch(repo, "main")
+    result = git_ops.branch.validate_trunk_branch(repo, "main")
 
     assert result == "main"
 
@@ -200,7 +200,7 @@ def test_validate_trunk_branch_not_exists(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     with pytest.raises(RuntimeError, match="does not exist in repository"):
-        git_ops.validate_trunk_branch(repo, "nonexistent")
+        git_ops.branch.validate_trunk_branch(repo, "nonexistent")
 
 
 def test_get_git_common_dir_from_main_repo(git_ops: GitSetup) -> None:
@@ -253,7 +253,7 @@ def test_add_worktree_with_existing_branch(
     assert git_ops_with_existing_branch.wt_path.exists()
 
     # Verify branch is checked out
-    branch = git_ops_with_existing_branch.git.get_current_branch(
+    branch = git_ops_with_existing_branch.git.branch.get_current_branch(
         git_ops_with_existing_branch.wt_path
     )
     assert branch == "feature"
@@ -274,7 +274,7 @@ def test_add_worktree_create_new_branch(
     assert git_ops_with_existing_branch.wt_path.exists()
 
     # Verify new branch is checked out
-    branch = git_ops_with_existing_branch.git.get_current_branch(
+    branch = git_ops_with_existing_branch.git.branch.get_current_branch(
         git_ops_with_existing_branch.wt_path
     )
     assert branch == "new-feature"
@@ -323,7 +323,7 @@ def test_add_worktree_detached(git_ops_with_existing_branch: GitWithExistingBran
     assert git_ops_with_existing_branch.wt_path.exists()
 
     # Verify it's in detached HEAD state
-    branch = git_ops_with_existing_branch.git.get_current_branch(
+    branch = git_ops_with_existing_branch.git.branch.get_current_branch(
         git_ops_with_existing_branch.wt_path
     )
     assert branch is None
@@ -932,7 +932,7 @@ def test_rebase_abort_cancels_rebase(tmp_path: Path) -> None:
     assert git_ops.is_rebase_in_progress(repo) is False
 
     # Verify we're back on feature branch with original content
-    branch = git_ops.get_current_branch(repo)
+    branch = git_ops.branch.get_current_branch(repo)
     assert branch == "feature"
     assert "FEATURE" in (repo / "file.txt").read_text()
 
@@ -1000,7 +1000,7 @@ def test_get_behind_commit_authors_no_upstream(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act: Branch has no upstream (local-only repo)
-    authors = git_ops.get_behind_commit_authors(repo, "main")
+    authors = git_ops.branch.get_behind_commit_authors(repo, "main")
 
     # Assert: No upstream, so empty list
     assert authors == []
@@ -1024,7 +1024,7 @@ def test_get_behind_commit_authors_up_to_date(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act: Local is at same commit as remote
-    authors = git_ops.get_behind_commit_authors(local_repo, "main")
+    authors = git_ops.branch.get_behind_commit_authors(local_repo, "main")
 
     # Assert: Up to date, so empty list
     assert authors == []
@@ -1069,7 +1069,7 @@ def test_get_behind_commit_authors_returns_authors_from_remote(tmp_path: Path) -
     git_ops = RealGit()
 
     # Act
-    authors = git_ops.get_behind_commit_authors(local_repo, "main")
+    authors = git_ops.branch.get_behind_commit_authors(local_repo, "main")
 
     # Assert: Should contain Alice's commit
     assert len(authors) == 1
@@ -1132,7 +1132,7 @@ def test_get_behind_commit_authors_multiple_authors(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    authors = git_ops.get_behind_commit_authors(local_repo, "main")
+    authors = git_ops.branch.get_behind_commit_authors(local_repo, "main")
 
     # Assert: Should contain both authors (most recent first from git log)
     assert len(authors) == 2
@@ -1179,7 +1179,7 @@ def test_get_behind_commit_authors_with_bot_author(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    authors = git_ops.get_behind_commit_authors(local_repo, "main")
+    authors = git_ops.branch.get_behind_commit_authors(local_repo, "main")
 
     # Assert: Should contain the bot author name
     assert len(authors) == 1

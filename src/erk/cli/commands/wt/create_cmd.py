@@ -109,7 +109,7 @@ def ensure_worktree_for_branch(
         return existing_path, False
 
     # Get trunk branch for validation
-    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+    trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
 
     # Validate that we're not trying to create worktree for trunk branch
     Ensure.invariant(
@@ -122,11 +122,11 @@ def ensure_worktree_for_branch(
 
     # Branch not checked out - need to create worktree
     # First check if branch exists locally
-    local_branches = ctx.git.list_local_branches(repo.root)
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
 
     if branch not in local_branches:
         # Not a local branch - check if remote branch exists
-        remote_branches = ctx.git.list_remote_branches(repo.root)
+        remote_branches = ctx.git.branch.list_remote_branches(repo.root)
         remote_ref = f"origin/{branch}"
 
         # Branch doesn't exist locally or on origin
@@ -277,7 +277,7 @@ def add_worktree(
         # Check if branch name exists on remote origin (only when creating new branches)
         if not skip_remote_check:
             try:
-                remote_branches = ctx.git.list_remote_branches(repo_root)
+                remote_branches = ctx.git.branch.list_remote_branches(repo_root)
                 remote_ref = f"origin/{branch}"
 
                 Ensure.invariant(
@@ -296,7 +296,7 @@ def add_worktree(
 
         if use_graphite:
             cwd = ctx.cwd
-            original_branch = ctx.git.get_current_branch(cwd)
+            original_branch = ctx.git.branch.get_current_branch(cwd)
             if original_branch is None:
                 raise ValueError("Cannot create graphite branch from detached HEAD")
             Ensure.invariant(
@@ -573,7 +573,7 @@ def create_wt(
     if from_current_branch:
         # Get the current branch
         current_branch = Ensure.not_none(
-            ctx.git.get_current_branch(ctx.cwd), "HEAD is detached (not on a branch)"
+            ctx.git.branch.get_current_branch(ctx.cwd), "HEAD is detached (not on a branch)"
         )
 
         # Set branch to current branch and derive name if not provided
@@ -675,7 +675,7 @@ def create_wt(
             raise SystemExit(1) from e
 
         # Prepare and validate using shared helper (returns union type)
-        trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+        trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
         result = prepare_plan_for_worktree(plan, ctx.time.now())
 
         if isinstance(result, IssueValidationFailed):
@@ -711,7 +711,7 @@ def create_wt(
     )
 
     cfg = ctx.local_config
-    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+    trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
 
     # Validate that name is not trunk branch (should use root worktree)
     Ensure.invariant(
@@ -730,7 +730,7 @@ def create_wt(
     if ctx.git.worktree.path_exists(wt_path):
         if output_json:
             # For JSON output, emit a status: "exists" response with available info
-            existing_branch = ctx.git.get_current_branch(wt_path)
+            existing_branch = ctx.git.branch.get_current_branch(wt_path)
             plan_path = get_impl_path(wt_path, git_ops=ctx.git)
             json_response = _create_json_response(
                 worktree_name=name,
@@ -747,7 +747,7 @@ def create_wt(
     to_branch = None
     if from_current_branch:
         current_branch = Ensure.not_none(
-            ctx.git.get_current_branch(ctx.cwd), "Unable to determine current branch"
+            ctx.git.branch.get_current_branch(ctx.cwd), "Unable to determine current branch"
         )
 
         # Determine preferred branch to checkout (prioritize Graphite parent)
@@ -765,7 +765,7 @@ def create_wt(
             to_branch = ref
         else:
             # Fall back to default branch (main/master)
-            to_branch = ctx.git.detect_trunk_branch(repo.root)
+            to_branch = ctx.git.branch.detect_trunk_branch(repo.root)
 
         # Check for edge case: can't move main to worktree then switch to main
         Ensure.invariant(

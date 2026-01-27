@@ -167,7 +167,7 @@ class RealGraphite(Graphite):
         branches_data = data.get("branches", [])
         for branch_name, _ in branches_data:
             if isinstance(branch_name, str):
-                commit_sha = git_ops.get_branch_head(repo_root, branch_name)
+                commit_sha = git_ops.branch.get_branch_head(repo_root, branch_name)
                 if commit_sha:
                     git_branch_heads[branch_name] = commit_sha
 

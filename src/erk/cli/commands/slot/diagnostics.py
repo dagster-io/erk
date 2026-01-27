@@ -143,7 +143,7 @@ def _check_missing_branches(
     issues: list[SyncIssue] = []
     for assignment in assignments:
         # Check if branch exists by getting its head commit
-        if ctx.git.get_branch_head(repo_root, assignment.branch_name) is None:
+        if ctx.git.branch.get_branch_head(repo_root, assignment.branch_name) is None:
             msg = f"Slot {assignment.slot_name}: branch '{assignment.branch_name}' deleted"
             issues.append(SyncIssue(code="missing-branch", message=msg))
     return issues

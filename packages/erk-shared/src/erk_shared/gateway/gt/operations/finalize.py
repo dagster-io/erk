@@ -176,7 +176,7 @@ def execute_finalize(
                 pass  # Ignore cleanup errors
 
     # Get PR info for result
-    branch_name = ops.git.get_current_branch(cwd) or "unknown"
+    branch_name = ops.git.branch.get_current_branch(cwd) or "unknown"
     pr_result = ops.github.get_pr_for_branch(repo_root, branch_name)
     pr_url = pr_result.url if not isinstance(pr_result, PRNotFound) else ""
 

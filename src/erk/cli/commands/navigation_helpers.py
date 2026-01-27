@@ -566,7 +566,7 @@ def resolve_down_navigation(
     parent_branch = ctx.branch_manager.get_parent_branch(repo.root, current_branch)
     if parent_branch is None:
         # Check if we're already on trunk
-        detected_trunk = ctx.git.detect_trunk_branch(repo.root)
+        detected_trunk = ctx.git.branch.detect_trunk_branch(repo.root)
         Ensure.invariant(
             current_branch != detected_trunk,
             f"Already at the bottom of the stack (on trunk branch '{detected_trunk}')",
@@ -579,7 +579,7 @@ def resolve_down_navigation(
         raise SystemExit(1)
 
     # Check if parent is the trunk - if so, switch to root
-    detected_trunk = ctx.git.detect_trunk_branch(repo.root)
+    detected_trunk = ctx.git.branch.detect_trunk_branch(repo.root)
     if parent_branch == detected_trunk:
         # Check if trunk is checked out in root (repo.root path)
         trunk_wt_path = ctx.git.worktree.find_worktree_for_branch(repo.root, detected_trunk)
@@ -651,7 +651,7 @@ def execute_stack_navigation(
 
     # Get current branch
     current_branch = Ensure.not_none(
-        ctx.git.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
+        ctx.git.branch.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
     )
 
     # Get all worktrees

@@ -213,7 +213,7 @@ def ci_verify_autofix(ctx: click.Context, original_sha: str, repo: str) -> None:
     github = require_github(ctx)
 
     # Get current SHA
-    current_sha = git.get_branch_head(cwd, "HEAD")
+    current_sha = git.branch.get_branch_head(cwd, "HEAD")
     if current_sha is None:
         click.echo(
             json.dumps(

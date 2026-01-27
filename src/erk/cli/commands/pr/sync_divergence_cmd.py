@@ -51,12 +51,12 @@ def pr_sync_divergence(ctx: ErkContext, *, dangerous: bool) -> None:
     cwd = ctx.cwd
 
     # Get current branch
-    current_branch = ctx.git.get_current_branch(cwd)
+    current_branch = ctx.git.branch.get_current_branch(cwd)
     if current_branch is None:
         raise click.ClickException("Not on a branch (detached HEAD)")
 
     # Check if remote tracking branch exists
-    if not ctx.git.branch_exists_on_remote(cwd, "origin", current_branch):
+    if not ctx.git.branch.branch_exists_on_remote(cwd, "origin", current_branch):
         raise click.ClickException(f"No remote tracking branch: origin/{current_branch}")
 
     # Fetch to get latest remote state
@@ -64,7 +64,7 @@ def pr_sync_divergence(ctx: ErkContext, *, dangerous: bool) -> None:
     ctx.git.fetch_branch(cwd, "origin", current_branch)
 
     # Check divergence status
-    divergence = ctx.git.is_branch_diverged_from_remote(cwd, current_branch, "origin")
+    divergence = ctx.git.branch.is_branch_diverged_from_remote(cwd, current_branch, "origin")
 
     if not divergence.is_diverged and divergence.behind == 0:
         click.echo("Branch is already in sync with remote. No action needed.")

@@ -228,7 +228,7 @@ def test_dryrun_git_checkout_branch_is_blocked(tmp_path: Path) -> None:
     from erk_shared.gateway.git.real import RealGit
 
     real_ops = RealGit()
-    assert real_ops.get_current_branch(repo) == "main"
+    assert real_ops.branch.get_current_branch(repo) == "main"
 
     ctx = create_context(dry_run=True)
 
@@ -236,7 +236,7 @@ def test_dryrun_git_checkout_branch_is_blocked(tmp_path: Path) -> None:
     ctx.branch_manager.checkout_branch(repo, "feature")
 
     # Verify we did NOT check out (checkout is blocked in dry-run)
-    assert real_ops.get_current_branch(repo) == "main"
+    assert real_ops.branch.get_current_branch(repo) == "main"
 
 
 # NOTE: Tests removed during global_config_ops migration

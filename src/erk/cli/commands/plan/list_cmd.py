@@ -319,7 +319,7 @@ def _build_plans_table(
             return None, 0
 
     # Build activity timestamps for display column (always computed)
-    trunk = ctx.git.detect_trunk_branch(repo_root)
+    trunk = ctx.git.branch.detect_trunk_branch(repo_root)
 
     # Build issue -> branch mapping from worktrees
     issue_to_branch: dict[int, str] = {}
@@ -333,7 +333,7 @@ def _build_plans_table(
     # Build activity timestamps for display and sorting
     activity_by_issue: dict[int, str] = {}
     for issue_num, branch in issue_to_branch.items():
-        timestamp = ctx.git.get_branch_last_commit_time(repo_root, branch, trunk)
+        timestamp = ctx.git.branch.get_branch_last_commit_time(repo_root, branch, trunk)
         if timestamp is not None:
             activity_by_issue[issue_num] = timestamp
 

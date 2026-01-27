@@ -136,7 +136,7 @@ def run_review(
     resolved_base_branch: str | None = None
     if local_mode:
         resolved_base_branch = (
-            base_branch if base_branch else require_git(ctx).detect_trunk_branch(cwd)
+            base_branch if base_branch else require_git(ctx).branch.detect_trunk_branch(cwd)
         )
 
     reviews_path = cwd / reviews_dir

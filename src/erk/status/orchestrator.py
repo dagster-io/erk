@@ -118,7 +118,7 @@ class StatusOrchestrator:
             is_root = worktree_path.resolve() == repo_root.resolve()
 
         name = "root" if is_root else worktree_path.name
-        branch = ctx.git.get_current_branch(worktree_path)
+        branch = ctx.git.branch.get_current_branch(worktree_path)
 
         return WorktreeDisplayInfo(name=name, path=worktree_path, branch=branch, is_root=is_root)
 

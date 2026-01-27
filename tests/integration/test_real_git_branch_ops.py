@@ -22,7 +22,7 @@ def test_create_branch_creates_new_branch(git_branch_ops: GitBranchOpsSetup) -> 
     branch_ops.create_branch(repo, "feature-branch", "main", force=False)
 
     # Assert
-    branches = git.list_local_branches(repo)
+    branches = git.branch.list_local_branches(repo)
     assert "feature-branch" in branches
 
 
@@ -50,7 +50,7 @@ def test_create_branch_from_specific_commit(git_branch_ops: GitBranchOpsSetup) -
     branch_ops.create_branch(repo, "from-first", first_commit, force=False)
 
     # Assert: Branch exists and points to first commit
-    branches = git.list_local_branches(repo)
+    branches = git.branch.list_local_branches(repo)
     assert "from-first" in branches
 
     result = subprocess.run(
@@ -82,7 +82,7 @@ def test_delete_branch_with_force_false_fails_on_unmerged(
         branch_ops.delete_branch(repo, "unmerged-branch", force=False)
 
     # Branch should still exist
-    branches = git.list_local_branches(repo)
+    branches = git.branch.list_local_branches(repo)
     assert "unmerged-branch" in branches
 
 
@@ -104,7 +104,7 @@ def test_delete_branch_with_force_true_deletes_unmerged(
     branch_ops.delete_branch(repo, "unmerged-branch", force=True)
 
     # Assert: Branch should be gone
-    branches = git.list_local_branches(repo)
+    branches = git.branch.list_local_branches(repo)
     assert "unmerged-branch" not in branches
 
 
@@ -121,7 +121,7 @@ def test_checkout_branch_switches_working_directory(
     branch_ops.checkout_branch(repo, "feature-branch")
 
     # Assert
-    current = git.get_current_branch(repo)
+    current = git.branch.get_current_branch(repo)
     assert current == "feature-branch"
 
 
@@ -145,7 +145,7 @@ def test_checkout_detached_moves_to_detached_head(
     branch_ops.checkout_detached(repo, commit_sha)
 
     # Assert: Should be in detached HEAD state
-    current = git.get_current_branch(repo)
+    current = git.branch.get_current_branch(repo)
     assert current is None  # Detached HEAD returns None
 
 
@@ -174,7 +174,7 @@ def test_create_tracking_branch_from_remote(tmp_path: Path) -> None:
     branch_ops.create_tracking_branch(local_repo, "local-feature", "origin/remote-feature")
 
     # Assert: Local branch exists and tracks remote
-    branches = git.list_local_branches(local_repo)
+    branches = git.branch.list_local_branches(local_repo)
     assert "local-feature" in branches
 
     # Verify tracking configuration

@@ -53,23 +53,23 @@ class PrintingGit(PrintingBase, Git):
 
     def get_current_branch(self, cwd: Path) -> str | None:
         """Get current branch (read-only, no printing)."""
-        return self._wrapped.get_current_branch(cwd)
+        return self._wrapped.branch.get_current_branch(cwd)
 
     def detect_trunk_branch(self, repo_root: Path) -> str:
         """Auto-detect trunk branch (read-only, no printing)."""
-        return self._wrapped.detect_trunk_branch(repo_root)
+        return self._wrapped.branch.detect_trunk_branch(repo_root)
 
     def validate_trunk_branch(self, repo_root: Path, name: str) -> str:
         """Validate trunk branch exists (read-only, no printing)."""
-        return self._wrapped.validate_trunk_branch(repo_root, name)
+        return self._wrapped.branch.validate_trunk_branch(repo_root, name)
 
     def list_local_branches(self, repo_root: Path) -> list[str]:
         """List local branches (read-only, no printing)."""
-        return self._wrapped.list_local_branches(repo_root)
+        return self._wrapped.branch.list_local_branches(repo_root)
 
     def list_remote_branches(self, repo_root: Path) -> list[str]:
         """List remote branches (read-only, no printing)."""
-        return self._wrapped.list_remote_branches(repo_root)
+        return self._wrapped.branch.list_remote_branches(repo_root)
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get git common directory (read-only, no printing)."""
@@ -85,15 +85,15 @@ class PrintingGit(PrintingBase, Git):
 
     def get_ahead_behind(self, cwd: Path, branch: str) -> tuple[int, int]:
         """Get ahead/behind counts (read-only, no printing)."""
-        return self._wrapped.get_ahead_behind(cwd, branch)
+        return self._wrapped.branch.get_ahead_behind(cwd, branch)
 
     def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
         """Get behind commit authors (read-only, no printing)."""
-        return self._wrapped.get_behind_commit_authors(cwd, branch)
+        return self._wrapped.branch.get_behind_commit_authors(cwd, branch)
 
     def get_all_branch_sync_info(self, repo_root: Path) -> dict[str, BranchSyncInfo]:
         """Get all branch sync info (read-only, no printing)."""
-        return self._wrapped.get_all_branch_sync_info(repo_root)
+        return self._wrapped.branch.get_all_branch_sync_info(repo_root)
 
     def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
         """Get recent commits (read-only, no printing)."""
@@ -113,11 +113,11 @@ class PrintingGit(PrintingBase, Git):
     def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
         """Check if branch exists on remote (delegates to wrapped implementation)."""
         # Read-only operation, no output needed
-        return self._wrapped.branch_exists_on_remote(repo_root, remote, branch)
+        return self._wrapped.branch.branch_exists_on_remote(repo_root, remote, branch)
 
     def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
         """Get branch head (read-only, no printing)."""
-        return self._wrapped.get_branch_head(repo_root, branch)
+        return self._wrapped.branch.get_branch_head(repo_root, branch)
 
     def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
         """Get commit message (read-only, no printing)."""
@@ -129,7 +129,7 @@ class PrintingGit(PrintingBase, Git):
 
     def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
         """Get branch issue (read-only, no printing)."""
-        return self._wrapped.get_branch_issue(repo_root, branch)
+        return self._wrapped.branch.get_branch_issue(repo_root, branch)
 
     def fetch_pr_ref(
         self, *, repo_root: Path, remote: str, pr_number: int, local_branch: str
@@ -169,7 +169,7 @@ class PrintingGit(PrintingBase, Git):
 
     def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
         """Get branch last commit time (read-only, no printing)."""
-        return self._wrapped.get_branch_last_commit_time(repo_root, branch, trunk)
+        return self._wrapped.branch.get_branch_last_commit_time(repo_root, branch, trunk)
 
     def add_all(self, cwd: Path) -> None:
         """Stage all changes with printed output."""
@@ -235,7 +235,9 @@ class PrintingGit(PrintingBase, Git):
         self, repo_root: Path, branch: str, trunk: str, *, limit: int = 50
     ) -> list[dict[str, str]]:
         """Get branch commits with authors (read-only, no printing)."""
-        return self._wrapped.get_branch_commits_with_authors(repo_root, branch, trunk, limit=limit)
+        return self._wrapped.branch.get_branch_commits_with_authors(
+            repo_root, branch, trunk, limit=limit
+        )
 
     def tag_exists(self, repo_root: Path, tag_name: str) -> bool:
         """Check if tag exists (read-only, no printing)."""
@@ -255,7 +257,7 @@ class PrintingGit(PrintingBase, Git):
         self, cwd: Path, branch: str, remote: str
     ) -> BranchDivergence:
         """Check branch divergence (read-only, no printing)."""
-        return self._wrapped.is_branch_diverged_from_remote(cwd, branch, remote)
+        return self._wrapped.branch.is_branch_diverged_from_remote(cwd, branch, remote)
 
     def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
         """Rebase onto target ref with printed output."""

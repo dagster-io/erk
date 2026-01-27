@@ -269,7 +269,7 @@ def _validate_existing_assignment(
         return ExistingAssignmentValidation(result=None, updated_state=updated_state)
 
     # Worktree exists - verify it has the correct branch
-    actual_branch = ctx.git.get_current_branch(existing.worktree_path)
+    actual_branch = ctx.git.branch.get_current_branch(existing.worktree_path)
     if actual_branch == branch_name:
         # Branch matches - fast path
         return ExistingAssignmentValidation(

@@ -182,10 +182,10 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
 
     # Get branch info for AI context
     repo_root = ctx.git.get_repository_root(cwd)
-    current_branch = ctx.git.get_current_branch(cwd)
+    current_branch = ctx.git.branch.get_current_branch(cwd)
     if current_branch is None:
         raise click.ClickException("Not on a branch (detached HEAD state)")
-    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
+    trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
 
     # Get parent branch (Graphite-aware, falls back to trunk)
     parent_branch = (
@@ -309,7 +309,7 @@ def _run_graphite_first_flow(
         click.ClickException: If gt submit fails or PR not found after submit
     """
     repo_root = ctx.git.get_repository_root(cwd)
-    branch_name = ctx.git.get_current_branch(cwd)
+    branch_name = ctx.git.branch.get_current_branch(cwd)
     if branch_name is None:
         raise click.ClickException("Not on a branch (detached HEAD state)")
 
@@ -346,7 +346,7 @@ def _run_graphite_first_flow(
         )
 
     # Get parent branch for base_branch
-    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
+    trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
     parent_branch = (
         ctx.branch_manager.get_parent_branch(Path(repo_root), branch_name) or trunk_branch
     )

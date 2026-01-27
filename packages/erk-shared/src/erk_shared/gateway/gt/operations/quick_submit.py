@@ -68,7 +68,7 @@ def execute_quick_submit(
 
     # Step 4: Submit via BranchManager (Graphite or git push)
     repo_root = ops.git.get_repository_root(cwd)
-    current_branch = ops.git.get_current_branch(cwd)
+    current_branch = ops.git.branch.get_current_branch(cwd)
 
     if current_branch is None:
         yield CompletionEvent(

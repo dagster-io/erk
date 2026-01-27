@@ -286,7 +286,7 @@ class TestRunReviewLocalMode:
         )
 
         # Use FakeGit to return "main" for trunk detection
-        fake_git = FakeGit(trunk_branches=["main"])
+        fake_git = FakeGit(trunk_branches={tmp_path: "main"})
 
         runner = CliRunner()
         result = runner.invoke(

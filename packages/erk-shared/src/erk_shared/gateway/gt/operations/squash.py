@@ -32,7 +32,7 @@ def execute_squash(
 
     # Step 1: Get trunk branch and count commits for progress reporting
     yield ProgressEvent("Detecting trunk branch...")
-    trunk = ops.git.detect_trunk_branch(repo_root)
+    trunk = ops.git.branch.detect_trunk_branch(repo_root)
 
     yield ProgressEvent(f"Counting commits ahead of {trunk}...")
     commit_count = ops.git.count_commits_ahead(cwd, trunk)

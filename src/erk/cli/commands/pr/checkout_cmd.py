@@ -115,9 +115,9 @@ def pr_checkout(
             repo_root=repo.root, remote="origin", pr_number=pr_number, local_branch=branch_name
         )
     else:
-        local_branches = ctx.git.list_local_branches(repo.root)
+        local_branches = ctx.git.branch.list_local_branches(repo.root)
         if branch_name not in local_branches:
-            remote_branches = ctx.git.list_remote_branches(repo.root)
+            remote_branches = ctx.git.branch.list_remote_branches(repo.root)
             remote_ref = f"origin/{branch_name}"
             if remote_ref in remote_branches:
                 ctx.git.fetch_branch(repo.root, "origin", branch_name)
@@ -138,9 +138,9 @@ def pr_checkout(
     # For stacked PRs (base is not trunk), rebase onto base branch
     # This ensures git history includes the base branch as an ancestor,
     # which `gt track` requires for proper stacking
-    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+    trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
     if pr.base_ref_name != trunk_branch and not pr.is_cross_repository:
-        local_branches = ctx.git.list_local_branches(repo.root)
+        local_branches = ctx.git.branch.list_local_branches(repo.root)
         if pr.base_ref_name not in local_branches:
             ctx.console.info(f"Fetching base branch '{pr.base_ref_name}'...")
             ctx.git.fetch_branch(repo.root, "origin", pr.base_ref_name)

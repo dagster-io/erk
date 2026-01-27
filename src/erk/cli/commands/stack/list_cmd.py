@@ -26,7 +26,7 @@ def list_stack(ctx: ErkContext) -> None:
     - worktree: Worktree directory name
     """
     repo = discover_repo_context(ctx, ctx.cwd)
-    current_branch = ctx.git.get_current_branch(repo.root)
+    current_branch = ctx.git.branch.get_current_branch(repo.root)
 
     if current_branch is None:
         click.echo("Error: Not on a branch (detached HEAD state)", err=True)

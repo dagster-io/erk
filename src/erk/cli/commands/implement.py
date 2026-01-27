@@ -196,7 +196,7 @@ def _implement_from_issue(
     # Execute based on mode
     if script:
         # Script mode - output activation script (stays in current directory)
-        branch = ctx.git.get_current_branch(ctx.cwd)
+        branch = ctx.git.branch.get_current_branch(ctx.cwd)
         if branch is None:
             branch = "current"
         target_description = f"#{issue_number}"
@@ -325,7 +325,7 @@ def _implement_from_file(
     # Execute based on mode
     if script:
         # Script mode - output activation script (stays in current directory)
-        branch = ctx.git.get_current_branch(ctx.cwd)
+        branch = ctx.git.branch.get_current_branch(ctx.cwd)
         if branch is None:
             branch = "current"
         target_description = str(plan_file)
@@ -500,7 +500,7 @@ def implement(
         # Extract plan number from current branch
         detected_plan = extract_plan_from_current_branch(ctx)
         if detected_plan is None:
-            current_branch = ctx.git.get_current_branch(ctx.cwd) or "unknown"
+            current_branch = ctx.git.branch.get_current_branch(ctx.cwd) or "unknown"
             raise click.ClickException(
                 f"Could not auto-detect plan number from branch '{current_branch}'.\n\n"
                 f"Branch does not follow PXXXX-* pattern. Either:\n"

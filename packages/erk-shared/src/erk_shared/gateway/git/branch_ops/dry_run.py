@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.output.output import user_output
 
@@ -52,3 +53,67 @@ class DryRunGitBranchOps(GitBranchOps):
         """No-op for creating tracking branch in dry-run mode."""
         # Do nothing - prevents actual tracking branch creation
         pass
+
+    # ============================================================================
+    # Query Operations (pass-through delegation)
+    # ============================================================================
+
+    def get_current_branch(self, cwd: Path) -> str | None:
+        """Get the currently checked-out branch."""
+        return self._wrapped.get_current_branch(cwd)
+
+    def list_local_branches(self, repo_root: Path) -> list[str]:
+        """List all local branch names in the repository."""
+        return self._wrapped.list_local_branches(repo_root)
+
+    def list_remote_branches(self, repo_root: Path) -> list[str]:
+        """List all remote branch names in the repository."""
+        return self._wrapped.list_remote_branches(repo_root)
+
+    def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
+        """Get the commit SHA at the head of a branch."""
+        return self._wrapped.get_branch_head(repo_root, branch)
+
+    def detect_trunk_branch(self, repo_root: Path) -> str:
+        """Auto-detect the trunk branch name."""
+        return self._wrapped.detect_trunk_branch(repo_root)
+
+    def validate_trunk_branch(self, repo_root: Path, name: str) -> str:
+        """Validate that a configured trunk branch exists."""
+        return self._wrapped.validate_trunk_branch(repo_root, name)
+
+    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
+        """Check if a branch exists on a remote."""
+        return self._wrapped.branch_exists_on_remote(repo_root, remote, branch)
+
+    def get_ahead_behind(self, cwd: Path, branch: str) -> tuple[int, int]:
+        """Get number of commits ahead and behind tracking branch."""
+        return self._wrapped.get_ahead_behind(cwd, branch)
+
+    def get_all_branch_sync_info(self, repo_root: Path) -> dict[str, BranchSyncInfo]:
+        """Get sync status for all local branches."""
+        return self._wrapped.get_all_branch_sync_info(repo_root)
+
+    def is_branch_diverged_from_remote(
+        self, cwd: Path, branch: str, remote: str
+    ) -> BranchDivergence:
+        """Check if a local branch has diverged from its remote tracking branch."""
+        return self._wrapped.is_branch_diverged_from_remote(cwd, branch, remote)
+
+    def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
+        """Extract GitHub issue number from branch name."""
+        return self._wrapped.get_branch_issue(repo_root, branch)
+
+    def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
+        """Get authors of commits on remote that are not in local branch."""
+        return self._wrapped.get_behind_commit_authors(cwd, branch)
+
+    def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
+        """Get the author date of the most recent commit unique to a branch."""
+        return self._wrapped.get_branch_last_commit_time(repo_root, branch, trunk)
+
+    def get_branch_commits_with_authors(
+        self, repo_root: Path, branch: str, trunk: str, *, limit: int
+    ) -> list[dict[str, str]]:
+        """Get commits on branch not on trunk, with author and timestamp."""
+        return self._wrapped.get_branch_commits_with_authors(repo_root, branch, trunk, limit=limit)

@@ -361,8 +361,8 @@ def test_branch_list_shows_last_commit_column() -> None:
             current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             branch_last_commit_times={
-                "feat-1": two_days_ago.isoformat(),
-                "feat-2": one_hour_ago.isoformat(),
+                (env.cwd, "feat-1", "main"): two_days_ago.isoformat(),
+                (env.cwd, "feat-2", "main"): one_hour_ago.isoformat(),
             },
         )
 

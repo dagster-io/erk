@@ -143,7 +143,7 @@ def branch_create(
     assert branch_name is not None
 
     # Check if branch already exists
-    local_branches = ctx.git.list_local_branches(repo.root)
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
     if branch_name in local_branches:
         user_output(
             f"Error: Branch '{branch_name}' already exists.\n"
@@ -152,13 +152,13 @@ def branch_create(
         raise SystemExit(1) from None
 
     # Create the new branch, respecting Graphite stacking
-    trunk = ctx.git.detect_trunk_branch(repo.root)
+    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
     if trunk is None:
         user_output("Error: Could not detect trunk branch.")
         raise SystemExit(1) from None
 
     # Stack on current branch if we're on a non-trunk branch
-    current_branch = ctx.git.get_current_branch(repo.root)
+    current_branch = ctx.git.branch.get_current_branch(repo.root)
     if current_branch and current_branch != trunk:
         parent_branch = current_branch
     else:

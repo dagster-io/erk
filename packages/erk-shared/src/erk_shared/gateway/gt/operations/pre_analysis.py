@@ -107,7 +107,7 @@ def execute_pre_analysis(
 
     # Step 1: Get current branch
     yield ProgressEvent("Getting current branch...")
-    branch_name = ops.git.get_current_branch(cwd)
+    branch_name = ops.git.branch.get_current_branch(cwd)
 
     if branch_name is None:
         yield CompletionEvent(
@@ -137,7 +137,7 @@ def execute_pre_analysis(
         return
 
     # Step 3: Check if parent branch has a merged PR (would cause gt submit to fail)
-    trunk_branch = ops.git.detect_trunk_branch(repo_root)
+    trunk_branch = ops.git.branch.detect_trunk_branch(repo_root)
     if parent_branch != trunk_branch:
         yield ProgressEvent(f"Checking if parent branch '{parent_branch}' is merged...")
         parent_pr = ops.github.get_pr_for_branch(repo_root, parent_branch)

@@ -81,8 +81,8 @@ def slot_init_pool(ctx: ErkContext, count: int | None, *, dry_run: bool) -> None
         )
 
     # Get trunk branch for placeholder branches
-    trunk = ctx.git.detect_trunk_branch(repo.root)
-    local_branches = ctx.git.list_local_branches(repo.root)
+    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
 
     initialized_count = 0
     already_initialized_count = 0

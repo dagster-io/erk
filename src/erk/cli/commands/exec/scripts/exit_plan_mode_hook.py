@@ -697,7 +697,7 @@ def _gather_inputs(
     # Get EDITOR env var for TUI detection
     editor: str | None = None
     if needs_blocking_message:
-        current_branch = git.get_current_branch(repo_root)
+        current_branch = git.branch.get_current_branch(repo_root)
         worktree_name = _get_worktree_name(git, repo_root)
         plan_issue_number = _get_plan_issue_from_impl(repo_root)
         editor = os.environ.get("EDITOR")

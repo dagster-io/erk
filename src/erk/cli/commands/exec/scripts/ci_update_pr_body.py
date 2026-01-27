@@ -174,7 +174,7 @@ def _update_pr_body_impl(
         UpdateSuccess on success, UpdateError on failure
     """
     # Get current branch
-    current_branch = git.get_current_branch(repo_root)
+    current_branch = git.branch.get_current_branch(repo_root)
     if current_branch is None:
         return UpdateError(
             success=False,
@@ -218,7 +218,7 @@ def _update_pr_body_impl(
     diff_content, _was_truncated = truncate_diff(pr_diff)
 
     # Get parent branch for context
-    parent_branch = git.detect_trunk_branch(repo_root)
+    parent_branch = git.branch.detect_trunk_branch(repo_root)
 
     # Generate summary using Claude
     prompt = _build_prompt(diff_content, current_branch, parent_branch, repo_root)

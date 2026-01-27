@@ -336,7 +336,7 @@ def test_format_last_commit_cell_with_valid_timestamp() -> None:
     timestamp = two_days_ago.isoformat()
 
     git = FakeGit(
-        branch_last_commit_times={"feature": timestamp},
+        branch_last_commit_times={(repo_root, "feature", "main"): timestamp},
     )
     ctx = create_test_context(git=git)
 

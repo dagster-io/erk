@@ -40,7 +40,7 @@ class GitHubPRCollector(StatusCollector):
         Returns:
             PullRequestStatus with PR information or None if collection fails
         """
-        branch = ctx.git.get_current_branch(worktree_path)
+        branch = ctx.git.branch.get_current_branch(worktree_path)
         if branch is None:
             return None
 

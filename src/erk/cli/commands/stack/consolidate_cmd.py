@@ -203,7 +203,7 @@ def consolidate_stack(
 
     # Get current worktree and branch
     current_worktree = ctx.cwd
-    current_branch = ctx.git.get_current_branch(current_worktree)
+    current_branch = ctx.git.branch.get_current_branch(current_worktree)
 
     if current_branch is None:
         user_output("Error: Current worktree is in detached HEAD state")

@@ -44,7 +44,7 @@ def _execute_submit_only(
         CompletionEvent with tuple of (pr_number, pr_url, graphite_url, branch_name) on success
         CompletionEvent with PostAnalysisError on failure
     """
-    branch_name = ops.git.get_current_branch(cwd) or "unknown"
+    branch_name = ops.git.branch.get_current_branch(cwd) or "unknown"
 
     # Phase 1: Restack the stack
     yield ProgressEvent("Rebasing stack... (gt restack)")
@@ -344,7 +344,7 @@ def execute_preflight(
         yield ProgressEvent("Diff truncated for size", style="warning")
 
     # Get repo root and branch info for AI prompt (needed before writing diff)
-    current_branch = ops.git.get_current_branch(cwd) or branch_name
+    current_branch = ops.git.branch.get_current_branch(cwd) or branch_name
     parent_branch = ops.graphite.get_parent_branch(ops.git, repo_root, current_branch) or "main"
 
     # Write diff to scratch file in repo .tmp/<session_id>/

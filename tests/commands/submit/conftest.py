@@ -74,6 +74,7 @@ def setup_submit_context(
     *,
     use_graphite: bool = False,
     confirm_responses: list[bool] | None = None,
+    remote_branch_refs: list[str] | None = None,
 ):
     """Setup common context for submit tests.
 
@@ -82,6 +83,8 @@ def setup_submit_context(
                      Default False for backwards compatibility with existing tests.
         confirm_responses: List of boolean responses for ctx.console.confirm() calls.
                           If None, uses default FakeConsole with no responses configured.
+        remote_branch_refs: List of remote branch refs (e.g., ["origin/branch", "origin/master"]).
+                           These are passed to FakeGit's remote_branches keyed by repo_root.
 
     Returns (ctx, fake_git, fake_github, fake_github_issues, fake_graphite, repo_root)
     """
@@ -101,6 +104,8 @@ def setup_submit_context(
         git_kwargs["current_branches"] = {repo_root: "main"}
     if "trunk_branches" not in git_kwargs:
         git_kwargs["trunk_branches"] = {repo_root: "master"}
+    if remote_branch_refs is not None:
+        git_kwargs["remote_branches"] = {repo_root: remote_branch_refs}
 
     fake_git = FakeGit(**git_kwargs)
     fake_github = FakeGitHub(**(github_kwargs or {}))
