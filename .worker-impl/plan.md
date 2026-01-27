@@ -5,6 +5,7 @@
 After running `/local:replan-learn-plans`, the consolidated plan has sparse content despite extensive investigation. The investigation findings from Step 4 aren't being incorporated into the plan content in Step 6.
 
 **Root cause:** `/erk:replan` Step 6 (lines 205-209) says only:
+
 ```
 Use EnterPlanMode to create an updated plan.
 ```
@@ -28,6 +29,7 @@ No explicit instruction to include investigation findings in the plan content.
 **Location:** Lines 205-209 (after "### Step 6: Create New Plan (Always)")
 
 **Current content:**
+
 ```markdown
 ### Step 6: Create New Plan (Always)
 
@@ -37,6 +39,7 @@ Use EnterPlanMode to create an updated plan.
 ```
 
 **Replace with:**
+
 ```markdown
 ### Step 6: Create New Plan (Always)
 
@@ -52,6 +55,7 @@ Before entering Plan Mode, collect all investigation findings from Steps 4-5:
 4. **Codebase evidence**: Actual function names, class signatures, config values
 
 For consolidation mode, also gather:
+
 - **Overlap analysis**: Which items appeared in multiple plans
 - **Merge decisions**: Why items were combined or kept separate
 - **Attribution map**: Which source plan contributed each item
@@ -69,17 +73,22 @@ Use EnterPlanMode to create an updated plan.
 
 **Anti-pattern (sparse):**
 ```
+
 1. Update gateway documentation
 2. Add missing tripwires
+
 ```
 
 **Correct pattern (comprehensive):**
 ```
+
 1. **Update gateway-inventory.md** (`docs/learned/architecture/gateway-inventory.md`)
    - Add missing entries: CommandExecutor (abc.py:105), PlanDataProvider (abc.py:142)
    - Fix import paths at lines 45, 67 (change `erk.gateways.` → `erk.gateway.`)
    - Verification: All gateways in `src/erk/gateway/` have entries
+
 ```
+
 ```
 
 ---
@@ -89,37 +98,45 @@ Use EnterPlanMode to create an updated plan.
 **Location:** After Step 3 (lines 119-137)
 
 **Add new section:**
-```markdown
+
+````markdown
 ### Step 3.5: Context Preservation for Learn Plans (CRITICAL)
 
 Learn plans document patterns discovered during implementation sessions. When the `/erk:replan` skill creates the consolidated plan, ensure it captures:
 
 #### Session-Derived Insights
+
 - **What was built**: Actual code changes with file paths and line numbers
 - **Decisions made**: Architectural choices, API designs, naming conventions
 - **Gaps identified**: Documentation needs discovered during implementation
 
 #### Documentation-Specific Context
+
 For each documentation item, include:
+
 - **Target file path**: Where the doc will be created/updated
 - **Content source**: Which investigation finding informs this item
 - **Related code**: File paths that the documentation describes
 - **Category placement**: Where in docs/learned/ hierarchy it belongs
 
 #### Actionable Implementation Steps
+
 Each step should specify:
+
 - Exact file to create/modify
 - Content outline or template
 - Source references (investigation findings, code locations)
 - Verification: How to confirm documentation is accurate
 
 **Example of comprehensive learn plan step:**
+
 ```markdown
 ### Step 3: Create flatten-subgateway-pattern.md
 
 **File:** `docs/learned/architecture/flatten-subgateway-pattern.md`
 
 **Content outline:**
+
 1. Problem: Nested subgateways (e.g., `git.branch.branch`) create confusing API
 2. Pattern: Flatten to single level (`git.branch`)
 3. Implementation: Phase 2A (PR #6159) and Phase 2B (PR #6162)
@@ -130,6 +147,8 @@ Each step should specify:
 
 **Verification:** Document accurately describes the pattern shown in `src/erk/gateway/git/branch.py`
 ```
+````
+
 ```
 
 ---
@@ -143,3 +162,4 @@ Each step should specify:
    - Commit/PR references
    - Detailed implementation steps with templates
    - Verification criteria for each step
+```
