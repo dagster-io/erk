@@ -39,8 +39,8 @@ All gateway ABCs (Git, GitHub, Graphite) follow the same 5-file pattern. When ad
 
 | Gateway   | Location                                                |
 | --------- | ------------------------------------------------------- |
-| Git       | `packages/erk-shared/src/erk_shared/git/`               |
-| GitHub    | `packages/erk-shared/src/erk_shared/github/`            |
+| Git       | `packages/erk-shared/src/erk_shared/gateway/git/`       |
+| GitHub    | `packages/erk-shared/src/erk_shared/gateway/github/`    |
 | Graphite  | `packages/erk-shared/src/erk_shared/gateway/graphite/`  |
 | Codespace | `packages/erk-shared/src/erk_shared/gateway/codespace/` |
 
@@ -297,7 +297,7 @@ class RealGit(Git):
 - Consistent with erk's dependency injection pattern for all gateways
 - Lock-waiting and retry logic execute instantly in tests
 
-**Reference Implementation**: `packages/erk-shared/src/erk_shared/git/lock.py` and `packages/erk-shared/src/erk_shared/git/real.py`
+**Reference Implementation**: `packages/erk-shared/src/erk_shared/gateway/git/lock.py` and `packages/erk-shared/src/erk_shared/gateway/git/real.py`
 
 ## Sub-Gateway Pattern for Method Extraction
 
@@ -315,7 +315,7 @@ Query methods remain on the main gateways for convenience.
 ### Sub-Gateway Structure
 
 ```
-packages/erk-shared/src/erk_shared/git/
+packages/erk-shared/src/erk_shared/gateway/git/
 ├── abc.py             # Main Git ABC (queries + branch_ops property)
 ├── branch_ops/        # Sub-gateway for mutations
 │   ├── __init__.py
@@ -394,12 +394,12 @@ class FakeGit(Git):
 
 Sub-gateways for branch mutations:
 
-- Git branch_ops: `packages/erk-shared/src/erk_shared/git/branch_ops/`
+- Git branch_ops: `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/`
 - Graphite branch_ops: `packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/`
 
 Sub-gateway for worktree operations:
 
-- Git worktree: `packages/erk-shared/src/erk_shared/git/worktree/`
+- Git worktree: `packages/erk-shared/src/erk_shared/gateway/git/worktree/`
 
 The worktree sub-gateway follows the same 5-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`.
 

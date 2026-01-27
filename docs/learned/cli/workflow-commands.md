@@ -2,27 +2,27 @@
 title: Workflow Commands
 read_when:
   - "triggering GitHub Actions workflows from CLI"
-  - "using erk workflow launch"
+  - "using erk launch"
   - "understanding WORKFLOW_COMMAND_MAP"
 ---
 
 # Workflow Commands
 
-The `erk workflow launch` command provides a unified interface for triggering GitHub Actions workflows that run Claude-powered operations remotely.
+The `erk launch` command provides a unified interface for triggering GitHub Actions workflows that run Claude-powered operations remotely.
 
 ## Available Workflows
 
 | Subcommand            | Workflow File             | Description                                   |
 | --------------------- | ------------------------- | --------------------------------------------- |
-| `pr-fix-conflicts`    | `erk-rebase.yml`          | Rebase PR with AI-powered conflict resolution |
+| `pr-fix-conflicts`    | `pr-fix-conflicts.yml`    | Rebase PR with AI-powered conflict resolution |
 | `pr-address`          | `pr-address.yml`          | Address PR review comments remotely           |
 | `objective-reconcile` | `objective-reconcile.yml` | Reconcile auto-advance objectives             |
-| `learn`               | `learn-dispatch.yml`      | Extract documentation from plan session       |
+| `learn`               | `learn.yml`               | Extract documentation from plan session       |
 
 ## Command Syntax
 
 ```bash
-erk workflow launch <workflow-name> [options]
+erk launch <workflow-name> [options]
 ```
 
 ### Options by Workflow
@@ -40,43 +40,43 @@ erk workflow launch <workflow-name> [options]
 
 ```bash
 # Fix conflicts on current branch's PR
-erk workflow launch pr-fix-conflicts
+erk launch pr-fix-conflicts
 
 # Fix conflicts on specific PR
-erk workflow launch pr-fix-conflicts --pr 123
+erk launch pr-fix-conflicts --pr 123
 
 # Skip commit squashing
-erk workflow launch pr-fix-conflicts --pr 123 --no-squash
+erk launch pr-fix-conflicts --pr 123 --no-squash
 
 # Use specific Claude model
-erk workflow launch pr-fix-conflicts --model claude-sonnet-4-5
+erk launch pr-fix-conflicts --model claude-sonnet-4-5
 ```
 
 ### Address PR Review Comments
 
 ```bash
 # Address comments on specific PR
-erk workflow launch pr-address --pr 456
+erk launch pr-address --pr 456
 
 # With specific model
-erk workflow launch pr-address --pr 456 --model claude-opus-4
+erk launch pr-address --pr 456 --model claude-opus-4
 ```
 
 ### Reconcile Objectives
 
 ```bash
 # Reconcile specific objective
-erk workflow launch objective-reconcile --objective 789
+erk launch objective-reconcile --objective 789
 
 # Preview mode (no mutations)
-erk workflow launch objective-reconcile --objective 789 --dry-run
+erk launch objective-reconcile --objective 789 --dry-run
 ```
 
 ### Trigger Learn Workflow
 
 ```bash
 # Extract docs from plan issue session
-erk workflow launch learn --issue 123
+erk launch learn --issue 123
 ```
 
 ## Architecture
@@ -114,12 +114,13 @@ Each workflow has a dedicated handler function that:
 
 ## Migration from Old Commands
 
-The `erk workflow launch` command replaces the previous pattern of separate remote commands:
+The `erk launch` command replaces the previous pattern of separate remote commands:
 
-| Old Command                   | New Command                                    |
-| ----------------------------- | ---------------------------------------------- |
-| `erk pr fix-conflicts-remote` | `erk workflow launch pr-fix-conflicts`         |
-| `erk pr address-remote`       | `erk workflow launch pr-address --pr <number>` |
+| Old Command                   | New Command                           |
+| ----------------------------- | ------------------------------------- |
+| `erk pr fix-conflicts-remote` | `erk launch pr-fix-conflicts`         |
+| `erk pr address-remote`       | `erk launch pr-address --pr <number>` |
+| `erk workflow launch`         | `erk launch`                          |
 
 ## Error Handling
 

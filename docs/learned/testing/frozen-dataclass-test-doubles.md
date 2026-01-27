@@ -123,8 +123,8 @@ def test_delete_branch_tracks_force_flag() -> None:
 ## Reference Implementations
 
 - `FakeBranchManager`: `packages/erk-shared/src/erk_shared/branch_manager/fake.py`
-- `FakeGitHub`: `packages/erk-shared/src/erk_shared/github/fake.py`
-- `FakeGitBranchOps`: `packages/erk-shared/src/erk_shared/git/branch_ops/fake.py`
+- `FakeGitHub`: `packages/erk-shared/src/erk_shared/gateway/github/fake.py`
+- `FakeGitBranchOps`: `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py`
 
 ## Related Documentation
 

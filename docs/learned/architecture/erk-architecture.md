@@ -25,7 +25,7 @@ tripwires:
   - action: 'using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code'
     warning: "Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables."
   - action: "injecting Time dependency into gateway real.py for lock-waiting or retry logic"
-    warning: "Accept optional Time in __init__ with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/git/lock.py for pattern."
+    warning: "Accept optional Time in __init__ with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/gateway/git/lock.py for pattern."
   - action: "adding file I/O, network calls, or subprocess invocations to a class __init__"
     warning: "Load `dignified-python` skill first. Class __init__ should be lightweight (just data assignment). Heavy operations belong in static factory methods like `from_config_path()` or `load()`. This enables direct instantiation in tests without I/O setup."
   - action: "calling ctx.git mutation methods (create_branch, delete_branch, checkout_branch, checkout_detached, create_tracking_branch)"
@@ -488,8 +488,8 @@ __all__ = [
 
 **Core gateways** (used across the codebase):
 
-- `packages/erk-shared/src/erk_shared/git/` - Git operations
-- `packages/erk-shared/src/erk_shared/github/` - GitHub API
+- `packages/erk-shared/src/erk_shared/gateway/git/` - Git operations
+- `packages/erk-shared/src/erk_shared/gateway/github/` - GitHub API
 - `packages/erk-shared/src/erk_shared/graphite/` - Graphite stack operations
 
 **Domain gateways** (specific domains):
