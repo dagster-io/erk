@@ -14,7 +14,7 @@ A minimal 3-file gateway abstraction for executing single-shot prompts via Claud
 ## Package Location
 
 ```
-packages/erk-shared/src/erk_shared/prompt_executor/
+packages/erk-shared/src/erk_shared/gateway/prompt_executor/
 ├── __init__.py
 ├── abc.py      # Abstract interface + PromptResult type
 ├── real.py     # Production implementation with retry logic

@@ -19,7 +19,7 @@ Erk supports two workflows: **planless** (direct coding) and **planning** (plan-
 - Create worktree with `erk wt create`
 - Make changes directly in Claude Code
 - Submit with `erk pr submit` or `/local:quick-submit`
-- Land with `erk pr land`
+- Land with `erk land`
 
 **Artifacts:** Git commits, PR, no `.impl/` folder
 

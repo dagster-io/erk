@@ -57,7 +57,7 @@ GitHub Actions admin operations.
 
 ## Higher-Level Abstractions
 
-Located in `packages/erk-shared/src/erk_shared/`:
+Located in `packages/erk-shared/src/erk_shared/gateway/`:
 
 ### BranchManager (`branch_manager/`)
 
@@ -206,6 +206,94 @@ Codespace SSH operations.
 - `run_ssh_command()`: Run SSH command in codespace and return exit code
 
 **Fake Features**: Exit code control, command tracking.
+
+### CodespaceRegistry (`gateway/codespace_registry/`)
+
+Codespace registration and configuration abstraction.
+
+**Purpose**: Manages lookup of registered GitHub Codespaces for remote Claude execution. Stores codespace configurations in `~/.erk/codespaces.toml`.
+
+**Key Methods**:
+
+- `list_codespaces()`: List all registered codespaces
+- `get()`: Get a codespace by name
+- `get_default()`: Get the default codespace
+- `get_default_name()`: Get the name of the default codespace
+
+**Mutation Functions** (standalone, not on ABC):
+
+- `register_codespace()`: Register a new codespace
+- `unregister_codespace()`: Remove a codespace registration
+- `set_default_codespace()`: Set the default codespace
+
+**Type**: `RegisteredCodespace` frozen dataclass with `name`, `gh_name`, `created_at` fields.
+
+**Fake Features**: In-memory codespace storage, configurable default.
+
+**When to use**: Any code that needs to work with registered codespaces should use this gateway instead of directly reading `~/.erk/codespaces.toml`.
+
+### CommandExecutor (`gateway/command_executor/`)
+
+TUI command execution abstraction for test isolation.
+
+**Purpose**: Provides interface for palette commands to perform actions like opening URLs, copying to clipboard, closing plans, and submitting to queue.
+
+**Key Methods**:
+
+- `open_url()`: Open URL in browser
+- `copy_to_clipboard()`: Copy text to clipboard
+- `close_plan()`: Close plan and linked PRs
+- `notify()`: Show notification to user
+- `refresh_data()`: Trigger data refresh
+- `submit_to_queue()`: Submit plan to queue for remote AI implementation
+
+**Fake Features**: Pre-programmed responses, action tracking via properties.
+
+**When to use**: TUI palette commands should use this gateway instead of direct gateway calls.
+
+### PlanDataProvider (`gateway/plan_data_provider/`)
+
+TUI plan data access abstraction.
+
+**Purpose**: Provides interface for TUI plan table to fetch and manipulate plan data.
+
+**Key Methods**:
+
+- `fetch_plans()`: Fetch plans matching given filters
+- `close_plan()`: Close a plan and its linked PRs
+- `submit_to_queue()`: Submit a plan to the implementation queue
+- `fetch_branch_activity()`: Fetch branch activity for plans with local worktrees
+- `fetch_plan_content()`: Fetch plan content from issue comment
+
+**Properties**:
+
+- `repo_root`: Repository root path
+- `clipboard`: Clipboard interface
+- `browser`: Browser launcher interface
+
+**Fake Features**: In-memory plan storage, action tracking.
+
+**When to use**: TUI plan table should use this gateway instead of direct GitHub/Git access.
+
+### ClaudeInstallation (`gateway/claude_installation/`)
+
+Claude Code installation filesystem operations abstraction.
+
+**Purpose**: Gateway for `~/.claude/` filesystem operations (sessions, settings, plans).
+
+**Fake Features**: Configurable session data, project directory injection, in-memory settings.
+
+**When to use**: Any code that needs to read from or write to `~/.claude/` paths should use this gateway instead of `Path.home()` directly.
+
+### LiveDisplay (`gateway/live_display/`)
+
+TUI display abstraction for live updates.
+
+**Purpose**: Provides interface for displaying live status updates in the TUI.
+
+**Fake Features**: Display call tracking, message capture.
+
+**When to use**: TUI components that need to show live updates should use this gateway.
 
 ### CIRunner (`gateway/ci_runner/`)
 
