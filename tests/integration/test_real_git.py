@@ -584,7 +584,7 @@ def test_has_uncommitted_changes_clean(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act: Check for uncommitted changes in clean repo
-    has_changes = git_ops.has_uncommitted_changes(repo)
+    has_changes = git_ops.status.has_uncommitted_changes(repo)
 
     # Assert: Should be clean after init
     assert has_changes is False
@@ -606,7 +606,7 @@ def test_has_uncommitted_changes_with_modifications(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    has_changes = git_ops.has_uncommitted_changes(repo)
+    has_changes = git_ops.status.has_uncommitted_changes(repo)
 
     # Assert
     assert has_changes is True
@@ -793,7 +793,7 @@ def test_check_merge_conflicts_detects_conflicts(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    has_conflicts = git_ops.check_merge_conflicts(repo, "main", "feature")
+    has_conflicts = git_ops.status.check_merge_conflicts(repo, "main", "feature")
 
     # Assert
     assert has_conflicts is True
@@ -818,7 +818,7 @@ def test_check_merge_conflicts_no_conflicts(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act
-    has_conflicts = git_ops.check_merge_conflicts(repo, "main", "feature")
+    has_conflicts = git_ops.status.check_merge_conflicts(repo, "main", "feature")
 
     # Assert
     assert has_conflicts is False
