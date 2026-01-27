@@ -75,7 +75,7 @@ def test_fake_gitops_get_current_branch() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit(current_branches={cwd: "feature-branch"})
 
-    branch = git_ops.get_current_branch(cwd)
+    branch = git_ops.branch.get_current_branch(cwd)
     assert branch == "feature-branch"
 
 
@@ -84,7 +84,7 @@ def test_fake_gitops_get_default_branch() -> None:
     repo_root = Path("/repo")
     git_ops = FakeGit(trunk_branches={repo_root: "main"})
 
-    branch = git_ops.detect_trunk_branch(repo_root)
+    branch = git_ops.branch.detect_trunk_branch(repo_root)
     assert branch == "main"
 
 
@@ -104,7 +104,7 @@ def test_fake_gitops_detached_head() -> None:
     cwd = Path("/repo")
     git_ops = FakeGit(current_branches={cwd: None})
 
-    branch = git_ops.get_current_branch(cwd)
+    branch = git_ops.branch.get_current_branch(cwd)
     assert branch is None
 
 
@@ -256,9 +256,9 @@ def test_fake_gitops_get_branch_head() -> None:
     repo_root = Path("/repo")
     git_ops = FakeGit(branch_heads={"main": "abc123", "feature": "def456"})
 
-    assert git_ops.get_branch_head(repo_root, "main") == "abc123"
-    assert git_ops.get_branch_head(repo_root, "feature") == "def456"
-    assert git_ops.get_branch_head(repo_root, "nonexistent") is None
+    assert git_ops.branch.get_branch_head(repo_root, "main") == "abc123"
+    assert git_ops.branch.get_branch_head(repo_root, "feature") == "def456"
+    assert git_ops.branch.get_branch_head(repo_root, "nonexistent") is None
 
 
 def test_fake_gitops_get_commit_message() -> None:
@@ -281,9 +281,9 @@ def test_fake_gitops_get_ahead_behind() -> None:
         }
     )
 
-    assert git_ops.get_ahead_behind(cwd, "main") == (0, 0)
-    assert git_ops.get_ahead_behind(cwd, "feature") == (3, 1)
-    assert git_ops.get_ahead_behind(cwd, "unknown") == (0, 0)
+    assert git_ops.branch.get_ahead_behind(cwd, "main") == (0, 0)
+    assert git_ops.branch.get_ahead_behind(cwd, "feature") == (3, 1)
+    assert git_ops.branch.get_ahead_behind(cwd, "unknown") == (0, 0)
 
 
 def test_fake_gitops_get_recent_commits() -> None:
@@ -388,21 +388,23 @@ def test_fake_git_get_branch_issue_extracts_from_branch_name() -> None:
 
     # Branch names with P-prefixed issue number (new format uses uppercase P)
     assert (
-        git_ops.get_branch_issue(Path("/repo"), "P2382-convert-erk-create-raw-ext-12-05-2359")
+        git_ops.branch.get_branch_issue(
+            Path("/repo"), "P2382-convert-erk-create-raw-ext-12-05-2359"
+        )
         == 2382
     )
-    assert git_ops.get_branch_issue(Path("/repo"), "P42-fix-bug") == 42
-    assert git_ops.get_branch_issue(Path("/repo"), "P123-feature-name") == 123
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "P42-fix-bug") == 42
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "P123-feature-name") == 123
     # Lowercase p also supported for backwards compatibility
-    assert git_ops.get_branch_issue(Path("/repo"), "p100-lowercase-prefix") == 100
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "p100-lowercase-prefix") == 100
 
     # Branch names with legacy format (no P prefix, backwards compatibility)
     assert (
-        git_ops.get_branch_issue(Path("/repo"), "2382-convert-erk-create-raw-ext-12-05-2359")
+        git_ops.branch.get_branch_issue(Path("/repo"), "2382-convert-erk-create-raw-ext-12-05-2359")
         == 2382
     )
-    assert git_ops.get_branch_issue(Path("/repo"), "42-fix-bug") == 42
-    assert git_ops.get_branch_issue(Path("/repo"), "123-feature-name") == 123
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "42-fix-bug") == 42
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "123-feature-name") == 123
 
 
 def test_fake_git_get_branch_issue_returns_none_for_no_prefix() -> None:
@@ -410,10 +412,10 @@ def test_fake_git_get_branch_issue_returns_none_for_no_prefix() -> None:
     git_ops = FakeGit()
 
     # Branch names without issue number prefix
-    assert git_ops.get_branch_issue(Path("/repo"), "feature-branch") is None
-    assert git_ops.get_branch_issue(Path("/repo"), "master") is None
-    assert git_ops.get_branch_issue(Path("/repo"), "main") is None
-    assert git_ops.get_branch_issue(Path("/repo"), "develop") is None
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "feature-branch") is None
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "master") is None
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "main") is None
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "develop") is None
 
 
 def test_fake_git_get_branch_issue_requires_hyphen_after_number() -> None:
@@ -421,8 +423,8 @@ def test_fake_git_get_branch_issue_requires_hyphen_after_number() -> None:
     git_ops = FakeGit()
 
     # Numbers without trailing hyphen are not issue numbers
-    assert git_ops.get_branch_issue(Path("/repo"), "123") is None
-    assert git_ops.get_branch_issue(Path("/repo"), "v2.0.0") is None
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "123") is None
+    assert git_ops.branch.get_branch_issue(Path("/repo"), "v2.0.0") is None
 
 
 # ============================================================================
@@ -481,7 +483,7 @@ def test_fake_git_is_branch_diverged_returns_configured_divergence() -> None:
         }
     )
 
-    result = git_ops.is_branch_diverged_from_remote(cwd, "feature", "origin")
+    result = git_ops.branch.is_branch_diverged_from_remote(cwd, "feature", "origin")
 
     assert result.is_diverged is True
     assert result.ahead == 3
@@ -492,7 +494,7 @@ def test_fake_git_is_branch_diverged_returns_default_for_unconfigured() -> None:
     """Test is_branch_diverged_from_remote returns default for unconfigured branch."""
     git_ops = FakeGit()
 
-    result = git_ops.is_branch_diverged_from_remote(Path("/repo"), "feature", "origin")
+    result = git_ops.branch.is_branch_diverged_from_remote(Path("/repo"), "feature", "origin")
 
     assert result.is_diverged is False
     assert result.ahead == 0
@@ -508,7 +510,7 @@ def test_fake_git_is_branch_diverged_not_diverged_when_only_ahead() -> None:
         }
     )
 
-    result = git_ops.is_branch_diverged_from_remote(cwd, "feature", "origin")
+    result = git_ops.branch.is_branch_diverged_from_remote(cwd, "feature", "origin")
 
     assert result.is_diverged is False
     assert result.ahead == 3

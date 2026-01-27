@@ -164,7 +164,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
     # Check we're on a branch (not detached HEAD)
     current_branch = Ensure.not_none(
-        ctx.git.get_current_branch(ctx.cwd),
+        ctx.git.branch.get_current_branch(ctx.cwd),
         "Not on a branch - checkout a branch before syncing",
     )
 
@@ -258,7 +258,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     # parent branch has been restacked (rebased onto trunk), the local parent has
     # different commits than origin/<base>. Graphite's `gt track` requires the parent
     # to be in the child's git history, so we rebase onto the local parent first.
-    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+    trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
     if base_branch != trunk_branch:
         user_output(f"Rebasing onto {base_branch}...")
         rebase_result = ctx.git.rebase_onto(repo.root, base_branch)

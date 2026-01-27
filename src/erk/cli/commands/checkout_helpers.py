@@ -73,7 +73,7 @@ def display_sync_status(
     if script:
         return
 
-    ahead, behind = ctx.git.get_ahead_behind(worktree_path, branch)
+    ahead, behind = ctx.git.branch.get_ahead_behind(worktree_path, branch)
     sync_display = format_sync_status(ahead, behind)
 
     if sync_display is None:
@@ -96,7 +96,7 @@ def display_sync_status(
         user_output(f"  Local is {styled_sync} ahead of origin ({ahead} unpushed {commit_word})")
     else:
         # Behind only - check if commits are from bots (e.g., autofix)
-        behind_authors = ctx.git.get_behind_commit_authors(worktree_path, branch)
+        behind_authors = ctx.git.branch.get_behind_commit_authors(worktree_path, branch)
         has_bot_commits = any(_is_bot_author(author) for author in behind_authors)
 
         styled_sync = click.style(sync_display, fg="yellow")

@@ -178,7 +178,7 @@ def require_git(ctx: click.Context) -> Git:
         >>> def my_command(ctx: click.Context) -> None:
         ...     git = require_git(ctx)
         ...     cwd = require_cwd(ctx)
-        ...     branch = git.get_current_branch(cwd)
+        ...     branch = git.branch.get_current_branch(cwd)
     """
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
@@ -236,7 +236,7 @@ def require_cwd(ctx: click.Context) -> Path:
         >>> def my_command(ctx: click.Context) -> None:
         ...     cwd = require_cwd(ctx)
         ...     git = require_git(ctx)
-        ...     branch = git.get_current_branch(cwd)
+        ...     branch = git.branch.get_current_branch(cwd)
     """
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
@@ -299,7 +299,7 @@ def get_current_branch(ctx: click.Context) -> str | None:
     """
     cwd = require_cwd(ctx)
     git = require_git(ctx)
-    return git.get_current_branch(cwd)
+    return git.branch.get_current_branch(cwd)
 
 
 def require_prompt_executor(ctx: click.Context) -> PromptExecutor:

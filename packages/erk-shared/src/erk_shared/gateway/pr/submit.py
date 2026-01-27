@@ -153,7 +153,7 @@ def execute_core_submit(
 
     # Step 2: Get repository root and current branch
     repo_root = ctx.git.get_repository_root(cwd)
-    branch_name = ctx.git.get_current_branch(cwd)
+    branch_name = ctx.git.branch.get_current_branch(cwd)
     if branch_name is None:
         yield CompletionEvent(
             CoreSubmitError(
@@ -174,7 +174,7 @@ def execute_core_submit(
         yield ProgressEvent("Created WIP commit", style="success")
 
     # Step 4: Verify there are commits to push
-    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
+    trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
 
     # Get parent branch (Graphite-aware, falls back to trunk)
     parent_branch = (
@@ -238,7 +238,7 @@ def execute_core_submit(
         yield ProgressEvent(f"Found linked issue: #{issue_number}")
 
     # Step 6: Pre-flight divergence check and auto-rebase
-    divergence = ctx.git.is_branch_diverged_from_remote(cwd, branch_name, "origin")
+    divergence = ctx.git.branch.is_branch_diverged_from_remote(cwd, branch_name, "origin")
 
     # If behind remote, auto-rebase first (handles CI commits)
     if divergence.behind > 0:
@@ -248,7 +248,7 @@ def execute_core_submit(
         )
         ctx.git.pull_rebase(cwd, "origin", branch_name)
         # Re-check divergence after rebase
-        divergence = ctx.git.is_branch_diverged_from_remote(cwd, branch_name, "origin")
+        divergence = ctx.git.branch.is_branch_diverged_from_remote(cwd, branch_name, "origin")
 
     # Only fail on true divergence (ahead AND behind after rebase attempt)
     if divergence.is_diverged:

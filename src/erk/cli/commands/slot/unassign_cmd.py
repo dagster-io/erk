@@ -69,8 +69,8 @@ def execute_unassign(
         )
         raise SystemExit(1) from None
 
-    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
-    local_branches = ctx.git.list_local_branches(repo.root)
+    trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
 
     if placeholder_branch not in local_branches:
         ctx.branch_manager.create_branch(repo.root, placeholder_branch, trunk_branch)

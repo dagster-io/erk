@@ -17,7 +17,7 @@ def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
 
     Raises SystemExit(1) on validation failure with clear error message.
     """
-    trunk = ctx.git.detect_trunk_branch(repo.root)
+    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
 
     # Find root worktree
     worktrees = ctx.git.worktree.list_worktrees(repo.root)
@@ -55,8 +55,8 @@ def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
     # Check 3: Sync trunk with remote
     ctx.git.fetch_branch(repo.root, "origin", trunk)
 
-    local_sha = ctx.git.get_branch_head(repo.root, trunk)
-    remote_sha = ctx.git.get_branch_head(repo.root, f"origin/{trunk}")
+    local_sha = ctx.git.branch.get_branch_head(repo.root, trunk)
+    remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{trunk}")
 
     if local_sha == remote_sha:
         return  # Already synced

@@ -214,7 +214,7 @@ def _rebase_with_conflict_resolution_impl(
 
     # Check if behind using ahead_behind
     try:
-        _ahead, behind = git.get_ahead_behind(cwd, branch_name)
+        _ahead, behind = git.branch.get_ahead_behind(cwd, branch_name)
     except Exception:
         return RebaseError(
             error="fetch-failed",

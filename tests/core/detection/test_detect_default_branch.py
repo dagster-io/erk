@@ -10,7 +10,7 @@ def test_detect_trunk_branch_uses_remote_head_master() -> None:
 
     git_ops = FakeGit(trunk_branches={repo_root: "master"})
 
-    assert git_ops.detect_trunk_branch(repo_root) == "master"
+    assert git_ops.branch.detect_trunk_branch(repo_root) == "master"
 
 
 def test_detect_trunk_branch_uses_remote_head_main() -> None:
@@ -19,7 +19,7 @@ def test_detect_trunk_branch_uses_remote_head_main() -> None:
 
     git_ops = FakeGit(trunk_branches={repo_root: "main"})
 
-    assert git_ops.detect_trunk_branch(repo_root) == "main"
+    assert git_ops.branch.detect_trunk_branch(repo_root) == "main"
 
 
 def test_detect_trunk_branch_fallback_to_main() -> None:
@@ -28,7 +28,7 @@ def test_detect_trunk_branch_fallback_to_main() -> None:
 
     git_ops = FakeGit()
 
-    assert git_ops.detect_trunk_branch(repo_root) == "main"
+    assert git_ops.branch.detect_trunk_branch(repo_root) == "main"
 
 
 def test_validate_trunk_branch_exists_in_trunk_branches() -> None:
@@ -37,7 +37,7 @@ def test_validate_trunk_branch_exists_in_trunk_branches() -> None:
 
     git_ops = FakeGit(trunk_branches={repo_root: "master"})
 
-    assert git_ops.validate_trunk_branch(repo_root, "master") == "master"
+    assert git_ops.branch.validate_trunk_branch(repo_root, "master") == "master"
 
 
 def test_validate_trunk_branch_exists_in_local_branches() -> None:
@@ -46,7 +46,7 @@ def test_validate_trunk_branch_exists_in_local_branches() -> None:
 
     git_ops = FakeGit(local_branches={repo_root: ["master", "feature"]})
 
-    assert git_ops.validate_trunk_branch(repo_root, "master") == "master"
+    assert git_ops.branch.validate_trunk_branch(repo_root, "master") == "master"
 
 
 def test_validate_trunk_branch_not_exists() -> None:
@@ -56,4 +56,4 @@ def test_validate_trunk_branch_not_exists() -> None:
     git_ops = FakeGit(trunk_branches={repo_root: "main"})
 
     with pytest.raises(RuntimeError, match="does not exist in repository"):
-        git_ops.validate_trunk_branch(repo_root, "nonexistent")
+        git_ops.branch.validate_trunk_branch(repo_root, "nonexistent")

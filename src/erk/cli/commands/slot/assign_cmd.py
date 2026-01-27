@@ -31,7 +31,7 @@ def slot_assign(ctx: ErkContext, branch_name: str, force: bool) -> None:
     ensure_erk_metadata_dir(repo)
 
     # Check if branch exists - assign command requires EXISTING branch
-    local_branches = ctx.git.list_local_branches(repo.root)
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
     if branch_name not in local_branches:
         user_output(
             f"Error: Branch '{branch_name}' does not exist.\n"

@@ -24,7 +24,7 @@ def pr_check(ctx: ErkContext) -> None:
     """
     # Get current branch
     branch = Ensure.not_none(
-        ctx.git.get_current_branch(ctx.cwd),
+        ctx.git.branch.get_current_branch(ctx.cwd),
         "Not on a branch (detached HEAD)",
     )
 

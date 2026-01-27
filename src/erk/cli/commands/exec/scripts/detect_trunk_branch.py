@@ -89,7 +89,7 @@ def _detect_trunk_branch_impl(git: Git, repo_root: Path) -> DetectedTrunk | Dete
     """
     # Check main first (modern convention), then master (legacy convention)
     for candidate in ["main", "master"]:
-        if git.branch_exists_on_remote(repo_root, "origin", candidate):
+        if git.branch.branch_exists_on_remote(repo_root, "origin", candidate):
             return DetectedTrunk(success=True, trunk_branch=candidate)
 
     # Neither found

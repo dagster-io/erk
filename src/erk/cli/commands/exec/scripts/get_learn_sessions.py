@@ -261,7 +261,7 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
             raise SystemExit(1)
     else:
         # Try to infer from current branch
-        branch = git.get_current_branch(cwd)
+        branch = git.branch.get_current_branch(cwd)
         if branch is not None:
             issue_number = extract_leading_issue_number(branch)
 

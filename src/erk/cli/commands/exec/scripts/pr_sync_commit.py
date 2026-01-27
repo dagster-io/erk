@@ -89,7 +89,7 @@ def _sync_pr_from_commit(
     """
 
     # Get current branch
-    current_branch = git.get_current_branch(repo_root)
+    current_branch = git.branch.get_current_branch(repo_root)
     if current_branch is None:
         return SyncError(
             success=False,

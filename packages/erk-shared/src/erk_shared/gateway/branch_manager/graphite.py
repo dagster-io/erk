@@ -80,7 +80,7 @@ class GraphiteBranchManager(BranchManager):
             base_branch: Name of the parent branch (can be local or remote ref like origin/main)
         """
         # Save current branch to restore later
-        current_branch = self.git.get_current_branch(repo_root)
+        current_branch = self.git.branch.get_current_branch(repo_root)
 
         # Create the branch from base_branch
         self.git.branch.create_branch(repo_root, branch_name, base_branch, force=False)
@@ -128,7 +128,7 @@ class GraphiteBranchManager(BranchManager):
             local_branch: Local branch name (e.g., "feature-branch")
             remote_ref: Remote reference (e.g., "origin/feature-branch")
         """
-        local_branches = self.git.list_local_branches(repo_root)
+        local_branches = self.git.branch.list_local_branches(repo_root)
 
         if local_branch not in local_branches:
             # Local doesn't exist - create it from remote
@@ -136,8 +136,8 @@ class GraphiteBranchManager(BranchManager):
             return
 
         # Check if local differs from remote
-        local_sha = self.git.get_branch_head(repo_root, local_branch)
-        remote_sha = self.git.get_branch_head(repo_root, remote_ref)
+        local_sha = self.git.branch.get_branch_head(repo_root, local_branch)
+        remote_sha = self.git.branch.get_branch_head(repo_root, remote_ref)
 
         if local_sha == remote_sha:
             return  # Already in sync

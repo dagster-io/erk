@@ -32,7 +32,7 @@ def execute_land_pr(
     """
     # Step 1: Get current branch
     yield ProgressEvent("Getting current branch...")
-    branch_name = ops.git.get_current_branch(cwd)
+    branch_name = ops.git.branch.get_current_branch(cwd)
     if branch_name is None:
         branch_name = "unknown"
 
@@ -54,7 +54,7 @@ def execute_land_pr(
 
     # Step 3: Validate parent is trunk
     yield ProgressEvent("Validating parent is trunk branch...")
-    trunk = ops.git.detect_trunk_branch(repo_root)
+    trunk = ops.git.branch.detect_trunk_branch(repo_root)
     validation_error = validate_parent_is_trunk(
         current_branch=branch_name,
         parent_branch=parent,

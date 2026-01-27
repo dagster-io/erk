@@ -62,7 +62,7 @@ def _trigger_pr_fix_conflicts(
         branch_name = pr.head_ref_name
     else:
         current_branch = Ensure.not_none(
-            ctx.git.get_current_branch(ctx.cwd),
+            ctx.git.branch.get_current_branch(ctx.cwd),
             "Not on a branch - checkout a branch or provide --pr",
         )
         pr = ctx.github.get_pr_for_branch(repo.root, current_branch)

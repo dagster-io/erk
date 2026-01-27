@@ -298,7 +298,7 @@ class RealPlanDataProvider(PlanDataProvider):
         result: dict[int, BranchActivity] = {}
 
         # Get trunk branch
-        trunk = self._ctx.git.detect_trunk_branch(self._location.root)
+        trunk = self._ctx.git.branch.detect_trunk_branch(self._location.root)
 
         for row in rows:
             # Only fetch for plans with local branches
@@ -306,7 +306,7 @@ class RealPlanDataProvider(PlanDataProvider):
                 continue
 
             # Get commits on branch not in trunk
-            commits = self._ctx.git.get_branch_commits_with_authors(
+            commits = self._ctx.git.branch.get_branch_commits_with_authors(
                 self._location.root,
                 row.worktree_branch,
                 trunk,

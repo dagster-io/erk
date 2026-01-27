@@ -6,7 +6,7 @@ operations while delegating read-only operations to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
+from erk_shared.gateway.git.abc import Git, RebaseResult
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.dry_run import DryRunGitBranchOps
 from erk_shared.gateway.git.worktree.abc import Worktree
@@ -56,26 +56,6 @@ class DryRunGit(Git):
 
     # Read-only operations: delegate to wrapped implementation
 
-    def get_current_branch(self, cwd: Path) -> str | None:
-        """Get current branch (read-only, delegates to wrapped)."""
-        return self._wrapped.get_current_branch(cwd)
-
-    def detect_trunk_branch(self, repo_root: Path) -> str:
-        """Auto-detect trunk branch (read-only, delegates to wrapped)."""
-        return self._wrapped.detect_trunk_branch(repo_root)
-
-    def validate_trunk_branch(self, repo_root: Path, name: str) -> str:
-        """Validate trunk branch exists (read-only, delegates to wrapped)."""
-        return self._wrapped.validate_trunk_branch(repo_root, name)
-
-    def list_local_branches(self, repo_root: Path) -> list[str]:
-        """List local branches (read-only, delegates to wrapped)."""
-        return self._wrapped.list_local_branches(repo_root)
-
-    def list_remote_branches(self, repo_root: Path) -> list[str]:
-        """List remote branches (read-only, delegates to wrapped)."""
-        return self._wrapped.list_remote_branches(repo_root)
-
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get git common directory (read-only, delegates to wrapped)."""
         return self._wrapped.get_git_common_dir(cwd)
@@ -88,10 +68,6 @@ class DryRunGit(Git):
         """Check for uncommitted changes (read-only, delegates to wrapped)."""
         return self._wrapped.has_uncommitted_changes(cwd)
 
-    def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
-        """Get branch head commit SHA (read-only, delegates to wrapped)."""
-        return self._wrapped.get_branch_head(repo_root, branch)
-
     def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
         """Get commit message (read-only, delegates to wrapped)."""
         return self._wrapped.get_commit_message(repo_root, commit_sha)
@@ -99,18 +75,6 @@ class DryRunGit(Git):
     def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
         """Get file status (read-only, delegates to wrapped)."""
         return self._wrapped.get_file_status(cwd)
-
-    def get_ahead_behind(self, cwd: Path, branch: str) -> tuple[int, int]:
-        """Get ahead/behind counts (read-only, delegates to wrapped)."""
-        return self._wrapped.get_ahead_behind(cwd, branch)
-
-    def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
-        """Get behind commit authors (read-only, delegates to wrapped)."""
-        return self._wrapped.get_behind_commit_authors(cwd, branch)
-
-    def get_all_branch_sync_info(self, repo_root: Path) -> dict[str, BranchSyncInfo]:
-        """Get all branch sync info (read-only, delegates to wrapped)."""
-        return self._wrapped.get_all_branch_sync_info(repo_root)
 
     def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
         """Get recent commits (read-only, delegates to wrapped)."""
@@ -125,15 +89,6 @@ class DryRunGit(Git):
         """No-op for pulling branch in dry-run mode."""
         # Do nothing - prevents actual pull execution
         pass
-
-    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
-        """No-op check - always returns True in dry-run mode."""
-        # Return True to allow dry-run to continue
-        return True
-
-    def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Get branch issue (read-only, delegates to wrapped)."""
-        return self._wrapped.get_branch_issue(repo_root, branch)
 
     def fetch_pr_ref(
         self, *, repo_root: Path, remote: str, pr_number: int, local_branch: str
@@ -164,10 +119,6 @@ class DryRunGit(Git):
         """No-op for pushing in dry-run mode."""
         # Do nothing - prevents actual push execution
         pass
-
-    def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
-        """Get branch last commit time (read-only, delegates to wrapped)."""
-        return self._wrapped.get_branch_last_commit_time(repo_root, branch, trunk)
 
     def add_all(self, cwd: Path) -> None:
         """No-op for staging all changes in dry-run mode."""
@@ -228,12 +179,6 @@ class DryRunGit(Git):
         """Get git user.name (read-only, delegates to wrapped)."""
         return self._wrapped.get_git_user_name(cwd)
 
-    def get_branch_commits_with_authors(
-        self, repo_root: Path, branch: str, trunk: str, *, limit: int = 50
-    ) -> list[dict[str, str]]:
-        """Get branch commits with authors (read-only, delegates to wrapped)."""
-        return self._wrapped.get_branch_commits_with_authors(repo_root, branch, trunk, limit=limit)
-
     def tag_exists(self, repo_root: Path, tag_name: str) -> bool:
         """Check if tag exists (read-only, delegates to wrapped)."""
         return self._wrapped.tag_exists(repo_root, tag_name)
@@ -245,12 +190,6 @@ class DryRunGit(Git):
     def push_tag(self, repo_root: Path, remote: str, tag_name: str) -> None:
         """Print dry-run message instead of pushing tag."""
         user_output(f"[DRY RUN] Would run: git push {remote} {tag_name}")
-
-    def is_branch_diverged_from_remote(
-        self, cwd: Path, branch: str, remote: str
-    ) -> BranchDivergence:
-        """Check branch divergence (read-only, delegates to wrapped)."""
-        return self._wrapped.is_branch_diverged_from_remote(cwd, branch, remote)
 
     def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
         """No-op for rebase in dry-run mode. Returns success."""

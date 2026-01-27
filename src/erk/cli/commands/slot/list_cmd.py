@@ -144,7 +144,7 @@ def slot_list(ctx: ErkContext) -> None:
 
         actual_branch: str | None = None
         if worktree_exists:
-            actual_branch = ctx.git.get_current_branch(worktree_path)
+            actual_branch = ctx.git.branch.get_current_branch(worktree_path)
 
         # Get assigned branch info
         assigned_branch: str | None = None

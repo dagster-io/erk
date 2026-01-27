@@ -40,7 +40,7 @@ def _find_branches_for_issue(
     Returns:
         List of matching branch names
     """
-    local_branches = ctx.git.list_local_branches(repo_root)
+    local_branches = ctx.git.branch.list_local_branches(repo_root)
     matching: list[str] = []
 
     for branch in local_branches:
@@ -227,9 +227,9 @@ def _checkout_pr(
         return
 
     # Fetch the branch from remote if not local
-    local_branches = ctx.git.list_local_branches(repo.root)
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
     if branch_name not in local_branches:
-        remote_branches = ctx.git.list_remote_branches(repo.root)
+        remote_branches = ctx.git.branch.list_remote_branches(repo.root)
         remote_ref = f"origin/{branch_name}"
         if remote_ref in remote_branches:
             ctx.git.fetch_branch(repo.root, "origin", branch_name)

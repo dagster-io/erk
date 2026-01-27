@@ -62,12 +62,12 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
     session_id = get_or_generate_session_id(cwd)
 
     # Get current branch
-    current_branch = ctx.git.get_current_branch(cwd)
+    current_branch = ctx.git.branch.get_current_branch(cwd)
     if current_branch is None:
         raise click.ClickException("Not on a branch (detached HEAD state)")
 
     repo_root = ctx.git.get_repository_root(cwd)
-    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
+    trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
 
     # Get parent branch (Graphite-aware, falls back to trunk)
     parent_branch = (

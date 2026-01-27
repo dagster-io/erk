@@ -92,14 +92,14 @@ def _validate_branch_for_deletion(
         SystemExit: If branch doesn't exist or is a protected trunk branch
     """
     # Check branch exists
-    local_branches = ctx.git.list_local_branches(repo_root)
+    local_branches = ctx.git.branch.list_local_branches(repo_root)
     Ensure.invariant(
         branch in local_branches,
         f"Branch '{branch}' does not exist.",
     )
 
     # Protect trunk branches
-    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
+    trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
     Ensure.invariant(
         branch != trunk_branch,
         f"Cannot delete trunk branch '{trunk_branch}'.",

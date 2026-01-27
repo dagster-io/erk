@@ -69,7 +69,7 @@ def _get_current_branch(cwd: Path) -> str | None:
     if git_dir is None:
         return None
     repo_root = git.get_repository_root(cwd)
-    return git.get_current_branch(repo_root)
+    return git.branch.get_current_branch(repo_root)
 
 
 def _get_session_id(cwd: Path) -> str | None:

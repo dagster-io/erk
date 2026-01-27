@@ -101,7 +101,7 @@ def _find_existing_branches_for_issue(
     issue_number: int,
 ) -> list[str]:
     """Find local branches matching P{issue_number}-* pattern."""
-    local_branches = ctx.git.list_local_branches(repo_root)
+    local_branches = ctx.git.branch.list_local_branches(repo_root)
     prefix = f"P{issue_number}-"
     return sorted([b for b in local_branches if b.startswith(prefix)])
 
@@ -382,7 +382,7 @@ def _validate_issue_for_submit(
     user_output(f"Computed branch: {click.style(branch_name, fg='cyan')}")
 
     # Check if branch already exists on remote and has a PR
-    branch_exists = ctx.git.branch_exists_on_remote(repo.root, "origin", branch_name)
+    branch_exists = ctx.git.branch.branch_exists_on_remote(repo.root, "origin", branch_name)
     logger.debug("branch_exists_on_remote(%s)=%s", branch_name, branch_exists)
 
     pr_number: int | None = None
@@ -565,7 +565,7 @@ def _submit_single_issue(
             ctx.git.fetch_branch(repo.root, "origin", branch_name)
 
             # Only create tracking branch if it doesn't exist locally (LBYL)
-            local_branches = ctx.git.list_local_branches(repo.root)
+            local_branches = ctx.git.branch.list_local_branches(repo.root)
             if branch_name not in local_branches:
                 remote_ref = f"origin/{branch_name}"
                 ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
@@ -637,7 +637,7 @@ def _submit_single_issue(
             ctx.branch_manager.checkout_branch(repo.root, original_branch)
     else:
         # Check if branch exists locally (user chose to reuse existing)
-        local_branches = ctx.git.list_local_branches(repo.root)
+        local_branches = ctx.git.branch.list_local_branches(repo.root)
         branch_exists_locally = branch_name in local_branches
 
         if branch_exists_locally:
@@ -862,7 +862,7 @@ def submit_cmd(
     ensure_trunk_synced(ctx, repo)
 
     # Save current state (needed for both default base and restoration)
-    original_branch = ctx.git.get_current_branch(repo.root)
+    original_branch = ctx.git.branch.get_current_branch(repo.root)
     if original_branch is None:
         user_output(
             click.style("Error: ", fg="red")
@@ -872,7 +872,7 @@ def submit_cmd(
 
     # Validate base branch if provided, otherwise default to current branch (LBYL)
     if base is not None:
-        if not ctx.git.branch_exists_on_remote(repo.root, "origin", base):
+        if not ctx.git.branch.branch_exists_on_remote(repo.root, "origin", base):
             user_output(
                 click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
             )
@@ -881,10 +881,10 @@ def submit_cmd(
     else:
         # If on a placeholder branch (local-only), use trunk as base
         if is_placeholder_branch(original_branch):
-            target_branch = ctx.git.detect_trunk_branch(repo.root)
-        elif not ctx.git.branch_exists_on_remote(repo.root, "origin", original_branch):
+            target_branch = ctx.git.branch.detect_trunk_branch(repo.root)
+        elif not ctx.git.branch.branch_exists_on_remote(repo.root, "origin", original_branch):
             # Current branch not pushed to remote - fall back to trunk
-            target_branch = ctx.git.detect_trunk_branch(repo.root)
+            target_branch = ctx.git.branch.detect_trunk_branch(repo.root)
         else:
             target_branch = original_branch
 
@@ -898,7 +898,7 @@ def submit_cmd(
         issue = ctx.issues.get_issue(repo.root, issue_number)
         if is_issue_learn_plan(issue.labels):
             parent_branch = get_learn_plan_parent_branch(ctx, repo.root, issue.body)
-            if parent_branch is not None and ctx.git.branch_exists_on_remote(
+            if parent_branch is not None and ctx.git.branch.branch_exists_on_remote(
                 repo.root, "origin", parent_branch
             ):
                 target_branch = parent_branch

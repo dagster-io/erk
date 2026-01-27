@@ -21,7 +21,7 @@ def test_list_remote_branches() -> None:
 
         # Act: Call the method
         ops = RealGit()
-        branches = ops.list_remote_branches(Path("/test/repo"))
+        branches = ops.branch.list_remote_branches(Path("/test/repo"))
 
         # Assert: Verify command construction
         mock_run.assert_called_once()
@@ -44,7 +44,7 @@ def test_list_remote_branches_empty() -> None:
 
         # Act: Call the method
         ops = RealGit()
-        branches = ops.list_remote_branches(Path("/test/repo"))
+        branches = ops.branch.list_remote_branches(Path("/test/repo"))
 
         # Assert: Verify empty list returned
         assert branches == []
@@ -61,7 +61,7 @@ def test_list_remote_branches_strips_whitespace() -> None:
 
         # Act: Call the method
         ops = RealGit()
-        branches = ops.list_remote_branches(Path("/test/repo"))
+        branches = ops.branch.list_remote_branches(Path("/test/repo"))
 
         # Assert: Verify whitespace stripped
         assert branches == ["origin/main", "origin/feature"]
@@ -78,7 +78,7 @@ def test_branch_exists_on_remote_when_exists() -> None:
 
         # Act: Call the method
         ops = RealGit()
-        exists = ops.branch_exists_on_remote(Path("/test/repo"), "origin", "feature-branch")
+        exists = ops.branch.branch_exists_on_remote(Path("/test/repo"), "origin", "feature-branch")
 
         # Assert: Verify command construction
         mock_run.assert_called_once()
@@ -104,7 +104,9 @@ def test_branch_exists_on_remote_when_not_exists() -> None:
 
         # Act: Call the method
         ops = RealGit()
-        exists = ops.branch_exists_on_remote(Path("/test/repo"), "origin", "nonexistent-branch")
+        exists = ops.branch.branch_exists_on_remote(
+            Path("/test/repo"), "origin", "nonexistent-branch"
+        )
 
         # Assert: Verify command construction
         mock_run.assert_called_once()
@@ -126,7 +128,7 @@ def test_branch_exists_on_remote_with_whitespace() -> None:
 
         # Act: Call the method
         ops = RealGit()
-        exists = ops.branch_exists_on_remote(Path("/test/repo"), "origin", "feature-branch")
+        exists = ops.branch.branch_exists_on_remote(Path("/test/repo"), "origin", "feature-branch")
 
         # Assert: Verify result (whitespace stripped before checking)
         assert exists is True

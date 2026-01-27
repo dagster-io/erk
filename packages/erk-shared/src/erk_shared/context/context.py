@@ -125,7 +125,7 @@ class ErkContext:
         """
         if isinstance(self.repo, NoRepoSentinel):
             return None
-        return self.git.detect_trunk_branch(self.repo.root)
+        return self.git.branch.detect_trunk_branch(self.repo.root)
 
     @property
     def issues(self) -> GitHubIssues:

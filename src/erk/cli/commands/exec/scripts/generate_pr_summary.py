@@ -102,8 +102,8 @@ def generate_pr_summary(ctx: click.Context, pr_number: int) -> None:
         click.echo("Warning: Diff truncated for size", err=True)
 
     # Get branch context using injected Git
-    current_branch = git.get_current_branch(repo_root) or f"pr-{pr_number}"
-    parent_branch = git.detect_trunk_branch(repo_root)
+    current_branch = git.branch.get_current_branch(repo_root) or f"pr-{pr_number}"
+    parent_branch = git.branch.detect_trunk_branch(repo_root)
 
     # Build prompt and run Claude via injected executor
     prompt = _build_prompt(diff_content, current_branch, parent_branch, repo_root)

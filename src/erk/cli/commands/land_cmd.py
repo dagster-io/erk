@@ -561,7 +561,7 @@ def _ensure_branch_not_checked_out(
     if worktree_path is None:
         return None
 
-    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
+    trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
     ctx.branch_manager.checkout_detached(worktree_path, trunk_branch)
     return worktree_path
 
@@ -587,7 +587,7 @@ def _handle_no_delete(cleanup: CleanupContext) -> None:
 
 def _cleanup_no_worktree(cleanup: CleanupContext) -> None:
     """Handle cleanup when no worktree exists: delete branch only if exists locally."""
-    local_branches = cleanup.ctx.git.list_local_branches(cleanup.main_repo_root)
+    local_branches = cleanup.ctx.git.branch.list_local_branches(cleanup.main_repo_root)
     if cleanup.branch in local_branches:
         cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch)
         user_output(click.style("✓", fg="green") + f" Deleted branch '{cleanup.branch}'")
@@ -659,7 +659,7 @@ def _cleanup_non_slot_worktree(cleanup: CleanupContext) -> None:
     # (git won't delete a branch that's checked out in any worktree)
     # Use detached HEAD instead of checkout_branch because trunk may already
     # be checked out in the root worktree
-    trunk_branch = cleanup.ctx.git.detect_trunk_branch(cleanup.main_repo_root)
+    trunk_branch = cleanup.ctx.git.branch.detect_trunk_branch(cleanup.main_repo_root)
     cleanup.ctx.branch_manager.checkout_detached(cleanup.worktree_path, trunk_branch)
 
     # Defensive: verify checkout succeeded before deletion
@@ -881,7 +881,7 @@ def _validate_pr_for_landing(
 
     # 3. PR base is trunk (skip for Graphite - it validates via stack)
     if not target.use_graphite:
-        trunk = ctx.git.detect_trunk_branch(main_repo_root)
+        trunk = ctx.git.branch.detect_trunk_branch(main_repo_root)
         Ensure.invariant(
             target.pr_details.base_ref_name == trunk,
             f"PR #{pr_number} targets '{target.pr_details.base_ref_name}' "
@@ -938,7 +938,7 @@ def _resolve_land_target_current_branch(
 
     # Get current branch
     current_branch = Ensure.not_none(
-        ctx.git.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
+        ctx.git.branch.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
     )
 
     current_worktree_path = Ensure.not_none(
@@ -975,7 +975,7 @@ def _resolve_land_target_current_branch(
     use_graphite = ctx.branch_manager.is_graphite_managed()
     if use_graphite:
         parent = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
-        trunk = ctx.git.detect_trunk_branch(repo.root)
+        trunk = ctx.git.branch.detect_trunk_branch(repo.root)
         validation_error = validate_parent_is_trunk(
             current_branch=current_branch,
             parent_branch=parent,
@@ -1044,7 +1044,7 @@ def _resolve_land_target_pr(
     branch = resolve_branch_for_pr(ctx, main_repo_root, pr_details)
 
     # Determine if we're in the target branch's worktree
-    current_branch = ctx.git.get_current_branch(ctx.cwd)
+    current_branch = ctx.git.branch.get_current_branch(ctx.cwd)
     is_current_branch = current_branch == branch
 
     # Check if worktree exists for this branch
@@ -1090,7 +1090,7 @@ def _resolve_land_target_branch(
     )
 
     # Determine if we're in the target branch's worktree
-    current_branch = ctx.git.get_current_branch(ctx.cwd)
+    current_branch = ctx.git.branch.get_current_branch(ctx.cwd)
     is_current_branch = current_branch == branch_name
 
     # Check if worktree exists for this branch
@@ -1273,7 +1273,7 @@ def _execute_simple_land(
     )
 
     # Validate PR base is trunk
-    trunk = ctx.git.detect_trunk_branch(repo_root)
+    trunk = ctx.git.branch.detect_trunk_branch(repo_root)
     Ensure.invariant(
         pr_details.base_ref_name == trunk,
         f"PR #{pr_number} targets '{pr_details.base_ref_name}' "
@@ -1439,13 +1439,13 @@ def _navigate_after_land(
         # Execute git pull in Python (before activation script) to avoid race condition
         # with stale index.lock files from earlier git operations
         if pull_flag:
-            trunk_branch = ctx.git.detect_trunk_branch(main_repo_root)
+            trunk_branch = ctx.git.branch.detect_trunk_branch(main_repo_root)
 
             # Fetch first to get latest remote state
             ctx.git.fetch_branch(main_repo_root, "origin", trunk_branch)
 
             # Check if local branch can be fast-forwarded
-            divergence = ctx.git.is_branch_diverged_from_remote(
+            divergence = ctx.git.branch.is_branch_diverged_from_remote(
                 main_repo_root, trunk_branch, "origin"
             )
 

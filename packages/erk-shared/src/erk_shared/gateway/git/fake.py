@@ -104,7 +104,7 @@ class FakeGit(Git):
         file_statuses: dict[Path, tuple[list[str], list[str], list[str]]] | None = None,
         ahead_behind: dict[tuple[Path, str], tuple[int, int]] | None = None,
         behind_commit_authors: dict[tuple[Path, str], list[str]] | None = None,
-        branch_sync_info: dict[str, BranchSyncInfo] | None = None,
+        branch_sync_info: dict[Path, dict[str, BranchSyncInfo]] | None = None,
         recent_commits: dict[Path, list[dict[str, str]]] | None = None,
         existing_paths: set[Path] | None = None,
         file_contents: dict[Path, str] | None = None,
@@ -113,7 +113,7 @@ class FakeGit(Git):
         remote_branches: dict[Path, list[str]] | None = None,
         tracking_branch_failures: dict[str, str] | None = None,
         dirty_worktrees: set[Path] | None = None,
-        branch_last_commit_times: dict[str, str] | None = None,
+        branch_last_commit_times: dict[tuple[Path, str, str], str | None] | None = None,
         repository_roots: dict[Path, Path] | None = None,
         diff_to_branch: dict[tuple[Path, str], str] | None = None,
         merge_conflicts: dict[tuple[str, str], bool] | None = None,
@@ -121,7 +121,7 @@ class FakeGit(Git):
         remote_urls: dict[tuple[Path, str], str] | None = None,
         add_all_raises: Exception | None = None,
         pull_branch_raises: Exception | None = None,
-        branch_issues: dict[str, int] | None = None,
+        branch_issues: dict[str, int | None] | None = None,
         conflicted_files: list[str] | None = None,
         rebase_in_progress: bool = False,
         rebase_continue_raises: Exception | None = None,
@@ -129,7 +129,8 @@ class FakeGit(Git):
         commit_messages_since: dict[tuple[Path, str], list[str]] | None = None,
         head_commit_messages_full: dict[Path, str] | None = None,
         git_user_name: str | None = None,
-        branch_commits_with_authors: dict[str, list[dict[str, str]]] | None = None,
+        branch_commits_with_authors: dict[tuple[Path, str, str, int], list[dict[str, str]]]
+        | None = None,
         push_to_remote_raises: Exception | None = None,
         existing_tags: set[str] | None = None,
         branch_divergence: dict[tuple[Path, str, str], BranchDivergence] | None = None,
@@ -153,7 +154,7 @@ class FakeGit(Git):
             ahead_behind: Mapping of (cwd, branch) -> (ahead, behind) counts
             behind_commit_authors: Mapping of (cwd, branch) -> list of author names
                 for commits on remote but not locally
-            branch_sync_info: Mapping of branch name -> BranchSyncInfo for batch queries
+            branch_sync_info: Mapping of repo_root -> dict of branch name -> BranchSyncInfo
             recent_commits: Mapping of cwd -> list of commit info dicts
             existing_paths: Set of paths that should be treated as existing (for pure mode)
             file_contents: Mapping of path -> file content (for commands that read files)
@@ -164,7 +165,7 @@ class FakeGit(Git):
             tracking_branch_failures: Mapping of branch name -> error message to raise
                 when create_tracking_branch is called for that branch
             dirty_worktrees: Set of worktree paths that have uncommitted/staged/untracked changes
-            branch_last_commit_times: Mapping of branch name -> ISO 8601 timestamp for last commit
+            branch_last_commit_times: Mapping of (repo_root, branch, trunk) -> ISO 8601 timestamp
             repository_roots: Mapping of cwd -> repository root path
             diff_to_branch: Mapping of (cwd, branch) -> diff output
             merge_conflicts: Mapping of (base_branch, head_branch) -> has conflicts bool
@@ -180,8 +181,8 @@ class FakeGit(Git):
             commit_messages_since: Mapping of (cwd, base_branch) -> list of commit messages
             head_commit_messages_full: Mapping of cwd -> full commit message for HEAD
             git_user_name: Configured git user.name to return from get_git_user_name()
-            branch_commits_with_authors: Mapping of branch name -> list of commit dicts
-                with keys: sha, author, timestamp
+            branch_commits_with_authors: Mapping of (repo_root, branch, trunk, limit)
+                -> commit dicts with keys: sha, author, timestamp
             push_to_remote_raises: Exception to raise when push_to_remote() is called
             existing_tags: Set of tag names that exist in the repository
             branch_divergence: Mapping of (cwd, branch, remote) -> BranchDivergence
@@ -271,6 +272,16 @@ class FakeGit(Git):
             worktrees=self._worktrees,
             current_branches=self._current_branches,
             local_branches=self._local_branches,
+            remote_branches=self._remote_branches,
+            branch_heads=self._branch_heads,
+            trunk_branches=self._trunk_branches,
+            ahead_behind=self._ahead_behind,
+            branch_divergence=self._branch_divergence,
+            branch_sync_info=self._branch_sync_info,
+            branch_issues=self._branch_issues,
+            behind_commit_authors=self._behind_commit_authors,
+            branch_last_commit_times=self._branch_last_commit_times,
+            branch_commits_with_authors=self._branch_commits_with_authors,
             delete_branch_raises=self._delete_branch_raises,
             tracking_branch_failures=self._tracking_branch_failures,
         )
@@ -292,39 +303,6 @@ class FakeGit(Git):
     def branch(self) -> GitBranchOps:
         """Access branch operations subgateway."""
         return self._branch_gateway
-
-    def get_current_branch(self, cwd: Path) -> str | None:
-        """Get the currently checked-out branch."""
-        return self._current_branches.get(cwd)
-
-    def detect_trunk_branch(self, repo_root: Path) -> str:
-        """Auto-detect the trunk branch name."""
-        if repo_root in self._trunk_branches:
-            return self._trunk_branches[repo_root]
-        # Default to "main" if not configured
-        return "main"
-
-    def validate_trunk_branch(self, repo_root: Path, name: str) -> str:
-        """Validate that a configured trunk branch exists."""
-        # Check trunk_branches first
-        if repo_root in self._trunk_branches and self._trunk_branches[repo_root] == name:
-            return name
-        # Check local_branches as well
-        if repo_root in self._local_branches and name in self._local_branches[repo_root]:
-            return name
-        error_msg = (
-            f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
-            f"Update your configuration in pyproject.toml or create the branch."
-        )
-        raise RuntimeError(error_msg)
-
-    def list_local_branches(self, repo_root: Path) -> list[str]:
-        """List all local branch names in the repository."""
-        return self._local_branches.get(repo_root, [])
-
-    def list_remote_branches(self, repo_root: Path) -> list[str]:
-        """List all remote branch names in the repository (fake implementation)."""
-        return self._remote_branches.get(repo_root, [])
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory.
@@ -358,10 +336,6 @@ class FakeGit(Git):
         staged, modified, untracked = self._file_statuses.get(cwd, ([], [], []))
         return bool(staged or modified or untracked)
 
-    def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
-        """Get the commit SHA at the head of a branch."""
-        return self._branch_heads.get(branch)
-
     def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
         """Get the commit message for a given commit SHA."""
         return self._commit_messages.get(commit_sha)
@@ -369,18 +343,6 @@ class FakeGit(Git):
     def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
         """Get lists of staged, modified, and untracked files."""
         return self._file_statuses.get(cwd, ([], [], []))
-
-    def get_ahead_behind(self, cwd: Path, branch: str) -> tuple[int, int]:
-        """Get number of commits ahead and behind tracking branch."""
-        return self._ahead_behind.get((cwd, branch), (0, 0))
-
-    def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
-        """Get authors of commits on remote that are not in local branch."""
-        return self._behind_commit_authors.get((cwd, branch), [])
-
-    def get_all_branch_sync_info(self, repo_root: Path) -> dict[str, BranchSyncInfo]:
-        """Get sync status for all local branches (fake implementation)."""
-        return self._branch_sync_info.copy()
 
     def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
         """Get recent commit information."""
@@ -396,16 +358,6 @@ class FakeGit(Git):
         self._pulled_branches.append((remote, branch, ff_only))
         if self._pull_branch_raises is not None:
             raise self._pull_branch_raises
-
-    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
-        """Check if a branch exists on a remote (fake implementation).
-
-        Returns True if the branch exists in the configured remote branches.
-        Checks for the branch in format: remote/branch (e.g., origin/feature).
-        """
-        remote_branches = self._remote_branches.get(repo_root, [])
-        remote_ref = f"{remote}/{branch}"
-        return remote_ref in remote_branches
 
     @property
     def deleted_branches(self) -> list[str]:
@@ -508,22 +460,6 @@ class FakeGit(Git):
             raise FileNotFoundError(f"No content for {path}")
         return self._file_contents[path]
 
-    def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Extract GitHub issue number from branch name.
-
-        Branch names follow the pattern: {issue_number}-{slug}-{timestamp}
-
-        Uses configured branch_issues mapping if available, otherwise extracts
-        from branch name.
-        """
-        # Check configured mapping first (allows tests to override)
-        if branch in self._branch_issues:
-            return self._branch_issues[branch]
-
-        from erk_shared.naming import extract_leading_issue_number
-
-        return extract_leading_issue_number(branch)
-
     def fetch_pr_ref(
         self, *, repo_root: Path, remote: str, pr_number: int, local_branch: str
     ) -> None:
@@ -597,10 +533,6 @@ class FakeGit(Git):
         remote, branch, set_upstream, force.
         """
         return self._pushed_branches
-
-    def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
-        """Get the author date of the most recent commit unique to a branch."""
-        return self._branch_last_commit_times.get(branch)
 
     def add_all(self, cwd: Path) -> None:
         """Stage all changes for commit (git add -A).
@@ -750,13 +682,6 @@ class FakeGit(Git):
         """Get the configured git user.name."""
         return self._git_user_name
 
-    def get_branch_commits_with_authors(
-        self, repo_root: Path, branch: str, trunk: str, *, limit: int = 50
-    ) -> list[dict[str, str]]:
-        """Get commits on branch not on trunk, with author and timestamp."""
-        commits = self._branch_commits_with_authors.get(branch, [])
-        return commits[:limit]
-
     def tag_exists(self, repo_root: Path, tag_name: str) -> bool:
         """Check if a git tag exists in the fake state."""
         return tag_name in self._existing_tags
@@ -787,19 +712,6 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return self._pushed_tags.copy()
-
-    def is_branch_diverged_from_remote(
-        self, cwd: Path, branch: str, remote: str
-    ) -> BranchDivergence:
-        """Check if a local branch has diverged from its remote tracking branch.
-
-        Returns the configured divergence state if the key exists in branch_divergence,
-        otherwise returns BranchDivergence(False, 0, 0) to indicate no divergence.
-        """
-        key = (cwd, branch, remote)
-        if key in self._branch_divergence:
-            return self._branch_divergence[key]
-        return BranchDivergence(is_diverged=False, ahead=0, behind=0)
 
     def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
         """Rebase the current branch onto a target ref.

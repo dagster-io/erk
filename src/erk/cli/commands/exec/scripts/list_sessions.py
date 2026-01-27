@@ -101,8 +101,8 @@ def get_branch_context(git: Git, cwd: Path) -> BranchContext:
     Returns:
         BranchContext with current branch, trunk branch, and trunk status
     """
-    current_branch = git.get_current_branch(cwd) or ""
-    trunk_branch = git.detect_trunk_branch(cwd)
+    current_branch = git.branch.get_current_branch(cwd) or ""
+    trunk_branch = git.branch.detect_trunk_branch(cwd)
 
     return BranchContext(
         current_branch=current_branch,

@@ -301,7 +301,7 @@ def branch_checkout(ctx: ErkContext, branch: str, no_slot: bool, force: bool, sc
             else:
                 # New behavior: slot allocation
                 # First check if this is the trunk branch - trunk cannot have a slot
-                trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+                trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
                 if branch == trunk_branch:
                     user_output(
                         f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
@@ -312,9 +312,9 @@ def branch_checkout(ctx: ErkContext, branch: str, no_slot: bool, force: bool, sc
                     raise SystemExit(1) from None
 
                 # Ensure branch exists (may need to create tracking branch)
-                local_branches = ctx.git.list_local_branches(repo.root)
+                local_branches = ctx.git.branch.list_local_branches(repo.root)
                 if branch not in local_branches:
-                    remote_branches = ctx.git.list_remote_branches(repo.root)
+                    remote_branches = ctx.git.branch.list_remote_branches(repo.root)
                     remote_ref = f"origin/{branch}"
                     if remote_ref in remote_branches:
                         user_output(

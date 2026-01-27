@@ -183,7 +183,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
     # Convert GitHubRepoId to string format for gh CLI
     repo_slug = f"{repo.github.owner}/{repo.github.repo}"
 
-    current_branch = ctx.git.get_current_branch(repo.root)
+    current_branch = ctx.git.branch.get_current_branch(repo.root)
     if current_branch is None:
         user_output(click.style("Error: ", fg="red") + "Not on a branch (detached HEAD)")
         raise SystemExit(1)

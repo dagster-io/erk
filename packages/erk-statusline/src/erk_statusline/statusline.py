@@ -168,7 +168,7 @@ def get_git_status_via_gateway(ctx: StatuslineContext) -> tuple[str, bool]:
     Returns:
         (branch_name, is_dirty)
     """
-    branch = ctx.git.get_current_branch(ctx.cwd)
+    branch = ctx.git.branch.get_current_branch(ctx.cwd)
     if branch is None:
         return "", False
 

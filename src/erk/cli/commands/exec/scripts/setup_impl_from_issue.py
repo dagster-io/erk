@@ -38,7 +38,7 @@ from erk_shared.naming import generate_issue_branch_name
 
 def _get_current_branch(git: Git, cwd: Path) -> str:
     """Get current branch via gateway, raising if detached HEAD."""
-    branch = git.get_current_branch(cwd)
+    branch = git.branch.get_current_branch(cwd)
     if branch is None:
         msg = "Cannot set up implementation from detached HEAD state"
         raise click.ClickException(msg)
@@ -120,7 +120,7 @@ def setup_impl_from_issue(
         branch_name = generate_issue_branch_name(issue_number, plan.title, timestamp)
 
         # Check if branch already exists
-        local_branches = git.list_local_branches(repo_root)
+        local_branches = git.branch.list_local_branches(repo_root)
 
         if branch_name in local_branches:
             # Branch exists - just check it out
