@@ -90,7 +90,7 @@ def _git_only_sync(
     """
     # Fetch the base branch
     user_output(f"Fetching origin/{base_branch}...")
-    ctx.git.fetch_branch(repo.root, "origin", base_branch)
+    ctx.git.remote.fetch_branch(repo.root, "origin", base_branch)
     user_output(click.style("✓", fg="green") + f" Fetched origin/{base_branch}")
 
     # Rebase onto origin/<base>
@@ -115,7 +115,7 @@ def _git_only_sync(
 
     # Force push to origin
     user_output(f"Force pushing to origin/{current_branch}...")
-    ctx.git.push_to_remote(repo.root, "origin", current_branch, force=True)
+    ctx.git.remote.push_to_remote(repo.root, "origin", current_branch, force=True)
     user_output(click.style("✓", fg="green") + f" PR #{pr_number} synchronized")
 
     user_output(f"\nBranch '{current_branch}' is now up to date with origin/{base_branch}.")

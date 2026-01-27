@@ -352,7 +352,7 @@ def _run_graphite_first_flow(
     )
 
     # Get Graphite URL
-    remote_url = ctx.git.get_remote_url(repo_root, "origin")
+    remote_url = ctx.git.remote.get_remote_url(repo_root, "origin")
     owner, repo_name = parse_git_remote_url(remote_url)
     repo_id = GitHubRepoId(owner=owner, repo=repo_name)
     graphite_url = ctx.graphite.get_graphite_url(repo_id, pr_info.number)

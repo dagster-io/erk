@@ -18,6 +18,8 @@ from erk_shared.gateway.git.abc import (
 )
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.fake import FakeWorktree
 
@@ -294,6 +296,21 @@ class FakeGit(Git):
             created_tracking_branches=self._created_tracking_branches,
         )
 
+        # Remote operations subgateway - linked to FakeGit's state
+        self._remote_gateway = FakeGitRemoteOps(
+            remote_urls=self._remote_urls,
+            pull_branch_raises=self._pull_branch_raises,
+            push_to_remote_raises=self._push_to_remote_raises,
+            pull_rebase_raises=self._pull_rebase_raises,
+        )
+        # Link mutation tracking so FakeGit properties see mutations from FakeGitRemoteOps
+        self._remote_gateway.link_mutation_tracking(
+            fetched_branches=self._fetched_branches,
+            pulled_branches=self._pulled_branches,
+            pushed_branches=self._pushed_branches,
+            pull_rebase_calls=self._pull_rebase_calls,
+        )
+
     @property
     def worktree(self) -> Worktree:
         """Access worktree operations subgateway."""
@@ -303,6 +320,11 @@ class FakeGit(Git):
     def branch(self) -> GitBranchOps:
         """Access branch operations subgateway."""
         return self._branch_gateway
+
+    @property
+    def remote(self) -> GitRemoteOps:
+        """Access remote operations subgateway."""
+        return self._remote_gateway
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory.
@@ -348,16 +370,6 @@ class FakeGit(Git):
         """Get recent commit information."""
         commits = self._recent_commits.get(cwd, [])
         return commits[:limit]
-
-    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
-        """Fetch a specific branch from a remote (tracks mutation)."""
-        self._fetched_branches.append((remote, branch))
-
-    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
-        """Pull a specific branch from a remote (tracks mutation)."""
-        self._pulled_branches.append((remote, branch, ff_only))
-        if self._pull_branch_raises is not None:
-            raise self._pull_branch_raises
 
     @property
     def deleted_branches(self) -> list[str]:
@@ -460,23 +472,6 @@ class FakeGit(Git):
             raise FileNotFoundError(f"No content for {path}")
         return self._file_contents[path]
 
-    def fetch_pr_ref(
-        self, *, repo_root: Path, remote: str, pr_number: int, local_branch: str
-    ) -> None:
-        """Record PR ref fetch in fake storage (mutates internal state).
-
-        Simulates fetching a PR ref by creating a local branch. In real git,
-        this would fetch refs/pull/<number>/head and create the branch.
-        """
-        # Track the fetch for test assertions
-        self._fetched_branches.append((remote, f"pull/{pr_number}/head"))
-
-        # In the fake, we simulate branch creation by adding to local branches
-        if repo_root not in self._local_branches:
-            self._local_branches[repo_root] = []
-        if local_branch not in self._local_branches[repo_root]:
-            self._local_branches[repo_root].append(local_branch)
-
     def stage_files(self, cwd: Path, paths: list[str]) -> None:
         """Record staged files for commit."""
         self._staged_files.extend(paths)
@@ -495,22 +490,6 @@ class FakeGit(Git):
         for (path, base_branch), count in list(self._commits_ahead.items()):
             if path == cwd:
                 self._commits_ahead[(cwd, base_branch)] = count + 1
-
-    def push_to_remote(
-        self,
-        cwd: Path,
-        remote: str,
-        branch: str,
-        *,
-        set_upstream: bool = False,
-        force: bool = False,
-    ) -> None:
-        """Record push to remote, or raise if failure configured."""
-        if self._push_to_remote_raises is not None:
-            raise self._push_to_remote_raises
-        self._pushed_branches.append(
-            PushedBranch(remote=remote, branch=branch, set_upstream=set_upstream, force=force)
-        )
 
     @property
     def staged_files(self) -> list[str]:
@@ -609,17 +588,6 @@ class FakeGit(Git):
     def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
         """Check if merging would have conflicts using git merge-tree."""
         return self._merge_conflicts.get((base_branch, head_branch), False)
-
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
-        """Get the URL for a git remote.
-
-        Raises:
-            ValueError: If remote doesn't exist or has no URL
-        """
-        url = self._remote_urls.get((repo_root, remote))
-        if url is None:
-            raise ValueError(f"Remote '{remote}' not found in repository")
-        return url
 
     def get_conflicted_files(self, cwd: Path) -> list[str]:
         """Get list of files with merge conflicts."""
@@ -749,23 +717,6 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return list(self._rebase_abort_calls)
-
-    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
-        """Pull and rebase from remote branch.
-
-        Tracks call for test assertions. Raises configured exception if set.
-        On success, clears the behind count in branch_divergence for this branch.
-        """
-        self._pull_rebase_calls.append((cwd, remote, branch))
-        if self._pull_rebase_raises is not None:
-            raise self._pull_rebase_raises
-        # Simulate successful rebase by clearing behind count
-        key = (cwd, branch, remote)
-        if key in self._branch_divergence:
-            old = self._branch_divergence[key]
-            self._branch_divergence[key] = BranchDivergence(
-                is_diverged=False, ahead=old.ahead, behind=0
-            )
 
     @property
     def pull_rebase_calls(self) -> list[tuple[Path, str, str]]:

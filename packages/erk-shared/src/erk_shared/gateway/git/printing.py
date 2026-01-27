@@ -9,6 +9,8 @@ from pathlib import Path
 from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.printing import PrintingGitBranchOps
+from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+from erk_shared.gateway.git.remote_ops.printing import PrintingGitRemoteOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.printing import PrintingWorktree
 from erk_shared.printing.base import PrintingBase
@@ -47,6 +49,13 @@ class PrintingGit(PrintingBase, Git):
         """Access branch operations subgateway (wrapped with PrintingGitBranchOps)."""
         return PrintingGitBranchOps(
             self._wrapped.branch, script_mode=self._script_mode, dry_run=self._dry_run
+        )
+
+    @property
+    def remote(self) -> GitRemoteOps:
+        """Access remote operations subgateway (wrapped with PrintingGitRemoteOps)."""
+        return PrintingGitRemoteOps(
+            self._wrapped.remote, script_mode=self._script_mode, dry_run=self._dry_run
         )
 
     # Read-only operations: delegate without printing
@@ -99,17 +108,6 @@ class PrintingGit(PrintingBase, Git):
         """Get recent commits (read-only, no printing)."""
         return self._wrapped.get_recent_commits(cwd, limit=limit)
 
-    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
-        """Fetch branch with printed output."""
-        self._emit(self._format_command(f"git fetch {remote} {branch}"))
-        self._wrapped.fetch_branch(repo_root, remote, branch)
-
-    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
-        """Pull branch with printed output."""
-        ff_flag = " --ff-only" if ff_only else ""
-        self._emit(self._format_command(f"git pull{ff_flag} {remote} {branch}"))
-        self._wrapped.pull_branch(repo_root, remote, branch, ff_only=ff_only)
-
     def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
         """Check if branch exists on remote (delegates to wrapped implementation)."""
         # Read-only operation, no output needed
@@ -131,15 +129,6 @@ class PrintingGit(PrintingBase, Git):
         """Get branch issue (read-only, no printing)."""
         return self._wrapped.branch.get_branch_issue(repo_root, branch)
 
-    def fetch_pr_ref(
-        self, *, repo_root: Path, remote: str, pr_number: int, local_branch: str
-    ) -> None:
-        """Fetch PR ref with printed output."""
-        self._emit(self._format_command(f"git fetch {remote} pull/{pr_number}/head:{local_branch}"))
-        self._wrapped.fetch_pr_ref(
-            repo_root=repo_root, remote=remote, pr_number=pr_number, local_branch=local_branch
-        )
-
     def stage_files(self, cwd: Path, paths: list[str]) -> None:
         """Stage files with printed output."""
         self._emit(self._format_command(f"git add {' '.join(paths)}"))
@@ -151,21 +140,6 @@ class PrintingGit(PrintingBase, Git):
         display_msg = message[:50] + "..." if len(message) > 50 else message
         self._emit(self._format_command(f'git commit --allow-empty -m "{display_msg}"'))
         self._wrapped.commit(cwd, message)
-
-    def push_to_remote(
-        self,
-        cwd: Path,
-        remote: str,
-        branch: str,
-        *,
-        set_upstream: bool = False,
-        force: bool = False,
-    ) -> None:
-        """Push to remote with printed output."""
-        upstream_flag = "-u " if set_upstream else ""
-        force_flag = "--force " if force else ""
-        self._emit(self._format_command(f"git push {upstream_flag}{force_flag}{remote} {branch}"))
-        self._wrapped.push_to_remote(cwd, remote, branch, set_upstream=set_upstream, force=force)
 
     def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
         """Get branch last commit time (read-only, no printing)."""
@@ -197,10 +171,6 @@ class PrintingGit(PrintingBase, Git):
     def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
         """Check merge conflicts (read-only, no printing)."""
         return self._wrapped.check_merge_conflicts(cwd, base_branch, head_branch)
-
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
-        """Get remote URL (read-only, no printing)."""
-        return self._wrapped.get_remote_url(repo_root, remote)
 
     def get_conflicted_files(self, cwd: Path) -> list[str]:
         """Get conflicted files (read-only, no printing)."""
@@ -268,11 +238,6 @@ class PrintingGit(PrintingBase, Git):
         """Abort rebase with printed output."""
         self._emit(self._format_command("git rebase --abort"))
         self._wrapped.rebase_abort(cwd)
-
-    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
-        """Pull with rebase with printed output."""
-        self._emit(self._format_command(f"git pull --rebase {remote} {branch}"))
-        self._wrapped.pull_rebase(cwd, remote, branch)
 
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
         """Get merge base (read-only, no printing)."""

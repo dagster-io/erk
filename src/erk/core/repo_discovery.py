@@ -91,7 +91,7 @@ def discover_repo_or_sentinel(
     # Extract GitHub identity from remote URL
     repo_id: GitHubRepoId | None = None
     try:
-        remote_url = ops.get_remote_url(root, "origin")
+        remote_url = ops.remote.get_remote_url(root, "origin")
         owner_repo = parse_git_remote_url(remote_url)
         repo_id = GitHubRepoId(owner=owner_repo[0], repo=owner_repo[1])
     except ValueError:

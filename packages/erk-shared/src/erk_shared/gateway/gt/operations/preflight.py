@@ -260,7 +260,7 @@ def _execute_submit_only(
     pr_number = pr_result.number
     pr_url = pr_result.url
     # Get Graphite URL by parsing repo identity from git remote URL (no API call)
-    remote_url = ops.git.get_remote_url(repo_root, "origin")
+    remote_url = ops.git.remote.get_remote_url(repo_root, "origin")
     owner, repo_name = parse_git_remote_url(remote_url)
     repo_id = GitHubRepoId(owner=owner, repo=repo_name)
     graphite_url = ops.graphite.get_graphite_url(repo_id, pr_number)

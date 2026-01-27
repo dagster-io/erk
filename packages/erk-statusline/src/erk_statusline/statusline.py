@@ -385,7 +385,7 @@ def get_github_repo_via_gateway(ctx: StatuslineContext, repo_root: Path) -> tupl
         (owner, repo) tuple, or None if unable to parse.
     """
     try:
-        remote_url = ctx.git.get_remote_url(repo_root, "origin")
+        remote_url = ctx.git.remote.get_remote_url(repo_root, "origin")
         return _parse_github_repo_from_url(remote_url)
     except ValueError:
         return None

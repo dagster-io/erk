@@ -452,7 +452,7 @@ def _create_branch_and_pr(
     # Stage, commit, and push
     ctx.git.stage_files(repo.root, [".worker-impl"])
     ctx.git.commit(repo.root, f"Add plan for issue #{issue_number}")
-    ctx.git.push_to_remote(repo.root, "origin", branch_name, set_upstream=True)
+    ctx.git.remote.push_to_remote(repo.root, "origin", branch_name, set_upstream=True)
     user_output(click.style("✓", fg="green") + " Branch pushed to remote")
 
     # Create draft PR
@@ -562,7 +562,7 @@ def _submit_single_issue(
             user_output(f"Branch '{branch_name}' exists but no PR. Adding placeholder commit...")
 
             # Fetch and checkout the remote branch locally
-            ctx.git.fetch_branch(repo.root, "origin", branch_name)
+            ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
 
             # Only create tracking branch if it doesn't exist locally (LBYL)
             local_branches = ctx.git.branch.list_local_branches(repo.root)
@@ -577,7 +577,7 @@ def _submit_single_issue(
                 repo.root,
                 f"[erk-plan] Initialize implementation for issue #{issue_number}",
             )
-            ctx.git.push_to_remote(repo.root, "origin", branch_name)
+            ctx.git.remote.push_to_remote(repo.root, "origin", branch_name)
             user_output(click.style("✓", fg="green") + " Placeholder commit pushed")
 
             # Now create the PR
@@ -667,7 +667,7 @@ def _submit_single_issue(
         else:
             # Create new branch
             user_output(f"Creating branch from origin/{base_branch}...")
-            ctx.git.fetch_branch(repo.root, "origin", base_branch)
+            ctx.git.remote.fetch_branch(repo.root, "origin", base_branch)
 
             # Verify parent is tracked by Graphite (if enabled)
             if ctx.branch_manager.is_graphite_managed():
