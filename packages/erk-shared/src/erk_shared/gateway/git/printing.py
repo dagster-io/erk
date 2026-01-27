@@ -6,11 +6,13 @@ before delegating to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
+from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, Git
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.printing import PrintingGitBranchOps
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
 from erk_shared.gateway.git.commit_ops.printing import PrintingGitCommitOps
+from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+from erk_shared.gateway.git.rebase_ops.printing import PrintingGitRebaseOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.printing import PrintingGitRemoteOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
@@ -74,6 +76,13 @@ class PrintingGit(PrintingBase, Git):
         """Access status operations subgateway (wrapped with PrintingGitStatusOps)."""
         return PrintingGitStatusOps(
             self._wrapped.status, script_mode=self._script_mode, dry_run=self._dry_run
+        )
+
+    @property
+    def rebase(self) -> GitRebaseOps:
+        """Access rebase operations subgateway (wrapped with PrintingGitRebaseOps)."""
+        return PrintingGitRebaseOps(
+            self._wrapped.rebase, script_mode=self._script_mode, dry_run=self._dry_run
         )
 
     # Read-only operations: delegate without printing
@@ -143,14 +152,6 @@ class PrintingGit(PrintingBase, Git):
         """Get diff to branch (read-only, no printing)."""
         return self._wrapped.get_diff_to_branch(cwd, branch)
 
-    def is_rebase_in_progress(self, cwd: Path) -> bool:
-        """Check if rebase in progress (read-only, no printing)."""
-        return self._wrapped.is_rebase_in_progress(cwd)
-
-    def rebase_continue(self, cwd: Path) -> None:
-        """Continue rebase (delegates without printing for now)."""
-        self._wrapped.rebase_continue(cwd)
-
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """Set git config with printed output."""
         self._emit(self._format_command(f"git config --{scope} {key} {value}"))
@@ -187,16 +188,6 @@ class PrintingGit(PrintingBase, Git):
     ) -> BranchDivergence:
         """Check branch divergence (read-only, no printing)."""
         return self._wrapped.branch.is_branch_diverged_from_remote(cwd, branch, remote)
-
-    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
-        """Rebase onto target ref with printed output."""
-        self._emit(self._format_command(f"git rebase {target_ref}"))
-        return self._wrapped.rebase_onto(cwd, target_ref)
-
-    def rebase_abort(self, cwd: Path) -> None:
-        """Abort rebase with printed output."""
-        self._emit(self._format_command("git rebase --abort"))
-        self._wrapped.rebase_abort(cwd)
 
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
         """Get merge base (read-only, no printing)."""

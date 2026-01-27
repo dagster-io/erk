@@ -149,10 +149,10 @@ def pr_checkout(
             )
 
         ctx.console.info("Rebasing onto base branch...")
-        rebase_result = ctx.git.rebase_onto(worktree_path, f"origin/{pr.base_ref_name}")
+        rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{pr.base_ref_name}")
 
         if not rebase_result.success:
-            ctx.git.rebase_abort(worktree_path)
+            ctx.git.rebase.rebase_abort(worktree_path)
             ctx.console.info(
                 f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
                 f"Run: cd {worktree_path} && git rebase origin/{pr.base_ref_name}"

@@ -5,15 +5,16 @@ commands via subprocess. Located in erk-shared so it can be used by both
 the main erk package and erk-kits without circular dependencies.
 """
 
-import os
 import subprocess
 from pathlib import Path
 
-from erk_shared.gateway.git.abc import Git, RebaseResult
+from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.real import RealGitBranchOps
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
 from erk_shared.gateway.git.commit_ops.real import RealGitCommitOps
+from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+from erk_shared.gateway.git.rebase_ops.real import RealGitRebaseOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.real import RealGitRemoteOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
@@ -43,6 +44,11 @@ class RealGit(Git):
         self._remote = RealGitRemoteOps(time=self._time)
         self._commit = RealGitCommitOps(time=self._time)
         self._status = RealGitStatusOps()
+        # Rebase operations subgateway
+        self._rebase_gateway = RealGitRebaseOps(
+            get_git_common_dir=self.get_git_common_dir,
+            get_conflicted_files=self._status.get_conflicted_files,
+        )
 
     @property
     def worktree(self) -> Worktree:
@@ -68,6 +74,11 @@ class RealGit(Git):
     def status(self) -> GitStatusOps:
         """Access status operations subgateway."""
         return self._status
+
+    @property
+    def rebase(self) -> GitRebaseOps:
+        """Access rebase operations subgateway."""
+        return self._rebase_gateway
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory."""
@@ -127,26 +138,6 @@ class RealGit(Git):
         )
         return result.stdout
 
-    def is_rebase_in_progress(self, cwd: Path) -> bool:
-        """Check for .git/rebase-merge or .git/rebase-apply directories."""
-        git_common_dir = self.get_git_common_dir(cwd)
-        if git_common_dir is None:
-            return False
-        rebase_merge = git_common_dir / "rebase-merge"
-        rebase_apply = git_common_dir / "rebase-apply"
-        return rebase_merge.exists() or rebase_apply.exists()
-
-    def rebase_continue(self, cwd: Path) -> None:
-        """Run git rebase --continue."""
-        subprocess.run(
-            ["git", "rebase", "--continue"],
-            cwd=cwd,
-            check=True,
-            capture_output=True,
-            text=True,
-            env={**os.environ, "GIT_EDITOR": "true"},  # Auto-accept commit messages
-        )
-
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """Set a git configuration value."""
         run_subprocess_with_context(
@@ -194,32 +185,6 @@ class RealGit(Git):
             cmd=["git", "push", remote, tag_name],
             operation_context=f"push tag '{tag_name}' to remote '{remote}'",
             cwd=repo_root,
-        )
-
-    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
-        """Rebase the current branch onto a target ref."""
-        result = subprocess.run(
-            ["git", "rebase", target_ref],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-            env={**os.environ, "GIT_EDITOR": "true"},  # Auto-accept commit messages
-        )
-
-        if result.returncode == 0:
-            return RebaseResult(success=True, conflict_files=())
-
-        # Rebase failed - get conflict files
-        conflict_files = self.status.get_conflicted_files(cwd)
-        return RebaseResult(success=False, conflict_files=tuple(conflict_files))
-
-    def rebase_abort(self, cwd: Path) -> None:
-        """Abort an in-progress rebase operation."""
-        run_subprocess_with_context(
-            cmd=["git", "rebase", "--abort"],
-            operation_context="abort rebase",
-            cwd=cwd,
         )
 
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:

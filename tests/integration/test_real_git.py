@@ -847,7 +847,7 @@ def test_rebase_onto_success(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act: Rebase feature onto base
-    result = git_ops.rebase_onto(repo, "base")
+    result = git_ops.rebase.rebase_onto(repo, "base")
 
     # Assert
     assert result.success is True
@@ -885,14 +885,14 @@ def test_rebase_onto_with_conflicts(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Act: Rebase feature onto base (should conflict)
-    result = git_ops.rebase_onto(repo, "base")
+    result = git_ops.rebase.rebase_onto(repo, "base")
 
     # Assert
     assert result.success is False
     assert "file.txt" in result.conflict_files
 
     # Clean up: abort the rebase
-    git_ops.rebase_abort(repo)
+    git_ops.rebase.rebase_abort(repo)
 
 
 def test_rebase_abort_cancels_rebase(tmp_path: Path) -> None:
@@ -919,22 +919,70 @@ def test_rebase_abort_cancels_rebase(tmp_path: Path) -> None:
     git_ops = RealGit()
 
     # Start a rebase that will conflict
-    result = git_ops.rebase_onto(repo, "base")
+    result = git_ops.rebase.rebase_onto(repo, "base")
     assert result.success is False
 
     # Verify rebase is in progress
-    assert git_ops.is_rebase_in_progress(repo) is True
+    assert git_ops.rebase.is_rebase_in_progress(repo) is True
 
     # Act: Abort the rebase
-    git_ops.rebase_abort(repo)
+    git_ops.rebase.rebase_abort(repo)
 
     # Assert: Rebase is no longer in progress
-    assert git_ops.is_rebase_in_progress(repo) is False
+    assert git_ops.rebase.is_rebase_in_progress(repo) is False
 
     # Verify we're back on feature branch with original content
     branch = git_ops.branch.get_current_branch(repo)
     assert branch == "feature"
     assert "FEATURE" in (repo / "file.txt").read_text()
+
+
+def test_rebase_continue_after_conflict_resolution(tmp_path: Path) -> None:
+    """Test rebase_continue completes rebase after resolving conflicts."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Create a file on main
+    (repo / "file.txt").write_text("line 1\nline 2\nline 3\n", encoding="utf-8")
+    subprocess.run(["git", "add", "file.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Add file"], cwd=repo, check=True)
+
+    # Create base branch with conflicting changes
+    subprocess.run(["git", "checkout", "-b", "base"], cwd=repo, check=True)
+    (repo / "file.txt").write_text("line 1 BASE\nline 2\nline 3\n", encoding="utf-8")
+    subprocess.run(["git", "commit", "-am", "Change on base"], cwd=repo, check=True)
+
+    # Go back to main and create feature with conflicting changes
+    subprocess.run(["git", "checkout", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "checkout", "-b", "feature"], cwd=repo, check=True)
+    (repo / "file.txt").write_text("line 1 FEATURE\nline 2\nline 3\n", encoding="utf-8")
+    subprocess.run(["git", "commit", "-am", "Change on feature"], cwd=repo, check=True)
+
+    git_ops = RealGit()
+
+    # Start a rebase that will conflict
+    result = git_ops.rebase.rebase_onto(repo, "base")
+    assert result.success is False
+
+    # Verify rebase is in progress
+    assert git_ops.rebase.is_rebase_in_progress(repo) is True
+
+    # Resolve the conflict manually
+    (repo / "file.txt").write_text("line 1 RESOLVED\nline 2\nline 3\n", encoding="utf-8")
+    subprocess.run(["git", "add", "file.txt"], cwd=repo, check=True)
+
+    # Continue the rebase
+    git_ops.rebase.rebase_continue(repo)
+
+    # Assert: Rebase completed
+    assert git_ops.rebase.is_rebase_in_progress(repo) is False
+
+    # Verify we're on feature branch with resolved content
+    branch = git_ops.branch.get_current_branch(repo)
+    assert branch == "feature"
+    assert "RESOLVED" in (repo / "file.txt").read_text()
 
 
 def test_pull_rebase_integrates_remote_commits(tmp_path: Path) -> None:

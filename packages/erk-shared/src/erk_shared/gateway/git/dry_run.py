@@ -6,11 +6,13 @@ operations while delegating read-only operations to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.gateway.git.abc import Git, RebaseResult
+from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.dry_run import DryRunGitBranchOps
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
 from erk_shared.gateway.git.commit_ops.dry_run import DryRunGitCommitOps
+from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+from erk_shared.gateway.git.rebase_ops.dry_run import DryRunGitRebaseOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.dry_run import DryRunGitRemoteOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
@@ -75,6 +77,11 @@ class DryRunGit(Git):
         """Access status operations subgateway (wrapped with DryRunGitStatusOps)."""
         return DryRunGitStatusOps(self._wrapped.status)
 
+    @property
+    def rebase(self) -> GitRebaseOps:
+        """Access rebase operations subgateway (wrapped with DryRunGitRebaseOps)."""
+        return DryRunGitRebaseOps(self._wrapped.rebase)
+
     # Read-only operations: delegate to wrapped implementation
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
@@ -92,15 +99,6 @@ class DryRunGit(Git):
     def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
         """Get diff to branch (read-only, delegates to wrapped)."""
         return self._wrapped.get_diff_to_branch(cwd, branch)
-
-    def is_rebase_in_progress(self, cwd: Path) -> bool:
-        """Check if rebase in progress (read-only, delegates to wrapped)."""
-        return self._wrapped.is_rebase_in_progress(cwd)
-
-    def rebase_continue(self, cwd: Path) -> None:
-        """No-op for continuing rebase in dry-run mode."""
-        # Do nothing - prevents actual rebase continue
-        pass
 
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """No-op for setting git config in dry-run mode."""
@@ -121,14 +119,6 @@ class DryRunGit(Git):
     def push_tag(self, repo_root: Path, remote: str, tag_name: str) -> None:
         """Print dry-run message instead of pushing tag."""
         user_output(f"[DRY RUN] Would run: git push {remote} {tag_name}")
-
-    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
-        """No-op for rebase in dry-run mode. Returns success."""
-        return RebaseResult(success=True, conflict_files=())
-
-    def rebase_abort(self, cwd: Path) -> None:
-        """No-op for rebase abort in dry-run mode."""
-        pass
 
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
         """Get merge base (read-only, delegates to wrapped)."""

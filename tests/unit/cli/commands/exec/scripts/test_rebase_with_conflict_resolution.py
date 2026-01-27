@@ -114,22 +114,22 @@ def test_rebase_success_no_conflicts(tmp_path: Path) -> None:
 
 def test_rebase_with_conflicts_resolved_by_claude(tmp_path: Path) -> None:
     """Test rebase with conflicts that Claude resolves successfully."""
-    # Create a custom fake that simulates:
+    # Create a callable that simulates:
     # 1. Initial rebase fails with conflicts (is_rebase_in_progress returns True first)
     # 2. After Claude resolves, rebase is no longer in progress (returns False)
     call_count = 0
 
-    class RebaseProgressTrackingGit(FakeGit):
-        def is_rebase_in_progress(self, cwd: Path) -> bool:
-            nonlocal call_count
-            call_count += 1
-            # First call returns True (rebase in progress), subsequent return False
-            return call_count == 1
+    def dynamic_rebase_in_progress(cwd: Path) -> bool:
+        nonlocal call_count
+        call_count += 1
+        # First call returns True (rebase in progress), subsequent return False
+        return call_count == 1
 
-    fake_git = RebaseProgressTrackingGit(
+    fake_git = FakeGit(
         ahead_behind={(tmp_path, "feature-branch"): (0, 2)},
         rebase_onto_result=RebaseResult(success=False, conflict_files=("src/config.py",)),
         conflicted_files=["src/config.py"],
+        rebase_in_progress=dynamic_rebase_in_progress,
     )
     fake_claude = FakeClaudeExecutor(passthrough_exit_code=0)
 
@@ -325,21 +325,21 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
 
 def test_conflict_resolution_uses_correct_prompt(tmp_path: Path) -> None:
     """Test that conflict resolution uses the expected prompt."""
-    # Create a custom fake that simulates rebase being in progress initially,
+    # Create a callable that simulates rebase being in progress initially,
     # then cleared after Claude is invoked (simulating successful resolution)
     call_count = 0
 
-    class RebaseProgressTrackingGit(FakeGit):
-        def is_rebase_in_progress(self, cwd: Path) -> bool:
-            nonlocal call_count
-            call_count += 1
-            # First call returns True (rebase in progress), subsequent return False
-            return call_count == 1
+    def dynamic_rebase_in_progress(cwd: Path) -> bool:
+        nonlocal call_count
+        call_count += 1
+        # First call returns True (rebase in progress), subsequent return False
+        return call_count == 1
 
-    fake_git = RebaseProgressTrackingGit(
+    fake_git = FakeGit(
         ahead_behind={(tmp_path, "feature-branch"): (0, 2)},
         rebase_onto_result=RebaseResult(success=False, conflict_files=("src/config.py",)),
         conflicted_files=["src/config.py"],
+        rebase_in_progress=dynamic_rebase_in_progress,
     )
     fake_claude = FakeClaudeExecutor(passthrough_exit_code=0)
 
