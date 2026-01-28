@@ -31,6 +31,12 @@ Once you have the issue number, run:
 erk plan submit <issue_number>
 ```
 
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "${CLAUDE_SESSION_ID}" plan-saved-issue
+```
+
 Display the command output to the user. The `erk plan submit` command handles all validation (issue existence, labels, state).
 
 ## Error Cases
