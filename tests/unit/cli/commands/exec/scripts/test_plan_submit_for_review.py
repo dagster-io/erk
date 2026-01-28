@@ -249,7 +249,9 @@ def test_plan_submit_for_review_missing_erk_plan_label() -> None:
     """Test error when issue doesn't have erk-plan label."""
     issue_number = 1234
     body = make_plan_header_body(plan_comment_id=123456789)
-    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=["bug", "enhancement"])
+    issue = make_issue_info(
+        issue_number, body, title="Test Plan Issue", labels=["bug", "enhancement"]
+    )
 
     fake_gh = FakeGitHubIssues(issues={issue_number: issue})
     runner = CliRunner()
