@@ -343,6 +343,7 @@ PlanHeaderFieldName = Literal[
     "learn_plan_issue",
     "learn_plan_pr",
     "learned_from_issue",
+    "review_pr",
 ]
 """Union type of all valid plan-header field names."""
 
@@ -387,6 +388,9 @@ LAST_SESSION_SOURCE: Literal["last_session_source"] = "last_session_source"
 LEARN_PLAN_ISSUE: Literal["learn_plan_issue"] = "learn_plan_issue"
 LEARN_PLAN_PR: Literal["learn_plan_pr"] = "learn_plan_pr"
 LEARNED_FROM_ISSUE: Literal["learned_from_issue"] = "learned_from_issue"
+
+# Review PR tracking field
+REVIEW_PR: Literal["review_pr"] = "review_pr"
 
 # Valid values for learn_status field
 LearnStatusValue = Literal[
@@ -448,6 +452,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         last_session_id: Claude Code session ID of uploaded session (nullable)
         last_session_at: ISO 8601 timestamp of session upload (nullable)
         last_session_source: "local" or "remote" indicating session origin (nullable)
+        review_pr: PR number for plan review (nullable)
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -487,6 +492,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             LEARN_PLAN_ISSUE,
             LEARN_PLAN_PR,
             LEARNED_FROM_ISSUE,
+            REVIEW_PR,
         }
 
         # Check required fields exist
@@ -719,6 +725,13 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("learned_from_issue must be an integer or null")
             if data[LEARNED_FROM_ISSUE] <= 0:
                 raise ValueError("learned_from_issue must be positive when provided")
+
+        # Validate optional review_pr field
+        if REVIEW_PR in data and data[REVIEW_PR] is not None:
+            if not isinstance(data[REVIEW_PR], int):
+                raise ValueError("review_pr must be an integer or null")
+            if data[REVIEW_PR] <= 0:
+                raise ValueError("review_pr must be positive when provided")
 
         # Check for unexpected fields
         known_fields = required_fields | optional_fields

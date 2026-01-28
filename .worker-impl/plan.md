@@ -7,6 +7,7 @@ Create PR via `gh pr create` with title/body linking back to plan issue, then up
 ## Summary
 
 Implement a single `erk exec plan-create-review-pr` command that:
+
 1. Creates a draft PR from the plan review branch
 2. Updates the plan issue's metadata with the new `review_pr` field
 
@@ -41,6 +42,7 @@ Create the new command.
 **File: `src/erk/cli/commands/exec/scripts/plan_create_review_pr.py` (NEW)**
 
 Structure (following `plan_create_review_branch.py` pattern):
+
 - `CreateReviewPRSuccess` dataclass: `success, issue_number, pr_number, pr_url`
 - `CreateReviewPRError` dataclass: `success, error, message`
 - `CreateReviewPRException` for LBYL error handling
@@ -49,17 +51,20 @@ Structure (following `plan_create_review_branch.py` pattern):
 - `plan_create_review_pr` Click command
 
 Command signature:
+
 ```
 erk exec plan-create-review-pr <issue-number> <branch-name> <plan-title>
 ```
 
 Logic:
+
 1. Create draft PR with `github.create_pr(repo_root, branch, title, body, base="master", draft=True)`
 2. LBYL: Check issue exists via `github_issues.issue_exists()`
 3. Get issue body, update with `update_plan_header_review_pr()`
 4. Write updated body via `github_issues.update_issue_body()`
 
 PR Format:
+
 - Title: `Plan Review: {plan_title} (#{issue_number})`
 - Body: Markdown with link to issue, warning that PR won't be merged
 
@@ -76,6 +81,7 @@ PR Format:
 **File: `tests/unit/cli/commands/exec/scripts/test_plan_create_review_pr.py` (NEW)**
 
 Test cases:
+
 1. `test_plan_create_review_pr_success` - PR created, metadata updated
 2. `test_plan_create_review_pr_pr_title_format` - Verify title contains issue reference
 3. `test_plan_create_review_pr_pr_body_format` - Verify body has issue link and warning
@@ -92,20 +98,21 @@ Use `FakeGitHub` and `FakeGitHubIssues` following existing test patterns.
 **File: `packages/erk-shared/tests/unit/github/metadata/test_plan_header.py`**
 
 Add tests for:
+
 - `test_update_plan_header_review_pr`
 - `test_extract_plan_header_review_pr`
 - `test_extract_plan_header_review_pr_not_present`
 
 ## Files to Modify
 
-| File | Action |
-|------|--------|
-| `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` | Add `REVIEW_PR` field |
+| File                                                                        | Action                       |
+| --------------------------------------------------------------------------- | ---------------------------- |
+| `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`     | Add `REVIEW_PR` field        |
 | `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py` | Add update/extract functions |
-| `src/erk/cli/commands/exec/scripts/plan_create_review_pr.py` | NEW - command impl |
-| `src/erk/cli/commands/exec/group.py` | Register command |
-| `tests/unit/cli/commands/exec/scripts/test_plan_create_review_pr.py` | NEW - command tests |
-| `packages/erk-shared/tests/unit/github/metadata/test_plan_header.py` | Add function tests |
+| `src/erk/cli/commands/exec/scripts/plan_create_review_pr.py`                | NEW - command impl           |
+| `src/erk/cli/commands/exec/group.py`                                        | Register command             |
+| `tests/unit/cli/commands/exec/scripts/test_plan_create_review_pr.py`        | NEW - command tests          |
+| `packages/erk-shared/tests/unit/github/metadata/test_plan_header.py`        | Add function tests           |
 
 ## Related Documentation
 

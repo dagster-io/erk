@@ -52,6 +52,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     LEARNED_FROM_ISSUE,
     OBJECTIVE_ISSUE,
     PLAN_COMMENT_ID,
+    REVIEW_PR,
     SCHEMA_VERSION,
     SOURCE_REPO,
     WORKTREE_NAME,
@@ -1331,3 +1332,63 @@ def update_plan_header_learn_plan_completed(
 
     # Replace block in full body
     return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+
+
+def update_plan_header_review_pr(
+    issue_body: str,
+    review_pr: int,
+) -> str:
+    """Update review_pr field in plan-header metadata block.
+
+    Uses Python YAML parsing for robustness (not regex).
+    This function reads the existing plan-header block, updates the
+    review_pr field, and re-renders the entire body.
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        review_pr: PR number for the plan review PR
+
+    Returns:
+        Updated issue body with new review_pr field
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Update review_pr field
+    updated_data = dict(block.data)
+    updated_data[REVIEW_PR] = review_pr
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+
+
+def extract_plan_header_review_pr(issue_body: str) -> int | None:
+    """Extract review_pr field from plan-header metadata block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        PR number if present, None otherwise
+
+    Raises:
+        ValueError: If plan-header block is invalid
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    return block.data.get(REVIEW_PR)
