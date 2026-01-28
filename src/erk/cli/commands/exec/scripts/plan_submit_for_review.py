@@ -72,7 +72,7 @@ def plan_submit_for_review(
             message=f"Issue #{issue_number} not found: {e}",
         )
         click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
+        raise SystemExit(1) from e
 
     # Validate erk-plan label
     if "erk-plan" not in issue.labels:
@@ -82,7 +82,7 @@ def plan_submit_for_review(
             message=f"Issue #{issue_number} does not have the erk-plan label",
         )
         click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
+        raise SystemExit(1)
 
     # Extract plan comment ID from metadata
     plan_comment_id = extract_plan_header_comment_id(issue.body)
@@ -93,7 +93,7 @@ def plan_submit_for_review(
             message=f"Issue #{issue_number} has no plan_comment_id in metadata",
         )
         click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
+        raise SystemExit(1)
 
     # Fetch comments with URLs
     try:
@@ -105,7 +105,7 @@ def plan_submit_for_review(
             message=f"Failed to fetch comments for issue #{issue_number}: {e}",
         )
         click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
+        raise SystemExit(1) from e
 
     if not comments:
         result = PlanSubmitError(
@@ -114,7 +114,7 @@ def plan_submit_for_review(
             message=f"Issue #{issue_number} has no comments",
         )
         click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
+        raise SystemExit(1)
 
     # Find the comment with the plan content
     plan_comment_url = None
@@ -135,7 +135,7 @@ def plan_submit_for_review(
             message=f"Issue #{issue_number} comment {plan_comment_id} has no plan markers",
         )
         click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
+        raise SystemExit(1)
 
     # Success - type checker now knows plan_comment_url is not None
     result = PlanSubmitSuccess(

@@ -18,7 +18,7 @@ from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
 
 def make_plan_header_body(
-    plan_comment_id: int | None = 123456789,
+    plan_comment_id: int | None,
 ) -> str:
     """Create a test issue body with plan-header metadata block."""
     comment_id_line = (
@@ -70,8 +70,8 @@ def make_plan_comment_body_v1(plan_content: str) -> str:
 def make_issue_info(
     number: int,
     body: str,
-    title: str = "Test Plan Issue",
-    labels: list[str] | None = None,
+    title: str,
+    labels: list[str] | None,
 ) -> IssueInfo:
     """Create test IssueInfo with given number, body, and labels."""
     if labels is None:
@@ -117,7 +117,7 @@ def test_plan_submit_for_review_success_v2_format() -> None:
 
     # Create issue with plan-header
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body, title="Plan: Add feature X")
+    issue = make_issue_info(issue_number, body, title="Plan: Add feature X", labels=None)
 
     # Create comment with plan-body block
     comment_body = make_plan_comment_body_v2(plan_content)
@@ -157,7 +157,7 @@ def test_plan_submit_for_review_success_v1_format() -> None:
 
     # Create issue with plan-header
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body)
+    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=None)
 
     # Create comment with old format markers
     comment_body = make_plan_comment_body_v1(plan_content)
@@ -200,7 +200,7 @@ All tests pass"""
     issue_number = 9999
 
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body)
+    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=None)
     comment_body = make_plan_comment_body_v2(plan_content)
     comment = make_issue_comment(comment_id, comment_body)
 
@@ -248,8 +248,8 @@ def test_plan_submit_for_review_issue_not_found() -> None:
 def test_plan_submit_for_review_missing_erk_plan_label() -> None:
     """Test error when issue doesn't have erk-plan label."""
     issue_number = 1234
-    body = make_plan_header_body()
-    issue = make_issue_info(issue_number, body, labels=["bug", "enhancement"])
+    body = make_plan_header_body(plan_comment_id=123456789)
+    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=["bug", "enhancement"])
 
     fake_gh = FakeGitHubIssues(issues={issue_number: issue})
     runner = CliRunner()
@@ -271,7 +271,7 @@ def test_plan_submit_for_review_no_plan_comment_id() -> None:
     """Test error when issue has no plan_comment_id in metadata."""
     issue_number = 1234
     body = make_plan_header_body(plan_comment_id=None)
-    issue = make_issue_info(issue_number, body)
+    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=None)
 
     fake_gh = FakeGitHubIssues(issues={issue_number: issue})
     runner = CliRunner()
@@ -294,7 +294,7 @@ def test_plan_submit_for_review_no_comments() -> None:
     issue_number = 1234
     comment_id = 123456789
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body)
+    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=None)
 
     fake_gh = FakeGitHubIssues(
         issues={issue_number: issue},
@@ -320,7 +320,7 @@ def test_plan_submit_for_review_comment_has_no_plan_markers() -> None:
     issue_number = 1234
     comment_id = 123456789
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body)
+    issue = make_issue_info(issue_number, body, title="Test Plan Issue", labels=None)
 
     # Create comment without plan markers
     comment = make_issue_comment(comment_id, "Just a regular comment, no plan here.")
@@ -356,7 +356,7 @@ def test_json_output_structure_success() -> None:
     issue_number = 1234
 
     body = make_plan_header_body(plan_comment_id=comment_id)
-    issue = make_issue_info(issue_number, body, title="Plan: Test Feature")
+    issue = make_issue_info(issue_number, body, title="Plan: Test Feature", labels=None)
     comment_body = make_plan_comment_body_v2(plan_content)
     comment = make_issue_comment(comment_id, comment_body)
 
