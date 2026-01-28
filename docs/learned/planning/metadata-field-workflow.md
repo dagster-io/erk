@@ -147,6 +147,65 @@ After making changes:
 2. Verify field appears correctly in created issues
 3. Verify field can be read back via `erk exec get-plan-metadata`
 
+## Concrete Example: review_pr Field
+
+The `review_pr` field was added following this workflow. Here's how each step was implemented:
+
+### 1. schemas.py - Define the Field
+
+```python
+# Add to PlanHeaderFieldName
+PlanHeaderFieldName = Literal[
+    # ... existing fields ...
+    "review_pr",
+]
+
+# Add constant
+REVIEW_PR: Literal["review_pr"] = "review_pr"
+
+# Add validation in validate_plan_header_data()
+if REVIEW_PR in data and data[REVIEW_PR] is not None:
+    if not isinstance(data[REVIEW_PR], int) or data[REVIEW_PR] <= 0:
+        raise ValueError("review_pr must be a positive integer or null")
+```
+
+### 2. plan_header.py - Update Functions
+
+Two functions were added (not threading through create):
+
+```python
+def update_plan_header_review_pr(issue_body: str, review_pr: int) -> str:
+    """Update the review_pr field in an existing plan header."""
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("No plan-header metadata block found")
+
+    updated_data = dict(block.data)
+    updated_data[REVIEW_PR] = review_pr
+    PlanHeaderSchema().validate(updated_data)
+
+    return replace_metadata_block_in_body(issue_body, "plan-header", updated_data)
+
+def extract_plan_header_review_pr(issue_body: str) -> int | None:
+    """Extract the review_pr field from a plan header."""
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+    return block.data.get(REVIEW_PR)
+```
+
+### Why Not Thread Through create_plan_header_block()?
+
+Unlike fields set at plan creation time, `review_pr` is populated AFTER the plan issue exists - when the review PR is created. This requires an update-in-place pattern rather than threading through creation functions.
+
+### 3-5. Remaining Steps
+
+For this field, steps 3-5 (plan_issues.py, plan_save_to_issue.py, test fixtures) were NOT needed because:
+
+- Field is set after issue creation, not during
+- No CLI option needed (set by exec command)
+- Tests use direct header manipulation
+
 ## Related Topics
 
 - [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) - Critical metadata fields

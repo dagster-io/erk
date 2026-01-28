@@ -180,6 +180,48 @@ github = FakeGitHub(
 
 If only `prs` is configured, `get_pr_for_branch()` returns `PRNotFound` because the second lookup fails.
 
+#### FakeGitHub Behavioral Quirks
+
+FakeGitHub simplifies some behaviors that differ from real GitHub:
+
+**Hardcoded PR Numbers**
+
+`FakeGitHub.create_pr()` returns PR number **999**, not sequential IDs:
+
+```python
+# FakeGitHub implementation
+def create_pr(self, ...) -> PullRequestInfo:
+    return PullRequestInfo(number=999, ...)  # Always 999
+```
+
+**Test implication:** Don't assert on sequential PR numbers:
+
+```python
+# WRONG - assumes sequential IDs
+assert result.pr_number == 1
+
+# CORRECT - match fake behavior
+assert result.pr_number == 999
+```
+
+**Mutation Tracking**
+
+Use read-only properties to verify operations:
+
+```python
+github = FakeGitHub()
+# ... perform operations ...
+
+# Check what PRs were created
+assert len(github.created_prs) == 1
+assert github.created_prs[0].title == "Expected Title"
+```
+
+**Available tracking properties:**
+
+- `created_prs: list[PullRequestInfo]` - PRs created via `create_pr()`
+- `updated_issues: list[tuple[int, str]]` - Issues updated via `update_issue_body()`
+
 ### FakeGraphite
 
 ```python
