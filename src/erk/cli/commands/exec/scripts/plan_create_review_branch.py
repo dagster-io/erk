@@ -213,4 +213,4 @@ def plan_create_review_branch(
             message=e.message,
         )
         click.echo(json.dumps(asdict(error_response)))
-        raise SystemExit(1)
+        raise SystemExit(1) from None
