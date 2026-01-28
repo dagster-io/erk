@@ -118,6 +118,7 @@ def _fetch_plan_content(
 
 def _create_review_branch_impl(
     git: Git,
+    *,
     github_issues: GitHubIssues,
     time: Time,
     repo_root: Path,
@@ -197,7 +198,13 @@ def plan_create_review_branch(
     time = require_time(ctx)
     repo_root = require_repo_root(ctx)
 
-    result = _create_review_branch_impl(git, github_issues, time, repo_root, issue_number)
+    result = _create_review_branch_impl(
+        git,
+        github_issues=github_issues,
+        time=time,
+        repo_root=repo_root,
+        issue_number=issue_number,
+    )
 
     # Output JSON result
     click.echo(json.dumps(asdict(result)))
