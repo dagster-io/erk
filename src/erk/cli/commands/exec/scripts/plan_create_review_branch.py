@@ -49,11 +49,20 @@ class PlanReviewBranchError:
     message: str
 
 
+class PlanReviewBranchException(Exception):
+    """Exception raised during plan review branch creation."""
+
+    def __init__(self, error: str, message: str) -> None:
+        super().__init__(message)
+        self.error = error
+        self.message = message
+
+
 def _fetch_plan_content(
     github_issues: GitHubIssues,
     repo_root: Path,
     issue_number: int,
-) -> tuple[str, str] | PlanReviewBranchError:
+) -> tuple[str, str]:
     """Fetch plan content from GitHub issue.
 
     Args:
@@ -62,12 +71,14 @@ def _fetch_plan_content(
         issue_number: Issue number to fetch
 
     Returns:
-        Tuple of (plan_title, plan_content) on success, or PlanReviewBranchError on failure
+        Tuple of (plan_title, plan_content) on success
+
+    Raises:
+        PlanReviewBranchException: If issue not found, missing label, or no plan content
     """
     # LBYL: Check if issue exists before fetching
     if not github_issues.issue_exists(repo_root, issue_number):
-        return PlanReviewBranchError(
-            success=False,
+        raise PlanReviewBranchException(
             error="issue_not_found",
             message=f"Issue #{issue_number} not found",
         )
@@ -77,8 +88,7 @@ def _fetch_plan_content(
 
     # Validate erk-plan label
     if "erk-plan" not in issue.labels:
-        return PlanReviewBranchError(
-            success=False,
+        raise PlanReviewBranchException(
             error="missing_erk_plan_label",
             message=f"Issue #{issue_number} does not have the erk-plan label",
         )
@@ -86,8 +96,7 @@ def _fetch_plan_content(
     # Extract plan comment ID from metadata
     plan_comment_id = extract_plan_header_comment_id(issue.body)
     if plan_comment_id is None:
-        return PlanReviewBranchError(
-            success=False,
+        raise PlanReviewBranchException(
             error="no_plan_content",
             message=f"Issue #{issue_number} has no plan_comment_id in metadata",
         )
@@ -96,8 +105,7 @@ def _fetch_plan_content(
     comments = github_issues.get_issue_comments_with_urls(repo_root, issue_number)
 
     if not comments:
-        return PlanReviewBranchError(
-            success=False,
+        raise PlanReviewBranchException(
             error="no_plan_content",
             message=f"Issue #{issue_number} has no comments",
         )
@@ -109,8 +117,7 @@ def _fetch_plan_content(
             if content:
                 return (issue.title, content)
 
-    return PlanReviewBranchError(
-        success=False,
+    raise PlanReviewBranchException(
         error="no_plan_content",
         message=f"Issue #{issue_number} comment {plan_comment_id} has no plan markers",
     )
@@ -123,7 +130,7 @@ def _create_review_branch_impl(
     time: Time,
     repo_root: Path,
     issue_number: int,
-) -> PlanReviewBranchSuccess | PlanReviewBranchError:
+) -> PlanReviewBranchSuccess:
     """Create a plan review branch and push to remote.
 
     Args:
@@ -134,21 +141,13 @@ def _create_review_branch_impl(
         issue_number: Issue number to create review branch for
 
     Returns:
-        PlanReviewBranchSuccess on success, PlanReviewBranchError on failure
-    """
-    # Fetch plan content
-    try:
-        result = _fetch_plan_content(github_issues, repo_root, issue_number)
-    except RuntimeError as e:
-        return PlanReviewBranchError(
-            success=False,
-            error="fetch_failed",
-            message=f"Failed to fetch plan content: {e}",
-        )
-    if isinstance(result, PlanReviewBranchError):
-        return result
+        PlanReviewBranchSuccess on success
 
-    plan_title, plan_content = result
+    Raises:
+        PlanReviewBranchException: If plan content cannot be fetched or validated
+    """
+    # Fetch plan content (raises PlanReviewBranchException on failure)
+    plan_title, plan_content = _fetch_plan_content(github_issues, repo_root, issue_number)
 
     # Define branch and file names with timestamp (format: plan-review-{issue}-{MM-DD-HHMM})
     timestamp_suffix = format_branch_timestamp_suffix(time.now())
@@ -198,17 +197,20 @@ def plan_create_review_branch(
     time = require_time(ctx)
     repo_root = require_repo_root(ctx)
 
-    result = _create_review_branch_impl(
-        git,
-        github_issues=github_issues,
-        time=time,
-        repo_root=repo_root,
-        issue_number=issue_number,
-    )
-
-    # Output JSON result
-    click.echo(json.dumps(asdict(result)))
-
-    # Exit with error code if failed
-    if isinstance(result, PlanReviewBranchError):
+    try:
+        result = _create_review_branch_impl(
+            git,
+            github_issues=github_issues,
+            time=time,
+            repo_root=repo_root,
+            issue_number=issue_number,
+        )
+        click.echo(json.dumps(asdict(result)))
+    except PlanReviewBranchException as e:
+        error_response = PlanReviewBranchError(
+            success=False,
+            error=e.error,
+            message=e.message,
+        )
+        click.echo(json.dumps(asdict(error_response)))
         raise SystemExit(1)
