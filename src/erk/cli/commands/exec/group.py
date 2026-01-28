@@ -78,6 +78,9 @@ from erk.cli.commands.exec.scripts.marker import marker
 from erk.cli.commands.exec.scripts.objective_save_to_issue import (
     objective_save_to_issue,
 )
+from erk.cli.commands.exec.scripts.plan_create_review_branch import (
+    plan_create_review_branch,
+)
 from erk.cli.commands.exec.scripts.plan_save_to_issue import plan_save_to_issue
 from erk.cli.commands.exec.scripts.plan_submit_for_review import (
     plan_submit_for_review,
@@ -190,6 +193,7 @@ exec_group.add_command(mark_impl_ended, name="mark-impl-ended")
 exec_group.add_command(mark_impl_started, name="mark-impl-started")
 exec_group.add_command(marker, name="marker")
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
+exec_group.add_command(plan_create_review_branch, name="plan-create-review-branch")
 exec_group.add_command(plan_save_to_issue, name="plan-save-to-issue")
 exec_group.add_command(plan_submit_for_review, name="plan-submit-for-review")
 exec_group.add_command(plan_update_issue, name="plan-update-issue")

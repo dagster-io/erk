@@ -53,6 +53,7 @@ Quick reference for all `erk exec` subcommands.
 | `marker exists`                   | Check if a marker file exists.                                            |
 | `marker read`                     | Read content from a marker file.                                          |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                      |
+| `plan-create-review-branch`       | Create a plan review branch and push to remote.                           |
 | `plan-save-to-issue`              | Extract plan from ~/.claude/plans/ and create GitHub issue.               |
 | `plan-submit-for-review`          | Fetch plan content from a GitHub issue for PR-based review workflow.      |
 | `plan-update-issue`               | Update an existing GitHub issue's plan comment with new content.          |
@@ -676,6 +677,18 @@ Save plan as objective GitHub issue.
 | -------------- | ------ | -------- | ------- | --------------------------------------------------------- |
 | `--format`     | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text) |
 | `--session-id` | TEXT   | No       | -       | Session ID for scoped plan lookup                         |
+
+### plan-create-review-branch
+
+Create a plan review branch and push to remote.
+
+**Usage:** `erk exec plan-create-review-branch` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
 
 ### plan-save-to-issue
 
