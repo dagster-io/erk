@@ -54,6 +54,7 @@ Quick reference for all `erk exec` subcommands.
 | `marker read`                     | Read content from a marker file.                                          |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                      |
 | `plan-save-to-issue`              | Extract plan from ~/.claude/plans/ and create GitHub issue.               |
+| `plan-submit-for-review`          | Fetch plan content from a GitHub issue for PR-based review workflow.      |
 | `plan-update-issue`               | Update an existing GitHub issue's plan comment with new content.          |
 | `post-or-update-pr-summary`       | Post or update a PR summary comment.                                      |
 | `post-pr-inline-comment`          | Post an inline review comment on a PR.                                    |
@@ -693,6 +694,18 @@ Extract plan from ~/.claude/plans/ and create GitHub issue.
 | `--plan-type`                     | CHOICE  | No       | -       | Plan type: standard (default) or learn (for documentation learning plans) |
 | `--learned-from-issue`            | INTEGER | No       | -       | Parent plan issue number (for learn plans, enables auto-update on land)   |
 | `--created-from-workflow-run-url` | TEXT    | No       | -       | GitHub Actions workflow run URL that created this plan (for backlink)     |
+
+### plan-submit-for-review
+
+Fetch plan content from a GitHub issue for PR-based review workflow.
+
+**Usage:** `erk exec plan-submit-for-review` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
 
 ### plan-update-issue
 
