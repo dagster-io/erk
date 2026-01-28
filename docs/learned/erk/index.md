@@ -4,6 +4,7 @@
 # Erk Documentation
 
 - **[branch-cleanup.md](branch-cleanup.md)** — cleaning up branches, removing dormant worktrees, managing branch lifecycle
+- **[branch-creation.md](branch-creation.md)** — creating branches from dynamic data, working with branch naming conventions, implementing commands that create git branches
 - **[graphite-branch-setup.md](graphite-branch-setup.md)** — submitting a PR with Graphite, encountering no_parent error, setting up branch tracking for gt
 - **[issue-pr-linkage-storage.md](issue-pr-linkage-storage.md)** — understanding how plans link to PRs, debugging why a PR isn't linked to its issue, working with .impl/issue.json, creating PRs that close issues
 - **[pr-address-workflows.md](pr-address-workflows.md)** — addressing PR review comments, choosing between local and remote PR addressing, understanding erk pr address-remote, understanding /erk:pr-address command

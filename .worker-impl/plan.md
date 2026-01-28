@@ -14,12 +14,12 @@ https://gist.github.com/schrockn/c158f64914db889566438dc2d7b80213
 
 ## Summary
 
-| Metric | Count |
-|--------|-------|
-| Documentation items | 5 |
-| Contradictions to resolve | 0 |
-| Tripwire candidates (score>=4) | 0 |
-| Potential tripwires (score 2-3) | 2 |
+| Metric                          | Count |
+| ------------------------------- | ----- |
+| Documentation items             | 5     |
+| Contradictions to resolve       | 0     |
+| Tripwire candidates (score>=4)  | 0     |
+| Potential tripwires (score 2-3) | 2     |
 
 ## Documentation Items
 
@@ -33,7 +33,7 @@ https://gist.github.com/schrockn/c158f64914db889566438dc2d7b80213
 
 **Draft Content:**
 
-```markdown
+````markdown
 ## Plan Operations (addition to existing section)
 
 ### plan-create-review-branch
@@ -45,12 +45,14 @@ Creates a git branch for offline plan review.
 **Purpose:** Creates a `plan-review/<issue>` branch populated with plan content from a GitHub issue, enabling offline review without switching worktrees or affecting active work.
 
 **Prerequisites:**
+
 - Issue must have `erk-plan` label
 - Issue must have plan-body metadata in a comment
 
 **Output (JSON):**
 
 Success:
+
 ```json
 {
   "success": true,
@@ -60,8 +62,10 @@ Success:
   "plan_title": "Plan Title Here"
 }
 ```
+````
 
 Error:
+
 ```json
 {
   "success": false,
@@ -72,18 +76,19 @@ Error:
 
 **Error Codes:**
 
-| Code | Meaning | Recovery |
-|------|---------|----------|
-| `issue_not_found` | Issue doesn't exist | Verify issue number |
-| `missing_erk_plan_label` | Issue lacks `erk-plan` label | Run `gh issue edit <number> --add-label erk-plan` |
-| `no_plan_content` | Missing plan comment metadata | Ensure plan was saved via `/erk:plan-save` |
-| `branch_already_exists` | Branch exists locally or on origin | Delete existing branch or use different workflow |
-| `git_error` | Git operation failed | Check git status and network connectivity |
+| Code                     | Meaning                            | Recovery                                          |
+| ------------------------ | ---------------------------------- | ------------------------------------------------- |
+| `issue_not_found`        | Issue doesn't exist                | Verify issue number                               |
+| `missing_erk_plan_label` | Issue lacks `erk-plan` label       | Run `gh issue edit <number> --add-label erk-plan` |
+| `no_plan_content`        | Missing plan comment metadata      | Ensure plan was saved via `/erk:plan-save`        |
+| `branch_already_exists`  | Branch exists locally or on origin | Delete existing branch or use different workflow  |
+| `git_error`              | Git operation failed               | Check git status and network connectivity         |
 
 **Workflow Context:** Part of plan review workflow. Creates isolated branch for non-destructive plan examination before implementation.
 
 **Note:** Plan file is written to repo root as `PLAN-REVIEW-<issue>.md`, not in `.impl/` or `docs/`.
-```
+
+````
 
 ---
 
@@ -111,7 +116,7 @@ When creating branches from dynamic user input (e.g., issue numbers, plan titles
 
 **Implemented in:**
 - `plan-create-review-branch` uses `plan-review/<issue>` prefix
-```
+````
 
 ---
 
@@ -123,7 +128,7 @@ When creating branches from dynamic user input (e.g., issue numbers, plan titles
 
 **Draft Content:**
 
-```markdown
+````markdown
 ## FakeGit Property Access (addition to existing doc)
 
 ### Subgateway Delegation Pattern
@@ -131,32 +136,39 @@ When creating branches from dynamic user input (e.g., issue numbers, plan titles
 FakeGit delegates to subgateways, mirroring the real implementation structure. Properties must be accessed through their subgateway, not at the top level.
 
 **Correct:**
+
 ```python
 # Access staged_files through commit_ops subgateway
 assert "myfile.md" in git.commit_ops.staged_files
 ```
+````
 
 **Incorrect:**
+
 ```python
 # This will fail silently (empty list or AttributeError)
 assert "myfile.md" in git.staged_files  # Wrong!
 ```
 
 **Why this matters:**
+
 - FakeGit mirrors real Git gateway architecture
 - Accessing at wrong level gives empty results, causing confusing test failures
 - Silent failure (empty list) is worse than AttributeError
 
 **How to find the right path:**
+
 1. Look at the method being called in implementation code
 2. Find which subgateway (branch_ops, commit_ops, remote_ops) owns that method
 3. Access the property via that same subgateway in tests
 
 **Subgateway mapping:**
+
 - `commit_ops` - staging, commits, `staged_files`
 - `branch_ops` - branch creation, listing, current branch
 - `remote_ops` - fetch, push, remote operations
-```
+
+````
 
 ---
 
@@ -193,7 +205,7 @@ class MyCommandError:
     success: Literal[False]
     error: str  # Machine-readable error code
     message: str  # Human-readable description
-```
+````
 
 ### 2. Click Command Entry Point
 
@@ -235,6 +247,7 @@ def _my_command_impl(
 ### 4. Error Code Convention
 
 Use lowercase snake_case error codes that are:
+
 - Machine-readable (for programmatic handling)
 - Descriptive (e.g., `missing_erk_plan_label` not `invalid_input`)
 - Actionable (users can understand what went wrong)
@@ -242,6 +255,7 @@ Use lowercase snake_case error codes that are:
 ### 5. Gateway Injection
 
 Use Click context helpers:
+
 - `require_git(ctx)` - Git operations
 - `require_github_issues(ctx)` - GitHub issue operations
 - `require_repo_root(ctx)` - Repository root path
@@ -251,7 +265,8 @@ Use Click context helpers:
 - `plan_create_review_branch.py` - Plan review branch creation
 - `plan_submit_for_review.py` - Plan submission workflow
 - `detect_trunk_branch.py` - Trunk branch detection
-```
+
+````
 
 ---
 
@@ -277,7 +292,7 @@ from erk.cli.commands.exec.scripts.plan_submit_for_review import (
     extract_plan_header_comment_id,
     extract_plan_from_comment,
 )
-```
+````
 
 **`extract_plan_header_comment_id(issue)`** - Extracts the comment ID containing plan metadata from issue body
 
@@ -296,12 +311,14 @@ Both `plan_submit_for_review` and `plan_create_review_branch` use this pattern:
 ### Why This Matters
 
 Reimplementing plan metadata extraction introduces:
+
 - Parsing bugs (the metadata format has edge cases)
 - Inconsistent error handling
 - Maintenance burden when format changes
 
 Always search for existing plan metadata functions before writing custom extraction.
-```
+
+````
 
 ---
 
@@ -332,16 +349,18 @@ except Exception as e:
         error="git_error",  # Specific, machine-readable code
         message=str(e),  # Human-readable details
     )
-```
+````
 
 ### Why This Pattern
 
 Without wrapping:
+
 - Raw exception messages leak into JSON output
 - Subprocess-style errors (exit codes, stderr) break JSON parsing
 - Callers can't programmatically handle failures
 
 With wrapping:
+
 - JSON structure is always valid
 - Error codes enable programmatic handling
 - Messages remain human-readable
@@ -351,6 +370,7 @@ With wrapping:
 - Use specific codes: `git_error`, `file_write_error`, `network_error`
 - Avoid generic codes: `error`, `failed`, `unknown`
 - Include original exception message in `message` field
+
 ```
 
 ---
@@ -416,3 +436,4 @@ The pattern where FakeGit properties like `staged_files` must be accessed via su
 The same metadata extraction flow appears in `plan_submit_for_review` and `plan_create_review_branch`. Reusable functions exist but aren't emphasized in docs. Not HIGH severity since functions exist, but prevents reimplementation across future plan-related commands.
 
 **Consider promoting if:** A third plan-related exec script is implemented without discovering the existing functions, indicating documentation alone isn't sufficient.
+```
