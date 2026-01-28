@@ -71,6 +71,7 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 - `plan-save-to-issue` - Save plan to GitHub
 - `get-plan-metadata` - Read plan issue metadata
 - `setup-impl-from-issue` - Prepare .impl/ folder
+- `plan-create-review-branch` - Create git branch for offline plan review
 
 ### Session Operations
 
@@ -116,3 +117,54 @@ Creates implementation environment from a plan issue:
 - If on feature branch: Stacks new branch on current branch
 
 **Important:** After `create_branch()`, explicit `checkout_branch()` is called because GraphiteBranchManager restores the original branch after tracking.
+
+#### plan-create-review-branch
+
+Creates a git branch for offline plan review.
+
+**Usage:** `erk exec plan-create-review-branch <issue-number>`
+
+**Purpose:** Creates a `plan-review/<issue>` branch populated with plan content from a GitHub issue, enabling offline review without switching worktrees or affecting active work.
+
+**Prerequisites:**
+
+- Issue must have `erk-plan` label
+- Issue must have plan-body metadata in a comment
+
+**Output (JSON):**
+
+Success:
+
+```json
+{
+  "success": true,
+  "issue_number": 1234,
+  "branch": "plan-review/1234",
+  "file_path": "PLAN-REVIEW-1234.md",
+  "plan_title": "Plan Title Here"
+}
+```
+
+Error:
+
+```json
+{
+  "success": false,
+  "error": "error_code",
+  "message": "Human-readable description"
+}
+```
+
+**Error Codes:**
+
+| Code                     | Meaning                            | Recovery                                          |
+| ------------------------ | ---------------------------------- | ------------------------------------------------- |
+| `issue_not_found`        | Issue doesn't exist                | Verify issue number                               |
+| `missing_erk_plan_label` | Issue lacks `erk-plan` label       | Run `gh issue edit <number> --add-label erk-plan` |
+| `no_plan_content`        | Missing plan comment metadata      | Ensure plan was saved via `/erk:plan-save`        |
+| `branch_already_exists`  | Branch exists locally or on origin | Delete existing branch or use different workflow  |
+| `git_error`              | Git operation failed               | Check git status and network connectivity         |
+
+**Workflow Context:** Part of plan review workflow. Creates isolated branch for non-destructive plan examination before implementation.
+
+**Note:** Plan file is written to repo root as `PLAN-REVIEW-<issue>.md`, not in `.impl/` or `docs/`.
