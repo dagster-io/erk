@@ -10,3 +10,6 @@ from erk.cli.cli import cli
 def main() -> None:
     """CLI entry point used by the `erk` console script."""
     cli()
+
+
+print("test")
