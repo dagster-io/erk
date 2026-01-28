@@ -93,14 +93,7 @@ def _fetch_plan_content(
         )
 
     # Fetch comments
-    try:
-        comments = github_issues.get_issue_comments_with_urls(repo_root, issue_number)
-    except RuntimeError as e:
-        return PlanReviewBranchError(
-            success=False,
-            error="no_plan_content",
-            message=f"Failed to fetch comments for issue #{issue_number}: {e}",
-        )
+    comments = github_issues.get_issue_comments_with_urls(repo_root, issue_number)
 
     if not comments:
         return PlanReviewBranchError(
@@ -143,7 +136,14 @@ def _create_review_branch_impl(
         PlanReviewBranchSuccess on success, PlanReviewBranchError on failure
     """
     # Fetch plan content
-    result = _fetch_plan_content(github_issues, repo_root, issue_number)
+    try:
+        result = _fetch_plan_content(github_issues, repo_root, issue_number)
+    except RuntimeError as e:
+        return PlanReviewBranchError(
+            success=False,
+            error="fetch_failed",
+            message=f"Failed to fetch plan content: {e}",
+        )
     if isinstance(result, PlanReviewBranchError):
         return result
 
