@@ -3,7 +3,7 @@ name: Dignified Python Review
 paths:
   - "**/*.py"
 marker: "<!-- dignified-python-review -->"
-model: claude-haiku-3-5
+model: claude-haiku-4-5
 timeout_minutes: 30
 allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
 enabled: true
