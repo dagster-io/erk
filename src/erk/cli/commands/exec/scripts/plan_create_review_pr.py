@@ -17,7 +17,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.constants import PLAN_REVIEW_LABEL
+from erk.cli.constants import ERK_PLAN_REVIEW_TITLE_PREFIX, ERK_PLAN_TITLE_PREFIX, PLAN_REVIEW_LABEL
 from erk_shared.context.helpers import (
     get_repo_identifier,
     require_github,
@@ -134,8 +134,9 @@ def _create_review_pr_impl(
             message=f"Issue #{issue_number} is missing plan-header metadata block",
         )
 
-    # Create draft PR
-    pr_title = f"Plan Review: {plan_title} (#{issue_number})"
+    # Create draft PR - strip [erk-plan] prefix if present, use [erk-plan-review] prefix
+    clean_title = plan_title.removeprefix(ERK_PLAN_TITLE_PREFIX)
+    pr_title = f"{ERK_PLAN_REVIEW_TITLE_PREFIX}{clean_title} (#{issue_number})"
     pr_body = _format_pr_body(issue_number, plan_title)
 
     pr_number = github.create_pr(
