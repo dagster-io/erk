@@ -29,33 +29,33 @@ Strip all human-oriented prose from descriptions. Add keywords for every categor
 
 # Category Keywords
 
-| Category | Keywords |
-| --- | --- |
-| architecture | core patterns, dry-run, gateways, subprocess, shell integration |
-| capabilities | Claude Code capabilities, tool use |
-| checklists | step-by-step checklists, implementation guides |
-| ci | GitHub Actions, `.github/workflows/`, `.github/actions/` |
-| claude-code | Claude Code configuration, settings |
-| cli | CLI commands, Click, output formatting, `src/erk/cli/` |
-| commands | slash commands, `.claude/commands/` |
-| config | project configuration, settings files |
-| configuration | erk configuration, YAML config |
-| documentation | doc structure, documentation methodology, agent docs |
-| erk | erk workflows, worktrees, PR sync, Graphite |
-| erk-dev | erk development, internal tooling |
-| gateway | gateway implementations, `gateway/` code |
-| hooks | Claude hooks, `.claude/hooks/` |
-| integrations | external integrations, third-party tools |
-| objectives | objectives, goal tracking |
-| planning | plans, `.impl/`, `.worker-impl/`, agent delegation |
-| pr-operations | pull requests, PR workflows |
-| refactoring | refactoring patterns, code restructuring |
-| reference | API specs, format specifications |
-| sessions | session logs, `~/.claude/projects/`, parallel sessions |
-| testing | tests, test infrastructure, `tests/` |
-| textual | Textual framework |
-| tui | TUI application, `src/erk/tui/` |
-| workflows | workflow patterns, automation |
+| Category      | Keywords                                                        |
+| ------------- | --------------------------------------------------------------- |
+| architecture  | core patterns, dry-run, gateways, subprocess, shell integration |
+| capabilities  | Claude Code capabilities, tool use                              |
+| checklists    | step-by-step checklists, implementation guides                  |
+| ci            | GitHub Actions, `.github/workflows/`, `.github/actions/`        |
+| claude-code   | Claude Code configuration, settings                             |
+| cli           | CLI commands, Click, output formatting, `src/erk/cli/`          |
+| commands      | slash commands, `.claude/commands/`                             |
+| config        | project configuration, settings files                           |
+| configuration | erk configuration, YAML config                                  |
+| documentation | doc structure, documentation methodology, agent docs            |
+| erk           | erk workflows, worktrees, PR sync, Graphite                     |
+| erk-dev       | erk development, internal tooling                               |
+| gateway       | gateway implementations, `gateway/` code                        |
+| hooks         | Claude hooks, `.claude/hooks/`                                  |
+| integrations  | external integrations, third-party tools                        |
+| objectives    | objectives, goal tracking                                       |
+| planning      | plans, `.impl/`, `.worker-impl/`, agent delegation              |
+| pr-operations | pull requests, PR workflows                                     |
+| refactoring   | refactoring patterns, code restructuring                        |
+| reference     | API specs, format specifications                                |
+| sessions      | session logs, `~/.claude/projects/`, parallel sessions          |
+| testing       | tests, test infrastructure, `tests/`                            |
+| textual       | Textual framework                                               |
+| tui           | TUI application, `src/erk/tui/`                                 |
+| workflows     | workflow patterns, automation                                   |
 ```
 
 This file is NOT auto-generated — it's a source-of-truth that humans edit. It should be excluded from the `discover_agent_docs()` scan (it has no frontmatter and is not a learned doc).
@@ -98,6 +98,7 @@ Note: `@cache` requires hashable args. `Path` is hashable, so this works. The fu
 **File:** `src/erk/agent_docs/operations.py` (lines 518-567)
 
 Changes:
+
 - **Add `docs_root: Path` parameter** to the function signature (needed to load keywords).
 - **Remove preamble**: Drop the "Before starting work..." lines — this instruction now lives in AGENTS.md's "Documentation-First Discovery" section.
 - **Change title**: "Agent Documentation" → "Agent Documentation Index"
