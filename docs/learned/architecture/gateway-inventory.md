@@ -450,6 +450,32 @@ Git tag operations extracted from the main Git gateway (Phase 7 of #6169).
 
 **Access Pattern**: `git.tag.method_name()`
 
+### GitRepoOps (`git/repo_ops/`)
+
+Repository location and metadata operations.
+
+- **Key Methods:** `get_repository_root()`, `get_git_common_dir()`
+- **Fake Features:** Configurable repository paths, in-memory state
+- **Added:** Phase 8 (PR #6190)
+
+### GitAnalysisOps (`git/analysis_ops/`)
+
+Branch comparison and analysis operations.
+
+- **Key Methods:** `count_commits_ahead()`, `get_merge_base()`, `get_diff_to_branch()`
+- **Fake Features:** Configurable commit counts, merge bases, diff content
+- **Added:** Phase 8 (PR #6190)
+
+### GitConfigOps (`git/config_ops/`)
+
+Git configuration management operations.
+
+- **Key Methods:** `config_set()`, `get_git_user_name()`
+- **Fake Features:** In-memory configuration state
+- **Added:** Phase 8 (PR #6190)
+
+> **Phase 8 Complete:** Git ABC refactoring achieved 10 total subgateways. All subgateways follow the 5-layer implementation pattern (abc, real, fake, dry_run, printing). Git ABC now serves as a pure property facade.
+
 ## Implementation Layers
 
 Each gateway typically has these implementations:
