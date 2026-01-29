@@ -53,7 +53,7 @@ erk exec get-plan-metadata <issue> last_review_pr
   - If user chooses to cancel, exit without creating a new PR
   - If user confirms, continue to Step 3
 
-### Step 2.5: Save Current Branch
+### Step 3: Save Current Branch
 
 Before creating the review branch, record the current branch:
 
@@ -63,7 +63,7 @@ git branch --show-current
 
 Store the result as `ORIGINAL_BRANCH`.
 
-### Step 3: Create Review Branch
+### Step 4: Create Review Branch
 
 ```bash
 erk exec plan-create-review-branch <issue>
@@ -81,13 +81,13 @@ Error handling:
 - `missing_erk_plan_label`: "Error: Issue #<issue> is not an erk-plan. Only saved plans can be reviewed."
 - `no_plan_content`: "Error: Issue #<issue> has no plan content. Save a plan first with /erk:plan-save"
 
-### Step 4: Create Review PR
+### Step 5: Create Review PR
 
 ```bash
 erk exec plan-create-review-pr <issue> <branch> <title>
 ```
 
-Pass the values extracted from Step 3.
+Pass the values extracted from Step 4.
 
 Parse the JSON response. On success, extract:
 
@@ -99,7 +99,7 @@ Error handling:
 - `pr_already_exists`: "Error: A PR already exists for this branch. Check: gh pr list --head <branch>"
 - `invalid_issue`: "Error: Issue #<issue> has invalid metadata"
 
-### Step 5: Display Success
+### Step 6: Display Success
 
 ```
 Plan #<issue> submitted for review
@@ -116,7 +116,7 @@ Next steps:
 View in browser: gh pr view <pr_number> --web
 ```
 
-### Step 6: Return to Original Branch
+### Step 7: Return to Original Branch
 
 Switch back to the branch the user was on before the review:
 

@@ -270,7 +270,7 @@ When Phase 0 detects the `plan-review` label on the current PR, the entire flow 
 | Commit message    | "Address PR review comments" | "Incorporate review feedback"          |
 | Thread resolution | What code change was made    | How plan was updated                   |
 
-### Plan Review Phase 0.5: Save Current Branch
+### Plan Review Phase 1: Save Current Branch
 
 Before processing feedback, record the current branch so we can return to it later:
 
@@ -280,11 +280,11 @@ git branch --show-current
 
 Store the result as `ORIGINAL_BRANCH`.
 
-### Plan Review Phase 1: Classify Feedback
+### Plan Review Phase 2: Classify Feedback
 
 Same as standard Phase 1 — invoke `/pr-feedback-classifier` to fetch and classify all PR feedback.
 
-### Plan Review Phase 2: Display Batched Plan
+### Plan Review Phase 3: Display Batched Plan
 
 Same as standard Phase 2, but note at the top of the display:
 
@@ -292,7 +292,7 @@ Same as standard Phase 2, but note at the top of the display:
 **Plan Review Mode** — changes apply to plan text, not source code.
 ```
 
-### Plan Review Phase 3: Execute by Batch (Plan Mode)
+### Plan Review Phase 4: Execute by Batch (Plan Mode)
 
 For each batch:
 
@@ -354,9 +354,9 @@ Noted for implementation phase. This feedback applies to the code implementation
 
 #### Step 5: Report Progress
 
-Same as standard Phase 3 Step 5 — report what was addressed and what remains.
+Same as standard Phase 4 Step 5 — report what was addressed and what remains.
 
-### Plan Review Phase 4: Final Verification
+### Plan Review Phase 5: Final Verification
 
 Same as standard Phase 4 — re-invoke the classifier to verify all threads are resolved. Report final summary.
 
@@ -364,5 +364,5 @@ Same as standard Phase 4 — re-invoke the classifier to verify all threads are 
 
 After all batches are complete and pushed:
 
-1. Switch back to the branch saved in Phase 0.5: `git checkout <ORIGINAL_BRANCH>`
+1. Switch back to the branch saved in Phase 1: `git checkout <ORIGINAL_BRANCH>`
 2. The plan-review branch work is complete — the user should not remain on it.
