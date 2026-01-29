@@ -55,6 +55,7 @@ Quick reference for all `erk exec` subcommands.
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                      |
 | `plan-create-review-branch`       | Create a plan review branch and push to remote.                           |
 | `plan-create-review-pr`           | Create a draft PR for plan review and update plan metadata.               |
+| `plan-review-complete`            | Close a plan review PR without merging.                                   |
 | `plan-save-to-issue`              | Extract plan from ~/.claude/plans/ and create GitHub issue.               |
 | `plan-submit-for-review`          | Fetch plan content from a GitHub issue for PR-based review workflow.      |
 | `plan-update-from-feedback`       | Update a plan issue's plan-body comment with new content.                 |
@@ -705,6 +706,18 @@ Create a draft PR for plan review and update plan metadata.
 | `ISSUE_NUMBER` | Yes      | -           |
 | `BRANCH_NAME`  | Yes      | -           |
 | `PLAN_TITLE`   | Yes      | -           |
+
+### plan-review-complete
+
+Close a plan review PR without merging.
+
+**Usage:** `erk exec plan-review-complete` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
 
 ### plan-save-to-issue
 
