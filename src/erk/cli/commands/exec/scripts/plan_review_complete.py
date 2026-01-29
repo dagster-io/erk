@@ -18,10 +18,12 @@ from pathlib import Path
 import click
 
 from erk_shared.context.helpers import (
+    require_branch_manager,
     require_git,
     require_github,
     require_repo_root,
 )
+from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
@@ -66,6 +68,7 @@ def _plan_review_complete_impl(
     github: GitHub,
     *,
     git: Git,
+    branch_manager: BranchManager,
     github_issues: GitHubIssues,
     repo_root: Path,
     issue_number: int,
@@ -74,7 +77,8 @@ def _plan_review_complete_impl(
 
     Args:
         github: GitHub gateway
-        git: Git gateway
+        git: Git gateway (for query operations)
+        branch_manager: BranchManager (for branch mutations)
         github_issues: GitHub issues gateway
         repo_root: Repository root path
         issue_number: Plan issue number
@@ -128,13 +132,13 @@ def _plan_review_complete_impl(
     # LBYL: Switch to master if currently on the review branch
     current_branch = git.branch.get_current_branch(repo_root)
     if current_branch == branch_name:
-        git.branch.checkout_branch(repo_root, "master")
+        branch_manager.checkout_branch(repo_root, "master")
 
     # LBYL: Delete local branch if it exists
     local_branches = git.branch.list_local_branches(repo_root)
     local_branch_deleted = False
     if branch_name in local_branches:
-        git.branch.delete_branch(repo_root, branch_name, force=True)
+        branch_manager.delete_branch(repo_root, branch_name, force=True)
         local_branch_deleted = True
 
     # Clear review_pr metadata (archives to last_review_pr)
@@ -163,6 +167,7 @@ def plan_review_complete(
     Looks up the review_pr from plan-header metadata and closes it.
     """
     git = require_git(ctx)
+    branch_manager = require_branch_manager(ctx)
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
 
@@ -170,6 +175,7 @@ def plan_review_complete(
         result = _plan_review_complete_impl(
             github,
             git=git,
+            branch_manager=branch_manager,
             github_issues=github.issues,
             repo_root=repo_root,
             issue_number=issue_number,
