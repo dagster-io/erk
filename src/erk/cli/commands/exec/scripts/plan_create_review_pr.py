@@ -17,6 +17,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.constants import PLAN_REVIEW_LABEL
 from erk_shared.context.helpers import (
     require_github,
     require_repo_root,
@@ -142,6 +143,9 @@ def _create_review_pr_impl(
         base="master",
         draft=True,
     )
+
+    # Add plan-review label to the PR
+    github.add_label_to_pr(repo_root, pr_number, PLAN_REVIEW_LABEL)
 
     # Update plan-header metadata with review_pr field
     # Safe to call - we validated plan-header block exists above
