@@ -170,6 +170,75 @@ esac
 
 ---
 
+## Review PR Creation Pattern
+
+Review PRs for plan content follow a different pattern than implementation PRs.
+
+### Why No Duplicate PR Check?
+
+For implementation PRs, we check `gh pr list --head <branch>` to prevent duplicates. For review PRs, we skip this because:
+
+1. Branch is created fresh for review (no pre-existing PR)
+2. Re-running should update metadata, not skip creation
+3. Orphaned PRs are handled by metadata update, not prevention
+
+### LBYL Pattern Instead
+
+Review PR creation uses Look Before You Leap on the **issue**, not the PR:
+
+```python
+# Check issue exists BEFORE creating PR
+if not github_issues.issue_exists(issue_number):
+    raise CreateReviewPRException("issue_not_found", ...)
+
+# Create PR (no duplicate check)
+pr = github.create_pr(
+    title=f"[Review] Plan #{issue_number}",
+    body=format_pr_body(issue_number),
+    draft=True,
+)
+
+# Update issue metadata with PR number
+updated_body = update_plan_header_review_pr(issue_body, pr.number)
+github_issues.update_issue_body(issue_number, BodyText(content=updated_body))
+```
+
+### Error Handling
+
+Multi-step operations use typed error codes:
+
+```python
+class CreateReviewPRException(Exception):
+    def __init__(self, error_code: str, message: str):
+        self.error_code = error_code
+        super().__init__(message)
+```
+
+Error codes enable precise handling in calling code:
+
+| Code                     | Meaning                        | Recovery          |
+| ------------------------ | ------------------------------ | ----------------- |
+| `issue_not_found`        | Plan issue doesn't exist       | Create plan first |
+| `metadata_update_failed` | PR exists but metadata not set | Re-run to retry   |
+
+### GitHub API Type Requirements
+
+When updating issue or PR bodies, use the `BodyContent` wrapper type:
+
+```python
+from erk_shared.gateway.github.types import BodyText, BodyContent
+
+# WRONG - raw string causes type error
+github_issues.update_issue_body(issue_number, updated_body)
+
+# CORRECT - wrap in BodyText
+github_issues.update_issue_body(issue_number, BodyText(content=updated_body))
+```
+
+**Why:** `BodyContent` is a discriminated union (`BodyText | BodyFile`) supporting both inline content and file references. The type system enforces explicit wrapping.
+
+---
+
 ## Automated Workflows
 
 ### Reference: `/erk:git-pr-push`

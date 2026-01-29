@@ -58,6 +58,42 @@ This field enables:
 - Tracing provenance of automatically generated plans
 - Quick navigation from plan issue to the workflow that created it
 
+### `review_pr`
+
+Tracks the draft PR created for asynchronous plan review.
+
+- **Type**: `int | None`
+- **When populated**: By `plan-create-review-pr` command after PR creation
+- **Format**: GitHub PR number (positive integer)
+
+**Purpose:**
+
+This field enables programmatic discovery of which draft PR contains the plan's review-ready version. It supports:
+
+- TUI display of review status
+- Automated workflows checking if plan has been reviewed
+- Navigation from plan issue to review PR
+
+**Important:** The review PR is distinct from any implementation PR. Review PRs are:
+
+- Always created as drafts
+- Never merged (for review only)
+- Contain plan content, not implementation
+
+**CLI Usage:**
+
+The field is set automatically by:
+
+```bash
+erk exec plan-create-review-pr --issue <issue_number>
+```
+
+To read the field:
+
+```bash
+erk exec get-plan-metadata --issue <issue_number> --field review_pr
+```
+
 ## Pipeline Stages and Preservation
 
 ### GitHub Gateway

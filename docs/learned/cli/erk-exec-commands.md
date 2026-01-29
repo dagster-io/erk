@@ -72,6 +72,43 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 - `get-plan-metadata` - Read plan issue metadata
 - `setup-impl-from-issue` - Prepare .impl/ folder
 
+### Plan Review Operations
+
+- `plan-create-review-branch` - Create branch with plan file for review
+- `plan-create-review-pr` - Create draft PR and update plan metadata
+- `plan-submit-for-review` - Orchestrate full review submission workflow
+
+#### plan-create-review-pr
+
+Creates a draft PR for asynchronous plan review:
+
+1. Validates plan issue exists
+2. Creates draft PR with plan file as content
+3. Updates plan issue metadata with `review_pr` field
+
+**Arguments:**
+
+| Option    | Required | Description       |
+| --------- | -------- | ----------------- |
+| `--issue` | Yes      | Plan issue number |
+
+**Output (JSON):**
+
+```json
+{
+  "success": true,
+  "pr_number": 123,
+  "pr_url": "https://github.com/owner/repo/pull/123"
+}
+```
+
+**Error codes:**
+
+| Code                     | Description                           |
+| ------------------------ | ------------------------------------- |
+| `issue_not_found`        | Plan issue does not exist             |
+| `metadata_update_failed` | PR created but metadata update failed |
+
 ### Session Operations
 
 - `list-sessions` - List Claude Code sessions
@@ -116,3 +153,13 @@ Creates implementation environment from a plan issue:
 - If on feature branch: Stacks new branch on current branch
 
 **Important:** After `create_branch()`, explicit `checkout_branch()` is called because GraphiteBranchManager restores the original branch after tracking.
+
+## Adding New Exec Commands
+
+When adding new exec commands:
+
+1. Create script in `src/erk/cli/commands/exec/scripts/`
+2. Import in `group.py` and call `exec_group.add_command()`
+3. **Regenerate reference docs:** `erk-dev gen-exec-reference-docs`
+
+The third step is often forgotten, causing the reference docs to become stale.
