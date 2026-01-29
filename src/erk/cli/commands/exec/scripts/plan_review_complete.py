@@ -23,7 +23,11 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_review_pr
+from erk_shared.gateway.github.metadata.plan_header import (
+    clear_plan_header_review_pr,
+    extract_plan_header_review_pr,
+)
+from erk_shared.gateway.github.types import BodyText, PRNotFound
 
 
 @dataclass(frozen=True)
@@ -33,6 +37,8 @@ class PlanReviewCompleteSuccess:
     success: bool
     issue_number: int
     pr_number: int
+    branch_name: str
+    branch_deleted: bool
 
 
 @dataclass(frozen=True)
@@ -99,13 +105,31 @@ def _plan_review_complete_impl(
             message=f"Issue #{issue_number} has no active review PR",
         )
 
+    # Get PR details before closing (need branch name for deletion)
+    pr_result = github.get_pr(repo_root, review_pr)
+    if isinstance(pr_result, PRNotFound):
+        raise PlanReviewCompleteException(
+            error="pr_not_found",
+            message=f"PR #{review_pr} not found",
+        )
+    branch_name = pr_result.head_ref_name
+
     # Close the PR
     github.close_pr(repo_root, review_pr)
+
+    # Delete the review branch
+    branch_deleted = github.delete_remote_branch(repo_root, branch_name)
+
+    # Clear review_pr metadata (archives to last_review_pr)
+    updated_body = clear_plan_header_review_pr(issue.body)
+    github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
 
     return PlanReviewCompleteSuccess(
         success=True,
         issue_number=issue_number,
         pr_number=review_pr,
+        branch_name=branch_name,
+        branch_deleted=branch_deleted,
     )
 
 

@@ -8,6 +8,7 @@ import pytest
 
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import (
+    clear_plan_header_review_pr,
     create_plan_header_block,
     extract_plan_header_branch_name,
     extract_plan_header_last_learn_at,
@@ -24,6 +25,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_learn_result,
     update_plan_header_learn_status,
     update_plan_header_remote_impl_event,
+    update_plan_header_review_pr,
     update_plan_header_worktree_and_branch,
 )
 from erk_shared.gateway.github.metadata.schemas import PlanHeaderSchema
@@ -1636,3 +1638,39 @@ def test_update_plan_header_learn_plan_completed_raises_for_missing_block() -> N
             issue_body=body,
             learn_plan_pr=789,
         )
+
+
+# === Clear Review PR Tests ===
+
+
+def test_clear_plan_header_review_pr() -> None:
+    """clear_plan_header_review_pr sets review_pr to null and archives to last_review_pr."""
+    # Create body with an active review PR
+    body = format_plan_header_body_for_test()
+    # First set review_pr to a value
+    body = update_plan_header_review_pr(body, 555)
+
+    # Verify review_pr is set
+    block = find_metadata_block(body, "plan-header")
+    assert block is not None
+    assert block.data["review_pr"] == 555
+
+    # Clear it
+    updated_body = clear_plan_header_review_pr(body)
+
+    # Verify review_pr is null and last_review_pr has the old value
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["review_pr"] is None
+    assert block.data["last_review_pr"] == 555
+    # Original fields preserved
+    assert block.data["created_at"] == "2024-01-15T10:30:00Z"
+    assert block.data["created_by"] == "test-user"
+
+
+def test_clear_plan_header_review_pr_no_block_raises() -> None:
+    """clear_plan_header_review_pr raises ValueError on missing block."""
+    body = "No metadata block here"
+
+    with pytest.raises(ValueError, match="plan-header block not found"):
+        clear_plan_header_review_pr(body)
