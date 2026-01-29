@@ -12,6 +12,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.plan_review_complete import plan_review_complete
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
@@ -114,6 +115,10 @@ def test_plan_review_complete_success(tmp_path: Path) -> None:
         issues_gateway=fake_gh_issues,
         pr_details={review_pr_number: pr_details},
     )
+    fake_git = FakeGit(
+        current_branches={repo_root: branch_name},
+        local_branches={repo_root: ["master", branch_name]},
+    )
 
     runner = CliRunner()
 
@@ -122,6 +127,7 @@ def test_plan_review_complete_success(tmp_path: Path) -> None:
         [str(issue_number)],
         obj=ErkContext.for_test(
             github=fake_gh,
+            git=fake_git,
             repo_root=repo_root,
         ),
     )
@@ -133,9 +139,14 @@ def test_plan_review_complete_success(tmp_path: Path) -> None:
     assert output["pr_number"] == review_pr_number
     assert output["branch_name"] == branch_name
     assert output["branch_deleted"] is True
+    assert output["local_branch_deleted"] is True
 
     # Verify close_pr was called with correct PR number
     assert fake_gh.closed_prs == [review_pr_number]
+
+    # Verify checkout to master and local branch deletion
+    assert (repo_root, "master") in fake_git.checked_out_branches
+    assert branch_name in fake_git.deleted_branches
 
 
 def test_plan_review_complete_json_output_structure(tmp_path: Path) -> None:
@@ -154,13 +165,17 @@ def test_plan_review_complete_json_output_structure(tmp_path: Path) -> None:
         issues_gateway=fake_gh_issues,
         pr_details={review_pr_number: pr_details},
     )
+    fake_git = FakeGit(
+        current_branches={repo_root: branch_name},
+        local_branches={repo_root: ["master", branch_name]},
+    )
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
     )
 
     assert result.exit_code == 0
@@ -172,6 +187,7 @@ def test_plan_review_complete_json_output_structure(tmp_path: Path) -> None:
     assert "pr_number" in output
     assert "branch_name" in output
     assert "branch_deleted" in output
+    assert "local_branch_deleted" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
@@ -179,6 +195,7 @@ def test_plan_review_complete_json_output_structure(tmp_path: Path) -> None:
     assert isinstance(output["pr_number"], int)
     assert isinstance(output["branch_name"], str)
     assert isinstance(output["branch_deleted"], bool)
+    assert isinstance(output["local_branch_deleted"], bool)
 
 
 def test_plan_review_complete_deletes_branch(tmp_path: Path) -> None:
@@ -197,13 +214,17 @@ def test_plan_review_complete_deletes_branch(tmp_path: Path) -> None:
         issues_gateway=fake_gh_issues,
         pr_details={review_pr_number: pr_details},
     )
+    fake_git = FakeGit(
+        current_branches={repo_root: branch_name},
+        local_branches={repo_root: ["master", branch_name]},
+    )
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
     )
 
     assert result.exit_code == 0
@@ -231,13 +252,17 @@ def test_plan_review_complete_clears_review_pr_metadata(tmp_path: Path) -> None:
         issues_gateway=fake_gh_issues,
         pr_details={review_pr_number: pr_details},
     )
+    fake_git = FakeGit(
+        current_branches={repo_root: branch_name},
+        local_branches={repo_root: ["master", branch_name]},
+    )
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
     )
 
     assert result.exit_code == 0
@@ -267,13 +292,17 @@ def test_plan_review_complete_sets_last_review_pr(tmp_path: Path) -> None:
         issues_gateway=fake_gh_issues,
         pr_details={review_pr_number: pr_details},
     )
+    fake_git = FakeGit(
+        current_branches={repo_root: branch_name},
+        local_branches={repo_root: ["master", branch_name]},
+    )
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
     )
 
     assert result.exit_code == 0
@@ -303,19 +332,103 @@ def test_plan_review_complete_branch_delete_returns_false(tmp_path: Path) -> Non
         issues_gateway=fake_gh_issues,
         pr_details={review_pr_number: pr_details},
     )
+    fake_git = FakeGit(
+        current_branches={repo_root: branch_name},
+        local_branches={repo_root: ["master", branch_name]},
+    )
 
     runner = CliRunner()
 
     result = runner.invoke(
         plan_review_complete,
         [str(issue_number)],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
     )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
     assert "branch_deleted" in output
+
+
+def test_plan_review_complete_already_on_master(tmp_path: Path) -> None:
+    """Test that checkout is skipped when user is already on master."""
+    issue_number = 1010
+    review_pr_number = 444
+    branch_name = "plan-review-1010"
+    repo_root = tmp_path / "repo"
+
+    body = make_plan_header_body(review_pr=review_pr_number)
+    issue = make_issue_info(issue_number, body, title="Plan: Already on master", labels=None)
+
+    pr_details = make_pr_details(number=review_pr_number, head_ref_name=branch_name)
+    fake_gh_issues = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh = FakeGitHub(
+        issues_gateway=fake_gh_issues,
+        pr_details={review_pr_number: pr_details},
+    )
+    fake_git = FakeGit(
+        current_branches={repo_root: "master"},
+        local_branches={repo_root: ["master", branch_name]},
+    )
+
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_review_complete,
+        [str(issue_number)],
+        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["local_branch_deleted"] is True
+
+    # Verify no checkout happened (already on master)
+    assert fake_git.checked_out_branches == []
+
+    # Verify local branch was still deleted
+    assert branch_name in fake_git.deleted_branches
+
+
+def test_plan_review_complete_no_local_branch(tmp_path: Path) -> None:
+    """Test that local_branch_deleted is False when local branch doesn't exist."""
+    issue_number = 2020
+    review_pr_number = 666
+    branch_name = "plan-review-2020"
+    repo_root = tmp_path / "repo"
+
+    body = make_plan_header_body(review_pr=review_pr_number)
+    issue = make_issue_info(issue_number, body, title="Plan: No local branch", labels=None)
+
+    pr_details = make_pr_details(number=review_pr_number, head_ref_name=branch_name)
+    fake_gh_issues = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh = FakeGitHub(
+        issues_gateway=fake_gh_issues,
+        pr_details={review_pr_number: pr_details},
+    )
+    fake_git = FakeGit(
+        current_branches={repo_root: "master"},
+        local_branches={repo_root: ["master"]},
+    )
+
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_review_complete,
+        [str(issue_number)],
+        obj=ErkContext.for_test(github=fake_gh, git=fake_git, repo_root=repo_root),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["local_branch_deleted"] is False
+
+    # Verify no checkout or delete happened
+    assert fake_git.checked_out_branches == []
+    assert fake_git.deleted_branches == []
 
 
 # ============================================================================

@@ -270,11 +270,21 @@ When Phase 0 detects the `plan-review` label on the current PR, the entire flow 
 | Commit message    | "Address PR review comments" | "Incorporate review feedback"          |
 | Thread resolution | What code change was made    | How plan was updated                   |
 
-### Plan Review Phase 1: Classify Feedback
+### Plan Review Phase 1: Save Current Branch
+
+Before processing feedback, record the current branch so we can return to it later:
+
+```bash
+git branch --show-current
+```
+
+Store the result as `ORIGINAL_BRANCH`.
+
+### Plan Review Phase 2: Classify Feedback
 
 Same as standard Phase 1 — invoke `/pr-feedback-classifier` to fetch and classify all PR feedback.
 
-### Plan Review Phase 2: Display Batched Plan
+### Plan Review Phase 3: Display Batched Plan
 
 Same as standard Phase 2, but note at the top of the display:
 
@@ -282,7 +292,7 @@ Same as standard Phase 2, but note at the top of the display:
 **Plan Review Mode** — changes apply to plan text, not source code.
 ```
 
-### Plan Review Phase 3: Execute by Batch (Plan Mode)
+### Plan Review Phase 4: Execute by Batch (Plan Mode)
 
 For each batch:
 
@@ -294,13 +304,7 @@ For each batch:
    - If feedback applies to implementation (not the plan itself), add a note to the relevant plan section rather than making structural changes
 3. Write the updated `PLAN-REVIEW-{issue}.md`
 
-#### Step 2: Sync Plan to GitHub Issue
-
-```bash
-erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
-```
-
-#### Step 3: Commit and Push
+#### Step 2: Commit and Push
 
 ```bash
 git add PLAN-REVIEW-{issue}.md
@@ -310,6 +314,12 @@ git commit -m "Incorporate review feedback (batch N/M)
 - <summary of change 2>
 ..."
 git push
+```
+
+#### Step 3: Sync Plan to GitHub Issue
+
+```bash
+erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
 ```
 
 #### Step 4: Resolve Threads
@@ -344,8 +354,15 @@ Noted for implementation phase. This feedback applies to the code implementation
 
 #### Step 5: Report Progress
 
-Same as standard Phase 3 Step 5 — report what was addressed and what remains.
+Same as standard Phase 4 Step 5 — report what was addressed and what remains.
 
-### Plan Review Phase 4: Final Verification
+### Plan Review Phase 5: Final Verification
 
 Same as standard Phase 4 — re-invoke the classifier to verify all threads are resolved. Report final summary.
+
+### Return to Original Branch
+
+After all batches are complete and pushed:
+
+1. Switch back to the branch saved in Phase 1: `git checkout <ORIGINAL_BRANCH>`
+2. The plan-review branch work is complete — the user should not remain on it.
