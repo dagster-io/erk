@@ -29,14 +29,11 @@ def _resolve_current_worktree(ctx: ErkContext, repo_root: Path) -> Path:
     cwd = ctx.cwd.resolve()
     worktrees = ctx.git.worktree.list_worktrees(repo_root)
     wt_path = find_worktree_containing_path(worktrees, cwd)
-    if wt_path is None:
-        user_output(
-            f"Error: Current directory ({cwd}) is not in any worktree.\n"
-            f"Either run this from within a worktree, or use --worktree or "
-            f"--branch to specify the source."
-        )
-        raise SystemExit(1)
-    return wt_path
+    return Ensure.not_none(
+        wt_path,
+        f"Current directory ({cwd}) is not in any worktree - "
+        f"Use --worktree or --branch to specify the source",
+    )
 
 
 def resolve_source_worktree(
@@ -55,10 +52,9 @@ def resolve_source_worktree(
     """
     # Count how many source flags are specified
     flag_count = sum([current, branch is not None, worktree is not None])
-
-    if flag_count > 1:
-        user_output("Error: Only one of --current, --branch, or --worktree can be specified")
-        raise SystemExit(1)
+    Ensure.invariant(
+        flag_count <= 1, "Only one of --current, --branch, or --worktree can be specified"
+    )
 
     if flag_count == 0 or current:
         # Default to current worktree (either no flags or --current explicitly set)
@@ -116,12 +112,11 @@ def execute_move(
     )
 
     # Check for uncommitted changes in source
-    if ctx.git.status.has_uncommitted_changes(source_wt) and not force:
-        user_output(
-            f"Error: Uncommitted changes in source worktree '{source_wt.name}'.\n"
-            f"Commit, stash, or use --force to override."
-        )
-        raise SystemExit(1)
+    Ensure.invariant(
+        not ctx.git.status.has_uncommitted_changes(source_wt) or force,
+        f"Uncommitted changes in source worktree '{source_wt.name}' - "
+        f"Commit, stash, or use --force to override",
+    )
 
     target_exists = ctx.git.worktree.path_exists(target_wt)
 
@@ -135,13 +130,11 @@ def execute_move(
 
     if target_exists:
         # Target exists - check for uncommitted changes
-        if ctx.git.status.has_uncommitted_changes(target_wt) and not force:
-            user_output(
-                f"Error: Uncommitted changes in target worktree '{target_wt.name}'.\n"
-                f"Commit, stash, or use --force to override."
-            )
-            raise SystemExit(1)
-
+        Ensure.invariant(
+            not ctx.git.status.has_uncommitted_changes(target_wt) or force,
+            f"Uncommitted changes in target worktree '{target_wt.name}' - "
+            f"Commit, stash, or use --force to override",
+        )
         # Checkout branch in existing target
         ctx.branch_manager.checkout_branch(target_wt, source_branch)
     else:
@@ -177,21 +170,22 @@ def execute_swap(
     worktrees = ctx.git.worktree.list_worktrees(repo_root)
     source_branch = get_worktree_branch(worktrees, source_wt)
     target_branch = get_worktree_branch(worktrees, target_wt)
-
-    if source_branch is None or target_branch is None:
-        user_output("Error: Both worktrees must have branches checked out for swap")
-        raise SystemExit(1)
+    Ensure.invariant(
+        source_branch is not None and target_branch is not None,
+        "Both worktrees must have branches checked out for swap",
+    )
+    # Type narrowing: after Ensure.invariant, we know both are not None
+    assert source_branch is not None
+    assert target_branch is not None
 
     # Check for uncommitted changes
-    if ctx.git.status.has_uncommitted_changes(source_wt) or ctx.git.status.has_uncommitted_changes(
-        target_wt
-    ):
-        if not force:
-            user_output(
-                "Error: Uncommitted changes detected in one or more worktrees.\n"
-                "Commit, stash, or use --force to override."
-            )
-            raise SystemExit(1)
+    has_uncommitted_source = ctx.git.status.has_uncommitted_changes(source_wt)
+    has_uncommitted_target = ctx.git.status.has_uncommitted_changes(target_wt)
+    Ensure.invariant(
+        not (has_uncommitted_source or has_uncommitted_target) or force,
+        "Uncommitted changes detected in one or more worktrees - "
+        "Commit, stash, or use --force to override",
+    )
 
     # Confirm swap unless --force
     if not force:
@@ -293,9 +287,9 @@ def move_stack(
         target_wt = worktree_path_for(repo.worktrees_dir, target)
 
     # Validate source and target are different
-    if source_wt.resolve() == target_wt.resolve():
-        user_output("Error: Source and target worktrees are the same")
-        raise SystemExit(1)
+    Ensure.invariant(
+        source_wt.resolve() != target_wt.resolve(), "Source and target worktrees are the same"
+    )
 
     # Detect operation type
     operation_type = detect_operation_type(source_wt, target_wt, ctx, repo.root)
