@@ -15,6 +15,9 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import RepoInfo
+
+TEST_REPO_INFO = RepoInfo(owner="test-owner", name="test-repo")
 
 
 def make_plan_header_body(
@@ -105,6 +108,7 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
         obj=ErkContext.for_test(
             github=fake_gh,
             repo_root=repo_root,
+            repo_info=TEST_REPO_INFO,
         ),
     )
 
@@ -113,7 +117,7 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
     assert output["success"] is True
     assert output["issue_number"] == issue_number
     assert output["pr_number"] == 999
-    assert output["pr_url"] == "https://github.com/schrockn/erk/pull/999"
+    assert output["pr_url"] == "https://github.com/test-owner/test-repo/pull/999"
 
     # Verify PR was created as draft
     assert len(fake_gh.created_prs) == 1
@@ -150,7 +154,7 @@ def test_plan_create_review_pr_title_format(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         [str(issue_number), branch_name, plan_title],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
     )
 
     assert result.exit_code == 0
@@ -178,7 +182,7 @@ def test_plan_create_review_pr_body_format(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         [str(issue_number), branch_name, plan_title],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
     )
 
     assert result.exit_code == 0
@@ -209,7 +213,7 @@ def test_plan_create_review_pr_draft_mode(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         [str(issue_number), branch_name, plan_title],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
     )
 
     assert result.exit_code == 0
@@ -237,7 +241,7 @@ def test_plan_create_review_pr_metadata_updated(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         [str(issue_number), branch_name, plan_title],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
     )
 
     assert result.exit_code == 0
@@ -246,6 +250,34 @@ def test_plan_create_review_pr_metadata_updated(tmp_path: Path) -> None:
     updated_issue = fake_gh_issues.get_issue(repo_root, issue_number)
     assert "review_pr:" in updated_issue.body
     assert "review_pr: 999" in updated_issue.body
+
+
+def test_plan_create_review_pr_uses_dynamic_repo_url(tmp_path: Path) -> None:
+    """Test PR URL uses repo identifier from context, not a hardcoded value."""
+    issue_number = 7777
+    branch_name = "plan-review-7777-01-15-1430"
+    plan_title = "Dynamic URL Test"
+    repo_root = tmp_path / "repo"
+
+    body = make_plan_header_body(plan_comment_id=333)
+    issue = make_issue_info(issue_number, body, title=f"Plan: {plan_title}", labels=None)
+
+    fake_gh_issues = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh = FakeGitHub(issues_gateway=fake_gh_issues)
+
+    custom_repo_info = RepoInfo(owner="my-org", name="my-project")
+
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_create_review_pr,
+        [str(issue_number), branch_name, plan_title],
+        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=custom_repo_info),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["pr_url"] == "https://github.com/my-org/my-project/pull/999"
 
 
 # ============================================================================
@@ -264,7 +296,7 @@ def test_plan_create_review_pr_issue_not_found(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         ["9999", "test-branch", "Test Plan"],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
     )
 
     assert result.exit_code == 1
@@ -297,7 +329,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         [str(issue_number), branch_name, plan_title],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
     )
 
     assert result.exit_code == 0
@@ -327,7 +359,7 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_create_review_pr,
         ["8888", "test-branch", "Error Test"],
-        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root),
+        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
     )
 
     assert result.exit_code == 1

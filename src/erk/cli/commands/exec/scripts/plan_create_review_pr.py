@@ -19,6 +19,7 @@ import click
 
 from erk.cli.constants import PLAN_REVIEW_LABEL
 from erk_shared.context.helpers import (
+    get_repo_identifier,
     require_github,
     require_repo_root,
 )
@@ -86,6 +87,7 @@ def _create_review_pr_impl(
     *,
     github_issues: GitHubIssues,
     repo_root: Path,
+    repo_identifier: str,
     issue_number: int,
     branch_name: str,
     plan_title: str,
@@ -96,6 +98,7 @@ def _create_review_pr_impl(
         github: GitHub gateway
         github_issues: GitHub issues gateway
         repo_root: Repository root path
+        repo_identifier: Repository identifier in "owner/repo" format
         issue_number: Plan issue number
         branch_name: Branch name for the PR
         plan_title: Title of the plan
@@ -156,7 +159,7 @@ def _create_review_pr_impl(
     github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
 
     # Construct PR URL
-    pr_url = f"https://github.com/schrockn/erk/pull/{pr_number}"
+    pr_url = f"https://github.com/{repo_identifier}/pull/{pr_number}"
 
     return CreateReviewPRSuccess(
         success=True,
@@ -184,12 +187,22 @@ def plan_create_review_pr(
     """
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
+    repo_identifier = get_repo_identifier(ctx)
+    if repo_identifier is None:
+        error_response = CreateReviewPRError(
+            success=False,
+            error="repo_not_found",
+            message="Could not determine repository identifier",
+        )
+        click.echo(json.dumps(asdict(error_response)))
+        raise SystemExit(1)
 
     try:
         result = _create_review_pr_impl(
             github,
             github_issues=github.issues,
             repo_root=repo_root,
+            repo_identifier=repo_identifier,
             issue_number=issue_number,
             branch_name=branch_name,
             plan_title=plan_title,

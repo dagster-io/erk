@@ -20,7 +20,7 @@ from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.github.types import RepoInfo
+from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
@@ -134,12 +134,16 @@ def context_for_test(
 
     # Create repo context
     repo_dir = Path("/fake/erk/repos") / resolved_repo_root.name
+    github_repo_id: GitHubRepoId | None = None
+    if repo_info is not None:
+        github_repo_id = GitHubRepoId(owner=repo_info.owner, repo=repo_info.name)
     repo = RepoContext(
         root=resolved_repo_root,
         repo_name=resolved_repo_root.name,
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
         pool_json_path=repo_dir / "pool.json",
+        github=github_repo_id,
     )
 
     fake_time = FakeTime()
