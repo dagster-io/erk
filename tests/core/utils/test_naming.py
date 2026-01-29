@@ -8,6 +8,7 @@ from erk_shared.naming import (
     default_branch_for_worktree,
     derive_branch_name_from_title,
     ensure_unique_worktree_name,
+    extract_plan_review_issue_number,
     extract_trailing_number,
     generate_issue_branch_name,
     sanitize_branch_component,
@@ -412,3 +413,25 @@ def test_generate_issue_branch_name_handles_special_chars() -> None:
     assert "#" not in result
     assert "!" not in result
     assert "--" not in result
+
+
+@pytest.mark.parametrize(
+    ("branch_name", "expected"),
+    [
+        # Valid plan review branches
+        ("plan-review-6214-01-15-1430", 6214),
+        ("plan-review-42-01-28-0930", 42),
+        ("plan-review-1-12-31-2359", 1),
+        ("plan-review-99999-01-01-0000", 99999),
+        # Not plan review branches
+        ("P2382-convert-erk-create-raw-ext", None),
+        ("2382-convert-erk-create-raw-ext", None),
+        ("feature-branch", None),
+        ("master", None),
+        ("plan-review", None),  # Missing issue number
+        ("plan-review-", None),  # Missing issue number
+        ("plan-review-abc-01-15-1430", None),  # Non-numeric issue
+    ],
+)
+def test_extract_plan_review_issue_number(branch_name: str, expected: int | None) -> None:
+    assert extract_plan_review_issue_number(branch_name) == expected
