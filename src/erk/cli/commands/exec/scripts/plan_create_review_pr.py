@@ -135,8 +135,10 @@ def _create_review_pr_impl(
         )
 
     # Create draft PR - strip [erk-plan] prefix if present, use [erk-plan-review] prefix
-    clean_title = plan_title.removeprefix(ERK_PLAN_TITLE_PREFIX)
-    pr_title = f"{ERK_PLAN_REVIEW_TITLE_PREFIX}{clean_title} (#{issue_number})"
+    pr_title = (
+        f"{ERK_PLAN_REVIEW_TITLE_PREFIX}"
+        f"{plan_title.removeprefix(ERK_PLAN_TITLE_PREFIX)} (#{issue_number})"
+    )
     pr_body = _format_pr_body(issue_number, plan_title)
 
     pr_number = github.create_pr(
