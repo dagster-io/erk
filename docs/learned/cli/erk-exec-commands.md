@@ -71,6 +71,8 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 - `plan-save-to-issue` - Save plan to GitHub
 - `get-plan-metadata` - Read plan issue metadata
 - `setup-impl-from-issue` - Prepare .impl/ folder
+- `plan-submit-for-review` - Fetch plan content from issue for PR-based review
+- `plan-create-review-branch` - Create git branch for offline plan review
 
 ### Session Operations
 
@@ -116,3 +118,27 @@ Creates implementation environment from a plan issue:
 - If on feature branch: Stacks new branch on current branch
 
 **Important:** After `create_branch()`, explicit `checkout_branch()` is called because GraphiteBranchManager restores the original branch after tracking.
+
+#### plan-submit-for-review
+
+Fetch plan content from a GitHub issue for PR-based review workflow.
+
+**Usage:** `erk exec plan-submit-for-review <issue_number>`
+
+**Output (JSON):**
+
+- `success`, `issue_number`, `title`, `plan_content`, `plan_comment_id`, `plan_comment_url`
+
+**Error Codes:** `issue_not_found`, `missing_erk_plan_label`, `no_plan_content`
+
+#### plan-create-review-branch
+
+Creates a git branch for offline plan review.
+
+**Usage:** `erk exec plan-create-review-branch <issue_number>`
+
+**Output (JSON):**
+
+- `success`, `issue_number`, `branch`, `file_path`, `plan_title`
+
+**Error Codes:** `issue_not_found`, `missing_erk_plan_label`, `no_plan_content`, `branch_already_exists`, `git_error`
