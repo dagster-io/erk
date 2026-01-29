@@ -3,6 +3,7 @@
 ## Problem
 
 Currently there are two separate UserPromptSubmit hook entries in `settings.json`:
+
 1. `user-prompt-hook` (Python) — emits session context + capability-gated reminders (devrun, dignified-python, tripwires, explore-docs)
 2. `fake-driven-testing-reminder.sh` (shell script) — emits a static "load fake-driven-testing" nudge
 
@@ -15,12 +16,14 @@ Additionally, the `dignified-python` reminder fires on **every prompt** via `use
 Add a `build_fake_driven_testing_reminder()` pure function and wire it into the hook's capability check loop.
 
 **File:** `src/erk/cli/commands/exec/scripts/user_prompt_hook.py`
+
 - Add `build_fake_driven_testing_reminder()` returning the static reminder string
 - Add `if is_reminder_installed(hook_ctx.repo_root, "fake-driven-testing"):` block in the hook
 
 ### 2. Remove `dignified-python` reminder from `user-prompt-hook.py`
 
 Since `pre-tool-use-hook` provides the just-in-time reminder on `.py` edits, remove:
+
 - `build_dignified_python_reminder()` function
 - The `is_reminder_installed(..., "dignified-python")` block in the hook
 
@@ -68,6 +71,7 @@ installed = [
 ### 6. Update tests
 
 **File:** `tests/unit/cli/commands/exec/scripts/test_user_prompt_hook.py`
+
 - Remove `build_dignified_python_reminder` imports and tests
 - Add `build_fake_driven_testing_reminder` tests
 - Update `_setup_reminders` helper to accept `fake_driven_testing` instead of `dignified_python`
