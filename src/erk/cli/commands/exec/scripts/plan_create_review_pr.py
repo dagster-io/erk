@@ -23,8 +23,9 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import update_plan_header_review_pr
-from erk_shared.gateway.github.types import BodyText
+from erk_shared.gateway.github.types import BodyText, PRNotFound
 
 
 @dataclass(frozen=True)
@@ -111,45 +112,44 @@ def _create_review_pr_impl(
             message=f"Issue #{issue_number} not found",
         )
 
+    # LBYL: Check if a PR already exists for this branch
+    existing_pr = github.get_pr_for_branch(repo_root, branch_name)
+    if not isinstance(existing_pr, PRNotFound):
+        raise CreateReviewPRException(
+            error="pr_already_exists",
+            message=f"PR #{existing_pr.number} already exists for branch {branch_name}",
+        )
+
+    # Get issue body and validate plan-header block exists before creating PR
+    issue = github_issues.get_issue(repo_root, issue_number)
+
+    # LBYL: Check plan-header block exists before proceeding
+    if find_metadata_block(issue.body, "plan-header") is None:
+        raise CreateReviewPRException(
+            error="invalid_issue",
+            message=f"Issue #{issue_number} is missing plan-header metadata block",
+        )
+
     # Create draft PR
     pr_title = f"Plan Review: {plan_title} (#{issue_number})"
     pr_body = _format_pr_body(issue_number, plan_title)
 
-    try:
-        pr_number = github.create_pr(
-            repo_root,
-            branch_name,
-            pr_title,
-            pr_body,
-            base="master",
-            draft=True,
-        )
-    except Exception as e:
-        raise CreateReviewPRException(
-            error="pr_creation_failed",
-            message=f"Failed to create PR: {e}",
-        ) from e
-
-    # Get issue body to update
-    issue = github_issues.get_issue(repo_root, issue_number)
+    pr_number = github.create_pr(
+        repo_root,
+        branch_name,
+        pr_title,
+        pr_body,
+        base="master",
+        draft=True,
+    )
 
     # Update plan-header metadata with review_pr field
-    try:
-        updated_body = update_plan_header_review_pr(issue.body, pr_number)
-    except Exception as e:
-        raise CreateReviewPRException(
-            error="metadata_update_failed",
-            message=f"Failed to update plan metadata: {e}",
-        ) from e
+    # Safe to call - we validated plan-header block exists above
+    updated_body = update_plan_header_review_pr(issue.body, pr_number)
 
     # Write updated body back to issue
-    try:
-        github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
-    except Exception as e:
-        raise CreateReviewPRException(
-            error="metadata_update_failed",
-            message=f"Failed to write updated metadata to issue: {e}",
-        ) from e
+    # Safe to call - we validated issue exists above
+    github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
 
     # Construct PR URL
     pr_url = f"https://github.com/schrockn/erk/pull/{pr_number}"

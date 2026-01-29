@@ -18,6 +18,7 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 
 
 def make_plan_header_body(
+    *,
     plan_comment_id: int | None,
 ) -> str:
     """Create a test issue body with plan-header metadata block."""

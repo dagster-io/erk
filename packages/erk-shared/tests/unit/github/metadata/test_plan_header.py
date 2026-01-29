@@ -12,7 +12,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
 
 
 def make_plan_header_body(
-    review_pr: int | None = None,
+    review_pr: int | None,
 ) -> str:
     """Create a test issue body with plan-header metadata block.
 
