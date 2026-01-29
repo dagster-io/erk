@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   check-submission:
-    if: github.event.pull_request.draft != true
+    if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'plan-review')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -132,6 +132,7 @@ jobs:
       github.ref_name != 'main' &&
       (github.event_name == 'pull_request' || github.event_name == 'push') &&
       (github.event_name != 'pull_request' || github.event.pull_request.draft != true) &&
+      (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'plan-review')) &&
       (needs.format.result == 'failure' ||
        needs.lint.result == 'failure' ||
        needs.prettier.result == 'failure' ||
