@@ -115,8 +115,7 @@ def _check_all(repo_root: Path | None) -> None:
 
     user_output("Erk capabilities:")
     for cap in sorted(caps, key=lambda c: c.name):
-        scope_label = f"[{cap.scope}]"
-        cap_line = f"{cap.name:25} {scope_label:10} {cap.description}"
+        cap_line = f"{cap.name:25} {f'[{cap.scope}]':10} {cap.description}"
         check_line = click.style(f"    Checked: {cap.installation_check_description}", dim=True)
 
         # Determine if we can check this capability
