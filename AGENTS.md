@@ -157,7 +157,7 @@ Skills persist for the entire session. Once loaded, they remain in context.
 - Hook reminders fire as safety nets, not commands
 - Check if loaded: Look for `<command-message>The "{name}" skill is loading</command-message>` earlier in conversation
 
-**Just-in-time context injection**: The `dignified-python` core rules are also automatically injected via PreToolUse hook when editing `.py` files. This provides a pointed reminder at the exact moment Python code is being written, complementing the UserPromptSubmit reminder and the ambient quick reference above.
+**Just-in-time context injection**: The `dignified-python` core rules are automatically injected via PreToolUse hook when editing `.py` files. This provides a pointed reminder at the exact moment Python code is being written, complementing the ambient quick reference above.
 
 ## Documentation-First Discovery
 

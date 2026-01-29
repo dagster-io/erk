@@ -11,7 +11,6 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.user_prompt_hook import (
     build_devrun_reminder,
-    build_dignified_python_reminder,
     build_explore_docs_reminder,
     build_session_context,
     build_tripwires_reminder,
@@ -63,23 +62,6 @@ def test_build_devrun_reminder_mentions_forbidden_tools() -> None:
 
 
 # ============================================================================
-# Pure Logic Tests for build_dignified_python_reminder() - NO MOCKING REQUIRED
-# ============================================================================
-
-
-def test_build_dignified_python_reminder_mentions_dignified_python() -> None:
-    """Reminder mentions dignified-python skill."""
-    result = build_dignified_python_reminder()
-    assert "dignified-python" in result
-
-
-def test_build_dignified_python_reminder_mentions_no_try_except() -> None:
-    """Reminder mentions LBYL rule (no try/except for control flow)."""
-    result = build_dignified_python_reminder()
-    assert "NO try/except" in result
-
-
-# ============================================================================
 # Pure Logic Tests for build_tripwires_reminder() - NO MOCKING REQUIRED
 # ============================================================================
 
@@ -122,7 +104,6 @@ def _setup_reminders(
     tmp_path: Path,
     *,
     devrun: bool,
-    dignified_python: bool,
     tripwires: bool,
     explore_docs: bool,
 ) -> None:
@@ -130,15 +111,13 @@ def _setup_reminders(
 
     Each reminder is stored as an entry in the installed list:
     [reminders]
-    installed = ["devrun", "dignified-python", "tripwires", "explore-docs"]
+    installed = ["devrun", "tripwires", "explore-docs"]
     """
     import tomli_w
 
     installed: list[str] = []
     if devrun:
         installed.append("devrun")
-    if dignified_python:
-        installed.append("dignified-python")
     if tripwires:
         installed.append("tripwires")
     if explore_docs:
@@ -172,9 +151,7 @@ class TestHookIntegration:
         (tmp_path / ".erk").mkdir()
 
         # Install all reminder capabilities
-        _setup_reminders(
-            tmp_path, devrun=True, dignified_python=True, tripwires=True, explore_docs=True
-        )
+        _setup_reminders(tmp_path, devrun=True, tripwires=True, explore_docs=True)
 
         # Inject via ErkContext - NO mocking needed
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
@@ -185,7 +162,6 @@ class TestHookIntegration:
         assert result.exit_code == 0
         assert f"session: {session_id}" in result.output
         assert "devrun" in result.output
-        assert "dignified-python" in result.output
         assert "tripwire" in result.output.lower()
 
     def test_persists_session_id_to_file(self, tmp_path: Path) -> None:
@@ -262,9 +238,7 @@ class TestReminderCapabilities:
         session_id = "session-abc123"
 
         (tmp_path / ".erk").mkdir()
-        _setup_reminders(
-            tmp_path, devrun=True, dignified_python=False, tripwires=False, explore_docs=False
-        )
+        _setup_reminders(tmp_path, devrun=True, tripwires=False, explore_docs=False)
 
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
         stdin_data = json.dumps({"session_id": session_id})
@@ -275,35 +249,13 @@ class TestReminderCapabilities:
         assert "dignified-python" not in result.output
         assert "tripwires.md" not in result.output
 
-    def test_only_dignified_python_reminder_when_only_that_installed(self, tmp_path: Path) -> None:
-        """Verify only dignified-python reminder when only that capability installed."""
-        runner = CliRunner()
-        session_id = "session-abc123"
-
-        (tmp_path / ".erk").mkdir()
-        _setup_reminders(
-            tmp_path, devrun=False, dignified_python=True, tripwires=False, explore_docs=False
-        )
-
-        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
-        stdin_data = json.dumps({"session_id": session_id})
-        result = runner.invoke(user_prompt_hook, input=stdin_data, obj=ctx)
-
-        assert result.exit_code == 0
-        assert "dignified-python" in result.output
-        # devrun may appear in dignified-python reminder, so we check specific text
-        assert "NO try/except" in result.output
-        assert "tripwires.md" not in result.output
-
     def test_only_tripwires_reminder_when_only_that_installed(self, tmp_path: Path) -> None:
         """Verify only tripwires reminder when only that capability installed."""
         runner = CliRunner()
         session_id = "session-abc123"
 
         (tmp_path / ".erk").mkdir()
-        _setup_reminders(
-            tmp_path, devrun=False, dignified_python=False, tripwires=True, explore_docs=False
-        )
+        _setup_reminders(tmp_path, devrun=False, tripwires=True, explore_docs=False)
 
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
         stdin_data = json.dumps({"session_id": session_id})
@@ -320,9 +272,7 @@ class TestReminderCapabilities:
         session_id = "session-abc123"
 
         (tmp_path / ".erk").mkdir()
-        _setup_reminders(
-            tmp_path, devrun=True, dignified_python=False, tripwires=True, explore_docs=False
-        )
+        _setup_reminders(tmp_path, devrun=True, tripwires=True, explore_docs=False)
 
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
         stdin_data = json.dumps({"session_id": session_id})
@@ -341,9 +291,7 @@ class TestReminderCapabilities:
         session_id = "session-abc123"
 
         (tmp_path / ".erk").mkdir()
-        _setup_reminders(
-            tmp_path, devrun=False, dignified_python=False, tripwires=False, explore_docs=True
-        )
+        _setup_reminders(tmp_path, devrun=False, tripwires=False, explore_docs=True)
 
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
         stdin_data = json.dumps({"session_id": session_id})
@@ -363,9 +311,7 @@ class TestReminderCapabilities:
 
         (tmp_path / ".erk").mkdir()
         # Install other reminders but NOT explore-docs
-        _setup_reminders(
-            tmp_path, devrun=True, dignified_python=True, tripwires=True, explore_docs=False
-        )
+        _setup_reminders(tmp_path, devrun=True, tripwires=True, explore_docs=False)
 
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
         stdin_data = json.dumps({"session_id": session_id})
@@ -377,5 +323,4 @@ class TestReminderCapabilities:
         assert "docs/learned/index.md" not in result.output
         # Other reminders should be present
         assert "devrun" in result.output
-        assert "dignified-python" in result.output
         assert "tripwire" in result.output.lower()
