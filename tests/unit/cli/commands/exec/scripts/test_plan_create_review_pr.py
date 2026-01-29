@@ -123,13 +123,13 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
     assert len(fake_gh.created_prs) == 1
     pr = fake_gh.created_prs[0]
     assert pr[0] == branch_name  # branch
-    assert pr[1] == f"Plan Review: {plan_title} (#{issue_number})"  # title
+    assert pr[1] == f"[erk-plan-review] {plan_title} (#{issue_number})"  # title
     assert f"issue #{issue_number}" in pr[2]  # body contains issue reference
     assert pr[3] == "master"  # base
     assert pr[4] is True  # draft=True
 
     # Verify plan-review label was added
-    assert (999, "plan-review") in fake_gh.added_labels
+    assert (999, "erk-plan-review") in fake_gh.added_labels
 
     # Verify issue body was updated with review_pr field
     updated_issue = fake_gh_issues.get_issue(repo_root, issue_number)
@@ -161,7 +161,35 @@ def test_plan_create_review_pr_title_format(tmp_path: Path) -> None:
 
     # Verify PR title format
     pr = fake_gh.created_prs[0]
-    assert pr[1] == f"Plan Review: {plan_title} (#{issue_number})"
+    assert pr[1] == f"[erk-plan-review] {plan_title} (#{issue_number})"
+
+
+def test_plan_create_review_pr_strips_erk_plan_prefix(tmp_path: Path) -> None:
+    """Test PR title strips [erk-plan] prefix from plan_title."""
+    issue_number = 5679
+    branch_name = "plan-review-5679-01-15-1430"
+    plan_title = "[erk-plan] Implement new backend"
+    repo_root = tmp_path / "repo"
+
+    body = make_plan_header_body(plan_comment_id=123)
+    issue = make_issue_info(issue_number, body, title=plan_title, labels=None)
+
+    fake_gh_issues = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh = FakeGitHub(issues_gateway=fake_gh_issues)
+
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_create_review_pr,
+        [str(issue_number), branch_name, plan_title],
+        obj=ErkContext.for_test(github=fake_gh, repo_root=repo_root, repo_info=TEST_REPO_INFO),
+    )
+
+    assert result.exit_code == 0
+
+    # Verify [erk-plan] prefix was stripped and [erk-plan-review] used instead
+    pr = fake_gh.created_prs[0]
+    assert pr[1] == f"[erk-plan-review] Implement new backend (#{issue_number})"
 
 
 def test_plan_create_review_pr_body_format(tmp_path: Path) -> None:

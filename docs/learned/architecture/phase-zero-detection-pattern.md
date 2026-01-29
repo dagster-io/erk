@@ -87,9 +87,9 @@ gh pr view --json labels -q '.labels[].name'
 
 If the label exists, switch to the alternative mode.
 
-**Example:** `plan-review` label indicates plan review mode.
+**Example:** `erk-plan-review` label indicates plan review mode.
 
-**Source:** `src/erk/cli/constants.py:52` defines `PLAN_REVIEW_LABEL = "plan-review"`
+**Source:** `src/erk/cli/constants.py:52` defines `PLAN_REVIEW_LABEL = "erk-plan-review"`
 
 ### Flag-Based Detection
 
