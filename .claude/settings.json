@@ -30,6 +30,15 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/dignified-python-pre-edit.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [
