@@ -393,6 +393,34 @@ def extract_leading_issue_number(branch_name: str) -> int | None:
     return None
 
 
+def extract_plan_review_issue_number(branch_name: str) -> int | None:
+    """Extract issue number from a plan review branch name.
+
+    Plan review branches follow the pattern: plan-review-{issue_number}-{timestamp}
+    Examples: "plan-review-6214-01-15-1430"
+
+    Args:
+        branch_name: Branch name to parse
+
+    Returns:
+        Issue number if branch matches plan-review-{number}- pattern, else None
+
+    Examples:
+        >>> extract_plan_review_issue_number("plan-review-6214-01-15-1430")
+        6214
+        >>> extract_plan_review_issue_number("plan-review-42-01-28-0930")
+        42
+        >>> extract_plan_review_issue_number("P2382-convert-erk-create-raw-ext")
+        None
+        >>> extract_plan_review_issue_number("feature-branch")
+        None
+    """
+    match = re.match(r"^plan-review-(\d+)-", branch_name)
+    if match:
+        return int(match.group(1))
+    return None
+
+
 def ensure_unique_worktree_name_with_date(base_name: str, worktrees_dir: Path, git_ops) -> str:
     """Ensure unique worktree name with datetime suffix and smart versioning.
 
