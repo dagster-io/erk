@@ -1,7 +1,8 @@
 ---
 title: Exec Script Patterns
 category: cli
-read_when: Creating new exec CLI commands
+read_when:
+  - "Creating new exec CLI commands"
 tripwires:
   - action: "importing from erk_shared.gateway when creating exec commands"
     warning: "Gateway ABCs use submodule paths: `erk_shared.gateway.{service}.{resource}.abc`"

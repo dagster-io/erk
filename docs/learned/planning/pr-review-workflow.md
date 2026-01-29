@@ -1,7 +1,8 @@
 ---
 title: PR-Based Plan Review Workflow
 category: planning
-read_when: Reviewing plans collaboratively before implementation
+read_when:
+  - "Reviewing plans collaboratively before implementation"
 ---
 
 # PR-Based Plan Review Workflow

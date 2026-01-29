@@ -17,11 +17,11 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [capabilities](capabilities/tripwires.md)   | 1         | Claude Code capabilities, tool use            |
 | [ci](ci/tripwires.md)                       | 13        | `.github/workflows/`, `.github/actions/`      |
 | [claude-code](claude-code/tripwires.md)     | 2         | Claude Code configuration, settings           |
-| [cli](cli/tripwires.md)                     | 11        | `src/erk/cli/`                                |
+| [cli](cli/tripwires.md)                     | 12        | `src/erk/cli/`                                |
 | [gateway](gateway/tripwires.md)             | 1         | `gateway/` code                               |
 | [planning](planning/tripwires.md)           | 19        | `.impl/`, `.worker-impl/`, planning workflows |
 | [sessions](sessions/tripwires.md)           | 4         | `~/.claude/projects/`, session analysis       |
-| [testing](testing/tripwires.md)             | 6         | `tests/`                                      |
+| [testing](testing/tripwires.md)             | 7         | `tests/`                                      |
 | [textual](textual/tripwires.md)             | 1         | Textual framework code                        |
 | [tui](tui/tripwires.md)                     | 4         | `src/erk/tui/`                                |
 | [uncategorized](uncategorized/tripwires.md) | 13        | `uncategorized/` code                         |
