@@ -36,7 +36,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/dignified-python-pre-edit.sh"
+            "command": "ERK_HOOK_ID=pre-tool-use-hook erk exec pre-tool-use-hook",
+            "timeout": 30
           }
         ]
       }

@@ -64,6 +64,7 @@ Quick reference for all `erk exec` subcommands.
 | `post-pr-inline-comment`          | Post an inline review comment on a PR.                                    |
 | `post-workflow-started-comment`   | Post a workflow started comment to a GitHub issue.                        |
 | `pr-sync-commit`                  | Sync PR title and body from the latest git commit.                        |
+| `pre-tool-use-hook`               | PreToolUse hook for dignified-python reminders on .py file edits.         |
 | `preprocess-session`              | Preprocess session log JSONL to compressed XML format.                    |
 | `quick-submit`                    | Quick commit all changes and submit.                                      |
 | `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.              |
@@ -840,6 +841,12 @@ Sync PR title and body from the latest git commit.
 | Flag     | Type | Required | Default | Description    |
 | -------- | ---- | -------- | ------- | -------------- |
 | `--json` | FLAG | No       | -       | Output as JSON |
+
+### pre-tool-use-hook
+
+PreToolUse hook for dignified-python reminders on .py file edits.
+
+**Usage:** `erk exec pre-tool-use-hook`
 
 ### preprocess-session
 
