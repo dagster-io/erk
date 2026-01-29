@@ -4,14 +4,14 @@
 
 ## Source Plans
 
-| # | Title | Items Merged | Status |
-|---|-------|--------------|--------|
-| 6212 | Create erk exec plan-create-review-branch Command | 2 tripwire candidates | Merge |
-| 6210 | Create erk exec plan-create-review-branch Command | 5 doc items | Merge |
-| 6204 | Learn Plan: Issue #6202 - plan-submit-for-review Command | 6 doc items | Merge |
-| 6198 | Consolidate erk init capability commands | 1 doc item (conditional) | Defer - consolidation not merged |
-| 6195 | Phase 8: Complete Git Gateway Refactoring | 9 doc items | Merge |
-| 6191 | Phase 8: Cleanup - Config & Repo Decision | 2 doc items | Merge (overlaps with #6195) |
+| #    | Title                                                    | Items Merged             | Status                           |
+| ---- | -------------------------------------------------------- | ------------------------ | -------------------------------- |
+| 6212 | Create erk exec plan-create-review-branch Command        | 2 tripwire candidates    | Merge                            |
+| 6210 | Create erk exec plan-create-review-branch Command        | 5 doc items              | Merge                            |
+| 6204 | Learn Plan: Issue #6202 - plan-submit-for-review Command | 6 doc items              | Merge                            |
+| 6198 | Consolidate erk init capability commands                 | 1 doc item (conditional) | Defer - consolidation not merged |
+| 6195 | Phase 8: Complete Git Gateway Refactoring                | 9 doc items              | Merge                            |
+| 6191 | Phase 8: Cleanup - Config & Repo Decision                | 2 doc items              | Merge (overlaps with #6195)      |
 
 ## What Changed Since Original Plans
 
@@ -32,13 +32,13 @@
 
 ### Overlap Analysis
 
-| Topic | Plans | Consolidated Action |
-|-------|-------|---------------------|
-| Gateway import path tripwire | #6212, #6210 | Single tripwire entry |
-| FakeGit subgateway property access | #6212, #6210 | Single tripwire entry |
-| erk-exec-commands.md update | #6210, #6204 | One update adding both commands |
-| Gateway inventory update | #6195, #6191 | One update adding all 3 subgateways |
-| Exec script patterns | #6210, #6204 | One new file covering both commands |
+| Topic                              | Plans        | Consolidated Action                 |
+| ---------------------------------- | ------------ | ----------------------------------- |
+| Gateway import path tripwire       | #6212, #6210 | Single tripwire entry               |
+| FakeGit subgateway property access | #6212, #6210 | Single tripwire entry               |
+| erk-exec-commands.md update        | #6210, #6204 | One update adding both commands     |
+| Gateway inventory update           | #6195, #6191 | One update adding all 3 subgateways |
+| Exec script patterns               | #6210, #6204 | One new file covering both commands |
 
 ## Remaining Gaps (Prioritized)
 
@@ -67,6 +67,7 @@
 ## Implementation Steps
 
 ### Step 1: Update erk-exec-commands.md
+
 **File:** `docs/learned/cli/erk-exec-commands.md`
 
 Add to Plan Operations section:
@@ -79,6 +80,7 @@ Fetch plan content from a GitHub issue for PR-based review workflow.
 **Usage:** `erk exec plan-submit-for-review <issue_number>`
 
 **Output (JSON):**
+
 - `success`, `issue_number`, `title`, `plan_content`, `plan_comment_id`, `plan_comment_url`
 
 **Error Codes:** `issue_not_found`, `missing_erk_plan_label`, `no_plan_content`
@@ -90,6 +92,7 @@ Creates a git branch for offline plan review.
 **Usage:** `erk exec plan-create-review-branch <issue_number>`
 
 **Output (JSON):**
+
 - `success`, `issue_number`, `branch`, `file_path`, `plan_title`
 
 **Error Codes:** `issue_not_found`, `missing_erk_plan_label`, `no_plan_content`, `branch_already_exists`, `git_error`
@@ -101,6 +104,7 @@ Creates a git branch for offline plan review.
 ---
 
 ### Step 2: Update gateway-inventory.md
+
 **File:** `docs/learned/architecture/gateway-inventory.md`
 
 Add to "Sub-Gateways" section (after line ~372):
@@ -143,6 +147,7 @@ Also add Phase 8 completion note at end of Sub-Gateways section:
 ---
 
 ### Step 3: Update SKILL.md
+
 **File:** `.claude/skills/erk-exec/SKILL.md`
 
 Add to Plan Operations section (around line 39-49):
@@ -158,9 +163,10 @@ Add to Plan Operations section (around line 39-49):
 ---
 
 ### Step 4: Create exec-script-patterns.md
+
 **File:** `docs/learned/cli/exec-script-patterns.md`
 
-```markdown
+````markdown
 ---
 title: Exec Script Patterns
 category: cli
@@ -186,6 +192,7 @@ class MyCommandError:
     error: str  # Machine-readable error code
     message: str  # Human-readable description
 ```
+````
 
 ### 2. Click Command Entry Point
 
@@ -220,6 +227,7 @@ from erk_shared.gateway.github.abc import GitHubIssues
 ### 4. Plan Metadata Extraction
 
 Reuse existing functions:
+
 ```python
 from erk.cli.commands.exec.scripts.plan_submit_for_review import (
     extract_plan_header_comment_id,
@@ -230,6 +238,7 @@ from erk.cli.commands.exec.scripts.plan_submit_for_review import (
 ## Error Code Convention
 
 Use lowercase snake_case error codes that are:
+
 - Machine-readable (for programmatic handling)
 - Descriptive (e.g., `missing_erk_plan_label` not `invalid_input`)
 - Actionable (users understand what went wrong)
@@ -238,7 +247,8 @@ Use lowercase snake_case error codes that are:
 
 - `plan_submit_for_review.py` - Plan content extraction
 - `plan_create_review_branch.py` - Branch creation with plan file
-```
+
+````
 
 **Source:** Investigation of #6210, #6204
 **Verification:** Patterns match existing exec scripts
@@ -289,7 +299,7 @@ Alternative to immediate implementation: submit plans as temporary PRs for colla
 
 - **Direct:** `erk plan submit` creates branch, PR, implements automatically
 - **Review:** `erk exec plan-submit-for-review` returns data for manual review PR creation
-```
+````
 
 **Source:** Investigation of #6204
 **Verification:** Commands exist and work as documented
@@ -297,9 +307,10 @@ Alternative to immediate implementation: submit plans as temporary PRs for colla
 ---
 
 ### Step 6: Create fake-github-testing.md
+
 **File:** `docs/learned/testing/fake-github-testing.md`
 
-```markdown
+````markdown
 ---
 title: FakeGitHubIssues Testing Patterns
 category: testing
@@ -311,6 +322,7 @@ read_when: Writing tests that use FakeGitHubIssues
 ## Parameter Confusion: comments vs comments_with_urls
 
 FakeGitHubIssues has two comment-related parameters:
+
 - `comments: dict[int, list[str]]` - Simple comment bodies as strings
 - `comments_with_urls: dict[int, list[IssueComment]]` - Full comment objects
 
@@ -332,10 +344,12 @@ fake_gh = FakeGitHubIssues(
     comments_with_urls={123: comments},
 )
 ```
+````
 
 ### Prevention
 
 When setting up FakeGitHubIssues for testing:
+
 1. Check which getter method you're calling in your code
 2. Use matching parameter name (`comments` for `get_comments`, `comments_with_urls` for `get_issue_comments_with_urls`)
 3. Ensure correct types for the parameter
@@ -343,7 +357,8 @@ When setting up FakeGitHubIssues for testing:
 ## Reference Test File
 
 See: `tests/unit/fakes/test_fake_github_issues.py` (1023 lines of comprehensive examples)
-```
+
+````
 
 **Source:** Investigation of #6204
 **Verification:** Pattern matches test file usage
@@ -367,7 +382,7 @@ Add to CLI/Testing section:
 **Before accessing FakeGit properties in tests:**
 - Read: [Testing Patterns](testing/testing.md#fakegit-property-access)
 - Warning: Access properties via subgateway (e.g., `git.commit_ops.staged_files`), not top-level
-```
+````
 
 **Source:** Investigation of #6212, #6210
 **Verification:** Tripwires link to documentation files
@@ -375,6 +390,7 @@ Add to CLI/Testing section:
 ---
 
 ### Step 8: Update lifecycle.md
+
 **File:** `docs/learned/planning/lifecycle.md`
 
 Add after Phase 2 (Plan Submission):

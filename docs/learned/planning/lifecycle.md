@@ -377,6 +377,18 @@ validation_results:
 expected_workflow: erk-impl
 ```
 
+### Phase 2b: Review (Optional)
+
+For plans requiring collaborative review or validation:
+
+1. Create temporary PR with plan content using `erk exec plan-submit-for-review`
+2. Review and discuss in PR UI
+3. Incorporate feedback
+4. Delete review PR branch
+5. Continue to Phase 3: Submit for Implementation
+
+See [PR-Based Plan Review Workflow](pr-review-workflow.md) for details.
+
 ---
 
 ## Phase 3: Workflow Dispatch
