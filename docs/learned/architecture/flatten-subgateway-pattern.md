@@ -133,6 +133,19 @@ class PrintingGit(Git):
 
 **Pattern:** Similar to DryRun, but pass configuration (script_mode, dry_run) to the printing wrapper.
 
+## Read-Only Subgateways
+
+When a subgateway contains only query operations (no mutations), the DryRun and Printing wrapper layers can be simplified to pure pass-through delegation.
+
+**Example:** GitStatusOps contains only query methods (`has_staged_changes`, `get_file_status`, etc.), so:
+
+- `DryRunGitStatusOps` simply delegates to the wrapped implementation
+- `PrintingGitStatusOps` simply delegates without logging
+
+There's no special dry-run behavior needed because queries have no side effects to suppress.
+
+See [Gateway Decomposition Phases](gateway-decomposition-phases.md) for the full list of subgateway variants.
+
 ## Before and After
 
 **Before (verbose, coupled):**
