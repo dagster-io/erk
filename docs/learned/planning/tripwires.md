@@ -22,6 +22,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before consolidating issues that already have erk-consolidated label** → Read [Consolidation Labels](consolidation-labels.md) first. Filter out erk-consolidated issues before consolidation. These are outputs of previous consolidation and should not be re-consolidated.
 
+**CRITICAL: Before creating a review PR for a plan** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Review PRs are draft PRs that are never merged. Use erk exec plan-create-review-pr.
+
 **CRITICAL: Before creating erk-learn plan for an issue that already has erk-learn label** → Read [Learn Plan Validation](learn-plan-validation.md) first. Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention).
 
 **CRITICAL: Before creating temp files for AI workflows** → Read [Scratch Storage](scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
@@ -39,6 +41,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before launching subagents that produce outputs > 1KB** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Use Write tool for agent outputs. Bash heredocs fail silently above 10KB.
 
 **CRITICAL: Before manually creating an erk-plan issue with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
+
+**CRITICAL: Before manually creating plan review branches** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Use plan-create-review-branch to ensure proper naming (plan-review-{issue}-{timestamp}).
 
 **CRITICAL: Before modifying learn command to add/remove/reorder agents** → Read [Learn Workflow](learn-workflow.md) first. Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output.
 

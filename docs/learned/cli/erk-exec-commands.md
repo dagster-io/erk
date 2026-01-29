@@ -74,6 +74,124 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 - `plan-submit-for-review` - Fetch plan content from issue for PR-based review
 - `plan-create-review-branch` - Create git branch for offline plan review
 
+### Plan Review Operations
+
+- `plan-submit-for-review` - Fetch plan content from issue for review
+- `plan-create-review-branch` - Create branch with plan file from issue
+- `plan-create-review-pr` - Create draft PR for plan review and update metadata
+- `plan-review-complete` - Close review PR, delete branch, archive metadata
+- `plan-update-from-feedback` - Update plan issue with review feedback
+
+#### plan-submit-for-review
+
+Fetches plan content from a GitHub issue to prepare for review.
+
+**Arguments**: `<issue-number>`
+
+**Output**: JSON with plan content and metadata
+
+**Error codes**:
+
+- `issue_not_found` - Issue does not exist
+- `missing_erk_plan_label` - Issue is not an erk-plan
+- `no_plan_content` - Issue has no plan_comment_id or plan content
+
+#### plan-create-review-branch
+
+Creates a timestamped branch with the plan file at repo root.
+
+**Arguments**: `<issue-number>`
+
+**Output**: JSON with branch name, file path, and plan title
+
+**Branch naming**: `plan-review-{issue}-{MM-DD-HHMM}`
+
+**File naming**: `PLAN-REVIEW-{issue}.md`
+
+**Operations**:
+
+1. Fetches plan content from issue
+2. Creates branch from origin/master
+3. Writes plan to file at repo root
+4. Commits and pushes to origin
+
+**Error codes**:
+
+- `issue_not_found` - Issue does not exist
+- `missing_erk_plan_label` - Issue is not an erk-plan
+- `no_plan_content` - Issue has no plan_comment_id or plan content
+- `branch_exists` - Branch already exists
+
+#### plan-create-review-pr
+
+Creates a draft PR for plan review and updates issue metadata.
+
+**Arguments**: `<issue-number> <branch-name> <plan-title>`
+
+**Output**: JSON with PR number and URL
+
+**Operations**:
+
+1. Validates issue exists and has plan-header block
+2. Checks for duplicate PR via `get_pr_for_branch()`
+3. Creates draft PR targeting master
+4. Adds `plan-review` label
+5. Updates issue `review_pr` field in plan-header metadata
+
+**PR body format**: Links to plan issue, warns PR will not be merged
+
+**Error codes**:
+
+- `issue_not_found` - Issue does not exist
+- `pr_already_exists` - PR already exists for this branch
+- `invalid_issue` - Issue missing plan-header metadata
+
+#### plan-review-complete
+
+Closes a plan review PR and cleans up associated resources.
+
+**Arguments**: `<issue-number>`
+
+**Output**: JSON with PR number, branch name, deletion status
+
+**Operations**:
+
+1. Extracts `review_pr` from plan-header metadata
+2. Closes the PR (without merging)
+3. Deletes remote branch
+4. Switches to master if currently on review branch
+5. Deletes local branch if exists
+6. Archives metadata: `review_pr` → `last_review_pr`, clears `review_pr`
+
+**Error codes**:
+
+- `issue_not_found` - Issue does not exist
+- `no_plan_header` - Issue missing plan-header metadata
+- `no_review_pr` - Issue has no active review PR
+- `pr_not_found` - PR does not exist
+
+#### plan-update-from-feedback
+
+Updates the plan-body comment in a plan issue with revised content.
+
+**Arguments**: `<issue-number>` with either `--plan-path PATH` or `--plan-content "..."`
+
+**Output**: JSON with comment ID and URL
+
+**Operations**:
+
+1. Validates issue exists and has erk-plan label
+2. Extracts plan_comment_id from plan-header
+3. Updates the comment with new plan content
+4. Preserves plan-body metadata markers
+
+**Error codes**:
+
+- `issue_not_found` - Issue does not exist
+- `missing_erk_plan_label` - Issue is not an erk-plan
+- `no_plan_comment` - Issue has no plan_comment_id
+- `comment_not_found` - Comment does not exist
+
 ### Session Operations
 
 - `list-sessions` - List Claude Code sessions

@@ -131,6 +131,63 @@ def make_plan_row(
 
 Update any test that constructs Plan objects directly.
 
+## Concrete Example: review_pr Field
+
+The `review_pr` field demonstrates a different pattern: **update-in-place** rather than **creation-time threading**.
+
+### Implementation Approach
+
+Unlike fields that flow through `create_plan_issue()` at creation time, `review_pr` is set **after** the issue already exists:
+
+1. **schemas.py**: Added `REVIEW_PR` and `LAST_REVIEW_PR` constants + validation (lines 393-395)
+2. **plan_header.py**: Added three functions (lines 1338-1437):
+   - `update_plan_header_review_pr()` - Set review_pr field
+   - `extract_plan_header_review_pr()` - Read review_pr field
+   - `clear_plan_header_review_pr()` - Archive to last_review_pr and clear
+
+### Why NOT Threaded Through Creation
+
+The `review_pr` field is NOT threaded through `create_plan_issue()` because:
+
+- Plans exist before review PRs are created
+- Review is an optional workflow step
+- Multiple reviews may occur over time
+
+Instead, `plan-create-review-pr` uses `update_plan_header_review_pr()` to set the field after PR creation.
+
+### Archival Pattern
+
+`clear_plan_header_review_pr()` implements a two-field archival pattern:
+
+```python
+# Archive current review_pr to last_review_pr (if not None)
+current_review_pr = updated_data.get(REVIEW_PR)
+if current_review_pr is not None:
+    updated_data[LAST_REVIEW_PR] = current_review_pr
+
+# Clear review_pr
+updated_data[REVIEW_PR] = None
+```
+
+This pattern:
+
+- Preserves history in `last_review_pr`
+- Clears `review_pr` to signal "no active review"
+- Enables re-review detection via `last_review_pr`
+
+### When to Use Update-in-Place
+
+Use this pattern when:
+
+- Field is set **after** issue creation
+- Field changes over time (not immutable)
+- Field represents current state with archival history
+
+Use creation-time threading when:
+
+- Field is known at creation time
+- Field is immutable (e.g., `created_from_workflow_run_url`)
+
 ## Optional: Additional Files
 
 Depending on usage, you may also need to update:

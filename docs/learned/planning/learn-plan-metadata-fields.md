@@ -58,6 +58,50 @@ This field enables:
 - Tracing provenance of automatically generated plans
 - Quick navigation from plan issue to the workflow that created it
 
+### `review_pr`
+
+PR number for an active plan review. Set when a review PR is created via `plan-create-review-pr`.
+
+- **Type**: `int` (nullable)
+- **When populated**: When `/erk:review-plan` creates a PR for inline plan review
+- **Format**: Integer PR number (e.g., `1234`)
+
+**CLI Usage**:
+
+```bash
+erk exec plan-create-review-pr <issue> <branch> <title>
+```
+
+This field enables:
+
+- Discovering if a plan has an active review PR
+- Preventing duplicate review PRs for the same plan
+- Linking from plan issue to the review PR
+
+**Lifecycle**: Set by `plan-create-review-pr`, cleared by `plan-review-complete` (moved to `last_review_pr`).
+
+### `last_review_pr`
+
+PR number of the most recently completed plan review. Set when a review PR is closed via `plan-review-complete`.
+
+- **Type**: `int` (nullable)
+- **When populated**: When review PR is closed and archived
+- **Format**: Integer PR number (e.g., `1234`)
+
+**CLI Usage**:
+
+```bash
+erk exec plan-review-complete <issue>
+```
+
+This field enables:
+
+- Tracking history of plan reviews
+- Warning users when creating a second review for the same plan
+- Linking to previous review feedback
+
+**Lifecycle**: Set by `plan-review-complete` when archiving `review_pr` field. Preserved across multiple reviews (stores the most recent).
+
 ## Pipeline Stages and Preservation
 
 ### GitHub Gateway

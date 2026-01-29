@@ -73,6 +73,8 @@ last_remote_impl_session_id: null
 | `last_remote_impl_run_id`     | string\|null | GitHub Actions run ID for remote impl    |
 | `last_remote_impl_session_id` | string\|null | Claude Code session ID for remote impl   |
 | `source_repo`                 | string\|null | Implementation repo for cross-repo plans |
+| `review_pr`                   | int\|null    | PR number for active plan review         |
+| `last_review_pr`              | int\|null    | PR number of last completed review       |
 
 **Session tracking fields:**
 

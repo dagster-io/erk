@@ -310,6 +310,121 @@ fi
 
 ---
 
+## Review PR Creation Pattern
+
+Plan review PRs follow a specialized creation pattern different from implementation PRs.
+
+### Characteristics of Review PRs
+
+- **Draft PRs**: Always created as drafts to prevent accidental merging
+- **Ephemeral**: Never merged, closed after review completes
+- **Labeled**: Tagged with `plan-review` label for filtering
+- **Timestamped branches**: Named `plan-review-{issue}-{MM-DD-HHMM}`
+
+### LBYL Pattern: Pre-Creation Validation
+
+Review PR creation follows strict Look Before You Leap validation:
+
+```python
+# 1. Check issue exists
+if not github_issues.issue_exists(repo_root, issue_number):
+    raise CreateReviewPRException(error="issue_not_found", ...)
+
+# 2. Check for duplicate PR by branch name
+existing_pr = github.get_pr_for_branch(repo_root, branch_name)
+if not isinstance(existing_pr, PRNotFound):
+    raise CreateReviewPRException(error="pr_already_exists", ...)
+
+# 3. Validate plan-header metadata exists
+issue = github_issues.get_issue(repo_root, issue_number)
+if find_metadata_block(issue.body, "plan-header") is None:
+    raise CreateReviewPRException(error="invalid_issue", ...)
+
+# 4. Only after all checks pass: create PR
+pr_number = github.create_pr(...)
+```
+
+**Source**: `src/erk/cli/commands/exec/scripts/plan_create_review_pr.py` (lines 109-145)
+
+### Duplicate Prevention via get_pr_for_branch()
+
+The `get_pr_for_branch()` gateway method prevents duplicate review PRs:
+
+```python
+existing_pr = github.get_pr_for_branch(repo_root, branch_name)
+
+# Discriminated union: Either PRNotFound or PR object
+if not isinstance(existing_pr, PRNotFound):
+    # PR already exists - error or update
+    raise CreateReviewPRException(...)
+```
+
+This pattern:
+
+- Returns discriminated union: `PR | PRNotFound`
+- Checks **all PR states** (open, closed, merged)
+- Uses branch name as exact match key
+
+### BodyText Wrapper for GitHub API
+
+Plan review creation uses `BodyText` wrapper for issue body updates:
+
+```python
+from erk_shared.gateway.github.types import BodyText
+
+# Update issue body with review_pr field
+updated_body = update_plan_header_review_pr(issue.body, pr_number)
+github_issues.update_issue_body(
+    repo_root,
+    issue_number,
+    BodyText(content=updated_body),  # Wrapper prevents raw string bugs
+)
+```
+
+**Why BodyText**: Prevents accidentally passing unwrapped strings, enforces type safety at gateway boundary.
+
+### plan-review Label Usage
+
+Review PRs are tagged with `plan-review` label for identification:
+
+```python
+from erk.cli.constants import PLAN_REVIEW_LABEL
+
+# Add label after PR creation
+github.add_label_to_pr(repo_root, pr_number, PLAN_REVIEW_LABEL)
+```
+
+**Constant location**: `src/erk/cli/constants.py` (line 52)
+
+**Label purpose**:
+
+- Filter review PRs from implementation PRs in listings
+- Trigger CI workflow exclusions (e.g., skip full CI for review PRs)
+- Visual distinction in GitHub PR lists
+
+### Why Draft PRs?
+
+Review PRs are always created as drafts:
+
+```python
+pr_number = github.create_pr(
+    repo_root,
+    branch_name,
+    pr_title,
+    pr_body,
+    base="master",
+    draft=True,  # Always draft for review PRs
+)
+```
+
+**Reasons**:
+
+1. **Signal intent**: Clear visual indicator "not ready for merge"
+2. **Prevent accidental merge**: GitHub prevents merging draft PRs
+3. **Distinguish from implementation PRs**: Draft status helps identify purpose
+
+---
+
 ## Integration with Erk Commands
 
 ### `erk exec get-pr-for-plan`

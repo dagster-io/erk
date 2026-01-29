@@ -102,6 +102,81 @@ if pr_number is None:
         pr_number = github.find_pr_by_branch(branch)
 ```
 
+## Plan Review Branch Detection
+
+Plan review PRs use a distinct branch naming pattern for identification and discovery.
+
+### Branch Naming Pattern
+
+Review branches follow the pattern: `plan-review-{issue}-{MM-DD-HHMM}`
+
+**Examples**:
+
+- `plan-review-6214-01-15-1430`
+- `plan-review-42-01-28-0930`
+
+### Extraction Function
+
+Use `extract_plan_review_issue_number()` from `erk_shared.naming`:
+
+```python
+from erk_shared.naming import extract_plan_review_issue_number
+
+branch = "plan-review-6214-01-15-1430"
+issue_number = extract_plan_review_issue_number(branch)
+# Returns: 6214
+
+branch = "P2382-feature-branch"
+issue_number = extract_plan_review_issue_number(branch)
+# Returns: None (not a review branch)
+```
+
+**Source**: `packages/erk-shared/src/erk_shared/naming.py` (lines 396-421)
+
+**Pattern**: `^plan-review-(\d+)-`
+
+### When to Use
+
+Use review branch detection when:
+
+1. **Filtering plan review PRs**: Distinguish review PRs from implementation PRs
+2. **Correlating PRs with plan issues**: Extract issue number from branch name
+3. **Discovering active reviews**: Find which plans have active review PRs
+
+### Integration with Existing Discovery
+
+Plan review detection extends the discovery strategies:
+
+**Primary strategy**: Use `branch_name` from metadata
+
+- Implementation PRs: `P{issue}-{description}-{timestamp}`
+- Review PRs: `plan-review-{issue}-{timestamp}`
+
+**Detection**:
+
+```python
+# Check if branch is a review branch
+issue_number = extract_plan_review_issue_number(branch_name)
+
+if issue_number is not None:
+    # This is a review PR for the specified plan issue
+    pr_type = "review"
+else:
+    # This is an implementation PR
+    issue_number = extract_leading_issue_number(branch_name)
+    pr_type = "implementation"
+```
+
+### Discovery Workflow
+
+To find all PRs for a plan (including review PRs):
+
+1. **Query implementation PRs**: `gh pr list --search "head:P{issue}-"`
+2. **Query review PRs**: `gh pr list --search "head:plan-review-{issue}-"`
+3. **Combine results**: Categorize by PR type
+
+This enables commands like `/erk:review-plan` to check for existing review PRs before creating new ones.
+
 ## Related Documentation
 
 - [Session Management](../cli/session-management.md) - Session metadata structure

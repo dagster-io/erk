@@ -82,6 +82,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
 
+**CRITICAL: Before parsing branch names with regex** → Read [Naming Utilities Pattern](naming-utilities.md) first. Use functions from erk_shared.naming for standard patterns. Don't reinvent extraction logic.
+
 **CRITICAL: Before passing array or object variables to gh api graphql with -F and json.dumps()** → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Arrays and objects require special gh syntax: arrays use -f key[]=value1 -f key[]=value2, objects use -f key[subkey]=value. Using -F key=[...] or -F key={...} passes them as literal strings, not typed values.
 
 **CRITICAL: Before passing dry_run boolean flags through business logic function parameters** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands.
@@ -91,6 +93,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before raising exceptions for expected failure cases in business logic** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Use discriminated unions (T | ErrorType) instead. Exceptions are for truly exceptional conditions, not business logic failures.
 
 **CRITICAL: Before reading from or writing to ~/.claude/ paths using Path.home() directly** → Read [ClaudeInstallation Gateway](claude-installation-gateway.md) first. Use ClaudeInstallation gateway instead. All ~/.claude/ filesystem operations should go through this gateway for testability and abstraction.
+
+**CRITICAL: Before sanitizing strings for filesystem use** → Read [Naming Utilities Pattern](naming-utilities.md) first. Use sanitize_worktree_name() or sanitize_branch_component(). Don't write custom sanitization.
 
 **CRITICAL: Before using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
 

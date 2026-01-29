@@ -51,6 +51,7 @@
 - **[metadata-archival-pattern.md](metadata-archival-pattern.md)** — clearing a metadata field that should be auditable, adding companion fields for historical tracking, extending plan-header schema with lifecycle transitions
 - **[metadata-blocks.md](metadata-blocks.md)** — working with erk metadata in GitHub issues, parsing or extracting data from issue comments, creating new event types for issue tracking
 - **[multi-worktree-state.md](multi-worktree-state.md)** — checkout operations in multi-worktree repositories, landing PRs with worktree cleanup, understanding git single-checkout constraint, debugging checkout failures across worktrees
+- **[naming-utilities.md](naming-utilities.md)** — adding new branch name extraction functions, working with branch naming conventions, implementing pattern-based identification, sanitizing names for filesystem or git use
 - **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
 - **[optional-field-propagation.md](optional-field-propagation.md)** — transforming dataclass instances in pipelines, debugging null metadata fields, adding optional fields to dataclasses
 - **[parallel-agent-pattern.md](parallel-agent-pattern.md)** — launching multiple agents concurrently, using Task with run_in_background, collecting results with TaskOutput, running agents in parallel
@@ -65,6 +66,7 @@
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns
 - **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit
 - **[session-discovery.md](session-discovery.md)** — finding Claude Code sessions for a plan, implementing session lookup from GitHub issues, understanding dual-source discovery patterns, working with gist-based session storage, downloading remote sessions for learn workflow
+- **[skill-exec-decomposition.md](skill-exec-decomposition.md)** — creating a multi-step agent command, deciding whether to use exec commands or inline logic in a skill, understanding how skills compose exec commands, designing agent workflows with multiple operations
 - **[ssh-command-execution.md](ssh-command-execution.md)** — implementing remote command execution via SSH, working with codespace connections, debugging remote setup commands
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
 - **[symlink-validation-pattern.md](symlink-validation-pattern.md)** — Validating @ references in markdown files, Validating import paths in configuration, Any path validation where source files may be symlinks
