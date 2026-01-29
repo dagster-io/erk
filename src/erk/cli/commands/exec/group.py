@@ -88,6 +88,9 @@ from erk.cli.commands.exec.scripts.plan_save_to_issue import plan_save_to_issue
 from erk.cli.commands.exec.scripts.plan_submit_for_review import (
     plan_submit_for_review,
 )
+from erk.cli.commands.exec.scripts.plan_update_from_feedback import (
+    plan_update_from_feedback,
+)
 from erk.cli.commands.exec.scripts.plan_update_issue import plan_update_issue
 from erk.cli.commands.exec.scripts.post_or_update_pr_summary import (
     post_or_update_pr_summary,
@@ -200,6 +203,7 @@ exec_group.add_command(plan_create_review_branch, name="plan-create-review-branc
 exec_group.add_command(plan_create_review_pr, name="plan-create-review-pr")
 exec_group.add_command(plan_save_to_issue, name="plan-save-to-issue")
 exec_group.add_command(plan_submit_for_review, name="plan-submit-for-review")
+exec_group.add_command(plan_update_from_feedback, name="plan-update-from-feedback")
 exec_group.add_command(plan_update_issue, name="plan-update-issue")
 exec_group.add_command(post_or_update_pr_summary, name="post-or-update-pr-summary")
 exec_group.add_command(post_pr_inline_comment, name="post-pr-inline-comment")

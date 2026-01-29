@@ -57,6 +57,7 @@ Quick reference for all `erk exec` subcommands.
 | `plan-create-review-pr`           | Create a draft PR for plan review and update plan metadata.               |
 | `plan-save-to-issue`              | Extract plan from ~/.claude/plans/ and create GitHub issue.               |
 | `plan-submit-for-review`          | Fetch plan content from a GitHub issue for PR-based review workflow.      |
+| `plan-update-from-feedback`       | Update a plan issue's plan-body comment with new content.                 |
 | `plan-update-issue`               | Update an existing GitHub issue's plan comment with new content.          |
 | `post-or-update-pr-summary`       | Post or update a PR summary comment.                                      |
 | `post-pr-inline-comment`          | Post an inline review comment on a PR.                                    |
@@ -734,6 +735,25 @@ Fetch plan content from a GitHub issue for PR-based review workflow.
 | Name           | Required | Description |
 | -------------- | -------- | ----------- |
 | `ISSUE_NUMBER` | Yes      | -           |
+
+### plan-update-from-feedback
+
+Update a plan issue's plan-body comment with new content.
+
+**Usage:** `erk exec plan-update-from-feedback` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag             | Type | Required | Default        | Description                |
+| ---------------- | ---- | -------- | -------------- | -------------------------- |
+| `--plan-path`    | PATH | No       | Sentinel.UNSET | Path to plan markdown file |
+| `--plan-content` | TEXT | No       | Sentinel.UNSET | Plan content as string     |
 
 ### plan-update-issue
 
