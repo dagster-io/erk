@@ -162,7 +162,7 @@ Skills persist for the entire session. Once loaded, they remain in context.
 Before launching Plan or Explore agents, search for relevant documentation:
 
 1. **Scan the embedded index above** — match your task against the read-when conditions
-2. **Grep docs/learned/** — extract 2-3 keywords from your task and search:
+2. **Grep docs/learned/** — extract keywords from your task and search:
    - `Grep(pattern="keyword", path="docs/learned/", glob="*.md")`
    - Use multiple searches if the task spans domains (e.g., both "gateway" and "testing")
 3. **Read every matching doc** before writing code or launching Plan agents
