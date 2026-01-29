@@ -165,11 +165,20 @@ def plan_update_from_feedback(
         raise SystemExit(1)
 
     # Read content from file or use provided string
+    # Both-None and both-set cases already handled above with early return
     if plan_path is not None:
         content = Path(plan_path).read_text(encoding="utf-8")
-    else:
-        assert plan_content is not None  # validated by mutual exclusion above
+    elif plan_content is not None:
         content = plan_content
+    else:
+        # Unreachable: guarded by validation above, but satisfies type checker
+        error_response = PlanUpdateFromFeedbackError(
+            success=False,
+            error="invalid_input",
+            message="Must specify either --plan-path or --plan-content",
+        )
+        click.echo(json.dumps(asdict(error_response)))
+        raise SystemExit(1)
 
     try:
         result = _update_plan_from_feedback_impl(
