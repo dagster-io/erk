@@ -185,6 +185,161 @@ def fetch() -> Data | Error:
     ...
 ```
 
+## Exec Command Error Pattern
+
+Exec commands (scripts in `src/erk/cli/commands/exec/scripts/`) MUST use frozen dataclass discriminated unions for their JSON output. This ensures callers get a clear contract for success and error cases.
+
+### The Pattern
+
+Exec commands use a three-layer approach:
+
+1. **Custom exception type** for internal error propagation
+2. **Frozen dataclass discriminated unions** for the JSON contract (Success | Error)
+3. **CLI boundary conversion** that catches exceptions and converts to JSON
+
+### Implementation Template
+
+```python
+# 1. Define the success and error dataclasses
+@dataclass(frozen=True)
+class MyCommandSuccess:
+    """Success response for my-command."""
+    success: bool
+    result_field1: str
+    result_field2: int
+    # Include all relevant success data
+
+@dataclass(frozen=True)
+class MyCommandError:
+    """Error response for my-command."""
+    success: bool
+    error: str      # Machine-readable error type
+    message: str    # Human-readable error message
+
+# 2. Define custom exception for internal use
+class MyCommandException(Exception):
+    """Exception raised during my-command execution."""
+
+    def __init__(self, error: str, message: str) -> None:
+        super().__init__(message)
+        self.error = error
+        self.message = message
+
+# 3. Implementation function raises exceptions
+def _my_command_impl(...) -> MyCommandSuccess:
+    if something_wrong:
+        raise MyCommandException(
+            error="resource-not-found",
+            message="The resource could not be found"
+        )
+
+    return MyCommandSuccess(
+        success=True,
+        result_field1="value",
+        result_field2=42
+    )
+
+# 4. CLI command converts exceptions to JSON at boundary
+@click.command()
+def my_command(...) -> None:
+    try:
+        result = _my_command_impl(...)
+        click.echo(json.dumps(asdict(result)))
+    except MyCommandException as e:
+        error = MyCommandError(
+            success=False,
+            error=e.error,
+            message=e.message
+        )
+        click.echo(json.dumps(asdict(error)))
+        raise SystemExit(1) from None
+```
+
+### Why This Hybrid Approach?
+
+This pattern combines **exceptions internally** with **discriminated unions externally**:
+
+- **Internal exceptions**: Simplify control flow within implementation (can propagate through helper functions)
+- **External discriminated unions**: Provide clear JSON contract for callers (LBYL-compliant)
+- **CLI boundary conversion**: Single point where exceptions become JSON errors
+
+Benefits:
+
+1. **Internal code simplicity**: Helper functions can raise exceptions without needing to thread error types through
+2. **Clear JSON contract**: Callers get typed `Success | Error` discriminated union via JSON
+3. **LBYL for callers**: Calling code can check `success` field before accessing result fields
+4. **Type safety**: Both success and error cases are frozen dataclasses with explicit fields
+
+### Exemplar: plan_review_complete
+
+The `plan_review_complete.py` script demonstrates this pattern:
+
+**Success fields:**
+
+```python
+@dataclass(frozen=True)
+class PlanReviewCompleteSuccess:
+    success: bool
+    issue_number: int
+    pr_number: int
+    branch_name: str
+    branch_deleted: bool
+    local_branch_deleted: bool
+```
+
+**Error fields:**
+
+```python
+@dataclass(frozen=True)
+class PlanReviewCompleteError:
+    success: bool
+    error: str
+    message: str
+```
+
+**CLI boundary conversion** (lines 183-191):
+
+```python
+try:
+    result = _plan_review_complete_impl(...)
+    click.echo(json.dumps(asdict(result)))
+except PlanReviewCompleteException as e:
+    error_response = PlanReviewCompleteError(
+        success=False,
+        error=e.error,
+        message=e.message,
+    )
+    click.echo(json.dumps(asdict(error_response)))
+    raise SystemExit(1) from None
+```
+
+### Success Field Guidelines
+
+Success dataclasses should include all relevant data the caller needs:
+
+- **Resource identifiers**: issue_number, pr_number, branch_name
+- **Operation results**: branch_deleted, local_branch_deleted
+- **Generated content**: URLs, file paths, computed values
+
+The `success: bool` field allows generic checking before parsing specific fields.
+
+### Error Field Guidelines
+
+Error dataclasses should include:
+
+- **success: bool**: Always `False`, allows generic success checking
+- **error: str**: Machine-readable error type (e.g., "pr-not-found", "branch-exists")
+- **message: str**: Human-readable error message for display
+- **Optional context fields**: Additional data for specific error types
+
+### Related Exec Commands
+
+This pattern is used in:
+
+- `plan_review_complete.py` (lines 37-64, 183-191)
+- `plan_create_review_pr.py` (lines 32-57)
+- Other exec scripts that need structured JSON output
+
 ## Related Documentation
 
 - [Not-Found Sentinel Pattern](not-found-sentinel.md) - Specific pattern for lookup operations

@@ -1077,6 +1077,18 @@ A GitHub label added to issues created by consolidating multiple learn plans. Pr
 
 **Related**: [Consolidation Labels](planning/consolidation-labels.md), [Learn Plan](#learn-plan)
 
+### plan-review
+
+GitHub PR label indicating a plan review PR. Plan review PRs contain only markdown plan content (no code changes).
+
+**When applied:** Automatically by `erk exec plan-create-review-pr`
+
+**Effect:** CI workflows skip, code review discovery skips, `/erk:pr-address` switches to plan editing mode
+
+**Lifecycle:** Applied at PR creation → detected in Phase 0 → removed at review completion
+
+**Related:** See [Workflow Gating Patterns](ci/workflow-gating-patterns.md), [PR-Based Plan Review Workflow](planning/pr-review-workflow.md)
+
 ### pending-learn
 
 A marker state indicating a merged PR is queued for insight extraction. When `erk land` completes successfully (and the PR is not from a learn plan), it leaves the worktree in a "pending learn" state for later session analysis.

@@ -377,17 +377,63 @@ validation_results:
 expected_workflow: erk-impl
 ```
 
-### Phase 2b: Review (Optional)
+### Phase 2b: Plan Review (Optional)
 
-For plans requiring collaborative review or validation:
+For plans requiring collaborative review or validation before implementation:
 
-1. Create temporary PR with plan content using `erk exec plan-submit-for-review`
-2. Review and discuss in PR UI
-3. Incorporate feedback
-4. Delete review PR branch
-5. Continue to Phase 3: Submit for Implementation
+#### Review PR Creation
 
-See [PR-Based Plan Review Workflow](pr-review-workflow.md) for details.
+Create a plan review PR using `erk exec plan-create-review-pr`:
+
+1. Creates a temporary review branch from trunk
+2. Adds plan content as markdown file (`PLAN-REVIEW-{issue}.md`)
+3. Creates PR with `plan-review` label
+4. Updates plan-header metadata with `review_pr` field
+
+#### Review PR Fields in plan-header
+
+The plan-header metadata tracks review PR state:
+
+**`review_pr` field**: Active review PR number (set when review PR created, cleared when review completes)
+
+**`last_review_pr` field**: Archived value of previous review PR (for historical tracking)
+
+**State transition:**
+
+```
+Planning
+    ↓ (erk exec plan-create-review-pr)
+Review PR Open (review_pr: 123)
+    ↓ (address feedback, sync changes)
+Feedback Addressed
+    ↓ (erk exec plan-review-complete)
+Review Closed (review_pr: null, last_review_pr: 123)
+    ↓
+Ready for Implementation
+```
+
+See [Archive-on-Clear Metadata Pattern](../architecture/metadata-archival-pattern.md) for details on the review_pr/last_review_pr lifecycle.
+
+#### Feedback Workflow
+
+1. Reviewers add comments to plan review PR
+2. Agent addresses feedback using `/erk:pr-address` (automatically detects plan review mode via `plan-review` label)
+3. Agent edits local plan file (`PLAN-REVIEW-{issue}.md`)
+4. Agent syncs changes back to GitHub issue using `erk exec plan-update-from-feedback`
+5. Process repeats until review is complete
+
+See [Plan File Sync Pattern](../architecture/plan-file-sync-pattern.md) for sync mechanics.
+
+#### Review Completion
+
+When review is complete, run `erk exec plan-review-complete`:
+
+1. Clears `review_pr` field (archives to `last_review_pr`)
+2. Deletes review PR branch (both remote and local)
+3. Removes `plan-review` label from PR
+4. Returns control to normal plan lifecycle
+
+See [PR-Based Plan Review Workflow](pr-review-workflow.md) for complete workflow details.
 
 ---
 
