@@ -4,6 +4,8 @@
 # Planning Documentation
 
 - **[agent-delegation.md](agent-delegation.md)** — delegating to agents from commands, implementing command-agent pattern, workflow orchestration
+- **[agent-orchestration-safety.md](agent-orchestration-safety.md)** — launching subagents that produce large outputs, using Write tool before launching dependent agents, designing agent-to-agent data handoff
+- **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort for a plan or PR, auditing what changed in a PR before review, creating a consolidation plan from multiple PRs
 - **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, running /local:replan-learn-plans
 - **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing replan workflow, creating consolidated plans, understanding sparse plan prevention
 - **[context-preservation-patterns.md](context-preservation-patterns.md)** — writing implementation plans, creating consolidated plans, avoiding sparse plan content
@@ -28,6 +30,7 @@
 - **[remote-implementation-idempotency.md](remote-implementation-idempotency.md)** — implementing remote plan execution, debugging branch creation in remote workflows, working with worktree reuse patterns
 - **[scratch-storage.md](scratch-storage.md)** — writing temp files for AI workflows, passing files between processes, understanding scratch directory location
 - **[session-deduplication.md](session-deduplication.md)** — understanding duplicate plan prevention, working with exit-plan-mode hook, debugging duplicate issue creation
+- **[session-preprocessing.md](session-preprocessing.md)** — preprocessing sessions for learn workflow, understanding token budget for session analysis, working with session XML format
 - **[submit-branch-reuse.md](submit-branch-reuse.md)** — implementing erk plan submit, handling duplicate branches, resubmitting a plan issue
 - **[tripwire-promotion-workflow.md](tripwire-promotion-workflow.md)** — implementing tripwire candidate extraction, promoting tripwire candidates to frontmatter, understanding the learn-to-tripwire pipeline
 - **[tripwire-worthiness-criteria.md](tripwire-worthiness-criteria.md)** — evaluating whether an insight deserves tripwire status, reviewing [TRIPWIRE-CANDIDATE] items from learn workflow, understanding what makes something tripwire-worthy

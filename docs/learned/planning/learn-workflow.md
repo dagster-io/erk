@@ -9,6 +9,10 @@ tripwires:
     warning: "Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output."
   - action: "adding new agents to learn workflow"
     warning: "Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition."
+  - action: "running /erk:learn in CI"
+    warning: "CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section."
+  - action: "gathering sessions for preprocessing"
+    warning: "Sessions >100k characters MUST be preprocessed first. Use erk exec preprocess-session for ~99% token reduction."
 ---
 
 # Learn Workflow
