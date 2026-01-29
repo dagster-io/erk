@@ -270,6 +270,16 @@ When Phase 0 detects the `plan-review` label on the current PR, the entire flow 
 | Commit message    | "Address PR review comments" | "Incorporate review feedback"          |
 | Thread resolution | What code change was made    | How plan was updated                   |
 
+### Plan Review Phase 0.5: Save Current Branch
+
+Before processing feedback, record the current branch so we can return to it later:
+
+```bash
+git branch --show-current
+```
+
+Store the result as `ORIGINAL_BRANCH`.
+
 ### Plan Review Phase 1: Classify Feedback
 
 Same as standard Phase 1 — invoke `/pr-feedback-classifier` to fetch and classify all PR feedback.
@@ -354,6 +364,5 @@ Same as standard Phase 4 — re-invoke the classifier to verify all threads are 
 
 After all batches are complete and pushed:
 
-1. Record current branch: `git branch --show-current`
-2. Switch to master: `git checkout master`
-3. The plan-review branch work is complete — the user should not remain on it.
+1. Switch back to the branch saved in Phase 0.5: `git checkout <ORIGINAL_BRANCH>`
+2. The plan-review branch work is complete — the user should not remain on it.
