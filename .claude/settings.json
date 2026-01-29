@@ -30,6 +30,16 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ERK_HOOK_ID=pre-tool-use-hook erk exec pre-tool-use-hook",
+            "timeout": 30
+          }
+        ]
       }
     ],
     "PostToolUse": [
