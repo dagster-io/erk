@@ -51,7 +51,7 @@ erk exec post-pr-inline-comment \\
   --pr-number {pr_number} \\
   --path "path/to/file" \\
   --line LINE_NUMBER \\
-  --body "**{review_name}**: [pattern detected] - [why it's a problem] - [fix suggestion]"
+  --body "**{review_name}**: [pattern detected] - [rule/doc reference]"
 ```
 
 ## Step 5: Post Summary Comment
@@ -143,8 +143,7 @@ For EACH violation found, output to stdout in this format:
 - File: path/to/file.py
 - Line: LINE_NUMBER
 - Issue: [pattern detected]
-- Problem: [why it's a problem]
-- Fix: [suggestion to fix]
+- Rule: [rule/doc reference]
 
 ---
 ```

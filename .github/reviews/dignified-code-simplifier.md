@@ -3,7 +3,7 @@ name: Dignified Code Simplifier Review
 paths:
   - "**/*.py"
 marker: "<!-- dignified-code-simplifier-review -->"
-model: claude-sonnet-4-5
+model: claude-haiku-3-5
 timeout_minutes: 30
 allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
 enabled: true
@@ -19,7 +19,7 @@ This skill references `@.claude/skills/dignified-python/` which you should also 
 
 Apply the skill's refinement process to the PR diff, but instead of making changes:
 
-- Post inline comments with format: `**Code Simplification**: [suggestion]`
+- Post inline comments with format: `**Code Simplification**: [what was detected] - [which rule]`
 - Focus only on lines starting with `+` in the diff (new/modified code)
 
 ## Step 3: Summary Comment
