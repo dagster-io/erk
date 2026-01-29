@@ -134,9 +134,9 @@ def context_for_test(
 
     # Create repo context
     repo_dir = Path("/fake/erk/repos") / resolved_repo_root.name
-    github_repo_id = (
-        GitHubRepoId(owner=repo_info.owner, repo=repo_info.name) if repo_info is not None else None
-    )
+    github_repo_id: GitHubRepoId | None = None
+    if repo_info is not None:
+        github_repo_id = GitHubRepoId(owner=repo_info.owner, repo=repo_info.name)
     repo = RepoContext(
         root=resolved_repo_root,
         repo_name=resolved_repo_root.name,
