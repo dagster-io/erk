@@ -1,7 +1,8 @@
 ---
 title: FakeGitHubIssues Testing Patterns
 category: testing
-read_when: Writing tests that use FakeGitHubIssues
+read_when:
+  - "Writing tests that use FakeGitHubIssues"
 ---
 
 # FakeGitHubIssues Testing Patterns
