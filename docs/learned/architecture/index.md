@@ -17,6 +17,7 @@
 - **[cli-binary-ops-pattern.md](cli-binary-ops-pattern.md)** — wrapping external CLI binary, testing subprocess calls, creating fake for external tool
 - **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
+- **[context-injection-tiers.md](context-injection-tiers.md)** — designing a new hook or reminder system, understanding how dignified-python reminders work, deciding where to inject context for agent compliance
 - **[discriminated-union-error-handling.md](discriminated-union-error-handling.md)** — designing return types for operations that may fail, implementing T | ErrorType patterns, handling errors without exceptions, working with GeneratedPlan, PlanGenerationError, or similar types
 - **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir, detecting root worktree, detecting worktree location, adding composing template methods to ABC
 - **[erk-shared-package.md](erk-shared-package.md)** — deciding where to put new utilities, moving code between packages
@@ -47,14 +48,17 @@
 - **[learn-origin-tracking.md](learn-origin-tracking.md)** — understanding how learn PRs are identified, modifying erk land behavior, working with erk-skip-learn label
 - **[live-display-gateway.md](live-display-gateway.md)** — implementing live-updating terminal displays, working with TUI real-time updates, showing progress indicators
 - **[markers.md](markers.md)** — creating worktree state tracking, adding friction before destructive operations, implementing pending learn workflow
+- **[metadata-archival-pattern.md](metadata-archival-pattern.md)** — clearing a metadata field that should be auditable, adding companion fields for historical tracking, extending plan-header schema with lifecycle transitions
 - **[metadata-blocks.md](metadata-blocks.md)** — working with erk metadata in GitHub issues, parsing or extracting data from issue comments, creating new event types for issue tracking
 - **[multi-worktree-state.md](multi-worktree-state.md)** — checkout operations in multi-worktree repositories, landing PRs with worktree cleanup, understanding git single-checkout constraint, debugging checkout failures across worktrees
 - **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
 - **[optional-field-propagation.md](optional-field-propagation.md)** — transforming dataclass instances in pipelines, debugging null metadata fields, adding optional fields to dataclasses
 - **[parallel-agent-pattern.md](parallel-agent-pattern.md)** — launching multiple agents concurrently, using Task with run_in_background, collecting results with TaskOutput, running agents in parallel
 - **[pathlib-symlinks.md](pathlib-symlinks.md)** — Writing file validation code, Debugging unexpected path resolution behavior, Working with symlinked configuration files
+- **[phase-zero-detection-pattern.md](phase-zero-detection-pattern.md)** — adding conditional execution to phase-based commands, implementing mode variants in CLI commands, modifying pr-address or similar multi-phase workflows
 - **[pipeline-transformation-patterns.md](pipeline-transformation-patterns.md)** — designing data transformation pipelines, deciding when to enrich vs filter data, troubleshooting lost metadata in pipelines
 - **[plan-context-integration.md](plan-context-integration.md)** — using PlanContextProvider for PR generation, extracting plan content from branches, understanding how PR descriptions get plan context
+- **[plan-file-sync-pattern.md](plan-file-sync-pattern.md)** — editing PLAN-REVIEW files locally, syncing local plan changes to GitHub issues, working with plan feedback workflows
 - **[pr-finalization-paths.md](pr-finalization-paths.md)** — debugging PR body content or issue closing, understanding local vs remote PR submission, working with 'Closes #N' in PRs
 - **[pre-destruction-capture.md](pre-destruction-capture.md)** — implementing operations that destroy or transform data, designing pipelines with data capture requirements, working with git squash, rebase, or other destructive operations
 - **[prompt-executor-gateway.md](prompt-executor-gateway.md)** — executing LLM prompts from Python code, testing code that uses Claude CLI, implementing single-shot prompt execution, working with PromptExecutor or FakePromptExecutor

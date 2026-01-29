@@ -102,7 +102,34 @@ Claude Code provides 10 lifecycle events for hook execution:
 
 **Most commonly used**: `UserPromptSubmit` (reminders), `PreToolUse` (validation), `SessionStart` (setup)
 
-### Matchers
+### Matcher Syntax Reference
+
+Matchers use **regex patterns** to target specific tools or events:
+
+| Pattern        | Matches                     | Example Use Case        |
+| -------------- | --------------------------- | ----------------------- |
+| `Write`        | Only Write tool             | File creation guard     |
+| `Edit`         | Only Edit tool              | File modification guard |
+| `Write\|Edit`  | Write OR Edit tools         | Python file detection   |
+| `Bash`         | Only Bash tool              | Command validation      |
+| `ExitPlanMode` | Only ExitPlanMode tool      | Plan save workflow      |
+| `.*`           | All tools (wildcard)        | Universal logging       |
+| `*`            | All events (event wildcard) | Per-prompt reminders    |
+
+The `|` character is regex OR. To match a literal pipe in a tool name, escape with `\\|`.
+
+**Example from erk's settings.json:**
+
+```json
+{
+  "matcher": "Write|Edit",
+  "hooks": [{ "type": "command", "command": "erk exec pre-tool-use-hook" }]
+}
+```
+
+This fires the hook before both Write and Edit tool calls.
+
+### Matchers (Detailed)
 
 Matchers determine when a hook fires. Three types:
 

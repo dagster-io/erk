@@ -11,6 +11,7 @@
 - **[exec-script-testing.md](exec-script-testing.md)** — testing exec CLI commands, writing integration tests for scripts, debugging 'Context not initialized' errors in tests, debugging flaky tests in parallel execution
 - **[fake-github-testing.md](fake-github-testing.md)** — Writing tests that use FakeGitHubIssues
 - **[frozen-dataclass-test-doubles.md](frozen-dataclass-test-doubles.md)** — implementing a fake for an ABC interface, adding mutation tracking to a test double, understanding the frozen dataclass with mutable internals pattern, writing tests that assert on method call parameters
+- **[hook-testing.md](hook-testing.md)** — writing tests for a PreToolUse hook, testing hooks that read from stdin, testing hook exit code behavior
 - **[import-conflict-resolution.md](import-conflict-resolution.md)** — resolving merge conflicts during rebase, fixing import conflicts after consolidation, rebasing after shared module changes
 - **[integration-test-speed.md](integration-test-speed.md)** — integration test is slow, test takes too long, pytest --durations shows slow test
 - **[integration-testing-patterns.md](integration-testing-patterns.md)** — writing integration tests that interact with filesystem, testing time-dependent operations, handling mtime resolution in tests

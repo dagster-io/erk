@@ -77,6 +77,31 @@ Use lowercase snake_case error codes that are:
 - Descriptive (e.g., `missing_erk_plan_label` not `invalid_input`)
 - Actionable (users understand what went wrong)
 
+## Parameterized URL Construction
+
+Exec scripts that construct GitHub URLs (issue links, PR links) must use `get_repo_identifier(ctx)` instead of hardcoding repository names.
+
+**Pattern**:
+
+```python
+from erk_shared.context.helpers import get_repo_identifier
+
+repo_identifier = get_repo_identifier(ctx)
+if repo_identifier is None:
+    # Handle missing repo — return error result
+    ...
+
+url = f"https://github.com/{repo_identifier}/issues/{issue_number}"
+```
+
+**LBYL**: Always check `repo_identifier is not None` before constructing URLs. The function returns `None` when the repository cannot be determined from git remote.
+
+**Scripts using this pattern**:
+
+- `plan_create_review_pr.py` — Constructs PR and issue URLs for review workflow
+- `plan_save_to_issue.py` — Constructs source repo reference for cross-repo plans
+- `run_review.py` — Gets repository name for review context
+
 ## Reference Implementations
 
 - `plan_submit_for_review.py` - Plan content extraction

@@ -12,6 +12,12 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+**CRITICAL: Before Archive value to 'last\_' variant BEFORE clearing** → Read [Archive-on-Clear Metadata Pattern](metadata-archival-pattern.md) first. Order matters — clear-then-archive loses the value silently
+
+**CRITICAL: Before Call plan-update-from-feedback after editing local plan files** → Read [Plan File Sync Pattern](plan-file-sync-pattern.md) first. Sync is NOT automatic — GitHub issue will show stale content without explicit sync
+
+**CRITICAL: Before Detect mode in Phase 0 before any other phases execute** → Read [Phase 0 Detection Pattern](phase-zero-detection-pattern.md) first. Late detection leads to starting wrong mode then discovering the error
+
 **CRITICAL: Before GraphiteBranchManager.create_branch() without explicit checkout** → Read [BranchManager Abstraction](branch-manager-abstraction.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
 
 **CRITICAL: Before adding a new method to Git ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
@@ -57,6 +63,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before constructing gist raw URLs with hardcoded filenames** → Read [GitHub Gist URL Patterns](github-gist-api.md) first. Use /raw/ without filename - GitHub redirects to first file.
 
 **CRITICAL: Before creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
+
+**CRITICAL: Before designing a new hook or reminder system** → Read [Three-Tier Context Injection Architecture](context-injection-tiers.md) first. Consider the three-tier context architecture. Read docs/learned/architecture/context-injection-tiers.md first.
 
 **CRITICAL: Before detecting current worktree using path comparisons on cwd** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use git.get_repository_root(cwd) to get the worktree root, then match exactly against known paths. Path comparisons with .exists()/.resolve()/is_relative_to() are fragile.
 
