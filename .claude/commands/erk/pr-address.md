@@ -27,6 +27,15 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 >
 > See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
 
+### Phase 0: Plan Review Detection
+
+Before classifying feedback, determine if this is a plan review PR:
+
+1. Get the current PR number: `gh pr view --json number -q .number`
+2. Check if the PR has the `plan-review` label: `gh pr view --json labels -q '.labels[].name'` and check for `plan-review` in the output
+3. If YES: extract the plan issue number from the PR body (which contains `**Plan Issue:** #NNN`): `gh pr view --json body -q .body` and parse the issue number from the `**Plan Issue:** #NNN` line. Enter **Plan Review Mode** (see [Plan Review Mode](#plan-review-mode) below). Skip normal Phases 1-4.
+4. If NO: proceed with standard code review flow (Phase 1)
+
 ### Phase 1: Classify Feedback
 
 Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback with context isolation:
@@ -243,3 +252,100 @@ See `pr-operations` skill for the complete table of common mistakes and correct 
 **GitHub API error:** Display error and suggest checking `gh auth status` and repository access
 
 **CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+
+---
+
+## Plan Review Mode
+
+When Phase 0 detects the `plan-review` label on the current PR, the entire flow switches to plan review mode. This mode edits plan text instead of source code.
+
+### Key Differences: Plan Mode vs Code Mode
+
+| Aspect            | Code Mode                    | Plan Mode                              |
+| ----------------- | ---------------------------- | -------------------------------------- |
+| File edited       | Source code files            | `PLAN-REVIEW-{issue}.md`               |
+| What changes      | Code implementation          | Plan text/structure                    |
+| CI checks         | Run tests                    | Skip (no code to test)                 |
+| Extra step        | None                         | `plan-update-issue` to sync plan issue |
+| Commit message    | "Address PR review comments" | "Incorporate review feedback"          |
+| Thread resolution | What code change was made    | How plan was updated                   |
+
+### Plan Review Phase 1: Classify Feedback
+
+Same as standard Phase 1 — invoke `/pr-feedback-classifier` to fetch and classify all PR feedback.
+
+### Plan Review Phase 2: Display Batched Plan
+
+Same as standard Phase 2, but note at the top of the display:
+
+```
+**Plan Review Mode** — changes apply to plan text, not source code.
+```
+
+### Plan Review Phase 3: Execute by Batch (Plan Mode)
+
+For each batch:
+
+#### Step 1: Edit the Plan
+
+1. Read `PLAN-REVIEW-{issue}.md` from the repo root
+2. For each comment in the batch, incorporate reviewer feedback by editing the plan markdown text
+   - Restructure sections, add detail, clarify language, update design decisions as requested
+   - If feedback applies to implementation (not the plan itself), add a note to the relevant plan section rather than making structural changes
+3. Write the updated `PLAN-REVIEW-{issue}.md`
+
+#### Step 2: Sync Plan to GitHub Issue
+
+```bash
+erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
+```
+
+#### Step 3: Commit and Push
+
+```bash
+git add PLAN-REVIEW-{issue}.md
+git commit -m "Incorporate review feedback (batch N/M)
+
+- <summary of change 1>
+- <summary of change 2>
+..."
+git push
+```
+
+#### Step 4: Resolve Threads
+
+Resolve each thread using the appropriate command (see `pr-operations` skill):
+
+**For review threads** (`resolve-review-thread`):
+
+Use a message like:
+
+```
+Incorporated feedback into plan. Updated the relevant section in PLAN-REVIEW-{issue}.md.
+
+Summary of change: {brief description of how the plan text was modified}
+```
+
+**For discussion comments** (`reply-to-discussion-comment`):
+
+Use a message like:
+
+```
+Addressed in plan update. {description of how feedback was incorporated or why it was noted for implementation phase}
+```
+
+**For feedback that applies to implementation, not the plan itself:**
+
+Use a message like:
+
+```
+Noted for implementation phase. This feedback applies to the code implementation rather than the plan structure — it will be addressed when implementing the plan.
+```
+
+#### Step 5: Report Progress
+
+Same as standard Phase 3 Step 5 — report what was addressed and what remains.
+
+### Plan Review Phase 4: Final Verification
+
+Same as standard Phase 4 — re-invoke the classifier to verify all threads are resolved. Report final summary.
