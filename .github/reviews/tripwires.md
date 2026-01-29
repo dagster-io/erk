@@ -5,7 +5,7 @@ paths:
   - "**/*.sh"
   - ".claude/**/*.md"
 marker: "<!-- tripwires-review -->"
-model: claude-sonnet-4-5
+model: claude-haiku-4-5
 timeout_minutes: 30
 allowed_tools: "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Read(*)"
 enabled: true
@@ -77,7 +77,7 @@ If the code matches an exception, it is NOT a violation. Do not flag it.
 When posting inline comments for violations, use this format:
 
 ```
-**Tripwire**: [pattern detected] - [why it's a problem] - [fix suggestion]
+**Tripwire**: [pattern detected] - [which tripwire/doc triggered]
 ```
 
 ## Step 5: Summary Comment Format

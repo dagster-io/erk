@@ -3,7 +3,7 @@ name: Dignified Python Review
 paths:
   - "**/*.py"
 marker: "<!-- dignified-python-review -->"
-model: claude-sonnet-4-5
+model: claude-haiku-4-5
 timeout_minutes: 30
 allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
 enabled: true
@@ -97,7 +97,7 @@ If the code matches a documented exception, it is NOT a violation. Do not flag i
 When posting inline comments for violations, use this format:
 
 ```
-**Dignified Python**: [rule violated] - [fix suggestion]
+**Dignified Python**: [rule violated] - [code location detail]
 ```
 
 ## Step 5: Summary Comment Format
