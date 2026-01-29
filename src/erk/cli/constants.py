@@ -47,8 +47,8 @@ DOCS_EXTRACTED_LABEL_COLOR = "5319E7"  # Purple
 
 # Learn plan label (for plans that learn from sessions)
 ERK_LEARN_LABEL = "erk-learn"
+ERK_LEARN_LABEL_DESCRIPTION = "Documentation learning plan"
+ERK_LEARN_LABEL_COLOR = "D93F0B"  # Orange-red
 
 # Plan review PR label
 PLAN_REVIEW_LABEL = "plan-review"
-ERK_LEARN_LABEL_DESCRIPTION = "Documentation learning plan"
-ERK_LEARN_LABEL_COLOR = "D93F0B"  # Orange-red
