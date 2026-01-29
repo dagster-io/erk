@@ -30,6 +30,7 @@ from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
     prompt_objective_update,
 )
+from erk.cli.commands.review_pr_cleanup import cleanup_review_pr
 from erk.cli.commands.slot.common import (
     extract_slot_number,
     find_branch_assignment,
@@ -1692,6 +1693,15 @@ def _execute_land(
                 candidates=candidates,
                 force=True,  # Execute mode auto-promotes
             )
+
+    # Step 2.8: Close review PR if plan has one
+    if plan_issue_number is not None:
+        cleanup_review_pr(
+            ctx,
+            repo_root=main_repo_root,
+            issue_number=plan_issue_number,
+            reason=f"the plan (issue #{plan_issue_number}) was implemented and landed",
+        )
 
     # Step 3: Cleanup (delete branch, unassign slot)
     # Note: Navigation is handled by the activation script's cd command

@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.review_pr_cleanup import cleanup_review_pr
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
@@ -55,6 +56,14 @@ def close_plan(ctx: ErkContext, identifier: str) -> None:
         _plan = ctx.plan_store.get_plan(repo_root, str(number))
     except RuntimeError as e:
         raise click.ClickException(str(e)) from e
+
+    # Close review PR before closing linked PRs
+    cleanup_review_pr(
+        ctx,
+        repo_root=repo_root,
+        issue_number=number,
+        reason=f"the plan (issue #{number}) was closed",
+    )
 
     # Close linked PRs before closing the plan
     closed_prs = _close_linked_prs(ctx, repo_root, number)

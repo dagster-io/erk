@@ -243,6 +243,93 @@ def test_close_plan_invalid_url_format() -> None:
         assert "https://github.com/owner/repo/issues/456" in result.output
 
 
+def _make_plan_header_body(
+    *,
+    review_pr: int | None,
+) -> str:
+    """Create a test issue body with plan-header metadata block including review_pr."""
+    review_pr_line = f"review_pr: {review_pr}" if review_pr is not None else "review_pr: null"
+
+    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2025-11-25T14:37:43.513418+00:00'
+created_by: testuser
+plan_comment_id: null
+{review_pr_line}
+last_dispatched_run_id: null
+last_dispatched_at: null
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+## Plan Content
+
+Some plan body text."""
+
+
+def test_close_plan_with_review_pr_adds_comment() -> None:
+    """Plan has review_pr; verify comment added to review PR before closure."""
+    # Arrange
+    body_with_review_pr = _make_plan_header_body(review_pr=55)
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="Test Issue",
+        body=body_with_review_pr,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    # Review PR entry (PRs are issues in GitHub's API)
+    review_pr_issue = IssueInfo(
+        number=55,
+        title="Review: Plan #42",
+        body="Review PR body",
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/55",
+        labels=[],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-author",
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        github = FakeGitHub()
+        fake_issues = FakeGitHubIssues(
+            issues={42: _make_issue_info(plan_issue), 55: review_pr_issue},
+        )
+        store = GitHubPlanStore(fake_issues)
+        ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=fake_issues)
+
+        # Act
+        result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        # Comment was added to review PR #55
+        assert any(
+            num == 55 and "automatically closed" in comment_body
+            for num, comment_body, _ in fake_issues.added_comments
+        )
+        # Review PR #55 was closed
+        assert 55 in github.closed_prs
+
+
 def test_close_plan_reports_closed_prs() -> None:
     """Test closing a plan reports the closed PRs in output."""
     # Arrange
