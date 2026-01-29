@@ -7,6 +7,7 @@ When a plan is implemented (landed) or explicitly closed, automatically close an
 ## Approach
 
 Create a shared helper function `cleanup_review_pr` and call it from two trigger points:
+
 1. `erk plan close` — before closing linked PRs
 2. `erk land` execute path — after merge, alongside other plan cleanup
 
@@ -29,6 +30,7 @@ def cleanup_review_pr(
 ```
 
 Logic:
+
 1. LBYL: Check issue exists, has plan-header block, has non-null `review_pr`
 2. Add comment to review PR: `"This review PR was automatically closed because {reason}."`
 3. Close the review PR via `ctx.github.close_pr`
@@ -76,6 +78,7 @@ if plan_issue_number is not None:
 ### 4. Tests
 
 **`tests/commands/plan/test_review_pr_cleanup.py`** — unit tests for the helper:
+
 - `test_cleanup_review_pr_closes_and_comments()` — happy path: comment added, PR closed, metadata cleared
 - `test_cleanup_review_pr_no_review_pr()` — review_pr is None → no-op
 - `test_cleanup_review_pr_no_plan_header()` — no plan-header block → no-op
@@ -83,17 +86,18 @@ if plan_issue_number is not None:
 - `test_cleanup_review_pr_close_failure_preserves_metadata()` — close_pr fails → metadata NOT cleared
 
 **Update `tests/commands/plan/test_close.py`** — add test:
+
 - `test_close_plan_with_review_pr_adds_comment()` — plan has review_pr; verify comment added to review PR before closure
 
 ## Files to Modify
 
-| File | Action |
-|------|--------|
-| `src/erk/cli/commands/review_pr_cleanup.py` | **Create** — shared helper |
-| `src/erk/cli/commands/plan/close_cmd.py` | **Modify** — add cleanup call |
-| `src/erk/cli/commands/land_cmd.py` | **Modify** — add cleanup call in `_execute_land` |
-| `tests/commands/plan/test_review_pr_cleanup.py` | **Create** — helper unit tests |
-| `tests/commands/plan/test_close.py` | **Modify** — add review PR test |
+| File                                            | Action                                           |
+| ----------------------------------------------- | ------------------------------------------------ |
+| `src/erk/cli/commands/review_pr_cleanup.py`     | **Create** — shared helper                       |
+| `src/erk/cli/commands/plan/close_cmd.py`        | **Modify** — add cleanup call                    |
+| `src/erk/cli/commands/land_cmd.py`              | **Modify** — add cleanup call in `_execute_land` |
+| `tests/commands/plan/test_review_pr_cleanup.py` | **Create** — helper unit tests                   |
+| `tests/commands/plan/test_close.py`             | **Modify** — add review PR test                  |
 
 ## Design Decisions
 
