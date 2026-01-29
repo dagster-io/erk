@@ -56,6 +56,6 @@ The file already uses `Ensure` in 5 places (lines 27, 70-73, 80, 114-115). There
 ## Verification
 
 1. Run `ruff` and `ty` to check for lint/type errors
-2. Run existing tests for `move_cmd` (search for test file)
+2. Run the entire test suite to catch any regressions
 3. Verify: `grep -n "raise SystemExit(1)" src/erk/cli/commands/stack/move_cmd.py` shows only 1 remaining (the fallthrough on line 83-84)
 4. Verify: no changes to non-error `user_output` calls (progress messages, success messages, swap confirmation)
