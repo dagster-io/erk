@@ -5,6 +5,7 @@
 Vercel's evals showed a compressed docs index (40KB → 8KB) in AGENTS.md achieved 100% agent pass rate. The key: agents need to know WHAT EXISTS and WHERE TO FIND IT, not read human-oriented prose.
 
 Erk's `docs/learned/index.md` is embedded in AGENTS.md via `@` include (~3.2KB ambient context). It currently contains:
+
 - Human-contributor instructions ("Add docs here for...") irrelevant to agents
 - 13 of 25 categories with NO description (zero matching signal)
 - A preamble that duplicates AGENTS.md's "Documentation-First Discovery" section
@@ -60,6 +61,7 @@ CATEGORY_KEYWORDS: dict[str, str] = {
 **File:** `src/erk/agent_docs/operations.py` (lines 518-567)
 
 Two changes:
+
 - **Remove preamble**: Drop the two lines "Before starting work, scan the read-when conditions below." and "If your current task matches, read the linked document **before writing code**." — this instruction now lives in AGENTS.md's "Documentation-First Discovery" section.
 - **Change title**: "Agent Documentation" → "Agent Documentation Index"
 - **Use `CATEGORY_KEYWORDS`**: Replace `CATEGORY_DESCRIPTIONS.get(category.name)` with `CATEGORY_KEYWORDS.get(category.name)`. Since every category now has keywords, the `if description` / `else` branch can use the same pattern (always include keywords if present).
@@ -77,6 +79,7 @@ Run `erk docs sync` to regenerate `docs/learned/index.md` and `docs/learned/trip
 ## Expected Output
 
 **Before:**
+
 ```markdown
 # Agent Documentation
 
@@ -91,6 +94,7 @@ If your current task matches, read the linked document **before writing code**.
 ```
 
 **After:**
+
 ```markdown
 # Agent Documentation Index
 
