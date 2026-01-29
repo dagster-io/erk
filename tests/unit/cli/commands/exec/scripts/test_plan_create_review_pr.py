@@ -129,7 +129,7 @@ def test_plan_create_review_pr_success(tmp_path: Path) -> None:
     assert pr[4] is True  # draft=True
 
     # Verify plan-review label was added
-    assert (999, "plan-review") in fake_gh.added_labels
+    assert (999, "erk-plan-review") in fake_gh.added_labels
 
     # Verify issue body was updated with review_pr field
     updated_issue = fake_gh_issues.get_issue(repo_root, issue_number)

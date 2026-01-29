@@ -49,7 +49,7 @@ DOCS_EXTRACTED_LABEL_COLOR = "5319E7"  # Purple
 ERK_LEARN_LABEL = "erk-learn"
 
 # Plan review PR label and title prefix
-PLAN_REVIEW_LABEL = "plan-review"
+PLAN_REVIEW_LABEL = "erk-plan-review"
 ERK_PLAN_REVIEW_TITLE_PREFIX = "[erk-plan-review] "
 ERK_LEARN_LABEL_DESCRIPTION = "Documentation learning plan"
 ERK_LEARN_LABEL_COLOR = "D93F0B"  # Orange-red
