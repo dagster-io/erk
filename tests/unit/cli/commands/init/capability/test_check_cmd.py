@@ -1,4 +1,4 @@
-"""Tests for erk init capability check command."""
+"""Tests for erk init capability list command."""
 
 from click.testing import CliRunner
 
@@ -10,7 +10,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def test_capability_check_shows_not_installed() -> None:
-    """Test that check shows capability as not installed when directory doesn't exist."""
+    """Test that list shows capability as not installed when directory doesn't exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -26,7 +26,7 @@ def test_capability_check_shows_not_installed() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "capability", "check"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "capability", "list"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Should show learned-docs as not installed (○)
@@ -34,7 +34,7 @@ def test_capability_check_shows_not_installed() -> None:
 
 
 def test_capability_check_shows_installed() -> None:
-    """Test that check shows capability as installed when directory exists."""
+    """Test that list shows capability as installed when directory exists."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Create docs/learned/ to make capability appear installed
@@ -53,7 +53,7 @@ def test_capability_check_shows_installed() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "capability", "check"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "capability", "list"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         assert "learned-docs" in result.output
@@ -76,7 +76,7 @@ def test_capability_check_specific_name() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "capability", "check", "learned-docs"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "capability", "list", "learned-docs"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         assert "learned-docs" in result.output
@@ -100,7 +100,7 @@ def test_capability_check_unknown_name_fails() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "capability", "check", "nonexistent"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "capability", "list", "nonexistent"], obj=test_ctx)
 
         assert result.exit_code == 1
         assert "Unknown capability: nonexistent" in result.output
@@ -108,7 +108,7 @@ def test_capability_check_unknown_name_fails() -> None:
 
 
 def test_capability_check_outside_repo_shows_unknown_for_project_caps() -> None:
-    """Test that check command outside git repo shows '?' for project capabilities."""
+    """Test that list command outside git repo shows '?' for project capabilities."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # FakeGit returns None for git_common_dir when not in a repo
@@ -125,7 +125,7 @@ def test_capability_check_outside_repo_shows_unknown_for_project_caps() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "capability", "check"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "capability", "list"], obj=test_ctx)
 
         # Should succeed because user-level capabilities can still be checked
         assert result.exit_code == 0, result.output
@@ -155,7 +155,7 @@ def test_capability_check_specific_project_cap_requires_repo() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "capability", "check", "learned-docs"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "capability", "list", "learned-docs"], obj=test_ctx)
 
         assert result.exit_code == 1
         assert "project-level capability" in result.output
@@ -183,7 +183,7 @@ def test_capability_check_shows_artifacts_when_installed() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "capability", "check", "learned-docs"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "capability", "list", "learned-docs"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Should show installation check description
@@ -214,7 +214,7 @@ def test_capability_check_shows_artifacts_when_not_installed() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "capability", "check", "learned-docs"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "capability", "list", "learned-docs"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Should show installation check description
@@ -243,7 +243,7 @@ def test_capability_check_shows_installation_check_description() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "capability", "check", "learned-docs"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "capability", "list", "learned-docs"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Should show the installation check description

@@ -31,14 +31,15 @@ def test_capability_list_shows_available_capabilities() -> None:
         result = runner.invoke(cli, ["init", "capability", "list"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        # Check section headers
-        assert "Project capabilities:" in result.output
-        assert "User capabilities:" in result.output
-        # Check a project capability
+        # Check main header
+        assert "Erk capabilities:" in result.output
+        # Check a project capability with scope label
         assert "learned-docs" in result.output
+        assert "[project]" in result.output
         assert "Autolearning documentation system" in result.output
-        # Check a user capability
+        # Check a user capability with scope label
         assert "statusline" in result.output
+        assert "[user]" in result.output
 
 
 def test_capability_list_works_without_repo() -> None:
@@ -86,32 +87,30 @@ def test_capability_list_sorts_alphabetically() -> None:
 
         assert result.exit_code == 0, result.output
 
-        # Extract capability names from output (they appear after "  " indentation)
-        # Format is "  capability-name          description"
-        capability_pattern = re.compile(r"^\s{2}(\S+)\s+", re.MULTILINE)
+        # Extract capability names from output
+        # Format is "  ✓/○ capability-name [scope] description"
+        capability_pattern = re.compile(r"^\s+[✓○?]\s+(\S+)\s+\[(\w+)\]", re.MULTILINE)
 
-        # Split into project and user sections based on headers
-        output_lines = result.output.split("\n")
-        project_section: list[str] = []
-        user_section: list[str] = []
-        current_section: list[str] | None = None
+        # Collect capabilities by scope
+        project_capabilities: list[str] = []
+        user_capabilities: list[str] = []
 
-        for line in output_lines:
-            if "Project capabilities:" in line:
-                current_section = project_section
-            elif "User capabilities:" in line:
-                current_section = user_section
-            elif current_section is not None and line.strip():
-                match = capability_pattern.match(line)
-                if match:
-                    current_section.append(match.group(1))
+        for match in capability_pattern.finditer(result.output):
+            cap_name = match.group(1)
+            scope = match.group(2)
+            if scope == "project":
+                project_capabilities.append(cap_name)
+            elif scope == "user":
+                user_capabilities.append(cap_name)
 
-        # Verify each section is sorted alphabetically
-        assert project_section == sorted(project_section), (
-            f"Project capabilities not sorted: {project_section}"
+        # Verify each scope is sorted alphabetically
+        assert project_capabilities == sorted(project_capabilities), (
+            f"Project capabilities not sorted: {project_capabilities}"
         )
-        assert user_section == sorted(user_section), f"User capabilities not sorted: {user_section}"
+        assert user_capabilities == sorted(user_capabilities), (
+            f"User capabilities not sorted: {user_capabilities}"
+        )
 
-        # Verify we found capabilities in both sections
-        assert len(project_section) > 0, "No project capabilities found"
-        assert len(user_section) > 0, "No user capabilities found"
+        # Verify we found capabilities in both scopes
+        assert len(project_capabilities) > 0, "No project capabilities found"
+        assert len(user_capabilities) > 0, "No user capabilities found"
