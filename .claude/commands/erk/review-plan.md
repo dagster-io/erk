@@ -40,6 +40,19 @@ Parse the JSON response:
   - Exit without creating a new PR
 - If `success: false` or `value` is null: No existing review, continue
 
+Then check for a previous completed review:
+
+```bash
+erk exec get-plan-metadata <issue> last_review_pr
+```
+
+- If `success: true` and `value` is not null: A previous review was completed
+  - Display warning: "Plan #<issue> was previously reviewed via PR #<value>"
+  - Use AskUserQuestion to ask the user: "Create a new review PR anyway?"
+    - Options: "Yes, create new review" / "No, cancel"
+  - If user chooses to cancel, exit without creating a new PR
+  - If user confirms, continue to Step 3
+
 ### Step 3: Create Review Branch
 
 ```bash
