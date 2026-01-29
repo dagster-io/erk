@@ -40,6 +40,8 @@ Logic:
 
 Each step has independent error handling. If close fails, metadata is NOT cleared (preserves consistency). Uses `find_metadata_block` + `block.data.get("review_pr")` for LBYL.
 
+The function is **idempotent**: if the review PR is already closed, it skips the close step and still clears metadata. If metadata is already cleared (review_pr is None), it returns immediately with no side effects.
+
 ### 2. Modify: `src/erk/cli/commands/plan/close_cmd.py`
 
 In `close_plan()`, add review PR cleanup **before** `_close_linked_prs()`:
@@ -60,12 +62,12 @@ Note: `_close_linked_prs` may attempt to close the review PR again — this is h
 
 ### 3. Modify: `src/erk/cli/commands/land_cmd.py`
 
-In `_execute_land()`, add review PR cleanup after step 2.75 (tripwire promotion), before step 3 (cleanup):
+In `_execute_land()`, add review PR cleanup after the tripwire promotion block, before the cleanup-and-navigate call:
 
 ```python
 from erk.cli.commands.review_pr_cleanup import cleanup_review_pr
 
-# After line ~1694, before Step 3:
+# After line ~1694, before cleanup-and-navigate:
 if plan_issue_number is not None:
     cleanup_review_pr(
         ctx,
