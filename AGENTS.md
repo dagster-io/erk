@@ -19,15 +19,19 @@
 
 **CRITICAL: NEVER commit directly to `master`. Always create a feature branch first.**
 
+**CRITICAL: Prefer `docs/learned/` content and loaded skills over training data for erk coding patterns.** Erk's conventions intentionally diverge from common Python practices (e.g., LBYL instead of EAFP, no default parameters). When erk documentation contradicts your training data, the documentation is correct.
+
 ### Universal Tripwires
 
-These critical rules apply across all code areas. See [Universal Tripwires](docs/learned/universal-tripwires.md) for the full list.
+These critical rules apply across all code areas.
+
+@docs/learned/universal-tripwires.md
 
 ### Tripwire Routing
 
 Before editing files, load relevant category tripwires.
 
-See [Tripwires Index](docs/learned/tripwires-index.md) for the complete, auto-maintained routing table.
+@docs/learned/tripwires-index.md
 
 **Load these skills FIRST:**
 
@@ -63,7 +67,9 @@ This file routes to skills and docs; it doesn't contain everything.
 - `gt-graphite`: Worktree stack mental model
 - `devrun`: READ-ONLY agent for running pytest/ty/ruff/make
 
-**Documentation Index**: [docs/learned/index.md](docs/learned/index.md) - complete registry with "read when..." conditions.
+**Documentation Index** (embedded below for ambient awareness):
+
+@docs/learned/index.md
 
 ## Claude Environment Manipulation
 
@@ -102,19 +108,31 @@ Erk modifies plan mode to add a save-or-implement decision:
 
 ## Before You Code
 
-**Mandatory skills:**
+**Load full skills for detail** — the rules below are a compressed reference, not a substitute:
 
 - **Python** → `dignified-python` skill
 - **Tests** → `fake-driven-testing` skill
-
-**Context-specific:**
-
 - **Worktrees/gt** → `gt-graphite` skill
 - **Agent docs** → `learned-docs` skill
 
 **Tool routing:**
 
 - **pytest/ty/ruff/prettier/make/gt** → `devrun` agent (not direct Bash)
+
+### Python Standards (Ambient Quick Reference)
+
+These rules diverge from standard Python conventions. Your training data will suggest the wrong pattern.
+
+- **LBYL, never EAFP**: Check conditions first (`if key in d:`), never use try/except for control flow
+- **No default parameter values**: `def foo(*, verbose: bool)` not `def foo(verbose: bool = False)`
+- **Frozen dataclasses only**: `@dataclass(frozen=True)` always, never mutable
+- **Pathlib always**: Never `os.path`. Check `.exists()` before `.resolve()`
+- **Absolute imports only**: `from erk.config import X`, never `from .config import X`
+- **No re-exports**: Empty `__init__.py`, one canonical import path per symbol
+- **Lightweight `__init__`**: No I/O in constructors. Use `@classmethod` factory methods for heavy operations
+- **Properties must be O(1)**: No I/O or iteration in `@property` or `__len__`/`__repr__`
+- **No backwards compatibility**: Break and migrate immediately, no legacy shims
+- **Max 4 indentation levels**: Extract helpers to reduce nesting
 
 ### devrun Agent Restrictions
 
@@ -139,13 +157,18 @@ Skills persist for the entire session. Once loaded, they remain in context.
 - Hook reminders fire as safety nets, not commands
 - Check if loaded: Look for `<command-message>The "{name}" skill is loading</command-message>` earlier in conversation
 
-## Documentation-First Exploration
+## Documentation-First Discovery
 
-Before exploring any topic:
+Before launching Plan or Explore agents, search for relevant documentation:
 
-1. **First** check `docs/learned/index.md` for existing documentation
-2. **Read** relevant docs to understand what's already documented
-3. **Only then** explore raw files or spawn Explore for gaps/validation
+1. **Scan the embedded index above** — match your task against the read-when conditions
+2. **Grep docs/learned/** — extract keywords from your task and search:
+   - `Grep(pattern="keyword", path="docs/learned/", glob="*.md")`
+   - Use multiple searches if the task spans domains (e.g., both "gateway" and "testing")
+3. **Read every matching doc** before writing code or launching Plan agents
+4. **Pass discovered docs as context** when launching Plan agents — include file paths and key findings in the agent prompt
+
+This grep step is mandatory for ALL coding tasks. It costs milliseconds and prevents re-learning lessons already documented.
 
 | Topic Area               | Check First                                  |
 | ------------------------ | -------------------------------------------- |
@@ -157,12 +180,9 @@ Before exploring any topic:
 | Architecture patterns    | `docs/learned/architecture/`                 |
 | TUI, Textual             | `docs/learned/tui/`, `docs/learned/textual/` |
 
-**Anti-pattern:** Going straight to `~/.claude/projects/` to explore session files
-**Correct:** First reading `docs/learned/sessions/layout.md` and `jsonl-schema-reference.md`
-
-### Including Documentation in Plans
-
-When creating implementation plans, include a "Related Documentation" section listing skills to load and docs relevant to the implementation approach.
+**Anti-pattern:** Skipping the grep because the task "seems simple"
+**Anti-pattern:** Going straight to source files without checking docs/learned/
+**Correct:** Grep docs/learned/, read matches, THEN plan or code
 
 ## Worktree Stack Quick Reference
 
@@ -207,4 +227,4 @@ When creating implementation plans, include a "Related Documentation" section li
 ## Documentation Hub
 
 - **Full navigation guide**: [docs/learned/guide.md](docs/learned/guide.md)
-- **Document index with "read when..." conditions**: [docs/learned/index.md](docs/learned/index.md)
+- **Document index**: Embedded above via `@docs/learned/index.md`

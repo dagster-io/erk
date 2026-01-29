@@ -531,7 +531,15 @@ def generate_root_index(
     Returns:
         Generated markdown content.
     """
-    lines = [GENERATED_FILE_BANNER.rstrip(), "", "# Agent Documentation", ""]
+    lines = [
+        GENERATED_FILE_BANNER.rstrip(),
+        "",
+        "# Agent Documentation",
+        "",
+        "Before starting work, scan the read-when conditions below.",
+        "If your current task matches, read the linked document **before writing code**.",
+        "",
+    ]
 
     if categories:
         lines.append("## Categories")
