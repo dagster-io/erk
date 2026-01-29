@@ -9,6 +9,8 @@ tripwires:
     warning: "Bug fixes require regression tests (fails before, passes after). Features require behavior tests."
   - action: "implementing interactive prompts with ctx.console.confirm()"
     warning: "Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. See tests/commands/submit/test_existing_branch_detection.py for examples."
+  - action: "accessing FakeGit properties in tests"
+    warning: "Access properties via subgateway (e.g., `git.commit_ops.staged_files`), not top-level."
 ---
 
 # Erk Test Reference
@@ -127,6 +129,21 @@ On macOS, `/tmp` and `/var` are symlinks to `/private/tmp` and `/private/var`. W
 **FakeGit handles this automatically** - all path lookups resolve both the input and configured paths before comparison. You generally don't need to worry about this.
 
 **If you see path mismatch errors:** Ensure FakeGit's path resolution methods are being used (they handle symlinks), not direct dict lookups.
+
+#### FakeGit Property Access
+
+After Phase 8 refactoring, FakeGit uses subgateways for all operations. Access mutation tracking properties via subgateway, not top-level:
+
+```python
+# CORRECT - Access via subgateway
+git.commit_ops.staged_files
+git.branch_ops.deleted_branches
+git.worktree_ops.added_worktrees
+
+# INCORRECT - No top-level properties
+git.staged_files  # AttributeError
+git.deleted_branches  # AttributeError
+```
 
 ### FakeConfigStore
 
