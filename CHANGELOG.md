@@ -7,14 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: `cbc36bae1` -->
+<!-- As of: `03b9e3a9d` -->
 
 ### Major Changes
 
+- **Plan Review via Temporary PR**: New workflow for asynchronous plan review through draft PRs. Plans can be submitted as temporary PRs for review, with feedback incorporated back into the plan issue. Includes automatic branch management, PR lifecycle handling, and integration with `/erk:pr-address`. (03b9e3a9d, 260f8a059, 46a916ddb, 436045eee, df3bda1a2, 90887e08b, 8f7b8811d, 8c7c66480, 712fffabf, f1c6fcb08, 91c06aaba)
 - **Top-level `erk launch` command**: Unified workflow launcher moved from `erk workflow launch` to `erk launch`, providing shorter commands for triggering remote workflows. (4335f65e6)
+
+### Added
+
+- Consolidate `erk init capability list` and `erk init capability check` into unified `erk init capability list [name]` command (57a406f39)
 
 ### Changed
 
+- Move code reviews to Haiku model with flag-only prompts, no fix suggestions (67bd9922e)
 - Fix discover-reviews for large PRs by switching to REST API with pagination (ab3ff4e58)
 - Auto-fix Graphite tracking divergence in sync and branch creation (8b8b06b53)
 - Fix detached HEAD state after landing PR from root worktree (8a952099c)
