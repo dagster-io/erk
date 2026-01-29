@@ -3,6 +3,9 @@
 
 # Agent Documentation
 
+Before starting work, scan the read-when conditions below.
+If your current task matches, read the linked document **before writing code**.
+
 ## Categories
 
 - [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
