@@ -18,9 +18,11 @@ from pathlib import Path
 import click
 
 from erk_shared.context.helpers import (
+    require_git,
     require_github,
     require_repo_root,
 )
+from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.plan_header import (
@@ -39,6 +41,7 @@ class PlanReviewCompleteSuccess:
     pr_number: int
     branch_name: str
     branch_deleted: bool
+    local_branch_deleted: bool
 
 
 @dataclass(frozen=True)
@@ -62,6 +65,7 @@ class PlanReviewCompleteException(Exception):
 def _plan_review_complete_impl(
     github: GitHub,
     *,
+    git: Git,
     github_issues: GitHubIssues,
     repo_root: Path,
     issue_number: int,
@@ -70,6 +74,7 @@ def _plan_review_complete_impl(
 
     Args:
         github: GitHub gateway
+        git: Git gateway
         github_issues: GitHub issues gateway
         repo_root: Repository root path
         issue_number: Plan issue number
@@ -120,6 +125,18 @@ def _plan_review_complete_impl(
     # Delete the review branch
     branch_deleted = github.delete_remote_branch(repo_root, branch_name)
 
+    # LBYL: Switch to master if currently on the review branch
+    current_branch = git.branch.get_current_branch(repo_root)
+    if current_branch == branch_name:
+        git.branch.checkout_branch(repo_root, "master")
+
+    # LBYL: Delete local branch if it exists
+    local_branches = git.branch.list_local_branches(repo_root)
+    local_branch_deleted = False
+    if branch_name in local_branches:
+        git.branch.delete_branch(repo_root, branch_name, force=True)
+        local_branch_deleted = True
+
     # Clear review_pr metadata (archives to last_review_pr)
     updated_body = clear_plan_header_review_pr(issue.body)
     github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
@@ -130,6 +147,7 @@ def _plan_review_complete_impl(
         pr_number=review_pr,
         branch_name=branch_name,
         branch_deleted=branch_deleted,
+        local_branch_deleted=local_branch_deleted,
     )
 
 
@@ -144,12 +162,14 @@ def plan_review_complete(
 
     Looks up the review_pr from plan-header metadata and closes it.
     """
+    git = require_git(ctx)
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
 
     try:
         result = _plan_review_complete_impl(
             github,
+            git=git,
             github_issues=github.issues,
             repo_root=repo_root,
             issue_number=issue_number,

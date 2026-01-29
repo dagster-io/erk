@@ -294,13 +294,7 @@ For each batch:
    - If feedback applies to implementation (not the plan itself), add a note to the relevant plan section rather than making structural changes
 3. Write the updated `PLAN-REVIEW-{issue}.md`
 
-#### Step 2: Sync Plan to GitHub Issue
-
-```bash
-erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
-```
-
-#### Step 3: Commit and Push
+#### Step 2: Commit and Push
 
 ```bash
 git add PLAN-REVIEW-{issue}.md
@@ -310,6 +304,12 @@ git commit -m "Incorporate review feedback (batch N/M)
 - <summary of change 2>
 ..."
 git push
+```
+
+#### Step 3: Sync Plan to GitHub Issue
+
+```bash
+erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
 ```
 
 #### Step 4: Resolve Threads
@@ -349,3 +349,11 @@ Same as standard Phase 3 Step 5 — report what was addressed and what remains.
 ### Plan Review Phase 4: Final Verification
 
 Same as standard Phase 4 — re-invoke the classifier to verify all threads are resolved. Report final summary.
+
+### Return to Original Branch
+
+After all batches are complete and pushed:
+
+1. Record current branch: `git branch --show-current`
+2. Switch to master: `git checkout master`
+3. The plan-review branch work is complete — the user should not remain on it.

@@ -53,6 +53,16 @@ erk exec get-plan-metadata <issue> last_review_pr
   - If user chooses to cancel, exit without creating a new PR
   - If user confirms, continue to Step 3
 
+### Step 2.5: Save Current Branch
+
+Before creating the review branch, record the current branch:
+
+```bash
+git branch --show-current
+```
+
+Store the result as `ORIGINAL_BRANCH`.
+
 ### Step 3: Create Review Branch
 
 ```bash
@@ -105,6 +115,16 @@ Next steps:
 
 View in browser: gh pr view <pr_number> --web
 ```
+
+### Step 6: Return to Original Branch
+
+Switch back to the branch the user was on before the review:
+
+```bash
+git checkout <ORIGINAL_BRANCH>
+```
+
+The plan-review branch is ephemeral — the user should not remain on it.
 
 ## Error Cases
 
