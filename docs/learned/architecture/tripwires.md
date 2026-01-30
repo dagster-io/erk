@@ -54,9 +54,9 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before calling os.chdir() in erk code** → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx, repo_root=repo.root). Stale ctx.cwd causes FileNotFoundError.
 
-**CRITICAL: Before changing gateway return type to discriminated union** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern.
-
 **CRITICAL: Before changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
+
+**CRITICAL: Before changing gateway return type to discriminated union** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern.
 
 **CRITICAL: Before checking if get_pr_for_branch() returned a PR** → Read [Not-Found Sentinel Pattern](not-found-sentinel.md) first. Use `isinstance(pr, PRNotFound)` not `pr is not None`. PRNotFound is a sentinel object, not None.
 
