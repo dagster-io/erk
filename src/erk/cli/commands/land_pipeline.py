@@ -126,7 +126,13 @@ def resolve_target(ctx: ErkContext, state: LandState) -> LandState | LandError:
     parsed = parse_argument(state.target_arg)
 
     if parsed.arg_type == "branch":
-        return _resolve_branch(ctx, state, repo_root, main_repo_root, state.target_arg)
+        return _resolve_branch(
+            ctx,
+            state,
+            repo_root=repo_root,
+            main_repo_root=main_repo_root,
+            branch_name=state.target_arg,
+        )
 
     # PR number or URL
     pr_number = parsed.pr_number
@@ -138,7 +144,9 @@ def resolve_target(ctx: ErkContext, state: LandState) -> LandState | LandError:
             "Expected a PR number (e.g., 123) or GitHub URL.",
             details={"target": state.target_arg},
         )
-    return _resolve_pr(ctx, state, repo_root, main_repo_root, pr_number)
+    return _resolve_pr(
+        ctx, state, repo_root=repo_root, main_repo_root=main_repo_root, pr_number=pr_number
+    )
 
 
 def _resolve_current_branch(
@@ -219,6 +227,7 @@ def _resolve_current_branch(
 def _resolve_pr(
     ctx: ErkContext,
     state: LandState,
+    *,
     repo_root: Path,
     main_repo_root: Path,
     pr_number: int,
@@ -260,6 +269,7 @@ def _resolve_pr(
 def _resolve_branch(
     ctx: ErkContext,
     state: LandState,
+    *,
     repo_root: Path,
     main_repo_root: Path,
     branch_name: str,
