@@ -29,7 +29,7 @@ If your current task matches, read the linked document **before writing code**.
 - [pr-operations/](pr-operations/)
 - [refactoring/](refactoring/)
 - [reference/](reference/) — Explore for API/format specifications. Add docs here for reference material that doesn't fit other categories.
-- [reviews/](reviews/)
+- [review/](review/)
 - [sessions/](sessions/) — Explore when working with session logs or parallel sessions. Add docs here for session management patterns.
 - [testing/](testing/) — Explore when writing tests or debugging test infrastructure. Add docs here for testing patterns specific to erk.
 - [textual/](textual/) — Explore when working with Textual framework. Add docs here for Textual-specific patterns.

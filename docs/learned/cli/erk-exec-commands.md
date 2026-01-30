@@ -96,56 +96,24 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 
 ### Objective Operations
 
-- `objective-roadmap-check` - Validate objective roadmap markdown structure
+- `objective-roadmap-check` - Parse and validate an objective's roadmap, returning structured JSON with phases, steps, summary, and next step
+- `objective-roadmap-update` - Update a specific step's status or PR column in an objective's roadmap
 
 #### objective-roadmap-check
 
-Parses and validates objective roadmap markdown tables.
-
-**Usage:** `erk exec objective-roadmap-check <path-to-objective.md>`
-
-**JSON Output:**
-
-```json
-{
-  "valid": true,
-  "phases": [
-    {
-      "phase_number": 1,
-      "phase_name": "Phase 1: Setup",
-      "steps": [
-        {
-          "step_id": "1.1",
-          "description": "Create infrastructure",
-          "status": "completed",
-          "pr_url": "https://github.com/owner/repo/pull/123"
-        }
-      ]
-    }
-  ]
-}
+```bash
+erk exec objective-roadmap-check <OBJECTIVE_NUMBER>
 ```
 
-**Validation Rules:**
+Returns JSON with `phases`, `summary`, `next_step`, and `validation_errors`. See [Roadmap Parser](../objectives/roadmap-parser.md) for full output format.
 
-- Phase headers: `## Phase N: Title` (N must be sequential starting from 1)
-- Table columns: `| Step | Description | Status | PR |`
-- Step rows: Must have step_id matching `N.M` where N is phase number
-- Status values: `pending`, `in_progress`, `completed`, `blocked`
-- PR column: Optional GitHub PR URL
+#### objective-roadmap-update
 
-**Status Inference Hierarchy:**
+```bash
+erk exec objective-roadmap-update <OBJECTIVE_NUMBER> --step <STEP_ID> [--status <STATUS>] [--pr <PR_REF>]
+```
 
-1. Explicit Status column value (highest priority)
-2. PR column presence (if PR URL exists → `completed`)
-3. Default: `pending`
-
-**Exit Codes:**
-
-- `0` - Valid roadmap
-- `1` - Invalid structure (with error details in JSON)
-
-See [objective-roadmap-check](../objectives/objective-roadmap-check.md) for complete documentation.
+Updates a step's status and/or PR reference. When `--pr` is provided without `--status`, the status cell is reset to allow inference. See [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md) for inference rules.
 
 ### Implementation Setup Operations
 

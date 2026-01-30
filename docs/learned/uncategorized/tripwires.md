@@ -28,6 +28,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before parsing objective roadmap PR column status** → Read [Erk Glossary](glossary.md) first. PR column format is non-standard: empty=pending, #XXXX=done (merged PR), `plan #XXXX`=plan in progress. This is erk-specific, not GitHub convention.
 
+**CRITICAL: Before passing session IDs via environment variables** → Read [Universal Tripwires](universal-tripwires.md) first. Use CLI flags (--session-id) for context propagation, not environment variables. Erk code never has access to CLAUDE_CODE_SESSION_ID.
+
 **CRITICAL: Before raising exceptions for expected failure cases** → Read [Universal Tripwires](universal-tripwires.md) first. Use discriminated unions (T | ErrorType) instead.
 
 **CRITICAL: Before using Path.home() directly in production code** → Read [Universal Tripwires](universal-tripwires.md) first. Use gateway abstractions instead (ClaudeInstallation, ErkInstallation).

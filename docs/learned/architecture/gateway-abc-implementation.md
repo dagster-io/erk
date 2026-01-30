@@ -670,9 +670,41 @@ This PR demonstrates:
 - Caller migration to subgateway properties
 - Verification via grep across packages
 
+## Reference Implementation: Git Remote Ops (5-Place Pattern)
+
+The `remote_ops/` sub-gateway provides a clean example of the 5-place pattern with discriminated union return types:
+
+```
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/
+├── abc.py        # push_to_remote() -> PushResult | PushError
+├── real.py       # try/except boundary, subprocess calls
+├── fake.py       # Constructor-injected errors, mutation tracking
+├── dry_run.py    # Returns PushResult() without executing
+└── printing.py   # Logs then delegates
+```
+
+Key patterns demonstrated:
+
+- **Discriminated union returns**: Methods return `Success | Error` instead of raising
+- **Error boundary in real.py**: `try/except RuntimeError` converts to `PushError`
+- **Fake configuration**: `FakeGitRemoteOps(push_to_remote_error=PushError(...))` injects failures
+- **Mutation tracking**: `fake.pushed_branches` records successful pushes for test assertions
+
+See PR #6329 for the migration that introduced this pattern.
+
+## Reference: PR #6300 Gateway Consolidation
+
+PR #6300 refactored PR submission from a monolithic function to a gateway-backed pipeline architecture. This established:
+
+- Sub-gateway extraction for branch operations (`branch_ops/`)
+- Pipeline step functions that consume gateways through `ErkContext`
+- The pattern of gateway methods returning discriminated unions consumed by pipeline steps
+
 ## Related Documentation
 
 - [Erk Architecture Patterns](erk-architecture.md) - Dependency injection, dry-run patterns
 - [Protocol vs ABC](protocol-vs-abc.md) - Why gateways use ABC instead of Protocol
 - [Subprocess Wrappers](subprocess-wrappers.md) - How Real implementations wrap subprocess calls
 - [GitHub GraphQL Patterns](github-graphql.md) - GraphQL mutation patterns for GitHub
+- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+- [Gateway Signature Migration](gateway-signature-migration.md) - How to update all call sites when signatures change
