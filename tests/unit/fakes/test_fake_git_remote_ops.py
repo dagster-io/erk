@@ -31,18 +31,14 @@ class TestPushToRemote:
 
     def test_tracks_pushed_branch_on_success(self) -> None:
         ops = FakeGitRemoteOps()
-        ops.push_to_remote(
-            Path("/repo"), "origin", "feature", set_upstream=True, force=False
-        )
+        ops.push_to_remote(Path("/repo"), "origin", "feature", set_upstream=True, force=False)
         assert ops.pushed_branches == [
             PushedBranch(remote="origin", branch="feature", set_upstream=True, force=False)
         ]
 
     def test_does_not_track_pushed_branch_on_error(self) -> None:
         ops = FakeGitRemoteOps(push_to_remote_error=PushError(message="rejected"))
-        ops.push_to_remote(
-            Path("/repo"), "origin", "main", set_upstream=False, force=False
-        )
+        ops.push_to_remote(Path("/repo"), "origin", "main", set_upstream=False, force=False)
         assert ops.pushed_branches == []
 
 
