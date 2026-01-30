@@ -11,6 +11,8 @@ tripwires:
     warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
   - action: "adding a new method to Graphite ABC"
     warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+  - action: "modifying a gateway ABC method signature (parameters, return type)"
+    warning: "Must update all 5 implementations simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Search for ALL callers with grep before starting. Missing a call site causes runtime failures."
   - action: "removing an abstract method from a gateway ABC"
     warning: "Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages."
   - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
@@ -531,6 +533,113 @@ This pattern aligns with the [Fake-Driven Testing Architecture](../testing/):
 - **Fake**: Layer 4 (Business Logic Tests) - in-memory test double for fast tests
 - **DryRun**: Preview mode for CLI operations
 - **Printing**: Verbose output for debugging
+
+## Reference Implementation: Git Remote Operations (Discriminated Unions)
+
+The Git remote operations sub-gateway (`packages/erk-shared/src/erk_shared/gateway/git/remote_ops/`) demonstrates the 5-place pattern with **discriminated union return types** instead of exceptions. See PR #6329 for the full refactoring.
+
+```
+remote_ops/
+├── abc.py        # Abstract methods returning Result | Error
+├── types.py      # Frozen dataclasses for results and errors
+├── real.py       # try/except at subprocess boundary → discriminated unions
+├── fake.py       # Returns configured success/error unions
+├── dry_run.py    # Returns no-op success unions
+└── printing.py   # Delegates to wrapped, prints mutations
+```
+
+**Key architectural decisions demonstrated:**
+
+### Error Handling Responsibility Distribution
+
+- **Real layer**: try/except blocks at subprocess boundary only
+
+  ```python
+  def push_to_remote(...) -> PushResult | PushError:
+      try:
+          subprocess.run([...], check=True)
+          return PushResult()
+      except subprocess.CalledProcessError as e:
+          return PushError(message=str(e))
+  ```
+
+- **Fake/DryRun/Printing**: Return proper discriminated unions directly, no exceptions
+
+  ```python
+  # Fake - returns configured success or error
+  def push_to_remote(...) -> PushResult | PushError:
+      if self.push_should_fail:
+          return PushError(message=self.push_error_message)
+      return PushResult()
+
+  # DryRun - returns no-op success
+  def push_to_remote(...) -> PushResult | PushError:
+      return PushResult()
+  ```
+
+### Type Structure
+
+From `remote_ops/types.py`:
+
+```python
+@dataclass(frozen=True)
+class PushResult:
+    """Success result from pushing to remote."""
+
+@dataclass(frozen=True)
+class PushError:
+    """Error result from pushing to remote. Implements NonIdealState."""
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "push-failed"
+```
+
+**Note**: Empty success types are intentional—success is the absence of error.
+
+### Caller Migration Patterns
+
+The refactoring migrated 8 call sites showing two patterns:
+
+**Fire-and-forget**: Convert error to exception at call site
+
+```python
+push_result = ctx.git.push_to_remote(
+    repo.root, "origin", branch, set_upstream=True, force=False
+)
+if isinstance(push_result, PushError):
+    raise RuntimeError(push_result.message)
+user_output("✓ Branch pushed to remote")
+```
+
+**Error propagation**: Return discriminated union to own caller
+
+```python
+push_result = ctx.git.push_to_remote(...)
+if isinstance(push_result, PushError):
+    if "non-fast-forward" in push_result.message:
+        return SubmitError(
+            error="push-rejected",
+            message=f"Push rejected: {push_result.message}"
+        )
+```
+
+### Testing Strategy
+
+**Layer 1 (Fake)**: `tests/unit/fakes/test_fake_git_remote_ops.py`
+
+- Test both success and error paths
+- Verify discriminated union types
+
+**Layer 2/3 (Integration)**: Existing tests verify subprocess boundary behavior
+
+### Why This Pattern?
+
+1. **LBYL-compliant**: Callers use `isinstance()` checks instead of try/except
+2. **Type-safe**: IDE shows both success and error types
+3. **Preserves error context**: `message` field captures full subprocess output
+4. **Clean separation**: Exceptions only at subprocess boundary (real.py), not in fakes
 
 ## Reference Implementation: BeadsGateway
 
