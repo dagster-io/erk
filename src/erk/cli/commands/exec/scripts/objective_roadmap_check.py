@@ -194,6 +194,26 @@ def _compute_summary(phases: list[RoadmapPhase]) -> dict[str, int]:
     }
 
 
+def _serialize_phases(phases: list[RoadmapPhase]) -> list[dict[str, object]]:
+    """Convert phases to JSON-serializable format."""
+    return [
+        {
+            "number": phase.number,
+            "name": phase.name,
+            "steps": [
+                {
+                    "id": step.id,
+                    "description": step.description,
+                    "status": step.status,
+                    "pr": step.pr,
+                }
+                for step in phase.steps
+            ],
+        }
+        for phase in phases
+    ]
+
+
 def _find_next_step(phases: list[RoadmapPhase]) -> dict[str, str] | None:
     """Find the first pending step in phase order."""
     for phase in phases:
@@ -252,31 +272,13 @@ def objective_roadmap_check(ctx: click.Context, objective_number: int) -> None:
     summary = _compute_summary(phases)
     next_step = _find_next_step(phases)
 
-    # Convert phases to JSON-serializable format
-    phases_json = [
-        {
-            "number": phase.number,
-            "name": phase.name,
-            "steps": [
-                {
-                    "id": step.id,
-                    "description": step.description,
-                    "status": step.status,
-                    "pr": step.pr,
-                }
-                for step in phase.steps
-            ],
-        }
-        for phase in phases
-    ]
-
     click.echo(
         json.dumps(
             {
                 "success": True,
                 "issue_number": issue.number,
                 "title": issue.title,
-                "phases": phases_json,
+                "phases": _serialize_phases(phases),
                 "summary": summary,
                 "next_step": next_step,
                 "validation_errors": validation_errors,
