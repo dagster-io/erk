@@ -27,6 +27,7 @@ from dataclasses import asdict, dataclass
 import click
 
 from erk_shared.context.helpers import require_issues, require_repo_root
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import update_plan_header_learn_result
 from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
 from erk_shared.gateway.github.types import BodyText
@@ -49,6 +50,7 @@ class TrackLearnResultError:
 
     success: bool
     error: str
+    message: str
 
 
 # Valid status values for learn result
@@ -101,7 +103,8 @@ def track_learn_result(
     if status == "completed_with_plan" and plan_issue is None:
         error = TrackLearnResultError(
             success=False,
-            error="--plan-issue is required when status is 'completed_with_plan'",
+            error="missing-plan-issue",
+            message="--plan-issue is required when status is 'completed_with_plan'",
         )
         click.echo(json.dumps(asdict(error)))
         raise SystemExit(1)
@@ -110,7 +113,8 @@ def track_learn_result(
     if status == "completed_no_plan" and plan_issue is not None:
         error = TrackLearnResultError(
             success=False,
-            error="--plan-issue should not be provided when status is 'completed_no_plan'",
+            error="unexpected-plan-issue",
+            message="--plan-issue should not be provided when status is 'completed_no_plan'",
         )
         click.echo(json.dumps(asdict(error)))
         raise SystemExit(1)
@@ -119,7 +123,8 @@ def track_learn_result(
     if status == "pending_review" and plan_pr is None:
         error = TrackLearnResultError(
             success=False,
-            error="--plan-pr is required when status is 'pending_review'",
+            error="missing-plan-pr",
+            message="--plan-pr is required when status is 'pending_review'",
         )
         click.echo(json.dumps(asdict(error)))
         raise SystemExit(1)
@@ -128,7 +133,8 @@ def track_learn_result(
     if status == "pending_review" and plan_issue is not None:
         error = TrackLearnResultError(
             success=False,
-            error="--plan-issue should not be provided when status is 'pending_review'",
+            error="unexpected-plan-issue",
+            message="--plan-issue should not be provided when status is 'pending_review'",
         )
         click.echo(json.dumps(asdict(error)))
         raise SystemExit(1)
@@ -137,7 +143,8 @@ def track_learn_result(
     if status == "completed_with_plan" and plan_pr is not None:
         error = TrackLearnResultError(
             success=False,
-            error="--plan-pr should not be provided when status is 'completed_with_plan'",
+            error="unexpected-plan-pr",
+            message="--plan-pr should not be provided when status is 'completed_with_plan'",
         )
         click.echo(json.dumps(asdict(error)))
         raise SystemExit(1)
@@ -148,6 +155,14 @@ def track_learn_result(
 
     # Fetch current issue body
     issue_info = github_issues.get_issue(repo_root, issue)
+    if isinstance(issue_info, IssueNotFound):
+        error = TrackLearnResultError(
+            success=False,
+            error="issue-not-found",
+            message=f"Issue #{issue} not found",
+        )
+        click.echo(json.dumps(asdict(error)), err=True)
+        raise SystemExit(1)
 
     # Cast status to LearnStatusValue (already validated by click.Choice)
     learn_status: LearnStatusValue = status  # type: ignore[assignment]

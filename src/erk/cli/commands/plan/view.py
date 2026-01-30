@@ -38,6 +38,7 @@ from erk_shared.gateway.github.parsing import (
 )
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanNotFound
 
 
 def _format_value(value: object) -> str:
@@ -274,11 +275,11 @@ def view_plan(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
         user_output("Or run from a branch named P{issue}-...")
         raise SystemExit(1)
 
-    try:
-        plan = ctx.plan_store.get_plan(repo_root, str(issue_number))
-    except RuntimeError as e:
-        user_output(click.style("Error: ", fg="red") + str(e))
-        raise SystemExit(1) from e
+    result = ctx.plan_store.get_plan(repo_root, str(issue_number))
+    if isinstance(result, PlanNotFound):
+        user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
+        raise SystemExit(1)
+    plan = result
 
     # Extract header info from issue body for branch display and later header section
     issue_body = plan.metadata.get("issue_body")

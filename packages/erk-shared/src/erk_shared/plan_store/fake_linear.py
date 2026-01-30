@@ -48,7 +48,7 @@ from pathlib import Path
 from typing import Literal
 
 from erk_shared.plan_store.backend import PlanBackend
-from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanQuery, PlanState
+from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanNotFound, PlanQuery, PlanState
 
 
 def _parse_objective_id(value: object) -> int | None:
@@ -167,7 +167,7 @@ class FakeLinearPlanBackend(PlanBackend):
     # Read operations (from PlanBackend ABC)
     # -------------------------------------------------------------------------
 
-    def get_plan(self, repo_root: Path, plan_id: str) -> Plan:
+    def get_plan(self, repo_root: Path, plan_id: str) -> Plan | PlanNotFound:
         """Fetch a plan by UUID identifier.
 
         Args:
@@ -175,14 +175,10 @@ class FakeLinearPlanBackend(PlanBackend):
             plan_id: Linear UUID string
 
         Returns:
-            Plan with converted data
-
-        Raises:
-            RuntimeError: If plan not found
+            Plan with converted data, or PlanNotFound if the plan does not exist
         """
         if plan_id not in self._issues:
-            msg = f"Linear issue {plan_id} not found"
-            raise RuntimeError(msg)
+            return PlanNotFound(plan_id=plan_id)
 
         issue = self._issues[plan_id]
         return self._convert_to_plan(issue)

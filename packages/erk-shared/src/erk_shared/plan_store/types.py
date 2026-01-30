@@ -70,3 +70,10 @@ class CreatePlanResult:
 
     plan_id: str
     url: str
+
+
+@dataclass(frozen=True)
+class PlanNotFound:
+    """Result when a plan cannot be found by identifier."""
+
+    plan_id: str

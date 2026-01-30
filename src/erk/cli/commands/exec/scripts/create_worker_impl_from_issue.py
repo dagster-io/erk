@@ -29,6 +29,7 @@ import click
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.plan_store.github import GitHubPlanStore
+from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.worker_impl_folder import create_worker_impl_folder
 
 
@@ -61,18 +62,18 @@ def create_worker_impl_from_issue(
     github_issues = RealGitHubIssues(target_repo=None, time=time)
     plan_store = GitHubPlanStore(github_issues, time)
 
-    # Fetch plan from GitHub (raises RuntimeError if not found)
-    try:
-        plan = plan_store.get_plan(repo_root, str(issue_number))
-    except RuntimeError as e:
+    # Fetch plan from GitHub
+    result = plan_store.get_plan(repo_root, str(issue_number))
+    if isinstance(result, PlanNotFound):
         error_output = {
             "success": False,
             "error": "plan_not_found",
-            "message": f"Could not fetch plan for issue #{issue_number}: {e}. "
+            "message": f"Could not fetch plan for issue #{issue_number}: Issue not found. "
             f"Ensure issue has erk-plan label and plan content.",
         }
         click.echo(json.dumps(error_output), err=True)
-        raise SystemExit(1) from e
+        raise SystemExit(1)
+    plan = result
 
     # Create .worker-impl/ folder with plan content
     worker_impl_path = repo_root / ".worker-impl"

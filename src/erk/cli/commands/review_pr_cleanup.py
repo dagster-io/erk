@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import clear_plan_header_review_pr
 from erk_shared.gateway.github.metadata_blocks import find_metadata_block
 from erk_shared.gateway.github.types import BodyText
@@ -40,6 +41,8 @@ def cleanup_review_pr(
 
     # LBYL: Get issue and check for plan-header block
     issue = ctx.issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        return None
     block = find_metadata_block(issue.body, "plan-header")
     if block is None:
         return None

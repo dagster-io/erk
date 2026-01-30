@@ -21,6 +21,7 @@ from erk_shared.context.helpers import require_git, require_repo_root, require_t
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
@@ -85,6 +86,11 @@ def _fetch_plan_content(
 
     # Issue exists, safe to fetch
     issue = github_issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        raise PlanReviewBranchException(
+            error="issue_not_found",
+            message=f"Issue #{issue_number} not found",
+        )
 
     # Validate erk-plan label
     if "erk-plan" not in issue.labels:

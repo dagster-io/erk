@@ -34,6 +34,7 @@ from erk_shared.context.helpers import (
 from erk_shared.gateway.git.abc import Git
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import generate_issue_branch_name
+from erk_shared.plan_store.types import PlanNotFound
 
 
 def _get_current_branch(git: Git, cwd: Path) -> str:
@@ -90,17 +91,17 @@ def setup_impl_from_issue(
     time = require_time(ctx)
 
     # Step 1: Fetch plan from GitHub
-    try:
-        plan = plan_backend.get_plan(repo_root, str(issue_number))
-    except RuntimeError as e:
+    result = plan_backend.get_plan(repo_root, str(issue_number))
+    if isinstance(result, PlanNotFound):
         error_output = {
             "success": False,
             "error": "plan_not_found",
-            "message": f"Could not fetch plan for issue #{issue_number}: {e}. "
+            "message": f"Could not fetch plan for issue #{issue_number}: Issue not found. "
             f"Ensure issue has erk-plan label and plan content.",
         }
         click.echo(json.dumps(error_output), err=True)
-        raise SystemExit(1) from e
+        raise SystemExit(1)
+    plan = result
 
     # Step 2: Determine base branch and create feature branch
     current_branch = _get_current_branch(git, cwd)

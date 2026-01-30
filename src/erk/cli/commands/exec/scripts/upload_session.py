@@ -42,6 +42,7 @@ import click
 
 from erk_shared.context.helpers import require_github, require_issues, require_repo_root
 from erk_shared.gateway.github.abc import GistCreateError
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import BodyText
 
 
@@ -128,6 +129,9 @@ def upload_session(
         # Get current issue body
         issues = require_issues(ctx)
         issue_info = issues.get_issue(repo_root, issue_number)
+        if isinstance(issue_info, IssueNotFound):
+            msg = f"Issue #{issue_number} not found"
+            raise RuntimeError(msg)
         issue_body = issue_info.body
 
         # Update with session gist info

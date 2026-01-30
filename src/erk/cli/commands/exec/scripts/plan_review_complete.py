@@ -27,6 +27,7 @@ from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
     clear_plan_header_review_pr,
     extract_plan_header_review_pr,
@@ -98,6 +99,11 @@ def _plan_review_complete_impl(
 
     # LBYL: Extract review_pr from plan-header
     issue = github_issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        raise PlanReviewCompleteException(
+            error="issue_not_found",
+            message=f"Issue #{issue_number} not found",
+        )
 
     try:
         review_pr = extract_plan_header_review_pr(issue.body)

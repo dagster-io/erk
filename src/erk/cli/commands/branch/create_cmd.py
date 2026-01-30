@@ -24,6 +24,7 @@ from erk_shared.issue_workflow import (
     prepare_plan_for_worktree,
 )
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanNotFound
 
 
 @click.command("create", cls=CommandWithHiddenOptions)
@@ -122,10 +123,10 @@ def branch_create(
 
     if for_plan is not None:
         issue_number = parse_issue_identifier(for_plan)
-        try:
-            plan = ctx.plan_store.get_plan(repo.root, str(issue_number))
-        except RuntimeError as e:
-            raise click.ClickException(str(e)) from e
+        result = ctx.plan_store.get_plan(repo.root, str(issue_number))
+        if isinstance(result, PlanNotFound):
+            raise click.ClickException(f"Issue #{issue_number} not found")
+        plan = result
 
         result = prepare_plan_for_worktree(plan, ctx.time.now())
         if isinstance(result, IssueValidationFailed):

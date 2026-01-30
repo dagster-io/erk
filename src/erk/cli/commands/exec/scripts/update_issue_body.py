@@ -27,6 +27,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_repo_root,
 )
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import BodyFile, BodyText
 
 
@@ -62,18 +63,17 @@ def update_issue_body(
     repo_root = require_repo_root(ctx)
 
     # First get the issue to verify it exists and get URL
-    try:
-        issue = github.get_issue(repo_root, issue_number)
-    except RuntimeError as e:
+    issue = github.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
         click.echo(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to get issue #{issue_number}: {e}",
+                    "error": f"Failed to get issue #{issue_number}",
                 }
             )
         )
-        raise SystemExit(1) from e
+        raise SystemExit(1)
 
     # Update the issue body - create appropriate wrapper type
     # Gateway handles file reading via gh api's -F body=@{path} syntax

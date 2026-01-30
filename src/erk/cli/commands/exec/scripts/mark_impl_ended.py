@@ -40,6 +40,7 @@ from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
 from erk_shared.env import in_github_actions
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_local_impl_event,
     update_plan_header_remote_impl,
@@ -139,16 +140,15 @@ def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
         raise SystemExit(0) from None
 
     # Fetch current issue
-    try:
-        issue = github_issues.get_issue(repo_root, issue_ref.issue_number)
-    except RuntimeError as e:
+    issue = github_issues.get_issue(repo_root, issue_ref.issue_number)
+    if isinstance(issue, IssueNotFound):
         result = MarkImplError(
             success=False,
             error_type="issue-not-found",
-            message=f"Issue #{issue_ref.issue_number} not found: {e}",
+            message=f"Issue #{issue_ref.issue_number} not found",
         )
         click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0) from None
+        raise SystemExit(0)
 
     # Update impl event based on environment
     try:

@@ -8,6 +8,7 @@ from erk_shared.gateway.github.issues.types import (
     CreateIssueResult,
     IssueComment,
     IssueInfo,
+    IssueNotFound,
     PRReference,
 )
 from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
@@ -174,15 +175,14 @@ class FakeGitHubIssues(GitHubIssues):
         """Check if issue exists in fake storage."""
         return number in self._issues
 
-    def get_issue(self, repo_root: Path, number: int) -> IssueInfo:
+    def get_issue(self, repo_root: Path, number: int) -> IssueInfo | IssueNotFound:
         """Get issue from fake storage.
 
-        Raises:
-            RuntimeError: If issue number not found (simulates gh CLI error)
+        Returns:
+            IssueInfo if found, IssueNotFound if not
         """
         if number not in self._issues:
-            msg = f"Issue #{number} not found"
-            raise RuntimeError(msg)
+            return IssueNotFound(issue_number=number)
         return self._issues[number]
 
     def add_comment(self, repo_root: Path, number: int, body: str) -> int:

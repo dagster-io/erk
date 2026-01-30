@@ -41,6 +41,7 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanNotFound
 
 
 def _show_dry_run_output(
@@ -112,11 +113,11 @@ def _implement_from_issue(
 
     # Fetch plan from GitHub
     ctx.console.info("Fetching issue from GitHub...")
-    try:
-        plan = ctx.plan_store.get_plan(repo.root, issue_number)
-    except RuntimeError as e:
-        user_output(click.style("Error: ", fg="red") + str(e))
-        raise SystemExit(1) from None
+    result = ctx.plan_store.get_plan(repo.root, issue_number)
+    if isinstance(result, PlanNotFound):
+        user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
+        raise SystemExit(1)
+    plan = result
 
     # Validate erk-plan label
     if "erk-plan" not in plan.labels:

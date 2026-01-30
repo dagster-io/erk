@@ -21,6 +21,16 @@ class IssueInfo:
 
 
 @dataclass(frozen=True)
+class IssueNotFound:
+    """Sentinel indicating an issue was not found.
+
+    Used as part of union return types for LBYL-style error handling.
+    """
+
+    issue_number: int
+
+
+@dataclass(frozen=True)
 class CreateIssueResult:
     """Result from creating a GitHub issue.
 

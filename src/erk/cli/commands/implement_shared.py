@@ -26,6 +26,7 @@ from erk_shared.naming import (
     strip_plan_from_filename,
 )
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanNotFound
 
 # Valid model names and their aliases
 _MODEL_ALIASES: dict[str, str] = {
@@ -571,11 +572,11 @@ def prepare_plan_source_from_issue(
     ctx.console.info("Fetching issue from GitHub...")
 
     # Fetch plan from GitHub
-    try:
-        plan = ctx.plan_store.get_plan(repo_root, issue_number)
-    except RuntimeError as e:
-        ctx.console.error(f"Error: {e}")
-        raise SystemExit(1) from e
+    result = ctx.plan_store.get_plan(repo_root, issue_number)
+    if isinstance(result, PlanNotFound):
+        ctx.console.error(f"Error: Issue #{issue_number} not found")
+        raise SystemExit(1)
+    plan = result
 
     # Output issue title
     ctx.console.info(f"Issue: {plan.title}")

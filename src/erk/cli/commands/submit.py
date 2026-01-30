@@ -23,7 +23,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
     render_erk_issue_event,
@@ -46,6 +46,7 @@ from erk_shared.naming import (
     sanitize_worktree_name,
 )
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.worker_impl_folder import create_worker_impl_folder
 
 logger = logging.getLogger(__name__)
@@ -177,6 +178,8 @@ def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, issue_body: s
         return None
 
     parent_issue = ctx.issues.get_issue(repo_root, learned_from)
+    if isinstance(parent_issue, IssueNotFound):
+        return None
     return extract_plan_header_branch_name(parent_issue.body)
 
 
@@ -333,11 +336,10 @@ def _validate_issue_for_submit(
         SystemExit: If issue doesn't exist, missing label, or closed.
     """
     # Fetch issue from GitHub
-    try:
-        issue = ctx.issues.get_issue(repo.root, issue_number)
-    except RuntimeError as e:
-        user_output(click.style("Error: ", fg="red") + str(e))
-        raise SystemExit(1) from None
+    issue = ctx.issues.get_issue(repo.root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        user_output(click.style("Error: ", fg="red") + f"Issue #{issue.issue_number} not found")
+        raise SystemExit(1)
 
     # Validate: must have erk-plan label
     if ERK_PLAN_LABEL not in issue.labels:
@@ -438,7 +440,11 @@ def _create_branch_and_pr(
 
     # Get plan content and create .worker-impl/ folder
     user_output("Fetching plan content...")
-    plan = ctx.plan_store.get_plan(repo.root, str(issue_number))
+    result = ctx.plan_store.get_plan(repo.root, str(issue_number))
+    if isinstance(result, PlanNotFound):
+        user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
+        raise SystemExit(1)
+    plan = result
 
     user_output("Creating .worker-impl/ folder...")
     create_worker_impl_folder(
@@ -747,6 +753,8 @@ def _submit_single_issue(
         try:
             # Fetch fresh issue body and update dispatch metadata
             fresh_issue = ctx.issues.get_issue(repo.root, issue_number)
+            if isinstance(fresh_issue, IssueNotFound):
+                raise RuntimeError(f"Issue #{issue_number} not found")
             updated_body = update_plan_header_dispatch(
                 issue_body=fresh_issue.body,
                 run_id=run_id,
@@ -898,7 +906,8 @@ def submit_cmd(
         and ctx.issues.issue_exists(repo.root, issue_number)
     ):
         issue = ctx.issues.get_issue(repo.root, issue_number)
-        if is_issue_learn_plan(issue.labels):
+        # issue_exists check above ensures this won't be IssueNotFound
+        if not isinstance(issue, IssueNotFound) and is_issue_learn_plan(issue.labels):
             parent_branch = get_learn_plan_parent_branch(ctx, repo.root, issue.body)
             if parent_branch is not None and ctx.git.branch.branch_exists_on_remote(
                 repo.root, "origin", parent_branch

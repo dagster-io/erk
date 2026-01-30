@@ -19,7 +19,7 @@ from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
 from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
-from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
@@ -173,12 +173,12 @@ class RealPlanDataProvider(PlanDataProvider):
         """
         result: dict[int, bool] = {}
         for issue_number in issue_numbers:
-            try:
-                issue_info = self._ctx.github.issues.get_issue(self._location.root, issue_number)
-                result[issue_number] = issue_info.state == "CLOSED"
-            except RuntimeError as e:
-                # Issue not found or API error - log and skip
-                logger.debug("Could not fetch learn issue %d: %s", issue_number, e)
+            issue_info = self._ctx.github.issues.get_issue(self._location.root, issue_number)
+            if isinstance(issue_info, IssueNotFound):
+                # Issue not found - log and skip
+                logger.debug("Could not fetch learn issue %d: issue not found", issue_number)
+                continue
+            result[issue_number] = issue_info.state == "CLOSED"
         return result
 
     def close_plan(self, issue_number: int, issue_url: str) -> list[int]:

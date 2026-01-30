@@ -19,6 +19,7 @@ import click
 
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 
 
@@ -59,16 +60,15 @@ def get_plan_metadata(
     repo_root = require_repo_root(ctx)
 
     # Fetch current issue
-    try:
-        issue = github_issues.get_issue(repo_root, issue_number)
-    except RuntimeError as e:
+    issue = github_issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
         result = MetadataError(
             success=False,
             error="issue_not_found",
-            message=f"Issue #{issue_number} not found: {e}",
+            message=f"Issue #{issue_number} not found",
         )
         click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
+        raise SystemExit(1)
 
     # Extract plan-header block
     block = find_metadata_block(issue.body, "plan-header")

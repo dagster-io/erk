@@ -21,6 +21,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_repo_root,
 )
+from erk_shared.gateway.github.issues.types import IssueNotFound
 
 
 @click.command(name="get-issue-body")
@@ -31,18 +32,17 @@ def get_issue_body(ctx: click.Context, issue_number: int) -> None:
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
 
-    try:
-        issue = github.get_issue(repo_root, issue_number)
-    except RuntimeError as e:
+    issue = github.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
         click.echo(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to get issue #{issue_number}: {e}",
+                    "error": f"Issue #{issue_number} not found",
                 }
             )
         )
-        raise SystemExit(1) from e
+        raise SystemExit(1)
 
     click.echo(
         json.dumps(

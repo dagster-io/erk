@@ -18,6 +18,7 @@ import click
 
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
@@ -63,16 +64,15 @@ def plan_submit_for_review(
     repo_root = require_repo_root(ctx)
 
     # Fetch issue
-    try:
-        issue = github_issues.get_issue(repo_root, issue_number)
-    except RuntimeError as e:
+    issue = github_issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
         result = PlanSubmitError(
             success=False,
             error="issue_not_found",
-            message=f"Issue #{issue_number} not found: {e}",
+            message=f"Issue #{issue_number} not found",
         )
         click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from e
+        raise SystemExit(1)
 
     # Validate erk-plan label
     if "erk-plan" not in issue.labels:

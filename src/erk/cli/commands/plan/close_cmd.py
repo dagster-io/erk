@@ -10,6 +10,7 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanNotFound
 
 
 def _close_linked_prs(
@@ -52,10 +53,9 @@ def close_plan(ctx: ErkContext, identifier: str) -> None:
     number = parse_issue_identifier(identifier)
 
     # Fetch plan - errors if not found
-    try:
-        _plan = ctx.plan_store.get_plan(repo_root, str(number))
-    except RuntimeError as e:
-        raise click.ClickException(str(e)) from e
+    result = ctx.plan_store.get_plan(repo_root, str(number))
+    if isinstance(result, PlanNotFound):
+        raise click.ClickException(f"Issue #{number} not found")
 
     # Close review PR before closing linked PRs
     cleanup_review_pr(

@@ -25,6 +25,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import update_plan_header_review_pr
 from erk_shared.gateway.github.types import BodyText, PRNotFound
@@ -126,6 +127,9 @@ def _create_review_pr_impl(
 
     # Get issue body and validate plan-header block exists before creating PR
     issue = github_issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        msg = f"Issue #{issue_number} not found"
+        raise CreateReviewPRException(error="issue_not_found", message=msg)
 
     # LBYL: Check plan-header block exists before proceeding
     if find_metadata_block(issue.body, "plan-header") is None:

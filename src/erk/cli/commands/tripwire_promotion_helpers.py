@@ -12,6 +12,7 @@ from pathlib import Path
 import click
 
 from erk.core.context import ErkContext
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.tripwire_candidates import (
     TripwireCandidate,
     extract_tripwire_candidates_from_comments,
@@ -49,6 +50,8 @@ def extract_tripwire_candidates_from_learn_plan(
         return []
 
     issue = ctx.issues.get_issue(repo_root, plan_issue_number)
+    if isinstance(issue, IssueNotFound):
+        return []
 
     # Only learn plans have tripwire candidates
     if "erk-learn" not in issue.labels:
