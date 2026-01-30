@@ -45,13 +45,13 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
         validation_errors.append("No phase headers found (expected '### Phase N: Name')")
         return phases, validation_errors
 
-    for phase_match in phase_matches:
+    for idx, phase_match in enumerate(phase_matches):
         phase_number = int(phase_match.group(1))
         phase_name = phase_match.group(3).strip()
 
         # Extract the section after this phase header until the next phase header or end
         phase_start = phase_match.end()
-        next_match_index = phase_matches.index(phase_match) + 1
+        next_match_index = idx + 1
         if next_match_index < len(phase_matches):
             phase_end = phase_matches[next_match_index].start()
         else:

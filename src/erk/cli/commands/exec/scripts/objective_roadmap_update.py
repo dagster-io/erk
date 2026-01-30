@@ -20,6 +20,7 @@ import re
 import click
 
 from erk.cli.commands.exec.scripts.objective_roadmap_shared import (
+    RoadmapPhase,
     compute_summary,
     parse_roadmap,
 )
@@ -88,6 +89,20 @@ def _update_step_in_body(
 
     new_row = _replace_row_cells(row_match, step_id, status=status, pr=pr)
     return body[: row_match.start()] + new_row + body[row_match.end() :]
+
+
+def _find_step_in_phases(phases: list[RoadmapPhase], step_id: str) -> dict[str, str | None] | None:
+    """Find a step by ID across all phases and return its data as a dict."""
+    for phase in phases:
+        for s in phase.steps:
+            if s.id == step_id:
+                return {
+                    "id": s.id,
+                    "description": s.description,
+                    "status": s.status,
+                    "pr": s.pr,
+                }
+    return None
 
 
 @click.command(name="objective-roadmap-update")
@@ -173,17 +188,7 @@ def objective_roadmap_update(
     updated_summary = compute_summary(updated_phases)
 
     # Find the updated step in the re-parsed data
-    updated_step_data: dict[str, str | None] | None = None
-    for phase in updated_phases:
-        for s in phase.steps:
-            if s.id == step:
-                updated_step_data = {
-                    "id": s.id,
-                    "description": s.description,
-                    "status": s.status,
-                    "pr": s.pr,
-                }
-                break
+    updated_step_data = _find_step_in_phases(updated_phases, step)
 
     click.echo(
         json.dumps(
