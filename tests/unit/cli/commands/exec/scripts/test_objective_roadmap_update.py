@@ -255,6 +255,37 @@ def test_preserves_other_rows() -> None:
     assert "| 1.3 | Update docs | - | #170 |" in updated_body
 
 
+def test_pr_clears_blocked_status() -> None:
+    """Test that setting --pr on a blocked step resets the status cell for inference.
+
+    This is the key inference-driven behavior: when --pr is provided without
+    --status, the Status cell resets to "-" so the parser infers from the PR column.
+    A blocked step with PR #250 should become "done", not stay "blocked".
+    """
+    issue = _make_issue(100, "Objective: Test Feature", SAMPLE_BODY)
+    fake_gh = FakeGitHubIssues(issues={100: issue})
+    runner = CliRunner()
+
+    # Step 2.2 is "blocked" — setting PR should clear the blocked override
+    result = runner.invoke(
+        objective_roadmap_update,
+        ["100", "--step", "2.2", "--pr", "#250"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+
+    assert output["step"]["id"] == "2.2"
+    assert output["step"]["pr"] == "#250"
+    # Inference: #250 -> done (blocked override was cleared)
+    assert output["step"]["status"] == "done"
+
+    # Verify the markdown cell was reset to "-" for status
+    _, updated_body = fake_gh.updated_bodies[0]
+    assert "| 2.2 | Add integration tests | - | #250 |" in updated_body
+
+
 def test_update_step_in_second_phase() -> None:
     """Test that updating a step in Phase 2 works correctly."""
     issue = _make_issue(100, "Objective: Test Feature", SAMPLE_BODY)

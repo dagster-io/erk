@@ -56,17 +56,31 @@ def _replace_row_cells(
     status: str | None,
     pr: str | None,
 ) -> str:
-    """Build a replacement row with updated cells.
+    """Build a replacement row with inference-driven cell values.
 
-    Only replaces cells for which a new value was provided.
-    Preserves the original value for cells not being updated.
+    When --pr is provided without --status, resets the Status cell to "-"
+    so the parser's inference logic determines status from the PR column.
+    This prevents stale status overrides (e.g., "blocked" remaining after
+    a PR is added).
+
+    When --status is provided, it's written directly as an explicit override
+    (e.g., "blocked", "skipped").
     """
     description = row_match.group(1).strip()
     original_status = row_match.group(2).strip()
     original_pr = row_match.group(3).strip()
 
-    new_status = status if status is not None else original_status
     new_pr = pr if pr is not None else original_pr
+
+    if status is not None:
+        # Explicit status override (blocked, skipped, etc.)
+        new_status = status
+    elif pr is not None:
+        # PR changed without explicit status — reset to "-" for inference
+        new_status = "-"
+    else:
+        # Neither changed (shouldn't happen given validation, but safe fallback)
+        new_status = original_status
 
     return f"| {step_id} | {description} | {new_status} | {new_pr} |"
 
