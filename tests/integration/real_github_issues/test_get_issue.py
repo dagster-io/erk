@@ -4,10 +4,10 @@ import json
 import subprocess
 from pathlib import Path
 
-import pytest
 from pytest import MonkeyPatch
 
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.time.real import RealTime
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -87,7 +87,7 @@ def test_get_issue_command_structure(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_get_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
-    """Test get_issue raises RuntimeError on gh CLI failure."""
+    """Test get_issue returns IssueNotFound on gh CLI failure."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise RuntimeError("Issue not found")
@@ -95,8 +95,10 @@ def test_get_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
-        with pytest.raises(RuntimeError, match="Issue not found"):
-            issues.get_issue(Path("/repo"), 999)
+        result = issues.get_issue(Path("/repo"), 999)
+
+        assert isinstance(result, IssueNotFound)
+        assert result.issue_number == 999
 
 
 def test_get_issue_null_body(monkeypatch: MonkeyPatch) -> None:

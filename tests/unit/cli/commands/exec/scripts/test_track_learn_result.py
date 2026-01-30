@@ -113,7 +113,7 @@ def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "plan-issue is required" in output["error"]
+    assert "plan-issue is required" in output["message"]
 
 
 def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: Path) -> None:
@@ -137,7 +137,7 @@ def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: P
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "should not be provided" in output["error"]
+    assert "should not be provided" in output["message"]
 
 
 # ============================================================================
@@ -200,7 +200,7 @@ def test_track_learn_result_pending_review_requires_plan_pr(tmp_path: Path) -> N
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "plan-pr is required" in output["error"]
+    assert "plan-pr is required" in output["message"]
 
 
 def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) -> None:
@@ -233,7 +233,7 @@ def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) ->
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "plan-issue should not be provided" in output["error"]
+    assert "plan-issue should not be provided" in output["message"]
 
 
 def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) -> None:
@@ -266,4 +266,4 @@ def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) 
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "plan-pr should not be provided" in output["error"]
+    assert "plan-pr should not be provided" in output["message"]

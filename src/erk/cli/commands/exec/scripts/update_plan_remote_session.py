@@ -30,6 +30,7 @@ from datetime import UTC
 import click
 
 from erk_shared.context.helpers import require_issues, require_repo_root, require_time
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_remote_impl_event,
 )
@@ -109,11 +110,10 @@ def update_plan_remote_session(
     # Get GitHub Issues from context
     github_issues = require_issues(ctx)
 
-    # Fetch current issue (RuntimeError if not found - third-party API boundary)
-    try:
-        issue = github_issues.get_issue(repo_root, issue_number)
-    except RuntimeError as e:
-        _output_error("issue-not-found", f"Issue #{issue_number} not found: {e}")
+    # Fetch current issue
+    issue = github_issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        _output_error("issue-not-found", f"Issue #{issue_number} not found")
         return  # Never reached, but helps type checker
 
     # Generate timestamp

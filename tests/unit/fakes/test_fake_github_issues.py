@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 import pytest
 
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import BodyText
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
@@ -106,11 +107,13 @@ def test_fake_github_issues_get_issue_existing() -> None:
 
 
 def test_fake_github_issues_get_issue_missing() -> None:
-    """Test get_issue raises RuntimeError for missing issue."""
+    """Test get_issue returns IssueNotFound for missing issue."""
     issues = FakeGitHubIssues()
 
-    with pytest.raises(RuntimeError, match="Issue #999 not found"):
-        issues.get_issue(sentinel_path(), 999)
+    result = issues.get_issue(sentinel_path(), 999)
+
+    assert isinstance(result, IssueNotFound)
+    assert result.issue_number == 999
 
 
 def test_fake_github_issues_get_issue_created() -> None:

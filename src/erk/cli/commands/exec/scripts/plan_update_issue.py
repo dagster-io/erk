@@ -35,6 +35,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
 
 
@@ -92,15 +93,14 @@ def plan_update_issue(
         raise SystemExit(1)
 
     # Step 2: Get existing issue to verify it exists
-    try:
-        issue = github.get_issue(repo_root, issue_number)
-    except RuntimeError as e:
-        error_msg = f"Failed to get issue #{issue_number}: {e}"
+    issue = github.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        error_msg = f"Issue #{issue_number} not found"
         if output_format == "display":
             click.echo(f"Error: {error_msg}", err=True)
         else:
             click.echo(json.dumps({"success": False, "error": error_msg}))
-        raise SystemExit(1) from e
+        raise SystemExit(1)
 
     # Step 3: Get first comment ID (where plan body lives in Schema v2)
     comments = github.get_issue_comments_with_urls(repo_root, issue_number)

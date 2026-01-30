@@ -54,6 +54,7 @@ from erk.core.worktree_pool import (
     load_pool_state,
 )
 from erk_shared.gateway.console.real import InteractiveConsole
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_learn_status,
     extract_plan_header_learned_from_issue,
@@ -297,6 +298,9 @@ def _check_learn_status_and_prompt(
     # Skip learn check for learn plans (they don't need to be learned from)
     # Fetch issue to check labels and learn_status
     issue = ctx.issues.get_issue(repo_root, plan_issue_number)
+    if isinstance(issue, IssueNotFound):
+        user_output(click.style("Warning: ", fg="yellow") + f"Issue #{plan_issue_number} not found")
+        return
     if "erk-learn" in issue.labels:
         return
 
@@ -515,6 +519,8 @@ def _update_parent_learn_status_if_learn_plan(
         return
 
     issue = ctx.issues.get_issue(repo_root, plan_issue_number)
+    if isinstance(issue, IssueNotFound):
+        return
     learned_from = extract_plan_header_learned_from_issue(issue.body)
 
     if learned_from is None:
@@ -526,6 +532,9 @@ def _update_parent_learn_status_if_learn_plan(
         return
 
     parent_issue = ctx.issues.get_issue(repo_root, learned_from)
+    if isinstance(parent_issue, IssueNotFound):
+        user_output(f"Warning: Could not find parent issue #{learned_from} to update learn status")
+        return
     updated_body = update_plan_header_learn_plan_completed(
         issue_body=parent_issue.body,
         learn_plan_pr=pr_number,

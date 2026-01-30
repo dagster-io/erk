@@ -10,6 +10,7 @@ from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.interactive_claude import build_claude_args
 from erk_shared.context.types import InteractiveClaudeConfig, RepoContext
+from erk_shared.gateway.github.issues.types import IssueNotFound
 
 
 @alias("rec")
@@ -33,6 +34,9 @@ def reconcile_objectives(ctx: ErkContext, objective: int) -> None:
         raise SystemExit(1)
 
     issue = ctx.github.issues.get_issue(repo.root, objective)
+    if isinstance(issue, IssueNotFound):
+        click.echo(f"Error: Issue #{issue.issue_number} not found", err=True)
+        raise SystemExit(1)
     if "erk-objective" not in issue.labels:
         click.echo(f"Error: Issue #{objective} is not an erk-objective", err=True)
         raise SystemExit(1)

@@ -13,7 +13,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
@@ -101,9 +101,12 @@ class GitHubPlanStore(PlanBackend):
             RuntimeError: If gh CLI fails or plan not found
         """
         issue_number = int(plan_id)
-        issue_info = self._github_issues.get_issue(repo_root, issue_number)
-        plan_body = self._get_plan_body(repo_root, issue_info)
-        return self._convert_to_plan(issue_info, plan_body)
+        issue = self._github_issues.get_issue(repo_root, issue_number)
+        if isinstance(issue, IssueNotFound):
+            msg = f"Issue #{issue_number} not found"
+            raise RuntimeError(msg)
+        plan_body = self._get_plan_body(repo_root, issue)
+        return self._convert_to_plan(issue, plan_body)
 
     def _fetch_comment_with_retry(
         self,
@@ -373,10 +376,13 @@ class GitHubPlanStore(PlanBackend):
         from erk_shared.gateway.github.metadata.types import MetadataBlock
 
         issue_number = int(plan_id)
-        issue_info = self._github_issues.get_issue(repo_root, issue_number)
+        issue = self._github_issues.get_issue(repo_root, issue_number)
+        if isinstance(issue, IssueNotFound):
+            msg = f"Issue #{issue_number} not found"
+            raise RuntimeError(msg)
 
         # Parse current metadata from issue body
-        block = find_metadata_block(issue_info.body, "plan-header")
+        block = find_metadata_block(issue.body, "plan-header")
         if block is None:
             raise RuntimeError("plan-header block not found in issue body")
 
@@ -409,9 +415,7 @@ class GitHubPlanStore(PlanBackend):
         new_block_content = render_metadata_block(new_block)
 
         # Replace block in full body and update issue
-        updated_body = replace_metadata_block_in_body(
-            issue_info.body, "plan-header", new_block_content
-        )
+        updated_body = replace_metadata_block_in_body(issue.body, "plan-header", new_block_content)
         self._github_issues.update_issue_body(
             repo_root, issue_number, BodyText(content=updated_body)
         )

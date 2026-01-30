@@ -11,6 +11,7 @@ from erk_shared.gateway.github.issues.types import (
     CreateIssueResult,
     IssueComment,
     IssueInfo,
+    IssueNotFound,
     PRReference,
 )
 from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
@@ -131,14 +132,15 @@ class RealGitHubIssues(GitHubIssues):
         )
         return result.returncode == 0
 
-    def get_issue(self, repo_root: Path, number: int) -> IssueInfo:
+    def get_issue(self, repo_root: Path, number: int) -> IssueInfo | IssueNotFound:
         """Fetch issue data using gh CLI REST API.
 
         Uses REST API instead of GraphQL to avoid hitting GraphQL rate limits.
         The {owner}/{repo} placeholders are auto-substituted by gh CLI.
 
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
-        on failures (not installed, not authenticated, issue not found).
+        on failures (not installed, not authenticated). Returns IssueNotFound
+        if the issue does not exist.
         """
         # GH-API-AUDIT: REST - GET issues/{number}
         base_cmd = [
@@ -147,7 +149,10 @@ class RealGitHubIssues(GitHubIssues):
             f"repos/{{owner}}/{{repo}}/issues/{number}",
         ]
         cmd = self._build_gh_command(base_cmd)
-        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        try:
+            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        except RuntimeError:
+            return IssueNotFound(issue_number=number)
         data = json.loads(stdout)
 
         # Extract author login (user who created the issue)

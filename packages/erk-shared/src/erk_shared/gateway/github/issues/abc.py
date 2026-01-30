@@ -7,6 +7,7 @@ from erk_shared.gateway.github.issues.types import (
     CreateIssueResult,
     IssueComment,
     IssueInfo,
+    IssueNotFound,
     PRReference,
 )
 from erk_shared.gateway.github.types import BodyContent
@@ -55,7 +56,7 @@ class GitHubIssues(ABC):
         ...
 
     @abstractmethod
-    def get_issue(self, repo_root: Path, number: int) -> IssueInfo:
+    def get_issue(self, repo_root: Path, number: int) -> IssueInfo | IssueNotFound:
         """Fetch issue data by number.
 
         Args:
@@ -63,10 +64,10 @@ class GitHubIssues(ABC):
             number: Issue number to fetch
 
         Returns:
-            IssueInfo with title, body, state, and url
+            IssueInfo with title, body, state, and url, or IssueNotFound if issue does not exist
 
         Raises:
-            RuntimeError: If gh CLI fails or issue not found
+            RuntimeError: If gh CLI fails (not installed, not authenticated)
         """
         ...
 

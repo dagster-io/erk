@@ -21,6 +21,7 @@ import click
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
 from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_comment_id,
     format_plan_content_comment,
@@ -84,6 +85,11 @@ def _update_plan_from_feedback_impl(
         )
 
     issue = github_issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        raise PlanUpdateFromFeedbackException(
+            error="issue_not_found",
+            message=f"Issue #{issue_number} not found",
+        )
 
     # Validate erk-plan label
     if "erk-plan" not in issue.labels:

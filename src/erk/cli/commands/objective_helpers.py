@@ -11,6 +11,7 @@ import click
 
 from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.pr.submit import has_issue_closing_reference
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
@@ -45,9 +46,8 @@ def _wait_for_issue_closure(
     )
     for attempt in range(_AUTO_CLOSE_MAX_RETRIES):
         ctx.time.sleep(_AUTO_CLOSE_RETRY_DELAY)
-        try:
-            issue = ctx.issues.get_issue(repo_root, issue_number)
-        except RuntimeError:
+        issue = ctx.issues.get_issue(repo_root, issue_number)
+        if isinstance(issue, IssueNotFound):
             logger.warning(
                 "Issue #%d became inaccessible during retry %d", issue_number, attempt + 1
             )
@@ -98,11 +98,10 @@ def check_and_display_plan_issue_closure(
         branch,
     )
 
-    # GitHubIssues.get_issue raises RuntimeError for missing issues.
-    # This is a fail-open feature (non-critical), so we catch and return None.
-    try:
-        issue = ctx.issues.get_issue(repo_root, plan_number)
-    except RuntimeError:
+    # GitHubIssues.get_issue returns IssueNotFound for missing issues.
+    # This is a fail-open feature (non-critical), so we check and return None.
+    issue = ctx.issues.get_issue(repo_root, plan_number)
+    if isinstance(issue, IssueNotFound):
         logger.debug("Plan issue #%d not found, skipping closure check", plan_number)
         return None
 

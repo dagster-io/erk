@@ -12,6 +12,7 @@ from erk_shared.gateway.claude_installation.abc import (
     FoundSession,
 )
 from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_created_from_session,
     extract_plan_header_last_learn_session,
@@ -108,17 +109,20 @@ def find_sessions_for_plan(
         SessionsForPlan with all discovered session IDs
     """
     # Get issue body for metadata extraction
-    issue_info = github.get_issue(repo_root, issue_number)
-    planning_session_id = extract_plan_header_created_from_session(issue_info.body)
-    metadata_impl_session = extract_plan_header_local_impl_session(issue_info.body)
-    metadata_learn_session = extract_plan_header_last_learn_session(issue_info.body)
-    last_remote_impl_at = extract_plan_header_remote_impl_at(issue_info.body)
-    last_remote_impl_run_id = extract_plan_header_remote_impl_run_id(issue_info.body)
-    last_remote_impl_session_id = extract_plan_header_remote_impl_session_id(issue_info.body)
+    issue = github.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        msg = f"Issue #{issue_number} not found"
+        raise RuntimeError(msg)
+    planning_session_id = extract_plan_header_created_from_session(issue.body)
+    metadata_impl_session = extract_plan_header_local_impl_session(issue.body)
+    metadata_learn_session = extract_plan_header_last_learn_session(issue.body)
+    last_remote_impl_at = extract_plan_header_remote_impl_at(issue.body)
+    last_remote_impl_run_id = extract_plan_header_remote_impl_run_id(issue.body)
+    last_remote_impl_session_id = extract_plan_header_remote_impl_session_id(issue.body)
     # Extract new gist-based session fields
-    last_session_gist_url = extract_plan_header_session_gist_url(issue_info.body)
-    last_session_id = extract_plan_header_last_session_id(issue_info.body)
-    last_session_source = extract_plan_header_last_session_source(issue_info.body)
+    last_session_gist_url = extract_plan_header_session_gist_url(issue.body)
+    last_session_id = extract_plan_header_last_session_id(issue.body)
+    last_session_source = extract_plan_header_last_session_source(issue.body)
 
     # Get comments to find implementation and learn sessions
     comments = github.get_issue_comments(repo_root, issue_number)

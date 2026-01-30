@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 import click
 
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import update_plan_header_dispatch
 from erk_shared.gateway.github.types import BodyText
@@ -52,6 +53,8 @@ def maybe_update_plan_dispatch_metadata(
         return
 
     plan_issue = ctx.issues.get_issue(repo.root, plan_issue_number)
+    if isinstance(plan_issue, IssueNotFound):
+        return
     # LBYL: Check if plan-header block exists before attempting update
     # This is expected to be missing for non-erk-plan issues that happen
     # to have P{number} prefix in their branch name

@@ -43,6 +43,7 @@ from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
 from erk_shared.env import in_github_actions
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import render_erk_issue_event
 from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_local_impl_event,
@@ -251,30 +252,36 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
     # Update issue metadata
     try:
         issue = github.get_issue(repo_root, issue_ref.issue_number)
-
-        if in_github_actions():
-            updated_body = update_plan_header_remote_impl(
-                issue_body=issue.body,
-                remote_impl_at=timestamp,
-            )
+        if isinstance(issue, IssueNotFound):
+            # Non-fatal - comment was posted, issue not found
+            # Continue successfully
+            pass
         else:
-            updated_body = update_plan_header_local_impl_event(
-                issue_body=issue.body,
-                local_impl_at=timestamp,
-                event="started",
-                session_id=session_id,
-                user=user,
+            if in_github_actions():
+                updated_body = update_plan_header_remote_impl(
+                    issue_body=issue.body,
+                    remote_impl_at=timestamp,
+                )
+            else:
+                updated_body = update_plan_header_local_impl_event(
+                    issue_body=issue.body,
+                    local_impl_at=timestamp,
+                    event="started",
+                    session_id=session_id,
+                    user=user,
+                )
+
+            # Set worktree and branch names atomically
+            updated_body = update_plan_header_worktree_and_branch(
+                issue_body=updated_body,
+                worktree_name=worktree_name,
+                branch_name=branch_name,
             )
 
-        # Set worktree and branch names atomically
-        updated_body = update_plan_header_worktree_and_branch(
-            issue_body=updated_body,
-            worktree_name=worktree_name,
-            branch_name=branch_name,
-        )
-
-        github.update_issue_body(repo_root, issue_ref.issue_number, BodyText(content=updated_body))
-    except (RuntimeError, ValueError):
+            github.update_issue_body(
+                repo_root, issue_ref.issue_number, BodyText(content=updated_body)
+            )
+    except ValueError:
         # Non-fatal - comment was posted, metadata update failed
         # Continue successfully
         pass
@@ -339,6 +346,9 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
     # Update issue metadata
     try:
         issue = github.get_issue(repo_root, issue_ref.issue_number)
+        if isinstance(issue, IssueNotFound):
+            _output_error(event, "github-api-failed", f"Issue #{issue_ref.issue_number} not found")
+            return
 
         if in_github_actions():
             updated_body = update_plan_header_remote_impl(
@@ -355,7 +365,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
             )
 
         github.update_issue_body(repo_root, issue_ref.issue_number, BodyText(content=updated_body))
-    except (RuntimeError, ValueError) as e:
+    except ValueError as e:
         _output_error(event, "github-api-failed", f"Failed to update issue: {e}")
         return
 

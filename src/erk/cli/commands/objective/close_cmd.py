@@ -6,6 +6,7 @@ from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext, RepoContext
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.output.output import user_output
 
 ERK_OBJECTIVE_LABEL = "erk-objective"
@@ -32,6 +33,9 @@ def close_objective(ctx: ErkContext, issue_ref: str, *, force: bool) -> None:
 
     # Fetch the issue
     issue = ctx.issues.get_issue(repo.root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        user_output(click.style("Error: ", fg="red") + f"Issue #{issue.issue_number} not found")
+        raise SystemExit(1)
 
     # Validate issue has erk-objective label
     if ERK_OBJECTIVE_LABEL not in issue.labels:

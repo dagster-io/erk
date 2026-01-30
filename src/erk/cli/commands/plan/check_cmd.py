@@ -10,6 +10,7 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
 from erk_shared.gateway.github.metadata.schemas import PlanHeaderSchema
@@ -69,10 +70,9 @@ def validate_plan_format(
     checks: list[tuple[bool, str]] = []
 
     # Fetch issue from GitHub
-    try:
-        issue = github_issues.get_issue(repo_root, issue_number)
-    except RuntimeError as e:
-        return PlanValidationError(error=str(e))
+    issue = github_issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        return PlanValidationError(error=f"Issue #{issue_number} not found")
 
     issue_body = issue.body if issue.body else ""
 

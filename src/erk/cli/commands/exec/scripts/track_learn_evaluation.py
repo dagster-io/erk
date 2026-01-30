@@ -34,6 +34,7 @@ from erk_shared.context.helpers import (
     require_repo_root,
     require_time,
 )
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import update_plan_header_learn_event
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
@@ -56,6 +57,7 @@ class TrackLearnError:
 
     success: bool
     error: str
+    message: str
 
 
 def _extract_issue_number(identifier: str) -> int | None:
@@ -112,6 +114,14 @@ def _do_track(
     # Update plan-header with learn event (in addition to comment)
     timestamp = time.now().replace(tzinfo=UTC).isoformat()
     issue = github_issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        result = TrackLearnError(
+            success=False,
+            error="issue-not-found",
+            message=f"Issue #{issue_number} not found",
+        )
+        click.echo(json.dumps(asdict(result)), err=True)
+        raise SystemExit(1)
     updated_body = update_plan_header_learn_event(
         issue_body=issue.body,
         learn_at=timestamp,
@@ -150,7 +160,8 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
         if issue_number is None:
             error = TrackLearnError(
                 success=False,
-                error=f"Invalid issue identifier: {issue}",
+                error="invalid-issue-identifier",
+                message=f"Invalid issue identifier: {issue}",
             )
             click.echo(json.dumps(asdict(error)))
             raise SystemExit(1)
@@ -163,7 +174,8 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
     if issue_number is None:
         error = TrackLearnError(
             success=False,
-            error="No issue specified and could not infer from branch name",
+            error="no-issue-specified",
+            message="No issue specified and could not infer from branch name",
         )
         click.echo(json.dumps(asdict(error)))
         raise SystemExit(1)

@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
@@ -77,10 +78,9 @@ class PlanContextProvider:
             return None
 
         # Step 2: Fetch the issue body
-        try:
-            issue_info = self._github_issues.get_issue(repo_root, issue_number)
-        except RuntimeError:
-            # Issue doesn't exist or API error - graceful degradation
+        issue_info = self._github_issues.get_issue(repo_root, issue_number)
+        if isinstance(issue_info, IssueNotFound):
+            # Issue doesn't exist - graceful degradation
             return None
 
         # Step 3: Extract plan_comment_id from metadata
@@ -132,9 +132,8 @@ class PlanContextProvider:
         if objective_issue is None:
             return None
 
-        try:
-            objective_info = self._github_issues.get_issue(repo_root, objective_issue)
-            return f"Objective #{objective_issue}: {objective_info.title}"
-        except RuntimeError:
-            # Objective issue not found or API error
+        objective_info = self._github_issues.get_issue(repo_root, objective_issue)
+        if isinstance(objective_info, IssueNotFound):
+            # Objective issue not found
             return None
+        return f"Objective #{objective_issue}: {objective_info.title}"

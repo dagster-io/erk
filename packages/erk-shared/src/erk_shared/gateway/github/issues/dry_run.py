@@ -7,6 +7,7 @@ from erk_shared.gateway.github.issues.types import (
     CreateIssueResult,
     IssueComment,
     IssueInfo,
+    IssueNotFound,
     PRReference,
 )
 from erk_shared.gateway.github.types import BodyContent
@@ -43,7 +44,7 @@ class DryRunGitHubIssues(GitHubIssues):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.issue_exists(repo_root, number)
 
-    def get_issue(self, repo_root: Path, number: int) -> IssueInfo:
+    def get_issue(self, repo_root: Path, number: int) -> IssueInfo | IssueNotFound:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_issue(repo_root, number)
 
