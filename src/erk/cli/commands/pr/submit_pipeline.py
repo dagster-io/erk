@@ -6,6 +6,7 @@ functions transforming a frozen SubmitState dataclass.
 Each step: (ErkContext, SubmitState) -> SubmitState | SubmitError
 """
 
+import dataclasses
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -134,26 +135,14 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
             objective_issue=None,
         )
 
-    return SubmitState(
+    return dataclasses.replace(
+        state,
         cwd=cwd,
         repo_root=repo_root,
         branch_name=branch_name,
         parent_branch=parent_branch,
         trunk_branch=trunk_branch,
-        use_graphite=state.use_graphite,
-        force=state.force,
-        debug=state.debug,
-        session_id=state.session_id,
         issue_number=issue_number,
-        pr_number=state.pr_number,
-        pr_url=state.pr_url,
-        was_created=state.was_created,
-        base_branch=state.base_branch,
-        graphite_url=state.graphite_url,
-        diff_file=state.diff_file,
-        plan_context=state.plan_context,
-        title=state.title,
-        body=state.body,
     )
 
 
@@ -228,26 +217,13 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
     click.echo(click.style(f"   PR #{pr_info.number} ready", fg="green"))
     click.echo("")
 
-    return SubmitState(
-        cwd=state.cwd,
-        repo_root=state.repo_root,
-        branch_name=state.branch_name,
-        parent_branch=state.parent_branch,
-        trunk_branch=state.trunk_branch,
-        use_graphite=state.use_graphite,
-        force=state.force,
-        debug=state.debug,
-        session_id=state.session_id,
-        issue_number=state.issue_number,
+    return dataclasses.replace(
+        state,
         pr_number=pr_info.number,
         pr_url=pr_info.url,
         was_created=True,
         base_branch=state.parent_branch,
         graphite_url=graphite_url,
-        diff_file=state.diff_file,
-        plan_context=state.plan_context,
-        title=state.title,
-        body=state.body,
     )
 
 
@@ -394,26 +370,12 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
         click.echo(click.style(f"   PR #{pr_number} created", fg="green"))
         click.echo("")
 
-        return SubmitState(
-            cwd=state.cwd,
-            repo_root=state.repo_root,
-            branch_name=state.branch_name,
-            parent_branch=state.parent_branch,
-            trunk_branch=state.trunk_branch,
-            use_graphite=state.use_graphite,
-            force=state.force,
-            debug=state.debug,
-            session_id=state.session_id,
-            issue_number=state.issue_number,
+        return dataclasses.replace(
+            state,
             pr_number=pr_number,
             pr_url=pr_url,
             was_created=True,
             base_branch=state.parent_branch,
-            graphite_url=state.graphite_url,
-            diff_file=state.diff_file,
-            plan_context=state.plan_context,
-            title=state.title,
-            body=state.body,
         )
 
     # PR exists
@@ -435,26 +397,12 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
     click.echo(click.style(f"   PR #{pr_number} found (already exists)", fg="green"))
     click.echo("")
 
-    return SubmitState(
-        cwd=state.cwd,
-        repo_root=state.repo_root,
-        branch_name=state.branch_name,
-        parent_branch=state.parent_branch,
-        trunk_branch=state.trunk_branch,
-        use_graphite=state.use_graphite,
-        force=state.force,
-        debug=state.debug,
-        session_id=state.session_id,
-        issue_number=state.issue_number,
+    return dataclasses.replace(
+        state,
         pr_number=pr_number,
         pr_url=pr_url,
         was_created=False,
         base_branch=state.parent_branch,
-        graphite_url=state.graphite_url,
-        diff_file=state.diff_file,
-        plan_context=state.plan_context,
-        title=state.title,
-        body=state.body,
     )
 
 
@@ -492,27 +440,7 @@ def extract_diff(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErr
 
     click.echo("")
 
-    return SubmitState(
-        cwd=state.cwd,
-        repo_root=state.repo_root,
-        branch_name=state.branch_name,
-        parent_branch=state.parent_branch,
-        trunk_branch=state.trunk_branch,
-        use_graphite=state.use_graphite,
-        force=state.force,
-        debug=state.debug,
-        session_id=state.session_id,
-        issue_number=state.issue_number,
-        pr_number=state.pr_number,
-        pr_url=state.pr_url,
-        was_created=state.was_created,
-        base_branch=state.base_branch,
-        graphite_url=state.graphite_url,
-        diff_file=diff_file,
-        plan_context=state.plan_context,
-        title=state.title,
-        body=state.body,
-    )
+    return dataclasses.replace(state, diff_file=diff_file)
 
 
 def fetch_plan_context(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
@@ -534,27 +462,7 @@ def fetch_plan_context(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
         click.echo(click.style("   No linked plan found", dim=True))
     click.echo("")
 
-    return SubmitState(
-        cwd=state.cwd,
-        repo_root=state.repo_root,
-        branch_name=state.branch_name,
-        parent_branch=state.parent_branch,
-        trunk_branch=state.trunk_branch,
-        use_graphite=state.use_graphite,
-        force=state.force,
-        debug=state.debug,
-        session_id=state.session_id,
-        issue_number=state.issue_number,
-        pr_number=state.pr_number,
-        pr_url=state.pr_url,
-        was_created=state.was_created,
-        base_branch=state.base_branch,
-        graphite_url=state.graphite_url,
-        diff_file=state.diff_file,
-        plan_context=plan_context,
-        title=state.title,
-        body=state.body,
-    )
+    return dataclasses.replace(state, plan_context=plan_context)
 
 
 def generate_description(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
@@ -594,24 +502,8 @@ def generate_description(ctx: ErkContext, state: SubmitState) -> SubmitState | S
 
     click.echo("")
 
-    return SubmitState(
-        cwd=state.cwd,
-        repo_root=state.repo_root,
-        branch_name=state.branch_name,
-        parent_branch=state.parent_branch,
-        trunk_branch=state.trunk_branch,
-        use_graphite=state.use_graphite,
-        force=state.force,
-        debug=state.debug,
-        session_id=state.session_id,
-        issue_number=state.issue_number,
-        pr_number=state.pr_number,
-        pr_url=state.pr_url,
-        was_created=state.was_created,
-        base_branch=state.base_branch,
-        graphite_url=state.graphite_url,
-        diff_file=state.diff_file,
-        plan_context=state.plan_context,
+    return dataclasses.replace(
+        state,
         title=msg_result.title or "Update",
         body=msg_result.body or "",
     )
@@ -679,27 +571,7 @@ def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -> SubmitState | 
 
     click.echo("")
 
-    return SubmitState(
-        cwd=state.cwd,
-        repo_root=state.repo_root,
-        branch_name=state.branch_name,
-        parent_branch=state.parent_branch,
-        trunk_branch=state.trunk_branch,
-        use_graphite=state.use_graphite,
-        force=state.force,
-        debug=state.debug,
-        session_id=state.session_id,
-        issue_number=state.issue_number,
-        pr_number=state.pr_number,
-        pr_url=state.pr_url,
-        was_created=state.was_created,
-        base_branch=state.base_branch,
-        graphite_url=graphite_url,
-        diff_file=state.diff_file,
-        plan_context=state.plan_context,
-        title=state.title,
-        body=state.body,
-    )
+    return dataclasses.replace(state, graphite_url=graphite_url)
 
 
 def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
@@ -784,24 +656,11 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
             repo_id = GitHubRepoId(owner=owner, repo=repo_name)
             graphite_url = ctx.graphite.get_graphite_url(repo_id, state.pr_number)
 
-    return SubmitState(
-        cwd=state.cwd,
-        repo_root=state.repo_root,
-        branch_name=state.branch_name,
-        parent_branch=state.parent_branch,
-        trunk_branch=state.trunk_branch,
-        use_graphite=state.use_graphite,
-        force=state.force,
-        debug=state.debug,
-        session_id=state.session_id,
+    return dataclasses.replace(
+        state,
         issue_number=issue_number,
-        pr_number=state.pr_number,
         pr_url=pr_url,
-        was_created=state.was_created,
-        base_branch=state.base_branch,
         graphite_url=graphite_url,
-        diff_file=state.diff_file,
-        plan_context=state.plan_context,
         title=pr_title,
         body=pr_body,
     )
