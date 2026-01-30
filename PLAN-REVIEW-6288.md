@@ -87,20 +87,21 @@ def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -> SubmitState | Su
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| **NEW** `src/erk/cli/commands/pr/submit_pipeline.py` | All pipeline steps, data types, runner |
-| `src/erk/cli/commands/pr/submit_cmd.py` | Shrink to CLI entry + `render_success()`. Delete `_run_graphite_first_flow`, `_run_core_submit`, `_run_diff_extraction`, `_run_graphite_enhance`, `_run_finalize`. Call `run_submit_pipeline()`. |
-| `packages/erk-shared/src/erk_shared/gateway/pr/submit.py` | Delete `execute_core_submit`. Keep `has_body_footer`, `has_checkout_footer_for_pr`, `has_issue_closing_reference`, `_make_divergence_error` utilities. |
-| `packages/erk-shared/src/erk_shared/gateway/pr/graphite_enhance.py` | Delete `execute_graphite_enhance`. Keep `should_enhance_with_graphite`, `GraphiteCheckResult`. |
-| `packages/erk-shared/src/erk_shared/gateway/pr/diff_extraction.py` | Delete `execute_diff_extraction`. Keep `filter_diff_excluded_files`. |
-| `packages/erk-shared/src/erk_shared/gateway/gt/operations/finalize.py` | Delete `execute_finalize`. Keep `is_learn_plan`, `_extract_closing_ref_from_pr`. |
-| `packages/erk-shared/src/erk_shared/gateway/pr/types.py` | Delete entirely (`CoreSubmitResult`, `CoreSubmitError`, `GraphiteEnhanceResult`, `GraphiteEnhanceError`, `GraphiteSkipped` all replaced). |
-| `packages/erk-shared/src/erk_shared/gateway/gt/types.py` | Remove `FinalizeResult`, `PostAnalysisError`, `PostAnalysisErrorType`. Keep non-submit types. |
+| File                                                                   | Change                                                                                                                                                                                           |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **NEW** `src/erk/cli/commands/pr/submit_pipeline.py`                   | All pipeline steps, data types, runner                                                                                                                                                           |
+| `src/erk/cli/commands/pr/submit_cmd.py`                                | Shrink to CLI entry + `render_success()`. Delete `_run_graphite_first_flow`, `_run_core_submit`, `_run_diff_extraction`, `_run_graphite_enhance`, `_run_finalize`. Call `run_submit_pipeline()`. |
+| `packages/erk-shared/src/erk_shared/gateway/pr/submit.py`              | Delete `execute_core_submit`. Keep `has_body_footer`, `has_checkout_footer_for_pr`, `has_issue_closing_reference`, `_make_divergence_error` utilities.                                           |
+| `packages/erk-shared/src/erk_shared/gateway/pr/graphite_enhance.py`    | Delete `execute_graphite_enhance`. Keep `should_enhance_with_graphite`, `GraphiteCheckResult`.                                                                                                   |
+| `packages/erk-shared/src/erk_shared/gateway/pr/diff_extraction.py`     | Delete `execute_diff_extraction`. Keep `filter_diff_excluded_files`.                                                                                                                             |
+| `packages/erk-shared/src/erk_shared/gateway/gt/operations/finalize.py` | Delete `execute_finalize`. Keep `is_learn_plan`, `_extract_closing_ref_from_pr`.                                                                                                                 |
+| `packages/erk-shared/src/erk_shared/gateway/pr/types.py`               | Delete entirely (`CoreSubmitResult`, `CoreSubmitError`, `GraphiteEnhanceResult`, `GraphiteEnhanceError`, `GraphiteSkipped` all replaced).                                                        |
+| `packages/erk-shared/src/erk_shared/gateway/gt/types.py`               | Remove `FinalizeResult`, `PostAnalysisError`, `PostAnalysisErrorType`. Keep non-submit types.                                                                                                    |
 
 ## Files to Check for Imports of Deleted Types
 
 Need to grep for all consumers of deleted types/functions and update them:
+
 - `CoreSubmitResult`, `CoreSubmitError` — `submit_cmd.py` (primary), possibly tests
 - `GraphiteEnhanceResult`, `GraphiteEnhanceError`, `GraphiteSkipped` — `submit_cmd.py`, possibly tests
 - `FinalizeResult`, `PostAnalysisError` — `submit_cmd.py`, possibly tests
