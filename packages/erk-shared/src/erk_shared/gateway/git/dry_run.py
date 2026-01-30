@@ -4,9 +4,7 @@ This module provides a Git wrapper that prevents execution of destructive
 operations while delegating read-only operations to the wrapped implementation.
 """
 
-from pathlib import Path
-
-from erk_shared.gateway.git.abc import Git, RebaseResult
+from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
 from erk_shared.gateway.git.analysis_ops.dry_run import DryRunGitAnalysisOps
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
@@ -108,11 +106,3 @@ class DryRunGit(Git):
     def config(self) -> GitConfigOps:
         """Access configuration operations subgateway."""
         return DryRunGitConfigOps(self._wrapped.config)
-
-    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
-        """No-op for rebase in dry-run mode. Returns success."""
-        return RebaseResult(success=True, conflict_files=())
-
-    def rebase_abort(self, cwd: Path) -> None:
-        """No-op for rebase abort in dry-run mode."""
-        pass

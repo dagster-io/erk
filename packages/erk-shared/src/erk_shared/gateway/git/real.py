@@ -5,11 +5,7 @@ commands via subprocess. Located in erk-shared so it can be used by both
 the main erk package and erk-kits without circular dependencies.
 """
 
-import os
-import subprocess
-from pathlib import Path
-
-from erk_shared.gateway.git.abc import Git, RebaseResult
+from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
 from erk_shared.gateway.git.analysis_ops.real import RealGitAnalysisOps
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
@@ -112,31 +108,3 @@ class RealGit(Git):
     def config(self) -> GitConfigOps:
         """Access configuration operations subgateway."""
         return self._config
-
-    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
-        """Rebase the current branch onto a target ref."""
-        result = subprocess.run(
-            ["git", "rebase", target_ref],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-            env={**os.environ, "GIT_EDITOR": "true"},  # Auto-accept commit messages
-        )
-
-        if result.returncode == 0:
-            return RebaseResult(success=True, conflict_files=())
-
-        # Rebase failed - get conflict files
-        conflict_files = self.status.get_conflicted_files(cwd)
-        return RebaseResult(success=False, conflict_files=tuple(conflict_files))
-
-    def rebase_abort(self, cwd: Path) -> None:
-        """Abort an in-progress rebase operation."""
-        from erk_shared.subprocess_utils import run_subprocess_with_context
-
-        run_subprocess_with_context(
-            cmd=["git", "rebase", "--abort"],
-            operation_context="abort rebase",
-            cwd=cwd,
-        )
