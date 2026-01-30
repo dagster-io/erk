@@ -52,6 +52,7 @@ Quick reference for all `erk exec` subcommands.
 | `marker delete`                   | Delete a marker file.                                                     |
 | `marker exists`                   | Check if a marker file exists.                                            |
 | `marker read`                     | Read content from a marker file.                                          |
+| `objective-roadmap-check`         | Parse an objective's roadmap tables and return structured JSON.           |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                      |
 | `plan-create-review-branch`       | Create a plan review branch and push to remote.                           |
 | `plan-create-review-pr`           | Create a draft PR for plan review and update plan metadata.               |
@@ -668,6 +669,18 @@ Read content from a marker file.
 | Flag           | Type | Required | Default | Description                              |
 | -------------- | ---- | -------- | ------- | ---------------------------------------- |
 | `--session-id` | TEXT | No       | -       | Session ID for marker storage (required) |
+
+### objective-roadmap-check
+
+Parse an objective's roadmap tables and return structured JSON.
+
+**Usage:** `erk exec objective-roadmap-check` <objective_number>
+
+**Arguments:**
+
+| Name               | Required | Description |
+| ------------------ | -------- | ----------- |
+| `OBJECTIVE_NUMBER` | Yes      | -           |
 
 ### objective-save-to-issue
 
