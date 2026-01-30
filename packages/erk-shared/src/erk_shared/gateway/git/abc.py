@@ -163,35 +163,3 @@ class Git(ABC):
     def config(self) -> GitConfigOps:
         """Access configuration operations subgateway."""
         ...
-
-    @abstractmethod
-    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
-        """Rebase the current branch onto a target ref.
-
-        Runs `git rebase <target_ref>` to replay current branch commits on top
-        of the target ref.
-
-        Args:
-            cwd: Working directory (must be in a git repository)
-            target_ref: The ref to rebase onto (e.g., "origin/main", branch name)
-
-        Returns:
-            RebaseResult with success flag and any conflict files.
-            If conflicts occur, the rebase will be left in progress.
-        """
-        ...
-
-    @abstractmethod
-    def rebase_abort(self, cwd: Path) -> None:
-        """Abort an in-progress rebase operation.
-
-        Runs `git rebase --abort` to cancel a rebase that has conflicts
-        and restore the branch to its original state.
-
-        Args:
-            cwd: Working directory (must have a rebase in progress)
-
-        Raises:
-            subprocess.CalledProcessError: If no rebase is in progress
-        """
-        ...
