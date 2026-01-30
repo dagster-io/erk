@@ -42,9 +42,32 @@ gh pr diff {pr_number} --name-only
 gh pr diff {pr_number}
 ```
 
-## Step 4: Post Inline Comments for Violations
+## Step 4: Fetch Existing Review Comments
+
+Before posting inline comments, fetch all existing review comments to avoid duplicates:
+
+```
+gh api repos/{{owner}}/{{repo}}/pulls/{pr_number}/comments --paginate
+```
+
+(Replace `{{owner}}/{{repo}}` with the actual repository owner and name from REPO above.)
+
+Build a set of existing comments keyed by `(path, line, body_prefix)` where
+`body_prefix` is the first 80 characters of the comment body. This catches
+near-duplicates even if wording varies slightly.
+
+When checking for duplicates, match comments that:
+1. Are on the same file path
+2. Are on the same line (or within 2 lines, to handle diff shifts)
+3. Start with the same review prefix (`**{review_name}**:`)
+
+## Step 5: Post Inline Comments for Violations
 
 **IMPORTANT: Post an inline comment for EACH violation found.**
+
+**Skip posting if an existing comment from this review already exists on the
+same file and line** (as determined in Step 4). Log skipped duplicates so they
+appear in the summary.
 
 ```
 erk exec post-pr-inline-comment \\
@@ -54,7 +77,7 @@ erk exec post-pr-inline-comment \\
   --body "**{review_name}**: [pattern detected] - [rule/doc reference]"
 ```
 
-## Step 5: Post Summary Comment
+## Step 6: Post Summary Comment
 
 **IMPORTANT: All timestamps MUST be in Pacific Time (PT), NOT UTC.**
 
