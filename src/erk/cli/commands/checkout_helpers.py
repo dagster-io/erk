@@ -198,8 +198,7 @@ def ensure_branch_has_worktree(
             create_branch=False,
         )
         if isinstance(wt_result, WorktreeAddError):
-            user_output(f"Error adding worktree: {wt_result.message}")
-            raise SystemExit(1) from None
+            raise click.ClickException(wt_result.message)
     else:
         result = allocate_slot_for_branch(
             ctx,
