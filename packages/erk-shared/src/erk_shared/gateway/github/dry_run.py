@@ -9,6 +9,7 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
     BodyContent,
     GitHubRepoLocation,
+    MergeResult,
     PRDetails,
     PRListState,
     PRNotFound,
@@ -63,10 +64,10 @@ class DryRunGitHub(GitHub):
         verbose: bool = False,
         subject: str | None = None,
         body: str | None = None,
-    ) -> bool | str:
+    ) -> MergeResult:
         """No-op for merging PR in dry-run mode."""
         # Do nothing - prevents actual PR merge
-        return True
+        return MergeResult(pr_number=pr_number)
 
     def trigger_workflow(
         self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None

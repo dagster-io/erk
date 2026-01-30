@@ -14,6 +14,7 @@ from pytest import MonkeyPatch
 
 from erk_shared.gateway.github.abc import GistCreated, GistCreateError
 from erk_shared.gateway.github.real import RealGitHub
+from erk_shared.gateway.github.types import MergeError, MergeResult
 from erk_shared.gateway.time.fake import FakeTime
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -115,8 +116,9 @@ def test_merge_pr_with_squash() -> None:
         subprocess.run = mock_run
 
         ops = RealGitHub.for_test()
-        # Should not raise
-        ops.merge_pr(repo_root, pr_number, squash=True, verbose=False)
+        result = ops.merge_pr(repo_root, pr_number, squash=True, verbose=False)
+        assert isinstance(result, MergeResult)
+        assert result.pr_number == 123
     finally:
         subprocess.run = original_run
 
@@ -151,8 +153,8 @@ def test_merge_pr_without_squash() -> None:
         subprocess.run = original_run
 
 
-def test_merge_pr_returns_error_string_on_failure() -> None:
-    """Test merge_pr returns error message string when gh pr merge fails."""
+def test_merge_pr_returns_merge_error_on_failure() -> None:
+    """Test merge_pr returns MergeError when gh pr merge fails."""
     repo_root = Path("/repo")
     pr_number = 789
 
@@ -165,10 +167,11 @@ def test_merge_pr_returns_error_string_on_failure() -> None:
 
         ops = RealGitHub.for_test()
 
-        # Should return error message string (not False)
         result = ops.merge_pr(repo_root, pr_number, squash=True, verbose=False)
-        assert isinstance(result, str)
-        assert "PR not found" in result
+        assert isinstance(result, MergeError)
+        assert result.pr_number == 789
+        assert "PR not found" in result.message
+        assert result.error_type == "merge-failed"
     finally:
         subprocess.run = original_run
 

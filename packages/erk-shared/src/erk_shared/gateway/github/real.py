@@ -43,6 +43,8 @@ from erk_shared.gateway.github.types import (
     BodyText,
     GitHubRepoId,
     GitHubRepoLocation,
+    MergeError,
+    MergeResult,
     PRDetails,
     PRListState,
     PRNotFound,
@@ -218,7 +220,7 @@ class RealGitHub(GitHub):
         verbose: bool = False,
         subject: str | None = None,
         body: str | None = None,
-    ) -> bool | str:
+    ) -> MergeResult | MergeError:
         """Merge a pull request on GitHub.
 
         When USE_GH_PR_MERGE_FOR_LANDING is True, uses gh pr merge.
@@ -272,9 +274,9 @@ class RealGitHub(GitHub):
             # Show output in verbose mode
             if verbose and result.stdout:
                 user_output(result.stdout)
-            return True
+            return MergeResult(pr_number=pr_number)
         except RuntimeError as e:
-            return str(e)
+            return MergeError(pr_number=pr_number, message=str(e))
 
     def _generate_distinct_id(self) -> str:
         """Generate a random base36 ID for workflow dispatch correlation.

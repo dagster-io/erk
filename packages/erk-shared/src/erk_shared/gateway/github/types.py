@@ -69,6 +69,25 @@ class PRReviewThread:
 
 
 @dataclass(frozen=True)
+class MergeResult:
+    """Success result from merging a PR."""
+
+    pr_number: int
+
+
+@dataclass(frozen=True)
+class MergeError:
+    """Error result from merging a PR. Implements NonIdealState."""
+
+    pr_number: int
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "merge-failed"
+
+
+@dataclass(frozen=True)
 class PRNotFound:
     """Result when a PR lookup finds no matching PR.
 
