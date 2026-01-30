@@ -44,6 +44,7 @@ from erk.cli.commands.tripwire_promotion_helpers import (
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
+from erk.cli.ensure_ideal import EnsureIdeal
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import RepoContext
@@ -989,7 +990,7 @@ def _resolve_land_target_current_branch(
 
     # Look up PR for current branch
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-    pr_details = Ensure.unwrap_pr(
+    pr_details = EnsureIdeal.unwrap_pr(
         ctx.github.get_pr_for_branch(main_repo_root, current_branch),
         f"No pull request found for branch '{current_branch}'.",
     )
@@ -1036,7 +1037,7 @@ def _resolve_land_target_pr(
 
     # Fetch PR details
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-    pr_details = Ensure.unwrap_pr(
+    pr_details = EnsureIdeal.unwrap_pr(
         ctx.github.get_pr(main_repo_root, pr_number),
         f"Pull request #{pr_number} not found.",
     )
@@ -1085,7 +1086,7 @@ def _resolve_land_target_branch(
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
     # Look up PR for branch
-    pr_details = Ensure.unwrap_pr(
+    pr_details = EnsureIdeal.unwrap_pr(
         ctx.github.get_pr_for_branch(main_repo_root, branch_name),
         f"No pull request found for branch '{branch_name}'.",
     )
@@ -1639,7 +1640,7 @@ def _execute_land(
         merged_pr_number = result.pr_number
     else:
         # Simple GitHub-only merge (no worktree or Graphite disabled)
-        pr_details = Ensure.unwrap_pr(
+        pr_details = EnsureIdeal.unwrap_pr(
             ctx.github.get_pr(main_repo_root, pr_number),
             f"Pull request #{pr_number} not found.",
         )

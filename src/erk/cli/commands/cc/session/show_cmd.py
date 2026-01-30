@@ -10,6 +10,7 @@ from erk.cli.commands.cc.session.list_cmd import (
     format_size,
 )
 from erk.cli.ensure import Ensure
+from erk.cli.ensure_ideal import EnsureIdeal
 from erk.core.context import ErkContext
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.learn.extraction.session_schema import (
@@ -75,7 +76,7 @@ def _show_session_impl(
         inferred = True
 
     # Get the session
-    session = Ensure.session(claude_installation.get_session(cwd, session_id))
+    session = EnsureIdeal.session(claude_installation.get_session(cwd, session_id))
 
     # Check if this is an agent session - provide helpful error
     parent_id = session.parent_session_id
