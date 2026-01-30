@@ -23,6 +23,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
@@ -699,7 +700,14 @@ def _submit_single_issue(
                     user_output(click.style("Error: ", fg="red") + msg)
                     raise SystemExit(1)
 
-            ctx.branch_manager.create_branch(repo.root, branch_name, f"origin/{base_branch}")
+            create_result = ctx.branch_manager.create_branch(
+                repo.root, branch_name, f"origin/{base_branch}"
+            )
+            if isinstance(create_result, BranchAlreadyExists):
+                user_output(
+                    click.style("Error: ", fg="red") + create_result.message
+                )
+                raise SystemExit(1) from None
             user_output(f"Created branch: {click.style(branch_name, fg='cyan')}")
 
             # Use context manager to restore original branch on failure

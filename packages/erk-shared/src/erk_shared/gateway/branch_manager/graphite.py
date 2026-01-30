@@ -8,6 +8,7 @@ from pathlib import Path
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.types import PrInfo
 from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.graphite.abc import Graphite
@@ -65,7 +66,9 @@ class GraphiteBranchManager(BranchManager):
             from_fallback=True,  # Mark as fallback
         )
 
-    def create_branch(self, repo_root: Path, branch_name: str, base_branch: str) -> None:
+    def create_branch(
+        self, repo_root: Path, branch_name: str, base_branch: str
+    ) -> BranchCreated | BranchAlreadyExists:
         """Create a new branch using Graphite.
 
         Creates the branch via git and registers it with Graphite for stack tracking.
@@ -78,12 +81,17 @@ class GraphiteBranchManager(BranchManager):
             repo_root: Repository root directory
             branch_name: Name of the new branch
             base_branch: Name of the parent branch (can be local or remote ref like origin/main)
+
+        Returns:
+            BranchCreated on success, BranchAlreadyExists if branch already exists.
         """
         # Save current branch to restore later
         current_branch = self.git.branch.get_current_branch(repo_root)
 
         # Create the branch from base_branch
-        self.git.branch.create_branch(repo_root, branch_name, base_branch, force=False)
+        result = self.git.branch.create_branch(repo_root, branch_name, base_branch, force=False)
+        if isinstance(result, BranchAlreadyExists):
+            return result
 
         # Checkout the new branch temporarily to track it with Graphite
         # (gt track requires the branch to be checked out)
@@ -111,6 +119,8 @@ class GraphiteBranchManager(BranchManager):
         # Restore original branch so callers can create worktrees with the new branch
         if current_branch is not None:
             self.git.branch.checkout_branch(repo_root, current_branch)
+
+        return BranchCreated()
 
     def _ensure_local_matches_remote(
         self, repo_root: Path, local_branch: str, remote_ref: str

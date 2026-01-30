@@ -10,6 +10,7 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.worktree.abc import Worktree
+from erk_shared.gateway.git.worktree.types import WorktreeAddError, WorktreeAdded
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
@@ -64,7 +65,7 @@ class RealWorktree(Worktree):
         branch: str | None,
         ref: str | None,
         create_branch: bool,
-    ) -> None:
+    ) -> WorktreeAdded | WorktreeAddError:
         """Add a new git worktree."""
         if branch and not create_branch:
             cmd = ["git", "worktree", "add", str(path), branch]
@@ -78,7 +79,11 @@ class RealWorktree(Worktree):
             cmd = ["git", "worktree", "add", str(path), base_ref]
             context = f"add worktree at {path}"
 
-        run_subprocess_with_context(cmd=cmd, operation_context=context, cwd=repo_root)
+        try:
+            run_subprocess_with_context(cmd=cmd, operation_context=context, cwd=repo_root)
+        except RuntimeError as e:
+            return WorktreeAddError(message=str(e))
+        return WorktreeAdded()
 
     def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
         """Move a worktree to a new location."""

@@ -13,6 +13,7 @@ from erk.cli.activation import (
 )
 from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.core import discover_repo_context
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
@@ -165,7 +166,10 @@ def branch_create(
     else:
         parent_branch = trunk
 
-    ctx.branch_manager.create_branch(repo.root, branch_name, parent_branch)
+    result = ctx.branch_manager.create_branch(repo.root, branch_name, parent_branch)
+    if isinstance(result, BranchAlreadyExists):
+        user_output(f"Error: {result.message}")
+        raise SystemExit(1) from None
     user_output(f"Created branch: {branch_name}")
 
     # If --no-slot is specified, we're done (but warn about .impl if --for-plan was used)

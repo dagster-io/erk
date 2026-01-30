@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from erk_shared.gateway.branch_manager.types import PrInfo
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 
 
 class BranchManager(ABC):
@@ -39,7 +40,9 @@ class BranchManager(ABC):
         ...
 
     @abstractmethod
-    def create_branch(self, repo_root: Path, branch_name: str, base_branch: str) -> None:
+    def create_branch(
+        self, repo_root: Path, branch_name: str, base_branch: str
+    ) -> BranchCreated | BranchAlreadyExists:
         """Create a new branch from base.
 
         For Graphite: Uses `gt create` to create and track the branch.
@@ -49,6 +52,9 @@ class BranchManager(ABC):
             repo_root: Repository root directory
             branch_name: Name of the new branch
             base_branch: Name of the parent/base branch
+
+        Returns:
+            BranchCreated on success, BranchAlreadyExists if branch already exists.
         """
         ...
 

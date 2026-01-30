@@ -6,6 +6,7 @@ from pathlib import Path
 
 from erk.core.context import ErkContext
 from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.worktree.types import WorktreeAddError
 from erk_shared.output.output import user_output
 
 
@@ -204,13 +205,16 @@ def execute_split_plan(
         # Create worktree for existing branch
         # Using create_branch=False since branch already exists
         # The actual behavior depends on the injected Git implementation
-        git_ops.worktree.add_worktree(
+        wt_result = git_ops.worktree.add_worktree(
             plan.repo_root,
             target_path,
             branch=branch,
             ref=None,
             create_branch=False,
         )
+        if isinstance(wt_result, WorktreeAddError):
+            user_output(f"Error adding worktree for '{branch}': {wt_result.message}")
+            raise SystemExit(1) from None
 
         results.append((branch, target_path))
 

@@ -16,6 +16,8 @@ from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+from erk_shared.gateway.git.worktree.types import WorktreeAddError
 from erk_shared.output.output import user_output
 
 
@@ -305,18 +307,26 @@ def consolidate_stack(
             new_worktree_path = worktree_path_for(repo.worktrees_dir, name)
 
             # Create temporary branch and checkout it to free up current_branch for new worktree
-            ctx.branch_manager.create_branch(current_worktree, temp_branch_name, current_branch)
+            create_result = ctx.branch_manager.create_branch(
+                current_worktree, temp_branch_name, current_branch
+            )
+            if isinstance(create_result, BranchAlreadyExists):
+                user_output(f"Error: {create_result.message}")
+                raise SystemExit(1) from None
             ctx.branch_manager.checkout_branch(current_worktree, temp_branch_name)
 
             # Create new worktree with original branch
             # (now available since source is on temp branch)
-            ctx.git.worktree.add_worktree(
+            wt_result = ctx.git.worktree.add_worktree(
                 repo.root,
                 new_worktree_path,
                 branch=current_branch,
                 ref=None,
                 create_branch=False,
             )
+            if isinstance(wt_result, WorktreeAddError):
+                user_output(f"Error adding worktree: {wt_result.message}")
+                raise SystemExit(1) from None
 
             user_output(click.style(f"✅ Created new worktree: {name}", fg="green"))
 

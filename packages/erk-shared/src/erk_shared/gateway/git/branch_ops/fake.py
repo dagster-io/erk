@@ -7,6 +7,7 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, WorktreeInfo
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 
 
 class FakeGitBranchOps(GitBranchOps):
@@ -47,6 +48,7 @@ class FakeGitBranchOps(GitBranchOps):
         | None = None,
         delete_branch_raises: dict[str, Exception] | None = None,
         tracking_branch_failures: dict[str, str] | None = None,
+        create_branch_error: BranchAlreadyExists | None = None,
     ) -> None:
         """Create FakeGitBranchOps with pre-configured state.
 
@@ -67,6 +69,7 @@ class FakeGitBranchOps(GitBranchOps):
             delete_branch_raises: Mapping of branch name -> exception to raise on delete
             tracking_branch_failures: Mapping of branch name -> error message to raise
                 when create_tracking_branch is called for that branch
+            create_branch_error: If set, create_branch returns this error instead of BranchCreated
         """
         self._worktrees = worktrees if worktrees is not None else {}
         self._current_branches = current_branches if current_branches is not None else {}
@@ -93,6 +96,7 @@ class FakeGitBranchOps(GitBranchOps):
         self._tracking_branch_failures = (
             tracking_branch_failures if tracking_branch_failures is not None else {}
         )
+        self._create_branch_error = create_branch_error
 
         # Mutation tracking
         self._created_branches: list[
@@ -103,12 +107,18 @@ class FakeGitBranchOps(GitBranchOps):
         self._detached_checkouts: list[tuple[Path, str]] = []
         self._created_tracking_branches: list[tuple[str, str]] = []  # (branch, remote_ref)
 
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str, *, force: bool) -> None:
+    def create_branch(
+        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    ) -> BranchCreated | BranchAlreadyExists:
         """Create a new branch without checking it out.
 
         Tracks the branch creation for test assertions via created_branches property.
+        Returns create_branch_error if configured, otherwise BranchCreated.
         """
+        if self._create_branch_error is not None:
+            return self._create_branch_error
         self._created_branches.append((cwd, branch_name, start_point, force))
+        return BranchCreated()
 
     def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
         """Delete a local branch (mutates internal state for test assertions).

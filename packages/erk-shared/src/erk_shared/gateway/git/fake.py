@@ -29,7 +29,9 @@ from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
 from erk_shared.gateway.git.rebase_ops.fake import FakeGitRebaseOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+from erk_shared.gateway.git.worktree.types import WorktreeAddError
 from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
 from erk_shared.gateway.git.repo_ops.fake import FakeGitRepoOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
@@ -157,6 +159,8 @@ class FakeGit(Git):
         rebase_abort_raises: Exception | None = None,
         pull_rebase_error: PullRebaseError | None = None,
         merge_bases: dict[tuple[str, str], str] | None = None,
+        create_branch_error: BranchAlreadyExists | None = None,
+        add_worktree_error: WorktreeAddError | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -214,6 +218,8 @@ class FakeGit(Git):
             merge_bases: Mapping of (ref1, ref2) -> merge base commit SHA for
                 get_merge_base(). Keys are ordered pairs, so (A, B) and (B, A)
                 are both checked.
+            create_branch_error: BranchAlreadyExists to return from create_branch()
+            add_worktree_error: WorktreeAddError to return from add_worktree()
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -315,6 +321,7 @@ class FakeGit(Git):
             worktrees=self._worktrees,
             existing_paths=self._existing_paths,
             dirty_worktrees=self._dirty_worktrees,
+            add_worktree_error=add_worktree_error,
         )
 
         # Branch operations subgateway - linked to FakeGit's state
@@ -334,6 +341,7 @@ class FakeGit(Git):
             branch_commits_with_authors=self._branch_commits_with_authors,
             delete_branch_raises=self._delete_branch_raises,
             tracking_branch_failures=self._tracking_branch_failures,
+            create_branch_error=create_branch_error,
         )
         # Link mutation tracking so FakeGit properties see mutations from FakeGitBranchOps
         self._branch_gateway.link_mutation_tracking(
