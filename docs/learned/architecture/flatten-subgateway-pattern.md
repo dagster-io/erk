@@ -206,6 +206,71 @@ When adding a subgateway property:
 - **Cause:** Forgetting to update all 5 layers
 - **Fix:** Use the 5-layer checklist above
 
+## Removed Convenience Methods Rationale
+
+### Pure Facade Goal
+
+Gateway ABCs should contain **ONLY property accessors** to subgateways, not convenience methods that delegate to those properties. This enforces a pure facade pattern where the ABC is a thin organizational layer.
+
+### The Problem: Convenience Method Accumulation
+
+As new subgateways are added, convenience methods accumulate in the parent ABC - methods that just forward calls to subgateway properties:
+
+```python
+class Git(ABC):
+    @property
+    @abstractmethod
+    def branch(self) -> GitBranchOps:
+        ...
+
+    # Convenience method - just forwards to subgateway
+    @abstractmethod
+    def get_current_branch(self, repo_root: Path) -> str:
+        ...
+
+    # What it actually does in implementations:
+    def get_current_branch(self, repo_root: Path) -> str:
+        return self.branch.get_current_branch(repo_root)
+```
+
+### PR #6285: Systematic Cleanup
+
+PR #6285 removed **16 methods** from the Git ABC implementations:
+
+- **14 convenience methods** - Forwards to `branch`, `worktree`, `rebase`, etc.
+- **2 rebase methods** - `rebase_onto`, `rebase_abort` moved to `rebase` subgateway
+
+**Migration mapping examples:**
+
+| Before (convenience)       | After (subgateway property)       |
+| -------------------------- | --------------------------------- |
+| `git.get_current_branch()` | `git.branch.get_current_branch()` |
+| `git.create_branch()`      | `git.branch.create_branch()`      |
+| `git.delete_branch()`      | `git.branch.delete_branch()`      |
+| `git.checkout_branch()`    | `git.branch.checkout_branch()`    |
+| `git.list_worktrees()`     | `git.worktree.list_worktrees()`   |
+| `git.add_worktree()`       | `git.worktree.add_worktree()`     |
+| `git.rebase_onto()`        | `git.rebase.rebase_onto()`        |
+
+**Result:** Git ABC reduced to exactly **10 abstract property accessors** - a pure facade with zero convenience methods.
+
+### Why This Matters
+
+1. **Clear Ownership** - Each operation belongs to exactly one subgateway, eliminating ambiguity
+2. **Discoverability** - IDE autocomplete guides users through the property hierarchy
+3. **Smaller Surface Area** - Fewer methods in the ABC = less to maintain across 5 implementations
+4. **Prevents Duplication** - Without convenience methods, there's one obvious way to call each operation
+
+### Periodic Audit Recommendation
+
+Convenience methods creep back as code evolves. Periodically audit gateway ABCs:
+
+1. Search for methods that delegate to `self.subgateway.method()`
+2. Check for zero production callers (methods that aren't actually used)
+3. Batch removal in a single PR (maintain 5-file synchronization)
+
+See [Gateway ABC Implementation](gateway-abc-implementation.md#abc-method-removal-pattern) for the removal pattern and verification steps.
+
 ## Related Topics
 
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - Full 5-layer gateway pattern

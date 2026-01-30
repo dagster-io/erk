@@ -643,6 +643,67 @@ Task(subagent_type="agent", prompt="Execute complete workflow")
 | **Model selection** | Uses main session model    | Agent chooses appropriate model |
 | **Maintenance**     | Update multiple commands   | Update one agent                |
 
+## Context Reduction Pattern
+
+**When to use:** Agent processes large input data using deterministic rules to produce compact output for main conversation.
+
+**Problem:** Some operations require processing large volumes of data (e.g., 2000+ lines of commit JSON) that would consume excessive context if directly loaded into the main conversation.
+
+**Solution:** Delegate to a specialized subagent that:
+
+1. Loads and processes the large input data
+2. Applies deterministic rules or analysis
+3. Returns a compact, actionable proposal (50-100 lines)
+4. Main conversation receives only the proposal, not the raw data
+
+### Example: changelog-update → commit-categorizer
+
+**Workflow:**
+
+1. Main conversation calls `/local:changelog-update`
+2. Command delegates to `commit-categorizer` agent
+3. Agent fetches 2000+ lines of commit JSON via `erk-dev changelog-commits --json-output`
+4. Agent categorizes commits using rules from agent definition
+5. Agent returns compact proposal (50-100 lines) with STATUS header
+6. Main conversation presents proposal to user, requests edits
+7. Main conversation updates CHANGELOG.md directly
+
+**Context reduction:** 95% (2000+ lines → 50-100 lines)
+
+**Output format:**
+
+```
+STATUS: OK
+HEAD_COMMIT: abc123
+SINCE_COMMIT: def456
+TOTAL_COMMITS: 42
+
+---PROPOSAL---
+
+Found 42 commits since last sync.
+
+**Major Changes (2):**
+1. `abc123` - New plan review workflow
+   - Reasoning: Significant user-facing feature
+
+**Added (5):**
+1. `def456` - New TUI command
+   ...
+
+**Filtered Out (35):**
+- `ghi789` - "Update tests" -> test-only change
+...
+```
+
+**When to apply:**
+
+- Large input data (1000+ lines)
+- Deterministic rules or categorization logic
+- Compact output required (summary, proposal, list)
+- Main conversation needs actionable result, not raw data
+
+**Reference:** `.claude/agents/changelog/commit-categorizer.md` for canonical implementation.
+
 ## Agent Discovery
 
 ### Finding Available Agents

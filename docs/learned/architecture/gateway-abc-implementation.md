@@ -11,6 +11,8 @@ tripwires:
     warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
   - action: "adding a new method to Graphite ABC"
     warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+  - action: "removing an abstract method from a gateway ABC"
+    warning: "Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages."
   - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
     warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
   - action: "using subprocess.run with git command outside of a gateway"
@@ -549,6 +551,97 @@ beads/
 - Test fake with fluent builder for state setup
 - Dry-run wrapper that returns mock success values
 - Printing wrapper that logs then delegates
+
+## ABC Method Removal Pattern
+
+When removing dead convenience methods from gateway ABCs (methods with zero production callers), follow this synchronization pattern.
+
+### When to Remove Methods
+
+Remove methods that meet ALL these criteria:
+
+1. **Zero production callers** - No code in `src/erk/` or `packages/erk-shared/` uses the method
+2. **Convenience wrapper** - Method just forwards to a subgateway property (e.g., `git.method()` → `git.subgateway.method()`)
+3. **Dead code** - Not part of the core gateway contract
+
+### 5-Place Synchronization Requirement
+
+When removing a method from an ABC, you MUST remove it from all 5 implementations simultaneously:
+
+1. `abc.py` - Remove abstract method definition
+2. `real.py` - Remove production implementation
+3. `fake.py` - Remove fake implementation
+4. `dry_run.py` - Remove dry-run implementation
+5. `printing.py` - Remove printing implementation
+
+**Partial removal causes type checker errors** - if you remove from abc.py but forget printing.py, the type checker will complain that PrintingGit doesn't implement the abstract method.
+
+### Caller Migration Pattern
+
+Before removing, migrate all call sites to use the subgateway property:
+
+```python
+# Before (convenience method)
+current_branch = git.get_current_branch(repo_root)
+
+# After (subgateway property)
+current_branch = git.branch.get_current_branch(repo_root)
+```
+
+### Verification Steps
+
+After removing a method:
+
+1. Run type checker (`ty`) to verify no abstract method errors
+2. Grep across packages for the removed method name:
+   ```bash
+   grep -r "removed_method_name" src/ packages/
+   ```
+3. Ensure zero matches in production code (tests may still reference for historical reasons)
+
+### Example: Git ABC Cleanup
+
+PR #6285 removed 16 methods from the Git ABC:
+
+- **14 convenience methods** (e.g., `get_current_branch`, `create_branch`, `delete_branch`)
+- **2 rebase methods** (`rebase_onto`, `rebase_abort`)
+
+**Migration mapping**:
+
+| Removed Method         | Migrated To                       |
+| ---------------------- | --------------------------------- |
+| `get_current_branch()` | `git.branch.get_current_branch()` |
+| `create_branch()`      | `git.branch.create_branch()`      |
+| `delete_branch()`      | `git.branch.delete_branch()`      |
+| `rebase_onto()`        | `git.rebase.rebase_onto()`        |
+
+**Result**: Git ABC reduced to exactly 10 abstract property accessors (pure facade pattern).
+
+### Rationale: Pure Facade Goal
+
+Gateway ABCs should contain ONLY property accessors to subgateways, not convenience methods. This enforces:
+
+- **Clear ownership** - Each operation belongs to exactly one subgateway
+- **Discoverability** - Callers navigate through properties (IDE autocomplete)
+- **Maintainability** - Fewer methods = smaller surface area
+
+### Periodic Audit Recommendation
+
+Convenience methods accumulate over time as new subgateways are added. Periodically audit gateway ABCs for methods that could be removed:
+
+1. Search for methods that delegate to subgateways
+2. Check for zero production callers
+3. Batch removal in a single PR (maintain 5-file synchronization)
+
+### Reference Implementation
+
+PR #6285: [Remove rebase_onto/rebase_abort from Git ABC and dead convenience methods from PrintingGit](https://github.com/owner/repo/pull/6285)
+
+This PR demonstrates:
+
+- 5-place synchronization (abc, real, fake, dry_run, printing)
+- Caller migration to subgateway properties
+- Verification via grep across packages
 
 ## Related Documentation
 

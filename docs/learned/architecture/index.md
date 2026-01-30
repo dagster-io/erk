@@ -23,6 +23,7 @@
 - **[erk-shared-package.md](erk-shared-package.md)** — deciding where to put new utilities, moving code between packages
 - **[erk-statusline.md](erk-statusline.md)** — modifying the Claude Code status line, adding new status indicators to the statusline, understanding how statusline fetches GitHub data, working with Token/TokenSeq patterns, debugging statusline performance
 - **[event-progress-pattern.md](event-progress-pattern.md)** — implementing operations that need progress reporting, separating business logic from UI output, building testable CLI operations, using ProgressEvent or CompletionEvent
+- **[fail-open-patterns.md](fail-open-patterns.md)** — implementing cleanup operations, designing resilient workflows, handling optional or non-critical operations
 - **[flatten-subgateway-pattern.md](flatten-subgateway-pattern.md)** — creating or migrating subgateways, exposing subgateway operations through parent gateway, working with gateway hierarchies, implementing property-based subgateway access
 - **[gateway-abc-implementation.md](gateway-abc-implementation.md)** — adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite), implementing new gateway operations, composing one gateway inside another (e.g., GitHub composing GitHubIssues)
 - **[gateway-decomposition-phases.md](gateway-decomposition-phases.md)** — understanding the gateway decomposition initiative, planning new subgateway extractions, reviewing architectural history

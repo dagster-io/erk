@@ -2,6 +2,11 @@
 title: Session Preprocessing
 read_when:
   - "preprocessing Claude Code session logs for analysis"
+tripwires:
+  - action: "looking up session files from metadata"
+    warning: "Session IDs in metadata may not match available local files. Verify session paths exist before preprocessing. Use LBYL checks and provide clear error messages when sessions are missing."
+  - action: "analyzing large sessions"
+    warning: "Sessions exceeding 20,000 tokens are automatically chunked into multi-part files. Analysis must detect and handle chunking (.part1.jsonl, .part2.jsonl, etc.). Check for part files when base session file is missing."
 ---
 
 # Session Preprocessing
