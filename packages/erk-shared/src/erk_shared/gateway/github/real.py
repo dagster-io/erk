@@ -276,7 +276,7 @@ class RealGitHub(GitHub):
                 user_output(result.stdout)
             return MergeResult(pr_number=pr_number)
         except RuntimeError as e:
-            return MergeError(pr_number=pr_number, _message=str(e))
+            return MergeError(pr_number=pr_number, message=str(e))
 
     def _generate_distinct_id(self) -> str:
         """Generate a random base36 ID for workflow dispatch correlation.

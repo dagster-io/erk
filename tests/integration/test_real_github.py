@@ -14,6 +14,7 @@ from pytest import MonkeyPatch
 
 from erk_shared.gateway.github.abc import GistCreated, GistCreateError
 from erk_shared.gateway.github.real import RealGitHub
+from erk_shared.gateway.github.types import MergeError, MergeResult
 from erk_shared.gateway.time.fake import FakeTime
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -87,8 +88,6 @@ def test_update_pr_base_branch_file_not_found(monkeypatch: MonkeyPatch) -> None:
 
 def test_merge_pr_with_squash() -> None:
     """Test merge_pr uses gh pr merge with --squash (no --delete-branch)."""
-    from erk_shared.gateway.github.types import MergeResult
-
     repo_root = Path("/repo")
     pr_number = 123
 
@@ -156,8 +155,6 @@ def test_merge_pr_without_squash() -> None:
 
 def test_merge_pr_returns_merge_error_on_failure() -> None:
     """Test merge_pr returns MergeError when gh pr merge fails."""
-    from erk_shared.gateway.github.types import MergeError
-
     repo_root = Path("/repo")
     pr_number = 789
 

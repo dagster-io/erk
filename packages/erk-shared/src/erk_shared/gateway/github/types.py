@@ -80,15 +80,11 @@ class MergeError:
     """Error result from merging a PR. Implements NonIdealState."""
 
     pr_number: int
-    _message: str
+    message: str
 
     @property
     def error_type(self) -> str:
         return "merge-failed"
-
-    @property
-    def message(self) -> str:
-        return self._message
 
 
 @dataclass(frozen=True)

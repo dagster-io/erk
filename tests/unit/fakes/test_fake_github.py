@@ -12,6 +12,8 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
+    MergeError,
+    MergeResult,
     PRDetails,
     PRNotFound,
     PullRequestInfo,
@@ -784,8 +786,6 @@ def test_fake_github_get_pr_for_branch_returns_pr_not_found_when_pr_exists_but_n
 
 def test_fake_github_merge_pr_returns_merge_result_on_success() -> None:
     """Test merge_pr returns MergeResult on success."""
-    from erk_shared.gateway.github.types import MergeResult
-
     ops = FakeGitHub(merge_should_succeed=True)
 
     result = ops.merge_pr(sentinel_path(), 123)
@@ -797,8 +797,6 @@ def test_fake_github_merge_pr_returns_merge_result_on_success() -> None:
 
 def test_fake_github_merge_pr_returns_merge_error_on_failure() -> None:
     """Test merge_pr returns MergeError on failure."""
-    from erk_shared.gateway.github.types import MergeError
-
     ops = FakeGitHub(merge_should_succeed=False)
 
     result = ops.merge_pr(sentinel_path(), 123)

@@ -214,7 +214,7 @@ class FakeGitHub(GitHub):
             self._merged_prs.append(pr_number)
             self._operation_log.append(("merge_pr", pr_number))
             return MergeResult(pr_number=pr_number)
-        return MergeError(pr_number=pr_number, _message="Merge failed (configured to fail in test)")
+        return MergeError(pr_number=pr_number, message="Merge failed (configured to fail in test)")
 
     def trigger_workflow(
         self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
