@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from erk_shared.gateway.branch_manager.types import PrInfo
 
 if TYPE_CHECKING:
-    from erk_shared.gateway.git.branch_ops.types import BranchCreateError, BranchCreated
+    from erk_shared.gateway.git.branch_ops.types import BranchCreated, BranchCreateError
 
 
 class BranchManager(ABC):

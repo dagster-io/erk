@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
-    from erk_shared.gateway.git.branch_ops.types import BranchCreateError, BranchCreated
+    from erk_shared.gateway.git.branch_ops.types import BranchCreated, BranchCreateError
 
 
 class GitBranchOps(ABC):

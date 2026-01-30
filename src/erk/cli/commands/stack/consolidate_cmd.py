@@ -306,7 +306,9 @@ def consolidate_stack(
             new_worktree_path = worktree_path_for(repo.worktrees_dir, name)
 
             # Create temporary branch and checkout it to free up current_branch for new worktree
-            result = ctx.branch_manager.create_branch(current_worktree, temp_branch_name, current_branch)
+            result = ctx.branch_manager.create_branch(
+                current_worktree, temp_branch_name, current_branch
+            )
             if isinstance(result, BranchCreateError):
                 user_output(f"Error creating branch: {result.message}")
                 raise SystemExit(1)

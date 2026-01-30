@@ -7,7 +7,7 @@ from pathlib import Path
 
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.types import PrInfo
-from erk_shared.gateway.git.branch_ops.types import BranchCreateError, BranchCreated
+from erk_shared.gateway.git.branch_ops.types import BranchCreated, BranchCreateError
 
 
 @dataclass(frozen=True)

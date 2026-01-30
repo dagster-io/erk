@@ -4,7 +4,7 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
-from erk_shared.gateway.git.branch_ops.types import BranchCreateError, BranchCreated
+from erk_shared.gateway.git.branch_ops.types import BranchCreated, BranchCreateError
 from erk_shared.printing.base import PrintingBase
 
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
-from erk_shared.gateway.git.branch_ops.types import BranchCreateError, BranchCreated
+from erk_shared.gateway.git.branch_ops.types import BranchCreated, BranchCreateError
 from erk_shared.gateway.git.lock import wait_for_index_lock
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime

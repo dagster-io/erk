@@ -8,7 +8,7 @@ from pathlib import Path
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.types import PrInfo
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.git.branch_ops.types import BranchCreateError, BranchCreated
+from erk_shared.gateway.git.branch_ops.types import BranchCreated, BranchCreateError
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.types import PRNotFound

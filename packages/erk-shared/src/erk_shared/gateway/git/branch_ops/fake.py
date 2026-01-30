@@ -7,7 +7,7 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, WorktreeInfo
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
-from erk_shared.gateway.git.branch_ops.types import BranchCreateError, BranchCreated
+from erk_shared.gateway.git.branch_ops.types import BranchCreated, BranchCreateError
 
 
 class FakeGitBranchOps(GitBranchOps):

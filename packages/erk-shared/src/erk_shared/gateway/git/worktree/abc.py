@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 from erk_shared.gateway.git.abc import WorktreeInfo
 
 if TYPE_CHECKING:
-    from erk_shared.gateway.git.worktree.types import WorktreeAddError, WorktreeAdded
+    from erk_shared.gateway.git.worktree.types import WorktreeAdded, WorktreeAddError
 
 
 class Worktree(ABC):
