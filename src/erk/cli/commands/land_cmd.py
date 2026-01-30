@@ -21,6 +21,13 @@ from typing import Literal, NamedTuple, assert_never
 import click
 
 from erk.cli.activation import print_temp_script_instructions, render_activation_script
+from erk.cli.commands.land_pipeline import (
+    LandError,
+    make_execution_state,
+    make_initial_state,
+    run_execution_pipeline,
+    run_validation_pipeline,
+)
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
@@ -28,19 +35,13 @@ from erk.cli.commands.navigation_helpers import (
 )
 from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
-    prompt_objective_update,
 )
-from erk.cli.commands.review_pr_cleanup import cleanup_review_pr
 from erk.cli.commands.slot.common import (
     extract_slot_number,
     find_branch_assignment,
     get_placeholder_branch_name,
 )
 from erk.cli.commands.slot.unassign_cmd import execute_unassign
-from erk.cli.commands.tripwire_promotion_helpers import (
-    extract_tripwire_candidates_from_learn_plan,
-    prompt_tripwire_promotion,
-)
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -60,10 +61,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_learned_from_issue,
     update_plan_header_learn_plan_completed,
 )
-from erk_shared.gateway.github.types import BodyText, MergeError, PRDetails
-from erk_shared.gateway.gt.cli import render_events
-from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
-from erk_shared.gateway.gt.types import LandPrError
+from erk_shared.gateway.github.types import BodyText, PRDetails
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.sessions.discovery import find_sessions_for_plan
@@ -1127,15 +1125,15 @@ def _land_target(
     pull_flag: bool,
     no_delete: bool,
 ) -> None:
-    """Unified landing flow for all entry points.
+    """Generate execution script after validation pipeline has completed.
 
-    This function handles the common landing workflow after target resolution:
-    1. Validate PR is ready to land
-    2. Look up objective and slot assignment
-    3. Determine navigation target path
-    4. Handle dry-run mode
-    5. Generate and write execution script
-    6. Display instructions or output script path
+    Validation and confirmation gathering are done by run_validation_pipeline()
+    before this function is called. This function handles:
+    1. Look up objective and slot assignment
+    2. Determine navigation target path
+    3. Handle dry-run mode
+    4. Generate and write execution script
+    5. Display instructions or output script path
 
     Args:
         ctx: ErkContext
@@ -1154,22 +1152,10 @@ def _land_target(
     pr_number = target.pr_details.number
     branch = target.branch
 
-    # Step 1: Validate PR is ready to land (gathers all confirmations upfront)
-    # The returned confirmation captures whether user approved cleanup.
-    # In script mode, execute phase uses cleanup_confirmed=True (user approved by sourcing).
-    _cleanup_confirmation = _validate_pr_for_landing(
-        ctx, repo=repo, target=target, force=force, script=script
-    )
-    # Note: _cleanup_confirmation is intentionally unused here because _land_target
-    # outputs a script that runs in a separate process. The confirmation has already
-    # been gathered (user was prompted), and the execute phase will use
-    # cleanup_confirmed=True since the user approved by sourcing the script.
-    _ = _cleanup_confirmation
-
-    # Step 2: Look up objective for branch (needed for script generation)
+    # Step 1: Look up objective for branch (needed for script generation)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
 
-    # Step 3: Look up slot assignment (needed for dry-run output)
+    # Step 2: Look up slot assignment (needed for dry-run output)
     state = load_pool_state(repo.pool_json_path)
     slot_assignment: SlotAssignment | None = None
     if state is not None:
@@ -1247,72 +1233,6 @@ def _land_target(
             extra_flags=display_flags if display_flags else None,
         )
     raise SystemExit(0)
-
-
-def _execute_simple_land(
-    ctx: ErkContext,
-    *,
-    repo_root: Path,
-    branch: str,
-    pr_details: PRDetails,
-) -> int:
-    """Execute simple GitHub-only merge without Graphite stack validation.
-
-    This is the non-Graphite path for landing PRs. It performs:
-    1. PR state validation (must be OPEN)
-    2. Base branch validation (must target trunk)
-    3. GitHub merge API call
-
-    Args:
-        ctx: ErkContext
-        repo_root: Repository root directory
-        branch: Branch name being landed
-        pr_details: PR details from GitHub
-
-    Returns:
-        PR number that was merged
-
-    Raises:
-        SystemExit(1) on validation or merge failure
-    """
-    pr_number = pr_details.number
-
-    # Validate PR state
-    Ensure.invariant(
-        pr_details.state == "OPEN",
-        f"Pull request #{pr_number} is not open (state: {pr_details.state}).",
-    )
-
-    # Validate PR base is trunk
-    trunk = ctx.git.branch.detect_trunk_branch(repo_root)
-    Ensure.invariant(
-        pr_details.base_ref_name == trunk,
-        f"PR #{pr_number} targets '{pr_details.base_ref_name}' "
-        + f"but should target '{trunk}'.\n\n"
-        + "The GitHub PR's base branch has diverged from your local stack.\n"
-        + "Update the PR base to trunk before landing.",
-    )
-
-    # Merge the PR via GitHub API
-    user_output(f"Merging PR #{pr_number}...")
-    subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
-    body = pr_details.body or None
-    merge_result = ctx.github.merge_pr(
-        repo_root,
-        pr_number,
-        squash=True,
-        verbose=False,
-        subject=subject,
-        body=body,
-    )
-
-    if isinstance(merge_result, MergeError):
-        Ensure.invariant(
-            False,
-            f"Failed to merge PR #{pr_number}\n\n{merge_result.message}",
-        )
-
-    return pr_number
 
 
 def _cleanup_and_navigate(
@@ -1608,7 +1528,7 @@ def _execute_land(
 
     This function is called when `erk land --execute` is invoked by the
     activation script. All validation has already been done - this just
-    performs the destructive operations.
+    performs the destructive operations via the execution pipeline.
 
     Confirmations are skipped in execute mode because the user already approved
     by sourcing the activation script. Confirmations happen during validation
@@ -1634,118 +1554,29 @@ def _execute_land(
     assert pr_number is not None
     assert branch is not None
 
-    repo = discover_repo_context(ctx, ctx.cwd)
-    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-
-    # Step 1: Merge the PR
-    # Use Graphite path only if:
-    # 1. use_graphite is True, AND
-    # 2. We have a worktree_path (i.e., there's a local checkout for this branch)
-    #
-    # For remote PRs (no local worktree), we use the simple GitHub merge path
-    # because execute_land_pr requires being in the branch's worktree to get
-    # the current branch and its parent.
-    if use_graphite and worktree_path is not None:
-        # Full Graphite-aware path - run from the branch's worktree
-        result = render_events(execute_land_pr(ctx, worktree_path))
-
-        if isinstance(result, LandPrError):
-            user_output(click.style("Error: ", fg="red") + result.message)
-            raise SystemExit(1)
-
-        merged_pr_number = result.pr_number
-    else:
-        # Simple GitHub-only merge (no worktree or Graphite disabled)
-        pr_details = EnsureIdeal.unwrap_pr(
-            ctx.github.get_pr(main_repo_root, pr_number),
-            f"Pull request #{pr_number} not found.",
-        )
-
-        user_output(f"Merging PR #{pr_number}...")
-        subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
-        body = pr_details.body or None
-        merge_result = ctx.github.merge_pr(
-            main_repo_root,
-            pr_number,
-            squash=True,
-            verbose=False,
-            subject=subject,
-            body=body,
-        )
-
-        if isinstance(merge_result, MergeError):
-            Ensure.invariant(
-                False,
-                f"Failed to merge PR #{pr_number}\n\n{merge_result.message}",
-            )
-        merged_pr_number = pr_number
-
-    user_output(click.style("✓", fg="green") + f" Merged PR #{merged_pr_number} [{branch}]")
-
-    # Step 2: Handle objective update (non-interactive since user already approved)
-    if objective_number is not None:
-        prompt_objective_update(
-            ctx,
-            repo_root=main_repo_root,
-            objective_number=objective_number,
-            pr_number=merged_pr_number,
-            branch=branch,
-            force=True,  # Skip confirmation in execute mode
-        )
-
-    # Step 2.5: Update parent plan if this is a learn plan
-    plan_issue_number = extract_leading_issue_number(branch)
-    if plan_issue_number is not None:
-        _update_parent_learn_status_if_learn_plan(
-            ctx,
-            repo_root=main_repo_root,
-            plan_issue_number=plan_issue_number,
-            pr_number=merged_pr_number,
-        )
-
-    # Step 2.75: Prompt tripwire promotion if this is a learn plan
-    if plan_issue_number is not None:
-        candidates = extract_tripwire_candidates_from_learn_plan(
-            ctx,
-            repo_root=main_repo_root,
-            plan_issue_number=plan_issue_number,
-        )
-        if candidates:
-            prompt_tripwire_promotion(
-                ctx,
-                repo_root=main_repo_root,
-                candidates=candidates,
-                force=True,  # Execute mode auto-promotes
-            )
-
-    # Step 2.8: Close review PR if plan has one
-    if plan_issue_number is not None:
-        cleanup_review_pr(
-            ctx,
-            repo_root=main_repo_root,
-            issue_number=plan_issue_number,
-            reason=f"the plan (issue #{plan_issue_number}) was implemented and landed",
-        )
-
-    # Step 3: Cleanup (delete branch, unassign slot)
-    # Note: Navigation is handled by the activation script's cd command
-    # Always use cleanup_confirmed=True in execute mode because user already approved
-    # by sourcing the script. Confirmations happen during validation phase only.
-    _cleanup_and_navigate(
-        ctx,
-        repo=repo,
+    state = make_execution_state(
+        cwd=ctx.cwd,
+        pr_number=pr_number,
         branch=branch,
         worktree_path=worktree_path,
-        script=script,
-        pull_flag=pull_flag,
-        force=True,  # Legacy parameter, kept for compatibility
         is_current_branch=is_current_branch,
-        target_child_branch=target_child_branch,
         objective_number=objective_number,
+        use_graphite=use_graphite,
+        pull_flag=pull_flag,
         no_delete=no_delete,
-        skip_activation_output=True,  # Script's cd command handles navigation
-        cleanup_confirmed=True,  # Execute mode: user approved via script
+        script=script,
+        target_child_branch=target_child_branch,
     )
+
+    # Re-derive main_repo_root from discovery
+    repo = discover_repo_context(ctx, ctx.cwd)
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+    state = replace(state, main_repo_root=main_repo_root)
+
+    result = run_execution_pipeline(ctx, state)
+    if isinstance(result, LandError):
+        user_output(click.style("Error: ", fg="red") + result.message)
+        raise SystemExit(1)
 
 
 @click.command("land", cls=CommandWithHiddenOptions)
@@ -1831,29 +1662,40 @@ def land(
     Ensure.gh_authenticated(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
-    # Phase 1: Resolve landing target based on argument type
-    if target is None:
-        # Landing current branch's PR
-        land_target = _resolve_land_target_current_branch(ctx, repo=repo, up_flag=up_flag)
-    else:
-        # Parse the target argument to determine type
-        parsed = parse_argument(target)
+    # Run validation pipeline (resolve target, validate PR, gather confirmations)
+    initial_state = make_initial_state(
+        cwd=ctx.cwd,
+        force=force,
+        script=script,
+        pull_flag=pull_flag,
+        no_delete=no_delete,
+        up_flag=up_flag,
+        dry_run=ctx.dry_run,
+        target_arg=target,
+        repo_root=repo.root,
+        main_repo_root=main_repo_root,
+    )
+    result = run_validation_pipeline(ctx, initial_state)
 
-        if parsed.arg_type == "branch":
-            # Landing a PR for a specific branch
-            land_target = _resolve_land_target_branch(ctx, repo=repo, branch_name=target)
-        else:
-            # Landing a specific PR by number or URL
-            pr_number = Ensure.not_none(
-                parsed.pr_number,
-                f"Invalid PR identifier: {target}\nExpected a PR number (e.g., 123) or GitHub URL.",
-            )
-            land_target = _resolve_land_target_pr(
-                ctx, repo=repo, pr_number=pr_number, up_flag=up_flag
-            )
+    if isinstance(result, LandError):
+        Ensure.invariant(False, result.message)
+    # Type narrowing: Ensure.invariant exits on failure, so result is LandState here
+    assert not isinstance(result, LandError)
+    assert result.pr_details is not None
 
-    # Phase 2: Execute unified landing flow
+    # Build LandTarget for _land_target (bridge to existing script generation)
+    land_target = LandTarget(
+        branch=result.branch,
+        pr_details=result.pr_details,
+        worktree_path=result.worktree_path,
+        is_current_branch=result.is_current_branch,
+        use_graphite=result.use_graphite,
+        target_child_branch=result.target_child_branch,
+    )
+
+    # Phase 2: Generate execution script (side effects stay in CLI layer)
     _land_target(
         ctx,
         repo=repo,
