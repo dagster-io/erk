@@ -59,6 +59,109 @@ Use exceptions when:
 
 ## Examples in the Codebase
 
+### Git Remote Operations (Canonical Exemplar)
+
+Git remote operations demonstrate the discriminated union pattern applied to subprocess-based I/O operations. See PR #6329 for the full migration from exception-based error handling.
+
+**Type definitions** (`packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py`):
+
+```python
+@dataclass(frozen=True)
+class PushResult:
+    """Success result from pushing to remote."""
+
+@dataclass(frozen=True)
+class PushError:
+    """Error result from pushing to remote. Implements NonIdealState."""
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "push-failed"
+
+@dataclass(frozen=True)
+class PullRebaseResult:
+    """Success result from pull --rebase."""
+
+@dataclass(frozen=True)
+class PullRebaseError:
+    """Error result from pull --rebase. Implements NonIdealState."""
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "pull-rebase-failed"
+```
+
+**Gateway interface** (5-place implementation pattern):
+
+```python
+# ABC layer
+@abstractmethod
+def push_to_remote(
+    self,
+    repo_root: Path,
+    remote: str,
+    refspec: str,
+    *,
+    set_upstream: bool,
+    force: bool,
+) -> PushResult | PushError:
+    """Push to remote. Returns error on failure."""
+
+# Real layer (subprocess boundary with try/except)
+def push_to_remote(...) -> PushResult | PushError:
+    try:
+        subprocess.run([...], check=True)
+        return PushResult()
+    except subprocess.CalledProcessError as e:
+        return PushError(message=str(e))
+
+# Fake layer (returns configured success/error)
+def push_to_remote(...) -> PushResult | PushError:
+    if self.push_should_fail:
+        return PushError(message=self.push_error_message)
+    return PushResult()
+
+# Dry-run layer (returns no-op success)
+def push_to_remote(...) -> PushResult | PushError:
+    return PushResult()
+
+# Printing layer (pass-through wrapper)
+def push_to_remote(...) -> PushResult | PushError:
+    result = self.inner.push_to_remote(...)
+    print(f"push_to_remote(...) -> {type(result).__name__}")
+    return result
+```
+
+**Consumer patterns:**
+
+```python
+# Fire-and-forget pattern: convert error to exception
+push_result = ctx.git.push_to_remote(
+    repo.root, "origin", branch_name, set_upstream=True, force=False
+)
+if isinstance(push_result, PushError):
+    raise RuntimeError(push_result.message)
+user_output("✓ Branch pushed to remote")
+
+# Error reporting pattern: propagate discriminated union
+push_result = ctx.git.push_to_remote(...)
+if isinstance(push_result, PushError):
+    if "non-fast-forward" in push_result.message:
+        return SubmitError(
+            error="push-rejected",
+            message=f"Push rejected: {push_result.message}"
+        )
+```
+
+**Key architectural insights:**
+
+1. **Error handling at subprocess boundary**: try/except in `real.py` only, not in fake/dry-run/printing
+2. **Empty success types**: `PushResult` has no fields—success is the absence of error
+3. **Error context preservation**: `message` field captures full subprocess output
+4. **Two consumer patterns**: fire-and-forget (convert to exception) vs error propagation (return discriminated union)
+
 ### Plan Generation
 
 ```python
