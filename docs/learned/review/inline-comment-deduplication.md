@@ -54,4 +54,4 @@ The deduplication logic is embedded in the review prompt template at `src/erk/re
 ## Related Documentation
 
 - [Prompt Assembly](prompt-assembly.md) — Two-mode prompt system that includes deduplication instructions
-- [PR Operations Skill](../../.claude/skills/pr-operations/SKILL.md) — Commands for posting and resolving review comments
+- [PR Operations Skill](../../../.claude/skills/pr-operations/SKILL.md) — Commands for posting and resolving review comments

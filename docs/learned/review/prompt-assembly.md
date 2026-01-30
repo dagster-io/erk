@@ -73,4 +73,4 @@ if pr_number is None and base_branch is None:
 ## Related Documentation
 
 - [Inline Comment Deduplication](inline-comment-deduplication.md) — Deduplication algorithm used in PR mode
-- [PR Operations Skill](../../.claude/skills/pr-operations/SKILL.md) — Commands for managing PR review threads
+- [PR Operations Skill](../../../.claude/skills/pr-operations/SKILL.md) — Commands for managing PR review threads
