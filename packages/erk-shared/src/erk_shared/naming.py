@@ -393,6 +393,36 @@ def extract_leading_issue_number(branch_name: str) -> int | None:
     return None
 
 
+def extract_objective_number(branch_name: str) -> int | None:
+    """Extract objective number from branch name.
+
+    Branch names with objectives follow the pattern: P{plan}-O{objective}-{slug}-{timestamp}
+    Examples: "P123-O456-fix-auth-bug-01-15-1430"
+
+    Also supports lowercase "o" prefix for case-insensitive matching.
+
+    Args:
+        branch_name: Branch name to parse
+
+    Returns:
+        Objective number if branch contains O{number} after plan number, else None
+
+    Examples:
+        >>> extract_objective_number("P123-O456-fix-auth-bug-01-15-1430")
+        456
+        >>> extract_objective_number("P123-o456-fix-bug")
+        456
+        >>> extract_objective_number("P123-fix-auth-bug-01-15-1430")
+        None
+        >>> extract_objective_number("feature-branch")
+        None
+    """
+    match = re.match(r"^[Pp]?\d+-[Oo](\d+)-", branch_name)
+    if match:
+        return int(match.group(1))
+    return None
+
+
 def extract_plan_review_issue_number(branch_name: str) -> int | None:
     """Extract issue number from a plan review branch name.
 
@@ -522,32 +552,46 @@ def generate_issue_branch_name(
     issue_number: int | str,
     title: str,
     timestamp: datetime,
+    *,
+    objective_id: int | None,
 ) -> str:
     """Generate branch name for issue-based worktree.
 
     Format: P{issue_number}-{sanitized_title}-{timestamp}
+    Or with objective: P{issue_number}-O{objective_id}-{sanitized_title}-{timestamp}
     Example: P123-fix-auth-bug-01-15-1430
+    Example with objective: P123-O456-fix-auth-bug-01-15-1430
 
     The branch name is constructed as:
     1. P prefix + issue number + hyphen
-    2. Sanitized title (lowercased, special chars replaced)
-    3. Truncated to 31 chars total (before timestamp)
-    4. Timestamp suffix appended (format: -MM-DD-HHMM)
+    2. If objective_id provided: O prefix + objective_id + hyphen
+    3. Sanitized title (lowercased, special chars replaced)
+    4. Truncated to 31 chars total (before timestamp)
+    5. Timestamp suffix appended (format: -MM-DD-HHMM)
 
     Args:
         issue_number: GitHub issue number
         title: Issue title to sanitize
         timestamp: Timestamp for the suffix
+        objective_id: Optional objective ID to encode in branch name
 
     Returns:
-        Branch name in format P{num}-{slug}-{timestamp}
+        Branch name in format P{num}-{slug}-{timestamp} or P{num}-O{obj}-{slug}-{timestamp}
 
     Examples:
         >>> from datetime import datetime
-        >>> generate_issue_branch_name(123, "Fix Auth Bug", datetime(2024, 1, 15, 14, 30))
+        >>> generate_issue_branch_name(
+        ...     123, "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), objective_id=None
+        ... )
         "P123-fix-auth-bug-01-15-1430"
+        >>> generate_issue_branch_name(
+        ...     123, "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), objective_id=456
+        ... )
+        "P123-O456-fix-auth-bug-01-15-1430"
     """
     prefix = f"P{issue_number}-"
+    if objective_id is not None:
+        prefix += f"O{objective_id}-"
     sanitized_title = sanitize_worktree_name(title)
     base_branch_name = (prefix + sanitized_title)[:31].rstrip("-")
     timestamp_suffix = format_branch_timestamp_suffix(timestamp)

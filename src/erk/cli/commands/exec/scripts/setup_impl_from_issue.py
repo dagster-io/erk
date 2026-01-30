@@ -117,7 +117,9 @@ def setup_impl_from_issue(
     else:
         # Generate branch name from issue
         timestamp = time.now()
-        branch_name = generate_issue_branch_name(issue_number, plan.title, timestamp)
+        branch_name = generate_issue_branch_name(
+            issue_number, plan.title, timestamp, objective_id=plan.objective_id
+        )
 
         # Check if branch already exists
         local_branches = git.branch.list_local_branches(repo_root)

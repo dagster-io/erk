@@ -98,6 +98,7 @@ def prepare_plan_for_worktree(
         issue_number,
         plan.title,
         timestamp,
+        objective_id=plan.objective_id,
     )
     worktree_name = sanitize_worktree_name(branch_name)
 
