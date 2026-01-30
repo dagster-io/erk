@@ -114,17 +114,12 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             else:
                 status = "pending"
 
-            # Parse PR reference
-            pr_value: str | None = None
-            if pr_col and pr_col != "-":
-                pr_value = pr_col
-
             steps.append(
                 RoadmapStep(
                     id=step_id,
                     description=description,
                     status=status,
-                    pr=pr_value,
+                    pr=pr_col if pr_col and pr_col != "-" else None,
                 )
             )
 
