@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from erk_shared.gateway.git.real import RealGit
+from erk_shared.gateway.git.worktree.types import WorktreeRemoved
 from tests.integration.conftest import (
     GitSetup,
     GitWithDetached,
@@ -358,9 +359,10 @@ def test_remove_worktree(git_ops_with_worktrees: GitWithWorktrees) -> None:
     if not wt.exists():
         wt.mkdir(parents=True, exist_ok=True)
 
-    git_ops_with_worktrees.git.worktree.remove_worktree(
+    result = git_ops_with_worktrees.git.worktree.remove_worktree(
         git_ops_with_worktrees.repo, wt, force=False
     )
+    assert isinstance(result, WorktreeRemoved)
 
     # Verify it's removed
     worktrees = git_ops_with_worktrees.git.worktree.list_worktrees(git_ops_with_worktrees.repo)
@@ -380,7 +382,10 @@ def test_remove_worktree_with_force(git_ops_with_worktrees: GitWithWorktrees) ->
     (wt / "dirty.txt").write_text("uncommitted\n", encoding="utf-8")
 
     # Remove with force
-    git_ops_with_worktrees.git.worktree.remove_worktree(git_ops_with_worktrees.repo, wt, force=True)
+    result = git_ops_with_worktrees.git.worktree.remove_worktree(
+        git_ops_with_worktrees.repo, wt, force=True
+    )
+    assert isinstance(result, WorktreeRemoved)
 
     # Verify it's removed
     worktrees = git_ops_with_worktrees.git.worktree.list_worktrees(git_ops_with_worktrees.repo)
@@ -426,7 +431,8 @@ def test_remove_worktree_called_from_worktree_path(
     # This simulates the case where we're inside the worktree and calling remove
     # The key is that after git worktree remove runs, the wt path no longer exists
     # so git worktree prune would fail if it tried to use wt as cwd
-    git_ops.worktree.remove_worktree(wt, wt, force=True)
+    result = git_ops.worktree.remove_worktree(wt, wt, force=True)
+    assert isinstance(result, WorktreeRemoved)
 
     # Assert: Worktree was removed successfully
     # This would have raised RuntimeError("Command not found...") before the fix

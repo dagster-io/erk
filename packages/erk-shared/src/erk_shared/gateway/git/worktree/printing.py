@@ -4,7 +4,12 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.worktree.abc import Worktree
-from erk_shared.gateway.git.worktree.types import WorktreeAdded, WorktreeAddError
+from erk_shared.gateway.git.worktree.types import (
+    WorktreeAdded,
+    WorktreeAddError,
+    WorktreeRemoved,
+    WorktreeRemoveError,
+)
 from erk_shared.printing.base import PrintingBase
 
 
@@ -80,11 +85,13 @@ class PrintingWorktree(PrintingBase, Worktree):
         self._emit(self._format_command(f"git worktree move {old_path} {new_path}"))
         self._wrapped.move_worktree(repo_root, old_path, new_path)
 
-    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
+    def remove_worktree(
+        self, repo_root: Path, path: Path, *, force: bool
+    ) -> WorktreeRemoved | WorktreeRemoveError:
         """Remove worktree with printed output."""
         force_flag = "--force " if force else ""
         self._emit(self._format_command(f"git worktree remove {force_flag}{path}"))
-        self._wrapped.remove_worktree(repo_root, path, force=force)
+        return self._wrapped.remove_worktree(repo_root, path, force=force)
 
     def prune_worktrees(self, repo_root: Path) -> None:
         """Prune worktrees with printed output."""

@@ -16,6 +16,7 @@ from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.git.worktree.types import WorktreeRemoved
 from erk_shared.gateway.github.dry_run import DryRunGitHub
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
@@ -205,7 +206,8 @@ def test_dryrun_git_remove_worktree_prints_message(tmp_path: Path) -> None:
     ctx = create_context(dry_run=True)
 
     # Try to remove via dry-run
-    ctx.git.worktree.remove_worktree(repo, wt, force=False)
+    result = ctx.git.worktree.remove_worktree(repo, wt, force=False)
+    assert isinstance(result, WorktreeRemoved)
 
     # Verify the worktree still exists
     assert wt.exists()
