@@ -10,6 +10,7 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.git.worktree.types import WorktreeRemoveError
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -206,3 +207,76 @@ def test_consolidate_slot_aware_unassigns_slot() -> None:
 
         # Assert: Output indicates slot unassignment
         assert "unassigned" in result.output.lower()
+
+
+def test_consolidate_worktree_remove_error() -> None:
+    """Test consolidate shows error when worktree removal fails."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Worktree path for non-slot worktree that will fail removal
+        feature_path = repo_dir / "worktrees" / "feature-a"
+        feature_path.mkdir(parents=True)
+
+        # Current branch worktree (stays)
+        current_path = repo_dir / "worktrees" / "feature-b"
+        current_path.mkdir(parents=True)
+
+        error = WorktreeRemoveError(message="worktree is locked")
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=feature_path, branch="feature-a", is_root=False),
+                    WorktreeInfo(path=current_path, branch="feature-b", is_root=False),
+                ]
+            },
+            current_branches={
+                env.cwd: "main",
+                feature_path: "feature-a",
+                current_path: "feature-b",
+            },
+            default_branches={env.cwd: "main"},
+            git_common_dirs={
+                env.cwd: env.git_dir,
+                feature_path: env.git_dir,
+                current_path: env.git_dir,
+            },
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-a", "feature-b"]},
+            remove_worktree_error=error,
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-a"], commit_sha="abc123"),
+                "feature-a": BranchMetadata.branch(
+                    "feature-a", "main", children=["feature-b"], commit_sha="aaa111"
+                ),
+                "feature-b": BranchMetadata.branch("feature-b", "feature-a", commit_sha="bbb222"),
+            },
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite_ops,
+            repo=repo,
+            use_graphite=True,
+            cwd=current_path,
+        )
+
+        result = runner.invoke(
+            cli, ["stack", "consolidate", "-f"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 1
+        assert "worktree is locked" in result.output

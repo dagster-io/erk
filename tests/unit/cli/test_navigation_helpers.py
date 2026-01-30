@@ -1003,3 +1003,40 @@ def test_validate_for_deletion_blocks_with_uncommitted_changes(tmp_path: Path) -
         )
 
     assert exc_info.value.code == 1
+
+
+def test_delete_branch_and_worktree_raises_on_worktree_remove_error(tmp_path: Path) -> None:
+    """Test that delete_branch_and_worktree raises ClickException when worktree removal fails."""
+    from erk_shared.gateway.git.worktree.types import WorktreeRemoveError
+
+    # Arrange
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+    erk_root = tmp_path / "erks"
+    erk_root.mkdir()
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+
+    error = WorktreeRemoveError(message="worktree is locked")
+    git = FakeGit(
+        local_branches={repo_root: ["main", "feature"]},
+        remote_branches={repo_root: []},
+        git_common_dirs={repo_root: git_dir},
+        worktrees={repo_root: [WorktreeInfo(path=worktree_path, branch="feature")]},
+        remove_worktree_error=error,
+    )
+
+    global_config = GlobalConfig.test(
+        erk_root,
+        use_graphite=False,
+        shell_setup_complete=False,
+    )
+
+    ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
+    repo = make_test_repo_context(repo_root, erk_root=erk_root)
+
+    # Act & Assert: Should raise ClickException with the error message
+    with pytest.raises(click.ClickException, match="worktree is locked"):
+        delete_branch_and_worktree(ctx, repo, "feature", worktree_path)
