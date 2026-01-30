@@ -20,6 +20,8 @@ from erk.cli.shell_utils import render_navigation_script
 from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+from erk_shared.gateway.git.worktree.types import WorktreeAddError
 from erk_shared.impl_folder import create_impl_folder, get_impl_path, save_issue_reference
 from erk_shared.issue_workflow import (
     IssueBranchSetup,
@@ -34,8 +36,6 @@ from erk_shared.naming import (
     sanitize_worktree_name,
     strip_plan_from_filename,
 )
-from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
-from erk_shared.gateway.git.worktree.types import WorktreeAddError
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan, PlanNotFound
 
@@ -705,9 +705,7 @@ def create_wt(
             user_output(click.style("Warning: ", fg="yellow") + warning)
 
         # Create branch via branch_manager (handles Graphite tracking automatically)
-        create_result = ctx.branch_manager.create_branch(
-            repo.root, setup.branch_name, trunk_branch
-        )
+        create_result = ctx.branch_manager.create_branch(repo.root, setup.branch_name, trunk_branch)
         if isinstance(create_result, BranchAlreadyExists):
             user_output(f"Error: {create_result.message}")
             raise SystemExit(1) from None

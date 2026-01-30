@@ -9,7 +9,7 @@ from pathlib import Path
 from erk_shared.gateway.git.abc import BranchDivergence, WorktreeInfo
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.git.worktree.types import WorktreeAddError, WorktreeAdded
+from erk_shared.gateway.git.worktree.types import WorktreeAdded, WorktreeAddError
 
 
 def test_fake_gitops_list_worktrees() -> None:

@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Re-export WorktreeInfo from the main git.abc module for backwards compatibility
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.worktree.types import WorktreeAddError, WorktreeAdded
+from erk_shared.gateway.git.worktree.types import WorktreeAdded, WorktreeAddError
 
 
 class Worktree(ABC):

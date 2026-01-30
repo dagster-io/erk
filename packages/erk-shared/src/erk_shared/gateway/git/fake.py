@@ -21,6 +21,7 @@ from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
 from erk_shared.gateway.git.analysis_ops.fake import FakeGitAnalysisOps
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
 from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
 from erk_shared.gateway.git.commit_ops.fake import CommitRecord, FakeGitCommitOps
 from erk_shared.gateway.git.config_ops.abc import GitConfigOps
@@ -29,9 +30,7 @@ from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
 from erk_shared.gateway.git.rebase_ops.fake import FakeGitRebaseOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
-from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
-from erk_shared.gateway.git.worktree.types import WorktreeAddError
 from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
 from erk_shared.gateway.git.repo_ops.fake import FakeGitRepoOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
@@ -40,6 +39,7 @@ from erk_shared.gateway.git.tag_ops.abc import GitTagOps
 from erk_shared.gateway.git.tag_ops.fake import FakeGitTagOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.fake import FakeWorktree
+from erk_shared.gateway.git.worktree.types import WorktreeAddError
 
 
 class PushedBranch(NamedTuple):

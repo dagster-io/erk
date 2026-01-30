@@ -13,11 +13,11 @@ from erk.cli.activation import (
 )
 from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.core import discover_repo_context
-from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.issue_workflow import (
     IssueBranchSetup,

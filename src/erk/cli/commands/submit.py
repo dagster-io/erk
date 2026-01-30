@@ -704,9 +704,7 @@ def _submit_single_issue(
                 repo.root, branch_name, f"origin/{base_branch}"
             )
             if isinstance(create_result, BranchAlreadyExists):
-                user_output(
-                    click.style("Error: ", fg="red") + create_result.message
-                )
+                user_output(click.style("Error: ", fg="red") + create_result.message)
                 raise SystemExit(1) from None
             user_output(f"Created branch: {click.style(branch_name, fg='cyan')}")
 
