@@ -31,7 +31,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.ensure import Ensure
+from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.gateway.git.remote_ops.types import PushError
@@ -120,7 +120,7 @@ def _git_only_sync(
         repo.root, "origin", current_branch, set_upstream=False, force=True
     )
     if isinstance(push_result, PushError):
-        raise RuntimeError(push_result.message)
+        raise UserFacingCliError(push_result.message)
     user_output(click.style("✓", fg="green") + f" PR #{pr_number} synchronized")
 
     user_output(f"\nBranch '{current_branch}' is now up to date with origin/{base_branch}.")

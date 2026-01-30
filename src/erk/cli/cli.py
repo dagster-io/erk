@@ -37,6 +37,7 @@ from erk.cli.commands.slot import slot_group
 from erk.cli.commands.stack import stack_group
 from erk.cli.commands.up import up_cmd
 from erk.cli.commands.wt import wt_group
+from erk.cli.ensure import UserFacingCliError
 from erk.cli.help_formatter import ErkCommandGroup
 from erk.core.command_log import get_cli_args, log_command_start, register_exit_handler
 from erk.core.context import create_context
@@ -49,6 +50,7 @@ from erk.core.version_check import (
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.gateway.git.real import RealGit
+from erk_shared.output.output import user_output
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])  # terse help flags
 
@@ -221,4 +223,8 @@ def main() -> None:
     entry_id = log_command_start(get_cli_args(), Path.cwd())
     register_exit_handler(entry_id)
 
-    cli()
+    try:
+        cli()
+    except UserFacingCliError as e:
+        user_output(click.style("Error: ", fg="red") + e.message)
+        raise SystemExit(1) from None
