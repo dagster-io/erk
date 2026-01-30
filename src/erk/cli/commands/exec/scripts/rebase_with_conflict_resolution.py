@@ -43,6 +43,7 @@ import click
 from erk_shared.context.helpers import require_claude_executor, require_cwd, require_git
 from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.remote_ops.types import PushError
 
 
 @dataclass(frozen=True)
@@ -262,12 +263,13 @@ def _rebase_with_conflict_resolution_impl(
         )
 
     # Force push after successful rebase
-    try:
-        git.remote.push_to_remote(cwd, "origin", branch_name, force=True, set_upstream=False)
-    except Exception as e:
+    push_result = git.remote.push_to_remote(
+        cwd, "origin", branch_name, force=True, set_upstream=False
+    )
+    if isinstance(push_result, PushError):
         return RebaseError(
             error="push-failed",
-            message=f"Failed to force push: {e}",
+            message=f"Failed to force push: {push_result.message}",
         )
 
     return RebaseSuccess(

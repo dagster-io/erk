@@ -20,6 +20,7 @@ import click
 from erk_shared.context.helpers import require_git, require_repo_root, require_time
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import (
@@ -175,7 +176,11 @@ def _create_review_branch_impl(
     git.commit.stage_files(repo_root, [file_name])
     commit_message = f"Add plan #{issue_number} for review"
     git.commit.commit(repo_root, commit_message)
-    git.remote.push_to_remote(repo_root, "origin", branch_name, set_upstream=True, force=False)
+    push_result = git.remote.push_to_remote(
+        repo_root, "origin", branch_name, set_upstream=True, force=False
+    )
+    if isinstance(push_result, PushError):
+        raise RuntimeError(push_result.message)
 
     return PlanReviewBranchSuccess(
         success=True,

@@ -21,6 +21,7 @@ from erk.cli.commands.pr.shared import (
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
 from erk_shared.gateway.github.parsing import parse_git_remote_url
 from erk_shared.gateway.github.pr_footer import (
     ClosingReference,
@@ -264,7 +265,18 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
                     dim=True,
                 )
             )
-        ctx.git.remote.pull_rebase(state.cwd, "origin", state.branch_name)
+        pull_result = ctx.git.remote.pull_rebase(state.cwd, "origin", state.branch_name)
+        if isinstance(pull_result, PullRebaseError):
+            return SubmitError(
+                phase="push_and_create_pr",
+                error_type="rebase_failed",
+                message=(
+                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+                    f"Error: {pull_result.message}\n\n"
+                    f"To fix manually: git pull --rebase origin {state.branch_name}"
+                ),
+                details={"branch": state.branch_name},
+            )
         divergence = ctx.git.branch.is_branch_diverged_from_remote(
             state.cwd, state.branch_name, "origin"
         )
@@ -288,13 +300,11 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
         )
 
     # Push
-    try:
-        ctx.git.remote.push_to_remote(
-            state.cwd, "origin", state.branch_name, set_upstream=True, force=state.force
-        )
-    except RuntimeError as e:
-        error_str = str(e)
-        if "non-fast-forward" in error_str or "rejected" in error_str.lower():
+    push_result = ctx.git.remote.push_to_remote(
+        state.cwd, "origin", state.branch_name, set_upstream=True, force=state.force
+    )
+    if isinstance(push_result, PushError):
+        if "non-fast-forward" in push_result.message or "rejected" in push_result.message.lower():
             return SubmitError(
                 phase="push_and_create_pr",
                 error_type="branch_diverged",
@@ -306,7 +316,7 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
                 ),
                 details={"branch": state.branch_name},
             )
-        raise
+        raise RuntimeError(push_result.message)
 
     # Check for existing PR or create new one
     existing_pr = ctx.github.get_pr_for_branch(state.repo_root, state.branch_name)

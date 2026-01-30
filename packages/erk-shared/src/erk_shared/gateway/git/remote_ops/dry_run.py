@@ -7,6 +7,10 @@ remote operations while delegating read-only operations to the wrapped implement
 from pathlib import Path
 
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+from erk_shared.gateway.git.remote_ops.types import (
+    PullRebaseResult,
+    PushResult,
+)
 
 
 class DryRunGitRemoteOps(GitRemoteOps):
@@ -64,14 +68,13 @@ class DryRunGitRemoteOps(GitRemoteOps):
         *,
         set_upstream: bool,
         force: bool,
-    ) -> None:
+    ) -> PushResult:
         """No-op for pushing in dry-run mode."""
-        # Do nothing - prevents actual push execution
-        pass
+        return PushResult()
 
-    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
+    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> PullRebaseResult:
         """No-op for pull --rebase in dry-run mode."""
-        pass
+        return PullRebaseResult()
 
     # ============================================================================
     # Query Operations (delegate to wrapped implementation)

@@ -34,6 +34,7 @@ import click
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.events import CompletionEvent
 from erk_shared.gateway.gt.operations.squash import execute_squash
@@ -115,9 +116,11 @@ def _git_only_sync(
 
     # Force push to origin
     user_output(f"Force pushing to origin/{current_branch}...")
-    ctx.git.remote.push_to_remote(
+    push_result = ctx.git.remote.push_to_remote(
         repo.root, "origin", current_branch, set_upstream=False, force=True
     )
+    if isinstance(push_result, PushError):
+        raise RuntimeError(push_result.message)
     user_output(click.style("✓", fg="green") + f" PR #{pr_number} synchronized")
 
     user_output(f"\nBranch '{current_branch}' is now up to date with origin/{base_branch}.")

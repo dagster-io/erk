@@ -8,6 +8,7 @@ from erk.cli.commands.submit import submit_cmd
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.fake import FakeGitHub
 from tests.commands.submit.conftest import create_plan
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
@@ -27,12 +28,11 @@ def test_submit_rollback_on_push_failure(tmp_path: Path) -> None:
 
     fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
 
-    # Configure FakeGit to raise an exception on push_to_remote
-    push_error = RuntimeError("Network error: Connection refused")
+    # Configure FakeGit to return an error on push_to_remote
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
-        push_to_remote_raises=push_error,
+        push_to_remote_error=PushError(message="Network error: Connection refused"),
     )
     fake_github = FakeGitHub()
 

@@ -8,6 +8,7 @@ from pathlib import Path
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.types import PrInfo
 from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.types import PRNotFound
 
@@ -83,7 +84,11 @@ class GitBranchManager(BranchManager):
             repo_root: Repository root directory
             branch: Branch name to push
         """
-        self.git.remote.push_to_remote(repo_root, "origin", branch, set_upstream=True, force=True)
+        push_result = self.git.remote.push_to_remote(
+            repo_root, "origin", branch, set_upstream=True, force=True
+        )
+        if isinstance(push_result, PushError):
+            raise RuntimeError(push_result.message)
 
     def commit(self, repo_root: Path, message: str) -> None:
         """Create a commit using git.
