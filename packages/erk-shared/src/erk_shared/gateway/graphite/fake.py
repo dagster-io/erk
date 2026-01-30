@@ -245,7 +245,7 @@ class FakeGraphite(Graphite):
         """
         return self._check_auth_status_calls
 
-    def squash_branch(self, repo_root: Path, *, quiet: bool = False) -> None:
+    def squash_branch(self, repo_root: Path, *, quiet: bool) -> None:
         """Track squash_branch calls and optionally raise."""
         self._squash_branch_calls.append((repo_root, quiet))
         if self._squash_branch_raises is not None:
@@ -255,10 +255,10 @@ class FakeGraphite(Graphite):
         self,
         repo_root: Path,
         *,
-        publish: bool = False,
-        restack: bool = False,
-        quiet: bool = False,
-        force: bool = False,
+        publish: bool,
+        restack: bool,
+        quiet: bool,
+        force: bool,
     ) -> None:
         """Track submit_stack calls and optionally raise."""
         self._submit_stack_calls.append((repo_root, publish, restack, quiet, force))
@@ -329,7 +329,7 @@ class FakeGraphite(Graphite):
         """Return True if branch is in configured branches."""
         return branch in self._branches
 
-    def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
+    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
         """Track continue_restack calls and optionally raise."""
         self._continue_restack_calls.append((repo_root, quiet))
         if self._continue_restack_raises is not None:

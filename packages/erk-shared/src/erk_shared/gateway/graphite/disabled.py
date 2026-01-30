@@ -85,7 +85,7 @@ class GraphiteDisabled(Graphite):
         """Return not authenticated - auth not applicable when disabled."""
         return (False, None, None)
 
-    def squash_branch(self, repo_root: Path, *, quiet: bool = False) -> None:
+    def squash_branch(self, repo_root: Path, *, quiet: bool) -> None:
         """Raise error - squash_branch is a mutating operation."""
         raise GraphiteDisabledError(self.reason)
 
@@ -93,10 +93,10 @@ class GraphiteDisabled(Graphite):
         self,
         repo_root: Path,
         *,
-        publish: bool = False,
-        restack: bool = False,
-        quiet: bool = False,
-        force: bool = False,
+        publish: bool,
+        restack: bool,
+        quiet: bool,
+        force: bool,
     ) -> None:
         """Raise error - submit_stack is a mutating operation."""
         raise GraphiteDisabledError(self.reason)
@@ -105,6 +105,6 @@ class GraphiteDisabled(Graphite):
         """Return False - no branches tracked when disabled."""
         return False
 
-    def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
+    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
         """Raise error - continue_restack is a mutating operation."""
         raise GraphiteDisabledError(self.reason)

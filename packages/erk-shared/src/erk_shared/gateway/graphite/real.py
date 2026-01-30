@@ -276,7 +276,7 @@ class RealGraphite(Graphite):
 
         return (True, username, repo_info)
 
-    def squash_branch(self, repo_root: Path, *, quiet: bool = False) -> None:
+    def squash_branch(self, repo_root: Path, *, quiet: bool) -> None:
         """Squash all commits on the current branch into one."""
         cmd = ["gt", "squash", "--no-edit", "--no-interactive"]
 
@@ -292,10 +292,10 @@ class RealGraphite(Graphite):
         self,
         repo_root: Path,
         *,
-        publish: bool = False,
-        restack: bool = False,
-        quiet: bool = False,
-        force: bool = False,
+        publish: bool,
+        restack: bool,
+        quiet: bool,
+        force: bool,
     ) -> None:
         """Submit the current stack to create or update PRs."""
         cmd = ["gt", "submit", "--no-edit", "--no-interactive"]
@@ -347,7 +347,7 @@ class RealGraphite(Graphite):
         )
         return result.returncode == 0
 
-    def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
+    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
         """Run gt continue to continue an in-progress restack."""
         cmd = ["gt", "continue"]
 

@@ -180,7 +180,7 @@ class GraphiteBranchManager(BranchManager):
             repo_root: Repository root directory
             branch: Branch name to submit (unused - Graphite submits current stack)
         """
-        self.graphite.submit_stack(repo_root, quiet=True, force=True)
+        self.graphite.submit_stack(repo_root, publish=False, restack=False, quiet=True, force=True)
 
     def commit(self, repo_root: Path, message: str) -> None:
         """Create a commit using git.

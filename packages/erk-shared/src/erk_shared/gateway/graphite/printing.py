@@ -70,7 +70,7 @@ class PrintingGraphite(PrintingBase, Graphite):
         self._emit(self._format_command(cmd))
         self._wrapped.restack(repo_root, no_interactive=no_interactive, quiet=quiet)
 
-    def squash_branch(self, repo_root: Path, *, quiet: bool = False) -> None:
+    def squash_branch(self, repo_root: Path, *, quiet: bool) -> None:
         """Squash branch with printed output."""
         self._emit(self._format_command("gt squash"))
         self._wrapped.squash_branch(repo_root, quiet=quiet)
@@ -79,10 +79,10 @@ class PrintingGraphite(PrintingBase, Graphite):
         self,
         repo_root: Path,
         *,
-        publish: bool = False,
-        restack: bool = False,
-        quiet: bool = False,
-        force: bool = False,
+        publish: bool,
+        restack: bool,
+        quiet: bool,
+        force: bool,
     ) -> None:
         """Submit stack with printed output."""
         cmd = "gt submit"
@@ -99,7 +99,7 @@ class PrintingGraphite(PrintingBase, Graphite):
             force=force,
         )
 
-    def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
+    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
         """Continue restack with printed output."""
         self._emit(self._format_command("gt continue"))
         self._wrapped.continue_restack(repo_root, quiet=quiet)

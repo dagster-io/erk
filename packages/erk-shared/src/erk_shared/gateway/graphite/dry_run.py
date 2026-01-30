@@ -64,7 +64,7 @@ class DryRunGraphite(Graphite):
         """Check authentication status (read-only, delegates to wrapped)."""
         return self._wrapped.check_auth_status()
 
-    def squash_branch(self, repo_root: Path, *, quiet: bool = False) -> None:
+    def squash_branch(self, repo_root: Path, *, quiet: bool) -> None:
         """No-op for gt squash in dry-run mode."""
         pass
 
@@ -72,10 +72,10 @@ class DryRunGraphite(Graphite):
         self,
         repo_root: Path,
         *,
-        publish: bool = False,
-        restack: bool = False,
-        quiet: bool = False,
-        force: bool = False,
+        publish: bool,
+        restack: bool,
+        quiet: bool,
+        force: bool,
     ) -> None:
         """No-op for gt submit in dry-run mode."""
         pass
@@ -84,6 +84,6 @@ class DryRunGraphite(Graphite):
         """Delegate to wrapped implementation for tracking check (read-only)."""
         return self._wrapped.is_branch_tracked(repo_root, branch)
 
-    def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
+    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
         """No-op for gt continue in dry-run mode."""
         pass

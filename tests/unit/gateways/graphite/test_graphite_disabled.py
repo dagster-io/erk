@@ -170,7 +170,7 @@ def test_submit_stack_raises_error(tmp_path: Path) -> None:
     sentinel = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
 
     with pytest.raises(GraphiteDisabledError):
-        sentinel.submit_stack(tmp_path, publish=False, restack=False)
+        sentinel.submit_stack(tmp_path, publish=False, restack=False, quiet=False, force=False)
 
 
 def test_continue_restack_raises_error(tmp_path: Path) -> None:
