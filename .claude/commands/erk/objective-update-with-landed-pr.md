@@ -130,31 +130,46 @@ EOF
 )"
 ```
 
-### Step 6: Update Objective Body
+### Step 6: Update Roadmap Step
 
-After posting the action comment, update the issue body to reflect the new state.
+After posting the action comment, update the roadmap table using the inference-driven update command.
 
-**Updates to make:**
+**For each completed step**, run:
 
-1. **Roadmap tables:** Change step statuses from `pending` to `done`
-2. **PR links:** Add the PR number to completed steps
-3. **Current Focus:** Update "Next action" to reflect what should happen next
+```bash
+erk exec objective-roadmap-update <objective-number> --step <step-id> --pr "#<pr-number>"
+```
 
-**How to update:**
+This command:
+
+- Sets the PR cell to the landed PR reference
+- Resets the Status cell to `-` so inference determines status (PR `#NNN` → done)
+- Re-validates the roadmap after mutation
+- Returns JSON with the updated step and summary statistics
+
+**Example:** If PR #6317 completed step 2.1:
+
+```bash
+erk exec objective-roadmap-update 6295 --step 2.1 --pr "#6317"
+```
+
+The JSON output includes `summary` with step counts — use this for Step 7.
+
+**For "Current Focus" updates**, fetch and edit the body separately:
 
 1. Fetch current body: `erk exec get-issue-body <issue-number>` (parse JSON to get `body` field)
-2. Make the edits (status changes, PR links, Current Focus)
+2. Update the "Current Focus" section text
 3. Update: `erk exec update-issue-body <issue-number> --body "<new-body>"`
 
 ### Step 7: Check Closing Triggers
 
 **After updating, check if the objective should be closed.**
 
-Count the roadmap steps:
+Use the `summary` from the `objective-roadmap-update` JSON output (or run `erk exec objective-roadmap-check <objective-number>` to get fresh counts):
 
-- Total steps
-- Steps with status `done` or `skipped`
-- Steps with status `pending` or `blocked`
+- `total_steps`: Total steps
+- `done` + `skipped`: Completed steps
+- `pending` + `blocked` + `in_progress`: Remaining steps
 
 **If ALL steps are `done` or `skipped`:**
 
