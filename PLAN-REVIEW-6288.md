@@ -20,16 +20,16 @@ class SubmitState:
     force: bool
     debug: bool
     session_id: str
-    issue_number: int | None = None
-    pr_number: int | None = None
-    pr_url: str | None = None
-    was_created: bool = False
-    base_branch: str | None = None
-    graphite_url: str | None = None
-    diff_file: Path | None = None
-    plan_context: PlanContext | None = None
-    title: str | None = None
-    body: str | None = None
+    issue_number: int | None
+    pr_number: int | None
+    pr_url: str | None
+    was_created: bool
+    base_branch: str | None
+    graphite_url: str | None
+    diff_file: Path | None
+    plan_context: PlanContext | None
+    title: str | None
+    body: str | None
 
 @dataclass(frozen=True)
 class SubmitError:
@@ -38,6 +38,57 @@ class SubmitError:
     message: str
     details: dict[str, str]
 ```
+
+All fields are required — no default values. For tests, provide a factory method:
+
+```python
+# In test helpers (e.g., tests/helpers/submit_factories.py)
+def make_submit_state(
+    *,
+    cwd: Path,
+    repo_root: str,
+    branch_name: str,
+    parent_branch: str,
+    trunk_branch: str,
+    use_graphite: bool,
+    force: bool,
+    debug: bool,
+    session_id: str,
+    issue_number: int | None = None,
+    pr_number: int | None = None,
+    pr_url: str | None = None,
+    was_created: bool = False,
+    base_branch: str | None = None,
+    graphite_url: str | None = None,
+    diff_file: Path | None = None,
+    plan_context: PlanContext | None = None,
+    title: str | None = None,
+    body: str | None = None,
+) -> SubmitState:
+    return SubmitState(
+        cwd=cwd,
+        repo_root=repo_root,
+        branch_name=branch_name,
+        parent_branch=parent_branch,
+        trunk_branch=trunk_branch,
+        use_graphite=use_graphite,
+        force=force,
+        debug=debug,
+        session_id=session_id,
+        issue_number=issue_number,
+        pr_number=pr_number,
+        pr_url=pr_url,
+        was_created=was_created,
+        base_branch=base_branch,
+        graphite_url=graphite_url,
+        diff_file=diff_file,
+        plan_context=plan_context,
+        title=title,
+        body=body,
+    )
+```
+
+The factory method lives in test code only. Production code always passes all fields explicitly.
 
 ### Pipeline Steps
 
@@ -65,19 +116,23 @@ Each step: `(ErkContext, SubmitState) -> SubmitState | SubmitError`
 ### Pipeline Runner
 
 ```python
-PIPELINE = [
-    prepare_state,
-    commit_wip,
-    push_and_create_pr,
-    extract_diff,
-    fetch_plan_context,
-    generate_description,
-    enhance_with_graphite,
-    finalize_pr,
-]
+type SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+
+@cache
+def _submit_pipeline() -> tuple[SubmitStep, ...]:
+    return (
+        prepare_state,
+        commit_wip,
+        push_and_create_pr,
+        extract_diff,
+        fetch_plan_context,
+        generate_description,
+        enhance_with_graphite,
+        finalize_pr,
+    )
 
 def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
-    for step in PIPELINE:
+    for step in _submit_pipeline():
         result = step(ctx, state)
         if isinstance(result, SubmitError):
             return result
