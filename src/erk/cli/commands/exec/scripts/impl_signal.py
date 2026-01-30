@@ -118,6 +118,52 @@ def _delete_claude_plan_file(ctx: click.Context, session_id: str, cwd: Path) -> 
     return False
 
 
+def _build_updated_issue_body(
+    *,
+    issue_body: str,
+    timestamp: str,
+    session_id: str,
+    user: str,
+    worktree_name: str,
+    branch_name: str,
+) -> str:
+    """Build the updated issue body with implementation metadata.
+
+    Applies the appropriate plan header update (remote or local) and sets
+    worktree/branch names.
+
+    Args:
+        issue_body: Current issue body text
+        timestamp: ISO timestamp of the event
+        session_id: Claude session ID
+        user: Username running the implementation
+        worktree_name: Name of the worktree
+        branch_name: Name of the git branch
+
+    Returns:
+        Updated issue body with metadata applied
+    """
+    if in_github_actions():
+        updated_body = update_plan_header_remote_impl(
+            issue_body=issue_body,
+            remote_impl_at=timestamp,
+        )
+    else:
+        updated_body = update_plan_header_local_impl_event(
+            issue_body=issue_body,
+            local_impl_at=timestamp,
+            event="started",
+            session_id=session_id,
+            user=user,
+        )
+
+    return update_plan_header_worktree_and_branch(
+        issue_body=updated_body,
+        worktree_name=worktree_name,
+        branch_name=branch_name,
+    )
+
+
 def _get_worktree_name() -> str | None:
     """Get current worktree name from git worktree list."""
     try:
@@ -249,41 +295,23 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
         _output_error(event, "github-comment-failed", f"Failed to post comment: {e}")
         return
 
-    # Update issue metadata
+    # Update issue metadata (non-fatal - comment was already posted)
     try:
         issue = github.get_issue(repo_root, issue_ref.issue_number)
-        if isinstance(issue, IssueNotFound):
-            # Non-fatal - comment was posted, issue not found
-            # Continue successfully
-            pass
-        else:
-            if in_github_actions():
-                updated_body = update_plan_header_remote_impl(
-                    issue_body=issue.body,
-                    remote_impl_at=timestamp,
-                )
-            else:
-                updated_body = update_plan_header_local_impl_event(
-                    issue_body=issue.body,
-                    local_impl_at=timestamp,
-                    event="started",
-                    session_id=session_id,
-                    user=user,
-                )
-
-            # Set worktree and branch names atomically
-            updated_body = update_plan_header_worktree_and_branch(
-                issue_body=updated_body,
+        if not isinstance(issue, IssueNotFound):
+            updated_body = _build_updated_issue_body(
+                issue_body=issue.body,
+                timestamp=timestamp,
+                session_id=session_id,
+                user=user,
                 worktree_name=worktree_name,
                 branch_name=branch_name,
             )
-
             github.update_issue_body(
                 repo_root, issue_ref.issue_number, BodyText(content=updated_body)
             )
     except ValueError:
-        # Non-fatal - comment was posted, metadata update failed
-        # Continue successfully
+        # Non-fatal - metadata update failed
         pass
 
     result = SignalSuccess(
