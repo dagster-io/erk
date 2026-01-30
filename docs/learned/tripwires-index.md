@@ -20,6 +20,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [cli](cli/tripwires.md)                     | 12        | `src/erk/cli/`                                |
 | [gateway](gateway/tripwires.md)             | 1         | `gateway/` code                               |
 | [hooks](hooks/tripwires.md)                 | 2         | `.claude/hooks/`, hook development            |
+| [objectives](objectives/tripwires.md)       | 2         | `objectives/` code                            |
 | [planning](planning/tripwires.md)           | 23        | `.impl/`, `.worker-impl/`, planning workflows |
 | [sessions](sessions/tripwires.md)           | 6         | `~/.claude/projects/`, session analysis       |
 | [testing](testing/tripwires.md)             | 8         | `tests/`                                      |

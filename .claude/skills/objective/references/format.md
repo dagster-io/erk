@@ -11,6 +11,7 @@ Complete templates and examples for objective issues.
 - [Example: Steelthread-Structured Objective](#example-steelthread-structured-objective)
 - [Common Patterns](#common-patterns)
 - [Update Examples](#update-examples)
+- [Programmatic Roadmap Operations](#programmatic-roadmap-operations)
 
 ## Issue Body Template
 
@@ -34,25 +35,25 @@ Locked decisions that guide all related work:
 
 ## Roadmap
 
-### Phase 1A: [Name] Steelthread (1 PR)
+### Phase 1: [Name] Steelthread (1 PR)
 
 Minimal vertical slice proving the concept works.
 
 | Step | Description              | Status  | PR  |
 | ---- | ------------------------ | ------- | --- |
-| 1A.1 | [Minimal infrastructure] | pending |     |
-| 1A.2 | [Wire into one command]  | pending |     |
+| 1.1  | [Minimal infrastructure] | pending |     |
+| 1.2  | [Wire into one command]  | pending |     |
 
 **Test:** [End-to-end acceptance test for steelthread]
 
-### Phase 1B: Complete [Name] (1 PR)
+### Phase 2: Complete [Name] (1 PR)
 
 Fill out remaining functionality.
 
 | Step | Description                    | Status  | PR  |
 | ---- | ------------------------------ | ------- | --- |
-| 1B.1 | [Extend to remaining commands] | pending |     |
-| 1B.2 | [Full test coverage]           | pending |     |
+| 2.1  | [Extend to remaining commands] | pending |     |
+| 2.2  | [Full test coverage]           | pending |     |
 
 **Test:** [Full acceptance criteria]
 
@@ -132,7 +133,7 @@ Each action comment logs work done and lessons learned. Post one comment per sig
 Use past-tense to indicate completed action:
 
 - ✅ "Action: Added Implementation Context"
-- ✅ "Action: Completed Phase 1A"
+- ✅ "Action: Completed Phase 1"
 - ✅ "Action: Refined error message requirements"
 - ❌ "Implementation Context" (not an action)
 - ❌ "Phase 1A" (not descriptive)
@@ -223,40 +224,40 @@ All gateway ABCs have:
 
 ## Roadmap
 
-### Phase 1A: Git Gateway Steelthread (1 PR)
+### Phase 1: Git Gateway Steelthread (1 PR)
 
 | Step | Description                                         | Status | PR   |
 | ---- | --------------------------------------------------- | ------ | ---- |
-| 1A.1 | Create FakeGit with just `commit()` and `get_log()` | done   | #301 |
-| 1A.2 | Wire into one test as proof of concept              | done   | #301 |
+| 1.1  | Create FakeGit with just `commit()` and `get_log()` | done   | #301 |
+| 1.2  | Wire into one test as proof of concept              | done   | #301 |
 
 **Test:** One gateway test runs with FakeGit instead of mocking.
 
-### Phase 1B: Complete Git Gateway (1 PR)
+### Phase 2: Complete Git Gateway (1 PR)
 
 | Step | Description                                            | Status | PR   |
 | ---- | ------------------------------------------------------ | ------ | ---- |
-| 1B.1 | Add remaining FakeGit methods (branch, checkout, etc.) | done   | #305 |
-| 1B.2 | Add DryRunGit wrapper                                  | done   | #305 |
-| 1B.3 | Migrate all Git tests to use FakeGit                   | done   | #305 |
+| 2.1  | Add remaining FakeGit methods (branch, checkout, etc.) | done   | #305 |
+| 2.2  | Add DryRunGit wrapper                                  | done   | #305 |
+| 2.3  | Migrate all Git tests to use FakeGit                   | done   | #305 |
 
 **Test:** All git gateway tests use FakeGit, no subprocess mocking.
 
-### Phase 2A: GitHub Gateway Steelthread (1 PR)
+### Phase 3: GitHub Gateway Steelthread (1 PR)
 
 | Step | Description                               | Status  | PR  |
 | ---- | ----------------------------------------- | ------- | --- |
-| 2A.1 | Create FakeGitHub with just `create_pr()` | pending |     |
-| 2A.2 | Wire into PR submission test              | pending |     |
+| 3.1  | Create FakeGitHub with just `create_pr()` | pending |     |
+| 3.2  | Wire into PR submission test              | pending |     |
 
 **Test:** PR creation test uses FakeGitHub.
 
-### Phase 2B: Complete GitHub Gateway (1 PR)
+### Phase 4: Complete GitHub Gateway (1 PR)
 
 | Step | Description                      | Status  | PR  |
 | ---- | -------------------------------- | ------- | --- |
-| 2B.1 | Add remaining FakeGitHub methods | pending |     |
-| 2B.2 | Add DryRunGitHub wrapper         | pending |     |
+| 4.1  | Add remaining FakeGitHub methods | pending |     |
+| 4.2  | Add DryRunGitHub wrapper         | pending |     |
 
 **Test:** All GitHub gateway tests use FakeGitHub.
 
@@ -294,7 +295,7 @@ See `erk/gateways/git/` for the full pattern.
 
 **Date:** 2025-01-15
 **PR:** #301
-**Phase/Step:** 1A
+**Phase/Step:** 1
 
 ### What Was Done
 
@@ -310,7 +311,7 @@ See `erk/gateways/git/` for the full pattern.
 
 ### Roadmap Updates
 
-- Phase 1A: all steps → done
+- Phase 1: all steps → done
 ```
 
 ```markdown
@@ -318,7 +319,7 @@ See `erk/gateways/git/` for the full pattern.
 
 **Date:** 2025-01-18
 **PR:** #305
-**Phase/Step:** 1B
+**Phase/Step:** 2
 
 ### What Was Done
 
@@ -334,7 +335,7 @@ See `erk/gateways/git/` for the full pattern.
 
 ### Roadmap Updates
 
-- Phase 1B: all steps → done
+- Phase 2: all steps → done
 ```
 
 ## Common Patterns
@@ -542,3 +543,45 @@ When implementation reveals additional scope:
 - Removed HTML comment about blocker
 - Added PR #412 link
 - Updated "Current Focus" to next pending step
+
+## Programmatic Roadmap Operations
+
+Two exec commands provide programmatic access to roadmap parsing and mutation. These use regex-based parsing (not LLM inference) for deterministic, fast operations.
+
+### Check: Parse and Validate
+
+```bash
+erk exec objective-roadmap-check <OBJECTIVE_NUMBER>
+```
+
+Returns JSON with:
+
+| Field               | Type         | Description                                                       |
+| ------------------- | ------------ | ----------------------------------------------------------------- |
+| `success`           | boolean      | Whether parsing succeeded                                         |
+| `issue_number`      | int          | The objective issue number                                        |
+| `title`             | string       | Issue title                                                       |
+| `phases`            | array        | Parsed phases with steps (id, description, status, pr)            |
+| `summary`           | object       | Counts: total_steps, pending, done, in_progress, blocked, skipped |
+| `next_step`         | object\|null | First pending step (id, description, phase)                       |
+| `validation_errors` | array        | List of parsing or format issues                                  |
+
+**Validation checks:**
+
+- Phase headers present (`### Phase N: Name`)
+- Table structure (`| Step | Description | Status | PR |`)
+- Letter-format step IDs warned (e.g., `1A.1` — prefer `1.1`)
+
+### Update: Mutate a Step
+
+```bash
+erk exec objective-roadmap-update <OBJECTIVE_NUMBER> --step <STEP_ID> [--status <STATUS>] [--pr <PR_REF>]
+```
+
+| Flag       | Required | Example             | Description       |
+| ---------- | -------- | ------------------- | ----------------- |
+| `--step`   | yes      | `2.1`               | Step ID to update |
+| `--status` | no       | `done`, `blocked`   | New status value  |
+| `--pr`     | no       | `#123`, `plan #456` | New PR reference  |
+
+The command regex-finds the target row, edits in place, writes back via the GitHub API, and re-runs check to validate the result.

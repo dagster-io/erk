@@ -1,84 +1,134 @@
 ---
-title: Roadmap Step Inference
+title: Roadmap Parser
 read_when:
   - "understanding how roadmap steps are parsed"
-  - "working with objective step detection"
-  - "debugging step inference issues"
+  - "working with objective roadmap check or update commands"
+  - "debugging roadmap parsing issues"
+  - "using erk exec objective-roadmap-check or objective-roadmap-update"
+tripwires:
+  - action: "implementing roadmap parsing functionality"
+    warning: "The parser is regex-based, not LLM-based. Do not reference LLM inference."
+  - action: "creating or modifying roadmap step IDs"
+    warning: "Step IDs should use plain numbers (1.1, 2.1), not letter format (1A.1, 1B.1)."
 ---
 
-# Roadmap Step Inference
+# Roadmap Parser
 
-This document describes how erk determines the next actionable step from an objective's roadmap table.
+This document describes how erk parses and mutates objective roadmap tables using regex-based parsing.
 
 ## Overview
 
-Rather than using regex-based parsing, erk uses Claude Haiku to analyze objective roadmaps. This LLM-based approach is more flexible and handles edge cases in markdown formatting.
+Erk uses deterministic regex parsing to extract structured data from objective roadmap markdown tables. Two exec commands expose this functionality:
 
-## PR Column Format
+- **`objective-roadmap-check`** — parse and validate a roadmap, returning structured JSON
+- **`objective-roadmap-update`** — mutate a specific step's status or PR column
 
-Objective roadmaps use a specific format in the PR column:
+Both commands share the parser in `objective_roadmap_shared.py`.
 
-| Column Value | Meaning                        | Step Status |
-| ------------ | ------------------------------ | ----------- |
-| (empty)      | Step is pending                | PENDING     |
-| `#XXXX`      | Step completed (PR merged)     | DONE        |
-| `plan #XXXX` | Plan in progress for this step | IN_PROGRESS |
+## Check Command
 
-## Status Column Override
+```bash
+erk exec objective-roadmap-check <OBJECTIVE_NUMBER>
+```
 
-The Status column overrides PR column inference:
+Fetches the objective issue body from GitHub, parses all roadmap tables, and returns JSON:
 
-| Status Column | Effect                               |
-| ------------- | ------------------------------------ |
-| `blocked`     | Step is blocked regardless of PR col |
-| `skipped`     | Step is skipped regardless of PR col |
-| (empty)       | Use PR column to determine status    |
+```json
+{
+  "success": true,
+  "issue_number": 6295,
+  "title": "Objective: ...",
+  "phases": [
+    {
+      "number": 1,
+      "name": "Phase Name",
+      "steps": [
+        { "id": "1.1", "description": "...", "status": "done", "pr": "#123" },
+        { "id": "1.2", "description": "...", "status": "pending", "pr": null }
+      ]
+    }
+  ],
+  "summary": {
+    "total_steps": 10,
+    "pending": 3,
+    "done": 6,
+    "in_progress": 1,
+    "blocked": 0,
+    "skipped": 0
+  },
+  "next_step": { "id": "1.2", "description": "...", "phase": "Phase Name" },
+  "validation_errors": []
+}
+```
 
-**Critical**: Always check Status column first. Ignoring it causes data loss.
+### Parsing Rules
 
-## Inference Rules
+1. **Phase headers**: Matches `### Phase N: Name` (with optional `(N PR)` suffix)
+2. **Table structure**: Expects `| Step | Description | Status | PR |` header with separator
+3. **Row extraction**: Each `| id | desc | status | pr |` row becomes a `RoadmapStep`
 
-The LLM follows these rules to find the next actionable step:
+### Validation
 
-1. Find all steps in the roadmap
-2. For each step, determine its status from PR and Status columns
-3. Find the FIRST step where:
-   - Previous step (if any) is DONE
-   - This step is PENDING (not done, blocked, skipped, or in-progress)
-4. Return that step, or indicate no step available
+The parser emits warnings (not errors) for:
 
-## Response Format
+- Missing phase headers
+- Missing or malformed table structure
+- Letter-format step IDs (e.g., `1A.1` — prefer `1.1`)
 
-The inference returns structured fields:
+## Update Command
 
-| Field         | Type   | Description                           |
-| ------------- | ------ | ------------------------------------- |
-| `NEXT_STEP`   | yes/no | Whether an actionable step was found  |
-| `STEP_ID`     | string | Step identifier (e.g., "1.1", "2A.1") |
-| `DESCRIPTION` | string | Human-readable step description       |
-| `PHASE`       | string | Phase name (e.g., "Phase 1: Setup")   |
-| `REASON`      | string | Why this step was chosen              |
+```bash
+erk exec objective-roadmap-update <OBJECTIVE_NUMBER> --step <STEP_ID> [--status <STATUS>] [--pr <PR_REF>]
+```
 
-## Cost Model
+| Flag       | Required | Example             | Description       |
+| ---------- | -------- | ------------------- | ----------------- |
+| `--step`   | yes      | `2.1`               | Step ID to update |
+| `--status` | no       | `done`, `blocked`   | New status value  |
+| `--pr`     | no       | `#123`, `plan #456` | New PR reference  |
 
-- Uses Haiku model: ~$0.001 per inference
-- Designed for automated workflows where many objectives are processed
+The command:
 
-## Error Handling
+1. Fetches the issue body
+2. Regex-finds the target row by step ID
+3. Edits the status and/or PR columns in place
+4. Writes the updated body back via the GitHub API
+5. Re-runs check to validate the result
 
-The inference can fail due to:
+## Status Inference
 
-- LLM rate limits or API errors
-- Malformed objective body (no roadmap table)
-- Network issues
+The parser infers step status from both columns:
 
-On failure, returns `InferenceError` with descriptive message.
+| Status Column | PR Column      | Inferred Status |
+| ------------- | -------------- | --------------- |
+| `blocked`     | (any)          | `blocked`       |
+| `skipped`     | (any)          | `skipped`       |
+| (other)       | `#XXXX`        | `done`          |
+| (other)       | `plan #XXXX`   | `in_progress`   |
+| (other)       | (empty or `-`) | `pending`       |
+
+**Status column takes priority** — `blocked` and `skipped` override PR column inference.
+
+## Step ID Format
+
+**Preferred**: Plain numbers — `1.1`, `1.2`, `2.1`, `3.1`
+
+**Deprecated**: Letter format — `1A.1`, `1B.2`, `2A.1`
+
+The parser accepts both formats but emits a validation warning for letter-format IDs. All templates now use plain numbers.
+
+## Next Step Discovery
+
+`find_next_step()` returns the first step with `pending` status in phase order. This is used by `objective-next-plan` to determine which step to implement next.
 
 ## Implementation Reference
 
-See `infer_next_step()` in `packages/erk-shared/src/erk_shared/objectives/next_step_inference.py`.
+- Shared parser: `src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py`
+- Check command: `src/erk/cli/commands/exec/scripts/objective_roadmap_check.py`
+- Update command: `src/erk/cli/commands/exec/scripts/objective_roadmap_update.py`
 
 ## Related Documentation
 
-- [Objectives Index](index.md) - Package overview and key types
-- [Glossary: Objectives System](../glossary.md#objectives-system) - Terminology definitions
+- [Objectives Index](index.md) — Package overview and key types
+- [Objective Format Reference](../../../.claude/skills/objective/references/format.md) — Templates and examples
+- [Glossary: Objectives System](../glossary.md#objectives-system) — Terminology definitions
