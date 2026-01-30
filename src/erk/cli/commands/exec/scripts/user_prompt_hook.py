@@ -3,7 +3,7 @@
 
 Consolidates multiple hooks into a single script:
 1. Session ID injection + file persistence
-2. Coding standards reminders (devrun, dignified-python)
+2. Coding standards reminders (devrun)
 3. Tripwires reminder
 
 Reminders are opt-in via capability marker files in .erk/capabilities/.
@@ -44,21 +44,6 @@ def build_devrun_reminder() -> str:
     """
     return """No direct Bash for: pytest/ty/ruff/prettier/make/gt
 Use Task(subagent_type='devrun') instead."""
-
-
-def build_dignified_python_reminder() -> str:
-    """Return dignified-python coding standards reminder.
-
-    Pure function - returns static string.
-    """
-    return """dignified-python: CRITICAL RULES (examples - full skill has more):
-NO try/except for control flow (use LBYL - check conditions first)
-NO default parameter values (no `foo: bool = False`)
-NO mutable/non-frozen dataclasses (always `@dataclass(frozen=True)`)
-MANDATORY: Load and READ the full dignified-python skill documents.
-   These are examples only. You MUST strictly abide by ALL rules in the skill.
-AFTER completing Python changes: Verify sufficient test coverage.
-Behavior changes ALWAYS need tests."""
 
 
 def build_tripwires_reminder() -> str:
@@ -129,9 +114,6 @@ def user_prompt_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
     # Add reminders based on installed capabilities
     if is_reminder_installed(hook_ctx.repo_root, "devrun"):
         context_parts.append(build_devrun_reminder())
-
-    if is_reminder_installed(hook_ctx.repo_root, "dignified-python"):
-        context_parts.append(build_dignified_python_reminder())
 
     if is_reminder_installed(hook_ctx.repo_root, "tripwires"):
         context_parts.append(build_tripwires_reminder())
