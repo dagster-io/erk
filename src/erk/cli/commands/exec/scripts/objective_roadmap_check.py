@@ -23,6 +23,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_repo_root,
 )
+from erk_shared.gateway.github.issues.types import IssueNotFound
 
 
 @dataclass(frozen=True)
@@ -235,18 +236,17 @@ def objective_roadmap_check(ctx: click.Context, objective_number: int) -> None:
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
 
-    try:
-        issue = github.get_issue(repo_root, objective_number)
-    except RuntimeError as e:
+    issue = github.get_issue(repo_root, objective_number)
+    if isinstance(issue, IssueNotFound):
         click.echo(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to get issue #{objective_number}: {e}",
+                    "error": f"Issue #{objective_number} not found",
                 }
             )
         )
-        raise SystemExit(1) from e
+        raise SystemExit(1)
 
     # Parse the roadmap
     phases, validation_errors = _parse_roadmap(issue.body)

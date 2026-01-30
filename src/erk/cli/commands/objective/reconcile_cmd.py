@@ -35,7 +35,7 @@ def reconcile_objectives(ctx: ErkContext, objective: int) -> None:
 
     issue = ctx.github.issues.get_issue(repo.root, objective)
     if isinstance(issue, IssueNotFound):
-        click.echo(f"Error: Issue #{issue.issue_number} not found", err=True)
+        click.echo(f"Error: Issue #{objective} not found", err=True)
         raise SystemExit(1)
     if "erk-objective" not in issue.labels:
         click.echo(f"Error: Issue #{objective} is not an erk-objective", err=True)

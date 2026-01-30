@@ -902,8 +902,7 @@ def submit_cmd(
     ):
         issue = ctx.issues.get_issue(repo.root, issue_number)
         # issue_exists check above ensures this won't be IssueNotFound
-        assert not isinstance(issue, IssueNotFound)
-        if is_issue_learn_plan(issue.labels):
+        if not isinstance(issue, IssueNotFound) and is_issue_learn_plan(issue.labels):
             parent_branch = get_learn_plan_parent_branch(ctx, repo.root, issue.body)
             if parent_branch is not None and ctx.git.branch.branch_exists_on_remote(
                 repo.root, "origin", parent_branch

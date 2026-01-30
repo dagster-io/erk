@@ -34,7 +34,7 @@ def close_objective(ctx: ErkContext, issue_ref: str, *, force: bool) -> None:
     # Fetch the issue
     issue = ctx.issues.get_issue(repo.root, issue_number)
     if isinstance(issue, IssueNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Issue #{issue.issue_number} not found")
+        user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
         raise SystemExit(1)
 
     # Validate issue has erk-objective label
