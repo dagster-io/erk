@@ -129,6 +129,64 @@ Post findings.
         assert "gh pr diff 999" in prompt
         assert "--pr-number 999" in prompt
 
+    def test_prompt_includes_deduplication_step(self) -> None:
+        """Prompt includes a step to fetch existing review comments."""
+        review = _make_review(
+            name="Dignified Python",
+            marker="<!-- dignified-python -->",
+            body="Review body.",
+        )
+
+        prompt = assemble_review_prompt(
+            review=review,
+            repository="owner/repo",
+            pr_number=42,
+            base_branch=None,
+        )
+
+        assert "Fetch Existing Review Comments" in prompt
+        assert "erk exec get-pr-review-comments --pr 42 --include-resolved" in prompt
+
+    def test_prompt_deduplication_references_review_name(self) -> None:
+        """Deduplication step references the review name for prefix matching."""
+        review = _make_review(
+            name="Tripwire Check",
+            marker="<!-- tripwire -->",
+            body="Review body.",
+        )
+
+        prompt = assemble_review_prompt(
+            review=review,
+            repository="owner/repo",
+            pr_number=100,
+            base_branch=None,
+        )
+
+        assert "**Tripwire Check**:" in prompt
+        assert "Skip posting if an existing comment" in prompt
+
+    def test_prompt_deduplication_step_order(self) -> None:
+        """Deduplication step comes after diff and before posting."""
+        review = _make_review(
+            name="Test",
+            marker="<!-- test -->",
+            body="Body.",
+        )
+
+        prompt = assemble_review_prompt(
+            review=review,
+            repository="owner/repo",
+            pr_number=1,
+            base_branch=None,
+        )
+
+        diff_pos = prompt.index("## Step 3: Get the Diff")
+        dedup_pos = prompt.index("## Step 4: Fetch Existing Review Comments")
+        post_pos = prompt.index("## Step 5: Post Inline Comments")
+        summary_pos = prompt.index("## Step 6: Post Summary Comment")
+
+        assert diff_pos < dedup_pos < post_pos < summary_pos
+
 
 class TestAssembleLocalPrompt:
     """Tests for local mode prompt assembly."""
