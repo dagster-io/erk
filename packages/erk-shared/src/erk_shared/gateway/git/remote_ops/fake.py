@@ -6,6 +6,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+from erk_shared.gateway.git.remote_ops.types import (
+    PullRebaseError,
+    PullRebaseResult,
+    PushError,
+    PushResult,
+)
 
 if TYPE_CHECKING:
     # Import PushedBranch type from parent module to avoid circular import
@@ -22,8 +28,8 @@ class FakeGitRemoteOps(GitRemoteOps):
     ---------------------
     - remote_urls: Mapping of (repo_root, remote_name) -> remote URL
     - pull_branch_raises: Exception to raise when pull_branch() is called
-    - push_to_remote_raises: Exception to raise when push_to_remote() is called
-    - pull_rebase_raises: Exception to raise when pull_rebase() is called
+    - push_to_remote_error: PushError to return when push_to_remote() is called
+    - pull_rebase_error: PullRebaseError to return when pull_rebase() is called
 
     Mutation Tracking:
     -----------------
@@ -41,8 +47,8 @@ class FakeGitRemoteOps(GitRemoteOps):
         remote_urls: dict[tuple[Path, str], str] | None = None,
         fetch_branch_raises: Exception | None = None,
         pull_branch_raises: Exception | None = None,
-        push_to_remote_raises: Exception | None = None,
-        pull_rebase_raises: Exception | None = None,
+        push_to_remote_error: PushError | None = None,
+        pull_rebase_error: PullRebaseError | None = None,
     ) -> None:
         """Create FakeGitRemoteOps with pre-configured state.
 
@@ -50,15 +56,15 @@ class FakeGitRemoteOps(GitRemoteOps):
             remote_urls: Mapping of (repo_root, remote_name) -> remote URL
             fetch_branch_raises: Exception to raise when fetch_branch() is called
             pull_branch_raises: Exception to raise when pull_branch() is called
-            push_to_remote_raises: Exception to raise when push_to_remote() is called
-            pull_rebase_raises: Exception to raise when pull_rebase() is called
+            push_to_remote_error: PushError to return when push_to_remote() is called
+            pull_rebase_error: PullRebaseError to return when pull_rebase() is called
         """
         # Use `is None` check to preserve empty dict reference from FakeGit
         self._remote_urls = remote_urls if remote_urls is not None else {}
         self._fetch_branch_raises = fetch_branch_raises
         self._pull_branch_raises = pull_branch_raises
-        self._push_to_remote_raises = push_to_remote_raises
-        self._pull_rebase_raises = pull_rebase_raises
+        self._push_to_remote_error = push_to_remote_error
+        self._pull_rebase_error = pull_rebase_error
 
         # Mutation tracking
         self._fetched_branches: list[tuple[str, str]] = []
@@ -98,25 +104,29 @@ class FakeGitRemoteOps(GitRemoteOps):
         *,
         set_upstream: bool,
         force: bool,
-    ) -> None:
-        """Record push to remote, or raise if failure configured."""
+    ) -> PushResult | PushError:
+        """Record push to remote, or return error if failure configured."""
         # Import at runtime to avoid circular dependency
         from erk_shared.gateway.git.fake import PushedBranch
 
-        if self._push_to_remote_raises is not None:
-            raise self._push_to_remote_raises
+        if self._push_to_remote_error is not None:
+            return self._push_to_remote_error
         self._pushed_branches.append(
             PushedBranch(remote=remote, branch=branch, set_upstream=set_upstream, force=force)
         )
+        return PushResult()
 
-    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
+    def pull_rebase(
+        self, cwd: Path, remote: str, branch: str
+    ) -> PullRebaseResult | PullRebaseError:
         """Pull and rebase from remote branch.
 
-        Tracks call for test assertions. Raises configured exception if set.
+        Tracks call for test assertions. Returns configured error if set.
         """
         self._pull_rebase_calls.append((cwd, remote, branch))
-        if self._pull_rebase_raises is not None:
-            raise self._pull_rebase_raises
+        if self._pull_rebase_error is not None:
+            return self._pull_rebase_error
+        return PullRebaseResult()
 
     def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get the URL for a git remote.

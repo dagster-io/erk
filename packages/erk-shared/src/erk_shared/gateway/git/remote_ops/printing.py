@@ -7,6 +7,12 @@ before delegating to the wrapped implementation.
 from pathlib import Path
 
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+from erk_shared.gateway.git.remote_ops.types import (
+    PullRebaseError,
+    PullRebaseResult,
+    PushError,
+    PushResult,
+)
 from erk_shared.printing.base import PrintingBase
 
 
@@ -59,17 +65,21 @@ class PrintingGitRemoteOps(PrintingBase, GitRemoteOps):
         *,
         set_upstream: bool,
         force: bool,
-    ) -> None:
+    ) -> PushResult | PushError:
         """Push to remote with printed output."""
         upstream_flag = "-u " if set_upstream else ""
         force_flag = "--force " if force else ""
         self._emit(self._format_command(f"git push {upstream_flag}{force_flag}{remote} {branch}"))
-        self._wrapped.push_to_remote(cwd, remote, branch, set_upstream=set_upstream, force=force)
+        return self._wrapped.push_to_remote(
+            cwd, remote, branch, set_upstream=set_upstream, force=force
+        )
 
-    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
+    def pull_rebase(
+        self, cwd: Path, remote: str, branch: str
+    ) -> PullRebaseResult | PullRebaseError:
         """Pull with rebase with printed output."""
         self._emit(self._format_command(f"git pull --rebase {remote} {branch}"))
-        self._wrapped.pull_rebase(cwd, remote, branch)
+        return self._wrapped.pull_rebase(cwd, remote, branch)
 
     # ============================================================================
     # Query Operations (delegate without printing)

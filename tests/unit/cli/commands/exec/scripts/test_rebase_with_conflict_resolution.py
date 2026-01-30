@@ -21,6 +21,7 @@ from erk_shared.core.claude_executor import PromptResult
 from erk_shared.core.fakes import FakeClaudeExecutor
 from erk_shared.gateway.git.abc import RebaseResult
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.git.remote_ops.types import PushError
 
 
 def test_build_summary_prompt_no_conflicts() -> None:
@@ -204,7 +205,7 @@ def test_rebase_push_failure(tmp_path: Path) -> None:
         ahead_behind={(tmp_path, "feature-branch"): (0, 2)},
         rebase_onto_result=RebaseResult(success=True, conflict_files=()),
         rebase_in_progress=False,
-        push_to_remote_raises=RuntimeError("Push rejected"),
+        push_to_remote_error=PushError(message="Push rejected"),
     )
     fake_claude = FakeClaudeExecutor()
 

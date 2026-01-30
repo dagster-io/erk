@@ -29,6 +29,7 @@ from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
 from erk_shared.gateway.git.rebase_ops.fake import FakeGitRebaseOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
 from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
+from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
 from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
 from erk_shared.gateway.git.repo_ops.fake import FakeGitRepoOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
@@ -149,12 +150,12 @@ class FakeGit(Git):
         git_user_name: str | None = None,
         branch_commits_with_authors: dict[tuple[Path, str, str, int], list[dict[str, str]]]
         | None = None,
-        push_to_remote_raises: Exception | None = None,
+        push_to_remote_error: PushError | None = None,
         existing_tags: set[str] | None = None,
         branch_divergence: dict[tuple[Path, str, str], BranchDivergence] | None = None,
         rebase_onto_result: RebaseResult | None = None,
         rebase_abort_raises: Exception | None = None,
-        pull_rebase_raises: Exception | None = None,
+        pull_rebase_error: PullRebaseError | None = None,
         merge_bases: dict[tuple[str, str], str] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
@@ -203,13 +204,13 @@ class FakeGit(Git):
             git_user_name: Configured git user.name to return from get_git_user_name()
             branch_commits_with_authors: Mapping of (repo_root, branch, trunk, limit)
                 -> commit dicts with keys: sha, author, timestamp
-            push_to_remote_raises: Exception to raise when push_to_remote() is called
+            push_to_remote_error: PushError to return when push_to_remote() is called
             existing_tags: Set of tag names that exist in the repository
             branch_divergence: Mapping of (cwd, branch, remote) -> BranchDivergence
                 for is_branch_diverged_from_remote()
             rebase_onto_result: Result to return from rebase_onto(). Defaults to success.
             rebase_abort_raises: Exception to raise when rebase_abort() is called
-            pull_rebase_raises: Exception to raise when pull_rebase() is called
+            pull_rebase_error: PullRebaseError to return when pull_rebase() is called
             merge_bases: Mapping of (ref1, ref2) -> merge base commit SHA for
                 get_merge_base(). Keys are ordered pairs, so (A, B) and (B, A)
                 are both checked.
@@ -252,12 +253,12 @@ class FakeGit(Git):
         self._head_commit_messages_full = head_commit_messages_full or {}
         self._git_user_name = git_user_name
         self._branch_commits_with_authors = branch_commits_with_authors or {}
-        self._push_to_remote_raises = push_to_remote_raises
+        self._push_to_remote_error = push_to_remote_error
         self._existing_tags: set[str] = existing_tags or set()
         self._branch_divergence = branch_divergence or {}
         self._rebase_onto_result = rebase_onto_result
         self._rebase_abort_raises = rebase_abort_raises
-        self._pull_rebase_raises = pull_rebase_raises
+        self._pull_rebase_error = pull_rebase_error
         self._merge_bases = merge_bases or {}
 
         # Mutation tracking
@@ -348,8 +349,8 @@ class FakeGit(Git):
             remote_urls=self._remote_urls,
             fetch_branch_raises=self._fetch_branch_raises,
             pull_branch_raises=self._pull_branch_raises,
-            push_to_remote_raises=self._push_to_remote_raises,
-            pull_rebase_raises=self._pull_rebase_raises,
+            push_to_remote_error=self._push_to_remote_error,
+            pull_rebase_error=self._pull_rebase_error,
         )
         # Link mutation tracking so FakeGit properties see mutations from FakeGitRemoteOps
         self._remote_gateway.link_mutation_tracking(

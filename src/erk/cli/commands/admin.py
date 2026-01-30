@@ -7,6 +7,7 @@ import click
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
+from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.types import GitHubRepoLocation
 from erk_shared.gateway.github_admin.real import RealGitHubAdmin
 from erk_shared.output.output import user_output
@@ -190,9 +191,11 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
 
     # Step 1: Ensure current branch exists on remote
     user_output(f"Ensuring branch '{current_branch}' exists on remote...")
-    ctx.git.remote.push_to_remote(
+    push_result = ctx.git.remote.push_to_remote(
         repo.root, "origin", current_branch, set_upstream=True, force=False
     )
+    if isinstance(push_result, PushError):
+        raise RuntimeError(push_result.message)
     user_output(click.style("✓", fg="green") + f" Branch '{current_branch}' pushed to origin")
 
     # Step 2: Find or create test issue
@@ -216,9 +219,11 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
 
     user_output(f"Creating test branch '{test_branch}'...")
     # Push master to the test branch using refspec syntax
-    ctx.git.remote.push_to_remote(
+    push_result = ctx.git.remote.push_to_remote(
         repo.root, "origin", f"master:{test_branch}", set_upstream=False, force=False
     )
+    if isinstance(push_result, PushError):
+        raise RuntimeError(push_result.message)
     user_output(click.style("✓", fg="green") + f" Test branch '{test_branch}' created")
 
     # Step 4: Add an empty commit to the test branch
@@ -227,7 +232,11 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
     ctx.git.remote.fetch_branch(repo.root, "origin", test_branch)
     ctx.branch_manager.checkout_branch(repo.root, test_branch)
     ctx.git.commit.commit(repo.root, "Test workflow run")
-    ctx.git.remote.push_to_remote(repo.root, "origin", test_branch, set_upstream=False, force=False)
+    push_result = ctx.git.remote.push_to_remote(
+        repo.root, "origin", test_branch, set_upstream=False, force=False
+    )
+    if isinstance(push_result, PushError):
+        raise RuntimeError(push_result.message)
     ctx.branch_manager.checkout_branch(repo.root, current_branch)
     user_output(click.style("✓", fg="green") + f" Initial commit added to '{test_branch}'")
 

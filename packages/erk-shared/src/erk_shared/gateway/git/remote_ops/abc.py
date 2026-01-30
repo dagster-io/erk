@@ -9,6 +9,13 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from erk_shared.gateway.git.remote_ops.types import (
+    PullRebaseError,
+    PullRebaseResult,
+    PushError,
+    PushResult,
+)
+
 
 class GitRemoteOps(ABC):
     """Abstract interface for Git remote operations.
@@ -71,7 +78,7 @@ class GitRemoteOps(ABC):
         *,
         set_upstream: bool,
         force: bool,
-    ) -> None:
+    ) -> PushResult | PushError:
         """Push a branch to a remote.
 
         Args:
@@ -81,13 +88,15 @@ class GitRemoteOps(ABC):
             set_upstream: If True, set upstream tracking (-u flag)
             force: If True, force push (--force flag)
 
-        Raises:
-            subprocess.CalledProcessError: If git command fails
+        Returns:
+            PushResult on success, PushError on failure.
         """
         ...
 
     @abstractmethod
-    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
+    def pull_rebase(
+        self, cwd: Path, remote: str, branch: str
+    ) -> PullRebaseResult | PullRebaseError:
         """Pull and rebase from a remote branch.
 
         Runs `git pull --rebase <remote> <branch>` to fetch remote changes
@@ -99,8 +108,8 @@ class GitRemoteOps(ABC):
             remote: Remote name (e.g., "origin")
             branch: Branch name to pull from
 
-        Raises:
-            subprocess.CalledProcessError: If rebase fails (e.g., conflicts)
+        Returns:
+            PullRebaseResult on success, PullRebaseError on failure.
         """
         ...
 

@@ -5,6 +5,12 @@ from pathlib import Path
 
 from erk_shared.gateway.git.lock import wait_for_index_lock
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+from erk_shared.gateway.git.remote_ops.types import (
+    PullRebaseError,
+    PullRebaseResult,
+    PushError,
+    PushResult,
+)
 from erk_shared.gateway.time.abc import Time
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
@@ -65,7 +71,7 @@ class RealGitRemoteOps(GitRemoteOps):
         *,
         set_upstream: bool,
         force: bool,
-    ) -> None:
+    ) -> PushResult | PushError:
         """Push a branch to a remote."""
         cmd = ["git", "push"]
         if set_upstream:
@@ -74,19 +80,29 @@ class RealGitRemoteOps(GitRemoteOps):
             cmd.append("--force")
         cmd.extend([remote, branch])
 
-        run_subprocess_with_context(
-            cmd=cmd,
-            operation_context=f"push branch '{branch}' to remote '{remote}'",
-            cwd=cwd,
-        )
+        try:
+            run_subprocess_with_context(
+                cmd=cmd,
+                operation_context=f"push branch '{branch}' to remote '{remote}'",
+                cwd=cwd,
+            )
+        except RuntimeError as e:
+            return PushError(message=str(e))
+        return PushResult()
 
-    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
+    def pull_rebase(
+        self, cwd: Path, remote: str, branch: str
+    ) -> PullRebaseResult | PullRebaseError:
         """Pull and rebase from remote branch."""
-        run_subprocess_with_context(
-            cmd=["git", "pull", "--rebase", remote, branch],
-            operation_context=f"pull --rebase {remote} {branch}",
-            cwd=cwd,
-        )
+        try:
+            run_subprocess_with_context(
+                cmd=["git", "pull", "--rebase", remote, branch],
+                operation_context=f"pull --rebase {remote} {branch}",
+                cwd=cwd,
+            )
+        except RuntimeError as e:
+            return PullRebaseError(message=str(e))
+        return PullRebaseResult()
 
     def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get the URL for a git remote.

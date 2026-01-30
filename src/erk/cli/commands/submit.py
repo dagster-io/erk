@@ -23,6 +23,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
@@ -458,7 +459,11 @@ def _create_branch_and_pr(
     # Stage, commit, and push
     ctx.git.commit.stage_files(repo.root, [".worker-impl"])
     ctx.git.commit.commit(repo.root, f"Add plan for issue #{issue_number}")
-    ctx.git.remote.push_to_remote(repo.root, "origin", branch_name, set_upstream=True, force=False)
+    push_result = ctx.git.remote.push_to_remote(
+        repo.root, "origin", branch_name, set_upstream=True, force=False
+    )
+    if isinstance(push_result, PushError):
+        raise RuntimeError(push_result.message)
     user_output(click.style("✓", fg="green") + " Branch pushed to remote")
 
     # Create draft PR
@@ -583,9 +588,11 @@ def _submit_single_issue(
                 repo.root,
                 f"[erk-plan] Initialize implementation for issue #{issue_number}",
             )
-            ctx.git.remote.push_to_remote(
+            push_result = ctx.git.remote.push_to_remote(
                 repo.root, "origin", branch_name, set_upstream=False, force=False
             )
+            if isinstance(push_result, PushError):
+                raise RuntimeError(push_result.message)
             user_output(click.style("✓", fg="green") + " Placeholder commit pushed")
 
             # Now create the PR

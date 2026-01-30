@@ -10,6 +10,7 @@ from erk.cli.commands.pr.submit_pipeline import (
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
 
@@ -202,7 +203,7 @@ def test_push_non_fast_forward_returns_error(tmp_path: Path) -> None:
                 behind=0,
             )
         },
-        push_to_remote_raises=RuntimeError("non-fast-forward update rejected"),
+        push_to_remote_error=PushError(message="non-fast-forward update rejected"),
     )
     ctx = context_for_test(git=fake_git, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
@@ -224,7 +225,7 @@ def test_push_generic_rejection_returns_error(tmp_path: Path) -> None:
                 behind=0,
             )
         },
-        push_to_remote_raises=RuntimeError("push Rejected by remote"),
+        push_to_remote_error=PushError(message="push Rejected by remote"),
     )
     ctx = context_for_test(git=fake_git, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
