@@ -50,6 +50,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before running /erk:learn in CI** → Read [Learn Workflow](learn-workflow.md) first. CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section.
 
+**CRITICAL: Before running sequential analysis that could be parallelized** → Read [Agent Orchestration for Learn Workflow](agent-orchestration.md) first. Use Tier 1 parallel agents for independent analysis (code-diff, existing-docs, session). Only use Tier 2 sequential synthesis when results must be combined.
+
 **CRITICAL: Before saving a plan with --objective-issue flag** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
 
 **CRITICAL: Before using background agents without waiting for completion before dependent operations** → Read [Command-Agent Delegation](agent-delegation.md) first. Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files.

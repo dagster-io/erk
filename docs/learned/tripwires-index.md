@@ -13,15 +13,16 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 
 | Category                                    | Tripwires | Load When Working In                          |
 | ------------------------------------------- | --------- | --------------------------------------------- |
-| [architecture](architecture/tripwires.md)   | 57        | `src/erk/gateway/`, gateways, subprocess      |
+| [architecture](architecture/tripwires.md)   | 59        | `src/erk/gateway/`, gateways, subprocess      |
 | [capabilities](capabilities/tripwires.md)   | 1         | Claude Code capabilities, tool use            |
 | [ci](ci/tripwires.md)                       | 14        | `.github/workflows/`, `.github/actions/`      |
 | [claude-code](claude-code/tripwires.md)     | 2         | Claude Code configuration, settings           |
-| [cli](cli/tripwires.md)                     | 12        | `src/erk/cli/`                                |
+| [cli](cli/tripwires.md)                     | 14        | `src/erk/cli/`                                |
 | [gateway](gateway/tripwires.md)             | 1         | `gateway/` code                               |
 | [hooks](hooks/tripwires.md)                 | 2         | `.claude/hooks/`, hook development            |
-| [objectives](objectives/tripwires.md)       | 2         | `objectives/` code                            |
-| [planning](planning/tripwires.md)           | 23        | `.impl/`, `.worker-impl/`, planning workflows |
+| [objectives](objectives/tripwires.md)       | 3         | `objectives/` code                            |
+| [planning](planning/tripwires.md)           | 24        | `.impl/`, `.worker-impl/`, planning workflows |
+| [reviews](reviews/tripwires.md)             | 1         | `reviews/` code                               |
 | [sessions](sessions/tripwires.md)           | 6         | `~/.claude/projects/`, session analysis       |
 | [testing](testing/tripwires.md)             | 8         | `tests/`                                      |
 | [textual](textual/tripwires.md)             | 1         | Textual framework code                        |

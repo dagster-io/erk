@@ -94,6 +94,59 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 | `pending_review`      | Learn plan awaiting review             | Plan created, not implemented |
 | `plan_completed`      | Learn plan implemented and merged      | Documentation updated         |
 
+### Objective Operations
+
+- `objective-roadmap-check` - Validate objective roadmap markdown structure
+
+#### objective-roadmap-check
+
+Parses and validates objective roadmap markdown tables.
+
+**Usage:** `erk exec objective-roadmap-check <path-to-objective.md>`
+
+**JSON Output:**
+
+```json
+{
+  "valid": true,
+  "phases": [
+    {
+      "phase_number": 1,
+      "phase_name": "Phase 1: Setup",
+      "steps": [
+        {
+          "step_id": "1.1",
+          "description": "Create infrastructure",
+          "status": "completed",
+          "pr_url": "https://github.com/owner/repo/pull/123"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Validation Rules:**
+
+- Phase headers: `## Phase N: Title` (N must be sequential starting from 1)
+- Table columns: `| Step | Description | Status | PR |`
+- Step rows: Must have step_id matching `N.M` where N is phase number
+- Status values: `pending`, `in_progress`, `completed`, `blocked`
+- PR column: Optional GitHub PR URL
+
+**Status Inference Hierarchy:**
+
+1. Explicit Status column value (highest priority)
+2. PR column presence (if PR URL exists → `completed`)
+3. Default: `pending`
+
+**Exit Codes:**
+
+- `0` - Valid roadmap
+- `1` - Invalid structure (with error details in JSON)
+
+See [objective-roadmap-check](../objectives/objective-roadmap-check.md) for complete documentation.
+
 ### Implementation Setup Operations
 
 - `setup-impl-from-issue` - Prepare worktree for plan implementation

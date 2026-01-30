@@ -17,6 +17,8 @@ tripwires:
     warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
   - action: "using subprocess.run with git command outside of a gateway"
     warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+  - action: "changing gateway return type to discriminated union"
+    warning: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern."
 ---
 
 # Gateway ABC Implementation Checklist
@@ -82,6 +84,31 @@ When adding a new method to any gateway ABC:
    - Mutation methods: print, then delegate
 6. [ ] Add unit tests for Fake behavior
 7. [ ] Add integration tests for Real (if feasible)
+
+## Return Type Changes
+
+When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+
+**Complete Update Checklist**:
+
+1. [ ] Define new types in `gateway/{name}/types.py`
+2. [ ] Update ABC signature in `abc.py`
+3. [ ] Update all 5 implementations:
+   - [ ] `real.py` - Return appropriate error types for failure cases
+   - [ ] `fake.py` - Return union types in test implementation
+   - [ ] `dry_run.py` - Return appropriate success/error based on mode
+   - [ ] `printing.py` - Update signature to return union
+4. [ ] Update all call sites to handle new return type
+5. [ ] Update tests to check `isinstance(result, ErrorType)`
+6. [ ] Verify all imports include new types
+
+**Canonical Example**: PR #6294 (`merge_pr: bool | str` → `MergeResult | MergeError`)
+
+- Changed 4 files in gateway implementations
+- Updated 3 call sites in land workflow
+- Updated tests to use `isinstance(result, MergeError)`
+
+**Critical**: Incomplete migrations break type safety. Use grep to find all call sites before starting.
 
 ## Read-Only vs Mutation Methods
 

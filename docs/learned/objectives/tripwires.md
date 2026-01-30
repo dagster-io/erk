@@ -15,3 +15,5 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before creating or modifying roadmap step IDs** → Read [Roadmap Parser](roadmap-parser.md) first. Step IDs should use plain numbers (1.1, 2.1), not letter format (1A.1, 1B.1).
 
 **CRITICAL: Before implementing roadmap parsing functionality** → Read [Roadmap Parser](roadmap-parser.md) first. The parser is regex-based, not LLM-based. Do not reference LLM inference.
+
+**CRITICAL: Before manually parsing objective roadmap markdown** → Read [objective-roadmap-check Command](objective-roadmap-check.md) first. Use `erk exec objective-roadmap-check` command. It handles regex patterns for phase headers, table columns, status inference, and validation.

@@ -129,10 +129,39 @@ Use `--dry-run` to print the assembled prompt without running Claude.
 
 ## Existing Reviews
 
-| Review           | File                  | Matches                                 |
-| ---------------- | --------------------- | --------------------------------------- |
-| Tripwires Review | `tripwires.md`        | `**/*.py`, `**/*.sh`, `.claude/**/*.md` |
-| Dignified Python | `dignified-python.md` | Python files                            |
+| Review           | File                  | Matches                                 | Notes                                                        |
+| ---------------- | --------------------- | --------------------------------------- | ------------------------------------------------------------ |
+| Tripwires Review | `tripwires.md`        | `**/*.py`, `**/*.sh`, `.claude/**/*.md` | Checks for tripwire violations                               |
+| Dignified Python | `dignified-python.md` | Python files                            | Enforces coding standards                                    |
+| Test Coverage    | `test-coverage.md`    | Python source files                     | 6-category file bucketing, untestable file detection, marker-based deduplication |
+
+### Test Coverage Agent Details
+
+The test-coverage agent categorizes files into 6 buckets:
+
+1. **source_added** - New files in `src/` or `packages/`
+2. **source_modified** - Modified files in `src/` or `packages/` (only significant changes)
+3. **source_deleted** - Deleted files in `src/` or `packages/`
+4. **tests_added** - New files in `tests/`
+5. **tests_modified** - Modified files in `tests/`
+6. **tests_deleted** - Deleted files in `tests/`
+
+**Legitimately Untestable Files**:
+
+- Thin CLI wrappers (only Click decorators + delegation)
+- Type-only files (TypeVar, Protocol, type aliases)
+- ABC definition files (only abstract methods)
+- `__init__.py`, `conftest.py`, `__main__.py`
+
+**Flagging Strategy**:
+
+- Untested new source files (excludes legitimately untestable)
+- Net test reduction (more deleted than added)
+- Source additions without test additions
+
+**Output Format**: Markdown table with status, inline comments on flagged files, activity log with last 10 entries
+
+See [Test Coverage Agent](../reviews/test-coverage-agent.md) for implementation details.
 
 ## Disabling a Review
 
