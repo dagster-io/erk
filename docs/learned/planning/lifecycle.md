@@ -600,6 +600,23 @@ The workflow treats no-changes as successful completion, not an error. Users rev
 
 See [No Code Changes Handling](no-changes-handling.md) for details.
 
+### Review PRs Do Not Block Implementation
+
+**Important:** If a plan has an associated review PR (from Phase 3), implementation can proceed regardless of the review PR's state:
+
+- Implementation does **not** wait for review PR feedback
+- Implementation does **not** require review PR to be merged or closed
+- Review feedback is **optional** - implementation follows the original plan
+
+**Workflow:**
+
+1. Plan saved with optional review PR link in metadata
+2. Implementation begins (local or remote)
+3. Implementation follows the plan, ignoring review PR state
+4. Review PR is cleaned up during landing (Phase 5)
+
+**Rationale:** Review PRs provide asynchronous feedback but should not block forward progress. The plan is the source of truth; review feedback is advisory.
+
 ---
 
 ## Phase 5: PR Finalization & Merge
@@ -660,6 +677,42 @@ This is needed because workflow dispatch doesn't trigger PR workflows.
 GitHub automatically closes the linked issue when the PR is merged if the commit message contains "Closes #N" or similar keywords.
 
 The `gt finalize` command (used during PR finalization) adds the closing keyword to the commit message, ensuring the issue is closed when the PR merges.
+
+### Review PR Auto-Closure During Landing
+
+When a plan's implementation PR is landed (merged), the associated review PR is automatically closed via `cleanup_review_pr()`.
+
+**Workflow steps (from `erk land`):**
+
+1. **Merge PR** (critical operation)
+2. **Delete worktree** (critical operation)
+3. **Cleanup review PR** (optional, fail-open):
+   - Step 2.8: `cleanup_review_pr()` called with `reason="PR landed"`
+   - Adds comment to review PR: "This review PR was automatically closed because PR landed."
+   - Closes the review PR via GitHub API
+   - Archives metadata: `review_pr` → `last_review_pr` in plan issue
+
+**Fail-open semantics:**
+
+`cleanup_review_pr()` uses the fail-open pattern (see [Fail-Open Patterns](../architecture/fail-open-patterns.md)):
+
+- If review PR close **fails** → Land still succeeds, warning logged
+- If metadata update **fails** → Land still succeeds, warning logged
+- Cleanup is **non-critical** → Main operation (land) is not blocked
+
+**Metadata archival:**
+
+The `review_pr` field is moved to `last_review_pr` in the plan issue's metadata block. This preserves historical context while clearing the active review PR link.
+
+**Also triggered by `erk plan close`:**
+
+The same cleanup logic is triggered when a plan is closed via `erk plan close`:
+
+- `cleanup_review_pr(reason="plan closed")`
+- Same fail-open semantics
+- Same metadata archival
+
+See `src/erk/cli/commands/review_pr_cleanup.py` for the canonical implementation.
 
 ---
 

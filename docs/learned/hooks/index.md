@@ -7,4 +7,5 @@
 - **[hooks.md](hooks.md)** — creating hooks, modifying hooks, understanding hook lifecycle
 - **[pretooluse-implementation.md](pretooluse-implementation.md)** — creating a PreToolUse hook, reading tool_input from stdin JSON, detecting file types in hooks
 - **[prompt-hooks.md](prompt-hooks.md)** — creating prompt hooks, customizing post-init setup, customizing CI workflow, understanding prompt hooks vs claude hooks
+- **[reminder-consolidation.md](reminder-consolidation.md)** — adding a new coding standards reminder, deciding between UserPromptSubmit and PreToolUse hooks for reminders, debugging duplicate reminder output
 - **[replan-context-reminders.md](replan-context-reminders.md)** — writing hooks for replan workflows, designing system reminders, implementing workflow checkpoints

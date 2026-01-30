@@ -78,13 +78,14 @@ Erk uses three tiers of context injection to ensure agents follow coding standar
 
 ## Integration Example: dignified-python
 
-The dignified-python coding standards use all three tiers:
+The dignified-python coding standards use a 2-tier delivery:
 
 1. **Ambient**: AGENTS.md "Python Standards" section provides compressed rules always in context
-2. **Per-Prompt**: UserPromptSubmit hook emits "dignified-python: CRITICAL RULES" reminder each turn
-3. **Just-in-Time**: PreToolUse hook on `Write|Edit` detects `.py` files and emits targeted reminder
+2. **Just-in-Time**: PreToolUse hook on `Write|Edit` detects `.py` files and emits core rules reminder
 
-This layered approach means an agent writing Python code receives the standards at session start, gets reminded each turn, and gets a final targeted reminder at the exact moment of editing.
+This layered approach means an agent writing Python code has quick-reference rules always available (Tier 1) and receives detailed core rules at the exact moment of editing (Tier 3).
+
+**Historical note:** Prior to PR #6278, dignified-python used all three tiers, including a Per-Prompt (Tier 2) UserPromptSubmit reminder. This was removed to reduce token waste and noise - the Ambient + Just-in-Time combination provides sufficient coverage without duplication. See [Reminder Consolidation](../hooks/reminder-consolidation.md) for the consolidation pattern.
 
 ## Compliance Observations
 

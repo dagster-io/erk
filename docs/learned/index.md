@@ -10,6 +10,7 @@ If your current task matches, read the linked document **before writing code**.
 
 - [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
 - [capabilities/](capabilities/)
+- [changelog/](changelog/)
 - [checklists/](checklists/)
 - [ci/](ci/)
 - [claude-code/](claude-code/)
