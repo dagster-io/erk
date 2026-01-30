@@ -24,6 +24,7 @@ from erk.core.worktree_utils import (
     get_worktree_branch,
 )
 from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.worktree.types import WorktreeRemoved
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_worktree_name
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import user_output
@@ -148,24 +149,11 @@ def _close_plan_for_worktree(
 def _try_git_worktree_delete(git_ops: Git, repo_root: Path, wt_path: Path) -> bool:
     """Attempt git worktree remove, returning success status.
 
-    This function violates LBYL norms because there's no reliable way to
-    check a priori if git worktree remove will succeed. The worktree might be:
-    - Already removed from git metadata
-    - In a partially corrupted state
-    - Referenced by stale lock files
-
-    Git's own error handling is unreliable for these edge cases, so we use
-    try/except as an error boundary and rely on manual cleanup + prune.
-
     Returns:
         True if git removal succeeded, False otherwise
     """
-    try:
-        git_ops.worktree.remove_worktree(repo_root, wt_path, force=True)
-        return True
-    except Exception:
-        # Git removal failed - manual cleanup will handle it
-        return False
+    result = git_ops.worktree.remove_worktree(repo_root, wt_path, force=True)
+    return isinstance(result, WorktreeRemoved)
 
 
 def _prune_worktrees_safe(git_ops: Git, repo_root: Path) -> None:

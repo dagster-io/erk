@@ -9,7 +9,12 @@ from pathlib import Path
 from erk_shared.gateway.git.abc import BranchDivergence, WorktreeInfo
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.git.worktree.types import WorktreeAdded, WorktreeAddError
+from erk_shared.gateway.git.worktree.types import (
+    WorktreeAdded,
+    WorktreeAddError,
+    WorktreeRemoved,
+    WorktreeRemoveError,
+)
 
 
 def test_fake_gitops_list_worktrees() -> None:
@@ -66,7 +71,8 @@ def test_fake_gitops_remove_worktree() -> None:
         }
     )
 
-    git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
+    result = git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
+    assert isinstance(result, WorktreeRemoved)
 
     worktrees = git_ops.worktree.list_worktrees(repo_root)
     assert len(worktrees) == 0
@@ -339,12 +345,39 @@ def test_fake_gitops_removed_worktrees_tracking() -> None:
         }
     )
 
-    git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
-    git_ops.worktree.remove_worktree(repo_root, wt2, force=False)
+    result1 = git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
+    result2 = git_ops.worktree.remove_worktree(repo_root, wt2, force=False)
 
+    assert isinstance(result1, WorktreeRemoved)
+    assert isinstance(result2, WorktreeRemoved)
     assert wt1 in git_ops.removed_worktrees
     assert wt2 in git_ops.removed_worktrees
     assert len(git_ops.removed_worktrees) == 2
+
+
+def test_fake_gitops_remove_worktree_error_injection() -> None:
+    """Test that FakeGit can inject remove_worktree errors."""
+    repo_root = Path("/repo")
+    wt1 = Path("/repo/wt1")
+    error = WorktreeRemoveError(message="Failed to remove worktree")
+
+    git_ops = FakeGit(
+        worktrees={
+            repo_root: [
+                WorktreeInfo(path=wt1, branch="feature-1"),
+            ]
+        },
+        remove_worktree_error=error,
+    )
+
+    result = git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
+    assert isinstance(result, WorktreeRemoveError)
+    assert result.message == "Failed to remove worktree"
+    assert result.error_type == "worktree-remove-failed"
+
+    # Worktree should not have been removed
+    worktrees = git_ops.worktree.list_worktrees(repo_root)
+    assert len(worktrees) == 1
 
 
 def test_fake_git_is_worktree_clean_with_clean_worktree() -> None:

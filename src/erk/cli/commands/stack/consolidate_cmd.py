@@ -17,7 +17,7 @@ from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
-from erk_shared.gateway.git.worktree.types import WorktreeAddError
+from erk_shared.gateway.git.worktree.types import WorktreeAddError, WorktreeRemoveError
 from erk_shared.output.output import user_output
 
 
@@ -113,7 +113,9 @@ def _remove_worktree_slot_aware(
         return (None, assignment.slot_name)
     else:
         # Non-slot worktree: remove normally
-        ctx.git.worktree.remove_worktree(repo.root, wt.path, force=True)
+        result = ctx.git.worktree.remove_worktree(repo.root, wt.path, force=True)
+        if isinstance(result, WorktreeRemoveError):
+            raise click.ClickException(result.message)
         return (wt.path, None)
 
 

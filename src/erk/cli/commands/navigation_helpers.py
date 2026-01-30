@@ -22,6 +22,7 @@ from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.debug import debug_log
 from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.worktree.types import WorktreeRemoveError
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.scratch.markers import PENDING_LEARN_MARKER, marker_exists
@@ -177,7 +178,9 @@ def delete_branch_and_worktree(
         os.chdir(main_repo)
 
     # Remove the worktree (already calls prune internally)
-    ctx.git.worktree.remove_worktree(main_repo, worktree_path, force=True)
+    result = ctx.git.worktree.remove_worktree(main_repo, worktree_path, force=True)
+    if isinstance(result, WorktreeRemoveError):
+        raise click.ClickException(result.message)
     user_output(f"✓ Removed worktree: {click.style(str(worktree_path), fg='green')}")
 
     # Delete the branch using BranchManager abstraction (respects use_graphite config)
@@ -305,7 +308,9 @@ def unallocate_worktree_and_branch(
         user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
     else:
         # Non-slot worktree: delete both
-        ctx.git.worktree.remove_worktree(main_repo_root, worktree_path, force=True)
+        result = ctx.git.worktree.remove_worktree(main_repo_root, worktree_path, force=True)
+        if isinstance(result, WorktreeRemoveError):
+            raise click.ClickException(result.message)
         ctx.branch_manager.delete_branch(main_repo_root, branch)
         user_output(click.style("✓", fg="green") + " Removed worktree and deleted branch")
 
