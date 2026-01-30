@@ -117,7 +117,7 @@ def test_submit_stack_invalidates_branches_cache() -> None:
         # Pre-populate cache with stale data
         ops._branches_cache = {"stale": "data"}  # type: ignore[assignment]
 
-        ops.submit_stack(Path("/test"))
+        ops.submit_stack(Path("/test"), publish=False, restack=False, quiet=False, force=False)
 
         # Cache should be invalidated after submit_stack
         assert ops._branches_cache is None
@@ -151,6 +151,6 @@ def test_continue_restack_invalidates_branches_cache() -> None:
         ops = RealGraphite()
         ops._branches_cache = {"stale": "data"}  # type: ignore[assignment]
 
-        ops.continue_restack(Path("/test"))
+        ops.continue_restack(Path("/test"), quiet=False)
 
         assert ops._branches_cache is None

@@ -201,7 +201,14 @@ def execute_land_pr(
     yield ProgressEvent(f"Merging PR #{pr_number}...")
     subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
     body = pr_details.body or None
-    merge_result = ops.github.merge_pr(repo_root, pr_number, subject=subject, body=body)
+    merge_result = ops.github.merge_pr(
+        repo_root,
+        pr_number,
+        squash=True,
+        verbose=False,
+        subject=subject,
+        body=body,
+    )
     if isinstance(merge_result, MergeError):
         yield CompletionEvent(
             LandPrError(

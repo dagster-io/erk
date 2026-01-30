@@ -86,8 +86,8 @@ class GitHub(ABC):
         repo_root: Path,
         pr_number: int,
         *,
-        squash: bool = True,
-        verbose: bool = False,
+        squash: bool,
+        verbose: bool,
         subject: str | None = None,
         body: str | None = None,
     ) -> MergeResult | MergeError:

@@ -140,7 +140,7 @@ class Graphite(ABC):
         ...
 
     @abstractmethod
-    def squash_branch(self, repo_root: Path, *, quiet: bool = False) -> None:
+    def squash_branch(self, repo_root: Path, *, quiet: bool) -> None:
         """Squash all commits on the current branch into one.
 
         Uses `gt squash` to consolidate commits. This is typically called
@@ -160,10 +160,10 @@ class Graphite(ABC):
         self,
         repo_root: Path,
         *,
-        publish: bool = False,
-        restack: bool = False,
-        quiet: bool = False,
-        force: bool = False,
+        publish: bool,
+        restack: bool,
+        quiet: bool,
+        force: bool,
     ) -> None:
         """Submit the current stack to create or update PRs.
 
@@ -319,7 +319,7 @@ class Graphite(ABC):
         return metadata.tracked_revision != metadata.commit_sha
 
     @abstractmethod
-    def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
+    def continue_restack(self, repo_root: Path, *, quiet: bool) -> None:
         """Continue an in-progress gt restack (gt continue).
 
         This is used after manually resolving merge conflicts during a restack
@@ -336,7 +336,7 @@ class Graphite(ABC):
         ...
 
     def squash_branch_idempotent(
-        self, repo_root: Path, *, quiet: bool = True
+        self, repo_root: Path, *, quiet: bool
     ) -> SquashSuccess | SquashError:
         """Squash commits idempotently - succeeds even if already single commit.
 
@@ -358,7 +358,7 @@ class Graphite(ABC):
             SquashError if squash failed (conflict or other error)
 
         Example:
-            >>> result = graphite.squash_branch_idempotent(repo_root)
+            >>> result = graphite.squash_branch_idempotent(repo_root, quiet=True)
             >>> if result.success:
             ...     print(result.message)  # "Squashed commits" or "Already single commit"
             >>> else:
