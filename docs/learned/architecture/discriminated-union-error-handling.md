@@ -8,6 +8,8 @@ read_when:
 tripwires:
   - action: "raising exceptions for expected failure cases in business logic"
     warning: "Use discriminated unions (T | ErrorType) instead. Exceptions are for truly exceptional conditions, not business logic failures."
+  - action: "migrating a gateway method to return discriminated union"
+    warning: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety."
 ---
 
 # Discriminated Union Error Handling
@@ -110,6 +112,103 @@ class InferenceError:
 def infer_next_step(...) -> NextStepResult | InferenceError:
     ...
 ```
+
+## Concrete Examples
+
+### Example 1: `merge_pr` - `bool | str` to Discriminated Union
+
+**Before** (ambiguous return type):
+
+```python
+# ABC definition
+def merge_pr(self, repo_root: Path, pr_number: int, ...) -> bool | str:
+    """Returns True on success, error message string on failure."""
+
+# Caller pattern (type-unsafe)
+merge_result = ops.github.merge_pr(repo_root, pr_number, ...)
+if merge_result is not True:
+    error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
+    return f"Failed to merge: {error_detail}"
+```
+
+**After** (explicit types):
+
+```python
+# Type definitions (gateway/github/types.py)
+@dataclass(frozen=True)
+class MergeResult:
+    """Success result from merging a PR."""
+    pr_number: int
+
+@dataclass(frozen=True)
+class MergeError:
+    """Error result from merging a PR. Implements NonIdealState."""
+    pr_number: int
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "merge-failed"
+
+# ABC definition
+def merge_pr(self, repo_root: Path, pr_number: int, ...) -> MergeResult | MergeError:
+    """Returns MergeResult on success, MergeError on failure."""
+
+# Caller pattern (type-safe)
+merge_result = ops.github.merge_pr(repo_root, pr_number, ...)
+if isinstance(merge_result, MergeError):
+    return LandPrError(
+        error_type="merge-failed",
+        message=f"Failed to merge PR #{pr_number}\n\n{merge_result.message}",
+    )
+# Type narrowing: merge_result is now MergeResult
+```
+
+**Migration Checklist** (from PR #6294):
+
+1. Define types in `gateway/github/types.py`
+2. Update ABC signature in `gateway/github/abc.py`
+3. Update all 5 implementations:
+   - `real.py` - Return `MergeError` for subprocess errors
+   - `fake.py` - Return union types in test implementation
+   - `dry_run.py` - Return `MergeResult` for no-op
+   - `printing.py` - Update signature
+4. Update all call sites (3 in land workflow)
+5. Update tests to check `isinstance(result, MergeError)`
+
+### Example 2: `get_issue` - Exception to Discriminated Union (Planned)
+
+**Before** (exception-based):
+
+```python
+def get_issue(self, issue_number: int) -> IssueDetails:
+    """Raises IssueNotFoundError if issue doesn't exist."""
+```
+
+**After** (discriminated union):
+
+```python
+@dataclass(frozen=True)
+class IssueInfo:
+    number: int
+    title: str
+    body: str
+    state: str
+
+@dataclass(frozen=True)
+class IssueNotFound:
+    issue_number: int
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "issue-not-found"
+
+def get_issue(self, issue_number: int) -> IssueInfo | IssueNotFound:
+    """Returns IssueInfo if found, IssueNotFound otherwise."""
+```
+
+This pattern is documented in PR #6304 but not yet merged to master.
 
 ## Consumer Pattern
 

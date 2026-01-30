@@ -17,6 +17,7 @@ Complex CLI commands that perform multiple mutations should use a two-phase mode
 
 - Gather ALL user confirmations upfront
 - Perform all precondition checks
+- **Type narrowing**: Use `EnsureIdeal` to narrow discriminated unions (e.g., `PRDetails | PRNotFound` → `PRDetails`)
 - NO mutations occur in this phase
 - Collect all decisions into confirmation objects
 
@@ -67,7 +68,26 @@ Key functions:
 - `_gather_cleanup_confirmation()`: Prompts during validation
 - `_cleanup_and_navigate()`: Uses pre-gathered confirmation during execution
 
+## EnsureIdeal as Type Narrowing
+
+The validation phase often includes type narrowing from discriminated unions. `EnsureIdeal` provides a concrete implementation of type narrowing for CLI commands:
+
+```python
+# Phase 1: Validation - narrow types from unions
+pr_details = EnsureIdeal.unwrap_pr(
+    ctx.github.get_pr_for_branch(repo_root, branch),
+    f"No pull request found for branch '{branch}'."
+)
+# Type narrowed: PRDetails | PRNotFound → PRDetails
+
+# Phase 2: Execution - use narrowed type
+ctx.github.merge_pr(repo_root, pr_details.number)
+```
+
+See [EnsureIdeal Pattern](ensure-ideal-pattern.md) for complete documentation.
+
 ## Related Topics
 
+- [EnsureIdeal Pattern](ensure-ideal-pattern.md) - Type narrowing from discriminated unions
 - [CI-Aware Commands](ci-aware-commands.md) - Commands must skip prompts in CI
 - [Output Styling Guide](output-styling.md) - Using `ctx.console.confirm()` for testability

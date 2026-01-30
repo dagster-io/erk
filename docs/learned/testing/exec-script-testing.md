@@ -273,6 +273,92 @@ def test_idempotency_all_formats(format_flag: str, tmp_path: Path) -> None:
     ...
 ```
 
+## Migrating Tests for Discriminated Union Returns
+
+When a gateway method changes from exception-based to discriminated union (e.g., `T | ErrorType`), update exec script tests to check return types instead of catching exceptions.
+
+### Before: Exception-Based Pattern
+
+```python
+def test_issue_not_found(fake_github: FakeGitHub) -> None:
+    """Test error handling when issue doesn't exist."""
+    fake_github.issue_not_found_error = True  # Fake raises exception
+
+    result = runner.invoke(cli, ["exec", "get-issue", "123"])
+
+    assert result.exit_code == 1
+    assert "Issue not found" in result.output
+```
+
+### After: Discriminated Union Pattern
+
+```python
+def test_issue_not_found(fake_github: FakeGitHub) -> None:
+    """Test error handling when issue doesn't exist."""
+    # Fake returns IssueNotFound sentinel instead of raising
+    fake_github.set_issue_result(123, IssueNotFound(issue_number=123, message="Issue not found"))
+
+    result = runner.invoke(cli, ["exec", "get-issue", "123"])
+
+    assert result.exit_code == 1
+    assert "Issue not found" in result.output
+```
+
+### Key Differences
+
+| Aspect              | Exception-Based                     | Discriminated Union                     |
+| ------------------- | ----------------------------------- | --------------------------------------- |
+| Fake setup          | Set error flag → raises exception   | Set return value → returns error type   |
+| Gateway behavior    | `raise IssueNotFoundError()`        | `return IssueNotFound(...)`             |
+| Exec script pattern | `try/except` block                  | `if isinstance(result, IssueNotFound):` |
+| Test assertion      | Verify exception caught & formatted | Verify error type returned & formatted  |
+
+### Migration Checklist
+
+When migrating exec script tests for discriminated unions:
+
+1. [ ] Update fake setup to return error types instead of raising
+2. [ ] Update exec script to use `isinstance()` checks instead of `try/except`
+3. [ ] Verify test still checks exit code and error message
+4. [ ] Verify test covers both success and error paths
+5. [ ] Update test names if needed (e.g., `test_issue_not_found_exception` → `test_issue_not_found`)
+
+### Example: Actual Migration
+
+From PR #6304 (hypothetical `get_issue` conversion):
+
+**Before:**
+
+```python
+# Fake gateway
+def get_issue(self, issue_number: int) -> IssueDetails:
+    if self.issue_not_found_error:
+        raise IssueNotFoundError(f"Issue {issue_number} not found")
+    return self.issues[issue_number]
+
+# Test
+def test_issue_not_found():
+    fake.issue_not_found_error = True
+    result = runner.invoke(cli, ["exec", "get-issue", "123"])
+    assert result.exit_code == 1
+```
+
+**After:**
+
+```python
+# Fake gateway
+def get_issue(self, issue_number: int) -> IssueInfo | IssueNotFound:
+    if issue_number in self.issue_results:
+        return self.issue_results[issue_number]
+    return IssueNotFound(issue_number=issue_number, message=f"Issue {issue_number} not found")
+
+# Test
+def test_issue_not_found():
+    fake.set_issue_result(123, IssueNotFound(issue_number=123, message="Issue not found"))
+    result = runner.invoke(cli, ["exec", "get-issue", "123"])
+    assert result.exit_code == 1
+```
+
 ## Related Documentation
 
 - [CLI Testing Patterns](cli-testing.md) - General CLI testing patterns

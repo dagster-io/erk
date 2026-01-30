@@ -575,6 +575,83 @@ If `confirm()` is called but no responses remain, FakeConsole raises `AssertionE
 
 See `tests/commands/submit/test_existing_branch_detection.py` for comprehensive examples of testing interactive prompts.
 
+## Test Naming for Return Type Refactoring
+
+When refactoring gateway methods from exception-based to discriminated unions, update test names to reflect the new pattern.
+
+### Pattern: Exception → Union
+
+| Old Test Name (Exception-Based)       | New Test Name (Discriminated Union)      |
+| ------------------------------------- | ---------------------------------------- |
+| `test_merge_pr_failure_returns_false` | `test_merge_pr_returns_merge_error`      |
+| `test_merge_pr_success_returns_true`  | `test_merge_pr_returns_merge_result`     |
+| `test_get_issue_raises_not_found`     | `test_get_issue_returns_issue_not_found` |
+| `test_get_issue_raises_api_error`     | `test_get_issue_returns_api_error`       |
+
+### Naming Conventions
+
+**Success Case:**
+
+- Old: `test_<method>_success` or `test_<method>_returns_true`
+- New: `test_<method>_returns_<success_type>`
+
+**Error Case:**
+
+- Old: `test_<method>_raises_<error>` or `test_<method>_returns_false`
+- New: `test_<method>_returns_<error_type>`
+
+### Migration Checklist
+
+When renaming tests for discriminated union migration:
+
+1. [ ] Update test name to use `returns_<type>` pattern
+2. [ ] Update test body to check `isinstance(result, Type)`
+3. [ ] Update docstring to describe return type (not exception)
+4. [ ] Verify fake setup returns type (not raises exception)
+5. [ ] Update related parametrized test names
+
+### Example: merge_pr Migration
+
+From PR #6294:
+
+**Before (Exception/Boolean):**
+
+```python
+def test_merge_pr_success_returns_true() -> None:
+    """Test merge_pr returns True on success."""
+    result = github.merge_pr(repo_root, 123)
+    assert result is True
+
+def test_merge_pr_failure_returns_error_string() -> None:
+    """Test merge_pr returns error string on failure."""
+    result = github.merge_pr(repo_root, 999)  # triggers error
+    assert isinstance(result, str)
+    assert "failed" in result.lower()
+```
+
+**After (Discriminated Union):**
+
+```python
+def test_merge_pr_returns_merge_result() -> None:
+    """Test merge_pr returns MergeResult on success."""
+    result = github.merge_pr(repo_root, 123)
+    assert isinstance(result, MergeResult)
+    assert result.pr_number == 123
+
+def test_merge_pr_returns_merge_error() -> None:
+    """Test merge_pr returns MergeError on failure."""
+    result = github.merge_pr(repo_root, 999)
+    assert isinstance(result, MergeError)
+    assert result.pr_number == 999
+    assert "failed" in result.message.lower()
+```
+
+**Key Changes:**
+
+- Test names describe return types (not booleans/exceptions)
+- Assertions check `isinstance(result, Type)` (not `is True` or exception catching)
+- Docstrings describe what's returned (not what's raised)
+
 ## Related
 
 - **Testing philosophy**: Load `fake-driven-testing` skill

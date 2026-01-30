@@ -722,7 +722,29 @@ Entities are connected through GitHub's native linking and deterministic metadat
 
 ### Branch → Issue
 
-Branches are named with the issue number prefix (e.g., `123-feature-name-01-15-1430`), making the association clear but not relying on GitHub's native branch linking.
+Branches are named with the issue number prefix (e.g., `P123-feature-name-01-15-1430`), making the association clear but not relying on GitHub's native branch linking.
+
+#### Objective-Linked Branches
+
+When a plan is associated with an objective (via `plan.objective_id`), the branch name encodes both the plan and objective IDs:
+
+**Format**: `P{plan}-O{objective}-{slug}-{timestamp}`
+
+**Example**: `P6318-O6234-consolidated-do-01-30-1128`
+
+This encoding enables:
+
+- **Traceability**: Branches visually indicate their objective context
+- **Automated tracking**: Commands can extract objective ID via `extract_objective_number(branch_name)`
+- **Workflow routing**: Objective-aware cleanup and status updates
+
+The objective ID is passed through the implementation pipeline:
+
+1. `plan.objective_id` is set when plan is created from an objective step
+2. `generate_issue_branch_name(..., objective_id=plan.objective_id)` encodes it into the branch name
+3. Downstream commands extract it via `extract_objective_number(current_branch)`
+
+**Backwards Compatibility**: All extraction functions work with both formats (`P123-O456-...` and `P123-...`).
 
 ### PR → Issue
 

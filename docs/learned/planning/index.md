@@ -5,6 +5,7 @@
 
 - **[agent-delegation.md](agent-delegation.md)** — delegating to agents from commands, implementing command-agent pattern, workflow orchestration
 - **[agent-orchestration-safety.md](agent-orchestration-safety.md)** — launching subagents that produce large outputs, using Write tool before launching dependent agents, designing agent-to-agent data handoff
+- **[agent-orchestration.md](agent-orchestration.md)** — implementing multi-tier agent workflows, understanding erk learn parallel analysis pattern, designing agent dependency graphs, working with Tier 1/Tier 2 agent patterns
 - **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort for a plan or PR, auditing what changed in a PR before review, creating a consolidation plan from multiple PRs
 - **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, running /local:replan-learn-plans
 - **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing replan workflow, creating consolidated plans, understanding sparse plan prevention
