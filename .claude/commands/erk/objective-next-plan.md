@@ -107,21 +107,23 @@ Load the `objective` skill for format templates and guidance.
 
 ### Step 4: Parse Roadmap and Display Steps
 
-Parse the objective body to extract roadmap steps. Look for markdown tables with columns like:
+Use the roadmap check exec command to get structured step data:
 
-| Step | Description | Status | PR |
+```bash
+erk exec objective-roadmap-check <issue-number>
+```
 
-Extract all steps **in roadmap order** (Phase 1A before 1B before 2A, etc. - alphanumeric sort by step ID). Present steps in this natural order with the first pending step as the recommended option.
+This returns JSON with `phases` (each containing `steps` with `id`, `description`, `status`, `pr` fields), `summary`, and `next_step`.
 
-**Detect step status from PR column:**
+**Map JSON status values to display labels:**
 
-- Empty PR column → `(pending)` - available to plan
-- `#<number>` (just a number) → `(done, PR #XXX)` - already completed with a merged PR
-- `plan #<number>` → `(plan in progress, #XXX)` - has a pending plan issue, skip recommending
-- `blocked` in Status column → `(blocked)` - cannot be worked yet
-- `skipped` in Status column → `(skipped)` - explicitly skipped
+- `"pending"` → `(pending)` - available to plan
+- `"done"` → `(done, PR #XXX)` (get PR ref from step's `pr` field)
+- `"in_progress"` → `(plan in progress, #XXX)` (get PR ref from step's `pr` field)
+- `"blocked"` → `(blocked)` - cannot be worked yet
+- `"skipped"` → `(skipped)` - explicitly skipped
 
-Display steps to the user:
+Display steps to the user in roadmap order:
 
 ```
 Objective #<number>: <title>
@@ -134,7 +136,7 @@ Roadmap Steps:
   ...
 ```
 
-**Ordering rule:** Present steps in natural roadmap order (by step ID). The first pending step that does NOT have a plan in progress is the recommended option.
+**Ordering rule:** Present steps in natural roadmap order (as returned by the JSON). The `next_step` field from the JSON indicates the recommended step. If `next_step` is null, all steps are complete or have plans in progress.
 
 ### Step 5: Prompt User to Select Step
 
@@ -148,13 +150,13 @@ Which step should I create a plan for?
 - (Other - specify step number or description)
 ```
 
-**Filtering rules:**
+**Filtering rules (based on JSON `status` field):**
 
-- **Show as options:** Steps that are `pending` (available to plan)
-- **Show but deprioritize:** Steps with `plan in progress` - still selectable via "Other" but not recommended
-- **Hide from options:** Steps that are `done`, `blocked`, or `skipped`
+- **Show as options:** Steps with status `"pending"`
+- **Show but deprioritize:** Steps with status `"in_progress"` - still selectable via "Other" but not recommended
+- **Hide from options:** Steps with status `"done"`, `"blocked"`, or `"skipped"`
 
-**Recommendation rule:** The first pending step (in roadmap order) that does NOT have a plan in progress is marked "(Recommended)".
+**Recommendation rule:** Use the `next_step` field from the roadmap check JSON as the recommended option. If `next_step` is null, no step is recommended.
 
 If all steps are complete or have plans in progress, report appropriately:
 

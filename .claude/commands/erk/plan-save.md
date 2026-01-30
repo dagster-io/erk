@@ -109,41 +109,15 @@ step_id=$(erk exec marker read --session-id "${CLAUDE_SESSION_ID}" roadmap-step)
 
 If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-next-plan`.
 
-2. **Fetch the objective issue body:**
+2. **Update the roadmap table** using the exec command:
 
 ```bash
-erk exec get-issue-body <objective-issue>
+erk exec objective-roadmap-update <objective-issue> --step "<step_id>" --pr "plan #<issue_number>"
 ```
 
-Parse the JSON response to extract the `body` field. 3. **Parse and update the roadmap table:**
+This command fetches the objective body, finds the matching row, updates the PR column, and writes back the updated body — all in one call.
 
-Find the row in the roadmap table where the Step column matches `step_id`. Update the PR column to show `plan #<issue_number>`.
-
-Example transformation:
-
-```markdown
-# Before
-
-| Step | Description   | Status  | PR  |
-| ---- | ------------- | ------- | --- |
-| 2A.1 | Add feature X | pending |     |
-
-# After
-
-| Step | Description   | Status  | PR         |
-| ---- | ------------- | ------- | ---------- |
-| 2A.1 | Add feature X | pending | plan #4567 |
-```
-
-4. **Update the objective issue:**
-
-```bash
-erk exec update-issue-body <objective-issue> --body "<updated_body>"
-```
-
-**Note:** If the PR column already has content, preserve it or append (e.g., if there's already a plan, append the new plan number).
-
-5. **Report the update:**
+3. **Report the update:**
 
 Display: `Updated objective #<objective-issue> roadmap: step <step_id> → plan #<issue_number>`
 
