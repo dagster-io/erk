@@ -4,6 +4,7 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.worktree.abc import Worktree
+from erk_shared.gateway.git.worktree.types import WorktreeAddError, WorktreeAdded
 from erk_shared.printing.base import PrintingBase
 
 
@@ -60,7 +61,7 @@ class PrintingWorktree(PrintingBase, Worktree):
         branch: str | None,
         ref: str | None,
         create_branch: bool,
-    ) -> None:
+    ) -> WorktreeAdded | WorktreeAddError:
         """Add worktree with printed output."""
         if branch and create_branch:
             base_ref = ref or "HEAD"
@@ -70,7 +71,7 @@ class PrintingWorktree(PrintingBase, Worktree):
         else:
             base_ref = ref or "HEAD"
             self._emit(self._format_command(f"git worktree add {path} {base_ref}"))
-        self._wrapped.add_worktree(
+        return self._wrapped.add_worktree(
             repo_root, path, branch=branch, ref=ref, create_branch=create_branch
         )
 

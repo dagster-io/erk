@@ -4,6 +4,7 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.git.branch_ops.types import BranchCreateError, BranchCreated
 from erk_shared.output.output import user_output
 
 
@@ -29,10 +30,13 @@ class DryRunGitBranchOps(GitBranchOps):
         """
         self._wrapped = wrapped
 
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str, *, force: bool) -> None:
+    def create_branch(
+        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    ) -> BranchCreated | BranchCreateError:
         """Print dry-run message instead of creating branch."""
         force_flag = " -f" if force else ""
         user_output(f"[DRY RUN] Would run: git branch{force_flag} {branch_name} {start_point}")
+        return BranchCreated()
 
     def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
         """Print dry-run message instead of deleting branch."""

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.worktree.abc import Worktree
+from erk_shared.gateway.git.worktree.types import WorktreeAddError, WorktreeAdded
 from erk_shared.output.output import user_output
 
 
@@ -65,7 +66,7 @@ class DryRunWorktree(Worktree):
         branch: str | None,
         ref: str | None,
         create_branch: bool,
-    ) -> None:
+    ) -> WorktreeAdded | WorktreeAddError:
         """Print dry-run message instead of adding worktree."""
         if branch and create_branch:
             base_ref = ref or "HEAD"
@@ -75,6 +76,7 @@ class DryRunWorktree(Worktree):
         else:
             base_ref = ref or "HEAD"
             user_output(f"[DRY RUN] Would run: git worktree add {path} {base_ref}")
+        return WorktreeAdded()
 
     def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
         """Print dry-run message instead of moving worktree."""

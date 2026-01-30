@@ -7,6 +7,7 @@ from pathlib import Path
 
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.types import PrInfo
+from erk_shared.gateway.git.branch_ops.types import BranchCreateError, BranchCreated
 
 
 @dataclass(frozen=True)
@@ -43,6 +44,8 @@ class FakeBranchManager(BranchManager):
     _detached_checkouts: list[str] = field(default_factory=list)
     # Track created tracking branches: list of (branch, remote_ref) tuples
     _created_tracking_branches: list[tuple[str, str]] = field(default_factory=list)
+    # Error to return from create_branch for test injection
+    create_branch_error: BranchCreateError | None = None
 
     def get_pr_for_branch(self, repo_root: Path, branch: str) -> PrInfo | None:
         """Get PR info from in-memory storage.
@@ -56,7 +59,9 @@ class FakeBranchManager(BranchManager):
         """
         return self.pr_info.get(branch)
 
-    def create_branch(self, repo_root: Path, branch_name: str, base_branch: str) -> None:
+    def create_branch(
+        self, repo_root: Path, branch_name: str, base_branch: str
+    ) -> BranchCreated | BranchCreateError:
         """Record branch creation in tracked list.
 
         Note: This mutates internal state despite the frozen dataclass.
@@ -67,8 +72,14 @@ class FakeBranchManager(BranchManager):
             repo_root: Repository root directory (unused in fake)
             branch_name: Name of the new branch
             base_branch: Name of the base branch
+
+        Returns:
+            BranchCreated on success, BranchCreateError if configured
         """
+        if self.create_branch_error is not None:
+            return self.create_branch_error
         self._created_branches.append((branch_name, base_branch))
+        return BranchCreated()
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Record branch deletion in tracked list.

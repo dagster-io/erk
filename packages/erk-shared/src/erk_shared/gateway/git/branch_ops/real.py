@@ -6,6 +6,7 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.git.branch_ops.types import BranchCreateError, BranchCreated
 from erk_shared.gateway.git.lock import wait_for_index_lock
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
@@ -26,17 +27,23 @@ class RealGitBranchOps(GitBranchOps):
         """
         self._time = time if time is not None else RealTime()
 
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str, *, force: bool) -> None:
+    def create_branch(
+        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    ) -> BranchCreated | BranchCreateError:
         """Create a new branch without checking it out."""
         cmd = ["git", "branch"]
         if force:
             cmd.append("-f")
         cmd.extend([branch_name, start_point])
-        run_subprocess_with_context(
-            cmd=cmd,
-            operation_context=f"create branch '{branch_name}' from '{start_point}'",
-            cwd=cwd,
-        )
+        try:
+            run_subprocess_with_context(
+                cmd=cmd,
+                operation_context=f"create branch '{branch_name}' from '{start_point}'",
+                cwd=cwd,
+            )
+            return BranchCreated()
+        except subprocess.CalledProcessError as e:
+            return BranchCreateError(message=str(e))
 
     def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
         """Delete a local branch.

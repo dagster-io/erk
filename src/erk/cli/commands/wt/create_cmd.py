@@ -20,6 +20,7 @@ from erk.cli.shell_utils import render_navigation_script
 from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+from erk_shared.gateway.git.branch_ops.types import BranchCreateError
 from erk_shared.impl_folder import create_impl_folder, get_impl_path, save_issue_reference
 from erk_shared.issue_workflow import (
     IssueBranchSetup,
@@ -687,7 +688,10 @@ def create_wt(
             user_output(click.style("Warning: ", fg="yellow") + warning)
 
         # Create branch via branch_manager (handles Graphite tracking automatically)
-        ctx.branch_manager.create_branch(repo.root, setup.branch_name, trunk_branch)
+        result_branch = ctx.branch_manager.create_branch(repo.root, setup.branch_name, trunk_branch)
+        if isinstance(result_branch, BranchCreateError):
+            user_output(f"Error creating branch: {result_branch.message}")
+            raise SystemExit(1)
         user_output(f"Created branch: {setup.branch_name}")
 
         # Track linked branch name for add_worktree call

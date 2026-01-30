@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+    from erk_shared.gateway.git.branch_ops.types import BranchCreateError, BranchCreated
 
 
 class GitBranchOps(ABC):
@@ -22,7 +23,9 @@ class GitBranchOps(ABC):
     """
 
     @abstractmethod
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str, *, force: bool) -> None:
+    def create_branch(
+        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    ) -> BranchCreated | BranchCreateError:
         """Create a new branch without checking it out.
 
         Args:
@@ -30,6 +33,9 @@ class GitBranchOps(ABC):
             branch_name: Name of the branch to create
             start_point: Commit/branch to base the new branch on
             force: Use -f flag to move existing branch to the start_point
+
+        Returns:
+            BranchCreated on success, BranchCreateError on failure
         """
         ...
 

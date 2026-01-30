@@ -16,6 +16,7 @@ from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.branch_ops.types import BranchCreateError
 from erk_shared.output.output import user_output
 
 
@@ -305,7 +306,10 @@ def consolidate_stack(
             new_worktree_path = worktree_path_for(repo.worktrees_dir, name)
 
             # Create temporary branch and checkout it to free up current_branch for new worktree
-            ctx.branch_manager.create_branch(current_worktree, temp_branch_name, current_branch)
+            result = ctx.branch_manager.create_branch(current_worktree, temp_branch_name, current_branch)
+            if isinstance(result, BranchCreateError):
+                user_output(f"Error creating branch: {result.message}")
+                raise SystemExit(1)
             ctx.branch_manager.checkout_branch(current_worktree, temp_branch_name)
 
             # Create new worktree with original branch

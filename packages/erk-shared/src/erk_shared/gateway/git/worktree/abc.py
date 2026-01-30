@@ -9,11 +9,17 @@ Architecture:
 - FakeWorktree: In-memory implementation for testing
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 # Re-export WorktreeInfo from the main git.abc module for backwards compatibility
 from erk_shared.gateway.git.abc import WorktreeInfo
+
+if TYPE_CHECKING:
+    from erk_shared.gateway.git.worktree.types import WorktreeAddError, WorktreeAdded
 
 
 class Worktree(ABC):
@@ -36,7 +42,7 @@ class Worktree(ABC):
         branch: str | None,
         ref: str | None,
         create_branch: bool,
-    ) -> None:
+    ) -> WorktreeAdded | WorktreeAddError:
         """Add a new git worktree.
 
         Args:
@@ -45,6 +51,9 @@ class Worktree(ABC):
             branch: Branch name (None creates detached HEAD or uses ref)
             ref: Git ref to base worktree on (None defaults to HEAD when creating branches)
             create_branch: True to create new branch, False to checkout existing
+
+        Returns:
+            WorktreeAdded on success, WorktreeAddError on failure
         """
         ...
 
