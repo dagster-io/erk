@@ -141,6 +141,7 @@ erk exec objective-roadmap-update <objective-number> --step <step-id> --pr "#<pr
 ```
 
 This command:
+
 - Sets the PR cell to the landed PR reference
 - Resets the Status cell to `-` so inference determines status (PR `#NNN` → done)
 - Re-validates the roadmap after mutation
