@@ -13,6 +13,7 @@ from erk.cli.commands.navigation_helpers import (
     delete_branch_and_worktree,
     get_slot_name_for_worktree,
     render_deferred_deletion_commands,
+    unallocate_worktree_and_branch,
     validate_for_deletion,
 )
 from erk.core.context import context_for_test
@@ -1040,3 +1041,41 @@ def test_delete_branch_and_worktree_raises_on_worktree_remove_error(tmp_path: Pa
     # Act & Assert: Should raise ClickException with the error message
     with pytest.raises(click.ClickException, match="worktree is locked"):
         delete_branch_and_worktree(ctx, repo, "feature", worktree_path)
+
+
+def test_unallocate_worktree_and_branch_raises_on_worktree_remove_error(tmp_path: Path) -> None:
+    """Test that unallocate_worktree_and_branch raises ClickException when removal fails."""
+    from erk_shared.gateway.git.worktree.types import WorktreeRemoveError
+
+    # Arrange
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+    erk_root = tmp_path / "erks"
+    erk_root.mkdir()
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+
+    error = WorktreeRemoveError(message="worktree is locked")
+    git = FakeGit(
+        local_branches={repo_root: ["main", "feature"]},
+        remote_branches={repo_root: []},
+        git_common_dirs={repo_root: git_dir},
+        worktrees={repo_root: [WorktreeInfo(path=worktree_path, branch="feature")]},
+        remove_worktree_error=error,
+    )
+
+    global_config = GlobalConfig.test(
+        erk_root,
+        use_graphite=False,
+        shell_setup_complete=False,
+    )
+
+    ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
+    repo = make_test_repo_context(repo_root, erk_root=erk_root)
+
+    # Act & Assert: Should raise ClickException with the error message
+    # (non-slot worktree path, so it takes the remove_worktree branch)
+    with pytest.raises(click.ClickException, match="worktree is locked"):
+        unallocate_worktree_and_branch(ctx, repo, "feature", worktree_path)
