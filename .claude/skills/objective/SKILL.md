@@ -40,7 +40,7 @@ capture lessons learned along the way.
 4. **Clear roadmap** - Status visible at a glance in the body
 5. **Body stays current** - Update body when roadmap status changes
 6. **Steelthread-first** - Each phase starts with minimal vertical slice proving the concept works
-7. **One PR per sub-phase** - Sub-phases (1A, 1B, 1C) are sized for coherent single PRs
+7. **One PR per phase** - Each phase is sized for a coherent single PR
 8. **Always shippable** - System remains functional after each merged PR
 9. **Body is source of truth** - Body always contains complete current state; comments are the changelog
 10. **Two-step for all changes** - Every addition (context, decisions, phases) gets a comment AND body update
@@ -67,25 +67,25 @@ gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(c
 
 ## Roadmap
 
-### Phase 1A: [Name] Steelthread (1 PR)
+### Phase 1: [Name] Steelthread (1 PR)
 
 Minimal vertical slice proving the concept works.
 
 | Step | Description | Status | PR |
 |------|-------------|--------|-----|
-| 1A.1 | [Minimal infrastructure] | pending | |
-| 1A.2 | [Wire into one command] | pending | |
+| 1.1 | [Minimal infrastructure] | pending | |
+| 1.2 | [Wire into one command] | pending | |
 
 **Test:** [End-to-end acceptance test for steelthread]
 
-### Phase 1B: Complete [Name] (1 PR)
+### Phase 2: Complete [Name] (1 PR)
 
 Fill out remaining functionality.
 
 | Step | Description | Status | PR |
 |------|-------------|--------|-----|
-| 1B.1 | [Extend to remaining commands] | pending | |
-| 1B.2 | [Full test coverage] | pending | |
+| 2.1 | [Extend to remaining commands] | pending | |
+| 2.2 | [Full test coverage] | pending | |
 
 **Test:** [Full acceptance criteria]
 
@@ -103,7 +103,7 @@ Post an action comment after completing work. See [format.md](references/format.
 ```bash
 gh issue comment <issue-number> --body "$(cat <<'EOF'
 ## Action: [Brief title]
-**Date:** YYYY-MM-DD | **PR:** #123 | **Phase/Step:** 1A.2
+**Date:** YYYY-MM-DD | **PR:** #123 | **Phase/Step:** 1.2
 ### What Was Done
 ### Lessons Learned
 ### Roadmap Updates

@@ -75,7 +75,7 @@ How would you like the objective structured?
 
 **Options:**
 
-1. **Steelthread (Recommended)** - Phase 1A is a minimal vertical slice proving the concept works end-to-end, followed by Phase 1B to complete the feature. Best when you can demonstrate value with a partial implementation.
+1. **Steelthread (Recommended)** - Phase 1 is a minimal vertical slice proving the concept works end-to-end, followed by Phase 2 to complete the feature. Best when you can demonstrate value with a partial implementation.
 2. **Linear** - Sequential phases, each building on the previous. Good when infrastructure must exist before any use case works (e.g., database schema before queries).
 3. **Single** - One phase, one PR. For small, focused objectives that don't need phasing.
 4. **Custom** - User describes their preferred structure
@@ -83,7 +83,7 @@ How would you like the objective structured?
 **Selection guidelines:**
 
 - **Steelthread**: Default choice. Use when feasible - it de-risks the approach early by proving the concept works.
-- **Linear**: Use when Phase 1A doesn't make sense - e.g., building a new abstraction layer that has no value until complete.
+- **Linear**: Use when a steelthread doesn't make sense - e.g., building a new abstraction layer that has no value until complete.
 - **Single**: Use for objectives small enough to implement in one PR (typically 1-2 days of work).
 - **Custom**: Use when the user has a specific structure in mind.
 
@@ -109,35 +109,35 @@ Write a structured objective proposal and show it to the user. Use the appropria
 
 ## Roadmap
 
-### Phase 1A: [Name] Steelthread (1 PR)
+### Phase 1: [Name] Steelthread (1 PR)
 
 Minimal vertical slice proving the concept works end-to-end.
 
 | Step | Description                  | Status  | PR  |
 | ---- | ---------------------------- | ------- | --- |
-| 1A.1 | [Minimal infrastructure]     | pending |     |
-| 1A.2 | [Wire into one command/path] | pending |     |
+| 1.1  | [Minimal infrastructure]     | pending |     |
+| 1.2  | [Wire into one command/path] | pending |     |
 
 **Test:** [End-to-end acceptance test for steelthread]
 
-### Phase 1B: Complete [Name] (1 PR)
+### Phase 2: Complete [Name] (1 PR)
 
 Fill out remaining functionality.
 
 | Step | Description                    | Status  | PR  |
 | ---- | ------------------------------ | ------- | --- |
-| 1B.1 | [Extend to remaining commands] | pending |     |
-| 1B.2 | [Full test coverage]           | pending |     |
+| 2.1  | [Extend to remaining commands] | pending |     |
+| 2.2  | [Full test coverage]           | pending |     |
 
 **Test:** [Full acceptance criteria]
 
-### Phase 2: [Next Component] (1 PR)
+### Phase 3: [Next Component] (1 PR)
 
 [Description]
 
 | Step | Description | Status  | PR  |
 | ---- | ----------- | ------- | --- |
-| 2.1  | ...         | pending |     |
+| 3.1  | ...         | pending |     |
 
 **Test:** [Verification criteria]
 
@@ -306,11 +306,20 @@ Once approved:
    erk exec objective-save-to-issue --session-id=<session-id> --format=display
    ```
 
-3. **Report success:**
+3. **Validate the roadmap:**
+
+   ```bash
+   erk exec objective-roadmap-check <issue-number>
+   ```
+   - If `validation_errors` is non-empty, fix the issue body and re-run until clean
+   - Report clean validation in the success output
+
+4. **Report success:**
 
    ```
    Objective created: #<number>
    URL: <issue-url>
+   Roadmap validation: clean
 
    Next steps:
    - Use /erk:objective-create-plan <number> to create implementation plans for specific steps
