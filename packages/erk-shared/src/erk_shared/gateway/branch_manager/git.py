@@ -8,6 +8,7 @@ from pathlib import Path
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.types import PrInfo
 from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.types import PRNotFound
@@ -48,7 +49,9 @@ class GitBranchManager(BranchManager):
             from_fallback=False,  # GitBranchManager always uses GitHub directly
         )
 
-    def create_branch(self, repo_root: Path, branch_name: str, base_branch: str) -> None:
+    def create_branch(
+        self, repo_root: Path, branch_name: str, base_branch: str
+    ) -> BranchCreated | BranchAlreadyExists:
         """Create a new branch using Git.
 
         Uses plain git commands without Graphite tracking.
@@ -58,10 +61,13 @@ class GitBranchManager(BranchManager):
             repo_root: Repository root directory
             branch_name: Name of the new branch
             base_branch: Name of the base branch
+
+        Returns:
+            BranchCreated on success, BranchAlreadyExists if branch already exists.
         """
         # Create the branch from base_branch without checking it out
         # This allows callers to create worktrees with the branch later
-        self.git.branch.create_branch(repo_root, branch_name, base_branch, force=False)
+        return self.git.branch.create_branch(repo_root, branch_name, base_branch, force=False)
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Delete a branch using plain Git.

@@ -16,6 +16,7 @@ from erk.core.worktree_utils import (
     find_worktree_with_branch,
     get_worktree_branch,
 )
+from erk_shared.gateway.git.worktree.types import WorktreeAddError
 from erk_shared.output.output import user_output
 
 
@@ -146,9 +147,12 @@ def execute_move(
         ctx.branch_manager.checkout_branch(target_wt, source_branch)
     else:
         # Create new worktree with branch
-        ctx.git.worktree.add_worktree(
+        wt_result = ctx.git.worktree.add_worktree(
             repo_root, target_wt, branch=source_branch, ref=None, create_branch=False
         )
+        if isinstance(wt_result, WorktreeAddError):
+            user_output(f"Error adding worktree: {wt_result.message}")
+            raise SystemExit(1) from None
 
     # Check if fallback_ref is already checked out elsewhere, and detach it if needed
     fallback_wt = ctx.git.worktree.is_branch_checked_out(repo_root, fallback_ref)

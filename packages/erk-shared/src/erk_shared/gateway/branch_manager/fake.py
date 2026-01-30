@@ -7,6 +7,7 @@ from pathlib import Path
 
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.types import PrInfo
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,8 @@ class FakeBranchManager(BranchManager):
     child_branches: dict[str, list[str]] = field(default_factory=dict)
     # Track created branches for assertions: list of (branch_name, base_branch) tuples
     _created_branches: list[tuple[str, str]] = field(default_factory=list)
+    # If set, create_branch returns this error instead of BranchCreated
+    _create_branch_error: BranchAlreadyExists | None = None
     # Track deleted branches for assertions: list of (branch, force) tuples
     _deleted_branches: list[tuple[str, bool]] = field(default_factory=list)
     # Track submitted branches for assertions
@@ -56,7 +59,9 @@ class FakeBranchManager(BranchManager):
         """
         return self.pr_info.get(branch)
 
-    def create_branch(self, repo_root: Path, branch_name: str, base_branch: str) -> None:
+    def create_branch(
+        self, repo_root: Path, branch_name: str, base_branch: str
+    ) -> BranchCreated | BranchAlreadyExists:
         """Record branch creation in tracked list.
 
         Note: This mutates internal state despite the frozen dataclass.
@@ -67,8 +72,14 @@ class FakeBranchManager(BranchManager):
             repo_root: Repository root directory (unused in fake)
             branch_name: Name of the new branch
             base_branch: Name of the base branch
+
+        Returns:
+            BranchCreated on success, or _create_branch_error if configured.
         """
+        if self._create_branch_error is not None:
+            return self._create_branch_error
         self._created_branches.append((branch_name, base_branch))
+        return BranchCreated()
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Record branch deletion in tracked list.

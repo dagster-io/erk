@@ -20,6 +20,7 @@ import click
 from erk_shared.context.helpers import require_git, require_repo_root, require_time
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
@@ -165,7 +166,9 @@ def _create_review_branch_impl(
     # These operations let exceptions escape as they represent invariant violations
     # if they fail (network/disk/auth issues are exceptional, not expected states)
     git.remote.fetch_branch(repo_root, "origin", "master")
-    git.branch.create_branch(repo_root, branch_name, "origin/master", force=False)
+    create_result = git.branch.create_branch(repo_root, branch_name, "origin/master", force=False)
+    if isinstance(create_result, BranchAlreadyExists):
+        raise RuntimeError(create_result.message)
     git.branch.checkout_branch(repo_root, branch_name)
 
     # Write plan file at repo root

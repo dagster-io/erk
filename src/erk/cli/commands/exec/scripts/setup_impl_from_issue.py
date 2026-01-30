@@ -32,6 +32,7 @@ from erk_shared.context.helpers import (
     require_time,
 )
 from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import generate_issue_branch_name
 from erk_shared.plan_store.types import PlanNotFound
@@ -138,7 +139,10 @@ def setup_impl_from_issue(
                 base_branch = current_branch
 
             # Create branch using BranchManager (handles Graphite tracking automatically)
-            branch_manager.create_branch(repo_root, branch_name, base_branch)
+            create_result = branch_manager.create_branch(repo_root, branch_name, base_branch)
+            if isinstance(create_result, BranchAlreadyExists):
+                click.echo(f"Error: {create_result.message}", err=True)
+                raise SystemExit(1) from None
             click.echo(f"Created branch '{branch_name}' from '{base_branch}'", err=True)
 
             branch_manager.checkout_branch(cwd, branch_name)

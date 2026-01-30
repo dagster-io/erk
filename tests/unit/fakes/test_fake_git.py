@@ -7,7 +7,9 @@ tracks mutations, and provides reliable test doubles for CLI tests.
 from pathlib import Path
 
 from erk_shared.gateway.git.abc import BranchDivergence, WorktreeInfo
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.git.worktree.types import WorktreeAdded, WorktreeAddError
 
 
 def test_fake_gitops_list_worktrees() -> None:
@@ -515,3 +517,62 @@ def test_fake_git_is_branch_diverged_not_diverged_when_only_ahead() -> None:
     assert result.is_diverged is False
     assert result.ahead == 3
     assert result.behind == 0
+
+
+# ============================================================================
+# Discriminated Union Return Types Tests
+# ============================================================================
+
+
+def test_fake_create_branch_returns_branch_created() -> None:
+    """Test that FakeGitBranchOps.create_branch returns BranchCreated on success."""
+    cwd = Path("/repo")
+    git_ops = FakeGit()
+
+    result = git_ops.branch.create_branch(cwd, "feature", "main", force=False)
+
+    assert isinstance(result, BranchCreated)
+
+
+def test_fake_create_branch_returns_error_when_configured() -> None:
+    """Test that FakeGitBranchOps.create_branch returns BranchAlreadyExists when configured."""
+    cwd = Path("/repo")
+    error = BranchAlreadyExists(branch_name="feature", message="branch 'feature' already exists")
+    git_ops = FakeGit(create_branch_error=error)
+
+    result = git_ops.branch.create_branch(cwd, "feature", "main", force=False)
+
+    assert isinstance(result, BranchAlreadyExists)
+    assert result.branch_name == "feature"
+    assert result.error_type == "branch-already-exists"
+
+
+def test_fake_add_worktree_returns_worktree_added(tmp_path: Path) -> None:
+    """Test that FakeWorktree.add_worktree returns WorktreeAdded on success."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_ops = FakeGit()
+
+    new_wt = repo_root / "new-wt"
+    result = git_ops.worktree.add_worktree(
+        repo_root, new_wt, branch="new-branch", ref=None, create_branch=True
+    )
+
+    assert isinstance(result, WorktreeAdded)
+
+
+def test_fake_add_worktree_returns_error_when_configured(tmp_path: Path) -> None:
+    """Test that FakeWorktree.add_worktree returns WorktreeAddError when configured."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    error = WorktreeAddError(message="worktree add failed: path already exists")
+    git_ops = FakeGit(add_worktree_error=error)
+
+    new_wt = repo_root / "new-wt"
+    result = git_ops.worktree.add_worktree(
+        repo_root, new_wt, branch="new-branch", ref=None, create_branch=True
+    )
+
+    assert isinstance(result, WorktreeAddError)
+    assert result.error_type == "worktree-add-failed"
+    assert "path already exists" in result.message

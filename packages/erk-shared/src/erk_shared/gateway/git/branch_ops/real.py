@@ -6,6 +6,7 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 from erk_shared.gateway.git.lock import wait_for_index_lock
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
@@ -26,17 +27,34 @@ class RealGitBranchOps(GitBranchOps):
         """
         self._time = time if time is not None else RealTime()
 
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str, *, force: bool) -> None:
+    def create_branch(
+        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    ) -> BranchCreated | BranchAlreadyExists:
         """Create a new branch without checking it out."""
         cmd = ["git", "branch"]
         if force:
             cmd.append("-f")
         cmd.extend([branch_name, start_point])
+        # LBYL: Check if branch already exists before creating (skip for force mode)
+        if not force:
+            check_result = run_subprocess_with_context(
+                cmd=["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
+                operation_context=f"check if branch '{branch_name}' exists",
+                cwd=cwd,
+                check=False,
+            )
+            if check_result.returncode == 0:
+                return BranchAlreadyExists(
+                    branch_name=branch_name,
+                    message=f"Branch '{branch_name}' already exists",
+                )
+
         run_subprocess_with_context(
             cmd=cmd,
             operation_context=f"create branch '{branch_name}' from '{start_point}'",
             cwd=cwd,
         )
+        return BranchCreated()
 
     def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
         """Delete a local branch.

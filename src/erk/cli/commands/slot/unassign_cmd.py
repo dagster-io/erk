@@ -15,6 +15,7 @@ from erk.core.worktree_pool import (
     load_pool_state,
     save_pool_state,
 )
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.output.output import user_output
 
 
@@ -73,7 +74,12 @@ def execute_unassign(
     local_branches = ctx.git.branch.list_local_branches(repo.root)
 
     if placeholder_branch not in local_branches:
-        ctx.branch_manager.create_branch(repo.root, placeholder_branch, trunk_branch)
+        create_result = ctx.branch_manager.create_branch(
+            repo.root, placeholder_branch, trunk_branch
+        )
+        if isinstance(create_result, BranchAlreadyExists):
+            user_output(f"Error: {create_result.message}")
+            raise SystemExit(1) from None
 
     # Checkout placeholder branch in the worktree
     ctx.branch_manager.checkout_branch(assignment.worktree_path, placeholder_branch)
