@@ -78,6 +78,9 @@ from erk.cli.commands.exec.scripts.marker import marker
 from erk.cli.commands.exec.scripts.objective_roadmap_check import (
     objective_roadmap_check,
 )
+from erk.cli.commands.exec.scripts.objective_roadmap_update import (
+    objective_roadmap_update,
+)
 from erk.cli.commands.exec.scripts.objective_save_to_issue import (
     objective_save_to_issue,
 )
@@ -206,6 +209,7 @@ exec_group.add_command(mark_impl_ended, name="mark-impl-ended")
 exec_group.add_command(mark_impl_started, name="mark-impl-started")
 exec_group.add_command(marker, name="marker")
 exec_group.add_command(objective_roadmap_check, name="objective-roadmap-check")
+exec_group.add_command(objective_roadmap_update, name="objective-roadmap-update")
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
 exec_group.add_command(plan_create_review_branch, name="plan-create-review-branch")
 exec_group.add_command(plan_create_review_pr, name="plan-create-review-pr")

@@ -53,6 +53,7 @@ Quick reference for all `erk exec` subcommands.
 | `marker exists`                   | Check if a marker file exists.                                            |
 | `marker read`                     | Read content from a marker file.                                          |
 | `objective-roadmap-check`         | Parse an objective's roadmap tables and return structured JSON.           |
+| `objective-roadmap-update`        | Update a step in an objective's roadmap table.                            |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                      |
 | `plan-create-review-branch`       | Create a plan review branch and push to remote.                           |
 | `plan-create-review-pr`           | Create a draft PR for plan review and update plan metadata.               |
@@ -681,6 +682,26 @@ Parse an objective's roadmap tables and return structured JSON.
 | Name               | Required | Description |
 | ------------------ | -------- | ----------- |
 | `OBJECTIVE_NUMBER` | Yes      | -           |
+
+### objective-roadmap-update
+
+Update a step in an objective's roadmap table.
+
+**Usage:** `erk exec objective-roadmap-update` <objective_number>
+
+**Arguments:**
+
+| Name               | Required | Description |
+| ------------------ | -------- | ----------- |
+| `OBJECTIVE_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag       | Type | Required | Default        | Description                                          |
+| ---------- | ---- | -------- | -------------- | ---------------------------------------------------- |
+| `--step`   | TEXT | Yes      | Sentinel.UNSET | Step ID to update (e.g. '2.1')                       |
+| `--status` | TEXT | No       | -              | New status value (e.g. 'done', 'blocked', 'skipped') |
+| `--pr`     | TEXT | No       | -              | New PR reference (e.g. '#123', 'plan #456')          |
 
 ### objective-save-to-issue
 
