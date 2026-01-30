@@ -6,8 +6,10 @@ read_when:
   - "debugging roadmap parsing issues"
   - "using erk exec objective-roadmap-check or objective-roadmap-update"
 tripwires:
-  - "The parser is regex-based, not LLM-based. Do not reference LLM inference."
-  - "Step IDs should use plain numbers (1.1, 2.1), not letter format (1A.1, 1B.1)."
+  - action: "implementing roadmap parsing functionality"
+    warning: "The parser is regex-based, not LLM-based. Do not reference LLM inference."
+  - action: "creating or modifying roadmap step IDs"
+    warning: "Step IDs should use plain numbers (1.1, 2.1), not letter format (1A.1, 1B.1)."
 ---
 
 # Roadmap Parser
