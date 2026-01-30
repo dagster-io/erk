@@ -30,6 +30,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_repo_root,
 )
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import BodyText
 
 
@@ -154,18 +155,17 @@ def objective_roadmap_update(
     repo_root = require_repo_root(ctx)
 
     # Fetch the issue
-    try:
-        issue = github.get_issue(repo_root, objective_number)
-    except RuntimeError as e:
+    issue = github.get_issue(repo_root, objective_number)
+    if isinstance(issue, IssueNotFound):
         click.echo(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to get issue #{objective_number}: {e}",
+                    "error": f"Failed to get issue #{objective_number}: issue not found",
                 }
             )
         )
-        raise SystemExit(1) from e
+        raise SystemExit(1)
 
     # Validate current body parses correctly
     phases, validation_errors = parse_roadmap(issue.body)
