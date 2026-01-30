@@ -35,16 +35,25 @@ class RealGitBranchOps(GitBranchOps):
         if force:
             cmd.append("-f")
         cmd.extend([branch_name, start_point])
-        try:
-            run_subprocess_with_context(
-                cmd=cmd,
-                operation_context=f"create branch '{branch_name}' from '{start_point}'",
+        # LBYL: Check if branch already exists before creating (skip for force mode)
+        if not force:
+            check_result = run_subprocess_with_context(
+                cmd=["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
+                operation_context=f"check if branch '{branch_name}' exists",
                 cwd=cwd,
+                check=False,
             )
-        except RuntimeError as e:
-            if "already exists" in str(e):
-                return BranchAlreadyExists(branch_name=branch_name, message=str(e))
-            raise
+            if check_result.returncode == 0:
+                return BranchAlreadyExists(
+                    branch_name=branch_name,
+                    message=f"Branch '{branch_name}' already exists",
+                )
+
+        run_subprocess_with_context(
+            cmd=cmd,
+            operation_context=f"create branch '{branch_name}' from '{start_point}'",
+            cwd=cwd,
+        )
         return BranchCreated()
 
     def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
