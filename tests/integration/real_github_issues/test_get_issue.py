@@ -90,7 +90,7 @@ def test_get_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
     """Test get_issue returns IssueNotFound on gh CLI failure."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        raise RuntimeError("Issue not found")
+        raise RuntimeError("gh: Not Found (HTTP 404)")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None, time=RealTime())

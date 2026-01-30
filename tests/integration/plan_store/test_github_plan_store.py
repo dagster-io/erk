@@ -7,7 +7,7 @@ import pytest
 
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.plan_store.github import GitHubPlanStore
-from erk_shared.plan_store.types import PlanQuery, PlanState
+from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
 from tests.test_utils.github_helpers import create_test_issue
 
 
@@ -27,6 +27,7 @@ def test_get_plan_success() -> None:
     store = GitHubPlanStore(fake_github)
 
     result = store.get_plan(Path("/fake/repo"), "42")
+    assert not isinstance(result, PlanNotFound)
 
     # Verify conversion to PlanIssue
     assert result.plan_identifier == "42"
@@ -55,6 +56,7 @@ def test_get_plan_closed_state() -> None:
     store = GitHubPlanStore(fake_github)
 
     result = store.get_plan(Path("/fake/repo"), "100")
+    assert not isinstance(result, PlanNotFound)
 
     assert result.state == PlanState.CLOSED
 
@@ -81,8 +83,9 @@ def test_get_plan_not_found() -> None:
     fake_github = FakeGitHubIssues(issues={})
     store = GitHubPlanStore(fake_github)
 
-    with pytest.raises(RuntimeError, match="Issue #999 not found"):
-        store.get_plan(Path("/fake/repo"), "999")
+    result = store.get_plan(Path("/fake/repo"), "999")
+    assert isinstance(result, PlanNotFound)
+    assert result.plan_id == "999"
 
 
 def test_list_plans_no_filters() -> None:
@@ -244,6 +247,7 @@ def test_timestamp_parsing_with_z_suffix() -> None:
     store = GitHubPlanStore(fake_github)
 
     result = store.get_plan(Path("/fake/repo"), "1")
+    assert not isinstance(result, PlanNotFound)
 
     # Verify timestamps are preserved correctly
     assert result.created_at == datetime(2024, 1, 15, 10, 30, 45, tzinfo=UTC)
@@ -262,6 +266,7 @@ def test_label_extraction() -> None:
     store = GitHubPlanStore(fake_github)
 
     result = store.get_plan(Path("/fake/repo"), "1")
+    assert not isinstance(result, PlanNotFound)
 
     # Verify labels are preserved as list of strings
     assert result.labels == ["erk-plan", "erk-queue", "enhancement"]
@@ -279,6 +284,7 @@ def test_assignee_extraction() -> None:
     store = GitHubPlanStore(fake_github)
 
     result = store.get_plan(Path("/fake/repo"), "1")
+    assert not isinstance(result, PlanNotFound)
 
     # Verify assignees are preserved as list of strings
     assert result.assignees == ["alice", "bob", "charlie"]
@@ -295,6 +301,7 @@ def test_metadata_preserves_github_number() -> None:
     store = GitHubPlanStore(fake_github)
 
     result = store.get_plan(Path("/fake/repo"), "42")
+    assert not isinstance(result, PlanNotFound)
 
     # Verify metadata contains GitHub number
     assert result.metadata["number"] == 42
@@ -460,6 +467,7 @@ More details.
     store = GitHubPlanStore(fake_github)
 
     result = store.get_plan(Path("/fake/repo"), "42")
+    assert not isinstance(result, PlanNotFound)
 
     # Should extract plan from comment, NOT return issue body metadata
     assert "# Plan: Test Implementation" in result.body
@@ -506,6 +514,7 @@ def test_get_plan_multiline_comment_preserved() -> None:
     store = GitHubPlanStore(fake_github)
 
     result = store.get_plan(Path("/fake/repo"), "1221")
+    assert not isinstance(result, PlanNotFound)
 
     # Plan should be fully extracted with all phases
     assert "# Plan: Fix GitHub Actions Plan Extraction Bug" in result.body
@@ -536,6 +545,7 @@ This is an old-style plan in the issue body."""
     store = GitHubPlanStore(fake_github)
 
     result = store.get_plan(Path("/fake/repo"), "100")
+    assert not isinstance(result, PlanNotFound)
 
     # Should fallback to issue body
     assert result.body == plan_body
@@ -559,6 +569,7 @@ This plan has no comments at all."""
     store = GitHubPlanStore(fake_github)
 
     result = store.get_plan(Path("/fake/repo"), "200")
+    assert not isinstance(result, PlanNotFound)
 
     # Should fallback to issue body
     assert result.body == plan_body
@@ -638,6 +649,7 @@ schema_version: '2'
     # Should NOT raise error - the metadata body is not empty
     # (Fallback uses issue body if no plan markers in comments)
     result = store.get_plan(Path("/fake/repo"), "302")
+    assert not isinstance(result, PlanNotFound)
     assert result.body == metadata_body
 
 
@@ -684,6 +696,7 @@ This is the actual plan content.
 
     # Should successfully fall back to first comment despite invalid plan_comment_id
     result = store.get_plan(Path("/fake/repo"), "42")
+    assert not isinstance(result, PlanNotFound)
 
     # Verify plan was extracted from first comment (fallback)
     assert "# Plan: Test Fallback" in result.body

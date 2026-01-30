@@ -35,7 +35,7 @@ from erk_shared.naming import (
     strip_plan_from_filename,
 )
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import Plan
+from erk_shared.plan_store.types import Plan, PlanNotFound
 
 
 def run_post_worktree_setup(
@@ -660,19 +660,19 @@ def create_wt(
         )
 
         # Fetch plan using plan_store (composed from issues layer)
-        try:
-            plan = ctx.plan_store.get_plan(repo.root, str(issue_number_parsed))
-        except RuntimeError as e:
+        result = ctx.plan_store.get_plan(repo.root, str(issue_number_parsed))
+        if isinstance(result, PlanNotFound):
             user_output(
                 click.style("Error: ", fg="red")
                 + f"Failed to fetch issue #{issue_number_parsed}\n"
-                + f"Details: {e}\n\n"
+                + f"Details: Issue #{issue_number_parsed} not found\n\n"
                 + "Troubleshooting:\n"
                 + "  • Verify issue number is correct\n"
                 + "  • Check repository access: gh auth status\n"
                 + f"  • Try viewing manually: gh issue view {issue_number_parsed}"
             )
-            raise SystemExit(1) from e
+            raise SystemExit(1)
+        plan = result
 
         # Prepare and validate using shared helper (returns union type)
         trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)

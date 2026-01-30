@@ -151,8 +151,10 @@ class RealGitHubIssues(GitHubIssues):
         cmd = self._build_gh_command(base_cmd)
         try:
             stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
-        except RuntimeError:
-            return IssueNotFound(issue_number=number)
+        except RuntimeError as e:
+            if "HTTP 404" in str(e):
+                return IssueNotFound(issue_number=number)
+            raise
         data = json.loads(stdout)
 
         # Extract author login (user who created the issue)

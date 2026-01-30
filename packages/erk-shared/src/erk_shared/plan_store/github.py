@@ -30,7 +30,7 @@ from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.plan_store.backend import PlanBackend
-from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanQuery, PlanState
+from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanNotFound, PlanQuery, PlanState
 
 
 def _parse_objective_id(value: object) -> int | None:
@@ -75,7 +75,7 @@ class GitHubPlanStore(PlanBackend):
         self._github_issues = github_issues
         self._time = time if time is not None else RealTime()
 
-    def get_plan(self, repo_root: Path, plan_id: str) -> Plan:
+    def get_plan(self, repo_root: Path, plan_id: str) -> Plan | PlanNotFound:
         """Fetch plan from GitHub by identifier.
 
         Schema Version 2:
@@ -95,16 +95,13 @@ class GitHubPlanStore(PlanBackend):
             plan_id: Issue number as string (e.g., "42")
 
         Returns:
-            Plan with converted data (plan content in body field)
-
-        Raises:
-            RuntimeError: If gh CLI fails or plan not found
+            Plan with converted data (plan content in body field),
+            or PlanNotFound if the issue does not exist
         """
         issue_number = int(plan_id)
         issue = self._github_issues.get_issue(repo_root, issue_number)
         if isinstance(issue, IssueNotFound):
-            msg = f"Issue #{issue_number} not found"
-            raise RuntimeError(msg)
+            return PlanNotFound(plan_id=plan_id)
         plan_body = self._get_plan_body(repo_root, issue)
         return self._convert_to_plan(issue, plan_body)
 

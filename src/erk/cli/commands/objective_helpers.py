@@ -15,6 +15,7 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.pr.submit import has_issue_closing_reference
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanNotFound
 
 logger = logging.getLogger(__name__)
 
@@ -148,14 +149,16 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
     if plan_number is None:
         return None
 
-    # PlanStore.get_plan raises RuntimeError for missing issues.
-    # This is a fail-open feature (non-critical), so we catch and return None.
+    # This is a fail-open feature (non-critical), so we return None
+    # for any failure: plan not found, empty plan content, etc.
     try:
-        plan = ctx.plan_store.get_plan(repo_root, str(plan_number))
+        result = ctx.plan_store.get_plan(repo_root, str(plan_number))
     except RuntimeError:
         return None
+    if isinstance(result, PlanNotFound):
+        return None
 
-    return plan.objective_id
+    return result.objective_id
 
 
 def prompt_objective_update(

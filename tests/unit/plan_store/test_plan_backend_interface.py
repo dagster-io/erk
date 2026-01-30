@@ -27,7 +27,7 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.fake_linear import FakeLinearPlanBackend, LinearIssue
 from erk_shared.plan_store.github import GitHubPlanStore
-from erk_shared.plan_store.types import PlanQuery, PlanState
+from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
 from tests.test_utils.github_helpers import create_test_issue
 
 # =============================================================================
@@ -115,6 +115,7 @@ def test_create_and_get_plan_roundtrip(plan_backend: PlanBackend) -> None:
 
     # Retrieve the plan
     plan = plan_backend.get_plan(Path("/repo"), result.plan_id)
+    assert not isinstance(plan, PlanNotFound)
 
     # Verify Plan structure
     assert plan.plan_identifier == result.plan_id
@@ -160,6 +161,7 @@ def test_close_plan_changes_state(
 
     # Verify initially OPEN
     plan_before = backend.get_plan(Path("/repo"), plan_id)
+    assert not isinstance(plan_before, PlanNotFound)
     assert plan_before.state == PlanState.OPEN
 
     # Close it
@@ -167,6 +169,7 @@ def test_close_plan_changes_state(
 
     # Verify now CLOSED
     plan_after = backend.get_plan(Path("/repo"), plan_id)
+    assert not isinstance(plan_after, PlanNotFound)
     assert plan_after.state == PlanState.CLOSED
 
 
@@ -197,11 +200,12 @@ def _get_nonexistent_id(plan_backend: PlanBackend) -> str:
         return "nonexistent-plan-id-12345"  # UUID-style for Linear
 
 
-def test_get_plan_not_found_raises_runtime_error(plan_backend: PlanBackend) -> None:
-    """Both backends raise RuntimeError when plan not found."""
+def test_get_plan_not_found_returns_plan_not_found(plan_backend: PlanBackend) -> None:
+    """Both backends return PlanNotFound when plan not found."""
     nonexistent_id = _get_nonexistent_id(plan_backend)
-    with pytest.raises(RuntimeError):
-        plan_backend.get_plan(Path("/repo"), nonexistent_id)
+    result = plan_backend.get_plan(Path("/repo"), nonexistent_id)
+    assert isinstance(result, PlanNotFound)
+    assert result.plan_id == nonexistent_id
 
 
 def test_add_comment_not_found_raises_runtime_error(plan_backend: PlanBackend) -> None:
@@ -242,6 +246,7 @@ def test_plan_identifier_is_string(
     backend, plan_id = backend_with_plan
 
     plan = backend.get_plan(Path("/repo"), plan_id)
+    assert not isinstance(plan, PlanNotFound)
 
     assert isinstance(plan.plan_identifier, str)
     # Note: GitHub uses "42", Linear uses "LIN-abc123"
@@ -255,6 +260,7 @@ def test_assignees_is_list(
     backend, plan_id = backend_with_plan
 
     plan = backend.get_plan(Path("/repo"), plan_id)
+    assert not isinstance(plan, PlanNotFound)
 
     assert isinstance(plan.assignees, list)
     # All items should be strings
@@ -269,6 +275,7 @@ def test_labels_is_list(
     backend, plan_id = backend_with_plan
 
     plan = backend.get_plan(Path("/repo"), plan_id)
+    assert not isinstance(plan, PlanNotFound)
 
     assert isinstance(plan.labels, list)
     # All items should be strings
@@ -283,6 +290,7 @@ def test_timestamps_are_timezone_aware(
     backend, plan_id = backend_with_plan
 
     plan = backend.get_plan(Path("/repo"), plan_id)
+    assert not isinstance(plan, PlanNotFound)
 
     # Both timestamps should be timezone-aware
     assert plan.created_at.tzinfo is not None

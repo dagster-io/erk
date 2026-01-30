@@ -19,7 +19,7 @@ from erk_shared.plan_store.fake_linear import (
     FakeLinearPlanBackend,
     LinearIssue,
 )
-from erk_shared.plan_store.types import PlanQuery, PlanState
+from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
 
 
 def _create_linear_issue(
@@ -69,12 +69,13 @@ def test_get_plan_returns_plan_with_uuid_identifier() -> None:
     assert not result.plan_identifier.isdigit()
 
 
-def test_get_plan_not_found_raises() -> None:
-    """Test error when plan doesn't exist."""
+def test_get_plan_not_found_returns_plan_not_found() -> None:
+    """Test PlanNotFound returned when plan doesn't exist."""
     backend = FakeLinearPlanBackend()
 
-    with pytest.raises(RuntimeError, match="Linear issue .* not found"):
-        backend.get_plan(Path("/repo"), "nonexistent-id")
+    result = backend.get_plan(Path("/repo"), "nonexistent-id")
+    assert isinstance(result, PlanNotFound)
+    assert result.plan_id == "nonexistent-id"
 
 
 def test_get_plan_converts_all_fields() -> None:

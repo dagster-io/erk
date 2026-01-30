@@ -12,6 +12,7 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanNotFound
 
 # Event type literals
 EventType: TypeAlias = Literal[
@@ -132,7 +133,11 @@ def plan_log(ctx: ErkContext, identifier: str, output_json: bool) -> None:
         repo_root = repo.root
 
         # Resolve plan identifier to issue number
-        plan = ctx.plan_store.get_plan(repo_root, identifier)
+        result = ctx.plan_store.get_plan(repo_root, identifier)
+        if isinstance(result, PlanNotFound):
+            user_output(click.style("Error: ", fg="red") + f"Plan '{identifier}' not found")
+            raise SystemExit(1)
+        plan = result
 
         # Convert plan identifier to issue number (GitHub: issue number as string)
         if not plan.plan_identifier.isdigit():

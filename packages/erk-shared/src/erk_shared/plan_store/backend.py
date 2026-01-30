@@ -22,7 +22,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from erk_shared.plan_store.store import PlanStore
-from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanQuery
+from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanNotFound, PlanQuery
 
 
 class PlanBackend(PlanStore):
@@ -49,7 +49,7 @@ class PlanBackend(PlanStore):
     # Read operations (inherited from PlanStore, re-declared with updated param names)
 
     @abstractmethod
-    def get_plan(self, repo_root: Path, plan_id: str) -> Plan:
+    def get_plan(self, repo_root: Path, plan_id: str) -> Plan | PlanNotFound:
         """Fetch a plan by identifier.
 
         Args:
@@ -57,10 +57,7 @@ class PlanBackend(PlanStore):
             plan_id: Provider-specific identifier (e.g., "42", "PROJ-123")
 
         Returns:
-            Plan with all metadata
-
-        Raises:
-            RuntimeError: If provider fails or plan not found
+            Plan with all metadata, or PlanNotFound if the plan does not exist
         """
         ...
 

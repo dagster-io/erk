@@ -46,6 +46,7 @@ from erk_shared.naming import (
     sanitize_worktree_name,
 )
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.worker_impl_folder import create_worker_impl_folder
 
 logger = logging.getLogger(__name__)
@@ -439,7 +440,11 @@ def _create_branch_and_pr(
 
     # Get plan content and create .worker-impl/ folder
     user_output("Fetching plan content...")
-    plan = ctx.plan_store.get_plan(repo.root, str(issue_number))
+    result = ctx.plan_store.get_plan(repo.root, str(issue_number))
+    if isinstance(result, PlanNotFound):
+        user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
+        raise SystemExit(1)
+    plan = result
 
     user_output("Creating .worker-impl/ folder...")
     create_worker_impl_folder(

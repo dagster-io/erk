@@ -8,7 +8,7 @@ New code should use PlanBackend for full read/write access.
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from erk_shared.plan_store.types import Plan, PlanQuery
+from erk_shared.plan_store.types import Plan, PlanNotFound, PlanQuery
 
 
 class PlanStore(ABC):
@@ -22,7 +22,7 @@ class PlanStore(ABC):
     """
 
     @abstractmethod
-    def get_plan(self, repo_root: Path, plan_id: str) -> Plan:
+    def get_plan(self, repo_root: Path, plan_id: str) -> Plan | PlanNotFound:
         """Fetch a plan by identifier.
 
         Args:
@@ -30,10 +30,7 @@ class PlanStore(ABC):
             plan_id: Provider-specific identifier (e.g., "42", "PROJ-123")
 
         Returns:
-            Plan with all metadata
-
-        Raises:
-            RuntimeError: If provider fails or plan not found
+            Plan with all metadata, or PlanNotFound if the plan does not exist
         """
         ...
 
