@@ -782,24 +782,31 @@ def test_fake_github_get_pr_for_branch_returns_pr_not_found_when_pr_exists_but_n
     assert result.branch == "some-branch"
 
 
-def test_fake_github_merge_pr_returns_true_on_success() -> None:
-    """Test merge_pr returns True (not just truthy) on success."""
+def test_fake_github_merge_pr_returns_merge_result_on_success() -> None:
+    """Test merge_pr returns MergeResult on success."""
+    from erk_shared.gateway.github.types import MergeResult
+
     ops = FakeGitHub(merge_should_succeed=True)
 
     result = ops.merge_pr(sentinel_path(), 123)
 
-    assert result is True
+    assert isinstance(result, MergeResult)
+    assert result.pr_number == 123
     assert ops.merged_prs == [123]
 
 
-def test_fake_github_merge_pr_returns_error_string_on_failure() -> None:
-    """Test merge_pr returns error message string on failure."""
+def test_fake_github_merge_pr_returns_merge_error_on_failure() -> None:
+    """Test merge_pr returns MergeError on failure."""
+    from erk_shared.gateway.github.types import MergeError
+
     ops = FakeGitHub(merge_should_succeed=False)
 
     result = ops.merge_pr(sentinel_path(), 123)
 
-    assert isinstance(result, str)
-    assert "Merge failed" in result
+    assert isinstance(result, MergeError)
+    assert result.pr_number == 123
+    assert "Merge failed" in result.message
+    assert result.error_type == "merge-failed"
     assert ops.merged_prs == []  # PR was not merged
 
 

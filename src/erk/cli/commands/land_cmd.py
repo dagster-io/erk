@@ -58,7 +58,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_learned_from_issue,
     update_plan_header_learn_plan_completed,
 )
-from erk_shared.gateway.github.types import BodyText, PRDetails
+from erk_shared.gateway.github.types import BodyText, MergeError, PRDetails
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError
@@ -1289,11 +1289,11 @@ def _execute_simple_land(
     body = pr_details.body or None
     merge_result = ctx.github.merge_pr(repo_root, pr_number, subject=subject, body=body)
 
-    error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
-    Ensure.invariant(
-        merge_result is True,
-        f"Failed to merge PR #{pr_number}\n\n{error_detail}",
-    )
+    if isinstance(merge_result, MergeError):
+        Ensure.invariant(
+            False,
+            f"Failed to merge PR #{pr_number}\n\n{merge_result.message}",
+        )
 
     return pr_number
 
@@ -1649,11 +1649,11 @@ def _execute_land(
         body = pr_details.body or None
         merge_result = ctx.github.merge_pr(main_repo_root, pr_number, subject=subject, body=body)
 
-        error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
-        Ensure.invariant(
-            merge_result is True,
-            f"Failed to merge PR #{pr_number}\n\n{error_detail}",
-        )
+        if isinstance(merge_result, MergeError):
+            Ensure.invariant(
+                False,
+                f"Failed to merge PR #{pr_number}\n\n{merge_result.message}",
+            )
         merged_pr_number = pr_number
 
     user_output(click.style("✓", fg="green") + f" Merged PR #{merged_pr_number} [{branch}]")

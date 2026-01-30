@@ -9,7 +9,7 @@ This script safely lands a single PR from a worktree stack by:
 from collections.abc import Generator
 from pathlib import Path
 
-from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.gateway.github.types import MergeError, PRNotFound
 from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
@@ -202,13 +202,12 @@ def execute_land_pr(
     subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
     body = pr_details.body or None
     merge_result = ops.github.merge_pr(repo_root, pr_number, subject=subject, body=body)
-    if merge_result is not True:
-        error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
+    if isinstance(merge_result, MergeError):
         yield CompletionEvent(
             LandPrError(
                 success=False,
                 error_type="merge-failed",
-                message=f"Failed to merge PR #{pr_number}\n\n{error_detail}",
+                message=f"Failed to merge PR #{pr_number}\n\n{merge_result.message}",
                 details={
                     "current_branch": branch_name,
                     "pr_number": pr_number,

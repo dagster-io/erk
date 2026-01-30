@@ -16,6 +16,8 @@ from erk_shared.gateway.github.types import (
     BodyFile,
     BodyText,
     GitHubRepoLocation,
+    MergeError,
+    MergeResult,
     PRDetails,
     PRListState,
     PRNotFound,
@@ -203,16 +205,16 @@ class FakeGitHub(GitHub):
         verbose: bool = False,
         subject: str | None = None,
         body: str | None = None,
-    ) -> bool | str:
+    ) -> MergeResult | MergeError:
         """Record PR merge in mutation tracking list.
 
-        Returns True on success, error message string on failure.
+        Returns MergeResult on success, MergeError on failure.
         """
         if self._merge_should_succeed:
             self._merged_prs.append(pr_number)
             self._operation_log.append(("merge_pr", pr_number))
-            return True
-        return "Merge failed (configured to fail in test)"
+            return MergeResult(pr_number=pr_number)
+        return MergeError(pr_number=pr_number, _message="Merge failed (configured to fail in test)")
 
     def trigger_workflow(
         self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
