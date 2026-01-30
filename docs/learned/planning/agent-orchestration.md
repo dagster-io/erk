@@ -60,6 +60,7 @@ Tier 1 agents run **concurrently** and perform independent analysis.
 **Input**: PR diff, file list
 
 **Output**: List of documentation-worthy items:
+
 - New gateway methods
 - New CLI commands
 - Architectural patterns
@@ -160,6 +161,7 @@ tier1_outputs = [
 ```
 
 **Key Points**:
+
 - All Tier 1 agents launched in **one message** with `run_in_background=True`
 - `TaskOutput(block=True)` waits for each to finish
 - Agents run concurrently (not sequentially)
@@ -190,6 +192,7 @@ final_output = Task(
 ```
 
 **Key Points**:
+
 - Each Tier 2 agent waits for previous agent to complete
 - `run_in_background=False` makes execution sequential
 - Each agent receives output from previous agent

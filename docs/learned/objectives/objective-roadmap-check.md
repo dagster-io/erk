@@ -92,7 +92,9 @@ Phase headers must match this pattern:
 
 ```markdown
 ### Phase 1: Setup
+
 ### Phase 2: Implementation
+
 ### Phase 3: Testing (3 PR)
 ```
 
@@ -101,8 +103,8 @@ Phase headers must match this pattern:
 Each phase must contain a markdown table with this exact header:
 
 ```markdown
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
+| Step | Description | Status | PR  |
+| ---- | ----------- | ------ | --- |
 ```
 
 **Column Requirements:**
@@ -115,11 +117,11 @@ Each phase must contain a markdown table with this exact header:
 **Example Table:**
 
 ```markdown
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Create schema | | #123 |
-| 1.2 | Add migrations | | plan #456 |
-| 1.3 | Test rollback | pending | - |
+| Step | Description    | Status  | PR        |
+| ---- | -------------- | ------- | --------- |
+| 1.1  | Create schema  |         | #123      |
+| 1.2  | Add migrations |         | plan #456 |
+| 1.3  | Test rollback  | pending | -         |
 ```
 
 ## Status Inference Hierarchy
@@ -139,11 +141,11 @@ If the Status column contains these keywords, use them directly:
 
 If Status column is empty or not a keyword, check PR column:
 
-| PR Column Value | Inferred Status  | Meaning                      |
-| --------------- | ---------------- | ---------------------------- |
-| `#123`          | `"done"`         | PR merged                    |
-| `plan #456`     | `"in_progress"`  | Plan exists but not merged   |
-| `-` or empty    | `"pending"`      | Not started                  |
+| PR Column Value | Inferred Status | Meaning                    |
+| --------------- | --------------- | -------------------------- |
+| `#123`          | `"done"`        | PR merged                  |
+| `plan #456`     | `"in_progress"` | Plan exists but not merged |
+| `-` or empty    | `"pending"`     | Not started                |
 
 ### Tier 3: Default
 
@@ -153,13 +155,13 @@ If neither Status nor PR columns provide information:
 
 ### Status Value Reference
 
-| Status        | Meaning                     | How Inferred                        |
-| ------------- | --------------------------- | ----------------------------------- |
-| `done`        | Step completed              | PR column has `#N`                  |
-| `in_progress` | Step being worked on        | PR column has `plan #N`             |
-| `pending`     | Not started                 | Default (no status, no PR)          |
-| `blocked`     | Blocked by dependency       | Explicit Status = `blocked`         |
-| `skipped`     | Intentionally skipped       | Explicit Status = `skipped`         |
+| Status        | Meaning               | How Inferred                |
+| ------------- | --------------------- | --------------------------- |
+| `done`        | Step completed        | PR column has `#N`          |
+| `in_progress` | Step being worked on  | PR column has `plan #N`     |
+| `pending`     | Not started           | Default (no status, no PR)  |
+| `blocked`     | Blocked by dependency | Explicit Status = `blocked` |
+| `skipped`     | Intentionally skipped | Explicit Status = `skipped` |
 
 ## Validation Rules
 
@@ -204,10 +206,10 @@ Missing separator → validation error.
 
 ## Exit Codes
 
-| Code | Meaning                                | JSON Output     |
-| ---- | -------------------------------------- | --------------- |
-| 0    | Success (roadmap parsed, may have warnings) | `valid: true`   |
-| 1    | Critical failure (issue not found, no phases, invalid structure) | `valid: false`  |
+| Code | Meaning                                                          | JSON Output    |
+| ---- | ---------------------------------------------------------------- | -------------- |
+| 0    | Success (roadmap parsed, may have warnings)                      | `valid: true`  |
+| 1    | Critical failure (issue not found, no phases, invalid structure) | `valid: false` |
 
 **Important**: Validation warnings (like letter-format step IDs) don't cause exit code 1. The command still returns success with warnings in `validation_errors` array.
 

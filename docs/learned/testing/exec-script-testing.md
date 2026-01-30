@@ -306,12 +306,12 @@ def test_issue_not_found(fake_github: FakeGitHub) -> None:
 
 ### Key Differences
 
-| Aspect              | Exception-Based                     | Discriminated Union                           |
-| ------------------- | ----------------------------------- | --------------------------------------------- |
-| Fake setup          | Set error flag → raises exception   | Set return value → returns error type         |
-| Gateway behavior    | `raise IssueNotFoundError()`        | `return IssueNotFound(...)`                   |
-| Exec script pattern | `try/except` block                  | `if isinstance(result, IssueNotFound):`       |
-| Test assertion      | Verify exception caught & formatted | Verify error type returned & formatted        |
+| Aspect              | Exception-Based                     | Discriminated Union                     |
+| ------------------- | ----------------------------------- | --------------------------------------- |
+| Fake setup          | Set error flag → raises exception   | Set return value → returns error type   |
+| Gateway behavior    | `raise IssueNotFoundError()`        | `return IssueNotFound(...)`             |
+| Exec script pattern | `try/except` block                  | `if isinstance(result, IssueNotFound):` |
+| Test assertion      | Verify exception caught & formatted | Verify error type returned & formatted  |
 
 ### Migration Checklist
 

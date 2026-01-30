@@ -166,11 +166,11 @@ Non-trivial source added with zero test files added.
 ```markdown
 ### Source Files
 
-| File | Status | Tests |
-|------|--------|-------|
-| `src/path/file.py` | Added | ❌ No tests |
+| File                | Status   | Tests                    |
+| ------------------- | -------- | ------------------------ |
+| `src/path/file.py`  | Added    | ❌ No tests              |
 | `src/path/other.py` | Modified | ✅ `tests/test_other.py` |
-| `src/path/types.py` | Added | ➖ Excluded (type-only) |
+| `src/path/types.py` | Added    | ➖ Excluded (type-only)  |
 
 ### Flags
 

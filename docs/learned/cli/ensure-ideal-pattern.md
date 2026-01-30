@@ -18,10 +18,10 @@ The `EnsureIdeal` class provides type-safe narrowing for discriminated union ret
 
 ## Semantic Distinction
 
-| Class        | Purpose                        | Use Case                                            | Example                                                      |
-| ------------ | ------------------------------ | --------------------------------------------------- | ------------------------------------------------------------ |
-| `Ensure`     | Invariant/precondition checks  | Asserting program invariants, validating arguments  | `Ensure.invariant(len(args) == 1, "Expected 1 argument")`    |
-| `EnsureIdeal`| Type narrowing from unions     | Handling operations that return `T \| NonIdealState`| `pr = EnsureIdeal.unwrap_pr(github.get_pr(...), "PR not found")` |
+| Class         | Purpose                       | Use Case                                             | Example                                                          |
+| ------------- | ----------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
+| `Ensure`      | Invariant/precondition checks | Asserting program invariants, validating arguments   | `Ensure.invariant(len(args) == 1, "Expected 1 argument")`        |
+| `EnsureIdeal` | Type narrowing from unions    | Handling operations that return `T \| NonIdealState` | `pr = EnsureIdeal.unwrap_pr(github.get_pr(...), "PR not found")` |
 
 **Key Difference**: `Ensure` checks conditions that should never be false in correct code. `EnsureIdeal` handles expected failure cases from external operations (API calls, git commands, file reads).
 

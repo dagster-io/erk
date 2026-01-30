@@ -129,10 +129,10 @@ Use `--dry-run` to print the assembled prompt without running Claude.
 
 ## Existing Reviews
 
-| Review           | File                  | Matches                                 | Notes                                                        |
-| ---------------- | --------------------- | --------------------------------------- | ------------------------------------------------------------ |
-| Tripwires Review | `tripwires.md`        | `**/*.py`, `**/*.sh`, `.claude/**/*.md` | Checks for tripwire violations                               |
-| Dignified Python | `dignified-python.md` | Python files                            | Enforces coding standards                                    |
+| Review           | File                  | Matches                                 | Notes                                                                            |
+| ---------------- | --------------------- | --------------------------------------- | -------------------------------------------------------------------------------- |
+| Tripwires Review | `tripwires.md`        | `**/*.py`, `**/*.sh`, `.claude/**/*.md` | Checks for tripwire violations                                                   |
+| Dignified Python | `dignified-python.md` | Python files                            | Enforces coding standards                                                        |
 | Test Coverage    | `test-coverage.md`    | Python source files                     | 6-category file bucketing, untestable file detection, marker-based deduplication |
 
 ### Test Coverage Agent Details

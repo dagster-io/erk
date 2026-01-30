@@ -581,20 +581,22 @@ When refactoring gateway methods from exception-based to discriminated unions, u
 
 ### Pattern: Exception → Union
 
-| Old Test Name (Exception-Based)          | New Test Name (Discriminated Union)        |
-| ---------------------------------------- | ------------------------------------------ |
-| `test_merge_pr_failure_returns_false`    | `test_merge_pr_returns_merge_error`        |
-| `test_merge_pr_success_returns_true`     | `test_merge_pr_returns_merge_result`       |
-| `test_get_issue_raises_not_found`        | `test_get_issue_returns_issue_not_found`   |
-| `test_get_issue_raises_api_error`        | `test_get_issue_returns_api_error`         |
+| Old Test Name (Exception-Based)       | New Test Name (Discriminated Union)      |
+| ------------------------------------- | ---------------------------------------- |
+| `test_merge_pr_failure_returns_false` | `test_merge_pr_returns_merge_error`      |
+| `test_merge_pr_success_returns_true`  | `test_merge_pr_returns_merge_result`     |
+| `test_get_issue_raises_not_found`     | `test_get_issue_returns_issue_not_found` |
+| `test_get_issue_raises_api_error`     | `test_get_issue_returns_api_error`       |
 
 ### Naming Conventions
 
 **Success Case:**
+
 - Old: `test_<method>_success` or `test_<method>_returns_true`
 - New: `test_<method>_returns_<success_type>`
 
 **Error Case:**
+
 - Old: `test_<method>_raises_<error>` or `test_<method>_returns_false`
 - New: `test_<method>_returns_<error_type>`
 
