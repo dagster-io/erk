@@ -788,7 +788,7 @@ def test_fake_github_merge_pr_returns_merge_result_on_success() -> None:
     """Test merge_pr returns MergeResult on success."""
     ops = FakeGitHub(merge_should_succeed=True)
 
-    result = ops.merge_pr(sentinel_path(), 123)
+    result = ops.merge_pr(sentinel_path(), 123, squash=True, verbose=False)
 
     assert isinstance(result, MergeResult)
     assert result.pr_number == 123
@@ -799,7 +799,7 @@ def test_fake_github_merge_pr_returns_merge_error_on_failure() -> None:
     """Test merge_pr returns MergeError on failure."""
     ops = FakeGitHub(merge_should_succeed=False)
 
-    result = ops.merge_pr(sentinel_path(), 123)
+    result = ops.merge_pr(sentinel_path(), 123, squash=True, verbose=False)
 
     assert isinstance(result, MergeError)
     assert result.pr_number == 123

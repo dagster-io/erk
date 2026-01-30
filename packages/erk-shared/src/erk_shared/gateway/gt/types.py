@@ -163,19 +163,6 @@ PreAnalysisErrorType = Literal[
     "parent-merged",
 ]
 
-PostAnalysisErrorType = Literal[
-    "amend-failed",
-    "submit-failed",
-    "submit-timeout",
-    "submit-merged-parent",
-    "submit-diverged",
-    "submit-conflict",
-    "submit-empty-parent",
-    "pr-update-failed",
-    "claude-not-available",
-    "ai-generation-failed",
-]
-
 
 @dataclass(frozen=True)
 class PreAnalysisResult:
@@ -202,62 +189,6 @@ class PreAnalysisError:
     error_type: PreAnalysisErrorType
     message: str
     details: dict[str, str | bool]
-
-
-@dataclass(frozen=True)
-class PostAnalysisResult:
-    """Success result from post-analysis phase."""
-
-    success: bool
-    pr_number: int | None
-    pr_url: str
-    pr_title: str
-    graphite_url: str
-    branch_name: str
-    issue_number: int | None
-    message: str
-
-
-@dataclass(frozen=True)
-class PostAnalysisError:
-    """Error result from post-analysis phase."""
-
-    success: bool
-    error_type: PostAnalysisErrorType
-    message: str
-    details: dict[str, str]
-
-
-@dataclass(frozen=True)
-class PreflightResult:
-    """Result from preflight phase (pre-analysis + submit + diff extraction)."""
-
-    success: bool
-    pr_number: int
-    pr_url: str
-    graphite_url: str
-    branch_name: str
-    diff_file: str  # Path to temp diff file
-    repo_root: str
-    current_branch: str
-    parent_branch: str
-    issue_number: int | None
-    message: str
-    commit_messages: list[str] | None = None  # Full commit messages for AI context
-
-
-@dataclass
-class FinalizeResult:
-    """Result from finalize phase (update PR metadata)."""
-
-    success: bool
-    pr_number: int
-    pr_url: str
-    pr_title: str
-    graphite_url: str
-    branch_name: str
-    issue_number: int | None
-    message: str
 
 
 # =============================================================================

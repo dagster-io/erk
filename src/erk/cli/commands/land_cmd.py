@@ -1288,7 +1288,14 @@ def _execute_simple_land(
     user_output(f"Merging PR #{pr_number}...")
     subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
     body = pr_details.body or None
-    merge_result = ctx.github.merge_pr(repo_root, pr_number, subject=subject, body=body)
+    merge_result = ctx.github.merge_pr(
+        repo_root,
+        pr_number,
+        squash=True,
+        verbose=False,
+        subject=subject,
+        body=body,
+    )
 
     if isinstance(merge_result, MergeError):
         Ensure.invariant(
@@ -1648,7 +1655,14 @@ def _execute_land(
         user_output(f"Merging PR #{pr_number}...")
         subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
         body = pr_details.body or None
-        merge_result = ctx.github.merge_pr(main_repo_root, pr_number, subject=subject, body=body)
+        merge_result = ctx.github.merge_pr(
+            main_repo_root,
+            pr_number,
+            squash=True,
+            verbose=False,
+            subject=subject,
+            body=body,
+        )
 
         if isinstance(merge_result, MergeError):
             Ensure.invariant(

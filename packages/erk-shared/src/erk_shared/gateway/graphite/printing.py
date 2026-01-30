@@ -52,6 +52,10 @@ class PrintingGraphite(PrintingBase, Graphite):
         """Check if branch is tracked (read-only, no printing)."""
         return self._wrapped.is_branch_tracked(repo_root, branch)
 
+    def check_auth_status(self) -> tuple[bool, str | None, str | None]:
+        """Check auth status (read-only, no printing)."""
+        return self._wrapped.check_auth_status()
+
     # Operations that need printing
 
     def sync(self, repo_root: Path, *, force: bool, quiet: bool) -> None:
@@ -65,3 +69,37 @@ class PrintingGraphite(PrintingBase, Graphite):
         cmd = "gt restack --no-interactive" if no_interactive else "gt restack"
         self._emit(self._format_command(cmd))
         self._wrapped.restack(repo_root, no_interactive=no_interactive, quiet=quiet)
+
+    def squash_branch(self, repo_root: Path, *, quiet: bool = False) -> None:
+        """Squash branch with printed output."""
+        self._emit(self._format_command("gt squash"))
+        self._wrapped.squash_branch(repo_root, quiet=quiet)
+
+    def submit_stack(
+        self,
+        repo_root: Path,
+        *,
+        publish: bool = False,
+        restack: bool = False,
+        quiet: bool = False,
+        force: bool = False,
+    ) -> None:
+        """Submit stack with printed output."""
+        cmd = "gt submit"
+        if publish:
+            cmd += " --publish"
+        if force:
+            cmd += " --force"
+        self._emit(self._format_command(cmd))
+        self._wrapped.submit_stack(
+            repo_root,
+            publish=publish,
+            restack=restack,
+            quiet=quiet,
+            force=force,
+        )
+
+    def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
+        """Continue restack with printed output."""
+        self._emit(self._format_command("gt continue"))
+        self._wrapped.continue_restack(repo_root, quiet=quiet)
