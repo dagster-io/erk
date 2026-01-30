@@ -608,12 +608,12 @@ PR #6285 removed 16 methods from the Git ABC:
 
 **Migration mapping**:
 
-| Removed Method         | Migrated To                     |
-| ---------------------- | ------------------------------- |
+| Removed Method         | Migrated To                       |
+| ---------------------- | --------------------------------- |
 | `get_current_branch()` | `git.branch.get_current_branch()` |
-| `create_branch()`      | `git.branch.create_branch()`    |
-| `delete_branch()`      | `git.branch.delete_branch()`    |
-| `rebase_onto()`        | `git.rebase.rebase_onto()`      |
+| `create_branch()`      | `git.branch.create_branch()`      |
+| `delete_branch()`      | `git.branch.delete_branch()`      |
+| `rebase_onto()`        | `git.rebase.rebase_onto()`        |
 
 **Result**: Git ABC reduced to exactly 10 abstract property accessors (pure facade pattern).
 

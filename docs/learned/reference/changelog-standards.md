@@ -66,21 +66,25 @@ Major Changes use a different format with explanatory prose:
 ### User Focus
 
 **Good (user-focused):**
+
 - "Fix discover-reviews for large PRs by switching to REST API with pagination"
 - "Auto-fix Graphite tracking divergence in sync and branch creation"
 
 **Bad (implementation-focused):**
+
 - "Refactor discover-reviews to use REST API instead of GraphQL"
 - "Add tracking divergence detection logic to sync command"
 
 ### Past Tense
 
 **Good:**
+
 - "Added plan review workflow"
 - "Fixed detached HEAD state"
 - "Removed fallback indicator"
 
 **Bad:**
+
 - "Add plan review workflow"
 - "Fix detached HEAD state"
 - "Remove fallback indicator"

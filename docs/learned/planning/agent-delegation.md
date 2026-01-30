@@ -650,6 +650,7 @@ Task(subagent_type="agent", prompt="Execute complete workflow")
 **Problem:** Some operations require processing large volumes of data (e.g., 2000+ lines of commit JSON) that would consume excessive context if directly loaded into the main conversation.
 
 **Solution:** Delegate to a specialized subagent that:
+
 1. Loads and processes the large input data
 2. Applies deterministic rules or analysis
 3. Returns a compact, actionable proposal (50-100 lines)
@@ -695,6 +696,7 @@ Found 42 commits since last sync.
 ```
 
 **When to apply:**
+
 - Large input data (1000+ lines)
 - Deterministic rules or categorization logic
 - Compact output required (summary, proposal, list)

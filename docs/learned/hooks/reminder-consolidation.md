@@ -30,15 +30,18 @@ This creates noise, wastes tokens, and reduces signal-to-noise ratio for the age
 **When to use:** Cross-cutting reminders that apply to ANY action in the session
 
 **Examples:**
+
 - Session-specific routing (e.g., "Use devrun agent for pytest/ty/ruff")
 - Session ID availability
 - Universal tripwires that don't fit a specific tool
 
 **Advantages:**
+
 - Delivered once at session start
 - Always visible in context
 
 **Disadvantages:**
+
 - Always present, even when not relevant
 - Higher token cost for long sessions
 
@@ -47,16 +50,19 @@ This creates noise, wastes tokens, and reduces signal-to-noise ratio for the age
 **When to use:** Reminders that only apply when a specific tool is about to be used
 
 **Examples:**
+
 - dignified-python rules when editing `.py` files
 - Test placement rules when editing test files
 - File-specific conventions
 
 **Advantages:**
+
 - Just-in-time delivery (only when relevant)
 - Lower token cost (only fires when tool matches)
 - Better signal-to-noise (pointed reminder at moment of action)
 
 **Disadvantages:**
+
 - Not visible in context until tool is invoked
 - Requires hook implementation and capability detection
 
@@ -78,6 +84,7 @@ PR #6278 consolidated dignified-python reminders from 3 tiers to 2 tiers:
 2. **Action-specific** - PreToolUse hook injects core rules when editing `.py` files
 
 **Result:**
+
 - Removed session-wide UserPromptSubmit reminder (line 160 in AGENTS.md)
 - Removed per-prompt core rules repetition from skill file
 - Skill file now focuses on extended guidance and examples
@@ -103,6 +110,7 @@ return reminder_content
 **Example:** `.erk/capabilities/dignified-python-pretooluse` enables Python editing reminders.
 
 **Benefits:**
+
 - Gradual rollout (projects opt-in)
 - Easy disable (delete marker file)
 - Testable (create/remove marker in tests)

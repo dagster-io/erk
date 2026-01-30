@@ -27,12 +27,14 @@ Commits are categorized into these sections (in order of precedence):
 **Test:** "Does an end user running `erk` commands see significantly different behavior?"
 
 **Include:**
+
 - New user-facing systems or major capabilities
 - Breaking changes that users need to know about
 - CLI command reorganization or removal
 - Features that warrant special attention in release notes
 
 **Exclude (NEVER Major Changes):**
+
 - Internal architecture improvements
 - Gateway refactoring
 - Retry mechanisms
@@ -58,12 +60,14 @@ Every Major Change entry must include:
 ### Added
 
 **Detection patterns:**
+
 - Commit message contains "add", "new", "implement", "create"
 - Feature PRs introducing new functionality
 
 **Test:** Is this a wholly new feature that didn't exist before?
 
 **Examples:**
+
 - New CLI commands
 - New slash commands (except `/local:*` - see exclusions)
 - New user-facing capabilities
@@ -71,12 +75,14 @@ Every Major Change entry must include:
 ### Changed
 
 **Detection patterns:**
+
 - Commit message contains "improve", "update", "enhance", "move", "migrate"
 - Non-breaking changes to existing functionality
 
 **Test:** Does this modify how an existing feature works without removing it?
 
 **Examples:**
+
 - Performance improvements
 - UI/UX enhancements
 - Output format improvements
@@ -84,12 +90,14 @@ Every Major Change entry must include:
 ### Fixed
 
 **Detection patterns:**
+
 - Commit message contains "fix", "bug", "resolve", "correct"
 - Issue fixes
 
 **Test:** Does this repair broken behavior?
 
 **Examples:**
+
 - Bug fixes
 - Error handling improvements
 - Edge case corrections
@@ -97,11 +105,13 @@ Every Major Change entry must include:
 ### Removed
 
 **Detection patterns:**
+
 - Commit message contains "remove", "delete", "drop"
 
 **Test:** Is functionality being taken away?
 
 **Examples:**
+
 - Deprecated command removal
 - Feature sunset
 - API cleanup
@@ -111,52 +121,65 @@ Every Major Change entry must include:
 ### Always Filter (never include in CHANGELOG)
 
 **Local-only commands:**
+
 - ANY commit adding or modifying `.claude/commands/local/*` files
 - These are developer-only commands not shipped to users
 - Filter even if message sounds like a new feature (e.g., "Add /local:foo command")
 
 **Release housekeeping:**
+
 - Version bumps ("Bump version to X")
 - CHANGELOG finalization
 - Lock file updates for releases
 
 **CI/CD-only changes:**
+
 - `.github/workflows/` changes (unless capability-related, see exception below)
 
 **Documentation-only:**
+
 - `docs/`, `.md` files in `.erk/`
 - Skill/agent documentation updates
 
 **Test-only:**
+
 - Changes only in `tests/`
 
 **Internal code conventions:**
+
 - Frozen dataclasses migrations
 - Parameter default removal
 - Import reorganization
 
 **Gateway method additions:**
+
 - `abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py` pattern
 - Pure plumbing with no user-visible behavior
 
 **Build tooling:**
+
 - `Makefile`, `pyproject.toml` dependency updates
 
 **Merge commits:**
+
 - Commits with no substantive changes
 
 **Vague messages:**
+
 - "update", "WIP", "wip" with no context
 
 **Internal abstractions:**
+
 - Consolidation of internal types (e.g., Terminal+UserFeedback->Console)
 - Refactoring with no user-visible change
 
 **erk-dev commands:**
+
 - All changes to `erk-dev` tooling
 - Internal development utilities
 
 **erk exec commands:**
+
 - ALL changes to `src/erk/cli/commands/exec/scripts/`
 - These are internal tooling, always filter
 
@@ -167,10 +190,12 @@ Changes to `.github/workflows/` that affect capabilities (e.g., `dignified-pytho
 ### Likely Internal (verify before including)
 
 **Commit message keywords that often indicate internal-only:**
+
 - "Refactor", "Relocate", "Consolidate" - check if user-visible
 - "Harden", "Strengthen" - usually internal enforcement
 
 **Path-based signals:**
+
 - Changes only in `tests/` -> internal
 - Changes only in `scripts/` (unless CLI-facing) -> internal
 - Changes only to `**/fake*.py` -> internal
@@ -183,6 +208,7 @@ When internal abstractions are merged, consolidated, or refactored, filter them 
 **The test:** Does an end user calling `erk` commands see different behavior? If no, filter it.
 
 **Examples (always filter):**
+
 - "Consolidate X and Y into Z" where X, Y, Z are internal types
 - "Unify X gateway" where the gateway interface is internal
 - "Merge X module into Y" for internal modules
@@ -194,11 +220,13 @@ When internal abstractions are merged, consolidated, or refactored, filter them 
 When multiple commits are part of a larger initiative, group them under a single Major Change entry.
 
 **Detection patterns:**
+
 - Multiple commits mentioning same keyword (e.g., "kit", "artifact", "hook")
 - Commits with sequential PR numbers on same topic
 - Commits referencing same GitHub issue/objective
 
 **Examples:**
+
 - 5+ commits about "kit" removal -> "Eliminate kit infrastructure entirely"
 - 3+ commits about "artifact sync" -> "Add unified artifact distribution system"
 

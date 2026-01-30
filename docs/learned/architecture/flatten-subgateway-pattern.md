@@ -242,15 +242,15 @@ PR #6285 removed **16 methods** from the Git ABC implementations:
 
 **Migration mapping examples:**
 
-| Before (convenience)               | After (subgateway property)                  |
-| ---------------------------------- | -------------------------------------------- |
-| `git.get_current_branch()`         | `git.branch.get_current_branch()`            |
-| `git.create_branch()`              | `git.branch.create_branch()`                 |
-| `git.delete_branch()`              | `git.branch.delete_branch()`                 |
-| `git.checkout_branch()`            | `git.branch.checkout_branch()`               |
-| `git.list_worktrees()`             | `git.worktree.list_worktrees()`              |
-| `git.add_worktree()`               | `git.worktree.add_worktree()`                |
-| `git.rebase_onto()`                | `git.rebase.rebase_onto()`                   |
+| Before (convenience)       | After (subgateway property)       |
+| -------------------------- | --------------------------------- |
+| `git.get_current_branch()` | `git.branch.get_current_branch()` |
+| `git.create_branch()`      | `git.branch.create_branch()`      |
+| `git.delete_branch()`      | `git.branch.delete_branch()`      |
+| `git.checkout_branch()`    | `git.branch.checkout_branch()`    |
+| `git.list_worktrees()`     | `git.worktree.list_worktrees()`   |
+| `git.add_worktree()`       | `git.worktree.add_worktree()`     |
+| `git.rebase_onto()`        | `git.rebase.rebase_onto()`        |
 
 **Result:** Git ABC reduced to exactly **10 abstract property accessors** - a pure facade with zero convenience methods.
 

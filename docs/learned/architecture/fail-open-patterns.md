@@ -41,11 +41,11 @@ Use fail-open pattern when:
 
 ## Pattern vs Alternatives
 
-| Pattern         | Behavior on Failure      | Use Case                                                     |
-| --------------- | ------------------------ | ------------------------------------------------------------ |
-| **Fail-open**   | Log warning, continue    | Non-critical cleanup, external API calls, optional features  |
-| **Fail-closed** | Raise exception, abort   | Critical operations, data integrity requirements             |
-| **Fail-fast**   | Validate early, abort    | Precondition checking, input validation before any mutations |
+| Pattern         | Behavior on Failure    | Use Case                                                     |
+| --------------- | ---------------------- | ------------------------------------------------------------ |
+| **Fail-open**   | Log warning, continue  | Non-critical cleanup, external API calls, optional features  |
+| **Fail-closed** | Raise exception, abort | Critical operations, data integrity requirements             |
+| **Fail-fast**   | Validate early, abort  | Precondition checking, input validation before any mutations |
 
 ## Canonical Example: cleanup_review_pr()
 
@@ -108,11 +108,11 @@ def cleanup_review_pr(
 
 **Failure handling breakdown:**
 
-| Step               | Type     | Failure Behavior               | Rationale                                             |
-| ------------------ | -------- | ------------------------------ | ----------------------------------------------------- |
-| Add comment        | Cosmetic | Log warning, continue          | Comment is nice-to-have, not required                 |
-| Close PR           | Critical | Log warning, return None       | Metadata should only be cleared if PR actually closed |
-| Clear metadata     | Dependent| Log warning, continue          | PR is closed, metadata inconsistency is tolerable     |
+| Step           | Type      | Failure Behavior         | Rationale                                             |
+| -------------- | --------- | ------------------------ | ----------------------------------------------------- |
+| Add comment    | Cosmetic  | Log warning, continue    | Comment is nice-to-have, not required                 |
+| Close PR       | Critical  | Log warning, return None | Metadata should only be cleared if PR actually closed |
+| Clear metadata | Dependent | Log warning, continue    | PR is closed, metadata inconsistency is tolerable     |
 
 **Key insight:** Metadata consistency is preserved by asymmetric handling:
 
