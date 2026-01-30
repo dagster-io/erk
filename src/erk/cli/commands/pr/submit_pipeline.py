@@ -161,10 +161,9 @@ def push_and_create_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
     Dispatches internally: Graphite-first vs core path.
     """
     # Determine if Graphite should handle the push
-    graphite_handles_push = False
-    if state.use_graphite:
-        check_result = should_enhance_with_graphite(ctx, state.cwd)
-        graphite_handles_push = check_result.should_enhance
+    graphite_handles_push = state.use_graphite and should_enhance_with_graphite(
+        ctx, state.cwd
+    ).should_enhance
 
     if graphite_handles_push:
         return _graphite_first_flow(ctx, state)
