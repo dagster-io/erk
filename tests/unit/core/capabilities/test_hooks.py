@@ -10,6 +10,7 @@ from pathlib import Path
 from erk.capabilities.hooks import HooksCapability
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
+    ERK_GIT_LOCK_CHECK_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
 )
 
@@ -53,7 +54,11 @@ def test_is_installed_returns_true_when_current_hooks_present(tmp_path: Path) ->
                 {
                     "matcher": "ExitPlanMode",
                     "hooks": [{"type": "command", "command": ERK_EXIT_PLAN_HOOK_COMMAND}],
-                }
+                },
+                {
+                    "matcher": "Bash",
+                    "hooks": [{"type": "command", "command": ERK_GIT_LOCK_CHECK_HOOK_COMMAND}],
+                },
             ],
         }
     }
@@ -262,7 +267,11 @@ def test_install_skips_when_already_current(tmp_path: Path) -> None:
                 {
                     "matcher": "ExitPlanMode",
                     "hooks": [{"type": "command", "command": ERK_EXIT_PLAN_HOOK_COMMAND}],
-                }
+                },
+                {
+                    "matcher": "Bash",
+                    "hooks": [{"type": "command", "command": ERK_GIT_LOCK_CHECK_HOOK_COMMAND}],
+                },
             ],
         }
     }

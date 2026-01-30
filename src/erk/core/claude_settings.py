@@ -26,6 +26,10 @@ ERK_EXIT_PLAN_HOOK_COMMAND = (
     "command -v erk >/dev/null 2>&1 || exit 0; "
     "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
 )
+ERK_GIT_LOCK_CHECK_HOOK_COMMAND = (
+    "command -v erk >/dev/null 2>&1 || exit 0; "
+    "ERK_HOOK_ID=git-lock-check-hook erk exec git-lock-check-hook"
+)
 
 # Statusline command - can be overridden via ERK_STATUSLINE_COMMAND env var for dev mode
 ERK_STATUSLINE_COMMAND = "uvx erk-statusline"
@@ -109,6 +113,25 @@ def has_exit_plan_hook(settings: Mapping[str, Any]) -> bool:
         if entry.get("matcher") == "ExitPlanMode":
             for hook in entry.get("hooks", []):
                 if hook.get("command") == ERK_EXIT_PLAN_HOOK_COMMAND:
+                    return True
+    return False
+
+
+def has_git_lock_check_hook(settings: Mapping[str, Any]) -> bool:
+    """Check if erk git lock check hook is configured with current command.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        True if the erk Bash PreToolUse hook is configured with the CURRENT command
+    """
+    hooks = settings.get("hooks", {})
+    pre_tool_hooks = hooks.get("PreToolUse", [])
+    for entry in pre_tool_hooks:
+        if entry.get("matcher") == "Bash":
+            for hook in entry.get("hooks", []):
+                if hook.get("command") == ERK_GIT_LOCK_CHECK_HOOK_COMMAND:
                     return True
     return False
 
@@ -210,13 +233,17 @@ def add_erk_hooks(settings: Mapping[str, Any]) -> dict[str, Any]:
         }
     )
 
-    # Filter out existing erk ExitPlanMode hooks from PreToolUse, then add current
+    # Filter out existing erk PreToolUse hooks, then add current versions
     pre_tool_hooks = hooks.get("PreToolUse", [])
     hooks["PreToolUse"] = [
         entry
         for entry in pre_tool_hooks
-        if not (entry.get("matcher") == "ExitPlanMode" and _is_erk_managed_hook_entry(entry))
+        if not (
+            entry.get("matcher") in ("ExitPlanMode", "Bash")
+            and _is_erk_managed_hook_entry(entry)
+        )
     ]
+    # Add ExitPlanMode hook
     hooks["PreToolUse"].append(
         {
             "matcher": "ExitPlanMode",
@@ -224,6 +251,18 @@ def add_erk_hooks(settings: Mapping[str, Any]) -> dict[str, Any]:
                 {
                     "type": "command",
                     "command": ERK_EXIT_PLAN_HOOK_COMMAND,
+                }
+            ],
+        }
+    )
+    # Add git lock check hook for Bash commands
+    hooks["PreToolUse"].append(
+        {
+            "matcher": "Bash",
+            "hooks": [
+                {
+                    "type": "command",
+                    "command": ERK_GIT_LOCK_CHECK_HOOK_COMMAND,
                 }
             ],
         }

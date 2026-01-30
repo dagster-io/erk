@@ -846,9 +846,11 @@ def test_hooks_is_installed_false_when_only_user_prompt_hook(tmp_path: Path) -> 
     assert cap.is_installed(tmp_path) is False
 
 
-def test_hooks_is_installed_true_when_both_hooks_present(tmp_path: Path) -> None:
-    """Test is_installed returns True when both hooks are configured."""
+def test_hooks_is_installed_true_when_all_hooks_present(tmp_path: Path) -> None:
+    """Test is_installed returns True when all hooks are configured."""
     import json
+
+    from erk.core.claude_settings import ERK_GIT_LOCK_CHECK_HOOK_COMMAND
 
     settings_path = tmp_path / ".claude" / "settings.json"
     settings_path.parent.mkdir(parents=True)
@@ -874,7 +876,16 @@ def test_hooks_is_installed_true_when_both_hooks_present(tmp_path: Path) -> None
                             "command": ERK_EXIT_PLAN_HOOK_COMMAND,
                         }
                     ],
-                }
+                },
+                {
+                    "matcher": "Bash",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": ERK_GIT_LOCK_CHECK_HOOK_COMMAND,
+                        }
+                    ],
+                },
             ],
         }
     }
@@ -933,6 +944,8 @@ def test_hooks_install_idempotent(tmp_path: Path) -> None:
     """Test install is idempotent when hooks already exist."""
     import json
 
+    from erk.core.claude_settings import ERK_GIT_LOCK_CHECK_HOOK_COMMAND
+
     settings_path = tmp_path / ".claude" / "settings.json"
     settings_path.parent.mkdir(parents=True)
     settings = {
@@ -957,7 +970,16 @@ def test_hooks_install_idempotent(tmp_path: Path) -> None:
                             "command": ERK_EXIT_PLAN_HOOK_COMMAND,
                         }
                     ],
-                }
+                },
+                {
+                    "matcher": "Bash",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": ERK_GIT_LOCK_CHECK_HOOK_COMMAND,
+                        }
+                    ],
+                },
             ],
         }
     }
@@ -1596,10 +1618,11 @@ def test_hooks_capability_managed_artifacts() -> None:
     cap = HooksCapability()
     managed = cap.managed_artifacts
 
-    assert len(managed) == 2
+    assert len(managed) == 3
     names = {(a.name, a.artifact_type) for a in managed}
     assert ("user-prompt-hook", "hook") in names
     assert ("exit-plan-mode-hook", "hook") in names
+    assert ("git-lock-check-hook", "hook") in names
 
 
 def test_ruff_format_capability_managed_artifacts() -> None:

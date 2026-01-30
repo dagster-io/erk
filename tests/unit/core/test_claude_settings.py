@@ -545,8 +545,10 @@ def test_hook_detection_finds_hook_among_multiple_entries() -> None:
     assert has_exit_plan_hook(settings) is False
 
 
-def test_add_erk_hooks_adds_both_hooks_to_empty_settings() -> None:
-    """Test that add_erk_hooks adds both hooks to empty settings."""
+def test_add_erk_hooks_adds_all_hooks_to_empty_settings() -> None:
+    """Test that add_erk_hooks adds all hooks to empty settings."""
+    from erk.core.claude_settings import ERK_GIT_LOCK_CHECK_HOOK_COMMAND
+
     settings: dict = {}
     result = add_erk_hooks(settings)
 
@@ -560,37 +562,50 @@ def test_add_erk_hooks_adds_both_hooks_to_empty_settings() -> None:
     assert user_prompt_hooks[0]["matcher"] == "*"
     assert user_prompt_hooks[0]["hooks"][0]["command"] == ERK_USER_PROMPT_HOOK_COMMAND
 
-    # Verify PreToolUse hook structure
+    # Verify PreToolUse hook structure (ExitPlanMode + Bash git lock check)
     pre_tool_hooks = result["hooks"]["PreToolUse"]
-    assert len(pre_tool_hooks) == 1
-    assert pre_tool_hooks[0]["matcher"] == "ExitPlanMode"
-    assert pre_tool_hooks[0]["hooks"][0]["command"] == ERK_EXIT_PLAN_HOOK_COMMAND
+    assert len(pre_tool_hooks) == 2
+
+    exit_plan_hooks = [h for h in pre_tool_hooks if h["matcher"] == "ExitPlanMode"]
+    git_lock_hooks = [h for h in pre_tool_hooks if h["matcher"] == "Bash"]
+
+    assert len(exit_plan_hooks) == 1
+    assert exit_plan_hooks[0]["hooks"][0]["command"] == ERK_EXIT_PLAN_HOOK_COMMAND
+
+    assert len(git_lock_hooks) == 1
+    assert git_lock_hooks[0]["hooks"][0]["command"] == ERK_GIT_LOCK_CHECK_HOOK_COMMAND
 
 
 def test_add_erk_hooks_adds_missing_user_prompt_hook() -> None:
     """Test that add_erk_hooks adds missing UserPromptSubmit hook."""
+    from erk.core.claude_settings import ERK_GIT_LOCK_CHECK_HOOK_COMMAND
+
     settings = {
         "hooks": {
             "PreToolUse": [
                 {
                     "matcher": "ExitPlanMode",
                     "hooks": [{"type": "command", "command": ERK_EXIT_PLAN_HOOK_COMMAND}],
-                }
+                },
+                {
+                    "matcher": "Bash",
+                    "hooks": [{"type": "command", "command": ERK_GIT_LOCK_CHECK_HOOK_COMMAND}],
+                },
             ]
         }
     }
     result = add_erk_hooks(settings)
 
-    # PreToolUse should be unchanged
-    assert len(result["hooks"]["PreToolUse"]) == 1
+    # PreToolUse should have 2 hooks (ExitPlanMode and git lock check)
+    assert len(result["hooks"]["PreToolUse"]) == 2
 
     # UserPromptSubmit should be added
     assert "UserPromptSubmit" in result["hooks"]
     assert len(result["hooks"]["UserPromptSubmit"]) == 1
 
 
-def test_add_erk_hooks_adds_missing_pre_tool_hook() -> None:
-    """Test that add_erk_hooks adds missing PreToolUse hook."""
+def test_add_erk_hooks_adds_missing_pre_tool_hooks() -> None:
+    """Test that add_erk_hooks adds missing PreToolUse hooks."""
     settings = {
         "hooks": {
             "UserPromptSubmit": [
@@ -606,9 +621,9 @@ def test_add_erk_hooks_adds_missing_pre_tool_hook() -> None:
     # UserPromptSubmit should be unchanged
     assert len(result["hooks"]["UserPromptSubmit"]) == 1
 
-    # PreToolUse should be added
+    # PreToolUse should be added with both ExitPlanMode and Bash hooks
     assert "PreToolUse" in result["hooks"]
-    assert len(result["hooks"]["PreToolUse"]) == 1
+    assert len(result["hooks"]["PreToolUse"]) == 2
 
 
 def test_add_erk_hooks_preserves_existing_hooks() -> None:
@@ -638,6 +653,8 @@ def test_add_erk_hooks_preserves_existing_hooks() -> None:
 
 def test_add_erk_hooks_does_not_duplicate_hooks() -> None:
     """Test that add_erk_hooks doesn't add hooks if already present."""
+    from erk.core.claude_settings import ERK_GIT_LOCK_CHECK_HOOK_COMMAND
+
     settings = {
         "hooks": {
             "UserPromptSubmit": [
@@ -650,7 +667,11 @@ def test_add_erk_hooks_does_not_duplicate_hooks() -> None:
                 {
                     "matcher": "ExitPlanMode",
                     "hooks": [{"type": "command", "command": ERK_EXIT_PLAN_HOOK_COMMAND}],
-                }
+                },
+                {
+                    "matcher": "Bash",
+                    "hooks": [{"type": "command", "command": ERK_GIT_LOCK_CHECK_HOOK_COMMAND}],
+                },
             ],
         }
     }
@@ -658,7 +679,7 @@ def test_add_erk_hooks_does_not_duplicate_hooks() -> None:
 
     # Should not have duplicates
     assert len(result["hooks"]["UserPromptSubmit"]) == 1
-    assert len(result["hooks"]["PreToolUse"]) == 1
+    assert len(result["hooks"]["PreToolUse"]) == 2
 
 
 def test_add_erk_hooks_is_pure_function() -> None:
@@ -868,9 +889,12 @@ def test_add_erk_hooks_replaces_old_hooks() -> None:
     This is the key behavior change: old hooks with ERK_HOOK_ID marker
     should be replaced, not duplicated.
     """
+    from erk.core.claude_settings import ERK_GIT_LOCK_CHECK_HOOK_COMMAND
+
     # Simulate old hook command with marker but different command text
     old_user_prompt_command = "ERK_HOOK_ID=user-prompt-hook erk exec old-command"
     old_exit_plan_command = "ERK_HOOK_ID=exit-plan-mode-hook erk exec old-exit"
+    old_git_lock_command = "ERK_HOOK_ID=git-lock-check-hook erk exec old-git-lock"
 
     settings = {
         "hooks": {
@@ -884,7 +908,11 @@ def test_add_erk_hooks_replaces_old_hooks() -> None:
                 {
                     "matcher": "ExitPlanMode",
                     "hooks": [{"type": "command", "command": old_exit_plan_command}],
-                }
+                },
+                {
+                    "matcher": "Bash",
+                    "hooks": [{"type": "command", "command": old_git_lock_command}],
+                },
             ],
         }
     }
@@ -897,9 +925,17 @@ def test_add_erk_hooks_replaces_old_hooks() -> None:
         == ERK_USER_PROMPT_HOOK_COMMAND
     )
 
-    # Should have exactly one ExitPlanMode PreToolUse hook (replaced, not appended)
-    assert len(result["hooks"]["PreToolUse"]) == 1
-    assert result["hooks"]["PreToolUse"][0]["hooks"][0]["command"] == ERK_EXIT_PLAN_HOOK_COMMAND
+    # Should have exactly two PreToolUse hooks (ExitPlanMode + Bash, both replaced)
+    assert len(result["hooks"]["PreToolUse"]) == 2
+
+    exit_plan_hooks = [h for h in result["hooks"]["PreToolUse"] if h["matcher"] == "ExitPlanMode"]
+    git_lock_hooks = [h for h in result["hooks"]["PreToolUse"] if h["matcher"] == "Bash"]
+
+    assert len(exit_plan_hooks) == 1
+    assert exit_plan_hooks[0]["hooks"][0]["command"] == ERK_EXIT_PLAN_HOOK_COMMAND
+
+    assert len(git_lock_hooks) == 1
+    assert git_lock_hooks[0]["hooks"][0]["command"] == ERK_GIT_LOCK_CHECK_HOOK_COMMAND
 
 
 def test_add_erk_hooks_preserves_user_hooks_when_replacing() -> None:
@@ -939,18 +975,20 @@ def test_add_erk_hooks_preserves_user_hooks_when_replacing() -> None:
     assert erk_hooks[0]["hooks"][0]["command"] == ERK_USER_PROMPT_HOOK_COMMAND
 
 
-def test_add_erk_hooks_preserves_non_exitplanmode_pretooluse_hooks() -> None:
-    """Test that add_erk_hooks preserves non-ExitPlanMode PreToolUse hooks."""
+def test_add_erk_hooks_preserves_non_erk_pretooluse_hooks() -> None:
+    """Test that add_erk_hooks preserves non-erk-managed PreToolUse hooks."""
+    from erk.core.claude_settings import ERK_GIT_LOCK_CHECK_HOOK_COMMAND
+
     old_exit_plan_command = "ERK_HOOK_ID=exit-plan-mode-hook erk exec old-exit"
-    user_bash_hook = "my-bash-validation"
+    user_write_hook = "my-write-validation"  # Non-erk hook with different matcher
 
     settings = {
         "hooks": {
             "PreToolUse": [
-                # User's Bash validation hook (should be preserved)
+                # User's Write validation hook (should be preserved)
                 {
-                    "matcher": "Bash",
-                    "hooks": [{"type": "command", "command": user_bash_hook}],
+                    "matcher": "Write",
+                    "hooks": [{"type": "command", "command": user_write_hook}],
                 },
                 # Old erk ExitPlanMode hook (should be replaced)
                 {
@@ -962,18 +1000,22 @@ def test_add_erk_hooks_preserves_non_exitplanmode_pretooluse_hooks() -> None:
     }
     result = add_erk_hooks(settings)
 
-    # Should have two hooks: user's Bash + erk's ExitPlanMode
-    assert len(result["hooks"]["PreToolUse"]) == 2
+    # Should have three hooks: user's Write + erk's ExitPlanMode + erk's Bash
+    assert len(result["hooks"]["PreToolUse"]) == 3
 
-    # Find the user hook and erk hook
-    bash_hooks = [h for h in result["hooks"]["PreToolUse"] if h["matcher"] == "Bash"]
+    # Find the hooks by matcher
+    write_hooks = [h for h in result["hooks"]["PreToolUse"] if h["matcher"] == "Write"]
     exit_hooks = [h for h in result["hooks"]["PreToolUse"] if h["matcher"] == "ExitPlanMode"]
+    bash_hooks = [h for h in result["hooks"]["PreToolUse"] if h["matcher"] == "Bash"]
 
-    assert len(bash_hooks) == 1
-    assert bash_hooks[0]["hooks"][0]["command"] == user_bash_hook
+    assert len(write_hooks) == 1
+    assert write_hooks[0]["hooks"][0]["command"] == user_write_hook
 
     assert len(exit_hooks) == 1
     assert exit_hooks[0]["hooks"][0]["command"] == ERK_EXIT_PLAN_HOOK_COMMAND
+
+    assert len(bash_hooks) == 1
+    assert bash_hooks[0]["hooks"][0]["command"] == ERK_GIT_LOCK_CHECK_HOOK_COMMAND
 
 
 # --- Tests for backup file creation ---

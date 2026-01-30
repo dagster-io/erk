@@ -63,6 +63,7 @@ from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
 from erk.cli.commands.exec.scripts.get_pr_review_comments import (
     get_pr_review_comments,
 )
+from erk.cli.commands.exec.scripts.git_lock_check_hook import git_lock_check_hook
 from erk.cli.commands.exec.scripts.handle_no_changes import handle_no_changes
 from erk.cli.commands.exec.scripts.impl_init import impl_init
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
@@ -181,6 +182,7 @@ exec_group.add_command(find_project_dir, name="find-project-dir")
 exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-summary")
 exec_group.add_command(generate_pr_summary, name="generate-pr-summary")
 exec_group.add_command(get_closing_text, name="get-closing-text")
+exec_group.add_command(git_lock_check_hook, name="git-lock-check-hook")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
 exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")
 exec_group.add_command(get_pr_for_plan, name="get-pr-for-plan")
