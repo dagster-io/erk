@@ -145,7 +145,7 @@ Post findings.
         )
 
         assert "Fetch Existing Review Comments" in prompt
-        assert "gh api repos/{owner}/{repo}/pulls/42/comments --paginate" in prompt
+        assert "erk exec get-pr-review-comments --pr 42 --include-resolved" in prompt
 
     def test_prompt_deduplication_references_review_name(self) -> None:
         """Deduplication step references the review name for prefix matching."""

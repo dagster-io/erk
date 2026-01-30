@@ -44,13 +44,15 @@ gh pr diff {pr_number}
 
 ## Step 4: Fetch Existing Review Comments
 
-Before posting inline comments, fetch all existing review comments to avoid duplicates:
+Before posting inline comments, fetch all existing review comments to avoid
+duplicates:
 
 ```
-gh api repos/{{owner}}/{{repo}}/pulls/{pr_number}/comments --paginate
+erk exec get-pr-review-comments --pr {pr_number} --include-resolved
 ```
 
-(Replace `{{owner}}/{{repo}}` with the actual repository owner and name from REPO above.)
+This returns JSON with a `threads` array. Each thread has `path`, `line`,
+and `comments` (each with `body`).
 
 Build a set of existing comments keyed by `(path, line, body_prefix)` where
 `body_prefix` is the first 80 characters of the comment body. This catches
