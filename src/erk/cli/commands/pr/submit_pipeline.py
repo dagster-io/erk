@@ -18,6 +18,7 @@ import click
 from erk.cli.commands.pr.shared import (
     run_commit_message_generation,
 )
+from erk.cli.ensure import UserFacingCliError
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContext, PlanContextProvider
@@ -316,7 +317,7 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
                 ),
                 details={"branch": state.branch_name},
             )
-        raise RuntimeError(push_result.message)
+        raise UserFacingCliError(push_result.message)
 
     # Check for existing PR or create new one
     existing_pr = ctx.github.get_pr_for_branch(state.repo_root, state.branch_name)

@@ -9,6 +9,7 @@ from erk.cli.commands.land_pipeline import (
     make_initial_state,
     run_validation_pipeline,
 )
+from erk.cli.ensure import UserFacingCliError
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
@@ -112,11 +113,9 @@ def test_validation_pipeline_stops_on_error(tmp_path: Path) -> None:
         main_repo_root=tmp_path,
     )
 
-    # resolve_target raises SystemExit for detached HEAD
-    with pytest.raises(SystemExit) as exc_info:
+    # resolve_target raises UserFacingCliError for detached HEAD
+    with pytest.raises(UserFacingCliError):
         run_validation_pipeline(ctx, initial_state)
-
-    assert exc_info.value.code == 1
 
 
 def test_validation_pipeline_with_pr_target(tmp_path: Path) -> None:

@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 
-from erk.cli.ensure import Ensure
+from erk.cli.ensure import Ensure, UserFacingCliError
 from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.graphite.disabled import (
     GraphiteDisabled,
@@ -29,20 +29,16 @@ class TestEnsureNotNone:
         # Type checker should infer result as int, not int | None
 
     def test_exits_when_none(self) -> None:
-        """Ensure.not_none raises SystemExit when value is None."""
-        with pytest.raises(SystemExit) as exc_info:
+        """Ensure.not_none raises UserFacingCliError when value is None."""
+        with pytest.raises(UserFacingCliError):
             Ensure.not_none(None, "Value is None")
-        assert exc_info.value.code == 1
 
-    def test_error_message_output(self, capsys: pytest.CaptureFixture[str]) -> None:
-        """Ensure.not_none outputs error message with red Error prefix to stderr."""
-        with pytest.raises(SystemExit):
+    def test_error_message_output(self) -> None:
+        """Ensure.not_none stores error message in exception."""
+        with pytest.raises(UserFacingCliError) as exc_info:
             Ensure.not_none(None, "Custom error message")
 
-        captured = capsys.readouterr()
-        # user_output routes to stderr for shell integration
-        assert "Error:" in captured.err
-        assert "Custom error message" in captured.err
+        assert exc_info.value.message == "Custom error message"
 
     def test_works_with_complex_types(self) -> None:
         """Ensure.not_none works with complex types like dicts and lists."""
@@ -82,25 +78,19 @@ class TestEnsureGtInstalled:
             Ensure.gt_installed()
 
     def test_exits_when_gt_not_found(self) -> None:
-        """Ensure.gt_installed raises SystemExit when gt not on PATH."""
+        """Ensure.gt_installed raises UserFacingCliError when gt not on PATH."""
         with mock.patch("shutil.which", return_value=None):
-            with pytest.raises(SystemExit) as exc_info:
+            with pytest.raises(UserFacingCliError):
                 Ensure.gt_installed()
 
-            assert exc_info.value.code == 1
-
-    def test_error_message_includes_install_instructions(
-        self, capsys: pytest.CaptureFixture[str]
-    ) -> None:
-        """Ensure.gt_installed outputs helpful installation instructions."""
+    def test_error_message_includes_install_instructions(self) -> None:
+        """Ensure.gt_installed stores helpful installation instructions in exception."""
         with mock.patch("shutil.which", return_value=None):
-            with pytest.raises(SystemExit):
+            with pytest.raises(UserFacingCliError) as exc_info:
                 Ensure.gt_installed()
 
-        captured = capsys.readouterr()
-        assert "Error:" in captured.err
-        assert "Graphite CLI (gt) is not installed" in captured.err
-        assert "npm install -g @withgraphite/graphite-cli" in captured.err
+        assert "Graphite CLI (gt) is not installed" in exc_info.value.message
+        assert "npm install -g @withgraphite/graphite-cli" in exc_info.value.message
 
 
 class TestEnsureGraphiteAvailable:
@@ -115,50 +105,42 @@ class TestEnsureGraphiteAvailable:
         Ensure.graphite_available(ctx)
 
     def test_exits_when_config_disabled(self) -> None:
-        """Ensure.graphite_available raises SystemExit when disabled via config."""
+        """Ensure.graphite_available raises UserFacingCliError when disabled via config."""
         disabled = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
         ctx = context_for_test(graphite=disabled)
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(UserFacingCliError):
             Ensure.graphite_available(ctx)
 
-        assert exc_info.value.code == 1
-
     def test_exits_when_not_installed(self) -> None:
-        """Ensure.graphite_available raises SystemExit when gt not installed."""
+        """Ensure.graphite_available raises UserFacingCliError when gt not installed."""
         disabled = GraphiteDisabled(reason=GraphiteDisabledReason.NOT_INSTALLED)
         ctx = context_for_test(graphite=disabled)
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(UserFacingCliError):
             Ensure.graphite_available(ctx)
 
-        assert exc_info.value.code == 1
-
-    def test_config_disabled_error_message(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_config_disabled_error_message(self) -> None:
         """Error message for CONFIG_DISABLED includes config enable instruction."""
         disabled = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
         ctx = context_for_test(graphite=disabled)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(UserFacingCliError) as exc_info:
             Ensure.graphite_available(ctx)
 
-        captured = capsys.readouterr()
-        assert "Error:" in captured.err
-        assert "requires Graphite to be enabled" in captured.err
-        assert "erk config set use_graphite true" in captured.err
+        assert "requires Graphite to be enabled" in exc_info.value.message
+        assert "erk config set use_graphite true" in exc_info.value.message
 
-    def test_not_installed_error_message(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_not_installed_error_message(self) -> None:
         """Error message for NOT_INSTALLED includes installation instructions."""
         disabled = GraphiteDisabled(reason=GraphiteDisabledReason.NOT_INSTALLED)
         ctx = context_for_test(graphite=disabled)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(UserFacingCliError) as exc_info:
             Ensure.graphite_available(ctx)
 
-        captured = capsys.readouterr()
-        assert "Error:" in captured.err
-        assert "requires Graphite to be installed" in captured.err
-        assert "npm install -g @withgraphite/graphite-cli" in captured.err
+        assert "requires Graphite to be installed" in exc_info.value.message
+        assert "npm install -g @withgraphite/graphite-cli" in exc_info.value.message
 
 
 class TestEnsureBranchGraphiteTrackedOrNew:
@@ -213,7 +195,7 @@ class TestEnsureBranchGraphiteTrackedOrNew:
         Ensure.branch_graphite_tracked_or_new(ctx, repo_root, "feature", "main")
 
     def test_exits_when_branch_exists_but_not_tracked(self) -> None:
-        """SystemExit when branch exists locally but is not tracked by Graphite."""
+        """UserFacingCliError when branch exists locally but is not tracked by Graphite."""
         from erk_shared.gateway.git.fake import FakeGit
         from erk_shared.gateway.graphite.fake import FakeGraphite
 
@@ -223,14 +205,10 @@ class TestEnsureBranchGraphiteTrackedOrNew:
         graphite = FakeGraphite(branches={})  # Empty - no tracked branches
         ctx = context_for_test(git=git, graphite=graphite)
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(UserFacingCliError):
             Ensure.branch_graphite_tracked_or_new(ctx, repo_root, "feature", "main")
 
-        assert exc_info.value.code == 1
-
-    def test_error_message_includes_remediation_steps(
-        self, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_error_message_includes_remediation_steps(self) -> None:
         """Error message includes all three remediation options."""
         from erk_shared.gateway.git.fake import FakeGit
         from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -240,13 +218,11 @@ class TestEnsureBranchGraphiteTrackedOrNew:
         graphite = FakeGraphite(branches={})
         ctx = context_for_test(git=git, graphite=graphite)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(UserFacingCliError) as exc_info:
             Ensure.branch_graphite_tracked_or_new(ctx, repo_root, "feature", "main")
 
-        captured = capsys.readouterr()
-        assert "Error:" in captured.err
-        assert "Branch 'feature' exists but is not tracked by Graphite" in captured.err
+        assert "Branch 'feature' exists but is not tracked by Graphite" in exc_info.value.message
         # Check all three remediation options
-        assert "gt track --parent main" in captured.err
-        assert "git branch -D feature" in captured.err
-        assert "erk config set use_graphite false" in captured.err
+        assert "gt track --parent main" in exc_info.value.message
+        assert "git branch -D feature" in exc_info.value.message
+        assert "erk config set use_graphite false" in exc_info.value.message

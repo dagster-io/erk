@@ -279,6 +279,39 @@ All error messages should follow these principles:
 | Missing config field | `"Required configuration '{field}' not set - {how to fix}"` |
 | Invalid argument     | `"Invalid {argument}: {value} - {valid options}"`           |
 
+### UserFacingCliError for Mid-Function Errors
+
+For errors that occur mid-function where `Ensure` precondition checks don't fit, use `UserFacingCliError`:
+
+```python
+from erk.cli.ensure import UserFacingCliError
+
+# CLI-layer consumer pattern for discriminated unions
+push_result = ctx.git.remote.push_to_remote(repo.root, "origin", branch)
+if isinstance(push_result, PushError):
+    raise UserFacingCliError(push_result.message)
+```
+
+**When to use:**
+
+- **Mid-logic errors**: Errors discovered during execution, not preconditions
+- **Discriminated union errors**: When consuming `Result | Error` types from gateway layer
+- **After operations fail**: When an operation returns an error variant
+
+**Relationship to Ensure:**
+
+- `Ensure`: For precondition checks at function entry (LBYL)
+- `UserFacingCliError`: For errors during execution (e.g., git push fails)
+- Both produce the same styled output (`Error: ` prefix in red)
+- Both exit with code 1
+- Ensure uses `UserFacingCliError` internally
+
+**Decision guide:**
+
+- Precondition validation → Use `Ensure` methods
+- Mid-function operation errors → Raise `UserFacingCliError`
+- Complex multi-step operations → Mix both (Ensure upfront, UserFacingCliError for failures)
+
 ### Using Ensure Methods
 
 ```python

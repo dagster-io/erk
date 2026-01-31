@@ -30,6 +30,28 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
+class UserFacingCliError(click.ClickException):
+    """Exception for user-facing CLI errors with styled output.
+
+    Extends click.ClickException so Click catches it automatically at every
+    level (groups, subgroups, commands) and converts it to a styled error
+    message + exit code 1. Works correctly with both production CLI and
+    CliRunner in tests.
+
+    Usage:
+        raise UserFacingCliError("Not a GitHub repository")
+        raise UserFacingCliError(push_result.message)
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
+
+    def show(self, file: Any = None) -> None:
+        """Display styled error message to stderr."""
+        user_output(click.style("Error: ", fg="red") + self.format_message())
+
+
 class Ensure:
     """Helper class for asserting invariants with consistent error handling."""
 
@@ -43,11 +65,10 @@ class Ensure:
                           "Error: " prefix will be added automatically in red.
 
         Raises:
-            SystemExit: If condition is false (with exit code 1)
+            UserFacingCliError: If condition is false
         """
         if not condition:
-            user_output(click.style("Error: ", fg="red") + error_message)
-            raise SystemExit(1)
+            raise UserFacingCliError(error_message)
 
     @staticmethod
     def truthy(value: T, error_message: str) -> T:
@@ -62,11 +83,10 @@ class Ensure:
             The value unchanged if truthy
 
         Raises:
-            SystemExit: If value is falsy (with exit code 1)
+            UserFacingCliError: If value is falsy
         """
         if not value:
-            user_output(click.style("Error: ", fg="red") + error_message)
-            raise SystemExit(1)
+            raise UserFacingCliError(error_message)
         return value
 
     @staticmethod
@@ -86,7 +106,7 @@ class Ensure:
             The value unchanged if not None (with narrowed type T)
 
         Raises:
-            SystemExit: If value is None (with exit code 1)
+            UserFacingCliError: If value is None
 
         Example:
             >>> # Type narrowing in action
@@ -95,8 +115,7 @@ class Ensure:
             >>> # safe_path is now guaranteed to be Path, not Path | None
         """
         if value is None:
-            user_output(click.style("Error: ", fg="red") + error_message)
-            raise SystemExit(1)
+            raise UserFacingCliError(error_message)
         return value
 
     @staticmethod
@@ -121,7 +140,7 @@ class Ensure:
                           "Error: " prefix will be added automatically in red.
 
         Raises:
-            SystemExit: If path does not exist (with exit code 1)
+            UserFacingCliError: If path does not exist
 
         Example:
             >>> # Basic usage with default error message
@@ -133,8 +152,7 @@ class Ensure:
         if not ctx.git.worktree.path_exists(path):
             if error_message is None:
                 error_message = f"Path not found: {path}"
-            user_output(click.style("Error: ", fg="red") + error_message)
-            raise SystemExit(1)
+            raise UserFacingCliError(error_message)
 
     @staticmethod
     def not_empty(value: str | list | dict | None, error_message: str) -> None:
@@ -146,15 +164,14 @@ class Ensure:
                           "Error: " prefix will be added automatically in red.
 
         Raises:
-            SystemExit: If value is None, empty string, empty list, or empty dict
+            UserFacingCliError: If value is None, empty string, empty list, or empty dict
 
         Example:
             >>> Ensure.not_empty(name, "Worktree name cannot be empty")
             >>> Ensure.not_empty(args, "No arguments provided - specify at least one branch")
         """
         if not value:
-            user_output(click.style("Error: ", fg="red") + error_message)
-            raise SystemExit(1)
+            raise UserFacingCliError(error_message)
 
     @staticmethod
     def git_worktree_exists(ctx: ErkContext, wt_path: Path, name: str | None = None) -> None:
@@ -188,18 +205,16 @@ class Ensure:
             branch: Branch name to check
 
         Raises:
-            SystemExit: If branch does not exist
+            UserFacingCliError: If branch does not exist
 
         Example:
             >>> Ensure.git_branch_exists(ctx, repo.root, "feature-branch")
         """
         local_branches = ctx.git.branch.list_local_branches(repo_root)
         if branch not in local_branches:
-            user_output(
-                click.style("Error: ", fg="red")
-                + f"Branch '{branch}' does not exist - Create it first or check the name"
+            raise UserFacingCliError(
+                f"Branch '{branch}' does not exist - Create it first or check the name"
             )
-            raise SystemExit(1)
 
     @staticmethod
     def in_git_worktree(ctx: ErkContext, current_path: Path | None) -> None:
@@ -210,18 +225,16 @@ class Ensure:
             current_path: Path to check (typically ctx.cwd or result of get_worktree_path)
 
         Raises:
-            SystemExit: If not in a git worktree
+            UserFacingCliError: If not in a git worktree
 
         Example:
             >>> current_wt = ctx.git.get_worktree_path(repo.root, ctx.cwd)
             >>> Ensure.in_git_worktree(ctx, current_wt)
         """
         if current_path is None:
-            user_output(
-                click.style("Error: ", fg="red")
-                + "Not in a git worktree - Run this command from within a worktree directory"
+            raise UserFacingCliError(
+                "Not in a git worktree - Run this command from within a worktree directory"
             )
-            raise SystemExit(1)
 
     @staticmethod
     def argument_count(
@@ -237,7 +250,7 @@ class Ensure:
             error_message: Optional custom error message
 
         Raises:
-            SystemExit: If argument count does not match expected
+            UserFacingCliError: If argument count does not match expected
 
         Example:
             >>> Ensure.argument_count(args, 1, "Expected exactly 1 branch name")
@@ -251,8 +264,7 @@ class Ensure:
                     error_message = f"Expected 1 argument, got {len(args)}"
                 else:
                     error_message = f"Expected {expected} arguments, got {len(args)}"
-            user_output(click.style("Error: ", fg="red") + error_message)
-            raise SystemExit(1)
+            raise UserFacingCliError(error_message)
 
     @staticmethod
     def config_field_set(
@@ -268,7 +280,7 @@ class Ensure:
             error_message: Optional custom error message
 
         Raises:
-            SystemExit: If field is not set (None or missing)
+            UserFacingCliError: If field is not set (None or missing)
 
         Example:
             >>> Ensure.config_field_set(
@@ -291,8 +303,7 @@ class Ensure:
                     f"Required configuration '{field_name}' not set - "
                     f"Run 'erk config set {field_name} <value>'"
                 )
-            user_output(click.style("Error: ", fg="red") + error_message)
-            raise SystemExit(1)
+            raise UserFacingCliError(error_message)
 
     @staticmethod
     def path_is_dir(ctx: ErkContext, path: Path, error_message: str | None = None) -> None:
@@ -304,7 +315,7 @@ class Ensure:
             error_message: Optional custom error message
 
         Raises:
-            SystemExit: If path doesn't exist or is not a directory
+            UserFacingCliError: If path doesn't exist or is not a directory
 
         Example:
             >>> Ensure.path_is_dir(ctx, repo.worktrees_dir, "Worktrees directory not found")
@@ -313,8 +324,7 @@ class Ensure:
         if not path.is_dir():
             if error_message is None:
                 error_message = f"Path is not a directory: {path}"
-            user_output(click.style("Error: ", fg="red") + error_message)
-            raise SystemExit(1)
+            raise UserFacingCliError(error_message)
 
     @staticmethod
     def path_not_exists(ctx: ErkContext, path: Path, error_message: str) -> None:
@@ -328,7 +338,7 @@ class Ensure:
             error_message: Error message to display if path exists
 
         Raises:
-            SystemExit: If path already exists
+            UserFacingCliError: If path already exists
 
         Example:
             >>> Ensure.path_not_exists(
@@ -339,8 +349,7 @@ class Ensure:
             ... )
         """
         if ctx.git.worktree.path_exists(path):
-            user_output(click.style("Error: ", fg="red") + error_message)
-            raise SystemExit(1)
+            raise UserFacingCliError(error_message)
 
     @staticmethod
     def gh_installed() -> None:
@@ -350,7 +359,7 @@ class Ensure:
         approach to validating external tool availability before use.
 
         Raises:
-            SystemExit: If gh CLI is not found on PATH
+            UserFacingCliError: If gh CLI is not found on PATH
 
         Example:
             >>> Ensure.gh_installed()
@@ -358,13 +367,11 @@ class Ensure:
             >>> pr_info = ctx.github.get_pr_checkout_info(repo.root, pr_number)
         """
         if shutil.which("gh") is None:
-            user_output(
-                click.style("Error: ", fg="red")
-                + "GitHub CLI (gh) is not installed\n\n"
+            raise UserFacingCliError(
+                "GitHub CLI (gh) is not installed\n\n"
                 + "Install it from: https://cli.github.com/\n"
                 + "Then authenticate with: gh auth login"
             )
-            raise SystemExit(1)
 
     @staticmethod
     def gt_installed() -> None:
@@ -374,7 +381,7 @@ class Ensure:
         approach to validating external tool availability before use.
 
         Raises:
-            SystemExit: If gt CLI is not found on PATH
+            UserFacingCliError: If gt CLI is not found on PATH
 
         Example:
             >>> Ensure.gt_installed()
@@ -382,13 +389,11 @@ class Ensure:
             >>> ctx.branch_manager.submit_branch(repo.root, branch)
         """
         if shutil.which("gt") is None:
-            user_output(
-                click.style("Error: ", fg="red")
-                + "Graphite CLI (gt) is not installed\n\n"
+            raise UserFacingCliError(
+                "Graphite CLI (gt) is not installed\n\n"
                 + "Install it from: https://withgraphite.com/docs/getting-started\n"
                 + "Or use: npm install -g @withgraphite/graphite-cli"
             )
-            raise SystemExit(1)
 
     @staticmethod
     def graphite_available(ctx: ErkContext) -> None:
@@ -404,7 +409,7 @@ class Ensure:
             ctx: Application context with graphite integration
 
         Raises:
-            SystemExit: If Graphite is disabled or not installed
+            UserFacingCliError: If Graphite is disabled or not installed
 
         Example:
             >>> Ensure.graphite_available(ctx)
@@ -413,8 +418,7 @@ class Ensure:
         """
         if isinstance(ctx.graphite, GraphiteDisabled):
             error = GraphiteDisabledError(ctx.graphite.reason)
-            user_output(click.style("Error: ", fg="red") + str(error))
-            raise SystemExit(1)
+            raise UserFacingCliError(str(error))
 
     @staticmethod
     def claude_installed() -> None:
@@ -424,7 +428,7 @@ class Ensure:
         approach to validating external tool availability before use.
 
         Raises:
-            SystemExit: If claude CLI is not found on PATH
+            UserFacingCliError: If claude CLI is not found on PATH
 
         Example:
             >>> Ensure.claude_installed()
@@ -432,13 +436,11 @@ class Ensure:
             >>> ctx.shell.run_claude_extraction_plan(cwd)
         """
         if shutil.which("claude") is None:
-            user_output(
-                click.style("Error: ", fg="red")
-                + "Claude CLI is not installed\n\n"
+            raise UserFacingCliError(
+                "Claude CLI is not installed\n\n"
                 + "Install it from: https://claude.ai/download\n"
                 + "Or skip extraction with: erk pr land --no-extract"
             )
-            raise SystemExit(1)
 
     @staticmethod
     def gt_authenticated(ctx: ErkContext) -> None:
@@ -451,7 +453,7 @@ class Ensure:
             ctx: Application context with graphite integration
 
         Raises:
-            SystemExit: If gt is not authenticated
+            UserFacingCliError: If gt is not authenticated
 
         Example:
             >>> Ensure.gt_authenticated(ctx)
@@ -461,13 +463,11 @@ class Ensure:
         is_authenticated, username, _ = ctx.graphite.check_auth_status()
 
         if not is_authenticated:
-            user_output(
-                click.style("Error: ", fg="red")
-                + "Graphite CLI (gt) is not authenticated\n\n"
+            raise UserFacingCliError(
+                "Graphite CLI (gt) is not authenticated\n\n"
                 + "Authenticate with: gt auth\n\n"
                 + "This is required before submitting branches or creating PRs."
             )
-            raise SystemExit(1)
 
     @staticmethod
     def gh_authenticated(ctx: ErkContext) -> None:
@@ -482,7 +482,7 @@ class Ensure:
             ctx: Application context with github integration
 
         Raises:
-            SystemExit: If gh is not installed or not authenticated
+            UserFacingCliError: If gh is not installed or not authenticated
 
         Example:
             >>> Ensure.gh_authenticated(ctx)
@@ -493,13 +493,11 @@ class Ensure:
         is_authenticated, username, _ = ctx.github.check_auth_status()
 
         if not is_authenticated:
-            user_output(
-                click.style("Error: ", fg="red")
-                + "GitHub CLI (gh) is not authenticated\n\n"
+            raise UserFacingCliError(
+                "GitHub CLI (gh) is not authenticated\n\n"
                 + "Authenticate with: gh auth login\n\n"
                 + "This is required before submitting branches or creating PRs."
             )
-            raise SystemExit(1)
 
     @staticmethod
     def branch_graphite_tracked_or_new(
@@ -545,9 +543,8 @@ class Ensure:
             return
 
         # Branch exists but is not tracked - error with remediation
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"Branch '{branch}' exists but is not tracked by Graphite.\n\n"
+        raise UserFacingCliError(
+            f"Branch '{branch}' exists but is not tracked by Graphite.\n\n"
             + "This branch was created outside of erk/Graphite workflow. To proceed, either:\n\n"
             + "  1. Track it manually:\n"
             + f"     gt track --parent {base_branch}\n\n"
@@ -556,4 +553,3 @@ class Ensure:
             + "  3. Disable Graphite for this repository:\n"
             + "     erk config set use_graphite false"
         )
-        raise SystemExit(1)

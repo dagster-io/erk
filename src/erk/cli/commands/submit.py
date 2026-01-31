@@ -20,7 +20,7 @@ from erk.cli.constants import (
     PLAN_HEADING_PREFIX,
 )
 from erk.cli.core import discover_repo_context
-from erk.cli.ensure import Ensure
+from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
@@ -464,7 +464,7 @@ def _create_branch_and_pr(
         repo.root, "origin", branch_name, set_upstream=True, force=False
     )
     if isinstance(push_result, PushError):
-        raise RuntimeError(push_result.message)
+        raise UserFacingCliError(push_result.message)
     user_output(click.style("✓", fg="green") + " Branch pushed to remote")
 
     # Create draft PR
@@ -593,7 +593,7 @@ def _submit_single_issue(
                 repo.root, "origin", branch_name, set_upstream=False, force=False
             )
             if isinstance(push_result, PushError):
-                raise RuntimeError(push_result.message)
+                raise UserFacingCliError(push_result.message)
             user_output(click.style("✓", fg="green") + " Placeholder commit pushed")
 
             # Now create the PR

@@ -17,6 +17,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.ensure import UserFacingCliError
 from erk_shared.context.helpers import require_git, require_repo_root, require_time
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.gateway.git.abc import Git
@@ -168,7 +169,7 @@ def _create_review_branch_impl(
     git.remote.fetch_branch(repo_root, "origin", "master")
     create_result = git.branch.create_branch(repo_root, branch_name, "origin/master", force=False)
     if isinstance(create_result, BranchAlreadyExists):
-        raise RuntimeError(create_result.message)
+        raise UserFacingCliError(create_result.message)
     git.branch.checkout_branch(repo_root, branch_name)
 
     # Write plan file at repo root
@@ -183,7 +184,7 @@ def _create_review_branch_impl(
         repo_root, "origin", branch_name, set_upstream=True, force=False
     )
     if isinstance(push_result, PushError):
-        raise RuntimeError(push_result.message)
+        raise UserFacingCliError(push_result.message)
 
     return PlanReviewBranchSuccess(
         success=True,

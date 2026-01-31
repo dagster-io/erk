@@ -212,17 +212,41 @@ This pattern is documented in PR #6304 but not yet merged to master.
 
 ## Consumer Pattern
 
-Always check the error case first:
+### CLI Layer Pattern
+
+For CLI commands consuming discriminated unions, use `UserFacingCliError`:
+
+```python
+from erk.cli.ensure import UserFacingCliError
+
+# Check error case first and raise UserFacingCliError
+push_result = ctx.git.remote.push_to_remote(repo.root, "origin", branch)
+if isinstance(push_result, PushError):
+    raise UserFacingCliError(push_result.message)
+
+# Type narrowing: push_result is now PushSuccess
+user_output(click.style("✓", fg="green") + " Branch pushed successfully")
+```
+
+**Why UserFacingCliError:**
+
+- Caught at CLI entry point (`main()`) with consistent error styling
+- Exits with code 1 automatically
+- One-line pattern: `raise UserFacingCliError(error.message)`
+- Replaces verbose two-line pattern: `user_output(error) + raise SystemExit(1)`
+
+### Library Layer Pattern
+
+For library code (non-CLI), check the error case and return or propagate:
 
 ```python
 result = generate_plan_for_step(executor, ...)
 
 if isinstance(result, PlanGenerationError):
-    click.echo(f"Error: {result.message}")
-    return 1
+    return result  # Propagate error to caller
 
 # Type narrowing: result is now GeneratedPlan
-click.echo(f"Created plan: {result.title}")
+return process_plan(result)
 ```
 
 ## Design Guidelines

@@ -9,6 +9,7 @@ from erk.cli.commands.land_cmd import (
     _cleanup_and_navigate,
     _ensure_branch_not_checked_out,
 )
+from erk.cli.ensure import UserFacingCliError
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
@@ -494,9 +495,9 @@ def test_cleanup_and_navigate_non_slot_worktree_fails_with_uncommitted_changes(
             skip_activation_output=False,
             cleanup_confirmed=True,
         )
-        pytest.fail("Expected SystemExit(1) for uncommitted changes")
-    except SystemExit as e:
-        assert e.code == 1
+        pytest.fail("Expected UserFacingCliError for uncommitted changes")
+    except UserFacingCliError:
+        pass  # Expected
 
     # Verify no checkout was attempted
     assert len(fake_git.checked_out_branches) == 0

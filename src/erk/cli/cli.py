@@ -221,4 +221,6 @@ def main() -> None:
     entry_id = log_command_start(get_cli_args(), Path.cwd())
     register_exit_handler(entry_id)
 
+    # UserFacingCliError extends click.ClickException, so Click handles it
+    # automatically — calling show() for styled output and sys.exit(1).
     cli()

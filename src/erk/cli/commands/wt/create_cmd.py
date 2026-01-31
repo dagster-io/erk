@@ -13,7 +13,7 @@ from erk.cli.activation import (
 )
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context, worktree_path_for
-from erk.cli.ensure import Ensure
+from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.cli.shell_utils import render_navigation_script
@@ -144,15 +144,14 @@ def ensure_worktree_for_branch(
         try:
             ctx.branch_manager.create_tracking_branch(repo.root, branch, remote_ref)
         except subprocess.CalledProcessError as e:
-            user_output(
-                f"Error: Failed to create local tracking branch from {remote_ref}\n"
+            raise UserFacingCliError(
+                f"Failed to create local tracking branch from {remote_ref}\n"
                 f"Details: {e.stderr}\n"
                 f"Suggested action:\n"
                 f"  1. Check git status and resolve any issues\n"
                 f"  2. Manually create branch: git branch --track {branch} {remote_ref}\n"
                 f"  3. Or use: erk wt create --branch {branch}"
-            )
-            raise SystemExit(1) from e
+            ) from e
 
     # Branch exists but not checked out - auto-create worktree
     user_output(f"Branch '{branch}' not checked out, creating worktree...")
@@ -183,8 +182,8 @@ def ensure_worktree_for_branch(
                 if wt.branch != branch:
                     # Detached HEAD: provide specific guidance
                     if wt.branch is None:
-                        user_output(
-                            f"Error: Worktree '{name}' is in detached HEAD state "
+                        raise UserFacingCliError(
+                            f"Worktree '{name}' is in detached HEAD state "
                             f"(possibly mid-rebase).\n\n"
                             f"Cannot create new worktree for branch '{branch}' with same name.\n\n"
                             f"Options:\n"
@@ -192,25 +191,22 @@ def ensure_worktree_for_branch(
                             f"  2. Complete or abort the rebase first, then try again\n"
                             f"  3. Use a different branch name"
                         )
-                        raise SystemExit(1) from None
                     # Different branch: existing error handling
-                    user_output(
-                        f"Error: Worktree '{name}' already exists "
+                    raise UserFacingCliError(
+                        f"Worktree '{name}' already exists "
                         f"with different branch '{wt.branch}'.\n"
                         f"Cannot create worktree for branch '{branch}' with same name.\n"
                         f"Options:\n"
                         f"  1. Switch to existing worktree: erk wt co {name}\n"
                         f"  2. Use a different branch name"
                     )
-                    raise SystemExit(1) from None
                 # Same branch - return existing path
                 return wt_path, False
         # Path exists but not in worktree list (shouldn't happen, but handle gracefully)
-        user_output(
-            f"Error: Directory '{wt_path}' exists but is not a git worktree.\n"
+        raise UserFacingCliError(
+            f"Directory '{wt_path}' exists but is not a git worktree.\n"
             f"Please remove or rename the directory and try again."
         )
-        raise SystemExit(1) from None
 
     # Create worktree from existing branch
     add_worktree(
@@ -283,22 +279,24 @@ def add_worktree(
     elif branch:
         # Check if branch name exists on remote origin (only when creating new branches)
         if not skip_remote_check:
+            remote_branches: list[str] | None = None
             try:
                 remote_branches = ctx.git.branch.list_remote_branches(repo_root)
-                remote_ref = f"origin/{branch}"
-
-                Ensure.invariant(
-                    remote_ref not in remote_branches,
-                    f"Branch '{branch}' already exists on remote 'origin'\n\n"
-                    "A branch with this name is already pushed to the remote repository.\n"
-                    "Please choose a different name for your new branch.",
-                )
             except Exception as e:
                 # Remote unavailable or other error - proceed with warning
                 user_output(
                     click.style("Warning: ", fg="yellow")
                     + f"Could not check remote branches: {e}\n"
                     + "Proceeding with branch creation..."
+                )
+
+            if remote_branches is not None:
+                remote_ref = f"origin/{branch}"
+                Ensure.invariant(
+                    remote_ref not in remote_branches,
+                    f"Branch '{branch}' already exists on remote 'origin'\n\n"
+                    "A branch with this name is already pushed to the remote repository.\n"
+                    "Please choose a different name for your new branch.",
                 )
 
         if use_graphite:

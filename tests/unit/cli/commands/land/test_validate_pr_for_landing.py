@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from erk.cli.commands.land_cmd import LandTarget, _validate_pr_for_landing
+from erk.cli.ensure import UserFacingCliError
 from erk.core.context import context_for_test
 from erk_shared.context.types import RepoContext
 from erk_shared.gateway.console.fake import FakeConsole
@@ -85,10 +86,8 @@ class TestValidatePrForLandingPrState:
 
         repo = create_test_repo_context(tmp_path)
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(UserFacingCliError):
             _validate_pr_for_landing(ctx, repo=repo, target=target, force=False, script=False)
-
-        assert exc_info.value.code == 1
 
     def test_fails_if_pr_closed(self, tmp_path: Path) -> None:
         """Test that _validate_pr_for_landing fails if PR is closed."""
@@ -121,10 +120,8 @@ class TestValidatePrForLandingPrState:
 
         repo = create_test_repo_context(tmp_path)
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(UserFacingCliError):
             _validate_pr_for_landing(ctx, repo=repo, target=target, force=False, script=False)
-
-        assert exc_info.value.code == 1
 
 
 class TestValidatePrForLandingBaseRef:
@@ -161,10 +158,8 @@ class TestValidatePrForLandingBaseRef:
 
         repo = create_test_repo_context(tmp_path)
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(UserFacingCliError):
             _validate_pr_for_landing(ctx, repo=repo, target=target, force=False, script=False)
-
-        assert exc_info.value.code == 1
 
     def test_skips_base_check_for_graphite_mode(self, tmp_path: Path) -> None:
         """Test that base-is-trunk check is skipped when use_graphite=True.
@@ -253,10 +248,8 @@ class TestValidatePrForLandingCleanWorkingTree:
 
         repo = create_test_repo_context(tmp_path)
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(UserFacingCliError):
             _validate_pr_for_landing(ctx, repo=repo, target=target, force=False, script=False)
-
-        assert exc_info.value.code == 1
 
     def test_skips_clean_check_for_non_current_branch(self, tmp_path: Path) -> None:
         """Test that clean working tree check is skipped when not current branch."""
