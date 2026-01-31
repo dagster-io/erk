@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from erk_shared.gateway.branch_manager.types import PrInfo
+from erk_shared.gateway.branch_manager.types import PrInfo, SubmitBranchError, SubmitBranchResult
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 
 
@@ -73,7 +73,7 @@ class BranchManager(ABC):
         ...
 
     @abstractmethod
-    def submit_branch(self, repo_root: Path, branch: str) -> None:
+    def submit_branch(self, repo_root: Path, branch: str) -> SubmitBranchResult | SubmitBranchError:
         """Submit a branch to remote.
 
         For Graphite: Uses `gt submit --force --quiet` to submit the stack.
@@ -82,6 +82,9 @@ class BranchManager(ABC):
         Args:
             repo_root: Repository root directory
             branch: Branch name to submit
+
+        Returns:
+            SubmitBranchResult on success, SubmitBranchError on failure.
         """
         ...
 

@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from erk_shared.gateway.branch_manager.abc import BranchManager
-from erk_shared.gateway.branch_manager.types import PrInfo
+from erk_shared.gateway.branch_manager.types import PrInfo, SubmitBranchError, SubmitBranchResult
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 
 
@@ -36,6 +36,8 @@ class FakeBranchManager(BranchManager):
     _deleted_branches: list[tuple[str, bool]] = field(default_factory=list)
     # Track submitted branches for assertions
     _submitted_branches: list[str] = field(default_factory=list)
+    # If set, submit_branch returns this error instead of SubmitBranchResult
+    _submit_branch_error: SubmitBranchError | None = None
     # Track tracked branches for assertions: list of (branch_name, parent_branch) tuples
     _tracked_branches: list[tuple[str, str]] = field(default_factory=list)
     # Track commits for assertions: list of commit messages
@@ -95,7 +97,7 @@ class FakeBranchManager(BranchManager):
         """
         self._deleted_branches.append((branch, force))
 
-    def submit_branch(self, repo_root: Path, branch: str) -> None:
+    def submit_branch(self, repo_root: Path, branch: str) -> SubmitBranchResult | SubmitBranchError:
         """Record branch submission in tracked list.
 
         Note: This mutates internal state despite the frozen dataclass.
@@ -105,8 +107,14 @@ class FakeBranchManager(BranchManager):
         Args:
             repo_root: Repository root directory (unused in fake)
             branch: Branch name to submit
+
+        Returns:
+            SubmitBranchResult on success, or _submit_branch_error if configured.
         """
+        if self._submit_branch_error is not None:
+            return self._submit_branch_error
         self._submitted_branches.append(branch)
+        return SubmitBranchResult()
 
     def commit(self, repo_root: Path, message: str) -> None:
         """Record commit in tracked list.

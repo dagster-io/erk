@@ -7,6 +7,7 @@ then submits via Graphite or git push. Returns the PR URL for easy access.
 from collections.abc import Generator
 from pathlib import Path
 
+from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
@@ -85,15 +86,14 @@ def execute_quick_submit(
     else:
         yield ProgressEvent("Pushing to remote...")
 
-    try:
-        ops.branch_manager.submit_branch(repo_root, current_branch)
-    except Exception as e:
+    submit_result = ops.branch_manager.submit_branch(repo_root, current_branch)
+    if isinstance(submit_result, SubmitBranchError):
         error_verb = "submit" if ops.branch_manager.is_graphite_managed() else "push"
         yield CompletionEvent(
             QuickSubmitError(
                 success=False,
                 error_type="submit-failed",
-                message=f"Failed to {error_verb}: {e}",
+                message=f"Failed to {error_verb}: {submit_result.message}",
             )
         )
         return

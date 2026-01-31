@@ -20,6 +20,7 @@ from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.github.types import PRNotFound
 
 
@@ -169,8 +170,14 @@ def pr_checkout(
             ctx.console.info("Tracking branch with Graphite...")
             ctx.branch_manager.track_branch(worktree_path, branch_name, pr.base_ref_name)
             ctx.console.info("Submitting to link with Graphite...")
-            ctx.branch_manager.submit_branch(worktree_path, branch_name)
-            ctx.console.info(click.style("✓", fg="green") + " Branch linked with Graphite")
+            submit_result = ctx.branch_manager.submit_branch(worktree_path, branch_name)
+            if isinstance(submit_result, SubmitBranchError):
+                ctx.console.info(
+                    click.style("Warning: ", fg="yellow")
+                    + f"Failed to link with Graphite: {submit_result.message}"
+                )
+            else:
+                ctx.console.info(click.style("✓", fg="green") + " Branch linked with Graphite")
 
     # Navigate and display checkout result
     navigate_and_display_checkout(

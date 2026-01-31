@@ -504,9 +504,9 @@ def test_pr_sync_handles_submit_failure_gracefully(tmp_path: Path) -> None:
 
         result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
-        # Submit failure should fail the command
+        # Submit failure should fail the command with ClickException
         assert result.exit_code == 1
-        assert "network error" in str(result.exception)
+        assert "network error" in result.output
 
 
 def test_pr_sync_squash_raises_unexpected_error(tmp_path: Path) -> None:

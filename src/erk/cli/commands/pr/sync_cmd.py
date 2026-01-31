@@ -34,6 +34,7 @@ import click
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.events import CompletionEvent
@@ -321,7 +322,9 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     # Step 8: Submit to link with Graphite
     # Force push is required because squashing rewrites history, causing divergence from remote
     user_output("Submitting to link with Graphite...")
-    ctx.branch_manager.submit_branch(repo.root, current_branch)
+    submit_result = ctx.branch_manager.submit_branch(repo.root, current_branch)
+    if isinstance(submit_result, SubmitBranchError):
+        raise click.ClickException(f"Failed to submit to Graphite: {submit_result.message}")
     user_output(click.style("✓", fg="green") + f" PR #{pr_number} synchronized with Graphite")
 
     user_output(f"\nBranch '{current_branch}' is now tracked by Graphite.")
