@@ -28,6 +28,7 @@ Actually — `WorktreeAdded` and `WorktreeRemoved` are empty dataclasses with ze
 **`real.py`:** Remove the try/except around `run_subprocess_with_context` — let `RuntimeError` propagate naturally. Remove imports of deleted types.
 
 **`fake.py`:**
+
 - Change `add_worktree_error: WorktreeAddError | None` constructor param → `add_worktree_error: str | None` (the error message to raise as RuntimeError)
 - Change `remove_worktree_error: WorktreeRemoveError | None` → `remove_worktree_error: str | None`
 - When error is set, `raise RuntimeError(self._add_worktree_error)` instead of returning error type
@@ -42,27 +43,35 @@ Actually — `WorktreeAdded` and `WorktreeRemoved` are empty dataclasses with ze
 Every callsite currently does `isinstance(result, WorktreeAddError)` then raises. Replace with letting the exception bubble. The callers are:
 
 **`src/erk/cli/commands/checkout_helpers.py:200`**
+
 - Remove isinstance check, let RuntimeError from `add_worktree()` propagate
 
 **`src/erk/cli/commands/wt/create_cmd.py:272,334,341,348`**
+
 - Remove all isinstance checks around `add_worktree()` calls
 
 **`src/erk/cli/commands/stack/consolidate_cmd.py:117,329`**
+
 - Remove isinstance check for `WorktreeRemoveError` and `WorktreeAddError`
 
 **`src/erk/cli/commands/slot/common.py:555,570`**
+
 - Remove isinstance checks
 
 **`src/erk/cli/commands/stack/move_cmd.py:153`**
+
 - Remove isinstance check
 
 **`src/erk/cli/commands/stack/split_old/plan.py:215`**
+
 - Remove isinstance check
 
 **`src/erk/cli/commands/slot/init_pool_cmd.py:129`**
+
 - This one uses `continue` on error (keeps initializing remaining slots). Wrap in try/except RuntimeError with `user_output` + `continue`.
 
 **`src/erk/cli/commands/navigation_helpers.py:182,312`**
+
 - Remove isinstance checks
 
 ### 5. Add RuntimeError handling at CLI boundary
@@ -74,6 +83,7 @@ The callsites currently convert errors to `click.ClickException`, `UserFacingCli
 Alternatively, most callers already sit inside Click commands where `UserFacingCliError` would bubble to Click's handler. We could wrap the worktree calls in a thin helper, but that's over-engineering. The cleanest approach: just let `RuntimeError` propagate and rely on Click's default exception display, OR wrap at each callsite with a one-line try/except converting to `UserFacingCliError`.
 
 **Recommended:** Wrap at each direct callsite since the error messages from `run_subprocess_with_context` are already user-readable. Use:
+
 ```python
 try:
     ctx.git.worktree.add_worktree(...)
