@@ -10,7 +10,6 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.git.worktree.types import WorktreeRemoveError
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -223,7 +222,7 @@ def test_consolidate_worktree_remove_error() -> None:
         current_path = repo_dir / "worktrees" / "feature-b"
         current_path.mkdir(parents=True)
 
-        error = WorktreeRemoveError(message="worktree is locked")
+        error = "worktree is locked"
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -274,9 +273,7 @@ def test_consolidate_worktree_remove_error() -> None:
             cwd=current_path,
         )
 
-        result = runner.invoke(
-            cli, ["stack", "consolidate", "-f"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["stack", "consolidate", "-f"], obj=test_ctx)
 
         assert result.exit_code == 1
         assert "worktree is locked" in result.output

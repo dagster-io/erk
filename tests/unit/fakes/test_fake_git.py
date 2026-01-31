@@ -6,15 +6,11 @@ tracks mutations, and provides reliable test doubles for CLI tests.
 
 from pathlib import Path
 
+import pytest
+
 from erk_shared.gateway.git.abc import BranchDivergence, WorktreeInfo
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.git.worktree.types import (
-    WorktreeAdded,
-    WorktreeAddError,
-    WorktreeRemoved,
-    WorktreeRemoveError,
-)
 
 
 def test_fake_gitops_list_worktrees() -> None:
@@ -71,8 +67,7 @@ def test_fake_gitops_remove_worktree() -> None:
         }
     )
 
-    result = git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
-    assert isinstance(result, WorktreeRemoved)
+    git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
 
     worktrees = git_ops.worktree.list_worktrees(repo_root)
     assert len(worktrees) == 0
@@ -345,21 +340,18 @@ def test_fake_gitops_removed_worktrees_tracking() -> None:
         }
     )
 
-    result1 = git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
-    result2 = git_ops.worktree.remove_worktree(repo_root, wt2, force=False)
+    git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
+    git_ops.worktree.remove_worktree(repo_root, wt2, force=False)
 
-    assert isinstance(result1, WorktreeRemoved)
-    assert isinstance(result2, WorktreeRemoved)
     assert wt1 in git_ops.removed_worktrees
     assert wt2 in git_ops.removed_worktrees
     assert len(git_ops.removed_worktrees) == 2
 
 
 def test_fake_gitops_remove_worktree_error_injection() -> None:
-    """Test that FakeGit can inject remove_worktree errors."""
+    """Test that FakeGit raises RuntimeError when remove_worktree_error is configured."""
     repo_root = Path("/repo")
     wt1 = Path("/repo/wt1")
-    error = WorktreeRemoveError(message="Failed to remove worktree")
 
     git_ops = FakeGit(
         worktrees={
@@ -367,13 +359,11 @@ def test_fake_gitops_remove_worktree_error_injection() -> None:
                 WorktreeInfo(path=wt1, branch="feature-1"),
             ]
         },
-        remove_worktree_error=error,
+        remove_worktree_error="Failed to remove worktree",
     )
 
-    result = git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
-    assert isinstance(result, WorktreeRemoveError)
-    assert result.message == "Failed to remove worktree"
-    assert result.error_type == "worktree-remove-failed"
+    with pytest.raises(RuntimeError, match="Failed to remove worktree"):
+        git_ops.worktree.remove_worktree(repo_root, wt1, force=False)
 
     # Worktree should not have been removed
     worktrees = git_ops.worktree.list_worktrees(repo_root)
@@ -580,32 +570,31 @@ def test_fake_create_branch_returns_error_when_configured() -> None:
     assert result.error_type == "branch-already-exists"
 
 
-def test_fake_add_worktree_returns_worktree_added(tmp_path: Path) -> None:
-    """Test that FakeWorktree.add_worktree returns WorktreeAdded on success."""
+def test_fake_add_worktree_succeeds(tmp_path: Path) -> None:
+    """Test that FakeWorktree.add_worktree succeeds without error."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     git_ops = FakeGit()
 
     new_wt = repo_root / "new-wt"
-    result = git_ops.worktree.add_worktree(
+    git_ops.worktree.add_worktree(
         repo_root, new_wt, branch="new-branch", ref=None, create_branch=True
     )
 
-    assert isinstance(result, WorktreeAdded)
+    # Verify worktree was added
+    worktrees = git_ops.worktree.list_worktrees(repo_root)
+    assert len(worktrees) == 1
+    assert worktrees[0].branch == "new-branch"
 
 
-def test_fake_add_worktree_returns_error_when_configured(tmp_path: Path) -> None:
-    """Test that FakeWorktree.add_worktree returns WorktreeAddError when configured."""
+def test_fake_add_worktree_raises_when_error_configured(tmp_path: Path) -> None:
+    """Test that FakeWorktree.add_worktree raises RuntimeError when configured."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
-    error = WorktreeAddError(message="worktree add failed: path already exists")
-    git_ops = FakeGit(add_worktree_error=error)
+    git_ops = FakeGit(add_worktree_error="worktree add failed: path already exists")
 
     new_wt = repo_root / "new-wt"
-    result = git_ops.worktree.add_worktree(
-        repo_root, new_wt, branch="new-branch", ref=None, create_branch=True
-    )
-
-    assert isinstance(result, WorktreeAddError)
-    assert result.error_type == "worktree-add-failed"
-    assert "path already exists" in result.message
+    with pytest.raises(RuntimeError, match="path already exists"):
+        git_ops.worktree.add_worktree(
+            repo_root, new_wt, branch="new-branch", ref=None, create_branch=True
+        )

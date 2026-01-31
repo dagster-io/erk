@@ -21,7 +21,6 @@ from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
-from erk_shared.gateway.git.worktree.types import WorktreeAddError
 from erk_shared.impl_folder import create_impl_folder, get_impl_path, save_issue_reference
 from erk_shared.issue_workflow import (
     IssueBranchSetup,
@@ -266,12 +265,7 @@ def add_worktree(
             f"  • Switch to that worktree: erk br co {branch}",
         )
 
-        wt_result = ctx.git.worktree.add_worktree(
-            repo_root, path, branch=branch, ref=None, create_branch=False
-        )
-        if isinstance(wt_result, WorktreeAddError):
-            user_output(f"Error adding worktree: {wt_result.message}")
-            raise SystemExit(1) from None
+        ctx.git.worktree.add_worktree(repo_root, path, branch=branch, ref=None, create_branch=False)
 
         # Pre-flight check: error if existing branch is not Graphite-tracked
         if use_graphite and ref:
@@ -328,26 +322,15 @@ def add_worktree(
                 ],
             )
             ctx.branch_manager.checkout_branch(cwd, original_branch)
-            wt_result = ctx.git.worktree.add_worktree(
+            ctx.git.worktree.add_worktree(
                 repo_root, path, branch=branch, ref=None, create_branch=False
             )
-            if isinstance(wt_result, WorktreeAddError):
-                user_output(f"Error adding worktree: {wt_result.message}")
-                raise SystemExit(1) from None
         else:
-            wt_result = ctx.git.worktree.add_worktree(
+            ctx.git.worktree.add_worktree(
                 repo_root, path, branch=branch, ref=ref, create_branch=True
             )
-            if isinstance(wt_result, WorktreeAddError):
-                user_output(f"Error adding worktree: {wt_result.message}")
-                raise SystemExit(1) from None
     else:
-        wt_result = ctx.git.worktree.add_worktree(
-            repo_root, path, branch=None, ref=ref, create_branch=False
-        )
-        if isinstance(wt_result, WorktreeAddError):
-            user_output(f"Error adding worktree: {wt_result.message}")
-            raise SystemExit(1) from None
+        ctx.git.worktree.add_worktree(repo_root, path, branch=None, ref=ref, create_branch=False)
 
 
 def make_env_content(

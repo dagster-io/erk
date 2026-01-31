@@ -39,7 +39,6 @@ from erk_shared.gateway.git.tag_ops.abc import GitTagOps
 from erk_shared.gateway.git.tag_ops.fake import FakeGitTagOps
 from erk_shared.gateway.git.worktree.abc import Worktree
 from erk_shared.gateway.git.worktree.fake import FakeWorktree
-from erk_shared.gateway.git.worktree.types import WorktreeAddError, WorktreeRemoveError
 
 
 class PushedBranch(NamedTuple):
@@ -160,8 +159,8 @@ class FakeGit(Git):
         pull_rebase_error: PullRebaseError | None = None,
         merge_bases: dict[tuple[str, str], str] | None = None,
         create_branch_error: BranchAlreadyExists | None = None,
-        add_worktree_error: WorktreeAddError | None = None,
-        remove_worktree_error: WorktreeRemoveError | None = None,
+        add_worktree_error: str | None = None,
+        remove_worktree_error: str | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -220,9 +219,8 @@ class FakeGit(Git):
                 get_merge_base(). Keys are ordered pairs, so (A, B) and (B, A)
                 are both checked.
             create_branch_error: BranchAlreadyExists to return from create_branch()
-            add_worktree_error: WorktreeAddError to return from add_worktree()
-            remove_worktree_error: WorktreeRemoveError to return from remove_worktree()
-                for error injection
+            add_worktree_error: Error message to raise as RuntimeError from add_worktree()
+            remove_worktree_error: Error message to raise as RuntimeError from remove_worktree()
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}

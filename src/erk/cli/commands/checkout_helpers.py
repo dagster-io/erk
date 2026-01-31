@@ -20,7 +20,6 @@ from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.core import worktree_path_for
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.git.worktree.types import WorktreeAddError
 from erk_shared.output.output import user_output
 
 
@@ -190,15 +189,13 @@ def ensure_branch_has_worktree(
     # Create worktree (with or without slot)
     if no_slot:
         worktree_path = worktree_path_for(repo.worktrees_dir, branch_name)
-        wt_result = ctx.git.worktree.add_worktree(
+        ctx.git.worktree.add_worktree(
             repo.root,
             worktree_path,
             branch=branch_name,
             ref=None,
             create_branch=False,
         )
-        if isinstance(wt_result, WorktreeAddError):
-            raise click.ClickException(wt_result.message)
     else:
         result = allocate_slot_for_branch(
             ctx,

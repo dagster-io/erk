@@ -9,12 +9,6 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.worktree.abc import Worktree
-from erk_shared.gateway.git.worktree.types import (
-    WorktreeAdded,
-    WorktreeAddError,
-    WorktreeRemoved,
-    WorktreeRemoveError,
-)
 
 
 class FakeWorktree(Worktree):
@@ -46,8 +40,8 @@ class FakeWorktree(Worktree):
         worktrees: dict[Path, list[WorktreeInfo]] | None = None,
         existing_paths: set[Path] | None = None,
         dirty_worktrees: set[Path] | None = None,
-        add_worktree_error: WorktreeAddError | None = None,
-        remove_worktree_error: WorktreeRemoveError | None = None,
+        add_worktree_error: str | None = None,
+        remove_worktree_error: str | None = None,
     ) -> None:
         """Create FakeWorktree with pre-configured state.
 
@@ -55,8 +49,8 @@ class FakeWorktree(Worktree):
             worktrees: Mapping of repo_root -> list of worktrees
             existing_paths: Set of paths that should be treated as existing (for pure mode)
             dirty_worktrees: Set of worktree paths that have uncommitted/staged/untracked changes
-            add_worktree_error: If set, add_worktree returns this error instead of WorktreeAdded
-            remove_worktree_error: Error to return from remove_worktree() for error injection
+            add_worktree_error: If set, add_worktree raises RuntimeError with this message
+            remove_worktree_error: Error message to raise from remove_worktree() for error injection
         """
         # Use `is None` checks instead of `or` to preserve empty collections
         # Empty set is falsy, so `set() or set()` creates a new set!
@@ -102,13 +96,13 @@ class FakeWorktree(Worktree):
         branch: str | None,
         ref: str | None,
         create_branch: bool,
-    ) -> WorktreeAdded | WorktreeAddError:
+    ) -> None:
         """Add a new worktree (mutates internal state and creates directory).
 
-        Returns add_worktree_error if configured, otherwise WorktreeAdded.
+        Raises RuntimeError if add_worktree_error is configured.
         """
         if self._add_worktree_error is not None:
-            return self._add_worktree_error
+            raise RuntimeError(self._add_worktree_error)
         if repo_root not in self._worktrees:
             self._worktrees[repo_root] = []
         # New worktrees are never the root worktree
@@ -119,7 +113,6 @@ class FakeWorktree(Worktree):
         self._existing_paths.add(path)
         # Track the addition
         self._added_worktrees.append((path, branch))
-        return WorktreeAdded()
 
     def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
         """Move a worktree (mutates internal state and simulates filesystem move)."""
@@ -135,13 +128,11 @@ class FakeWorktree(Worktree):
             self._existing_paths.discard(old_path)
             self._existing_paths.add(new_path)
 
-    def remove_worktree(
-        self, repo_root: Path, path: Path, *, force: bool
-    ) -> WorktreeRemoved | WorktreeRemoveError:
+    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
         """Remove a worktree (mutates internal state)."""
         # Check for error injection first
         if self._remove_worktree_error is not None:
-            return self._remove_worktree_error
+            raise RuntimeError(self._remove_worktree_error)
 
         if repo_root in self._worktrees:
             self._worktrees[repo_root] = [
@@ -151,8 +142,6 @@ class FakeWorktree(Worktree):
         self._removed_worktrees.append(path)
         # Remove from existing_paths so path_exists() returns False after deletion
         self._existing_paths.discard(path)
-
-        return WorktreeRemoved()
 
     def prune_worktrees(self, repo_root: Path) -> None:
         """Prune stale worktree metadata (no-op for in-memory fake)."""
