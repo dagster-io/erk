@@ -21,6 +21,7 @@
 - **[exec-script-patterns.md](exec-script-patterns.md)** — Creating new exec CLI commands
 - **[fast-path-pattern.md](fast-path-pattern.md)** — implementing CLI commands that can skip expensive operations, adding fast path optimization to existing commands, understanding when to invoke Claude vs complete locally
 - **[json-schema.md](json-schema.md)** — adding --json flag to CLI commands, parsing JSON output from erk commands, implementing kit CLI commands with JSON output
+- **[learn-plan-land-flow.md](learn-plan-land-flow.md)** — landing PRs associated with learn plans, understanding learn plan status transitions, working with tripwire documentation promotion
 - **[list-formatting.md](list-formatting.md)** — formatting list output, designing list commands, ensuring consistent list display
 - **[local-commands.md](local-commands.md)** — designing local commands, understanding local command taxonomy, creating audit or assessment commands
 - **[local-remote-command-groups.md](local-remote-command-groups.md)** — creating commands with local and remote variants, using invoke_without_command=True pattern, migrating separate commands to a unified group

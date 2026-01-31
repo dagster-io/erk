@@ -191,6 +191,205 @@ When changing an existing gateway method's return type (e.g., converting from ex
 
 **Critical**: Incomplete migrations break type safety. Use grep to find all call sites before starting.
 
+## Canonical Examples: Worktree Gateway Conversions
+
+The worktree sub-gateway provides concrete examples of discriminated union conversions following the NonIdealState protocol pattern.
+
+### add_worktree: None → WorktreeAdded | WorktreeAddError
+
+**Before** (exception-based):
+
+```python
+# abc.py
+@abstractmethod
+def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> None:
+    """Add a new worktree. Raises WorktreeAddError on failure."""
+```
+
+**After** (discriminated union):
+
+```python
+# types.py - Define success and error types
+@dataclass(frozen=True)
+class WorktreeAdded:
+    """Success result from adding a worktree."""
+    path: Path
+    branch: str
+
+@dataclass(frozen=True)
+class WorktreeAddError:
+    """Error result from adding a worktree. Implements NonIdealState."""
+    path: Path
+    branch: str
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "worktree-add-failed"
+
+# abc.py - Update signature
+@abstractmethod
+def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> WorktreeAdded | WorktreeAddError:
+    """Add a new worktree. Returns WorktreeAdded on success, WorktreeAddError on failure."""
+```
+
+**5-Place Implementation**:
+
+| File           | Update                                                                         |
+| -------------- | ------------------------------------------------------------------------------ |
+| `types.py`     | Define `WorktreeAdded` and `WorktreeAddError` dataclasses                      |
+| `abc.py`       | Update abstract method signature to return union                               |
+| `real.py`      | Parse subprocess errors, return `WorktreeAddError` for failures                |
+| `fake.py`      | Add `add_worktree_error: WorktreeAddError \| None` parameter, check first      |
+| `dry_run.py`   | Return `WorktreeAdded` (no-op)                                                 |
+| `printing.py`  | Update signature to return union                                               |
+| **Call sites** | Replace try/except with `isinstance(result, WorktreeAddError)`                 |
+| **Tests**      | Update to check `isinstance(result, WorktreeAddError)` instead of catching exc |
+
+**Fake implementation pattern**:
+
+```python
+# fake.py
+class FakeGitWorktree(GitWorktree):
+    def __init__(
+        self,
+        *,
+        add_worktree_error: WorktreeAddError | None = None,
+    ) -> None:
+        self._add_worktree_error = add_worktree_error
+
+    def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> WorktreeAdded | WorktreeAddError:
+        # Check injected error FIRST (before any success logic)
+        if self._add_worktree_error is not None:
+            return self._add_worktree_error
+
+        # Success path
+        return WorktreeAdded(path=path, branch=branch)
+```
+
+**Call site migration** (18 call sites throughout codebase):
+
+```python
+# Before
+try:
+    ops.git_worktree.add_worktree(repo_root=root, path=wt_path, branch=branch)
+except WorktreeAddError as e:
+    return SetupError(error_type="worktree-creation-failed", message=str(e))
+
+# After
+result = ops.git_worktree.add_worktree(repo_root=root, path=wt_path, branch=branch)
+if isinstance(result, WorktreeAddError):
+    return SetupError(
+        error_type="worktree-creation-failed",
+        message=f"Failed to create worktree at {wt_path}\n\n{result.message}",
+    )
+# Type narrowing: result is now WorktreeAdded
+```
+
+**Reference PR**: #6350 (add_worktree conversion)
+
+### remove_worktree: None → WorktreeRemoved | WorktreeRemoveError
+
+**Before** (exception-based):
+
+```python
+@abstractmethod
+def remove_worktree(self, *, repo_root: Path, path: Path) -> None:
+    """Remove a worktree. Raises WorktreeRemoveError on failure."""
+```
+
+**After** (discriminated union with mixed exception handling):
+
+```python
+# types.py
+@dataclass(frozen=True)
+class WorktreeRemoved:
+    """Success result from removing a worktree."""
+    path: Path
+
+@dataclass(frozen=True)
+class WorktreeRemoveError:
+    """Error result from removing a worktree. Implements NonIdealState."""
+    path: Path
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "worktree-remove-failed"
+
+# abc.py
+@abstractmethod
+def remove_worktree(self, *, repo_root: Path, path: Path) -> WorktreeRemoved | WorktreeRemoveError:
+    """Remove a worktree. Returns WorktreeRemoved on success, WorktreeRemoveError on failure.
+
+    Note: Cleanup operations like 'git worktree prune' may still raise exceptions
+    if they fail, as this indicates corrupted repository state.
+    """
+```
+
+**Key pattern**: Main operation returns discriminated union, but cleanup operations (like `git worktree prune`) remain exception-based because their failure indicates corrupted state. See [gateway-specific-patterns.md](gateway-specific-patterns.md) for details.
+
+**LBYL violation fix**: Before this conversion, `delete_cmd.py:150-168` used `_remove_worktree_safe()` wrapper:
+
+```python
+# Before (LBYL violation)
+def _remove_worktree_safe(ops: Operations, repo_root: Path, path: Path) -> None:
+    """Remove worktree, catching errors."""
+    try:
+        ops.git_worktree.remove_worktree(repo_root=repo_root, path=path)
+    except WorktreeRemoveError:
+        pass  # Ignore errors
+```
+
+The discriminated union pattern eliminates the need for try/except wrappers - callers can use `isinstance()` checks instead:
+
+```python
+# After (LBYL-compliant)
+result = ops.git_worktree.remove_worktree(repo_root=root, path=wt_path)
+if isinstance(result, WorktreeRemoveError):
+    click.echo(f"Warning: Failed to remove worktree: {result.message}", err=True)
+```
+
+**Call sites**: 12 total (4 production, 8 test)
+
+**Reference PR**: #6346 (remove_worktree conversion)
+
+### File Paths for Worktree Gateway
+
+All implementations are in the worktree sub-gateway:
+
+```
+packages/erk-shared/src/erk_shared/gateway/git/worktree/
+├── abc.py         # GitWorktree ABC with abstract methods
+├── types.py       # WorktreeAdded, WorktreeAddError, WorktreeRemoved, WorktreeRemoveError
+├── real.py        # Subprocess-based implementation
+├── fake.py        # Test double with error injection
+├── dry_run.py     # No-op wrapper returning success types
+└── printing.py    # Verbose output wrapper
+```
+
+### NonIdealState Protocol Pattern
+
+All error types implement the `NonIdealState` protocol from `remote_ops/types.py`:
+
+```python
+class NonIdealState(Protocol):
+    @property
+    def error_type(self) -> str:
+        """Machine-readable error classification."""
+        ...
+```
+
+This enables:
+
+- Consistent error handling across gateways
+- Type-safe error classification
+- CLI output formatting from discriminated unions
+
+### Cross-Reference
+
+See [discriminated-union-error-handling.md](discriminated-union-error-handling.md) for complete examples of WorktreeAdded/WorktreeAddError and BranchCreated/BranchCreateError patterns with call site examples.
+
 ## Read-Only vs Mutation Methods
 
 ### Read-Only Methods
