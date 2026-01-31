@@ -13,15 +13,13 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
-from erk_shared.gateway.github.metadata.plan_header import (
-    format_plan_content_comment,
-    format_plan_header_body,
-)
+from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
-from tests.test_utils.env_helpers import erk_isolated_fs_env
+from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def test_pr_summarize_fails_when_claude_not_available() -> None:
@@ -350,47 +348,12 @@ def _make_issue_info(
     )
 
 
-def _make_plan_issue_body(
-    *,
-    plan_comment_id: int,
-    objective_issue: int | None,
-) -> str:
-    """Create a plan issue body with standard defaults."""
-    return format_plan_header_body(
-        created_at="2024-01-01T00:00:00Z",
-        created_by="testuser",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=plan_comment_id,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id=None,
-        source_repo=None,
-        objective_issue=objective_issue,
-        created_from_session=None,
-        created_from_workflow_run_url=None,
-        last_learn_session=None,
-        last_learn_at=None,
-        learn_status=None,
-        learn_plan_issue=None,
-        learn_plan_pr=None,
-        learned_from_issue=None,
-    )
-
-
 def _make_summarize_fakes(
-    env,
+    env: ErkIsolatedFsEnv,
     *,
     branch_name: str,
     fake_github_issues: FakeGitHubIssues,
-):
+) -> tuple[FakeGit, FakeGraphite, FakeGitHub, FakeClaudeExecutor]:
     """Create standard fakes for summarize plan context tests."""
     git = FakeGit(
         git_common_dirs={env.cwd: env.git_dir},
