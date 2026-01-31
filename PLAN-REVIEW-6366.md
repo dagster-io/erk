@@ -2,7 +2,7 @@
 
 ## Rationale
 
-`WorktreeAddError` and `WorktreeRemoveError` are structureless wrappers around an opaque `message: str`. No caller inspects `error_type` or branches on message content — they all just extract the string and convert to a CLI error. These don't model meaningful domain states (contrast with `PRNotFound` which has a `pr_number`, or `BranchAlreadyExists` which has a `branch_name`). They should just be exceptions that bubble to the CLI boundary.
+These operations use exceptions that bubble to a top-level CLI handler. The error types (`WorktreeAddError`, `WorktreeRemoveError`) are structureless `message: str` wrappers with no domain-meaningful variants — they should be `RuntimeError` exceptions caught at the CLI boundary.
 
 ## Changes
 
@@ -40,19 +40,17 @@ Actually — `WorktreeAdded` and `WorktreeRemoved` are empty dataclasses with ze
 
 ### 4. Update all callsites
 
-Every callsite currently does `isinstance(result, WorktreeAddError)` then raises. Replace with letting the exception bubble. The callers are:
+Every callsite currently does `isinstance(result, WorktreeAddError)` then raises. Remove these isinstance checks and let `RuntimeError` propagate to the top-level handler. The callers are:
 
 **`src/erk/cli/commands/checkout_helpers.py:200`**
-
-- Remove isinstance check, let RuntimeError from `add_worktree()` propagate
+- Remove isinstance check, remove error import
 
 **`src/erk/cli/commands/wt/create_cmd.py:272,334,341,348`**
 
 - Remove all isinstance checks around `add_worktree()` calls
 
 **`src/erk/cli/commands/stack/consolidate_cmd.py:117,329`**
-
-- Remove isinstance check for `WorktreeRemoveError` and `WorktreeAddError`
+- Remove isinstance checks for `WorktreeRemoveError` and `WorktreeAddError`
 
 **`src/erk/cli/commands/slot/common.py:555,570`**
 
@@ -67,31 +65,17 @@ Every callsite currently does `isinstance(result, WorktreeAddError)` then raises
 - Remove isinstance check
 
 **`src/erk/cli/commands/slot/init_pool_cmd.py:129`**
-
-- This one uses `continue` on error (keeps initializing remaining slots). Wrap in try/except RuntimeError with `user_output` + `continue`.
+- **Exception:** This callsite uses `continue` on error (keeps initializing remaining slots). Wrap in `try/except RuntimeError` with `user_output` + `continue`.
 
 **`src/erk/cli/commands/navigation_helpers.py:182,312`**
 
 - Remove isinstance checks
 
-### 5. Add RuntimeError handling at CLI boundary
+### 5. Add RuntimeError handling at top-level CLI boundary
 
-The callsites currently convert errors to `click.ClickException`, `UserFacingCliError`, or `SystemExit(1)`. Since `RuntimeError` will now propagate, we need a handler.
+`RuntimeError` from worktree operations propagates up to a single top-level handler — the Click command group or CLI entry point — which converts it to `UserFacingCliError`. No per-callsite `try/except` wrapping.
 
-**Option:** Add a `try/except RuntimeError` in each Click command function that calls worktree operations, converting to `UserFacingCliError`. This is the simplest approach and matches the one special case (`init_pool_cmd.py`) that needs `continue` behavior.
-
-Alternatively, most callers already sit inside Click commands where `UserFacingCliError` would bubble to Click's handler. We could wrap the worktree calls in a thin helper, but that's over-engineering. The cleanest approach: just let `RuntimeError` propagate and rely on Click's default exception display, OR wrap at each callsite with a one-line try/except converting to `UserFacingCliError`.
-
-**Recommended:** Wrap at each direct callsite since the error messages from `run_subprocess_with_context` are already user-readable. Use:
-
-```python
-try:
-    ctx.git.worktree.add_worktree(...)
-except RuntimeError as e:
-    raise UserFacingCliError(str(e)) from None
-```
-
-This is the same number of lines as the isinstance pattern but with proper exception semantics. For `init_pool_cmd.py`, keep the try/except with `continue`.
+The one exception is `init_pool_cmd.py` (Section 4 above), which needs `continue` behavior inside a loop and therefore keeps its own `try/except RuntimeError`.
 
 ### 6. Update tests
 
