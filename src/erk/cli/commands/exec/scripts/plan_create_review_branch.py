@@ -169,7 +169,7 @@ def _create_review_branch_impl(
     git.remote.fetch_branch(repo_root, "origin", "master")
     create_result = git.branch.create_branch(repo_root, branch_name, "origin/master", force=False)
     if isinstance(create_result, BranchAlreadyExists):
-        raise RuntimeError(create_result.message)
+        raise UserFacingCliError(create_result.message)
     git.branch.checkout_branch(repo_root, branch_name)
 
     # Write plan file at repo root
