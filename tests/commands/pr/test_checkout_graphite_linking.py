@@ -213,6 +213,52 @@ def test_pr_checkout_skips_graphite_for_fork_prs() -> None:
         assert "Tracking branch with Graphite" not in result.output
 
 
+def test_pr_checkout_shows_warning_when_submit_branch_fails() -> None:
+    """Test pr checkout shows warning when submit_branch fails.
+
+    When Graphite submit fails during checkout, the command should still succeed
+    (checkout already happened) but display a warning about the failure.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+        pr_details = _make_pr_details(
+            number=105,
+            head_ref_name="feature-submit-fail",
+            is_cross_repository=False,
+            state="OPEN",
+        )
+        github = FakeGitHub(pr_details={105: pr_details})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-submit-fail"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-submit-fail"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+
+        from erk_shared.gateway.graphite.fake import FakeGraphite
+
+        graphite = FakeGraphite(
+            branches={},
+            submit_stack_raises=RuntimeError("network error"),
+        )
+        ctx = build_workspace_test_context(
+            env, git=git, github=github, graphite=graphite, use_graphite=True
+        )
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "105"], obj=ctx)
+
+        # Checkout should still succeed despite submit failure
+        assert result.exit_code == 0, result.output
+        assert "Created worktree for PR #105" in result.output
+        # Should show warning about failed submit
+        assert "Failed to link with Graphite" in result.output
+        assert "network error" in result.output
+
+
 def test_pr_checkout_skips_graphite_when_disabled() -> None:
     """Test pr checkout skips Graphite linking when Graphite is disabled.
 

@@ -114,3 +114,72 @@ def test_plan_submit_existing_branch_links_with_graphite(tmp_path: Path) -> None
 
     # Verify submit_stack was called for the existing branch path
     assert len(fake_graphite.submit_stack_calls) == 1
+
+
+def test_plan_submit_shows_error_when_graphite_submit_fails(tmp_path: Path) -> None:
+    """Test submit shows error message when Graphite submit_branch fails.
+
+    When Graphite submit fails during PR creation, the command should still
+    succeed (PR already created) but display an error about the failure.
+    """
+    plan = create_plan("789", "Implement feature Y")
+    repo_root = tmp_path / "repo"
+    ctx, fake_git, fake_github, _, fake_graphite, repo_root = setup_submit_context(
+        tmp_path,
+        {"789": plan},
+        git_kwargs={
+            "current_branches": {repo_root: "main"},
+            "trunk_branches": {repo_root: "master"},
+            "remote_branches": {repo_root: ["origin/main"]},
+        },
+        graphite_kwargs={
+            "branches": {
+                "main": BranchMetadata.trunk("main"),
+            },
+            "submit_stack_raises": RuntimeError("network error"),
+        },
+        use_graphite=True,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["789"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    assert "Linking PR with Graphite" in result.output
+    assert "Failed to link PR with Graphite" in result.output
+    assert "network error" in result.output
+
+
+def test_plan_submit_existing_branch_shows_error_when_graphite_submit_fails(
+    tmp_path: Path,
+) -> None:
+    """Test submit shows error when Graphite submit_branch fails on existing branch path.
+
+    When a branch already exists on remote but has no PR, and Graphite submit fails
+    after creating the PR, the command should still succeed but show an error.
+    """
+    plan = create_plan("456", "Fix bug in feature")
+    repo_root = tmp_path / "repo"
+    expected_branch = "P456-fix-bug-in-feature-01-15-1430"
+
+    ctx, fake_git, fake_github, _, fake_graphite, repo_root = setup_submit_context(
+        tmp_path,
+        {"456": plan},
+        git_kwargs={
+            "current_branches": {repo_root: "main"},
+            "trunk_branches": {repo_root: "master"},
+            "remote_branches": {repo_root: ["origin/main", f"origin/{expected_branch}"]},
+        },
+        graphite_kwargs={
+            "submit_stack_raises": RuntimeError("timeout error"),
+        },
+        use_graphite=True,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["456"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    assert "Linking PR with Graphite" in result.output
+    assert "Failed to link PR with Graphite" in result.output
+    assert "timeout error" in result.output

@@ -23,6 +23,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
@@ -515,8 +516,14 @@ def _create_branch_and_pr(
     # Link PR with Graphite (if enabled)
     if ctx.branch_manager.is_graphite_managed():
         user_output("Linking PR with Graphite...")
-        ctx.branch_manager.submit_branch(repo.root, branch_name)
-        user_output(click.style("✓", fg="green") + " PR linked with Graphite")
+        submit_result = ctx.branch_manager.submit_branch(repo.root, branch_name)
+        if isinstance(submit_result, SubmitBranchError):
+            user_output(
+                click.style("✗", fg="red")
+                + f" Failed to link PR with Graphite: {submit_result.message}"
+            )
+        else:
+            user_output(click.style("✓", fg="green") + " PR linked with Graphite")
 
     # Close any orphaned draft PRs for this issue
     closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
@@ -637,8 +644,14 @@ def _submit_single_issue(
             # Link PR with Graphite (if enabled)
             if ctx.branch_manager.is_graphite_managed():
                 user_output("Linking PR with Graphite...")
-                ctx.branch_manager.submit_branch(repo.root, branch_name)
-                user_output(click.style("✓", fg="green") + " PR linked with Graphite")
+                submit_result = ctx.branch_manager.submit_branch(repo.root, branch_name)
+                if isinstance(submit_result, SubmitBranchError):
+                    user_output(
+                        click.style("✗", fg="red")
+                        + f" Failed to link PR with Graphite: {submit_result.message}"
+                    )
+                else:
+                    user_output(click.style("✓", fg="green") + " PR linked with Graphite")
 
             # Close any orphaned draft PRs
             closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)

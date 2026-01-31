@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from erk_shared.gateway.branch_manager.abc import BranchManager
-from erk_shared.gateway.branch_manager.types import PrInfo
+from erk_shared.gateway.branch_manager.types import PrInfo, SubmitBranchError, SubmitBranchResult
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 from erk_shared.gateway.git.remote_ops.types import PushError
@@ -79,7 +79,7 @@ class GitBranchManager(BranchManager):
         """
         self.git.branch.delete_branch(repo_root, branch, force=force)
 
-    def submit_branch(self, repo_root: Path, branch: str) -> None:
+    def submit_branch(self, repo_root: Path, branch: str) -> SubmitBranchResult | SubmitBranchError:
         """Submit branch via git push.
 
         Uses `git push -u --force origin <branch>` to push with upstream tracking.
@@ -89,12 +89,16 @@ class GitBranchManager(BranchManager):
         Args:
             repo_root: Repository root directory
             branch: Branch name to push
+
+        Returns:
+            SubmitBranchResult on success, SubmitBranchError on failure.
         """
         push_result = self.git.remote.push_to_remote(
             repo_root, "origin", branch, set_upstream=True, force=True
         )
         if isinstance(push_result, PushError):
-            raise RuntimeError(push_result.message)
+            return SubmitBranchError(message=push_result.message)
+        return SubmitBranchResult()
 
     def commit(self, repo_root: Path, message: str) -> None:
         """Create a commit using git.
