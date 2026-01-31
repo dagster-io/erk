@@ -19,6 +19,8 @@ tripwires:
     warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
   - action: "changing gateway return type to discriminated union"
     warning: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern."
+  - action: "designing error handling for a new gateway method"
+    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
 ---
 
 # Gateway ABC Implementation Checklist
@@ -84,6 +86,77 @@ When adding a new method to any gateway ABC:
    - Mutation methods: print, then delegate
 6. [ ] Add unit tests for Fake behavior
 7. [ ] Add integration tests for Real (if feasible)
+
+## Non-Ideal State Decision Checklist
+
+When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+
+This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+
+### Decision: Discriminated Union or Exception?
+
+| Question                                                                        | If Yes              | If No               |
+| ------------------------------------------------------------------------------- | ------------------- | ------------------- |
+| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+
+### Checklist: Use a Discriminated Union When
+
+- [ ] At least one caller branches on the error and continues with different logic
+- [ ] Error type carries domain-meaningful fields beyond just `message`
+- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+- [ ] Type defined as `@dataclass(frozen=True)` in the gateway's `types.py` file
+- [ ] All 5 implementations updated (abc, real, fake, dry_run, printing)
+
+### Checklist: Use Exceptions When
+
+- [ ] All callers terminate on failure (extract message and stop)
+- [ ] No caller inspects error type or branches on error content
+- [ ] Use `UserFacingCliError` at CLI boundary
+
+### NonIdealState Protocol
+
+All discriminated union error types must implement the `NonIdealState` protocol from `erk_shared.non_ideal_state`:
+
+```python
+class NonIdealState(Protocol):
+    @property
+    def error_type(self) -> str: ...
+
+    @property
+    def message(self) -> str: ...
+```
+
+### Type Colocation Rule
+
+Non-ideal state types live in the gateway's `types.py` file, alongside the success types:
+
+| Gateway        | Types location                                                       |
+| -------------- | -------------------------------------------------------------------- |
+| GitHub         | `packages/erk-shared/src/erk_shared/gateway/github/types.py`         |
+| Git branch_ops | `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py` |
+| Git remote_ops | `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py` |
+| BranchManager  | `packages/erk-shared/src/erk_shared/gateway/branch_manager/types.py` |
+
+### Codebase Examples
+
+**Methods using discriminated unions** (callers branch on error):
+
+| Method           | Return type                                 | Gateway        |
+| ---------------- | ------------------------------------------- | -------------- |
+| `merge_pr`       | `MergeResult \| MergeError`                 | GitHub         |
+| `push_to_remote` | `PushResult \| PushError`                   | Git remote_ops |
+| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`       | Git remote_ops |
+| `create_branch`  | `CreateBranchResult \| BranchAlreadyExists` | Git branch_ops |
+| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError`   | BranchManager  |
+
+**Methods using exceptions** (all callers terminate):
+
+| Method              | Exception       | Why                                                         |
+| ------------------- | --------------- | ----------------------------------------------------------- |
+| Worktree add/remove | `WorktreeError` | No caller inspects error content; all terminate identically |
+| HTTP operations     | `HttpError`     | Generic transport failure; callers just surface the message |
 
 ## Return Type Changes
 
