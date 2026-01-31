@@ -50,8 +50,7 @@ def close_issue_with_comment(
                 {
                     "success": False,
                     "error": (
-                        f"Failed to add comment to issue #{issue_number}: "
-                        f"{comment_id.message}"
+                        f"Failed to add comment to issue #{issue_number}: {comment_id.message}"
                     ),
                 }
             )
