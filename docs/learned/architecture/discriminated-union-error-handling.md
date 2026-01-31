@@ -82,7 +82,7 @@ except WorktreeError as e:
 
 The discriminated union buys nothing here: no caller inspects the error type, no caller branches on the error content, and every caller terminates identically. The union just adds ceremony.
 
-Contrast with `submit_branch`, where callers _do_ branch:
+Contrast with `submit_branch` and `create_branch`, where callers _do_ branch:
 
 ```python
 result = branch_mgr.submit_branch(...)
@@ -92,6 +92,18 @@ if isinstance(result, BranchAlreadyExists):
 elif isinstance(result, SubmitError):
     # Continue: retry with different options
     retry_submit(result)
+
+# Git branch creation (PR #6348)
+result = git_ops.create_branch(name="feature", start_point="main")
+if result.type == "branch_already_exists":
+    # Continue: use existing branch or prompt for new name
+    logger.info(f"Branch {result.branch_name} already exists, using it")
+    return result.branch_name
+elif result.type == "error":
+    # Terminate: unexpected git failure
+    raise UserFacingCliError(f"Failed to create branch: {result.message}")
+# Success case continues
+return result.branch_name
 ```
 
 ## Examples in the Codebase

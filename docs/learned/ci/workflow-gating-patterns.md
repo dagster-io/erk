@@ -203,6 +203,65 @@ This pattern ensures autofix:
 
 The event type check prevents autofix from running in contexts where `github.event.pull_request` would be null, which would break the label check.
 
+## Step-Level Label Query Pattern
+
+For push events, the job-level label check via `github.event.pull_request.labels` is unavailable because the `pull_request` context doesn't exist. This creates an asymmetry:
+
+- **pull_request events**: Can use job-level label checks (fast path, prevents job execution)
+- **push events**: Must use step-level API queries to fetch labels
+
+The defense-in-depth approach combines both:
+
+```yaml
+autofix:
+  if: |
+    always() &&
+    (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'plan-review')) &&
+    ...
+  steps:
+    - name: Discover PR
+      id: discover-pr
+      run: |
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+        else
+          # For push events, discover PR number via gh pr list
+          pr_number=$(gh pr list --head "${{ github.ref_name }}" --state open --json number --jq '.[0].number')
+          echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Check plan-review label
+      id: check-label
+      if: steps.discover-pr.outputs.pr_number != ''
+      run: |
+        labels=$(gh api repos/${{ github.repository }}/pulls/${{ steps.discover-pr.outputs.pr_number }} --jq '[.labels[].name] | join(",")')
+        if echo "$labels" | grep -q "plan-review"; then
+          echo "has_plan_review_label=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_plan_review_label=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Determine if autofix should run
+      id: should-autofix
+      run: |
+        if [[ "${{ steps.check-label.outputs.has_plan_review_label }}" != "true" ]]; then
+          echo "run=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "run=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - uses: actions/setup-python@v5
+      if: steps.should-autofix.outputs.run == 'true'
+      # ... rest of autofix steps
+```
+
+**Why both layers:**
+
+- Job-level condition prevents unnecessary job execution for pull_request events (cost optimization)
+- Step-level API query ensures push events can also check labels (correctness requirement)
+
+See [GitHub Actions Label Queries](github-actions-label-queries.md) for detailed explanation and skip condition consolidation patterns.
+
 ## Decision Table: When to Use Each Pattern
 
 | Scenario                    | Pattern                                                       | Example                                       |

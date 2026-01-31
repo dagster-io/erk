@@ -1,77 +1,160 @@
 ---
 title: Gateway Error Boundaries
 read_when:
-  - "implementing try/except in gateway real.py files"
-  - "designing error boundaries for subprocess calls"
-  - "understanding where exceptions become discriminated unions"
+  - "implementing gateway error handling"
+  - "converting gateway operations to discriminated unions"
+  - "deciding where try/except blocks belong in gateways"
 tripwires:
-  - action: "adding try/except in gateway real.py for subprocess calls"
-    warning: "Catch specific exceptions (RuntimeError, CalledProcessError) and return discriminated union error types. Never re-raise — errors become return values at this boundary."
-  - action: "using template.format() without verifying placeholders exist in the template"
-    warning: "Assert that required placeholders exist in the template string before calling .format(). Missing placeholders cause silent formatting failures or KeyError at runtime."
+  - score: 8
+    action: "try/except in fake.py or dry_run.py"
+    warning: "Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions."
+    context: "The 5-file gateway pattern has clear error boundary responsibilities. Real implementations catch and convert subprocess/system errors. Fakes simulate errors via constructor params. Dry-run always returns success."
 ---
 
 # Gateway Error Boundaries
 
-Gateway `real.py` files are the boundary where subprocess exceptions become discriminated union return values. This pattern ensures all code above the gateway layer uses LBYL (`isinstance()` checks) instead of try/except.
+## The 5-File Gateway Pattern
 
-## The Pattern
+The gateway ABC implementation pattern (see [Gateway ABC Implementation](gateway-abc-implementation.md)) uses 5 files with distinct error handling responsibilities:
 
-```python
-# real.py — the ONLY place try/except is acceptable for expected failures
-def push_to_remote(
-    self,
-    cwd: Path,
-    remote: str,
-    branch: str,
-    *,
-    set_upstream: bool,
-    force: bool,
-) -> PushResult | PushError:
-    cmd = ["git", "push", remote, branch]
-    if set_upstream:
-        cmd.extend(["--set-upstream"])
-    if force:
-        cmd.extend(["--force-with-lease"])
-    try:
-        run_subprocess_with_context(cmd, cwd=cwd)
-        return PushResult()
-    except RuntimeError as e:
-        return PushError(message=str(e))
-```
+1. **`abc.py`** - Defines return type (discriminated union for operations that can fail)
+2. **`real.py`** - Catches errors and converts to discriminated union
+3. **`fake.py`** - Returns error discriminant based on constructor params (NO try/except)
+4. **`dry_run.py`** - Returns success discriminant (NO try/except)
+5. **`printing.py`** - Logs and delegates (NO try/except)
 
-## Key Rules
+## Error Boundary Responsibilities
 
-1. **`real.py` is the error boundary**: Try/except wraps subprocess calls and converts exceptions to discriminated union error types
-2. **Fakes return directly**: `fake.py` returns configured success or error variants — no exceptions
-3. **Dry-run returns success**: `dry_run.py` returns the success variant without executing
-4. **Printing delegates**: `printing.py` logs then delegates to wrapped implementation
-5. **Callers use isinstance()**: All code above the gateway uses `isinstance(result, ErrorType)` — never try/except
+### real.py: The Error Boundary
 
-## Reference Implementation
-
-`packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py`:
-
-- `push_to_remote()` (lines 66–91): Wraps `run_subprocess_with_context()`, catches `RuntimeError`, returns `PushResult | PushError`
-- `pull_rebase()` (lines 93–105): Same pattern, returns `PullRebaseResult | PullRebaseError`
-
-## Anti-Patterns
+**Purpose**: Catch subprocess and system errors, convert to discriminated union
 
 ```python
-# WRONG: try/except in business logic (above gateway layer)
-try:
-    result = ctx.git.remote.push_to_remote(cwd, "origin", branch, ...)
-except RuntimeError:
-    handle_error()
-
-# CORRECT: isinstance check in business logic
-result = ctx.git.remote.push_to_remote(cwd, "origin", branch, ...)
-if isinstance(result, PushError):
-    handle_error(result.message)
+class RealGitBranchOps(GitBranchOps):
+    def create_branch(self, *, name: str, start_point: str) -> CreateBranchResult:
+        try:
+            result = run_subprocess(
+                ["git", "branch", name, start_point],
+                cwd=self._cwd,
+                capture_output=True,
+            )
+            if result.returncode != 0:
+                return CreateBranchResult(
+                    type="branch_already_exists",
+                    branch_name=name,
+                )
+            return CreateBranchResult(type="success", branch_name=name)
+        except Exception as e:
+            # Convert unexpected errors to discriminated union
+            return CreateBranchResult(type="error", message=str(e))
 ```
 
-## Related Documentation
+**Key patterns:**
 
-- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — The union types returned at these boundaries
-- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — The 5-place pattern for gateway implementations
-- [Subprocess Wrappers](subprocess-wrappers.md) — The subprocess functions wrapped at these boundaries
+- Uses `try/except` to catch subprocess and system errors
+- Checks return codes to distinguish expected failure modes
+- Returns appropriate discriminant for each failure case
+- Converts unexpected exceptions to generic error discriminant
+
+### fake.py: Constructor-Driven Error Simulation
+
+**Purpose**: Return error discriminants based on constructor params, NO exception handling
+
+```python
+@dataclass(frozen=True)
+class FakeGitBranchOps(GitBranchOps):
+    create_branch_error: CreateBranchResult | None = None
+
+    def create_branch(self, *, name: str, start_point: str) -> CreateBranchResult:
+        if self.create_branch_error is not None:
+            return self.create_branch_error
+        return CreateBranchResult(type="success", branch_name=name)
+```
+
+**Key patterns:**
+
+- **NO try/except blocks** - fakes don't catch exceptions
+- Error behavior configured via constructor params
+- Returns discriminants directly based on params
+- Enables test-driven error scenarios without subprocess overhead
+
+### dry_run.py: Success Path Only
+
+**Purpose**: Log and return success discriminant, NO error handling
+
+```python
+@dataclass(frozen=True)
+class DryRunGitBranchOps(GitBranchOps):
+    logger: DryRunLogger
+
+    def create_branch(self, *, name: str, start_point: str) -> CreateBranchResult:
+        self.logger.log(f"Would create branch: {name} from {start_point}")
+        return CreateBranchResult(type="success", branch_name=name)
+```
+
+**Key patterns:**
+
+- **NO try/except blocks** - dry-run always succeeds
+- Always returns success discriminant
+- Logs what would have been done
+- Useful for validating command sequences without side effects
+
+### printing.py: Delegator Only
+
+**Purpose**: Log operations and delegate to wrapped implementation, NO error handling
+
+```python
+@dataclass(frozen=True)
+class PrintingGitBranchOps(GitBranchOps):
+    impl: GitBranchOps
+    logger: Logger
+
+    def create_branch(self, *, name: str, start_point: str) -> CreateBranchResult:
+        self.logger.info(f"Creating branch: {name} from {start_point}")
+        return self.impl.create_branch(name=name, start_point=start_point)
+```
+
+**Key patterns:**
+
+- **NO try/except blocks** - just delegates
+- Logs operations for debugging/audit trail
+- Returns whatever the wrapped implementation returns
+- Transparent wrapper pattern
+
+## When try/except IS Appropriate in Gateways
+
+The real implementation uses `try/except` in two scenarios:
+
+1. **Multiple failure modes**: When an operation can fail in several ways (e.g., branch already exists vs. invalid start point vs. permission error)
+2. **Atomic operations**: When you need to catch unexpected errors and convert them to discriminated union error discriminants
+
+## When try/except is NOT Appropriate in Gateways
+
+- **Fake implementations**: Use constructor params to simulate errors
+- **Dry-run implementations**: Always return success, never fail
+- **Printing implementations**: Just delegate, don't intercept errors
+
+## Testing Error Scenarios
+
+Use fake constructor params to simulate errors in tests:
+
+```python
+def test_create_branch_already_exists():
+    fake = FakeGitBranchOps(
+        create_branch_error=CreateBranchResult(
+            type="branch_already_exists",
+            branch_name="feature",
+        )
+    )
+    result = fake.create_branch(name="feature", start_point="main")
+    assert result.type == "branch_already_exists"
+```
+
+This avoids subprocess overhead and makes tests fast and deterministic.
+
+## Related Patterns
+
+- [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-file checklist
+- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - "Does the caller continue?" framing
+- [Subprocess Wrappers](subprocess-wrappers.md) - Subprocess execution patterns
+- [Fake-Driven Testing](../testing/fake-driven-testing.md) - 5-layer test architecture

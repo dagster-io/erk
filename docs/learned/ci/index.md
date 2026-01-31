@@ -10,12 +10,14 @@
 - **[convention-based-reviews.md](convention-based-reviews.md)** — adding a new code review to CI, understanding how code reviews work, modifying code review behavior
 - **[formatter-tools.md](formatter-tools.md)** — formatting code, choosing a formatter, fixing format errors
 - **[github-actions-claude-integration.md](github-actions-claude-integration.md)** — running Claude in GitHub Actions workflows, configuring non-interactive Claude execution, capturing Claude output in CI
+- **[github-actions-label-queries.md](github-actions-label-queries.md)** — checking PR labels in GitHub Actions workflows, working with push event workflows, implementing CI gating based on PR labels
 - **[github-actions-output-patterns.md](github-actions-output-patterns.md)** — setting outputs in GitHub Actions workflows, passing data between workflow steps, handling multi-line content in GITHUB_OUTPUT, parsing JSON from workflow step outputs
 - **[github-actions-security.md](github-actions-security.md)** — writing or modifying GitHub Actions workflow files, passing dynamic values to shell commands in workflows, using user-controlled input in GitHub Actions run blocks
 - **[github-actions-workflow-patterns.md](github-actions-workflow-patterns.md)** — writing GitHub Actions workflows, debugging workflow conditions, composing step conditions
 - **[github-commit-indexing-timing.md](github-commit-indexing-timing.md)** — working with GitHub commit status API, debugging 422 'No commit found for SHA' errors, implementing CI verification workflows
 - **[github-token-scopes.md](github-token-scopes.md)** — deciding which token to use in GitHub Actions workflows, encountering permission errors with github.token, understanding why gist creation or user API calls fail
 - **[learn-ci-environment-detection.md](learn-ci-environment-detection.md)** — running /erk:learn in CI, understanding CI vs interactive mode differences, debugging learn workflow in GitHub Actions
+- **[makefile-prettier-ignore-path.md](makefile-prettier-ignore-path.md)** — modifying Prettier configuration, creating .prettierignore file, working with Makefile format target
 - **[markdown-formatting.md](markdown-formatting.md)** — editing markdown files, handling Prettier CI failures, implementing documentation changes
 - **[objective-reconciler-workflow.md](objective-reconciler-workflow.md)** — understanding automated objective advancement, configuring objective reconciler GitHub Action, debugging objective auto-advance issues
 - **[plan-implement-change-detection.md](plan-implement-change-detection.md)** — maintaining erk-impl workflow, debugging change detection issues, understanding why no-changes was triggered
