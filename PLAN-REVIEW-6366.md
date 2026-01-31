@@ -43,6 +43,7 @@ Actually — `WorktreeAdded` and `WorktreeRemoved` are empty dataclasses with ze
 Every callsite currently does `isinstance(result, WorktreeAddError)` then raises. Remove these isinstance checks and let `RuntimeError` propagate to the top-level handler. The callers are:
 
 **`src/erk/cli/commands/checkout_helpers.py:200`**
+
 - Remove isinstance check, remove error import
 
 **`src/erk/cli/commands/wt/create_cmd.py:272,334,341,348`**
@@ -50,6 +51,7 @@ Every callsite currently does `isinstance(result, WorktreeAddError)` then raises
 - Remove all isinstance checks around `add_worktree()` calls
 
 **`src/erk/cli/commands/stack/consolidate_cmd.py:117,329`**
+
 - Remove isinstance checks for `WorktreeRemoveError` and `WorktreeAddError`
 
 **`src/erk/cli/commands/slot/common.py:555,570`**
@@ -65,6 +67,7 @@ Every callsite currently does `isinstance(result, WorktreeAddError)` then raises
 - Remove isinstance check
 
 **`src/erk/cli/commands/slot/init_pool_cmd.py:129`**
+
 - **Exception:** This callsite uses `continue` on error (keeps initializing remaining slots). Wrap in `try/except RuntimeError` with `user_output` + `continue`.
 
 **`src/erk/cli/commands/navigation_helpers.py:182,312`**
