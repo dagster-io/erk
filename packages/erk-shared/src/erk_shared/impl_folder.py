@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from erk_shared.gateway.github.issues.types import CommentAddError
 from erk_shared.gateway.github.metadata.core import (
     create_worktree_creation_block,
     render_erk_issue_event,
@@ -401,8 +402,6 @@ claude --permission-mode acceptEdits "/erk:plan-implement"
         metadata=block,
         description=instructions,
     )
-
-    from erk_shared.gateway.github.issues.types import CommentAddError
 
     result = github_issues.add_comment(repo_root, issue_number, comment_body)
     if isinstance(result, CommentAddError):

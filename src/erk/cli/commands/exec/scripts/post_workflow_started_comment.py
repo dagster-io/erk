@@ -158,13 +158,15 @@ def post_workflow_started_comment(
 
     # Post comment
     comment_result = github.add_comment(repo_root, issue_number, comment_body)
+
     if isinstance(comment_result, CommentAddError):
-        result = PostError(
+        error = PostError(
             success=False,
             error="github-api-failed",
             message=comment_result.message,
         )
-        click.echo(json.dumps(asdict(result), indent=2))
+        click.echo(json.dumps(asdict(error), indent=2))
         raise SystemExit(1) from None
-    result = PostSuccess(success=True, issue_number=issue_number)
-    click.echo(json.dumps(asdict(result), indent=2))
+
+    success = PostSuccess(success=True, issue_number=issue_number)
+    click.echo(json.dumps(asdict(success), indent=2))
