@@ -26,7 +26,12 @@ from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.remote_ops.types import PushError
-from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
+from erk_shared.gateway.github.issues.types import (
+    CommentAddError,
+    IssueInfo,
+    IssueNotFound,
+    IssueUpdateError,
+)
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
     render_erk_issue_event,
@@ -787,8 +792,16 @@ def _submit_single_issue(
                 node_id=node_id,
                 dispatched_at=queued_at,
             )
-            ctx.issues.update_issue_body(repo.root, issue_number, BodyText(content=updated_body))
-            user_output(click.style("✓", fg="green") + " Dispatch metadata written to issue")
+            update_result = ctx.issues.update_issue_body(
+                repo.root, issue_number, BodyText(content=updated_body)
+            )
+            if isinstance(update_result, IssueUpdateError):
+                user_output(
+                    click.style("Warning: ", fg="yellow")
+                    + f"Failed to update dispatch metadata: {update_result.message}"
+                )
+            else:
+                user_output(click.style("✓", fg="green") + " Dispatch metadata written to issue")
         except Exception as e:
             # Log warning but don't block - workflow is already triggered
             user_output(
@@ -826,8 +839,15 @@ def _submit_single_issue(
         )
 
         user_output("Posting queued event comment...")
-        ctx.issues.add_comment(repo.root, issue_number, comment_body)
-        user_output(click.style("✓", fg="green") + " Queued event comment posted")
+        comment_result = ctx.issues.add_comment(repo.root, issue_number, comment_body)
+        if isinstance(comment_result, CommentAddError):
+            user_output(
+                click.style("Warning: ", fg="yellow")
+                + f"Failed to post queued comment: {comment_result.message}\n"
+                + "Workflow is already running."
+            )
+        else:
+            user_output(click.style("✓", fg="green") + " Queued event comment posted")
     except Exception as e:
         # Log warning but don't block - workflow is already triggered
         user_output(

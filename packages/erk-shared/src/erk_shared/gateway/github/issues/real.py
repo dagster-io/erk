@@ -8,10 +8,14 @@ from pathlib import Path
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.label_cache import RealLabelCache
 from erk_shared.gateway.github.issues.types import (
+    CommentAddError,
+    CreateIssueError,
     CreateIssueResult,
+    IssueCloseError,
     IssueComment,
     IssueInfo,
     IssueNotFound,
+    IssueUpdateError,
     PRReference,
 )
 from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
@@ -71,14 +75,11 @@ class RealGitHubIssues(GitHubIssues):
 
     def create_issue(
         self, *, repo_root: Path, title: str, body: str, labels: list[str]
-    ) -> CreateIssueResult:
+    ) -> CreateIssueResult | CreateIssueError:
         """Create a new GitHub issue using gh CLI REST API.
 
         Uses REST API instead of GraphQL (`gh issue create`) to avoid hitting
         GraphQL rate limits. GraphQL and REST have separate quotas.
-
-        Note: Uses gh's native error handling - gh CLI raises RuntimeError
-        on failures (not installed, not authenticated, etc.).
         """
         # GH-API-AUDIT: REST - POST issues
         base_cmd = [
@@ -98,7 +99,10 @@ class RealGitHubIssues(GitHubIssues):
             base_cmd.extend(["-f", f"labels[]={label}"])
 
         cmd = self._build_gh_command(base_cmd)
-        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        try:
+            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        except RuntimeError as e:
+            return CreateIssueError(message=str(e))
         # REST API returns JSON, --jq extracts "number url" format
         parts = stdout.strip().split(" ", 1)
         number = int(parts[0])
@@ -173,13 +177,11 @@ class RealGitHubIssues(GitHubIssues):
             author=author,
         )
 
-    def add_comment(self, repo_root: Path, number: int, body: str) -> int:
+    def add_comment(self, repo_root: Path, number: int, body: str) -> int | CommentAddError:
         """Add comment to issue using gh CLI.
 
-        Returns the comment ID from the created comment.
-
-        Note: Uses gh's native error handling - gh CLI raises RuntimeError
-        on failures (not installed, not authenticated, issue not found).
+        Returns the comment ID from the created comment,
+        or CommentAddError if the operation failed.
         """
         # GH-API-AUDIT: REST - POST issues/{number}/comments
         base_cmd = [
@@ -194,10 +196,15 @@ class RealGitHubIssues(GitHubIssues):
             ".id",
         ]
         cmd = self._build_gh_command(base_cmd)
-        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        try:
+            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        except RuntimeError as e:
+            return CommentAddError(issue_number=number, message=str(e))
         return int(stdout.strip())
 
-    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -> None:
+    def update_issue_body(
+        self, repo_root: Path, number: int, body: BodyContent
+    ) -> None | IssueUpdateError:
         """Update issue body using gh CLI REST API.
 
         Uses REST API instead of GraphQL (`gh issue edit`) to avoid hitting
@@ -205,9 +212,6 @@ class RealGitHubIssues(GitHubIssues):
 
         When body is BodyFile, uses gh api's -F body=@{path} syntax to read
         from file, avoiding shell argument length limits for large bodies.
-
-        Note: Uses gh's native error handling - gh CLI raises RuntimeError
-        on failures (not installed, not authenticated, issue not found).
         """
         # GH-API-AUDIT: REST - PATCH issues/{number}
         base_cmd = [
@@ -225,7 +229,11 @@ class RealGitHubIssues(GitHubIssues):
             base_cmd.extend(["-f", f"body={body.content}"])
 
         cmd = self._build_gh_command(base_cmd)
-        execute_gh_command_with_retry(cmd, repo_root, self._time)
+        try:
+            execute_gh_command_with_retry(cmd, repo_root, self._time)
+        except RuntimeError as e:
+            return IssueUpdateError(issue_number=number, message=str(e))
+        return None
 
     def list_issues(
         self,
@@ -485,14 +493,11 @@ class RealGitHubIssues(GitHubIssues):
         cmd = self._build_gh_command(base_cmd)
         execute_gh_command_with_retry(cmd, repo_root, self._time)
 
-    def close_issue(self, repo_root: Path, number: int) -> None:
+    def close_issue(self, repo_root: Path, number: int) -> None | IssueCloseError:
         """Close issue using gh CLI REST API.
 
         Uses REST API instead of GraphQL (`gh issue close`) to avoid hitting
         GraphQL rate limits. GraphQL and REST have separate quotas.
-
-        Note: Uses gh's native error handling - gh CLI raises RuntimeError
-        on failures (not installed, not authenticated, issue not found).
         """
         # GH-API-AUDIT: REST - PATCH issues/{number}
         base_cmd = [
@@ -505,7 +510,11 @@ class RealGitHubIssues(GitHubIssues):
             "state=closed",
         ]
         cmd = self._build_gh_command(base_cmd)
-        execute_gh_command_with_retry(cmd, repo_root, self._time)
+        try:
+            execute_gh_command_with_retry(cmd, repo_root, self._time)
+        except RuntimeError as e:
+            return IssueCloseError(issue_number=number, message=str(e))
+        return None
 
     def get_current_username(self) -> str | None:
         """Get current GitHub username via gh api user.

@@ -4,10 +4,14 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from erk_shared.gateway.github.issues.types import (
+    CommentAddError,
+    CreateIssueError,
     CreateIssueResult,
+    IssueCloseError,
     IssueComment,
     IssueInfo,
     IssueNotFound,
+    IssueUpdateError,
     PRReference,
 )
 from erk_shared.gateway.github.types import BodyContent
@@ -22,7 +26,7 @@ class GitHubIssues(ABC):
     @abstractmethod
     def create_issue(
         self, *, repo_root: Path, title: str, body: str, labels: list[str]
-    ) -> CreateIssueResult:
+    ) -> CreateIssueResult | CreateIssueError:
         """Create a new GitHub issue.
 
         Args:
@@ -32,10 +36,8 @@ class GitHubIssues(ABC):
             labels: List of label names to apply
 
         Returns:
-            CreateIssueResult with issue number and full GitHub URL
-
-        Raises:
-            RuntimeError: If gh CLI fails (not installed, not authenticated, or command error)
+            CreateIssueResult with issue number and full GitHub URL,
+            or CreateIssueError if the operation failed
         """
         ...
 
@@ -72,7 +74,7 @@ class GitHubIssues(ABC):
         ...
 
     @abstractmethod
-    def add_comment(self, repo_root: Path, number: int, body: str) -> int:
+    def add_comment(self, repo_root: Path, number: int, body: str) -> int | CommentAddError:
         """Add a comment to an existing issue.
 
         Args:
@@ -81,15 +83,15 @@ class GitHubIssues(ABC):
             body: Comment body markdown
 
         Returns:
-            The comment ID of the newly created comment
-
-        Raises:
-            RuntimeError: If gh CLI fails or issue not found
+            The comment ID of the newly created comment,
+            or CommentAddError if the operation failed
         """
         ...
 
     @abstractmethod
-    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -> None:
+    def update_issue_body(
+        self, repo_root: Path, number: int, body: BodyContent
+    ) -> None | IssueUpdateError:
         """Update the body of an existing issue.
 
         Args:
@@ -100,8 +102,8 @@ class GitHubIssues(ABC):
                 the gh CLI reads from the file using -F body=@{path} syntax,
                 which avoids shell argument length limits for large bodies.
 
-        Raises:
-            RuntimeError: If gh CLI fails or issue not found
+        Returns:
+            None on success, or IssueUpdateError if the operation failed
         """
         ...
 
@@ -240,15 +242,15 @@ class GitHubIssues(ABC):
         ...
 
     @abstractmethod
-    def close_issue(self, repo_root: Path, number: int) -> None:
+    def close_issue(self, repo_root: Path, number: int) -> None | IssueCloseError:
         """Close a GitHub issue.
 
         Args:
             repo_root: Repository root directory
             number: Issue number to close
 
-        Raises:
-            RuntimeError: If gh CLI fails or issue not found
+        Returns:
+            None on success, or IssueCloseError if the operation failed
         """
         ...
 

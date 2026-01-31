@@ -6,7 +6,7 @@ from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext, RepoContext
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import IssueCloseError, IssueNotFound
 from erk_shared.output.output import user_output
 
 ERK_OBJECTIVE_LABEL = "erk-objective"
@@ -60,6 +60,9 @@ def close_objective(ctx: ErkContext, issue_ref: str, *, force: bool) -> None:
             raise SystemExit(0)
 
     # Close the issue
-    ctx.issues.close_issue(repo.root, issue_number)
+    close_result = ctx.issues.close_issue(repo.root, issue_number)
+    if isinstance(close_result, IssueCloseError):
+        user_output(f"Error: Could not close objective #{issue_number}: {close_result.message}")
+        raise SystemExit(1)
 
     user_output(click.style("✓ ", fg="green") + f"Closed objective #{issue_number}: {issue.url}")

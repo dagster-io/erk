@@ -9,7 +9,12 @@ from datetime import UTC, datetime
 import pytest
 
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import (
+    CommentAddError,
+    IssueCloseError,
+    IssueNotFound,
+    IssueUpdateError,
+)
 from erk_shared.gateway.github.types import BodyText
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
@@ -148,11 +153,13 @@ def test_fake_github_issues_add_comment_existing_issue() -> None:
 
 
 def test_fake_github_issues_add_comment_missing_issue() -> None:
-    """Test add_comment raises RuntimeError for missing issue."""
+    """Test add_comment returns CommentAddError for missing issue."""
     issues = FakeGitHubIssues()
 
-    with pytest.raises(RuntimeError, match="Issue #999 not found"):
-        issues.add_comment(sentinel_path(), 999, "Comment body")
+    result = issues.add_comment(sentinel_path(), 999, "Comment body")
+
+    assert isinstance(result, CommentAddError)
+    assert result.issue_number == 999
 
 
 def test_fake_github_issues_add_comment_multiple() -> None:
@@ -199,11 +206,13 @@ def test_fake_github_issues_update_issue_body_existing_issue() -> None:
 
 
 def test_fake_github_issues_update_issue_body_missing_issue() -> None:
-    """Test update_issue_body raises RuntimeError for missing issue."""
+    """Test update_issue_body returns IssueUpdateError for missing issue."""
     issues = FakeGitHubIssues()
 
-    with pytest.raises(RuntimeError, match="Issue #999 not found"):
-        issues.update_issue_body(sentinel_path(), 999, BodyText(content="New body"))
+    result = issues.update_issue_body(sentinel_path(), 999, BodyText(content="New body"))
+
+    assert isinstance(result, IssueUpdateError)
+    assert result.issue_number == 999
 
 
 def test_fake_github_issues_update_issue_body_updates_timestamp() -> None:
@@ -760,12 +769,14 @@ def test_close_issue_updates_state() -> None:
     assert updated_issue.state == "closed"
 
 
-def test_close_issue_missing_raises() -> None:
-    """Test close_issue raises RuntimeError for non-existent issue."""
+def test_close_issue_missing_returns_error() -> None:
+    """Test close_issue returns IssueCloseError for non-existent issue."""
     issues = FakeGitHubIssues()
 
-    with pytest.raises(RuntimeError, match="Issue #999 not found"):
-        issues.close_issue(sentinel_path(), 999)
+    result = issues.close_issue(sentinel_path(), 999)
+
+    assert isinstance(result, IssueCloseError)
+    assert result.issue_number == 999
 
 
 def test_close_issue_tracks_mutation() -> None:

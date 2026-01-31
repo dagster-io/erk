@@ -42,7 +42,7 @@ import click
 
 from erk_shared.context.helpers import require_github, require_issues, require_repo_root
 from erk_shared.gateway.github.abc import GistCreateError
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import IssueNotFound, IssueUpdateError
 from erk_shared.gateway.github.types import BodyText
 
 
@@ -145,11 +145,19 @@ def upload_session(
                 session_at=timestamp,
                 source=source,
             )
-            issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
-            result["issue_updated"] = True
-        except (ValueError, RuntimeError) as e:
-            # Issue update failed but gist was created - partial success
+        except ValueError as e:
+            # plan-header block not found (old format issue) - partial success
             result["issue_updated"] = False
             result["issue_update_error"] = str(e)
+        else:
+            update_err = issues.update_issue_body(
+                repo_root, issue_number, BodyText(content=updated_body)
+            )
+            if isinstance(update_err, IssueUpdateError):
+                # Issue update failed but gist was created - partial success
+                result["issue_updated"] = False
+                result["issue_update_error"] = update_err.message
+            else:
+                result["issue_updated"] = True
 
     click.echo(json.dumps(result))

@@ -29,6 +29,7 @@ from dataclasses import asdict, dataclass
 import click
 
 from erk_shared.context.helpers import require_github, require_repo_root
+from erk_shared.gateway.github.issues.types import CommentAddError
 from erk_shared.gateway.github.types import BodyText
 
 
@@ -237,14 +238,13 @@ def handle_no_changes(
         raise SystemExit(1) from None
 
     # 4. Add comment to plan issue
-    try:
-        comment = _build_issue_comment(pr_number=pr_number)
-        github.issues.add_comment(repo_root, issue_number, comment)
-    except RuntimeError as e:
+    comment = _build_issue_comment(pr_number=pr_number)
+    comment_result = github.issues.add_comment(repo_root, issue_number, comment)
+    if isinstance(comment_result, CommentAddError):
         result = HandleNoChangesError(
             success=False,
             error="github-api-failed",
-            message=f"Failed to add issue comment: {e}",
+            message=f"Failed to add issue comment: {comment_result.message}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None

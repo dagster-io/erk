@@ -18,6 +18,7 @@ import click
 
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
+from erk_shared.gateway.github.issues.types import CreateIssueError, IssueUpdateError
 from erk_shared.gateway.github.metadata.core import format_plan_issue_body
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.plan_utils import extract_title_from_plan
@@ -76,26 +77,26 @@ def create_plan_from_context(ctx: click.Context) -> None:
         click.echo(f"Error: Failed to ensure label exists: {e}", err=True)
         raise SystemExit(1) from e
 
-    # Create issue (ABC interface with EAFP pattern)
+    # Create issue
     # Add [erk-plan] suffix to title for visibility
     issue_title = f"{title} [erk-plan]"
-    try:
-        result = github.create_issue(
-            repo_root=repo_root, title=issue_title, body=initial_body, labels=["erk-plan"]
-        )
-    except RuntimeError as e:
-        click.echo(f"Error: Failed to create GitHub issue: {e}", err=True)
-        raise SystemExit(1) from e
+    result = github.create_issue(
+        repo_root=repo_root, title=issue_title, body=initial_body, labels=["erk-plan"]
+    )
+    if isinstance(result, CreateIssueError):
+        click.echo(f"Error: Failed to create GitHub issue: {result.message}", err=True)
+        raise SystemExit(1) from None
 
     # Now that we have the issue number, format the complete body with commands
     formatted_body = format_plan_issue_body(plan.strip(), result.number)
 
     # Update the issue body with the formatted version
-    try:
-        github.update_issue_body(repo_root, result.number, BodyText(content=formatted_body))
-    except RuntimeError as e:
-        click.echo(f"Error: Failed to update issue body: {e}", err=True)
-        raise SystemExit(1) from e
+    update_result = github.update_issue_body(
+        repo_root, result.number, BodyText(content=formatted_body)
+    )
+    if isinstance(update_result, IssueUpdateError):
+        click.echo(f"Error: Failed to update issue body: {update_result.message}", err=True)
+        raise SystemExit(1) from None
 
     # Output structured JSON
     output = {

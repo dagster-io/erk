@@ -5,10 +5,14 @@ from pathlib import Path
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import (
+    CommentAddError,
+    CreateIssueError,
     CreateIssueResult,
+    IssueCloseError,
     IssueComment,
     IssueInfo,
     IssueNotFound,
+    IssueUpdateError,
     PRReference,
 )
 from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
@@ -30,6 +34,7 @@ class FakeGitHubIssues(GitHubIssues):
         comments_with_urls: dict[int, list[IssueComment]] | None = None,
         username: str | None = "testuser",
         pr_references: dict[int, list[PRReference]] | None = None,
+        create_issue_error: str | None = None,
         add_reaction_error: str | None = None,
         get_comments_error: str | None = None,
         target_repo: str | None = None,
@@ -46,6 +51,8 @@ class FakeGitHubIssues(GitHubIssues):
                 not authenticated)
             pr_references: Mapping of issue number -> list of PRReference for
                 get_prs_referencing_issue()
+            create_issue_error: If set, create_issue returns CreateIssueError
+                with this message
             add_reaction_error: If set, add_reaction_to_comment raises RuntimeError
                 with this message
             get_comments_error: If set, get_issue_comments_with_urls raises
@@ -61,6 +68,7 @@ class FakeGitHubIssues(GitHubIssues):
         self._comments_with_urls = comments_with_urls or {}
         self._username = username
         self._pr_references = pr_references or {}
+        self._create_issue_error = create_issue_error
         self._add_reaction_error = add_reaction_error
         self._get_comments_error = get_comments_error
         self._target_repo = target_repo
@@ -144,8 +152,10 @@ class FakeGitHubIssues(GitHubIssues):
 
     def create_issue(
         self, *, repo_root: Path, title: str, body: str, labels: list[str]
-    ) -> CreateIssueResult:
+    ) -> CreateIssueResult | CreateIssueError:
         """Create issue in fake storage and track mutation."""
+        if self._create_issue_error is not None:
+            return CreateIssueError(message=self._create_issue_error)
         issue_number = self._next_issue_number
         self._next_issue_number += 1
 
@@ -185,29 +195,27 @@ class FakeGitHubIssues(GitHubIssues):
             return IssueNotFound(issue_number=number)
         return self._issues[number]
 
-    def add_comment(self, repo_root: Path, number: int, body: str) -> int:
+    def add_comment(self, repo_root: Path, number: int, body: str) -> int | CommentAddError:
         """Record comment in mutation tracking and return generated comment ID.
 
-        Raises:
-            RuntimeError: If issue number not found (simulates gh CLI error)
+        Returns CommentAddError if issue not found.
         """
         if number not in self._issues:
-            msg = f"Issue #{number} not found"
-            raise RuntimeError(msg)
+            return CommentAddError(issue_number=number, message=f"Issue #{number} not found")
         comment_id = self._next_comment_id
         self._next_comment_id += 1
         self._added_comments.append((number, body, comment_id))
         return comment_id
 
-    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -> None:
+    def update_issue_body(
+        self, repo_root: Path, number: int, body: BodyContent
+    ) -> None | IssueUpdateError:
         """Update issue body in fake storage and track mutation.
 
-        Raises:
-            RuntimeError: If issue number not found (simulates gh CLI error)
+        Returns IssueUpdateError if issue not found.
         """
         if number not in self._issues:
-            msg = f"Issue #{number} not found"
-            raise RuntimeError(msg)
+            return IssueUpdateError(issue_number=number, message=f"Issue #{number} not found")
 
         # Resolve body content from BodyFile or BodyText
         if isinstance(body, BodyFile):
@@ -236,6 +244,7 @@ class FakeGitHubIssues(GitHubIssues):
             author=old_issue.author,
         )
         self._issues[number] = updated_issue
+        return None
 
     def list_issues(
         self,
@@ -376,15 +385,13 @@ class FakeGitHubIssues(GitHubIssues):
                 author=current_issue.author,
             )
 
-    def close_issue(self, repo_root: Path, number: int) -> None:
+    def close_issue(self, repo_root: Path, number: int) -> None | IssueCloseError:
         """Close issue in fake storage.
 
-        Raises:
-            RuntimeError: If issue number not found (simulates gh CLI error)
+        Returns IssueCloseError if issue not found.
         """
         if number not in self._issues:
-            msg = f"Issue #{number} not found"
-            raise RuntimeError(msg)
+            return IssueCloseError(issue_number=number, message=f"Issue #{number} not found")
 
         # Update issue state to closed
         current_issue = self._issues[number]
@@ -401,6 +408,7 @@ class FakeGitHubIssues(GitHubIssues):
             author=current_issue.author,
         )
         self._closed_issues.append(number)
+        return None
 
     def get_current_username(self) -> str | None:
         """Return configured username from constructor.

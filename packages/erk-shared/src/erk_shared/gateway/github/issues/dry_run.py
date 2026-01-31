@@ -4,10 +4,14 @@ from pathlib import Path
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import (
+    CommentAddError,
+    CreateIssueError,
     CreateIssueResult,
+    IssueCloseError,
     IssueComment,
     IssueInfo,
     IssueNotFound,
+    IssueUpdateError,
     PRReference,
 )
 from erk_shared.gateway.github.types import BodyContent
@@ -33,7 +37,7 @@ class DryRunGitHubIssues(GitHubIssues):
 
     def create_issue(
         self, *, repo_root: Path, title: str, body: str, labels: list[str]
-    ) -> CreateIssueResult:
+    ) -> CreateIssueResult | CreateIssueError:
         """No-op for creating issue in dry-run mode.
 
         Returns a fake CreateIssueResult to allow dry-run workflows to continue.
@@ -48,15 +52,18 @@ class DryRunGitHubIssues(GitHubIssues):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_issue(repo_root, number)
 
-    def add_comment(self, repo_root: Path, number: int, body: str) -> int:
+    def add_comment(self, repo_root: Path, number: int, body: str) -> int | CommentAddError:
         """No-op for adding comment in dry-run mode.
 
         Returns a fake comment ID to allow dry-run workflows to continue.
         """
         return 1234567890  # Fake comment ID for dry-run mode
 
-    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -> None:
+    def update_issue_body(
+        self, repo_root: Path, number: int, body: BodyContent
+    ) -> None | IssueUpdateError:
         """No-op for updating issue body in dry-run mode."""
+        return None
 
     def list_issues(
         self,
@@ -98,8 +105,9 @@ class DryRunGitHubIssues(GitHubIssues):
     def remove_label_from_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
         """No-op for removing label in dry-run mode."""
 
-    def close_issue(self, repo_root: Path, number: int) -> None:
+    def close_issue(self, repo_root: Path, number: int) -> None | IssueCloseError:
         """No-op for closing issue in dry-run mode."""
+        return None
 
     def get_current_username(self) -> str | None:
         """Delegate to wrapped implementation (read operation)."""

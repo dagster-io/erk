@@ -45,6 +45,7 @@ import click
 
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
+from erk_shared.gateway.github.issues.types import CommentAddError
 
 
 @dataclass(frozen=True)
@@ -156,15 +157,14 @@ def post_workflow_started_comment(
     )
 
     # Post comment
-    try:
-        github.add_comment(repo_root, issue_number, comment_body)
-        result = PostSuccess(success=True, issue_number=issue_number)
-        click.echo(json.dumps(asdict(result), indent=2))
-    except RuntimeError as e:
+    comment_result = github.add_comment(repo_root, issue_number, comment_body)
+    if isinstance(comment_result, CommentAddError):
         result = PostError(
             success=False,
             error="github-api-failed",
-            message=str(e),
+            message=comment_result.message,
         )
         click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(1) from e
+        raise SystemExit(1) from None
+    result = PostSuccess(success=True, issue_number=issue_number)
+    click.echo(json.dumps(asdict(result), indent=2))

@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import CommentAddError, IssueNotFound, IssueUpdateError
 from erk_shared.gateway.github.metadata.plan_header import clear_plan_header_review_pr
 from erk_shared.gateway.github.metadata_blocks import find_metadata_block
 from erk_shared.gateway.github.types import BodyText
@@ -54,9 +54,8 @@ def cleanup_review_pr(
 
     # Step 1: Add comment to review PR explaining why it was closed
     comment_body = f"This review PR was automatically closed because {reason}."
-    try:
-        ctx.issues.add_comment(repo_root, review_pr, comment_body)
-    except RuntimeError:
+    comment_result = ctx.issues.add_comment(repo_root, review_pr, comment_body)
+    if isinstance(comment_result, CommentAddError):
         user_output(f"Warning: Could not add comment to review PR #{review_pr}")
 
     # Step 2: Close the review PR
@@ -70,9 +69,14 @@ def cleanup_review_pr(
     # Step 3: Clear review_pr metadata (archives to last_review_pr)
     try:
         updated_body = clear_plan_header_review_pr(issue.body)
-        ctx.issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
-    except (ValueError, RuntimeError):
+    except ValueError:
         user_output(f"Warning: Could not clear review PR metadata for issue #{issue_number}")
+    else:
+        update_err = ctx.issues.update_issue_body(
+            repo_root, issue_number, BodyText(content=updated_body)
+        )
+        if isinstance(update_err, IssueUpdateError):
+            user_output(f"Warning: Could not clear review PR metadata for issue #{issue_number}")
 
     user_output(f"Closed review PR #{review_pr}")
     return review_pr

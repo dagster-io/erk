@@ -43,7 +43,7 @@ from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
 from erk_shared.env import in_github_actions
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import CommentAddError, IssueNotFound, IssueUpdateError
 from erk_shared.gateway.github.metadata.core import render_erk_issue_event
 from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_local_impl_event,
@@ -280,19 +280,19 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
         return
 
     # Post start comment
-    try:
-        description = f"""**Worktree:** `{worktree_name}`
+    description = f"""**Worktree:** `{worktree_name}`
 **Branch:** `{branch_name}`"""
 
-        comment_body = render_erk_issue_event(
-            title="🚀 Starting implementation",
-            metadata=None,
-            description=description,
-        )
+    comment_body = render_erk_issue_event(
+        title="🚀 Starting implementation",
+        metadata=None,
+        description=description,
+    )
 
-        github.add_comment(repo_root, issue_ref.issue_number, comment_body)
-    except RuntimeError as e:
-        _output_error(event, "github-comment-failed", f"Failed to post comment: {e}")
+    comment_result = github.add_comment(repo_root, issue_ref.issue_number, comment_body)
+    if isinstance(comment_result, CommentAddError):
+        msg = f"Failed to post comment: {comment_result.message}"
+        _output_error(event, "github-comment-failed", msg)
         return
 
     # Update issue metadata (non-fatal - comment was already posted)
@@ -392,7 +392,13 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
                 user=user,
             )
 
-        github.update_issue_body(repo_root, issue_ref.issue_number, BodyText(content=updated_body))
+        update_result = github.update_issue_body(
+            repo_root, issue_ref.issue_number, BodyText(content=updated_body)
+        )
+        if isinstance(update_result, IssueUpdateError):
+            msg = f"Failed to update issue: {update_result.message}"
+            _output_error(event, "github-api-failed", msg)
+            return
     except ValueError as e:
         _output_error(event, "github-api-failed", f"Failed to update issue: {e}")
         return

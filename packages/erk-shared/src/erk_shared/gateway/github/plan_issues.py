@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import CommentAddError, CreateIssueError
 from erk_shared.gateway.github.metadata.core import format_plan_commands_section
 from erk_shared.gateway.github.metadata.plan_header import (
     format_plan_content_comment,
@@ -187,34 +188,35 @@ def create_plan_issue(
     )
 
     # Create issue
-    try:
-        result = github_issues.create_issue(
-            repo_root=repo_root,
-            title=issue_title,
-            body=issue_body,
-            labels=labels,
-        )
-    except RuntimeError as e:
+    result = github_issues.create_issue(
+        repo_root=repo_root,
+        title=issue_title,
+        body=issue_body,
+        labels=labels,
+    )
+    if isinstance(result, CreateIssueError):
         return CreatePlanIssueResult(
             success=False,
             issue_number=None,
             issue_url=None,
             title=title,
-            error=f"Failed to create GitHub issue: {e}",
+            error=f"Failed to create GitHub issue: {result.message}",
         )
 
     # Step 5: Add first comment with plan content
     plan_comment = format_plan_content_comment(plan_content.strip())
-    try:
-        comment_id = github_issues.add_comment(repo_root, result.number, plan_comment)
-    except RuntimeError as e:
+    comment_id = github_issues.add_comment(repo_root, result.number, plan_comment)
+    if isinstance(comment_id, CommentAddError):
         # Partial success - issue created but comment failed
         return CreatePlanIssueResult(
             success=False,
             issue_number=result.number,
             issue_url=result.url,
             title=title,
-            error=f"Issue #{result.number} created but failed to add plan comment: {e}",
+            error=(
+                f"Issue #{result.number} created but failed to add plan comment: "
+                f"{comment_id.message}"
+            ),
         )
 
     # Step 6: Update issue body with plan_comment_id for direct lookup
@@ -301,20 +303,19 @@ def create_objective_issue(
         )
 
     # Step 4: Create issue with plan content directly in body (no metadata)
-    try:
-        result = github_issues.create_issue(
-            repo_root=repo_root,
-            title=title,  # No suffix for objectives
-            body=plan_content.strip(),
-            labels=labels,
-        )
-    except RuntimeError as e:
+    result = github_issues.create_issue(
+        repo_root=repo_root,
+        title=title,  # No suffix for objectives
+        body=plan_content.strip(),
+        labels=labels,
+    )
+    if isinstance(result, CreateIssueError):
         return CreatePlanIssueResult(
             success=False,
             issue_number=None,
             issue_url=None,
             title=title,
-            error=f"Failed to create GitHub issue: {e}",
+            error=f"Failed to create GitHub issue: {result.message}",
         )
 
     # No comment, no commands section for objectives

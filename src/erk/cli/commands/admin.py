@@ -9,6 +9,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import UserFacingCliError
 from erk.core.context import ErkContext
 from erk_shared.gateway.git.remote_ops.types import PushError
+from erk_shared.gateway.github.issues.types import CreateIssueError
 from erk_shared.gateway.github.types import GitHubRepoLocation
 from erk_shared.gateway.github_admin.real import RealGitHubAdmin
 from erk_shared.output.output import user_output
@@ -210,6 +211,8 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
             body="This issue was created to test the plan-implement workflow. Safe to close.",
             labels=["test"],
         )
+        if isinstance(result, CreateIssueError):
+            raise UserFacingCliError(f"Failed to create test issue: {result.message}")
         issue_number = result.number
         user_output(click.style("✓", fg="green") + f" Created test issue #{issue_number}")
 

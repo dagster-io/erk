@@ -27,7 +27,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_repo_root,
 )
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import IssueNotFound, IssueUpdateError
 from erk_shared.gateway.github.types import BodyFile, BodyText
 
 
@@ -83,18 +83,17 @@ def update_issue_body(
     else:
         assert body is not None
         body_arg = BodyText(content=body)
-    try:
-        github.update_issue_body(repo_root, issue_number, body_arg)
-    except RuntimeError as e:
+    update_result = github.update_issue_body(repo_root, issue_number, body_arg)
+    if isinstance(update_result, IssueUpdateError):
         click.echo(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to update issue #{issue_number}: {e}",
+                    "error": f"Failed to update issue #{issue_number}: {update_result.message}",
                 }
             )
         )
-        raise SystemExit(1) from e
+        raise SystemExit(1) from None
 
     click.echo(
         json.dumps(

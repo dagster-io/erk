@@ -40,7 +40,7 @@ from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
 from erk_shared.env import in_github_actions
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import IssueNotFound, IssueUpdateError
 from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_local_impl_event,
     update_plan_header_remote_impl,
@@ -176,15 +176,14 @@ def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
         raise SystemExit(0) from None
 
     # Update issue body
-    try:
-        github_issues.update_issue_body(
-            repo_root, issue_ref.issue_number, BodyText(content=updated_body)
-        )
-    except RuntimeError as e:
+    update_result = github_issues.update_issue_body(
+        repo_root, issue_ref.issue_number, BodyText(content=updated_body)
+    )
+    if isinstance(update_result, IssueUpdateError):
         result = MarkImplError(
             success=False,
             error_type="github-api-failed",
-            message=f"Failed to update issue body: {e}",
+            message=f"Failed to update issue body: {update_result.message}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(0) from None

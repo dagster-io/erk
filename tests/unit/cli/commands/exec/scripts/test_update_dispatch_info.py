@@ -15,7 +15,7 @@ from erk.cli.commands.exec.scripts.update_dispatch_info import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.types import IssueInfo, IssueUpdateError
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import BodyContent
 
@@ -208,8 +208,10 @@ def test_update_dispatch_info_github_api_failure() -> None:
     body = make_plan_header_body()
 
     class FailingFakeGitHubIssues(FakeGitHubIssues):
-        def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -> None:
-            raise RuntimeError("Network error")
+        def update_issue_body(
+            self, repo_root: Path, number: int, body: BodyContent
+        ) -> IssueUpdateError:
+            return IssueUpdateError(issue_number=number, message="Network error")
 
     fake_gh = FailingFakeGitHubIssues(issues={200: make_issue_info(200, body)})
     runner = CliRunner()

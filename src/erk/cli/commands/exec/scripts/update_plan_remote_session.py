@@ -30,7 +30,7 @@ from datetime import UTC
 import click
 
 from erk_shared.context.helpers import require_issues, require_repo_root, require_time
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import IssueNotFound, IssueUpdateError
 from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_remote_impl_event,
 )
@@ -131,11 +131,12 @@ def update_plan_remote_session(
         _output_error("no-plan-header-block", str(e))
         return  # Never reached, but helps type checker
 
-    # Update issue body (RuntimeError if API fails)
-    try:
-        github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
-    except RuntimeError as e:
-        _output_error("github-api-failed", f"Failed to update issue body: {e}")
+    # Update issue body
+    update_result = github_issues.update_issue_body(
+        repo_root, issue_number, BodyText(content=updated_body)
+    )
+    if isinstance(update_result, IssueUpdateError):
+        _output_error("github-api-failed", f"Failed to update issue body: {update_result.message}")
         return  # Never reached, but helps type checker
 
     result_success = UpdateSuccess(

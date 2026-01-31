@@ -13,7 +13,13 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
+from erk_shared.gateway.github.issues.types import (
+    CommentAddError,
+    IssueCloseError,
+    IssueInfo,
+    IssueNotFound,
+    IssueUpdateError,
+)
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
@@ -240,10 +246,14 @@ class GitHubPlanStore(PlanBackend):
 
         # Add comment before closing
         comment_body = "Plan completed via erk plan close"
-        self._github_issues.add_comment(repo_root, number, comment_body)
+        comment_result = self._github_issues.add_comment(repo_root, number, comment_body)
+        if isinstance(comment_result, CommentAddError):
+            raise RuntimeError(comment_result.message)
 
         # Close the issue
-        self._github_issues.close_issue(repo_root, number)
+        close_result = self._github_issues.close_issue(repo_root, number)
+        if isinstance(close_result, IssueCloseError):
+            raise RuntimeError(close_result.message)
 
     def create_plan(
         self,
@@ -413,9 +423,11 @@ class GitHubPlanStore(PlanBackend):
 
         # Replace block in full body and update issue
         updated_body = replace_metadata_block_in_body(issue.body, "plan-header", new_block_content)
-        self._github_issues.update_issue_body(
+        update_result = self._github_issues.update_issue_body(
             repo_root, issue_number, BodyText(content=updated_body)
         )
+        if isinstance(update_result, IssueUpdateError):
+            raise RuntimeError(update_result.message)
 
     def add_comment(
         self,
@@ -437,8 +449,10 @@ class GitHubPlanStore(PlanBackend):
             RuntimeError: If provider fails or plan not found
         """
         issue_number = int(plan_id)
-        comment_id = self._github_issues.add_comment(repo_root, issue_number, body)
-        return str(comment_id)
+        result = self._github_issues.add_comment(repo_root, issue_number, body)
+        if isinstance(result, CommentAddError):
+            raise RuntimeError(result.message)
+        return str(result)
 
     def _parse_identifier(self, identifier: str) -> int:
         """Parse identifier to extract issue number.

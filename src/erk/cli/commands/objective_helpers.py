@@ -11,7 +11,7 @@ import click
 
 from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import IssueCloseError, IssueNotFound
 from erk_shared.gateway.pr.submit import has_issue_closing_reference
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
@@ -130,8 +130,11 @@ def check_and_display_plan_issue_closure(
         )
         # Offer to close the issue manually
         if ctx.console.confirm(f"Close issue #{plan_number} now?", default=True):
-            ctx.issues.close_issue(repo_root, plan_number)
-            user_output(click.style("✓", fg="green") + f" Closed plan issue #{plan_number}")
+            close_result = ctx.issues.close_issue(repo_root, plan_number)
+            if isinstance(close_result, IssueCloseError):
+                user_output(f"Warning: Could not close plan issue #{plan_number}")
+            else:
+                user_output(click.style("✓", fg="green") + f" Closed plan issue #{plan_number}")
 
     return plan_number
 

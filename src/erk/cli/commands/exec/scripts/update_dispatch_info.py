@@ -18,7 +18,7 @@ import click
 
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import IssueNotFound, IssueUpdateError
 from erk_shared.gateway.github.metadata.plan_header import update_plan_header_dispatch
 from erk_shared.gateway.github.types import BodyText
 
@@ -93,13 +93,14 @@ def update_dispatch_info(
         raise SystemExit(1) from None
 
     # Update issue body
-    try:
-        github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
-    except RuntimeError as e:
+    update_result = github_issues.update_issue_body(
+        repo_root, issue_number, BodyText(content=updated_body)
+    )
+    if isinstance(update_result, IssueUpdateError):
         result = UpdateError(
             success=False,
             error="github-api-failed",
-            message=f"Failed to update issue body: {e}",
+            message=f"Failed to update issue body: {update_result.message}",
         )
         click.echo(json.dumps(asdict(result)), err=True)
         raise SystemExit(1) from None

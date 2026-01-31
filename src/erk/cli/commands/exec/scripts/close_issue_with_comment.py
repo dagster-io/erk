@@ -21,6 +21,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_repo_root,
 )
+from erk_shared.gateway.github.issues.types import CommentAddError, IssueCloseError
 
 
 @click.command(name="close-issue-with-comment")
@@ -42,33 +43,34 @@ def close_issue_with_comment(
     repo_root = require_repo_root(ctx)
 
     # Add the comment first
-    try:
-        comment_id = github.add_comment(repo_root, issue_number, comment)
-    except RuntimeError as e:
+    comment_id = github.add_comment(repo_root, issue_number, comment)
+    if isinstance(comment_id, CommentAddError):
         click.echo(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to add comment to issue #{issue_number}: {e}",
+                    "error": (
+                        f"Failed to add comment to issue #{issue_number}: "
+                        f"{comment_id.message}"
+                    ),
                 }
             )
         )
-        raise SystemExit(1) from e
+        raise SystemExit(1) from None
 
     # Then close the issue
-    try:
-        github.close_issue(repo_root, issue_number)
-    except RuntimeError as e:
+    close_result = github.close_issue(repo_root, issue_number)
+    if isinstance(close_result, IssueCloseError):
         click.echo(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to close issue #{issue_number}: {e}",
+                    "error": f"Failed to close issue #{issue_number}: {close_result.message}",
                     "comment_id": comment_id,
                 }
             )
         )
-        raise SystemExit(1) from e
+        raise SystemExit(1) from None
 
     click.echo(
         json.dumps(

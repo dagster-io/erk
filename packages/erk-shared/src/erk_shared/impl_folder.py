@@ -402,7 +402,11 @@ claude --permission-mode acceptEdits "/erk:plan-implement"
         description=instructions,
     )
 
-    github_issues.add_comment(repo_root, issue_number, comment_body)
+    from erk_shared.gateway.github.issues.types import CommentAddError
+
+    result = github_issues.add_comment(repo_root, issue_number, comment_body)
+    if isinstance(result, CommentAddError):
+        raise RuntimeError(result.message)
 
 
 def read_local_run_state(impl_dir: Path) -> LocalRunState | None:

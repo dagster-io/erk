@@ -61,6 +61,53 @@ class IssueComment:
 
 
 @dataclass(frozen=True)
+class CreateIssueError:
+    """Error from creating a GitHub issue. Implements NonIdealState."""
+
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "create-issue-failed"
+
+
+@dataclass(frozen=True)
+class IssueCloseError:
+    """Error from closing a GitHub issue. Implements NonIdealState."""
+
+    issue_number: int
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "close-issue-failed"
+
+
+@dataclass(frozen=True)
+class IssueUpdateError:
+    """Error from updating a GitHub issue body. Implements NonIdealState."""
+
+    issue_number: int
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "update-issue-failed"
+
+
+@dataclass(frozen=True)
+class CommentAddError:
+    """Error from adding a comment. Implements NonIdealState."""
+
+    issue_number: int
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "add-comment-failed"
+
+
+@dataclass(frozen=True)
 class PRReference:
     """Lightweight PR reference from timeline cross-reference.
 
