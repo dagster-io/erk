@@ -184,14 +184,28 @@ jobs:
           base_repo=$(echo "$pr_data" | jq -r '.base_repo')
           if [ "$head_repo" != "$base_repo" ]; then
             echo "PR is from a fork ($head_repo != $base_repo), skipping for security"
-            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "is_fork=true" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          echo "skip=false" >> $GITHUB_OUTPUT
+          echo "is_fork=false" >> $GITHUB_OUTPUT
+
+      - name: Check plan-review label
+        id: check-label
+        if: steps.discover-pr.outputs.has_pr == 'true' && steps.pr.outputs.is_fork != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          labels=$(gh api repos/${{ github.repository }}/pulls/${{ steps.discover-pr.outputs.pr_number }} --jq '[.labels[].name] | join(",")')
+          if echo "$labels" | grep -q "plan-review"; then
+            echo "PR has plan-review label, skipping autofix"
+            echo "has_plan_review_label=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_plan_review_label=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Skip if fork
-        if: steps.pr.outputs.skip == 'true'
+        if: steps.pr.outputs.is_fork == 'true'
         run: |
           echo "Skipping autofix for fork PR"
           exit 0
@@ -199,35 +213,47 @@ jobs:
       # Security: Fork PRs are blocked above before reaching this checkout.
       # Only same-repo PRs can trigger code execution in this privileged workflow.
       - uses: actions/checkout@v4
-        if: steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.discover-pr.outputs.has_pr == 'true' && steps.pr.outputs.is_fork != 'true' && steps.check-label.outputs.has_plan_review_label != 'true'
         with:
           ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
           fetch-depth: 0
 
       - name: Check for submission folder
-        if: steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.discover-pr.outputs.has_pr == 'true' && steps.pr.outputs.is_fork != 'true' && steps.check-label.outputs.has_plan_review_label != 'true'
         id: check
         run: |
           if [ -d ".impl" ]; then
             echo "Found .impl folder, skipping autofix"
-            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "has_impl_folder=true" >> $GITHUB_OUTPUT
           else
-            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "has_impl_folder=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine if autofix should run
+        id: should-autofix
+        run: |
+          if [[ "${{ steps.discover-pr.outputs.has_pr }}" == "true" && \
+                "${{ steps.pr.outputs.is_fork }}" != "true" && \
+                "${{ steps.check-label.outputs.has_plan_review_label }}" != "true" && \
+                "${{ steps.check.outputs.has_impl_folder }}" != "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/setup-python@v5
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.should-autofix.outputs.run == 'true'
         with:
           python-version: "3.12"
 
       - name: Install uv
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.should-autofix.outputs.run == 'true'
         run: pip install uv
 
       # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
       # about executing untrusted code from checkout in privileged workflow
       - name: Install erk
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.should-autofix.outputs.run == 'true'
         run: |
           if [ -d "./packages/erk-shared" ]; then
             uv tool install --from . --with-editable ./packages/erk-shared erk
@@ -236,23 +262,23 @@ jobs:
           fi
 
       - uses: actions/setup-node@v4
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.should-autofix.outputs.run == 'true'
         with:
           node-version: "20"
 
       - name: Install prettier
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.should-autofix.outputs.run == 'true'
         run: npm install -g prettier@3.6.0
 
       - uses: ./.github/actions/setup-graphite
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.should-autofix.outputs.run == 'true'
 
       - name: Setup Claude Code
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.should-autofix.outputs.run == 'true'
         uses: ./.github/actions/setup-claude-code
 
       - name: Collect failure context
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.should-autofix.outputs.run == 'true'
         id: failures
         run: |
           # Collect all job outcomes for Claude's context
@@ -265,7 +291,7 @@ jobs:
           echo "integration_tests_result=${{ needs.integration-tests.result }}" >> $GITHUB_OUTPUT
 
       - name: Collect actual errors
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.should-autofix.outputs.run == 'true'
         id: errors
         run: |
           errors=""
@@ -301,7 +327,7 @@ jobs:
           echo -e "$errors" > /tmp/errors.txt
 
       - name: Run Claude autofix
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.should-autofix.outputs.run == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
@@ -340,7 +366,7 @@ jobs:
             --allowedTools 'Read(*),Edit(*),Bash(uv run ruff:*),Bash(uv run ty:*),Bash(prettier:*),Bash(make docs-sync:*),Bash(git:*)'
 
       - name: Run full CI verification
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.should-autofix.outputs.run == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
