@@ -16,6 +16,7 @@ from erk.cli.commands.navigation_helpers import (
     unallocate_worktree_and_branch,
     validate_for_deletion,
 )
+from erk.cli.ensure import UserFacingCliError
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo, save_pool_state
@@ -993,8 +994,8 @@ def test_validate_for_deletion_blocks_with_uncommitted_changes(tmp_path: Path) -
 
     ctx = context_for_test(git=git, github=FakeGitHub(), cwd=repo_root, global_config=global_config)
 
-    # Should raise SystemExit
-    with pytest.raises(SystemExit) as exc_info:
+    # Should raise UserFacingCliError
+    with pytest.raises(UserFacingCliError):
         validate_for_deletion(
             ctx=ctx,
             repo_root=repo_root,
@@ -1002,8 +1003,6 @@ def test_validate_for_deletion_blocks_with_uncommitted_changes(tmp_path: Path) -
             worktree_path=worktree_path,
             force=False,
         )
-
-    assert exc_info.value.code == 1
 
 
 def test_delete_branch_and_worktree_raises_on_worktree_remove_error(tmp_path: Path) -> None:

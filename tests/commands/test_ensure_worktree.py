@@ -45,6 +45,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.config import LoadedConfig
+from erk.cli.ensure import UserFacingCliError
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
@@ -201,12 +202,12 @@ def test_ensure_worktree_fails_for_nonexistent_branch() -> None:
 
         ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Call ensure_worktree_for_branch for nonexistent branch - should raise SystemExit
+        # Call ensure_worktree_for_branch for nonexistent branch - should raise UserFacingCliError
         try:
             ensure_worktree_for_branch(ctx, repo, "nonexistent-branch")
-            raise AssertionError("Expected SystemExit to be raised")
-        except SystemExit as e:
-            assert e.code == 1
+            raise AssertionError("Expected UserFacingCliError to be raised")
+        except UserFacingCliError:
+            pass
 
         # No worktrees should be created
         assert len(git_ops.added_worktrees) == 0
@@ -471,7 +472,6 @@ def test_ensure_worktree_generates_unique_name_on_collision() -> None:
         with pytest.raises(SystemExit) as exc_info:
             ensure_worktree_for_branch(ctx, repo, "feature-name", is_plan_derived=False)
 
-        # Should exit with error code
         assert exc_info.value.code == 1
 
 

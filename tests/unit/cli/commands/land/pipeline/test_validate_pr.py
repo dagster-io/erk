@@ -10,6 +10,7 @@ from erk.cli.commands.land_pipeline import (
     make_initial_state,
     validate_pr,
 )
+from erk.cli.ensure import UserFacingCliError
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
@@ -107,10 +108,8 @@ def test_fails_for_closed_pr(tmp_path: Path) -> None:
     )
 
     state = _resolved_state(tmp_path, pr_details=pr_details)
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(UserFacingCliError):
         validate_pr(ctx, state)
-
-    assert exc_info.value.code == 1
 
 
 def test_fails_for_wrong_base_branch(tmp_path: Path) -> None:
@@ -131,10 +130,8 @@ def test_fails_for_wrong_base_branch(tmp_path: Path) -> None:
     )
 
     state = _resolved_state(tmp_path, pr_details=pr_details)
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(UserFacingCliError):
         validate_pr(ctx, state)
-
-    assert exc_info.value.code == 1
 
 
 def test_returns_error_for_none_pr_details(tmp_path: Path) -> None:

@@ -9,6 +9,7 @@ from erk.cli.commands.land_cmd import (
     _resolve_land_target_current_branch,
     _resolve_land_target_pr,
 )
+from erk.cli.ensure import UserFacingCliError
 from erk.core.context import context_for_test
 from erk_shared.context.types import RepoContext
 from erk_shared.gateway.git.abc import WorktreeInfo
@@ -120,10 +121,8 @@ class TestResolveCurrentBranch:
 
         repo = create_test_repo_context(tmp_path)
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(UserFacingCliError):
             _resolve_land_target_current_branch(ctx, repo=repo, up_flag=False)
-
-        assert exc_info.value.code == 1
 
     def test_fails_if_no_pr_for_branch(self, tmp_path: Path) -> None:
         """Test that resolver fails when no PR exists for branch."""
@@ -258,10 +257,8 @@ class TestResolvePr:
 
         repo = create_test_repo_context(tmp_path)
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(UserFacingCliError):
             _resolve_land_target_pr(ctx, repo=repo, pr_number=pr_number, up_flag=True)
-
-        assert exc_info.value.code == 1
 
     def test_fails_if_pr_not_found(self, tmp_path: Path) -> None:
         """Test that resolver fails when PR doesn't exist."""

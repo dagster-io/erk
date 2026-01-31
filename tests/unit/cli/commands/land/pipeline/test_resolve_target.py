@@ -10,6 +10,7 @@ from erk.cli.commands.land_pipeline import (
     make_initial_state,
     resolve_target,
 )
+from erk.cli.ensure import UserFacingCliError
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
@@ -189,7 +190,5 @@ def test_detached_head_fails(tmp_path: Path) -> None:
     )
 
     state = _make_state(tmp_path)
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(UserFacingCliError):
         resolve_target(ctx, state)
-
-    assert exc_info.value.code == 1

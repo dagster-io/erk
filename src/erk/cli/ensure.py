@@ -19,7 +19,10 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeVar
 
+import click
+
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
+from erk_shared.output.output import user_output
 
 if TYPE_CHECKING:
     from erk.core.context import ErkContext
@@ -27,11 +30,13 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class UserFacingCliError(Exception):
-    """Exception for user-facing CLI errors.
+class UserFacingCliError(click.ClickException):
+    """Exception for user-facing CLI errors with styled output.
 
-    Stores the error message for display at the CLI entry point.
-    Caught by main() which handles styled output and exit code.
+    Extends click.ClickException so Click catches it automatically at every
+    level (groups, subgroups, commands) and converts it to a styled error
+    message + exit code 1. Works correctly with both production CLI and
+    CliRunner in tests.
 
     Usage:
         raise UserFacingCliError("Not a GitHub repository")
@@ -41,6 +46,10 @@ class UserFacingCliError(Exception):
     def __init__(self, message: str) -> None:
         super().__init__(message)
         self.message = message
+
+    def show(self, file: Any = None) -> None:
+        """Display styled error message to stderr."""
+        user_output(click.style("Error: ", fg="red") + self.format_message())
 
 
 class Ensure:
