@@ -3,10 +3,10 @@
 import subprocess
 from pathlib import Path
 
-import pytest
 from pytest import MonkeyPatch
 
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueUpdateError
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.real import RealTime
 from tests.integration.test_helpers import mock_subprocess_run
@@ -70,7 +70,7 @@ Paragraph with **bold** text.
 
 
 def test_update_issue_body_command_failure(monkeypatch: MonkeyPatch) -> None:
-    """Test update_issue_body raises RuntimeError on gh CLI failure."""
+    """Test update_issue_body returns IssueUpdateError on gh CLI failure."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise RuntimeError("Issue not found")
@@ -78,5 +78,7 @@ def test_update_issue_body_command_failure(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
-        with pytest.raises(RuntimeError, match="Issue not found"):
-            issues.update_issue_body(Path("/repo"), 999, BodyText(content="New body"))
+        result = issues.update_issue_body(Path("/repo"), 999, BodyText(content="New body"))
+
+        assert isinstance(result, IssueUpdateError)
+        assert "Issue not found" in result.message

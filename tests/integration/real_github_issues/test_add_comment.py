@@ -3,10 +3,10 @@
 import subprocess
 from pathlib import Path
 
-import pytest
 from pytest import MonkeyPatch
 
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
+from erk_shared.gateway.github.issues.types import CommentAddError
 from erk_shared.gateway.time.real import RealTime
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -74,7 +74,7 @@ Third line"""
 
 
 def test_add_comment_command_failure(monkeypatch: MonkeyPatch) -> None:
-    """Test add_comment raises RuntimeError on gh CLI failure."""
+    """Test add_comment returns CommentAddError on gh CLI failure."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise RuntimeError("Issue not found")
@@ -82,5 +82,7 @@ def test_add_comment_command_failure(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
-        with pytest.raises(RuntimeError, match="Issue not found"):
-            issues.add_comment(Path("/repo"), 999, "Comment body")
+        result = issues.add_comment(Path("/repo"), 999, "Comment body")
+
+        assert isinstance(result, CommentAddError)
+        assert "Issue not found" in result.message

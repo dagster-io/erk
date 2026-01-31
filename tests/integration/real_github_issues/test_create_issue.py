@@ -3,10 +3,10 @@
 import subprocess
 from pathlib import Path
 
-import pytest
 from pytest import MonkeyPatch
 
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
+from erk_shared.gateway.github.issues.types import CreateIssueError
 from erk_shared.gateway.time.real import RealTime
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -110,7 +110,7 @@ def test_create_issue_no_labels(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_create_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
-    """Test create_issue raises RuntimeError on gh CLI failure."""
+    """Test create_issue returns CreateIssueError on gh CLI failure."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise RuntimeError("gh command failed: not authenticated")
@@ -118,7 +118,9 @@ def test_create_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
-        with pytest.raises(RuntimeError, match="not authenticated"):
-            issues.create_issue(
-                repo_root=Path("/repo"), title="Title", body="Body", labels=["label"]
-            )
+        result = issues.create_issue(
+            repo_root=Path("/repo"), title="Title", body="Body", labels=["label"]
+        )
+
+        assert isinstance(result, CreateIssueError)
+        assert "not authenticated" in result.message
