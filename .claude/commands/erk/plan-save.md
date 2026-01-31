@@ -136,8 +136,8 @@ Next steps:
 View Issue: gh issue view <issue_number> --web
 
 In Claude Code:
-  Prepare worktree: /erk:prepare
-  Submit to queue: /erk:plan-submit
+  Submit to queue: /erk:plan-submit — Submit plan for remote agent implementation
+  Plan review: /erk:plan-review — Submit plan as PR for human review before implementation
 
 OR exit Claude Code first, then run one of:
   Local: erk prepare <issue_number>
