@@ -117,6 +117,15 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
         branch_name=current_branch,
     )
 
+    if plan_context is not None:
+        msg = f"   Incorporating plan from issue #{plan_context.issue_number}"
+        click.echo(click.style(msg, fg="green"))
+        if plan_context.objective_summary is not None:
+            click.echo(click.style(f"   Linked to {plan_context.objective_summary}", fg="green"))
+    else:
+        click.echo(click.style("   No linked plan found", dim=True))
+    click.echo("")
+
     msg_gen = CommitMessageGenerator(ctx.claude_executor)
     msg_result = run_commit_message_generation(
         generator=msg_gen,
