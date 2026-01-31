@@ -131,4 +131,7 @@ jobs:
               BODY="❌ Remote rebase failed\n\n[View workflow run]($RUN_URL)"
             fi
           fi
-          gh pr comment "$PR_NUMBER" --body "$(echo -e "$BODY")"
+          TEMP_FILE=$(mktemp)
+          printf "%b" "$BODY" > "$TEMP_FILE"
+          gh pr comment "$PR_NUMBER" --body-file "$TEMP_FILE"
+          rm "$TEMP_FILE"
