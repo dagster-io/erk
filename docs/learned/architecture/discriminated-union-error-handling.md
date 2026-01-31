@@ -257,6 +257,228 @@ def get_issue(self, issue_number: int) -> IssueInfo | IssueNotFound:
 
 This pattern is documented in PR #6304 but not yet merged to master.
 
+### Example 3: Gateway Conversion Examples - Worktree and Branch Operations
+
+The worktree and branch gateway methods demonstrate the full discriminated union conversion pattern across multiple gateways. These conversions follow the NonIdealState protocol pattern from `remote_ops/types.py`.
+
+#### WorktreeAdded/WorktreeAddError - add_worktree Gateway
+
+**Before** (exception-based):
+
+```python
+# ABC definition
+def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> None:
+    """Raises WorktreeAddError if worktree cannot be created."""
+```
+
+**After** (discriminated union):
+
+```python
+# Type definitions (gateway/git/worktree/types.py)
+@dataclass(frozen=True)
+class WorktreeAdded:
+    """Success result from adding a worktree."""
+    path: Path
+    branch: str
+
+@dataclass(frozen=True)
+class WorktreeAddError:
+    """Error result from adding a worktree. Implements NonIdealState."""
+    path: Path
+    branch: str
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "worktree-add-failed"
+
+# ABC definition (gateway/git/worktree/abc.py)
+def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> WorktreeAdded | WorktreeAddError:
+    """Returns WorktreeAdded on success, WorktreeAddError on failure."""
+```
+
+**Implementation pattern** across 5 files:
+
+- `abc.py` - Abstract method with union return type
+- `real.py` - Parse subprocess errors, return `WorktreeAddError` for failures
+- `fake.py` - Check injected error first, then return success/error based on test setup
+- `dry_run.py` - Always return `WorktreeAdded` (no-op)
+- `printing.py` - Print operation details, return `WorktreeAdded`
+
+**Call site pattern** (18 call sites throughout codebase):
+
+```python
+result = ops.git_worktree.add_worktree(repo_root=root, path=wt_path, branch=branch)
+if isinstance(result, WorktreeAddError):
+    return SetupError(
+        error_type="worktree-creation-failed",
+        message=f"Failed to create worktree at {wt_path}\n\n{result.message}",
+    )
+# Type narrowing: result is now WorktreeAdded
+```
+
+#### WorktreeRemoved/WorktreeRemoveError - remove_worktree Gateway
+
+**Before** (exception-based):
+
+```python
+def remove_worktree(self, *, repo_root: Path, path: Path) -> None:
+    """Raises WorktreeRemoveError if worktree cannot be removed."""
+```
+
+**After** (discriminated union with mixed exception handling):
+
+```python
+# Type definitions (gateway/git/worktree/types.py)
+@dataclass(frozen=True)
+class WorktreeRemoved:
+    """Success result from removing a worktree."""
+    path: Path
+
+@dataclass(frozen=True)
+class WorktreeRemoveError:
+    """Error result from removing a worktree. Implements NonIdealState."""
+    path: Path
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "worktree-remove-failed"
+
+# ABC definition
+def remove_worktree(self, *, repo_root: Path, path: Path) -> WorktreeRemoved | WorktreeRemoveError:
+    """Returns WorktreeRemoved on success, WorktreeRemoveError on failure.
+
+    Note: Cleanup operations like 'git worktree prune' may still raise exceptions
+    if they fail, as this indicates corrupted repository state.
+    """
+```
+
+**Key nuance**: The main `remove_worktree` operation returns discriminated union, but cleanup operations (like `git worktree prune`) remain exception-based because their failure indicates corrupted state requiring different handling. See [gateway-specific-patterns.md](gateway-specific-patterns.md) for details on mixed exception/union handling.
+
+**Call site pattern** (12 call sites: 4 production, 8 test):
+
+```python
+result = ops.git_worktree.remove_worktree(repo_root=root, path=wt_path)
+if isinstance(result, WorktreeRemoveError):
+    click.echo(f"Warning: Failed to remove worktree: {result.message}", err=True)
+    return 1
+# Type narrowing: result is now WorktreeRemoved
+```
+
+**LBYL violation fix**: Before this conversion, `delete_cmd.py:150-168` used `_remove_worktree_safe()` wrapper to catch exceptions - a LBYL violation. The discriminated union pattern eliminates the need for try/except wrappers.
+
+#### BranchCreated/BranchCreateError - create_branch Gateway
+
+**Before** (exception-based):
+
+```python
+def create_branch(self, *, repo_root: Path, branch_name: str, start_point: str) -> None:
+    """Raises BranchCreateError if branch cannot be created."""
+```
+
+**After** (discriminated union):
+
+```python
+# Type definitions (gateway/git/branch/types.py)
+@dataclass(frozen=True)
+class BranchCreated:
+    """Success result from creating a branch."""
+    branch_name: str
+    start_point: str
+
+@dataclass(frozen=True)
+class BranchCreateError:
+    """Error result from creating a branch. Implements NonIdealState."""
+    branch_name: str
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "branch-create-failed"
+
+# ABC definition (gateway/git/branch/abc.py)
+def create_branch(self, *, repo_root: Path, branch_name: str, start_point: str) -> BranchCreated | BranchCreateError:
+    """Returns BranchCreated on success, BranchCreateError on failure."""
+```
+
+**Multi-caller example**: `create_branch` is called from multiple contexts:
+
+- Worktree creation workflows
+- Branch management commands
+- Plan implementation setup
+
+Each caller uses the same isinstance() pattern, with context-specific error handling.
+
+**Migration reference**: See PR #6350 (add_worktree), PR #6346 (remove_worktree) for complete conversion examples.
+
+### 5-Place Implementation Checklist
+
+When converting a gateway method to discriminated union:
+
+1. **Types file**: Define `SuccessType` and `ErrorType` dataclasses with `@property error_type() -> str`
+2. **ABC**: Update abstract method signature to `-> SuccessType | ErrorType`
+3. **Real implementation**: Parse subprocess/API errors, return ErrorType for failures
+4. **Fake implementation**: Add error injection parameters, check injected error FIRST
+5. **Dry-run/Printing**: Update signatures, typically return SuccessType
+6. **All call sites**: Replace try/except with `isinstance(result, ErrorType)` checks
+7. **All tests**: Update to check `isinstance(result, ErrorType)` instead of catching exceptions
+
+Cross-reference: [gateway-abc-implementation.md](gateway-abc-implementation.md) for detailed 5-place update pattern.
+
+### Example 4: LandError - Structured Pipeline Error
+
+The land command pipeline uses a structured error type that extends the discriminated union pattern with pipeline-specific metadata. This demonstrates how discriminated unions can encode rich error context for complex workflows.
+
+**LandError definition** (`land_pipeline.py:82-89`):
+
+```python
+@dataclass(frozen=True)
+class LandError:
+    """Error result from land pipeline."""
+    phase: str              # Which pipeline stage failed ('validation' or 'execution')
+    error_type: str         # Machine-readable error classification
+    message: str            # Human-readable description
+    details: dict[str, Any] | None = None  # Optional structured context
+
+    @property
+    def error_type(self) -> str:
+        return self.error_type
+```
+
+**Pipeline step signature**:
+
+```python
+LandStep = Callable[[ErkContext, LandState], LandState | LandError]
+```
+
+Each pipeline step returns either:
+
+- Updated `LandState` to pass to next step
+- `LandError` to short-circuit pipeline and propagate error to caller
+
+**Consumer pattern in validation pipeline**:
+
+```python
+def run_validation_pipeline(ctx: ErkContext, state: LandState) -> LandState | LandError:
+    """Run all validation steps, short-circuit on first error."""
+    for step in [resolve_target, validate_checks, check_no_conflicts, ...]:
+        result = step(ctx, state)
+        if isinstance(result, LandError):
+            return result  # Short-circuit pipeline
+        state = result  # Update state for next step
+    return state
+```
+
+**Benefits of structured error**:
+
+1. **Phase tracking**: Caller knows if error occurred in validation vs execution
+2. **Machine-readable error_type**: Enables specific error handling (e.g., "pr-checks-failing" vs "merge-conflict")
+3. **Structured details**: Optional dict for additional context (PR number, check names, etc.)
+4. **Pipeline composition**: Each step has same signature, enabling functional composition
+
+**Reference**: See [linear-pipelines.md](linear-pipelines.md) for complete land pipeline architecture.
+
 ## Consumer Pattern
 
 ### CLI Layer Pattern

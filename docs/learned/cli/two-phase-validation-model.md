@@ -86,6 +86,93 @@ ctx.github.merge_pr(repo_root, pr_details.number)
 
 See [EnsureIdeal Pattern](ensure-ideal-pattern.md) for complete documentation.
 
+## Extended Example: Land Command Pipeline
+
+The land command implements an extended two-phase model with separate validation and execution pipelines. This demonstrates how the two-phase pattern scales to complex workflows with multiple steps.
+
+### Validation Pipeline (5 Steps)
+
+**Purpose**: Check preconditions, resolve values, no mutations
+
+```python
+def run_validation_pipeline(ctx: ErkContext, state: LandState) -> LandState | LandError:
+    """Phase 1: Validation - check ALL preconditions before mutations."""
+    for step in [
+        resolve_target,              # Resolve PR number, fetch details
+        validate_checks,             # Check PR status, CI passing
+        check_no_conflicts,          # Check for merge conflicts
+        check_no_uncommitted_changes,# Check working tree clean
+        check_branch_up_to_date,     # Check branch synced with remote
+    ]:
+        result = step(ctx, state)
+        if isinstance(result, LandError):
+            return result  # Short-circuit on first error
+        state = result  # Thread state to next step
+    return state
+```
+
+**Key characteristics**:
+
+- Read-only operations (no mutations)
+- Type narrowing (PR number resolution, branch detection)
+- Fails fast on first error
+- Returns enriched state with validated values
+
+### Execution Pipeline (6 Steps)
+
+**Purpose**: Perform mutations with validated state
+
+```python
+def run_execution_pipeline(ctx: ErkContext, state: LandState) -> LandState | LandError:
+    """Phase 2: Execution - perform mutations with pre-validated state."""
+    for step in [
+        merge_pr_step,       # Merge PR to target branch
+        check_learn_status,  # Check learn plan status (if applicable)
+        update_learn_plan,   # Update learn plan issue (if applicable)
+        promote_tripwires,   # Promote tripwires to category files
+        close_review_pr,     # Close review PR (if exists)
+        cleanup_branches,    # Delete merged branches
+    ]:
+        result = step(ctx, state)
+        if isinstance(result, LandError):
+            return result  # Short-circuit on first error
+        state = result  # Thread state to next step
+    return state
+```
+
+**Key characteristics**:
+
+- Mutating operations (modifies repository state)
+- Assumes validation passed (no type narrowing needed)
+- Steps may have dependencies on previous step results
+- No user interaction (all confirmations pre-gathered)
+
+### Benefits of Pipeline Separation
+
+1. **Clear boundaries**: Validation pipeline is read-only, execution pipeline mutates
+2. **Independent testability**: Can test validation without side effects
+3. **Resumability**: Execution pipeline can be serialized to shell script and re-executed
+4. **Composability**: Each pipeline is a sequence of steps with same signature
+
+### State Threading
+
+State objects (`LandState`) thread through both pipelines:
+
+- **Validation pipeline**: Enriches state with resolved values (PR number, target branch)
+- **Execution pipeline**: Uses validated state, adds execution results
+
+See [Land State Threading](../architecture/land-state-threading.md) for immutable state management patterns.
+
+### Reference Implementation
+
+**File**: `src/erk/cli/commands/workflows/land_pipeline.py` (706 lines, 20 functions)
+
+**Cross-references**:
+
+- [Linear Pipelines](../architecture/linear-pipelines.md) - Two-pipeline pattern architecture
+- [CLI-to-Pipeline Boundary](../architecture/cli-to-pipeline-boundary.md) - Separating CLI from business logic
+- [Learn Plan Land Flow](learn-plan-land-flow.md) - Learn-plan-specific execution steps
+
 ## Related Topics
 
 - [EnsureIdeal Pattern](ensure-ideal-pattern.md) - Type narrowing from discriminated unions

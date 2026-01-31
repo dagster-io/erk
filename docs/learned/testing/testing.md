@@ -145,6 +145,88 @@ git.staged_files  # AttributeError
 git.deleted_branches  # AttributeError
 ```
 
+#### FakeWorktree Error Injection Pattern
+
+When testing discriminated union error paths in gateway methods, use constructor-injected error parameters. The FakeGitWorktree gateway demonstrates the canonical pattern:
+
+**Naming convention**: `{method_name}_error` (e.g., `add_worktree_error`, `remove_worktree_error`)
+
+**Constructor pattern**:
+
+```python
+from erk_shared.gateway.git.worktree import FakeGitWorktree
+from erk_shared.gateway.git.worktree.types import WorktreeAddError, WorktreeRemoveError
+
+fake_worktree = FakeGitWorktree(
+    add_worktree_error=WorktreeAddError(
+        path=Path("/path/to/worktree"),
+        branch="feature",
+        message="Worktree already exists",
+    ),
+    remove_worktree_error=WorktreeRemoveError(
+        path=Path("/path/to/worktree"),
+        message="Worktree is locked",
+    ),
+)
+```
+
+**Implementation pattern** (inside FakeGitWorktree):
+
+```python
+def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> WorktreeAdded | WorktreeAddError:
+    # Check injected error FIRST (before any success logic)
+    if self._add_worktree_error is not None:
+        return self._add_worktree_error
+
+    # Success path
+    return WorktreeAdded(path=path, branch=branch)
+```
+
+**Key principle**: Error injection is checked FIRST in the method body, before any success logic executes.
+
+**Test pattern for success path**:
+
+```python
+def test_add_worktree_success() -> None:
+    """Test successful worktree addition."""
+    fake_worktree = FakeGitWorktree()  # No error injected
+    result = fake_worktree.add_worktree(
+        repo_root=Path("/repo"),
+        path=Path("/repo/.worktrees/feature"),
+        branch="feature",
+    )
+    assert isinstance(result, WorktreeAdded)
+    assert result.path == Path("/repo/.worktrees/feature")
+    assert result.branch == "feature"
+```
+
+**Test pattern for error path**:
+
+```python
+def test_add_worktree_error() -> None:
+    """Test worktree addition failure."""
+    error = WorktreeAddError(
+        path=Path("/repo/.worktrees/feature"),
+        branch="feature",
+        message="Worktree already exists",
+    )
+    fake_worktree = FakeGitWorktree(add_worktree_error=error)
+
+    result = fake_worktree.add_worktree(
+        repo_root=Path("/repo"),
+        path=Path("/repo/.worktrees/feature"),
+        branch="feature",
+    )
+
+    assert isinstance(result, WorktreeAddError)
+    assert result.message == "Worktree already exists"
+    assert result.error_type == "worktree-add-failed"
+```
+
+**Reference test patterns**: Tests in `tests/unit/gateway/git/worktree/` demonstrate success and error path testing for both `add_worktree` and `remove_worktree` operations.
+
+**Cross-reference**: See [gateway-fake-testing-exemplar.md](../architecture/gateway-fake-testing-exemplar.md) for comprehensive fake testing patterns.
+
 ### FakeConfigStore
 
 ```python
