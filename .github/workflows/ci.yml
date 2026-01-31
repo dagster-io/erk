@@ -190,6 +190,20 @@ jobs:
 
           echo "skip=false" >> $GITHUB_OUTPUT
 
+      - name: Check plan-review label
+        id: check-label
+        if: steps.discover-pr.outputs.has_pr == 'true' && steps.pr.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          labels=$(gh api repos/${{ github.repository }}/pulls/${{ steps.discover-pr.outputs.pr_number }} --jq '[.labels[].name] | join(",")')
+          if echo "$labels" | grep -q "plan-review"; then
+            echo "PR has plan-review label, skipping autofix"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Skip if fork
         if: steps.pr.outputs.skip == 'true'
         run: |
@@ -199,13 +213,13 @@ jobs:
       # Security: Fork PRs are blocked above before reaching this checkout.
       # Only same-repo PRs can trigger code execution in this privileged workflow.
       - uses: actions/checkout@v4
-        if: steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.pr.outputs.skip != 'true' && steps.check-label.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         with:
           ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
           fetch-depth: 0
 
       - name: Check for submission folder
-        if: steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.pr.outputs.skip != 'true' && steps.check-label.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         id: check
         run: |
           if [ -d ".impl" ]; then
@@ -216,18 +230,18 @@ jobs:
           fi
 
       - uses: actions/setup-python@v5
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.check-label.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         with:
           python-version: "3.12"
 
       - name: Install uv
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.check-label.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         run: pip install uv
 
       # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
       # about executing untrusted code from checkout in privileged workflow
       - name: Install erk
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.check-label.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         run: |
           if [ -d "./packages/erk-shared" ]; then
             uv tool install --from . --with-editable ./packages/erk-shared erk
@@ -236,23 +250,23 @@ jobs:
           fi
 
       - uses: actions/setup-node@v4
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.check-label.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         with:
           node-version: "20"
 
       - name: Install prettier
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.check-label.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         run: npm install -g prettier@3.6.0
 
       - uses: ./.github/actions/setup-graphite
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.check-label.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
 
       - name: Setup Claude Code
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.check-label.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         uses: ./.github/actions/setup-claude-code
 
       - name: Collect failure context
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.check-label.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         id: failures
         run: |
           # Collect all job outcomes for Claude's context
@@ -265,7 +279,7 @@ jobs:
           echo "integration_tests_result=${{ needs.integration-tests.result }}" >> $GITHUB_OUTPUT
 
       - name: Collect actual errors
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.check-label.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         id: errors
         run: |
           errors=""
@@ -301,7 +315,7 @@ jobs:
           echo -e "$errors" > /tmp/errors.txt
 
       - name: Run Claude autofix
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.check-label.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
