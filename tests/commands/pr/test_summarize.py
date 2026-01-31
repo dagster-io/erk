@@ -333,7 +333,7 @@ def _make_issue_info(
     body: str,
 ) -> IssueInfo:
     """Create an IssueInfo for testing."""
-    now = datetime.now(UTC)
+    now = datetime(2024, 1, 1, tzinfo=UTC)
     return IssueInfo(
         number=number,
         title=title,
