@@ -219,6 +219,64 @@ shell = FakeShell(
 )
 ```
 
+## Fake Error Simulation
+
+Fakes support error simulation via constructor parameters. This pattern is used extensively in gateway testing for discriminated union error handling.
+
+**Pattern**: Error parameters accept the error discriminant type:
+
+```python
+from tests.fakes.git_branch_ops import FakeGitBranchOps
+from erk.gateway.git_branch_ops.types import CreateBranchResult
+
+fake = FakeGitBranchOps(
+    create_branch_error=CreateBranchResult(
+        type="branch_already_exists",
+        branch_name="feature",
+    )
+)
+
+result = fake.create_branch(name="feature", start_point="main")
+assert result.type == "branch_already_exists"
+```
+
+**Benefits:**
+
+- Fast: No subprocess overhead
+- Deterministic: Error behavior controlled by test
+- Type-safe: Constructor param matches method return type
+- Realistic: Uses same discriminant types as real implementation
+
+**Common error simulation patterns:**
+
+```python
+# Simulate branch already exists
+FakeGitBranchOps(
+    create_branch_error=CreateBranchResult(
+        type="branch_already_exists",
+        branch_name="existing-branch",
+    )
+)
+
+# Simulate worktree add failure
+FakeWorktreeOps(
+    add_worktree_error=AddWorktreeResult(
+        type="worktree_path_occupied",
+        path=Path("/path/to/worktree"),
+    )
+)
+
+# Simulate generic error
+FakeGitBranchOps(
+    create_branch_error=CreateBranchResult(
+        type="error",
+        message="git command failed",
+    )
+)
+```
+
+**Error boundary testing**: Fakes do NOT use try/except (see [Gateway Error Boundaries](../architecture/gateway-error-boundaries.md)). They return error discriminants based on constructor params, making error paths easy to test without mocking exceptions.
+
 ## Fixture Selection Guide
 
 ### When to Use Each Fixture

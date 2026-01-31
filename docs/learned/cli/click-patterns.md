@@ -16,27 +16,27 @@ Use `is_flag=False` with `flag_value` to create flags that work both with and wi
 
 ```python
 @click.option(
-    "--codespace",
+    "--environment",
     type=str,
     default=None,        # None when flag not provided
     is_flag=False,       # Accepts a value
     flag_value="",       # Empty string when flag provided without value
-    help="Run in codespace (uses default if name not provided)",
+    help="Use environment (uses default if name not provided)",
 )
 ```
 
 **Behavior:**
 
-- `erk implement 123` → `codespace=None` (flag not used)
-- `erk implement 123 --codespace` → `codespace=""` (use default)
-- `erk implement 123 --codespace mybox` → `codespace="mybox"` (use named)
+- `erk command` → `environment=None` (flag not used)
+- `erk command --environment` → `environment=""` (use default)
+- `erk command --environment staging` → `environment="staging"` (use named)
 
 **In code, check for flag usage:**
 
 ```python
-if codespace is not None:
+if environment is not None:
     # Flag was provided
-    codespace_name = codespace if codespace else None  # "" → None for "use default"
+    env_name = environment if environment else None  # "" → None for "use default"
 ```
 
 **Use case:** When you want a flag that can optionally take a value, with a sensible default when no value is given.

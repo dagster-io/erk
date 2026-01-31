@@ -15,6 +15,7 @@
 - **[dependency-injection-patterns.md](dependency-injection-patterns.md)** — writing erk exec scripts, testing exec scripts that use gateways, understanding exec script architecture, migrating exec scripts from subprocess to gateways
 - **[ensure-ideal-pattern.md](ensure-ideal-pattern.md)** — handling discriminated union returns in CLI commands, narrowing types from T | NonIdealState or T | ErrorType, working with PR lookups, branch detection, or API calls that return union types, seeing EnsureIdeal in code and wondering when to use it vs Ensure
 - **[erk-exec-commands.md](erk-exec-commands.md)** — running erk exec subcommands, looking up erk exec syntax
+- **[error-handling-antipatterns.md](error-handling-antipatterns.md)** — handling expected CLI failures, deciding between RuntimeError and UserFacingCliError, converting exception-based error handling to UserFacingCliError
 - **[exec-command-patterns.md](exec-command-patterns.md)** — writing exec scripts with PR/issue output, building diagnostic messages, standardizing exec command output
 - **[exec-script-discovery.md](exec-script-discovery.md)** — using erk exec commands, unsure what flags an exec command accepts
 - **[exec-script-patterns.md](exec-script-patterns.md)** — Creating new exec CLI commands

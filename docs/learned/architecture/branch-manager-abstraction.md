@@ -56,17 +56,17 @@ else:
 
 ## Method Reference
 
-| Method                 | Purpose                              | Graphite                  | Git                  |
-| ---------------------- | ------------------------------------ | ------------------------- | -------------------- |
-| `create_branch()`      | Create new branch from base          | `gt create`               | `git branch`         |
-| `delete_branch()`      | Delete local branch                  | `git branch -D` + cleanup | `git branch -d/-D`   |
-| `checkout_branch()`    | Switch to branch                     | `git checkout`            | `git checkout`       |
-| `submit_branch()`      | Push branch to remote                | `gt submit`               | `git push -u origin` |
-| `track_branch()`       | Register existing branch with parent | `gt track`                | No-op                |
-| `get_pr_for_branch()`  | Get PR info for branch               | Cache lookup              | GitHub API           |
-| `get_branch_stack()`   | Get linear stack containing branch   | Returns stack             | Returns None         |
-| `get_parent_branch()`  | Get parent branch name               | Cache lookup              | Returns None         |
-| `get_child_branches()` | Get child branches                   | Cache lookup              | Returns empty list   |
+| Method                 | Purpose                              | Graphite                  | Git                  | Error Handling                 |
+| ---------------------- | ------------------------------------ | ------------------------- | -------------------- | ------------------------------ |
+| `create_branch()`      | Create new branch from base          | `gt create`               | `git branch`         | Discriminated union (PR #6348) |
+| `delete_branch()`      | Delete local branch                  | `git branch -D` + cleanup | `git branch -d/-D`   | Exception-based                |
+| `checkout_branch()`    | Switch to branch                     | `git checkout`            | `git checkout`       | Exception-based                |
+| `submit_branch()`      | Push branch to remote                | `gt submit`               | `git push -u origin` | Exception-based                |
+| `track_branch()`       | Register existing branch with parent | `gt track`                | No-op                | Exception-based                |
+| `get_pr_for_branch()`  | Get PR info for branch               | Cache lookup              | GitHub API           | Exception-based                |
+| `get_branch_stack()`   | Get linear stack containing branch   | Returns stack             | Returns None         | Returns None on failure        |
+| `get_parent_branch()`  | Get parent branch name               | Cache lookup              | Returns None         | Returns None on failure        |
+| `get_child_branches()` | Get child branches                   | Cache lookup              | Returns empty list   | Returns empty on failure       |
 
 ## Force Flag Flow-Through
 
@@ -101,7 +101,27 @@ if ctx.branch_manager.is_graphite_managed():
     ...
 ```
 
+## Discriminated Union Delegation
+
+As of PR #6348, `create_branch()` uses discriminated union error handling. BranchManager delegates to the underlying GitBranchOps gateway, which returns a `CreateBranchResult`:
+
+```python
+result = git_ops.create_branch(name=branch_name, start_point=base_branch)
+if result.type == "branch_already_exists":
+    # Handle existing branch
+    ...
+elif result.type == "error":
+    # Handle unexpected error
+    ...
+# Success case
+return result.branch_name
+```
+
+This pattern allows callers to distinguish between "branch already exists" (recoverable) and generic errors (unrecoverable) without exception parsing.
+
 ## Related Documentation
 
 - [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) - Pattern for implementing gateway ABCs
+- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - When to use discriminated unions vs exceptions
+- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where try/except belongs in gateway implementations
 - [Frozen Dataclass Test Doubles](../testing/frozen-dataclass-test-doubles.md) - Testing pattern for FakeBranchManager

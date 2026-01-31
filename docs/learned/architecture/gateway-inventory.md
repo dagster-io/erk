@@ -207,11 +207,13 @@ Codespace SSH operations.
 
 **Fake Features**: Exit code control, command tracking.
 
+**Note**: As of PR #6359, the `--codespace` flag was removed from `erk implement` and `erk prepare` commands. The Codespace gateway persists for direct codespace management via `erk codespace` commands (setup, list, set-default).
+
 ### CodespaceRegistry (`gateway/codespace_registry/`)
 
 Codespace registration and configuration abstraction.
 
-**Purpose**: Manages lookup of registered GitHub Codespaces for remote Claude execution. Stores codespace configurations in `~/.erk/codespaces.toml`.
+**Purpose**: Manages lookup of registered GitHub Codespaces. Stores codespace configurations in `~/.erk/codespaces.toml`. Used by `erk codespace` commands, not by implementation workflows.
 
 **Key Methods**:
 

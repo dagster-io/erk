@@ -22,6 +22,7 @@
 - **[metadata-field-workflow.md](metadata-field-workflow.md)** — adding a new field to plan-header metadata, extending plan issue schema, coordinating metadata changes across files
 - **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved
+- **[plan-metadata-fields.md](plan-metadata-fields.md)** — working with .impl/ folder structure, implementing get-pr-for-plan or learn workflows, debugging plan-to-PR associations
 - **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks
 - **[pr-analysis-pattern.md](pr-analysis-pattern.md)** — analyzing PR changes for documentation, building workflows that inspect PRs
 - **[pr-discovery.md](pr-discovery.md)** — implementing erk learn workflow, discovering PRs when branch_name is missing, debugging PR discovery failures, working with session metadata

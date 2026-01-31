@@ -175,11 +175,19 @@ When changing an existing gateway method's return type (e.g., converting from ex
 5. [ ] Update tests to check `isinstance(result, ErrorType)`
 6. [ ] Verify all imports include new types
 
-**Canonical Example**: PR #6294 (`merge_pr: bool | str` → `MergeResult | MergeError`)
+**Canonical Examples**:
 
-- Changed 4 files in gateway implementations
-- Updated 3 call sites in land workflow
-- Updated tests to use `isinstance(result, MergeError)`
+1. **PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+   - Changed 4 files in gateway implementations
+   - Updated 3 call sites in land workflow
+   - Updated tests to use `isinstance(result, MergeError)`
+
+2. **PR #6348** (Phase 4: Branch/Worktree Creation):
+   - `create_branch()` - Exception-based → `CreateBranchResult` discriminated union
+   - `add_worktree()` - Exception-based → `AddWorktreeResult` discriminated union
+   - Updated all 5 implementations (real, fake, dry_run, printing, abc)
+   - Updated call sites to handle `type` discriminant checking
+   - Updated tests with fake error simulation patterns
 
 **Critical**: Incomplete migrations break type safety. Use grep to find all call sites before starting.
 
