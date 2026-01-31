@@ -4,11 +4,19 @@ These tests verify the CLI layer behavior of the summarize command.
 The command generates an AI-powered commit message and amends the current commit.
 """
 
+from datetime import UTC, datetime
+
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+from erk_shared.gateway.github.metadata.plan_header import (
+    format_plan_content_comment,
+    format_plan_header_body,
+)
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from tests.fakes.claude_executor import FakeClaudeExecutor
@@ -318,3 +326,188 @@ def test_pr_summarize_fails_when_message_generation_fails() -> None:
 
         assert result.exit_code != 0
         assert "Failed to generate message" in result.output
+
+
+def _make_issue_info(
+    *,
+    number: int,
+    title: str,
+    body: str,
+) -> IssueInfo:
+    """Create an IssueInfo for testing."""
+    now = datetime.now(UTC)
+    return IssueInfo(
+        number=number,
+        title=title,
+        body=body,
+        state="OPEN",
+        url=f"https://github.com/test-owner/test-repo/issues/{number}",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+
+
+def _make_plan_issue_body(
+    *,
+    plan_comment_id: int,
+    objective_issue: int | None,
+) -> str:
+    """Create a plan issue body with standard defaults."""
+    return format_plan_header_body(
+        created_at="2024-01-01T00:00:00Z",
+        created_by="testuser",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=plan_comment_id,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
+        source_repo=None,
+        objective_issue=objective_issue,
+        created_from_session=None,
+        created_from_workflow_run_url=None,
+        last_learn_session=None,
+        last_learn_at=None,
+        learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_pr=None,
+        learned_from_issue=None,
+    )
+
+
+def _make_summarize_fakes(
+    env,
+    *,
+    branch_name: str,
+    fake_github_issues: FakeGitHubIssues,
+):
+    """Create standard fakes for summarize plan context tests."""
+    git = FakeGit(
+        git_common_dirs={env.cwd: env.git_dir},
+        repository_roots={env.cwd: env.git_dir},
+        local_branches={env.cwd: ["main", branch_name]},
+        default_branches={env.cwd: "main"},
+        trunk_branches={env.git_dir: "main"},
+        current_branches={env.cwd: branch_name},
+        commits_ahead={(env.cwd, "main"): 1},
+        diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
+    )
+    graphite = FakeGraphite(
+        authenticated=True,
+        branches={
+            branch_name: BranchMetadata(
+                name=branch_name,
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+            "main": BranchMetadata(
+                name="main",
+                parent=None,
+                children=[branch_name],
+                is_trunk=True,
+                commit_sha=None,
+            ),
+        },
+    )
+    github = FakeGitHub(authenticated=True, issues_gateway=fake_github_issues)
+    claude_executor = FakeClaudeExecutor(
+        claude_available=True,
+        simulated_prompt_output="Fix the bug\n\nThis fixes the bug.",
+    )
+    return git, graphite, github, claude_executor
+
+
+def test_pr_summarize_shows_plan_context_with_objective() -> None:
+    """Test that plan context with objective is displayed during summarize."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_body = _make_plan_issue_body(plan_comment_id=1000, objective_issue=200)
+        plan_issue = _make_issue_info(number=123, title="Plan: Fix bug", body=plan_body)
+        objective_issue = _make_issue_info(
+            number=200, title="Improve CI Reliability", body="Objective body"
+        )
+        comment = IssueComment(
+            id=1000,
+            body=format_plan_content_comment("# Plan\nFix the bug."),
+            url="https://github.com/test-owner/test-repo/issues/123#issuecomment-1000",
+            author="testuser",
+        )
+        fake_github_issues = FakeGitHubIssues(
+            issues={123: plan_issue, 200: objective_issue},
+            comments_with_urls={123: [comment]},
+        )
+
+        git, graphite, github, claude_executor = _make_summarize_fakes(
+            env, branch_name="P123-fix-bug", fake_github_issues=fake_github_issues
+        )
+        ctx = build_workspace_test_context(
+            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
+        )
+
+        result = runner.invoke(pr_group, ["summarize"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Incorporating plan from issue #123" in result.output
+        assert "Linked to Objective #200: Improve CI Reliability" in result.output
+
+
+def test_pr_summarize_shows_plan_context_without_objective() -> None:
+    """Test that plan context without objective shows plan but not objective line."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_body = _make_plan_issue_body(plan_comment_id=1000, objective_issue=None)
+        plan_issue = _make_issue_info(number=123, title="Plan: Fix bug", body=plan_body)
+        comment = IssueComment(
+            id=1000,
+            body=format_plan_content_comment("# Plan\nFix the bug."),
+            url="https://github.com/test-owner/test-repo/issues/123#issuecomment-1000",
+            author="testuser",
+        )
+        fake_github_issues = FakeGitHubIssues(
+            issues={123: plan_issue},
+            comments_with_urls={123: [comment]},
+        )
+
+        git, graphite, github, claude_executor = _make_summarize_fakes(
+            env, branch_name="P123-fix-bug", fake_github_issues=fake_github_issues
+        )
+        ctx = build_workspace_test_context(
+            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
+        )
+
+        result = runner.invoke(pr_group, ["summarize"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Incorporating plan from issue #123" in result.output
+        assert "Linked to" not in result.output
+
+
+def test_pr_summarize_shows_no_linked_plan() -> None:
+    """Test that branches without plan issue show 'No linked plan found'."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        fake_github_issues = FakeGitHubIssues()
+
+        git, graphite, github, claude_executor = _make_summarize_fakes(
+            env, branch_name="feature", fake_github_issues=fake_github_issues
+        )
+        ctx = build_workspace_test_context(
+            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
+        )
+
+        result = runner.invoke(pr_group, ["summarize"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "No linked plan found" in result.output

@@ -118,8 +118,9 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
     )
 
     if plan_context is not None:
-        msg = f"   Incorporating plan from issue #{plan_context.issue_number}"
-        click.echo(click.style(msg, fg="green"))
+        click.echo(click.style(
+            f"   Incorporating plan from issue #{plan_context.issue_number}", fg="green",
+        ))
         if plan_context.objective_summary is not None:
             click.echo(click.style(f"   Linked to {plan_context.objective_summary}", fg="green"))
     else:
