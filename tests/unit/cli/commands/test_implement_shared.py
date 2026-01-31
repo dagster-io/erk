@@ -120,9 +120,6 @@ class TestValidateFlags:
             submit=False,
             no_interactive=False,
             script=False,
-            docker=False,
-            codespace=False,
-            codespace_name=None,
         )
 
     def test_valid_non_interactive_with_submit(self) -> None:
@@ -132,9 +129,6 @@ class TestValidateFlags:
             submit=True,
             no_interactive=True,
             script=False,
-            docker=False,
-            codespace=False,
-            codespace_name=None,
         )
 
     def test_submit_requires_non_interactive(self) -> None:
@@ -144,9 +138,6 @@ class TestValidateFlags:
                 submit=True,
                 no_interactive=False,
                 script=False,
-                docker=False,
-                codespace=False,
-                codespace_name=None,
             )
         assert "--submit requires --no-interactive" in str(exc_info.value)
 
@@ -157,9 +148,6 @@ class TestValidateFlags:
             submit=True,
             no_interactive=False,
             script=True,
-            docker=False,
-            codespace=False,
-            codespace_name=None,
         )
 
     def test_no_interactive_and_script_mutually_exclusive(self) -> None:
@@ -169,85 +157,5 @@ class TestValidateFlags:
                 submit=False,
                 no_interactive=True,
                 script=True,
-                docker=False,
-                codespace=False,
-                codespace_name=None,
             )
         assert "--no-interactive and --script are mutually exclusive" in str(exc_info.value)
-
-    def test_docker_and_codespace_mutually_exclusive(self) -> None:
-        """Test that docker and codespace flag are mutually exclusive."""
-        with pytest.raises(ClickException) as exc_info:
-            validate_flags(
-                submit=False,
-                no_interactive=False,
-                script=False,
-                docker=True,
-                codespace=True,
-                codespace_name=None,
-            )
-        assert "--docker and --codespace" in str(exc_info.value)
-        assert "mutually exclusive" in str(exc_info.value)
-
-    def test_docker_and_codespace_name_mutually_exclusive(self) -> None:
-        """Test that docker and codespace-name are mutually exclusive."""
-        with pytest.raises(ClickException) as exc_info:
-            validate_flags(
-                submit=False,
-                no_interactive=False,
-                script=False,
-                docker=True,
-                codespace=False,
-                codespace_name="mybox",
-            )
-        assert "--docker and --codespace" in str(exc_info.value)
-        assert "mutually exclusive" in str(exc_info.value)
-
-    def test_codespace_and_codespace_name_mutually_exclusive(self) -> None:
-        """Test that codespace flag and codespace-name are mutually exclusive."""
-        with pytest.raises(ClickException) as exc_info:
-            validate_flags(
-                submit=False,
-                no_interactive=False,
-                script=False,
-                docker=False,
-                codespace=True,
-                codespace_name="mybox",
-            )
-        assert "--codespace and --codespace-name are mutually exclusive" in str(exc_info.value)
-
-    def test_docker_alone_valid(self) -> None:
-        """Test that docker alone is valid."""
-        # Should not raise
-        validate_flags(
-            submit=False,
-            no_interactive=False,
-            script=False,
-            docker=True,
-            codespace=False,
-            codespace_name=None,
-        )
-
-    def test_codespace_flag_alone_valid(self) -> None:
-        """Test that codespace flag alone is valid."""
-        # Should not raise
-        validate_flags(
-            submit=False,
-            no_interactive=False,
-            script=False,
-            docker=False,
-            codespace=True,
-            codespace_name=None,
-        )
-
-    def test_codespace_name_alone_valid(self) -> None:
-        """Test that codespace-name alone is valid."""
-        # Should not raise
-        validate_flags(
-            submit=False,
-            no_interactive=False,
-            script=False,
-            docker=False,
-            codespace=False,
-            codespace_name="mybox",
-        )
