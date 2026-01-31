@@ -10,6 +10,8 @@ tripwires:
     warning: "If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section."
   - action: "migrating a gateway method to return discriminated union"
     warning: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety."
+  - action: "accessing properties on a discriminated union result without isinstance() check"
+    warning: "Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type."
 ---
 
 # Discriminated Union Error Handling
@@ -496,7 +498,65 @@ This pattern is used in:
 - `plan_create_review_pr.py` (lines 32-57)
 - Other exec scripts that need structured JSON output
 
+## Gateway Discriminated Unions: PushResult/PullRebaseResult
+
+Git remote operations return discriminated unions at the gateway boundary:
+
+```python
+@dataclass(frozen=True)
+class PushResult:
+    """Success: push completed."""
+
+@dataclass(frozen=True)
+class PushError:
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        ...
+
+# Return type
+def push_to_remote(...) -> PushResult | PushError: ...
+def pull_rebase(...) -> PullRebaseResult | PullRebaseError: ...
+```
+
+Success variants are empty marker types. Error variants contain `message` and a read-only `error_type` property for classification. See `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py`.
+
+## Pipeline Discriminated Unions: SubmitState/SubmitError
+
+The submit pipeline threads an immutable `SubmitState` through 8 steps, where each step returns `SubmitState | SubmitError`:
+
+```python
+@dataclass(frozen=True)
+class SubmitError:
+    phase: str       # Which pipeline step failed
+    error_type: str  # Machine-readable error classification
+    message: str     # Human-readable description
+    details: str | None
+```
+
+The pipeline runner short-circuits on the first `isinstance(result, SubmitError)` check. See `src/erk/cli/commands/pr/submit_pipeline.py:74-81`.
+
+## LBYL isinstance() Pattern in Exec Commands
+
+Exec commands use isinstance() checks after gateway calls:
+
+```python
+# From objective_roadmap_update.py
+issue = ctx.github.issues.get_issue(repo_root, objective_number)
+if isinstance(issue, IssueNotFound):
+    # Handle error — never use try/except for this
+    return error_response(...)
+
+# Type narrowing: issue is now IssueInfo
+phases, warnings = parse_roadmap(issue.body)
+```
+
+This pattern keeps LBYL principles consistent from gateway layer through exec command layer.
+
 ## Related Documentation
 
 - [Not-Found Sentinel Pattern](not-found-sentinel.md) - Specific pattern for lookup operations
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - Gateways often use this pattern
+- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+- [State Threading Pattern](state-threading-pattern.md) - Pipeline discriminated union pattern

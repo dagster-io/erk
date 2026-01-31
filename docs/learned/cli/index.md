@@ -29,7 +29,9 @@
 - **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub issues, working with .impl/ folders, debugging plan execution failures
 - **[pr-operations.md](pr-operations.md)** — creating PRs programmatically, implementing PR submission workflows, preventing duplicate PR creation
 - **[pr-submission.md](pr-submission.md)** — submitting PRs without Graphite, using /erk:git-pr-push command, understanding PR creation workflows
+- **[pr-submit-pipeline.md](pr-submit-pipeline.md)** — modifying the PR submit workflow, adding new steps to the submit pipeline, debugging PR submission failures, understanding SubmitState or SubmitError
 - **[session-management.md](session-management.md)** — using ${CLAUDE_SESSION_ID} in commands, debugging session ID errors, implementing session tracking, writing slash commands that need session context
+- **[slash-command-exec-migration.md](slash-command-exec-migration.md)** — migrating slash commands to use erk exec, extracting manual logic from commands into exec scripts, understanding the exec command extraction pattern
 - **[subprocess-stdin-patterns.md](subprocess-stdin-patterns.md)** — passing content to CLI tools via stdin, using subprocess with input parameter, CLI flags that only work with stdin
 - **[template-variables.md](template-variables.md)** — configuring .env templates, using substitution variables in config.toml, setting environment variables per worktree, updating environment when switching worktrees
 - **[two-phase-validation-model.md](two-phase-validation-model.md)** — implementing commands with multiple confirmations, designing commands that perform destructive mutations, working on erk land or similar multi-step commands

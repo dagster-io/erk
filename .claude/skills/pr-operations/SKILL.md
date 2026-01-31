@@ -101,6 +101,16 @@ Process batches from simplest to most complex:
 - **Batch 1-2 (simple)**: Auto-proceed without confirmation
 - **Batch 3-4 (complex)**: Show plan and wait for user approval
 
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
 ## Detailed Documentation
 
 For complete command documentation including JSON output formats, options, and examples:
