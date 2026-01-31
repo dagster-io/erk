@@ -23,7 +23,6 @@ class WorktreeAddError:
         return "worktree-add-failed"
 
 
-
 @dataclass(frozen=True)
 class WorktreeRemoved:
     """Success result from removing a worktree."""

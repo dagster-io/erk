@@ -13,7 +13,7 @@ from erk.cli.activation import (
 )
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context, worktree_path_for
-from erk.cli.ensure import Ensure
+from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.cli.shell_utils import render_navigation_script
@@ -293,6 +293,8 @@ def add_worktree(
                     "A branch with this name is already pushed to the remote repository.\n"
                     "Please choose a different name for your new branch.",
                 )
+            except UserFacingCliError:
+                raise
             except Exception as e:
                 # Remote unavailable or other error - proceed with warning
                 user_output(
