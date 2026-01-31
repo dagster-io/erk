@@ -1007,8 +1007,6 @@ def test_validate_for_deletion_blocks_with_uncommitted_changes(tmp_path: Path) -
 
 def test_delete_branch_and_worktree_raises_on_worktree_remove_error(tmp_path: Path) -> None:
     """Test that delete_branch_and_worktree raises ClickException when worktree removal fails."""
-    from erk_shared.gateway.git.worktree.types import WorktreeRemoveError
-
     # Arrange
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -1019,13 +1017,12 @@ def test_delete_branch_and_worktree_raises_on_worktree_remove_error(tmp_path: Pa
     worktree_path = tmp_path / "worktrees" / "feature"
     worktree_path.mkdir(parents=True)
 
-    error = WorktreeRemoveError(message="worktree is locked")
     git = FakeGit(
         local_branches={repo_root: ["main", "feature"]},
         remote_branches={repo_root: []},
         git_common_dirs={repo_root: git_dir},
         worktrees={repo_root: [WorktreeInfo(path=worktree_path, branch="feature")]},
-        remove_worktree_error=error,
+        remove_worktree_error="worktree is locked",
     )
 
     global_config = GlobalConfig.test(
@@ -1044,8 +1041,6 @@ def test_delete_branch_and_worktree_raises_on_worktree_remove_error(tmp_path: Pa
 
 def test_unallocate_worktree_and_branch_raises_on_worktree_remove_error(tmp_path: Path) -> None:
     """Test that unallocate_worktree_and_branch raises ClickException when removal fails."""
-    from erk_shared.gateway.git.worktree.types import WorktreeRemoveError
-
     # Arrange
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -1056,13 +1051,12 @@ def test_unallocate_worktree_and_branch_raises_on_worktree_remove_error(tmp_path
     worktree_path = tmp_path / "worktrees" / "feature"
     worktree_path.mkdir(parents=True)
 
-    error = WorktreeRemoveError(message="worktree is locked")
     git = FakeGit(
         local_branches={repo_root: ["main", "feature"]},
         remote_branches={repo_root: []},
         git_common_dirs={repo_root: git_dir},
         worktrees={repo_root: [WorktreeInfo(path=worktree_path, branch="feature")]},
-        remove_worktree_error=error,
+        remove_worktree_error="worktree is locked",
     )
 
     global_config = GlobalConfig.test(

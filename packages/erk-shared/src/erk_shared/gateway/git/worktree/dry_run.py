@@ -4,12 +4,6 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.worktree.abc import Worktree
-from erk_shared.gateway.git.worktree.types import (
-    WorktreeAdded,
-    WorktreeAddError,
-    WorktreeRemoved,
-    WorktreeRemoveError,
-)
 from erk_shared.output.output import user_output
 
 
@@ -71,7 +65,7 @@ class DryRunWorktree(Worktree):
         branch: str | None,
         ref: str | None,
         create_branch: bool,
-    ) -> WorktreeAdded | WorktreeAddError:
+    ) -> None:
         """Print dry-run message instead of adding worktree."""
         if branch and create_branch:
             base_ref = ref or "HEAD"
@@ -81,19 +75,15 @@ class DryRunWorktree(Worktree):
         else:
             base_ref = ref or "HEAD"
             user_output(f"[DRY RUN] Would run: git worktree add {path} {base_ref}")
-        return WorktreeAdded()
 
     def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
         """Print dry-run message instead of moving worktree."""
         user_output(f"[DRY RUN] Would run: git worktree move {old_path} {new_path}")
 
-    def remove_worktree(
-        self, repo_root: Path, path: Path, *, force: bool
-    ) -> WorktreeRemoved | WorktreeRemoveError:
+    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
         """Print dry-run message instead of removing worktree."""
         force_flag = "--force " if force else ""
         user_output(f"[DRY RUN] Would run: git worktree remove {force_flag}{path}")
-        return WorktreeRemoved()
 
     def prune_worktrees(self, repo_root: Path) -> None:
         """Print dry-run message instead of pruning worktrees."""

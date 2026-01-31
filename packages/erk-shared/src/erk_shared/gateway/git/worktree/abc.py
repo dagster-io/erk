@@ -14,12 +14,6 @@ from pathlib import Path
 
 # Re-export WorktreeInfo from the main git.abc module for backwards compatibility
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.worktree.types import (
-    WorktreeAdded,
-    WorktreeAddError,
-    WorktreeRemoved,
-    WorktreeRemoveError,
-)
 
 
 class Worktree(ABC):
@@ -42,7 +36,7 @@ class Worktree(ABC):
         branch: str | None,
         ref: str | None,
         create_branch: bool,
-    ) -> WorktreeAdded | WorktreeAddError:
+    ) -> None:
         """Add a new git worktree.
 
         Args:
@@ -52,8 +46,8 @@ class Worktree(ABC):
             ref: Git ref to base worktree on (None defaults to HEAD when creating branches)
             create_branch: True to create new branch, False to checkout existing
 
-        Returns:
-            WorktreeAdded on success, WorktreeAddError on failure.
+        Raises:
+            RuntimeError: If the worktree add operation fails.
         """
         ...
 
@@ -63,9 +57,7 @@ class Worktree(ABC):
         ...
 
     @abstractmethod
-    def remove_worktree(
-        self, repo_root: Path, path: Path, *, force: bool
-    ) -> WorktreeRemoved | WorktreeRemoveError:
+    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
         """Remove a worktree.
 
         Args:
@@ -73,8 +65,8 @@ class Worktree(ABC):
             path: Path to the worktree to remove
             force: True to force removal even if worktree has uncommitted changes
 
-        Returns:
-            WorktreeRemoved on success, WorktreeRemoveError on failure
+        Raises:
+            RuntimeError: If the worktree remove operation fails.
         """
         ...
 

@@ -24,7 +24,6 @@ from erk.core.worktree_utils import (
     get_worktree_branch,
 )
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.git.worktree.types import WorktreeRemoved
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_worktree_name
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import user_output
@@ -152,8 +151,11 @@ def _try_git_worktree_delete(git_ops: Git, repo_root: Path, wt_path: Path) -> bo
     Returns:
         True if git removal succeeded, False otherwise
     """
-    result = git_ops.worktree.remove_worktree(repo_root, wt_path, force=True)
-    return isinstance(result, WorktreeRemoved)
+    try:
+        git_ops.worktree.remove_worktree(repo_root, wt_path, force=True)
+    except RuntimeError:
+        return False
+    return True
 
 
 def _prune_worktrees_safe(git_ops: Git, repo_root: Path) -> None:

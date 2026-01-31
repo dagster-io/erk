@@ -10,12 +10,6 @@ from pathlib import Path
 
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.worktree.abc import Worktree
-from erk_shared.gateway.git.worktree.types import (
-    WorktreeAdded,
-    WorktreeAddError,
-    WorktreeRemoved,
-    WorktreeRemoveError,
-)
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
@@ -70,7 +64,7 @@ class RealWorktree(Worktree):
         branch: str | None,
         ref: str | None,
         create_branch: bool,
-    ) -> WorktreeAdded | WorktreeAddError:
+    ) -> None:
         """Add a new git worktree."""
         if branch and not create_branch:
             cmd = ["git", "worktree", "add", str(path), branch]
@@ -84,11 +78,7 @@ class RealWorktree(Worktree):
             cmd = ["git", "worktree", "add", str(path), base_ref]
             context = f"add worktree at {path}"
 
-        try:
-            run_subprocess_with_context(cmd=cmd, operation_context=context, cwd=repo_root)
-        except RuntimeError as e:
-            return WorktreeAddError(message=str(e))
-        return WorktreeAdded()
+        run_subprocess_with_context(cmd=cmd, operation_context=context, cwd=repo_root)
 
     def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
         """Move a worktree to a new location."""
@@ -99,9 +89,7 @@ class RealWorktree(Worktree):
             cwd=repo_root,
         )
 
-    def remove_worktree(
-        self, repo_root: Path, path: Path, *, force: bool
-    ) -> WorktreeRemoved | WorktreeRemoveError:
+    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
         """Remove a worktree."""
         # Find the main git directory BEFORE deleting the worktree
         # This handles the case where repo_root IS the worktree being deleted
@@ -112,14 +100,11 @@ class RealWorktree(Worktree):
             cmd.append("--force")
         cmd.append(str(path))
 
-        try:
-            run_subprocess_with_context(
-                cmd=cmd,
-                operation_context=f"remove worktree at {path}",
-                cwd=repo_root,
-            )
-        except RuntimeError as e:
-            return WorktreeRemoveError(message=str(e))
+        run_subprocess_with_context(
+            cmd=cmd,
+            operation_context=f"remove worktree at {path}",
+            cwd=repo_root,
+        )
 
         # Clean up git worktree metadata to prevent permission issues during test cleanup
         # This prunes stale administrative files left behind after worktree removal
@@ -129,8 +114,6 @@ class RealWorktree(Worktree):
             operation_context="prune worktree metadata",
             cwd=main_git_dir,
         )
-
-        return WorktreeRemoved()
 
     def _find_main_git_dir(self, repo_root: Path) -> Path:
         """Find the main repository root (where .git directory lives).

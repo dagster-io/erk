@@ -17,7 +17,6 @@ from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
-from erk_shared.gateway.git.worktree.types import WorktreeAddError, WorktreeRemoveError
 from erk_shared.output.output import user_output
 
 
@@ -113,9 +112,10 @@ def _remove_worktree_slot_aware(
         return (None, assignment.slot_name)
     else:
         # Non-slot worktree: remove normally
-        result = ctx.git.worktree.remove_worktree(repo.root, wt.path, force=True)
-        if isinstance(result, WorktreeRemoveError):
-            raise click.ClickException(result.message)
+        try:
+            ctx.git.worktree.remove_worktree(repo.root, wt.path, force=True)
+        except RuntimeError as e:
+            raise click.ClickException(str(e)) from None
         return (wt.path, None)
 
 
@@ -319,16 +319,13 @@ def consolidate_stack(
 
             # Create new worktree with original branch
             # (now available since source is on temp branch)
-            wt_result = ctx.git.worktree.add_worktree(
+            ctx.git.worktree.add_worktree(
                 repo.root,
                 new_worktree_path,
                 branch=current_branch,
                 ref=None,
                 create_branch=False,
             )
-            if isinstance(wt_result, WorktreeAddError):
-                user_output(f"Error adding worktree: {wt_result.message}")
-                raise SystemExit(1) from None
 
             user_output(click.style(f"✅ Created new worktree: {name}", fg="green"))
 

@@ -18,7 +18,6 @@ from erk.core.worktree_pool import (
     save_pool_state,
 )
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
-from erk_shared.gateway.git.worktree.types import WorktreeAddError
 from erk_shared.output.output import user_output
 
 
@@ -119,15 +118,16 @@ def slot_init_pool(ctx: ErkContext, count: int | None, *, dry_run: bool) -> None
 
         # Create worktree with placeholder branch
         if not ctx.git.worktree.path_exists(worktree_path / ".git"):
-            wt_result = ctx.git.worktree.add_worktree(
-                repo.root,
-                worktree_path,
-                branch=placeholder_branch,
-                ref=None,
-                create_branch=False,
-            )
-            if isinstance(wt_result, WorktreeAddError):
-                user_output(f"Error adding worktree for {slot_name}: {wt_result.message}")
+            try:
+                ctx.git.worktree.add_worktree(
+                    repo.root,
+                    worktree_path,
+                    branch=placeholder_branch,
+                    ref=None,
+                    create_branch=False,
+                )
+            except RuntimeError as e:
+                user_output(f"Error adding worktree for {slot_name}: {e}")
                 continue
 
         # Add to slots list

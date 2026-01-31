@@ -826,21 +826,19 @@ def test_delete_slot_aware_unassigns_slot() -> None:
 
 
 def test_delete_try_git_worktree_delete_returns_false_on_error() -> None:
-    """Test that _try_git_worktree_delete returns False when WorktreeRemoveError is returned."""
+    """Test that _try_git_worktree_delete returns False when RuntimeError is raised."""
     from erk.cli.commands.wt.delete_cmd import _try_git_worktree_delete
-    from erk_shared.gateway.git.worktree.types import WorktreeRemoveError
 
     repo_root = Path("/repo")
     wt_path = Path("/repo/worktree")
-    error = WorktreeRemoveError(message="worktree is locked")
 
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=wt_path, branch="feature", is_root=False)]},
-        remove_worktree_error=error,
+        remove_worktree_error="worktree is locked",
     )
 
     result = _try_git_worktree_delete(git_ops, repo_root, wt_path)
 
     assert result is False
-    # Worktree should NOT have been removed from state (error was returned)
+    # Worktree should NOT have been removed from state (error was raised)
     assert len(git_ops.removed_worktrees) == 0

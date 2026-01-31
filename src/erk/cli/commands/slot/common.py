@@ -13,7 +13,6 @@ from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.git.worktree.types import WorktreeAddError
 from erk_shared.output.output import user_output
 
 
@@ -545,31 +544,25 @@ def allocate_slot_for_branch(
             else:
                 # Worktree doesn't exist (orphaned assignment) - create it
                 worktree_path.mkdir(parents=True, exist_ok=True)
-                wt_result = ctx.git.worktree.add_worktree(
+                ctx.git.worktree.add_worktree(
                     repo.root,
                     worktree_path,
                     branch=branch_name,
                     ref=None,
                     create_branch=False,
                 )
-                if isinstance(wt_result, WorktreeAddError):
-                    user_output(f"Error adding worktree: {wt_result.message}")
-                    raise SystemExit(1) from None
         else:
             # Create new slot - no worktree exists yet
             slot_name = generate_slot_name(slot_num)
             worktree_path = repo.worktrees_dir / slot_name
             worktree_path.mkdir(parents=True, exist_ok=True)
-            wt_result = ctx.git.worktree.add_worktree(
+            ctx.git.worktree.add_worktree(
                 repo.root,
                 worktree_path,
                 branch=branch_name,
                 ref=None,
                 create_branch=False,
             )
-            if isinstance(wt_result, WorktreeAddError):
-                user_output(f"Error adding worktree: {wt_result.message}")
-                raise SystemExit(1) from None
 
     # Ensure activation script exists with latest template
     ensure_worktree_activate_script(
