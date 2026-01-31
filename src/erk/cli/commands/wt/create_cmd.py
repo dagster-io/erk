@@ -144,15 +144,14 @@ def ensure_worktree_for_branch(
         try:
             ctx.branch_manager.create_tracking_branch(repo.root, branch, remote_ref)
         except subprocess.CalledProcessError as e:
-            user_output(
-                f"Error: Failed to create local tracking branch from {remote_ref}\n"
+            raise UserFacingCliError(
+                f"Failed to create local tracking branch from {remote_ref}\n"
                 f"Details: {e.stderr}\n"
                 f"Suggested action:\n"
                 f"  1. Check git status and resolve any issues\n"
                 f"  2. Manually create branch: git branch --track {branch} {remote_ref}\n"
                 f"  3. Or use: erk wt create --branch {branch}"
-            )
-            raise SystemExit(1) from e
+            ) from e
 
     # Branch exists but not checked out - auto-create worktree
     user_output(f"Branch '{branch}' not checked out, creating worktree...")
@@ -183,8 +182,8 @@ def ensure_worktree_for_branch(
                 if wt.branch != branch:
                     # Detached HEAD: provide specific guidance
                     if wt.branch is None:
-                        user_output(
-                            f"Error: Worktree '{name}' is in detached HEAD state "
+                        raise UserFacingCliError(
+                            f"Worktree '{name}' is in detached HEAD state "
                             f"(possibly mid-rebase).\n\n"
                             f"Cannot create new worktree for branch '{branch}' with same name.\n\n"
                             f"Options:\n"
@@ -192,25 +191,22 @@ def ensure_worktree_for_branch(
                             f"  2. Complete or abort the rebase first, then try again\n"
                             f"  3. Use a different branch name"
                         )
-                        raise SystemExit(1) from None
                     # Different branch: existing error handling
-                    user_output(
-                        f"Error: Worktree '{name}' already exists "
+                    raise UserFacingCliError(
+                        f"Worktree '{name}' already exists "
                         f"with different branch '{wt.branch}'.\n"
                         f"Cannot create worktree for branch '{branch}' with same name.\n"
                         f"Options:\n"
                         f"  1. Switch to existing worktree: erk wt co {name}\n"
                         f"  2. Use a different branch name"
                     )
-                    raise SystemExit(1) from None
                 # Same branch - return existing path
                 return wt_path, False
         # Path exists but not in worktree list (shouldn't happen, but handle gracefully)
-        user_output(
-            f"Error: Directory '{wt_path}' exists but is not a git worktree.\n"
+        raise UserFacingCliError(
+            f"Directory '{wt_path}' exists but is not a git worktree.\n"
             f"Please remove or rename the directory and try again."
         )
-        raise SystemExit(1) from None
 
     # Create worktree from existing branch
     add_worktree(

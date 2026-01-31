@@ -244,12 +244,11 @@ def test_ensure_worktree_handles_tracking_branch_failure() -> None:
 
         ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Call ensure_worktree_for_branch - should raise SystemExit
-        try:
+        # Call ensure_worktree_for_branch - should raise UserFacingCliError
+        import pytest
+
+        with pytest.raises(UserFacingCliError):
             ensure_worktree_for_branch(ctx, repo, "feature-4")
-            raise AssertionError("Expected SystemExit to be raised")
-        except SystemExit as e:
-            assert e.code == 1
 
         # No worktrees should be created (tracking branch failed first)
         assert len(git_ops.added_worktrees) == 0
@@ -469,10 +468,8 @@ def test_ensure_worktree_generates_unique_name_on_collision() -> None:
         # Should error because name exists with different branch
         import pytest
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(UserFacingCliError):
             ensure_worktree_for_branch(ctx, repo, "feature-name", is_plan_derived=False)
-
-        assert exc_info.value.code == 1
 
 
 def test_ensure_worktree_returns_was_created_flag() -> None:
@@ -542,13 +539,11 @@ def test_ensure_worktree_detached_head_error_message() -> None:
         ctx = env.build_context(git=git_ops, repo=repo)
 
         # Call ensure_worktree_for_branch for branch with same name as detached HEAD worktree
-        # Should raise SystemExit with helpful error message
+        # Should raise UserFacingCliError with helpful error message
         import pytest
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(UserFacingCliError):
             ensure_worktree_for_branch(ctx, repo, "feature-branch", is_plan_derived=False)
 
-        # Should exit with error code
-        assert exc_info.value.code == 1
         # No worktrees should be created
         assert len(git_ops.added_worktrees) == 0
