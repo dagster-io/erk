@@ -6,8 +6,8 @@ read_when:
   - "handling errors without exceptions"
   - "working with GeneratedPlan, PlanGenerationError, or similar types"
 tripwires:
-  - action: "raising exceptions for expected failure cases in business logic"
-    warning: "Use discriminated unions (T | ErrorType) instead. Exceptions are for truly exceptional conditions, not business logic failures."
+  - action: "choosing between exceptions and discriminated unions for operation failures"
+    warning: "If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section."
   - action: "migrating a gateway method to return discriminated union"
     warning: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety."
 ---
@@ -46,18 +46,51 @@ Callers use `isinstance()` to check which variant they received.
 
 ## When to Use
 
+The key question is: **does the caller continue after the failure?**
+
 Use discriminated unions when:
 
-- Failure is a **normal, expected case** (not exceptional)
-- Callers need to handle the failure case explicitly
-- You want type-safe error handling with IDE support
-- You're following LBYL principles
+- The caller has **branching business logic** that continues after the failure
+- The error type carries **domain-meaningful structure** (e.g., `pr_number`, `branch_name`) that callers inspect
+- Multiple distinct error variants require **different handling paths**
 
 Use exceptions when:
 
-- Failure indicates a **programming error** or system failure
-- The error should propagate up the call stack
-- Recovery at the immediate call site is unlikely
+- All callers **terminate the operation** on failure — the error just surfaces as a message
+- The error type is a **structureless `message: str` wrapper** with no domain variants
+- The error propagates to a **generic error boundary** (CLI handler, top-level catch)
+- No caller branches on error content beyond extracting the message
+
+### When Exceptions Are Preferred: Worktree Operations
+
+Worktree add/remove failures are _expected_ — but they're still better as exceptions because no caller does anything meaningful with the error beyond terminating:
+
+```python
+# All callers do the same thing: extract message and stop
+result = git.worktree.add_worktree(repo_root, path, branch)
+if isinstance(result, WorktreeAddError):
+    raise UserFacingCliError(result.message)  # Every caller does this
+
+# vs. exceptions — simpler, same behavior
+try:
+    git.worktree.add_worktree(repo_root, path, branch)
+except WorktreeError as e:
+    raise UserFacingCliError(str(e))
+```
+
+The discriminated union buys nothing here: no caller inspects the error type, no caller branches on the error content, and every caller terminates identically. The union just adds ceremony.
+
+Contrast with `submit_branch`, where callers _do_ branch:
+
+```python
+result = branch_mgr.submit_branch(...)
+if isinstance(result, BranchAlreadyExists):
+    # Continue: offer to check out the existing branch
+    handle_existing_branch(result.branch_name)
+elif isinstance(result, SubmitError):
+    # Continue: retry with different options
+    retry_submit(result)
+```
 
 ## Examples in the Codebase
 

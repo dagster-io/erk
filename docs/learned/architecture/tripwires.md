@@ -58,6 +58,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before checking isinstance(ctx.graphite, GraphiteDisabled) inline in command code** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use BranchManager abstraction instead. Add a method to BranchManager ABC that handles both Graphite and Git paths. This centralizes the branching logic and enables testing with FakeBranchManager.
 
+**CRITICAL: Before choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
+
 **CRITICAL: Before comparing git SHA to Graphite's tracked SHA for divergence detection** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches.
 
 **CRITICAL: Before comparing worktree path to repo_root to detect root worktree** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently.
@@ -93,8 +95,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before passing dry_run boolean flags through business logic function parameters** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands.
 
 **CRITICAL: Before passing variables to gh api graphql as JSON blob** → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work.
-
-**CRITICAL: Before raising exceptions for expected failure cases in business logic** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Use discriminated unions (T | ErrorType) instead. Exceptions are for truly exceptional conditions, not business logic failures.
 
 **CRITICAL: Before reading from or writing to ~/.claude/ paths using Path.home() directly** → Read [ClaudeInstallation Gateway](claude-installation-gateway.md) first. Use ClaudeInstallation gateway instead. All ~/.claude/ filesystem operations should go through this gateway for testability and abstraction.
 
