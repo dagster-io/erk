@@ -193,6 +193,7 @@ class GraphiteBranchManager(BranchManager):
         Returns:
             SubmitBranchResult on success, SubmitBranchError on failure.
         """
+        # submit_stack is a subprocess call (gt submit) — no LBYL alternative exists
         try:
             self.graphite.submit_stack(
                 repo_root, publish=False, restack=False, quiet=True, force=True
