@@ -396,7 +396,7 @@ def test_pr_summarize_shows_plan_context_with_objective() -> None:
     """Test that plan context with objective is displayed during summarize."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        plan_body = _make_plan_issue_body(plan_comment_id=1000, objective_issue=200)
+        plan_body = format_plan_header_body_for_test(plan_comment_id=1000, objective_issue=200)
         plan_issue = _make_issue_info(number=123, title="Plan: Fix bug", body=plan_body)
         objective_issue = _make_issue_info(
             number=200, title="Improve CI Reliability", body="Objective body"
@@ -430,7 +430,7 @@ def test_pr_summarize_shows_plan_context_without_objective() -> None:
     """Test that plan context without objective shows plan but not objective line."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        plan_body = _make_plan_issue_body(plan_comment_id=1000, objective_issue=None)
+        plan_body = format_plan_header_body_for_test(plan_comment_id=1000)
         plan_issue = _make_issue_info(number=123, title="Plan: Fix bug", body=plan_body)
         comment = IssueComment(
             id=1000,
