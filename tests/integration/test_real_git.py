@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from erk_shared.gateway.git.real import RealGit
-from erk_shared.gateway.git.worktree.types import WorktreeRemoved
+from erk_shared.gateway.git.worktree.types import WorktreeAdded, WorktreeRemoved
 from tests.integration.conftest import (
     GitSetup,
     GitWithDetached,
@@ -243,7 +243,7 @@ def test_add_worktree_with_existing_branch(
         check=True,
     )
 
-    git_ops_with_existing_branch.git.worktree.add_worktree(
+    result = git_ops_with_existing_branch.git.worktree.add_worktree(
         git_ops_with_existing_branch.repo,
         git_ops_with_existing_branch.wt_path,
         branch="feature",
@@ -251,6 +251,7 @@ def test_add_worktree_with_existing_branch(
         create_branch=False,
     )
 
+    assert isinstance(result, WorktreeAdded)
     assert git_ops_with_existing_branch.wt_path.exists()
 
     # Verify branch is checked out
@@ -264,7 +265,7 @@ def test_add_worktree_create_new_branch(
     git_ops_with_existing_branch: GitWithExistingBranch,
 ) -> None:
     """Test adding worktree with new branch creation."""
-    git_ops_with_existing_branch.git.worktree.add_worktree(
+    result = git_ops_with_existing_branch.git.worktree.add_worktree(
         git_ops_with_existing_branch.repo,
         git_ops_with_existing_branch.wt_path,
         branch="new-feature",
@@ -272,6 +273,7 @@ def test_add_worktree_create_new_branch(
         create_branch=True,
     )
 
+    assert isinstance(result, WorktreeAdded)
     assert git_ops_with_existing_branch.wt_path.exists()
 
     # Verify new branch is checked out
@@ -304,16 +306,17 @@ def test_add_worktree_from_specific_ref(
 
     git_ops = RealGit()
 
-    git_ops.worktree.add_worktree(
+    result = git_ops.worktree.add_worktree(
         repo, wt, branch="test-branch", ref="old-main", create_branch=True
     )
 
+    assert isinstance(result, WorktreeAdded)
     assert wt.exists()
 
 
 def test_add_worktree_detached(git_ops_with_existing_branch: GitWithExistingBranch) -> None:
     """Test adding detached worktree."""
-    git_ops_with_existing_branch.git.worktree.add_worktree(
+    result = git_ops_with_existing_branch.git.worktree.add_worktree(
         git_ops_with_existing_branch.repo,
         git_ops_with_existing_branch.wt_path,
         branch=None,
@@ -321,6 +324,7 @@ def test_add_worktree_detached(git_ops_with_existing_branch: GitWithExistingBran
         create_branch=False,
     )
 
+    assert isinstance(result, WorktreeAdded)
     assert git_ops_with_existing_branch.wt_path.exists()
 
     # Verify it's in detached HEAD state
