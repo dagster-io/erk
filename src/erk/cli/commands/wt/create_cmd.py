@@ -279,24 +279,24 @@ def add_worktree(
     elif branch:
         # Check if branch name exists on remote origin (only when creating new branches)
         if not skip_remote_check:
+            remote_branches: list[str] | None = None
             try:
                 remote_branches = ctx.git.branch.list_remote_branches(repo_root)
-                remote_ref = f"origin/{branch}"
-
-                Ensure.invariant(
-                    remote_ref not in remote_branches,
-                    f"Branch '{branch}' already exists on remote 'origin'\n\n"
-                    "A branch with this name is already pushed to the remote repository.\n"
-                    "Please choose a different name for your new branch.",
-                )
-            except UserFacingCliError:
-                raise
             except Exception as e:
                 # Remote unavailable or other error - proceed with warning
                 user_output(
                     click.style("Warning: ", fg="yellow")
                     + f"Could not check remote branches: {e}\n"
                     + "Proceeding with branch creation..."
+                )
+
+            if remote_branches is not None:
+                remote_ref = f"origin/{branch}"
+                Ensure.invariant(
+                    remote_ref not in remote_branches,
+                    f"Branch '{branch}' already exists on remote 'origin'\n\n"
+                    "A branch with this name is already pushed to the remote repository.\n"
+                    "Please choose a different name for your new branch.",
                 )
 
         if use_graphite:
