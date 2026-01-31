@@ -15,16 +15,11 @@ import click
 
 from erk.cli.alias import alias
 from erk.cli.commands.completions import complete_plan_files
-from erk.cli.commands.docker_executor import (
-    execute_docker_interactive,
-    execute_docker_non_interactive,
-)
 from erk.cli.commands.implement_shared import (
     PlanSource,
     build_claude_args,
     build_command_sequence,
     detect_target_type,
-    execute_codespace_mode,
     execute_interactive_mode,
     execute_non_interactive_mode,
     extract_plan_from_current_branch,
@@ -84,10 +79,6 @@ def _implement_from_issue(
     verbose: bool,
     model: str | None,
     executor: ClaudeExecutor,
-    docker: bool,
-    docker_image: str,
-    codespace: bool,
-    codespace_name: str | None,
 ) -> None:
     """Implement feature from GitHub issue in current directory.
 
@@ -102,10 +93,6 @@ def _implement_from_issue(
         verbose: Whether to show raw output or filtered output
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         executor: Claude CLI executor for command execution
-        docker: Whether to run in Docker container
-        docker_image: Docker image to use
-        codespace: Whether to use default codespace
-        codespace_name: Named codespace (None if not using named codespace)
     """
     # Discover repo context for issue fetch
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -129,28 +116,6 @@ def _implement_from_issue(
         raise SystemExit(1) from None
 
     ctx.console.info(f"Issue: {plan.title}")
-
-    # Handle codespace mode early - skip local .impl/ creation
-    # The codespace will fetch the plan from GitHub directly
-    if codespace or codespace_name is not None:
-        if dry_run:
-            dry_run_header = click.style("Dry-run mode:", fg="cyan", bold=True)
-            user_output(dry_run_header + " No changes will be made\n")
-            user_output(f"Would execute /erk:plan-implement {issue_number} in codespace")
-            return
-
-        # Codespace mode - pass issue number so codespace fetches plan directly
-        # codespace_name=None means use default codespace
-        execute_codespace_mode(
-            ctx,
-            codespace_name=codespace_name,
-            model=model,
-            no_interactive=no_interactive,
-            submit=submit,
-            verbose=verbose,
-            command_arg=issue_number,
-        )
-        return
 
     # Create dry-run description
     dry_run_desc = f"Would create .impl/ from issue #{issue_number}\n  Title: {plan.title}"
@@ -211,28 +176,6 @@ def _implement_from_issue(
             model=model,
             target_description=target_description,
         )
-    elif docker:
-        # Docker mode - run Claude inside container
-        if no_interactive:
-            commands = build_command_sequence(submit)
-            exit_code = execute_docker_non_interactive(
-                repo_root=repo.root,
-                worktree_path=ctx.cwd,
-                image_name=docker_image,
-                model=model,
-                commands=commands,
-                verbose=verbose,
-            )
-            if exit_code != 0:
-                raise SystemExit(exit_code)
-        else:
-            # Docker interactive mode - replaces process
-            execute_docker_interactive(
-                repo_root=repo.root,
-                worktree_path=ctx.cwd,
-                image_name=docker_image,
-                model=model,
-            )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
@@ -268,10 +211,6 @@ def _implement_from_file(
     verbose: bool,
     model: str | None,
     executor: ClaudeExecutor,
-    docker: bool,
-    docker_image: str,
-    codespace: bool,
-    codespace_name: str | None,
 ) -> None:
     """Implement feature from plan file in current directory.
 
@@ -288,10 +227,6 @@ def _implement_from_file(
         verbose: Whether to show raw output or filtered output
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         executor: Claude CLI executor for command execution
-        docker: Whether to run in Docker container
-        docker_image: Docker image to use
-        codespace: Whether to use default codespace
-        codespace_name: Named codespace (None if not using named codespace)
     """
     # Discover repo context
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -340,40 +275,6 @@ def _implement_from_file(
             model=model,
             target_description=target_description,
         )
-    elif docker:
-        # Docker mode - run Claude inside container
-        if no_interactive:
-            commands = build_command_sequence(submit)
-            exit_code = execute_docker_non_interactive(
-                repo_root=repo.root,
-                worktree_path=ctx.cwd,
-                image_name=docker_image,
-                model=model,
-                commands=commands,
-                verbose=verbose,
-            )
-            if exit_code != 0:
-                raise SystemExit(exit_code)
-        else:
-            # Docker interactive mode - replaces process
-            execute_docker_interactive(
-                repo_root=repo.root,
-                worktree_path=ctx.cwd,
-                image_name=docker_image,
-                model=model,
-            )
-    elif codespace or codespace_name is not None:
-        # Codespace mode - run Claude in registered codespace
-        # codespace_name=None means use default codespace
-        execute_codespace_mode(
-            ctx,
-            codespace_name=codespace_name,
-            model=model,
-            no_interactive=no_interactive,
-            submit=submit,
-            verbose=verbose,
-            command_arg=str(plan_file),
-        )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
@@ -414,10 +315,6 @@ def implement(
     yolo: bool,
     verbose: bool,
     model: str | None,
-    docker: bool,
-    docker_image: str,
-    codespace: bool,
-    codespace_name: str | None,
 ) -> None:
     """Create .impl/ folder from GitHub issue or plan file and execute implementation.
 
@@ -464,18 +361,6 @@ def implement(
     \b
       # From plan file
       erk implement ./my-feature-plan.md
-
-    \b
-      # Docker isolation mode (filesystem-isolated, safe to skip permissions)
-      erk implement 123 --docker
-
-    \b
-      # Codespace isolation mode (remote execution in registered codespace)
-      erk implement 123 --codespace
-
-    \b
-      # Codespace with named codespace
-      erk implement 123 --codespace-name mybox
     """
     # Handle --yolo flag (shorthand for dangerous + submit + no-interactive)
     if yolo:
@@ -491,9 +376,6 @@ def implement(
         submit=submit,
         no_interactive=no_interactive,
         script=script,
-        docker=docker,
-        codespace=codespace,
-        codespace_name=codespace_name,
     )
 
     # Auto-detect plan number from branch name when TARGET is omitted
@@ -542,10 +424,6 @@ def implement(
             verbose=verbose,
             model=model,
             executor=ctx.claude_executor,
-            docker=docker,
-            docker_image=docker_image,
-            codespace=codespace,
-            codespace_name=codespace_name,
         )
     else:
         plan_file = Path(target)
@@ -560,8 +438,4 @@ def implement(
             verbose=verbose,
             model=model,
             executor=ctx.claude_executor,
-            docker=docker,
-            docker_image=docker_image,
-            codespace=codespace,
-            codespace_name=codespace_name,
         )

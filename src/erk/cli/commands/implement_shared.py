@@ -38,9 +38,6 @@ _VALID_MODELS = {"haiku", "sonnet", "opus"}
 
 F = TypeVar("F", bound=Callable[..., object])
 
-# Default Docker image for isolated implementation
-DEFAULT_DOCKER_IMAGE = "erk-local:latest"
-
 
 def implement_common_options(fn: F) -> F:
     """Decorator that applies common options shared between implement commands.
@@ -54,10 +51,6 @@ def implement_common_options(fn: F) -> F:
     - --yolo: Equivalent to --dangerous --submit --no-interactive
     - --verbose: Show full Claude Code output
     - -m/--model: Model to use for Claude
-    - --docker: Run Claude inside Docker container for filesystem isolation
-    - --docker-image: Docker image to use (default: erk-local:latest)
-    - --codespace: Run Claude in registered codespace (uses default)
-    - --codespace-name: Run Claude in named codespace
 
     Example:
         @click.command("implement", cls=CommandWithHiddenOptions)
@@ -69,29 +62,6 @@ def implement_common_options(fn: F) -> F:
     """
     # Apply options in reverse order (Click decorators are applied bottom-up)
     # This results in options appearing in this order in --help
-    fn = click.option(
-        "--codespace-name",
-        type=str,
-        default=None,
-        help="Run Claude in named codespace for isolated implementation",
-    )(fn)
-    fn = click.option(
-        "--codespace",
-        is_flag=True,
-        help="Run Claude in registered codespace (uses default)",
-    )(fn)
-    fn = click.option(
-        "--docker-image",
-        type=str,
-        default=DEFAULT_DOCKER_IMAGE,
-        help=f"Docker image to use (default: {DEFAULT_DOCKER_IMAGE})",
-    )(fn)
-    fn = click.option(
-        "--docker",
-        is_flag=True,
-        default=False,
-        help="Run Claude inside Docker container for filesystem isolation",
-    )(fn)
     fn = click.option(
         "-m",
         "--model",
@@ -194,9 +164,6 @@ def validate_flags(
     submit: bool,
     no_interactive: bool,
     script: bool,
-    docker: bool,
-    codespace: bool,
-    codespace_name: str | None,
 ) -> None:
     """Validate flag combinations and raise ClickException if invalid.
 
@@ -204,9 +171,6 @@ def validate_flags(
         submit: Whether to auto-submit PR after implementation
         no_interactive: Whether to execute non-interactively
         script: Whether to output shell integration script
-        docker: Whether to run in Docker container
-        codespace: Whether to use default codespace
-        codespace_name: Named codespace (None if not using named codespace)
 
     Raises:
         click.ClickException: If flag combination is invalid
@@ -225,20 +189,6 @@ def validate_flags(
             "--no-interactive and --script are mutually exclusive\n"
             "--script generates shell integration code for manual execution\n"
             "--no-interactive executes commands programmatically"
-        )
-
-    # --codespace and --codespace-name are mutually exclusive
-    if codespace and codespace_name is not None:
-        raise click.ClickException(
-            "--codespace and --codespace-name are mutually exclusive\n"
-            "Use --codespace for default or --codespace-name NAME for a specific codespace"
-        )
-
-    # --docker and --codespace/--codespace-name are mutually exclusive
-    if docker and (codespace or codespace_name is not None):
-        raise click.ClickException(
-            "--docker and --codespace/--codespace-name are mutually exclusive\n"
-            "Choose either Docker container or codespace execution"
         )
 
 
@@ -728,71 +678,3 @@ class WorktreeCreationResult:
 
     worktree_path: Path
     impl_dir: Path
-
-
-def execute_codespace_mode(
-    ctx: ErkContext,
-    *,
-    codespace_name: str | None,
-    model: str | None,
-    no_interactive: bool,
-    submit: bool,
-    verbose: bool,
-    command_arg: str | None,
-) -> None:
-    """Execute Claude in codespace mode (interactive or non-interactive).
-
-    This is a consolidated helper that handles codespace execution for both
-    _implement_from_issue and _implement_from_file.
-
-    Args:
-        ctx: Erk context with codespace gateway and registry
-        codespace_name: Codespace name to use, or None for default
-        model: Optional model name
-        no_interactive: Whether to execute non-interactively
-        submit: Whether to auto-submit PR after implementation
-        verbose: Whether to show verbose output
-        command_arg: Optional argument to pass to /erk:plan-implement (issue number or file path)
-
-    Raises:
-        click.ClickException: If codespace not found
-        SystemExit: On non-interactive failure with non-zero exit code
-    """
-    from erk.cli.commands.codespace_executor import (
-        CodespaceNotFoundError,
-        execute_codespace_interactive,
-        execute_codespace_non_interactive,
-        resolve_codespace,
-    )
-
-    # Resolve codespace (None means use default)
-    # Note: resolve_codespace raises CodespaceNotFoundError on failure, which is
-    # a third-party/external API boundary where try-except is appropriate per LBYL
-    try:
-        resolved_codespace = resolve_codespace(
-            ctx.codespace_registry,
-            name=codespace_name,
-        )
-    except CodespaceNotFoundError as e:
-        raise click.ClickException(str(e)) from e
-
-    if no_interactive:
-        commands = build_command_sequence(submit)
-        exit_code = execute_codespace_non_interactive(
-            codespace_gateway=ctx.codespace,
-            codespace=resolved_codespace,
-            model=model,
-            commands=commands,
-            verbose=verbose,
-            command_arg=command_arg,
-        )
-        if exit_code != 0:
-            raise SystemExit(exit_code)
-    else:
-        # Interactive mode - replaces process
-        execute_codespace_interactive(
-            codespace_gateway=ctx.codespace,
-            codespace=resolved_codespace,
-            model=model,
-            command_arg=command_arg,
-        )
