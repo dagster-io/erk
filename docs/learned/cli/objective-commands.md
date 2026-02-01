@@ -15,13 +15,13 @@ The `erk objective` command group manages erk objectives - high-level goals that
 
 ## Command Overview
 
-| Command                                | Alias | Description                                  |
-| -------------------------------------- | ----- | -------------------------------------------- |
-| `erk objective reconcile`              | `rec` | Reconcile auto-advance objectives            |
-| `erk objective list`                   | `ls`  | List open objectives                         |
-| `erk objective create`                 | -     | Create a new objective                       |
-| `erk objective next-plan`              | -     | Create plan for next objective step (local)  |
-| `erk codespace run objective next-plan`| -     | Create plan for next objective step (remote) |
+| Command                                 | Alias | Description                                  |
+| --------------------------------------- | ----- | -------------------------------------------- |
+| `erk objective reconcile`               | `rec` | Reconcile auto-advance objectives            |
+| `erk objective list`                    | `ls`  | List open objectives                         |
+| `erk objective create`                  | -     | Create a new objective                       |
+| `erk objective next-plan`               | -     | Create plan for next objective step (local)  |
+| `erk codespace run objective next-plan` | -     | Create plan for next objective step (remote) |
 
 ## Reconcile Command
 
@@ -135,18 +135,22 @@ Long-running objective workflows (like `next-plan`, which can take 10+ minutes) 
 ### Local vs Remote Execution
 
 **Local execution:**
+
 ```bash
 erk objective next-plan 42
 ```
+
 - Runs in current terminal
 - Blocks until complete (10+ minutes)
 - Shows live progress and output
 - User cannot use terminal during execution
 
 **Remote execution:**
+
 ```bash
 erk codespace run objective next-plan 42
 ```
+
 - Dispatches to GitHub Codespace
 - Returns immediately (fire-and-forget)
 - Execution continues in background on codespace
@@ -156,12 +160,14 @@ erk codespace run objective next-plan 42
 ### When to Use Remote Execution
 
 **Good use cases:**
+
 - Long-running plan creation (10+ minutes)
 - Parallel processing of multiple objectives
 - Batch operations during off-hours
 - When you need to continue local work immediately
 
 **Not ideal for:**
+
 - Quick operations where you want immediate feedback
 - When you need to see live progress
 - Debugging workflows (harder to monitor output)
@@ -173,9 +179,11 @@ erk codespace run objective next-plan ISSUE_REF [--codespace NAME]
 ```
 
 **Arguments:**
+
 - `ISSUE_REF`: Objective issue number or URL
 
 **Options:**
+
 - `--codespace`, `-c`: Codespace name (defaults to configured default)
 
 ### Examples

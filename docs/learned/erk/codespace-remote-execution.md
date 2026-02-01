@@ -14,18 +14,21 @@ Remote execution enables fire-and-forget dispatch of long-running erk operations
 ## Overview
 
 **Fire-and-forget semantics:**
+
 - Command invocation returns immediately after dispatch
 - Execution continues on codespace in background
 - No streaming output to user terminal
 - User retains control of local CLI immediately
 
 **Use cases:**
+
 - Long-running objective workflows (10+ minutes)
 - Parallel processing of multiple tasks
 - Batch operations requiring significant compute
 - Any workflow that would block local terminal
 
 **Tradeoffs:**
+
 - ✅ Async execution: user doesn't wait for completion
 - ✅ Resource isolation: runs on codespace, not local machine
 - ❌ No live output: cannot see progress in real-time
@@ -44,6 +47,7 @@ remote_cmd = build_codespace_run_command("erk objective next-plan 42")
 ```
 
 **What it does:**
+
 1. Wraps the erk CLI command in a shell wrapper: `bash -l -c '...'`
 2. Sets up environment before execution:
    - `git pull` to sync latest code
@@ -161,6 +165,7 @@ exit_code = ctx.codespace.run_ssh_command(codespace.gh_name, remote_cmd)
 The `build_codespace_run_command()` function is designed for reuse. Every new remote command should use it rather than duplicating environment setup logic.
 
 **No duplication:**
+
 - Environment setup (git pull, uv sync, venv activation) is handled once
 - Consistent behavior across all remote commands
 - Single place to fix bugs or add features
@@ -244,11 +249,13 @@ No special handling needed for different command types.
 ## Source Attribution
 
 **Established in:**
+
 - Plan #6396: `[erk-plan] erk codespace run objective next-plan ISSUE_REF`
 - PR #6408: Add `erk codespace run objective next-plan` for remote execution
 - Session analysis from implementation
 
 **Implementation location:**
+
 - Command builder: `src/erk/core/codespace_run.py`
 - Example command: `src/erk/cli/commands/codespace/run/next_plan_cmd.py`
 - Tests: `tests/unit/cli/commands/codespace/run/test_next_plan_cmd.py`

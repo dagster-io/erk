@@ -105,6 +105,7 @@ cli.add_command(objective_group, name="objective")
 The `erk codespace run` group was extended in PR #6408 to add `erk codespace run objective next-plan`:
 
 **Existing group structure:**
+
 ```
 src/erk/cli/commands/codespace/
 ├── __init__.py                     # Codespace group

@@ -19,12 +19,14 @@ Patterns for building CLI commands that work with GitHub Codespaces.
 ### Problem Solved
 
 **Without helper:**
+
 - Each command duplicates 15 lines of codespace lookup logic
 - Inconsistent error messages across commands
 - Repeated logic for default vs named codespace resolution
 - Easy to forget edge cases (default not set, default not found, etc.)
 
 **With helper:**
+
 - 1-line function call: `resolve_codespace(registry, name)`
 - Consistent error messages across all codespace commands
 - All edge cases handled in one place
@@ -86,6 +88,7 @@ def resolve_codespace(
 ### Error Messages
 
 All error messages:
+
 - Are prefixed with "Error: " for clarity
 - Include helpful hint: "Use 'erk codespace setup' to create one"
 - Exit with code 1 (via `sys.exit(1)`)
@@ -144,11 +147,13 @@ def remote_command(ctx: click.Context, issue_ref: str, codespace: str | None) ->
 ## When to Use This Helper
 
 **Use the helper when:**
+
 - Command accepts optional `-c/--codespace` flag
 - Command needs to fall back to default codespace
 - Command should provide consistent error messages
 
 **Don't use the helper when:**
+
 - Command requires codespace name (not optional)
 - Command operates on all codespaces (iteration)
 - Command doesn't interact with codespace registry
@@ -227,6 +232,7 @@ When adding a new codespace command:
 ```
 
 **Important:**
+
 - Type must be `str | None` (not `str`)
 - Default must be `None` (to trigger default resolution)
 - Help text should mention "defaults to configured default"
@@ -293,11 +299,13 @@ def test_uses_default_codespace() -> None:
 ## Source Attribution
 
 **Established in:**
+
 - Plan #6396: `[erk-plan] erk codespace run objective next-plan ISSUE_REF`
 - PR #6408: Add `erk codespace run objective next-plan` for remote execution
 - Helper extracted to reduce duplication across codespace commands
 
 **Implementation location:**
+
 - Helper: `src/erk/cli/commands/codespace/helpers.py`
 - Usage: `src/erk/cli/commands/codespace/connect_cmd.py`
 - Usage: `src/erk/cli/commands/codespace/run/next_plan_cmd.py`

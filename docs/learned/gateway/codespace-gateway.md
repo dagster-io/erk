@@ -17,6 +17,7 @@ The `Codespace` gateway provides an abstraction for GitHub Codespace operations,
 ## Gateway Overview
 
 **Location:**
+
 - **ABC:** `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py`
 - **Real:** `packages/erk-shared/src/erk_shared/gateway/codespace/real.py`
 - **Fake:** `packages/erk-shared/src/erk_shared/gateway/codespace/fake.py`
@@ -46,6 +47,7 @@ def start_codespace(self, gh_name: str) -> None:
 ```
 
 **Behavior:**
+
 - If codespace is already running: no-op (returns immediately)
 - If codespace is stopped: starts it via `gh codespace start`
 - If codespace doesn't exist: command fails with error
@@ -63,6 +65,7 @@ def run_ssh_command(self, gh_name: str, command: str) -> int:
 ```
 
 **Behavior:**
+
 - Connects to codespace via `gh codespace ssh`
 - Executes the provided shell command
 - Returns the exit code from the command
@@ -92,6 +95,7 @@ def start_codespace(self, gh_name: str) -> None:
 ```
 
 **Requirements:**
+
 - Clear docstring explaining purpose and behavior
 - Explicit parameter documentation
 - Document exceptions that may be raised
@@ -112,6 +116,7 @@ def start_codespace(self, gh_name: str) -> None:
 ```
 
 **Requirements:**
+
 - Use `subprocess.run()` with appropriate arguments
 - Set `check=True` to raise on failure
 - Capture output if needed for error reporting
@@ -136,6 +141,7 @@ class FakeCodespace(Codespace):
 ```
 
 **Requirements:**
+
 - Track calls in internal list for test assertions
 - Provide property to access tracking data
 - Use defensive copy to prevent external mutation
@@ -155,6 +161,7 @@ exit_code = ctx.codespace.run_ssh_command(codespace.gh_name, remote_cmd)
 ```
 
 **Pattern:**
+
 1. Start codespace (ensures running)
 2. Build remote command (environment setup)
 3. Execute via SSH (dispatch)
@@ -184,6 +191,7 @@ def test_starts_codespace_before_ssh() -> None:
 ```
 
 **Test tracking properties:**
+
 - `started_codespaces`: List of codespace names passed to `start_codespace()`
 - `ssh_commands`: List of (codespace, command) tuples passed to `run_ssh_command()`
 
@@ -202,6 +210,7 @@ This prevents tests from accidentally mutating internal state.
 ### Integration Tests
 
 Integration tests use `RealCodespace` and require:
+
 - GitHub CLI installed and authenticated
 - Access to a real codespace for testing
 
@@ -212,6 +221,7 @@ Most tests should use `FakeCodespace` for speed and isolation.
 **Why not 5-place?**
 
 Standard gateway pattern has 5 implementations:
+
 1. ABC (contract)
 2. Real (actual operations)
 3. Fake (test doubles)
@@ -225,11 +235,13 @@ Standard gateway pattern has 5 implementations:
 - **No preview value:** Dry-run of "connect to codespace" isn't useful
 
 **When to use 3-place:**
+
 - Process replacement operations
 - Interactive terminal sessions
 - Operations that cannot be simulated or previewed
 
 **When to use 5-place:**
+
 - File operations (show what would be written)
 - Git operations (show what would be committed)
 - API calls (show what would be sent)
@@ -245,11 +257,13 @@ See [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implement
 ## Source Attribution
 
 **Established in:**
+
 - Plan #6396: `[erk-plan] erk codespace run objective next-plan ISSUE_REF`
 - PR #6408: Add `erk codespace run objective next-plan` for remote execution
 - `start_codespace()` method added as part of remote execution pattern
 
 **Implementation location:**
+
 - ABC: `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py`
 - Real: `packages/erk-shared/src/erk_shared/gateway/codespace/real.py`
 - Fake: `packages/erk-shared/src/erk_shared/gateway/codespace/fake.py`

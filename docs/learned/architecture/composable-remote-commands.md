@@ -17,12 +17,14 @@ Remote commands that dispatch work to GitHub Codespaces should reuse the shared 
 ## Problem Solved
 
 **Without pattern:**
+
 - Every new remote command duplicates environment setup (git pull, uv sync, venv activation)
 - 15+ lines of boilerplate per command
 - Inconsistent setup across commands
 - Bug fixes must be applied to multiple locations
 
 **With pattern:**
+
 - Single `build_codespace_run_command()` function handles all setup
 - 1-line call per command
 - Consistent environment across all remote operations
@@ -169,6 +171,7 @@ def test_uses_default_codespace_when_not_specified() -> None:
 **Implementation:** `src/erk/cli/commands/codespace/run/next_plan_cmd.py`
 
 **What it does:**
+
 - Dispatches `erk objective next-plan ISSUE_REF` to codespace
 - Uses `build_codespace_run_command()` for environment setup
 - Returns immediately (fire-and-forget)
@@ -203,11 +206,13 @@ exit_code = cmd_ctx.codespace.run_ssh_command(cs.gh_name, remote_cmd)
 ### Future Remote Command Candidates
 
 **Good candidates:**
+
 - `erk codespace run objective replan ISSUE_REF` - long-running replanning
 - `erk codespace run plan implement ISSUE_NUM` - remote plan implementation
 - `erk codespace run learn ISSUE_REF` - async documentation generation
 
 **Not good candidates:**
+
 - `erk codespace run worktree list` - Fast, needs output
 - `erk codespace run config show` - Configuration queries need live output
 
@@ -228,6 +233,7 @@ def build_codespace_run_command(cli_command: str) -> str:
 ```
 
 **All remote commands reuse this:**
+
 - Add a dependency? Update once, all commands benefit
 - Change log location? Update once, consistent everywhere
 - Fix a bug? Fixed for all remote commands immediately
@@ -263,6 +269,7 @@ remote_cmd = build_codespace_run_command(f"erk plan implement {issue_num}")
 ### Consistent Behavior
 
 All remote commands get the same:
+
 - Environment setup sequence
 - Error handling (via subprocess.run)
 - Output logging location
@@ -315,11 +322,13 @@ See [Codespace Remote Execution](../erk/codespace-remote-execution.md) for detai
 ## Source Attribution
 
 **Established in:**
+
 - Plan #6396: `[erk-plan] erk codespace run objective next-plan ISSUE_REF`
 - PR #6408: Add `erk codespace run objective next-plan` for remote execution
 - Pattern extracted from implementation and tests
 
 **Implementation location:**
+
 - Builder function: `src/erk/core/codespace_run.py`
 - Example command: `src/erk/cli/commands/codespace/run/next_plan_cmd.py`
 - Example tests: `tests/unit/cli/commands/codespace/run/test_next_plan_cmd.py`
