@@ -1,0 +1,159 @@
+"""Update a step's PR cell in an objective's roadmap table.
+
+Usage:
+    erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
+    erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500"
+    erk exec update-roadmap-step 6423 --step 1.3 --pr ""
+
+Output:
+    JSON with {success, issue_number, step_id, previous_pr, new_pr, url}
+
+Exit Codes:
+    0: Success - step updated
+    1: Error - issue/step not found, no roadmap, or API error
+"""
+
+import json
+import re
+
+import click
+
+from erk.cli.commands.exec.scripts.objective_roadmap_shared import parse_roadmap
+from erk_shared.context.helpers import (
+    require_issues as require_github_issues,
+)
+from erk_shared.context.helpers import (
+    require_repo_root,
+)
+from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.types import BodyText
+
+
+def _find_step_pr(body: str, step_id: str) -> tuple[str | None, bool]:
+    """Find the current PR value for a step in the roadmap body.
+
+    Returns:
+        (previous_pr, found) where previous_pr is the current PR cell value
+        (None if empty/"-") and found indicates whether the step was located.
+    """
+    phases, _ = parse_roadmap(body)
+    for phase in phases:
+        for step in phase.steps:
+            if step.id == step_id:
+                return step.pr, True
+    return None, False
+
+
+def _replace_step_pr_in_body(body: str, step_id: str, new_pr: str) -> str | None:
+    """Replace the PR cell for a step in the raw markdown body.
+
+    Uses regex to find the table row matching the step ID and replace
+    the last two cells (status -> "-", pr -> new value). Setting status
+    to "-" allows the parser's inference logic to determine the correct
+    status from the PR column value.
+
+    Returns:
+        Updated body string, or None if the step row was not found.
+    """
+    # Match table row: | step_id | description | status | pr |
+    # The step_id is in the first cell, and we need to replace status and pr cells.
+    pattern = re.compile(
+        r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|$",
+        re.MULTILINE,
+    )
+
+    match = pattern.search(body)
+    if match is None:
+        return None
+
+    # Build replacement: preserve step_id cell and description cell,
+    # set status to "-" and pr to new value
+    pr_display = new_pr if new_pr else "-"
+    replacement = f"|{match.group(1)}|{match.group(2)}| - | {pr_display} |"
+
+    return body[: match.start()] + replacement + body[match.end() :]
+
+
+@click.command(name="update-roadmap-step")
+@click.argument("issue_number", type=int)
+@click.option("--step", required=True, help="Step ID to update (e.g., '1.3')")
+@click.option(
+    "--pr", required=True, help="PR reference (e.g., 'plan #123', '#456', or '' to clear)"
+)
+@click.pass_context
+def update_roadmap_step(ctx: click.Context, issue_number: int, *, step: str, pr: str) -> None:
+    """Update a step's PR cell in an objective's roadmap table."""
+    github = require_github_issues(ctx)
+    repo_root = require_repo_root(ctx)
+
+    # Fetch the issue
+    issue = github.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "issue_not_found",
+                    "message": f"Issue #{issue_number} not found",
+                }
+            )
+        )
+        raise SystemExit(1)
+
+    # Parse roadmap to validate it exists
+    phases, _ = parse_roadmap(issue.body)
+    if not phases:
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "no_roadmap",
+                    "message": f"Issue #{issue_number} has no roadmap table",
+                }
+            )
+        )
+        raise SystemExit(1)
+
+    # Find the step's current PR value
+    previous_pr, found = _find_step_pr(issue.body, step)
+    if not found:
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "step_not_found",
+                    "message": f"Step '{step}' not found in issue #{issue_number}",
+                }
+            )
+        )
+        raise SystemExit(1)
+
+    # Replace the PR cell in the raw body
+    updated_body = _replace_step_pr_in_body(issue.body, step, pr)
+    if updated_body is None:
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "replacement_failed",
+                    "message": f"Failed to replace PR cell for step '{step}'",
+                }
+            )
+        )
+        raise SystemExit(1)
+
+    # Write the updated body back
+    github.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+
+    click.echo(
+        json.dumps(
+            {
+                "success": True,
+                "issue_number": issue_number,
+                "step_id": step,
+                "previous_pr": previous_pr,
+                "new_pr": pr if pr else None,
+                "url": issue.url,
+            }
+        )
+    )
