@@ -29,10 +29,4 @@ def run_next_plan(ctx: ErkContext, issue_ref: str, name: str | None) -> None:
         f"Running 'erk objective next-plan {issue_ref}' on '{codespace.name}'...",
         err=True,
     )
-    exit_code = ctx.codespace.run_ssh_command(codespace.gh_name, remote_cmd)
-
-    if exit_code == 0:
-        click.echo("Command completed successfully.", err=True)
-    else:
-        click.echo(f"Error: SSH command exited with code {exit_code}.", err=True)
-        raise SystemExit(exit_code)
+    ctx.codespace.exec_ssh_interactive(codespace.gh_name, remote_cmd)

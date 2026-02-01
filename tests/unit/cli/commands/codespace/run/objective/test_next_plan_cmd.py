@@ -38,17 +38,17 @@ def test_run_next_plan_starts_codespace_and_runs_command() -> None:
     assert result.exit_code == 0
     assert "Starting codespace 'mybox'" in result.output
     assert "Running 'erk objective next-plan 42' on 'mybox'" in result.output
-    assert "Command completed successfully" in result.output
 
     # Verify start_codespace was called
     assert fake_codespace.started_codespaces == ["user-mybox-abc123"]
 
-    # Verify SSH command was called with correct remote command
+    # Verify exec_ssh_interactive was called with correct remote command
+    assert fake_codespace.exec_called is True
     assert len(fake_codespace.ssh_calls) == 1
     call = fake_codespace.ssh_calls[0]
     assert call.gh_name == "user-mybox-abc123"
     assert "erk objective next-plan 42" in call.remote_command
-    assert call.interactive is False
+    assert call.interactive is True
 
 
 def test_run_next_plan_with_explicit_codespace() -> None:
@@ -89,23 +89,3 @@ def test_run_next_plan_fails_when_no_codespace() -> None:
 
     assert result.exit_code == 1
     assert "No default codespace set" in result.output
-
-
-def test_run_next_plan_reports_ssh_failure() -> None:
-    """run objective next-plan reports non-zero exit code from SSH."""
-    runner = CliRunner()
-
-    cs = _make_codespace("mybox")
-    fake_codespace = FakeCodespace(run_exit_code=1)
-    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    ctx = context_for_test(codespace=fake_codespace, codespace_registry=codespace_registry)
-
-    result = runner.invoke(
-        cli,
-        ["codespace", "run", "objective", "next-plan", "42"],
-        obj=ctx,
-        catch_exceptions=False,
-    )
-
-    assert result.exit_code == 1
-    assert "SSH command exited with code 1" in result.output
