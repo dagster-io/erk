@@ -38,6 +38,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before launching dependent agents that read from files written by Write tool** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Verify file existence with ls before launching dependent agents.
 
+**CRITICAL: Before launching learn agents without writing outputs to scratch storage** → Read [Learn Pipeline Architecture](learn-pipeline.md) first. Agent outputs MUST be written to .erk/scratch/sessions/{session_id}/learn-agents/ using Write tool before launching dependent agents. Bash heredoc fails with large outputs.
+
 **CRITICAL: Before launching subagents that produce outputs > 1KB** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Use Write tool for agent outputs. Bash heredocs fail silently above 10KB.
 
 **CRITICAL: Before manually creating an erk-plan issue with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
@@ -57,6 +59,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before saving a plan with --objective-issue flag** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
 
 **CRITICAL: Before using background agents without waiting for completion before dependent operations** → Read [Command-Agent Delegation](agent-delegation.md) first. Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files.
+
+**CRITICAL: Before using sequential agent launches when parallel is possible** → Read [Learn Pipeline Architecture](learn-pipeline.md) first. SessionAnalyzer, CodeDiffAnalyzer, and ExistingDocsChecker can run in parallel. Use run_in_background=true and collect with TaskOutput.
 
 **CRITICAL: Before using session-scoped markers in exec scripts** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Session markers enable idempotency in command retries. Always write markers AFTER successful operation completion, never before. Use triple-check guard on marker read: file exists AND content is valid AND expected type (numeric for issue numbers).
 

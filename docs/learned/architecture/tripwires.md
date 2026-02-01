@@ -122,6 +122,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before setting status explicitly when --pr is provided without --status** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. When --pr is set without --status, reset status cell to '-' to allow inference. Do not preserve the existing status — it may be stale (e.g., 'blocked' after a PR is added).
 
+**CRITICAL: Before starting implementation without loading dignified-python and fake-driven-testing** → Read [Skill Loading Best Practices](skill-loading.md) first. Load foundational skills FIRST. Skipping leads to inconsistent code quality and test patterns. These skills persist for the entire session.
+
 **CRITICAL: Before threading state through pipeline steps with mutable dataclasses** → Read [Land State Threading Pattern](land-state-threading.md) first. Use frozen dataclasses (@dataclass(frozen=True)) for pipeline state. Update fields with dataclasses.replace() to create new instances. Immutability enables caching, testability, and replay.
 
 **CRITICAL: Before try/except in fake.py or dry_run.py** → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
