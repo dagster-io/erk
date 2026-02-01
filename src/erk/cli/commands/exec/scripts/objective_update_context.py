@@ -19,9 +19,7 @@ import re
 
 import click
 
-from erk_shared.context.helpers import require_github as require_github_gateway
-from erk_shared.context.helpers import require_issues as require_github_issues
-from erk_shared.context.helpers import require_repo_root
+from erk_shared.context.helpers import require_github, require_issues, require_repo_root
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import PRNotFound
 
@@ -51,8 +49,8 @@ def objective_update_context(
     branch_name: str,
 ) -> None:
     """Fetch all context for objective update in a single call."""
-    issues = require_github_issues(ctx)
-    github = require_github_gateway(ctx)
+    issues = require_issues(ctx)
+    github = require_github(ctx)
     repo_root = require_repo_root(ctx)
 
     # Parse plan number from branch
