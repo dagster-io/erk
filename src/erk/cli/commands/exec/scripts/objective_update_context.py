@@ -22,6 +22,13 @@ import click
 from erk_shared.context.helpers import require_github, require_issues, require_repo_root
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.objective_update_context_result import (
+    ObjectiveInfoDict,
+    ObjectiveUpdateContextErrorDict,
+    ObjectiveUpdateContextResultDict,
+    PlanInfoDict,
+    PRInfoDict,
+)
 
 
 def _parse_plan_number_from_branch(branch: str) -> int | None:
@@ -33,7 +40,8 @@ def _parse_plan_number_from_branch(branch: str) -> int | None:
 
 
 def _error_json(error: str) -> str:
-    return json.dumps({"success": False, "error": error})
+    result: ObjectiveUpdateContextErrorDict = {"success": False, "error": error}
+    return json.dumps(result)
 
 
 @click.command(name="objective-update-context")
@@ -77,29 +85,29 @@ def objective_update_context(
         click.echo(_error_json(f"PR #{pr_number} not found"))
         raise SystemExit(1)
 
-    click.echo(
-        json.dumps(
-            {
-                "success": True,
-                "objective": {
-                    "number": objective.number,
-                    "title": objective.title,
-                    "body": objective.body,
-                    "state": objective.state,
-                    "labels": objective.labels,
-                    "url": objective.url,
-                },
-                "plan": {
-                    "number": plan.number,
-                    "title": plan.title,
-                    "body": plan.body,
-                },
-                "pr": {
-                    "number": pr.number,
-                    "title": pr.title,
-                    "body": pr.body,
-                    "url": pr.url,
-                },
-            }
-        )
-    )
+    objective_info: ObjectiveInfoDict = {
+        "number": objective.number,
+        "title": objective.title,
+        "body": objective.body,
+        "state": objective.state,
+        "labels": objective.labels,
+        "url": objective.url,
+    }
+    plan_info: PlanInfoDict = {
+        "number": plan.number,
+        "title": plan.title,
+        "body": plan.body,
+    }
+    pr_info: PRInfoDict = {
+        "number": pr.number,
+        "title": pr.title,
+        "body": pr.body,
+        "url": pr.url,
+    }
+    result: ObjectiveUpdateContextResultDict = {
+        "success": True,
+        "objective": objective_info,
+        "plan": plan_info,
+        "pr": pr_info,
+    }
+    click.echo(json.dumps(result))
