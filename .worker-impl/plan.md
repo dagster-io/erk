@@ -13,6 +13,7 @@ Add a call to `cleanup_review_pr()` in `_implement_from_issue()` in `src/erk/cli
 ### 1. `src/erk/cli/commands/implement.py`
 
 Add import at top:
+
 ```python
 from erk.cli.commands.review_pr_cleanup import cleanup_review_pr
 ```
@@ -34,6 +35,7 @@ No test needed for this integration — `cleanup_review_pr` is already thoroughl
 ## Also: close review PR #6397 for issue #6396
 
 After implementing, manually close the review PR that prompted this fix:
+
 ```
 gh pr close 6397 -c "Closed: plan was submitted for implementation"
 ```
