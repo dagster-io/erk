@@ -80,6 +80,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
 
+**CRITICAL: Before creating branches in erk code** → Read [Branch Manager Decision Tree](branch-manager-decision-tree.md) first. Use the decision tree to determine whether to use ctx.branch_manager (with Graphite tracking) or ctx.git.branch (low-level git). Placeholder/ephemeral branches bypass branch_manager.
+
 **CRITICAL: Before designing a new hook or reminder system** → Read [Three-Tier Context Injection Architecture](context-injection-tiers.md) first. Consider the three-tier context architecture. Read docs/learned/architecture/context-injection-tiers.md first.
 
 **CRITICAL: Before designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.

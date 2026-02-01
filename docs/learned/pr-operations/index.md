@@ -3,6 +3,7 @@
 
 # Pr Operations Documentation
 
+- **[checkout-footer-syntax.md](checkout-footer-syntax.md)** — writing PR body checkout footer, implementing plan-save workflow, debugging PR validation failures
 - **[commit-message-generation.md](commit-message-generation.md)** — understanding how PR descriptions are generated, working with plan context in PR summaries, customizing commit message generation
 - **[plan-embedding-in-pr.md](plan-embedding-in-pr.md)** — implementing PR body formatting with HTML, understanding how plans are embedded in PRs, debugging plan visibility in pull requests, working with <details> collapsible sections in PR bodies
 - **[pr-creation-patterns.md](pr-creation-patterns.md)** — creating a PR programmatically, detecting if a PR already exists for a branch, implementing PR creation in exec scripts

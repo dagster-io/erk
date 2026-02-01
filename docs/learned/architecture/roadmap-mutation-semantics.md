@@ -64,12 +64,79 @@ if not phases:
     # Handle empty roadmap
 ```
 
+## Objective-Level vs Step-Level Commands
+
+Erk provides two commands for mutating objective roadmap tables:
+
+### `objective-roadmap-update` (Objective-Level)
+
+**Purpose:** Update multiple cells in a single step row with flexible overrides.
+
+**Usage:**
+
+```bash
+erk exec objective-roadmap-update 6423 --step 1.3 --status done --pr "#6500"
+```
+
+**Capabilities:**
+
+- Can set status explicitly with `--status`
+- Can set PR reference with `--pr`
+- Can update either field independently or both together
+- Preserves status when `--pr` not provided
+- Resets status to "-" when `--pr` provided without `--status` (for inference)
+
+**Use When:** You need precise control over both status and PR columns, especially when overriding status (e.g., marking as "blocked" or "skipped").
+
+### `update-roadmap-step` (Step-Level)
+
+**Purpose:** Atomically update a step's PR cell with automatic status inference.
+
+**Usage:**
+
+```bash
+erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
+```
+
+**Capabilities:**
+
+- Updates only the PR cell
+- Always resets status to "-" for parser inference
+- Simpler mental model: "set step X's PR to Y"
+- Designed for plan-save workflow integration
+
+**Use When:** You're updating PR references and want automatic status inference (most common case).
+
+### PR Cell Mutation Pattern
+
+Both commands use the same underlying regex pattern for PR cell replacement:
+
+```python
+# Find the step row pattern:
+r'\|\s*{step_id}\s*\|.*?\|.*?\|(.*?)\|'
+
+# The fourth column (PR cell) is captured and replaced
+```
+
+This pattern works across all phases in the roadmap table.
+
+### Shared Parser
+
+Both commands use `objective_roadmap_shared.py` for:
+
+- Parsing the markdown roadmap table
+- Extracting phases and steps
+- Applying status inference rules
+- Validating step IDs
+
 ## Reference Implementation
 
-- Mutation logic: `src/erk/cli/commands/exec/scripts/objective_roadmap_update.py:53-86`
+- Objective-level mutation: `src/erk/cli/commands/exec/scripts/objective_roadmap_update.py:53-86`
+- Step-level mutation: `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:48-87`
 - Parser inference: `src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py:107-115`
 
 ## Related Documentation
 
+- [Update Roadmap Step Command](../cli/commands/update-roadmap-step.md) — Step-level PR updates
 - [Roadmap Parser](../objectives/roadmap-parser.md) — Parsing rules and CLI usage
 - [Discriminated Union Error Handling](discriminated-union-error-handling.md) — The isinstance() checking pattern

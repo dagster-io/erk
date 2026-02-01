@@ -534,6 +534,29 @@ Delegates to devrun agent to run pytest and pyright iteratively.
 
 **Key insight:** One agent serves multiple commands by accepting different tool invocations.
 
+### Example 1b: /local:interview → interview agent
+
+**Pattern:** Agent delegation with tool restrictions for safety
+
+**Command:** `.claude/commands/local/interview.md`
+
+**Frontmatter:**
+
+```yaml
+allowed-tools: AskUserQuestion, Read, Glob, Grep
+```
+
+**Agent responsibilities:**
+
+- Conduct multi-turn interview with user
+- Ask clarifying questions about requirements
+- Search codebase to inform questions
+- Gather context before plan creation
+
+**Key insight:** Tool restrictions (`allowed-tools`) enforce read-only behavior in plan mode. The interview agent can search and ask questions but cannot write code or modify files, making it safe to use within plan mode before implementation begins.
+
+**Use case:** Gather detailed requirements through conversation before entering plan mode or as part of planning workflow.
+
 ### Example 2: /erk:create-wt-from-plan-file → planned-wt-creator
 
 ⚠️ **Note:** This command is now deprecated. The recommended workflow is to use `erk implement <issue>` instead, which creates worktrees directly from GitHub issues. This example is preserved for architectural reference.
