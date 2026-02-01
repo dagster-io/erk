@@ -78,12 +78,8 @@ Object.defineProperty(window, "matchMedia", {
 });
 
 // ResizeObserver - MUST use class syntax, not vi.fn().mockImplementation()
-class ResizeObserver {
-  observe = vi.fn();
-  unobserve = vi.fn();
-  disconnect = vi.fn();
-}
-global.ResizeObserver = ResizeObserver;
+// Source: erkdesk/src/test/setup.ts:8-12
+// Uses class syntax so `new ResizeObserver()` works as a proper constructor.
 ```
 
 ## ResizeObserver: Why Class Syntax is Required

@@ -12,41 +12,17 @@ This document provides reference documentation for TypeScript interfaces and typ
 
 ## Action Event Types
 
+> **Source:** `erkdesk/src/types/erkdesk.d.ts:45-53`
+
 ### ActionOutputEvent
 
-Discriminated union for real-time output from streaming actions.
+Discriminated union for real-time output from streaming actions. Has two fields: `stream` (`"stdout"` | `"stderr"`) identifying the output source, and `data` (string) containing text with ANSI escape codes already stripped.
 
-```typescript
-type ActionOutputEvent = {
-  stream: "stdout" | "stderr";
-  data: string;
-};
-```
-
-**Fields:**
-
-- `stream`: Identifies which output stream the data came from
-  - `"stdout"`: Standard output (typically gray in UI)
-  - `"stderr"`: Standard error (typically red/orange in UI)
-- `data`: The text content, with ANSI escape codes already stripped
-
-**Usage:** Received via `window.erkdesk.onActionOutput()` callback as actions execute.
+**Usage:** Received via `window.erkdesk.onActionOutput()` callback as actions execute. Stdout is typically rendered gray in the UI, stderr in red/orange.
 
 ### ActionCompletedEvent
 
-Discriminated union for action completion status.
-
-```typescript
-type ActionCompletedEvent = {
-  success: boolean;
-  error?: string;
-};
-```
-
-**Fields:**
-
-- `success`: `true` if the action completed with exit code 0, `false` otherwise
-- `error`: Optional error message if `success` is `false`
+Discriminated union for action completion status. Has `success` (boolean, true if exit code 0) and optional `error` (string, present when `success` is false).
 
 **Usage:** Received via `window.erkdesk.onActionCompleted()` callback when spawned process exits.
 
@@ -69,19 +45,9 @@ type LogLine = {
 
 ### ElkdeskAPI Streaming Methods
 
-The `window.erkdesk` API exposes these streaming-related methods:
+> **Source:** `erkdesk/src/types/erkdesk.d.ts:55-65`
 
-```typescript
-interface ElkdeskAPI {
-  // Existing methods omitted for brevity
-
-  // Streaming action methods
-  startStreamingAction(action: ActionDefinition, worktreePath: string): void;
-  onActionOutput(callback: (event: ActionOutputEvent) => void): void;
-  onActionCompleted(callback: (event: ActionCompletedEvent) => void): void;
-  removeActionListeners(): void;
-}
-```
+The `window.erkdesk` API exposes four streaming-related methods: `startStreamingAction` to spawn a process, `onActionOutput` / `onActionCompleted` to register callbacks for output events and completion, and `removeActionListeners` to clean up IPC listeners.
 
 **See also:** [Erkdesk IPC Streaming Architecture](../architecture/erkdesk-ipc-streaming.md) for usage patterns and lifecycle details.
 

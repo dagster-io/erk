@@ -232,19 +232,9 @@ When dynamic UI elements (like the LogPanel) appear or disappear, the right pane
 
 ### Testing Implications
 
-When testing components that use ResizeObserver, jsdom requires the mock to be a proper class constructor. See [jsdom DOM API Stubs](../testing/vitest-jsdom-stubs.md) for the correct mock pattern:
+When testing components that use ResizeObserver, jsdom requires the mock to be a proper class constructor. The mock is defined in `erkdesk/src/test/setup.ts:8-12` using class syntax so it can be instantiated with `new`.
 
-```typescript
-// In vitest-setup/setup.ts
-class ResizeObserver {
-  observe = vi.fn();
-  unobserve = vi.fn();
-  disconnect = vi.fn();
-}
-global.ResizeObserver = ResizeObserver;
-```
-
-**Critical:** Do NOT use `vi.fn().mockImplementation()` - it returns a function, not a constructable class, causing "ResizeObserver is not a constructor" TypeError.
+**Critical:** Do NOT use `vi.fn().mockImplementation()` — it returns a function, not a constructable class, causing "ResizeObserver is not a constructor" TypeError. See [jsdom DOM API Stubs](../testing/vitest-jsdom-stubs.md) for details.
 
 ## IPC Cleanup
 
