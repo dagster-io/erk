@@ -11,10 +11,10 @@ Additionally, the composition work (Turn 3) is mechanical template-filling that 
 
 ## Target: 2 turns, with Haiku doing the heavy lifting
 
-| Turn | Model | What happens |
-|------|-------|-------------|
-| 1 (parent) | Sonnet/Opus | Fetch context via `erk exec objective-update-context`, then delegate |
-| 2 (subagent) | **Haiku** | Compose action comment + updated body, write both in parallel, self-validate, close if all done |
+| Turn         | Model       | What happens                                                                                    |
+| ------------ | ----------- | ----------------------------------------------------------------------------------------------- |
+| 1 (parent)   | Sonnet/Opus | Fetch context via `erk exec objective-update-context`, then delegate                            |
+| 2 (subagent) | **Haiku**   | Compose action comment + updated body, write both in parallel, self-validate, close if all done |
 
 The parent model does one turn to fetch context, then spawns a Haiku Task subagent with the full context blob + all templates/rules embedded in the prompt. Haiku does the composition, writes, validation, and optional closing — all in one subagent invocation.
 
