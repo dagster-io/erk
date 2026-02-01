@@ -79,7 +79,12 @@ def test_slot_unassign_by_slot_name() -> None:
 
         # Verify placeholder branch was created from trunk
         # (tuple is cwd, branch_name, start_point, force)
-        assert (env.cwd, "__erk-slot-01-br-stub__", "main", False) in git_ops.branch.created_branches
+        assert (
+            env.cwd,
+            "__erk-slot-01-br-stub__",
+            "main",
+            False,
+        ) in git_ops.branch.created_branches
 
 
 def test_slot_unassign_not_found() -> None:
@@ -342,7 +347,12 @@ def test_slot_unassign_creates_placeholder_via_git_not_branch_manager() -> None:
 
         # Verify placeholder branch was created via git.branch.create_branch
         # The tuple format is (cwd, branch_name, start_point, force)
-        assert (env.cwd, "__erk-slot-01-br-stub__", "main", False) in git_ops.branch.created_branches
+        assert (
+            env.cwd,
+            "__erk-slot-01-br-stub__",
+            "main",
+            False,
+        ) in git_ops.branch.created_branches
 
         # Verify NO checkout of parent branch occurred
         # (branch_manager.create_branch would check out 'main', which would appear here)
