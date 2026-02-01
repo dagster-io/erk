@@ -5,9 +5,13 @@ read_when:
   - "working with large pull requests (300+ files)"
   - "encountering HTTP 406 errors from gh CLI"
   - "implementing PR file discovery"
+  - "working with GitHub codespaces in code"
+  - "implementing codespace operations"
 tripwires:
   - action: "using gh pr diff --name-only in production code"
     warning: "For PRs with 300+ files, gh pr diff fails with HTTP 406. Use REST API with pagination instead."
+  - action: "using gh codespace start"
+    warning: "gh codespace start does not exist. Use REST API POST /user/codespaces/{name}/start via gh api instead."
 ---
 
 # GitHub CLI Limits
@@ -63,7 +67,74 @@ PR #6119 fixed a bug where `erk exec discover-reviews` failed on large PRs. The 
 
 This is a production tripwire: code that works in testing (small PRs) fails in production (large refactors).
 
+## gh codespace start Does Not Exist
+
+The GitHub CLI does not provide a `gh codespace start` command. Attempting to use it fails:
+
+```bash
+gh codespace start mycodespace
+# Error: unknown command "start" for "gh codespace"
+```
+
+### The Solution: REST API
+
+Use the REST API endpoint `/user/codespaces/{name}/start` via `gh api`:
+
+```bash
+gh api \
+  --method POST \
+  "user/codespaces/${CODESPACE_NAME}/start"
+```
+
+This returns JSON with the codespace state. The operation is asynchronous - the codespace may still be starting when the API call returns.
+
+### Implementation Pattern
+
+See `src/erk/gateway/codespace/real.py` for the production implementation:
+
+```python
+# DON'T: Use gh codespace start (does not exist)
+subprocess.run(["gh", "codespace", "start", name])
+
+# DO: Use REST API
+result = subprocess.run([
+    "gh", "api",
+    "--method", "POST",
+    f"user/codespaces/{name}/start"
+])
+```
+
+## GH-API-AUDIT Annotation Convention
+
+To track GitHub CLI commands that should be audited for potential REST/GraphQL API replacements, use the `GH-API-AUDIT` annotation:
+
+```python
+# GH-API-AUDIT: [REST/GraphQL] - [operation description]
+subprocess.run(["gh", "pr", "view", pr_number])
+```
+
+### Format
+
+- **`REST`**: Operation has a known REST API endpoint
+- **`GraphQL`**: Operation may be better served by GraphQL
+- **Operation description**: Brief explanation of what the command does
+
+### Examples from Codebase
+
+```python
+# GH-API-AUDIT: REST - Get PR number from branch
+result = subprocess.run(["gh", "pr", "view", "--json", "number"])
+
+# GH-API-AUDIT: GraphQL - Fetch issue comments
+result = subprocess.run(["gh", "issue", "view", issue_number, "--json", "comments"])
+```
+
+### Purpose
+
+This convention identifies 66+ locations in the gateway code where we're using `gh` CLI commands that could potentially be replaced with direct REST or GraphQL API calls for better performance, error handling, or functionality.
+
 ## Related Documentation
 
 - [Universal Tripwires](../universal-tripwires.md) - Lists the gh pr diff tripwire
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - How GitHubGateway abstracts this
+- [Codespace Gateway](../gateway/codespace-gateway.md) - Codespace-specific gateway patterns
