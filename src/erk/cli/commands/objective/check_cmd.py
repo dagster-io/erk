@@ -154,9 +154,7 @@ def validate_objective(
 
     # Check 5: Phase numbering is sequential (sub-phases like 1A, 1B, 1C are OK)
     phase_keys = [(p.number, p.suffix) for p in phases]
-    is_sequential = all(
-        phase_keys[i] < phase_keys[i + 1] for i in range(len(phase_keys) - 1)
-    )
+    is_sequential = all(phase_keys[i] < phase_keys[i + 1] for i in range(len(phase_keys) - 1))
     if is_sequential:
         checks.append((True, "Phase numbering is sequential"))
     else:

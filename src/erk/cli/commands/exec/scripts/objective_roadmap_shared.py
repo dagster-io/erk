@@ -99,7 +99,6 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             status_col = row_match.group(3).strip().lower()
             pr_col = row_match.group(4).strip()
 
-
             # Infer status based on status column and PR column
             if status_col in ("blocked", "skipped"):
                 status = status_col
