@@ -1,0 +1,100 @@
+.plan-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-family: "Menlo", "Consolas", "Courier New", monospace;
+  font-size: 12px;
+}
+
+.plan-list__loading,
+.plan-list__error,
+.plan-list__empty {
+  padding: 1rem;
+  color: #888;
+}
+
+.plan-list__error {
+  color: #f44747;
+}
+
+.plan-list__table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.plan-list__table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.plan-list__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.plan-list__table th {
+  background: #2d2d2d;
+  color: #888;
+  font-weight: 600;
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 1px solid #404040;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.plan-list__table td {
+  padding: 3px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.plan-list__col-number {
+  width: 50px;
+}
+
+.plan-list__col-title {
+  /* flex fill via no explicit width */
+}
+
+.plan-list__col-pr {
+  width: 70px;
+}
+
+.plan-list__col-checks {
+  width: 40px;
+  text-align: center;
+}
+
+.plan-list__col-comments {
+  width: 50px;
+  text-align: center;
+}
+
+.plan-list__col-wt {
+  width: 80px;
+}
+
+.plan-list__col-local {
+  width: 60px;
+  text-align: center;
+}
+
+.plan-list__row {
+  cursor: pointer;
+}
+
+.plan-list__row:hover {
+  background: #2a2d2e;
+}
+
+.plan-list__row--selected {
+  background: #094771 !important;
+  color: #ffffff;
+}

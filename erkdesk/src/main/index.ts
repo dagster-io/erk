@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, WebContentsView } from "electron";
+import { execFile } from "child_process";
 import path from "path";
-import type { WebViewBounds } from "../types/erkdesk";
+import type { WebViewBounds, FetchPlansResult } from "../types/erkdesk";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -52,6 +53,38 @@ const createWindow = (): void => {
     }
   });
 
+  // IPC: Fetch plan data from erk CLI.
+  ipcMain.handle("plans:fetch", (): Promise<FetchPlansResult> => {
+    return new Promise((resolve) => {
+      execFile("erk", ["dash-data", "--json"], (error, stdout, stderr) => {
+        if (error) {
+          resolve({
+            success: false,
+            plans: [],
+            count: 0,
+            error: stderr || error.message,
+          });
+          return;
+        }
+        try {
+          const data = JSON.parse(stdout);
+          resolve({
+            success: true,
+            plans: data.plans ?? data,
+            count: data.count ?? (data.plans ?? data).length,
+          });
+        } catch (parseError) {
+          resolve({
+            success: false,
+            plans: [],
+            count: 0,
+            error: `Failed to parse erk output: ${parseError}`,
+          });
+        }
+      });
+    });
+  });
+
   // Load the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -70,6 +103,7 @@ const createWindow = (): void => {
   mainWindow.on("closed", () => {
     ipcMain.removeAllListeners("webview:update-bounds");
     ipcMain.removeAllListeners("webview:load-url");
+    ipcMain.removeHandler("plans:fetch");
     webView = null;
   });
 };
