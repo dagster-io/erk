@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check
+.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check erkdesk-start erkdesk-package erkdesk-make
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -155,6 +155,17 @@ docs-serve:
 
 docs-deploy:
 	uv run mkdocs gh-deploy --force
+
+# === Erkdesk ===
+
+erkdesk-start:
+	cd erkdesk && pnpm start
+
+erkdesk-package:
+	cd erkdesk && pnpm run package
+
+erkdesk-make:
+	cd erkdesk && pnpm run make
 
 pull_master:
 	git -C /Users/schrockn/code/erk pull origin master
