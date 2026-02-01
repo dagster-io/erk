@@ -82,6 +82,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before creating branches in erk code** → Read [Branch Manager Decision Tree](branch-manager-decision-tree.md) first. Use the decision tree to determine whether to use ctx.branch_manager (with Graphite tracking) or ctx.git.branch (low-level git). Placeholder/ephemeral branches bypass branch_manager.
 
+**CRITICAL: Before delegating to subagents via Task tool** → Read [Subagent Prompt Structure for Complete Context Embedding](subagent-prompt-structure.md) first. Verify prompt includes: (1) full context blob, (2) all templates, (3) 'DO NOT re-fetch' instructions, (4) clear success criteria. Incomplete context causes silent failures (subagent makes wrong decisions without exceptions).
+
 **CRITICAL: Before designing a new hook or reminder system** → Read [Three-Tier Context Injection Architecture](context-injection-tiers.md) first. Consider the three-tier context architecture. Read docs/learned/architecture/context-injection-tiers.md first.
 
 **CRITICAL: Before designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
@@ -93,6 +95,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before implementing CLI flags that affect post-mutation behavior** → Read [Erk Architecture Patterns](erk-architecture.md) first. Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target).
 
 **CRITICAL: Before implementing a cleanup operation that modifies metadata based on external API success** → Read [Fail-Open Pattern](fail-open-patterns.md) first. Use fail-open pattern. If critical step fails, do NOT execute dependent steps that modify persistent state.
+
+**CRITICAL: Before implementing deterministic command logic with multiple sequential turns** → Read [Haiku Subagent Delegation for Optimization](subagent-delegation-for-optimization.md) first. Consider Task delegation with Haiku for mechanical, template-driven work. Turn count dominates wall-clock latency (each turn adds 10-15s). This is a missed optimization opportunity.
 
 **CRITICAL: Before implementing mtime-based cache invalidation** → Read [Graphite Cache Invalidation](graphite-cache-invalidation.md) first. Use triple-check guard pattern: (cache exists) AND (mtime exists) AND (mtime matches). Partial checks cause stale data bugs.
 
@@ -117,6 +121,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before reading from or writing to ~/.claude/ paths using Path.home() directly** → Read [ClaudeInstallation Gateway](claude-installation-gateway.md) first. Use ClaudeInstallation gateway instead. All ~/.claude/ filesystem operations should go through this gateway for testability and abstraction.
 
 **CRITICAL: Before removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+
+**CRITICAL: Before reviewing subagent code that re-fetches context via GitHub API or other external sources** → Read [Subagent Self-Validation Pattern](subagent-self-validation.md) first. If subagent is re-fetching context already available or passed in the prompt, context embedding is incomplete. Add missing data to prompt instead. This is a silent performance regression (wasted API calls, added latency).
 
 **CRITICAL: Before running tsc --noEmit from root in multi-config TypeScript project** → Read [TypeScript Multi-Config Project Checking](typescript-multi-config.md) first. tsc --noEmit from root breaks subdirectory configs. Use tsc -p <path> --noEmit for each tsconfig.json separately.
 

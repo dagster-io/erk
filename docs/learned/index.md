@@ -26,6 +26,7 @@ If your current task matches, read the linked document **before writing code**.
 - [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
 - [integrations/](integrations/)
 - [objectives/](objectives/)
+- [optimization/](optimization/)
 - [planning/](planning/) — Explore when working with plans, .impl/ folders, or agent delegation. Add docs here for planning workflow patterns.
 - [pr-operations/](pr-operations/)
 - [refactoring/](refactoring/)
