@@ -364,8 +364,7 @@ def _prompt_async_learn_and_continue(
         SystemExit(0) if user cancels
     """
     user_output(
-        click.style("Warning: ", fg="yellow")
-        + f"Plan #{plan_issue_number} has not been learned from."
+        "⚠️  " + click.style(f"Plan #{plan_issue_number} has not been learned from.", fg="yellow")
     )
     user_output("")
 
@@ -376,10 +375,10 @@ def _prompt_async_learn_and_continue(
 
     # Interactive mode: show numbered choice menu
     user_output("Choose an action:")
-    user_output("  1. Trigger async learn and continue (recommended)")
+    user_output("  1. 🚀 Trigger async learn and continue (recommended)")
     user_output("     Reads session logs, uploads to gist, runs analysis in GitHub Actions")
-    user_output("  2. Continue without learning")
-    user_output("  3. Cancel")
+    user_output("  2. ⏩ Continue without learning")
+    user_output("  3. ❌ Cancel")
     user_output("")
 
     choice = click.prompt(
@@ -433,11 +432,13 @@ def _trigger_async_learn(
     # Silence unused parameter warning - repo_root kept for interface consistency
     _ = repo_root
 
-    user_output(f"Triggering async learn for plan #{plan_issue_number}...")
-    user_output("  Reads local session logs, preprocesses them, and uploads to a secret gist.")
+    header = click.style(f"🧠 Triggering async learn for plan #{plan_issue_number}...", fg="cyan")
+    user_output(header)
+    user_output("   Reads local session logs, preprocesses them, and uploads to a secret gist.")
     user_output(
-        "  A GitHub Actions workflow then analyzes sessions and creates a documentation plan."
+        "   A GitHub Actions workflow then analyzes sessions and creates a documentation plan."
     )
+    user_output("")
 
     try:
         # Stream stderr (progress) in real-time while capturing stdout (JSON result)
