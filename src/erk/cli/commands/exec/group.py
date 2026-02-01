@@ -31,6 +31,7 @@ from erk.cli.commands.exec.scripts.create_plan_from_context import (
 from erk.cli.commands.exec.scripts.create_worker_impl_from_issue import (
     create_worker_impl_from_issue,
 )
+from erk.cli.commands.exec.scripts.dash_data import dash_data
 from erk.cli.commands.exec.scripts.detect_trunk_branch import detect_trunk_branch
 from erk.cli.commands.exec.scripts.discover_reviews import discover_reviews
 from erk.cli.commands.exec.scripts.download_remote_session import (
@@ -177,6 +178,7 @@ exec_group.add_command(capture_session_info, name="capture-session-info")
 exec_group.add_command(check_impl, name="check-impl")
 exec_group.add_command(create_issue_from_session, name="create-issue-from-session")
 exec_group.add_command(create_plan_from_context, name="create-plan-from-context")
+exec_group.add_command(dash_data, name="dash-data")
 exec_group.add_command(create_worker_impl_from_issue, name="create-worker-impl-from-issue")
 exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")
 exec_group.add_command(discover_reviews, name="discover-reviews")

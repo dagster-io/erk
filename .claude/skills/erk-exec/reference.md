@@ -19,6 +19,7 @@ Quick reference for all `erk exec` subcommands.
 | `create-issue-from-session`       | Extract plan from Claude session and create GitHub issue.                 |
 | `create-plan-from-context`        | Create GitHub issue from plan content with erk-plan label.                |
 | `create-worker-impl-from-issue`   | Create .worker-impl/ folder from GitHub issue with plan content.          |
+| `dash-data`                       | Serialize plan dashboard data to JSON.                                    |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                  |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                          |
 | `download-remote-session`         | Download a session from a GitHub Gist.                                    |
@@ -223,6 +224,24 @@ Create .worker-impl/ folder from GitHub issue with plan content.
 | Flag          | Type      | Required | Default | Description                                               |
 | ------------- | --------- | -------- | ------- | --------------------------------------------------------- |
 | `--repo-root` | DIRECTORY | No       | -       | Repository root directory (defaults to current directory) |
+
+### dash-data
+
+Serialize plan dashboard data to JSON.
+
+**Usage:** `erk exec dash-data`
+
+**Options:**
+
+| Flag          | Type    | Required | Default       | Description |
+| ------------- | ------- | -------- | ------------- | ----------- |
+| `--state`     | CHOICE  | No       | -             | -           |
+| `--label`     | TEXT    | No       | ('erk-plan',) | -           |
+| `--limit`     | INTEGER | No       | -             | -           |
+| `--show-prs`  | FLAG    | No       | -             | -           |
+| `--show-runs` | FLAG    | No       | -             | -           |
+| `--run-state` | TEXT    | No       | -             | -           |
+| `--creator`   | TEXT    | No       | -             | -           |
 
 ### detect-trunk-branch
 
