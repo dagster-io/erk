@@ -201,11 +201,64 @@ stderr_thread.join(timeout=5.0)
 - Fire-and-forget processes where stderr is ignored
 - Short-lived commands that complete quickly
 
+## Temporary File Lifecycle Pattern in Shell
+
+When passing large or formatted content to external CLI tools (like `gh pr comment`), use the standard Unix temp file pattern to avoid command-line argument limits and escape sequence issues.
+
+### The Pattern
+
+```bash
+# 1. Create temp file
+TEMP_FILE=$(mktemp)
+
+# 2. Write content with proper formatting
+printf "%b\n" "$CONTENT" > "$TEMP_FILE"
+
+# 3. Pass filename to command
+gh pr comment "$PR_NUMBER" --body-file "$TEMP_FILE"
+
+# 4. Cleanup
+rm "$TEMP_FILE"
+```
+
+### Why This Pattern?
+
+1. **Bypasses ARG_MAX**: Linux kernel limits command-line argument length to ~2MB. File I/O has no such limit.
+2. **Reliable escape sequences**: `printf "%b"` is POSIX standard for interpreting backslash escape sequences (`\n`, `\t`, etc.).
+3. **Clean resource management**: Explicit cleanup prevents temp file accumulation.
+
+### When to Use
+
+- GitHub Actions workflows posting CI outputs (rebase logs, test results)
+- Any CLI tool accepting file-based input (`--body-file`, `--input-file`, etc.)
+- Content that could potentially be large (>1KB as rule of thumb)
+- Multi-line content with escape sequences
+
+### Real-World Example
+
+From `.github/workflows/pr-fix-conflicts.yml`:
+
+```yaml
+BODY="## Conflict Resolution Failed\n\nRebase output:\n\`\`\`\n$REBASE_OUTPUT\n\`\`\`"
+TEMP_FILE=$(mktemp)
+printf "%b\n" "$BODY" > "$TEMP_FILE"
+gh pr comment "$PR_NUMBER" --body-file "$TEMP_FILE"
+rm "$TEMP_FILE"
+```
+
+This pattern is especially important in CI where large content is common and shell behavior differs from local development (GitHub Actions uses dash/sh, not bash).
+
+### See Also
+
+- [GitHub CLI PR Comment Patterns](../ci/github-cli-comment-patterns.md) - Full guide to CI comment posting patterns
+- [GitHub Actions Output Patterns](../ci/github-actions-output-patterns.md) - For `$GITHUB_OUTPUT` (different context)
+
 ## Summary
 
 - **Gateway layer**: Use `run_subprocess_with_context()` for business logic
 - **CLI layer**: Use `run_with_error_reporting()` for command handlers
 - **GitHub with retry**: Use `execute_gh_command_with_retry()` for network-sensitive operations
 - **Streaming with stderr**: Use background thread accumulation pattern
+- **Temp file pattern**: Use `mktemp` → `printf "%b"` → file-based input → `rm` for large/formatted content
 - **Keep LBYL**: Don't migrate intentional `check=False` patterns
 - **Never use bare check=True**: Always use one of the wrapper functions

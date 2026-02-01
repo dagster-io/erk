@@ -635,7 +635,7 @@ The pure git submission flow:
 
 ### `.worker-impl/` Cleanup
 
-In GitHub Actions, `.worker-impl/` is removed in a separate commit:
+In GitHub Actions, `.worker-impl/` is removed in a separate commit after CI passes:
 
 ```bash
 git rm -rf .worker-impl/
@@ -644,6 +644,25 @@ git push
 ```
 
 This keeps the implementation commit clean.
+
+#### Timing and Distinction
+
+The cleanup happens in a specific sequence:
+
+1. **Implementation commit** - Contains the actual code changes
+2. **CI validation** - Tests, formatting, type checking must pass
+3. **Remove `.worker-impl/`** - Cleanup commit (this step)
+4. **Push changes** - Both commits pushed to PR
+
+**Key distinction:**
+
+- **`.worker-impl/`**: CI automatically removes this after validation passes. This is the ephemeral working copy used during remote implementation. It's safe to delete because it's already been copied to `.impl/` for Claude's use.
+
+- **`.impl/`**: Requires user review and manual deletion. This is the original plan that should be preserved until the user confirms completion. Never auto-delete this folder - it serves as documentation of what was planned vs. what was implemented.
+
+**Clear sequence**: CI passes → remove `.worker-impl/` → commit → push
+
+This pattern ensures that transient artifacts (`.worker-impl/`) are cleaned up automatically while permanent artifacts (`.impl/`) remain for user review.
 
 ### PR Ready for Review
 

@@ -9,15 +9,18 @@ Three implementation sessions contributed insights: session e5da072c demonstrate
 ## What Was Built
 
 **Problem**: The conflict resolution workflow posted PR comments using inline command substitution:
+
 ```yaml
 gh pr comment "$PR_NUMBER" --body "$(echo -e "$BODY")"
 ```
 
 This pattern failed in two ways:
+
 1. **Escape sequence loss**: The `echo -e` in command substitution didn't properly interpret `\n` as newlines, resulting in literal `\n` appearing in PR comments
 2. **ARG_MAX overflow**: Large rebase output caused "Argument list too long" errors when the command line exceeded ~2MB
 
 **Solution**: Replace inline `--body` with temp file + `--body-file`:
+
 ```yaml
 TEMP_FILE=$(mktemp)
 printf "%b\n" "$BODY" > "$TEMP_FILE"
@@ -49,12 +52,14 @@ Future agents editing GitHub Actions workflows that post PR comments need this d
 **Sources**: [Impl e5da072c] [Impl f871bb54] [Impl 5d99bc36] [PR #6388]
 
 **Read When**:
+
 - Posting formatted PR comments from GitHub Actions workflows
 - Debugging escape sequences in `gh pr comment` commands
 - Encountering "Argument list too long" errors
 - Writing GitHub Actions steps that use `gh pr` commands with multi-line content
 
 **Topics to Cover**:
+
 - Inline `--body` vs `--body-file` comparison and when to use each
 - Why command substitution + echo -e fails (shell interpretation depth, escape sequence loss)
 - The complete pattern: `mktemp` -> `printf "%b"` -> `--body-file` -> `rm`
@@ -72,6 +77,7 @@ Future agents editing GitHub Actions workflows that post PR comments need this d
 **Sources**: [Impl e5da072c] [Impl f871bb54] [PR #6388]
 
 **Tripwire Entry**:
+
 - **Trigger**: Writing GitHub Actions workflow steps that pass large content to `gh` CLI commands (e.g., `gh pr comment --body "$VAR"`)
 - **Warning**: Use `--body-file` or other file-based input to avoid Linux ARG_MAX limit (~2MB on command-line arguments). Large CI outputs like rebase logs can exceed this limit.
 - **Score**: 6/10 (Non-obvious +2, Cross-cutting +2, Silent failure +2)
@@ -85,6 +91,7 @@ Future agents editing GitHub Actions workflows that post PR comments need this d
 **Sources**: [Impl e5da072c] [Impl f871bb54] [PR #6388]
 
 **Tripwire Entry**:
+
 - **Trigger**: Using escape sequences like `\n` in GitHub Actions workflows
 - **Warning**: Use `printf "%b"` instead of `echo -e` for reliable escape sequence handling. GitHub Actions uses dash/sh (POSIX standard), not bash, so `echo -e` behavior differs from local development.
 - **Score**: 5/10 (Non-obvious +2, Cross-cutting +2, External tool quirk +1)
@@ -111,11 +118,13 @@ A note clarifying that heredoc patterns in this document apply specifically to `
 **Sources**: [Impl 5d99bc36]
 
 **Read When**:
+
 - Adding checkout footers to PR bodies
 - Implementing PR-related features that involve validation
 - Debugging `erk pr check` failures
 
 **Topics to Cover**:
+
 - The `erk pr check` command validates exact patterns, not semantic equivalents
 - The specific requirement: `erk pr checkout <number>` format
 - Why `erk wt from-pr <number>` fails validation despite being semantically equivalent
@@ -131,11 +140,13 @@ A note clarifying that heredoc patterns in this document apply specifically to `
 **Sources**: [Impl 5d99bc36]
 
 **Read When**:
+
 - Updating PR bodies to satisfy validation requirements
 - Implementing PR-related features
 - Debugging validation failures
 
 **Topics to Cover**:
+
 - The iterate-until-valid workflow: update PR body -> run `erk pr check` -> read error -> investigate source -> fix -> re-validate
 - When to read validation source code vs. guessing at fixes
 - Example from session 5d99bc36: discovering `has_checkout_footer_for_pr()` pattern requirement
@@ -150,6 +161,7 @@ A note clarifying that heredoc patterns in this document apply specifically to `
 **Sources**: [Impl e5da072c]
 
 **Tripwire Entry**:
+
 - **Trigger**: GitHub Actions workflow needs to perform operations like gist creation, or session uploads fail in CI
 - **Warning**: GitHub Actions GITHUB_TOKEN has restricted scope by default. Check token capabilities or use personal access token (PAT) for elevated permissions like gist creation.
 - **Score**: 3/10 (Non-obvious +2, External tool quirk +1)
@@ -165,11 +177,13 @@ A note clarifying that heredoc patterns in this document apply specifically to `
 **Sources**: [Impl 5d99bc36]
 
 **Read When**:
+
 - Debugging validation failures
 - Encountering errors with unclear root causes
 - Deciding whether to guess at fixes or investigate source
 
 **Topics to Cover**:
+
 - The debugging approach: error message -> grep codebase -> read source file -> understand validation logic -> apply fix
 - Example: PR validation investigation from session 5d99bc36
 - Why this approach is superior to trial-and-error
@@ -185,6 +199,7 @@ A note clarifying that heredoc patterns in this document apply specifically to `
 
 **What to Add**:
 Document the standard Unix pattern for temp files in CI context:
+
 1. Create: `TEMP_FILE=$(mktemp)`
 2. Write: `printf "%b\n" "$VAR" > "$TEMP_FILE"`
 3. Use: Pass filename as flag argument `--body-file "$TEMP_FILE"`
@@ -202,6 +217,7 @@ Reference the real example from `pr-fix-conflicts.yml` and note that this patter
 
 **What to Add**:
 Clarify the distinction:
+
 - `.worker-impl/`: CI automatically removes this after validation passes. This is the ephemeral working copy used during remote implementation.
 - `.impl/`: Requires user review and manual deletion. This is the original plan that should be preserved until the user confirms completion.
 - Clear sequence: CI passes -> remove `.worker-impl/` -> commit -> push

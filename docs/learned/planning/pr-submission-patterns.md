@@ -135,7 +135,116 @@ For operations that might fail transiently:
 2. **Create if missing**: Only create when check confirms nothing exists
 3. **Update on conflict**: If creation fails due to conflict, fall back to update
 
+## PR Body Validation Workflow (Iterate-Until-Valid Pattern)
+
+When creating or updating PRs in erk, validation failures often require an iterative approach.
+
+### The Pattern
+
+```bash
+# 1. Update PR body with required fields
+gh pr edit --body "..."
+
+# 2. Run validation
+erk pr check
+
+# 3. Read error message
+# Error: Missing required checkout footer
+
+# 4. Investigate source code (if pattern is unclear)
+grep -r "has_checkout_footer" src/
+
+# 5. Update PR body with fix
+gh pr edit --body "... with correct footer format"
+
+# 6. Re-validate
+erk pr check
+
+# Repeat steps 2-6 until validation passes
+```
+
+### When to Use
+
+Use iterate-until-valid when:
+
+1. **Initial PR creation** - ensuring all required fields are present
+2. **Validation failures** - fixing specific validation errors
+3. **Pattern requirements unclear** - discovering exact format through iteration
+4. **Complex validation logic** - multiple validators must pass
+
+### Two-Phase PR Update Strategy
+
+**Phase 1: Add Required Fields**
+
+Start with the known requirements:
+
+```bash
+# Add title, summary, checkout footer
+gh pr edit \
+  --title "Fix authentication bug" \
+  --body "## Summary
+Fix token refresh logic
+
+## Test Plan
+- [ ] Manual testing with expired token
+- [ ] Unit tests for refresh flow
+
+---
+erk pr checkout 123"
+```
+
+**Phase 2: Validate and Iterate**
+
+Run validation and fix errors iteratively:
+
+```bash
+# First validation attempt
+$ erk pr check
+Error: Test plan incomplete - missing checked items
+
+# Fix: Add at least one checked item
+$ gh pr edit --body "...
+- [x] Manual testing with expired token
+- [ ] Unit tests for refresh flow
+..."
+
+# Second validation attempt
+$ erk pr check
+✓ All checks passed
+```
+
+### When to Read Source Code
+
+**Read source code when:**
+
+- Error message is unclear about the exact requirement
+- Multiple attempts with reasonable fixes still fail
+- Pattern requirements seem inconsistent with intuition
+- Validation logic involves regex or complex parsing
+
+**Example from session 5d99bc36:**
+
+The error "Missing checkout footer" was clear, but the exact pattern requirement was not obvious. Instead of trial-and-error:
+
+```bash
+$ grep -r "has_checkout_footer" src/
+# Read erk_shared.gateway.pr.submit.has_checkout_footer_for_pr()
+# Discover exact pattern: "erk pr checkout <number>"
+# Fix immediately
+```
+
+### Best Practices
+
+1. **Start with known requirements** - add obvious fields first (title, summary, footer)
+2. **Run validation early** - don't wait until PR submission to discover issues
+3. **Read errors carefully** - messages often indicate exactly what's missing
+4. **Investigate source when stuck** - grep codebase for validator function names
+5. **Iterate quickly** - update, validate, fix, repeat until passing
+6. **Document patterns** - if validation logic is non-obvious, document it
+
 ## Related Documentation
 
 - [Plan Lifecycle](lifecycle.md) - Full plan lifecycle including PR creation
 - [Submit Branch Reuse](submit-branch-reuse.md) - Branch reuse detection in plan submit
+- [PR Checkout Footer Validation Pattern](../erk/pr-commands.md) - Specific validation details for checkout footers
+- [Source Code Investigation Pattern](debugging-patterns.md) - General debugging approach for validation failures

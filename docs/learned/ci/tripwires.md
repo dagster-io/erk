@@ -14,9 +14,15 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before Creating or modifying .prettierignore** → Read [Makefile Prettier Ignore Path](makefile-prettier-ignore-path.md) first. The Makefile uses `prettier --ignore-path .gitignore`, NOT `.prettierignore`. Adding rules to .prettierignore has no effect. Modify .gitignore to control what Prettier ignores.
 
+**CRITICAL: Before GitHub Actions workflow needs to perform operations like gist creation, or session uploads fail in CI** → Read [GitHub CLI PR Comment Patterns](github-cli-comment-patterns.md) first. GitHub Actions GITHUB_TOKEN has restricted scope by default. Check token capabilities or use personal access token (PAT) for elevated permissions like gist creation.
+
 **CRITICAL: Before Label checks in push event workflows** → Read [GitHub Actions Label Queries](github-actions-label-queries.md) first. Job-level label access via github.event.pull_request.labels is ONLY available in pull_request events, NOT push events. For push events, you must use step-level GitHub API queries with gh cli or REST API.
 
 **CRITICAL: Before Use !contains() pattern for label-based gating** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Negation is critical — contains() without ! skips all push events
+
+**CRITICAL: Before Using escape sequences like `\n` in GitHub Actions workflows** → Read [GitHub CLI PR Comment Patterns](github-cli-comment-patterns.md) first. Use `printf "%b"` instead of `echo -e` for reliable escape sequence handling. GitHub Actions uses dash/sh (POSIX standard), not bash, so `echo -e` behavior differs from local development.
+
+**CRITICAL: Before Writing GitHub Actions workflow steps that pass large content to `gh` CLI commands (e.g., `gh pr comment --body "$VAR"`)** → Read [GitHub CLI PR Comment Patterns](github-cli-comment-patterns.md) first. Use `--body-file` or other file-based input to avoid Linux ARG_MAX limit (~2MB on command-line arguments). Large CI outputs like rebase logs can exceed this limit.
 
 **CRITICAL: Before asking devrun agent to fix errors** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. devrun is READ-ONLY. Never prompt with 'fix errors' or 'make tests pass'. Use pattern: 'Run command and report results', then parent agent fixes based on output.
 

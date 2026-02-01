@@ -13,6 +13,7 @@
 - **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, implementing replan workflows, designing consolidation prompts
 - **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
 - **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo issue closing syntax
+- **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures, Encountering errors with unclear root causes, Deciding whether to guess at fixes or investigate source, Working with error messages that reference specific functions
 - **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving gateways to gateway/ directory, consolidating gateway packages, performing systematic refactoring
 - **[learn-plan-metadata-fields.md](learn-plan-metadata-fields.md)** — working with learn plan metadata, troubleshooting null learn_status or learn_plan_issue, transforming Plan objects in pipelines, understanding created_from_workflow_run_url field, adding workflow run backlinks to plans
 - **[learn-plan-validation.md](learn-plan-validation.md)** — creating erk-learn plans, preventing learn plan cycles, validating learn workflow

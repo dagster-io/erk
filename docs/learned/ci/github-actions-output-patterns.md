@@ -239,8 +239,20 @@ if: steps.check.outputs.skip == true
 if: steps.check.outputs.skip == 'true'
 ```
 
+## Important Context Distinction
+
+The heredoc patterns in this document apply specifically to `$GITHUB_OUTPUT` workflow step outputs - data flowing **between workflow steps** within the GitHub Actions runner environment.
+
+For `gh pr comment` and other **external GitHub CLI commands** that send data to the GitHub API, use `--body-file` with `printf "%b"` instead. This distinction matters because:
+
+1. **$GITHUB_OUTPUT** is GitHub Actions' internal mechanism for step-to-step communication
+2. **gh CLI commands** are external tools that interact with the GitHub API
+
+Using command substitution with `echo -e` for `gh pr comment` fails due to shell interpretation depth and ARG_MAX limits. See [GitHub CLI PR Comment Patterns](github-cli-comment-patterns.md) for the correct pattern.
+
 ## Related Documentation
 
+- [GitHub CLI PR Comment Patterns](github-cli-comment-patterns.md) - For `gh pr comment` and external CLI tools
 - [GitHub Actions Security Patterns](github-actions-security.md) - Security considerations
 - [CI Prompt Patterns](prompt-patterns.md) - Working with prompts in CI
 - [erk-impl Change Detection](erk-impl-change-detection.md) - Specific change detection patterns

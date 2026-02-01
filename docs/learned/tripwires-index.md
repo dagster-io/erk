@@ -15,7 +15,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | ------------------------------------------- | --------- | --------------------------------------------- |
 | [architecture](architecture/tripwires.md)   | 70        | `src/erk/gateway/`, gateways, subprocess      |
 | [capabilities](capabilities/tripwires.md)   | 1         | Claude Code capabilities, tool use            |
-| [ci](ci/tripwires.md)                       | 16        | `.github/workflows/`, `.github/actions/`      |
+| [ci](ci/tripwires.md)                       | 19        | `.github/workflows/`, `.github/actions/`      |
 | [claude-code](claude-code/tripwires.md)     | 2         | Claude Code configuration, settings           |
 | [cli](cli/tripwires.md)                     | 19        | `src/erk/cli/`                                |
 | [gateway](gateway/tripwires.md)             | 1         | `gateway/` code                               |
