@@ -2,9 +2,9 @@
 
 Usage:
     erk exec objective-roadmap-update <NUMBER> --step <ID>
-        [--status <STATUS>] [--pr <PR_REF>]
+        [--status <STATUS>] [--pr <PR_REF>] [--description <TEXT>]
 
-At least one of --status or --pr must be provided.
+At least one of --status, --pr, or --description must be provided.
 
 Output:
     JSON with {success, issue_number, step, summary, validation_errors}
@@ -56,6 +56,7 @@ def _replace_row_cells(
     *,
     status: str | None,
     pr: str | None,
+    description: str | None,
 ) -> str:
     """Build a replacement row with inference-driven cell values.
 
@@ -66,11 +67,14 @@ def _replace_row_cells(
 
     When --status is provided, it's written directly as an explicit override
     (e.g., "blocked", "skipped").
+
+    When --description is provided, it replaces the step description text.
     """
-    description = row_match.group(1).strip()
+    original_description = row_match.group(1).strip()
     original_status = row_match.group(2).strip()
     original_pr = row_match.group(3).strip()
 
+    new_description = description if description is not None else original_description
     new_pr = pr if pr is not None else original_pr
 
     if status is not None:
@@ -83,7 +87,7 @@ def _replace_row_cells(
         # Neither changed (shouldn't happen given validation, but safe fallback)
         new_status = original_status
 
-    return f"| {step_id} | {description} | {new_status} | {new_pr} |"
+    return f"| {step_id} | {new_description} | {new_status} | {new_pr} |"
 
 
 def _update_step_in_body(
@@ -92,6 +96,7 @@ def _update_step_in_body(
     *,
     status: str | None,
     pr: str | None,
+    description: str | None,
 ) -> str | None:
     """Find and replace a step row in the body.
 
@@ -102,7 +107,7 @@ def _update_step_in_body(
     if row_match is None:
         return None
 
-    new_row = _replace_row_cells(row_match, step_id, status=status, pr=pr)
+    new_row = _replace_row_cells(row_match, step_id, status=status, pr=pr, description=description)
     return body[: row_match.start()] + new_row + body[row_match.end() :]
 
 
@@ -130,6 +135,7 @@ def _find_step_in_phases(phases: list[RoadmapPhase], step_id: str) -> dict[str, 
     help="New status value (e.g. 'done', 'blocked', 'skipped')",
 )
 @click.option("--pr", "new_pr", default=None, help="New PR reference (e.g. '#123', 'plan #456')")
+@click.option("--description", "new_description", default=None, help="New step description text")
 @click.pass_context
 def objective_roadmap_update(
     ctx: click.Context,
@@ -137,15 +143,16 @@ def objective_roadmap_update(
     step: str,
     new_status: str | None,
     new_pr: str | None,
+    new_description: str | None,
 ) -> None:
     """Update a step in an objective's roadmap table."""
     # Validate that at least one update flag is provided
-    if new_status is None and new_pr is None:
+    if new_status is None and new_pr is None and new_description is None:
         click.echo(
             json.dumps(
                 {
                     "success": False,
-                    "error": "At least one of --status or --pr must be provided",
+                    "error": "At least one of --status, --pr, or --description must be provided",
                 }
             )
         )
@@ -182,7 +189,9 @@ def objective_roadmap_update(
         raise SystemExit(1)
 
     # Perform the row-level update
-    updated_body = _update_step_in_body(issue.body, step, status=new_status, pr=new_pr)
+    updated_body = _update_step_in_body(
+        issue.body, step, status=new_status, pr=new_pr, description=new_description
+    )
     if updated_body is None:
         click.echo(
             json.dumps(

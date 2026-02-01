@@ -164,7 +164,7 @@ def test_issue_not_found() -> None:
 
 
 def test_no_flags_provided() -> None:
-    """Test error when neither --status nor --pr is provided."""
+    """Test error when no update flags (--status, --pr, --description) are provided."""
     issue = _make_issue(100, "Objective: Test Feature", SAMPLE_BODY)
     fake_gh = FakeGitHubIssues(issues={100: issue})
     runner = CliRunner()
@@ -305,3 +305,57 @@ def test_update_step_in_second_phase() -> None:
     assert output["step"]["pr"] == "#250"
     # Status column is "-" which is not blocked/skipped, and PR is #250 -> done
     assert output["step"]["status"] == "done"
+
+
+def test_update_description_only() -> None:
+    """Test updating only the description, preserving status and PR."""
+    issue = _make_issue(100, "Objective: Test Feature", SAMPLE_BODY)
+    fake_gh = FakeGitHubIssues(issues={100: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        objective_roadmap_update,
+        ["100", "--step", "1.1", "--description", "Set up infrastructure and tooling"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+
+    assert output["success"] is True
+    assert output["step"]["id"] == "1.1"
+    assert output["step"]["description"] == "Set up infrastructure and tooling"
+    # Original PR and status should be preserved
+    assert output["step"]["pr"] == "#100"
+    assert output["step"]["status"] == "done"
+
+    # Verify the body was updated
+    _, updated_body = fake_gh.updated_bodies[0]
+    assert "| 1.1 | Set up infrastructure and tooling | - | #100 |" in updated_body
+
+
+def test_update_description_with_pr() -> None:
+    """Test updating both description and PR together."""
+    issue = _make_issue(100, "Objective: Test Feature", SAMPLE_BODY)
+    fake_gh = FakeGitHubIssues(issues={100: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        objective_roadmap_update,
+        ["100", "--step", "2.1", "--description", "Implement core feature", "--pr", "#300"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+
+    assert output["success"] is True
+    assert output["step"]["id"] == "2.1"
+    assert output["step"]["description"] == "Implement core feature"
+    assert output["step"]["pr"] == "#300"
+    # PR #300 means status inferred as "done"
+    assert output["step"]["status"] == "done"
+
+    # Verify the body was updated
+    _, updated_body = fake_gh.updated_bodies[0]
+    assert "| 2.1 | Implement core feature | - | #300 |" in updated_body

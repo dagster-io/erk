@@ -155,6 +155,27 @@ erk exec objective-roadmap-update 6295 --step 2.1 --pr "#6317"
 
 The JSON output includes `summary` with step counts — use this for Step 7.
 
+**Detecting Stale Descriptions:**
+
+After updating the step with `--pr`, compare the PR title against the step description. If they meaningfully differ (e.g., command location changed from `erk dash-data` to `erk exec dash-data`, scope changed, or implementation diverged from plan), update the description:
+
+```bash
+erk exec objective-roadmap-update <objective-number> --step <step-id> --description "Updated description text"
+```
+
+**Guidelines for descriptions:**
+
+- Keep descriptions concise — match the style of other steps in the roadmap
+- Focus on what was actually implemented, not what was originally planned
+- Update when: command names changed, scope shifted, or approach diverged from plan
+- Don't update for minor wording differences or when the PR title is just more detailed
+
+**Example:** If step 2.1 says "Add `erk dash-data` command" but PR #6433 implemented "Add `erk exec dash-data` command":
+
+```bash
+erk exec objective-roadmap-update 6295 --step 2.1 --description "Add \`erk exec dash-data\` command"
+```
+
 **For "Current Focus" updates**, fetch and edit the body separately:
 
 1. Fetch current body: `erk exec get-issue-body <issue-number>` (parse JSON to get `body` field)

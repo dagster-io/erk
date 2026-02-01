@@ -716,11 +716,12 @@ Update a step in an objective's roadmap table.
 
 **Options:**
 
-| Flag       | Type | Required | Default        | Description                                          |
-| ---------- | ---- | -------- | -------------- | ---------------------------------------------------- |
-| `--step`   | TEXT | Yes      | Sentinel.UNSET | Step ID to update (e.g. '2.1')                       |
-| `--status` | TEXT | No       | -              | New status value (e.g. 'done', 'blocked', 'skipped') |
-| `--pr`     | TEXT | No       | -              | New PR reference (e.g. '#123', 'plan #456')          |
+| Flag            | Type | Required | Default        | Description                                          |
+| --------------- | ---- | -------- | -------------- | ---------------------------------------------------- |
+| `--step`        | TEXT | Yes      | Sentinel.UNSET | Step ID to update (e.g. '2.1')                       |
+| `--status`      | TEXT | No       | -              | New status value (e.g. 'done', 'blocked', 'skipped') |
+| `--pr`          | TEXT | No       | -              | New PR reference (e.g. '#123', 'plan #456')          |
+| `--description` | TEXT | No       | -              | New step description text                            |
 
 ### objective-save-to-issue
 
