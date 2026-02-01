@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   check-submission:
-    if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'plan-review')
+    if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -132,7 +132,7 @@ jobs:
       github.ref_name != 'main' &&
       (github.event_name == 'pull_request' || github.event_name == 'push') &&
       (github.event_name != 'pull_request' || github.event.pull_request.draft != true) &&
-      (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'plan-review')) &&
+      (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')) &&
       (needs.format.result == 'failure' ||
        needs.lint.result == 'failure' ||
        needs.prettier.result == 'failure' ||
@@ -190,15 +190,15 @@ jobs:
 
           echo "is_fork=false" >> $GITHUB_OUTPUT
 
-      - name: Check plan-review label
+      - name: Check erk-plan-review label
         id: check-label
         if: steps.discover-pr.outputs.has_pr == 'true' && steps.pr.outputs.is_fork != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           labels=$(gh api repos/${{ github.repository }}/pulls/${{ steps.discover-pr.outputs.pr_number }} --jq '[.labels[].name] | join(",")')
-          if echo "$labels" | grep -q "plan-review"; then
-            echo "PR has plan-review label, skipping autofix"
+          if echo "$labels" | grep -q "erk-plan-review"; then
+            echo "PR has erk-plan-review label, skipping autofix"
             echo "has_plan_review_label=true" >> $GITHUB_OUTPUT
           else
             echo "has_plan_review_label=false" >> $GITHUB_OUTPUT
