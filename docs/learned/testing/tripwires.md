@@ -24,6 +24,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. See tests/commands/submit/test_existing_branch_detection.py for examples.
 
+**CRITICAL: Before mocking ResizeObserver or IntersectionObserver in jsdom tests** → Read [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) first. Use class syntax: `class ResizeObserver { observe = vi.fn(); ... }`. Do NOT use `vi.fn().mockImplementation()` - it returns a function, not a constructable class, causing 'ResizeObserver is not a constructor' TypeError.
+
 **CRITICAL: Before modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.
 
 **CRITICAL: Before setting mock return values in test beforeEach** → Read [Window Mock Patterns for Electron IPC Testing](window-mock-patterns.md) first. Order matters: call mockReset() FIRST (clears previous test's values), THEN mockResolvedValue(). Reverse order has no effect.

@@ -26,6 +26,7 @@
 - **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir, detecting root worktree, detecting worktree location, adding composing template methods to ABC
 - **[erk-shared-package.md](erk-shared-package.md)** — deciding where to put new utilities, moving code between packages
 - **[erk-statusline.md](erk-statusline.md)** — modifying the Claude Code status line, adding new status indicators to the statusline, understanding how statusline fetches GitHub data, working with Token/TokenSeq patterns, debugging statusline performance
+- **[erkdesk-ipc-streaming.md](erkdesk-ipc-streaming.md)** — implementing streaming features in erkdesk, working with real-time action output in Electron, understanding erkdesk IPC event patterns, debugging erkdesk streaming action listeners
 - **[event-progress-pattern.md](event-progress-pattern.md)** — implementing operations that need progress reporting, separating business logic from UI output, building testable CLI operations, using ProgressEvent or CompletionEvent
 - **[fail-open-patterns.md](fail-open-patterns.md)** — implementing cleanup operations, designing resilient workflows, handling optional or non-critical operations
 - **[flatten-subgateway-pattern.md](flatten-subgateway-pattern.md)** — creating or migrating subgateways, exposing subgateway operations through parent gateway, working with gateway hierarchies, implementing property-based subgateway access

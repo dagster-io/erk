@@ -9,7 +9,7 @@
 - **[cli-testing.md](cli-testing.md)** — writing tests for erk CLI commands, using ErkContext.for_test(), testing Click commands with context
 - **[command-group-testing.md](command-group-testing.md)** — testing Click command groups, migrating tests for grouped commands, testing invoke_without_command patterns
 - **[devrun-agent.md](devrun-agent.md)** — using the devrun agent, running CI checks via Task tool, debugging devrun agent failures, writing prompts for devrun
-- **[erkdesk-component-testing.md](erkdesk-component-testing.md)** — writing tests for erkdesk React components, testing keyboard navigation in erkdesk, testing async state updates in React components
+- **[erkdesk-component-testing.md](erkdesk-component-testing.md)** — writing tests for erkdesk React components, testing keyboard navigation in erkdesk, testing async state updates in React components, testing streaming action integration, mocking erkdesk IPC bridge in tests
 - **[exec-script-testing.md](exec-script-testing.md)** — testing exec CLI commands, writing integration tests for scripts, debugging 'Context not initialized' errors in tests, debugging flaky tests in parallel execution
 - **[fake-github-testing.md](fake-github-testing.md)** — Writing tests that use FakeGitHubIssues
 - **[frozen-dataclass-test-doubles.md](frozen-dataclass-test-doubles.md)** — implementing a fake for an ABC interface, adding mutation tracking to a test double, understanding the frozen dataclass with mutable internals pattern, writing tests that assert on method call parameters
@@ -26,5 +26,5 @@
 - **[submit-pipeline-tests.md](submit-pipeline-tests.md)** — adding tests for submit pipeline steps, understanding how pipeline steps are tested in isolation, working with tests/unit/cli/commands/pr/submit_pipeline/
 - **[subprocess-testing.md](subprocess-testing.md)** — testing code that uses subprocess, creating fakes for process execution, avoiding subprocess mocks in tests
 - **[testing.md](testing.md)** — writing tests for erk, using erk fakes, running erk test commands
-- **[vitest-jsdom-stubs.md](vitest-jsdom-stubs.md)** — writing React component tests with Vitest + jsdom, encountering "scrollIntoView is not a function" errors, setting up Vitest test environment
+- **[vitest-jsdom-stubs.md](vitest-jsdom-stubs.md)** — writing React component tests with Vitest + jsdom, encountering "scrollIntoView is not a function" errors, setting up Vitest test environment, mocking ResizeObserver or IntersectionObserver in jsdom tests
 - **[window-mock-patterns.md](window-mock-patterns.md)** — testing erkdesk components that use window.erkdesk IPC bridge, encountering mock contamination between tests, tests passing individually but failing in CI

@@ -7,6 +7,8 @@
 - **[app-architecture.md](app-architecture.md)** — modifying the erkdesk App component, understanding erkdesk state management, implementing new features in the erkdesk dashboard
 - **[backend-communication.md](backend-communication.md)** — connecting Electron to a Python backend, choosing between HTTP server and CLI shelling for IPC, implementing the desktop dashboard backend
 - **[defensive-bounds-handling.md](defensive-bounds-handling.md)** — working with WebContentsView bounds, debugging Electron crashes, implementing IPC bounds updates
+- **[erkdesk-components.md](erkdesk-components.md)** — implementing new erkdesk React components, understanding LogPanel component behavior, working with streaming output display in erkdesk
+- **[erkdesk-migration-guide.md](erkdesk-migration-guide.md)** — updating erkdesk components after API changes, fixing ActionToolbar integration after streaming migration, understanding erkdesk breaking changes
 - **[erkdesk-project-structure.md](erkdesk-project-structure.md)** — working on erkdesk codebase, understanding Electron Forge Vite setup, adding new erkdesk features, debugging erkdesk build issues
 - **[forge-vite-setup.md](forge-vite-setup.md)** — configuring Electron Forge with Vite, understanding erkdesk build configuration, debugging Vite build issues in Electron, adding new build targets or configs
 - **[framework-evaluation.md](framework-evaluation.md)** — choosing a framework for the desktop dashboard, embedding GitHub pages in an application, understanding why Electron was chosen for the desktop dashboard

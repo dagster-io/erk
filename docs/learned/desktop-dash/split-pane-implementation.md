@@ -202,6 +202,40 @@ Shows horizontal resize cursor when hovering over the divider.
 - Divider has fixed width (`DIVIDER_WIDTH = 4`)
 - Right pane uses `flex: 1` to fill remaining space
 
+## ResizeObserver for Automatic Repositioning
+
+The SplitPane component uses `ResizeObserver` to automatically detect layout changes and reposition the WebContentsView accordingly.
+
+### Why ResizeObserver?
+
+When dynamic UI elements (like the LogPanel) appear or disappear, the right pane's dimensions change. Without automatic detection, the WebContentsView would be misaligned with its placeholder.
+
+**Triggers:**
+
+- LogPanel showing/hiding (Phase 2: Streaming Log Panel)
+- Toolbar height changes
+- Any other dynamic layout adjustments
+
+### Implementation
+
+> **Source:** `erkdesk/src/renderer/components/SplitPane.tsx:46-56`
+>
+> The `useEffect` hook creates a `ResizeObserver` on the right pane element,
+> calling `reportBounds()` on resize, and disconnects on cleanup.
+
+**How it works:**
+
+1. Observer watches the right pane placeholder element
+2. When LogPanel appears/disappears, the right pane resizes
+3. ResizeObserver callback triggers `reportBounds()`
+4. WebContentsView repositions to match new layout
+
+### Testing Implications
+
+When testing components that use ResizeObserver, jsdom requires the mock to be a proper class constructor. The mock is defined in `erkdesk/src/test/setup.ts:8-12` using class syntax so it can be instantiated with `new`.
+
+**Critical:** Do NOT use `vi.fn().mockImplementation()` — it returns a function, not a constructable class, causing "ResizeObserver is not a constructor" TypeError. See [jsdom DOM API Stubs](../testing/vitest-jsdom-stubs.md) for details.
+
 ## IPC Cleanup
 
 The component does **not** handle cleanup — the main process removes IPC listeners when the window closes:
