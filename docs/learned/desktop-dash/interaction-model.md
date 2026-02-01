@@ -309,6 +309,55 @@ Make the right pane prominent and primary.
 
 **Test:** Can I land a PR by clicking a toolbar button and see streaming output?
 
+#### Phase 2 Implementation: Streaming Log Panel
+
+The streaming log panel feature transforms action execution from batch callbacks to real-time streaming output.
+
+**State Management (App.tsx):**
+
+The App component manages streaming action state:
+
+```typescript
+const [showLogPanel, setShowLogPanel] = useState(false);
+const [actionLogs, setActionLogs] = useState<LogLine[]>([]);
+const [actionStatus, setActionStatus] = useState<
+  "running" | "success" | "error"
+>("running");
+const [runningActionId, setRunningActionId] = useState<string | null>(null);
+```
+
+**Event Flow:**
+
+1. **Action Start**: ActionToolbar calls `onActionStart(actionId)` (replaces old `executeAction()`)
+2. **Stream Setup**: App registers streaming listeners via IPC bridge
+3. **Real-Time Updates**: LogPanel receives logs array and updates as events arrive
+4. **Cleanup**: On completion, `removeActionListeners()` removes all event listeners
+
+**Architectural Shift:**
+
+- **Before (Batch Pattern)**: `executeAction() -> Promise<ActionResult>` - blocking, collected all output before returning
+- **After (Streaming Pattern)**: `startStreamingAction()` + event listeners (`onActionOutput`, `onActionCompleted`) - non-blocking, real-time feedback
+
+**Breaking Change in ActionToolbar:**
+
+The ActionToolbar component API changed to support streaming:
+
+- **Before**: `executeAction={async (action) => { ... }}` - callback returned Promise with final result
+- **After**: `onActionStart={(actionId) => { ... }}` + `runningActionId={currentRunningAction}` - parent manages streaming
+
+This shift enables real-time feedback during long-running operations without blocking the UI.
+
+**Component Integration:**
+
+The LogPanel component displays streaming output with:
+
+- Stream-specific styling (stdout gray, stderr red)
+- Auto-scroll to bottom as logs arrive
+- Status-aware header (running blue, success green, error red)
+- Dismiss button to hide panel when done
+
+See [Erkdesk IPC Streaming Architecture](../architecture/erkdesk-ipc-streaming.md) for detailed IPC event patterns and [Erkdesk Components](erkdesk-components.md) for LogPanel reference.
+
 ### Phase 3: Notifications
 
 - Diff previous state against new state

@@ -5,6 +5,8 @@ read_when:
   - writing tests for erkdesk React components
   - testing keyboard navigation in erkdesk
   - testing async state updates in React components
+  - testing streaming action integration
+  - mocking erkdesk IPC bridge in tests
 ---
 
 # Erkdesk Component Testing Patterns
@@ -310,8 +312,177 @@ expect(screen.queryByText("Plan Title")).not.toBeInTheDocument();
 await screen.findByText("Plan Title");
 ```
 
+## Pattern: Streaming Action Testing
+
+Components that manage streaming action state require special testing patterns to simulate real-time IPC events.
+
+### Mocking Streaming APIs
+
+Ensure `window.erkdesk` streaming methods are mocked in `vitest-setup/setup.ts`:
+
+```typescript
+global.window.erkdesk = {
+  // ... other methods
+  startStreamingAction: vi.fn(),
+  onActionOutput: vi.fn(),
+  onActionCompleted: vi.fn(),
+  removeActionListeners: vi.fn(),
+};
+```
+
+### Testing Streaming State Flow
+
+To test components that manage streaming action state:
+
+**Step 1: Capture callbacks from mocks**
+
+```typescript
+let outputCallback: ((event: ActionOutputEvent) => void) | null = null;
+let completedCallback: ((event: ActionCompletedEvent) => void) | null = null;
+
+beforeEach(() => {
+  vi.mocked(window.erkdesk.onActionOutput).mockImplementation((cb) => {
+    outputCallback = cb;
+  });
+
+  vi.mocked(window.erkdesk.onActionCompleted).mockImplementation((cb) => {
+    completedCallback = cb;
+  });
+});
+```
+
+**Step 2: Trigger action and invoke callbacks**
+
+```typescript
+it('streams output in real-time', async () => {
+  const user = userEvent.setup();
+  render(<App />);
+
+  // Trigger action start
+  await user.click(screen.getByRole('button', { name: /submit/i }));
+
+  // Simulate stdout event
+  act(() => {
+    outputCallback?.({ stream: "stdout", data: "Building project..." });
+  });
+
+  // Verify log appears
+  expect(screen.getByText("Building project...")).toBeInTheDocument();
+
+  // Simulate stderr event
+  act(() => {
+    outputCallback?.({ stream: "stderr", data: "Error: build failed" });
+  });
+
+  // Verify error styling
+  expect(screen.getByText("Error: build failed")).toHaveClass("text-red-400");
+
+  // Simulate completion
+  act(() => {
+    completedCallback?.({ success: false, error: "Build failed" });
+  });
+
+  // Verify status changed to error
+  expect(screen.getByRole("heading")).toHaveClass("bg-red-500");
+});
+```
+
+**Step 3: Verify cleanup**
+
+```typescript
+it('removes action listeners on unmount', () => {
+  const { unmount } = render(<App />);
+
+  unmount();
+
+  expect(window.erkdesk.removeActionListeners).toHaveBeenCalled();
+});
+```
+
+### LogPanel Test Coverage
+
+When testing the LogPanel component:
+
+```typescript
+it('renders stdout logs with gray styling', () => {
+  const logs = [{ stream: "stdout" as const, data: "Normal output" }];
+  render(<LogPanel logs={logs} status="running" onDismiss={vi.fn()} />);
+
+  const logLine = screen.getByText("Normal output");
+  expect(logLine).toHaveClass("text-gray-300");
+});
+
+it('renders stderr logs with red styling', () => {
+  const logs = [{ stream: "stderr" as const, data: "Error output" }];
+  render(<LogPanel logs={logs} status="error" onDismiss={vi.fn()} />);
+
+  const logLine = screen.getByText("Error output");
+  expect(logLine).toHaveClass("text-red-400");
+});
+
+it.each([
+  ["running", "bg-blue-500"],
+  ["success", "bg-green-500"],
+  ["error", "bg-red-500"],
+])('displays %s status with %s background', (status, expectedClass) => {
+  render(
+    <LogPanel
+      logs={[]}
+      status={status as any}
+      onDismiss={vi.fn()}
+    />
+  );
+
+  const header = screen.getByRole("heading");
+  expect(header).toHaveClass(expectedClass);
+});
+
+it('calls onDismiss when dismiss button clicked', async () => {
+  const user = userEvent.setup();
+  const onDismiss = vi.fn();
+  render(<LogPanel logs={[]} status="success" onDismiss={onDismiss} />);
+
+  const dismissButton = screen.getByRole("button", { name: /dismiss/i });
+  await user.click(dismissButton);
+
+  expect(onDismiss).toHaveBeenCalledTimes(1);
+});
+```
+
+### Common Pitfalls
+
+**Forgetting act() for async updates:**
+
+When invoking callbacks that trigger state updates, wrap in `act()`:
+
+```typescript
+// WRONG: State update not wrapped
+outputCallback?.({ stream: "stdout", data: "Test" });
+
+// RIGHT: Wrapped in act()
+act(() => {
+  outputCallback?.({ stream: "stdout", data: "Test" });
+});
+```
+
+**Note:** Some async updates may still trigger act() warnings in tests. This is expected behavior for complex streaming patterns and acceptable when tests pass.
+
+**Not resetting mocks in beforeEach:**
+
+Always reset mocks between tests. See [Window Mock Patterns](window-mock-patterns.md) for details on mock reset timing.
+
+```typescript
+beforeEach(() => {
+  vi.mocked(window.erkdesk.onActionOutput).mockReset();
+  vi.mocked(window.erkdesk.onActionCompleted).mockReset();
+  vi.mocked(window.erkdesk.removeActionListeners).mockReset();
+});
+```
+
 ## Related
 
 - [Window Mock Patterns](window-mock-patterns.md) - IPC bridge mocking discipline
 - [Vitest Configuration](../desktop-dash/vitest-setup.md) - Test environment setup
 - [jsdom DOM API Stubs](vitest-jsdom-stubs.md) - Required jsdom stubs
+- [Erkdesk IPC Streaming Architecture](../architecture/erkdesk-ipc-streaming.md) - IPC event flow
+- [Erkdesk Components](../desktop-dash/erkdesk-components.md) - LogPanel reference

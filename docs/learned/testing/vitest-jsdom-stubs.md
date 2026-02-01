@@ -5,9 +5,12 @@ read_when:
   - writing React component tests with Vitest + jsdom
   - encountering "scrollIntoView is not a function" errors
   - setting up Vitest test environment
+  - mocking ResizeObserver or IntersectionObserver in jsdom tests
 tripwires:
   - action: "writing React component tests with Vitest + jsdom"
     warning: "jsdom doesn't implement Element.prototype.scrollIntoView(). Stub in setup.ts with `Element.prototype.scrollIntoView = vi.fn()` before tests run to avoid TypeError."
+  - action: "mocking ResizeObserver or IntersectionObserver in jsdom tests"
+    warning: "Use class syntax: `class ResizeObserver { observe = vi.fn(); ... }`. Do NOT use `vi.fn().mockImplementation()` - it returns a function, not a constructable class, causing 'ResizeObserver is not a constructor' TypeError."
 ---
 
 # jsdom DOM API Stubs for Vitest
@@ -74,13 +77,47 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
-// ResizeObserver
+// ResizeObserver - MUST use class syntax, not vi.fn().mockImplementation()
+class ResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+global.ResizeObserver = ResizeObserver;
+```
+
+## ResizeObserver: Why Class Syntax is Required
+
+When mocking `ResizeObserver` or `IntersectionObserver`, you **must use class syntax**, not `vi.fn().mockImplementation()`.
+
+**WRONG:**
+
+```typescript
+// Returns a function, not a constructable class
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn(),
 }));
 ```
+
+This fails with `TypeError: ResizeObserver is not a constructor` because `vi.fn()` returns a function, but `new ResizeObserver()` requires a class constructor.
+
+**CORRECT:**
+
+```typescript
+// Proper class constructor
+class ResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+global.ResizeObserver = ResizeObserver;
+```
+
+The class syntax creates a true constructor function that can be instantiated with `new`.
+
+This pattern applies to any browser API instantiated with `new`: `ResizeObserver`, `IntersectionObserver`, `MutationObserver`, etc.
 
 ## When to Add Stubs
 

@@ -98,6 +98,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before implementing mtime-based cache invalidation** → Read [Graphite Cache Invalidation](graphite-cache-invalidation.md) first. Use triple-check guard pattern: (cache exists) AND (mtime exists) AND (mtime matches). Partial checks cause stale data bugs.
 
+**CRITICAL: Before implementing streaming action listeners in erkdesk** → Read [Erkdesk IPC Streaming Architecture](erkdesk-ipc-streaming.md) first. Always pair onActionOutput/onActionCompleted with removeActionListeners() on cleanup. Prevents accumulated listeners causing memory leaks and duplicate event handling.
+
 **CRITICAL: Before importing time module or calling time.sleep() or datetime.now()** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use context.time.sleep() and context.time.now() for testability. Direct time.sleep() makes tests slow and datetime.now() makes tests non-deterministic.
 
 **CRITICAL: Before inferring status from PR column when status is explicitly set** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. Explicit status values (done, in-progress, pending, blocked, skipped) always override PR-based inference. Only '-' allows inference.
