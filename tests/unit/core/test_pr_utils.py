@@ -38,9 +38,7 @@ class TestSelectDisplayPr:
     def test_excludes_review_pr(self) -> None:
         review_pr = _make_pr(number=100, state="OPEN")
         impl_pr = _make_pr(number=101, state="OPEN")
-        result = select_display_pr(
-            [review_pr, impl_pr], exclude_pr_numbers={100}
-        )
+        result = select_display_pr([review_pr, impl_pr], exclude_pr_numbers={100})
         assert result is not None
         assert result.number == 101
 
@@ -74,8 +72,6 @@ class TestSelectDisplayPr:
         review_pr = _make_pr(number=100, state="OPEN")
         merged_pr = _make_pr(number=101, state="MERGED")
         open_pr = _make_pr(number=102, state="OPEN")
-        result = select_display_pr(
-            [review_pr, merged_pr, open_pr], exclude_pr_numbers={100}
-        )
+        result = select_display_pr([review_pr, merged_pr, open_pr], exclude_pr_numbers={100})
         assert result is not None
         assert result.number == 102

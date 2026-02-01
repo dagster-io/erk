@@ -484,9 +484,7 @@ class RealPlanDataProvider(PlanDataProvider):
         if issue_number in pr_linkages:
             issue_prs = pr_linkages[issue_number]
             exclude_pr_numbers = {review_pr} if review_pr is not None else None
-            selected_pr = select_display_pr(
-                issue_prs, exclude_pr_numbers=exclude_pr_numbers
-            )
+            selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=exclude_pr_numbers)
             if selected_pr is not None:
                 pr_number = selected_pr.number
                 pr_title = selected_pr.title
