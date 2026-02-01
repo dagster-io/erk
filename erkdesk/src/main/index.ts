@@ -56,7 +56,7 @@ const createWindow = (): void => {
   // IPC: Fetch plan data from erk CLI.
   ipcMain.handle("plans:fetch", (): Promise<FetchPlansResult> => {
     return new Promise((resolve) => {
-      execFile("erk", ["dash-data", "--json"], (error, stdout, stderr) => {
+      execFile("erk", ["exec", "dash-data"], (error, stdout, stderr) => {
         if (error) {
           resolve({
             success: false,
