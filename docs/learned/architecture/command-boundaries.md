@@ -77,11 +77,11 @@ This pattern is the **inverse** of CLI Spawning Agent. Use it when:
 
 Examples:
 
-| Agent Command            | Delegates To                 | Why                                                              |
-| ------------------------ | ---------------------------- | ---------------------------------------------------------------- |
-| `/erk:plan-submit`       | `erk plan submit <issue>`    | Agent finds issue in conversation, CLI handles workflow dispatch |
-| `/erk:pr-address-remote` | `erk pr address-remote <pr>` | Agent finds PR in conversation, CLI triggers GitHub workflow     |
-| `/erk:prepare`           | `erk prepare <issue>`        | Agent finds issue in conversation, CLI creates worktree          |
+| Agent Command            | Delegates To                            | Why                                                              |
+| ------------------------ | --------------------------------------- | ---------------------------------------------------------------- |
+| `/erk:plan-submit`       | `erk plan submit <issue>`               | Agent finds issue in conversation, CLI handles workflow dispatch |
+| `/erk:pr-address-remote` | `erk launch pr-address --pr <pr>`       | Agent finds PR in conversation, CLI triggers GitHub workflow     |
+| `/erk:prepare`           | `erk prepare <issue>`                   | Agent finds issue in conversation, CLI creates worktree          |
 
 **Pattern characteristics:**
 

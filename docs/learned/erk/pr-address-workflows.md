@@ -3,7 +3,7 @@ title: PR Address Workflows
 read_when:
   - "addressing PR review comments"
   - "choosing between local and remote PR addressing"
-  - "understanding erk pr address-remote"
+  - "understanding erk launch pr-address"
   - "understanding /erk:pr-address command"
 ---
 
@@ -12,7 +12,7 @@ read_when:
 Erk provides two workflows for addressing PR review comments using Claude:
 
 1. **Local** (`/erk:pr-address`) - Claude Code slash command, runs in your terminal
-2. **Remote** (`erk pr address-remote`) - GitHub Actions workflow, runs in CI
+2. **Remote** (`erk launch pr-address --pr <number>`) - GitHub Actions workflow, runs in CI
 
 ## Decision Matrix
 
@@ -96,18 +96,18 @@ The git push updates the PR, but doesn't update the issue. The explicit sync com
 
 See [PR-Based Plan Review Workflow](../planning/pr-review-workflow.md) for the complete plan review process.
 
-## Remote Workflow: erk pr address-remote
+## Remote Workflow: erk launch pr-address
 
-The `erk pr address-remote` command triggers a GitHub Actions workflow to address comments without local checkout.
+The `erk launch pr-address` command triggers a GitHub Actions workflow to address comments without local checkout.
 
 ### Usage
 
 ```bash
 # From any directory in the repo
-erk pr address-remote 123
+erk launch pr-address --pr 123
 
 # With a specific model
-erk pr address-remote 123 --model claude-opus-4
+erk launch pr-address --pr 123 --model claude-opus-4
 ```
 
 ### What it does

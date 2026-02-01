@@ -8,6 +8,8 @@ read_when:
 
 # Local/Remote Command Group Pattern
 
+> **Historical Note**: This Click-based pattern has been superseded by the `erk launch` command for remote workflows. New remote workflows should use `erk launch <workflow-name>` rather than the local/remote command group pattern. See [Workflow Commands](workflow-commands.md) for current patterns.
+
 This document describes the pattern for commands that have both local and remote execution variants, unified under a single command group.
 
 ## Overview
@@ -17,7 +19,7 @@ Some erk commands can be executed either:
 - **Locally**: Using Claude CLI on the developer's machine
 - **Remotely**: Via GitHub Actions workflow
 
-Rather than maintaining separate commands (`erk pr address` and `erk pr address-remote`), we use a command group pattern where:
+Rather than maintaining separate commands (`erk pr address` and `erk launch pr-address`), we use a command group pattern where:
 
 - The base command runs the local variant
 - A `remote` subcommand triggers the GitHub Actions workflow
@@ -36,7 +38,7 @@ def address_group(ctx: click.Context, *, dangerous: bool) -> None:
     When run without a subcommand, addresses PR review comments on the
     current branch using Claude.
 
-    Use 'erk pr address remote <pr_number>' to trigger remote addressing via
+    Use 'erk launch pr-address --pr <pr_number>' to trigger remote addressing via
     GitHub Actions workflow.
     """
     if ctx.invoked_subcommand is None:
@@ -78,14 +80,14 @@ from erk.cli.help_formatter import ErkCommandGroup
 ## Usage Examples
 
 ```bash
-# Local execution (default - no subcommand)
-erk pr address --dangerous
+# Local execution (slash command)
+/erk:pr-address
 
-# Remote execution (explicit subcommand)
-erk pr address remote 123
+# Remote execution (via erk launch)
+erk launch pr-address --pr 123
 
-# Help shows both variants
-erk pr address --help
+# Help
+erk launch --help
 ```
 
 ## Migration Checklist
@@ -93,7 +95,7 @@ erk pr address --help
 When unifying separate local/remote commands into a group:
 
 1. **Identify the existing commands**
-   - e.g., `erk pr address` (local) and `erk pr address-remote` (remote)
+   - e.g., `erk pr address` (local) and `erk launch pr-address` (remote)
 
 2. **Create the unified group**
    - Use `@click.group("name", cls=ErkCommandGroup, invoke_without_command=True)`
@@ -101,7 +103,7 @@ When unifying separate local/remote commands into a group:
    - Add remote as a subcommand
 
 3. **Update test invocations**
-   - Change `["pr", "address-remote", "123"]` to `["pr", "address", "remote", "123"]`
+   - Change `["pr", "address-remote", "123"]` to `["launch", "pr-address", "--pr", "123"]`
    - Keep local tests unchanged (they invoke the same command path)
 
 4. **Update documentation**
