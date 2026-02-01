@@ -228,7 +228,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
 
         if not output_paths:
             click.echo(
-                f"[trigger-async-learn] Session filtered (empty/warmup), skipping",
+                "[trigger-async-learn] Session filtered (empty/warmup), skipping",
                 err=True,
             )
             continue
