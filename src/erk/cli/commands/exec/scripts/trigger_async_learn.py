@@ -202,7 +202,6 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
 
     # Diagnostic: log session source summary
     planning_session_id = sessions_result.get("planning_session_id")
-    source_count = len(session_sources)
     planning_count = 0
     for s in session_sources:
         if not isinstance(s, dict):
@@ -210,10 +209,9 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         item: Any = s
         if item.get("session_id") == planning_session_id:  # type: ignore
             planning_count += 1
-    impl_count = source_count - planning_count
     click.echo(
-        f"[trigger-async-learn] Found {source_count} session source(s)"
-        f" ({planning_count} planning, {impl_count} impl)",
+        f"[trigger-async-learn] Found {len(session_sources)} session source(s)"
+        f" ({planning_count} planning, {len(session_sources) - planning_count} impl)",
         err=True,
     )
     for source_item in session_sources:
