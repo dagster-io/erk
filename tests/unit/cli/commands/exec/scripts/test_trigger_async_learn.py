@@ -22,6 +22,19 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import RepoInfo
 
 
+def _parse_json_output(output: str) -> dict[str, object]:
+    """Parse JSON from CliRunner output, skipping stderr progress lines.
+
+    Click 8.x mixes stderr into result.output. The trigger-async-learn script
+    writes progress messages to stderr and JSON to stdout. This helper extracts
+    the JSON line from the mixed output.
+    """
+    for line in reversed(output.strip().splitlines()):
+        if line.startswith("{"):
+            return json.loads(line)  # type: ignore[no-any-return]
+    raise ValueError(f"No JSON found in output: {output!r}")
+
+
 def test_trigger_async_learn_success(tmp_path: Path) -> None:
     """Test successful workflow trigger with full orchestration pipeline."""
     runner = CliRunner()
@@ -82,7 +95,7 @@ def test_trigger_async_learn_success(tmp_path: Path) -> None:
         result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
 
     assert result.exit_code == 0
-    output = json.loads(result.output)
+    output = _parse_json_output(result.output)
     assert output["success"] is True
     assert output["issue_number"] == 123
     assert output["workflow_triggered"] is True
@@ -148,7 +161,7 @@ def test_trigger_async_learn_no_repo_info(tmp_path: Path) -> None:
     result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
 
     assert result.exit_code == 1
-    output = json.loads(result.output)
+    output = _parse_json_output(result.output)
     assert output["success"] is False
     assert "GitHub repository" in output["error"]
 
@@ -160,7 +173,7 @@ def test_trigger_async_learn_no_context(tmp_path: Path) -> None:
     result = runner.invoke(trigger_async_learn_command, ["123"], obj=None)
 
     assert result.exit_code == 1
-    output = json.loads(result.output)
+    output = _parse_json_output(result.output)
     assert output["success"] is False
     assert "Context not initialized" in output["error"]
 
@@ -204,7 +217,7 @@ def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
         result = runner.invoke(trigger_async_learn_command, ["789"], obj=ctx)
 
     assert result.exit_code == 0
-    output = json.loads(result.output)
+    output = _parse_json_output(result.output)
 
     # Verify expected keys
     assert "success" in output
