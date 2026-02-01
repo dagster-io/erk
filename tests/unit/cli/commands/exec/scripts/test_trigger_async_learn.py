@@ -54,11 +54,14 @@ def test_trigger_async_learn_success(tmp_path: Path) -> None:
             stdout=json.dumps(
                 {
                     "success": True,
+                    "planning_session_id": "planning-session-1",
                     "session_sources": [
                         {
-                            "source": "local",
-                            "session_path": "/fake/path.jsonl",
-                            "session_type": "planning",
+                            "source_type": "local",
+                            "session_id": "planning-session-1",
+                            "path": "/fake/path.jsonl",
+                            "run_id": None,
+                            "gist_url": None,
                         }
                     ],
                 }

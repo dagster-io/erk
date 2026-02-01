@@ -161,21 +161,23 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
     click.echo(f"[trigger-async-learn] Created {learn_dir}", err=True)
 
     # Step 3: Preprocess each local session source
+    planning_session_id = sessions_result.get("planning_session_id")
+
     for source_item in session_sources:
         if not isinstance(source_item, dict):
             continue
 
         source: Any = source_item
 
-        if source.get("source") != "local":  # type: ignore
+        if source.get("source_type") != "local":  # type: ignore
             continue
 
-        session_path = source.get("session_path")  # type: ignore
+        session_path = source.get("path")  # type: ignore
         if not isinstance(session_path, str):
             continue
 
-        session_type = source.get("session_type") or "unknown"  # type: ignore
-        prefix = "planning" if session_type == "planning" else "impl"
+        session_id = source.get("session_id")  # type: ignore
+        prefix = "planning" if session_id == planning_session_id else "impl"
 
         _run_subprocess(
             [
@@ -190,7 +192,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
                 "--prefix",
                 prefix,
             ],
-            description=f"Preprocessing {session_type} session",
+            description=f"Preprocessing {prefix} session",
         )
 
     # Step 4: Get PR for plan (if exists) and fetch review comments
