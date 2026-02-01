@@ -4,15 +4,15 @@
 
 ## Source Plans
 
-| #    | Title                                                            | Items Merged |
-| ---- | ---------------------------------------------------------------- | ------------ |
-| 6445 | Add --description to roadmap update + skill instructions         | 2 tripwires  |
-| 6444 | Scaffold erkdesk Electron + React + TypeScript App               | 4 items      |
-| 6443 | Add Progress Logging to Learn Workflow                           | 2 items      |
-| 6440 | Add erk exec dash-data Command                                   | 1 item       |
-| 6437 | Fix: gh codespace start does not exist                           | 4 items      |
-| 6431 | Desktop Dashboard Research Documentation Patterns                | 2 items      |
-| 6422 | Remote Objective Next-Plan Execution via GitHub Codespaces       | 4 items      |
+| #    | Title                                                      | Items Merged |
+| ---- | ---------------------------------------------------------- | ------------ |
+| 6445 | Add --description to roadmap update + skill instructions   | 2 tripwires  |
+| 6444 | Scaffold erkdesk Electron + React + TypeScript App         | 4 items      |
+| 6443 | Add Progress Logging to Learn Workflow                     | 2 items      |
+| 6440 | Add erk exec dash-data Command                             | 1 item       |
+| 6437 | Fix: gh codespace start does not exist                     | 4 items      |
+| 6431 | Desktop Dashboard Research Documentation Patterns          | 2 items      |
+| 6422 | Remote Objective Next-Plan Execution via GitHub Codespaces | 4 items      |
 
 ## What Changed Since Original Plans
 
@@ -79,6 +79,7 @@ After filtering out what already exists, these are the actual gaps:
 **File:** `docs/learned/architecture/github-cli-limits.md`
 
 Add sections:
+
 - `## gh codespace start Does Not Exist` — Document that `gh codespace start` is not a real command; use REST API `/user/codespaces/{name}/start` via `gh api --method POST`
 - `## GH-API-AUDIT Annotation Convention` — Document the `# GH-API-AUDIT: [REST/GraphQL] - [operation]` format used in 66 places across gateway code
 
@@ -87,6 +88,7 @@ Add sections:
 ### Step 2: Create codespace documentation _(from #6422)_
 
 **File:** `docs/learned/erk/codespace-remote-execution.md`
+
 - Fire-and-forget semantics
 - `build_codespace_run_command()` in `src/erk/core/codespace_run.py`
 - Environment setup: git pull, uv sync, venv activation
@@ -94,16 +96,19 @@ Add sections:
 - Debugging guidance
 
 **File:** `docs/learned/gateway/codespace-gateway.md`
+
 - 3-place pattern (abc, real, fake — no dry-run/print)
 - `start_codespace()`, `run_ssh_command()`, `exec_ssh_interactive()`
 - ABC at `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py`
 
 **File:** `docs/learned/architecture/composable-remote-commands.md`
+
 - Template for new remote commands using `build_codespace_run_command()`
 - `resolve_codespace()` usage from `src/erk/cli/commands/codespace/resolve.py`
 - Existing example: `erk codespace run objective next-plan`
 
 **File:** `docs/learned/cli/codespace-patterns.md`
+
 - `resolve_codespace(registry, name)` helper function documentation
 - Error handling patterns (name not found, default not set)
 - Usage in existing commands
@@ -113,16 +118,19 @@ Add sections:
 ### Step 3: Create CI documentation _(from #6443, #6445)_
 
 **File:** `docs/learned/ci/edit-tool-formatting.md`
+
 - Edit tool preserves exact indentation without auto-formatting
 - Pattern: always run `make format` after editing Python with multiline strings
 - Tripwire in frontmatter
 
 **File:** `docs/learned/ci/formatting-workflow.md`
+
 - Decision tree: `.py` → `make format`, `.md` → `make prettier`, unclear → both
 - The Prettier Trap: Prettier silently does nothing on Python files
 - Standard CI iteration sequence
 
 **Add tripwires to `docs/learned/cli/tripwires.md`:**
+
 - Auto-generated file regeneration after CLI changes (run `erk-dev gen-exec-reference-docs`)
 - CLI options validation coverage when adding new flags
 
@@ -131,22 +139,26 @@ Add sections:
 ### Step 4: Create desktop/erkdesk documentation _(from #6444, #6431)_
 
 **File:** `docs/learned/erkdesk/security.md`
+
 - Context isolation architecture (contextIsolation: true, nodeIntegration: false)
 - Preload script and context bridge pattern
 - GitHub token isolation (stays in Python layer)
 - FORBIDDEN patterns
 
 **File:** `docs/learned/architecture/typescript-multi-config.md`
+
 - Problem: `tsc --noEmit` from root breaks subdirectory configs
 - Solution: `tsc -p <path> --noEmit` for each config
 - erkdesk example with 3 configs (root, main, renderer)
 
 **File:** `docs/learned/tui/dual-handler-pattern.md`
+
 - Context-agnostic commands operating on selected plan
 - CommandRegistry dispatches same handler from list and detail contexts
 - Implications for desktop implementation
 
 **File:** `docs/learned/objectives/research-documentation-integration.md`
+
 - When to create research documentation during objectives
 - Documentation creation workflow (read_when frontmatter, erk docs sync)
 - Objective linking workflow (bidirectional references)
@@ -156,6 +168,7 @@ Add sections:
 ### Step 5: Create JSON serialization patterns _(from #6440)_
 
 **File:** `docs/learned/cli/json-serialization-patterns.md`
+
 - Datetime → `.isoformat()` for ISO 8601
 - Tuple → `list()` for JSON compatibility
 - Pure helper function pattern (`_serialize_plan_row()` example)
