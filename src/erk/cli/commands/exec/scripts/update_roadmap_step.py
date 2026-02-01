@@ -19,12 +19,7 @@ import re
 import click
 
 from erk.cli.commands.exec.scripts.objective_roadmap_shared import parse_roadmap
-from erk_shared.context.helpers import (
-    require_issues as require_github_issues,
-)
-from erk_shared.context.helpers import (
-    require_repo_root,
-)
+from erk_shared.context.helpers import require_issues, require_repo_root
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import BodyText
 
@@ -83,7 +78,7 @@ def _replace_step_pr_in_body(body: str, step_id: str, new_pr: str) -> str | None
 @click.pass_context
 def update_roadmap_step(ctx: click.Context, issue_number: int, *, step: str, pr: str) -> None:
     """Update a step's PR cell in an objective's roadmap table."""
-    github = require_github_issues(ctx)
+    github = require_issues(ctx)
     repo_root = require_repo_root(ctx)
 
     # Fetch the issue
