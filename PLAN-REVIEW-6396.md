@@ -4,6 +4,17 @@
 
 Add `erk codespace run` subgroup that executes erk commands remotely on a codespace. First supported command: `objective next-plan`. Fire-and-forget execution with auto-start of stopped codespaces.
 
+## Design Decision: Invoke erk CLI remotely (not raw claude)
+
+Instead of constructing a `claude --dangerously-skip-permissions ...` command string locally and sending it over SSH, the remote side invokes `erk objective next-plan` directly. Benefits:
+
+- **Single source of truth** — slash command format, permission mode, and claude args stay in `next_plan_cmd.py`
+- **No string construction** — avoids fragile quoting/escaping of shell commands
+- **Testable** — no need to assert on string contents; test behavior through fakes
+- **Extensible** — adding a new remoteable command is just `erk <whatever>` on the remote
+
+The setup steps (`git pull && uv sync && source .venv/bin/activate`) are still a shell string since they bootstrap the environment before erk is available. This is extracted into a shared helper.
+
 ## CLI Invocation
 
 ```bash
@@ -35,27 +46,22 @@ def start_codespace(self, gh_name: str) -> None
 
 **Modify** `packages/erk-shared/src/erk_shared/gateway/codespace/fake.py` — track calls in `_started_codespaces: list[str]`, expose via property.
 
-### 3. Extract slash command builder from `next_plan_cmd`
+### 3. Create codespace run helper
 
-**Modify** `src/erk/cli/commands/objective/next_plan_cmd.py` — extract:
+**Create** `src/erk/core/codespace_run.py`
+
+Function `build_codespace_run_command(erk_command: str) -> str` that wraps any erk CLI command in the setup + nohup pattern:
+
 ```python
-def next_plan_slash_command(issue_ref: str) -> str:
-    return f"/erk:objective-next-plan {issue_ref}"
-```
-Both local and remote commands import this. Single source of truth for the slash command format.
-
-### 4. Create remote command builder
-
-**Create** `src/erk/core/remote_command.py`
-
-Function `build_remote_claude_command(*, slash_command: str) -> str` that constructs:
-```
-bash -l -c 'git pull && uv sync && source .venv/bin/activate && nohup claude --dangerously-skip-permissions --permission-mode plan "/erk:objective-next-plan 42" > /tmp/erk-run.log 2>&1 &'
+def build_codespace_run_command(erk_command: str) -> str:
+    """Wrap an erk CLI command for fire-and-forget codespace execution."""
+    setup = "git pull && uv sync && source .venv/bin/activate"
+    return f"bash -l -c '{setup} && nohup {erk_command} > /tmp/erk-run.log 2>&1 &'"
 ```
 
-Uses `build_claude_command_string()` from `interactive_claude.py` to construct the claude portion.
+This is the only place that knows about the setup/nohup pattern. Every remoteable command calls it with its own erk CLI string.
 
-### 5. Create `run` group and `objective next-plan` command
+### 4. Create `run` group and `objective next-plan` command
 
 **Create** `src/erk/cli/commands/codespace/run/__init__.py` — `run` Click group
 **Create** `src/erk/cli/commands/codespace/run/objective/__init__.py` — `objective` Click group under `run`
@@ -69,37 +75,38 @@ Uses `build_claude_command_string()` from `interactive_claude.py` to construct t
 def run_next_plan(ctx: ErkContext, issue_ref: str, name: str | None) -> None:
     codespace = resolve_codespace(ctx.codespace_registry, name)
     ctx.codespace.start_codespace(codespace.gh_name)
-    slash_cmd = next_plan_slash_command(issue_ref)
-    remote_cmd = build_remote_claude_command(slash_command=slash_cmd)
+    remote_cmd = build_codespace_run_command(f"erk objective next-plan {issue_ref}")
     exit_code = ctx.codespace.run_ssh_command(codespace.gh_name, remote_cmd)
     # report success/failure
 ```
 
-### 6. Register `run` group
+The `ISSUE_REF` argument is the only duplicated Click decorator between local and remote commands. This is acceptable — it's one line, and the actual logic (what slash command to run, what permission mode) stays in `next_plan_cmd.py`.
+
+### 5. Register `run` group
 
 **Modify** `src/erk/cli/commands/codespace/__init__.py` — add `codespace_group.add_command(run_group)`
 
-### 7. Tests
+### 6. Tests
 
 - `tests/cli/commands/codespace/test_resolve.py` — resolution helper (name, default, errors)
 - `tests/cli/commands/codespace/run/objective/test_next_plan_cmd.py` — remote command using FakeCodespace/FakeCodespaceRegistry
-- `tests/core/test_remote_command.py` — remote command string construction
+- `tests/core/test_codespace_run.py` — `build_codespace_run_command` output
 
 ## Extensibility
 
 Adding a new remoteable command (e.g., `erk codespace run plan replan`) requires:
 1. Create group/command under `codespace/run/`
-2. Extract a slash command builder from the local command
+2. Call `build_codespace_run_command("erk plan replan ...")` with the appropriate CLI string
 3. Register in `run/__init__.py`
 
-All shared infrastructure (resolve, start, remote command builder) is reused.
+No shared slash command builders needed — the remote side just invokes the erk CLI.
 
 ## Key Files
 
 | File | Action |
 |------|--------|
 | `src/erk/cli/commands/codespace/resolve.py` | Create |
-| `src/erk/core/remote_command.py` | Create |
+| `src/erk/core/codespace_run.py` | Create |
 | `src/erk/cli/commands/codespace/run/__init__.py` | Create |
 | `src/erk/cli/commands/codespace/run/objective/__init__.py` | Create |
 | `src/erk/cli/commands/codespace/run/objective/next_plan_cmd.py` | Create |
@@ -108,7 +115,6 @@ All shared infrastructure (resolve, start, remote command builder) is reused.
 | `packages/erk-shared/src/erk_shared/gateway/codespace/fake.py` | Modify |
 | `src/erk/cli/commands/codespace/__init__.py` | Modify |
 | `src/erk/cli/commands/codespace/connect_cmd.py` | Modify |
-| `src/erk/cli/commands/objective/next_plan_cmd.py` | Modify |
 
 ## Verification
 
