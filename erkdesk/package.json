@@ -3,7 +3,7 @@
   "productName": "erkdesk",
   "version": "0.1.0",
   "description": "Desktop app for erk plan visualization and management",
-  "main": ".vite/build/main.js",
+  "main": ".vite/build/index.js",
   "private": true,
   "scripts": {
     "start": "electron-forge start",
@@ -39,11 +39,11 @@
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
-    "@vitejs/plugin-react": "^5.1.2",
+    "@vitejs/plugin-react": "^4.3.4",
     "electron": "40.1.0",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
-    "typescript": "~4.5.5",
+    "typescript": "~5.7.0",
     "vite": "^5.4.21"
   },
   "dependencies": {
