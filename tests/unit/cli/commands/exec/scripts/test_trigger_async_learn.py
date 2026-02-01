@@ -40,9 +40,7 @@ def _get_stderr_lines(output: str) -> list[str]:
 
     Returns all non-JSON lines (JSON lines are stdout, everything else is stderr diagnostics).
     """
-    return [
-        line for line in output.strip().splitlines() if not line.startswith("{")
-    ]
+    return [line for line in output.strip().splitlines() if not line.startswith("{")]
 
 
 def test_trigger_async_learn_success(tmp_path: Path) -> None:
