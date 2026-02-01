@@ -42,7 +42,9 @@ describe("App", () => {
   });
 
   it("renders loading state initially", () => {
-    vi.mocked(window.erkdesk.fetchPlans).mockReturnValue(new Promise(() => {}));
+    vi.mocked(window.erkdesk.fetchPlans).mockReturnValue(new Promise(() => {
+      // Empty promise to test loading state
+    }));
     render(<App />);
     expect(screen.getByText("Loading plans...")).toBeInTheDocument();
   });

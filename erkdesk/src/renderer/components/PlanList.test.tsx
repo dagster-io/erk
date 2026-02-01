@@ -30,12 +30,19 @@ function makePlan(overrides: Partial<PlanRow> = {}): PlanRow {
 }
 
 describe("PlanList", () => {
+  const mockContextMenu = vi.fn();
+
+  beforeEach(() => {
+    mockContextMenu.mockReset();
+  });
+
   it("renders loading state", () => {
     render(
       <PlanList
         plans={[]}
         selectedIndex={-1}
         onSelectIndex={vi.fn()}
+        onContextMenu={mockContextMenu}
         loading={true}
         error={null}
       />,
@@ -49,6 +56,7 @@ describe("PlanList", () => {
         plans={[]}
         selectedIndex={-1}
         onSelectIndex={vi.fn()}
+        onContextMenu={mockContextMenu}
         loading={false}
         error="Network timeout"
       />,
@@ -62,6 +70,7 @@ describe("PlanList", () => {
         plans={[]}
         selectedIndex={-1}
         onSelectIndex={vi.fn()}
+        onContextMenu={mockContextMenu}
         loading={false}
         error={null}
       />,
@@ -79,6 +88,7 @@ describe("PlanList", () => {
         plans={plans}
         selectedIndex={0}
         onSelectIndex={vi.fn()}
+        onContextMenu={mockContextMenu}
         loading={false}
         error={null}
       />,
@@ -100,6 +110,7 @@ describe("PlanList", () => {
         plans={plans}
         selectedIndex={1}
         onSelectIndex={vi.fn()}
+        onContextMenu={mockContextMenu}
         loading={false}
         error={null}
       />,
@@ -121,6 +132,7 @@ describe("PlanList", () => {
         plans={plans}
         selectedIndex={0}
         onSelectIndex={onSelectIndex}
+        onContextMenu={mockContextMenu}
         loading={false}
         error={null}
       />,
@@ -131,5 +143,25 @@ describe("PlanList", () => {
     await user.click(rows[1]);
 
     expect(onSelectIndex).toHaveBeenCalledWith(1);
+  });
+
+  it("calls onContextMenu when row is right-clicked", async () => {
+    const plan = makePlan({ issue_number: 1, title: "First" });
+    render(
+      <PlanList
+        plans={[plan]}
+        selectedIndex={0}
+        onSelectIndex={vi.fn()}
+        onContextMenu={mockContextMenu}
+        loading={false}
+        error={null}
+      />,
+    );
+
+    const rows = screen.getAllByRole("row").slice(1);
+    const user = userEvent.setup();
+    await user.pointer({ keys: "[MouseRight]", target: rows[0] });
+
+    expect(mockContextMenu).toHaveBeenCalledWith(plan);
   });
 });

@@ -7,7 +7,9 @@ import type {
   ActionResult,
   ActionOutputEvent,
   ActionCompletedEvent,
+  PlanRow,
 } from "../types/erkdesk";
+import { buildContextMenu } from "./context-menu";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -16,9 +18,10 @@ if (require("electron-squirrel-startup")) {
 
 let webView: WebContentsView | null = null;
 let activeAction: ChildProcess | null = null;
+let mainWindow: BrowserWindow | null = null;
 
 const createWindow = (): void => {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
@@ -117,6 +120,13 @@ const createWindow = (): void => {
     },
   );
 
+  // IPC: Show context menu for a plan row.
+  ipcMain.on("context-menu:show", (_event, plan: PlanRow) => {
+    if (!mainWindow) return;
+    const menu = buildContextMenu(plan, mainWindow);
+    menu.popup({ window: mainWindow });
+  });
+
   // Load the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -190,6 +200,7 @@ const createWindow = (): void => {
   mainWindow.on("closed", () => {
     ipcMain.removeAllListeners("webview:update-bounds");
     ipcMain.removeAllListeners("webview:load-url");
+    ipcMain.removeAllListeners("context-menu:show");
     ipcMain.removeHandler("plans:fetch");
     ipcMain.removeHandler("actions:execute");
     ipcMain.removeAllListeners("actions:start-streaming");
@@ -198,6 +209,7 @@ const createWindow = (): void => {
       activeAction = null;
     }
     webView = null;
+    mainWindow = null;
   });
 };
 

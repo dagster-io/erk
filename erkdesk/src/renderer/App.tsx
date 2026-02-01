@@ -3,10 +3,11 @@ import type {
   PlanRow,
   ActionOutputEvent,
   ActionCompletedEvent,
+  ContextMenuAction,
 } from "../types/erkdesk";
 import SplitPane from "./components/SplitPane";
 import PlanList from "./components/PlanList";
-import ActionToolbar from "./components/ActionToolbar";
+import ActionToolbar, { ACTIONS } from "./components/ActionToolbar";
 import { LogPanel, LogLine } from "./components/LogPanel";
 
 const REFRESH_INTERVAL_MS = 15_000;
@@ -16,6 +17,7 @@ const App: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [runningAction, setRunningAction] = useState<string | null>(null);
   const lastLoadedUrlRef = useRef<string | null>(null);
 
   const [logLines, setLogLines] = useState<LogLine[]>([]);
@@ -129,6 +131,40 @@ const App: React.FC = () => {
   const selectedPlan =
     selectedIndex >= 0 ? (plans[selectedIndex] ?? null) : null;
 
+  const handleExecuteAction = useCallback(async (actionId: string, plan: PlanRow) => {
+    if (runningAction !== null) return;
+
+    const action = ACTIONS.find((a) => a.id === actionId);
+    if (!action) return;
+
+    setRunningAction(actionId);
+    const { command, args } = action.getCommand(plan);
+    try {
+      await window.erkdesk.executeAction(command, args);
+    } finally {
+      setRunningAction(null);
+    }
+  }, [runningAction]);
+
+  const handleContextMenu = useCallback((plan: PlanRow) => {
+    window.erkdesk.showContextMenu(plan);
+  }, []);
+
+  useEffect(() => {
+    const cleanup = window.erkdesk.onContextMenuAction((action: ContextMenuAction) => {
+      if (action.type === "open_url") {
+        window.erkdesk.loadWebViewURL(action.payload);
+      } else if (action.type === "copy") {
+        navigator.clipboard.writeText(action.payload);
+      } else if (action.type === "execute") {
+        if (selectedPlan) {
+          handleExecuteAction(action.payload, selectedPlan);
+        }
+      }
+    });
+    return cleanup;
+  }, [handleExecuteAction, selectedPlan]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <ActionToolbar
@@ -142,6 +178,7 @@ const App: React.FC = () => {
             plans={plans}
             selectedIndex={selectedIndex}
             onSelectIndex={setSelectedIndex}
+            onContextMenu={handleContextMenu}
             loading={loading}
             error={error}
           />

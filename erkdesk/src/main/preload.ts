@@ -1,8 +1,10 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
 import type {
   WebViewBounds,
   ActionOutputEvent,
   ActionCompletedEvent,
+  PlanRow,
+  ContextMenuAction,
 } from "../types/erkdesk";
 
 contextBridge.exposeInMainWorld("erkdesk", {
@@ -35,5 +37,13 @@ contextBridge.exposeInMainWorld("erkdesk", {
   removeActionListeners: () => {
     ipcRenderer.removeAllListeners("action:output");
     ipcRenderer.removeAllListeners("action:completed");
+  },
+  showContextMenu: (plan: PlanRow) => {
+    ipcRenderer.send("context-menu:show", plan);
+  },
+  onContextMenuAction: (callback: (action: ContextMenuAction) => void) => {
+    const handler = (_event: IpcRendererEvent, action: ContextMenuAction) => callback(action);
+    ipcRenderer.on("context-menu:action", handler);
+    return () => ipcRenderer.removeListener("context-menu:action", handler);
   },
 });

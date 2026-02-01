@@ -6,6 +6,7 @@ interface PlanListProps {
   plans: PlanRow[];
   selectedIndex: number;
   onSelectIndex: (index: number) => void;
+  onContextMenu: (plan: PlanRow) => void;
   loading: boolean;
   error: string | null;
 }
@@ -14,6 +15,7 @@ const PlanList: React.FC<PlanListProps> = ({
   plans,
   selectedIndex,
   onSelectIndex,
+  onContextMenu,
   loading,
   error,
 }) => {
@@ -62,6 +64,10 @@ const PlanList: React.FC<PlanListProps> = ({
                 }}
                 className={`plan-list__row${index === selectedIndex ? " plan-list__row--selected" : ""}`}
                 onClick={() => onSelectIndex(index)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  onContextMenu(plan);
+                }}
               >
                 <td className="plan-list__col-number">{plan.issue_number}</td>
                 <td className="plan-list__col-title">{plan.title}</td>

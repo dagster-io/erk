@@ -8,14 +8,14 @@ interface ActionToolbarProps {
   onActionStart: (actionId: string, command: string, args: string[]) => void;
 }
 
-interface ActionDef {
+export interface ActionDef {
   id: string;
   label: string;
   isAvailable: (plan: PlanRow) => boolean;
   getCommand: (plan: PlanRow) => { command: string; args: string[] };
 }
 
-const ACTIONS: ActionDef[] = [
+export const ACTIONS: ActionDef[] = [
   {
     id: "submit_to_queue",
     label: "Submit",

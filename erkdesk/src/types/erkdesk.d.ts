@@ -52,6 +52,11 @@ export interface ActionCompletedEvent {
   error?: string;
 }
 
+export interface ContextMenuAction {
+  type: 'open_url' | 'copy' | 'execute';
+  payload: string;  // URL, clipboard text, or action ID
+}
+
 export interface ErkdeskAPI {
   version: string;
   updateWebViewBounds: (bounds: WebViewBounds) => void;
@@ -62,6 +67,8 @@ export interface ErkdeskAPI {
   onActionOutput: (callback: (event: ActionOutputEvent) => void) => void;
   onActionCompleted: (callback: (event: ActionCompletedEvent) => void) => void;
   removeActionListeners: () => void;
+  showContextMenu: (plan: PlanRow) => void;
+  onContextMenuAction: (callback: (action: ContextMenuAction) => void) => () => void;
 }
 
 declare global {
