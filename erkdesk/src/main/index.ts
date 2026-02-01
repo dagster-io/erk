@@ -1,7 +1,11 @@
 import { app, BrowserWindow, ipcMain, WebContentsView } from "electron";
 import { execFile } from "child_process";
 import path from "path";
-import type { WebViewBounds, FetchPlansResult } from "../types/erkdesk";
+import type {
+  WebViewBounds,
+  FetchPlansResult,
+  ActionResult,
+} from "../types/erkdesk";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -85,6 +89,31 @@ const createWindow = (): void => {
     });
   });
 
+  // IPC: Execute an erk CLI action.
+  ipcMain.handle(
+    "actions:execute",
+    (_event, command: string, args: string[]): Promise<ActionResult> => {
+      return new Promise((resolve) => {
+        execFile(command, args, (error, stdout, stderr) => {
+          if (error) {
+            resolve({
+              success: false,
+              stdout: stdout ?? "",
+              stderr: stderr ?? "",
+              error: error.message,
+            });
+            return;
+          }
+          resolve({
+            success: true,
+            stdout: stdout ?? "",
+            stderr: stderr ?? "",
+          });
+        });
+      });
+    },
+  );
+
   // Load the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -104,6 +133,7 @@ const createWindow = (): void => {
     ipcMain.removeAllListeners("webview:update-bounds");
     ipcMain.removeAllListeners("webview:load-url");
     ipcMain.removeHandler("plans:fetch");
+    ipcMain.removeHandler("actions:execute");
     webView = null;
   });
 };
