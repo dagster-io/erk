@@ -58,18 +58,9 @@ jobs:
           GIST_URL: ${{ inputs.gist_url }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          if [ -n "$GIST_URL" ]; then
-            claude --print \
-              --verbose \
-              --model claude-haiku-4-5 \
-              --output-format stream-json \
-              --dangerously-skip-permissions \
-              "/erk:learn $ISSUE_NUMBER gist_url=$GIST_URL"
-          else
-            claude --print \
-              --verbose \
-              --model claude-haiku-4-5 \
-              --output-format stream-json \
-              --dangerously-skip-permissions \
-              "/erk:learn $ISSUE_NUMBER"
-          fi
+          claude --print \
+            --verbose \
+            --model claude-haiku-4-5 \
+            --output-format stream-json \
+            --dangerously-skip-permissions \
+            "/erk:learn $ISSUE_NUMBER gist_url=$GIST_URL"
