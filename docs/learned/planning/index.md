@@ -6,6 +6,7 @@
 - **[agent-delegation.md](agent-delegation.md)** — delegating to agents from commands, implementing command-agent pattern, workflow orchestration
 - **[agent-orchestration-safety.md](agent-orchestration-safety.md)** — launching subagents that produce large outputs, using Write tool before launching dependent agents, designing agent-to-agent data handoff
 - **[agent-orchestration.md](agent-orchestration.md)** — implementing multi-tier agent workflows, understanding erk learn parallel analysis pattern, designing agent dependency graphs, working with Tier 1/Tier 2 agent patterns
+- **[async-learn-local-preprocessing.md](async-learn-local-preprocessing.md)** — working with async learn workflow, debugging trigger-async-learn command, understanding local vs remote session preprocessing
 - **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort for a plan or PR, auditing what changed in a PR before review, creating a consolidation plan from multiple PRs
 - **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, running /local:replan-learn-plans
 - **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing replan workflow, creating consolidated plans, understanding sparse plan prevention
@@ -18,6 +19,7 @@
 - **[learn-plan-metadata-fields.md](learn-plan-metadata-fields.md)** — working with learn plan metadata, troubleshooting null learn_status or learn_plan_issue, transforming Plan objects in pipelines, understanding created_from_workflow_run_url field, adding workflow run backlinks to plans
 - **[learn-plan-validation.md](learn-plan-validation.md)** — creating erk-learn plans, preventing learn plan cycles, validating learn workflow
 - **[learn-vs-implementation-plans.md](learn-vs-implementation-plans.md)** — choosing between plan types, creating erk-learn plans, understanding plan workflows
+- **[learn-without-pr-context.md](learn-without-pr-context.md)** — debugging learn workflow failures, implementing plans without creating PRs, understanding workflow variance in learn
 - **[learn-workflow.md](learn-workflow.md)** — using /erk:learn skill, understanding learn status tracking, auto-updating parent plans when learn plans land
 - **[lifecycle.md](lifecycle.md)** — creating a plan, closing a plan, understanding plan states
 - **[metadata-block-fallback.md](metadata-block-fallback.md)** — fetching plan content from GitHub issues, debugging 'no plan content found' errors, working with older erk-plan issues, implementing plan content extraction
@@ -35,6 +37,7 @@
 - **[scratch-storage.md](scratch-storage.md)** — writing temp files for AI workflows, passing files between processes, understanding scratch directory location
 - **[session-deduplication.md](session-deduplication.md)** — understanding duplicate plan prevention, working with exit-plan-mode hook, debugging duplicate issue creation
 - **[session-preprocessing.md](session-preprocessing.md)** — preprocessing sessions for learn workflow, understanding token budget for session analysis, working with session XML format
+- **[sub-agent-context-limitations.md](sub-agent-context-limitations.md)** — debugging impl-signal failures, working with CLAUDE_SESSION_ID, delegating to Task tool sub-agents, implementing plan-save workflow
 - **[submit-branch-reuse.md](submit-branch-reuse.md)** — implementing erk plan submit, handling duplicate branches, resubmitting a plan issue
 - **[token-optimization-patterns.md](token-optimization-patterns.md)** — designing multi-agent workflows, handling large data payloads in agent orchestration, experiencing context bloat from fetching multiple documents, building consolidation or aggregation commands
 - **[tripwire-promotion-workflow.md](tripwire-promotion-workflow.md)** — implementing tripwire candidate extraction, promoting tripwire candidates to frontmatter, understanding the learn-to-tripwire pipeline
