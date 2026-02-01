@@ -9,6 +9,7 @@
 - **[ci-aware-commands.md](ci-aware-commands.md)** — implementing commands that behave differently in CI, checking if code is running in GitHub Actions, skipping user-interactive steps in automated environments
 - **[click-patterns.md](click-patterns.md)** — implementing CLI options with complex behavior, creating flags that optionally accept values, designing CLI flags with default behaviors
 - **[code-review-filtering.md](code-review-filtering.md)** — debugging false positives in code review, understanding keyword-only parameter exceptions, working with ABC/Protocol method validation
+- **[codespace-patterns.md](codespace-patterns.md)** — adding new codespace commands that accept -c/--codespace flag, implementing default codespace resolution logic, avoiding duplication of codespace lookup code, providing consistent error messages for missing codespaces
 - **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
 - **[pr-summarize.md](pr-summarize.md)** — generating PR descriptions for existing PRs, updating PR body with plan context, understanding pr summarize vs pr submit
