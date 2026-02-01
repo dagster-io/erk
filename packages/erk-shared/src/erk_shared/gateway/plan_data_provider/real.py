@@ -30,6 +30,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_local_impl_at,
     extract_plan_header_objective_issue,
     extract_plan_header_remote_impl_at,
+    extract_plan_header_review_pr,
     extract_plan_header_worktree_name,
 )
 from erk_shared.gateway.github.types import (
@@ -415,6 +416,7 @@ class RealPlanDataProvider(PlanDataProvider):
         learn_plan_issue: int | None = None
         learn_plan_pr: int | None = None
         learn_run_id: str | None = None
+        review_pr: int | None = None
         if plan.body:
             extracted = extract_plan_header_worktree_name(plan.body)
             if extracted and not worktree_name:
@@ -425,6 +427,7 @@ class RealPlanDataProvider(PlanDataProvider):
             learn_plan_issue = extract_plan_header_learn_plan_issue(plan.body)
             learn_plan_pr = extract_plan_header_learn_plan_pr(plan.body)
             learn_run_id = extract_plan_header_learn_run_id(plan.body)
+            review_pr = extract_plan_header_review_pr(plan.body)
 
         # Extract objective_issue from plan body
         objective_issue: int | None = None
@@ -480,7 +483,11 @@ class RealPlanDataProvider(PlanDataProvider):
 
         if issue_number in pr_linkages:
             issue_prs = pr_linkages[issue_number]
-            selected_pr = select_display_pr(issue_prs)
+            if review_pr is not None:
+                exclude_pr_numbers: set[int] | None = {review_pr}
+            else:
+                exclude_pr_numbers = None
+            selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=exclude_pr_numbers)
             if selected_pr is not None:
                 pr_number = selected_pr.number
                 pr_title = selected_pr.title

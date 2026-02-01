@@ -155,7 +155,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
             checks_cell = "-"
             if issue_num in pr_linkages:
                 prs = pr_linkages[issue_num]
-                selected_pr = select_display_pr(prs)
+                selected_pr = select_display_pr(prs, exclude_pr_numbers=None)
                 if selected_pr is not None:
                     graphite_url = ctx.graphite.get_graphite_url(
                         GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
