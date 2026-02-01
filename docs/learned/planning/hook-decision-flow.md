@@ -1,6 +1,11 @@
 ---
-read-when: exiting plan mode, choosing plan workflow options, understanding exit-plan-mode hook behavior, deciding between save and implement
-tripwires: 0
+title: Exit-Plan-Mode Hook Decision Flow
+read_when:
+  - exiting plan mode
+  - choosing plan workflow options
+  - understanding exit-plan-mode hook behavior
+  - deciding between save and implement
+tripwires: []
 ---
 
 # Exit-Plan-Mode Hook Decision Flow

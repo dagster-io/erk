@@ -3,6 +3,7 @@
 
 # Review Documentation
 
+- **[handling-contradictory-feedback.md](handling-contradictory-feedback.md)** — handling automated code review feedback, resolving conflicts between bot comments and plan requirements, implementing features flagged by automated reviewers
 - **[inline-comment-deduplication.md](inline-comment-deduplication.md)** — working with PR inline review comments, understanding how duplicate comments are prevented, modifying review prompt assembly
 - **[learned-docs-review.md](learned-docs-review.md)** — working with learned documentation, understanding documentation quality checks, debugging verbatim code violations
 - **[prompt-assembly.md](prompt-assembly.md)** — modifying review prompt generation, understanding the PR review vs local review modes, working with src/erk/review/prompt_assembly.py

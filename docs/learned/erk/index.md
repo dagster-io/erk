@@ -5,6 +5,7 @@
 
 - **[branch-cleanup.md](branch-cleanup.md)** — cleaning up branches, removing dormant worktrees, managing branch lifecycle
 - **[codespace-remote-execution.md](codespace-remote-execution.md)** — implementing remote command execution on codespaces, working with streaming command output on codespaces, debugging codespace remote execution failures, adding new erk commands that run remotely
+- **[divergence-resolution.md](divergence-resolution.md)** — encountering git push rejection, handling remote branch divergence, working with /erk:pr-address workflow, resolving non-fast-forward errors
 - **[graphite-branch-setup.md](graphite-branch-setup.md)** — submitting a PR with Graphite, encountering no_parent error, setting up branch tracking for gt
 - **[issue-pr-linkage-storage.md](issue-pr-linkage-storage.md)** — understanding how plans link to PRs, debugging why a PR isn't linked to its issue, working with .impl/issue.json, creating PRs that close issues
 - **[placeholder-branches.md](placeholder-branches.md)** — working with worktree pool slots, implementing slot commands, deciding when to use ctx.git.branch vs ctx.branch_manager

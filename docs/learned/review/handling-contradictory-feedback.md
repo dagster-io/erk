@@ -1,6 +1,10 @@
 ---
-read-when: handling automated code review feedback, resolving conflicts between bot comments and plan requirements, implementing features flagged by automated reviewers
-tripwires: 0
+title: Handling Contradictory Feedback from Automated Review
+read_when:
+  - handling automated code review feedback
+  - resolving conflicts between bot comments and plan requirements
+  - implementing features flagged by automated reviewers
+tripwires: []
 ---
 
 # Handling Contradictory Feedback from Automated Review

@@ -1,6 +1,10 @@
 ---
-read-when: handling multiple automated code review comments, resolving overlapping bot feedback, coordinating responses across review bots
-tripwires: 0
+title: Bot Coordination in PR Reviews
+read_when:
+  - handling multiple automated code review comments
+  - resolving overlapping bot feedback
+  - coordinating responses across review bots
+tripwires: []
 ---
 
 # Bot Coordination in PR Reviews

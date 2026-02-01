@@ -1,5 +1,9 @@
 ---
-read-when: writing tests for CLI entry points, testing Click-based main() functions, testing command initialization code
+title: CLI Entry Point Testing Patterns
+read_when:
+  - writing tests for CLI entry points
+  - testing Click-based main() functions
+  - testing command initialization code
 tripwires:
   - action: "writing tests for CLI entry points"
     warning: "CLI entry points are Layer 3 pure unit tests. Use mocking (not CliRunner) to keep tests simple and focused. Signs you're over-engineering: using CliRunner for simple output functions, creating fixtures, test file 20+ lines for one call, multiple nested context managers."

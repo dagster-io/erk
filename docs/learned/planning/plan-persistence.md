@@ -1,6 +1,11 @@
 ---
-read-when: saving plans to GitHub, understanding plan storage locations, working with plan-save-to-issue command, tracking plan state transitions
-tripwires: 0
+title: Plan Persistence and Serialization Flow
+read_when:
+  - saving plans to GitHub
+  - understanding plan storage locations
+  - working with plan-save-to-issue command
+  - tracking plan state transitions
+tripwires: []
 ---
 
 # Plan Persistence and Serialization Flow

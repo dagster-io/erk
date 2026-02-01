@@ -5,6 +5,7 @@
 
 - **[alias-verification-pattern.md](alias-verification-pattern.md)** — detecting import alias violations, implementing no-import-aliases rule checks, writing tests for import statement validation
 - **[cascading-import-cleanup.md](cascading-import-cleanup.md)** — removing modules from codebase, import errors after module deletion, cleaning up removed functionality
+- **[cli-entry-point-patterns.md](cli-entry-point-patterns.md)** — writing tests for CLI entry points, testing Click-based main() functions, testing command initialization code
 - **[cli-test-error-assertions.md](cli-test-error-assertions.md)** — writing CLI tests with error assertions, testing error messages in Click commands, asserting on CLI output
 - **[cli-testing.md](cli-testing.md)** — writing tests for erk CLI commands, using ErkContext.for_test(), testing Click commands with context
 - **[command-group-testing.md](command-group-testing.md)** — testing Click command groups, migrating tests for grouped commands, testing invoke_without_command patterns

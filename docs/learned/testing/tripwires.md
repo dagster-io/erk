@@ -37,3 +37,5 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before using monkeypatch.chdir() in exec script tests** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
 
 **CRITICAL: Before writing React component tests with Vitest + jsdom** → Read [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) first. jsdom doesn't implement Element.prototype.scrollIntoView(). Stub in setup.ts with `Element.prototype.scrollIntoView = vi.fn()` before tests run to avoid TypeError.
+
+**CRITICAL: Before writing tests for CLI entry points** → Read [CLI Entry Point Testing Patterns](cli-entry-point-patterns.md) first. CLI entry points are Layer 3 pure unit tests. Use mocking (not CliRunner) to keep tests simple and focused. Signs you're over-engineering: using CliRunner for simple output functions, creating fixtures, test file 20+ lines for one call, multiple nested context managers.

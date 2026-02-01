@@ -1,6 +1,11 @@
 ---
-read-when: encountering git push rejection, handling remote branch divergence, working with /erk:pr-address workflow, resolving non-fast-forward errors
-tripwires: 0
+title: Divergence Resolution Patterns
+read_when:
+  - encountering git push rejection
+  - handling remote branch divergence
+  - working with /erk:pr-address workflow
+  - resolving non-fast-forward errors
+tripwires: []
 ---
 
 # Divergence Resolution Patterns

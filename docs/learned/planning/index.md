@@ -16,6 +16,7 @@
 - **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo issue closing syntax
 - **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures, Encountering errors with unclear root causes, Deciding whether to guess at fixes or investigate source, Working with error messages that reference specific functions
 - **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving gateways to gateway/ directory, consolidating gateway packages, performing systematic refactoring
+- **[hook-decision-flow.md](hook-decision-flow.md)** — exiting plan mode, choosing plan workflow options, understanding exit-plan-mode hook behavior, deciding between save and implement
 - **[learn-plan-metadata-fields.md](learn-plan-metadata-fields.md)** — working with learn plan metadata, troubleshooting null learn_status or learn_plan_issue, transforming Plan objects in pipelines, understanding created_from_workflow_run_url field, adding workflow run backlinks to plans
 - **[learn-plan-validation.md](learn-plan-validation.md)** — creating erk-learn plans, preventing learn plan cycles, validating learn workflow
 - **[learn-vs-implementation-plans.md](learn-vs-implementation-plans.md)** — choosing between plan types, creating erk-learn plans, understanding plan workflows
@@ -27,6 +28,7 @@
 - **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved
 - **[plan-metadata-fields.md](plan-metadata-fields.md)** — working with .impl/ folder structure, implementing get-pr-for-plan or learn workflows, debugging plan-to-PR associations
+- **[plan-persistence.md](plan-persistence.md)** — saving plans to GitHub, understanding plan storage locations, working with plan-save-to-issue command, tracking plan state transitions
 - **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks
 - **[pr-analysis-pattern.md](pr-analysis-pattern.md)** — analyzing PR changes for documentation, building workflows that inspect PRs
 - **[pr-discovery.md](pr-discovery.md)** — implementing erk learn workflow, discovering PRs when branch_name is missing, debugging PR discovery failures, working with session metadata

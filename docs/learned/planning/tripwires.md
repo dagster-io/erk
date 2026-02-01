@@ -20,6 +20,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before calling commands that depend on `.impl/issue.json` metadata** → Read [Plan Lifecycle](lifecycle.md) first. Verify metadata file exists in worktree; if missing, operations silently return empty values.
 
+**CRITICAL: Before calling plan-save-to-issue command** → Read [Plan Lifecycle](lifecycle.md) first. Do not edit on master branch directly. Use the plan save workflow to ensure proper issue creation and branching. Editing directly on master during plan mode can lead to commits pushed to trunk without review and difficulty tracking which changes belong to which plan.
+
 **CRITICAL: Before consolidating issues that already have erk-consolidated label** → Read [Consolidation Labels](consolidation-labels.md) first. Filter out erk-consolidated issues before consolidation. These are outputs of previous consolidation and should not be re-consolidated.
 
 **CRITICAL: Before creating erk-learn plan for an issue that already has erk-learn label** → Read [Learn Plan Validation](learn-plan-validation.md) first. Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention).

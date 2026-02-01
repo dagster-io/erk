@@ -1,6 +1,11 @@
 ---
-read-when: using session ID in commands, writing hooks that need session context, accessing ${CLAUDE_SESSION_ID}, debugging session ID unavailability
-tripwires: 0
+title: Session ID Availability in Claude Code
+read_when:
+  - using session ID in commands
+  - writing hooks that need session context
+  - accessing ${CLAUDE_SESSION_ID}
+  - debugging session ID unavailability
+tripwires: []
 ---
 
 # Session ID Availability in Claude Code
