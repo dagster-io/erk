@@ -13,12 +13,12 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 
 | Category                                    | Tripwires | Load When Working In                          |
 | ------------------------------------------- | --------- | --------------------------------------------- |
-| [architecture](architecture/tripwires.md)   | 71        | `src/erk/gateway/`, gateways, subprocess      |
+| [architecture](architecture/tripwires.md)   | 72        | `src/erk/gateway/`, gateways, subprocess      |
 | [capabilities](capabilities/tripwires.md)   | 1         | Claude Code capabilities, tool use            |
 | [ci](ci/tripwires.md)                       | 20        | `.github/workflows/`, `.github/actions/`      |
 | [claude-code](claude-code/tripwires.md)     | 2         | Claude Code configuration, settings           |
-| [cli](cli/tripwires.md)                     | 19        | `src/erk/cli/`                                |
-| [gateway](gateway/tripwires.md)             | 1         | `gateway/` code                               |
+| [cli](cli/tripwires.md)                     | 20        | `src/erk/cli/`                                |
+| [gateway](gateway/tripwires.md)             | 2         | `gateway/` code                               |
 | [hooks](hooks/tripwires.md)                 | 2         | `.claude/hooks/`, hook development            |
 | [objectives](objectives/tripwires.md)       | 5         | `objectives/` code                            |
 | [planning](planning/tripwires.md)           | 25        | `.impl/`, `.worker-impl/`, planning workflows |

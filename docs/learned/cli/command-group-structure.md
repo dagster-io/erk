@@ -100,6 +100,95 @@ cli.add_command(objective_group, name="objective")
 2. Import and register in `src/erk/cli/commands/{group}/__init__.py`
 3. Add test in `tests/commands/{group}/test_{verb}.py`
 
+### Example: Extending `erk codespace run` Group
+
+The `erk codespace run` group was extended in PR #6408 to add `erk codespace run objective next-plan`:
+
+**Existing group structure:**
+```
+src/erk/cli/commands/codespace/
+├── __init__.py                     # Codespace group
+├── connect_cmd.py
+├── setup_cmd.py
+└── run/
+    ├── __init__.py                 # Run subgroup
+    └── next_plan_cmd.py            # NEW: objective next-plan subcommand
+```
+
+**Step 1: Create command file**
+
+Create `src/erk/cli/commands/codespace/run/next_plan_cmd.py`:
+
+```python
+"""erk codespace run objective next-plan implementation."""
+
+import click
+from erk.cli.context import get_command_context
+from erk.cli.commands.codespace.helpers import resolve_codespace
+from erk.core.codespace_run import build_codespace_run_command
+
+
+@click.command()
+@click.argument("issue_ref")
+@click.option("--codespace", "-c", help="Codespace name")
+@click.pass_context
+def next_plan_cmd(ctx: click.Context, issue_ref: str, codespace: str | None) -> None:
+    """Execute 'erk objective next-plan' on a remote codespace."""
+    cmd_ctx = get_command_context(ctx)
+    cs = resolve_codespace(cmd_ctx.codespace_registry, codespace)
+    cmd_ctx.codespace.start_codespace(cs.gh_name)
+    remote_cmd = build_codespace_run_command(f"erk objective next-plan {issue_ref}")
+    exit_code = cmd_ctx.codespace.run_ssh_command(cs.gh_name, remote_cmd)
+    # ... handle exit code ...
+```
+
+**Step 2: Register in parent group**
+
+In `src/erk/cli/commands/codespace/run/__init__.py`:
+
+```python
+"""Codespace run subcommands."""
+
+import click
+from erk.cli.commands.codespace.run.next_plan_cmd import next_plan_cmd
+
+
+@click.group("run")
+def run_group() -> None:
+    """Run commands on codespaces."""
+    pass
+
+
+# Register subcommands
+run_group.add_command(next_plan_cmd, name="objective")
+```
+
+**Step 3: Link to parent group**
+
+In `src/erk/cli/commands/codespace/__init__.py`:
+
+```python
+from erk.cli.commands.codespace.run import run_group
+
+codespace_group.add_command(run_group, name="run")
+```
+
+This creates the command chain: `erk codespace run objective next-plan`
+
+**Step 4: Add tests**
+
+Create `tests/unit/cli/commands/codespace/run/test_next_plan_cmd.py`:
+
+```python
+def test_starts_codespace_before_execution() -> None:
+    """Verify codespace is started before SSH command."""
+    # ... test implementation ...
+
+def test_uses_default_codespace_when_not_specified() -> None:
+    """Verify default codespace resolution."""
+    # ... test implementation ...
+```
+
 ## Creating a New Command Group
 
 1. Create directory: `src/erk/cli/commands/{noun}/`

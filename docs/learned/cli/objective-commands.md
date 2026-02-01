@@ -15,11 +15,13 @@ The `erk objective` command group manages erk objectives - high-level goals that
 
 ## Command Overview
 
-| Command                   | Alias | Description                       |
-| ------------------------- | ----- | --------------------------------- |
-| `erk objective reconcile` | `rec` | Reconcile auto-advance objectives |
-| `erk objective list`      | `ls`  | List open objectives              |
-| `erk objective create`    | -     | Create a new objective            |
+| Command                                | Alias | Description                                  |
+| -------------------------------------- | ----- | -------------------------------------------- |
+| `erk objective reconcile`              | `rec` | Reconcile auto-advance objectives            |
+| `erk objective list`                   | `ls`  | List open objectives                         |
+| `erk objective create`                 | -     | Create a new objective                       |
+| `erk objective next-plan`              | -     | Create plan for next objective step (local)  |
+| `erk codespace run objective next-plan`| -     | Create plan for next objective step (remote) |
 
 ## Reconcile Command
 
@@ -125,6 +127,93 @@ Session-based deduplication is:
 - **Opt-in**: Only active when `--session-id` is provided
 
 This prevents issues like duplicate plan creation when hooks retry or Claude retries a blocked command.
+
+## Remote Objective Execution via Codespaces
+
+Long-running objective workflows (like `next-plan`, which can take 10+ minutes) can be dispatched to GitHub Codespaces for background execution. This enables fire-and-forget operation where the command returns immediately while execution continues remotely.
+
+### Local vs Remote Execution
+
+**Local execution:**
+```bash
+erk objective next-plan 42
+```
+- Runs in current terminal
+- Blocks until complete (10+ minutes)
+- Shows live progress and output
+- User cannot use terminal during execution
+
+**Remote execution:**
+```bash
+erk codespace run objective next-plan 42
+```
+- Dispatches to GitHub Codespace
+- Returns immediately (fire-and-forget)
+- Execution continues in background on codespace
+- Output logged to `/tmp/erk-run.log` on codespace
+- User retains control of local terminal
+
+### When to Use Remote Execution
+
+**Good use cases:**
+- Long-running plan creation (10+ minutes)
+- Parallel processing of multiple objectives
+- Batch operations during off-hours
+- When you need to continue local work immediately
+
+**Not ideal for:**
+- Quick operations where you want immediate feedback
+- When you need to see live progress
+- Debugging workflows (harder to monitor output)
+
+### Command Signature
+
+```bash
+erk codespace run objective next-plan ISSUE_REF [--codespace NAME]
+```
+
+**Arguments:**
+- `ISSUE_REF`: Objective issue number or URL
+
+**Options:**
+- `--codespace`, `-c`: Codespace name (defaults to configured default)
+
+### Examples
+
+```bash
+# Use default codespace
+erk codespace run objective next-plan 42
+
+# Use specific codespace
+erk codespace run objective next-plan 42 -c my-dev-codespace
+
+# With GitHub URL
+erk codespace run objective next-plan https://github.com/owner/repo/issues/42
+```
+
+### Checking Execution Progress
+
+Output is logged to `/tmp/erk-run.log` on the codespace:
+
+```bash
+# SSH to codespace
+erk codespace connect
+
+# View logs
+cat /tmp/erk-run.log
+
+# Follow live progress
+tail -f /tmp/erk-run.log
+```
+
+### How It Works
+
+1. **Environment setup**: The command automatically syncs code and dependencies on the codespace
+2. **Background execution**: Uses `nohup` to detach from SSH session
+3. **Output logging**: All output redirected to `/tmp/erk-run.log`
+4. **Immediate return**: Local command returns as soon as SSH dispatch succeeds
+
+See [Codespace Remote Execution](../erk/codespace-remote-execution.md) for architecture details.
 
 ## Related Documentation
 
