@@ -10,6 +10,13 @@ read_when:
 
 The `CommitMessageGenerator` uses Claude to generate PR titles and descriptions from diffs, with optional plan and objective context.
 
+## Commands Using This Generator
+
+Both `erk pr submit` and `erk pr summarize` use `CommitMessageGenerator` with identical context priority ordering. This ensures PR descriptions are consistent regardless of when they were generated:
+
+- `erk pr submit` - Generates description during PR creation
+- `erk pr summarize` - Regenerates description for existing PR
+
 ## Context Priority Ordering
 
 When generating PR descriptions, context sources are prioritized:

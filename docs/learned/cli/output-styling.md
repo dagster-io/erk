@@ -154,6 +154,86 @@ Standard emojis for CLI output:
 - Use `\n` prefix in strings for section breaks
 - Indent list items with `  ` (2 spaces)
 
+## Plan Context Feedback Pattern
+
+When displaying plan context information in CLI commands, use this standardized feedback pattern for consistency across plan-aware operations.
+
+### Pattern Components
+
+The pattern consists of three elements:
+
+1. **Plan incorporation message** (when plan found):
+   - Format: `"   Incorporating plan from issue #{issue_number}"`
+   - Style: Green text (`fg="green"`)
+2. **Objective link message** (when objective available):
+   - Format: `"   Linked to {objective_summary}"`
+   - Style: Green text (`fg="green"`)
+3. **No plan message** (when plan not found):
+   - Format: `"   No linked plan found"`
+   - Style: Dimmed text (`dim=True`)
+4. **Separator**: Blank line after feedback
+
+### Implementation
+
+```python
+import click
+
+if plan_context is not None:
+    click.echo(
+        click.style(
+            f"   Incorporating plan from issue #{plan_context.issue_number}",
+            fg="green",
+        )
+    )
+    if plan_context.objective_summary is not None:
+        click.echo(click.style(f"   Linked to {plan_context.objective_summary}", fg="green"))
+else:
+    click.echo(click.style("   No linked plan found", dim=True))
+click.echo("")
+```
+
+### Usage Examples
+
+**With Plan and Objective:**
+
+```
+   Incorporating plan from issue #6386
+   Linked to [objective] Improve PR operations feedback
+
+```
+
+**With Plan Only:**
+
+```
+   Incorporating plan from issue #6172
+
+```
+
+**Without Plan:**
+
+```
+   No linked plan found
+
+```
+
+### Commands Using This Pattern
+
+This pattern is currently used in:
+
+- `erk pr submit` - During PR submission (`src/erk/cli/commands/pr/submit_pipeline.py:466-472`)
+- `erk pr summarize` - When generating PR descriptions (`src/erk/cli/commands/pr/summarize_cmd.py:120-131`)
+
+### Design Rationale
+
+**Why standardize this pattern:**
+
+- **Consistency**: Users see the same feedback format across all plan-aware operations
+- **Transparency**: Makes plan context detection explicit and visible
+- **Graceful degradation**: Provides clear feedback when no plan is found
+- **Visual hierarchy**: Green for success/presence, dim for absence
+
+**Future commands that incorporate plan context should follow this convention.**
+
 ## Output Abstraction
 
 **Use output abstraction for all CLI output to separate user messages from machine-readable data.**
