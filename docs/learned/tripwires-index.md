@@ -27,7 +27,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [review](review/tripwires.md)               | 2         | `review/` code                                |
 | [reviews](reviews/tripwires.md)             | 1         | `reviews/` code                               |
 | [sessions](sessions/tripwires.md)           | 6         | `~/.claude/projects/`, session analysis       |
-| [testing](testing/tripwires.md)             | 10        | `tests/`                                      |
+| [testing](testing/tripwires.md)             | 13        | `tests/`                                      |
 | [textual](textual/tripwires.md)             | 1         | Textual framework code                        |
 | [tui](tui/tripwires.md)                     | 5         | `src/erk/tui/`                                |
 | [uncategorized](uncategorized/tripwires.md) | 14        | `uncategorized/` code                         |

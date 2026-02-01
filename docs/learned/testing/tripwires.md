@@ -26,8 +26,14 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.
 
+**CRITICAL: Before setting mock return values in test beforeEach** → Read [Window Mock Patterns for Electron IPC Testing](window-mock-patterns.md) first. Order matters: call mockReset() FIRST (clears previous test's values), THEN mockResolvedValue(). Reverse order has no effect.
+
 **CRITICAL: Before testing code that reads from Path.home() or ~/.claude/ or ~/.erk/** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Tests that run in parallel must use monkeypatch to isolate from real filesystem state. Functions like extract_slugs_from_session() cause flakiness when they read from the user's home directory.
+
+**CRITICAL: Before testing components that use window.erkdesk IPC bridge** → Read [Window Mock Patterns for Electron IPC Testing](window-mock-patterns.md) first. Mock window.erkdesk in setup.ts, but always call mockReset() in beforeEach before setting mockResolvedValue(). Forgetting this causes mock value contamination - tests pass individually but fail in CI.
 
 **CRITICAL: Before using Path.home() directly in production code** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
 
 **CRITICAL: Before using monkeypatch.chdir() in exec script tests** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
+
+**CRITICAL: Before writing React component tests with Vitest + jsdom** → Read [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) first. jsdom doesn't implement Element.prototype.scrollIntoView(). Stub in setup.ts with `Element.prototype.scrollIntoView = vi.fn()` before tests run to avoid TypeError.
