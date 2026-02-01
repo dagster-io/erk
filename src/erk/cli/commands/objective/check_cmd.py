@@ -152,15 +152,16 @@ def validate_objective(
     else:
         checks.append((False, f"Done step without PR reference: {', '.join(orphaned)}"))
 
-    # Check 5: Phase numbering is sequential
-    phase_numbers = [p.number for p in phases]
+    # Check 5: Phase numbering is sequential (sub-phases like 1A, 1B, 1C are OK)
+    phase_keys = [(p.number, p.suffix) for p in phases]
     is_sequential = all(
-        phase_numbers[i] < phase_numbers[i + 1] for i in range(len(phase_numbers) - 1)
+        phase_keys[i] < phase_keys[i + 1] for i in range(len(phase_keys) - 1)
     )
     if is_sequential:
         checks.append((True, "Phase numbering is sequential"))
     else:
-        checks.append((False, f"Phase numbering is not sequential: {phase_numbers}"))
+        phase_labels = [f"{n}{s}" for n, s in phase_keys]
+        checks.append((False, f"Phase numbering is not sequential: {phase_labels}"))
 
     summary = compute_summary(phases)
     next_step = find_next_step(phases)

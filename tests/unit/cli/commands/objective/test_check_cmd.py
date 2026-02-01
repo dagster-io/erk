@@ -280,6 +280,45 @@ def test_non_sequential_phase_numbering_still_passes() -> None:
     assert "Phase numbering is sequential" in result.output
 
 
+def test_sub_phase_numbering_passes() -> None:
+    """Test that sub-phases like 1A, 1B, 1C pass the sequential check."""
+    body = """# Objective: Sub-phases
+
+## Roadmap
+
+### Phase 1A: First Part
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1A.1 | Step one | - | - |
+
+### Phase 1B: Second Part
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1B.1 | Step two | - | - |
+
+### Phase 2: Core
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 2.1 | Step three | - | - |
+"""
+    issue = _make_issue(900, "Objective: Sub-phases", body)
+    fake_gh = FakeGitHubIssues(issues={900: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["900"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0
+    assert "Phase numbering is sequential" in result.output
+    assert "[FAIL]" not in result.output
+
+
 def test_validate_objective_returns_success_type() -> None:
     """Test that validate_objective returns proper result types."""
     issue = _make_issue(700, "Objective: Test", VALID_OBJECTIVE_BODY)

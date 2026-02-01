@@ -22,6 +22,7 @@ class RoadmapPhase:
     """A phase in the objective roadmap."""
 
     number: int
+    suffix: str  # Letter suffix, e.g. "A" for "Phase 1A", "" for "Phase 1"
     name: str
     steps: list[RoadmapStep]
 
@@ -47,6 +48,7 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
 
     for idx, phase_match in enumerate(phase_matches):
         phase_number = int(phase_match.group(1))
+        phase_suffix = phase_match.group(2)  # "" or "A", "B", etc.
         phase_name = phase_match.group(3).strip()
 
         # Extract the section after this phase header until the next phase header or end
@@ -97,12 +99,6 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             status_col = row_match.group(3).strip().lower()
             pr_col = row_match.group(4).strip()
 
-            # Check for letter-format step IDs (warning, not error)
-            if re.match(r"^\d+[A-Z]\.\d+$", step_id):
-                validation_errors.append(
-                    f"Step ID '{step_id}' uses letter format — prefer plain numbers "
-                    f"(e.g., {step_id[0]}.{step_id.split('.')[1]})"
-                )
 
             # Infer status based on status column and PR column
             if status_col in ("blocked", "skipped"):
@@ -130,6 +126,7 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
         phases.append(
             RoadmapPhase(
                 number=phase_number,
+                suffix=phase_suffix,
                 name=phase_name,
                 steps=steps,
             )
@@ -176,6 +173,7 @@ def serialize_phases(phases: list[RoadmapPhase]) -> list[dict[str, object]]:
     return [
         {
             "number": phase.number,
+            "suffix": phase.suffix,
             "name": phase.name,
             "steps": [
                 {

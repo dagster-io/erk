@@ -38,12 +38,53 @@ def test_parse_roadmap_well_formed() -> None:
     assert errors == []
 
     assert phases[0].number == 1
+    assert phases[0].suffix == ""
     assert phases[0].name == "Foundation"
     assert len(phases[0].steps) == 3
 
     assert phases[1].number == 2
+    assert phases[1].suffix == ""
     assert phases[1].name == "Core"
     assert len(phases[1].steps) == 2
+
+
+def test_parse_roadmap_sub_phases() -> None:
+    """Test parsing sub-phase headers like Phase 1A, Phase 1B."""
+    body = """## Roadmap
+
+### Phase 1A: First Part
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1A.1 | Step one | - | - |
+
+### Phase 1B: Second Part
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1B.1 | Step two | - | - |
+
+### Phase 2: Core
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 2.1 | Step three | - | - |
+"""
+    phases, _errors = parse_roadmap(body)
+
+    assert len(phases) == 3
+
+    assert phases[0].number == 1
+    assert phases[0].suffix == "A"
+    assert phases[0].name == "First Part"
+
+    assert phases[1].number == 1
+    assert phases[1].suffix == "B"
+    assert phases[1].name == "Second Part"
+
+    assert phases[2].number == 2
+    assert phases[2].suffix == ""
+    assert phases[2].name == "Core"
 
 
 def test_parse_roadmap_status_inference() -> None:
@@ -94,6 +135,7 @@ def test_compute_summary() -> None:
     phases = [
         RoadmapPhase(
             number=1,
+            suffix="",
             name="Test",
             steps=[
                 RoadmapStep(id="1.1", description="A", status="done", pr="#1"),
@@ -127,6 +169,7 @@ def test_serialize_phases() -> None:
     phases = [
         RoadmapPhase(
             number=1,
+            suffix="",
             name="Test",
             steps=[
                 RoadmapStep(id="1.1", description="A", status="done", pr="#1"),
@@ -137,6 +180,7 @@ def test_serialize_phases() -> None:
 
     assert len(result) == 1
     assert result[0]["number"] == 1
+    assert result[0]["suffix"] == ""
     assert result[0]["name"] == "Test"
     assert len(result[0]["steps"]) == 1
     assert result[0]["steps"][0]["id"] == "1.1"
@@ -149,6 +193,7 @@ def test_find_next_step_returns_first_pending() -> None:
     phases = [
         RoadmapPhase(
             number=1,
+            suffix="",
             name="Phase One",
             steps=[
                 RoadmapStep(id="1.1", description="Done", status="done", pr="#1"),
@@ -169,6 +214,7 @@ def test_find_next_step_returns_none_when_all_done() -> None:
     phases = [
         RoadmapPhase(
             number=1,
+            suffix="",
             name="Done",
             steps=[
                 RoadmapStep(id="1.1", description="A", status="done", pr="#1"),
