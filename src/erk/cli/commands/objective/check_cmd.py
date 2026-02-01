@@ -113,14 +113,26 @@ def validate_objective(
     for phase in phases:
         for step in phase.steps:
             # Steps with PR #NNN should infer as done
-            if step.pr and step.pr.startswith("#") and step.status != "done" and step.status != "skipped":
+            if (
+                step.pr
+                and step.pr.startswith("#")
+                and step.status != "done"
+                and step.status != "skipped"
+            ):
                 consistency_issues.append(
-                    f"Step {step.id} has PR {step.pr} but status is '{step.status}' (expected 'done')"
+                    f"Step {step.id} has PR {step.pr} but status is '{step.status}' "
+                    f"(expected 'done')"
                 )
             # Steps with plan #NNN should infer as in_progress
-            if step.pr and step.pr.startswith("plan #") and step.status != "in_progress" and step.status != "skipped":
+            if (
+                step.pr
+                and step.pr.startswith("plan #")
+                and step.status != "in_progress"
+                and step.status != "skipped"
+            ):
                 consistency_issues.append(
-                    f"Step {step.id} has {step.pr} but status is '{step.status}' (expected 'in_progress')"
+                    f"Step {step.id} has {step.pr} but status is '{step.status}' "
+                    f"(expected 'in_progress')"
                 )
 
     if not consistency_issues:
@@ -168,7 +180,9 @@ def validate_objective(
 @alias("ch")
 @click.command("check")
 @click.argument("objective_ref", type=str)
-@click.option("--json-output", "json_mode", is_flag=True, help="Output structured JSON (for programmatic use)")
+@click.option(
+    "--json-output", "json_mode", is_flag=True, help="Output structured JSON (for programmatic use)"
+)
 @click.pass_obj
 def check_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> None:
     """Validate an objective's format and roadmap consistency.
@@ -213,8 +227,7 @@ def _output_json(result: ObjectiveValidationResult, issue_number: int) -> None:
                 "success": result.passed,
                 "issue_number": issue_number,
                 "checks": [
-                    {"passed": passed, "description": desc}
-                    for passed, desc in result.checks
+                    {"passed": passed, "description": desc} for passed, desc in result.checks
                 ],
                 "phases": serialize_phases(result.phases),
                 "summary": result.summary,
@@ -230,7 +243,9 @@ def _output_json(result: ObjectiveValidationResult, issue_number: int) -> None:
 def _output_human(result: ObjectiveValidationResult, issue_number: int) -> None:
     """Output human-readable [PASS]/[FAIL] format."""
     if isinstance(result, ObjectiveValidationError):
-        user_output(click.style("Error: ", fg="red") + f"Failed to validate objective: {result.error}")
+        user_output(
+            click.style("Error: ", fg="red") + f"Failed to validate objective: {result.error}"
+        )
         raise SystemExit(1)
 
     user_output(f"Validating objective #{issue_number}...")
