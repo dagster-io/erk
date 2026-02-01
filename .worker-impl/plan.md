@@ -15,13 +15,13 @@ Replace emoji-encoded display strings in the PlanList table with proper GUI elem
 
 ## Color Palette (VS Code dark theme)
 
-| Color  | Hex       | Used For                                       |
-|--------|-----------|------------------------------------------------|
-| Green  | `#4ec9b0` | PR open, checks pass, all comments resolved    |
-| Amber  | `#dcdcaa` | PR draft, checks running, unresolved comments  |
-| Purple | `#c586c0` | PR merged                                      |
-| Red    | `#f44747` | PR closed, checks failed                       |
-| Gray   | `#666666` | No data / none                                 |
+| Color  | Hex       | Used For                                      |
+| ------ | --------- | --------------------------------------------- |
+| Green  | `#4ec9b0` | PR open, checks pass, all comments resolved   |
+| Amber  | `#dcdcaa` | PR draft, checks running, unresolved comments |
+| Purple | `#c586c0` | PR merged                                     |
+| Red    | `#f44747` | PR closed, checks failed                      |
+| Gray   | `#666666` | No data / none                                |
 
 ## Files to Modify/Create
 
@@ -55,11 +55,11 @@ Three pure functions mapping raw state to `{color, text, tooltip}`:
 
 Replace three table cells:
 
-| Column   | Before                            | After                                          |
-|----------|-----------------------------------|-------------------------------------------------|
-| PR       | `{plan.pr_display}` (emoji text)  | `<StatusIndicator>` dot + `#NNN` text           |
-| Checks   | `{plan.checks_display}` (emoji)   | `<StatusIndicator>` dot + checkmark/x           |
-| Comments | `{plan.comments_display}` (text)  | `<StatusIndicator>` dot + `N/M` text (colored)  |
+| Column   | Before                           | After                                          |
+| -------- | -------------------------------- | ---------------------------------------------- |
+| PR       | `{plan.pr_display}` (emoji text) | `<StatusIndicator>` dot + `#NNN` text          |
+| Checks   | `{plan.checks_display}` (emoji)  | `<StatusIndicator>` dot + checkmark/x          |
+| Comments | `{plan.comments_display}` (text) | `<StatusIndicator>` dot + `N/M` text (colored) |
 
 Each cell renders: `[colored-dot] [text]` in an inline-flex container.
 
@@ -72,6 +72,7 @@ Each cell renders: `[colored-dot] [text]` in an inline-flex container.
 ### 6. Update test fixtures — 3 files with `makePlan` helpers
 
 Add new fields with defaults to `makePlan` in:
+
 - `erkdesk/src/renderer/App.test.tsx`
 - `erkdesk/src/renderer/components/PlanList.test.tsx`
 - `erkdesk/src/renderer/components/ActionToolbar.test.tsx`
@@ -81,6 +82,7 @@ Add new fields with defaults to `makePlan` in:
 - `erkdesk/src/renderer/components/statusHelpers.test.ts`
 
 Test all state-to-color mappings:
+
 - Each `pr_state` value + null
 - Each `run_conclusion` value + `run_status` = "in_progress"
 - Comment counts: 0/0, partial, fully resolved

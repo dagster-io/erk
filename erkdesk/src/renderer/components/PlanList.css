@@ -64,17 +64,23 @@
 }
 
 .plan-list__col-pr {
-  width: 70px;
+  width: 80px;
 }
 
 .plan-list__col-checks {
-  width: 40px;
+  width: 50px;
   text-align: center;
 }
 
 .plan-list__col-comments {
-  width: 50px;
+  width: 60px;
   text-align: center;
+}
+
+.plan-list__status-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .plan-list__col-wt {

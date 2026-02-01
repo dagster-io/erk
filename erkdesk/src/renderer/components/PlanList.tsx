@@ -1,5 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import type { PlanRow } from "../../types/erkdesk";
+import { StatusIndicator } from "./StatusIndicator";
+import {
+  derivePrStatus,
+  deriveChecksStatus,
+  deriveCommentsStatus,
+} from "./statusHelpers";
 import "./PlanList.css";
 
 interface PlanListProps {
@@ -65,10 +71,14 @@ const PlanList: React.FC<PlanListProps> = ({
               >
                 <td className="plan-list__col-number">{plan.issue_number}</td>
                 <td className="plan-list__col-title">{plan.title}</td>
-                <td className="plan-list__col-pr">{plan.pr_display}</td>
-                <td className="plan-list__col-checks">{plan.checks_display}</td>
-                <td className="plan-list__col-comments">
-                  {plan.comments_display}
+                <td className="plan-list__col-pr plan-list__status-cell">
+                  <StatusIndicator {...derivePrStatus(plan)} />
+                </td>
+                <td className="plan-list__col-checks plan-list__status-cell">
+                  <StatusIndicator {...deriveChecksStatus(plan)} />
+                </td>
+                <td className="plan-list__col-comments plan-list__status-cell">
+                  <StatusIndicator {...deriveCommentsStatus(plan)} />
                 </td>
                 <td className="plan-list__col-wt">{plan.worktree_name}</td>
                 <td className="plan-list__col-local">

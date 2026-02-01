@@ -26,6 +26,10 @@ export interface PlanRow {
   run_url: string | null;
   worktree_branch: string | null;
   pr_head_branch: string | null;
+  run_status: string | null;
+  run_conclusion: string | null;
+  resolved_comment_count: number;
+  total_comment_count: number;
 }
 
 export interface FetchPlansResult {

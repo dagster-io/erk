@@ -25,6 +25,10 @@ function makePlan(overrides: Partial<PlanRow> = {}): PlanRow {
     run_url: null,
     worktree_branch: null,
     pr_head_branch: null,
+    run_status: null,
+    run_conclusion: null,
+    resolved_comment_count: 0,
+    total_comment_count: 0,
     ...overrides,
   };
 }

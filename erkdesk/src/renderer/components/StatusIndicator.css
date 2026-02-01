@@ -1,0 +1,36 @@
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-indicator__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-indicator__dot--green {
+  background-color: #4ec9b0;
+}
+
+.status-indicator__dot--amber {
+  background-color: #dcdcaa;
+}
+
+.status-indicator__dot--purple {
+  background-color: #c586c0;
+}
+
+.status-indicator__dot--red {
+  background-color: #f44747;
+}
+
+.status-indicator__dot--gray {
+  background-color: #666666;
+}
+
+.status-indicator__text {
+  white-space: nowrap;
+}

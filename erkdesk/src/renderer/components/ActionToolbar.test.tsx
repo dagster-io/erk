@@ -25,6 +25,10 @@ function makePlan(overrides: Partial<PlanRow> = {}): PlanRow {
     run_url: "https://github.com/org/repo/actions/runs/123",
     worktree_branch: "feature-branch",
     pr_head_branch: "feature-branch",
+    run_status: null,
+    run_conclusion: null,
+    resolved_comment_count: 0,
+    total_comment_count: 0,
     ...overrides,
   };
 }
