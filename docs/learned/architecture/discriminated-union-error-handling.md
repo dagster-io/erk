@@ -18,6 +18,15 @@ tripwires:
 
 A LBYL-compliant pattern for handling expected failures without exceptions. Return types are unions of success and error types, allowing callers to use `isinstance()` checks.
 
+## Source References
+
+Examples in this document reference actual type definitions. See canonical sources:
+
+- **GitHub operations**: `packages/erk-shared/src/erk_shared/gateway/github/types.py`
+- **Git worktree operations**: `packages/erk-shared/src/erk_shared/gateway/git/worktree/types.py`
+- **Git branch operations**: `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py`
+- **Git remote operations**: `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py`
+
 ## The Pattern
 
 Instead of:
@@ -180,23 +189,13 @@ if merge_result is not True:
 
 **After** (explicit types):
 
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py -->
+
+See `MergeResult` and `MergeError` type definitions in `packages/erk-shared/src/erk_shared/gateway/github/types.py`.
+
+Example caller pattern:
+
 ```python
-# Type definitions (gateway/github/types.py)
-@dataclass(frozen=True)
-class MergeResult:
-    """Success result from merging a PR."""
-    pr_number: int
-
-@dataclass(frozen=True)
-class MergeError:
-    """Error result from merging a PR. Implements NonIdealState."""
-    pr_number: int
-    message: str
-
-    @property
-    def error_type(self) -> str:
-        return "merge-failed"
-
 # ABC definition
 def merge_pr(self, repo_root: Path, pr_number: int, ...) -> MergeResult | MergeError:
     """Returns MergeResult on success, MergeError on failure."""
@@ -273,25 +272,13 @@ def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> None:
 
 **After** (discriminated union):
 
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/worktree/types.py -->
+
+See `WorktreeAdded` and `WorktreeAddError` type definitions in `packages/erk-shared/src/erk_shared/gateway/git/worktree/types.py`.
+
+ABC signature:
+
 ```python
-# Type definitions (gateway/git/worktree/types.py)
-@dataclass(frozen=True)
-class WorktreeAdded:
-    """Success result from adding a worktree."""
-    path: Path
-    branch: str
-
-@dataclass(frozen=True)
-class WorktreeAddError:
-    """Error result from adding a worktree. Implements NonIdealState."""
-    path: Path
-    branch: str
-    message: str
-
-    @property
-    def error_type(self) -> str:
-        return "worktree-add-failed"
-
 # ABC definition (gateway/git/worktree/abc.py)
 def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> WorktreeAdded | WorktreeAddError:
     """Returns WorktreeAdded on success, WorktreeAddError on failure."""

@@ -55,31 +55,9 @@ This pattern is **mandatory** for testing erk CLI commands because:
 
 ### API Signature
 
-```python
-@staticmethod
-def for_test(
-    github_issues: GitHubIssues | None = None,
-    git: Git | None = None,
-    github: GitHub | None = None,
-    session_store: ClaudeCodeSessionStore | None = None,
-    debug: bool = False,
-    repo_root: Path | None = None,
-    cwd: Path | None = None,
-) -> "ErkContext":
-    """Create test context with optional pre-configured implementations.
+<!-- Source: packages/erk-shared/src/erk_shared/context/context.py:193-250 -->
 
-    All parameters are optional. Unspecified values default to fakes:
-    - github_issues: Defaults to FakeGitHubIssues()
-    - git: Defaults to FakeGit()
-    - github: Defaults to FakeGitHub()
-    - session_store: Defaults to FakeClaudeCodeSessionStore()
-    - repo_root: Defaults to Path("/fake/repo")
-    - cwd: Defaults to Path("/fake/worktree")
-
-    Returns:
-        ErkContext configured with provided values and test defaults
-    """
-```
+See `ErkContext.for_test()` method in `packages/erk-shared/src/erk_shared/context/context.py:193-250` for complete API signature and default values.
 
 ## Testing Patterns
 

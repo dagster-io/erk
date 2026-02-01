@@ -138,7 +138,9 @@ def test_operation_emits_progress(tmp_path: Path) -> None:
 
 ## Example: CommitMessageGenerator
 
-Real example from `src/erk/core/commit_message_generator.py`:
+<!-- Source: src/erk/core/commit_message_generator.py:85-189 -->
+
+Real example from `src/erk/core/commit_message_generator.py:85-189`. See the `generate()` method for complete implementation.
 
 ```python
 def generate(
