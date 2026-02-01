@@ -130,42 +130,54 @@ EOF
 )"
 ```
 
-### Step 6: Update Roadmap Step
+### Step 6: Update Objective Body (Whole-Body Update)
 
-After posting the action comment, update the roadmap table using the inference-driven update command.
+After posting the action comment, update the objective body directly. Since you already have the body from Step 3, make all changes in a single pass.
 
-**For each completed step**, run:
+**For each completed step**, edit the roadmap table row in the body text:
+
+1. Set the PR cell to `#<pr-number>` for the completed step
+2. Set the Status cell to `-` (inference determines status from PR column)
+3. If the PR title meaningfully differs from the step description, update the description to reflect what was actually implemented
+
+**Status inference rules** (the parser uses these to determine effective status):
+
+- Step has `#NNN` in PR column → Status `-` → inferred as `done`
+- Step has `plan #NNN` in PR column → Status `-` → inferred as `in_progress`
+- Step has no PR → Status stays as-is (inferred as `pending`)
+- `blocked`/`skipped` in Status column are explicit overrides — only change if you know the blocker is resolved
+
+**Also update "Current Focus"** in the same pass — advance it to describe the next pending step or next phase of work.
+
+**Description update guidelines:**
+
+- Keep descriptions concise — match the style of other steps in the roadmap
+- Focus on what was actually implemented, not what was originally planned
+- Update when: command names changed, scope shifted, or approach diverged from plan
+- Don't update for minor wording differences or when the PR title is just more detailed
+
+**Write the updated body:**
 
 ```bash
-erk exec objective-roadmap-update <objective-number> --step <step-id> --pr "#<pr-number>"
+erk exec update-issue-body <issue-number> --body "$(cat <<'BODY_EOF'
+<full updated body text>
+BODY_EOF
+)"
 ```
 
-This command:
-
-- Sets the PR cell to the landed PR reference
-- Resets the Status cell to `-` so inference determines status (PR `#NNN` → done)
-- Re-validates the roadmap after mutation
-- Returns JSON with the updated step and summary statistics
-
-**Example:** If PR #6317 completed step 2.1:
+**After writing, validate the update:**
 
 ```bash
-erk exec objective-roadmap-update 6295 --step 2.1 --pr "#6317"
+erk objective check <objective-number>
 ```
 
-The JSON output includes `summary` with step counts — use this for Step 7.
-
-**For "Current Focus" updates**, fetch and edit the body separately:
-
-1. Fetch current body: `erk exec get-issue-body <issue-number>` (parse JSON to get `body` field)
-2. Update the "Current Focus" section text
-3. Update: `erk exec update-issue-body <issue-number> --body "<new-body>"`
+This runs validation checks on the objective (label, roadmap parsing, status/PR consistency, phase numbering). All checks should pass.
 
 ### Step 7: Check Closing Triggers
 
 **After updating, check if the objective should be closed.**
 
-Use the `summary` from the `objective-roadmap-update` JSON output (or run `erk exec objective-roadmap-check <objective-number>` to get fresh counts):
+Run `erk objective check <objective-number> --json-output` to get fresh counts:
 
 - `total_steps`: Total steps
 - `done` + `skipped`: Completed steps

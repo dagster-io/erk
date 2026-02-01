@@ -309,7 +309,7 @@ Once approved:
 3. **Validate the roadmap:**
 
    ```bash
-   erk exec objective-roadmap-check <issue-number>
+   erk objective check <issue-number> --json-output
    ```
    - If `validation_errors` is non-empty, fix the issue body and re-run until clean
    - Report clean validation in the success output

@@ -546,42 +546,34 @@ When implementation reveals additional scope:
 
 ## Programmatic Roadmap Operations
 
-Two exec commands provide programmatic access to roadmap parsing and mutation. These use regex-based parsing (not LLM inference) for deterministic, fast operations.
+`erk objective check` provides both human-readable validation and programmatic JSON output.
 
-### Check: Parse and Validate
+### Human-Readable Validation
 
 ```bash
-erk exec objective-roadmap-check <OBJECTIVE_NUMBER>
+erk objective check <OBJECTIVE_NUMBER>
+```
+
+Outputs `[PASS]`/`[FAIL]` per check with a summary line. Checks: erk-objective label, roadmap parsing, status/PR consistency, orphaned statuses, phase numbering.
+
+### JSON Output (Programmatic)
+
+```bash
+erk objective check <OBJECTIVE_NUMBER> --json-output
 ```
 
 Returns JSON with:
 
 | Field               | Type         | Description                                                       |
 | ------------------- | ------------ | ----------------------------------------------------------------- |
-| `success`           | boolean      | Whether parsing succeeded                                         |
+| `success`           | boolean      | Whether all checks passed                                         |
 | `issue_number`      | int          | The objective issue number                                        |
-| `title`             | string       | Issue title                                                       |
+| `checks`            | array        | List of {passed, description} for each check                      |
 | `phases`            | array        | Parsed phases with steps (id, description, status, pr)            |
 | `summary`           | object       | Counts: total_steps, pending, done, in_progress, blocked, skipped |
 | `next_step`         | object\|null | First pending step (id, description, phase)                       |
 | `validation_errors` | array        | List of parsing or format issues                                  |
 
-**Validation checks:**
+### Updating Roadmap Steps
 
-- Phase headers present (`### Phase N: Name`)
-- Table structure (`| Step | Description | Status | PR |`)
-- Letter-format step IDs warned (e.g., `1A.1` — prefer `1.1`)
-
-### Update: Mutate a Step
-
-```bash
-erk exec objective-roadmap-update <OBJECTIVE_NUMBER> --step <STEP_ID> [--status <STATUS>] [--pr <PR_REF>]
-```
-
-| Flag       | Required | Example             | Description       |
-| ---------- | -------- | ------------------- | ----------------- |
-| `--step`   | yes      | `2.1`               | Step ID to update |
-| `--status` | no       | `done`, `blocked`   | New status value  |
-| `--pr`     | no       | `#123`, `plan #456` | New PR reference  |
-
-The command regex-finds the target row, edits in place, writes back via the GitHub API, and re-runs check to validate the result.
+Agents update roadmap steps by rewriting the full objective body (whole-body update) rather than surgical per-cell mutation. The agent reads the body, edits the roadmap table directly, and writes back via `erk exec update-issue-body`.
