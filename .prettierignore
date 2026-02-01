@@ -1,3 +1,9 @@
 # Worker implementation folder - contains plan.md extracted from GitHub issues
 # which may not be prettier-formatted (written by Claude during planning)
 .worker-impl/
+
+# erkdesk Electron app build artifacts
+erkdesk/out/
+erkdesk/dist/
+erkdesk/.vite/
+erkdesk/node_modules/
