@@ -39,6 +39,7 @@ def test_upload_learn_materials_success_single_file(tmp_path: Path) -> None:
     assert output["success"] is True
     assert "gist_url" in output
     assert output["file_count"] == 1
+    assert output["total_size"] > 0
 
     # Verify gist was created
     assert len(fake_github.created_gists) == 1
