@@ -114,34 +114,14 @@ gh workflow run learn.yml -f issue_number=<issue_number> -f gist_url=<gist_url>
 
 The command uses a shared helper for subprocess execution with JSON output capture:
 
+**Source**: `src/erk/cli/commands/exec/scripts/trigger_async_learn.py:82-108`
+
 ```python
-def _run_subprocess(cmd: list[str], *, description: str) -> dict[str, object]:
-    """Run subprocess, capture stdout JSON, check exit code.
-
-    Args:
-        cmd: Command to run (list of strings)
-        description: Human-readable description for error messages
-
-    Returns:
-        Parsed JSON from stdout
-
-    Raises:
-        SystemExit: On subprocess failure (outputs error JSON and exits)
-    """
-    click.echo(f"[trigger-async-learn] {description}...", err=True)
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-
-    if result.returncode != 0:
-        error_msg = f"{description} failed: {result.stderr.strip() or result.stdout.strip()}"
-        _output_error(error_msg)
-
-    if not result.stdout.strip():
-        _output_error(f"{description} returned empty output")
-
-    try:
-        return json.loads(result.stdout)
-    except json.JSONDecodeError as e:
-        _output_error(f"{description} returned invalid JSON: {e}")
+# Key pattern (see source for full implementation):
+result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+# Validates exit code, non-empty stdout, and JSON parsing
+# Calls _output_error() on any failure (which raises SystemExit)
+return json.loads(result.stdout)
 ```
 
 **Pattern features**:
