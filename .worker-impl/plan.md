@@ -4,11 +4,11 @@
 
 ## Source Plans
 
-| #    | Title                                                                | Items Merged |
-| ---- | -------------------------------------------------------------------- | ------------ |
-| 6455 | [erk-learn] Plan #6449 - Collapsible Sections in PR Bodies           | 3 items      |
+| #    | Title                                                                 | Items Merged |
+| ---- | --------------------------------------------------------------------- | ------------ |
+| 6455 | [erk-learn] Plan #6449 - Collapsible Sections in PR Bodies            | 3 items      |
 | 6456 | [erk-learn] Token Optimization and Workflow Patterns from /erk:replan | 7 items      |
-| 6457 | [erk-learn] Scaffold erkdesk as pnpm Project                         | 7 items      |
+| 6457 | [erk-learn] Scaffold erkdesk as pnpm Project                          | 7 items      |
 
 ## What Changed Since Original Plans
 
@@ -45,6 +45,7 @@
 **File:** `docs/learned/pr-operations/plan-embedding-in-pr.md`
 
 **Changes:**
+
 - Update code example to include `## Implementation Plan` markdown header before `<details>` tag
 - Document the two-target body pattern: `pr_body` (plain for git commits) vs `pr_body_for_github` (HTML for GitHub)
 - Add reference to `_build_plan_details_section()` at `src/erk/cli/commands/pr/submit_pipeline.py:587-601`
@@ -57,6 +58,7 @@
 **File:** `docs/learned/pr-operations/template-synchronization.md`
 
 **Content outline:**
+
 1. Two synchronized files must be byte-identical:
    - `packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md`
    - `.claude/skills/erk-diff-analysis/references/commit-message-prompt.md`
@@ -71,6 +73,7 @@
 **File:** `docs/learned/pr-operations/pr-validation-rules.md`
 
 **Content outline:**
+
 1. `has_checkout_footer_for_pr()`: regex `rf"erk pr checkout {pr_number}\b"` at `packages/erk-shared/src/erk_shared/gateway/pr/submit.py:25-38`
 2. `has_issue_closing_reference()`: regex `rf"Closes\s+#{issue_number}\b"` (same-repo) or `rf"Closes\s+{escaped_repo}#{issue_number}\b"` (cross-repo)
 3. Both use word boundary `\b` and case-insensitive matching
@@ -86,7 +89,8 @@
 **File:** `docs/learned/planning/token-optimization-patterns.md`
 
 **Content outline:**
-1. Problem: Consolidation with N issues creates N * plan_size tokens in parent context
+
+1. Problem: Consolidation with N issues creates N \* plan_size tokens in parent context
 2. Pattern: Delegate content fetching to child Explore agents (each fetches its own plan)
 3. Implementation reference: `.claude/commands/erk/replan.md` Step 3 → Step 4a
 4. Result: Parent context O(1) instead of O(n) for plan content
@@ -99,6 +103,7 @@
 **File:** `docs/learned/ci/git-force-push-decision-tree.md`
 
 **Content outline:**
+
 1. When `git push` fails with "fetch first":
    - Check `git log origin/branch..HEAD` (outgoing commits)
    - Check `git log HEAD..origin/branch` (incoming commits)
@@ -113,6 +118,7 @@
 **File:** `docs/learned/commands/step-renumbering-checklist.md`
 
 **Content outline:**
+
 1. When merging/removing steps in slash commands: renumber all subsequent steps
 2. Update all cross-references ("See Step 4b" must match actual step numbers)
 3. Check both forward and backward references
@@ -125,6 +131,7 @@
 **File:** `docs/learned/planning/metadata-block-fallback.md`
 
 **Content outline:**
+
 1. Primary: Look for `<!-- erk:metadata-block:plan-body -->` in first comment
 2. Fallback: Check issue body directly (handles older issues like #6431)
 3. Implementation: `.claude/commands/erk/replan.md` Step 4a
@@ -137,6 +144,7 @@
 **File:** `docs/learned/commands/session-id-substitution.md`
 
 **Content outline:**
+
 1. In skills/commands: Use `${CLAUDE_SESSION_ID}` string substitution (since Claude Code 2.1.9)
 2. In hooks: Session ID comes via stdin JSON, NOT environment variables
 3. When generating commands for Claude from hooks: interpolate the actual value
@@ -149,6 +157,7 @@
 **File:** `docs/learned/ci/commit-squash-divergence.md`
 
 **Content outline:**
+
 1. After `gt submit` squashes multiple commits, branch diverges from remote - this is EXPECTED
 2. `git push` will fail with "fetch first" - this is NOT an error
 3. Safe response: force push (no incoming commits from others)
@@ -163,6 +172,7 @@
 **File:** `docs/learned/desktop-dash/erkdesk-project-structure.md`
 
 **Content outline:**
+
 1. Directory layout: `erkdesk/` with `src/main/`, `src/renderer/`, config files
 2. Standalone pnpm project (NOT a pnpm workspace)
 3. Three Vite build targets: main (Node.js), preload (bridge), renderer (React)
@@ -176,6 +186,7 @@
 **File:** `docs/learned/desktop-dash/pnpm-hoisting-pattern.md`
 
 **Content outline:**
+
 1. `.npmrc` with `node-linker = hoisted` is REQUIRED for Electron
 2. Without it: Electron crashes with cryptic errors (silent failure)
 3. Default pnpm symlink structure incompatible with Electron module resolution
@@ -188,6 +199,7 @@
 **File:** `docs/learned/desktop-dash/forge-vite-setup.md`
 
 **Content outline:**
+
 1. `forge.config.ts` defines three VitePlugin build entries
 2. `vite.main.config.ts`: Node.js target, ESM module resolution
 3. `vite.preload.config.ts`: External electron, minimal bundle
@@ -201,6 +213,7 @@
 **File:** `docs/learned/desktop-dash/main-process-startup.md`
 
 **Content outline:**
+
 1. `createWindow()` function with security defaults: `contextIsolation: true`, `nodeIntegration: false`
 2. HMR-aware loading: dev server URL vs production file path
 3. DevTools auto-open in development only
@@ -214,6 +227,7 @@
 **File:** `docs/learned/desktop-dash/preload-bridge-patterns.md`
 
 **Content outline:**
+
 1. `contextBridge.exposeInMainWorld("erkdesk", {...})` pattern
 2. Currently exposes only version string; reserved for future IPC methods
 3. No TypeScript type definitions yet for `window.erkdesk`
@@ -227,6 +241,7 @@
 #### Step 15: Update category index files
 
 **Files to update:**
+
 - `docs/learned/pr-operations/index.md` - Add entries for template-synchronization.md, pr-validation-rules.md
 - `docs/learned/planning/index.md` - Add entries for token-optimization-patterns.md, metadata-block-fallback.md
 - `docs/learned/ci/index.md` - Add entries for git-force-push-decision-tree.md, commit-squash-divergence.md
@@ -238,6 +253,7 @@
 #### Step 16: Add tripwires to category tripwire files
 
 **New tripwires:**
+
 - `docs/learned/pr-operations/tripwires.md` (create if not exists): Template sync requirement
 - `docs/learned/planning/tripwires.md`: Token optimization delegation pattern
 - `docs/learned/ci/tripwires.md`: Force push decision tree

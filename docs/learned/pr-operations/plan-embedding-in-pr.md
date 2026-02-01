@@ -39,6 +39,8 @@ def _build_plan_details_section(plan_context: PlanContext) -> str:
     issue_num = plan_context.issue_number
     parts = [
         "",
+        "## Implementation Plan",
+        "",
         "<details>",
         f"<summary><strong>Implementation Plan</strong> (Issue #{issue_num})</summary>",
         "",
@@ -49,7 +51,7 @@ def _build_plan_details_section(plan_context: PlanContext) -> str:
     return "\n".join(parts)
 ```
 
-**Location**: `src/erk/cli/commands/pr/submit_pipeline.py:587-599`
+**Location**: `src/erk/cli/commands/pr/submit_pipeline.py:587-601`
 
 ### Integration in `finalize_pr()`
 
@@ -68,13 +70,22 @@ metadata_section = build_pr_body_footer(
 final_body = pr_body_for_github + metadata_section
 ```
 
-**Location**: `src/erk/cli/commands/pr/submit_pipeline.py:633-644`
+**Location**: `src/erk/cli/commands/pr/submit_pipeline.py:635-646`
+
+The two-target body pattern is clearly visible here:
+
+- `pr_body` - Plain text used for git commit messages (no HTML plan embedding)
+- `pr_body_for_github` - Enhanced with plan embedding for GitHub PR body only
+
+This ensures that plan content appears in the GitHub UI for reviewers but never pollutes the git commit history. The test at `tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:291-294` verifies this separation.
 
 ## HTML Structure
 
 The generated HTML follows this pattern:
 
 ```html
+## Implementation Plan
+
 <details>
   <summary><strong>Implementation Plan</strong> (Issue #1234)</summary>
 
