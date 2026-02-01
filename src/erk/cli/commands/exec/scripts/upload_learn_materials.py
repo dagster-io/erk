@@ -108,5 +108,6 @@ def upload_learn_materials(
         "success": True,
         "gist_url": gist_result.gist_url,
         "file_count": len(files),
+        "total_size": len(combined_content),
     }
     click.echo(json.dumps(result))

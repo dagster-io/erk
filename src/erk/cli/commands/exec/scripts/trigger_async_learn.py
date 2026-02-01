@@ -28,7 +28,8 @@ Examples:
 import json
 import subprocess
 from dataclasses import asdict, dataclass
-from typing import NoReturn, cast
+from pathlib import Path
+from typing import Any, NoReturn, cast
 
 import click
 
@@ -120,6 +121,9 @@ def _run_preprocess_session(cmd: list[str], *, description: str) -> list[str]:
     preprocess-session outputs file paths (one per line) to stdout,
     or empty stdout when a session is filtered (empty/warmup).
 
+    Stderr from the subprocess (e.g. compression stats) is forwarded
+    with the [trigger-async-learn] prefix for diagnostic visibility.
+
     Args:
         cmd: Command to run (list of strings)
         description: Human-readable description for error messages
@@ -132,6 +136,11 @@ def _run_preprocess_session(cmd: list[str], *, description: str) -> list[str]:
     """
     click.echo(f"[trigger-async-learn] {description}...", err=True)
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+
+    # Forward stderr diagnostics (e.g. compression stats) with prefix
+    if result.stderr and result.stderr.strip():
+        for line in result.stderr.strip().splitlines():
+            click.echo(f"[trigger-async-learn]   {line}", err=True)
 
     if result.returncode != 0:
         error_msg = f"{description} failed: {result.stderr.strip() or result.stdout.strip()}"
@@ -191,6 +200,34 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         _output_error("Invalid session_sources format - expected list")
         return
 
+    # Diagnostic: log session source summary
+    planning_session_id = sessions_result.get("planning_session_id")
+    source_count = len(session_sources)
+    planning_count = 0
+    for s in session_sources:
+        if not isinstance(s, dict):
+            continue
+        item: Any = s
+        if item.get("session_id") == planning_session_id:  # type: ignore
+            planning_count += 1
+    impl_count = source_count - planning_count
+    click.echo(
+        f"[trigger-async-learn] Found {source_count} session source(s)"
+        f" ({planning_count} planning, {impl_count} impl)",
+        err=True,
+    )
+    for source_item in session_sources:
+        if not isinstance(source_item, dict):
+            continue
+        item_any: Any = source_item
+        sid = item_any.get("session_id", "unknown")  # type: ignore
+        source_type = item_any.get("source_type", "unknown")  # type: ignore
+        prefix = "planning" if sid == planning_session_id else "impl"
+        click.echo(
+            f"[trigger-async-learn]   {prefix}: {sid} ({source_type})",
+            err=True,
+        )
+
     # Step 2: Create learn materials directory
     learn_dir = repo_root / ".erk" / "scratch" / f"learn-{issue_number}"
     learn_dir.mkdir(parents=True, exist_ok=True)
@@ -230,10 +267,20 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
 
         if not output_paths:
             click.echo(
-                "[trigger-async-learn] Session filtered (empty/warmup), skipping",
+                "[trigger-async-learn]   Session filtered (empty/warmup), skipping",
                 err=True,
             )
             continue
+
+        # Diagnostic: log output file sizes
+        for output_path in output_paths:
+            output_file = Path(output_path)
+            if output_file.exists():
+                char_count = len(output_file.read_text(encoding="utf-8"))
+                click.echo(
+                    f"[trigger-async-learn]   Output: {output_file.name} ({char_count:,} chars)",
+                    err=True,
+                )
 
     # Step 4: Get PR for plan (if exists) and fetch review comments
     pr_result = _run_subprocess(
@@ -302,7 +349,13 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         _output_error("Upload succeeded but no gist_url in response")
         return
 
-    click.echo(f"[trigger-async-learn] Gist created: {gist_url}", err=True)
+    file_count = upload_result.get("file_count", 0)
+    total_size = upload_result.get("total_size", 0)
+    click.echo(
+        f"[trigger-async-learn] Gist created: {gist_url}"
+        f" ({file_count} file(s), {total_size:,} chars)",
+        err=True,
+    )
 
     # Step 6: Trigger the learn workflow with gist_url
     workflow_inputs: dict[str, str] = {
