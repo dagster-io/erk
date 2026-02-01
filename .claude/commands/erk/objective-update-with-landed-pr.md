@@ -18,7 +18,7 @@ Run after landing a PR:
 
 ## Agent Instructions
 
-### Step 0: Parse Arguments (if provided)
+### Step 0: Parse Arguments and Fetch All Context
 
 Check `$ARGUMENTS` for pre-provided context:
 
@@ -27,72 +27,40 @@ Check `$ARGUMENTS` for pre-provided context:
 - `--branch <name>`: Original branch name (contains plan issue number in `P<number>-...` pattern)
 - `--auto-close`: If set and all steps are complete, close objective without asking
 
-**If all arguments are provided:** Use them directly. Parse the plan issue number from the branch name pattern to get implementation details. Skip Steps 1 and 4 (discovery steps).
-
-**If arguments are not provided:** Continue with Steps 1 and 4 to discover from git state (manual invocation case).
-
-### Step 1: Get Current Branch and Find Parent Objective
-
-**Skip this step if `--objective` was provided in arguments.**
+**If all three data arguments are provided**, fetch everything in one call:
 
 ```bash
-git branch --show-current
+erk exec objective-update-context --pr <number> --objective <number> --branch <name>
 ```
 
-Parse the plan issue number from the branch name pattern `P<number>-...`
+This returns a single JSON blob with `{success, objective, plan, pr}` containing all issue bodies and PR details needed for the update. Parse and store the result.
 
-Example: `P3679-phase-1b-implement-fakes` -> Plan Issue #3679
+**If arguments are not provided**, discover from git state:
 
-**Important:** The branch pattern `P<number>-...` points to an **erk-plan** issue, not the objective. After getting the plan issue number:
+1. Get current branch: `git branch --show-current`
+2. Parse plan issue number from branch pattern `P<number>-...`
+3. Ask user for objective number if not discoverable
+4. Find merged PR: `gh pr list --state merged --head <branch-name> --limit 1 --json number,title,url`
+5. Then run `erk exec objective-update-context` with the discovered values
 
-1. Read the plan issue: `erk exec get-issue-body <plan-number>` (returns JSON with body)
-2. Find the parent objective reference (look for "Objective: #XXXX" or "[#XXXX]" link in the body)
-3. Use the objective issue number for all subsequent steps
+If the branch doesn't match the pattern or no merged PR is found, ask the user for the missing information.
 
-If the branch doesn't match the pattern:
-
-1. Ask the user for the objective issue number
-2. Use AskUserQuestion tool with options like "#3679", "#3680", or "Other"
-
-If the plan issue has no objective reference, ask the user which objective to update.
-
-### Step 2: Load Objective Skill
+### Step 1: Load Objective Skill
 
 Load the `objective` skill for format templates and guidelines.
 
-### Step 3: Read Current Objective State
+### Step 2: Analyze Context and Compose Updates
 
-```bash
-erk exec get-issue-body <issue-number>
-```
-
-This returns JSON with `{success, issue_number, title, body, labels, url}`. Analyze the objective body to identify:
+Using the data from Step 0, analyze the objective body to identify:
 
 - Current roadmap structure (phases and steps)
 - Which phase/steps this PR likely completed
 - Current status of all steps
 - What "Current Focus" says
 
-### Step 4: Get PR Information
+Then compose both updates:
 
-**Skip this step if `--pr` was provided in arguments.**
-
-Find the most recently merged PR for this branch:
-
-```bash
-gh pr list --state merged --head <branch-name> --limit 1 --json number,title,url
-```
-
-If no merged PR is found:
-
-- Ask user if they want to specify a PR number
-- Or proceed without PR reference
-
-### Step 5: Post Action Comment
-
-Post an action comment using the objective skill template.
-
-**Template:**
+**Action Comment** (using objective skill template):
 
 ```markdown
 ## Action: [Brief title - what was accomplished]
@@ -119,22 +87,10 @@ Post an action comment using the objective skill template.
 
 - **What Was Done:** Infer from PR title, PR description, and commit messages. The plan issue body contains the implementation plan with specific steps - use this to understand what was accomplished.
 - **Lessons Learned:** Infer from implementation patterns, architectural decisions made, or any non-obvious approaches taken. If the implementation was straightforward with no surprises, note what pattern worked well.
-- Be concrete and specific based on available context
 
-Use:
+**Updated Objective Body:**
 
-```bash
-gh issue comment <issue-number> --body "$(cat <<'EOF'
-[action comment content]
-EOF
-)"
-```
-
-### Step 6: Update Objective Body (Whole-Body Update)
-
-After posting the action comment, update the objective body directly. Since you already have the body from Step 3, make all changes in a single pass.
-
-**For each completed step**, edit the roadmap table row in the body text:
+For each completed step, edit the roadmap table row:
 
 1. Set the PR cell to `#<pr-number>` for the completed step
 2. Set the Status cell to `-` (inference determines status from PR column)
@@ -147,41 +103,37 @@ After posting the action comment, update the objective body directly. Since you 
 - Step has no PR → Status stays as-is (inferred as `pending`)
 - `blocked`/`skipped` in Status column are explicit overrides — only change if you know the blocker is resolved
 
-**Also update "Current Focus"** in the same pass — advance it to describe the next pending step or next phase of work.
+Also update "Current Focus" to describe the next pending step or next phase of work.
 
-**Description update guidelines:**
+### Step 3: Execute Both Writes in Parallel
 
-- Keep descriptions concise — match the style of other steps in the roadmap
-- Focus on what was actually implemented, not what was originally planned
-- Update when: command names changed, scope shifted, or approach diverged from plan
-- Don't update for minor wording differences or when the PR title is just more detailed
-
-**Write the updated body:**
+Execute the action comment and body update in parallel:
 
 ```bash
+# Post action comment
+gh issue comment <issue-number> --body "$(cat <<'EOF'
+[action comment content]
+EOF
+)"
+```
+
+```bash
+# Update objective body
 erk exec update-issue-body <issue-number> --body "$(cat <<'BODY_EOF'
 <full updated body text>
 BODY_EOF
 )"
 ```
 
-**After writing, validate the update:**
+### Step 4: Validate and Check Closing Triggers
+
+Run validation and closing check in one call:
 
 ```bash
-erk objective check <objective-number>
+erk objective check <objective-number> --json-output
 ```
 
-This runs validation checks on the objective (label, roadmap parsing, status/PR consistency, phase numbering). All checks should pass.
-
-### Step 7: Check Closing Triggers
-
-**After updating, check if the objective should be closed.**
-
-Run `erk objective check <objective-number> --json-output` to get fresh counts:
-
-- `total_steps`: Total steps
-- `done` + `skipped`: Completed steps
-- `pending` + `blocked` + `in_progress`: Remaining steps
+This returns counts: `total_steps`, `done`, `skipped`, `pending`, `blocked`, `in_progress`.
 
 **If ALL steps are `done` or `skipped`:**
 
@@ -216,8 +168,7 @@ Report the update is done and what the next focus should be.
 ## Output Format
 
 - **Start:** "Updating objective #<number> after landing PR #<pr-number>"
-- **After action comment:** "Posted action comment to #<number>"
-- **After body update:** "Updated objective body - marked step X.Y as done"
+- **After writes:** "Posted action comment and updated objective body for #<number>"
 - **End:** Either "Objective #<number> closed" or "Objective updated. Next focus: [next action]"
 - **Always:** Display the objective URL: `https://github.com/<owner>/<repo>/issues/<number>`
 
@@ -232,12 +183,3 @@ Report the update is done and what the next focus should be.
 | No merged PR found                 | Ask if user wants to specify a PR number     |
 | Issue not found                    | Report error and exit                        |
 | Issue has no `erk-objective` label | Warn user this may not be an objective issue |
-
----
-
-## Important Notes
-
-- **Two-step workflow:** Always post action comment FIRST, then update body
-- **Lessons are mandatory:** Every action comment must include lessons learned
-- **Be specific:** "Fixed auth flow" not "Made improvements"
-- **Check closing triggers:** Don't let objectives linger in "ready to close" state

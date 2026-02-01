@@ -55,6 +55,7 @@ Quick reference for all `erk exec` subcommands.
 | `marker exists`                   | Check if a marker file exists.                                            |
 | `marker read`                     | Read content from a marker file.                                          |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                      |
+| `objective-update-context`        | Fetch all context for objective update in a single call.                  |
 | `plan-create-review-branch`       | Create a plan review branch and push to remote.                           |
 | `plan-create-review-pr`           | Create a draft PR for plan review and update plan metadata.               |
 | `plan-review-complete`            | Close a plan review PR without merging.                                   |
@@ -715,6 +716,20 @@ Save plan as objective GitHub issue.
 | -------------- | ------ | -------- | ------- | --------------------------------------------------------- |
 | `--format`     | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text) |
 | `--session-id` | TEXT   | No       | -       | Session ID for scoped plan lookup                         |
+
+### objective-update-context
+
+Fetch all context for objective update in a single call.
+
+**Usage:** `erk exec objective-update-context`
+
+**Options:**
+
+| Flag          | Type    | Required | Default        | Description     |
+| ------------- | ------- | -------- | -------------- | --------------- |
+| `--pr`        | INTEGER | Yes      | Sentinel.UNSET | PR number       |
+| `--objective` | INTEGER | Yes      | Sentinel.UNSET | Objective issue |
+| `--branch`    | TEXT    | Yes      | Sentinel.UNSET | Branch name     |
 
 ### plan-create-review-branch
 
