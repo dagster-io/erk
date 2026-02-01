@@ -9,6 +9,7 @@
 **Switch from `run_ssh_command` to `exec_ssh_interactive`** in the codespace run wrapper.
 
 `exec_ssh_interactive` already:
+
 - Allocates a pseudo-TTY (`-t` flag)
 - Replaces the current process via `os.execvp` (so output streams directly)
 
