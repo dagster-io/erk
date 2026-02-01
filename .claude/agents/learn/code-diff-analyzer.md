@@ -40,6 +40,7 @@ You receive:
    - New gateway methods (ABC additions)
    - New exec scripts
    - Config changes
+   - Source locations for documentation pointers: for each item, note exact file path and line range for downstream source pointers
 
 4. **For each inventory item, assess documentation need:**
    - Does this need docs? (Almost always yes for new features)
@@ -61,9 +62,9 @@ STATS: +<additions> -<deletions> files: <count>
 | ...  | ...  | Yes/No              | ...      |
 
 ### New Functions/Classes
-| Name | File | Documentation Needed | Location |
-|------|------|---------------------|----------|
-| ...  | ...  | Yes/No              | ...      |
+| Name | File | Line Range | Documentation Needed | Location |
+|------|------|-----------|---------------------|----------|
+| ...  | ...  | ...       | Yes/No              | ...      |
 
 ### New CLI Commands
 | Command | File | Documentation Needed |
@@ -88,8 +89,18 @@ Skip documentation: <N> (with reasons)
 
 ## Recommended Documentation Items
 
-1. **<item>** → <location>: <what to document>
+1. **<item>** → <location>: <what to document> (source: path/to/file.py:LINE-LINE)
 2. ...
+
+## Source Pointer Awareness
+
+Every inventory item MUST include the exact source file path and line range. This enables downstream agents to create documentation with source pointers instead of verbatim code blocks.
+
+For each new function, class, CLI command, or gateway method, note:
+- Full file path (e.g., `src/erk/planning/plan_manager.py`)
+- Line range where the item is defined (e.g., `145-178`)
+
+See `docs/learned/documentation/source-pointers.md` for the two-part pattern used in documentation.
 ```
 
 Note: "Self-documenting code" is NOT a valid reason to skip. Document context, not just code.
