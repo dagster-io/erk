@@ -105,7 +105,9 @@ def _download_gist_raw_content(gist_id: str) -> str:
             last_error = e
 
     # All URLs failed — raise the last error
-    raise last_error  # type: ignore[misc]
+    # last_error is guaranteed non-None since candidate_urls is non-empty
+    assert last_error is not None
+    raise last_error
 
 
 @click.command(name="download-learn-materials")
