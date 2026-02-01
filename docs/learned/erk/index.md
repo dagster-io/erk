@@ -4,6 +4,7 @@
 # Erk Documentation
 
 - **[branch-cleanup.md](branch-cleanup.md)** — cleaning up branches, removing dormant worktrees, managing branch lifecycle
+- **[branch-naming-conventions.md](branch-naming-conventions.md)** — creating branches programmatically, implementing plan workflows, working with Graphite (gt) integration, debugging branch creation or naming issues, implementing automated branch creation
 - **[codespace-remote-execution.md](codespace-remote-execution.md)** — implementing remote command execution on codespaces, working with streaming command output on codespaces, debugging codespace remote execution failures, adding new erk commands that run remotely
 - **[graphite-branch-setup.md](graphite-branch-setup.md)** — submitting a PR with Graphite, encountering no_parent error, setting up branch tracking for gt
 - **[issue-pr-linkage-storage.md](issue-pr-linkage-storage.md)** — understanding how plans link to PRs, debugging why a PR isn't linked to its issue, working with .impl/issue.json, creating PRs that close issues

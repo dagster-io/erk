@@ -14,6 +14,7 @@
 - **[codespace-patterns.md](codespace-patterns.md)** — implementing CLI commands that use codespaces, working with resolve_codespace() helper, handling codespace name resolution errors
 - **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
+- **[command-specification.md](command-specification.md)** — creating or editing slash commands, modifying files in .claude/commands/, seeing CI failures related to Prettier, writing command documentation, updating command prompts or instructions
 - **[pr-summarize.md](pr-summarize.md)** — generating PR descriptions for existing PRs, updating PR body with plan context, understanding pr summarize vs pr submit
 - **[pr-sync-divergence.md](pr-sync-divergence.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, syncing local branch with remote tracking branch
 - **[update-roadmap-step.md](update-roadmap-step.md)** — working with objective roadmap tables, updating step PR references, implementing plan-save workflow

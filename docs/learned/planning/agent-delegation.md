@@ -727,6 +727,48 @@ Found 42 commits since last sync.
 
 **Reference:** `.claude/agents/changelog/commit-categorizer.md` for canonical implementation.
 
+## CI Environment Detection for Batch vs Interactive
+
+**When to use:** Workflows that should behave differently in CI (batch/automated) vs interactive sessions.
+
+**Pattern:** Check CI environment variables early in workflow, adjust behavior accordingly.
+
+**Example use case:** The learn workflow auto-submits in CI but prompts for confirmation in interactive sessions.
+
+**Detection:**
+
+```python
+import os
+
+def is_ci_environment() -> bool:
+    """Detect if running in CI environment."""
+    return any([
+        os.getenv("CI") == "true",
+        os.getenv("GITHUB_ACTIONS") == "true",
+        os.getenv("CONTINUOUS_INTEGRATION") == "true"
+    ])
+```
+
+**Workflow adaptation:**
+
+```python
+if is_ci_environment():
+    # Batch mode: Auto-submit without confirmation
+    submit_plan_immediately()
+else:
+    # Interactive mode: Prompt user for confirmation
+    if confirm_with_user():
+        submit_plan()
+```
+
+**Key benefits:**
+
+- Same workflow code works in both CI and interactive contexts
+- No user interaction required in CI (prevents hanging)
+- User retains control in interactive sessions
+
+**Reference:** Used in learn workflow for CI-aware execution, enabling automated documentation updates in GitHub Actions.
+
 ## Agent Discovery
 
 ### Finding Available Agents
