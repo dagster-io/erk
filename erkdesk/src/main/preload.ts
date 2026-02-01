@@ -1,10 +1,12 @@
-import { contextBridge } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
+import type { WebViewBounds } from "../types/erkdesk";
 
-// Expose protected methods that allow the renderer process to use
-// the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld("erkdesk", {
   version: "0.1.0",
-  // Future IPC methods will go here:
-  // - fetchDashData()
-  // - executeCommand()
+  updateWebViewBounds: (bounds: WebViewBounds) => {
+    ipcRenderer.send("webview:update-bounds", bounds);
+  },
+  loadWebViewURL: (url: string) => {
+    ipcRenderer.send("webview:load-url", url);
+  },
 });
