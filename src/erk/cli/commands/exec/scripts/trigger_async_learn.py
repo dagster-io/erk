@@ -29,7 +29,7 @@ import json
 import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, NoReturn, cast
+from typing import NoReturn, cast
 
 import click
 
@@ -206,8 +206,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
     for s in session_sources:
         if not isinstance(s, dict):
             continue
-        item: Any = s
-        if item.get("session_id") == planning_session_id:  # type: ignore
+        if s.get("session_id") == planning_session_id:
             planning_count += 1
     click.echo(
         f"[trigger-async-learn] Found {len(session_sources)} session source(s)"
@@ -217,9 +216,8 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
     for source_item in session_sources:
         if not isinstance(source_item, dict):
             continue
-        item_any: Any = source_item
-        sid = item_any.get("session_id", "unknown")  # type: ignore
-        source_type = item_any.get("source_type", "unknown")  # type: ignore
+        sid = source_item.get("session_id", "unknown")
+        source_type = source_item.get("source_type", "unknown")
         prefix = "planning" if sid == planning_session_id else "impl"
         click.echo(
             f"[trigger-async-learn]   {prefix}: {sid} ({source_type})",
