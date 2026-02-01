@@ -2,12 +2,15 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { PlanRow } from "../../types/erkdesk";
 import "./PlanList.css";
 
+const REFRESH_INTERVAL_MS = 15_000;
+
 const PlanList: React.FC = () => {
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
+  const lastLoadedUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     window.erkdesk.fetchPlans().then((result) => {
@@ -21,6 +24,27 @@ const PlanList: React.FC = () => {
       }
       setLoading(false);
     });
+  }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      window.erkdesk.fetchPlans().then((result) => {
+        if (!result.success) return;
+        setPlans((prevPlans) => {
+          const newPlans = result.plans;
+          setSelectedIndex((prevIndex) => {
+            const previousIssueNumber = prevPlans[prevIndex]?.issue_number;
+            if (previousIssueNumber === undefined) return 0;
+            const newIndex = newPlans.findIndex(
+              (p) => p.issue_number === previousIssueNumber,
+            );
+            return newIndex >= 0 ? newIndex : 0;
+          });
+          return newPlans;
+        });
+      });
+    }, REFRESH_INTERVAL_MS);
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleKeyDown = useCallback(
@@ -54,7 +78,8 @@ const PlanList: React.FC = () => {
     if (selectedIndex < 0 || selectedIndex >= plans.length) return;
     const plan = plans[selectedIndex];
     const url = plan.pr_url ?? plan.issue_url;
-    if (url) {
+    if (url && url !== lastLoadedUrlRef.current) {
+      lastLoadedUrlRef.current = url;
       window.erkdesk.loadWebViewURL(url);
     }
   }, [selectedIndex, plans]);

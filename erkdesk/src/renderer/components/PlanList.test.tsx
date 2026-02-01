@@ -336,6 +336,245 @@ describe("PlanList", () => {
     });
   });
 
+  describe("auto-refresh", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("updates plans after refresh interval", async () => {
+      const initialPlans = [makePlan({ issue_number: 1, title: "Initial" })];
+      const refreshedPlans = [
+        makePlan({ issue_number: 1, title: "Updated" }),
+        makePlan({ issue_number: 2, title: "New Plan" }),
+      ];
+
+      vi.mocked(window.erkdesk.fetchPlans)
+        .mockResolvedValueOnce({ success: true, plans: initialPlans, count: 1 })
+        .mockResolvedValueOnce({
+          success: true,
+          plans: refreshedPlans,
+          count: 2,
+        });
+
+      render(<PlanList />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Initial")).toBeInTheDocument();
+      });
+
+      await vi.advanceTimersByTimeAsync(15_000);
+
+      await waitFor(() => {
+        expect(screen.getByText("Updated")).toBeInTheDocument();
+      });
+      expect(screen.getByText("New Plan")).toBeInTheDocument();
+    });
+
+    it("preserves selection by issue_number after refresh", async () => {
+      const initialPlans = [
+        makePlan({ issue_number: 10, title: "Alpha" }),
+        makePlan({ issue_number: 20, title: "Beta" }),
+      ];
+      // After refresh, order is reversed
+      const refreshedPlans = [
+        makePlan({ issue_number: 20, title: "Beta" }),
+        makePlan({ issue_number: 10, title: "Alpha" }),
+      ];
+
+      vi.mocked(window.erkdesk.fetchPlans)
+        .mockResolvedValueOnce({
+          success: true,
+          plans: initialPlans,
+          count: 2,
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          plans: refreshedPlans,
+          count: 2,
+        });
+
+      render(<PlanList />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Alpha")).toBeInTheDocument();
+      });
+
+      // First row (issue 10) is selected by default
+      const rowsBefore = screen.getAllByRole("row").slice(1);
+      expect(rowsBefore[0]).toHaveClass("plan-list__row--selected");
+
+      await vi.advanceTimersByTimeAsync(15_000);
+
+      await waitFor(() => {
+        // After refresh, issue 10 is now at index 1
+        const rowsAfter = screen.getAllByRole("row").slice(1);
+        expect(rowsAfter[1]).toHaveClass("plan-list__row--selected");
+        expect(rowsAfter[0]).not.toHaveClass("plan-list__row--selected");
+      });
+    });
+
+    it("falls back to index 0 when selected plan removed", async () => {
+      const initialPlans = [
+        makePlan({ issue_number: 10, title: "Alpha" }),
+        makePlan({ issue_number: 20, title: "Beta" }),
+      ];
+      // After refresh, issue 10 is gone
+      const refreshedPlans = [
+        makePlan({ issue_number: 20, title: "Beta" }),
+        makePlan({ issue_number: 30, title: "Gamma" }),
+      ];
+
+      vi.mocked(window.erkdesk.fetchPlans)
+        .mockResolvedValueOnce({
+          success: true,
+          plans: initialPlans,
+          count: 2,
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          plans: refreshedPlans,
+          count: 2,
+        });
+
+      render(<PlanList />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Alpha")).toBeInTheDocument();
+      });
+
+      // Issue 10 selected by default
+      const rowsBefore = screen.getAllByRole("row").slice(1);
+      expect(rowsBefore[0]).toHaveClass("plan-list__row--selected");
+
+      await vi.advanceTimersByTimeAsync(15_000);
+
+      await waitFor(() => {
+        // Issue 10 gone, should fall back to index 0 (Beta)
+        const rowsAfter = screen.getAllByRole("row").slice(1);
+        expect(rowsAfter[0]).toHaveClass("plan-list__row--selected");
+      });
+    });
+
+    it("errors during refresh don't replace data", async () => {
+      const initialPlans = [makePlan({ issue_number: 1, title: "Keeper" })];
+
+      vi.mocked(window.erkdesk.fetchPlans)
+        .mockResolvedValueOnce({
+          success: true,
+          plans: initialPlans,
+          count: 1,
+        })
+        .mockResolvedValueOnce({
+          success: false,
+          plans: [],
+          count: 0,
+          error: "Network error",
+        });
+
+      render(<PlanList />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Keeper")).toBeInTheDocument();
+      });
+
+      await vi.advanceTimersByTimeAsync(15_000);
+
+      // Data should still be there
+      await waitFor(() => {
+        expect(screen.getByText("Keeper")).toBeInTheDocument();
+      });
+      // Should not show error state
+      expect(screen.queryByText(/Error:/)).not.toBeInTheDocument();
+    });
+
+    it("URL not reloaded when selected plan unchanged", async () => {
+      const plans = [
+        makePlan({
+          issue_number: 1,
+          title: "Same",
+          issue_url: "https://github.com/org/repo/issues/1",
+        }),
+      ];
+
+      vi.mocked(window.erkdesk.fetchPlans)
+        .mockResolvedValueOnce({ success: true, plans, count: 1 })
+        .mockResolvedValueOnce({ success: true, plans, count: 1 });
+
+      render(<PlanList />);
+
+      await waitFor(() => {
+        expect(window.erkdesk.loadWebViewURL).toHaveBeenCalledWith(
+          "https://github.com/org/repo/issues/1",
+        );
+      });
+
+      vi.mocked(window.erkdesk.loadWebViewURL).mockClear();
+
+      await vi.advanceTimersByTimeAsync(15_000);
+
+      // Wait for refresh to settle
+      await waitFor(() => {
+        expect(window.erkdesk.fetchPlans).toHaveBeenCalledTimes(2);
+      });
+
+      // URL should NOT be reloaded since it hasn't changed
+      expect(window.erkdesk.loadWebViewURL).not.toHaveBeenCalled();
+    });
+
+    it("URL updated when selected plan's URL changes", async () => {
+      const initialPlans = [
+        makePlan({
+          issue_number: 1,
+          title: "Plan",
+          issue_url: "https://github.com/org/repo/issues/1",
+          pr_url: null,
+        }),
+      ];
+      const refreshedPlans = [
+        makePlan({
+          issue_number: 1,
+          title: "Plan",
+          issue_url: "https://github.com/org/repo/issues/1",
+          pr_url: "https://github.com/org/repo/pull/42",
+        }),
+      ];
+
+      vi.mocked(window.erkdesk.fetchPlans)
+        .mockResolvedValueOnce({
+          success: true,
+          plans: initialPlans,
+          count: 1,
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          plans: refreshedPlans,
+          count: 1,
+        });
+
+      render(<PlanList />);
+
+      await waitFor(() => {
+        expect(window.erkdesk.loadWebViewURL).toHaveBeenCalledWith(
+          "https://github.com/org/repo/issues/1",
+        );
+      });
+
+      vi.mocked(window.erkdesk.loadWebViewURL).mockClear();
+
+      await vi.advanceTimersByTimeAsync(15_000);
+
+      await waitFor(() => {
+        expect(window.erkdesk.loadWebViewURL).toHaveBeenCalledWith(
+          "https://github.com/org/repo/pull/42",
+        );
+      });
+    });
+  });
+
   it("does not call loadWebViewURL when both URLs are null", async () => {
     const plans = [
       makePlan({
