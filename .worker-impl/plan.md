@@ -4,15 +4,15 @@
 
 ## Source Plans
 
-| #    | Title                                                              | Items Merged | Code Status      |
-| ---- | ------------------------------------------------------------------ | ------------ | ---------------- |
-| 6557 | Fix Graphite tracking divergence after commit amend in pr-submit   | 4 items      | MERGED (30f7a7a) |
-| 6556 | Fix Objective Roadmap Status Display (#6551)                       | 8 items      | MERGED (4090e6d) |
-| 6554 | Optimize objective-update-with-landed-pr (4→2 turns, Haiku)       | 10 items     | Phase 1 MERGED, Phase 2 on branch |
-| 6550 | Add Right-Click Context Menu to erkdesk                            | 11 items     | On branch (not merged) |
-| 6549 | Add Streaming Log Panel for Action Buttons                         | 8 items      | MERGED (9c9c17f) |
-| 6547 | Optimize objective-update-with-landed-pr (Haiku delegation)        | 10 items     | On branch P6547 |
-| 6542 | Add contextual action toolbar to erkdesk dashboard                 | 10 items     | MERGED (ce10753) |
+| #    | Title                                                            | Items Merged | Code Status                       |
+| ---- | ---------------------------------------------------------------- | ------------ | --------------------------------- |
+| 6557 | Fix Graphite tracking divergence after commit amend in pr-submit | 4 items      | MERGED (30f7a7a)                  |
+| 6556 | Fix Objective Roadmap Status Display (#6551)                     | 8 items      | MERGED (4090e6d)                  |
+| 6554 | Optimize objective-update-with-landed-pr (4→2 turns, Haiku)      | 10 items     | Phase 1 MERGED, Phase 2 on branch |
+| 6550 | Add Right-Click Context Menu to erkdesk                          | 11 items     | On branch (not merged)            |
+| 6549 | Add Streaming Log Panel for Action Buttons                       | 8 items      | MERGED (9c9c17f)                  |
+| 6547 | Optimize objective-update-with-landed-pr (Haiku delegation)      | 10 items     | On branch P6547                   |
+| 6542 | Add contextual action toolbar to erkdesk dashboard               | 10 items     | MERGED (ce10753)                  |
 
 ## What Changed Since Original Plans
 
@@ -40,6 +40,7 @@
 ### Key Discovery: Unmerged Documentation PRs
 
 Two PRs have documentation work that should be merged BEFORE creating new docs:
+
 - **PR #6548** (from #6547): 9 new doc files + 10 updates (subagent delegation, optimization patterns)
 - **PR #6549 branch**: Streaming IPC docs, erkdesk component docs, migration guides
 
@@ -101,6 +102,7 @@ If PRs are ready, merge them to avoid duplicating work. If not mergeable, procee
 **File:** `docs/learned/architecture/roadmap-mutation-semantics.md`
 
 **Changes needed:**
+
 - Update tripwire (line ~9) to reflect two-tier status resolution
 - Update inference rules table (lines ~20-25) to include explicit status values
 - Update explanation section (lines ~27-36) to describe computed status
@@ -115,6 +117,7 @@ If PRs are ready, merge them to avoid duplicating work. If not mergeable, procee
 **File:** `docs/learned/objectives/roadmap-status-system.md`
 
 **Content outline:**
+
 1. Two-tier status resolution system
 2. Tier 1: Explicit status values (done, in-progress, pending, blocked, skipped)
 3. Tier 2: PR-based inference (# → done, plan # → in_progress, empty → pending)
@@ -128,14 +131,17 @@ If PRs are ready, merge them to avoid duplicating work. If not mergeable, procee
 **File:** `docs/learned/architecture/git-graphite-quirks.md`
 
 **Changes:** Add "Retracking Required After Commit Amend" subsection after line ~352:
+
 - Code pattern showing retrack after amend
 - References to submit_pipeline.py:666-668 and sync_cmd.py:254,319
 - Add tripwire to frontmatter
 
 **File:** `docs/learned/cli/pr-submit-pipeline.md`
+
 - Update Step 8 description (line ~37) to include "retrack Graphite"
 
 **File:** `docs/learned/pr-operations/pr-submit-phases.md`
+
 - Update Phase 6 description (lines ~104-115) with retracking explanation
 
 **Verification:** Documentation matches code at submit_pipeline.py:666-668
@@ -145,6 +151,7 @@ If PRs are ready, merge them to avoid duplicating work. If not mergeable, procee
 **File:** `docs/learned/desktop-dash/app-architecture.md`
 
 **Content outline:**
+
 1. App.tsx as state owner (plans, selectedIndex, loading, error, log state)
 2. State lifting pattern: PlanList and ActionToolbar as controlled components
 3. Auto-refresh every 15s with selection preservation by issue_number
@@ -154,6 +161,7 @@ If PRs are ready, merge them to avoid duplicating work. If not mergeable, procee
 **File:** `docs/learned/desktop-dash/action-toolbar.md`
 
 **Content outline:**
+
 1. 5 actions: Submit, Land, Address, Fix Conflicts, Close
 2. Availability predicates table with exact conditions
 3. Streaming execution pattern (spawn + events, not blocking)
@@ -163,6 +171,7 @@ If PRs are ready, merge them to avoid duplicating work. If not mergeable, procee
 **File:** `docs/learned/desktop-dash/ipc-actions.md`
 
 **Content outline:**
+
 1. IPC handler registration pattern
 2. Four-location checklist: main, preload, types, test mock
 3. Streaming vs blocking execution
@@ -178,6 +187,7 @@ If PRs are ready, merge them to avoid duplicating work. If not mergeable, procee
 **File:** `docs/learned/desktop-dash/tripwires.md`
 
 **Add 3 tripwires:**
+
 1. IPC Handler Cleanup (score 6/10): Must call removeHandler() and removeAllListeners() on window close
 2. IPC Event Listener Cleanup (score 5/10): removeActionListeners() prevents memory leaks
 3. Four-Location IPC Updates (score 4/10): main, preload, types, test mock must stay in sync
@@ -187,6 +197,7 @@ If PRs are ready, merge them to avoid duplicating work. If not mergeable, procee
 **File:** `docs/learned/objectives/roadmap-mutation-patterns.md`
 
 **Content outline:**
+
 1. Surgical update pattern (update-roadmap-step for single cells)
 2. Full-body update pattern (objective-update-with-landed-pr for complete rewrites)
 3. When to use each pattern
@@ -201,6 +212,7 @@ Run `erk docs sync` to regenerate auto-generated files.
 ## Attribution
 
 Items by source:
+
 - **#6557**: Steps 4 (Graphite retrack docs)
 - **#6556**: Steps 2, 3, 7 (roadmap docs)
 - **#6554**: Step 1 (merge pending PR - docs already on branch)

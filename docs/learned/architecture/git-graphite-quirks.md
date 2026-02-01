@@ -18,6 +18,8 @@ tripwires:
     warning: "Use /erk:sync-divergence instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push."
   - action: "comparing git SHA to Graphite's tracked SHA for divergence detection"
     warning: "Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches."
+  - action: "amending a commit when Graphite is enabled"
+    warning: "After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in sync_cmd and branch_manager."
 ---
 
 # Git and Graphite Edge Cases Catalog
@@ -350,6 +352,51 @@ if is_graphite_tracking_diverged(commit_sha, graphite_tracked_sha):
 - After force-push from another machine
 
 **Location in Codebase**: See `packages/erk-shared/src/erk_shared/gateway/graphite/` for tracking operations.
+
+### Retracking Required After Commit Amend or Restack (PR #6052)
+
+**Surprising Behavior**: After `gt restack` rebases a branch, it creates new commit SHAs, but Graphite's internal cache (`.graphite_cache_persist`) still points to old SHAs. This leaves branches "diverged" from Graphite's perspective.
+
+**Consequences**:
+
+- `gt track` on child branches fails with "parent branch is diverged" errors
+- Graphite commands refuse to operate on "diverged" branches
+- Manual `gt track` (with no args) fixes it, but must be done proactively
+
+**Why It's Surprising**: You'd expect `gt restack` to update its own tracking automatically. Instead, the cache update can fail silently, leaving the branch in a diverged state that breaks child branch operations.
+
+**Detection Pattern**:
+
+```python
+# Check if branch SHA differs from Graphite's cached revision
+is_diverged = graphite.is_branch_diverged_from_tracking(
+    git, repo_root, branch_name
+)
+```
+
+**Auto-Fix Pattern**:
+
+```python
+# Retrack to update Graphite's internal cache
+if graphite.is_branch_diverged_from_tracking(git, repo_root, branch_name):
+    graphite_branch_ops.retrack_branch(repo_root, branch_name)
+```
+
+**Where Auto-Fixes Are Implemented**:
+
+1. **sync_cmd.py**: After `gt restack` operations (two code paths)
+   - Line ~260: After restack in sync's rebase path
+   - Line ~304: After restack before Graphite submission
+2. **branch_manager/graphite.py**: Before tracking child branches
+   - Auto-fixes diverged parent before `gt track` to prevent creation failures
+
+**Code References**:
+
+- Gateway method: `packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/real.py` (`retrack_branch()`)
+- Divergence detection: `packages/erk-shared/src/erk_shared/gateway/graphite/abc.py` (`is_branch_diverged_from_tracking()`)
+- Sync auto-fix: `src/erk/cli/commands/pr/sync_cmd.py:260,304`
+- Branch creation auto-fix: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py`
+- Fix commit: `8b8b06b5` (PR #6052)
 
 ## Adding New Quirks
 
