@@ -359,8 +359,139 @@ def test_issue_not_found():
     assert result.exit_code == 1
 ```
 
+## Testing Interactive Gateway Methods (NoReturn)
+
+When exec scripts call gateway methods that use process replacement (`exec_ssh_interactive()`, `os.execvp()`), tests must verify the call was made correctly **before** the process replacement occurs.
+
+### The NoReturn Pattern
+
+Methods like `exec_ssh_interactive()` have type signature `-> NoReturn` because they replace the Python process via `os.execvp()`. No code executes after the call.
+
+```python
+# CLI command using interactive method
+@click.command()
+@click.pass_context
+def next_plan_cmd(ctx: click.Context) -> None:
+    codespace = require_codespace(ctx)
+
+    # This call NEVER returns
+    codespace.exec_ssh_interactive(
+        gh_name=codespace_name,
+        remote_command="bash -l -c 'erk objective next-plan'"
+    )
+
+    # NO CODE HERE EXECUTES
+```
+
+### Test Pattern: Verify Fake Recorded the Call
+
+Use the fake gateway to record the call and verify parameters:
+
+```python
+from erk_shared.gateway.codespace.fake import FakeCodespace
+
+def test_next_plan_uses_interactive_ssh(tmp_path: Path) -> None:
+    """Verify command uses exec_ssh_interactive for real-time streaming."""
+    fake_codespace = FakeCodespace()
+    ctx = ErkContext.for_test(cwd=tmp_path, codespace=fake_codespace)
+
+    runner = CliRunner()
+    result = runner.invoke(next_plan_cmd, obj=ctx)
+
+    # Verify the interactive call was made
+    assert fake_codespace.exec_called is True
+
+    # Verify call details
+    call = fake_codespace.last_exec_call
+    assert call is not None
+    assert call.interactive is True
+    assert "erk objective next-plan" in call.remote_command
+    assert call.gh_name == fake_codespace.gh_name
+```
+
+### Critical Gotcha: No Post-Execution Verification
+
+**WRONG:** Cannot verify state after `exec_ssh_interactive()` because the process is gone.
+
+```python
+# WRONG - This test won't work
+def test_next_plan_wrong(tmp_path: Path) -> None:
+    result = runner.invoke(next_plan_cmd, obj=ctx)
+
+    # IMPOSSIBLE - Process replaced, no exit code available
+    assert result.exit_code == 0  # Won't work!
+```
+
+**CORRECT:** Verify only pre-execution state and fake's recorded calls.
+
+```python
+# CORRECT - Verify the call was made with correct parameters
+def test_next_plan_correct(tmp_path: Path) -> None:
+    fake_codespace = FakeCodespace()
+    ctx = ErkContext.for_test(cwd=tmp_path, codespace=fake_codespace)
+
+    runner.invoke(next_plan_cmd, obj=ctx)
+
+    # Verify call recorded in fake
+    assert fake_codespace.exec_called is True
+    assert fake_codespace.last_exec_call.interactive is True
+```
+
+### Comparison: Interactive vs Non-Interactive Tests
+
+| Aspect              | Interactive (`exec_ssh_interactive`)  | Non-Interactive (`run_ssh_command`) |
+| ------------------- | ------------------------------------- | ----------------------------------- |
+| Test assertion      | `fake.exec_called is True`            | `exit_code == 0`                    |
+| Call verification   | `call.interactive is True`            | `call.interactive is False`         |
+| Exit code check     | N/A (process replaced)                | `result.exit_code == 0`             |
+| Post-execution code | None possible                         | Can verify messages, side effects   |
+| Fake method used    | `fake_codespace.exec_ssh_interactive` | `fake_codespace.run_ssh_command`    |
+
+### Example: Migrating from Non-Interactive to Interactive
+
+When fixing output buffering issues by switching methods:
+
+**Before (non-interactive):**
+
+```python
+def test_next_plan_reports_success(tmp_path: Path) -> None:
+    result = runner.invoke(next_plan_cmd, obj=ctx)
+    assert result.exit_code == 0
+    assert "Command completed successfully" in result.output
+```
+
+**After (interactive):**
+
+```python
+def test_next_plan_uses_interactive_execution(tmp_path: Path) -> None:
+    fake_codespace = FakeCodespace()
+    ctx = ErkContext.for_test(cwd=tmp_path, codespace=fake_codespace)
+
+    runner.invoke(next_plan_cmd, obj=ctx)
+
+    # Verify interactive method used (no exit code available)
+    assert fake_codespace.exec_called is True
+    call = fake_codespace.last_exec_call
+    assert call.interactive is True
+
+    # Note: Cannot verify "Command completed successfully" message
+    # because process is replaced before message would print
+```
+
+### Historical Example
+
+Issue #6514 / PR #6515: `erk codespace run objective next-plan` appeared to hang. Root cause: used `run_ssh_command()` (buffered) instead of `exec_ssh_interactive()` (streaming).
+
+**Test changes required:**
+
+1. Removed exit code assertions (process replaced, no exit code)
+2. Added `fake_codespace.exec_called` verification
+3. Changed assertion from `call.interactive is False` to `True`
+4. Deleted `test_run_next_plan_reports_ssh_failure` (incompatible with NoReturn)
+
 ## Related Documentation
 
 - [CLI Testing Patterns](cli-testing.md) - General CLI testing patterns
+- [SSH Command Execution Patterns](../architecture/ssh-command-execution.md) - Method selection guide
 - [Progress Schema Reference](../planning/progress-schema.md) - For testing progress commands
 - Source: `src/erk/cli/commands/exec/scripts/AGENTS.md` - Exec script standards

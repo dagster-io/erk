@@ -79,7 +79,8 @@
 - **[roadmap-mutation-semantics.md](roadmap-mutation-semantics.md)** — modifying objective roadmap update logic, understanding status inference when updating roadmap steps, working with objective-roadmap-update command
 - **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit
 - **[session-discovery.md](session-discovery.md)** — finding Claude Code sessions for a plan, implementing session lookup from GitHub issues, understanding dual-source discovery patterns, working with gist-based session storage, downloading remote sessions for learn workflow
-- **[ssh-command-execution.md](ssh-command-execution.md)** — implementing remote command execution via SSH, working with codespace connections, debugging remote setup commands
+- **[skill-loading.md](skill-loading.md)** — starting implementation of a plan, writing command execution workflows, creating slash commands that delegate to implementation
+- **[ssh-command-execution.md](ssh-command-execution.md)** — implementing remote command execution via SSH, working with codespace connections, debugging remote setup commands, choosing between run_ssh_command and exec_ssh_interactive
 - **[state-threading-pattern.md](state-threading-pattern.md)** — designing linear pipelines with immutable state, understanding SubmitState or pipeline architecture, implementing multi-step workflows with frozen dataclasses
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
 - **[symlink-validation-pattern.md](symlink-validation-pattern.md)** — Validating @ references in markdown files, Validating import paths in configuration, Any path validation where source files may be symlinks

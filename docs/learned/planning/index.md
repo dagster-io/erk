@@ -16,6 +16,7 @@
 - **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo issue closing syntax
 - **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures, Encountering errors with unclear root causes, Deciding whether to guess at fixes or investigate source, Working with error messages that reference specific functions
 - **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving gateways to gateway/ directory, consolidating gateway packages, performing systematic refactoring
+- **[learn-pipeline.md](learn-pipeline.md)** — implementing learn workflow changes, adding new learn agents, debugging learn failures, understanding parallel agent orchestration
 - **[learn-plan-metadata-fields.md](learn-plan-metadata-fields.md)** — working with learn plan metadata, troubleshooting null learn_status or learn_plan_issue, transforming Plan objects in pipelines, understanding created_from_workflow_run_url field, adding workflow run backlinks to plans
 - **[learn-plan-validation.md](learn-plan-validation.md)** — creating erk-learn plans, preventing learn plan cycles, validating learn workflow
 - **[learn-vs-implementation-plans.md](learn-vs-implementation-plans.md)** — choosing between plan types, creating erk-learn plans, understanding plan workflows
