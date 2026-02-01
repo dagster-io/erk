@@ -54,19 +54,22 @@ def test_trigger_async_learn_success(tmp_path: Path) -> None:
             stdout=json.dumps(
                 {
                     "success": True,
+                    "planning_session_id": "planning-session-1",
                     "session_sources": [
                         {
-                            "source": "local",
-                            "session_path": "/fake/path.jsonl",
-                            "session_type": "planning",
+                            "source_type": "local",
+                            "session_id": "planning-session-1",
+                            "path": "/fake/path.jsonl",
+                            "run_id": None,
+                            "gist_url": None,
                         }
                     ],
                 }
             ),
             stderr="",
         ),
-        # preprocess-session (planning)
-        MagicMock(returncode=0, stdout=json.dumps({"success": True}), stderr=""),
+        # preprocess-session (planning) - outputs file paths, not JSON
+        MagicMock(returncode=0, stdout="/tmp/learn/planning-summary.md\n", stderr=""),
         # get-pr-for-plan
         MagicMock(
             returncode=0,
@@ -234,3 +237,108 @@ def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
     assert isinstance(output["run_id"], str)
     assert isinstance(output["workflow_url"], str)
     assert isinstance(output["gist_url"], str)
+
+
+def test_trigger_async_learn_filtered_session_skipped(tmp_path: Path) -> None:
+    """Test that a filtered session (empty stdout from preprocess) is skipped gracefully."""
+    runner = CliRunner()
+    repo_info = RepoInfo(owner="test-owner", name="test-repo")
+    github = FakeGitHub(repo_info=repo_info)
+    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
+
+    learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
+    learn_dir.mkdir(parents=True)
+
+    mock_subprocess_results = [
+        # get-learn-sessions - returns one local session
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "success": True,
+                    "planning_session_id": "planning-session-1",
+                    "session_sources": [
+                        {
+                            "source_type": "local",
+                            "session_id": "planning-session-1",
+                            "path": "/fake/path.jsonl",
+                            "run_id": None,
+                            "gist_url": None,
+                        }
+                    ],
+                }
+            ),
+            stderr="",
+        ),
+        # preprocess-session returns empty stdout (session filtered as empty/warmup)
+        MagicMock(returncode=0, stdout="", stderr=""),
+        # get-pr-for-plan (no PR)
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps({"success": False}),
+            stderr="",
+        ),
+        # upload-learn-materials
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "success": True,
+                    "gist_url": "https://gist.github.com/user/abc123",
+                    "file_count": 0,
+                }
+            ),
+            stderr="",
+        ),
+    ]
+
+    with patch("subprocess.run", side_effect=mock_subprocess_results):
+        result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
+
+    assert result.exit_code == 0
+    output = _parse_json_output(result.output)
+    assert output["success"] is True
+
+
+def test_trigger_async_learn_preprocess_failure(tmp_path: Path) -> None:
+    """Test that a non-zero exit code from preprocess-session produces an error."""
+    runner = CliRunner()
+    repo_info = RepoInfo(owner="test-owner", name="test-repo")
+    github = FakeGitHub(repo_info=repo_info)
+    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
+
+    learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
+    learn_dir.mkdir(parents=True)
+
+    mock_subprocess_results = [
+        # get-learn-sessions - returns one local session
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "success": True,
+                    "planning_session_id": "planning-session-1",
+                    "session_sources": [
+                        {
+                            "source_type": "local",
+                            "session_id": "planning-session-1",
+                            "path": "/fake/path.jsonl",
+                            "run_id": None,
+                            "gist_url": None,
+                        }
+                    ],
+                }
+            ),
+            stderr="",
+        ),
+        # preprocess-session fails with non-zero exit code
+        MagicMock(returncode=1, stdout="", stderr="Session file not found"),
+    ]
+
+    with patch("subprocess.run", side_effect=mock_subprocess_results):
+        result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
+
+    assert result.exit_code == 1
+    output = _parse_json_output(result.output)
+    assert output["success"] is False
+    assert "failed" in str(output["error"]).lower()
