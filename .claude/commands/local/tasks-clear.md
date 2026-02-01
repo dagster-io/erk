@@ -1,10 +1,10 @@
 ---
-description: Clear all todos from the current session
+description: Clear all tasks from the current session
 ---
 
 # /tasks-clear
 
-Clears all todo items from the current Claude Code session.
+Clears all tasks from the current Claude Code session and removes them from the display.
 
 ## Usage
 
@@ -14,27 +14,25 @@ Clears all todo items from the current Claude Code session.
 
 ## When to Use
 
-Use this command to clear the todo list in these scenarios:
+Use this command to clear the task list in these scenarios:
 
 - After completing all tasks in the current session
 - When starting fresh on a new set of tasks
-- When cleaning up abandoned or obsolete todos
-- When the todo list has become cluttered or irrelevant
+- When cleaning up abandoned or obsolete tasks
+- When the task list has become cluttered or irrelevant
 
 ---
 
 ## Agent Instructions
 
-Clear all todos by using the TodoWrite tool with an empty array:
+Clear all tasks by following these steps:
 
-```json
-[]
-```
-
-After clearing, output a brief confirmation:
+1. Use the TaskList tool to get all current tasks
+2. For each task returned, use TaskUpdate with `status: "deleted"` to remove it
+3. After clearing, output a brief confirmation:
 
 ```
-✅ All todos cleared
+All tasks cleared.
 ```
 
 Keep the output minimal and clean.
