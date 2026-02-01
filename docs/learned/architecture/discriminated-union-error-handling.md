@@ -21,6 +21,7 @@ A LBYL-compliant pattern for handling expected failures without exceptions. Retu
 ## Source References
 
 Examples in this document reference actual type definitions. See canonical sources:
+
 - **GitHub operations**: `packages/erk-shared/src/erk_shared/gateway/github/types.py`
 - **Git worktree operations**: `packages/erk-shared/src/erk_shared/gateway/git/worktree/types.py`
 - **Git branch operations**: `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py`
@@ -189,9 +190,11 @@ if merge_result is not True:
 **After** (explicit types):
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py -->
+
 See `MergeResult` and `MergeError` type definitions in `packages/erk-shared/src/erk_shared/gateway/github/types.py`.
 
 Example caller pattern:
+
 ```python
 # ABC definition
 def merge_pr(self, repo_root: Path, pr_number: int, ...) -> MergeResult | MergeError:
@@ -270,9 +273,11 @@ def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> None:
 **After** (discriminated union):
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/git/worktree/types.py -->
+
 See `WorktreeAdded` and `WorktreeAddError` type definitions in `packages/erk-shared/src/erk_shared/gateway/git/worktree/types.py`.
 
 ABC signature:
+
 ```python
 # ABC definition (gateway/git/worktree/abc.py)
 def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> WorktreeAdded | WorktreeAddError:

@@ -56,6 +56,7 @@ This pattern is **mandatory** for testing erk CLI commands because:
 ### API Signature
 
 <!-- Source: packages/erk-shared/src/erk_shared/context/context.py:193-250 -->
+
 See `ErkContext.for_test()` method in `packages/erk-shared/src/erk_shared/context/context.py:193-250` for complete API signature and default values.
 
 ## Testing Patterns

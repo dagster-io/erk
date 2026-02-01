@@ -70,6 +70,7 @@ tests/
 ### FakeGit
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/git/fake.py:112-165 -->
+
 See `FakeGit` class and constructor in `packages/erk-shared/src/erk_shared/gateway/git/fake.py:112-165`.
 
 **Note**: FakeGit now uses subgateways. Access mutation tracking properties via subgateway (e.g., `git.commit_ops.staged_files`, `git.branch_ops.deleted_branches`), not top-level.
@@ -232,6 +233,7 @@ config_store = FakeConfigStore(
 ### FakeGitHub
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py:38-80 -->
+
 See `FakeGitHub` class and constructor in `packages/erk-shared/src/erk_shared/gateway/github/fake.py:38-80`.
 
 **Important: Dual-mapping for branch lookups** - `get_pr_for_branch()` requires BOTH `prs` AND `pr_details` to be configured. If only `prs` is configured, the method returns `PRNotFound` because the second lookup fails.
@@ -239,11 +241,13 @@ See `FakeGitHub` class and constructor in `packages/erk-shared/src/erk_shared/ga
 ### FakeGraphite
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/graphite/fake.py:28-90 -->
+
 See `FakeGraphite` class and constructor in `packages/erk-shared/src/erk_shared/gateway/graphite/fake.py:28-90`.
 
 ### FakeShell
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/shell/fake.py:57-105 -->
+
 See `FakeShell` class and constructor in `packages/erk-shared/src/erk_shared/gateway/shell/fake.py:57-105`.
 
 ## Fake Error Simulation

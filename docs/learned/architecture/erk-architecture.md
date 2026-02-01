@@ -202,9 +202,11 @@ def track_event(context: ErkContext, issue_number: int) -> None:
 ### Implementations
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/time/real.py -->
+
 **Production (RealTime)**: See `RealTime` class in `packages/erk-shared/src/erk_shared/gateway/time/real.py`
 
 Usage example:
+
 ```python
 from erk_shared.gateway.time.real import RealTime
 
@@ -213,9 +215,11 @@ time.sleep(2.0)  # Actually sleeps for 2 seconds
 ```
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/time/fake.py -->
+
 **Testing (FakeTime)**: See `FakeTime` class in `packages/erk-shared/src/erk_shared/gateway/time/fake.py`
 
 Usage example:
+
 ```python
 from erk_shared.gateway.time.fake import FakeTime
 
@@ -266,6 +270,7 @@ def test_retry_logic():
 ### Interface
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/time/abc.py -->
+
 The `Time` ABC defines abstract methods for time operations including `sleep()` and `now()`. See `packages/erk-shared/src/erk_shared/gateway/time/abc.py` for the canonical interface definition.
 
 Implementations:
@@ -312,7 +317,7 @@ If you find code using `datetime.now()`:
 
 ## TUI Exit-with-Command Pattern
 
-*Note: This pattern has been deprecated. The `exit_command` attribute no longer exists in `ErkDashApp`. See `src/erk/tui/app.py` for current TUI architecture.*
+_Note: This pattern has been deprecated. The `exit_command` attribute no longer exists in `ErkDashApp`. See `src/erk/tui/app.py` for current TUI architecture._
 
 ## Gateway Directory Structure
 
@@ -842,6 +847,7 @@ def execute_quick_submit(ctx: ErkContext) -> None:
 ### How BranchManager is Created
 
 <!-- Source: packages/erk-shared/src/erk_shared/context/context.py:165-187 -->
+
 `ErkContext.branch_manager` property automatically selects the right implementation. See the `branch_manager` property in `packages/erk-shared/src/erk_shared/context/context.py:165-187` for the complete implementation including DryRun unwrapping logic.
 
 ### Adding New Operations to BranchManager
@@ -892,6 +898,7 @@ def test_quick_submit_tracks_submission() -> None:
 ### context.branch_manager Property
 
 <!-- Source: packages/erk-shared/src/erk_shared/context/context.py:165-187 -->
+
 The `ErkContext.branch_manager` property provides automatic wrapper unwrapping for dry-run mode. See the complete implementation in `packages/erk-shared/src/erk_shared/context/context.py:165-187`.
 
 This unwrapping is necessary because:
@@ -907,6 +914,7 @@ When operations have optional behavior based on availability of resources, use g
 ### Pattern: Branch Lookup Fallback
 
 <!-- Source: src/erk/cli/commands/submit.py:165-185 -->
+
 The `get_learn_plan_parent_branch()` function (see `src/erk/cli/commands/submit.py:165-185`) gracefully handles missing parent plans by returning `None` when no parent is found.
 
 Callers check the return value and fall back to trunk:
@@ -956,6 +964,7 @@ def navigate_with_cleanup(target_worktree: Path, cleanup_commands: list[str]) ->
 ### Real-World Example: `--delete-current` Flag
 
 <!-- Source: src/erk/cli/commands/navigation_helpers.py -->
+
 The `erk up` and `erk down` commands support `--delete-current` to navigate away then delete the current worktree. See `render_deferred_deletion_commands()` in `src/erk/cli/commands/navigation_helpers.py` for the implementation.
 
 The activation script structure:
