@@ -61,6 +61,7 @@ class FakeGitHub(GitHub):
         pr_update_should_succeed: bool = True,
         pr_review_threads: dict[int, list[PRReviewThread]] | None = None,
         review_threads_rate_limited: bool = False,
+        resolve_thread_failures: set[str] | None = None,
         pr_diff_error: str | None = None,
         workflow_runs_error: str | None = None,
         artifact_download_callback: "Callable[[str, str, Path], bool] | None" = None,
@@ -95,6 +96,7 @@ class FakeGitHub(GitHub):
             pr_review_threads: Mapping of pr_number -> list[PRReviewThread]
             review_threads_rate_limited: Whether get_pr_review_threads() should raise
                 RuntimeError simulating GraphQL rate limit
+            resolve_thread_failures: Set of thread IDs that should fail when resolved
             pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
                 Use to simulate HTTP 406 "diff too large" errors.
             workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
@@ -135,6 +137,7 @@ class FakeGitHub(GitHub):
         self._pr_update_should_succeed = pr_update_should_succeed
         self._pr_review_threads = pr_review_threads or {}
         self._review_threads_rate_limited = review_threads_rate_limited
+        self._resolve_thread_failures = resolve_thread_failures or set()
         self._pr_diff_error = pr_diff_error
         self._workflow_runs_error = workflow_runs_error
         self._artifact_download_callback = artifact_download_callback
@@ -752,8 +755,11 @@ class FakeGitHub(GitHub):
     ) -> bool:
         """Record thread resolution in mutation tracking set.
 
-        Always returns True to simulate successful resolution.
+        Returns False if thread_id is in resolve_thread_failures set.
+        Otherwise returns True to simulate successful resolution.
         """
+        if thread_id in self._resolve_thread_failures:
+            return False
         self._resolved_thread_ids.add(thread_id)
         return True
 

@@ -119,6 +119,55 @@ def _add_comment_if_provided(
         )
 
 
+def _resolve_single(
+    github: GitHub,
+    repo_root: Path,
+    thread_id: str,
+    comment: str | None,
+) -> ResolveThreadSuccess | ResolveThreadError:
+    """Resolve a single review thread with optional comment.
+
+    This is the core resolution logic extracted for reuse in batch operations.
+    Does not perform any I/O (echo/exit) - returns typed result.
+
+    Args:
+        github: GitHub gateway instance
+        repo_root: Repository root path
+        thread_id: GraphQL node ID of the thread to resolve
+        comment: Optional comment to add before resolving
+
+    Returns:
+        ResolveThreadSuccess if thread was resolved, ResolveThreadError on failure
+    """
+    # Add comment first if provided
+    comment_result = _add_comment_if_provided(github, repo_root, thread_id, comment)
+    if isinstance(comment_result, ResolveThreadError):
+        return comment_result
+
+    # Attempt to resolve the thread
+    try:
+        resolved = github.resolve_review_thread(repo_root, thread_id)
+    except RuntimeError as e:
+        return ResolveThreadError(
+            success=False,
+            error_type="github-api-failed",
+            message=str(e),
+        )
+
+    if resolved:
+        return ResolveThreadSuccess(
+            success=True,
+            thread_id=thread_id,
+            comment_added=comment_result,
+        )
+    else:
+        return ResolveThreadError(
+            success=False,
+            error_type="resolution-failed",
+            message=f"Failed to resolve thread {thread_id}",
+        )
+
+
 @click.command(name="resolve-review-thread")
 @click.option("--thread-id", required=True, help="GraphQL node ID of the thread to resolve")
 @click.option("--comment", default=None, help="Optional comment to add before resolving")
@@ -135,36 +184,9 @@ def resolve_review_thread(ctx: click.Context, thread_id: str, comment: str | Non
     repo_root = require_repo_root(ctx)
     github = require_github(ctx)
 
-    # Add comment first if provided
-    comment_added = _ensure_not_error(
-        _add_comment_if_provided(github, repo_root, thread_id, comment)
-    )
+    # Resolve the thread using extracted helper
+    result = _resolve_single(github, repo_root, thread_id, comment)
 
-    # Attempt to resolve the thread
-    try:
-        resolved = github.resolve_review_thread(repo_root, thread_id)
-    except RuntimeError as e:
-        result = ResolveThreadError(
-            success=False,
-            error_type="github-api-failed",
-            message=str(e),
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0) from None
-
-    if resolved:
-        result_success = ResolveThreadSuccess(
-            success=True,
-            thread_id=thread_id,
-            comment_added=comment_added,
-        )
-        click.echo(json.dumps(asdict(result_success), indent=2))
-    else:
-        result_error = ResolveThreadError(
-            success=False,
-            error_type="resolution-failed",
-            message=f"Failed to resolve thread {thread_id}",
-        )
-        click.echo(json.dumps(asdict(result_error), indent=2))
-
+    # Output result and exit
+    click.echo(json.dumps(asdict(result), indent=2))
     raise SystemExit(0)

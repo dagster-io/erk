@@ -124,6 +124,9 @@ from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
 from erk.cli.commands.exec.scripts.resolve_review_thread import (
     resolve_review_thread,
 )
+from erk.cli.commands.exec.scripts.resolve_review_threads import (
+    resolve_review_threads,
+)
 from erk.cli.commands.exec.scripts.run_review import run_review
 from erk.cli.commands.exec.scripts.session_id_injector_hook import (
     session_id_injector_hook,
@@ -230,6 +233,7 @@ exec_group.add_command(preprocess_session, name="preprocess-session")
 exec_group.add_command(quick_submit, name="quick-submit")
 exec_group.add_command(rebase_with_conflict_resolution, name="rebase-with-conflict-resolution")
 exec_group.add_command(resolve_review_thread, name="resolve-review-thread")
+exec_group.add_command(resolve_review_threads, name="resolve-review-threads")
 exec_group.add_command(run_review, name="run-review")
 exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
