@@ -23,6 +23,9 @@ export interface PlanRow {
   remote_impl_display: string;
   run_state_display: string;
   exists_locally: boolean;
+  run_url: string | null;
+  worktree_branch: string | null;
+  pr_head_branch: string | null;
 }
 
 export interface FetchPlansResult {
@@ -32,11 +35,19 @@ export interface FetchPlansResult {
   error?: string;
 }
 
+export interface ActionResult {
+  success: boolean;
+  stdout: string;
+  stderr: string;
+  error?: string;
+}
+
 export interface ErkdeskAPI {
   version: string;
   updateWebViewBounds: (bounds: WebViewBounds) => void;
   loadWebViewURL: (url: string) => void;
   fetchPlans: () => Promise<FetchPlansResult>;
+  executeAction: (command: string, args: string[]) => Promise<ActionResult>;
 }
 
 declare global {

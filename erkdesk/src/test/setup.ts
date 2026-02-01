@@ -11,6 +11,9 @@ const mockErkdesk: ErkdeskAPI = {
   updateWebViewBounds: vi.fn(),
   loadWebViewURL: vi.fn(),
   fetchPlans: vi.fn().mockResolvedValue({ success: true, plans: [], count: 0 }),
+  executeAction: vi
+    .fn()
+    .mockResolvedValue({ success: true, stdout: "", stderr: "" }),
 };
 
 Object.defineProperty(window, "erkdesk", {
