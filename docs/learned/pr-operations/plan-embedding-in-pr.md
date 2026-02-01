@@ -76,12 +76,9 @@ The generated HTML follows this pattern:
 
 ```html
 <details>
-<summary><strong>Implementation Plan</strong> (Issue #1234)</summary>
+  <summary><strong>Implementation Plan</strong> (Issue #1234)</summary>
 
-# Plan Title
-
-Plan content here...
-
+  # Plan Title Plan content here...
 </details>
 ```
 

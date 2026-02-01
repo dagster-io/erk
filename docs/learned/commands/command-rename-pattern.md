@@ -74,9 +74,11 @@ Update all actual uses of the command:
 
 ```markdown
 <!-- OLD -->
+
 /erk:pr-address-remote
 
 <!-- NEW -->
+
 /erk:pr-address
 ```
 
@@ -86,9 +88,11 @@ Update descriptive text that mentions the command:
 
 ```markdown
 <!-- OLD -->
+
 The `/erk:pr-address-remote` command triggers...
 
 <!-- NEW -->
+
 The `/erk:pr-address` command triggers...
 ```
 
