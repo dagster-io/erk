@@ -20,7 +20,7 @@ def _make_codespace(name: str) -> RegisteredCodespace:
 
 
 def test_run_next_plan_starts_codespace_and_runs_command() -> None:
-    """run objective next-plan starts the codespace and dispatches the command."""
+    """run objective next-plan starts the codespace and runs the command."""
     runner = CliRunner()
 
     cs = _make_codespace("mybox")
@@ -38,7 +38,7 @@ def test_run_next_plan_starts_codespace_and_runs_command() -> None:
     assert result.exit_code == 0
     assert "Starting codespace 'mybox'" in result.output
     assert "Running 'erk objective next-plan 42' on 'mybox'" in result.output
-    assert "Command dispatched successfully" in result.output
+    assert "Command completed successfully" in result.output
 
     # Verify start_codespace was called
     assert fake_codespace.started_codespaces == ["user-mybox-abc123"]

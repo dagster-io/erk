@@ -1,17 +1,16 @@
 """Codespace remote execution helper.
 
-Builds shell commands for fire-and-forget execution on codespaces.
+Builds shell commands for streaming execution on codespaces.
 Every remoteable command calls this with its own erk CLI string.
 """
 
 
-def build_codespace_run_command(erk_command: str) -> str:
-    """Wrap an erk CLI command for fire-and-forget codespace execution.
+def build_codespace_ssh_command(erk_command: str) -> str:
+    """Wrap an erk CLI command for streaming codespace execution.
 
     Produces a bash command that:
     1. Bootstraps the environment (git pull, uv sync, activate venv)
-    2. Runs the given erk command via nohup in the background
-    3. Redirects output to /tmp/erk-run.log
+    2. Runs the given erk command in the foreground, streaming output
 
     Args:
         erk_command: The erk CLI command to run remotely (e.g., "erk objective next-plan 42")
@@ -21,5 +20,5 @@ def build_codespace_run_command(erk_command: str) -> str:
     """
     return (
         f"bash -l -c 'git pull && uv sync && source .venv/bin/activate"
-        f" && nohup {erk_command} > /tmp/erk-run.log 2>&1 &'"
+        f" && {erk_command}'"
     )
