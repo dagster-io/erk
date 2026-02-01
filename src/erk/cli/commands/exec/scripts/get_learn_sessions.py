@@ -30,7 +30,6 @@ Exit Codes:
 """
 
 import json
-from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import click
@@ -42,11 +41,14 @@ from erk_shared.context.helpers import (
     require_issues,
     require_repo_root,
 )
+from erk_shared.learn.extraction.get_learn_sessions_result import (
+    GetLearnSessionsErrorDict,
+    GetLearnSessionsResultDict,
+)
 from erk_shared.learn.extraction.session_source import (
     LocalSessionSource,
     RemoteSessionSource,
     SessionSource,
-    SessionSourceDict,
 )
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.sessions.discovery import (
@@ -55,36 +57,6 @@ from erk_shared.sessions.discovery import (
     find_sessions_for_plan,
     get_readable_sessions,
 )
-
-
-@dataclass(frozen=True)
-class GetLearnSessionsResult:
-    """Result of get-learn-sessions command."""
-
-    success: bool
-    issue_number: int
-    planning_session_id: str | None
-    implementation_session_ids: list[str]
-    learn_session_ids: list[str]
-    readable_session_ids: list[str]
-    session_paths: list[str]
-    local_session_ids: list[str]
-    last_remote_impl_at: str | None
-    last_remote_impl_run_id: str | None
-    last_remote_impl_session_id: str | None
-    session_sources: list[SessionSourceDict]
-    # New gist-based session fields
-    last_session_gist_url: str | None
-    last_session_id: str | None
-    last_session_source: str | None
-
-
-@dataclass(frozen=True)
-class GetLearnSessionsError:
-    """Error result when getting sessions fails."""
-
-    success: bool
-    error: str
 
 
 def _extract_issue_number(identifier: str) -> int | None:
@@ -117,9 +89,9 @@ def _build_result(
     session_paths: list[str],
     local_session_ids: list[str],
     session_sources: list[SessionSource],
-) -> GetLearnSessionsResult:
-    """Build the result dataclass from session data."""
-    return GetLearnSessionsResult(
+) -> GetLearnSessionsResultDict:
+    """Build the result dict from session data."""
+    return GetLearnSessionsResultDict(
         success=True,
         issue_number=issue_number,
         planning_session_id=sessions_for_plan.planning_session_id,
@@ -145,7 +117,7 @@ def _discover_sessions(
     repo_root: Path,
     cwd: Path,
     issue_number: int,
-) -> GetLearnSessionsResult:
+) -> GetLearnSessionsResultDict:
     """Discover all sessions for a plan issue.
 
     Args:
@@ -156,7 +128,7 @@ def _discover_sessions(
         issue_number: Plan issue number
 
     Returns:
-        GetLearnSessionsResult with all session data
+        GetLearnSessionsResultDict with all session data
     """
     # Find sessions for the plan from GitHub metadata
     sessions_for_plan = find_sessions_for_plan(
@@ -253,11 +225,11 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
     if issue is not None:
         issue_number = _extract_issue_number(issue)
         if issue_number is None:
-            error = GetLearnSessionsError(
+            error = GetLearnSessionsErrorDict(
                 success=False,
                 error=f"Invalid issue identifier: {issue}",
             )
-            click.echo(json.dumps(asdict(error)))
+            click.echo(json.dumps(error))
             raise SystemExit(1)
     else:
         # Try to infer from current branch
@@ -266,11 +238,11 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
             issue_number = extract_leading_issue_number(branch)
 
     if issue_number is None:
-        error = GetLearnSessionsError(
+        error = GetLearnSessionsErrorDict(
             success=False,
             error="No issue specified and could not infer from branch name",
         )
-        click.echo(json.dumps(asdict(error)))
+        click.echo(json.dumps(error))
         raise SystemExit(1)
 
     # Discover sessions
@@ -282,4 +254,4 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
         issue_number=issue_number,
     )
 
-    click.echo(json.dumps(asdict(result), indent=2))
+    click.echo(json.dumps(result, indent=2))
