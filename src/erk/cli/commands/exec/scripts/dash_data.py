@@ -40,9 +40,8 @@ def _serialize_plan_row(row: PlanRowData) -> dict[str, Any]:
     """
     data = dataclasses.asdict(row)
     for key in ("last_local_impl_at", "last_remote_impl_at"):
-        value = data[key]
-        if isinstance(value, datetime):
-            data[key] = value.isoformat()
+        if isinstance(data[key], datetime):
+            data[key] = data[key].isoformat()
     # Convert log_entries tuple of tuples to list of lists
     data["log_entries"] = [list(entry) for entry in row.log_entries]
     return data
