@@ -25,3 +25,9 @@ CLAUDE.local.md
 
 # MkDocs build output
 site/
+
+# erkdesk Electron app
+erkdesk/node_modules/
+erkdesk/out/
+erkdesk/dist/
+erkdesk/.vite/
