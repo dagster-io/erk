@@ -74,8 +74,8 @@ def execute_unassign(
     local_branches = ctx.git.branch.list_local_branches(repo.root)
 
     if placeholder_branch not in local_branches:
-        create_result = ctx.branch_manager.create_branch(
-            repo.root, placeholder_branch, trunk_branch
+        create_result = ctx.git.branch.create_branch(
+            repo.root, placeholder_branch, trunk_branch, force=False
         )
         if isinstance(create_result, BranchAlreadyExists):
             user_output(f"Error: {create_result.message}")

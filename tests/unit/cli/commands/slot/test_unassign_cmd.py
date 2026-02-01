@@ -293,3 +293,61 @@ def test_slot_unassign_uses_existing_placeholder_branch() -> None:
 
         # Verify NO branch was created (placeholder already existed)
         assert len(git_ops.created_branches) == 0
+
+
+def test_slot_unassign_creates_placeholder_via_git_not_branch_manager() -> None:
+    """Test unassigning creates placeholder branch via git, not branch manager.
+
+    Regression test for issue #6473: Placeholder branches should bypass
+    Graphite branch manager to avoid checkout conflicts in worktrees.
+    The key verification is that the placeholder branch is created via
+    git.branch.create_branch (low-level git operation) rather than
+    ctx.branch_manager.create_branch (which would check out the parent
+    branch and fail in multi-worktree scenarios).
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
+        worktree_path.mkdir(parents=True)
+
+        git_ops = FakeGit(
+            worktrees={env.cwd: env.build_worktrees("main")[env.cwd]},
+            current_branches={env.cwd: "main", worktree_path: "feature-test"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-test"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        assignment = _create_test_assignment("erk-slot-01", "feature-test", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["slot", "unassign", "erk-slot-01"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify placeholder branch was created via git.branch.create_branch
+        # The tuple format is (cwd, branch_name, start_point, force)
+        assert (env.cwd, "__erk-slot-01-br-stub__", "main", False) in git_ops.created_branches
+
+        # Verify NO checkout of parent branch occurred
+        # (branch_manager.create_branch would check out 'main', which would appear here)
+        # We should only see the checkout of the placeholder branch in the worktree
+        assert (worktree_path, "__erk-slot-01-br-stub__") in git_ops.checked_out_branches
+        # Ensure 'main' was never checked out (would fail in multi-worktree scenario)
+        assert (worktree_path, "main") not in git_ops.checked_out_branches
+        assert (env.cwd, "main") not in git_ops.checked_out_branches
