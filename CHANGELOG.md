@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: `03b9e3a9d` -->
+<!-- As of: `2d8665c80` -->
 
 ### Major Changes
 
@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Consolidate `erk init capability list` and `erk init capability check` into unified `erk init capability list [name]` command (57a406f39)
+- Add plan context feedback to `erk pr summarize`, showing which plan issue is being incorporated (d4c1c2019)
+- Prevent duplicate inline review comments by deduplicating during review execution (19f88f463)
 
 ### Changed
 
@@ -24,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix discover-reviews for large PRs by switching to REST API with pagination (ab3ff4e58)
 - Auto-fix Graphite tracking divergence in sync and branch creation (8b8b06b53)
 - Fix detached HEAD state after landing PR from root worktree (8a952099c)
+- Remove `--docker` and `--codespace` flags from `implement`/`prepare` commands; standalone `erk codespace` commands preserved (f1f0ac79c)
+- Encode objective ID in branch names with `P{issue}-O{objective}-{slug}-{timestamp}` pattern (eb7988c88)
 
 ### Fixed
 
@@ -32,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `erk br delete` not force-deleting merged PR branches (a6262db0c)
 - Fix objective-save-to-issue plan lookup bug (f1b1843dd)
 - Fix remote implementation creates wrong branch (c7e2a08fe)
+- Fix pr-fix-conflicts "Argument list too long" error in PR comment formatting (7df756fb6)
+- Fix hardcoded PR URL in plan-create-review-pr, making it portable across repositories (57aa7ed96)
 
 ### Removed
 
