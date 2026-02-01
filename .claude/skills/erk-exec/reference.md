@@ -82,6 +82,7 @@ Quick reference for all `erk exec` subcommands.
 | `update-dispatch-info`            | Update dispatch info in GitHub issue plan-header metadata.                |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).       |
 | `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.        |
+| `update-roadmap-step`             | Update a step's PR cell in an objective's roadmap table.                  |
 | `upload-learn-materials`          | Upload learn materials directory to a gist.                               |
 | `upload-session`                  | Upload a session JSONL to GitHub Gist and update plan header.             |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.       |
@@ -1092,6 +1093,25 @@ Update plan-header metadata with remote session artifact location.
 | `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | GitHub issue number to update |
 | `--run-id`       | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions run ID         |
 | `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID        |
+
+### update-roadmap-step
+
+Update a step's PR cell in an objective's roadmap table.
+
+**Usage:** `erk exec update-roadmap-step` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag     | Type | Required | Default        | Description                                              |
+| -------- | ---- | -------- | -------------- | -------------------------------------------------------- |
+| `--step` | TEXT | Yes      | Sentinel.UNSET | Step ID to update (e.g., '1.3')                          |
+| `--pr`   | TEXT | Yes      | Sentinel.UNSET | PR reference (e.g., 'plan #123', '#456', or '' to clear) |
 
 ### upload-learn-materials
 

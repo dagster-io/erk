@@ -109,19 +109,13 @@ step_id=$(erk exec marker read --session-id "${CLAUDE_SESSION_ID}" roadmap-step)
 
 If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-next-plan`.
 
-2. **Update the roadmap table** via whole-body update:
+2. **Update the roadmap table** using the dedicated command:
 
 ```bash
-# Fetch current body
-erk exec get-issue-body <objective-issue>
+erk exec update-roadmap-step <objective-issue> --step "$step_id" --pr "plan #<issue_number>"
 ```
 
-Parse the JSON response to get the `body` field. Find the roadmap table row matching the step ID, set the PR cell to `plan #<issue_number>`, and set the Status cell to `-` (inference will determine `in_progress` from the `plan #` prefix).
-
-```bash
-# Write the updated body
-erk exec update-issue-body <objective-issue> --body "<updated-body>"
-```
+This atomically fetches the issue body, finds the matching step row, updates the PR cell, resets the Status cell to `-` (inference will determine `in_progress` from the `plan #` prefix), and writes the updated body back.
 
 3. **Report the update:**
 

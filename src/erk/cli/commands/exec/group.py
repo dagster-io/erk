@@ -143,6 +143,7 @@ from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
 from erk.cli.commands.exec.scripts.update_plan_remote_session import (
     update_plan_remote_session,
 )
+from erk.cli.commands.exec.scripts.update_roadmap_step import update_roadmap_step
 from erk.cli.commands.exec.scripts.upload_learn_materials import (
     upload_learn_materials,
 )
@@ -232,6 +233,7 @@ exec_group.add_command(trigger_async_learn, name="trigger-async-learn")
 exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_dispatch_info, name="update-dispatch-info")
 exec_group.add_command(update_issue_body, name="update-issue-body")
+exec_group.add_command(update_roadmap_step, name="update-roadmap-step")
 exec_group.add_command(update_plan_remote_session, name="update-plan-remote-session")
 exec_group.add_command(upload_learn_materials, name="upload-learn-materials")
 exec_group.add_command(upload_session, name="upload-session")
