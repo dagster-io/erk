@@ -280,6 +280,7 @@ def test_embeds_plan_in_pr_body(tmp_path: Path) -> None:
     assert len(fake_github.updated_pr_bodies) == 1
     updated_body = fake_github.updated_pr_bodies[0][1]
     assert "Summary of changes" in updated_body
+    assert "## Implementation Plan" in updated_body
     assert "<details>" in updated_body
     assert "<summary><strong>Implementation Plan</strong> (Issue #1234)</summary>" in updated_body
     assert plan_content in updated_body
