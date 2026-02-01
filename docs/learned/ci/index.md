@@ -31,5 +31,6 @@
 - **[plan-implement-customization.md](plan-implement-customization.md)** — customizing erk-impl workflow for a specific repository, installing system dependencies in erk-impl CI, overriding Python version in erk-impl workflow
 - **[plan-implement-workflow-patterns.md](plan-implement-workflow-patterns.md)** — modifying erk-impl workflow, adding cleanup steps to GitHub Actions, working with git reset in workflows
 - **[prompt-patterns.md](prompt-patterns.md)** — Using Claude Code in GitHub Actions workflows, Creating multi-line prompts in CI YAML, Adding new prompts to the erk bundle
+- **[review-spec-format.md](review-spec-format.md)** — creating a new code review, understanding review spec structure, debugging review behavior
 - **[workflow-gating-patterns.md](workflow-gating-patterns.md)** — adding conditional execution to GitHub Actions workflows, implementing label-based CI skipping, understanding why CI was skipped on a PR
 - **[workflow-naming-conventions.md](workflow-naming-conventions.md)** — creating new GitHub Actions workflows, understanding WORKFLOW_COMMAND_MAP, working with erk launch command
