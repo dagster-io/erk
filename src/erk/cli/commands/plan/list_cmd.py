@@ -436,7 +436,10 @@ def _build_plans_table(
         checks_cell = "-"
         if isinstance(issue_number, int) and issue_number in pr_linkages:
             issue_prs = pr_linkages[issue_number]
-            exclude_pr_numbers = {review_pr} if review_pr is not None else None
+            if review_pr is not None:
+                exclude_pr_numbers: set[int] | None = {review_pr}
+            else:
+                exclude_pr_numbers = None
             selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=exclude_pr_numbers)
             if selected_pr is not None:
                 graphite_url = ctx.graphite.get_graphite_url(
