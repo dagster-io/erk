@@ -22,6 +22,7 @@ Quick reference for all `erk exec` subcommands.
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                    |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                  |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                          |
+| `download-learn-materials`        | Download learn materials from a gist and split into files.                |
 | `download-remote-session`         | Download a session from a GitHub Gist.                                    |
 | `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                |
 | `extract-latest-plan`             | Extract the latest plan from Claude session files.                        |
@@ -260,6 +261,19 @@ Discover code reviews matching PR changed files.
 | --------------- | ------- | -------- | ----------------- | ------------------------------------------------------------------ |
 | `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET    | PR number to analyze                                               |
 | `--reviews-dir` | TEXT    | No       | '.claude/reviews' | Directory containing review definitions (default: .claude/reviews) |
+
+### download-learn-materials
+
+Download learn materials from a gist and split into files.
+
+**Usage:** `erk exec download-learn-materials`
+
+**Options:**
+
+| Flag           | Type | Required | Default        | Description                                |
+| -------------- | ---- | -------- | -------------- | ------------------------------------------ |
+| `--gist-url`   | TEXT | Yes      | Sentinel.UNSET | URL of the gist containing learn materials |
+| `--output-dir` | PATH | Yes      | Sentinel.UNSET | Directory to write the extracted files     |
 
 ### download-remote-session
 

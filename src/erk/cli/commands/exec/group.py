@@ -34,6 +34,9 @@ from erk.cli.commands.exec.scripts.create_worker_impl_from_issue import (
 from erk.cli.commands.exec.scripts.dash_data import dash_data
 from erk.cli.commands.exec.scripts.detect_trunk_branch import detect_trunk_branch
 from erk.cli.commands.exec.scripts.discover_reviews import discover_reviews
+from erk.cli.commands.exec.scripts.download_learn_materials import (
+    download_learn_materials,
+)
 from erk.cli.commands.exec.scripts.download_remote_session import (
     download_remote_session,
 )
@@ -177,6 +180,7 @@ exec_group.add_command(dash_data, name="dash-data")
 exec_group.add_command(create_worker_impl_from_issue, name="create-worker-impl-from-issue")
 exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")
 exec_group.add_command(discover_reviews, name="discover-reviews")
+exec_group.add_command(download_learn_materials, name="download-learn-materials")
 exec_group.add_command(download_remote_session, name="download-remote-session")
 exec_group.add_command(exit_plan_mode_hook, name="exit-plan-mode-hook")
 exec_group.add_command(extract_latest_plan, name="extract-latest-plan")
