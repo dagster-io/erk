@@ -24,14 +24,13 @@ Erk uses GitHub Gists as a data carrier to transfer multiple files between the l
 
 **File**: `src/erk/cli/commands/exec/scripts/upload_learn_materials.py:80-87`
 
+Each file is wrapped with delimiter lines and a `FILE:` header, then joined with blank line separators:
+
 ```python
-combined_parts: list[str] = []
-for file_path in files:
-    combined_parts.append(f"{'=' * 60}")        # Opening delimiter
-    combined_parts.append(f"FILE: {file_path.name}")  # Filename header
-    combined_parts.append(f"{'=' * 60}")        # Closing delimiter
-    combined_parts.append(file_path.read_text(encoding="utf-8"))  # File content
-    combined_parts.append("")                   # Blank line separator
+# Key pattern (see source for full loop):
+combined_parts.append(f"{'=' * 60}")        # Opening delimiter
+combined_parts.append(f"FILE: {file_path.name}")  # Filename header
+combined_parts.append(f"{'=' * 60}")        # Closing delimiter
 ```
 
 **Example packed content**:
@@ -58,35 +57,14 @@ FILE: metadata.json
 
 **File**: `src/erk/cli/commands/exec/scripts/download_learn_materials.py:163-207`
 
+The parser uses a boolean `in_header` state toggle to walk through delimiters, extract filenames, and accumulate content:
+
 ```python
-# Parse the combined content back into individual files
-# Upload format per file:
-#   ============================================================
-#   FILE: filename.txt
-#   ============================================================
-#   <content lines>
-#   <blank line separator>
-#
-# The delimiter pair brackets the FILE: header. Content follows
-# AFTER the closing delimiter until the next opening delimiter.
-
-for line in content.splitlines():
-    # Check for delimiter line (60 equals signs)
-    if line.strip() == "=" * 60:
-        if not in_header and current_filename is not None:
-            # Entering a new header — save the previous file's content
-            ...
-        in_header = not in_header
-        continue
-
-    # Check for FILE: header (inside delimiter pair)
-    if in_header and line.startswith("FILE: "):
-        current_filename = line[6:].strip()
-        continue
-
-    # Accumulate content lines (outside delimiter pair, after a FILE: was set)
-    if not in_header and current_filename is not None:
-        current_content_lines.append(line)
+# Key parsing logic (see source for full implementation):
+if line.strip() == "=" * 60:
+    in_header = not in_header  # Toggle header state on delimiter
+if in_header and line.startswith("FILE: "):
+    current_filename = line[6:].strip()
 ```
 
 ## Delimiter Pattern Details
