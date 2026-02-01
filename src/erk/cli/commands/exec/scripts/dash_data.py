@@ -89,9 +89,7 @@ def dash_data(
         location=location,
         clipboard=RealClipboard(),
         browser=RealBrowserLauncher(),
-        http_client=RealHttpClient(
-            token=fetch_github_token(), base_url="https://api.github.com"
-        ),
+        http_client=RealHttpClient(token=fetch_github_token(), base_url="https://api.github.com"),
     )
 
     filters = PlanFilters(
