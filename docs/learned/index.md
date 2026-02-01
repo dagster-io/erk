@@ -18,6 +18,7 @@ If your current task matches, read the linked document **before writing code**.
 - [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
 - [config/](config/)
 - [configuration/](configuration/)
+- [desktop-dash/](desktop-dash/)
 - [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
 - [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
 - [erk-dev/](erk-dev/)
