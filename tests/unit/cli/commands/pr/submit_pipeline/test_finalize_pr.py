@@ -292,3 +292,37 @@ def test_embeds_plan_in_pr_body(tmp_path: Path) -> None:
     assert commit_msg == "Add feature\n\nSummary of changes"
     assert "<details>" not in commit_msg
     assert plan_content not in commit_msg
+
+
+def test_retracks_graphite_after_amend(tmp_path: Path) -> None:
+    """retrack_branch called after amend to fix Graphite tracking divergence."""
+    from erk_shared.context.types import GlobalConfig
+
+    pr = _pr_details(number=42)
+    fake_git = FakeGit(
+        repository_roots={tmp_path: tmp_path},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+        pr_details={42: pr},
+    )
+    # Enable Graphite so context_for_test creates graphite_branch_ops
+    global_config = GlobalConfig(
+        erk_root=Path("/test/erks"),
+        use_graphite=True,
+        shell_setup_complete=False,
+        github_planning=True,
+    )
+    ctx = context_for_test(
+        git=fake_git, github=fake_github, global_config=global_config, cwd=tmp_path
+    )
+    state = _make_state(cwd=tmp_path, title="Title", body="Body text")
+
+    result = finalize_pr(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    # Verify retrack_branch was called after the amend
+    assert ctx.graphite_branch_ops is not None
+    assert len(ctx.graphite_branch_ops.retrack_branch_calls) == 1
+    assert ctx.graphite_branch_ops.retrack_branch_calls[0] == (tmp_path, "feature")

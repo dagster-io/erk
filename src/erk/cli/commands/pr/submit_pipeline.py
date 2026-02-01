@@ -663,6 +663,10 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
         commit_message = f"{pr_title}\n\n{pr_body}"
     ctx.git.commit.amend_commit(state.repo_root, commit_message)
 
+    # Fix Graphite tracking divergence caused by the amend
+    if ctx.graphite_branch_ops is not None:
+        ctx.graphite_branch_ops.retrack_branch(state.repo_root, state.branch_name)
+
     # Clean up temp diff file
     if state.diff_file is not None and state.diff_file.exists():
         try:
