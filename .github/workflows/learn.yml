@@ -22,8 +22,8 @@ on:
         required: true
         type: string
       gist_url:
-        description: "URL of gist containing preprocessed learn materials (optional)"
-        required: false
+        description: "URL of gist containing preprocessed learn materials"
+        required: true
         type: string
 
 concurrency:
