@@ -3,6 +3,7 @@
 
 # Ci Documentation
 
+- **[autofix-job-needs.md](autofix-job-needs.md)** — modifying the autofix job's needs list in ci.yml, adding a new CI job that might block autofix, understanding why autofix is blocked on test failures
 - **[ci-iteration.md](ci-iteration.md)** — running CI commands in workflows, delegating pytest, ty, ruff commands, understanding devrun agent restrictions
 - **[claude-code-docker.md](claude-code-docker.md)** — Running Claude Code in GitHub Actions containers, Debugging permission errors in CI Docker containers, Choosing between container and container-less CI approaches
 - **[commit-squash-divergence.md](commit-squash-divergence.md)** — encountering 'fetch first' after gt submit, dealing with divergent branches after Graphite operations, understanding expected vs unexpected branch divergence, working with Graphite PR submission workflow

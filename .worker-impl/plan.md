@@ -4,14 +4,14 @@
 
 ## Source Plans
 
-| #     | Title                                                         | Items Merged |
-| ----- | ------------------------------------------------------------- | ------------ |
-| #6512 | Address PR #6500 Review Feedback                              | 5 items      |
-| #6509 | Add CI Job for erkdesk Tests                                  | 4 items      |
-| #6506 | Set up Vitest + React Testing Library for erkdesk             | Cherry-pick  |
-| #6505 | Fix trigger-async-learn field name mismatches                 | 5 items      |
-| #6495 | Replace Verbatim Source Code with Source Pointers              | 3 items      |
-| #6493 | Learned Docs Review for Verbatim Code Detection               | Cherry-pick  |
+| #     | Title                                             | Items Merged |
+| ----- | ------------------------------------------------- | ------------ |
+| #6512 | Address PR #6500 Review Feedback                  | 5 items      |
+| #6509 | Add CI Job for erkdesk Tests                      | 4 items      |
+| #6506 | Set up Vitest + React Testing Library for erkdesk | Cherry-pick  |
+| #6505 | Fix trigger-async-learn field name mismatches     | 5 items      |
+| #6495 | Replace Verbatim Source Code with Source Pointers | 3 items      |
+| #6493 | Learned Docs Review for Verbatim Code Detection   | Cherry-pick  |
 
 ## What Changed Since Original Plans
 
@@ -48,6 +48,7 @@ Three natural groupings emerged:
 **Action:** Cherry-pick commit from `origin/P6506-erk-learn-set-up-vitest-r-02-01-1134` to master branch.
 
 **Files added (10 files, +1042 lines):**
+
 - `docs/learned/cli/erkdesk-makefile-targets.md` (191 lines)
 - `docs/learned/desktop-dash/vitest-setup.md` (225 lines)
 - `docs/learned/testing/erkdesk-component-testing.md` (317 lines)
@@ -62,6 +63,7 @@ Three natural groupings emerged:
 **Action:** Cherry-pick commit from `origin/P6493-erk-learn-learn-plan-lear-02-01-1100` to master branch.
 
 **Files added (7 files, +415 lines):**
+
 - `docs/learned/ci/review-spec-format.md` (249 lines)
 - `docs/learned/review/learned-docs-review.md` (125 lines)
 - Updates to `docs/learned/ci/convention-based-reviews.md` (+41 lines - tool constraints section, review table update)
@@ -76,6 +78,7 @@ Three natural groupings emerged:
 **File:** `docs/learned/cli/exec-script-schema-patterns.md`
 
 **Content outline:**
+
 1. **Problem**: Silent failures from dict `.get()` with wrong field names in exec scripts
 2. **Pattern**: Define TypedDict in `erk_shared`, use `cast()` for type-safe consumption
 3. **Example**: `GetLearnSessionsResultDict` and `SessionSourceDict` (source pointers to `packages/erk-shared/src/erk_shared/learn/extraction/get_learn_sessions_result.py` and `session_source.py`)
@@ -93,6 +96,7 @@ Three natural groupings emerged:
 **File:** `docs/learned/cli/tripwires.md` (UPDATE)
 
 **Add 3 tripwires:**
+
 1. `action: "using dict .get() to access fields from exec script JSON output without a TypedDict schema"` -> Warning about silent filtering failures, link to exec-script-schema-patterns.md
 2. `action: "adding a new exec script that produces JSON consumed by another exec script"` -> Warning to define shared TypedDict in erk_shared
 3. `action: "filtering session sources without logging which sessions were skipped and why"` -> Warning about silent filtering making debugging impossible
@@ -106,6 +110,7 @@ Three natural groupings emerged:
 **File:** `docs/learned/ci/tripwires.md` (UPDATE)
 
 **Add 1 CRITICAL tripwire:**
+
 - `action: "adding a new CI job to the autofix job's needs list"` -> Warning: Only add jobs whose failures can be auto-fixed (format, lint, prettier). Test jobs (erkdesk-tests, unit-tests, integration-tests) should NOT block autofix. Adding them causes the entire pipeline to block on test failures that autofix cannot resolve.
 
 **Source:** Investigation of #6509 confirmed erkdesk-tests correctly excluded from autofix needs. Pattern is non-obvious and needs documentation.
@@ -117,6 +122,7 @@ Three natural groupings emerged:
 **File:** `docs/learned/documentation/source-pointers.md`
 
 **Content outline:**
+
 1. **When to use**: Code blocks >5 lines that copy implementation details from source
 2. **Format**: `<!-- Source: path/to/file.py:START-END -->` + `See \`ClassName.method_name()\` in \`path/to/file.py:START-END\`.`
 3. **Category system**:
@@ -136,6 +142,7 @@ Three natural groupings emerged:
 **File:** `docs/learned/desktop-dash/erkdesk-project-structure.md` (UPDATE)
 
 **Add Testing section:**
+
 - Vitest + React Testing Library + jsdom
 - Test command: `pnpm test` / `make erkdesk-test`
 - CI integration: `erkdesk-tests` job in `.github/workflows/ci.yml`
@@ -152,6 +159,7 @@ Three natural groupings emerged:
 **Files:** Various `index.md` files and `docs/learned/tripwires-index.md`
 
 **Actions:**
+
 - Add `exec-script-schema-patterns.md` to `docs/learned/cli/index.md`
 - Add `source-pointers.md` to `docs/learned/documentation/index.md`
 - Run `erk docs sync` to regenerate auto-generated files
@@ -162,6 +170,7 @@ Three natural groupings emerged:
 ## Attribution
 
 Items by source:
+
 - **#6512**: Steps 3, 4 (exec script schema docs and tripwires)
 - **#6509**: Steps 5, 7 (CI autofix tripwire, erkdesk project structure update)
 - **#6506**: Step 1 (cherry-pick P6506 branch - Vitest/testing docs)

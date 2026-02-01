@@ -25,6 +25,7 @@
 - **[exec-command-patterns.md](exec-command-patterns.md)** — writing exec scripts with PR/issue output, building diagnostic messages, standardizing exec command output
 - **[exec-script-discovery.md](exec-script-discovery.md)** — using erk exec commands, unsure what flags an exec command accepts
 - **[exec-script-patterns.md](exec-script-patterns.md)** — Creating new exec CLI commands
+- **[exec-script-schema-patterns.md](exec-script-schema-patterns.md)** — writing an exec script that produces JSON consumed by another script, debugging silent filtering failures in exec script pipelines, adding new fields to exec script JSON output
 - **[fast-path-pattern.md](fast-path-pattern.md)** — implementing CLI commands that can skip expensive operations, adding fast path optimization to existing commands, understanding when to invoke Claude vs complete locally
 - **[json-schema.md](json-schema.md)** — adding --json flag to CLI commands, parsing JSON output from erk commands, implementing kit CLI commands with JSON output
 - **[json-serialization-patterns.md](json-serialization-patterns.md)** — implementing erk exec commands with JSON output, serializing dataclasses to JSON, handling datetime or tuple fields in JSON output, working with --format json option
