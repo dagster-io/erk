@@ -3,6 +3,7 @@
 
 # Ci Documentation
 
+- **[autofix-job-needs.md](autofix-job-needs.md)** — modifying the autofix job's needs list in ci.yml, adding a new CI job that might block autofix, understanding why autofix is blocked on test failures
 - **[ci-iteration.md](ci-iteration.md)** — running CI commands in workflows, delegating pytest, ty, ruff commands, understanding devrun agent restrictions
 - **[claude-code-docker.md](claude-code-docker.md)** — Running Claude Code in GitHub Actions containers, Debugging permission errors in CI Docker containers, Choosing between container and container-less CI approaches
 - **[commit-squash-divergence.md](commit-squash-divergence.md)** — encountering 'fetch first' after gt submit, dealing with divergent branches after Graphite operations, understanding expected vs unexpected branch divergence, working with Graphite PR submission workflow
@@ -31,5 +32,6 @@
 - **[plan-implement-customization.md](plan-implement-customization.md)** — customizing erk-impl workflow for a specific repository, installing system dependencies in erk-impl CI, overriding Python version in erk-impl workflow
 - **[plan-implement-workflow-patterns.md](plan-implement-workflow-patterns.md)** — modifying erk-impl workflow, adding cleanup steps to GitHub Actions, working with git reset in workflows
 - **[prompt-patterns.md](prompt-patterns.md)** — Using Claude Code in GitHub Actions workflows, Creating multi-line prompts in CI YAML, Adding new prompts to the erk bundle
+- **[review-spec-format.md](review-spec-format.md)** — creating a new code review, understanding review spec structure, debugging review behavior
 - **[workflow-gating-patterns.md](workflow-gating-patterns.md)** — adding conditional execution to GitHub Actions workflows, implementing label-based CI skipping, understanding why CI was skipped on a PR
 - **[workflow-naming-conventions.md](workflow-naming-conventions.md)** — creating new GitHub Actions workflows, understanding WORKFLOW_COMMAND_MAP, working with erk launch command

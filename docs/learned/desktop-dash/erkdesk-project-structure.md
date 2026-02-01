@@ -182,9 +182,47 @@ makers: [new MakerZIP({}, ["darwin", "linux", "win32"])];
    make erkdesk-make
    ```
 
+## Testing
+
+Erkdesk uses **Vitest + React Testing Library + jsdom** for component testing.
+
+### Test Stack
+
+- **Vitest**: Fast test runner with native ESM support
+- **React Testing Library**: Component testing with user-centric queries
+- **jsdom**: Simulated DOM environment for Node.js
+
+### Running Tests
+
+```bash
+# Via pnpm
+cd erkdesk && pnpm test
+
+# Via make
+make erkdesk-test
+```
+
+### CI Integration
+
+The `erkdesk-tests` job in `.github/workflows/ci.yml` runs the test suite on every push. Tests must pass before merge.
+
+**Key CI property**: The `erkdesk-tests` job is **excluded** from the `autofix` job's needs list. Why? The autofix job can only fix linting/formatting issues, not test failures. Including test jobs would cause the entire pipeline to block on test failures that autofix cannot resolve.
+
+### Configuration
+
+See [Vitest Setup](vitest-setup.md) for detailed configuration patterns, including:
+
+- Test file patterns and discovery
+- jsdom environment configuration
+- Coverage setup
+- Mock patterns for window/DOM APIs
+
 ## Related Documentation
 
 - [Forge Vite Setup](forge-vite-setup.md) - Detailed Vite configuration patterns
 - [Main Process Startup](main-process-startup.md) - Main process architecture
 - [Preload Bridge Patterns](preload-bridge-patterns.md) - Context bridge setup
 - [pnpm Hoisting Pattern](pnpm-hoisting-pattern.md) - Critical .npmrc configuration
+- [Vitest Setup](vitest-setup.md) - Testing configuration and patterns
+- [erkdesk Component Testing](../testing/erkdesk-component-testing.md) - React component testing guide
+- [erkdesk Makefile Targets](../cli/erkdesk-makefile-targets.md) - Complete make targets reference
