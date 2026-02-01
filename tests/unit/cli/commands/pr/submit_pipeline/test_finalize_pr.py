@@ -9,6 +9,7 @@ from erk.cli.commands.pr.submit_pipeline import (
     finalize_pr,
 )
 from erk.core.context import context_for_test
+from erk.core.plan_context_provider import PlanContext
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
@@ -243,3 +244,50 @@ def test_cleans_up_diff_file(tmp_path: Path) -> None:
 
     assert isinstance(result, SubmitState)
     assert not diff_file.exists()
+
+
+def test_embeds_plan_in_pr_body(tmp_path: Path) -> None:
+    """Plan context embedded in PR body but NOT in commit message."""
+    plan_content = "# My Plan\n\nSome implementation details"
+    plan_ctx = PlanContext(
+        issue_number=1234,
+        plan_content=plan_content,
+        objective_summary=None,
+    )
+
+    pr = _pr_details(number=42)
+    fake_git = FakeGit(
+        repository_roots={tmp_path: tmp_path},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+        pr_details={42: pr},
+    )
+    ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
+    state = _make_state(
+        cwd=tmp_path,
+        title="Add feature",
+        body="Summary of changes",
+        plan_context=plan_ctx,
+    )
+
+    result = finalize_pr(ctx, state)
+
+    assert isinstance(result, SubmitState)
+
+    # Verify PR body contains the plan details block
+    assert len(fake_github.updated_pr_bodies) == 1
+    updated_body = fake_github.updated_pr_bodies[0][1]
+    assert "Summary of changes" in updated_body
+    assert "<details>" in updated_body
+    assert "<summary><strong>Implementation Plan</strong> (Issue #1234)</summary>" in updated_body
+    assert plan_content in updated_body
+    assert "</details>" in updated_body
+
+    # Verify commit message does NOT contain plan details block
+    assert len(fake_git.commit.commits) == 1
+    commit_msg = fake_git.commit.commits[0].message
+    assert commit_msg == "Add feature\n\nSummary of changes"
+    assert "<details>" not in commit_msg
+    assert plan_content not in commit_msg
