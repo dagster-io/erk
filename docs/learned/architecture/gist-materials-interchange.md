@@ -1,0 +1,170 @@
+---
+title: Gist Materials Interchange Format
+read_when:
+  - working with learn materials upload/download, debugging gist-based file transfer, implementing new file packing formats
+---
+
+# Gist Materials Interchange Format
+
+Erk uses GitHub Gists as a data carrier to transfer multiple files between the local machine and GitHub Actions CI environments. Files are packed into a single gist using a delimiter-based format.
+
+## Why Gists as Data Carrier?
+
+**Problem**: Async learn workflow needs to transfer session XML files, PR comments, and metadata from local machine to GitHub Actions codespace.
+
+**Solution**: Pack all files into a single gist:
+
+- Gist URL passed to GitHub Actions workflow via `workflow_dispatch` input
+- Codespace downloads gist and unpacks files
+- No need for artifact uploads or external storage
+
+## Delimiter-Based File Packing
+
+### Upload Format
+
+**File**: `src/erk/cli/commands/exec/scripts/upload_learn_materials.py:80-87`
+
+```python
+combined_parts: list[str] = []
+for file_path in files:
+    combined_parts.append(f"{'=' * 60}")        # Opening delimiter
+    combined_parts.append(f"FILE: {file_path.name}")  # Filename header
+    combined_parts.append(f"{'=' * 60}")        # Closing delimiter
+    combined_parts.append(file_path.read_text(encoding="utf-8"))  # File content
+    combined_parts.append("")                   # Blank line separator
+```
+
+**Example packed content**:
+
+```
+============================================================
+FILE: planning-session-6491.xml
+============================================================
+<session>...</session>
+
+============================================================
+FILE: pr-comments.json
+============================================================
+[{"id": 123, "body": "Looks good!"}]
+
+============================================================
+FILE: metadata.json
+============================================================
+{"issue_number": 6491, "timestamp": "2024-..."}
+
+```
+
+### Download/Unpack Format
+
+**File**: `src/erk/cli/commands/exec/scripts/download_learn_materials.py:163-207`
+
+```python
+# Parse the combined content back into individual files
+# Upload format per file:
+#   ============================================================
+#   FILE: filename.txt
+#   ============================================================
+#   <content lines>
+#   <blank line separator>
+#
+# The delimiter pair brackets the FILE: header. Content follows
+# AFTER the closing delimiter until the next opening delimiter.
+
+for line in content.splitlines():
+    # Check for delimiter line (60 equals signs)
+    if line.strip() == "=" * 60:
+        if not in_header and current_filename is not None:
+            # Entering a new header — save the previous file's content
+            ...
+        in_header = not in_header
+        continue
+
+    # Check for FILE: header (inside delimiter pair)
+    if in_header and line.startswith("FILE: "):
+        current_filename = line[6:].strip()
+        continue
+
+    # Accumulate content lines (outside delimiter pair, after a FILE: was set)
+    if not in_header and current_filename is not None:
+        current_content_lines.append(line)
+```
+
+## Delimiter Pattern Details
+
+| Element               | Value              | Purpose                                                         |
+| --------------------- | ------------------ | --------------------------------------------------------------- |
+| **Opening delimiter** | `"=" * 60`         | Marks start of file header block                                |
+| **Filename header**   | `FILE: {filename}` | Specifies output filename (basename only)                       |
+| **Closing delimiter** | `"=" * 60`         | Marks end of file header block                                  |
+| **Content**           | Raw file content   | Everything between closing delimiter and next opening delimiter |
+| **Separator**         | Empty line         | Blank line after content (before next file's opening delimiter) |
+
+### State Machine
+
+The unpacker uses a state machine with two states:
+
+1. **`in_header = False`** — Reading file content
+2. **`in_header = True`** — Reading header block (between delimiters)
+
+**Transitions**:
+
+- `in_header = not in_header` on each delimiter line
+- Parse `FILE: {name}` only when `in_header == True`
+- Accumulate content lines only when `in_header == False`
+
+## Round-Trip Guarantees
+
+The format guarantees round-trip consistency:
+
+**Upload**:
+
+```python
+files = [Path("session.xml"), Path("comments.json")]
+packed_content = pack_files(files)
+gist_url = upload_to_gist(packed_content)
+```
+
+**Download**:
+
+```python
+packed_content = download_from_gist(gist_url)
+unpacked_files = unpack_files(packed_content)
+# unpacked_files == original files (content preserved)
+```
+
+**Invariant**: If file content doesn't contain lines matching `"=" * 60`, unpacking is guaranteed to restore original content exactly.
+
+**Edge case**: If file content contains a line of 60 equals signs, it will confuse the parser. Currently unhandled (no escaping mechanism).
+
+## URL Format Normalization
+
+Gist URLs are normalized before storage:
+
+```python
+# Normalize gist URL to canonical format
+gist_url = gist_url.replace("https://gist.github.com/", "https://gist.githubusercontent.com/")
+gist_url = gist_url + "/raw" if not gist_url.endswith("/raw") else gist_url
+```
+
+**Why**:
+
+- `gist.github.com` URLs redirect to HTML pages (not suitable for `curl`)
+- `gist.githubusercontent.com/.../raw` URLs return raw gist content directly
+- Normalization ensures consistent URL format for downloads
+
+## Gist Metadata
+
+Each gist uploaded for learn materials includes:
+
+| File                  | Purpose                                            |
+| --------------------- | -------------------------------------------------- |
+| `learn-materials.txt` | Main packed file containing all materials          |
+| Description           | "Learn materials for issue #{issue_number}"        |
+| Public                | Yes (required for unauthenticated downloads in CI) |
+
+**Source**: `upload_learn_materials.py:93-100`
+
+## Related Documentation
+
+- [Async Learn Local Preprocessing](../planning/async-learn-local-preprocessing.md) — How materials are generated and uploaded
+- [Learn Workflow](../planning/learn-workflow.md) — Complete async learn flow

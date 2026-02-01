@@ -116,6 +116,43 @@ Closes schrocknteam/erk-plans#5678
 
 **Fix**: This usually indicates copy-paste error. Update footer to match actual PR number.
 
+## Common Mistakes
+
+### PR Number vs Issue Number Confusion
+
+**The Problem**: Agents sometimes confuse issue numbers with PR numbers when generating checkout footers.
+
+**Why It Happens**: During plan-save workflow, `.impl/issue.json` contains the plan's issue number, which is easily accessible. However, the checkout footer requires the **PR number** (from `gh pr create` output), not the issue number.
+
+**Example of Wrong Pattern**:
+
+```python
+# WRONG: Using issue number from .impl/issue.json
+issue_data = json.loads(Path(".impl/issue.json").read_text())
+checkout_footer = f"erk pr checkout {issue_data['issue_number']}"  # ❌
+```
+
+**Correct Pattern**:
+
+```python
+# RIGHT: Using PR number from gh pr create output
+result = subprocess.run(["gh", "pr", "create", "--fill"], capture_output=True, text=True)
+pr_url = result.stdout.strip()
+pr_number = pr_url.split("/")[-1]
+checkout_footer = f"erk pr checkout {pr_number}"  # ✅
+```
+
+**Key Distinction**:
+
+| Source                | Usage                     | Valid For                     |
+| --------------------- | ------------------------- | ----------------------------- |
+| `.impl/issue.json`    | Issue number (plan issue) | `Closes #<issue>` reference   |
+| `gh pr create` output | PR number                 | `erk pr checkout <pr>` footer |
+
+**Why It Matters**: `gh pr checkout` only accepts PR numbers. Using an issue number will fail validation and prevent users from checking out the PR.
+
+**See Also**: [Checkout Footer Syntax](checkout-footer-syntax.md) for detailed examples
+
 ## Resolution Pattern
 
 When validation fails, use the grep-based resolution pattern documented in [Debugging Patterns](../planning/debugging-patterns.md):

@@ -58,7 +58,7 @@ def run_ssh_command(self, gh_name: str, remote_command: str) -> int:
     ...
 ```
 
-**Common use**: Fire-and-forget commands wrapped with `build_codespace_run_command()` - see [Codespace Remote Execution](../erk/codespace-remote-execution.md)
+**Common use**: Streaming remote commands wrapped with `build_codespace_ssh_command()` - see [Codespace Remote Execution](../erk/codespace-remote-execution.md)
 
 ### 3. exec_ssh_interactive()
 
@@ -111,7 +111,7 @@ The fake implementation serves the testing role that dry-run would fill.
 
 ## Related Documentation
 
-- [Codespace Remote Execution](../erk/codespace-remote-execution.md) - Fire-and-forget command pattern
+- [Codespace Remote Execution](../erk/codespace-remote-execution.md) - Streaming command execution pattern
 - [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) - General gateway patterns
 - [GitHub CLI Limits](../architecture/github-cli-limits.md) - Why gh codespace start doesn't work
 - [Composable Remote Commands](../architecture/composable-remote-commands.md) - Template for new commands

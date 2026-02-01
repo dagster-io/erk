@@ -351,6 +351,44 @@ Then enter Plan Mode with this context.
 **CRITICAL:** Plan steps must reference specific files with line numbers, not generic descriptions.
 ```
 
+### Interviewing Within Plan Mode
+
+When requirements are ambiguous or underspecified, use `/local:interview` to gather context before planning:
+
+**Pattern: Interview → Gather → Plan**
+
+```markdown
+### Step 1: Clarify Ambiguous Requirements
+
+If user request is vague or has multiple valid approaches, use `/local:interview` to gather requirements:
+
+SlashCommand(command="/local:interview <brief-topic>")
+
+This launches a specialized agent with tool restrictions (Read, Glob, Grep, AskUserQuestion only) that:
+
+- Asks clarifying questions about the feature
+- Searches codebase to inform questions
+- Gathers architectural constraints
+- Documents user preferences
+
+### Step 2: Resume with Context
+
+After interview completes, the conversation resumes with gathered context in history. Proceed to planning with this context.
+
+### Step 3: Gather and Plan
+
+Now follow the standard context preservation pattern (Steps 6a-6b) to create a comprehensive plan incorporating interview findings.
+```
+
+**Use case:** User says "add authentication" without specifying method (OAuth, JWT, sessions). Interview agent asks about:
+
+- Existing auth patterns in codebase
+- User preference for auth method
+- Token storage approach
+- Session management requirements
+
+**Tool restriction safety:** `/local:interview` uses `allowed-tools: AskUserQuestion, Read, Glob, Grep` frontmatter to enforce read-only behavior in plan mode. See [Tool Restriction Safety](../commands/tool-restriction-safety.md).
+
 ---
 
 ## Related Documentation

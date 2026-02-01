@@ -47,6 +47,25 @@ else:
 - Submitting branches to remote
 - Tracking branches with parents
 
+**Exception: Ephemeral/Placeholder Branches**
+
+For ephemeral branches that should **never be tracked by Graphite**, use `ctx.git.branch` directly:
+
+```python
+# Placeholder branches bypass BranchManager
+create_result = ctx.git.branch.create_branch(
+    repo.root, placeholder_branch, trunk, force=False
+)
+```
+
+**Examples of ephemeral branches:**
+
+- `placeholder/slot-*` (pool worktree placeholders)
+- Temporary branches for internal operations
+- Branches that will never be pushed or have PRs
+
+**See**: [Placeholder Branches](../erk/placeholder-branches.md) and [Branch Manager Decision Tree](branch-manager-decision-tree.md) for complete guidance.
+
 **Use `ctx.git` for read-only queries:**
 
 - `get_current_branch()`
