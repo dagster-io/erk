@@ -192,8 +192,6 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
     click.echo(f"[trigger-async-learn] Created {learn_dir}", err=True)
 
     # Step 3: Preprocess each local session source
-    planning_session_id = sessions_result.get("planning_session_id")
-
     for source_item in session_sources:
         if not isinstance(source_item, dict):
             continue
@@ -208,6 +206,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
             continue
 
         session_id = source.get("session_id")  # type: ignore
+        planning_session_id = sessions_result.get("planning_session_id")
         prefix = "planning" if session_id == planning_session_id else "impl"
 
         output_paths = _run_preprocess_session(
