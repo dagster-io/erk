@@ -4,10 +4,12 @@ This package provides a Click-based CLI for managing git worktrees in a
 global worktrees directory. See `erk --help` for details.
 """
 
+import click
+
 from erk.cli.cli import cli
 
 
 def main() -> None:
     """CLI entry point used by the `erk` console script."""
-    print("hello from erk")
+    click.echo("Hello from erk")
     cli()
