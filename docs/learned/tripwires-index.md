@@ -13,15 +13,15 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 
 | Category                                    | Tripwires | Load When Working In                          |
 | ------------------------------------------- | --------- | --------------------------------------------- |
-| [architecture](architecture/tripwires.md)   | 74        | `src/erk/gateway/`, gateways, subprocess      |
+| [architecture](architecture/tripwires.md)   | 76        | `src/erk/gateway/`, gateways, subprocess      |
 | [capabilities](capabilities/tripwires.md)   | 1         | Claude Code capabilities, tool use            |
 | [ci](ci/tripwires.md)                       | 22        | `.github/workflows/`, `.github/actions/`      |
 | [claude-code](claude-code/tripwires.md)     | 2         | Claude Code configuration, settings           |
 | [cli](cli/tripwires.md)                     | 24        | `src/erk/cli/`                                |
-| [desktop-dash](desktop-dash/tripwires.md)   | 3         | `desktop-dash/` code                          |
+| [desktop-dash](desktop-dash/tripwires.md)   | 11        | `desktop-dash/` code                          |
 | [gateway](gateway/tripwires.md)             | 2         | `gateway/` code                               |
 | [hooks](hooks/tripwires.md)                 | 2         | `.claude/hooks/`, hook development            |
-| [objectives](objectives/tripwires.md)       | 5         | `objectives/` code                            |
+| [objectives](objectives/tripwires.md)       | 9         | `objectives/` code                            |
 | [planning](planning/tripwires.md)           | 25        | `.impl/`, `.worker-impl/`, planning workflows |
 | [pr-operations](pr-operations/tripwires.md) | 1         | `pr-operations/` code                         |
 | [review](review/tripwires.md)               | 3         | `review/` code                                |
