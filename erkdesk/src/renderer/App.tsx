@@ -1,8 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import type { PlanRow } from "../types/erkdesk";
+import type {
+  PlanRow,
+  ActionOutputEvent,
+  ActionCompletedEvent,
+} from "../types/erkdesk";
 import SplitPane from "./components/SplitPane";
 import PlanList from "./components/PlanList";
 import ActionToolbar from "./components/ActionToolbar";
+import { LogPanel, LogLine } from "./components/LogPanel";
 
 const REFRESH_INTERVAL_MS = 15_000;
 
@@ -12,6 +17,13 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const lastLoadedUrlRef = useRef<string | null>(null);
+
+  const [logLines, setLogLines] = useState<LogLine[]>([]);
+  const [logStatus, setLogStatus] = useState<"running" | "success" | "error">(
+    "running",
+  );
+  const [logVisible, setLogVisible] = useState(false);
+  const [runningActionId, setRunningActionId] = useState<string | null>(null);
 
   useEffect(() => {
     window.erkdesk.fetchPlans().then((result) => {
@@ -78,12 +90,52 @@ const App: React.FC = () => {
     }
   }, [selectedIndex, plans]);
 
+  const handleActionStart = useCallback(
+    (actionId: string, command: string, args: string[]) => {
+      setLogLines([]);
+      setLogStatus("running");
+      setLogVisible(true);
+      setRunningActionId(actionId);
+      window.erkdesk.startStreamingAction(command, args);
+    },
+    [],
+  );
+
+  const handleLogDismiss = useCallback(() => {
+    setLogVisible(false);
+  }, []);
+
+  useEffect(() => {
+    const onOutput = (event: ActionOutputEvent) => {
+      setLogLines((prev) => [
+        ...prev,
+        { stream: event.stream, text: event.data },
+      ]);
+    };
+
+    const onCompleted = (event: ActionCompletedEvent) => {
+      setLogStatus(event.success ? "success" : "error");
+      setRunningActionId(null);
+    };
+
+    window.erkdesk.onActionOutput(onOutput);
+    window.erkdesk.onActionCompleted(onCompleted);
+
+    return () => {
+      window.erkdesk.removeActionListeners();
+    };
+  }, []);
+
   const selectedPlan =
     selectedIndex >= 0 ? (plans[selectedIndex] ?? null) : null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <ActionToolbar selectedPlan={selectedPlan} />
+      <ActionToolbar
+        selectedPlan={selectedPlan}
+        runningActionId={runningActionId}
+        onActionStart={handleActionStart}
+      />
       <SplitPane
         leftPane={
           <PlanList
@@ -95,6 +147,13 @@ const App: React.FC = () => {
           />
         }
       />
+      {logVisible && (
+        <LogPanel
+          lines={logLines}
+          status={logStatus}
+          onDismiss={handleLogDismiss}
+        />
+      )}
     </div>
   );
 };

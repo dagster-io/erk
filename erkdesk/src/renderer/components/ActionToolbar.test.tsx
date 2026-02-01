@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { PlanRow } from "../../types/erkdesk";
 import ActionToolbar from "./ActionToolbar";
@@ -30,17 +30,20 @@ function makePlan(overrides: Partial<PlanRow> = {}): PlanRow {
 }
 
 describe("ActionToolbar", () => {
+  const mockOnActionStart = vi.fn();
+
   beforeEach(() => {
-    vi.mocked(window.erkdesk.executeAction).mockReset();
-    vi.mocked(window.erkdesk.executeAction).mockResolvedValue({
-      success: true,
-      stdout: "",
-      stderr: "",
-    });
+    mockOnActionStart.mockReset();
   });
 
   it("renders all five buttons", () => {
-    render(<ActionToolbar selectedPlan={makePlan()} />);
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan()}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+      />,
+    );
     expect(screen.getByText("Submit")).toBeInTheDocument();
     expect(screen.getByText("Land")).toBeInTheDocument();
     expect(screen.getByText("Address")).toBeInTheDocument();
@@ -49,7 +52,13 @@ describe("ActionToolbar", () => {
   });
 
   it("all buttons enabled when plan has PR, run_url, and OPEN state", () => {
-    render(<ActionToolbar selectedPlan={makePlan()} />);
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan()}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+      />,
+    );
     const buttons = screen.getAllByRole("button");
     for (const button of buttons) {
       expect(button).not.toBeDisabled();
@@ -57,7 +66,13 @@ describe("ActionToolbar", () => {
   });
 
   it("all buttons disabled when no plan selected", () => {
-    render(<ActionToolbar selectedPlan={null} />);
+    render(
+      <ActionToolbar
+        selectedPlan={null}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+      />,
+    );
     const buttons = screen.getAllByRole("button");
     for (const button of buttons) {
       expect(button).toBeDisabled();
@@ -65,24 +80,48 @@ describe("ActionToolbar", () => {
   });
 
   it("disables Land when pr_state is not OPEN", () => {
-    render(<ActionToolbar selectedPlan={makePlan({ pr_state: "MERGED" })} />);
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan({ pr_state: "MERGED" })}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+      />,
+    );
     expect(screen.getByText("Land")).toBeDisabled();
     expect(screen.getByText("Submit")).not.toBeDisabled();
   });
 
   it("disables Land when run_url is null", () => {
-    render(<ActionToolbar selectedPlan={makePlan({ run_url: null })} />);
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan({ run_url: null })}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+      />,
+    );
     expect(screen.getByText("Land")).toBeDisabled();
   });
 
   it("disables Address and Fix Conflicts when no PR", () => {
-    render(<ActionToolbar selectedPlan={makePlan({ pr_number: null })} />);
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan({ pr_number: null })}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+      />,
+    );
     expect(screen.getByText("Address")).toBeDisabled();
     expect(screen.getByText("Fix Conflicts")).toBeDisabled();
   });
 
   it("disables Submit when no issue_url", () => {
-    render(<ActionToolbar selectedPlan={makePlan({ issue_url: null })} />);
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan({ issue_url: null })}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+      />,
+    );
     expect(screen.getByText("Submit")).toBeDisabled();
   });
 
@@ -90,29 +129,43 @@ describe("ActionToolbar", () => {
     render(
       <ActionToolbar
         selectedPlan={makePlan({ pr_number: null, issue_url: null })}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
       />,
     );
     expect(screen.getByText("Close")).not.toBeDisabled();
   });
 
-  it("calls executeAction with correct command for Submit", async () => {
-    render(<ActionToolbar selectedPlan={makePlan()} />);
+  it("calls onActionStart with correct command for Submit", async () => {
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan()}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+      />,
+    );
     const user = userEvent.setup();
     await user.click(screen.getByText("Submit"));
 
-    expect(window.erkdesk.executeAction).toHaveBeenCalledWith("erk", [
+    expect(mockOnActionStart).toHaveBeenCalledWith("submit_to_queue", "erk", [
       "plan",
       "submit",
       "100",
     ]);
   });
 
-  it("calls executeAction with correct command for Land", async () => {
-    render(<ActionToolbar selectedPlan={makePlan()} />);
+  it("calls onActionStart with correct command for Land", async () => {
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan()}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+      />,
+    );
     const user = userEvent.setup();
     await user.click(screen.getByText("Land"));
 
-    expect(window.erkdesk.executeAction).toHaveBeenCalledWith("erk", [
+    expect(mockOnActionStart).toHaveBeenCalledWith("land_pr", "erk", [
       "exec",
       "land-execute",
       "--pr-number=42",
@@ -121,24 +174,36 @@ describe("ActionToolbar", () => {
     ]);
   });
 
-  it("calls executeAction with correct command for Close", async () => {
-    render(<ActionToolbar selectedPlan={makePlan()} />);
+  it("calls onActionStart with correct command for Close", async () => {
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan()}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+      />,
+    );
     const user = userEvent.setup();
     await user.click(screen.getByText("Close"));
 
-    expect(window.erkdesk.executeAction).toHaveBeenCalledWith("erk", [
+    expect(mockOnActionStart).toHaveBeenCalledWith("close_plan", "erk", [
       "exec",
       "close-plan",
       "100",
     ]);
   });
 
-  it("calls executeAction with correct command for Address", async () => {
-    render(<ActionToolbar selectedPlan={makePlan()} />);
+  it("calls onActionStart with correct command for Address", async () => {
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan()}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+      />,
+    );
     const user = userEvent.setup();
     await user.click(screen.getByText("Address"));
 
-    expect(window.erkdesk.executeAction).toHaveBeenCalledWith("erk", [
+    expect(mockOnActionStart).toHaveBeenCalledWith("address_remote", "erk", [
       "launch",
       "pr-address",
       "--pr",
@@ -146,45 +211,50 @@ describe("ActionToolbar", () => {
     ]);
   });
 
-  it("calls executeAction with correct command for Fix Conflicts", async () => {
-    render(<ActionToolbar selectedPlan={makePlan()} />);
+  it("calls onActionStart with correct command for Fix Conflicts", async () => {
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan()}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+      />,
+    );
     const user = userEvent.setup();
     await user.click(screen.getByText("Fix Conflicts"));
 
-    expect(window.erkdesk.executeAction).toHaveBeenCalledWith("erk", [
-      "launch",
-      "pr-fix-conflicts",
-      "--pr",
-      "42",
-    ]);
+    expect(mockOnActionStart).toHaveBeenCalledWith(
+      "fix_conflicts_remote",
+      "erk",
+      ["launch", "pr-fix-conflicts", "--pr", "42"],
+    );
   });
 
-  it("disables all buttons while action is running", async () => {
-    let resolveAction!: () => void;
-    vi.mocked(window.erkdesk.executeAction).mockReturnValue(
-      new Promise((resolve) => {
-        resolveAction = () => resolve({ success: true, stdout: "", stderr: "" });
-      }),
+  it("disables all buttons while action is running", () => {
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan()}
+        runningActionId="submit_to_queue"
+        onActionStart={mockOnActionStart}
+      />,
     );
 
-    render(<ActionToolbar selectedPlan={makePlan()} />);
-    const user = userEvent.setup();
-    await user.click(screen.getByText("Submit"));
-
-    // All buttons should be disabled while running
-    await waitFor(() => {
-      expect(screen.getByText("Submit...")).toBeInTheDocument();
-    });
+    expect(screen.getByText("Submit...")).toBeInTheDocument();
     const buttons = screen.getAllByRole("button");
     for (const button of buttons) {
       expect(button).toBeDisabled();
     }
+  });
 
-    // Resolve and verify buttons re-enable
-    resolveAction();
-    await waitFor(() => {
-      expect(screen.getByText("Submit")).toBeInTheDocument();
-    });
-    expect(screen.getByText("Submit")).not.toBeDisabled();
+  it("shows running state for the correct button", () => {
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan()}
+        runningActionId="land_pr"
+        onActionStart={mockOnActionStart}
+      />,
+    );
+
+    expect(screen.getByText("Land...")).toBeInTheDocument();
+    expect(screen.getByText("Submit")).toBeInTheDocument();
   });
 });

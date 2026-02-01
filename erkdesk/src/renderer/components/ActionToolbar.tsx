@@ -1,9 +1,11 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import type { PlanRow } from "../../types/erkdesk";
 import "./ActionToolbar.css";
 
 interface ActionToolbarProps {
   selectedPlan: PlanRow | null;
+  runningActionId: string | null;
+  onActionStart: (actionId: string, command: string, args: string[]) => void;
 }
 
 interface ActionDef {
@@ -70,22 +72,19 @@ const ACTIONS: ActionDef[] = [
   },
 ];
 
-const ActionToolbar: React.FC<ActionToolbarProps> = ({ selectedPlan }) => {
-  const [runningAction, setRunningAction] = useState<string | null>(null);
-
+const ActionToolbar: React.FC<ActionToolbarProps> = ({
+  selectedPlan,
+  runningActionId,
+  onActionStart,
+}) => {
   const handleClick = useCallback(
-    async (action: ActionDef) => {
-      if (runningAction !== null || selectedPlan === null) return;
+    (action: ActionDef) => {
+      if (runningActionId !== null || selectedPlan === null) return;
 
-      setRunningAction(action.id);
       const { command, args } = action.getCommand(selectedPlan);
-      try {
-        await window.erkdesk.executeAction(command, args);
-      } finally {
-        setRunningAction(null);
-      }
+      onActionStart(action.id, command, args);
     },
-    [runningAction, selectedPlan],
+    [runningActionId, selectedPlan, onActionStart],
   );
 
   return (
@@ -93,8 +92,8 @@ const ActionToolbar: React.FC<ActionToolbarProps> = ({ selectedPlan }) => {
       {ACTIONS.map((action) => {
         const available =
           selectedPlan !== null && action.isAvailable(selectedPlan);
-        const disabled = !available || runningAction !== null;
-        const isRunning = runningAction === action.id;
+        const disabled = !available || runningActionId !== null;
+        const isRunning = runningActionId === action.id;
 
         return (
           <button
