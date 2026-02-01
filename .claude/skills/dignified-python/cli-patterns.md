@@ -30,6 +30,24 @@ def greet(name: str) -> None:
     print(f"Hello, {name}!")  # NEVER use print in CLI
 ```
 
+## CLI Entry Point Greetings
+
+When adding user-facing output to CLI entry points, always use `click.echo()`, never bare `print()`.
+
+```python
+import click
+
+# ✅ CORRECT: Entry point greeting with click.echo()
+def main():
+    """Main entry point for erk CLI."""
+    click.echo("Hello from erk")
+    # ... rest of CLI initialization
+```
+
+**Why not print()?** `click.echo()` handles encoding correctly, integrates with Click's output handling, and can be captured/mocked cleanly in tests.
+
+**Note**: When someone requests "add a print statement" in erk context, this means "add an output statement" which should use `click.echo()`.
+
 ## Error Handling in CLI
 
 ```python

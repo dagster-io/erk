@@ -5,6 +5,8 @@ read_when:
   - "closing a plan"
   - "understanding plan states"
 tripwires:
+  - action: "calling plan-save-to-issue command"
+    warning: "Do not edit on master branch directly. Use the plan save workflow to ensure proper issue creation and branching. Editing directly on master during plan mode can lead to commits pushed to trunk without review and difficulty tracking which changes belong to which plan."
   - action: "manually creating an erk-plan issue with gh issue create"
     warning: "Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
   - action: "saving a plan with --objective-issue flag"
