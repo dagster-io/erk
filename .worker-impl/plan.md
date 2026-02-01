@@ -11,6 +11,7 @@ Create learned documentation capturing all research and reasoning from the Elect
 **Content:** PlanRowData field inventory (40 fields organized by category), PlanDataProvider ABC interface, PlanFilters dataclass, RealPlanDataProvider data fetch flow, display string pattern (pre-formatted `*_display` fields), JSON serialization considerations (datetime fields).
 
 **read_when:**
+
 - "building on top of the TUI data layer"
 - "serializing PlanRowData to JSON"
 - "understanding what data the dashboard displays"
@@ -20,6 +21,7 @@ Create learned documentation capturing all research and reasoning from the Elect
 **Content:** All 14 commands across 3 categories (ACTION/OPEN/COPY), availability predicates per command, execution patterns (in-process HTTP vs subprocess streaming vs long-running 600s), keyboard shortcuts, command context fields, the dual-handler pattern (main list + detail modal).
 
 **read_when:**
+
 - "adding actions to the dashboard"
 - "understanding TUI command execution patterns"
 - "replicating TUI functionality in another frontend"
@@ -29,6 +31,7 @@ Create learned documentation capturing all research and reasoning from the Elect
 **Content:** Five approaches evaluated (Textual-web, Electron, Tauri, Full Web App, Hybrid terminal+browser) with pros/cons. GitHub X-Frame-Options constraint as the deciding factor. WebContentsView vs `<webview>` tag vs iframe analysis.
 
 **read_when:**
+
 - "choosing a framework for the desktop dashboard"
 - "embedding GitHub pages in an application"
 - "understanding why Electron was chosen for the desktop dashboard"
@@ -38,6 +41,7 @@ Create learned documentation capturing all research and reasoning from the Elect
 **Content:** Three patterns evaluated (FastAPI local server, CLI shelling, stdio JSON-RPC). Analysis of current TUI data flow (in-process Python for data, subprocess for actions). Why CLI shelling is the right starting point. Upgrade path to stdio JSON-RPC. Python startup cost analysis.
 
 **read_when:**
+
 - "connecting Electron to a Python backend"
 - "choosing between HTTP server and CLI shelling for IPC"
 - "implementing the desktop dashboard backend"
@@ -47,6 +51,7 @@ Create learned documentation capturing all research and reasoning from the Elect
 **Content:** Why not to port TUI features 1:1. Right pane as primary workspace (inverted hierarchy). GUI-native actions (toolbar, context menu) over memorized keyboard shortcuts. No detail modal (right pane replaces it). Notification-driven workflow vs visual polling. Comparison of TUI constraints vs desktop affordances.
 
 **read_when:**
+
 - "designing the desktop dashboard UX"
 - "deciding which TUI features to carry forward to Electron"
 - "understanding the interaction model differences between TUI and desktop"

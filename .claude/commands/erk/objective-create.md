@@ -311,6 +311,7 @@ Once approved:
    ```bash
    erk exec objective-roadmap-check <issue-number>
    ```
+
    - If `validation_errors` is non-empty, fix the issue body and re-run until clean
    - Report clean validation in the success output
 
