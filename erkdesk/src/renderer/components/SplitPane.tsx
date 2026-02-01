@@ -42,6 +42,19 @@ const SplitPane: React.FC<SplitPaneProps> = ({
     return () => window.removeEventListener("resize", reportBounds);
   }, [reportBounds]);
 
+  // ResizeObserver to detect when right pane size changes (e.g., log panel appears).
+  useEffect(() => {
+    const el = rightPaneRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver(() => {
+      reportBounds();
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [reportBounds]);
+
   // Divider drag handling.
   useEffect(() => {
     if (!isDragging) return;

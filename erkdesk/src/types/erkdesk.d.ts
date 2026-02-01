@@ -42,12 +42,26 @@ export interface ActionResult {
   error?: string;
 }
 
+export interface ActionOutputEvent {
+  stream: "stdout" | "stderr";
+  data: string;
+}
+
+export interface ActionCompletedEvent {
+  success: boolean;
+  error?: string;
+}
+
 export interface ErkdeskAPI {
   version: string;
   updateWebViewBounds: (bounds: WebViewBounds) => void;
   loadWebViewURL: (url: string) => void;
   fetchPlans: () => Promise<FetchPlansResult>;
   executeAction: (command: string, args: string[]) => Promise<ActionResult>;
+  startStreamingAction: (command: string, args: string[]) => void;
+  onActionOutput: (callback: (event: ActionOutputEvent) => void) => void;
+  onActionCompleted: (callback: (event: ActionCompletedEvent) => void) => void;
+  removeActionListeners: () => void;
 }
 
 declare global {

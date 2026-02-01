@@ -1,0 +1,84 @@
+.log-panel {
+  height: 200px;
+  flex-shrink: 0;
+  background: #1e1e1e;
+  border-top: 1px solid #404040;
+  display: flex;
+  flex-direction: column;
+}
+
+.log-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: #2d2d2d;
+  border-bottom: 1px solid #404040;
+  flex-shrink: 0;
+}
+
+.log-panel__status {
+  font-family: "Menlo", "Consolas", "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.log-panel__status--running {
+  color: #4ec9b0;
+  background: rgba(78, 201, 176, 0.1);
+}
+
+.log-panel__status--success {
+  color: #6a9955;
+  background: rgba(106, 153, 85, 0.1);
+}
+
+.log-panel__status--error {
+  color: #f48771;
+  background: rgba(244, 135, 113, 0.1);
+}
+
+.log-panel__dismiss {
+  background: transparent;
+  border: none;
+  color: #d4d4d4;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  margin: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+}
+
+.log-panel__dismiss:hover {
+  background: #3c3c3c;
+}
+
+.log-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+  font-family: "Menlo", "Consolas", "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.log-panel__line {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.log-panel__line--stdout {
+  color: #d4d4d4;
+}
+
+.log-panel__line--stderr {
+  color: #f48771;
+}

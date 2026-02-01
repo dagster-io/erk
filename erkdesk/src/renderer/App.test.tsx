@@ -35,6 +35,10 @@ describe("App", () => {
     vi.mocked(window.erkdesk.loadWebViewURL).mockReset();
     vi.mocked(window.erkdesk.updateWebViewBounds).mockReset();
     vi.mocked(window.erkdesk.executeAction).mockReset();
+    vi.mocked(window.erkdesk.startStreamingAction).mockReset();
+    vi.mocked(window.erkdesk.onActionOutput).mockReset();
+    vi.mocked(window.erkdesk.onActionCompleted).mockReset();
+    vi.mocked(window.erkdesk.removeActionListeners).mockReset();
   });
 
   it("renders loading state initially", () => {
@@ -250,6 +254,86 @@ describe("App", () => {
         expect(screen.getByText("Keeper")).toBeInTheDocument();
       });
       expect(screen.queryByText(/Error:/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("log panel streaming", () => {
+    it("shows log panel when action button is clicked", async () => {
+      const plans = [
+        makePlan({
+          issue_number: 1,
+          issue_url: "https://github.com/org/repo/issues/1",
+        }),
+      ];
+      vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+        success: true,
+        plans,
+        count: 1,
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Submit")).toBeInTheDocument();
+      });
+
+      const user = userEvent.setup();
+      await user.click(screen.getByText("Submit"));
+
+      expect(window.erkdesk.startStreamingAction).toHaveBeenCalledWith("erk", [
+        "plan",
+        "submit",
+        "1",
+      ]);
+      expect(screen.getByText("Running...")).toBeInTheDocument();
+    });
+
+    it("hides log panel when dismiss button is clicked", async () => {
+      const plans = [
+        makePlan({
+          issue_number: 1,
+          issue_url: "https://github.com/org/repo/issues/1",
+        }),
+      ];
+      vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+        success: true,
+        plans,
+        count: 1,
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Submit")).toBeInTheDocument();
+      });
+
+      const user = userEvent.setup();
+      await user.click(screen.getByText("Submit"));
+      expect(screen.getByText("Running...")).toBeInTheDocument();
+
+      await user.click(screen.getByLabelText("Dismiss log panel"));
+      expect(screen.queryByText("Running...")).not.toBeInTheDocument();
+    });
+
+    it("registers and cleans up streaming listeners", async () => {
+      vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+        success: true,
+        plans: [makePlan()],
+        count: 1,
+      });
+
+      const { unmount } = render(<App />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Submit")).toBeInTheDocument();
+      });
+
+      expect(window.erkdesk.onActionOutput).toHaveBeenCalled();
+      expect(window.erkdesk.onActionCompleted).toHaveBeenCalled();
+
+      unmount();
+
+      expect(window.erkdesk.removeActionListeners).toHaveBeenCalled();
     });
   });
 });
