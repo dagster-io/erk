@@ -29,7 +29,7 @@ Each layer serves a different purpose and they work together to create flexible,
 ### The Core Pattern
 
 ```yaml
-if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'plan-review')
+if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
 ```
 
 This pattern appears in:
@@ -49,7 +49,7 @@ The `!contains()` pattern uses **negation** to exclude labeled PRs. This design 
 **WRONG (skips all push events):**
 
 ```yaml
-if: contains(github.event.pull_request.labels.*.name, 'plan-review')
+if: contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
 ```
 
 This evaluates to `false` for push events (empty array), so the job is skipped.
@@ -57,7 +57,7 @@ This evaluates to `false` for push events (empty array), so the job is skipped.
 **CORRECT (runs for push events):**
 
 ```yaml
-if: !contains(github.event.pull_request.labels.*.name , 'plan-review')
+if: !contains(github.event.pull_request.labels.*.name , 'erk-plan-review')
 ```
 
 This evaluates to `true` for push events (empty array doesn't contain 'plan-review'), so the job runs.
@@ -66,8 +66,8 @@ This evaluates to `true` for push events (empty array doesn't contain 'plan-revi
 
 The negation pattern creates a safe default behavior:
 
-- **PR with 'plan-review' label**: Job is skipped (intended)
-- **PR without 'plan-review' label**: Job runs (intended)
+- **PR with 'erk-plan-review' label**: Job is skipped (intended)
+- **PR without 'erk-plan-review' label**: Job runs (intended)
 - **Push event (no PR context)**: Job runs (safe default - don't skip CI on direct pushes)
 
 This ensures that CI always runs on direct pushes to branches, which is important for protecting the main branch.
@@ -98,7 +98,7 @@ Both checks are needed because:
 The combined condition ensures CI only runs on PRs that are both:
 
 - Ready for review (not draft)
-- Contain code changes (not labeled 'plan-review')
+- Contain code changes (not labeled 'erk-plan-review')
 
 ## ready_for_review Trigger Complement
 
@@ -139,12 +139,12 @@ on:
 ```yaml
 jobs:
   check-submission:
-    if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'plan-review')
+    if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
 ```
 
 **Purpose**: Decide whether individual jobs execute within the triggered workflow.
 
-**Effect**: The job is skipped if the PR is a draft or has the 'plan-review' label. Other jobs in the workflow can still run.
+**Effect**: The job is skipped if the PR is a draft or has the 'erk-plan-review' label. Other jobs in the workflow can still run.
 
 ### Layer 3: Output-Based Skipping
 
@@ -185,7 +185,7 @@ autofix:
     github.ref_name != 'main' &&
     (github.event_name == 'pull_request' || github.event_name == 'push') &&
     (github.event_name != 'pull_request' || github.event.pull_request.draft != true) &&
-    (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'plan-review')) &&
+    (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')) &&
     (needs.format.result == 'failure' ||
      needs.lint.result == 'failure' ||
      needs.prettier.result == 'failure' ||
@@ -216,7 +216,7 @@ The defense-in-depth approach combines both:
 autofix:
   if: |
     always() &&
-    (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'plan-review')) &&
+    (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')) &&
     ...
   steps:
     - name: Discover PR
@@ -230,12 +230,12 @@ autofix:
           echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
         fi
 
-    - name: Check plan-review label
+    - name: Check erk-plan-review label
       id: check-label
       if: steps.discover-pr.outputs.pr_number != ''
       run: |
         labels=$(gh api repos/${{ github.repository }}/pulls/${{ steps.discover-pr.outputs.pr_number }} --jq '[.labels[].name] | join(",")')
-        if echo "$labels" | grep -q "plan-review"; then
+        if echo "$labels" | grep -q "erk-plan-review"; then
           echo "has_plan_review_label=true" >> $GITHUB_OUTPUT
         else
           echo "has_plan_review_label=false" >> $GITHUB_OUTPUT
@@ -266,7 +266,7 @@ See [GitHub Actions Label Queries](github-actions-label-queries.md) for detailed
 
 | Scenario                    | Pattern                                                       | Example                                       |
 | --------------------------- | ------------------------------------------------------------- | --------------------------------------------- |
-| Exclude labeled PRs         | `!contains(github.event.pull_request.labels.*.name, 'label')` | Skip CI for plan-review PRs                   |
+| Exclude labeled PRs         | `!contains(github.event.pull_request.labels.*.name, 'label')` | Skip CI for erk-plan-review PRs               |
 | Exclude draft PRs           | `github.event.pull_request.draft != true`                     | Don't run CI until PR is ready                |
 | Both draft and label        | Combine both conditions with `&&`                             | Skip CI for draft plan reviews                |
 | Allow workflow but skip job | Job-level `if:` condition                                     | Skip code checks but run metadata checks      |

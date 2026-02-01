@@ -39,7 +39,7 @@ autofix:
     always() &&
     github.ref_name != 'master' &&
     (github.event_name == 'pull_request' || github.event_name == 'push') &&
-    (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'plan-review')) &&
+    (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')) &&
     (needs.format.result == 'failure' || ...)
   runs-on: ubuntu-latest
   steps:
@@ -62,15 +62,15 @@ autofix:
           fi
         fi
 
-    - name: Check plan-review label
+    - name: Check erk-plan-review label
       id: check-label
       if: steps.discover-pr.outputs.has_pr == 'true' && steps.pr.outputs.is_fork != 'true'
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
         labels=$(gh api repos/${{ github.repository }}/pulls/${{ steps.discover-pr.outputs.pr_number }} --jq '[.labels[].name] | join(",")')
-        if echo "$labels" | grep -q "plan-review"; then
-          echo "PR has plan-review label, skipping autofix"
+        if echo "$labels" | grep -q "erk-plan-review"; then
+          echo "PR has erk-plan-review label, skipping autofix"
           echo "has_plan_review_label=true" >> $GITHUB_OUTPUT
         else
           echo "has_plan_review_label=false" >> $GITHUB_OUTPUT
@@ -99,7 +99,7 @@ The `should-autofix` step consolidates all skip conditions into a single boolean
 
 - **has_pr**: Must have an open PR for the branch
 - **is_fork**: Skip fork PRs for security
-- **has_plan_review_label**: Skip PRs with plan-review label (manual review only)
+- **has_plan_review_label**: Skip PRs with erk-plan-review label (manual review only)
 - **has_impl_folder**: Skip PRs with .impl/ folder (agent-generated code)
 
 All subsequent steps check `steps.should-autofix.outputs.run == 'true'` instead of repeating the complex condition.
