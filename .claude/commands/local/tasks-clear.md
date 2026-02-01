@@ -2,14 +2,14 @@
 description: Clear all todos from the current session
 ---
 
-# /todos-clear
+# /tasks-clear
 
 Clears all todo items from the current Claude Code session.
 
 ## Usage
 
 ```bash
-/todos-clear
+/tasks-clear
 ```
 
 ## When to Use
