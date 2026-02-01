@@ -21,6 +21,10 @@ on:
         description: "Unique identifier for run discovery (base36)"
         required: true
         type: string
+      gist_url:
+        description: "URL of gist containing preprocessed learn materials (optional)"
+        required: false
+        type: string
 
 concurrency:
   group: learn-issue-${{ github.event.inputs.issue_number }}
@@ -51,11 +55,21 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
+          GIST_URL: ${{ inputs.gist_url }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          claude --print \
-            --verbose \
-            --model claude-haiku-4-5 \
-            --output-format stream-json \
-            --dangerously-skip-permissions \
-            "/erk:learn $ISSUE_NUMBER"
+          if [ -n "$GIST_URL" ]; then
+            claude --print \
+              --verbose \
+              --model claude-haiku-4-5 \
+              --output-format stream-json \
+              --dangerously-skip-permissions \
+              "/erk:learn $ISSUE_NUMBER gist_url=$GIST_URL"
+          else
+            claude --print \
+              --verbose \
+              --model claude-haiku-4-5 \
+              --output-format stream-json \
+              --dangerously-skip-permissions \
+              "/erk:learn $ISSUE_NUMBER"
+          fi

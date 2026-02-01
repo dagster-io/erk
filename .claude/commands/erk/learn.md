@@ -10,8 +10,9 @@ Create a documentation plan from Claude Code sessions associated with a plan imp
 ## Usage
 
 ```
-/erk:learn           # Infers issue from current branch (P{issue}-...)
-/erk:learn 4655      # Explicit issue number
+/erk:learn                              # Infers issue from current branch (P{issue}-...)
+/erk:learn 4655                          # Explicit issue number
+/erk:learn 4655 gist_url=https://...    # With preprocessed materials gist
 ```
 
 ## Purpose
@@ -55,7 +56,50 @@ Error: Issue #<issue-number> is a learn plan (has erk-learn label).
 Cannot learn from a learn plan - this would create documentation cycles.
 ```
 
-If the issue is NOT a learn plan, proceed to Step 2.
+If the issue is NOT a learn plan, proceed to Step 1.5.
+
+### Step 1.5: Check for Preprocessed Materials
+
+Check if a `gist_url` parameter was provided in the command arguments (format: `gist_url=https://...`).
+
+**If `gist_url` is provided:**
+
+1. Create the learn directory:
+
+   ```bash
+   mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
+   ```
+
+2. Download and extract the gist:
+
+   ```bash
+   result=$(erk exec download-learn-materials \
+       --gist-url "<gist_url>" \
+       --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn)
+
+   # Check for failure
+   if echo "$result" | jq -e '.success == false' > /dev/null 2>&1; then
+       echo "ERROR: Failed to download learn materials: $(echo "$result" | jq -r '.error')"
+       exit 1
+   fi
+
+   file_count=$(echo "$result" | jq -r '.file_count')
+   echo "Downloaded $file_count file(s) from gist"
+   ```
+
+3. Tell the user:
+
+   ```
+   Using preprocessed materials from gist:
+     - Downloaded N file(s) to .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/
+     - Skipping session discovery and preprocessing
+   ```
+
+4. **Skip to Step 3** (Analyze Implementation). The preprocessed sessions and PR comments are already in the learn directory.
+
+**If no `gist_url` is provided:**
+
+Proceed to Step 2 for standard session discovery and preprocessing.
 
 ### Step 2: Get Session Information
 
@@ -169,6 +213,8 @@ Task(
 
 ### Step 4: Gather and Analyze Sessions
 
+**Note:** If you downloaded preprocessed materials from a gist in Step 1.5, skip the "Preprocess Sessions" and "Save PR Comments" subsections. The files are already in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`. Proceed to "Launch Parallel Analysis Agents".
+
 #### Check Existing Documentation
 
 **Note:** This manual check provides a quick overview. The **existing-docs-checker agent** (launched in parallel below) performs a thorough search across all documentation directories.
@@ -249,6 +295,8 @@ erk exec get-pr-discussion-comments --pr <pr-number> \
 ```
 
 #### Upload to Gist
+
+**Note:** If you downloaded preprocessed materials from a gist in Step 1.5, skip this subsection. The gist URL is already available from the command arguments.
 
 Upload preprocessed session files and PR comments to a secret gist:
 

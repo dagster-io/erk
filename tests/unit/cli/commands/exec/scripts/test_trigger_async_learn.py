@@ -2,10 +2,15 @@
 
 Tests triggering the learn.yml workflow for async learn.
 Uses FakeGitHub for dependency injection.
+
+NOTE: Full orchestration testing (session preprocessing, gist upload, etc.)
+requires mocking subprocess.run calls since the script orchestrates multiple
+erk exec commands via subprocess.
 """
 
 import json
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
@@ -18,13 +23,63 @@ from erk_shared.gateway.github.types import RepoInfo
 
 
 def test_trigger_async_learn_success(tmp_path: Path) -> None:
-    """Test successful workflow trigger returns correct JSON."""
+    """Test successful workflow trigger with full orchestration pipeline."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
     github = FakeGitHub(repo_info=repo_info)
     ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
 
-    result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
+    # Create the .erk/scratch directory that the script expects
+    learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
+    learn_dir.mkdir(parents=True)
+
+    # Mock subprocess calls to simulate the orchestration pipeline
+    mock_subprocess_results = [
+        # get-learn-sessions
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "success": True,
+                    "session_sources": [
+                        {
+                            "source": "local",
+                            "session_path": "/fake/path.jsonl",
+                            "session_type": "planning",
+                        }
+                    ],
+                }
+            ),
+            stderr="",
+        ),
+        # preprocess-session (planning)
+        MagicMock(returncode=0, stdout=json.dumps({"success": True}), stderr=""),
+        # get-pr-for-plan
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps({"success": True, "pr_number": 456}),
+            stderr="",
+        ),
+        # get-pr-review-comments
+        MagicMock(returncode=0, stdout=json.dumps({"success": True, "threads": []}), stderr=""),
+        # get-pr-discussion-comments
+        MagicMock(returncode=0, stdout=json.dumps({"success": True, "comments": []}), stderr=""),
+        # upload-learn-materials
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "success": True,
+                    "gist_url": "https://gist.github.com/user/abc123",
+                    "file_count": 1,
+                }
+            ),
+            stderr="",
+        ),
+    ]
+
+    with patch("subprocess.run", side_effect=mock_subprocess_results):
+        result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
 
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -35,21 +90,52 @@ def test_trigger_async_learn_success(tmp_path: Path) -> None:
     assert (
         output["workflow_url"] == "https://github.com/test-owner/test-repo/actions/runs/1234567890"
     )
+    assert output["gist_url"] == "https://gist.github.com/user/abc123"
 
 
 def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
-    """Test that workflow trigger is called with correct parameters."""
+    """Test that workflow trigger is called with correct parameters including gist_url."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
     github = FakeGitHub(repo_info=repo_info)
     ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
 
-    runner.invoke(trigger_async_learn_command, ["456"], obj=ctx)
+    learn_dir = tmp_path / ".erk" / "scratch" / "learn-456"
+    learn_dir.mkdir(parents=True)
+
+    # Mock the subprocess pipeline
+    mock_subprocess_results = [
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps({"success": True, "session_sources": []}),
+            stderr="",
+        ),
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps({"success": False}),
+            stderr="",
+        ),  # get-pr-for-plan (no PR)
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "success": True,
+                    "gist_url": "https://gist.github.com/user/xyz789",
+                    "file_count": 0,
+                }
+            ),
+            stderr="",
+        ),
+    ]
+
+    with patch("subprocess.run", side_effect=mock_subprocess_results):
+        runner.invoke(trigger_async_learn_command, ["456"], obj=ctx)
 
     assert len(github.triggered_workflows) == 1
     workflow, inputs = github.triggered_workflows[0]
     assert workflow == "learn.yml"
     assert inputs["issue_number"] == "456"
+    assert inputs["gist_url"] == "https://gist.github.com/user/xyz789"
 
 
 def test_trigger_async_learn_no_repo_info(tmp_path: Path) -> None:
@@ -80,13 +166,42 @@ def test_trigger_async_learn_no_context(tmp_path: Path) -> None:
 
 
 def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
-    """Test that JSON output has expected structure on success."""
+    """Test that JSON output has expected structure on success including gist_url."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="dagster-io", name="erk")
     github = FakeGitHub(repo_info=repo_info)
     ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
 
-    result = runner.invoke(trigger_async_learn_command, ["789"], obj=ctx)
+    learn_dir = tmp_path / ".erk" / "scratch" / "learn-789"
+    learn_dir.mkdir(parents=True)
+
+    # Mock the subprocess pipeline
+    mock_subprocess_results = [
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps({"success": True, "session_sources": []}),
+            stderr="",
+        ),
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps({"success": False}),
+            stderr="",
+        ),  # get-pr-for-plan (no PR)
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "success": True,
+                    "gist_url": "https://gist.github.com/user/test123",
+                    "file_count": 0,
+                }
+            ),
+            stderr="",
+        ),
+    ]
+
+    with patch("subprocess.run", side_effect=mock_subprocess_results):
+        result = runner.invoke(trigger_async_learn_command, ["789"], obj=ctx)
 
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -97,6 +212,7 @@ def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
     assert "workflow_triggered" in output
     assert "run_id" in output
     assert "workflow_url" in output
+    assert "gist_url" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
@@ -104,3 +220,4 @@ def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
     assert isinstance(output["workflow_triggered"], bool)
     assert isinstance(output["run_id"], str)
     assert isinstance(output["workflow_url"], str)
+    assert isinstance(output["gist_url"], str)
