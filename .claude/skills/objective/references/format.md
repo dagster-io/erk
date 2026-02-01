@@ -576,4 +576,6 @@ Returns JSON with:
 
 ### Updating Roadmap Steps
 
-Agents update roadmap steps by rewriting the full objective body (whole-body update) rather than surgical per-cell mutation. The agent reads the body, edits the roadmap table directly, and writes back via `erk exec update-issue-body`.
+Use `erk exec update-roadmap-step` for surgical updates to a single step's PR and Status cells. This command handles the correct status computation and table formatting automatically.
+
+For multi-step updates or structural changes, agents can also rewrite the full objective body via `erk exec update-issue-body`.

@@ -99,9 +99,14 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             status_col = row_match.group(3).strip().lower()
             pr_col = row_match.group(4).strip()
 
-            # Infer status based on status column and PR column
-            if status_col in ("blocked", "skipped"):
+            # Explicit status values take priority
+            if status_col in ("done", "blocked", "skipped"):
                 status = status_col
+            elif status_col in ("in-progress", "in_progress"):
+                status = "in_progress"
+            elif status_col == "pending":
+                status = "pending"
+            # Fall back to PR-column inference for "-" or legacy values
             elif pr_col and pr_col != "-" and pr_col.startswith("#"):
                 status = "done"
             elif pr_col and pr_col.startswith("plan #"):

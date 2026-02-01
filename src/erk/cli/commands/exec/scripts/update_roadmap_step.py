@@ -64,9 +64,8 @@ def _replace_step_pr_in_body(body: str, step_id: str, new_pr: str) -> str | None
     """Replace the PR cell for a step in the raw markdown body.
 
     Uses regex to find the table row matching the step ID and replace
-    the last two cells (status -> "-", pr -> new value). Setting status
-    to "-" allows the parser's inference logic to determine the correct
-    status from the PR column value.
+    the last two cells (status and pr). The status is computed from the PR
+    value to provide human-readable status in the roadmap table.
 
     Returns:
         Updated body string, or None if the step row was not found.
@@ -82,10 +81,18 @@ def _replace_step_pr_in_body(body: str, step_id: str, new_pr: str) -> str | None
     if match is None:
         return None
 
+    # Determine display status from PR value
+    if new_pr.startswith("#"):
+        display_status = "done"
+    elif new_pr.startswith("plan #"):
+        display_status = "in-progress"
+    else:
+        display_status = "pending"
+
     # Build replacement: preserve step_id cell and description cell,
-    # set status to "-" and pr to new value
+    # set computed status and pr
     pr_display = new_pr if new_pr else "-"
-    replacement = f"|{match.group(1)}|{match.group(2)}| - | {pr_display} |"
+    replacement = f"|{match.group(1)}|{match.group(2)}| {display_status} | {pr_display} |"
 
     return body[: match.start()] + replacement + body[match.end() :]
 
