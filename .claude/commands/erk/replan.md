@@ -80,23 +80,12 @@ Store the objective issue number(s) for later use when saving the new plan.
 - If plans have different `objective_issues`, warn the user and ask which to use
 - If only some plans have `objective_issues`, use the one(s) that exist
 
-### Step 3: Fetch Plan Content (Parallel if Multiple)
+### Step 3: Plan Content Fetching (Delegated to Step 4)
 
-For each issue, fetch the plan content stored in the first comment's `plan-body` metadata block:
+Plan content is fetched by each Explore agent in Step 4, not in the main context.
+This avoids dumping large plan bodies into the main conversation.
 
-```bash
-gh issue view <number> --comments --json comments
-```
-
-Parse the first comment to find `<!-- erk:metadata-block:plan-body -->` section.
-
-Extract the plan content from within the `<details>` block.
-
-If no plan-body found for any issue, display error:
-
-```
-Error: No plan content found in issue #<number>. Expected plan-body metadata block in first comment.
-```
+Skip to Step 4.
 
 ### Step 4: Deep Investigation
 
@@ -112,9 +101,35 @@ Launch parallel Explore agents (one per plan, using `run_in_background: true`), 
 
 **For each plan (parallel or sequential):**
 
-#### 4a: Check Plan Items Against Codebase
+#### 4a: Fetch Plan Content (Agent's First Action)
 
-For each implementation item in the plan:
+Each Explore agent MUST fetch its issue's plan content as its first action. This keeps the raw plan content inside the agent's context instead of the main conversation.
+
+**Fetch command:**
+
+```bash
+gh issue view <number> --comments --json comments --jq '.comments[0].body'
+```
+
+**Parse the plan content:**
+
+1. Look for the `<!-- erk:metadata-block:plan-body -->` metadata block in the first comment
+2. Extract the plan content from within the `<details>` block
+3. If no `plan-body` metadata block is found in the first comment, check the issue body directly (handles cases like #6431 where content is in the body)
+
+**If no plan content found:**
+
+Return an error to the main agent:
+
+```
+Error: No plan content found in issue #<number>. Expected plan-body metadata block in first comment or issue body.
+```
+
+The agent should fail early if it cannot fetch the plan content, rather than proceeding with incomplete information.
+
+#### 4b: Check Plan Items Against Codebase
+
+For each implementation item in the plan (now fetched in 4a):
 
 - Search for relevant files, functions, or patterns
 - Determine status: **implemented**, **partially implemented**, **not implemented**, or **obsolete**
@@ -125,7 +140,7 @@ Build a comparison table showing:
 | --------- | -------------- | ----- |
 | ...       | ...            | ...   |
 
-#### 4b: Deep Investigation (MANDATORY)
+#### 4c: Deep Investigation (MANDATORY)
 
 Go beyond the plan items to understand the actual implementation:
 
@@ -136,14 +151,14 @@ Go beyond the plan items to understand the actual implementation:
 5. **Entry Points**: Map all places that trigger the relevant functionality
 6. **Configuration**: Find config options, defaults, and overrides
 
-#### 4c: Document Corrections and Discoveries
+#### 4d: Document Corrections and Discoveries
 
 Create two lists per plan:
 
 1. **Corrections to Original Plan**: Wrong assumptions, incorrect names, outdated information
 2. **Additional Details**: Implementation specifics, architectural insights, edge cases
 
-### Step 4d: Consolidation Analysis (CONSOLIDATION_MODE only)
+### Step 4e: Consolidation Analysis (CONSOLIDATION_MODE only)
 
 If consolidating multiple plans:
 
@@ -152,7 +167,7 @@ If consolidating multiple plans:
 3. **Dependency Ordering**: Order items by dependency across all plans
 4. **Attribution Tracking**: Track which items came from which plan
 
-### Step 4e: Wait for All Background Investigations (CRITICAL)
+### Step 4f: Wait for All Background Investigations (CRITICAL)
 
 **BEFORE proceeding to Step 5 or Step 6, you MUST wait for ALL background agents to complete.**
 
