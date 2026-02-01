@@ -97,7 +97,10 @@ def _run_subprocess(cmd: list[str], *, description: str, emoji: str) -> dict[str
     Raises:
         SystemExit: On subprocess failure (outputs error JSON and exits)
     """
-    prefix = f"{emoji} " if emoji else ""
+    if emoji:
+        prefix = f"{emoji} "
+    else:
+        prefix = ""
     message = click.style(f"{prefix}{description}...", fg="cyan")
     click.echo(message, err=True)
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
@@ -226,8 +229,12 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
             continue
         sid = source_item.get("session_id", "unknown")
         source_type = source_item.get("source_type", "unknown")
-        prefix = "planning" if sid == planning_session_id else "impl"
-        emoji = "📝" if prefix == "planning" else "🔧"
+        if sid == planning_session_id:
+            prefix = "planning"
+            emoji = "📝"
+        else:
+            prefix = "impl"
+            emoji = "🔧"
         session_line = click.style(f"     {emoji} {prefix}: {sid} ({source_type})", dim=True)
         click.echo(session_line, err=True)
 

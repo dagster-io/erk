@@ -10,8 +10,15 @@ from erk.core.context import ErkContext
 @click.command("next-plan")
 @click.argument("issue_ref")
 @click.option("--codespace", "-c", "name", default=None, help="Codespace name.")
+@click.option(
+    "-d",
+    "--dangerous",
+    is_flag=True,
+    default=False,
+    help="Allow dangerous permissions by passing --allow-dangerously-skip-permissions to Claude",
+)
 @click.pass_obj
-def run_next_plan(ctx: ErkContext, issue_ref: str, name: str | None) -> None:
+def run_next_plan(ctx: ErkContext, issue_ref: str, name: str | None, dangerous: bool) -> None:
     """Run objective next-plan remotely on a codespace.
 
     ISSUE_REF is an objective issue number or GitHub URL.
@@ -24,9 +31,13 @@ def run_next_plan(ctx: ErkContext, issue_ref: str, name: str | None) -> None:
     click.echo(f"Starting codespace '{codespace.name}'...", err=True)
     ctx.codespace.start_codespace(codespace.gh_name)
 
-    remote_cmd = build_codespace_ssh_command(f"erk objective next-plan {issue_ref}")
+    if dangerous:
+        remote_erk_cmd = f"erk objective next-plan -d {issue_ref}"
+    else:
+        remote_erk_cmd = f"erk objective next-plan {issue_ref}"
+    remote_cmd = build_codespace_ssh_command(remote_erk_cmd)
     click.echo(
-        f"Running 'erk objective next-plan {issue_ref}' on '{codespace.name}'...",
+        f"Running '{remote_erk_cmd}' on '{codespace.name}'...",
         err=True,
     )
     ctx.codespace.exec_ssh_interactive(codespace.gh_name, remote_cmd)

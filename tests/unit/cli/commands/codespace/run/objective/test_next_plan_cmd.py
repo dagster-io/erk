@@ -89,3 +89,54 @@ def test_run_next_plan_fails_when_no_codespace() -> None:
 
     assert result.exit_code == 1
     assert "No default codespace set" in result.output
+
+
+def test_run_next_plan_with_dangerous_flag() -> None:
+    """run objective next-plan -d includes -d flag in remote command."""
+    runner = CliRunner()
+
+    cs = _make_codespace("mybox")
+    fake_codespace = FakeCodespace()
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    ctx = context_for_test(codespace=fake_codespace, codespace_registry=codespace_registry)
+
+    result = runner.invoke(
+        cli,
+        ["codespace", "run", "objective", "next-plan", "-d", "42"],
+        obj=ctx,
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert "Running 'erk objective next-plan -d 42' on 'mybox'" in result.output
+
+    # Verify the remote command includes -d flag
+    assert len(fake_codespace.ssh_calls) == 1
+    call = fake_codespace.ssh_calls[0]
+    assert "erk objective next-plan -d 42" in call.remote_command
+
+
+def test_run_next_plan_without_dangerous_flag() -> None:
+    """run objective next-plan without -d does not include -d in remote command."""
+    runner = CliRunner()
+
+    cs = _make_codespace("mybox")
+    fake_codespace = FakeCodespace()
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    ctx = context_for_test(codespace=fake_codespace, codespace_registry=codespace_registry)
+
+    result = runner.invoke(
+        cli,
+        ["codespace", "run", "objective", "next-plan", "42"],
+        obj=ctx,
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert "Running 'erk objective next-plan 42' on 'mybox'" in result.output
+
+    # Verify the remote command does not include -d flag
+    assert len(fake_codespace.ssh_calls) == 1
+    call = fake_codespace.ssh_calls[0]
+    assert "erk objective next-plan 42" in call.remote_command
+    assert "-d" not in call.remote_command

@@ -14,8 +14,15 @@ from erk_shared.context.types import InteractiveClaudeConfig
 @alias("np")
 @click.command("next-plan")
 @click.argument("issue_ref")
+@click.option(
+    "-d",
+    "--dangerous",
+    is_flag=True,
+    default=False,
+    help="Allow dangerous permissions by passing --allow-dangerously-skip-permissions to Claude",
+)
 @click.pass_obj
-def next_plan(ctx: ErkContext, issue_ref: str) -> None:
+def next_plan(ctx: ErkContext, issue_ref: str, dangerous: bool) -> None:
     """Create an implementation plan from an objective step.
 
     ISSUE_REF is an objective issue number or GitHub URL.
@@ -39,11 +46,16 @@ def next_plan(ctx: ErkContext, issue_ref: str) -> None:
         ic_config = InteractiveClaudeConfig.default()
     else:
         ic_config = ctx.global_config.interactive_claude
+    if dangerous:
+        allow_dangerous_override = True
+    else:
+        allow_dangerous_override = None
+
     config = ic_config.with_overrides(
         permission_mode_override="plan",
         model_override=None,
         dangerous_override=None,
-        allow_dangerous_override=None,
+        allow_dangerous_override=allow_dangerous_override,
     )
 
     # Build Claude CLI arguments

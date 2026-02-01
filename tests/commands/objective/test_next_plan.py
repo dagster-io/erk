@@ -142,3 +142,49 @@ def test_next_plan_respects_allow_dangerous_config() -> None:
         "--allow-dangerously-skip-permissions",
         "/erk:objective-next-plan 123",
     ]
+
+
+def test_next_plan_with_dangerous_flag() -> None:
+    """Test that -d/--dangerous flag passes --allow-dangerously-skip-permissions to Claude."""
+    runner = CliRunner()
+
+    with (
+        patch("shutil.which", return_value="/usr/local/bin/claude"),
+        patch("os.execvp") as mock_execvp,
+    ):
+        runner.invoke(cli, ["objective", "next-plan", "-d", "123"])
+
+    mock_execvp.assert_called_once()
+    call_args = mock_execvp.call_args
+    assert call_args[0][0] == "claude"
+    args_list = call_args[0][1]
+    # Should include --allow-dangerously-skip-permissions from -d flag
+    assert args_list == [
+        "claude",
+        "--permission-mode",
+        "plan",
+        "--allow-dangerously-skip-permissions",
+        "/erk:objective-next-plan 123",
+    ]
+
+
+def test_next_plan_without_dangerous_flag() -> None:
+    """Test that without -d flag, --allow-dangerously-skip-permissions is not passed."""
+    runner = CliRunner()
+
+    with (
+        patch("shutil.which", return_value="/usr/local/bin/claude"),
+        patch("os.execvp") as mock_execvp,
+    ):
+        runner.invoke(cli, ["objective", "next-plan", "123"])
+
+    mock_execvp.assert_called_once()
+    call_args = mock_execvp.call_args
+    args_list = call_args[0][1]
+    # Should NOT include --allow-dangerously-skip-permissions
+    assert args_list == [
+        "claude",
+        "--permission-mode",
+        "plan",
+        "/erk:objective-next-plan 123",
+    ]
