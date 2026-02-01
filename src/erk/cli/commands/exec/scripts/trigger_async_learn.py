@@ -110,6 +110,37 @@ def _run_subprocess(cmd: list[str], *, description: str) -> dict[str, object]:
         return {}
 
 
+def _run_preprocess_session(cmd: list[str], *, description: str) -> list[str]:
+    """Run preprocess-session subprocess and return output file paths.
+
+    Unlike _run_subprocess, this does NOT parse stdout as JSON.
+    preprocess-session outputs file paths (one per line) to stdout,
+    or empty stdout when a session is filtered (empty/warmup).
+
+    Args:
+        cmd: Command to run (list of strings)
+        description: Human-readable description for error messages
+
+    Returns:
+        List of output file paths (may be empty if session was filtered)
+
+    Raises:
+        SystemExit: On subprocess failure (outputs error JSON and exits)
+    """
+    click.echo(f"[trigger-async-learn] {description}...", err=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+
+    if result.returncode != 0:
+        error_msg = f"{description} failed: {result.stderr.strip() or result.stdout.strip()}"
+        _output_error(error_msg)
+
+    stdout = result.stdout.strip()
+    if not stdout:
+        return []
+
+    return [line for line in stdout.splitlines() if line.strip()]
+
+
 @click.command(name="trigger-async-learn")
 @click.argument("issue_number", type=int)
 @click.pass_context
@@ -179,7 +210,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         session_id = source.get("session_id")  # type: ignore
         prefix = "planning" if session_id == planning_session_id else "impl"
 
-        _run_subprocess(
+        output_paths = _run_preprocess_session(
             [
                 "erk",
                 "exec",
@@ -194,6 +225,13 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
             ],
             description=f"Preprocessing {prefix} session",
         )
+
+        if not output_paths:
+            click.echo(
+                f"[trigger-async-learn] Session filtered (empty/warmup), skipping",
+                err=True,
+            )
+            continue
 
     # Step 4: Get PR for plan (if exists) and fetch review comments
     pr_result = _run_subprocess(
