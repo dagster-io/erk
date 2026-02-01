@@ -18,14 +18,15 @@ class RealCodespace(Codespace):
     def start_codespace(self, gh_name: str) -> None:
         """Start a stopped codespace.
 
-        Uses gh codespace start to ensure the codespace is running.
+        Uses GitHub REST API POST /user/codespaces/{name}/start to ensure
+        the codespace is running.
 
         Args:
             gh_name: GitHub codespace name (from gh codespace list)
         """
         # GH-API-AUDIT: REST - codespace start
         run_subprocess_with_context(
-            cmd=["gh", "codespace", "start", "-c", gh_name],
+            cmd=["gh", "api", "--method", "POST", f"/user/codespaces/{gh_name}/start"],
             operation_context=f"start codespace '{gh_name}'",
         )
 
