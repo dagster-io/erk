@@ -1,5 +1,26 @@
 """Update a step's PR cell in an objective's roadmap table.
 
+Why this command exists (instead of using update-issue-body directly):
+
+    The alternative is "fetch body → parse markdown table → find step row →
+    surgically edit the PR cell → write entire body back". That's ~15 lines
+    of fragile ad-hoc Python that every caller (skills, hooks, scripts) must
+    duplicate. The roadmap table has a specific structure
+    (| step_id | description | status | pr |) and the update has specific
+    semantics:
+
+    1. Find the row by step ID across all phases
+    2. Replace the PR cell with the new value
+    3. Reset the status cell to "-" so parse_roadmap's inference logic
+       determines the correct status from the PR column (e.g., "#123" → done,
+       "plan #123" → in_progress, empty → pending)
+
+    Encoding this once in a tested CLI command means:
+    - No duplicated table-parsing logic across callers
+    - Testable edge cases (step not found, no roadmap, clearing PR)
+    - Atomic mental model: "update step 1.3's PR to X"
+    - Resilient to roadmap format changes (one command updates, not N sites)
+
 Usage:
     erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
     erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500"
