@@ -75,6 +75,18 @@ This PR is for reviewing the plan in issue #{issue_number}.
 
 **Plan Issue:** #{issue_number}
 
+## Quick Start
+
+Prepare worktree only:
+```
+erk prepare {issue_number}
+```
+
+Prepare and implement:
+```
+source "$(erk prepare {issue_number} --script)" && erk implement --dangerous
+```
+
 ## Important
 
 **This PR will not be merged.** It exists solely to enable inline review comments on the plan.
