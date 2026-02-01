@@ -6,12 +6,19 @@ from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata.plan_header import update_plan_header_review_pr
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import (
+    create_plan_store_with_plans,
+    format_plan_header_body_for_test,
+)
 
 
 def test_implement_from_plain_issue_number() -> None:
@@ -237,3 +244,98 @@ def test_auto_detect_fails_on_non_plan_branch() -> None:
         assert "Could not auto-detect plan number" in result.output
         assert "feature-branch" in result.output
         assert "PXXXX-* pattern" in result.output
+
+
+def test_implement_from_issue_closes_review_pr() -> None:
+    """Test that implementing from an issue closes its associated review PR."""
+    # Build issue body with plan-header metadata containing review_pr: 99
+    issue_body = format_plan_header_body_for_test()
+    issue_body_with_review_pr = update_plan_header_review_pr(issue_body, 99)
+
+    # Create the Plan with metadata pointing to the real issue body
+    # (plan_store uses plan.body for the plan content, but cleanup_review_pr
+    # reads the issue body from ctx.issues which needs the metadata block)
+    plan = Plan(
+        plan_identifier="42",
+        title="Add Authentication Feature",
+        body="# Implementation Plan\n\nAdd user authentication.",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan", "enhancement"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    # Create plan store (for _implement_from_issue to fetch the plan)
+    store, plan_store_issues = create_plan_store_with_plans({"42": plan})
+
+    # Create a separate FakeGitHubIssues with the real issue body containing
+    # the plan-header metadata block (cleanup_review_pr reads from ctx.issues)
+    issue_42 = IssueInfo(
+        number=42,
+        title="Add Authentication Feature",
+        body=issue_body_with_review_pr,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan", "enhancement"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-author",
+    )
+    # Review PR issue (must exist for add_comment to succeed)
+    issue_99 = IssueInfo(
+        number=99,
+        title="Review PR for plan #42",
+        body="Review PR body",
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/99",
+        labels=[],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-author",
+    )
+    fake_issues = FakeGitHubIssues(issues={42: issue_42, 99: issue_99})
+    fake_github = FakeGitHub(issues_gateway=fake_issues)
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        executor = FakeClaudeExecutor(claude_available=True)
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            plan_store=store,
+            claude_executor=executor,
+            issues=fake_issues,
+            github=fake_github,
+        )
+
+        result = runner.invoke(implement, ["#42"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Created .impl/ folder" in result.output
+
+        # Review PR was closed
+        assert 99 in fake_github.closed_prs
+
+        # Comment was added to review PR explaining why it was closed
+        comment_bodies = [body for num, body, _ in fake_issues.added_comments if num == 99]
+        assert len(comment_bodies) == 1
+        assert "automatically closed" in comment_bodies[0]
+
+        # Issue body was updated to clear review_pr metadata
+        updated_bodies = [body for num, body in fake_issues.updated_bodies if num == 42]
+        assert len(updated_bodies) == 1
+        assert "review_pr: null" in updated_bodies[0] or "review_pr:" in updated_bodies[0]
+
+        # .impl/ folder was created (normal implement behavior still works)
+        assert (env.cwd / ".impl").exists()
