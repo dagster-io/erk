@@ -363,7 +363,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            --allowedTools 'Read(*),Edit(*),Bash(uv run ruff:*),Bash(uv run ty:*),Bash(prettier:*),Bash(make docs-sync:*),Bash(git:*)'
+            --allowedTools 'Read(*),Edit(*),Bash(uv run ruff:*),Bash(uv run ty:*),Bash(prettier --write **/*.md:*),Bash(make docs-sync:*),Bash(git:*)'
 
       - name: Run full CI verification
         if: steps.should-autofix.outputs.run == 'true'

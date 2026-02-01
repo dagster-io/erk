@@ -7,3 +7,9 @@ erkdesk/out/
 erkdesk/dist/
 erkdesk/.vite/
 erkdesk/node_modules/
+
+# Lock files are machine-generated
+erkdesk/pnpm-lock.yaml
+
+# erkdesk source files use their own toolchain
+erkdesk/src/
