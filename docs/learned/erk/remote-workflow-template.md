@@ -3,7 +3,7 @@ title: Remote Workflow Command Pattern
 read_when:
   - "creating a new remote workflow command"
   - "triggering GitHub Actions from CLI"
-  - "building commands like pr-address-remote"
+  - "building commands like erk launch pr-address"
 ---
 
 # Remote Workflow Command Pattern
@@ -92,10 +92,10 @@ Inputs are typed as `dict[str, str]` matching GitHub Actions workflow_dispatch i
 
 ## Existing Commands
 
-| Command                       | Workflow              | Purpose                         |
-| ----------------------------- | --------------------- | ------------------------------- |
-| `erk pr address-remote`       | `pr-address.yml`      | Address PR review comments      |
-| `erk pr fix-conflicts-remote` | `rebase-workflow.yml` | Rebase with conflict resolution |
+| Command                       | Workflow         | Purpose                         |
+| ----------------------------- | ---------------- | ------------------------------- |
+| `erk launch pr-address`       | `pr-address.yml` | Address PR review comments      |
+| `erk launch pr-fix-conflicts` | `erk-rebase.yml` | Rebase with conflict resolution |
 
 ## Related Documentation
 

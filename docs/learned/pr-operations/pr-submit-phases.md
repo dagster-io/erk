@@ -105,7 +105,14 @@ This phase is non-fatal - errors are warnings, not failures.
 
 - Updates PR title and body via GitHub API
 - Uses AI-generated content from Phase 4
+- Embeds plan in PR body via `_build_plan_details_section()` when `plan_context` is present
+- Builds checkout footer with metadata section
+- Separates commit message (`pr_body`) from GitHub PR body (`pr_body_for_github`)
 - Links to Graphite if available
+
+**Plan Embedding**: When `state.plan_context` is available, the phase embeds the full plan content in a collapsible `<details>` section in the PR body. The plan appears on GitHub but **not** in the git commit message. See [Plan Embedding in PR](plan-embedding-in-pr.md) for details.
+
+**Two-Target Pattern**: Phase 6 uses separate strings for commit messages (plain text) and GitHub PR bodies (with HTML enhancements). See [PR Body Formatting](../architecture/pr-body-formatting.md) for the pattern.
 
 ## CLI Options
 
