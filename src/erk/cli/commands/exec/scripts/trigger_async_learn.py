@@ -83,12 +83,13 @@ def _output_error(message: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def _run_subprocess(cmd: list[str], *, description: str) -> dict[str, object]:
+def _run_subprocess(cmd: list[str], *, description: str, emoji: str) -> dict[str, object]:
     """Run subprocess, capture stdout JSON, check exit code.
 
     Args:
         cmd: Command to run (list of strings)
         description: Human-readable description for error messages
+        emoji: Emoji prefix for the output message (empty string for no prefix)
 
     Returns:
         Parsed JSON from stdout
@@ -96,7 +97,9 @@ def _run_subprocess(cmd: list[str], *, description: str) -> dict[str, object]:
     Raises:
         SystemExit: On subprocess failure (outputs error JSON and exits)
     """
-    click.echo(f"[trigger-async-learn] {description}...", err=True)
+    prefix = f"{emoji} " if emoji else ""
+    message = click.style(f"{prefix}{description}...", fg="cyan")
+    click.echo(message, err=True)
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
     if result.returncode != 0:
@@ -122,7 +125,7 @@ def _run_preprocess_session(cmd: list[str], *, description: str) -> list[str]:
     or empty stdout when a session is filtered (empty/warmup).
 
     Stderr from the subprocess (e.g. compression stats) is forwarded
-    with the [trigger-async-learn] prefix for diagnostic visibility.
+    with indentation for diagnostic visibility.
 
     Args:
         cmd: Command to run (list of strings)
@@ -134,13 +137,14 @@ def _run_preprocess_session(cmd: list[str], *, description: str) -> list[str]:
     Raises:
         SystemExit: On subprocess failure (outputs error JSON and exits)
     """
-    click.echo(f"[trigger-async-learn] {description}...", err=True)
+    message = click.style(f"🔄 {description}...", fg="cyan")
+    click.echo(message, err=True)
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
-    # Forward stderr diagnostics (e.g. compression stats) with prefix
+    # Forward stderr diagnostics (e.g. compression stats) with indentation
     if result.stderr and result.stderr.strip():
         for line in result.stderr.strip().splitlines():
-            click.echo(f"[trigger-async-learn]   {line}", err=True)
+            click.echo(f"   {line}", err=True)
 
     if result.returncode != 0:
         error_msg = f"{description} failed: {result.stderr.strip() or result.stdout.strip()}"
@@ -184,7 +188,8 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
     # Step 1: Get session sources for the plan
     sessions_result = _run_subprocess(
         ["erk", "exec", "get-learn-sessions", str(issue_number)],
-        description="Getting session sources",
+        description="Discovering sessions",
+        emoji="📋",
     )
 
     if not sessions_result.get("success"):
@@ -208,26 +213,30 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
             continue
         if s.get("session_id") == planning_session_id:
             planning_count += 1
-    click.echo(
-        f"[trigger-async-learn] Found {len(session_sources)} session source(s)"
-        f" ({planning_count} planning, {len(session_sources) - planning_count} impl)",
-        err=True,
+
+    summary = click.style(
+        f"   Found {len(session_sources)} session(s): {planning_count} planning, "
+        f"{len(session_sources) - planning_count} impl",
+        dim=True,
     )
+    click.echo(summary, err=True)
+
     for source_item in session_sources:
         if not isinstance(source_item, dict):
             continue
         sid = source_item.get("session_id", "unknown")
         source_type = source_item.get("source_type", "unknown")
         prefix = "planning" if sid == planning_session_id else "impl"
-        click.echo(
-            f"[trigger-async-learn]   {prefix}: {sid} ({source_type})",
-            err=True,
-        )
+        emoji = "📝" if prefix == "planning" else "🔧"
+        session_line = click.style(f"     {emoji} {prefix}: {sid} ({source_type})", dim=True)
+        click.echo(session_line, err=True)
 
     # Step 2: Create learn materials directory
     learn_dir = repo_root / ".erk" / "scratch" / f"learn-{issue_number}"
     learn_dir.mkdir(parents=True, exist_ok=True)
-    click.echo(f"[trigger-async-learn] Created {learn_dir}", err=True)
+    dirname = learn_dir.name
+    message = click.style(f"📂 Created {dirname}", fg="cyan")
+    click.echo(message, err=True)
 
     # Step 3: Preprocess each local session source
     for source_item in session_sources:
@@ -262,10 +271,8 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         )
 
         if not output_paths:
-            click.echo(
-                "[trigger-async-learn]   Session filtered (empty/warmup), skipping",
-                err=True,
-            )
+            message = click.style("   ⏭️  Session filtered (empty/warmup), skipping", dim=True)
+            click.echo(message, err=True)
             continue
 
         # Diagnostic: log output file sizes
@@ -273,15 +280,14 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
             output_file = Path(output_path)
             if output_file.exists():
                 char_count = len(output_file.read_text(encoding="utf-8"))
-                click.echo(
-                    f"[trigger-async-learn]   Output: {output_file.name} ({char_count:,} chars)",
-                    err=True,
-                )
+                message = click.style(f"   📄 {output_file.name} ({char_count:,} chars)", dim=True)
+                click.echo(message, err=True)
 
     # Step 4: Get PR for plan (if exists) and fetch review comments
     pr_result = _run_subprocess(
         ["erk", "exec", "get-pr-for-plan", str(issue_number)],
         description="Getting PR for plan",
+        emoji="🔍",
     )
 
     if pr_result.get("success") and pr_result.get("pr_number"):
@@ -297,7 +303,8 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
                 str(pr_number),
                 "--include-resolved",
             ],
-            description="Fetching PR review comments",
+            description="Fetching review comments",
+            emoji="💬",
         )
 
         # Write to file
@@ -305,12 +312,14 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         review_comments_file.write_text(
             json.dumps(review_comments_result, indent=2), encoding="utf-8"
         )
-        click.echo(f"[trigger-async-learn] Wrote {review_comments_file}", err=True)
+        message = click.style(f"   📄 Wrote {review_comments_file.name}", dim=True)
+        click.echo(message, err=True)
 
         # Fetch discussion comments
         discussion_comments_result = _run_subprocess(
             ["erk", "exec", "get-pr-discussion-comments", "--pr", str(pr_number)],
-            description="Fetching PR discussion comments",
+            description="Fetching discussion comments",
+            emoji="💬",
         )
 
         # Write to file
@@ -318,7 +327,8 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         discussion_comments_file.write_text(
             json.dumps(discussion_comments_result, indent=2), encoding="utf-8"
         )
-        click.echo(f"[trigger-async-learn] Wrote {discussion_comments_file}", err=True)
+        message = click.style(f"   📄 Wrote {discussion_comments_file.name}", dim=True)
+        click.echo(message, err=True)
 
     # Step 5: Upload learn materials to gist
     upload_result = _run_subprocess(
@@ -331,7 +341,8 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
             "--issue",
             str(issue_number),
         ],
-        description="Uploading learn materials to gist",
+        description="Uploading to gist",
+        emoji="☁️",
     )
 
     if not upload_result.get("success"):
@@ -347,11 +358,9 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
 
     file_count = upload_result.get("file_count", 0)
     total_size = upload_result.get("total_size", 0)
-    click.echo(
-        f"[trigger-async-learn] Gist created: {gist_url}"
-        f" ({file_count} file(s), {total_size:,} chars)",
-        err=True,
-    )
+    url_styled = click.style(f"{gist_url}", fg="blue", underline=True)
+    stats_styled = click.style(f"({file_count} file(s), {total_size:,} chars)", dim=True)
+    click.echo(f"   🔗 {url_styled} {stats_styled}", err=True)
 
     # Step 6: Trigger the learn workflow with gist_url
     workflow_inputs: dict[str, str] = {

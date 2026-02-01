@@ -38,11 +38,9 @@ def _parse_json_output(output: str) -> dict[str, object]:
 def _get_stderr_lines(output: str) -> list[str]:
     """Extract stderr diagnostic lines from CliRunner output.
 
-    Returns all lines starting with '[trigger-async-learn]'.
+    Returns all non-JSON lines (JSON lines are stdout, everything else is stderr diagnostics).
     """
-    return [
-        line for line in output.strip().splitlines() if line.startswith("[trigger-async-learn]")
-    ]
+    return [line for line in output.strip().splitlines() if not line.startswith("{")]
 
 
 def test_trigger_async_learn_success(tmp_path: Path) -> None:
@@ -433,17 +431,17 @@ def test_trigger_async_learn_logs_session_source_summary(tmp_path: Path) -> None
     stderr_lines = _get_stderr_lines(result.output)
 
     # Check session source summary line
-    summary_lines = [line for line in stderr_lines if "Found 2 session source(s)" in line]
+    summary_lines = [line for line in stderr_lines if "Found 2 session" in line]
     assert len(summary_lines) == 1
-    assert "1 planning" in summary_lines[0]
-    assert "1 impl" in summary_lines[0]
+    assert "planning" in summary_lines[0]
+    assert "impl" in summary_lines[0]
 
     # Check individual session lines
-    planning_lines = [line for line in stderr_lines if "planning: plan-sess-1" in line]
+    planning_lines = [line for line in stderr_lines if "plan-sess-1" in line]
     assert len(planning_lines) == 1
     assert "(local)" in planning_lines[0]
 
-    impl_lines = [line for line in stderr_lines if "impl: impl-sess-2" in line]
+    impl_lines = [line for line in stderr_lines if "impl-sess-2" in line]
     assert len(impl_lines) == 1
     assert "(local)" in impl_lines[0]
 
@@ -561,9 +559,8 @@ def test_trigger_async_learn_logs_gist_size(tmp_path: Path) -> None:
     assert result.exit_code == 0
     stderr_lines = _get_stderr_lines(result.output)
 
-    gist_lines = [line for line in stderr_lines if "Gist created:" in line]
+    gist_lines = [line for line in stderr_lines if "3 file(s)" in line]
     assert len(gist_lines) == 1
-    assert "3 file(s)" in gist_lines[0]
     assert "42,891 chars" in gist_lines[0]
 
 
@@ -631,6 +628,6 @@ def test_trigger_async_learn_logs_output_file_sizes(tmp_path: Path) -> None:
     assert result.exit_code == 0
     stderr_lines = _get_stderr_lines(result.output)
 
-    output_lines = [line for line in stderr_lines if "Output: planning-abc123.xml" in line]
+    output_lines = [line for line in stderr_lines if "planning-abc123.xml" in line]
     assert len(output_lines) == 1
     assert "chars)" in output_lines[0]

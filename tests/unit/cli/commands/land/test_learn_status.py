@@ -153,7 +153,7 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
 
     # Check that warning was shown
     captured = capsys.readouterr()
-    assert "Warning:" in captured.err
+    assert "has not been learned from" in captured.err
     assert "#123" in captured.err
     assert "not been learned from" in captured.err
 
