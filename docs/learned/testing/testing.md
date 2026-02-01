@@ -69,22 +69,10 @@ tests/
 
 ### FakeGit
 
-```python
-from tests.fakes.gitops import FakeGit
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/fake.py:112-165 -->
+See `FakeGit` class and constructor in `packages/erk-shared/src/erk_shared/gateway/git/fake.py:112-165`.
 
-git = FakeGit(
-    worktrees: dict[Path, list[WorktreeInfo]] = {},
-    current_branches: dict[Path, str] = {},
-    default_branches: dict[Path, str] = {},
-    git_common_dirs: dict[Path, Path] = {},
-)
-
-# Mutation tracking (read-only)
-git.deleted_branches: list[str]
-git.added_worktrees: list[tuple[Path, str | None]]
-git.removed_worktrees: list[Path]
-git.checked_out_branches: list[tuple[Path, str]]
-```
+**Note**: FakeGit now uses subgateways. Access mutation tracking properties via subgateway (e.g., `git.commit_ops.staged_files`, `git.branch_ops.deleted_branches`), not top-level.
 
 #### FakeGit Path Resolution
 
@@ -243,63 +231,20 @@ config_store = FakeConfigStore(
 
 ### FakeGitHub
 
-```python
-from erk_shared.gateway.github.fake import FakeGitHub
-from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py:38-80 -->
+See `FakeGitHub` class and constructor in `packages/erk-shared/src/erk_shared/gateway/github/fake.py:38-80`.
 
-github = FakeGitHub(
-    prs: dict[str, PullRequestInfo] = {},  # Branch -> PR info
-    pr_details: dict[int, PRDetails] = {},  # PR number -> full details
-)
-```
-
-**Important: Dual-mapping for branch lookups**
-
-`get_pr_for_branch()` requires BOTH `prs` AND `pr_details` to be configured:
-
-```python
-# For get_pr_for_branch() to work, configure both mappings:
-pr_info = PullRequestInfo(
-    number=123, state="OPEN", url="https://github.com/...",
-    is_draft=False, title="My PR", checks_passing=True,
-    owner="owner", repo="repo",
-)
-pr_details = PRDetails(
-    number=123, state="OPEN", branch="feature-branch",
-    base_branch="main", title="My PR", body="Description",
-    url="https://github.com/...", is_draft=False,
-    owner="owner", repo="repo",
-)
-
-github = FakeGitHub(
-    prs={"feature-branch": pr_info},      # Step 1: branch -> PR number
-    pr_details={123: pr_details},          # Step 2: PR number -> details
-)
-```
-
-If only `prs` is configured, `get_pr_for_branch()` returns `PRNotFound` because the second lookup fails.
+**Important: Dual-mapping for branch lookups** - `get_pr_for_branch()` requires BOTH `prs` AND `pr_details` to be configured. If only `prs` is configured, the method returns `PRNotFound` because the second lookup fails.
 
 ### FakeGraphite
 
-```python
-from tests.fakes.graphite import FakeGraphite
-
-graphite = FakeGraphite(
-    stacks: dict[Path, list[str]] = {},
-    current_branch_in_stack: dict[Path, bool] = {},
-)
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/graphite/fake.py:28-90 -->
+See `FakeGraphite` class and constructor in `packages/erk-shared/src/erk_shared/gateway/graphite/fake.py:28-90`.
 
 ### FakeShell
 
-```python
-from tests.fakes.shell import FakeShell
-
-shell = FakeShell(
-    detected_shell: tuple[str, Path] | None = None,
-    installed_tools: dict[str, str] = {},
-)
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/shell/fake.py:57-105 -->
+See `FakeShell` class and constructor in `packages/erk-shared/src/erk_shared/gateway/shell/fake.py:57-105`.
 
 ## Fake Error Simulation
 

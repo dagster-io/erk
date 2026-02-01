@@ -201,8 +201,10 @@ def track_event(context: ErkContext, issue_number: int) -> None:
 
 ### Implementations
 
-**Production (RealTime)**:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/time/real.py -->
+**Production (RealTime)**: See `RealTime` class in `packages/erk-shared/src/erk_shared/gateway/time/real.py`
 
+Usage example:
 ```python
 from erk_shared.gateway.time.real import RealTime
 
@@ -210,8 +212,10 @@ time = RealTime()
 time.sleep(2.0)  # Actually sleeps for 2 seconds
 ```
 
-**Testing (FakeTime)**:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/time/fake.py -->
+**Testing (FakeTime)**: See `FakeTime` class in `packages/erk-shared/src/erk_shared/gateway/time/fake.py`
 
+Usage example:
 ```python
 from erk_shared.gateway.time.fake import FakeTime
 
@@ -261,12 +265,13 @@ def test_retry_logic():
 
 ### Interface
 
-The `Time` ABC defines abstract methods for time operations including `sleep()` and `now()`. Implementations:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/time/abc.py -->
+The `Time` ABC defines abstract methods for time operations including `sleep()` and `now()`. See `packages/erk-shared/src/erk_shared/gateway/time/abc.py` for the canonical interface definition.
 
-- **RealTime**: Uses actual `time.sleep()` and `datetime.now()`
-- **FakeTime**: Returns immediately, tracks calls for test assertions
+Implementations:
 
-See `erk_shared/gateway/time/abc.py` for the canonical interface definition.
+- **RealTime**: Uses actual `time.sleep()` and `datetime.now()` (see `packages/erk-shared/src/erk_shared/gateway/time/real.py`)
+- **FakeTime**: Returns immediately, tracks calls for test assertions (see `packages/erk-shared/src/erk_shared/gateway/time/fake.py`)
 
 ### When to Use
 
@@ -307,60 +312,7 @@ If you find code using `datetime.now()`:
 
 ## TUI Exit-with-Command Pattern
 
-The TUI can request command execution after exit. This allows the TUI to trigger CLI commands that require a fresh terminal (not running inside Textual).
-
-### App Side (tui/app.py)
-
-```python
-class ErkDashApp(App):
-    def __init__(self, ...):
-        ...
-        self.exit_command: str | None = None  # Command to run after exit
-
-# In a ModalScreen:
-def _on_confirmed(self, result: bool | None) -> None:
-    if result is True:
-        app = self.app
-        if isinstance(app, ErkDashApp):
-            app.exit_command = "erk implement 123"
-        self.dismiss()
-        self.app.exit()
-```
-
-### CLI Side (cli/commands/list_cmd.py)
-
-```python
-app = ErkDashApp(provider, filters)
-app.run()
-
-# After TUI exits, check for command to execute
-if app.exit_command:
-    import os
-    import shlex
-    args = shlex.split(app.exit_command)
-    os.execvp(args[0], args)  # Replaces current process
-```
-
-### When to Use
-
-Use this pattern when:
-
-- TUI action requires fresh terminal output (not Textual rendering)
-- Command needs to run interactively after TUI closes
-- Chaining from TUI to another CLI command
-
-### Testing Considerations
-
-When mocking `ErkDashApp` in tests, include the `exit_command` attribute:
-
-```python
-class MockApp:
-    def __init__(self, provider, filters, refresh_interval):
-        self.exit_command: str | None = None  # Required attribute
-
-    def run(self):
-        pass
-```
+*Note: This pattern has been deprecated. The `exit_command` attribute no longer exists in `ErkDashApp`. See `src/erk/tui/app.py` for current TUI architecture.*
 
 ## Gateway Directory Structure
 
@@ -889,15 +841,8 @@ def execute_quick_submit(ctx: ErkContext) -> None:
 
 ### How BranchManager is Created
 
-`ErkContext.branch_manager` property automatically selects the right implementation:
-
-```python
-@property
-def branch_manager(self) -> BranchManager:
-    if isinstance(self.graphite, GraphiteDisabled):
-        return GitBranchManager(git=self.git, github=self.github)
-    return GraphiteBranchManager(git=self.git, graphite=self.graphite)
-```
+<!-- Source: packages/erk-shared/src/erk_shared/context/context.py:165-187 -->
+`ErkContext.branch_manager` property automatically selects the right implementation. See the `branch_manager` property in `packages/erk-shared/src/erk_shared/context/context.py:165-187` for the complete implementation including DryRun unwrapping logic.
 
 ### Adding New Operations to BranchManager
 
@@ -946,20 +891,8 @@ def test_quick_submit_tracks_submission() -> None:
 
 ### context.branch_manager Property
 
-The `ErkContext.branch_manager` property provides automatic wrapper unwrapping for dry-run mode:
-
-```python
-@property
-def branch_manager(self) -> BranchManager:
-    # Unwrap DryRunGraphite to get to the underlying Graphite
-    graphite = self.graphite
-    if isinstance(graphite, DryRunGraphite):
-        graphite = graphite._wrapped
-
-    if isinstance(graphite, GraphiteDisabled):
-        return GitBranchManager(git=self.git, github=self.github)
-    return GraphiteBranchManager(git=self.git, graphite=graphite)
-```
+<!-- Source: packages/erk-shared/src/erk_shared/context/context.py:165-187 -->
+The `ErkContext.branch_manager` property provides automatic wrapper unwrapping for dry-run mode. See the complete implementation in `packages/erk-shared/src/erk_shared/context/context.py:165-187`.
 
 This unwrapping is necessary because:
 
@@ -973,18 +906,8 @@ When operations have optional behavior based on availability of resources, use g
 
 ### Pattern: Branch Lookup Fallback
 
-The `get_learn_plan_parent_branch()` function gracefully handles missing parent plans:
-
-```python
-def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, issue_body: str) -> str | None:
-    """Get parent branch for learn plan stacking, or None to use trunk."""
-    learned_from = extract_plan_header_learned_from_issue(issue_body)
-    if learned_from is None:
-        return None  # No parent link - use trunk
-
-    parent_issue = ctx.issues.get_issue(repo_root, learned_from)
-    return extract_plan_header_branch_name(parent_issue.body)  # May return None
-```
+<!-- Source: src/erk/cli/commands/submit.py:165-185 -->
+The `get_learn_plan_parent_branch()` function (see `src/erk/cli/commands/submit.py:165-185`) gracefully handles missing parent plans by returning `None` when no parent is found.
 
 Callers check the return value and fall back to trunk:
 
@@ -1032,21 +955,8 @@ def navigate_with_cleanup(target_worktree: Path, cleanup_commands: list[str]) ->
 
 ### Real-World Example: `--delete-current` Flag
 
-The `erk up` and `erk down` commands support `--delete-current` to navigate away then delete the current worktree:
-
-```python
-# From navigation_helpers.py
-def render_deferred_deletion_commands(
-    worktree_path: Path,
-    branch_name: str,
-    git: Git,
-) -> list[str]:
-    """Generate shell commands to delete worktree and branch after navigation."""
-    return [
-        f"git worktree remove {shlex.quote(str(worktree_path))}",
-        f"git branch -D {shlex.quote(branch_name)}",
-    ]
-```
+<!-- Source: src/erk/cli/commands/navigation_helpers.py -->
+The `erk up` and `erk down` commands support `--delete-current` to navigate away then delete the current worktree. See `render_deferred_deletion_commands()` in `src/erk/cli/commands/navigation_helpers.py` for the implementation.
 
 The activation script structure:
 
