@@ -72,7 +72,6 @@ def dash_data(
 
     repo = discover_repo_context(erk_ctx, erk_ctx.cwd)
     ensure_erk_metadata_dir(repo)
-    repo_root = repo.root
 
     if repo.github is None:
         click.echo(
@@ -80,22 +79,19 @@ def dash_data(
         )
         raise SystemExit(1)
 
-    owner = repo.github.owner
-    repo_name = repo.github.repo
-
-    location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))
-    clipboard = RealClipboard()
-    browser = RealBrowserLauncher()
-
-    token = fetch_github_token()
-    http_client = RealHttpClient(token=token, base_url="https://api.github.com")
+    location = GitHubRepoLocation(
+        root=repo.root,
+        repo_id=GitHubRepoId(repo.github.owner, repo.github.repo),
+    )
 
     provider = RealPlanDataProvider(
         erk_ctx,
         location=location,
-        clipboard=clipboard,
-        browser=browser,
-        http_client=http_client,
+        clipboard=RealClipboard(),
+        browser=RealBrowserLauncher(),
+        http_client=RealHttpClient(
+            token=fetch_github_token(), base_url="https://api.github.com"
+        ),
     )
 
     filters = PlanFilters(
