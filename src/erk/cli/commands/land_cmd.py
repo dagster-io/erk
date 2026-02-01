@@ -377,6 +377,7 @@ def _prompt_async_learn_and_continue(
     # Interactive mode: show numbered choice menu
     user_output("Choose an action:")
     user_output("  1. Trigger async learn and continue (recommended)")
+    user_output("     Reads session logs, uploads to gist, runs analysis in GitHub Actions")
     user_output("  2. Continue without learning")
     user_output("  3. Cancel")
     user_output("")
@@ -433,6 +434,10 @@ def _trigger_async_learn(
     _ = repo_root
 
     user_output(f"Triggering async learn for plan #{plan_issue_number}...")
+    user_output("  Reads local session logs, preprocesses them, and uploads to a secret gist.")
+    user_output(
+        "  A GitHub Actions workflow then analyzes sessions and creates a documentation plan."
+    )
 
     try:
         # Stream stderr (progress) in real-time while capturing stdout (JSON result)
@@ -467,6 +472,9 @@ def _trigger_async_learn(
                 click.style("✓", fg="green")
                 + f" Async learn triggered (run: {output.get('run_id', 'unknown')})"
             )
+        user_output(
+            f"  Results will appear as a new GitHub issue linked to plan #{plan_issue_number}."
+        )
     else:
         user_output(
             click.style("⚠ ", fg="yellow")

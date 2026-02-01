@@ -28,6 +28,18 @@ These docs are "token caches" - preserved reasoning and research so future agent
 
 ## Agent Instructions
 
+Tell the user:
+
+```
+Learn pipeline for plan #<issue-number>:
+  1. Read local session logs from ~/.claude/projects/
+  2. Preprocess sessions (compress JSONL → XML, deduplicate, truncate)
+  3. Upload preprocessed XML + PR comments to a secret GitHub gist
+  4. Launch analysis agents (session, diff, docs check)
+  5. Synthesize findings into a documentation plan
+  6. Save plan as a new GitHub issue
+```
+
 ### Step 1: Validate Plan Type
 
 First, check if the issue is a learn plan. **Learn plans cannot generate additional learn plans** - this would create documentation cycles.
@@ -71,6 +83,14 @@ Parse the JSON output to get:
 If no sessions are found, inform the user and stop.
 
 **Note on remote sessions:** Remote sessions appear in `session_sources` with `source_type: "remote"` and `path: null`. These sessions must be downloaded before processing (see Step 4).
+
+Tell the user:
+
+```
+Found N session(s) for plan #<issue-number>:
+  - N local session(s) from ~/.claude/projects/
+  - N remote session(s) from GitHub Actions
+```
 
 ### Step 3: Analyze Implementation
 
@@ -210,6 +230,12 @@ erk exec preprocess-session "<source.path>" \
 
 Note: The preprocessor applies deduplication, truncation, and pruning optimizations automatically. Files are auto-chunked if they exceed the token limit (20000 tokens safely under Claude's 25000 read limit). Output files include session IDs in filenames (e.g., `planning-{session-id}.xml` or `impl-{session-id}-part{N}.xml` for chunked files).
 
+Tell the user:
+
+```
+Preprocessing N session(s): compressing JSONL → XML, deduplicating, truncating to 20k tokens each...
+```
+
 #### Save PR Comments
 
 If PR comments were fetched in Step 3, save them for the gist:
@@ -243,9 +269,25 @@ echo "Gist created: $gist_url"
 
 Display the gist URL to the user and save it for the plan issue.
 
+Tell the user:
+
+```
+Uploaded preprocessed sessions to secret gist: <gist_url>
+  Contents: N session XML file(s), PR review comments, PR discussion comments
+```
+
 #### Launch Parallel Analysis Agents
 
 After preprocessing, launch analysis agents in parallel to extract insights concurrently.
+
+Tell the user:
+
+```
+Launching analysis agents in parallel:
+  - Session analyzer (1 per session file)
+  - Code diff analyzer (PR #<number>)
+  - Existing documentation checker
+```
 
 **Agent 1: Session Analysis** (for each preprocessed session)
 
@@ -324,6 +366,15 @@ TaskOutput(task_id: <agent-task-id>, block: true)
 ```
 
 Collect all results before proceeding to the next step.
+
+Tell the user:
+
+```
+Parallel analysis complete. Running sequential synthesis:
+  - Identifying documentation gaps
+  - Synthesizing learn plan
+  - Extracting tripwire candidates
+```
 
 #### Write Agent Results to Scratch Storage
 
