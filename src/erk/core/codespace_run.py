@@ -19,5 +19,7 @@ def build_codespace_run_command(erk_command: str) -> str:
     Returns:
         A shell string suitable for passing to codespace SSH
     """
-    setup = "git pull && uv sync && source .venv/bin/activate"
-    return f"bash -l -c '{setup} && nohup {erk_command} > /tmp/erk-run.log 2>&1 &'"
+    return (
+        f"bash -l -c 'git pull && uv sync && source .venv/bin/activate"
+        f" && nohup {erk_command} > /tmp/erk-run.log 2>&1 &'"
+    )
