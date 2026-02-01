@@ -9,4 +9,5 @@ contextBridge.exposeInMainWorld("erkdesk", {
   loadWebViewURL: (url: string) => {
     ipcRenderer.send("webview:load-url", url);
   },
+  fetchPlans: () => ipcRenderer.invoke("plans:fetch"),
 });

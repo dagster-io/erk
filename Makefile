@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check erkdesk-start erkdesk-package erkdesk-make
+.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check erkdesk-install erkdesk-start erkdesk-package erkdesk-make
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -157,6 +157,9 @@ docs-deploy:
 	uv run mkdocs gh-deploy --force
 
 # === Erkdesk ===
+
+erkdesk-install:
+	cd erkdesk && pnpm install
 
 erkdesk-start:
 	cd erkdesk && pnpm start
