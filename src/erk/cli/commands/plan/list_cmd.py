@@ -32,6 +32,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_local_impl_event,
     extract_plan_header_objective_issue,
     extract_plan_header_remote_impl_at,
+    extract_plan_header_review_pr,
     extract_plan_header_source_repo,
     extract_plan_header_worktree_name,
 )
@@ -410,6 +411,7 @@ def _build_plans_table(
 
         # Extract from issue body - worktree may or may not exist locally
         source_repo: str | None = None
+        review_pr: int | None = None
         if plan.body:
             extracted = extract_plan_header_worktree_name(plan.body)
             if extracted:
@@ -422,6 +424,7 @@ def _build_plans_table(
             last_remote_impl_at = extract_plan_header_remote_impl_at(plan.body)
             # Extract source_repo for cross-repo plans
             source_repo = extract_plan_header_source_repo(plan.body)
+            review_pr = extract_plan_header_review_pr(plan.body)
 
         # Format the worktree cells
         worktree_name_cell = format_worktree_name_cell(worktree_name, exists_locally)
@@ -433,7 +436,10 @@ def _build_plans_table(
         checks_cell = "-"
         if isinstance(issue_number, int) and issue_number in pr_linkages:
             issue_prs = pr_linkages[issue_number]
-            selected_pr = select_display_pr(issue_prs)
+            exclude_pr_numbers = {review_pr} if review_pr is not None else None
+            selected_pr = select_display_pr(
+                issue_prs, exclude_pr_numbers=exclude_pr_numbers
+            )
             if selected_pr is not None:
                 graphite_url = ctx.graphite.get_graphite_url(
                     GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
