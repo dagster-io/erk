@@ -113,6 +113,41 @@ class TestFakeCodespaceExecInteractive:
         assert codespace.exec_called is False
 
 
+class TestFakeCodespaceStartCodespace:
+    """Tests for FakeCodespace start_codespace tracking functionality."""
+
+    def test_start_tracks_gh_name(self) -> None:
+        """start_codespace() calls are tracked in started_codespaces property."""
+        codespace = FakeCodespace()
+        codespace.start_codespace("cs-abc123")
+
+        assert codespace.started_codespaces == ["cs-abc123"]
+
+    def test_start_tracks_multiple_calls(self) -> None:
+        """Multiple start_codespace() calls are all tracked."""
+        codespace = FakeCodespace()
+        codespace.start_codespace("cs-abc123")
+        codespace.start_codespace("cs-def456")
+
+        assert codespace.started_codespaces == ["cs-abc123", "cs-def456"]
+
+    def test_started_codespaces_empty_initially(self) -> None:
+        """started_codespaces is empty list initially."""
+        codespace = FakeCodespace()
+
+        assert codespace.started_codespaces == []
+
+    def test_started_codespaces_returns_copy(self) -> None:
+        """started_codespaces returns a copy to prevent external mutation."""
+        codespace = FakeCodespace()
+        codespace.start_codespace("cs-abc123")
+
+        returned_list = codespace.started_codespaces
+        returned_list.append("mutated")
+
+        assert codespace.started_codespaces == ["cs-abc123"]
+
+
 class TestFakeCodespaceDefensiveCopying:
     """Tests for FakeCodespace defensive copying behavior."""
 

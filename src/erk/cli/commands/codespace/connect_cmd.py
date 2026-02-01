@@ -4,6 +4,7 @@ import os
 
 import click
 
+from erk.cli.commands.codespace.resolve import resolve_codespace
 from erk.core.context import ErkContext
 
 
@@ -22,23 +23,7 @@ def connect_codespace(ctx: ErkContext, name: str | None, *, shell: bool) -> None
 
     Use --shell to drop into an interactive shell instead of launching Claude.
     """
-    # Get codespace by name or default
-    if name is not None:
-        codespace = ctx.codespace_registry.get(name)
-        if codespace is None:
-            click.echo(f"Error: No codespace named '{name}' found.", err=True)
-            click.echo("\nUse 'erk codespace setup' to create one.", err=True)
-            raise SystemExit(1)
-    else:
-        codespace = ctx.codespace_registry.get_default()
-        if codespace is None:
-            default_name = ctx.codespace_registry.get_default_name()
-            if default_name is not None:
-                click.echo(f"Error: Default codespace '{default_name}' not found.", err=True)
-            else:
-                click.echo("Error: No default codespace set.", err=True)
-            click.echo("\nUse 'erk codespace setup' to create one.", err=True)
-            raise SystemExit(1)
+    codespace = resolve_codespace(ctx.codespace_registry, name)
 
     click.echo(f"Connecting to codespace '{codespace.name}'...", err=True)
 
