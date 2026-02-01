@@ -318,6 +318,8 @@ def build_blocking_message(
         '  3. "Save plan and implement here" - Save to GitHub, then immediately '
         "implement (full workflow).",
         '  4. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
+        '  5. "Save and submit for review" - Save plan as GitHub issue, then create a '
+        "review PR for inline feedback. Prints the review PR link.",
     ]
 
     if current_branch in ("master", "main"):
@@ -359,6 +361,13 @@ def build_blocking_message(
             "       exit-plan-mode-hook.implement-now",
             "  3. Call ExitPlanMode",
             "  4. After exiting plan mode, run /erk:plan-implement to execute implementation",
+            "",
+            "If user chooses 'Save and submit for review':",
+            f"  1. Run {save_cmd}",
+            "  2. After save completes, read the saved issue number:",
+            f"     erk exec marker read --session-id {session_id} plan-saved-issue",
+            "  3. Run /erk:plan-review <issue_number>",
+            "  4. STOP - Do NOT call ExitPlanMode. Stay in plan mode.",
         ]
     )
 
