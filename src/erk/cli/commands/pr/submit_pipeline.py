@@ -589,6 +589,8 @@ def _build_plan_details_section(plan_context: PlanContext) -> str:
     issue_num = plan_context.issue_number
     parts = [
         "",
+        "## Implementation Plan",
+        "",
         "<details>",
         f"<summary><strong>Implementation Plan</strong> (Issue #{issue_num})</summary>",
         "",

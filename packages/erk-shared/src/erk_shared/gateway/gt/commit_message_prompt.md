@@ -26,6 +26,9 @@ Analyze the diff following these principles:
 
 ## Files Changed
 
+<details>
+<summary>Files Changed</summary>
+
 ### Added (N files)
 - `path/to/file.py` - Brief purpose (one line)
 
@@ -34,6 +37,8 @@ Analyze the diff following these principles:
 
 ### Deleted (N files)
 - `path/to/file.py` - Why removed (strategic reason)
+
+</details>
 
 ## Key Changes
 
