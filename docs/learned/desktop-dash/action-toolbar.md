@@ -131,17 +131,9 @@ const isRunning = runningActionId === action.id;
 
 Actions use streaming execution, NOT blocking:
 
-```tsx
-const handleClick = useCallback(
-  (action: ActionDef) => {
-    if (runningActionId !== null || selectedPlan === null) return;
+> **Source**: See [`ActionToolbar.tsx:80-88`](../../../erkdesk/src/renderer/components/ActionToolbar.tsx)
 
-    const { command, args } = action.getCommand(selectedPlan);
-    onActionStart(action.id, command, args);
-  },
-  [runningActionId, selectedPlan, onActionStart],
-);
-```
+The `handleClick` callback guards against concurrent actions (`runningActionId !== null`) and missing selection, then delegates to `onActionStart` with the action's command and args.
 
 **Key insight**: `onActionStart` triggers IPC streaming, does NOT wait for completion. The parent (App.tsx) listens to `onActionOutput` and `onActionCompleted` events to update log state.
 

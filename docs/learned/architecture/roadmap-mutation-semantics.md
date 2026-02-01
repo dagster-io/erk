@@ -67,22 +67,9 @@ By resetting to `"-"`, the parser's Tier 2 inference logic (`parse_roadmap()`) d
 
 The shared parser in `objective_roadmap_shared.py` (lines 102–115) applies a two-tier resolution system:
 
-```python
-# Tier 1: Explicit status values take priority
-if status_col in ("done", "blocked", "skipped"):
-    status = status_col
-elif status_col in ("in-progress", "in_progress"):
-    status = "in_progress"
-elif status_col == "pending":
-    status = "pending"
-# Tier 2: Fall back to PR-column inference for "-" or legacy values
-elif pr_col and pr_col != "-" and pr_col.startswith("#"):
-    status = "done"
-elif pr_col and pr_col.startswith("plan #"):
-    status = "in_progress"
-else:
-    status = "pending"
-```
+> **Source**: See [`objective_roadmap_shared.py:102-115`](../../../src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py)
+
+The parser checks Tier 1 explicit values (`done`, `blocked`, `skipped`, `in-progress`, `pending`) first, then falls back to Tier 2 PR-column inference for `-` or empty status values (`#NNN` → `done`, `plan #NNN` → `in_progress`, otherwise `pending`).
 
 This means:
 

@@ -72,28 +72,9 @@ App.tsx passes state down to controlled components:
 
 Every 15 seconds (`REFRESH_INTERVAL_MS`), App.tsx re-fetches plan data and preserves selection by `issue_number`:
 
-```tsx
-useEffect(() => {
-  const intervalId = setInterval(() => {
-    window.erkdesk.fetchPlans().then((result) => {
-      if (!result.success) return;
-      setPlans((prevPlans) => {
-        const newPlans = result.plans;
-        setSelectedIndex((prevIndex) => {
-          const previousIssueNumber = prevPlans[prevIndex]?.issue_number;
-          if (previousIssueNumber === undefined) return 0;
-          const newIndex = newPlans.findIndex(
-            (p) => p.issue_number === previousIssueNumber,
-          );
-          return newIndex >= 0 ? newIndex : 0;
-        });
-        return newPlans;
-      });
-    });
-  }, REFRESH_INTERVAL_MS);
-  return () => clearInterval(intervalId);
-}, []);
-```
+> **Source**: See [`App.tsx:42-61`](../../../erkdesk/src/renderer/App.tsx)
+
+The effect sets up a `setInterval` that fetches plans every `REFRESH_INTERVAL_MS` (15s). On each refresh, it preserves selection by finding the previously-selected `issue_number` in the new plan array, falling back to index 0 if the plan is gone.
 
 **Why this works**:
 
@@ -107,27 +88,9 @@ useEffect(() => {
 
 App.tsx implements j/k and arrow key navigation:
 
-```tsx
-const handleKeyDown = useCallback(
-  (event: KeyboardEvent) => {
-    if (plans.length === 0) return;
+> **Source**: See [`App.tsx:63-81`](../../../erkdesk/src/renderer/App.tsx)
 
-    if (event.key === "j" || event.key === "ArrowDown") {
-      event.preventDefault();
-      setSelectedIndex((prev) => Math.min(prev + 1, plans.length - 1));
-    } else if (event.key === "k" || event.key === "ArrowUp") {
-      event.preventDefault();
-      setSelectedIndex((prev) => Math.max(prev - 1, 0));
-    }
-  },
-  [plans.length],
-);
-
-useEffect(() => {
-  document.addEventListener("keydown", handleKeyDown);
-  return () => document.removeEventListener("keydown", handleKeyDown);
-}, [handleKeyDown]);
-```
+A `useCallback` handler listens for `j`/`ArrowDown` (increment) and `k`/`ArrowUp` (decrement) keys, clamping with `Math.min`/`Math.max` to prevent out-of-range indices. A `useEffect` registers and cleans up the `keydown` listener.
 
 **Pattern**: Bounds checking with `Math.min` and `Math.max` prevents out-of-range indices.
 
@@ -135,17 +98,9 @@ useEffect(() => {
 
 When selection changes, App.tsx loads the corresponding URL in the WebView:
 
-```tsx
-useEffect(() => {
-  if (selectedIndex < 0 || selectedIndex >= plans.length) return;
-  const plan = plans[selectedIndex];
-  const url = plan.pr_url ?? plan.issue_url;
-  if (url && url !== lastLoadedUrlRef.current) {
-    lastLoadedUrlRef.current = url;
-    window.erkdesk.loadWebViewURL(url);
-  }
-}, [selectedIndex, plans]);
-```
+> **Source**: See [`App.tsx:83-91`](../../../erkdesk/src/renderer/App.tsx)
+
+The effect bounds-checks `selectedIndex`, resolves the URL (`pr_url` preferred over `issue_url`), and loads it via IPC only if the URL has changed (deduplication via `lastLoadedUrlRef`).
 
 **Priority**: `pr_url` is preferred over `issue_url` (PRs are more actionable than issues).
 
@@ -155,39 +110,9 @@ useEffect(() => {
 
 App.tsx coordinates streaming actions through IPC event listeners:
 
-```tsx
-const handleActionStart = useCallback(
-  (actionId: string, command: string, args: string[]) => {
-    setLogLines([]);
-    setLogStatus("running");
-    setLogVisible(true);
-    setRunningActionId(actionId);
-    window.erkdesk.startStreamingAction(command, args);
-  },
-  [],
-);
+> **Source**: See [`App.tsx:93-127`](../../../erkdesk/src/renderer/App.tsx)
 
-useEffect(() => {
-  const onOutput = (event: ActionOutputEvent) => {
-    setLogLines((prev) => [
-      ...prev,
-      { stream: event.stream, text: event.data },
-    ]);
-  };
-
-  const onCompleted = (event: ActionCompletedEvent) => {
-    setLogStatus(event.success ? "success" : "error");
-    setRunningActionId(null);
-  };
-
-  window.erkdesk.onActionOutput(onOutput);
-  window.erkdesk.onActionCompleted(onCompleted);
-
-  return () => {
-    window.erkdesk.removeActionListeners();
-  };
-}, []);
-```
+`handleActionStart` resets log state, shows the log panel, sets the running action ID, and starts streaming via IPC. A separate `useEffect` registers `onActionOutput` (appends to `logLines`) and `onActionCompleted` (updates status, clears running action) listeners, with cleanup via `removeActionListeners()`.
 
 **Pattern**: Event listeners are registered once on mount and cleaned up on unmount.
 

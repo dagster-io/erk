@@ -65,21 +65,9 @@ Status inference kicks in: `-` + `plan #6464` → `in_progress`
 
 The surgical update uses regex to find and replace the PR cell:
 
-```python
-# Find the step row
-pattern = rf'\|\s*{re.escape(step_id)}\s*\|.*?\|.*?\|(.*?)\|'
-match = re.search(pattern, body)
+> **Source**: See [`update_roadmap_step.py:63-91`](../../../src/erk/cli/commands/exec/scripts/update_roadmap_step.py)
 
-# Replace PR cell (4th column) and reset status cell to "-"
-new_pr_cell = f" {new_pr} |"
-old_cells = match.group(0)
-# Status is 3rd column, PR is 4th
-new_row = re.sub(
-    r'(\|[^|]*\|[^|]*\|)\s*[^|]*(\|)',  # Capture columns 1-2, skip status
-    rf'\1 - \2 {new_pr} |',              # Reset status, set PR
-    old_cells
-)
-```
+The surgical update uses regex to find the step row by ID, then replaces the PR cell (4th column) and resets the status cell (3rd column) to `-` for inference.
 
 **LBYL pattern**: Check if step exists before attempting replacement:
 

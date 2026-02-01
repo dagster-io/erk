@@ -56,35 +56,9 @@ Every IPC handler requires changes in **4 locations**:
 - Real-time output streaming
 - User can see progress
 
-**Example (main/index.ts:130-182)**:
+> **Source**: See [`main/index.ts:130-182`](../../../erkdesk/src/main/index.ts)
 
-```tsx
-ipcMain.on(
-  "actions:start-streaming",
-  (_event, command: string, args: string[]) => {
-    const proc = spawn(command, args);
-
-    const stripAnsi = (text: string): string =>
-      text.replace(/\x1B\[[0-9;]*m/g, "");
-
-    proc.stdout?.on("data", (chunk: Buffer) => {
-      const event: ActionOutputEvent = {
-        stream: "stdout",
-        data: stripAnsi(chunk.toString()),
-      };
-      mainWindow.webContents.send("action:output", event);
-    });
-
-    proc.on("close", (code: number | null) => {
-      const event: ActionCompletedEvent = {
-        success: code === 0,
-        error: code !== 0 ? `Process exited with code ${code}` : undefined,
-      };
-      mainWindow.webContents.send("action:completed", event);
-    });
-  },
-);
-```
+The handler spawns the subprocess, strips ANSI codes from stdout/stderr chunks, and forwards them as `action:output` events. On process close, it sends `action:completed` with success/error status.
 
 **ANSI Stripping**: Subprocess output contains ANSI escape codes (colors/formatting). The `stripAnsi` helper removes them before sending to renderer to prevent rendering issues.
 
@@ -98,29 +72,9 @@ ipcMain.on(
 2. Main process uses `execFile()` and waits for completion
 3. Returns `{ success, stdout, stderr, error }` once complete
 
-**Example (main/index.ts:96-126)**:
+> **Source**: See [`main/index.ts:96-118`](../../../erkdesk/src/main/index.ts)
 
-```tsx
-ipcMain.handle(
-  "actions:execute",
-  (_event, command: string, args: string[]): Promise<ActionResult> => {
-    return new Promise((resolve) => {
-      execFile(command, args, (error, stdout, stderr) => {
-        if (error) {
-          resolve({
-            success: false,
-            stdout,
-            stderr,
-            error: error.message,
-          });
-        } else {
-          resolve({ success: true, stdout, stderr });
-        }
-      });
-    });
-  },
-);
-```
+The handler wraps `execFile()` in a Promise, resolving with `{ success, stdout, stderr, error }`. Errors resolve (not reject) with `success: false` for consistent result handling.
 
 **Disadvantage**: UI freezes for the entire duration.
 
@@ -128,30 +82,9 @@ ipcMain.handle(
 
 Streaming actions register event listeners that **must be cleaned up** to prevent memory leaks.
 
-**Correct pattern (App.tsx:108-127)**:
+> **Source**: See [`App.tsx:108-127`](../../../erkdesk/src/renderer/App.tsx)
 
-```tsx
-useEffect(() => {
-  const onOutput = (event: ActionOutputEvent) => {
-    setLogLines((prev) => [
-      ...prev,
-      { stream: event.stream, text: event.data },
-    ]);
-  };
-
-  const onCompleted = (event: ActionCompletedEvent) => {
-    setLogStatus(event.success ? "success" : "error");
-    setRunningActionId(null);
-  };
-
-  window.erkdesk.onActionOutput(onOutput);
-  window.erkdesk.onActionCompleted(onCompleted);
-
-  return () => {
-    window.erkdesk.removeActionListeners();
-  };
-}, []);
-```
+The `useEffect` registers `onActionOutput` (appends log lines) and `onActionCompleted` (updates status, clears running action) listeners on mount, and calls `removeActionListeners()` in the cleanup function on unmount.
 
 **Key insight**: `removeActionListeners()` is called in the cleanup function, running on component unmount.
 
