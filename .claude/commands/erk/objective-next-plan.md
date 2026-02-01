@@ -107,10 +107,10 @@ Load the `objective` skill for format templates and guidance.
 
 ### Step 4: Parse Roadmap and Display Steps
 
-Use the roadmap check exec command to get structured step data:
+Use the objective check command to get structured step data:
 
 ```bash
-erk exec objective-roadmap-check <issue-number>
+erk objective check <issue-number> --json-output
 ```
 
 This returns JSON with `phases` (each containing `steps` with `id`, `description`, `status`, `pr` fields), `summary`, and `next_step`.
