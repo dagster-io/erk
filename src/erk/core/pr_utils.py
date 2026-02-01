@@ -22,7 +22,7 @@ def select_display_pr(
         PR to display, or None if no PRs
     """
     candidates = prs
-    if exclude_pr_numbers:
+    if exclude_pr_numbers is not None:
         filtered = [pr for pr in prs if pr.number not in exclude_pr_numbers]
         if filtered:
             candidates = filtered
