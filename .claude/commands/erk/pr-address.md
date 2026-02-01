@@ -32,7 +32,7 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 Before classifying feedback, determine if this is a plan review PR:
 
 1. Get the current PR number: `gh pr view --json number -q .number`
-2. Check if the PR has the `plan-review` label: `gh pr view --json labels -q '.labels[].name'` and check for `plan-review` in the output
+2. Check if the PR has the `erk-plan-review` label: `gh pr view --json labels -q '.labels[].name'` and check for `erk-plan-review` in the output
 3. If YES: extract the plan issue number from the PR body (which contains `**Plan Issue:** #NNN`): `gh pr view --json body -q .body` and parse the issue number from the `**Plan Issue:** #NNN` line. Enter **Plan Review Mode** (see [Plan Review Mode](#plan-review-mode) below). Skip normal Phases 1-4.
 4. If NO: proceed with standard code review flow (Phase 1)
 
@@ -257,7 +257,7 @@ See `pr-operations` skill for the complete table of common mistakes and correct 
 
 ## Plan Review Mode
 
-When Phase 0 detects the `plan-review` label on the current PR, the entire flow switches to plan review mode. This mode edits plan text instead of source code.
+When Phase 0 detects the `erk-plan-review` label on the current PR, the entire flow switches to plan review mode. This mode edits plan text instead of source code.
 
 ### Key Differences: Plan Mode vs Code Mode
 
@@ -289,7 +289,7 @@ Same as standard Phase 1 — invoke `/pr-feedback-classifier` to fetch and class
 Same as standard Phase 2, but note at the top of the display:
 
 ```
-**Plan Review Mode** — changes apply to plan text, not source code.
+**Plan Review Mode** (erk-plan-review label detected) — changes apply to plan text, not source code.
 ```
 
 ### Plan Review Phase 4: Execute by Batch (Plan Mode)

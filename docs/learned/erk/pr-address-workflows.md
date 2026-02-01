@@ -51,11 +51,11 @@ erk br co my-feature
 
 ### Plan Review Mode
 
-When the PR has the `plan-review` label, `/erk:pr-address` automatically switches to **Plan Review Mode**. This mode is designed for addressing feedback on plan-only PRs (no code changes).
+When the PR has the `erk-plan-review` label, `/erk:pr-address` automatically switches to **Plan Review Mode**. This mode is designed for addressing feedback on plan-only PRs (no code changes).
 
 #### How it's triggered
 
-The `plan-review` label is applied automatically by `erk exec plan-create-review-pr`. The `/erk:pr-address` command detects this label in Phase 0 and switches modes.
+The `erk-plan-review` label is applied automatically by `erk exec plan-create-review-pr`. The `/erk:pr-address` command detects this label in Phase 0 and switches modes.
 
 See [Phase 0 Detection Pattern](../architecture/phase-zero-detection-pattern.md) for the detection mechanism.
 
@@ -90,7 +90,7 @@ The git push updates the PR, but doesn't update the issue. The explicit sync com
 #### When Plan Review Mode is used
 
 - User runs `erk exec plan-create-review-pr` to create a review PR
-- PR gets `plan-review` label automatically
+- PR gets `erk-plan-review` label automatically
 - User runs `/erk:pr-address` on that PR branch
 - Mode is detected automatically, no manual selection needed
 

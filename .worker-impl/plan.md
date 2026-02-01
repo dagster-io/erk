@@ -34,6 +34,7 @@ https://gist.github.com/schrockn/360bba2641f8f9619929d5248d5f521a
 **Changes Required:**
 
 Update all examples showing the old label name `'plan-review'` to `'erk-plan-review'`:
+
 - Core pattern examples
 - WRONG vs CORRECT pattern sections
 - Safe defaults section
@@ -51,6 +52,7 @@ Update all examples showing the old label name `'plan-review'` to `'erk-plan-rev
 **Changes Required:**
 
 Update label references in implementation pattern examples:
+
 - Job condition examples: change `'plan-review'` to `'erk-plan-review'`
 - Grep check examples: change `'plan-review'` to `'erk-plan-review'`
 - Skip conditions lists: change `'plan-review'` to `'erk-plan-review'`
@@ -75,6 +77,7 @@ Update the Phase 0 detection section to use the correct label name `erk-plan-rev
 **Purpose:** Document the comprehensive checklist for renaming GitHub labels used in CI automation, ensuring all references across Python constants, workflow files, and documentation are synchronized.
 
 **Key Sections:**
+
 - Source of truth verification (Python constants)
 - GitHub Actions workflows search and update
 - Documentation updates across all guides and commands
@@ -102,6 +105,7 @@ Update the Plan Review Mode section to use `erk-plan-review` instead of `plan-re
 **Purpose:** Provide a quick reference for the GitHub Actions label filtering pattern, explaining the `.*.name` syntax, negation semantics, and how to keep workflow label strings synchronized with Python constant definitions.
 
 **Key Sections:**
+
 - Core pattern explanation with syntax breakdown
 - Why negation matters for safe defaults
 - Authoritative label definitions (reference to Python constants)
@@ -152,6 +156,7 @@ Update the Plan Review Mode section to use `erk-plan-review` instead of `plan-re
 "Labels are referenced in multiple places: (1) Job-level `if:` conditions in all workflow files, (2) Step name descriptions and comments, (3) Documentation examples showing the label check. Missing any location will cause CI behavior to diverge from intent. Use the CI Label Rename Checklist to ensure comprehensive updates."
 
 **Why it's a tripwire:**
+
 - **Non-obvious (+2)**: Developers may update the Python constant and assume they're done, not realizing YAML files need manual updates
 - **Cross-cutting (+2)**: Spans multiple workflow files, multiple locations within each file, plus documentation
 - **Destructive potential (+2)**: Silent failure mode—no runtime errors, just different CI behavior
