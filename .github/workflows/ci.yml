@@ -122,6 +122,28 @@ jobs:
       - name: Run integration tests
         run: make test-integration
 
+  erkdesk-tests:
+    needs: check-submission
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: erkdesk/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: erkdesk
+      - name: Run erkdesk tests
+        run: pnpm test
+        working-directory: erkdesk
+
   # === Autofix (runs after ALL checks) ===
   autofix:
     needs:
