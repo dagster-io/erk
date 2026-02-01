@@ -50,6 +50,15 @@ const PlanList: React.FC = () => {
     }
   }, [selectedIndex]);
 
+  useEffect(() => {
+    if (selectedIndex < 0 || selectedIndex >= plans.length) return;
+    const plan = plans[selectedIndex];
+    const url = plan.pr_url ?? plan.issue_url;
+    if (url) {
+      window.erkdesk.loadWebViewURL(url);
+    }
+  }, [selectedIndex, plans]);
+
   if (loading) {
     return <div className="plan-list__loading">Loading plans...</div>;
   }

@@ -30,6 +30,7 @@ describe("PlanList", () => {
   beforeEach(() => {
     // Reset the mock before each test
     vi.mocked(window.erkdesk.fetchPlans).mockReset();
+    vi.mocked(window.erkdesk.loadWebViewURL).mockReset();
   });
 
   it("renders loading state initially", () => {
@@ -192,5 +193,170 @@ describe("PlanList", () => {
     const rows = screen.getAllByRole("row").slice(1);
     expect(rows[0]).toHaveClass("plan-list__row--selected");
     expect(rows[0].className).toContain("plan-list__row--selected");
+  });
+
+  it("loads URL for first plan on initial render", async () => {
+    const plans = [
+      makePlan({
+        issue_number: 1,
+        title: "First",
+        issue_url: "https://github.com/org/repo/issues/1",
+      }),
+    ];
+    vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+      success: true,
+      plans,
+      count: 1,
+    });
+
+    render(<PlanList />);
+
+    await waitFor(() => {
+      expect(window.erkdesk.loadWebViewURL).toHaveBeenCalledWith(
+        "https://github.com/org/repo/issues/1",
+      );
+    });
+  });
+
+  it("keyboard navigation updates URL", async () => {
+    const plans = [
+      makePlan({
+        issue_number: 1,
+        title: "First",
+        issue_url: "https://github.com/org/repo/issues/1",
+      }),
+      makePlan({
+        issue_number: 2,
+        title: "Second",
+        issue_url: "https://github.com/org/repo/issues/2",
+      }),
+    ];
+    vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+      success: true,
+      plans,
+      count: 2,
+    });
+
+    render(<PlanList />);
+
+    await waitFor(() => {
+      expect(screen.getByText("First")).toBeInTheDocument();
+    });
+
+    const user = userEvent.setup();
+    await user.keyboard("j");
+
+    expect(window.erkdesk.loadWebViewURL).toHaveBeenCalledWith(
+      "https://github.com/org/repo/issues/2",
+    );
+  });
+
+  it("click on row updates URL", async () => {
+    const plans = [
+      makePlan({
+        issue_number: 1,
+        title: "First",
+        issue_url: "https://github.com/org/repo/issues/1",
+      }),
+      makePlan({
+        issue_number: 2,
+        title: "Second",
+        issue_url: "https://github.com/org/repo/issues/2",
+      }),
+    ];
+    vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+      success: true,
+      plans,
+      count: 2,
+    });
+
+    render(<PlanList />);
+
+    await waitFor(() => {
+      expect(screen.getByText("First")).toBeInTheDocument();
+    });
+
+    const rows = screen.getAllByRole("row").slice(1);
+    const user = userEvent.setup();
+    await user.click(rows[1]);
+
+    expect(window.erkdesk.loadWebViewURL).toHaveBeenCalledWith(
+      "https://github.com/org/repo/issues/2",
+    );
+  });
+
+  it("prefers pr_url over issue_url", async () => {
+    const plans = [
+      makePlan({
+        issue_number: 1,
+        title: "With PR",
+        issue_url: "https://github.com/org/repo/issues/1",
+        pr_url: "https://github.com/org/repo/pull/42",
+      }),
+    ];
+    vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+      success: true,
+      plans,
+      count: 1,
+    });
+
+    render(<PlanList />);
+
+    await waitFor(() => {
+      expect(window.erkdesk.loadWebViewURL).toHaveBeenCalledWith(
+        "https://github.com/org/repo/pull/42",
+      );
+    });
+    expect(window.erkdesk.loadWebViewURL).not.toHaveBeenCalledWith(
+      "https://github.com/org/repo/issues/1",
+    );
+  });
+
+  it("falls back to issue_url when pr_url is null", async () => {
+    const plans = [
+      makePlan({
+        issue_number: 1,
+        title: "No PR",
+        issue_url: "https://github.com/org/repo/issues/1",
+        pr_url: null,
+      }),
+    ];
+    vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+      success: true,
+      plans,
+      count: 1,
+    });
+
+    render(<PlanList />);
+
+    await waitFor(() => {
+      expect(window.erkdesk.loadWebViewURL).toHaveBeenCalledWith(
+        "https://github.com/org/repo/issues/1",
+      );
+    });
+  });
+
+  it("does not call loadWebViewURL when both URLs are null", async () => {
+    const plans = [
+      makePlan({
+        issue_number: 1,
+        title: "No URLs",
+        issue_url: null,
+        pr_url: null,
+      }),
+    ];
+    vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+      success: true,
+      plans,
+      count: 1,
+    });
+
+    render(<PlanList />);
+
+    await waitFor(() => {
+      expect(screen.getByText("No URLs")).toBeInTheDocument();
+    });
+
+    expect(window.erkdesk.loadWebViewURL).not.toHaveBeenCalled();
   });
 });
