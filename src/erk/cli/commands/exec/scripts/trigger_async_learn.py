@@ -28,12 +28,15 @@ Examples:
 import json
 import subprocess
 from dataclasses import asdict, dataclass
-from typing import Any, NoReturn
+from typing import NoReturn, cast
 
 import click
 
 from erk_shared.context.helpers import require_github, require_repo_root
 from erk_shared.gateway.github.parsing import construct_workflow_run_url
+from erk_shared.learn.extraction.get_learn_sessions_result import (
+    GetLearnSessionsResultDict,
+)
 
 LEARN_WORKFLOW = "learn.yml"
 
@@ -181,7 +184,9 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         )
         return
 
-    session_sources = sessions_result.get("session_sources", [])
+    sessions = cast(GetLearnSessionsResultDict, sessions_result)
+
+    session_sources = sessions["session_sources"]
     if not isinstance(session_sources, list):
         _output_error("Invalid session_sources format - expected list")
         return
@@ -192,22 +197,19 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
     click.echo(f"[trigger-async-learn] Created {learn_dir}", err=True)
 
     # Step 3: Preprocess each local session source
-    planning_session_id = sessions_result.get("planning_session_id")
-
     for source_item in session_sources:
         if not isinstance(source_item, dict):
             continue
 
-        source: Any = source_item
-
-        if source.get("source_type") != "local":  # type: ignore
+        if source_item.get("source_type") != "local":
             continue
 
-        session_path = source.get("path")  # type: ignore
+        session_path = source_item.get("path")
         if not isinstance(session_path, str):
             continue
 
-        session_id = source.get("session_id")  # type: ignore
+        session_id = source_item.get("session_id")
+        planning_session_id = sessions["planning_session_id"]
         prefix = "planning" if session_id == planning_session_id else "impl"
 
         output_paths = _run_preprocess_session(
