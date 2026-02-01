@@ -178,6 +178,28 @@ def my_function() -> None:
 
 For detailed inline import patterns and when they're legitimate, see `references/module-design.md`.
 
+### No Import Aliases
+
+**Rule:** Imports must use canonical names. The `as` keyword for aliasing is prohibited by default.
+
+**Rationale:** Import aliases obscure the canonical name, make grep-based discovery harder, and invite cargo-culting. When reading code, aliases force you to scroll up to find the real import, breaking flow. When searching for usage of a symbol, aliases fragment results across different names.
+
+**The only acceptable exception:** Resolving genuine name collisions between two different modules that export identically-named symbols.
+
+```python
+# WRONG: Gratuitous aliasing
+from erk.helpers import require_issues as require_github_issues
+
+# CORRECT: Use canonical name
+from erk.helpers import require_issues
+
+# CORRECT (rare exception): Resolving genuine collision
+from datetime import datetime as dt
+from pandas import datetime as pd_datetime
+```
+
+**Note:** This rule is complementary to the "No Re-Exports" rule. Re-exports use `import X as X` for explicit re-export syntax at package boundaries. This rule targets gratuitous renaming aliases.
+
 ---
 
 ## Performance Guidelines

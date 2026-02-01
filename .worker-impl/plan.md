@@ -11,6 +11,7 @@ Add a new rule to the **Import Organization** section of `.claude/skills/dignifi
 ## Rule Content
 
 Add a "No Import Aliases" rule with:
+
 - Statement: imports must use canonical names; `as` aliasing is prohibited by default
 - Rationale: aliases obscure the canonical name, make grep-based discovery harder, and invite cargo-culting
 - The only acceptable exceptions: resolving genuine name collisions between two different modules
