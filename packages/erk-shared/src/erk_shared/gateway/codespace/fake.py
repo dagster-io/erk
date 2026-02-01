@@ -45,6 +45,7 @@ class FakeCodespace(Codespace):
         """
         self._run_exit_code = run_exit_code
         self._ssh_calls: list[SSHCall] = []
+        self._started_codespaces: list[str] = []
         self._exec_called = False
 
     @property
@@ -56,6 +57,16 @@ class FakeCodespace(Codespace):
         This property is for test assertions only.
         """
         return list(self._ssh_calls)
+
+    @property
+    def started_codespaces(self) -> list[str]:
+        """Get the list of codespace gh_names that were started.
+
+        Returns a copy of the list to prevent external mutation.
+
+        This property is for test assertions only.
+        """
+        return list(self._started_codespaces)
 
     @property
     def exec_called(self) -> bool:
@@ -74,6 +85,14 @@ class FakeCodespace(Codespace):
         if not self._ssh_calls:
             return None
         return self._ssh_calls[-1]
+
+    def start_codespace(self, gh_name: str) -> None:
+        """Track codespace start call.
+
+        Args:
+            gh_name: GitHub codespace name
+        """
+        self._started_codespaces.append(gh_name)
 
     def exec_ssh_interactive(self, gh_name: str, remote_command: str) -> NoReturn:
         """Track interactive SSH call.

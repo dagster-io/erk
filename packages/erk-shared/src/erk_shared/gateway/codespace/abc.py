@@ -28,6 +28,18 @@ class Codespace(ABC):
         ...
 
     @abstractmethod
+    def start_codespace(self, gh_name: str) -> None:
+        """Start a stopped codespace.
+
+        Ensures the codespace is running before attempting SSH connections.
+        No-op if the codespace is already running.
+
+        Args:
+            gh_name: GitHub codespace name (from gh codespace list)
+        """
+        ...
+
+    @abstractmethod
     def run_ssh_command(self, gh_name: str, remote_command: str) -> int:
         """Run SSH command in codespace and return exit code.
 

@@ -9,10 +9,25 @@ import subprocess
 from typing import NoReturn
 
 from erk_shared.gateway.codespace.abc import Codespace
+from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
 class RealCodespace(Codespace):
     """Production implementation using gh codespace ssh for remote execution."""
+
+    def start_codespace(self, gh_name: str) -> None:
+        """Start a stopped codespace.
+
+        Uses gh codespace start to ensure the codespace is running.
+
+        Args:
+            gh_name: GitHub codespace name (from gh codespace list)
+        """
+        # GH-API-AUDIT: REST - codespace start
+        run_subprocess_with_context(
+            cmd=["gh", "codespace", "start", "-c", gh_name],
+            operation_context=f"start codespace '{gh_name}'",
+        )
 
     def exec_ssh_interactive(self, gh_name: str, remote_command: str) -> NoReturn:
         """Replace current process with SSH session to codespace.
