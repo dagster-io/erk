@@ -178,9 +178,15 @@ git commit -m "Address PR review comments (batch N/M)
 
 **This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
 
-After committing, resolve each review thread and mark each discussion comment.
+After committing, resolve review threads and mark discussion comments.
 
-**For Review Threads** - use `erk exec resolve-review-thread` with the `thread_id` from the JSON (see `pr-operations` skill for examples).
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
 
 **For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
 
@@ -326,14 +332,10 @@ erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue
 
 Resolve each thread using the appropriate command (see `pr-operations` skill):
 
-**For review threads** (`resolve-review-thread`):
+**For review threads** - use the batch command to resolve all at once:
 
-Use a message like:
-
-```
-Incorporated feedback into plan. Updated the relevant section in PLAN-REVIEW-{issue}.md.
-
-Summary of change: {brief description of how the plan text was modified}
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Incorporated feedback into plan. Updated the relevant section in PLAN-REVIEW-{issue}.md.\n\nSummary of change: {brief description}"}]' | erk exec resolve-review-threads
 ```
 
 **For discussion comments** (`reply-to-discussion-comment`):

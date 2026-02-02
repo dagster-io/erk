@@ -17,13 +17,14 @@ description: Use when working with PR review comments, resolving threads, or rep
 
 ## Quick Reference
 
-| Command                       | Purpose                         | Key Point                      |
-| ----------------------------- | ------------------------------- | ------------------------------ |
-| `get-pr-review-comments`      | Fetch unresolved review threads | Returns threads with line info |
-| `get-pr-discussion-comments`  | Fetch PR discussion comments    | Returns top-level comments     |
-| `resolve-review-thread`       | Reply AND resolve a thread      | Does both in one operation     |
-| `reply-to-discussion-comment` | Reply to discussion comment     | For non-code feedback          |
-| `post-pr-inline-comment`      | Post new inline comment         | Creates new review thread      |
+| Command                        | Purpose                          | Key Point                        |
+| ------------------------------ | -------------------------------- | -------------------------------- |
+| `get-pr-review-comments`       | Fetch unresolved review threads  | Returns threads with line info   |
+| `get-pr-discussion-comments`   | Fetch PR discussion comments     | Returns top-level comments       |
+| `resolve-review-thread`        | Reply AND resolve a single thread | Does both in one operation      |
+| `resolve-review-threads`       | Batch resolve multiple threads   | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment`  | Reply to discussion comment      | For non-code feedback            |
+| `post-pr-inline-comment`       | Post new inline comment          | Creates new review thread        |
 
 ## When to Use Each Command
 
@@ -43,8 +44,11 @@ erk exec get-pr-review-comments --all
 ### Resolving Review Threads
 
 ```bash
-# Always use this to resolve review threads - it replies AND resolves
+# Resolve a single thread
 erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
 ```
 
 ### Replying to Discussion Comments
@@ -70,7 +74,7 @@ erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:
 > - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
 > - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
 >
-> Always use `erk exec resolve-review-thread` - it does both in one operation.
+> Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
 
 ## Comment Classification Model
 
