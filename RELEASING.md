@@ -12,14 +12,6 @@ How to publish a new erk release.
 
 ### 1. Create a Release Branch
 
-**Option A - Manual:**
-
-```bash
-git checkout -b release-X.Y.Z
-```
-
-**Option B - Via plan workflow:**
-
 ```bash
 erk prepare -d <plan-issue>
 ```
