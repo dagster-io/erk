@@ -10,6 +10,7 @@
 - **[command-group-testing.md](command-group-testing.md)** — testing Click command groups, migrating tests for grouped commands, testing invoke_without_command patterns
 - **[devrun-agent.md](devrun-agent.md)** — using the devrun agent, running CI checks via Task tool, debugging devrun agent failures, writing prompts for devrun
 - **[erkdesk-component-testing.md](erkdesk-component-testing.md)** — writing tests for erkdesk React components, testing keyboard navigation in erkdesk, testing async state updates in React components
+- **[exec-script-batch-testing.md](exec-script-batch-testing.md)** — writing tests for batch exec commands, organizing test cases for JSON stdin/stdout commands, implementing fake gateway failure injection for batch operations
 - **[exec-script-testing.md](exec-script-testing.md)** — testing exec CLI commands, writing integration tests for scripts, debugging 'Context not initialized' errors in tests, debugging flaky tests in parallel execution
 - **[fake-github-testing.md](fake-github-testing.md)** — Writing tests that use FakeGitHubIssues
 - **[frozen-dataclass-test-doubles.md](frozen-dataclass-test-doubles.md)** — implementing a fake for an ABC interface, adding mutation tracking to a test double, understanding the frozen dataclass with mutable internals pattern, writing tests that assert on method call parameters

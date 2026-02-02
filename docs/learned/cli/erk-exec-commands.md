@@ -63,6 +63,7 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 
 - `get-pr-review-comments` - Fetch PR review threads
 - `resolve-review-thread` - Resolve a review thread
+- `resolve-review-threads` - Batch resolve multiple review threads via JSON stdin
 - `reply-to-discussion-comment` - Reply to PR discussion
 - `handle-no-changes` - Handle zero-change implementation outcomes (called by erk-impl workflow)
 
