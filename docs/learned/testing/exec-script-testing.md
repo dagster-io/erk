@@ -359,8 +359,103 @@ def test_issue_not_found():
     assert result.exit_code == 1
 ```
 
+## Testing Interactive/NoReturn Gateway Methods
+
+Some gateway methods are `NoReturn` - they call `os.exec*()` to replace the current process (e.g., `exec_ssh_interactive()`). These methods never return control to the caller.
+
+### Problem
+
+Methods with `NoReturn` type annotation never return. Testing them directly would cause the test process to be replaced.
+
+### Solution Pattern
+
+**DO NOT call the method directly.** Instead:
+
+1. Verify the fake gateway recorded the call
+2. Check the call parameters (interactive=True, correct command, etc.)
+3. No assertions after the call - they won't execute
+
+### Example: Testing exec_ssh_interactive
+
+**From:** `tests/unit/cli/commands/codespace/run/objective/test_next_plan_cmd.py`
+
+```python
+def test_run_next_plan_starts_codespace_and_runs_command() -> None:
+    """run objective next-plan starts the codespace and runs the command."""
+    runner = CliRunner()
+
+    cs = _make_codespace("mybox")
+    fake_codespace = FakeCodespace()
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    ctx = context_for_test(codespace=fake_codespace, codespace_registry=codespace_registry)
+
+    # Invoke the command (which calls exec_ssh_interactive internally)
+    result = runner.invoke(
+        cli,
+        ["codespace", "run", "objective", "next-plan", "42"],
+        obj=ctx,
+        catch_exceptions=False,
+    )
+
+    # Verify the call was made via the fake
+    assert fake_codespace.exec_called is True
+    assert len(fake_codespace.ssh_calls) == 1
+    call = fake_codespace.ssh_calls[0]
+    assert call.gh_name == "user-mybox-abc123"
+    assert "erk objective next-plan 42" in call.remote_command
+    assert call.interactive is True
+```
+
+**Key points:**
+
+- `exec_called` attribute tracks whether `exec_ssh_interactive()` was invoked
+- `ssh_calls` list stores parameters passed to the call
+- `interactive` field distinguishes `exec_ssh_interactive()` from `run_ssh_command()`
+
+### Why This Works
+
+**FakeCodespace behavior:**
+
+- `exec_ssh_interactive()` records the call and returns normally (doesn't actually exec)
+- Real gateway would replace process, test never reaches assertions
+- Fake gateway lets test continue and verify the call parameters
+
+### Gotcha: No Code After exec_ssh_interactive
+
+In real code, nothing after `exec_ssh_interactive()` executes:
+
+```python
+# Command implementation
+def next_plan(ctx: ErkContext, issue_ref: str) -> None:
+    codespace.exec_ssh_interactive(gh_name, remote_command)
+    # THIS LINE NEVER RUNS - process was replaced
+    print("Done")  # Dead code
+```
+
+**In tests:** The fake lets execution continue, but this doesn't match production behavior. Don't write tests that depend on post-exec code running.
+
+### Verification Checklist
+
+When testing NoReturn gateway methods:
+
+- ✅ Verify `exec_called is True`
+- ✅ Check parameters in the call record (`ssh_calls`, `gh_name`, `remote_command`, `interactive`)
+- ✅ Verify command arguments are correctly formatted
+- ❌ Don't assert on return values (there are none)
+- ❌ Don't write code that depends on execution continuing after the call
+
+### Related Gateway Methods
+
+Other `NoReturn` methods that follow this pattern:
+
+- `exec_ssh_interactive()` - Replace process with SSH command
+- `os.execvp()` - Replace process with any command
+
+See [SSH Command Execution](../architecture/ssh-command-execution.md) for when to use `exec_ssh_interactive()` vs `run_ssh_command()`.
+
 ## Related Documentation
 
 - [CLI Testing Patterns](cli-testing.md) - General CLI testing patterns
 - [Progress Schema Reference](../planning/progress-schema.md) - For testing progress commands
+- [SSH Command Execution](../architecture/ssh-command-execution.md) - Decision framework for SSH methods
 - Source: `src/erk/cli/commands/exec/scripts/AGENTS.md` - Exec script standards

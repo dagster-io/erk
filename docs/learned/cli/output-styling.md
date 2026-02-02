@@ -148,6 +148,117 @@ Standard emojis for CLI output:
 - `⭕` - Aborted/cancelled
 - `ℹ️` - Info notes
 
+## Async Progress Output Patterns
+
+When orchestrating multi-step async operations (like `trigger-async-learn`), use a hierarchical output structure to show progress clearly.
+
+### Hierarchical Indentation
+
+Use consistent indentation to show the relationship between actions and their details:
+
+| Level      | Indentation | Content                              | Example                                     |
+| ---------- | ----------- | ------------------------------------ | ------------------------------------------- |
+| Action     | 0 spaces    | Top-level operation being performed  | `📋 Discovering sessions...`                |
+| Detail     | 3-4 spaces  | Summary information about the action | `   Found 2 session(s): 1 planning, 1 impl` |
+| Sub-detail | 5+ spaces   | Item-level details                   | `     📝 planning: abc123 (local)`          |
+
+### Emoji as Semantic Type Indicators
+
+Emojis serve as visual type indicators for different stages of async workflows:
+
+| Emoji | Meaning       | When to Use                        | Example                                     |
+| ----- | ------------- | ---------------------------------- | ------------------------------------------- |
+| 📋    | Discovery     | Finding/listing resources          | `📋 Discovering sessions...`                |
+| 🔍    | Search        | Looking up specific items          | `🔍 Getting PR for plan...`                 |
+| 🔄    | Processing    | Transforming or preprocessing data | `🔄 Preprocessing planning session...`      |
+| 📂    | Directory ops | Creating directories               | `📂 Created learn-6545`                     |
+| 💬    | Comments      | Fetching comments or discussions   | `💬 Fetching review comments...`            |
+| ☁️    | Upload        | Uploading to remote services       | `☁️ Uploading to gist...`                   |
+| 📄    | File output   | Writing files to disk              | `   📄 planning-session.xml (12,345 chars)` |
+| 🔗    | Links         | Generated URLs or references       | `   🔗 https://gist.github.com/...`         |
+
+**Rule:** Emoji is a REQUIRED parameter in `_run_subprocess()` calls. Pass empty string `""` for no prefix.
+
+### Context-Aware Emoji Selection
+
+For session processing, choose emoji based on session type:
+
+```python
+# From trigger_async_learn.py:230-232
+prefix = "planning" if sid == planning_session_id else "impl"
+emoji = "📝" if prefix == "planning" else "🔧"
+session_line = click.style(f"     {emoji} {prefix}: {sid} ({source_type})", dim=True)
+```
+
+| Context                 | Emoji | Usage                         |
+| ----------------------- | ----- | ----------------------------- |
+| Planning sessions       | 📝    | `📝 planning: abc123 (local)` |
+| Implementation sessions | 🔧    | `🔧 impl: def456 (gist)`      |
+
+### Output Routing
+
+**Critical:** All progress output goes to **stderr**, JSON output goes to **stdout**.
+
+```python
+# From trigger_async_learn.py:100-102
+message = click.style(f"{prefix}{description}...", fg="cyan")
+click.echo(message, err=True)  # Note: err=True
+```
+
+This allows shell scripts to parse JSON from stdout without interference from progress messages.
+
+### Example: Full Async Progress Flow
+
+**From:** `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`
+
+```
+📋 Discovering sessions...
+   Found 2 session(s): 1 planning, 1 impl
+     📝 planning: abc123 (local)
+     🔧 impl: def456 (local)
+📂 Created learn-6545
+🔄 Preprocessing planning session...
+   Original: 45,678 chars → Compressed: 12,345 chars (72.97% reduction)
+   📄 planning-session.xml (12,345 chars)
+🔄 Preprocessing impl session...
+   ⏭️  Session filtered (empty/warmup), skipping
+🔍 Getting PR for plan...
+💬 Fetching review comments...
+   📄 pr-review-comments.json
+💬 Fetching discussion comments...
+   📄 pr-discussion-comments.json
+☁️ Uploading to gist...
+   🔗 https://gist.github.com/... (4 file(s), 23,456 chars)
+```
+
+**Final stdout (after all stderr):**
+
+```json
+{
+  "success": true,
+  "issue_number": 6545,
+  "workflow_triggered": true,
+  "run_id": "12345678",
+  "workflow_url": "https://...",
+  "gist_url": "https://..."
+}
+```
+
+### Styling Conventions for Async Progress
+
+| Element         | Style             | Example                                          |
+| --------------- | ----------------- | ------------------------------------------------ |
+| Action messages | Cyan              | `click.style(f"📋 {description}...", fg="cyan")` |
+| Summary details | Dimmed            | `click.style(f"   Found {n} items", dim=True)`   |
+| File names      | Dimmed            | `click.style(f"   📄 {filename}", dim=True)`     |
+| URLs            | Blue, underlined  | `click.style(url, fg="blue", underline=True)`    |
+| Stats/metadata  | Dimmed, in parens | `click.style(f"({count} files)", dim=True)`      |
+
+### Related Patterns
+
+- [Output Abstraction](#output-abstraction) - When to use `user_output()` vs `machine_output()`
+- [Emoji Conventions](#emoji-conventions) - Standard emoji meanings
+
 ## Spacing Guidelines
 
 - Use empty `click.echo()` for vertical spacing between sections

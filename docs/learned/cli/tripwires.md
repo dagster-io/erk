@@ -28,17 +28,23 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before choosing between Ensure and EnsureIdeal** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal.
 
+**CRITICAL: Before creating exec scripts for operations requiring LLM reasoning between steps** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Keep conditional logic in slash commands. Only bundle mechanical API calls where input params are known upfront.
+
 **CRITICAL: Before displaying user-provided text in Rich CLI tables** → Read [CLI Output Styling Guide](output-styling.md) first. Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear.
 
 **CRITICAL: Before displaying user-provided text in Rich CLI tables without escaping** → Read [Objective Commands](objective-commands.md) first. Use `escape_markup(value)` for user data in Rich tables. Brackets like `[text]` are interpreted as style tags and will disappear.
 
 **CRITICAL: Before filtering session sources without logging which sessions were skipped and why** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering makes debugging impossible. Log to stderr when skipping sessions, include the reason (empty/warmup/filtered).
 
+**CRITICAL: Before forgetting to add TypedDict schemas for exec script JSON output** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Define TypedDict in erk_shared for type-safe JSON parsing. Create separate dicts for success result and error result.
+
 **CRITICAL: Before implementing a command with multiple user confirmations** → Read [Two-Phase Validation Model for Complex Commands](two-phase-validation-model.md) first. Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Inline confirmations cause partial state on decline.
 
 **CRITICAL: Before importing from erk_shared.gateway when creating exec commands** → Read [Exec Script Patterns](exec-script-patterns.md) first. Gateway ABCs use submodule paths: `erk_shared.gateway.{service}.{resource}.abc`
 
 **CRITICAL: Before landing a PR without updating associated learn plan status** → Read [Learn Plan Land Flow](learn-plan-land-flow.md) first. Learn plan PRs trigger special execution pipeline steps: check_learn_status, update_learn_plan, promote_tripwires, close_review_pr. Ensure these steps execute after PR merge.
+
+**CRITICAL: Before making LLM fetch data sequentially when it could be bundled** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Extract 3+ mechanical sequential calls into an exec script. Bundle objective/plan/PR fetches into objective-update-context pattern.
 
 **CRITICAL: Before mutating SubmitState fields directly** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state.
 

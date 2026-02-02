@@ -38,6 +38,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before amending a commit when Graphite is enabled** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in sync_cmd and branch_manager.
 
+**CRITICAL: Before assuming cursor position will persist across DataTable.clear() calls** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Save cursor position by row key before clear(), restore after repopulating. See textual/quirks.md for pattern.
+
 **CRITICAL: Before calling GraphiteBranchManager.create_branch() without explicit checkout** → Read [Erk Architecture Patterns](erk-architecture.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
 
 **CRITICAL: Before calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
@@ -126,7 +128,11 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before setting status explicitly when --pr is provided without --status** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. When --pr is set without --status, reset status cell to '-' to allow inference. Do not preserve the existing status — it may be stale (e.g., 'blocked' after a PR is added).
 
+**CRITICAL: Before skipping fallback strategies when the selected item might disappear** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Always provide fallback behavior when selected item not found in refreshed data (reset to 0, preserve index clamped, or clear selection).
+
 **CRITICAL: Before threading state through pipeline steps with mutable dataclasses** → Read [Land State Threading Pattern](land-state-threading.md) first. Use frozen dataclasses (@dataclass(frozen=True)) for pipeline state. Update fields with dataclasses.replace() to create new instances. Immutability enables caching, testability, and replay.
+
+**CRITICAL: Before tracking selection by array index when the array can be mutated** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Track selection by unique identifier (issue_number, row key), not array position. Array indices become unstable when rows are added, removed, or reordered.
 
 **CRITICAL: Before try/except in fake.py or dry_run.py** → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
 
