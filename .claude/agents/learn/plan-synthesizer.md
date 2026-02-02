@@ -69,7 +69,7 @@ For each item from the gap analysis (non-SKIP items):
    - Add source attribution: [Plan], [Impl], or [PR #N]
 4. **Use source pointers, not verbatim code**: Draft content MUST NOT include verbatim code blocks copied from source files. Instead:
    - Describe what the code does in prose
-   - Point to the source file: `See ClassName.method() in path/to/file.py:LINE-LINE`
+   - Point to the source file: `See ClassName.method() in path/to/file.py` (agents should grep to find the exact location)
    - Short illustrative snippets (≤5 lines) showing a pattern are acceptable
    - Follow `docs/learned/documentation/source-pointers.md` for format
 

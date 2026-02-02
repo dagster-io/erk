@@ -89,16 +89,16 @@ Skip documentation: <N> (with reasons)
 
 ## Recommended Documentation Items
 
-1. **<item>** → <location>: <what to document> (source: path/to/file.py:LINE-LINE)
+1. **<item>** → <location>: <what to document> (source: path/to/file.py, grep for ClassName/function_name)
 2. ...
 
 ## Source Pointer Awareness
 
-Every inventory item MUST include the exact source file path and line range. This enables downstream agents to create documentation with source pointers instead of verbatim code blocks.
+Every inventory item MUST include the source file path. This enables downstream agents to create documentation with source pointers instead of verbatim code blocks.
 
 For each new function, class, CLI command, or gateway method, note:
 - Full file path (e.g., `src/erk/planning/plan_manager.py`)
-- Line range where the item is defined (e.g., `145-178`)
+- Key identifiers (class name, function name) so agents can grep to locate the relevant code
 
 See `docs/learned/documentation/source-pointers.md` for the two-part pattern used in documentation.
 ```
