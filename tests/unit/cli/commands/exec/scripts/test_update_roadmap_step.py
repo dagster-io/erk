@@ -80,8 +80,9 @@ def test_update_pending_step_with_plan_pr() -> None:
     assert len(fake_gh.updated_bodies) == 1
     updated_body = fake_gh.updated_bodies[0][1]
     assert "plan #6464" in updated_body
-    # Status cell should be reset to "-" for inference
+    # Status cell should be "in-progress" for plan PR
     assert "| 1.3 " in updated_body
+    assert "| in-progress |" in updated_body
 
 
 def test_update_step_with_existing_pr() -> None:
@@ -107,6 +108,8 @@ def test_update_step_with_existing_pr() -> None:
     assert "#500" in updated_body
     # The old "plan #200" should be replaced
     assert "plan #200" not in updated_body
+    # Status cell should be "done" for merged PR
+    assert "| done |" in updated_body
 
 
 def test_clear_pr_reference() -> None:
@@ -131,6 +134,8 @@ def test_clear_pr_reference() -> None:
     updated_body = fake_gh.updated_bodies[0][1]
     # The row for 1.1 should now have "-" in PR cell
     assert "#100" not in updated_body
+    # Status cell should be "pending" when PR is cleared
+    assert "| pending |" in updated_body
 
 
 def test_step_not_found() -> None:

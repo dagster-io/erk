@@ -224,3 +224,84 @@ def test_find_next_step_returns_none_when_all_done() -> None:
     result = find_next_step(phases)
 
     assert result is None
+
+
+def test_parse_roadmap_explicit_done_status() -> None:
+    """Test that explicit 'done' status in Status column is recognized."""
+    body = """## Roadmap
+
+### Phase 1: Test
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | Step one | done | #100 |
+"""
+    phases, errors = parse_roadmap(body)
+
+    assert errors == []
+    assert len(phases) == 1
+    assert len(phases[0].steps) == 1
+    assert phases[0].steps[0].status == "done"
+    assert phases[0].steps[0].pr == "#100"
+
+
+def test_parse_roadmap_explicit_in_progress_status() -> None:
+    """Test that explicit 'in-progress' status in Status column is recognized."""
+    body = """## Roadmap
+
+### Phase 1: Test
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | Step one | in-progress | plan #101 |
+"""
+    phases, errors = parse_roadmap(body)
+
+    assert errors == []
+    assert len(phases) == 1
+    assert len(phases[0].steps) == 1
+    assert phases[0].steps[0].status == "in_progress"
+    assert phases[0].steps[0].pr == "plan #101"
+
+
+def test_parse_roadmap_explicit_pending_status() -> None:
+    """Test that explicit 'pending' status in Status column is recognized."""
+    body = """## Roadmap
+
+### Phase 1: Test
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | Step one | pending | - |
+"""
+    phases, errors = parse_roadmap(body)
+
+    assert errors == []
+    assert len(phases) == 1
+    assert len(phases[0].steps) == 1
+    assert phases[0].steps[0].status == "pending"
+    assert phases[0].steps[0].pr is None
+
+
+def test_parse_roadmap_explicit_status_overrides_pr_inference() -> None:
+    """Test that explicit status values take priority over PR-based inference."""
+    body = """## Roadmap
+
+### Phase 1: Test
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | Explicit done | done | #100 |
+| 1.2 | Explicit in-progress | in-progress | plan #101 |
+| 1.3 | Fallback to inference | - | #102 |
+"""
+    phases, errors = parse_roadmap(body)
+
+    assert errors == []
+    assert len(phases) == 1
+    assert len(phases[0].steps) == 3
+    # Explicit statuses should be preserved
+    assert phases[0].steps[0].status == "done"
+    assert phases[0].steps[1].status == "in_progress"
+    # Legacy "-" should fall back to PR inference
+    assert phases[0].steps[2].status == "done"
