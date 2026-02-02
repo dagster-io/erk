@@ -158,21 +158,14 @@ def resolve_review_threads(ctx: click.Context) -> None:
 
     # Process each thread sequentially
     results: list[dict[str, object]] = []
-    all_succeeded = True
 
     for item in validated:
-        thread_id = item["thread_id"]
-        comment = item.get("comment")
-
-        single_result = _resolve_single(github, repo_root, thread_id, comment)
+        single_result = _resolve_single(github, repo_root, item["thread_id"], item.get("comment"))
         results.append(asdict(single_result))
-
-        if not single_result.success:
-            all_succeeded = False
 
     # Output batch result
     batch_result = BatchResolveResult(
-        success=all_succeeded,
+        success=all(r.get("success", False) for r in results),
         results=results,
     )
     click.echo(json.dumps(asdict(batch_result), indent=2))
