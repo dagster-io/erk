@@ -330,10 +330,11 @@ class FakeClaudeExecutor(ClaudeExecutor):
         tools: list[str] | None,
         cwd: Path | None,
         system_prompt: str | None,
+        dangerous: bool,
     ) -> PromptResult:
         """Track prompt execution and return simulated result.
 
-        This method records the prompt and system_prompt for test assertions.
+        This method records the prompt, system_prompt, and dangerous flag for test assertions.
         It does not execute any actual subprocess operations.
 
         Args:
@@ -342,11 +343,13 @@ class FakeClaudeExecutor(ClaudeExecutor):
             tools: Optional list of allowed tools (ignored in fake)
             cwd: Optional working directory (ignored in fake)
             system_prompt: Optional system prompt (tracked for test assertions)
+            dangerous: Whether --dangerously-skip-permissions was requested
+                (tracked for test assertions)
 
         Returns:
             PromptResult with simulated output or error
         """
-        self._prompt_calls.append((prompt, system_prompt))
+        self._prompt_calls.append((prompt, system_prompt, dangerous))
 
         if self._simulated_prompt_error is not None:
             return PromptResult(
@@ -367,10 +370,10 @@ class FakeClaudeExecutor(ClaudeExecutor):
         )
 
     @property
-    def prompt_calls(self) -> list[tuple[str, str | None]]:
+    def prompt_calls(self) -> list[tuple[str, str | None, bool]]:
         """Get the list of execute_prompt() calls that were made.
 
-        Returns list of (prompt, system_prompt) tuples.
+        Returns list of (prompt, system_prompt, dangerous) tuples.
 
         This property is for test assertions only.
         """

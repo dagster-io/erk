@@ -145,6 +145,7 @@ class CommitMessageGenerator:
                 tools=None,
                 cwd=request.repo_root,
                 system_prompt=get_commit_message_prompt(request.repo_root),
+                dangerous=False,
             )
         else:
             # Legacy: system prompt concatenated with user prompt
@@ -162,6 +163,7 @@ class CommitMessageGenerator:
                 tools=None,
                 cwd=request.repo_root,
                 system_prompt=None,
+                dangerous=False,
             )
 
         if not result.success:

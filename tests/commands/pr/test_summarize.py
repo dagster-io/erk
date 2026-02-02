@@ -267,7 +267,7 @@ def test_pr_summarize_uses_graphite_parent() -> None:
 
         # Verify the prompt was called with correct branches
         assert len(claude_executor.prompt_calls) == 1
-        prompt, system_prompt = claude_executor.prompt_calls[0]
+        prompt, system_prompt, _dangerous = claude_executor.prompt_calls[0]
         # Should contain branch-1 as parent (Graphite parent)
         assert "branch-1" in prompt
         assert "branch-2" in prompt

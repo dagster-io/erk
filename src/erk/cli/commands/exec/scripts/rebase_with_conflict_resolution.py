@@ -141,6 +141,7 @@ def _generate_summary(
         tools=None,
         cwd=cwd,
         system_prompt=None,
+        dangerous=False,
     )
 
     return result.output.strip()
@@ -168,16 +169,17 @@ def _invoke_claude_for_conflicts(
         model: Claude model to use
 
     Returns:
-        True if Claude invocation succeeded (exit code 0).
+        True if Claude invocation succeeded.
     """
-    exit_code = claude_executor.execute_prompt_passthrough(
+    result = claude_executor.execute_prompt(
         CONFLICT_RESOLUTION_PROMPT,
         model=model,
         tools=None,
         cwd=cwd,
+        system_prompt=None,
         dangerous=True,
     )
-    return exit_code == 0
+    return result.success
 
 
 def _rebase_with_conflict_resolution_impl(

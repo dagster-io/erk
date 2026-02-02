@@ -68,7 +68,7 @@ def test_generate_success(tmp_path: Path) -> None:
 
     # Verify prompt was called
     assert len(executor.prompt_calls) == 1
-    prompt, system_prompt = executor.prompt_calls[0]
+    prompt, system_prompt, _dangerous = executor.prompt_calls[0]
     assert "feature-branch" in prompt
     assert "main" in prompt
 
@@ -333,7 +333,7 @@ def test_generate_includes_commit_messages_in_prompt(tmp_path: Path) -> None:
     assert result.success is True
     # Verify commit messages were included in the prompt
     assert len(executor.prompt_calls) == 1
-    prompt, system_prompt = executor.prompt_calls[0]
+    prompt, system_prompt, _dangerous = executor.prompt_calls[0]
     assert "Initial implementation" in prompt
     assert "Added basic structure" in prompt
     assert "Fix bug in parsing" in prompt
@@ -365,7 +365,7 @@ def test_generate_works_without_commit_messages(tmp_path: Path) -> None:
     assert result.success is True
     # Prompt should not mention Developer's Commit Messages
     assert len(executor.prompt_calls) == 1
-    prompt, system_prompt = executor.prompt_calls[0]
+    prompt, system_prompt, _dangerous = executor.prompt_calls[0]
     assert "Developer's Commit Messages" not in prompt
 
 
@@ -401,7 +401,7 @@ def test_generate_passes_system_prompt_separately(tmp_path: Path) -> None:
 
     # Verify system_prompt was passed separately
     assert len(executor.prompt_calls) == 1
-    prompt, system_prompt = executor.prompt_calls[0]
+    prompt, system_prompt, _dangerous = executor.prompt_calls[0]
 
     # System prompt should be passed separately
     assert system_prompt is not None
@@ -447,7 +447,7 @@ def test_generate_includes_plan_context_in_prompt(tmp_path: Path) -> None:
     assert result.success is True
     # Verify plan context was included in the prompt
     assert len(executor.prompt_calls) == 1
-    prompt, _ = executor.prompt_calls[0]
+    prompt, _, _ = executor.prompt_calls[0]
     assert "Implementation Plan (Issue #123)" in prompt
     assert "Fix Authentication Bug" in prompt
     assert "session expiration" in prompt
@@ -483,7 +483,7 @@ def test_generate_includes_plan_context_with_objective_summary(tmp_path: Path) -
 
     assert result.success is True
     assert len(executor.prompt_calls) == 1
-    prompt, _ = executor.prompt_calls[0]
+    prompt, _, _ = executor.prompt_calls[0]
     assert "Implementation Plan (Issue #456)" in prompt
     assert "Parent Objective" in prompt
     assert "Objective #100: Improve Observability" in prompt
@@ -521,7 +521,7 @@ def test_generate_includes_both_plan_and_commit_messages(tmp_path: Path) -> None
 
     assert result.success is True
     assert len(executor.prompt_calls) == 1
-    prompt, _ = executor.prompt_calls[0]
+    prompt, _, _ = executor.prompt_calls[0]
     # Both should be present
     assert "Implementation Plan (Issue #789)" in prompt
     assert "Refactor API" in prompt

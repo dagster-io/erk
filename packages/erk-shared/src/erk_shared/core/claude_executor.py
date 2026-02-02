@@ -365,6 +365,7 @@ class ClaudeExecutor(ABC):
         tools: list[str] | None,
         cwd: Path | None,
         system_prompt: str | None,
+        dangerous: bool,
     ) -> PromptResult:
         """Execute a single prompt and return the result.
 
@@ -381,6 +382,8 @@ class ClaudeExecutor(ABC):
                 When provided, uses --system-prompt flag to completely replace
                 the default system prompt, enabling more deterministic behavior
                 for narrow, single-shot tasks.
+            dangerous: When True, passes --dangerously-skip-permissions to bypass
+                permission checks for automated scripts that need unattended execution.
 
         Returns:
             PromptResult with success status and output text
@@ -390,6 +393,7 @@ class ClaudeExecutor(ABC):
             >>> result = executor.execute_prompt(
             ...     "Generate a commit message for this diff",
             ...     model="haiku",
+            ...     dangerous=False,
             ... )
             >>> if result.success:
             ...     print(result.output)
