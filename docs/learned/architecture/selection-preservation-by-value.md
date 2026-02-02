@@ -66,38 +66,7 @@ setSelectedIndex((prevIndex) => {
 
 **Example:** `src/erk/tui/widgets/plan_table.py` lines 158-185
 
-```python
-def populate(self, rows: list[PlanRowData]) -> None:
-    """Populate table with plan data, preserving cursor position."""
-    # Save current selection by issue number (row key)
-    selected_key: str | None = None
-    if self._rows and self.cursor_row is not None and 0 <= self.cursor_row < len(self._rows):
-        selected_key = str(self._rows[self.cursor_row].issue_number)
-
-    # Save cursor row index for fallback
-    saved_cursor_row = self.cursor_row
-
-    self._rows = rows
-    self.clear()
-
-    for row in rows:
-        values = self._row_to_values(row)
-        self.add_row(*values, key=str(row.issue_number))
-
-    # Restore cursor position
-    if rows:
-        # Try to restore by key (issue number) first
-        if selected_key is not None:
-            for idx, row in enumerate(rows):
-                if str(row.issue_number) == selected_key:
-                    self.move_cursor(row=idx)
-                    return
-
-        # Plan disappeared - stay at same row index, clamped to valid range
-        if saved_cursor_row is not None and saved_cursor_row >= 0:
-            target_row = min(saved_cursor_row, len(rows) - 1)
-            self.move_cursor(row=target_row)
-```
+See `PlanTable.populate()` in `src/erk/tui/widgets/plan_table.py:158` for the full implementation.
 
 **Key elements:**
 

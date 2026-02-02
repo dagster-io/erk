@@ -85,41 +85,7 @@ erk exec objective-update-context --pr <number> --objective <number> --branch <n
 
 **Exec script:** `src/erk/cli/commands/exec/scripts/objective_update_context.py`
 
-```python
-@click.command(name="objective-update-context")
-@click.option("--pr", "pr_number", type=int, required=True, help="PR number")
-@click.option("--objective", "objective_number", type=int, required=True, help="Objective issue")
-@click.option("--branch", "branch_name", type=str, required=True, help="Branch name")
-@click.pass_context
-def objective_update_context(
-    ctx: click.Context,
-    *,
-    pr_number: int,
-    objective_number: int,
-    branch_name: str,
-) -> None:
-    """Fetch all context for objective update in a single call."""
-    issues = require_issues(ctx)
-    github = require_github(ctx)
-    repo_root = require_repo_root(ctx)
-
-    # Parse plan number from branch
-    plan_number = _parse_plan_number_from_branch(branch_name)
-
-    # Fetch all data
-    objective = issues.get_issue(repo_root, objective_number)
-    plan = issues.get_issue(repo_root, plan_number)
-    pr = github.get_pr(repo_root, pr_number)
-
-    # Return bundled JSON
-    result: ObjectiveUpdateContextResultDict = {
-        "success": True,
-        "objective": {...},
-        "plan": {...},
-        "pr": {...},
-    }
-    click.echo(json.dumps(result))
-```
+See `objective_update_context()` in `src/erk/cli/commands/exec/scripts/objective_update_context.py:47` for the full implementation.
 
 **Impact:** Reduced from ~8 turns to ~4 turns
 

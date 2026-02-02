@@ -209,28 +209,7 @@ allow_dangerous_override=dangerous_flag  # False disables, should be None
 
 **From:** `src/erk/cli/commands/objective/next_plan_cmd.py`
 
-```python
-def next_plan(ctx: ErkContext, issue_ref: str) -> None:
-    # Get config from context
-    if ctx.global_config is None:
-        ic_config = InteractiveClaudeConfig.default()
-    else:
-        ic_config = ctx.global_config.interactive_claude
-
-    # Override permission mode to force plan mode
-    config = ic_config.with_overrides(
-        permission_mode_override="plan",
-        model_override=None,
-        dangerous_override=None,
-        allow_dangerous_override=None,
-    )
-
-    # Build Claude CLI arguments
-    cmd_args = build_claude_args(config, command=f"/erk:objective-next-plan {issue_ref}")
-
-    # Replace current process with Claude
-    os.execvp("claude", cmd_args)
-```
+See `next_plan()` in `src/erk/cli/commands/objective/next_plan_cmd.py:18` for the full implementation.
 
 ## Related Documentation
 

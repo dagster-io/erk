@@ -91,25 +91,7 @@ The `Codespace` ABC provides two methods for SSH execution with different behavi
 
 ### Method Signatures
 
-```python
-class Codespace(ABC):
-    @abstractmethod
-    def run_ssh_command(self, gh_name: str, remote_command: str) -> int:
-        """Run SSH command in codespace and return exit code.
-
-        Uses subprocess.run() to execute the command and wait for completion.
-        """
-        ...
-
-    @abstractmethod
-    def exec_ssh_interactive(self, gh_name: str, remote_command: str) -> NoReturn:
-        """Replace current process with SSH session to codespace.
-
-        Uses os.execvp() to replace the current process, so this
-        method never returns.
-        """
-        ...
-```
+See the `Codespace` ABC in `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py` for the full method signatures.
 
 ### Example: Interactive Use Case
 

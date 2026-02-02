@@ -31,25 +31,7 @@ The erkdesk dashboard auto-refreshes the plan list every 15 seconds, preserving 
 
 ### 1. Refresh Interval
 
-```typescript
-const REFRESH_INTERVAL_MS = 15_000;
-
-useEffect(() => {
-  const intervalId = setInterval(() => {
-    window.erkdesk.fetchPlans().then((result) => {
-      if (!result.success) return; // Silent failure - don't replace good data
-      setPlans((prevPlans) => {
-        const newPlans = result.plans;
-        setSelectedIndex((prevIndex) => {
-          // Selection preservation logic (see Step 2)
-        });
-        return newPlans;
-      });
-    });
-  }, REFRESH_INTERVAL_MS);
-  return () => clearInterval(intervalId); // Cleanup on unmount
-}, []);
-```
+See the refresh interval `useEffect` in `erkdesk/src/renderer/App.tsx:42` for the full implementation.
 
 **Key decisions:**
 
@@ -84,19 +66,7 @@ setSelectedIndex((prevIndex) => {
 
 **Solution:** Track the last loaded URL with `useRef`:
 
-```typescript
-const lastLoadedUrlRef = useRef<string | null>(null);
-
-useEffect(() => {
-  if (selectedIndex < 0 || selectedIndex >= plans.length) return;
-  const plan = plans[selectedIndex];
-  const url = plan.pr_url ?? plan.issue_url;
-  if (url && url !== lastLoadedUrlRef.current) {
-    lastLoadedUrlRef.current = url;
-    window.erkdesk.loadWebViewURL(url);
-  }
-}, [selectedIndex, plans]);
-```
+See the URL deduplication `useEffect` in `erkdesk/src/renderer/App.tsx:83` for the full implementation.
 
 **Why useRef:**
 
