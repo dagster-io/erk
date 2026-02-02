@@ -40,6 +40,7 @@ class PromptCall(NamedTuple):
     tools: list[str] | None
     cwd: Path | None
     system_prompt: str | None
+    dangerous: bool
 
 
 class PassthroughCall(NamedTuple):
@@ -128,6 +129,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         tools: list[str] | None,
         cwd: Path | None,
         system_prompt: str | None,
+        dangerous: bool,
     ) -> PromptResult:
         self.prompt_calls.append(
             PromptCall(
@@ -136,6 +138,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
                 tools=tools,
                 cwd=cwd,
                 system_prompt=system_prompt,
+                dangerous=dangerous,
             )
         )
         if self._prompt_result_index < len(self.prompt_results):

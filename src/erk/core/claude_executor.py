@@ -523,6 +523,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         tools: list[str] | None,
         cwd: Path | None,
         system_prompt: str | None,
+        dangerous: bool,
     ) -> PromptResult:
         """Execute a single prompt and return the result.
 
@@ -530,6 +531,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         - Uses subprocess.run with --print and --output-format text
         - When system_prompt is provided, uses --system-prompt to replace
           Claude Code's default system prompt
+        - When dangerous is True, adds --dangerously-skip-permissions
         - Returns PromptResult with success status and output
         """
         cmd = [
@@ -541,6 +543,8 @@ class RealClaudeExecutor(ClaudeExecutor):
             "--model",
             model,
         ]
+        if dangerous:
+            cmd.append("--dangerously-skip-permissions")
         if system_prompt is not None:
             cmd.extend(["--system-prompt", system_prompt])
         if tools is not None:
