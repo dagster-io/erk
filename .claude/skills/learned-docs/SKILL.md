@@ -281,8 +281,8 @@ See `preprocess_session.py` for the canonical implementation.
 
 Follow the canonical guide in `docs/learned/documentation/source-pointers.md`. Key rules:
 
-- Use the two-part pattern: HTML comment with line range + prose reference
-- Source pointers use line numbers (easier to fix than stale code blocks)
+- Use the two-part pattern: HTML comment with source file + prose reference
+- Source pointers reference file paths and identifiers (agents grep to find exact locations)
 - Prefer CLI commands over source pointers when available
 
 ## Reorganizing Documentation
