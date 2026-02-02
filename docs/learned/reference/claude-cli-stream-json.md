@@ -216,5 +216,5 @@ except json.JSONDecodeError:
 ## Related
 
 - **CommandResult Extension Pattern**: [commandresult-extension-pattern.md](../architecture/commandresult-extension-pattern.md) - How to add new metadata fields based on stream-json parsing
-- **Implementation Reference**: `src/erk/core/claude_executor.py` - RealClaudeExecutor.\_parse_stream_json_line()
+- **Implementation Reference**: `src/erk/core/prompt_executor.py` - ClaudePromptExecutor.\_parse_stream_json_line()
 - **Output Filtering**: `src/erk/core/output_filter.py` - Text extraction and tool summarization functions

@@ -23,7 +23,7 @@ packages/erk-shared/src/erk_shared/gateway/prompt_executor/
 
 ## Why a Simplified Gateway?
 
-Unlike the full `ClaudeExecutor` in erk core (which supports streaming and interactive commands), `PromptExecutor` is deliberately minimal:
+Unlike the full `PromptExecutor` in erk core (which supports streaming and interactive commands), `PromptExecutor` is deliberately minimal:
 
 - **Single-shot only**: No streaming, no interactive commands
 - **3-file structure**: ABC, real, fake (no dry-run wrapper needed)

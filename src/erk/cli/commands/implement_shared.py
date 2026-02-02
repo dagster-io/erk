@@ -14,8 +14,8 @@ import click
 
 from erk.cli.activation import render_activation_script
 from erk.cli.help_formatter import script_option
-from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
+from erk.core.prompt_executor import PromptExecutor
 from erk_shared.issue_workflow import (
     IssueBranchSetup,
     IssueValidationFailed,
@@ -254,7 +254,7 @@ def execute_interactive_mode(
     worktree_path: Path,
     dangerous: bool,
     model: str | None,
-    executor: ClaudeExecutor,
+    executor: PromptExecutor,
 ) -> None:
     """Execute implementation in interactive mode using executor.
 
@@ -266,7 +266,7 @@ def execute_interactive_mode(
         worktree_path: Path to worktree directory
         dangerous: Whether to skip permission prompts
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
-        executor: Claude CLI executor for process replacement
+        executor: Prompt executor for process replacement
 
     Raises:
         click.ClickException: If Claude CLI not found
@@ -294,7 +294,7 @@ def execute_non_interactive_mode(
     dangerous: bool,
     verbose: bool,
     model: str | None,
-    executor: ClaudeExecutor,
+    executor: PromptExecutor,
 ) -> None:
     """Execute commands via Claude CLI executor with rich output formatting.
 
@@ -304,7 +304,7 @@ def execute_non_interactive_mode(
         dangerous: Whether to skip permission prompts
         verbose: Whether to show raw output (True) or filtered output (False)
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
-        executor: Claude CLI executor for command execution
+        executor: Prompt executor for command execution
 
     Raises:
         click.ClickException: If Claude CLI not found or command fails
@@ -314,10 +314,10 @@ def execute_non_interactive_mode(
     from rich.console import Console
 
     from erk.cli.output import format_implement_summary, stream_command_with_feedback
-    from erk.core.claude_executor import CommandResult
+    from erk.core.prompt_executor import CommandResult
 
     # Verify Claude is available
-    if not executor.is_claude_available():
+    if not executor.is_available():
         raise click.ClickException(
             "Claude CLI not found\nInstall from: https://claude.com/download"
         )

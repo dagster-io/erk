@@ -49,9 +49,9 @@ from erk.review.parsing import parse_review_file
 from erk.review.prompt_assembly import assemble_review_prompt
 from erk_shared.context.helpers import (
     get_repo_identifier,
-    require_claude_executor,
     require_cwd,
     require_git,
+    require_prompt_executor,
 )
 
 
@@ -177,8 +177,8 @@ def run_review(
         click.echo(prompt)
         return
 
-    # Use ClaudeExecutor gateway for execution
-    executor = require_claude_executor(ctx)
+    # Use PromptExecutor gateway for execution
+    executor = require_prompt_executor(ctx)
 
     # Parse allowed_tools from comma-separated string
     tools: list[str] | None = None

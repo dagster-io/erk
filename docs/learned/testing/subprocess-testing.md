@@ -26,9 +26,9 @@ This provides:
 - **Readable tests** - Test intent is clear from fake configuration
 - **Realistic behavior** - Fakes can simulate edge cases
 
-## FakeClaudeExecutor Pattern
+## FakePromptExecutor Pattern
 
-The `FakeClaudeExecutor` demonstrates the pattern for testing Claude CLI execution:
+The `FakePromptExecutor` demonstrates the pattern for testing Claude CLI execution:
 
 ### Constructor Injection
 
@@ -36,22 +36,22 @@ All behavior is configured via constructor:
 
 ```python
 # Basic success case
-executor = FakeClaudeExecutor(claude_available=True)
+executor = FakePromptExecutor(available=True)
 
 # Claude not installed
-executor = FakeClaudeExecutor(claude_available=False)
+executor = FakePromptExecutor(available=False)
 
 # Command failure
-executor = FakeClaudeExecutor(command_should_fail=True)
+executor = FakePromptExecutor(command_should_fail=True)
 
 # PR creation simulation
-executor = FakeClaudeExecutor(
+executor = FakePromptExecutor(
     simulated_pr_url="https://github.com/org/repo/pull/123",
     simulated_pr_number=123,
 )
 
 # Hook blocking (zero turns)
-executor = FakeClaudeExecutor(simulated_zero_turns=True)
+executor = FakePromptExecutor(simulated_zero_turns=True)
 ```
 
 ### Tracking Calls for Assertions
@@ -59,7 +59,7 @@ executor = FakeClaudeExecutor(simulated_zero_turns=True)
 Read-only properties expose calls made:
 
 ```python
-executor = FakeClaudeExecutor()
+executor = FakePromptExecutor()
 executor.execute_command(command="/erk:plan-implement", ...)
 
 # Assert the call was made with expected parameters
@@ -73,7 +73,7 @@ assert cmd == "/erk:plan-implement"
 The fake yields appropriate event types:
 
 ```python
-executor = FakeClaudeExecutor(
+executor = FakePromptExecutor(
     simulated_tool_events=["Read file.py", "Edit file.py"],
 )
 
@@ -150,7 +150,7 @@ For general subprocess operations, the gateway pattern applies:
 ### Define the Interface
 
 ```python
-class ClaudeExecutor(ABC):
+class PromptExecutor(ABC):
     @abstractmethod
     def execute_command(self, command: str, ...) -> CommandResult: ...
 ```
@@ -158,7 +158,7 @@ class ClaudeExecutor(ABC):
 ### Real Implementation
 
 ```python
-class RealClaudeExecutor(ClaudeExecutor):
+class ClaudePromptExecutor(PromptExecutor):
     def execute_command(self, command: str, ...) -> CommandResult:
         result = subprocess.run(["claude", command, ...])
         return CommandResult(success=result.returncode == 0, ...)
@@ -167,7 +167,7 @@ class RealClaudeExecutor(ClaudeExecutor):
 ### Fake Implementation
 
 ```python
-class FakeClaudeExecutor(ClaudeExecutor):
+class FakePromptExecutor(PromptExecutor):
     def __init__(self, *, command_should_fail: bool = False):
         self._command_should_fail = command_should_fail
         self._executed_commands: list[tuple] = []
@@ -184,7 +184,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
 ### Process Startup Failure
 
 ```python
-executor = FakeClaudeExecutor(
+executor = FakePromptExecutor(
     simulated_process_error="Failed to start Claude CLI: Permission denied"
 )
 
@@ -195,7 +195,7 @@ assert any(isinstance(e, ProcessErrorEvent) for e in events)
 ### No Output
 
 ```python
-executor = FakeClaudeExecutor(simulated_no_output=True)
+executor = FakePromptExecutor(simulated_no_output=True)
 
 events = list(executor.execute_command_streaming(...))
 assert any(isinstance(e, NoOutputEvent) for e in events)
@@ -204,7 +204,7 @@ assert any(isinstance(e, NoOutputEvent) for e in events)
 ### Command Failure
 
 ```python
-executor = FakeClaudeExecutor(command_should_fail=True)
+executor = FakePromptExecutor(command_should_fail=True)
 
 events = list(executor.execute_command_streaming(...))
 assert any(isinstance(e, ErrorEvent) for e in events)
@@ -224,5 +224,5 @@ See `tests/integration/` for examples of integration tests that execute real sub
 ## Related Documentation
 
 - [Erk Test Reference](testing.md) - Overall testing patterns
-- [FakeClaudeExecutor](../../../tests/fakes/claude_executor.py) - Reference implementation
+- [FakePromptExecutor](../../../tests/fakes/fake_prompt_executor.py) - Reference implementation
 - [Subprocess Wrappers](../architecture/subprocess-wrappers.md) - Wrapper function patterns

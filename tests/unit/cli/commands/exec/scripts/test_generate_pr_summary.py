@@ -110,16 +110,19 @@ def test_generate_pr_summary_exits_on_whitespace_only_diff() -> None:
 
 def test_generate_pr_summary_truncates_large_diff() -> None:
     """Test that large diffs are truncated with warning."""
+    from erk_shared.core.fakes import FakePromptExecutor
+    from erk_shared.core.prompt_executor import PromptResult
     from erk_shared.gateway.github.fake import FakeGitHub
     from erk_shared.gateway.gt.prompts import MAX_DIFF_CHARS
-    from erk_shared.gateway.prompt_executor.fake import FakePromptExecutor
 
     # Create fake GitHub with very large diff
     large_diff = "+" + "x" * (MAX_DIFF_CHARS + 1000)
     fake_github = FakeGitHub(pr_diffs={123: large_diff})
 
     # Use FakePromptExecutor to avoid actual Claude CLI call
-    fake_executor = FakePromptExecutor(output="Summary output")
+    fake_executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="Summary output", error=None)]
+    )
 
     test_ctx = ErkContext.for_test(
         github=fake_github,

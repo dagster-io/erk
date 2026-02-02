@@ -130,7 +130,7 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
         click.echo(click.style("   No linked plan found", dim=True))
     click.echo("")
 
-    msg_gen = CommitMessageGenerator(ctx.claude_executor)
+    msg_gen = CommitMessageGenerator(ctx.prompt_executor)
     msg_result = run_commit_message_generation(
         generator=msg_gen,
         diff_file=diff_file,

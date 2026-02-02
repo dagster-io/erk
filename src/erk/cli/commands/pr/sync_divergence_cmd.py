@@ -79,8 +79,8 @@ def pr_sync_divergence(ctx: ErkContext, *, dangerous: bool) -> None:
         )
 
     # Check Claude availability
-    executor = ctx.claude_executor
-    if not executor.is_claude_available():
+    executor = ctx.prompt_executor
+    if not executor.is_available():
         raise click.ClickException(
             "Claude CLI is required for divergence resolution.\n\n"
             "Install from: https://claude.com/download"

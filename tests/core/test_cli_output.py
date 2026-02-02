@@ -1,7 +1,7 @@
 """Tests for CLI output formatting."""
 
 from erk.cli.output import format_implement_summary
-from erk.core.claude_executor import CommandResult
+from erk.core.prompt_executor import CommandResult
 
 
 def test_format_implement_summary_shows_pr_number_and_title() -> None:

@@ -42,12 +42,12 @@ def require_claude_available(ctx: ErkContext) -> None:
     """Verify Claude CLI is available, raising ClickException if not.
 
     Args:
-        ctx: ErkContext providing claude_executor
+        ctx: ErkContext providing prompt_executor
 
     Raises:
         click.ClickException: If Claude CLI is not available
     """
-    if not ctx.claude_executor.is_claude_available():
+    if not ctx.prompt_executor.is_available():
         raise click.ClickException(
             "Claude CLI not found\n\nInstall from: https://claude.com/download"
         )

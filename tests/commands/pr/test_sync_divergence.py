@@ -6,7 +6,7 @@ from erk.cli.commands.pr import pr_group
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.fake import FakeGit
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -29,9 +29,9 @@ def test_pr_sync_divergence_success() -> None:
             },
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
 
@@ -39,8 +39,8 @@ def test_pr_sync_divergence_success() -> None:
         assert "Branch synced with remote!" in result.output
 
         # Claude should be invoked for divergence resolution
-        assert len(claude_executor.executed_commands) == 1
-        command, _, dangerous_flag, _, _ = claude_executor.executed_commands[0]
+        assert len(executor.executed_commands) == 1
+        command, _, dangerous_flag, _, _ = executor.executed_commands[0]
         assert command == "/erk:sync-divergence"
         assert dangerous_flag is True
 
@@ -63,9 +63,9 @@ def test_pr_sync_divergence_requires_dangerous_flag() -> None:
             },
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["sync-divergence"], obj=ctx)
 
@@ -93,7 +93,7 @@ def test_pr_sync_divergence_skip_dangerous_with_config() -> None:
             },
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
         # Create GlobalConfig with fix_conflicts_require_dangerous_flag=False
         global_config = GlobalConfig.test(
@@ -104,7 +104,7 @@ def test_pr_sync_divergence_skip_dangerous_with_config() -> None:
         ctx = build_workspace_test_context(
             env,
             git=git,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
             global_config=global_config,
         )
 
@@ -134,9 +134,9 @@ def test_pr_sync_divergence_already_in_sync() -> None:
             },
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
 
@@ -144,7 +144,7 @@ def test_pr_sync_divergence_already_in_sync() -> None:
         assert "already in sync" in result.output
 
         # Claude should NOT be invoked (no divergence to resolve)
-        assert len(claude_executor.executed_commands) == 0
+        assert len(executor.executed_commands) == 0
 
 
 def test_pr_sync_divergence_behind_only() -> None:
@@ -165,9 +165,9 @@ def test_pr_sync_divergence_behind_only() -> None:
             },
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
 
@@ -189,9 +189,9 @@ def test_pr_sync_divergence_no_remote_branch() -> None:
             remote_branches={env.cwd: ["origin/main"]},  # No origin/feature-branch
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
 
@@ -213,9 +213,9 @@ def test_pr_sync_divergence_detached_head() -> None:
             remote_branches={env.cwd: ["origin/feature-branch", "origin/main"]},
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
 
@@ -241,9 +241,9 @@ def test_pr_sync_divergence_claude_not_available() -> None:
             },
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=False)
+        executor = FakePromptExecutor(available=False)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
 
@@ -252,7 +252,7 @@ def test_pr_sync_divergence_claude_not_available() -> None:
         assert "claude.com/download" in result.output
 
         # Verify no command was executed
-        assert len(claude_executor.executed_commands) == 0
+        assert len(executor.executed_commands) == 0
 
 
 def test_pr_sync_divergence_aborts_on_semantic_conflict() -> None:
@@ -274,12 +274,12 @@ def test_pr_sync_divergence_aborts_on_semantic_conflict() -> None:
         )
 
         # Simulate Claude using AskUserQuestion tool (semantic conflict)
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_tool_events=["Using AskUserQuestion..."],
         )
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
 
@@ -306,17 +306,17 @@ def test_pr_sync_divergence_fails_on_command_error() -> None:
             },
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             command_should_fail=True,
         )
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
 
         assert result.exit_code != 0
-        # Error message from FakeClaudeExecutor
+        # Error message from FakePromptExecutor
         assert "failed" in result.output.lower()
 
 
@@ -339,12 +339,12 @@ def test_pr_sync_divergence_fails_when_no_work_events() -> None:
         )
 
         # Simulate Claude completing but emitting no work events
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_no_work_events=True,
         )
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["sync-divergence", "--dangerous"], obj=ctx)
 

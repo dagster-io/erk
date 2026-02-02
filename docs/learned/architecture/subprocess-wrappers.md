@@ -155,7 +155,7 @@ See [GitHub API Retry Mechanism](github-api-retry-mechanism.md) for the full pat
 
 ## Error Accumulation Pattern
 
-When streaming stdout line-by-line with `subprocess.Popen()`, stderr must be captured in a background thread to avoid deadlock. This pattern is used in `RealClaudeExecutor.execute_command_streaming()`.
+When streaming stdout line-by-line with `subprocess.Popen()`, stderr must be captured in a background thread to avoid deadlock. This pattern is used in `ClaudePromptExecutor.execute_command_streaming()`.
 
 ### Why Background Thread for Stderr?
 
@@ -187,7 +187,7 @@ stderr_thread.join(timeout=5.0)
 - Use `daemon=True` so thread doesn't prevent process exit
 - Use a timeout on `join()` to avoid hanging on pathological cases
 - Stderr is accumulated as list, joined only when needed for error message
-- See `src/erk/core/claude_executor.py` for the canonical implementation
+- See `src/erk/core/prompt_executor.py` for the canonical implementation
 
 ### When to Use This Pattern
 

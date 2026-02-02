@@ -1,7 +1,7 @@
-"""Claude CLI execution abstraction - ABC and types.
+"""Prompt execution abstraction - ABC and types.
 
-This module provides the abstract interface and typed events for Claude CLI execution.
-The real implementation (RealClaudeExecutor) remains in erk.core.claude_executor.
+This module provides the abstract interface and typed events for prompt execution.
+The real implementation (ClaudePromptExecutor) remains in erk.core.prompt_executor.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from erk_shared.context.types import ClaudePermissionMode
 
 # =============================================================================
-# Typed Claude CLI Events
+# Typed Executor Events
 # =============================================================================
 
 
@@ -98,8 +98,8 @@ class ProcessErrorEvent:
     message: str
 
 
-# Union type for all Claude events
-ClaudeEvent = (
+# Union type for all executor events
+ExecutorEvent = (
     TextEvent
     | ToolEvent
     | SpinnerUpdateEvent
@@ -154,24 +154,24 @@ class CommandResult:
     filtered_messages: list[str] = field(default_factory=list)
 
 
-class ClaudeExecutor(ABC):
-    """Abstract interface for Claude CLI execution.
+class PromptExecutor(ABC):
+    """Abstract interface for prompt execution.
 
-    This abstraction enables testing without mock.patch by making Claude
+    This abstraction enables testing without mock.patch by making prompt
     execution an injectable dependency.
     """
 
     @abstractmethod
-    def is_claude_available(self) -> bool:
-        """Check if Claude CLI is installed and available in PATH.
+    def is_available(self) -> bool:
+        """Check if the prompt executor backend is available.
 
         Returns:
-            True if Claude CLI is available, False otherwise.
+            True if the executor is available, False otherwise.
 
         Example:
-            >>> executor = RealClaudeExecutor()
-            >>> if executor.is_claude_available():
-            ...     print("Claude CLI is installed")
+            >>> executor = ClaudePromptExecutor()
+            >>> if executor.is_available():
+            ...     print("Executor is available")
         """
         ...
 
@@ -187,8 +187,8 @@ class ClaudeExecutor(ABC):
         model: str | None = None,
         permission_mode: ClaudePermissionMode = "acceptEdits",
         allow_dangerous: bool = False,
-    ) -> Iterator[ClaudeEvent]:
-        """Execute Claude CLI command and yield typed events in real-time.
+    ) -> Iterator[ExecutorEvent]:
+        """Execute command and yield typed events in real-time.
 
         Args:
             command: The slash command to execute (e.g., "/erk:plan-implement")
@@ -201,10 +201,10 @@ class ClaudeExecutor(ABC):
             allow_dangerous: Whether to pass --allow-dangerously-skip-permissions
 
         Yields:
-            ClaudeEvent objects as they occur during execution
+            ExecutorEvent objects as they occur during execution
 
         Example:
-            >>> executor = RealClaudeExecutor()
+            >>> executor = ClaudePromptExecutor()
             >>> for event in executor.execute_command_streaming(
             ...     "/erk:plan-implement",
             ...     Path("/repos/my-project"),
@@ -227,7 +227,7 @@ class ClaudeExecutor(ABC):
         permission_mode: ClaudePermissionMode = "acceptEdits",
         allow_dangerous: bool = False,
     ) -> CommandResult:
-        """Execute Claude CLI command and return final result (non-streaming).
+        """Execute command and return final result (non-streaming).
 
         This is a convenience method that collects all streaming events
         and returns a final CommandResult. Use execute_command_streaming()
@@ -246,7 +246,7 @@ class ClaudeExecutor(ABC):
             CommandResult containing success status, PR URL, duration, and messages
 
         Example:
-            >>> executor = RealClaudeExecutor()
+            >>> executor = ClaudePromptExecutor()
             >>> result = executor.execute_command(
             ...     "/erk:plan-implement",
             ...     Path("/repos/my-project"),
@@ -324,7 +324,7 @@ class ClaudeExecutor(ABC):
         model: str | None = None,
         permission_mode: ClaudePermissionMode = "acceptEdits",
     ) -> None:
-        """Execute Claude CLI in interactive mode by replacing current process.
+        """Execute in interactive mode by replacing current process.
 
         Args:
             worktree_path: Path to worktree directory to run in
@@ -338,16 +338,16 @@ class ClaudeExecutor(ABC):
             permission_mode: Permission mode for Claude CLI. See ClaudePermissionMode.
 
         Raises:
-            RuntimeError: If Claude CLI is not available
+            RuntimeError: If the executor is not available
 
         Note:
-            In production (RealClaudeExecutor), this function never returns - the
+            In production (ClaudePromptExecutor), this function never returns - the
             process is replaced by Claude CLI via os.execvp. In testing
-            (FakeClaudeExecutor), this simulates the behavior without actually
+            (FakePromptExecutor), this simulates the behavior without actually
             replacing the process.
 
         Example:
-            >>> executor = RealClaudeExecutor()
+            >>> executor = ClaudePromptExecutor()
             >>> executor.execute_interactive(
             ...     Path("/repos/my-project"),
             ...     dangerous=False
@@ -389,7 +389,7 @@ class ClaudeExecutor(ABC):
             PromptResult with success status and output text
 
         Example:
-            >>> executor = RealClaudeExecutor()
+            >>> executor = ClaudePromptExecutor()
             >>> result = executor.execute_prompt(
             ...     "Generate a commit message for this diff",
             ...     model="haiku",
@@ -429,7 +429,7 @@ class ClaudeExecutor(ABC):
             Exit code from Claude CLI
 
         Example:
-            >>> executor = RealClaudeExecutor()
+            >>> executor = ClaudePromptExecutor()
             >>> exit_code = executor.execute_prompt_passthrough(
             ...     "Review this PR",
             ...     model="sonnet",

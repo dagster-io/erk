@@ -18,8 +18,9 @@ from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
     generate_pr_address_summary,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.core.fakes import FakePromptExecutor
+from erk_shared.core.prompt_executor import PromptResult
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.prompt_executor.fake import FakePromptExecutor
 
 
 def test_build_summary_prompt_contains_diff() -> None:
@@ -165,7 +166,13 @@ def test_generate_pr_address_summary_with_changes(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         commits_ahead={(tmp_path, "abc1234"): 2},
     )
-    fake_executor = FakePromptExecutor(output="Fixed authentication logic and updated tests.")
+    fake_executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(
+                success=True, output="Fixed authentication logic and updated tests.", error=None
+            )
+        ]
+    )
 
     test_ctx = ErkContext.for_test(
         cwd=tmp_path,
@@ -206,7 +213,9 @@ def test_generate_pr_address_summary_with_changes(tmp_path: Path) -> None:
 def test_generate_pr_address_summary_claude_failure(tmp_path: Path) -> None:
     """Test that Claude execution failure exits with error."""
     fake_git = FakeGit(repository_roots={tmp_path: tmp_path})
-    fake_executor = FakePromptExecutor(should_fail=True, error="API error")
+    fake_executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=False, output="", error="API error")]
+    )
 
     test_ctx = ErkContext.for_test(
         cwd=tmp_path,
@@ -239,7 +248,9 @@ def test_generate_pr_address_summary_claude_failure(tmp_path: Path) -> None:
 def test_generate_pr_address_summary_empty_claude_output(tmp_path: Path) -> None:
     """Test that empty Claude output uses default message."""
     fake_git = FakeGit(repository_roots={tmp_path: tmp_path})
-    fake_executor = FakePromptExecutor(output="")  # Empty output
+    fake_executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="", error=None)]
+    )  # Empty output
 
     test_ctx = ErkContext.for_test(
         cwd=tmp_path,

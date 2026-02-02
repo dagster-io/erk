@@ -14,8 +14,8 @@ import click
 import tomlkit
 
 from erk.cli.config import load_config, load_local_config, merge_configs_with_local
-from erk.core.claude_executor import RealClaudeExecutor
 from erk.core.completion import RealCompletion
+from erk.core.prompt_executor import ClaudePromptExecutor
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
 from erk.core.services.plan_list_service import RealPlanListService
@@ -32,9 +32,9 @@ from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
 from erk_shared.context.types import RepoContext as RepoContext
 
 # Import ABCs and fakes from erk_shared.core
-from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListService
+from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.codespace.abc import Codespace
@@ -68,8 +68,6 @@ from erk_shared.gateway.graphite.disabled import (
 )
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.real import RealGraphite
-from erk_shared.gateway.prompt_executor.abc import PromptExecutor
-from erk_shared.gateway.prompt_executor.real import RealPromptExecutor
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
@@ -96,7 +94,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         For more complex test setup with custom configs or multiple integration classes,
         use context_for_test() instead.
     """
-    from tests.fakes.claude_executor import FakeClaudeExecutor
+    from tests.fakes.prompt_executor import FakePromptExecutor
     from tests.fakes.script_writer import FakeScriptWriter
 
     from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
@@ -110,7 +108,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.prompt_executor.fake import FakePromptExecutor
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
 
@@ -136,7 +133,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         console=fake_console,
         shell=FakeShell(),
         codespace=fake_codespace,
-        claude_executor=FakeClaudeExecutor(),
         completion=FakeCompletion(),
         time=fake_time,
         erk_installation=FakeErkInstallation(),
@@ -166,7 +162,6 @@ def context_for_test(
     console: Console | None = None,
     shell: Shell | None = None,
     codespace: Codespace | None = None,
-    claude_executor: ClaudeExecutor | None = None,
     completion: Completion | None = None,
     time: Time | None = None,
     erk_installation: ErkInstallation | None = None,
@@ -216,7 +211,7 @@ def context_for_test(
     Returns:
         ErkContext configured with provided values and test defaults
     """
-    from tests.fakes.claude_executor import FakeClaudeExecutor
+    from tests.fakes.prompt_executor import FakePromptExecutor
     from tests.fakes.script_writer import FakeScriptWriter
     from tests.test_utils.paths import sentinel_path
 
@@ -234,7 +229,6 @@ def context_for_test(
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.prompt_executor.fake import FakePromptExecutor
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
 
@@ -302,9 +296,6 @@ def context_for_test(
     if codespace is None:
         codespace = FakeCodespace()
 
-    if claude_executor is None:
-        claude_executor = FakeClaudeExecutor()
-
     if completion is None:
         completion = FakeCompletion()
 
@@ -364,7 +355,6 @@ def context_for_test(
         console=console,
         shell=shell,
         codespace=codespace,
-        claude_executor=claude_executor,
         completion=completion,
         time=time,
         erk_installation=erk_installation,
@@ -575,7 +565,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
 
     real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
-    prompt_executor: PromptExecutor = RealPromptExecutor(time)
+    prompt_executor: PromptExecutor = ClaudePromptExecutor(console=console)
 
     # 11. Create context with all values
     return ErkContext(
@@ -588,7 +578,6 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         console=console,
         shell=RealShell(),
         codespace=RealCodespace(),
-        claude_executor=RealClaudeExecutor(console=console),
         completion=RealCompletion(),
         time=time,
         erk_installation=erk_installation,

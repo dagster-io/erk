@@ -10,7 +10,7 @@ from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -74,8 +74,8 @@ def test_pr_submit_core_path_succeeds_without_graphite() -> None:
             pr_bases={123: "main"},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="fix: test change\n\nTest body",
         )
 
@@ -83,7 +83,7 @@ def test_pr_submit_core_path_succeeds_without_graphite() -> None:
             env,
             git=git,
             github=github,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
             use_graphite=False,
         )
 
@@ -119,8 +119,8 @@ def test_pr_submit_no_graphite_flag_works_without_graphite() -> None:
             pr_bases={123: "main"},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="fix: test change\n\nTest body",
         )
 
@@ -128,7 +128,7 @@ def test_pr_submit_no_graphite_flag_works_without_graphite() -> None:
             env,
             git=git,
             github=github,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
             use_graphite=False,
         )
 
@@ -150,12 +150,12 @@ def test_pr_submit_without_claude_shows_proper_error() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=False)
+        executor = FakePromptExecutor(available=False)
 
         ctx = build_workspace_test_context(
             env,
             git=git,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
             use_graphite=False,
         )
 

@@ -173,7 +173,7 @@ def prompt_objective_update(
     """Prompt user to update objective after landing.
 
     Args:
-        ctx: ErkContext with claude_executor
+        ctx: ErkContext with prompt_executor
         repo_root: Repository root path for Claude execution
         objective_number: The linked objective issue number
         pr_number: The PR number that was just landed
@@ -195,7 +195,7 @@ def prompt_objective_update(
         user_output("Starting objective update...")
 
         result = stream_command_with_feedback(
-            executor=ctx.claude_executor,
+            executor=ctx.prompt_executor,
             command=cmd,
             worktree_path=repo_root,
             dangerous=True,
@@ -224,7 +224,7 @@ def prompt_objective_update(
         user_output("Starting objective update...")
 
         result = stream_command_with_feedback(
-            executor=ctx.claude_executor,
+            executor=ctx.prompt_executor,
             command=cmd,
             worktree_path=repo_root,
             dangerous=True,

@@ -12,7 +12,7 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import update_plan_header_review_pr
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.implement.conftest import create_sample_plan_issue
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import (
@@ -33,8 +33,8 @@ def test_implement_from_plain_issue_number() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_plan_store_with_plans({"123": plan_issue})
-        executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+        executor = FakePromptExecutor(available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
         # Test with plain number (no # prefix)
         result = runner.invoke(implement, ["123"], obj=ctx)
@@ -60,8 +60,8 @@ def test_implement_from_issue_number() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_plan_store_with_plans({"42": plan_issue})
-        executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+        executor = FakePromptExecutor(available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42"], obj=ctx)
 
@@ -87,8 +87,8 @@ def test_implement_from_issue_url() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_plan_store_with_plans({"123": plan_issue})
-        executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+        executor = FakePromptExecutor(available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
         url = "https://github.com/owner/repo/issues/123"
         result = runner.invoke(implement, [url], obj=ctx)
@@ -114,8 +114,8 @@ def test_implement_creates_impl_folder_in_cwd() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_plan_store_with_plans({"42": plan_issue})
-        executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+        executor = FakePromptExecutor(available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42"], obj=ctx)
 
@@ -309,12 +309,12 @@ def test_implement_from_issue_closes_review_pr() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(
             env,
             git=git,
             plan_store=store,
-            claude_executor=executor,
+            prompt_executor=executor,
             issues=fake_issues,
             github=fake_github,
         )

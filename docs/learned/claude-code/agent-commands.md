@@ -99,4 +99,4 @@ See [Agent Command vs CLI Command Boundaries](../architecture/command-boundaries
 ## Related Topics
 
 - [command-boundaries.md](../architecture/command-boundaries.md) - CLI vs agent decisions
-- [claude-executor-patterns.md](../architecture/claude-executor-patterns.md) - ClaudeExecutor usage
+- [prompt-executor-patterns.md](../architecture/prompt-executor-patterns.md) - PromptExecutor usage

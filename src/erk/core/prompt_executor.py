@@ -1,7 +1,7 @@
-"""Claude CLI execution abstraction.
+"""Claude CLI prompt execution implementation.
 
-This module provides the RealClaudeExecutor implementation and re-exports
-ABC and types from erk_shared.core for backward compatibility.
+This module provides the ClaudePromptExecutor implementation and re-exports
+ABC and types from erk_shared.core.
 """
 
 from __future__ import annotations
@@ -20,22 +20,23 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from erk_shared.context.types import ClaudePermissionMode
 
-# Re-export ABC and types from erk_shared.core for backward compatibility
-from erk_shared.core.claude_executor import ClaudeEvent as ClaudeEvent
-from erk_shared.core.claude_executor import ClaudeExecutor as ClaudeExecutor
-from erk_shared.core.claude_executor import CommandResult as CommandResult
-from erk_shared.core.claude_executor import ErrorEvent as ErrorEvent
-from erk_shared.core.claude_executor import IssueNumberEvent as IssueNumberEvent
-from erk_shared.core.claude_executor import NoOutputEvent as NoOutputEvent
-from erk_shared.core.claude_executor import NoTurnsEvent as NoTurnsEvent
-from erk_shared.core.claude_executor import PrNumberEvent as PrNumberEvent
-from erk_shared.core.claude_executor import ProcessErrorEvent as ProcessErrorEvent
-from erk_shared.core.claude_executor import PromptResult as PromptResult
-from erk_shared.core.claude_executor import PrTitleEvent as PrTitleEvent
-from erk_shared.core.claude_executor import PrUrlEvent as PrUrlEvent
-from erk_shared.core.claude_executor import SpinnerUpdateEvent as SpinnerUpdateEvent
-from erk_shared.core.claude_executor import TextEvent as TextEvent
-from erk_shared.core.claude_executor import ToolEvent as ToolEvent
+from erk_shared.core.prompt_executor import (
+    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
+    ErrorEvent,
+    ExecutorEvent,
+    IssueNumberEvent,
+    NoOutputEvent,
+    NoTurnsEvent,
+    PrNumberEvent,
+    ProcessErrorEvent,
+    PromptExecutor,
+    PromptResult,
+    PrTitleEvent,
+    PrUrlEvent,
+    SpinnerUpdateEvent,
+    TextEvent,
+    ToolEvent,
+)
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.console.real import InteractiveConsole
 
@@ -73,11 +74,11 @@ def format_prompt_error(
     return " | ".join(error_parts)
 
 
-class RealClaudeExecutor(ClaudeExecutor):
+class ClaudePromptExecutor(PromptExecutor):
     """Production implementation using subprocess and Claude CLI."""
 
     def __init__(self, console: Console | None) -> None:
-        """Initialize RealClaudeExecutor with Console dependency.
+        """Initialize ClaudePromptExecutor with Console dependency.
 
         Args:
             console: Console gateway for TTY detection.
@@ -85,7 +86,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         """
         self._console = console if console is not None else InteractiveConsole()
 
-    def is_claude_available(self) -> bool:
+    def is_available(self) -> bool:
         """Check if Claude CLI is in PATH using shutil.which."""
         return shutil.which("claude") is not None
 
@@ -100,7 +101,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         model: str | None = None,
         permission_mode: ClaudePermissionMode = "acceptEdits",
         allow_dangerous: bool = False,
-    ) -> Iterator[ClaudeEvent]:
+    ) -> Iterator[ExecutorEvent]:
         """Execute Claude CLI command and yield typed events in real-time.
 
         Implementation details:
@@ -470,7 +471,7 @@ class RealClaudeExecutor(ClaudeExecutor):
             shares git history with the source, the path should exist.
         """
         # Verify Claude is available
-        if not self.is_claude_available():
+        if not self.is_available():
             raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
 
         # Change to worktree directory (optionally to subpath)

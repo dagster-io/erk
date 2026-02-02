@@ -105,4 +105,4 @@ Does operation require understanding/generating natural language?
 ## Related Topics
 
 - [Claude Code Agent Command Patterns](../claude-code/agent-commands.md) - Conversation-context extraction
-- [Claude Executor Patterns](claude-executor-patterns.md) - ClaudeExecutor for CLI spawning agent
+- [Prompt Executor Patterns](prompt-executor-patterns.md) - PromptExecutor for CLI spawning agent

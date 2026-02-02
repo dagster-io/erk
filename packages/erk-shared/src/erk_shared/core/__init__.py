@@ -7,8 +7,8 @@ hints without circular imports.
 Real implementations remain in the erk package. Test fakes are in erk_shared.
 
 Import from submodules:
-- erk_shared.core.claude_executor: ClaudeExecutor, events
-- erk_shared.core.fakes: FakeClaudeExecutor, FakePlanListService, etc.
+- erk_shared.core.prompt_executor: PromptExecutor, events
+- erk_shared.core.fakes: FakePromptExecutor, FakePlanListService, etc.
 - erk_shared.core.plan_list_service: PlanListService, PlanListData
 - erk_shared.core.script_writer: ScriptWriter, ScriptResult
 """

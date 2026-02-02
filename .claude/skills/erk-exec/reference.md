@@ -73,6 +73,7 @@ Quick reference for all `erk exec` subcommands.
 | `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.              |
 | `reply-to-discussion-comment`     | Reply to a PR discussion comment with quote and action summary.           |
 | `resolve-review-thread`           | Resolve a PR review thread.                                               |
+| `resolve-review-threads`          | Resolve multiple PR review threads from JSON stdin.                       |
 | `run-review`                      | Run a code review using Claude.                                           |
 | `session-id-injector-hook`        | Inject session ID into conversation context when relevant.                |
 | `setup-impl-from-issue`           | Set up .impl/ folder from GitHub issue in current worktree.               |
@@ -968,6 +969,12 @@ Resolve a PR review thread.
 | ------------- | ---- | -------- | -------------- | ---------------------------------------- |
 | `--thread-id` | TEXT | Yes      | Sentinel.UNSET | GraphQL node ID of the thread to resolve |
 | `--comment`   | TEXT | No       | -              | Optional comment to add before resolving |
+
+### resolve-review-threads
+
+Resolve multiple PR review threads from JSON stdin.
+
+**Usage:** `erk exec resolve-review-threads`
 
 ### run-review
 

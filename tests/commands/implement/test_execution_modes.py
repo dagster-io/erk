@@ -9,7 +9,7 @@ from click.testing import CliRunner
 from erk.cli.commands.implement import implement
 from erk_shared.gateway.git.fake import FakeGit
 from tests.commands.implement.conftest import create_sample_plan_issue
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
@@ -29,8 +29,8 @@ def test_interactive_mode_calls_executor() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_plan_store_with_plans({"42": plan_issue})
-        executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+        executor = FakePromptExecutor(available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
         # Interactive mode is the default (no --no-interactive flag)
         result = runner.invoke(implement, ["#42"], obj=ctx)
@@ -62,8 +62,8 @@ def test_interactive_mode_with_dangerous_flag() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_plan_store_with_plans({"42": plan_issue})
-        executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+        executor = FakePromptExecutor(available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42", "--dangerous"], obj=ctx)
 
@@ -86,8 +86,8 @@ def test_interactive_mode_from_plan_file() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, claude_executor=executor)
+        executor = FakePromptExecutor(available=True)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         # Create plan file
         plan_content = "# Implementation Plan\n\nImplement feature X."
@@ -122,8 +122,8 @@ def test_interactive_mode_fails_when_claude_not_available() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_plan_store_with_plans({"42": plan_issue})
-        executor = FakeClaudeExecutor(claude_available=False)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+        executor = FakePromptExecutor(available=False)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42"], obj=ctx)
 
@@ -147,8 +147,8 @@ def test_non_interactive_executes_single_command() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_plan_store_with_plans({"42": plan_issue})
-        executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+        executor = FakePromptExecutor(available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42", "--no-interactive"], obj=ctx)
 
@@ -175,8 +175,8 @@ def test_non_interactive_with_submit_runs_all_commands() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_plan_store_with_plans({"42": plan_issue})
-        executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+        executor = FakePromptExecutor(available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
         result = runner.invoke(
             implement,
@@ -299,8 +299,8 @@ def test_yolo_flag_sets_all_flags() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_plan_store_with_plans({"42": plan_issue})
-        executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+        executor = FakePromptExecutor(available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42", "--yolo"], obj=ctx)
 

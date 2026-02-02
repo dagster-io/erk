@@ -107,7 +107,9 @@ def generate_pr_summary(ctx: click.Context, pr_number: int) -> None:
 
     # Build prompt and run Claude via injected executor
     prompt = _build_prompt(diff_content, current_branch, parent_branch, repo_root)
-    result = executor.execute_prompt(prompt, model="haiku", cwd=repo_root)
+    result = executor.execute_prompt(
+        prompt, model="haiku", tools=None, cwd=repo_root, system_prompt=None, dangerous=False
+    )
 
     if not result.success:
         click.echo(f"Error: Claude execution failed: {result.error}", err=True)

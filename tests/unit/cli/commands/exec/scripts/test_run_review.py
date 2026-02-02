@@ -10,7 +10,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.run_review import run_review
 from erk_shared.context.context import ErkContext
-from erk_shared.core.fakes import FakeClaudeExecutor
+from erk_shared.core.fakes import FakePromptExecutor
 from erk_shared.gateway.git.fake import FakeGit
 
 
@@ -166,7 +166,7 @@ class TestRunReviewExecution:
     """Tests for run-review execution mode (non-dry-run)."""
 
     def test_executes_claude_via_gateway(self, tmp_path: Path) -> None:
-        """Non-dry-run mode executes Claude via ClaudeExecutor gateway."""
+        """Non-dry-run mode executes Claude via PromptExecutor gateway."""
         reviews_dir = tmp_path / ".claude" / "reviews"
         reviews_dir.mkdir(parents=True)
 
@@ -186,13 +186,13 @@ Check for issues in the code.
             encoding="utf-8",
         )
 
-        fake_executor = FakeClaudeExecutor(passthrough_exit_code=0)
+        fake_executor = FakePromptExecutor(passthrough_exit_code=0)
 
         runner = CliRunner()
         result = runner.invoke(
             run_review,
             ["--name", "test", "--pr-number", "123"],
-            obj=ErkContext.for_test(cwd=tmp_path, claude_executor=fake_executor),
+            obj=ErkContext.for_test(cwd=tmp_path, prompt_executor=fake_executor),
         )
 
         assert result.exit_code == 0
@@ -223,13 +223,13 @@ Check for issues.
             encoding="utf-8",
         )
 
-        fake_executor = FakeClaudeExecutor(passthrough_exit_code=42)
+        fake_executor = FakePromptExecutor(passthrough_exit_code=42)
 
         runner = CliRunner()
         result = runner.invoke(
             run_review,
             ["--name", "test", "--pr-number", "123"],
-            obj=ErkContext.for_test(cwd=tmp_path, claude_executor=fake_executor),
+            obj=ErkContext.for_test(cwd=tmp_path, prompt_executor=fake_executor),
         )
 
         assert result.exit_code == 42
@@ -253,13 +253,13 @@ Simple check.
             encoding="utf-8",
         )
 
-        fake_executor = FakeClaudeExecutor()
+        fake_executor = FakePromptExecutor()
 
         runner = CliRunner()
         result = runner.invoke(
             run_review,
             ["--name", "test", "--pr-number", "456"],
-            obj=ErkContext.for_test(cwd=tmp_path, claude_executor=fake_executor),
+            obj=ErkContext.for_test(cwd=tmp_path, prompt_executor=fake_executor),
         )
 
         assert result.exit_code == 0

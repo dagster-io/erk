@@ -14,7 +14,6 @@
 - **[claude-cli-error-reporting.md](claude-cli-error-reporting.md)** — handling Claude CLI errors, interpreting PromptResult.error, working with ErrorEvent, NoOutputEvent, NoTurnsEvent, ProcessErrorEvent
 - **[claude-cli-integration.md](claude-cli-integration.md)** — Invoking Claude from Python, Spawning Claude CLI from Python code, Understanding non-interactive vs interactive modes
 - **[claude-cli-progress.md](claude-cli-progress.md)** — adding progress output to Claude operations, wrapping Claude CLI with user feedback, using ProgressEvent or CompletionEvent, converting blocking operations to streaming progress
-- **[claude-executor-patterns.md](claude-executor-patterns.md)** — launching Claude from CLI commands, deciding which ClaudeExecutor method to use, testing code that executes Claude CLI, choosing between RealClaudeExecutor and RealPromptExecutor
 - **[claude-installation-gateway.md](claude-installation-gateway.md)** — working with Claude Code session logs, accessing ~/.claude/ directory, implementing session analysis features, working with plan files
 - **[cli-binary-ops-pattern.md](cli-binary-ops-pattern.md)** — wrapping external CLI binary, testing subprocess calls, creating fake for external tool
 - **[cli-to-pipeline-boundary.md](cli-to-pipeline-boundary.md)** — refactoring complex CLI commands, separating business logic from Click layer, deciding when to extract pipeline from CLI command
@@ -76,6 +75,7 @@
 - **[pr-finalization-paths.md](pr-finalization-paths.md)** — debugging PR body content or issue closing, understanding local vs remote PR submission, working with 'Closes #N' in PRs
 - **[pre-destruction-capture.md](pre-destruction-capture.md)** — implementing operations that destroy or transform data, designing pipelines with data capture requirements, working with git squash, rebase, or other destructive operations
 - **[prompt-executor-gateway.md](prompt-executor-gateway.md)** — executing LLM prompts from Python code, testing code that uses Claude CLI, implementing single-shot prompt execution, working with PromptExecutor or FakePromptExecutor
+- **[prompt-executor-patterns.md](prompt-executor-patterns.md)** — launching Claude from CLI commands, deciding which PromptExecutor method to use, testing code that executes Claude CLI, choosing between ClaudePromptExecutor and RealPromptExecutor
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns
 - **[roadmap-mutation-semantics.md](roadmap-mutation-semantics.md)** — modifying objective roadmap update logic, understanding status inference when updating roadmap steps, working with objective-roadmap-update command
 - **[selection-preservation-by-value.md](selection-preservation-by-value.md)** — working with auto-refreshing lists or tables in UI components, implementing selection state that should persist across data updates, building real-time dashboard views with user-selected items, debugging cursor position resets in DataTable or list components

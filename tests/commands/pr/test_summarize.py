@@ -16,7 +16,7 @@ from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -32,9 +32,9 @@ def test_pr_summarize_fails_when_claude_not_available() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=False)
+        executor = FakePromptExecutor(available=False)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["summarize"], obj=ctx)
 
@@ -76,13 +76,13 @@ def test_pr_summarize_fails_when_no_commits_ahead() -> None:
                 ),
             },
         )
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["summarize"], obj=ctx)
@@ -125,13 +125,13 @@ def test_pr_summarize_fails_when_multiple_commits() -> None:
                 ),
             },
         )
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["summarize"], obj=ctx)
@@ -176,8 +176,8 @@ def test_pr_summarize_success_amends_commit() -> None:
             },
         )
         github = FakeGitHub(authenticated=True)
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Add awesome feature\n\nThis PR adds an awesome new feature.",
         )
 
@@ -186,7 +186,7 @@ def test_pr_summarize_success_amends_commit() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["summarize"], obj=ctx)
@@ -248,8 +248,8 @@ def test_pr_summarize_uses_graphite_parent() -> None:
             },
         )
         github = FakeGitHub(authenticated=True)
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Add feature 2\n\nThis adds feature 2.",
         )
 
@@ -258,7 +258,7 @@ def test_pr_summarize_uses_graphite_parent() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["summarize"], obj=ctx)
@@ -266,8 +266,8 @@ def test_pr_summarize_uses_graphite_parent() -> None:
         assert result.exit_code == 0
 
         # Verify the prompt was called with correct branches
-        assert len(claude_executor.prompt_calls) == 1
-        prompt, system_prompt, _dangerous = claude_executor.prompt_calls[0]
+        assert len(executor.prompt_calls) == 1
+        prompt, system_prompt, _dangerous = executor.prompt_calls[0]
         # Should contain branch-1 as parent (Graphite parent)
         assert "branch-1" in prompt
         assert "branch-2" in prompt
@@ -308,8 +308,8 @@ def test_pr_summarize_fails_when_message_generation_fails() -> None:
             },
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_error="Claude CLI execution failed",
         )
 
@@ -317,7 +317,7 @@ def test_pr_summarize_fails_when_message_generation_fails() -> None:
             env,
             git=git,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["summarize"], obj=ctx)
@@ -353,7 +353,7 @@ def _make_summarize_fakes(
     *,
     branch_name: str,
     fake_github_issues: FakeGitHubIssues,
-) -> tuple[FakeGit, FakeGraphite, FakeGitHub, FakeClaudeExecutor]:
+) -> tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]:
     """Create standard fakes for summarize plan context tests."""
     git = FakeGit(
         git_common_dirs={env.cwd: env.git_dir},
@@ -385,11 +385,11 @@ def _make_summarize_fakes(
         },
     )
     github = FakeGitHub(authenticated=True, issues_gateway=fake_github_issues)
-    claude_executor = FakeClaudeExecutor(
-        claude_available=True,
+    executor = FakePromptExecutor(
+        available=True,
         simulated_prompt_output="Fix the bug\n\nThis fixes the bug.",
     )
-    return git, graphite, github, claude_executor
+    return git, graphite, github, executor
 
 
 def test_pr_summarize_shows_plan_context_with_objective() -> None:
@@ -412,11 +412,11 @@ def test_pr_summarize_shows_plan_context_with_objective() -> None:
             comments_with_urls={123: [comment]},
         )
 
-        git, graphite, github, claude_executor = _make_summarize_fakes(
+        git, graphite, github, executor = _make_summarize_fakes(
             env, branch_name="P123-fix-bug", fake_github_issues=fake_github_issues
         )
         ctx = build_workspace_test_context(
-            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
+            env, git=git, github=github, graphite=graphite, prompt_executor=executor
         )
 
         result = runner.invoke(pr_group, ["summarize"], obj=ctx)
@@ -443,11 +443,11 @@ def test_pr_summarize_shows_plan_context_without_objective() -> None:
             comments_with_urls={123: [comment]},
         )
 
-        git, graphite, github, claude_executor = _make_summarize_fakes(
+        git, graphite, github, executor = _make_summarize_fakes(
             env, branch_name="P123-fix-bug", fake_github_issues=fake_github_issues
         )
         ctx = build_workspace_test_context(
-            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
+            env, git=git, github=github, graphite=graphite, prompt_executor=executor
         )
 
         result = runner.invoke(pr_group, ["summarize"], obj=ctx)
@@ -463,11 +463,11 @@ def test_pr_summarize_shows_no_linked_plan() -> None:
     with erk_isolated_fs_env(runner) as env:
         fake_github_issues = FakeGitHubIssues()
 
-        git, graphite, github, claude_executor = _make_summarize_fakes(
+        git, graphite, github, executor = _make_summarize_fakes(
             env, branch_name="feature", fake_github_issues=fake_github_issues
         )
         ctx = build_workspace_test_context(
-            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
+            env, git=git, github=github, graphite=graphite, prompt_executor=executor
         )
 
         result = runner.invoke(pr_group, ["summarize"], obj=ctx)

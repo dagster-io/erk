@@ -133,8 +133,8 @@ result = runner.invoke(
 Grouped commands may need different context setup:
 
 ```python
-# Local variant needs Claude executor
-ctx = ErkContext.for_test(cwd=tmp_path, claude_executor=FakeClaudeExecutor())
+# Local variant needs prompt executor
+ctx = ErkContext.for_test(cwd=tmp_path, prompt_executor=FakePromptExecutor())
 
 # Remote variant needs GitHub access
 ctx = ErkContext.for_test(cwd=tmp_path, github=FakeGitHub())

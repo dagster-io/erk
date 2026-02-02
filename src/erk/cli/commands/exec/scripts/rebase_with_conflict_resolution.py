@@ -40,8 +40,8 @@ from typing import Literal
 
 import click
 
-from erk_shared.context.helpers import require_claude_executor, require_cwd, require_git
-from erk_shared.core.claude_executor import ClaudeExecutor
+from erk_shared.context.helpers import require_cwd, require_git, require_prompt_executor
+from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.remote_ops.types import PushError
 
@@ -106,7 +106,7 @@ Requirements:
 
 def _generate_summary(
     *,
-    claude_executor: ClaudeExecutor,
+    prompt_executor: PromptExecutor,
     cwd: Path,
     branch_name: str,
     target_branch: str,
@@ -117,7 +117,7 @@ def _generate_summary(
     """Use Claude to generate an intelligent summary of the rebase.
 
     Args:
-        claude_executor: Claude CLI executor gateway
+        prompt_executor: Prompt executor gateway
         cwd: Working directory for Claude execution
         branch_name: The branch that was rebased
         target_branch: The branch rebased onto
@@ -135,7 +135,7 @@ def _generate_summary(
         conflicts_resolved=conflicts_resolved,
     )
 
-    result = claude_executor.execute_prompt(
+    result = prompt_executor.execute_prompt(
         prompt,
         model=model,
         tools=None,
@@ -157,35 +157,34 @@ CONFLICT_RESOLUTION_PROMPT = (
 
 def _invoke_claude_for_conflicts(
     *,
-    claude_executor: ClaudeExecutor,
+    prompt_executor: PromptExecutor,
     cwd: Path,
     model: str,
 ) -> bool:
     """Invoke Claude to fix merge conflicts.
 
     Args:
-        claude_executor: Claude CLI executor gateway
+        prompt_executor: Prompt executor gateway
         cwd: Working directory for Claude execution
         model: Claude model to use
 
     Returns:
         True if Claude invocation succeeded.
     """
-    result = claude_executor.execute_prompt(
+    exit_code = prompt_executor.execute_prompt_passthrough(
         CONFLICT_RESOLUTION_PROMPT,
         model=model,
         tools=None,
         cwd=cwd,
-        system_prompt=None,
         dangerous=True,
     )
-    return result.success
+    return exit_code == 0
 
 
 def _rebase_with_conflict_resolution_impl(
     *,
     git: Git,
-    claude_executor: ClaudeExecutor,
+    prompt_executor: PromptExecutor,
     cwd: Path,
     target_branch: str,
     branch_name: str,
@@ -196,7 +195,7 @@ def _rebase_with_conflict_resolution_impl(
 
     Args:
         git: Git gateway for repository operations
-        claude_executor: Claude CLI executor gateway
+        prompt_executor: Prompt executor gateway
         cwd: Current working directory (worktree path)
         target_branch: Branch to rebase onto (trunk or parent branch for stacked PRs)
         branch_name: Current branch name for force push
@@ -250,7 +249,7 @@ def _rebase_with_conflict_resolution_impl(
         all_conflicted_files.update(conflicted)
         # Invoke Claude to fix conflicts
         _invoke_claude_for_conflicts(
-            claude_executor=claude_executor,
+            prompt_executor=prompt_executor,
             cwd=cwd,
             model=model,
         )
@@ -321,11 +320,11 @@ def rebase_with_conflict_resolution(
     """
     cwd = require_cwd(ctx)
     git = require_git(ctx)
-    claude_executor = require_claude_executor(ctx)
+    prompt_executor = require_prompt_executor(ctx)
 
     result = _rebase_with_conflict_resolution_impl(
         git=git,
-        claude_executor=claude_executor,
+        prompt_executor=prompt_executor,
         cwd=cwd,
         target_branch=target_branch,
         branch_name=branch_name,
@@ -344,7 +343,7 @@ def rebase_with_conflict_resolution(
         )
     else:
         summary = _generate_summary(
-            claude_executor=claude_executor,
+            prompt_executor=prompt_executor,
             cwd=cwd,
             branch_name=branch_name,
             target_branch=target_branch,
