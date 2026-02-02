@@ -40,7 +40,7 @@ You receive:
    - New gateway methods (ABC additions)
    - New exec scripts
    - Config changes
-   - Source locations for documentation pointers: for each item, note exact file path and line range for downstream source pointers
+   - Source locations for documentation pointers: for each item, note file path and key identifiers (class/function names) so agents can grep to find them
 
 4. **For each inventory item, assess documentation need:**
    - Does this need docs? (Almost always yes for new features)
@@ -62,9 +62,9 @@ STATS: +<additions> -<deletions> files: <count>
 | ...  | ...  | Yes/No              | ...      |
 
 ### New Functions/Classes
-| Name | File | Line Range | Documentation Needed | Location |
-|------|------|-----------|---------------------|----------|
-| ...  | ...  | ...       | Yes/No              | ...      |
+| Name | File | Documentation Needed | Location |
+|------|------|---------------------|----------|
+| ...  | ...  | Yes/No              | ...      |
 
 ### New CLI Commands
 | Command | File | Documentation Needed |
