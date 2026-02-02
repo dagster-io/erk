@@ -120,6 +120,48 @@ def _run_subprocess(cmd: list[str], *, description: str, emoji: str) -> dict[str
         return {}
 
 
+def _run_subprocess_lenient(
+    cmd: list[str], *, description: str, emoji: str
+) -> dict[str, object] | None:
+    """Run subprocess, capture stdout JSON, return None on failure.
+
+    Unlike _run_subprocess, this does not exit on subprocess failure.
+    It logs a dim warning to stderr and returns None instead.
+
+    Args:
+        cmd: Command to run (list of strings)
+        description: Human-readable description for error messages
+        emoji: Emoji prefix for the output message (empty string for no prefix)
+
+    Returns:
+        Parsed JSON from stdout on success, None on failure
+    """
+    if emoji:
+        prefix = f"{emoji} "
+    else:
+        prefix = ""
+    message = click.style(f"{prefix}{description}...", fg="cyan")
+    click.echo(message, err=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+
+    if result.returncode != 0:
+        error_output = result.stderr.strip() or result.stdout.strip()
+        warning = click.style(
+            f"   ⏭️  {description} failed, skipping: {error_output}",
+            dim=True,
+        )
+        click.echo(warning, err=True)
+        return None
+
+    if not result.stdout.strip():
+        return None
+
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None
+
+
 def _run_preprocess_session(cmd: list[str], *, description: str) -> list[str]:
     """Run preprocess-session subprocess and return output file paths.
 
@@ -291,13 +333,13 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
                 click.echo(message, err=True)
 
     # Step 4: Get PR for plan (if exists) and fetch review comments
-    pr_result = _run_subprocess(
+    pr_result = _run_subprocess_lenient(
         ["erk", "exec", "get-pr-for-plan", str(issue_number)],
         description="Getting PR for plan",
         emoji="🔍",
     )
 
-    if pr_result.get("success") and pr_result.get("pr_number"):
+    if pr_result is not None and pr_result.get("success") and pr_result.get("pr_number"):
         pr_number = pr_result["pr_number"]
 
         # Fetch review comments
