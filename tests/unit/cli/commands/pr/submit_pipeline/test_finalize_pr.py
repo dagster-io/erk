@@ -10,6 +10,7 @@ from erk.cli.commands.pr.submit_pipeline import (
 )
 from erk.core.context import context_for_test
 from erk.core.plan_context_provider import PlanContext
+from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
@@ -296,8 +297,6 @@ def test_embeds_plan_in_pr_body(tmp_path: Path) -> None:
 
 def test_retracks_graphite_after_amend(tmp_path: Path) -> None:
     """retrack_branch called after amend to fix Graphite tracking divergence."""
-    from erk_shared.context.types import GlobalConfig
-
     pr = _pr_details(number=42)
     fake_git = FakeGit(
         repository_roots={tmp_path: tmp_path},
