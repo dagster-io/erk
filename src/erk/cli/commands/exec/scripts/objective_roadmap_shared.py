@@ -107,7 +107,7 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             elif status_col == "pending":
                 status = "pending"
             # Fall back to PR-column inference for "-" or legacy values
-            elif pr_col and pr_col != "-" and pr_col.startswith("#"):
+            elif pr_col and pr_col.startswith("#"):
                 status = "done"
             elif pr_col and pr_col.startswith("plan #"):
                 status = "in_progress"
