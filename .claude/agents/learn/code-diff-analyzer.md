@@ -40,6 +40,7 @@ You receive:
    - New gateway methods (ABC additions)
    - New exec scripts
    - Config changes
+   - Source locations for documentation pointers: for each item, note file path and key identifiers (class/function names) so agents can grep to find them
 
 4. **For each inventory item, assess documentation need:**
    - Does this need docs? (Almost always yes for new features)
@@ -88,8 +89,18 @@ Skip documentation: <N> (with reasons)
 
 ## Recommended Documentation Items
 
-1. **<item>** → <location>: <what to document>
+1. **<item>** → <location>: <what to document> (source: path/to/file.py, grep for ClassName/function_name)
 2. ...
+
+## Source Pointer Awareness
+
+Every inventory item MUST include the source file path. This enables downstream agents to create documentation with source pointers instead of verbatim code blocks.
+
+For each new function, class, CLI command, or gateway method, note:
+- Full file path (e.g., `src/erk/planning/plan_manager.py`)
+- Key identifiers (class name, function name) so agents can grep to locate the relevant code
+
+See `docs/learned/documentation/source-pointers.md` for the two-part pattern used in documentation.
 ```
 
 Note: "Self-documenting code" is NOT a valid reason to skip. Document context, not just code.

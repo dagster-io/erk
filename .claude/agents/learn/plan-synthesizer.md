@@ -67,6 +67,11 @@ For each item from the gap analysis (non-SKIP items):
    - NOT just "document this" - provide actual starter markdown
    - Include the key points to cover
    - Add source attribution: [Plan], [Impl], or [PR #N]
+4. **Use source pointers, not verbatim code**: Draft content MUST NOT include verbatim code blocks copied from source files. Instead:
+   - Describe what the code does in prose
+   - Point to the source file: `See ClassName.method() in path/to/file.py` (agents should grep to find the exact location)
+   - Short illustrative snippets (≤5 lines) showing a pattern are acceptable
+   - Follow `docs/learned/documentation/source-pointers.md` for format
 
 ### Step 5: Describe Tripwire Insights
 
@@ -191,4 +196,6 @@ Items with score 2-3 (may warrant promotion with additional context):
 4. **Prioritization drives order**: HIGH items first (contradictions, gateway methods), then MEDIUM, then LOW
 
 5. **Write tripwire insights naturally**: Describe action patterns, warnings, and target docs in prose. A separate extraction agent handles structured data — do not include `## Tripwire Additions` with YAML code blocks.
+
+6. **Source pointers over verbatim code**: Draft content starters MUST use source file references instead of copying code blocks. Code in documentation goes stale silently. See `docs/learned/documentation/source-pointers.md`.
 ```

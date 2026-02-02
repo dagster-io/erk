@@ -22,19 +22,19 @@ Short illustrative snippets (≤5 lines) are fine to include verbatim.
 
 ## Format: Two-Part Pattern
 
-### Part 1: HTML Comment with Line Range
+### Part 1: HTML Comment with Source File
 
 Add an HTML comment before the prose reference:
 
 ```markdown
-<!-- Source: path/to/file.py:START-END -->
+<!-- Source: path/to/file.py, ClassName.method_name -->
 ```
 
 **Examples:**
 
 ```markdown
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/fake.py:112-165 -->
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py:187-189 -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/fake.py, FakeGit.add -->
+<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, cast() pattern -->
 ```
 
 ### Part 2: Prose Reference with Method Name
@@ -42,16 +42,18 @@ Add an HTML comment before the prose reference:
 Reference the specific class or method in prose:
 
 ```markdown
-See `ClassName.method_name()` in `path/to/file.py:START-END`.
+See `ClassName.method_name()` in `path/to/file.py`.
 ```
 
 **Examples:**
 
 ```markdown
-See `FakeGit.add()` in `packages/erk-shared/src/erk_shared/gateway/git/fake.py:112-165`.
+See `FakeGit.add()` in `packages/erk-shared/src/erk_shared/gateway/git/fake.py`.
 
-See the `cast()` pattern in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py:187-189`.
+See the `cast()` pattern in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`.
 ```
+
+Agents should grep for the class/function name to find the exact location in the file.
 
 ## Category System: What to Keep vs Remove
 
@@ -101,11 +103,11 @@ If you answered "Yes" to questions 1-3, use a source pointer.
 
 ## Maintenance Trade-offs
 
-**Source pointers may go stale** when line numbers change. This is an acceptable trade-off:
+**Source pointers reference file paths and identifiers**, not line numbers. This avoids staleness:
 
-- **Stale line numbers** are easy to detect and fix (file still exists, just wrong lines)
+- **File paths** rarely change; when they do, grep finds the new location
+- **Class/function names** are stable identifiers that survive refactoring better than line numbers
 - **Stale code blocks** are insidious (code still runs, just outdated patterns)
-- Tooling can validate pointers (check if file/lines exist)
 - No tooling can detect when copied code diverges from current implementation
 
 ## Automated Detection
@@ -114,7 +116,7 @@ The learned-docs review (`.github/reviews/learned-docs.md`) automatically detect
 
 - Scans `docs/learned/**/*.md` files
 - Matches code blocks against source files in `src/erk/` and `packages/`
-- Posts inline comments with exact source file and line numbers
+- Posts inline comments identifying the source file and relevant identifiers
 - Suggests source pointer format as replacement
 
 When you receive a learned-docs review comment, it means you should replace the code block with a source pointer.
