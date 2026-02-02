@@ -22,6 +22,7 @@
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
 - **[composable-remote-commands.md](composable-remote-commands.md)** — adding a new remote command to run on codespaces, implementing erk codespace run subcommands, working with streaming remote execution
 - **[context-injection-tiers.md](context-injection-tiers.md)** — designing a new hook or reminder system, understanding how dignified-python reminders work, deciding where to inject context for agent compliance
+- **[defense-in-depth-enforcement.md](defense-in-depth-enforcement.md)** — designing multi-layer validation or enforcement systems, implementing critical rules across multiple components, understanding why erk uses redundant enforcement mechanisms
 - **[discriminated-union-error-handling.md](discriminated-union-error-handling.md)** — designing return types for operations that may fail, implementing T | ErrorType patterns, handling errors without exceptions, working with GeneratedPlan, PlanGenerationError, or similar types
 - **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir, detecting root worktree, detecting worktree location, adding composing template methods to ABC
 - **[erk-shared-package.md](erk-shared-package.md)** — deciding where to put new utilities, moving code between packages
@@ -81,6 +82,7 @@
 - **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit
 - **[session-discovery.md](session-discovery.md)** — finding Claude Code sessions for a plan, implementing session lookup from GitHub issues, understanding dual-source discovery patterns, working with gist-based session storage, downloading remote sessions for learn workflow
 - **[ssh-command-execution.md](ssh-command-execution.md)** — implementing remote command execution via SSH, working with codespace connections, debugging remote setup commands
+- **[state-derivation-pattern.md](state-derivation-pattern.md)** — designing frontend/backend data contracts, choosing between pre-rendered strings and raw state fields, implementing testable display logic
 - **[state-threading-pattern.md](state-threading-pattern.md)** — designing linear pipelines with immutable state, understanding SubmitState or pipeline architecture, implementing multi-step workflows with frozen dataclasses
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
 - **[symlink-validation-pattern.md](symlink-validation-pattern.md)** — Validating @ references in markdown files, Validating import paths in configuration, Any path validation where source files may be symlinks

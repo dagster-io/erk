@@ -18,6 +18,7 @@
 - **[preload-bridge-patterns.md](preload-bridge-patterns.md)** — exposing Node.js APIs to Electron renderer, implementing IPC communication in erkdesk, understanding context bridge security, adding new erkdesk capabilities
 - **[security.md](security.md)** — implementing Electron context bridge, working with erkdesk frontend-backend communication, handling GitHub tokens in desktop app, setting up Electron security settings
 - **[split-pane-implementation.md](split-pane-implementation.md)** — working on split-pane layout, debugging bounds reporting, implementing resizable panels in erkdesk
+- **[visual-status-indicators.md](visual-status-indicators.md)** — implementing visual status indicators in erkdesk, designing CSS-only status dots with color semantics, understanding the backend data contract for status derivation
 - **[vitest-setup.md](vitest-setup.md)** — setting up test infrastructure for erkdesk, adding new tests to erkdesk, understanding erkdesk test environment
 - **[webcontentsview-lifecycle.md](webcontentsview-lifecycle.md)** — working with WebContentsView in erkdesk, implementing split-pane with embedded webview, setting up IPC for bounds updates
 - **[webview-api.md](webview-api.md)** — working with WebContentsView in erkdesk, implementing split-pane layout, debugging bounds updates or URL loading

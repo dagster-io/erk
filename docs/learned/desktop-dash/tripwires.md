@@ -12,6 +12,8 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+**CRITICAL: Before Add new status colors without documenting their semantic meaning** → Read [Visual Status Indicators](visual-status-indicators.md) first. Document color semantics: green=success, amber=warning, purple=in-progress, red=failure, gray=unknown/none.
+
 **CRITICAL: Before adding IPC handler without updating all 4 locations** → Read [erkdesk IPC Action Pattern](ipc-actions.md) first. Every IPC handler requires updates in 4 files: main/index.ts (handler), main/preload.ts (bridge), types/erkdesk.d.ts (types), tests (mock). Missing any location breaks type safety or tests.
 
 **CRITICAL: Before adding a new action without updating ACTIONS array** → Read [erkdesk Action Toolbar](action-toolbar.md) first. ACTIONS is exported and can be reused in context menus. Add new ActionDef entries to the ACTIONS array, not as separate one-offs.
