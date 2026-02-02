@@ -13,7 +13,7 @@
 
 <!-- BEHAVIORAL TRIGGERS: rules that detect action patterns and route to documentation -->
 
-**CRITICAL: NEVER search, read, or access `/Users/schrockn/` directory**
+**CRITICAL: NEVER perform broad searches or recursive operations against `/Users/schrockn/` directly. Scoped access to specific subfolders (e.g., `~/.claude/projects/`, `/Users/schrockn/code/project-name/`) is allowed.**
 
 **CRITICAL: NEVER use raw `pip install`. Always use `uv` for package management.**
 
