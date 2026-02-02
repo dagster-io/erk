@@ -10,6 +10,7 @@ Output:
 """
 
 import json
+import subprocess
 from dataclasses import asdict, dataclass
 
 import click
@@ -80,13 +81,36 @@ def get_pr_for_plan(
     # Get branch_name field
     branch_name = block.data.get("branch_name")
     if branch_name is None:
-        result = GetPrForPlanError(
-            success=False,
-            error="no-branch-in-plan",
-            message=f"Issue #{issue_number} plan-header has no branch_name field",
+        # Attempt to infer branch from current git context
+        # This handles cases where impl-signal failed to set branch_name
+        git_branch_result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            check=False,
         )
-        click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
+
+        if git_branch_result.returncode == 0:
+            current_branch = git_branch_result.stdout.strip()
+            # Check if branch matches erk naming pattern: P{issue}-*
+            if current_branch.startswith(f"P{issue_number}-"):
+                branch_name = current_branch
+            else:
+                result = GetPrForPlanError(
+                    success=False,
+                    error="no-branch-in-plan",
+                    message=f"Issue #{issue_number} plan-header has no branch_name field",
+                )
+                click.echo(json.dumps(asdict(result)), err=True)
+                raise SystemExit(1) from None
+        else:
+            result = GetPrForPlanError(
+                success=False,
+                error="no-branch-in-plan",
+                message=f"Issue #{issue_number} plan-header has no branch_name field",
+            )
+            click.echo(json.dumps(asdict(result)), err=True)
+            raise SystemExit(1) from None
 
     # Fetch PR for branch
     pr_result = github.get_pr_for_branch(repo_root, branch_name)

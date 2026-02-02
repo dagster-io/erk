@@ -6,6 +6,7 @@ Uses FakeGitHub and FakeGitHubIssues for fast, reliable testing.
 
 import json
 from datetime import UTC, datetime
+from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
@@ -301,3 +302,59 @@ def test_json_output_structure_error() -> None:
 
     # Verify values
     assert output["success"] is False
+
+
+def test_get_pr_for_plan_branch_inference_when_no_branch_name() -> None:
+    """Test branch inference when plan-header has no branch_name but current git branch matches."""
+    branch_name = "P5103-feature-branch"
+    # Create body with branch_name set to null
+    body = make_plan_header_body(branch_name=None)
+    fake_issues = FakeGitHubIssues(issues={5103: make_issue_info(5103, body)})
+    fake_gh = FakeGitHub(
+        issues_gateway=fake_issues,
+        prs={branch_name: make_pr_info(number=5104, head_branch=branch_name)},
+        pr_details={5104: make_pr_details(number=5104, head_ref_name=branch_name)},
+    )
+    runner = CliRunner()
+
+    # Mock git branch --show-current to return the matching branch
+    mock_git_result = MagicMock(returncode=0, stdout=f"{branch_name}\n", stderr="")
+
+    with patch("subprocess.run", return_value=mock_git_result):
+        result = runner.invoke(
+            get_pr_for_plan,
+            ["5103"],
+            obj=ErkContext.for_test(github=fake_gh, github_issues=fake_issues),
+        )
+
+    # Should succeed with inferred branch
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["pr"]["number"] == 5104
+    assert output["pr"]["head_ref_name"] == branch_name
+
+
+def test_get_pr_for_plan_branch_inference_fails_wrong_pattern() -> None:
+    """Test branch inference fails when current git branch doesn't match P{issue}- pattern."""
+    # Create body with branch_name set to null
+    body = make_plan_header_body(branch_name=None)
+    fake_issues = FakeGitHubIssues(issues={5103: make_issue_info(5103, body)})
+    fake_gh = FakeGitHub(issues_gateway=fake_issues)
+    runner = CliRunner()
+
+    # Mock git branch --show-current to return a non-matching branch
+    mock_git_result = MagicMock(returncode=0, stdout="main\n", stderr="")
+
+    with patch("subprocess.run", return_value=mock_git_result):
+        result = runner.invoke(
+            get_pr_for_plan,
+            ["5103"],
+            obj=ErkContext.for_test(github=fake_gh, github_issues=fake_issues),
+        )
+
+    # Should fail with error
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["error"] == "no-branch-in-plan"

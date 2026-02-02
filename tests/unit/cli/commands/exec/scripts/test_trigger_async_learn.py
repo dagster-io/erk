@@ -631,3 +631,67 @@ def test_trigger_async_learn_logs_output_file_sizes(tmp_path: Path) -> None:
     output_lines = [line for line in stderr_lines if "planning-abc123.xml" in line]
     assert len(output_lines) == 1
     assert "chars)" in output_lines[0]
+
+
+def test_trigger_async_learn_pr_lookup_failure_continues() -> None:
+    """Test that PR lookup failure is handled gracefully and pipeline continues."""
+    runner = CliRunner()
+    repo_info = RepoInfo(owner="test-owner", name="test-repo")
+    github = FakeGitHub(repo_info=repo_info)
+    tmp_path = Path("/tmp/test-erk-pr-lookup-failure")
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
+
+    learn_dir = tmp_path / ".erk" / "scratch" / "learn-999"
+    learn_dir.mkdir(parents=True, exist_ok=True)
+
+    mock_subprocess_results = [
+        # get-learn-sessions - success
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps({"success": True, "session_sources": []}),
+            stderr="",
+        ),
+        # get-pr-for-plan - FAILS with returncode=1 and error JSON in stderr
+        MagicMock(
+            returncode=1,
+            stdout="",
+            stderr=json.dumps(
+                {
+                    "success": False,
+                    "error_type": "missing-branch-name",
+                    "message": "Plan header has no branch_name field",
+                }
+            ),
+        ),
+        # upload-learn-materials - success (pipeline continues despite PR lookup failure)
+        MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "success": True,
+                    "gist_url": "https://gist.github.com/user/xyz789",
+                    "file_count": 0,
+                    "total_size": 0,
+                }
+            ),
+            stderr="",
+        ),
+    ]
+
+    with patch("subprocess.run", side_effect=mock_subprocess_results):
+        result = runner.invoke(trigger_async_learn_command, ["999"], obj=ctx)
+
+    # Pipeline should still succeed even though PR lookup failed
+    assert result.exit_code == 0
+    output = _parse_json_output(result.output)
+    assert output["success"] is True
+    assert output["issue_number"] == 999
+    assert output["workflow_triggered"] is True
+
+    # Verify PR review/discussion comment fetching was skipped (not in subprocess calls)
+    stderr_lines = _get_stderr_lines(result.output)
+    # Should have warning about PR lookup failure
+    warning_lines = [line for line in stderr_lines if "failed, skipping" in line]
+    assert len(warning_lines) == 1
+    assert "Getting PR for plan" in warning_lines[0]
