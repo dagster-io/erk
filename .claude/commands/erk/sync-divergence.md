@@ -48,7 +48,7 @@ Resolve "Branch X has been updated remotely" errors by syncing with remote and h
    git rebase origin/$BRANCH
    ```
 
-   > **Note:** Do not use `gt restack` here. Graphite's restack only handles parent branch relationships (rebasing onto the parent in your stack), not same-branch remote divergence.
+   > **Note:** `gt restack` alone won't fix remote divergence — it only handles parent branch relationships. You need `git rebase origin/$BRANCH` first to sync the PR commits with remote. However, `gt restack` IS needed afterward (step 7) to re-base onto the current parent branch.
 
 6. **If rebase causes conflicts:**
 
@@ -56,11 +56,21 @@ Resolve "Branch X has been updated remotely" errors by syncing with remote and h
 
    @../../../.erk/docs/kits/erk/includes/conflict-resolution.md
 
-7. **After successful sync:**
+7. **Re-restack onto parent branch** (when using Graphite):
+
+   After the rebase resolves the remote divergence, the branch may be based on an older master. Re-restack to ensure the branch sits on top of the current parent:
+
+   ```bash
+   gt restack --no-interactive
+   ```
+
+   > This is separate from step 5. The `git rebase origin/$BRANCH` in step 5 syncs the PR commits with remote. This `gt restack` ensures the branch base is current master, not the remote's older master.
+
+8. **After successful sync:**
    - For Graphite: `gt submit` (or `gt ss`)
    - For git-only: `git push --force-with-lease`
 
-8. **Verify completion** - Run `git status` and `git log --oneline -5` to confirm sync succeeded
+9. **Verify completion** - Run `git status` and `git log --oneline -5` to confirm sync succeeded
 
 ## Edge Cases
 
