@@ -45,22 +45,24 @@ This returns a single JSON blob with `{success, objective, plan, pr}` containing
 
 If the branch doesn't match the pattern or no merged PR is found, ask the user for the missing information.
 
-### Step 1: Load Objective Skill
+### Step 1: Delegate to Haiku Subagent
 
-Load the `objective` skill for format templates and guidelines.
+Use the Task tool with `model: haiku` to spawn a specialized subagent that will compose the updates and execute them in one turn.
 
-### Step 2: Analyze Context and Compose Updates
+The subagent prompt should include:
 
-Using the data from Step 0, analyze the objective body to identify:
+1. **The full JSON context blob from Step 0** (objective body, plan body, PR details)
+2. **The `--auto-close` flag** (if present in `$ARGUMENTS`)
+3. **All templates and rules below**
 
-- Current roadmap structure (phases and steps)
-- Which phase/steps this PR likely completed
-- Current status of all steps
-- What "Current Focus" says
+**Subagent Instructions:**
 
-Then compose both updates:
+You are updating objective issue #<objective-number> after landing PR #<pr-number>. You have the full context including the objective body, plan body, and PR details.
 
-**Action Comment** (using objective skill template):
+Your tasks:
+
+1. **Analyze which steps the PR completed** by comparing the plan body against the objective roadmap
+2. **Compose an action comment** using this template:
 
 ```markdown
 ## Action: [Brief title - what was accomplished]
@@ -85,29 +87,23 @@ Then compose both updates:
 
 **Inferring content (DO NOT ask the user):**
 
-- **What Was Done:** Infer from PR title, PR description, and commit messages. The plan issue body contains the implementation plan with specific steps - use this to understand what was accomplished.
-- **Lessons Learned:** Infer from implementation patterns, architectural decisions made, or any non-obvious approaches taken. If the implementation was straightforward with no surprises, note what pattern worked well.
+- **What Was Done:** Infer from PR title, PR description, and commit messages. The plan body contains the implementation plan - use it to understand what was accomplished.
+- **Lessons Learned:** Infer from implementation patterns or architectural decisions. If straightforward, note what pattern worked well.
 
-**Updated Objective Body:**
+3. **Compose the updated objective body** by editing the roadmap table:
+   - Set the PR cell to `#<pr-number>` for completed steps
+   - Set the Status cell to `-` (inference determines status from PR column)
+   - If PR title meaningfully differs from step description, update the description
+   - Update "Current Focus" to describe the next pending step or next phase
 
-For each completed step, edit the roadmap table row:
-
-1. Set the PR cell to `#<pr-number>` for the completed step
-2. Set the Status cell to `-` (inference determines status from PR column)
-3. If the PR title meaningfully differs from the step description, update the description to reflect what was actually implemented
-
-**Status inference rules** (the parser uses these to determine effective status):
+**Status inference rules:**
 
 - Step has `#NNN` in PR column → Status `-` → inferred as `done`
 - Step has `plan #NNN` in PR column → Status `-` → inferred as `in_progress`
 - Step has no PR → Status stays as-is (inferred as `pending`)
-- `blocked`/`skipped` in Status column are explicit overrides — only change if you know the blocker is resolved
+- `blocked`/`skipped` in Status are explicit overrides — only change if blocker is resolved
 
-Also update "Current Focus" to describe the next pending step or next phase of work.
-
-### Step 3: Execute Both Writes in Parallel
-
-Execute the action comment and body update in parallel:
+4. **Execute both writes in parallel:**
 
 ```bash
 # Post action comment
@@ -125,27 +121,32 @@ BODY_EOF
 )"
 ```
 
-### Step 4: Validate and Check Closing Triggers
+5. **Self-validate by counting steps from the body you just composed:**
+   - Count total steps, done (have PR), skipped, pending, blocked, in_progress (have plan PR)
+   - **DO NOT** re-fetch from GitHub — use the body you just wrote
 
-Run validation and closing check in one call:
-
-```bash
-erk objective check <objective-number> --json-output
-```
-
-This returns counts: `total_steps`, `done`, `skipped`, `pending`, `blocked`, `in_progress`.
+6. **Check closing triggers:**
 
 **If ALL steps are `done` or `skipped`:**
 
 **If `--auto-close` was provided:**
 
-1. Post a final "Action: Objective Complete" comment with summary
-2. Close the issue: `gh issue close <issue-number>`
-3. Report: "All steps complete - objective closed automatically"
+- Post a final "Action: Objective Complete" comment with summary
+- Close the issue: `gh issue close <issue-number>`
+- Report: "All steps complete - objective closed automatically"
 
 **Otherwise (interactive mode):**
 
-Ask the user:
+- Report back to parent: "All steps complete, user should be asked if they want to close"
+- Parent will ask: "All roadmap steps are complete. Should I close objective #<number> now?"
+
+**If not all steps are complete:**
+
+- Report the update is complete and what the next focus should be
+
+### Step 2: Handle Subagent Response
+
+The subagent will report back with the result. If it reports "All steps complete, user should be asked if they want to close", ask the user:
 
 ```
 All roadmap steps are complete. Should I close objective #<number> now?
@@ -154,14 +155,12 @@ All roadmap steps are complete. Should I close objective #<number> now?
 - I'll close it manually later
 ```
 
-**If user says yes:**
+If the user says yes:
 
 1. Post a final "Action: Objective Complete" comment with summary
 2. Close the issue: `gh issue close <issue-number>`
 
-**If not all steps are complete:**
-
-Report the update is done and what the next focus should be.
+Otherwise, acknowledge the user's choice and report the update is complete.
 
 ---
 
