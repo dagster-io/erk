@@ -17,14 +17,14 @@ description: Use when working with PR review comments, resolving threads, or rep
 
 ## Quick Reference
 
-| Command                        | Purpose                          | Key Point                        |
-| ------------------------------ | -------------------------------- | -------------------------------- |
-| `get-pr-review-comments`       | Fetch unresolved review threads  | Returns threads with line info   |
-| `get-pr-discussion-comments`   | Fetch PR discussion comments     | Returns top-level comments       |
-| `resolve-review-thread`        | Reply AND resolve a single thread | Does both in one operation      |
-| `resolve-review-threads`       | Batch resolve multiple threads   | JSON stdin, one call for N threads |
-| `reply-to-discussion-comment`  | Reply to discussion comment      | For non-code feedback            |
-| `post-pr-inline-comment`       | Post new inline comment          | Creates new review thread        |
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
 
 ## When to Use Each Command
 
