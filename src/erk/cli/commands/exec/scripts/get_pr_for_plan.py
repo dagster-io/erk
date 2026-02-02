@@ -94,6 +94,9 @@ def get_pr_for_plan(
     if isinstance(issue, IssueNotFound):
         return _exit_with_error(error="plan-not-found", message=f"Issue #{issue_number} not found")
 
+    # At this point issue is guaranteed to be IssueInfo
+    assert not isinstance(issue, IssueNotFound)
+
     # Extract plan-header block
     block = find_metadata_block(issue.body, "plan-header")
     if block is None:
@@ -102,10 +105,16 @@ def get_pr_for_plan(
             message=f"Issue #{issue_number} has no plan-header metadata block",
         )
 
+    # At this point block is guaranteed to be MetadataBlock
+    assert block is not None
+
     # Get branch_name field
     branch_name = block.data.get("branch_name")
     if branch_name is None:
         branch_name = _infer_branch_from_git(issue_number)
+
+    # At this point branch_name is guaranteed to be a string
+    assert branch_name is not None
 
     # Fetch PR for branch
     pr_result = github.get_pr_for_branch(repo_root, branch_name)
@@ -114,6 +123,9 @@ def get_pr_for_plan(
             error="no-pr-for-branch",
             message=f"No PR found for branch '{branch_name}'",
         )
+
+    # At this point pr_result is guaranteed to be PRDetails
+    assert not isinstance(pr_result, PRNotFound)
 
     # Return PR details
     pr_data = {
