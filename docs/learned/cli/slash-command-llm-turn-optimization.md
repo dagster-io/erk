@@ -95,38 +95,7 @@ Always define TypedDict schemas in `erk_shared` for exec script output:
 
 **File:** `packages/erk-shared/src/erk_shared/objective_update_context_result.py`
 
-```python
-from typing import TypedDict
-
-class ObjectiveInfoDict(TypedDict):
-    number: int
-    title: str
-    body: str
-    state: str
-    labels: list[str]
-    url: str
-
-class PlanInfoDict(TypedDict):
-    number: int
-    title: str
-    body: str
-
-class PRInfoDict(TypedDict):
-    number: int
-    title: str
-    body: str
-    commits: list[dict[str, object]]
-
-class ObjectiveUpdateContextResultDict(TypedDict):
-    success: bool
-    objective: ObjectiveInfoDict
-    plan: PlanInfoDict
-    pr: PRInfoDict
-
-class ObjectiveUpdateContextErrorDict(TypedDict):
-    success: bool
-    error: str
-```
+See `packages/erk-shared/src/erk_shared/objective_update_context_result.py` for the canonical TypedDict definitions (`ObjectiveInfoDict`, `PlanInfoDict`, `PRInfoDict`, `ObjectiveUpdateContextResultDict`, `ObjectiveUpdateContextErrorDict`).
 
 **Why TypedDict:**
 

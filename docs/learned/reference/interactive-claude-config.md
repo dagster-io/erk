@@ -25,15 +25,7 @@ tripwires:
 
 ## Configuration Structure
 
-```python
-@dataclass(frozen=True)
-class InteractiveClaudeConfig:
-    model: str | None
-    verbose: bool
-    permission_mode: ClaudePermissionMode
-    dangerous: bool
-    allow_dangerous: bool
-```
+See `InteractiveClaudeConfig` in `packages/erk-shared/src/erk_shared/context/types.py:72` for the canonical dataclass definition. Fields: `model` (`str | None`), `verbose` (`bool`), `permission_mode` (`ClaudePermissionMode`), `dangerous` (`bool`), `allow_dangerous` (`bool`).
 
 ### Fields
 
@@ -47,9 +39,7 @@ class InteractiveClaudeConfig:
 
 ## Permission Modes
 
-```python
-ClaudePermissionMode = Literal["default", "acceptEdits", "plan", "bypassPermissions"]
-```
+Defined in `packages/erk-shared/src/erk_shared/context/types.py:24` as `Literal["default", "acceptEdits", "plan", "bypassPermissions"]`.
 
 | Mode                | CLI Flag                              | Behavior                               |
 | ------------------- | ------------------------------------- | -------------------------------------- |
