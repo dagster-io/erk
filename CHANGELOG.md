@@ -7,41 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: `2d8665c80` -->
+## [0.7.1] - 2026-02-02 08:48 PT
 
 ### Major Changes
 
-- **Plan Review via Temporary PR**: New workflow for asynchronous plan review through draft PRs. Plans can be submitted as temporary PRs for review, with feedback incorporated back into the plan issue. Includes automatic branch management, PR lifecycle handling, and integration with `/erk:pr-address`. (03b9e3a9d, 260f8a059, 46a916ddb, 436045eee, df3bda1a2, 90887e08b, 8f7b8811d, 8c7c66480, 712fffabf, f1c6fcb08, 91c06aaba)
-- **Top-level `erk launch` command**: Unified workflow launcher moved from `erk workflow launch` to `erk launch`, providing shorter commands for triggering remote workflows. (4335f65e6)
+- **Plan Review via Temporary PR**: New workflow for asynchronous plan review through draft PRs. Plans can be submitted as temporary PRs for review, with feedback incorporated back into the plan issue. Includes automatic branch management, PR lifecycle handling, and integration with `/erk:pr-address`.
+- **Top-level `erk launch` command**: Unified workflow launcher moved from `erk workflow launch` to `erk launch`, providing shorter commands for triggering remote workflows.
 
 ### Added
 
-- Consolidate `erk init capability list` and `erk init capability check` into unified `erk init capability list [name]` command (57a406f39)
-- Add plan context feedback to `erk pr summarize`, showing which plan issue is being incorporated (d4c1c2019)
-- Prevent duplicate inline review comments by deduplicating during review execution (19f88f463)
+- Consolidate `erk init capability list` and `erk init capability check` into unified `erk init capability list [name]` command
+- Add plan context feedback to `erk pr summarize`, showing which plan issue is being incorporated
+- Prevent duplicate inline review comments by deduplicating during review execution
+- Add `erk objective check` command for validating objective roadmap status, labels, and consistency
+- Add `-d/--dangerous` flag to `erk objective next-plan` for skipping permissions during plan creation
+- Embed implementation plan in PR description as a collapsible `<details>` section
+- Make Files Changed and Implementation Plan sections collapsible in PR body
+- Add Quick Start section to plan review PRs with copy-pasteable `erk prepare` and `erk implement` commands
 
 ### Changed
 
-- Move code reviews to Haiku model with flag-only prompts, no fix suggestions (67bd9922e)
-- Fix discover-reviews for large PRs by switching to REST API with pagination (ab3ff4e58)
-- Auto-fix Graphite tracking divergence in sync and branch creation (8b8b06b53)
-- Fix detached HEAD state after landing PR from root worktree (8a952099c)
-- Remove `--docker` and `--codespace` flags from `implement`/`prepare` commands; standalone `erk codespace` commands preserved (f1f0ac79c)
-- Encode objective ID in branch names with `P{issue}-O{objective}-{slug}-{timestamp}` pattern (eb7988c88)
+- Move code reviews to Haiku model with flag-only prompts, no fix suggestions
+- Fix discover-reviews for large PRs by switching to REST API with pagination
+- Auto-fix Graphite tracking divergence in sync and branch creation
+- Fix detached HEAD state after landing PR from root worktree
+- Remove `--docker` and `--codespace` flags from `implement`/`prepare` commands; standalone `erk codespace` commands preserved
+- Encode objective ID in branch names with `P{issue}-O{objective}-{slug}-{timestamp}` pattern
+- Automatically close review PRs when plan implementation starts via `erk implement`
+- Objective roadmap tables now show explicit status values (`done`, `in-progress`, `pending`) instead of `-`
 
 ### Fixed
 
-- Fix objective reconcile plan quality by using Claude with codebase context instead of Haiku (aa7302f32)
-- Fix TUI workflow launch commands (2b43daa99)
-- Fix `erk br delete` not force-deleting merged PR branches (a6262db0c)
-- Fix objective-save-to-issue plan lookup bug (f1b1843dd)
-- Fix remote implementation creates wrong branch (c7e2a08fe)
-- Fix pr-fix-conflicts "Argument list too long" error in PR comment formatting (7df756fb6)
-- Fix hardcoded PR URL in plan-create-review-pr, making it portable across repositories (57aa7ed96)
+- Fix objective reconcile plan quality by using Claude with codebase context instead of Haiku
+- Fix TUI workflow launch commands
+- Fix `erk br delete` not force-deleting merged PR branches
+- Fix objective-save-to-issue plan lookup bug
+- Fix remote implementation creates wrong branch
+- Fix pr-fix-conflicts "Argument list too long" error in PR comment formatting
+- Fix hardcoded PR URL in plan-create-review-pr, making it portable across repositories
+- Fix Graphite tracking divergence after commit amend in `erk pr submit` finalization
+- Fix placeholder branch creation failing in multi-worktree scenarios by bypassing Graphite for ephemeral stub branches
 
 ### Removed
 
-- Remove fallback indicator from statusline (9307c8d30)
+- Remove fallback indicator from statusline
 
 ## [0.7.0] - 2026-01-24 15:12 PT
 

@@ -1,16 +1,13 @@
 """Unit tests for trigger_async_learn exec script.
 
 Tests triggering the learn.yml workflow for async learn.
-Uses FakeGitHub for dependency injection.
-
-NOTE: Full orchestration testing (session preprocessing, gist upload, etc.)
-requires mocking subprocess.run calls since the script orchestrates multiple
-erk exec commands via subprocess.
+Uses FakeGitHub, FakeGitHubIssues, and FakeClaudeInstallation for
+dependency injection — no subprocess mocking.
 """
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
@@ -18,8 +15,15 @@ from erk.cli.commands.exec.scripts.trigger_async_learn import (
     trigger_async_learn as trigger_async_learn_command,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.claude_installation.fake import (
+    FakeClaudeInstallation,
+    FakeProject,
+    FakeSessionData,
+)
 from erk_shared.gateway.github.fake import FakeGitHub
-from erk_shared.gateway.github.types import RepoInfo
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo, RepoInfo
 
 
 def _parse_json_output(output: str) -> dict[str, object]:
@@ -43,70 +47,212 @@ def _get_stderr_lines(output: str) -> list[str]:
     return [line for line in output.strip().splitlines() if not line.startswith("{")]
 
 
+def _make_plan_issue_body(*, branch_name: str | None) -> str:
+    """Create a plan issue body with plan-header metadata block."""
+    branch_line = f"branch_name: {branch_name}" if branch_name is not None else "branch_name: null"
+    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2025-11-25T14:37:43.513418+00:00'
+created_by: testuser
+worktree_name: test-worktree
+{branch_line}
+last_dispatched_run_id: null
+last_dispatched_at: null
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+
+def _make_plan_issue_body_with_session(
+    *,
+    branch_name: str | None,
+    planning_session_id: str,
+    impl_session_id: str | None = None,
+) -> str:
+    """Create a plan issue body with plan-header metadata including session IDs."""
+    branch_line = f"branch_name: {branch_name}" if branch_name is not None else "branch_name: null"
+    impl_line = (
+        f"last_local_impl_session: {impl_session_id}"
+        if impl_session_id is not None
+        else "last_local_impl_session: null"
+    )
+    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2025-11-25T14:37:43.513418+00:00'
+created_by: testuser
+worktree_name: test-worktree
+{branch_line}
+created_from_session: {planning_session_id}
+{impl_line}
+last_dispatched_run_id: null
+last_dispatched_at: null
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+
+def _make_issue_info(number: int, body: str) -> IssueInfo:
+    """Create test IssueInfo."""
+    now = datetime.now(UTC)
+    return IssueInfo(
+        number=number,
+        title="Test Issue",
+        body=body,
+        state="OPEN",
+        url=f"https://github.com/test-owner/test-repo/issues/{number}",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="test-user",
+    )
+
+
+def _make_minimal_session_jsonl(session_id: str) -> str:
+    """Create minimal JSONL content that passes preprocessing filters.
+
+    Creates a session with enough meaningful content to not be filtered
+    as empty or warmup. Content uses list-of-blocks format as required
+    by the preprocessing pipeline.
+    """
+    entries = [
+        {
+            "type": "system",
+            "message": {"content": [{"type": "text", "text": "System prompt"}]},
+            "session_id": session_id,
+        },
+        {
+            "type": "user",
+            "message": {"content": [{"type": "text", "text": "Please implement the feature"}]},
+            "session_id": session_id,
+        },
+        {
+            "type": "assistant",
+            "message": {"content": [{"type": "text", "text": "I'll implement the feature now."}]},
+            "session_id": session_id,
+        },
+        {
+            "type": "user",
+            "message": {"content": [{"type": "text", "text": "Looks good, thanks"}]},
+            "session_id": session_id,
+        },
+        {
+            "type": "assistant",
+            "message": {"content": [{"type": "text", "text": "You're welcome!"}]},
+            "session_id": session_id,
+        },
+    ]
+    return "\n".join(json.dumps(entry) for entry in entries) + "\n"
+
+
+def _make_pr_info(*, number: int, head_branch: str) -> PullRequestInfo:
+    """Create test PullRequestInfo."""
+    return PullRequestInfo(
+        number=number,
+        state="OPEN",
+        url=f"https://github.com/test-owner/test-repo/pull/{number}",
+        is_draft=False,
+        title=f"PR #{number}",
+        checks_passing=True,
+        owner="test-owner",
+        repo="test-repo",
+        head_branch=head_branch,
+    )
+
+
+def _make_pr_details(*, number: int, head_ref_name: str) -> PRDetails:
+    """Create test PRDetails."""
+    return PRDetails(
+        number=number,
+        url=f"https://github.com/test-owner/test-repo/pull/{number}",
+        title=f"PR #{number}",
+        body="Test PR body",
+        state="OPEN",
+        is_draft=False,
+        base_ref_name="master",
+        head_ref_name=head_ref_name,
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+    )
+
+
+# ============================================================================
+# Success Cases
+# ============================================================================
+
+
 def test_trigger_async_learn_success(tmp_path: Path) -> None:
-    """Test successful workflow trigger with full orchestration pipeline."""
+    """Test successful workflow trigger with session preprocessing pipeline."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
-    github = FakeGitHub(repo_info=repo_info)
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
 
-    # Create the .erk/scratch directory that the script expects
+    session_id = "planning-session-1"
+
+    # Create a real JSONL session file that preprocessing can read
+    session_content = _make_minimal_session_jsonl(session_id)
+    session_dir = tmp_path / ".claude" / "projects" / "test-project"
+    session_dir.mkdir(parents=True)
+    session_file = session_dir / f"{session_id}.jsonl"
+    session_file.write_text(session_content, encoding="utf-8")
+
+    # Set up plan issue with session reference
+    body = _make_plan_issue_body_with_session(
+        branch_name=None,
+        planning_session_id=session_id,
+    )
+    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+
+    # FakeClaudeInstallation that can find the session
+    fake_claude = FakeClaudeInstallation.for_test(
+        projects={
+            session_dir: FakeProject(
+                sessions={
+                    session_id: FakeSessionData(
+                        content=session_content,
+                        size_bytes=len(session_content),
+                        modified_at=1700000000.0,
+                    ),
+                }
+            ),
+        },
+    )
+
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    # Create the .erk/scratch directory
     learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
     learn_dir.mkdir(parents=True)
 
-    # Mock subprocess calls to simulate the orchestration pipeline
-    mock_subprocess_results = [
-        # get-learn-sessions
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "planning_session_id": "planning-session-1",
-                    "session_sources": [
-                        {
-                            "source_type": "local",
-                            "session_id": "planning-session-1",
-                            "path": "/fake/path.jsonl",
-                            "run_id": None,
-                            "gist_url": None,
-                        }
-                    ],
-                }
-            ),
-            stderr="",
-        ),
-        # preprocess-session (planning) - outputs file paths, not JSON
-        MagicMock(returncode=0, stdout="/tmp/learn/planning-summary.md\n", stderr=""),
-        # get-pr-for-plan
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps({"success": True, "pr_number": 456}),
-            stderr="",
-        ),
-        # get-pr-review-comments
-        MagicMock(returncode=0, stdout=json.dumps({"success": True, "threads": []}), stderr=""),
-        # get-pr-discussion-comments
-        MagicMock(returncode=0, stdout=json.dumps({"success": True, "comments": []}), stderr=""),
-        # upload-learn-materials
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "gist_url": "https://gist.github.com/user/abc123",
-                    "file_count": 1,
-                    "total_size": 5432,
-                }
-            ),
-            stderr="",
-        ),
-    ]
+    result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
 
-    with patch("subprocess.run", side_effect=mock_subprocess_results):
-        result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
-
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result.output
     output = _parse_json_output(result.output)
     assert output["success"] is True
     assert output["issue_number"] == 123
@@ -115,61 +261,56 @@ def test_trigger_async_learn_success(tmp_path: Path) -> None:
     assert (
         output["workflow_url"] == "https://github.com/test-owner/test-repo/actions/runs/1234567890"
     )
-    assert output["gist_url"] == "https://gist.github.com/user/abc123"
+    assert isinstance(output["gist_url"], str)
 
 
 def test_trigger_async_learn_verifies_workflow_call(tmp_path: Path) -> None:
     """Test that workflow trigger is called with correct parameters including gist_url."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
-    github = FakeGitHub(repo_info=repo_info)
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
 
+    # Plan issue with no sessions (no created_from_session in metadata)
+    body = _make_plan_issue_body(branch_name=None)
+    fake_issues = FakeGitHubIssues(issues={456: _make_issue_info(456, body)})
+    fake_claude = FakeClaudeInstallation.for_test()
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    # Create learn dir with a dummy file so gist upload has content
     learn_dir = tmp_path / ".erk" / "scratch" / "learn-456"
     learn_dir.mkdir(parents=True)
+    (learn_dir / "placeholder.txt").write_text("test content", encoding="utf-8")
 
-    # Mock the subprocess pipeline
-    mock_subprocess_results = [
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps({"success": True, "session_sources": []}),
-            stderr="",
-        ),
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps({"success": False}),
-            stderr="",
-        ),  # get-pr-for-plan (no PR)
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "gist_url": "https://gist.github.com/user/xyz789",
-                    "file_count": 0,
-                    "total_size": 0,
-                }
-            ),
-            stderr="",
-        ),
-    ]
+    runner.invoke(trigger_async_learn_command, ["456"], obj=ctx)
 
-    with patch("subprocess.run", side_effect=mock_subprocess_results):
-        runner.invoke(trigger_async_learn_command, ["456"], obj=ctx)
-
-    assert len(github.triggered_workflows) == 1
-    workflow, inputs = github.triggered_workflows[0]
+    assert len(fake_gh.triggered_workflows) == 1
+    workflow, inputs = fake_gh.triggered_workflows[0]
     assert workflow == "learn.yml"
     assert inputs["issue_number"] == "456"
-    assert inputs["gist_url"] == "https://gist.github.com/user/xyz789"
+    assert "gist_url" in inputs
 
 
 def test_trigger_async_learn_no_repo_info(tmp_path: Path) -> None:
     """Test error when not in a GitHub repository."""
     runner = CliRunner()
-    github = FakeGitHub()
-    # Not passing repo_info leaves it as None, simulating not being in a GitHub repo
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=github)
+    fake_gh = FakeGitHub()
+    fake_issues = FakeGitHubIssues()
+    fake_claude = FakeClaudeInstallation.for_test()
+    # Not passing repo_info leaves it as None
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+    )
 
     result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
 
@@ -195,40 +336,27 @@ def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
     """Test that JSON output has expected structure on success including gist_url."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="dagster-io", name="erk")
-    github = FakeGitHub(repo_info=repo_info)
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
 
+    body = _make_plan_issue_body(branch_name=None)
+    fake_issues = FakeGitHubIssues(issues={789: _make_issue_info(789, body)})
+    fake_claude = FakeClaudeInstallation.for_test()
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    # Create learn dir with content
     learn_dir = tmp_path / ".erk" / "scratch" / "learn-789"
     learn_dir.mkdir(parents=True)
+    (learn_dir / "placeholder.txt").write_text("test content", encoding="utf-8")
 
-    # Mock the subprocess pipeline
-    mock_subprocess_results = [
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps({"success": True, "session_sources": []}),
-            stderr="",
-        ),
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps({"success": False}),
-            stderr="",
-        ),  # get-pr-for-plan (no PR)
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "gist_url": "https://gist.github.com/user/test123",
-                    "file_count": 0,
-                    "total_size": 0,
-                }
-            ),
-            stderr="",
-        ),
-    ]
-
-    with patch("subprocess.run", side_effect=mock_subprocess_results):
-        result = runner.invoke(trigger_async_learn_command, ["789"], obj=ctx)
+    result = runner.invoke(trigger_async_learn_command, ["789"], obj=ctx)
 
     assert result.exit_code == 0
     output = _parse_json_output(result.output)
@@ -251,61 +379,56 @@ def test_trigger_async_learn_json_output_structure(tmp_path: Path) -> None:
 
 
 def test_trigger_async_learn_filtered_session_skipped(tmp_path: Path) -> None:
-    """Test that a filtered session (empty stdout from preprocess) is skipped gracefully."""
+    """Test that a filtered session (empty content) is skipped gracefully."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
-    github = FakeGitHub(repo_info=repo_info)
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
 
+    session_id = "planning-session-1"
+
+    # Create a session file with too few entries (will be filtered as empty)
+    session_content = (
+        json.dumps({"type": "system", "message": {"content": "x"}, "session_id": session_id}) + "\n"
+    )
+    session_dir = tmp_path / ".claude" / "projects" / "test-project"
+    session_dir.mkdir(parents=True)
+    session_file = session_dir / f"{session_id}.jsonl"
+    session_file.write_text(session_content, encoding="utf-8")
+
+    body = _make_plan_issue_body_with_session(
+        branch_name=None,
+        planning_session_id=session_id,
+    )
+    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    fake_claude = FakeClaudeInstallation.for_test(
+        projects={
+            session_dir: FakeProject(
+                sessions={
+                    session_id: FakeSessionData(
+                        content=session_content,
+                        size_bytes=len(session_content),
+                        modified_at=1700000000.0,
+                    ),
+                }
+            ),
+        },
+    )
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    # Create learn dir with content for gist upload
     learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
     learn_dir.mkdir(parents=True)
+    (learn_dir / "placeholder.txt").write_text("test", encoding="utf-8")
 
-    mock_subprocess_results = [
-        # get-learn-sessions - returns one local session
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "planning_session_id": "planning-session-1",
-                    "session_sources": [
-                        {
-                            "source_type": "local",
-                            "session_id": "planning-session-1",
-                            "path": "/fake/path.jsonl",
-                            "run_id": None,
-                            "gist_url": None,
-                        }
-                    ],
-                }
-            ),
-            stderr="",
-        ),
-        # preprocess-session returns empty stdout (session filtered as empty/warmup)
-        MagicMock(returncode=0, stdout="", stderr=""),
-        # get-pr-for-plan (no PR)
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps({"success": False}),
-            stderr="",
-        ),
-        # upload-learn-materials
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "gist_url": "https://gist.github.com/user/abc123",
-                    "file_count": 0,
-                    "total_size": 0,
-                }
-            ),
-            stderr="",
-        ),
-    ]
-
-    with patch("subprocess.run", side_effect=mock_subprocess_results):
-        result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
+    result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
 
     assert result.exit_code == 0
     output = _parse_json_output(result.output)
@@ -313,42 +436,48 @@ def test_trigger_async_learn_filtered_session_skipped(tmp_path: Path) -> None:
 
 
 def test_trigger_async_learn_preprocess_failure(tmp_path: Path) -> None:
-    """Test that a non-zero exit code from preprocess-session produces an error."""
+    """Test that a missing session file produces an error."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
-    github = FakeGitHub(repo_info=repo_info)
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
 
-    learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
-    learn_dir.mkdir(parents=True)
+    session_id = "planning-session-1"
 
-    mock_subprocess_results = [
-        # get-learn-sessions - returns one local session
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "planning_session_id": "planning-session-1",
-                    "session_sources": [
-                        {
-                            "source_type": "local",
-                            "session_id": "planning-session-1",
-                            "path": "/fake/path.jsonl",
-                            "run_id": None,
-                            "gist_url": None,
-                        }
-                    ],
+    # Session file path that doesn't actually exist on disk
+    session_dir = tmp_path / ".claude" / "projects" / "test-project"
+    session_dir.mkdir(parents=True)
+
+    body = _make_plan_issue_body_with_session(
+        branch_name=None,
+        planning_session_id=session_id,
+    )
+    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+
+    # FakeClaudeInstallation reports the session exists, but the file isn't on disk
+    fake_claude = FakeClaudeInstallation.for_test(
+        projects={
+            session_dir: FakeProject(
+                sessions={
+                    session_id: FakeSessionData(
+                        content="not real",
+                        size_bytes=10,
+                        modified_at=1700000000.0,
+                    ),
                 }
             ),
-            stderr="",
-        ),
-        # preprocess-session fails with non-zero exit code
-        MagicMock(returncode=1, stdout="", stderr="Session file not found"),
-    ]
+        },
+    )
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
 
-    with patch("subprocess.run", side_effect=mock_subprocess_results):
-        result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
 
     assert result.exit_code == 1
     output = _parse_json_output(result.output)
@@ -362,70 +491,59 @@ def test_trigger_async_learn_preprocess_failure(tmp_path: Path) -> None:
 
 
 def test_trigger_async_learn_logs_session_source_summary(tmp_path: Path) -> None:
-    """Test that session source summary is logged to stderr after get-learn-sessions."""
+    """Test that session source summary is logged to stderr after session discovery."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
-    github = FakeGitHub(repo_info=repo_info)
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
 
-    learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
-    learn_dir.mkdir(parents=True)
+    planning_id = "plan-sess-1"
+    impl_id = "impl-sess-2"
 
-    mock_subprocess_results = [
-        # get-learn-sessions - returns two sessions (1 planning, 1 impl)
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "planning_session_id": "plan-sess-1",
-                    "session_sources": [
-                        {
-                            "source_type": "local",
-                            "session_id": "plan-sess-1",
-                            "path": "/fake/planning.jsonl",
-                            "run_id": None,
-                            "gist_url": None,
-                        },
-                        {
-                            "source_type": "local",
-                            "session_id": "impl-sess-2",
-                            "path": "/fake/impl.jsonl",
-                            "run_id": None,
-                            "gist_url": None,
-                        },
-                    ],
+    # Create real session files for both sessions
+    session_dir = tmp_path / ".claude" / "projects" / "test-project"
+    session_dir.mkdir(parents=True)
+
+    for sid in [planning_id, impl_id]:
+        content = _make_minimal_session_jsonl(sid)
+        (session_dir / f"{sid}.jsonl").write_text(content, encoding="utf-8")
+
+    # Issue body with both planning and impl session references
+    body = _make_plan_issue_body_with_session(
+        branch_name=None,
+        planning_session_id=planning_id,
+        impl_session_id=impl_id,
+    )
+    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+
+    fake_claude = FakeClaudeInstallation.for_test(
+        projects={
+            session_dir: FakeProject(
+                sessions={
+                    planning_id: FakeSessionData(
+                        content=_make_minimal_session_jsonl(planning_id),
+                        size_bytes=500,
+                        modified_at=1700000000.0,
+                    ),
+                    impl_id: FakeSessionData(
+                        content=_make_minimal_session_jsonl(impl_id),
+                        size_bytes=500,
+                        modified_at=1700000001.0,
+                    ),
                 }
             ),
-            stderr="",
-        ),
-        # preprocess-session (planning)
-        MagicMock(returncode=0, stdout="", stderr=""),
-        # preprocess-session (impl)
-        MagicMock(returncode=0, stdout="", stderr=""),
-        # get-pr-for-plan (no PR)
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps({"success": False}),
-            stderr="",
-        ),
-        # upload-learn-materials
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "gist_url": "https://gist.github.com/user/abc",
-                    "file_count": 0,
-                    "total_size": 0,
-                }
-            ),
-            stderr="",
-        ),
-    ]
+        },
+    )
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
 
-    with patch("subprocess.run", side_effect=mock_subprocess_results):
-        result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
 
     assert result.exit_code == 0
     stderr_lines = _get_stderr_lines(result.output)
@@ -436,251 +554,40 @@ def test_trigger_async_learn_logs_session_source_summary(tmp_path: Path) -> None
     assert "planning" in summary_lines[0]
     assert "impl" in summary_lines[0]
 
-    # Check individual session lines
-    planning_lines = [line for line in stderr_lines if "plan-sess-1" in line]
+    # Check individual session source lines (filter to only source listing lines)
+    planning_lines = [line for line in stderr_lines if planning_id in line and "(local)" in line]
     assert len(planning_lines) == 1
-    assert "(local)" in planning_lines[0]
 
-    impl_lines = [line for line in stderr_lines if "impl-sess-2" in line]
+    impl_lines = [line for line in stderr_lines if impl_id in line and "(local)" in line]
     assert len(impl_lines) == 1
-    assert "(local)" in impl_lines[0]
 
 
-def test_trigger_async_learn_forwards_preprocess_stderr(tmp_path: Path) -> None:
-    """Test that stderr from preprocess-session is forwarded with prefix."""
-    runner = CliRunner()
-    repo_info = RepoInfo(owner="test-owner", name="test-repo")
-    github = FakeGitHub(repo_info=repo_info)
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
-
-    learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
-    learn_dir.mkdir(parents=True)
-
-    preprocess_stderr = (
-        "📉 Token reduction: 50,000 → 20,000 (60% reduction)\n📊 Compression ratio: 2.5x"
-    )
-
-    mock_subprocess_results = [
-        # get-learn-sessions
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "planning_session_id": "plan-sess-1",
-                    "session_sources": [
-                        {
-                            "source_type": "local",
-                            "session_id": "plan-sess-1",
-                            "path": "/fake/planning.jsonl",
-                            "run_id": None,
-                            "gist_url": None,
-                        },
-                    ],
-                }
-            ),
-            stderr="",
-        ),
-        # preprocess-session with stderr diagnostics
-        MagicMock(returncode=0, stdout="", stderr=preprocess_stderr),
-        # get-pr-for-plan (no PR)
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps({"success": False}),
-            stderr="",
-        ),
-        # upload-learn-materials
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "gist_url": "https://gist.github.com/user/abc",
-                    "file_count": 0,
-                    "total_size": 0,
-                }
-            ),
-            stderr="",
-        ),
-    ]
-
-    with patch("subprocess.run", side_effect=mock_subprocess_results):
-        result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
-
-    assert result.exit_code == 0
-    stderr_lines = _get_stderr_lines(result.output)
-
-    # Forwarded preprocess stderr lines should appear with prefix
-    token_lines = [line for line in stderr_lines if "Token reduction" in line]
-    assert len(token_lines) == 1
-
-    compression_lines = [line for line in stderr_lines if "Compression ratio" in line]
-    assert len(compression_lines) == 1
-
-
-def test_trigger_async_learn_logs_gist_size(tmp_path: Path) -> None:
-    """Test that gist creation logs file count and total size."""
-    runner = CliRunner()
-    repo_info = RepoInfo(owner="test-owner", name="test-repo")
-    github = FakeGitHub(repo_info=repo_info)
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
-
-    learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
-    learn_dir.mkdir(parents=True)
-
-    mock_subprocess_results = [
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps({"success": True, "session_sources": []}),
-            stderr="",
-        ),
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps({"success": False}),
-            stderr="",
-        ),
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "gist_url": "https://gist.github.com/user/xyz",
-                    "file_count": 3,
-                    "total_size": 42891,
-                }
-            ),
-            stderr="",
-        ),
-    ]
-
-    with patch("subprocess.run", side_effect=mock_subprocess_results):
-        result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
-
-    assert result.exit_code == 0
-    stderr_lines = _get_stderr_lines(result.output)
-
-    gist_lines = [line for line in stderr_lines if "3 file(s)" in line]
-    assert len(gist_lines) == 1
-    assert "42,891 chars" in gist_lines[0]
-
-
-def test_trigger_async_learn_logs_output_file_sizes(tmp_path: Path) -> None:
-    """Test that preprocessed output file sizes are logged."""
-    runner = CliRunner()
-    repo_info = RepoInfo(owner="test-owner", name="test-repo")
-    github = FakeGitHub(repo_info=repo_info)
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
-
-    learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
-    learn_dir.mkdir(parents=True)
-
-    # Create the output file that preprocess would produce
-    output_file = learn_dir / "planning-abc123.xml"
-    output_file.write_text("<session>test content here</session>", encoding="utf-8")
-
-    mock_subprocess_results = [
-        # get-learn-sessions
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "planning_session_id": "plan-sess-1",
-                    "session_sources": [
-                        {
-                            "source_type": "local",
-                            "session_id": "plan-sess-1",
-                            "path": "/fake/planning.jsonl",
-                            "run_id": None,
-                            "gist_url": None,
-                        },
-                    ],
-                }
-            ),
-            stderr="",
-        ),
-        # preprocess-session outputs the file path
-        MagicMock(returncode=0, stdout=str(output_file) + "\n", stderr=""),
-        # get-pr-for-plan (no PR)
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps({"success": False}),
-            stderr="",
-        ),
-        # upload-learn-materials
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "gist_url": "https://gist.github.com/user/abc",
-                    "file_count": 1,
-                    "total_size": 100,
-                }
-            ),
-            stderr="",
-        ),
-    ]
-
-    with patch("subprocess.run", side_effect=mock_subprocess_results):
-        result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
-
-    assert result.exit_code == 0
-    stderr_lines = _get_stderr_lines(result.output)
-
-    output_lines = [line for line in stderr_lines if "planning-abc123.xml" in line]
-    assert len(output_lines) == 1
-    assert "chars)" in output_lines[0]
-
-
-def test_trigger_async_learn_pr_lookup_failure_continues() -> None:
+def test_trigger_async_learn_pr_lookup_failure_continues(tmp_path: Path) -> None:
     """Test that PR lookup failure is handled gracefully and pipeline continues."""
     runner = CliRunner()
     repo_info = RepoInfo(owner="test-owner", name="test-repo")
-    github = FakeGitHub(repo_info=repo_info)
-    tmp_path = Path("/tmp/test-erk-pr-lookup-failure")
-    tmp_path.mkdir(parents=True, exist_ok=True)
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=github, repo_info=repo_info)
 
+    # Plan issue with no branch_name -> _get_pr_for_plan_direct returns None
+    body = _make_plan_issue_body(branch_name=None)
+    fake_issues = FakeGitHubIssues(issues={999: _make_issue_info(999, body)})
+    fake_claude = FakeClaudeInstallation.for_test()
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    # Create learn dir with content
     learn_dir = tmp_path / ".erk" / "scratch" / "learn-999"
-    learn_dir.mkdir(parents=True, exist_ok=True)
+    learn_dir.mkdir(parents=True)
+    (learn_dir / "placeholder.txt").write_text("test", encoding="utf-8")
 
-    mock_subprocess_results = [
-        # get-learn-sessions - success
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps({"success": True, "session_sources": []}),
-            stderr="",
-        ),
-        # get-pr-for-plan - FAILS with returncode=1 and error JSON in stderr
-        MagicMock(
-            returncode=1,
-            stdout="",
-            stderr=json.dumps(
-                {
-                    "success": False,
-                    "error_type": "missing-branch-name",
-                    "message": "Plan header has no branch_name field",
-                }
-            ),
-        ),
-        # upload-learn-materials - success (pipeline continues despite PR lookup failure)
-        MagicMock(
-            returncode=0,
-            stdout=json.dumps(
-                {
-                    "success": True,
-                    "gist_url": "https://gist.github.com/user/xyz789",
-                    "file_count": 0,
-                    "total_size": 0,
-                }
-            ),
-            stderr="",
-        ),
-    ]
-
-    with patch("subprocess.run", side_effect=mock_subprocess_results):
-        result = runner.invoke(trigger_async_learn_command, ["999"], obj=ctx)
+    result = runner.invoke(trigger_async_learn_command, ["999"], obj=ctx)
 
     # Pipeline should still succeed even though PR lookup failed
     assert result.exit_code == 0
@@ -689,9 +596,97 @@ def test_trigger_async_learn_pr_lookup_failure_continues() -> None:
     assert output["issue_number"] == 999
     assert output["workflow_triggered"] is True
 
-    # Verify PR review/discussion comment fetching was skipped (not in subprocess calls)
+    # Verify PR lookup warning
     stderr_lines = _get_stderr_lines(result.output)
-    # Should have warning about PR lookup failure
     warning_lines = [line for line in stderr_lines if "failed, skipping" in line]
     assert len(warning_lines) == 1
     assert "Getting PR for plan" in warning_lines[0]
+
+
+def test_trigger_async_learn_logs_output_file_sizes(tmp_path: Path) -> None:
+    """Test that preprocessed output file sizes are logged."""
+    runner = CliRunner()
+    repo_info = RepoInfo(owner="test-owner", name="test-repo")
+
+    session_id = "plan-sess-1"
+
+    # Create a real session file
+    session_dir = tmp_path / ".claude" / "projects" / "test-project"
+    session_dir.mkdir(parents=True)
+    session_content = _make_minimal_session_jsonl(session_id)
+    (session_dir / f"{session_id}.jsonl").write_text(session_content, encoding="utf-8")
+
+    body = _make_plan_issue_body_with_session(
+        branch_name=None,
+        planning_session_id=session_id,
+    )
+    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    fake_claude = FakeClaudeInstallation.for_test(
+        projects={
+            session_dir: FakeProject(
+                sessions={
+                    session_id: FakeSessionData(
+                        content=session_content,
+                        size_bytes=len(session_content),
+                        modified_at=1700000000.0,
+                    ),
+                }
+            ),
+        },
+    )
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
+
+    assert result.exit_code == 0
+    stderr_lines = _get_stderr_lines(result.output)
+
+    # Should have output file with size logged
+    output_lines = [line for line in stderr_lines if f"planning-{session_id}" in line]
+    assert len(output_lines) >= 1
+    assert "chars)" in output_lines[0]
+
+
+def test_trigger_async_learn_logs_gist_size(tmp_path: Path) -> None:
+    """Test that gist creation logs file count and total size."""
+    runner = CliRunner()
+    repo_info = RepoInfo(owner="test-owner", name="test-repo")
+
+    body = _make_plan_issue_body(branch_name=None)
+    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+    fake_claude = FakeClaudeInstallation.for_test()
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    # Create learn dir with multiple files for gist stats
+    learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
+    learn_dir.mkdir(parents=True)
+    (learn_dir / "file1.txt").write_text("content one", encoding="utf-8")
+    (learn_dir / "file2.txt").write_text("content two", encoding="utf-8")
+    (learn_dir / "file3.txt").write_text("content three", encoding="utf-8")
+
+    result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
+
+    assert result.exit_code == 0
+    stderr_lines = _get_stderr_lines(result.output)
+
+    gist_lines = [line for line in stderr_lines if "3 file(s)" in line]
+    assert len(gist_lines) == 1
+    assert "chars" in gist_lines[0]

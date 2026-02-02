@@ -38,6 +38,28 @@ from erk_shared.context.helpers import require_github
 from erk_shared.gateway.github.abc import GistCreateError
 
 
+def combine_learn_material_files(learn_dir: Path) -> str:
+    """Combine all files in a learn materials directory into a single string.
+
+    Files are combined with clear delimiters between them.
+
+    Args:
+        learn_dir: Directory containing learn material files
+
+    Returns:
+        Combined content with file delimiters
+    """
+    files = sorted(f for f in learn_dir.iterdir() if f.is_file())
+    combined_parts: list[str] = []
+    for file_path in files:
+        combined_parts.append(f"{'=' * 60}")
+        combined_parts.append(f"FILE: {file_path.name}")
+        combined_parts.append(f"{'=' * 60}")
+        combined_parts.append(file_path.read_text(encoding="utf-8"))
+        combined_parts.append("")  # blank line separator
+    return "\n".join(combined_parts)
+
+
 @click.command(name="upload-learn-materials")
 @click.option(
     "--learn-dir",
@@ -77,16 +99,7 @@ def upload_learn_materials(
         click.echo(json.dumps(error_output))
         raise SystemExit(1)
 
-    # Combine files with clear delimiters
-    combined_parts: list[str] = []
-    for file_path in files:
-        combined_parts.append(f"{'=' * 60}")
-        combined_parts.append(f"FILE: {file_path.name}")
-        combined_parts.append(f"{'=' * 60}")
-        combined_parts.append(file_path.read_text(encoding="utf-8"))
-        combined_parts.append("")  # blank line separator
-
-    combined_content = "\n".join(combined_parts)
+    combined_content = combine_learn_material_files(learn_dir)
 
     # Create gist
     gist_result = github.create_gist(
