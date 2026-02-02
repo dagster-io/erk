@@ -116,7 +116,7 @@ def get_pr_for_plan(
     # At this point branch_name is guaranteed to be a string
     assert branch_name is not None
 
-    # Fetch PR for branch
+    # Fetch PR for branch (branch_name is guaranteed to be str here)
     pr_result = github.get_pr_for_branch(repo_root, branch_name)
     if isinstance(pr_result, PRNotFound):
         return _exit_with_error(
