@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-02-02 14:13 PT
+
+### Fixed
+
+- Fix statusline causing dangling `git index.lock` files by disabling optional git locks in the statusline process
+
 ## [0.7.1] - 2026-02-02 08:48 PT
 
 ### Major Changes
