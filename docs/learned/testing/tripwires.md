@@ -22,6 +22,10 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
 
+**CRITICAL: Before forgetting shouldAdvanceTime option when manually advancing** → Read [Vitest Fake Timers with Promises](vitest-fake-timers-with-promises.md) first. Use vi.useFakeTimers({ shouldAdvanceTime: true }) to enable manual timer control with advanceTimersByTimeAsync().
+
+**CRITICAL: Before forgetting vi.useRealTimers() in afterEach()** → Read [Vitest Fake Timers with Promises](vitest-fake-timers-with-promises.md) first. Always restore real timers in afterEach(). Fake timers persist across tests and cause unpredictable failures.
+
 **CRITICAL: Before implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. See tests/commands/submit/test_existing_branch_detection.py for examples.
 
 **CRITICAL: Before modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.
@@ -35,5 +39,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before using Path.home() directly in production code** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
 
 **CRITICAL: Before using monkeypatch.chdir() in exec script tests** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
+
+**CRITICAL: Before using vi.advanceTimersByTime() with Promise-based code** → Read [Vitest Fake Timers with Promises](vitest-fake-timers-with-promises.md) first. Use await vi.advanceTimersByTimeAsync() instead. Synchronous advancement blocks Promise microtasks and causes test hangs.
 
 **CRITICAL: Before writing React component tests with Vitest + jsdom** → Read [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) first. jsdom doesn't implement Element.prototype.scrollIntoView(). Stub in setup.ts with `Element.prototype.scrollIntoView = vi.fn()` before tests run to avoid TypeError.

@@ -26,5 +26,6 @@
 - **[submit-pipeline-tests.md](submit-pipeline-tests.md)** — adding tests for submit pipeline steps, understanding how pipeline steps are tested in isolation, working with tests/unit/cli/commands/pr/submit_pipeline/
 - **[subprocess-testing.md](subprocess-testing.md)** — testing code that uses subprocess, creating fakes for process execution, avoiding subprocess mocks in tests
 - **[testing.md](testing.md)** — writing tests for erk, using erk fakes, running erk test commands
+- **[vitest-fake-timers-with-promises.md](vitest-fake-timers-with-promises.md)** — testing React components with setInterval or setTimeout, using Vitest fake timers with async/await code, debugging tests that hang when advancing fake timers, testing auto-refresh patterns in React
 - **[vitest-jsdom-stubs.md](vitest-jsdom-stubs.md)** — writing React component tests with Vitest + jsdom, encountering "scrollIntoView is not a function" errors, setting up Vitest test environment
 - **[window-mock-patterns.md](window-mock-patterns.md)** — testing erkdesk components that use window.erkdesk IPC bridge, encountering mock contamination between tests, tests passing individually but failing in CI
