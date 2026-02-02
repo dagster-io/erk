@@ -10,12 +10,12 @@ from pathlib import Path
 from typing import NamedTuple
 
 from erk_shared.context.types import ClaudePermissionMode
-from erk_shared.core.claude_executor import (
-    ClaudeEvent,
-    ClaudeExecutor,
+from erk_shared.core.plan_list_service import PlanListData, PlanListService
+from erk_shared.core.prompt_executor import (
+    ExecutorEvent,
+    PromptExecutor,
     PromptResult,
 )
-from erk_shared.core.plan_list_service import PlanListData, PlanListService
 from erk_shared.core.script_writer import ScriptResult, ScriptWriter
 from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, RegisteredCodespace
 from erk_shared.gateway.github.types import GitHubRepoLocation
@@ -53,11 +53,11 @@ class PassthroughCall(NamedTuple):
     dangerous: bool
 
 
-class FakeClaudeExecutor(ClaudeExecutor):
-    """Fake ClaudeExecutor for testing.
+class FakePromptExecutor(PromptExecutor):
+    """Fake PromptExecutor for testing.
 
     Attributes:
-        is_available: Whether Claude CLI should appear available
+        is_available: Whether the executor should appear available
         interactive_calls: List of InteractiveCall records
         prompt_calls: List of PromptCall records
         passthrough_calls: List of PassthroughCall records
@@ -71,7 +71,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         *,
         is_available: bool = True,
         prompt_results: list[PromptResult] | None = None,
-        streaming_events: list[ClaudeEvent] | None = None,
+        streaming_events: list[ExecutorEvent] | None = None,
         passthrough_exit_code: int = 0,
     ) -> None:
         self.is_available_value = is_available
@@ -83,7 +83,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self.passthrough_exit_code = passthrough_exit_code
         self._prompt_result_index = 0
 
-    def is_claude_available(self) -> bool:
+    def is_available(self) -> bool:
         return self.is_available_value
 
     def execute_command_streaming(
@@ -97,7 +97,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         model: str | None = None,
         permission_mode: ClaudePermissionMode = "acceptEdits",
         allow_dangerous: bool = False,
-    ) -> Iterator[ClaudeEvent]:
+    ) -> Iterator[ExecutorEvent]:
         yield from self.streaming_events
 
     def execute_interactive(

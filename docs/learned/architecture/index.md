@@ -14,7 +14,7 @@
 - **[claude-cli-error-reporting.md](claude-cli-error-reporting.md)** — handling Claude CLI errors, interpreting PromptResult.error, working with ErrorEvent, NoOutputEvent, NoTurnsEvent, ProcessErrorEvent
 - **[claude-cli-integration.md](claude-cli-integration.md)** — Invoking Claude from Python, Spawning Claude CLI from Python code, Understanding non-interactive vs interactive modes
 - **[claude-cli-progress.md](claude-cli-progress.md)** — adding progress output to Claude operations, wrapping Claude CLI with user feedback, using ProgressEvent or CompletionEvent, converting blocking operations to streaming progress
-- **[claude-executor-patterns.md](claude-executor-patterns.md)** — launching Claude from CLI commands, deciding which ClaudeExecutor method to use, testing code that executes Claude CLI, choosing between RealClaudeExecutor and RealPromptExecutor
+- **[prompt-executor-patterns.md](prompt-executor-patterns.md)** — launching Claude from CLI commands, deciding which PromptExecutor method to use, testing code that executes Claude CLI, choosing between ClaudePromptExecutor and RealPromptExecutor
 - **[claude-installation-gateway.md](claude-installation-gateway.md)** — working with Claude Code session logs, accessing ~/.claude/ directory, implementing session analysis features, working with plan files
 - **[cli-binary-ops-pattern.md](cli-binary-ops-pattern.md)** — wrapping external CLI binary, testing subprocess calls, creating fake for external tool
 - **[cli-to-pipeline-boundary.md](cli-to-pipeline-boundary.md)** — refactoring complex CLI commands, separating business logic from Click layer, deciding when to extract pipeline from CLI command

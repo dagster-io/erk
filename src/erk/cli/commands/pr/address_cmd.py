@@ -42,9 +42,9 @@ def address(ctx: ErkContext, *, dangerous: bool) -> None:
     cwd = ctx.cwd
 
     # Check Claude availability
-    executor = ctx.claude_executor
+    executor = ctx.prompt_executor
     Ensure.invariant(
-        executor.is_claude_available(),
+        executor.is_available(),
         "Claude CLI is required for addressing PR comments.\n\n"
         "Install from: https://claude.com/download",
     )

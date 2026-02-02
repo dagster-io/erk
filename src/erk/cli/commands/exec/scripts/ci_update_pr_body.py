@@ -51,12 +51,12 @@ from erk_shared.context.helpers import (
     require_prompt_executor,
     require_repo_root,
 )
+from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
-from erk_shared.gateway.prompt_executor.abc import PromptExecutor
 
 
 @dataclass(frozen=True)
@@ -222,7 +222,9 @@ def _update_pr_body_impl(
 
     # Generate summary using Claude
     prompt = _build_prompt(diff_content, current_branch, parent_branch, repo_root)
-    result = executor.execute_prompt(prompt, model="haiku", cwd=repo_root)
+    result = executor.execute_prompt(
+        prompt, model="haiku", tools=None, cwd=repo_root, system_prompt=None
+    )
 
     # Separate failure modes for better diagnostics
     if not result.success:

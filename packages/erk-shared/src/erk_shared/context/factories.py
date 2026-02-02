@@ -11,9 +11,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from erk_shared.core.fakes import (
-    FakeClaudeExecutor,
     FakeCodespaceRegistry,
     FakePlanListService,
+    FakePromptExecutor,
     FakeScriptWriter,
 )
 
@@ -52,7 +52,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
 
     This factory creates a minimal context suitable for erk-kits commands.
     It uses real implementations for GitHub, git, and session store, but uses
-    fake implementations for erk-specific services (ClaudeExecutor, etc.) that
+    fake implementations for erk-specific services (PromptExecutor, etc.) that
     erk-kits doesn't need.
 
     Detects repository root using git rev-parse. Returns context with
@@ -81,7 +81,9 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     from erk_shared.gateway.github.real import RealGitHub
     from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.prompt_executor.real import RealPromptExecutor
+
+    # Note: For minimal contexts, use FakePromptExecutor since the real
+    # ClaudePromptExecutor lives in erk (not erk-shared)
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.gateway.time.real import RealTime
@@ -128,7 +130,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         github=RealGitHub(time=time, repo_info=repo_info, issues=github_issues),
         github_admin=FakeGitHubAdmin(),
         claude_installation=RealClaudeInstallation(),
-        prompt_executor=RealPromptExecutor(time),
+        prompt_executor=FakePromptExecutor(),
         graphite=fake_graphite,
         graphite_branch_ops=None,  # Graphite disabled, so None
         console=ScriptConsole(),
@@ -138,7 +140,6 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         shell=FakeShell(),
         completion=FakeCompletion(),
         codespace=FakeCodespace(),
-        claude_executor=FakeClaudeExecutor(),
         script_writer=FakeScriptWriter(),
         codespace_registry=FakeCodespaceRegistry(),
         plan_list_service=FakePlanListService(),

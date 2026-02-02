@@ -17,8 +17,8 @@ from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
     rebase_with_conflict_resolution,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.core.claude_executor import PromptResult
-from erk_shared.core.fakes import FakeClaudeExecutor
+from erk_shared.core.fakes import FakePromptExecutor
+from erk_shared.core.prompt_executor import PromptResult
 from erk_shared.gateway.git.abc import RebaseResult
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.git.remote_ops.types import PushError
@@ -61,11 +61,11 @@ def test_rebase_already_up_to_date(tmp_path: Path) -> None:
     fake_git = FakeGit(
         ahead_behind={(tmp_path, "feature-branch"): (2, 0)},  # 2 ahead, 0 behind
     )
-    fake_claude = FakeClaudeExecutor()
+    fake_claude = FakePromptExecutor()
 
     result = _rebase_with_conflict_resolution_impl(
         git=fake_git,
-        claude_executor=fake_claude,
+        prompt_executor=fake_claude,
         cwd=tmp_path,
         target_branch="main",
         branch_name="feature-branch",
@@ -88,11 +88,11 @@ def test_rebase_success_no_conflicts(tmp_path: Path) -> None:
         rebase_onto_result=RebaseResult(success=True, conflict_files=()),
         rebase_in_progress=False,
     )
-    fake_claude = FakeClaudeExecutor()
+    fake_claude = FakePromptExecutor()
 
     result = _rebase_with_conflict_resolution_impl(
         git=fake_git,
-        claude_executor=fake_claude,
+        prompt_executor=fake_claude,
         cwd=tmp_path,
         target_branch="main",
         branch_name="feature-branch",
@@ -132,11 +132,11 @@ def test_rebase_with_conflicts_resolved_by_claude(tmp_path: Path) -> None:
         conflicted_files=["src/config.py"],
         rebase_in_progress=dynamic_rebase_in_progress,
     )
-    fake_claude = FakeClaudeExecutor(passthrough_exit_code=0)
+    fake_claude = FakePromptExecutor(passthrough_exit_code=0)
 
     result = _rebase_with_conflict_resolution_impl(
         git=fake_git,
-        claude_executor=fake_claude,
+        prompt_executor=fake_claude,
         cwd=tmp_path,
         target_branch="main",
         branch_name="feature-branch",
@@ -160,11 +160,11 @@ def test_rebase_fails_after_max_attempts(tmp_path: Path) -> None:
         rebase_in_progress=True,  # Stays in progress (Claude can't resolve)
         conflicted_files=["src/config.py"],
     )
-    fake_claude = FakeClaudeExecutor(passthrough_exit_code=1)  # Claude fails
+    fake_claude = FakePromptExecutor(passthrough_exit_code=1)  # Claude fails
 
     result = _rebase_with_conflict_resolution_impl(
         git=fake_git,
-        claude_executor=fake_claude,
+        prompt_executor=fake_claude,
         cwd=tmp_path,
         target_branch="main",
         branch_name="feature-branch",
@@ -182,11 +182,11 @@ def test_rebase_fails_after_max_attempts(tmp_path: Path) -> None:
 def test_rebase_fetch_failure(tmp_path: Path) -> None:
     """Test error handling when fetch fails."""
     fake_git = FakeGit(fetch_branch_raises=RuntimeError("Network error"))
-    fake_claude = FakeClaudeExecutor()
+    fake_claude = FakePromptExecutor()
 
     result = _rebase_with_conflict_resolution_impl(
         git=fake_git,
-        claude_executor=fake_claude,
+        prompt_executor=fake_claude,
         cwd=tmp_path,
         target_branch="main",
         branch_name="feature-branch",
@@ -207,11 +207,11 @@ def test_rebase_push_failure(tmp_path: Path) -> None:
         rebase_in_progress=False,
         push_to_remote_error=PushError(message="Push rejected"),
     )
-    fake_claude = FakeClaudeExecutor()
+    fake_claude = FakePromptExecutor()
 
     result = _rebase_with_conflict_resolution_impl(
         git=fake_git,
-        claude_executor=fake_claude,
+        prompt_executor=fake_claude,
         cwd=tmp_path,
         target_branch="main",
         branch_name="feature-branch",
@@ -242,12 +242,12 @@ def test_cli_already_up_to_date(tmp_path: Path) -> None:
     fake_git = FakeGit(
         ahead_behind={(tmp_path, "feature-branch"): (0, 0)},
     )
-    fake_claude = FakeClaudeExecutor()
+    fake_claude = FakePromptExecutor()
 
     test_ctx = ErkContext.for_test(
         cwd=tmp_path,
         git=fake_git,
-        claude_executor=fake_claude,
+        prompt_executor=fake_claude,
     )
 
     runner = CliRunner()
@@ -270,7 +270,7 @@ def test_cli_successful_rebase_generates_summary(tmp_path: Path) -> None:
         rebase_onto_result=RebaseResult(success=True, conflict_files=()),
         rebase_in_progress=False,
     )
-    fake_claude = FakeClaudeExecutor(
+    fake_claude = FakePromptExecutor(
         prompt_results=[
             PromptResult(
                 success=True,
@@ -283,7 +283,7 @@ def test_cli_successful_rebase_generates_summary(tmp_path: Path) -> None:
     test_ctx = ErkContext.for_test(
         cwd=tmp_path,
         git=fake_git,
-        claude_executor=fake_claude,
+        prompt_executor=fake_claude,
     )
 
     runner = CliRunner()
@@ -305,12 +305,12 @@ def test_cli_successful_rebase_generates_summary(tmp_path: Path) -> None:
 def test_cli_error_exit_code(tmp_path: Path) -> None:
     """Test CLI exits with code 1 on error."""
     fake_git = FakeGit(fetch_branch_raises=RuntimeError("Network error"))
-    fake_claude = FakeClaudeExecutor()
+    fake_claude = FakePromptExecutor()
 
     test_ctx = ErkContext.for_test(
         cwd=tmp_path,
         git=fake_git,
-        claude_executor=fake_claude,
+        prompt_executor=fake_claude,
     )
 
     runner = CliRunner()
@@ -342,11 +342,11 @@ def test_conflict_resolution_uses_correct_prompt(tmp_path: Path) -> None:
         conflicted_files=["src/config.py"],
         rebase_in_progress=dynamic_rebase_in_progress,
     )
-    fake_claude = FakeClaudeExecutor(passthrough_exit_code=0)
+    fake_claude = FakePromptExecutor(passthrough_exit_code=0)
 
     _rebase_with_conflict_resolution_impl(
         git=fake_git,
-        claude_executor=fake_claude,
+        prompt_executor=fake_claude,
         cwd=tmp_path,
         target_branch="main",
         branch_name="feature-branch",
@@ -369,14 +369,14 @@ def test_model_parameter_passed_correctly(tmp_path: Path) -> None:
         rebase_onto_result=RebaseResult(success=True, conflict_files=()),
         rebase_in_progress=False,
     )
-    fake_claude = FakeClaudeExecutor(
+    fake_claude = FakePromptExecutor(
         prompt_results=[PromptResult(success=True, output="Summary text", error=None)]
     )
 
     test_ctx = ErkContext.for_test(
         cwd=tmp_path,
         git=fake_git,
-        claude_executor=fake_claude,
+        prompt_executor=fake_claude,
     )
 
     runner = CliRunner()
@@ -406,12 +406,12 @@ def test_max_attempts_parameter(tmp_path: Path) -> None:
         rebase_in_progress=True,  # Stays in progress
         conflicted_files=["src/config.py"],
     )
-    fake_claude = FakeClaudeExecutor(passthrough_exit_code=1)
+    fake_claude = FakePromptExecutor(passthrough_exit_code=1)
 
     test_ctx = ErkContext.for_test(
         cwd=tmp_path,
         git=fake_git,
-        claude_executor=fake_claude,
+        prompt_executor=fake_claude,
     )
 
     runner = CliRunner()

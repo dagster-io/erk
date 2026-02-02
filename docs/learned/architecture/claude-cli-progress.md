@@ -187,11 +187,11 @@ Skip for:
 
 ## Pattern: Typed Claude CLI Events
 
-For consuming Claude CLI streaming output directly, use the typed `ClaudeEvent` union:
+For consuming Claude CLI streaming output directly, use the typed `ExecutorEvent` union:
 
 ```python
-from erk.core.claude_executor import (
-    ClaudeEvent,
+from erk.core.prompt_executor import (
+    ExecutorEvent,
     ErrorEvent,
     PrNumberEvent,
     SpinnerUpdateEvent,
@@ -220,11 +220,11 @@ for event in executor.execute_command_streaming(...):
 - **Self-documenting**: `PrUrlEvent(url=...)` vs stringly-typed events
 - **IDE support**: Autocomplete and refactoring work correctly
 
-**See also**: [Glossary - ClaudeEvent](../glossary.md#claudeevent) for complete event type reference.
+**See also**: [Glossary - ExecutorEvent](../glossary.md#executorevent) for complete event type reference.
 
 ## Related Files
 
 - `packages/erk-shared/src/erk_shared/gateway/gt/events.py` - ProgressEvent/CompletionEvent definitions
-- `src/erk/core/claude_executor.py` - ClaudeEvent definitions
+- `src/erk/core/prompt_executor.py` - ExecutorEvent definitions
 - `packages/erk-shared/src/erk_shared/gateway/gt/operations/` - Example operations
 - `src/erk/cli/commands/pr/submit_cmd.py` - CLI consumption example

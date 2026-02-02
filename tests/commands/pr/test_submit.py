@@ -15,7 +15,7 @@ from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -30,9 +30,9 @@ def test_pr_submit_fails_when_claude_not_available() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=False)
+        executor = FakePromptExecutor(available=False)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
@@ -101,8 +101,8 @@ def test_pr_submit_fails_when_graphite_not_authenticated() -> None:
             pr_details={123: pr_details},
             pr_bases={123: "main"},
         )
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Add feature\n\nThis adds a new feature.",
         )
 
@@ -111,7 +111,7 @@ def test_pr_submit_fails_when_graphite_not_authenticated() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -137,14 +137,14 @@ def test_pr_submit_fails_when_github_not_authenticated() -> None:
         # Graphite authenticated, GitHub not authenticated
         graphite = FakeGraphite(authenticated=True)
         github = FakeGitHub(authenticated=False)
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -189,14 +189,14 @@ def test_pr_submit_fails_when_no_commits_ahead() -> None:
             },
         )
         github = FakeGitHub(authenticated=True)
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         # Use --no-graphite to test standard flow error handling
@@ -278,8 +278,8 @@ def test_pr_submit_fails_when_commit_message_generation_fails() -> None:
         )
 
         # Configure executor to fail on prompt
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_error="Claude CLI execution failed",
         )
 
@@ -288,7 +288,7 @@ def test_pr_submit_fails_when_commit_message_generation_fails() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -369,8 +369,8 @@ def test_pr_submit_fails_when_pr_update_fails() -> None:
             pr_update_should_succeed=False,
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Add feature\n\nThis adds a new feature.",
         )
 
@@ -379,7 +379,7 @@ def test_pr_submit_fails_when_pr_update_fails() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -462,8 +462,8 @@ def test_pr_submit_success(tmp_path: Path) -> None:
             pr_bases={123: "main"},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Add awesome feature\n\nThis PR adds an awesome new feature.",
         )
 
@@ -472,7 +472,7 @@ def test_pr_submit_success(tmp_path: Path) -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -482,8 +482,8 @@ def test_pr_submit_success(tmp_path: Path) -> None:
         assert "github.com/owner/repo/pull/123" in result.output
 
         # Verify commit message was generated
-        assert len(claude_executor.prompt_calls) == 1
-        prompt, system_prompt, _dangerous = claude_executor.prompt_calls[0]
+        assert len(executor.prompt_calls) == 1
+        prompt, system_prompt, _dangerous = executor.prompt_calls[0]
         assert "feature" in prompt  # Branch name in context
         assert "main" in prompt  # Parent branch in context
 
@@ -597,8 +597,8 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
             pr_bases={456: "branch-1"},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Add feature 2\n\nThis adds feature 2.",
         )
 
@@ -607,7 +607,7 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -616,8 +616,8 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
 
         # Verify the commit messages passed to Claude only include branch-2's commits
         # NOT the entire stack's commits
-        assert len(claude_executor.prompt_calls) == 1
-        prompt, system_prompt, _dangerous = claude_executor.prompt_calls[0]
+        assert len(executor.prompt_calls) == 1
+        prompt, system_prompt, _dangerous = executor.prompt_calls[0]
 
         # Should contain branch-2's commit message
         assert "feat: add feature 2 (from branch-2)" in prompt
@@ -696,8 +696,8 @@ def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
             pr_bases={123: "main"},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Title\n\nBody",
         )
 
@@ -706,7 +706,7 @@ def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         # Run with --force flag and --no-graphite to test git push force path
@@ -793,8 +793,8 @@ def test_pr_submit_short_force_flag() -> None:
             pr_bases={123: "main"},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Title\n\nBody",
         )
 
@@ -803,7 +803,7 @@ def test_pr_submit_short_force_flag() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         # Run with -f short flag and --no-graphite to test git push force path
@@ -889,8 +889,8 @@ def test_pr_submit_shows_graphite_url() -> None:
             pr_bases={123: "main"},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Title\n\nBody",
         )
 
@@ -899,7 +899,7 @@ def test_pr_submit_shows_graphite_url() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -975,8 +975,8 @@ def test_pr_submit_shows_created_message_for_new_pr() -> None:
             pr_bases={999: "main"},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Title\n\nBody",
         )
 
@@ -985,7 +985,7 @@ def test_pr_submit_shows_created_message_for_new_pr() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         # Use --no-graphite to test standard flow output messaging
@@ -1059,8 +1059,8 @@ def test_pr_submit_fails_when_parent_branch_has_no_pr() -> None:
             prs={},  # No PRs exist
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Add feature\n\nThis adds a new feature.",
         )
 
@@ -1069,7 +1069,7 @@ def test_pr_submit_fails_when_parent_branch_has_no_pr() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         # Use --no-graphite to test standard flow error handling
@@ -1153,8 +1153,8 @@ def test_pr_submit_shows_found_message_for_existing_pr() -> None:
             pr_bases={123: "main"},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Title\n\nBody",
         )
 
@@ -1163,7 +1163,7 @@ def test_pr_submit_shows_found_message_for_existing_pr() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         # Use --no-graphite to test standard flow output messaging
@@ -1304,8 +1304,8 @@ plan_comment_id: 1000
             issues_gateway=github_issues,
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Title\n\nBody",
         )
 
@@ -1314,7 +1314,7 @@ plan_comment_id: 1000
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
@@ -1467,8 +1467,8 @@ objective_issue: 5000
             issues_gateway=github_issues,
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Title\n\nBody",
         )
 
@@ -1477,7 +1477,7 @@ objective_issue: 5000
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
@@ -1565,8 +1565,8 @@ def test_pr_submit_shows_no_plan_message() -> None:
             pr_bases={123: "main"},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_prompt_output="Title\n\nBody",
         )
 
@@ -1575,7 +1575,7 @@ def test_pr_submit_shows_no_plan_message() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)

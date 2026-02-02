@@ -5,7 +5,7 @@ from click.testing import CliRunner
 from erk.cli.commands.pr import pr_group
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.fake import FakeGit
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -23,9 +23,9 @@ def test_pr_fix_conflicts_success() -> None:
             conflicted_files=["src/file.py"],  # Has conflicts
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["fix-conflicts", "--dangerous"], obj=ctx)
 
@@ -33,8 +33,8 @@ def test_pr_fix_conflicts_success() -> None:
         assert "Conflicts resolved!" in result.output
 
         # Claude should be invoked for conflict resolution
-        assert len(claude_executor.executed_commands) == 1
-        command, _, dangerous_flag, _, _ = claude_executor.executed_commands[0]
+        assert len(executor.executed_commands) == 1
+        command, _, dangerous_flag, _, _ = executor.executed_commands[0]
         assert command == "/erk:fix-conflicts"
         assert dangerous_flag is True
 
@@ -52,9 +52,9 @@ def test_pr_fix_conflicts_requires_dangerous_flag() -> None:
             conflicted_files=["src/file.py"],
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["fix-conflicts"], obj=ctx)
 
@@ -77,7 +77,7 @@ def test_pr_fix_conflicts_skip_dangerous_with_config() -> None:
             conflicted_files=["src/file.py"],  # Has conflicts
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
         # Create GlobalConfig with fix_conflicts_require_dangerous_flag=False
         global_config = GlobalConfig.test(
@@ -88,7 +88,7 @@ def test_pr_fix_conflicts_skip_dangerous_with_config() -> None:
         ctx = build_workspace_test_context(
             env,
             git=git,
-            claude_executor=claude_executor,
+            prompt_executor=executor,
             global_config=global_config,
         )
 
@@ -113,9 +113,9 @@ def test_pr_fix_conflicts_no_conflicts() -> None:
             conflicted_files=[],  # No conflicts
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["fix-conflicts", "--dangerous"], obj=ctx)
 
@@ -123,7 +123,7 @@ def test_pr_fix_conflicts_no_conflicts() -> None:
         assert "No merge conflicts detected" in result.output
 
         # Claude should NOT be invoked (no conflicts to resolve)
-        assert len(claude_executor.executed_commands) == 0
+        assert len(executor.executed_commands) == 0
 
 
 def test_pr_fix_conflicts_claude_not_available() -> None:
@@ -139,9 +139,9 @@ def test_pr_fix_conflicts_claude_not_available() -> None:
             conflicted_files=["src/file.py"],  # Has conflicts
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=False)
+        executor = FakePromptExecutor(available=False)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["fix-conflicts", "--dangerous"], obj=ctx)
 
@@ -150,7 +150,7 @@ def test_pr_fix_conflicts_claude_not_available() -> None:
         assert "claude.com/download" in result.output
 
         # Verify no command was executed
-        assert len(claude_executor.executed_commands) == 0
+        assert len(executor.executed_commands) == 0
 
 
 def test_pr_fix_conflicts_aborts_on_semantic_conflict() -> None:
@@ -167,12 +167,12 @@ def test_pr_fix_conflicts_aborts_on_semantic_conflict() -> None:
         )
 
         # Simulate Claude using AskUserQuestion tool (semantic conflict)
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_tool_events=["Using AskUserQuestion..."],
         )
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["fix-conflicts", "--dangerous"], obj=ctx)
 
@@ -196,17 +196,17 @@ def test_pr_fix_conflicts_fails_on_command_error() -> None:
             conflicted_files=["src/file.py"],  # Has conflicts
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             command_should_fail=True,
         )
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["fix-conflicts", "--dangerous"], obj=ctx)
 
         assert result.exit_code != 0
-        # Error message from FakeClaudeExecutor
+        # Error message from FakePromptExecutor
         assert "failed" in result.output.lower()
 
 
@@ -224,12 +224,12 @@ def test_pr_fix_conflicts_fails_when_no_work_events() -> None:
         )
 
         # Simulate Claude completing but emitting no work events
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             simulated_no_work_events=True,
         )
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["fix-conflicts", "--dangerous"], obj=ctx)
 

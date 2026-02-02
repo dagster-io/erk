@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from erk.core.claude_executor import ClaudeExecutor
+from erk.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt
 
@@ -68,15 +68,15 @@ class CommitMessageResult:
 class CommitMessageGenerator:
     """Generates commit messages via Claude CLI.
 
-    This is a concrete class (not ABC) that uses ClaudeExecutor for
-    testability. In tests, inject FakeClaudeExecutor with simulated_prompt_output.
+    This is a concrete class (not ABC) that uses PromptExecutor for
+    testability. In tests, inject FakePromptExecutor with simulated_prompt_output.
     """
 
-    def __init__(self, executor: ClaudeExecutor, model: str = "haiku") -> None:
+    def __init__(self, executor: PromptExecutor, model: str = "haiku") -> None:
         """Initialize generator with executor.
 
         Args:
-            executor: Claude CLI executor for prompt execution
+            executor: Prompt executor for prompt execution
             model: Model to use for generation (default "haiku" for speed/cost)
         """
         self._executor = executor

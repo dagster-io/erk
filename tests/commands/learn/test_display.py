@@ -21,7 +21,7 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from tests.fakes.prompt_executor import FakePromptExecutor
 
 
 def test_display_shows_remote_impl_message_when_set(capsys: pytest.CaptureFixture[str]) -> None:
@@ -149,7 +149,7 @@ def test_dangerous_flag_passed_to_execute_interactive(tmp_path: Path) -> None:
         }
     )
 
-    fake_executor = FakeClaudeExecutor(claude_available=True)
+    fake_executor = FakePromptExecutor(available=True)
 
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
@@ -167,7 +167,7 @@ def test_dangerous_flag_passed_to_execute_interactive(tmp_path: Path) -> None:
         git=fake_git,
         issues=fake_issues,
         claude_installation=fake_installation,
-        claude_executor=fake_executor,
+        prompt_executor=fake_executor,
         repo=repo,
         global_config=global_config,
     )
@@ -234,7 +234,7 @@ def test_learn_without_dangerous_flag(tmp_path: Path) -> None:
         }
     )
 
-    fake_executor = FakeClaudeExecutor(claude_available=True)
+    fake_executor = FakePromptExecutor(available=True)
 
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
@@ -252,7 +252,7 @@ def test_learn_without_dangerous_flag(tmp_path: Path) -> None:
         git=fake_git,
         issues=fake_issues,
         claude_installation=fake_installation,
-        claude_executor=fake_executor,
+        prompt_executor=fake_executor,
         repo=repo,
         global_config=global_config,
     )

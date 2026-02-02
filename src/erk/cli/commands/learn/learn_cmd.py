@@ -189,7 +189,7 @@ def learn_cmd(
         )
 
     if should_launch:
-        ctx.claude_executor.execute_interactive(
+        ctx.prompt_executor.execute_interactive(
             worktree_path=repo_root,
             dangerous=dangerous,
             command=f"/erk:learn {issue_number}",

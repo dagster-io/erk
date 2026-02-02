@@ -19,7 +19,7 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
@@ -117,7 +117,7 @@ def test_land_force_runs_objective_update_without_prompt() -> None:
         plan_issue = _create_plan_issue_with_objective(objective_number=100)
         issues_ops = FakeGitHubIssues(username="testuser", issues={42: plan_issue})
 
-        executor = FakeClaudeExecutor()
+        executor = FakePromptExecutor()
 
         repo = RepoContext(
             root=env.cwd,
@@ -135,7 +135,7 @@ def test_land_force_runs_objective_update_without_prompt() -> None:
             repo=repo,
             use_graphite=True,
             issues=issues_ops,
-            claude_executor=executor,
+            prompt_executor=executor,
         )
 
         # Execute mode with objective number - no --force needed
@@ -250,7 +250,7 @@ def test_land_execute_always_runs_objective_update() -> None:
         plan_issue = _create_plan_issue_with_objective(objective_number=100)
         issues_ops = FakeGitHubIssues(username="testuser", issues={42: plan_issue})
 
-        executor = FakeClaudeExecutor()
+        executor = FakePromptExecutor()
 
         repo = RepoContext(
             root=env.cwd,
@@ -267,7 +267,7 @@ def test_land_execute_always_runs_objective_update() -> None:
             repo=repo,
             use_graphite=True,
             issues=issues_ops,
-            claude_executor=executor,
+            prompt_executor=executor,
         )
 
         # Execute mode with objective number - always runs update
@@ -367,7 +367,7 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
         issues_ops = FakeGitHubIssues(username="testuser", issues={42: plan_issue})
 
         # Default executor simulates success
-        executor = FakeClaudeExecutor()
+        executor = FakePromptExecutor()
 
         repo = RepoContext(
             root=env.cwd,
@@ -391,7 +391,7 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
                 True,  # Confirm cleanup
             ],
             issues=issues_ops,
-            claude_executor=executor,
+            prompt_executor=executor,
         )
 
         # Execute mode with objective number
@@ -499,7 +499,7 @@ def test_land_claude_failure_shows_retry_command() -> None:
         issues_ops = FakeGitHubIssues(username="testuser", issues={42: plan_issue})
 
         # Configure executor to simulate failure
-        executor = FakeClaudeExecutor(command_should_fail=True)
+        executor = FakePromptExecutor(command_should_fail=True)
 
         repo = RepoContext(
             root=env.cwd,
@@ -523,7 +523,7 @@ def test_land_claude_failure_shows_retry_command() -> None:
                 True,  # Confirm cleanup
             ],
             issues=issues_ops,
-            claude_executor=executor,
+            prompt_executor=executor,
         )
 
         # Execute mode with objective number

@@ -297,7 +297,9 @@ def generate_pr_address_summary(
     executor = require_prompt_executor(ctx)
 
     prompt = _build_summary_prompt(diff_content)
-    result = executor.execute_prompt(prompt, model="haiku", cwd=repo_root)
+    result = executor.execute_prompt(
+        prompt, model="haiku", tools=None, cwd=repo_root, system_prompt=None
+    )
 
     if not result.success:
         click.echo(f"Error: Claude execution failed: {result.error}", err=True)

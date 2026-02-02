@@ -28,7 +28,7 @@ Follow these 8 steps in order to add a new CommandResult field:
 
 ### 1. Add Field to CommandResult Dataclass
 
-**File:** `src/erk/core/claude_executor.py`
+**File:** `src/erk/core/prompt_executor.py`
 
 Add the new field to the `CommandResult` dataclass with a default value of `None`:
 
@@ -62,7 +62,7 @@ class CommandResult:
 
 ### 2. Add Field to `_parse_stream_json_line()` Result Dict
 
-**File:** `src/erk/core/claude_executor.py`
+**File:** `src/erk/core/prompt_executor.py`
 
 Initialize the field in the result dictionary returned by `_parse_stream_json_line()`:
 
@@ -89,7 +89,7 @@ def _parse_stream_json_line(
 
 ### 3. Add Extraction Logic in `_parse_stream_json_line()`
 
-**File:** `src/erk/core/claude_executor.py`
+**File:** `src/erk/core/prompt_executor.py`
 
 Add logic to extract the field from the JSON data:
 
@@ -118,7 +118,7 @@ See [claude-cli-stream-json.md](../reference/claude-cli-stream-json.md) for comp
 
 ### 4. Add `yield StreamEvent()` in `execute_command_streaming()`
 
-**File:** `src/erk/core/claude_executor.py`
+**File:** `src/erk/core/prompt_executor.py`
 
 Yield a StreamEvent when the field is found:
 
@@ -149,7 +149,7 @@ def execute_command_streaming(
 
 ### 5. Add Capture Logic in `execute_command()` Method
 
-**File:** `src/erk/core/claude_executor.py`
+**File:** `src/erk/core/prompt_executor.py`
 
 Capture the field from streaming events in the non-streaming wrapper:
 
@@ -207,7 +207,7 @@ def execute_and_capture(
     # ... existing setup ...
     session_id: str | None = None  # <-- NEW VARIABLE
 
-    for event in ctx.claude_executor.execute_command_streaming(
+    for event in ctx.prompt_executor.execute_command_streaming(
         command=command,
         worktree_path=worktree_path,
         dangerous=ctx.dry_run,
@@ -230,14 +230,14 @@ def execute_and_capture(
     )
 ```
 
-### 7. Add `simulated_*` Parameter to `FakeClaudeExecutor`
+### 7. Add `simulated_*` Parameter to `FakePromptExecutor`
 
-**File:** `tests/fakes/fake_claude_executor.py`
+**File:** `tests/fakes/fake_prompt_executor.py`
 
 Add a simulated parameter to enable testing:
 
 ```python
-class FakeClaudeExecutor(ClaudeExecutor):
+class FakePromptExecutor(PromptExecutor):
     """Test double for Claude CLI execution."""
 
     def __init__(
@@ -290,14 +290,14 @@ Add tests to verify the field works correctly:
 
 #### A. Parsing Test
 
-**File:** `tests/core/test_claude_executor.py`
+**File:** `tests/core/test_prompt_executor.py`
 
 Test that `_parse_stream_json_line()` extracts the field correctly:
 
 ```python
 def test_parse_stream_json_line_extracts_session_id():
     """Test that _parse_stream_json_line extracts session_id from top level."""
-    executor = RealClaudeExecutor()
+    executor = ClaudePromptExecutor()
     line = json.dumps({
         "type": "assistant",
         "session_id": "abc123-def456",
@@ -315,14 +315,14 @@ def test_parse_stream_json_line_extracts_session_id():
 
 #### B. Fake Test
 
-**File:** `tests/fakes/test_fake_claude_executor.py`
+**File:** `tests/fakes/test_fake_prompt_executor.py`
 
-Test that `FakeClaudeExecutor` simulates the field correctly:
+Test that `FakePromptExecutor` simulates the field correctly:
 
 ```python
-def test_fake_claude_executor_simulates_session_id():
-    """Test FakeClaudeExecutor yields session_id event."""
-    fake = FakeClaudeExecutor(simulated_session_id="test-session-123")
+def test_fake_prompt_executor_simulates_session_id():
+    """Test FakePromptExecutor yields session_id event."""
+    fake = FakePromptExecutor(simulated_session_id="test-session-123")
 
     events = list(fake.execute_command_streaming(
         command="/test",
@@ -337,14 +337,14 @@ def test_fake_claude_executor_simulates_session_id():
 
 #### C. Integration Test
 
-**File:** `tests/core/test_claude_executor.py`
+**File:** `tests/core/test_prompt_executor.py`
 
 Test that `execute_command()` captures the field into `CommandResult`:
 
 ```python
 def test_execute_command_captures_session_id():
     """Test execute_command captures session_id into CommandResult."""
-    fake = FakeClaudeExecutor(simulated_session_id="captured-session-789")
+    fake = FakePromptExecutor(simulated_session_id="captured-session-789")
 
     result = fake.execute_command(
         command="/test",
@@ -361,16 +361,16 @@ This pattern was used to add `session_id` support to CommandResult. The changes 
 
 | Step | Location                                                        | Change                                              |
 | ---- | --------------------------------------------------------------- | --------------------------------------------------- |
-| 1    | `src/erk/core/claude_executor.py` - CommandResult               | Add `session_id: str \| None` field                 |
-| 2    | `src/erk/core/claude_executor.py` - `_parse_stream_json_line`   | Add `"session_id": None` to result dict             |
-| 3    | `src/erk/core/claude_executor.py` - `_parse_stream_json_line`   | Add extraction logic for top-level `session_id`     |
-| 4    | `src/erk/core/claude_executor.py` - `execute_command_streaming` | Yield `StreamEvent("session_id", ...)`              |
-| 5    | `src/erk/core/claude_executor.py` - `execute_command`           | Capture event into `session_id` variable            |
+| 1    | `src/erk/core/prompt_executor.py` - CommandResult               | Add `session_id: str \| None` field                 |
+| 2    | `src/erk/core/prompt_executor.py` - `_parse_stream_json_line`   | Add `"session_id": None` to result dict             |
+| 3    | `src/erk/core/prompt_executor.py` - `_parse_stream_json_line`   | Add extraction logic for top-level `session_id`     |
+| 4    | `src/erk/core/prompt_executor.py` - `execute_command_streaming` | Yield `StreamEvent("session_id", ...)`              |
+| 5    | `src/erk/core/prompt_executor.py` - `execute_command`           | Capture event into `session_id` variable            |
 | 6    | `src/erk/core/output.py` - `stream_command_with_feedback`       | Same capture logic                                  |
-| 7    | `tests/fakes/fake_claude_executor.py`                           | Add `simulated_session_id` parameter                |
+| 7    | `tests/fakes/fake_prompt_executor.py`                           | Add `simulated_session_id` parameter                |
 | 8    | Test files                                                      | Add parsing, fake simulation, and integration tests |
 
-See `src/erk/core/claude_executor.py` for the canonical implementation.
+See `src/erk/core/prompt_executor.py` for the canonical implementation.
 
 ## Common Pitfalls
 
@@ -408,11 +408,11 @@ session_id = data.get("message", {}).get("session_id")  # None
 session_id = data.get("session_id")  # "abc123-def456"
 ```
 
-### 4. Not updating FakeClaudeExecutor
+### 4. Not updating FakePromptExecutor
 
 ```python
 # ❌ WRONG - no way to simulate in tests
-fake = FakeClaudeExecutor()  # No simulated_session_id parameter
+fake = FakePromptExecutor()  # No simulated_session_id parameter
 # Tests can't verify session_id behavior
 ```
 
@@ -428,5 +428,5 @@ Without tests, you won't catch:
 ## Related
 
 - **Stream-JSON Format**: [claude-cli-stream-json.md](../reference/claude-cli-stream-json.md) - Complete reference for Claude CLI's stream-json output format
-- **Implementation Reference**: `src/erk/core/claude_executor.py` - RealClaudeExecutor class
-- **Testing Reference**: `tests/fakes/fake_claude_executor.py` - FakeClaudeExecutor test double
+- **Implementation Reference**: `src/erk/core/prompt_executor.py` - ClaudePromptExecutor class
+- **Testing Reference**: `tests/fakes/fake_prompt_executor.py` - FakePromptExecutor test double

@@ -490,7 +490,7 @@ def generate_description(ctx: ErkContext, state: SubmitState) -> SubmitState | S
     # Get commit messages for AI context
     commit_messages = ctx.git.commit.get_commit_messages_since(state.cwd, state.parent_branch)
 
-    msg_gen = CommitMessageGenerator(ctx.claude_executor)
+    msg_gen = CommitMessageGenerator(ctx.prompt_executor)
     msg_result = run_commit_message_generation(
         generator=msg_gen,
         diff_file=state.diff_file,

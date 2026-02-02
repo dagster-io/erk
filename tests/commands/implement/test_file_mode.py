@@ -4,7 +4,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
 from erk_shared.gateway.git.fake import FakeGit
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -18,8 +18,8 @@ def test_implement_from_plan_file() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, claude_executor=executor)
+        executor = FakePromptExecutor(available=True)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         # Create plan file
         plan_content = "# Implementation Plan\n\nImplement feature X."
@@ -49,8 +49,8 @@ def test_implement_from_plan_file_creates_impl_folder() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, claude_executor=executor)
+        executor = FakePromptExecutor(available=True)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         # Create plan file
         plan_file = env.cwd / "feature-plan.md"

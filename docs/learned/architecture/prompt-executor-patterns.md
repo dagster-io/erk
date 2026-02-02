@@ -1,24 +1,24 @@
 ---
-title: ClaudeExecutor Pattern Documentation
+title: PromptExecutor Pattern Documentation
 read_when:
   - "launching Claude from CLI commands"
-  - "deciding which ClaudeExecutor method to use"
+  - "deciding which PromptExecutor method to use"
   - "testing code that executes Claude CLI"
-  - "choosing between RealClaudeExecutor and RealPromptExecutor"
+  - "choosing between ClaudePromptExecutor and RealPromptExecutor"
 ---
 
-# ClaudeExecutor Pattern Documentation
+# PromptExecutor Pattern Documentation
 
-The `ClaudeExecutor` abstraction provides multiple methods for launching Claude CLI. Understanding when to use each is critical.
+The `PromptExecutor` abstraction provides multiple methods for launching Claude CLI. Understanding when to use each is critical.
 
 ## Method Comparison
 
-| Method                        | Mechanism                         | Returns?                 | Use Case                           |
-| ----------------------------- | --------------------------------- | ------------------------ | ---------------------------------- |
-| `execute_interactive()`       | `os.execvp()`                     | Never (replaces process) | Final action in a workflow         |
-| `execute_prompt()`            | `subprocess.run()` with `--print` | `PromptResult`           | Non-interactive prompt execution   |
-| `execute_command()`           | `subprocess.run()`                | `CommandResult`          | Programmatic command with metadata |
-| `execute_command_streaming()` | `subprocess.Popen()`              | `Iterator[ClaudeEvent]`  | Real-time progress tracking        |
+| Method                        | Mechanism                         | Returns?                  | Use Case                           |
+| ----------------------------- | --------------------------------- | ------------------------- | ---------------------------------- |
+| `execute_interactive()`       | `os.execvp()`                     | Never (replaces process)  | Final action in a workflow         |
+| `execute_prompt()`            | `subprocess.run()` with `--print` | `PromptResult`            | Non-interactive prompt execution   |
+| `execute_command()`           | `subprocess.run()`                | `CommandResult`           | Programmatic command with metadata |
+| `execute_command_streaming()` | `subprocess.Popen()`              | `Iterator[ExecutorEvent]` | Real-time progress tracking        |
 
 ## When to Use Each
 
@@ -85,7 +85,7 @@ for event in executor.execute_command_streaming(
             print(c)
 ```
 
-## Testing with FakeClaudeExecutor
+## Testing with FakePromptExecutor
 
 The fake tracks all calls for assertion via read-only properties.
 
@@ -101,22 +101,22 @@ The fake tracks all calls for assertion via read-only properties.
 
 ```python
 # Successful execution
-executor = FakeClaudeExecutor(claude_available=True)
+executor = FakePromptExecutor(available=True)
 
 # Claude not installed
-executor = FakeClaudeExecutor(claude_available=False)
+executor = FakePromptExecutor(available=False)
 
 # Command failure
-executor = FakeClaudeExecutor(command_should_fail=True)
+executor = FakePromptExecutor(command_should_fail=True)
 
 # PR creation
-executor = FakeClaudeExecutor(
+executor = FakePromptExecutor(
     simulated_pr_url="https://github.com/org/repo/pull/123",
     simulated_pr_number=123,
 )
 
 # Hook blocking (zero turns)
-executor = FakeClaudeExecutor(simulated_zero_turns=True)
+executor = FakePromptExecutor(simulated_zero_turns=True)
 ```
 
 ## Real-World Usage Example
@@ -140,7 +140,7 @@ def _prompt_objective_update(
         return
 
     # User chooses to run now
-    result = ctx.claude_executor.execute_command(
+    result = ctx.prompt_executor.execute_command(
         "/erk:objective-update-with-landed-pr",
         repo_root,
         dangerous=True,  # Skip permission prompts for non-interactive
@@ -162,17 +162,17 @@ Key points:
 
 ## File Locations
 
-- **ABC**: `packages/erk-shared/src/erk_shared/core/claude_executor.py`
-- **Real**: `src/erk/core/claude_executor.py` (RealClaudeExecutor)
-- **Fake**: `tests/fakes/claude_executor.py`
+- **ABC**: `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
+- **Real**: `src/erk/core/prompt_executor.py` (ClaudePromptExecutor)
+- **Fake**: `tests/fakes/prompt_executor.py`
 
-## Executor Comparison: ClaudeExecutor vs PromptExecutor
+## Executor Comparison: PromptExecutor vs PromptExecutor
 
 Erk has two distinct executor abstractions for Claude CLI operations:
 
-| Aspect                 | RealClaudeExecutor                                      | RealPromptExecutor                                           |
+| Aspect                 | ClaudePromptExecutor                                    | RealPromptExecutor                                           |
 | ---------------------- | ------------------------------------------------------- | ------------------------------------------------------------ |
-| **Location**           | `src/erk/core/claude_executor.py`                       | `packages/erk-shared/src/erk_shared/prompt_executor/real.py` |
+| **Location**           | `src/erk/core/prompt_executor.py`                       | `packages/erk-shared/src/erk_shared/prompt_executor/real.py` |
 | **Scope**              | Full-featured: interactive, streaming, commands         | Single-shot prompts only                                     |
 | **Methods**            | 4 methods (interactive, streaming, prompt, passthrough) | 1 method (execute_prompt)                                    |
 | **Retry logic**        | No built-in retry                                       | Automatic retry on empty output                              |
@@ -182,7 +182,7 @@ Erk has two distinct executor abstractions for Claude CLI operations:
 
 ### When to Use Each
 
-**Use RealClaudeExecutor when:**
+**Use ClaudePromptExecutor when:**
 
 - Launching Claude interactively (`execute_interactive`)
 - Need real-time streaming events (`execute_command_streaming`)
@@ -198,11 +198,11 @@ Erk has two distinct executor abstractions for Claude CLI operations:
 
 ### Error Handling Differences
 
-RealClaudeExecutor uses a background thread to accumulate stderr while streaming stdout:
+ClaudePromptExecutor uses a background thread to accumulate stderr while streaming stdout:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ RealClaudeExecutor.execute_command_streaming()              │
+│ ClaudePromptExecutor.execute_command_streaming()              │
 ├─────────────────────────────────────────────────────────────┤
 │ Main Thread                    │ Background Thread          │
 │ ─────────────────────────────  │ ──────────────────────────│
@@ -211,7 +211,6 @@ RealClaudeExecutor uses a background thread to accumulate stderr while streaming
 │   yield parse(line)            │   stderr_output.append()   │
 │ process.wait()                 │                            │
 │ stderr_thread.join(timeout=5)  │                            │
-│ # Use accumulated stderr       │                            │
 └─────────────────────────────────────────────────────────────┘
 ```
 

@@ -20,10 +20,11 @@ from erk.cli.commands.exec.scripts.ci_update_pr_body import (
     ci_update_pr_body as ci_update_pr_body_command,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.core.fakes import FakePromptExecutor
+from erk_shared.core.prompt_executor import PromptResult
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.prompt_executor.fake import FakePromptExecutor
 
 # ============================================================================
 # 1. Helper Function Tests
@@ -138,7 +139,9 @@ def test_impl_success(tmp_path: Path) -> None:
         pr_diffs={123: "+added line\n-removed line"},
     )
 
-    executor = FakePromptExecutor(output="Generated PR summary")
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="Generated PR summary", error=None)]
+    )
 
     result = _update_pr_body_impl(
         git=git,
@@ -271,7 +274,9 @@ def test_impl_claude_failure(tmp_path: Path) -> None:
         pr_diffs={123: "+some diff"},
     )
 
-    executor = FakePromptExecutor(should_fail=True, error="API error")
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=False, output="", error="API error")]
+    )
 
     result = _update_pr_body_impl(
         git=git,
@@ -330,7 +335,9 @@ def test_impl_claude_failure_truncates_long_stderr(tmp_path: Path) -> None:
 
     # Create a very long error message (> 500 chars)
     long_error = "x" * 600
-    executor = FakePromptExecutor(should_fail=True, error=long_error)
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=False, output="", error=long_error)]
+    )
 
     result = _update_pr_body_impl(
         git=git,
@@ -388,7 +395,9 @@ def test_impl_claude_empty_output(tmp_path: Path) -> None:
         pr_diffs={123: "+some diff"},
     )
 
-    executor = FakePromptExecutor(output="")
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="", error=None)]
+    )
 
     result = _update_pr_body_impl(
         git=git,
@@ -450,7 +459,9 @@ def test_cli_success(tmp_path: Path) -> None:
         pr_diffs={123: "+added line"},
     )
 
-    executor = FakePromptExecutor(output="Generated summary")
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+    )
 
     ctx = ErkContext.for_test(
         git=git, github=github, prompt_executor=executor, repo_root=tmp_path, cwd=tmp_path
@@ -506,7 +517,9 @@ def test_cli_with_workflow_run(tmp_path: Path) -> None:
         pr_diffs={123: "+added line"},
     )
 
-    executor = FakePromptExecutor(output="Generated summary")
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="Generated summary", error=None)]
+    )
 
     ctx = ErkContext.for_test(
         git=git, github=github, prompt_executor=executor, repo_root=tmp_path, cwd=tmp_path
@@ -602,7 +615,9 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
         pr_diffs={123: "+added line"},
     )
 
-    executor = FakePromptExecutor(output="Summary")
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="Summary", error=None)]
+    )
 
     ctx = ErkContext.for_test(
         git=git, github=github, prompt_executor=executor, repo_root=tmp_path, cwd=tmp_path

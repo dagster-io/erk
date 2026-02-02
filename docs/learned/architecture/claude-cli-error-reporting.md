@@ -15,7 +15,7 @@ Error handling for Claude CLI execution uses typed events and structured error m
 
 ## Error Event Types
 
-Claude CLI execution produces four distinct error event types, defined in `erk_shared.core.claude_executor`:
+Claude CLI execution produces four distinct error event types, defined in `erk_shared.core.prompt_executor`:
 
 | Event Type          | Field             | Meaning                                           |
 | ------------------- | ----------------- | ------------------------------------------------- |
@@ -113,13 +113,13 @@ for event in executor.execute_command_streaming(...):
 
 ## Implementation Locations
 
-- **Event types**: `packages/erk-shared/src/erk_shared/core/claude_executor.py`
-- **Streaming execution**: `src/erk/core/claude_executor.py` (`execute_command_streaming`)
-- **Single prompt**: `src/erk/core/claude_executor.py` (`execute_prompt`)
+- **Event types**: `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
+- **Streaming execution**: `src/erk/core/prompt_executor.py` (`execute_command_streaming`)
+- **Single prompt**: `src/erk/core/prompt_executor.py` (`execute_prompt`)
 - **Lightweight prompts**: `packages/erk-shared/src/erk_shared/prompt_executor/real.py`
 
 ## Related Topics
 
 - [glossary.md](../glossary.md) - Full event type reference table
-- [claude-executor-patterns.md](claude-executor-patterns.md) - ClaudeExecutor usage patterns
+- [prompt-executor-patterns.md](prompt-executor-patterns.md) - PromptExecutor usage patterns
 - [claude-cli-integration.md](claude-cli-integration.md) - CLI flag requirements

@@ -1,6 +1,6 @@
-"""Fake implementation of ClaudeExecutor for testing.
+"""Fake implementation of PromptExecutor for testing.
 
-This fake enables testing Claude command execution without
+This fake enables testing prompt execution without
 requiring the actual Claude CLI or using subprocess mocks.
 """
 
@@ -13,16 +13,16 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from erk_shared.context.types import ClaudePermissionMode
 
-from erk.core.claude_executor import (
-    ClaudeEvent,
-    ClaudeExecutor,
+from erk_shared.core.prompt_executor import (
     CommandResult,
     ErrorEvent,
+    ExecutorEvent,
     IssueNumberEvent,
     NoOutputEvent,
     NoTurnsEvent,
     PrNumberEvent,
     ProcessErrorEvent,
+    PromptExecutor,
     PromptResult,
     PrTitleEvent,
     PrUrlEvent,
@@ -32,37 +32,37 @@ from erk.core.claude_executor import (
 )
 
 
-class FakeClaudeExecutor(ClaudeExecutor):
-    """In-memory fake implementation of Claude CLI execution.
+class FakePromptExecutor(PromptExecutor):
+    """In-memory fake implementation of prompt execution.
 
     Constructor Injection:
     - All state is provided via constructor parameters
     - Mutations are tracked in read-only properties
 
     When to Use:
-    - Testing commands that execute Claude CLI (e.g., erk implement --no-interactive)
-    - Simulating Claude CLI availability
+    - Testing commands that execute prompts (e.g., erk implement --no-interactive)
+    - Simulating executor availability
     - Verifying command execution without actual subprocess calls
 
     Examples:
-        # Test with Claude available and successful execution
-        >>> executor = FakeClaudeExecutor(claude_available=True)
+        # Test with executor available and successful execution
+        >>> executor = FakePromptExecutor(available=True)
         >>> executor.execute_command("/erk:plan-implement", Path("/repo"), False)
         >>> assert len(executor.executed_commands) == 1
 
-        # Test with Claude not available
-        >>> executor = FakeClaudeExecutor(claude_available=False)
-        >>> assert not executor.is_claude_available()
+        # Test with executor not available
+        >>> executor = FakePromptExecutor(available=False)
+        >>> assert not executor.is_available()
 
         # Test command failure
-        >>> executor = FakeClaudeExecutor(command_should_fail=True)
+        >>> executor = FakePromptExecutor(command_should_fail=True)
         >>> try:
         ...     executor.execute_command("/bad-command", Path("/repo"), False)
         ... except RuntimeError:
         ...     print("Command failed as expected")
 
         # Test interactive execution
-        >>> executor = FakeClaudeExecutor(claude_available=True)
+        >>> executor = FakePromptExecutor(available=True)
         >>> executor.execute_interactive(Path("/repo"), dangerous=False)
         >>> assert len(executor.interactive_calls) == 1
     """
@@ -70,7 +70,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
     def __init__(
         self,
         *,
-        claude_available: bool = True,
+        available: bool = True,
         command_should_fail: bool = False,
         simulated_pr_url: str | None = None,
         simulated_pr_number: int | None = None,
@@ -88,7 +88,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         """Initialize fake with predetermined behavior.
 
         Args:
-            claude_available: Whether Claude CLI should appear available
+            available: Whether the executor should appear available
             command_should_fail: Whether execute_command should raise RuntimeError
             simulated_pr_url: PR URL to return in CommandResult (simulates successful PR creation)
             simulated_pr_number: PR number to return (simulates PR metadata)
@@ -110,7 +110,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
             simulated_passthrough_exit_code: Exit code to return from execute_prompt_passthrough().
                 Defaults to 0 (success).
         """
-        self._claude_available = claude_available
+        self._available = available
         self._command_should_fail = command_should_fail
         self._simulated_pr_url = simulated_pr_url
         self._simulated_pr_number = simulated_pr_number
@@ -129,9 +129,9 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self._prompt_calls: list[tuple[str, str | None]] = []
         self._passthrough_calls: list[tuple[str, str, list[str] | None, Path, bool]] = []
 
-    def is_claude_available(self) -> bool:
+    def is_available(self) -> bool:
         """Return the availability configured at construction time."""
-        return self._claude_available
+        return self._available
 
     def execute_command_streaming(
         self,
@@ -144,7 +144,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         model: str | None = None,
         permission_mode: ClaudePermissionMode = "acceptEdits",
         allow_dangerous: bool = False,
-    ) -> Iterator[ClaudeEvent]:
+    ) -> Iterator[ExecutorEvent]:
         """Track command execution and yield simulated typed events.
 
         This method records the call parameters for test assertions.
@@ -161,7 +161,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
             allow_dangerous: Whether --allow-dangerously-skip-permissions - recorded but not used
 
         Yields:
-            ClaudeEvent objects simulating command execution
+            ExecutorEvent objects simulating command execution
 
         Raises:
             RuntimeError: If command_should_fail was set to True
@@ -286,13 +286,13 @@ class FakeClaudeExecutor(ClaudeExecutor):
         """Track interactive execution without replacing process.
 
         This method records the call parameters for test assertions.
-        Unlike RealClaudeExecutor, this does not use os.execvp and returns
+        Unlike RealPromptExecutor, this does not use os.execvp and returns
         normally to allow tests to continue.
 
         Raises:
             RuntimeError: If Claude CLI is not available
         """
-        if not self._claude_available:
+        if not self._available:
             raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
 
         self._interactive_calls.append(

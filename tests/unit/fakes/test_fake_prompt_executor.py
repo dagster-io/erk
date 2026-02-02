@@ -1,4 +1,4 @@
-"""Tests for FakeClaudeExecutor.
+"""Tests for FakePromptExecutor.
 
 Tests that verify the fake implementation correctly simulates
 typed events for testing error handling.
@@ -6,13 +6,13 @@ typed events for testing error handling.
 
 from pathlib import Path
 
-from erk.core.claude_executor import NoOutputEvent, ProcessErrorEvent
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from erk.core.prompt_executor import NoOutputEvent, ProcessErrorEvent
+from tests.fakes.prompt_executor import FakePromptExecutor
 
 
-def test_fake_claude_executor_simulates_no_output() -> None:
-    """Test that FakeClaudeExecutor yields NoOutputEvent when configured."""
-    fake = FakeClaudeExecutor(simulated_no_output=True)
+def test_fake_prompt_executor_simulates_no_output() -> None:
+    """Test that FakePromptExecutor yields NoOutputEvent when configured."""
+    fake = FakePromptExecutor(simulated_no_output=True)
 
     events = list(
         fake.execute_command_streaming(
@@ -27,9 +27,9 @@ def test_fake_claude_executor_simulates_no_output() -> None:
     assert "no output" in events[0].diagnostic.lower()
 
 
-def test_fake_claude_executor_simulates_process_error() -> None:
-    """Test that FakeClaudeExecutor yields ProcessErrorEvent when configured."""
-    fake = FakeClaudeExecutor(
+def test_fake_prompt_executor_simulates_process_error() -> None:
+    """Test that FakePromptExecutor yields ProcessErrorEvent when configured."""
+    fake = FakePromptExecutor(
         simulated_process_error="Failed to start Claude CLI: Permission denied"
     )
 
@@ -46,9 +46,9 @@ def test_fake_claude_executor_simulates_process_error() -> None:
     assert "Permission denied" in events[0].message
 
 
-def test_fake_claude_executor_process_error_takes_precedence() -> None:
+def test_fake_prompt_executor_process_error_takes_precedence() -> None:
     """Test that ProcessErrorEvent takes precedence over NoOutputEvent."""
-    fake = FakeClaudeExecutor(
+    fake = FakePromptExecutor(
         simulated_no_output=True,
         simulated_process_error="Process failed",
     )
@@ -66,9 +66,9 @@ def test_fake_claude_executor_process_error_takes_precedence() -> None:
     assert isinstance(events[0], ProcessErrorEvent)
 
 
-def test_fake_claude_executor_no_output_takes_precedence_over_command_fail() -> None:
+def test_fake_prompt_executor_no_output_takes_precedence_over_command_fail() -> None:
     """Test that NoOutputEvent takes precedence over command_should_fail."""
-    fake = FakeClaudeExecutor(
+    fake = FakePromptExecutor(
         simulated_no_output=True,
         command_should_fail=True,
     )
@@ -88,7 +88,7 @@ def test_fake_claude_executor_no_output_takes_precedence_over_command_fail() -> 
 
 def test_execute_prompt_passthrough_returns_configured_exit_code() -> None:
     """Test that execute_prompt_passthrough returns the configured exit code."""
-    fake = FakeClaudeExecutor(simulated_passthrough_exit_code=5)
+    fake = FakePromptExecutor(simulated_passthrough_exit_code=5)
 
     exit_code = fake.execute_prompt_passthrough(
         "test prompt",
@@ -103,7 +103,7 @@ def test_execute_prompt_passthrough_returns_configured_exit_code() -> None:
 
 def test_execute_prompt_passthrough_default_exit_code_is_zero() -> None:
     """Test that execute_prompt_passthrough defaults to exit code 0."""
-    fake = FakeClaudeExecutor()
+    fake = FakePromptExecutor()
 
     exit_code = fake.execute_prompt_passthrough(
         "test prompt",
@@ -118,7 +118,7 @@ def test_execute_prompt_passthrough_default_exit_code_is_zero() -> None:
 
 def test_execute_prompt_passthrough_tracks_calls() -> None:
     """Test that execute_prompt_passthrough tracks all call arguments."""
-    fake = FakeClaudeExecutor()
+    fake = FakePromptExecutor()
 
     fake.execute_prompt_passthrough(
         "prompt1",

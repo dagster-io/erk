@@ -19,8 +19,7 @@ from rich.text import Text
 if TYPE_CHECKING:
     from erk_shared.context.types import ClaudePermissionMode
 
-from erk.core.claude_executor import (
-    ClaudeExecutor,
+from erk.core.prompt_executor import (
     CommandResult,
     ErrorEvent,
     IssueNumberEvent,
@@ -28,6 +27,7 @@ from erk.core.claude_executor import (
     NoTurnsEvent,
     PrNumberEvent,
     ProcessErrorEvent,
+    PromptExecutor,
     PrTitleEvent,
     PrUrlEvent,
     SpinnerUpdateEvent,
@@ -126,7 +126,7 @@ def format_implement_summary(results: list[CommandResult], total_duration: float
 
 def stream_command_with_feedback(
     *,
-    executor: ClaudeExecutor,
+    executor: PromptExecutor,
     command: str,
     worktree_path: Path,
     dangerous: bool,
@@ -150,7 +150,7 @@ def stream_command_with_feedback(
     - End (failure): `--- Failed (1m 23s) ---` (red)
 
     Args:
-        executor: Claude CLI executor for command execution
+        executor: Prompt executor for command execution
         command: The slash command to execute (e.g., "/gt:pr-submit")
         worktree_path: Path to worktree directory to run command in
         dangerous: Whether to skip permission prompts (--dangerously-skip-permissions)
@@ -273,7 +273,7 @@ class FixConflictsResult:
 
 
 def stream_fix_conflicts(
-    executor: ClaudeExecutor,
+    executor: PromptExecutor,
     worktree_path: Path,
 ) -> FixConflictsResult:
     """Stream fix-conflicts command via Claude executor with live feedback.
@@ -285,7 +285,7 @@ def stream_fix_conflicts(
     - Rich console output with start/end markers
 
     Args:
-        executor: Claude CLI executor
+        executor: Prompt executor
         worktree_path: Path to run the conflict resolution in
 
     Returns:
@@ -389,7 +389,7 @@ class SyncDivergenceResult:
 
 
 def stream_sync_divergence(
-    executor: ClaudeExecutor,
+    executor: PromptExecutor,
     worktree_path: Path,
 ) -> SyncDivergenceResult:
     """Stream sync-divergence command via Claude executor with live feedback.
@@ -401,7 +401,7 @@ def stream_sync_divergence(
     - Rich console output with start/end markers
 
     Args:
-        executor: Claude CLI executor
+        executor: Prompt executor
         worktree_path: Path to run the divergence sync in
 
     Returns:

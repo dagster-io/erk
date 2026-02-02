@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import (
     ErkContext,
     GlobalConfig,
@@ -11,6 +10,7 @@ from erk.core.context import (
     RepoContext,
     context_for_test,
 )
+from erk.core.prompt_executor import PromptExecutor
 from erk.core.script_writer import ScriptWriter
 from erk_shared.gateway.completion.fake import FakeCompletion
 from erk_shared.gateway.git.fake import FakeGit
@@ -26,7 +26,7 @@ def create_test_context(
     issues: GitHubIssues | None = None,
     graphite: FakeGraphite | None = None,
     shell: FakeShell | None = None,
-    claude_executor: ClaudeExecutor | None = None,
+    prompt_executor: PromptExecutor | None = None,
     completion: FakeCompletion | None = None,
     script_writer: ScriptWriter | None = None,
     cwd: Path | None = None,
@@ -89,7 +89,7 @@ def create_test_context(
         issues=issues,
         graphite=graphite,
         shell=shell,
-        claude_executor=claude_executor,
+        prompt_executor=prompt_executor,
         completion=completion,
         script_writer=script_writer,
         cwd=cwd,

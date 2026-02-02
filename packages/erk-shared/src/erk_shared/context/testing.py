@@ -8,13 +8,13 @@ from pathlib import Path
 
 from erk_shared.context.context import ErkContext
 from erk_shared.context.types import LoadedConfig, RepoContext
-from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.core.fakes import (
-    FakeClaudeExecutor,
     FakeCodespaceRegistry,
     FakePlanListService,
+    FakePromptExecutor,
     FakeScriptWriter,
 )
+from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.git.abc import Git
@@ -24,7 +24,6 @@ from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
-from erk_shared.gateway.prompt_executor.abc import PromptExecutor
 
 
 def context_for_test(
@@ -35,7 +34,6 @@ def context_for_test(
     graphite: Graphite | None = None,
     claude_installation: ClaudeInstallation | None = None,
     prompt_executor: PromptExecutor | None = None,
-    claude_executor: ClaudeExecutor | None = None,
     codespace: Codespace | None = None,
     debug: bool = False,
     repo_root: Path | None = None,
@@ -57,7 +55,6 @@ def context_for_test(
         graphite: Optional Graphite implementation. If None, creates FakeGraphite.
         claude_installation: Optional ClaudeInstallation. If None, creates FakeClaudeInstallation.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
-        claude_executor: Optional ClaudeExecutor. If None, creates FakeClaudeExecutor.
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
         cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -84,7 +81,6 @@ def context_for_test(
     from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.prompt_executor.fake import FakePromptExecutor
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.plan_store.github import GitHubPlanStore
@@ -126,9 +122,6 @@ def context_for_test(
     resolved_prompt_executor: PromptExecutor = (
         prompt_executor if prompt_executor is not None else FakePromptExecutor()
     )
-    resolved_claude_executor: ClaudeExecutor = (
-        claude_executor if claude_executor is not None else FakeClaudeExecutor()
-    )
     resolved_codespace: Codespace = codespace if codespace is not None else FakeCodespace()
     resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 
@@ -168,7 +161,6 @@ def context_for_test(
         shell=FakeShell(),
         completion=FakeCompletion(),
         codespace=resolved_codespace,
-        claude_executor=resolved_claude_executor,
         script_writer=FakeScriptWriter(),
         codespace_registry=FakeCodespaceRegistry(),
         plan_list_service=FakePlanListService(),

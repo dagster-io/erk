@@ -4,7 +4,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.fake import FakeGit
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -21,9 +21,9 @@ def test_pr_address_success() -> None:
             current_branches={env.cwd: "feature-branch"},
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["address", "--dangerous"], obj=ctx)
 
@@ -31,8 +31,8 @@ def test_pr_address_success() -> None:
         assert "PR comments addressed!" in result.output
 
         # Claude should be invoked for PR comment addressing
-        assert len(claude_executor.executed_commands) == 1
-        command, _, dangerous_flag, _, _ = claude_executor.executed_commands[0]
+        assert len(executor.executed_commands) == 1
+        command, _, dangerous_flag, _, _ = executor.executed_commands[0]
         assert command == "/erk:pr-address"
         assert dangerous_flag is True
 
@@ -49,9 +49,9 @@ def test_pr_address_requires_dangerous_flag() -> None:
             current_branches={env.cwd: "feature-branch"},
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        executor = FakePromptExecutor(available=True)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["address"], obj=ctx)
 
@@ -71,9 +71,9 @@ def test_pr_address_claude_not_available() -> None:
             current_branches={env.cwd: "feature-branch"},
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=False)
+        executor = FakePromptExecutor(available=False)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["address", "--dangerous"], obj=ctx)
 
@@ -82,7 +82,7 @@ def test_pr_address_claude_not_available() -> None:
         assert "claude.com/download" in result.output
 
         # Verify no command was executed
-        assert len(claude_executor.executed_commands) == 0
+        assert len(executor.executed_commands) == 0
 
 
 def test_pr_address_fails_on_command_error() -> None:
@@ -97,15 +97,15 @@ def test_pr_address_fails_on_command_error() -> None:
             current_branches={env.cwd: "feature-branch"},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
+        executor = FakePromptExecutor(
+            available=True,
             command_should_fail=True,
         )
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
         result = runner.invoke(pr_group, ["address", "--dangerous"], obj=ctx)
 
         assert result.exit_code != 0
-        # Error message from FakeClaudeExecutor
+        # Error message from FakePromptExecutor
         assert "failed" in result.output.lower()

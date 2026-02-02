@@ -32,8 +32,8 @@ from erk.cli.commands.implement_shared import (
 from erk.cli.commands.review_pr_cleanup import cleanup_review_pr
 from erk.cli.core import discover_repo_context
 from erk.cli.help_formatter import CommandWithHiddenOptions
-from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
+from erk.core.prompt_executor import PromptExecutor
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.output.output import user_output
@@ -79,7 +79,7 @@ def _implement_from_issue(
     no_interactive: bool,
     verbose: bool,
     model: str | None,
-    executor: ClaudeExecutor,
+    executor: PromptExecutor,
 ) -> None:
     """Implement feature from GitHub issue in current directory.
 
@@ -93,7 +93,7 @@ def _implement_from_issue(
         no_interactive: Whether to execute non-interactively
         verbose: Whether to show raw output or filtered output
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
-        executor: Claude CLI executor for command execution
+        executor: Prompt executor for command execution
     """
     # Discover repo context for issue fetch
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -219,7 +219,7 @@ def _implement_from_file(
     no_interactive: bool,
     verbose: bool,
     model: str | None,
-    executor: ClaudeExecutor,
+    executor: PromptExecutor,
 ) -> None:
     """Implement feature from plan file in current directory.
 
@@ -235,7 +235,7 @@ def _implement_from_file(
         no_interactive: Whether to execute non-interactively
         verbose: Whether to show raw output or filtered output
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
-        executor: Claude CLI executor for command execution
+        executor: Prompt executor for command execution
     """
     # Discover repo context
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -432,7 +432,7 @@ def implement(
             no_interactive=no_interactive,
             verbose=verbose,
             model=model,
-            executor=ctx.claude_executor,
+            executor=ctx.prompt_executor,
         )
     else:
         plan_file = Path(target)
@@ -446,5 +446,5 @@ def implement(
             no_interactive=no_interactive,
             verbose=verbose,
             model=model,
-            executor=ctx.claude_executor,
+            executor=ctx.prompt_executor,
         )

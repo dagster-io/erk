@@ -17,7 +17,7 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from tests.fakes.claude_executor import FakeClaudeExecutor
+from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
@@ -124,7 +124,7 @@ def test_land_execute_auto_detects_objective_from_branch() -> None:
         )
         issues_ops = FakeGitHubIssues(username="testuser", issues={42: plan_issue})
 
-        executor = FakeClaudeExecutor()
+        executor = FakePromptExecutor()
 
         repo = RepoContext(
             root=env.cwd,
@@ -141,7 +141,7 @@ def test_land_execute_auto_detects_objective_from_branch() -> None:
             repo=repo,
             use_graphite=True,
             issues=issues_ops,
-            claude_executor=executor,
+            prompt_executor=executor,
         )
 
         # Execute WITHOUT --objective-number flag - should auto-detect from branch
@@ -253,7 +253,7 @@ def test_land_execute_explicit_objective_takes_precedence() -> None:
         )
         issues_ops = FakeGitHubIssues(username="testuser", issues={42: plan_issue})
 
-        executor = FakeClaudeExecutor()
+        executor = FakePromptExecutor()
 
         repo = RepoContext(
             root=env.cwd,
@@ -270,7 +270,7 @@ def test_land_execute_explicit_objective_takes_precedence() -> None:
             repo=repo,
             use_graphite=True,
             issues=issues_ops,
-            claude_executor=executor,
+            prompt_executor=executor,
         )
 
         # Execute WITH explicit --objective-number=200 (different from plan's 100)
@@ -389,7 +389,7 @@ def test_land_execute_no_objective_when_plan_has_no_objective() -> None:
         )
         issues_ops = FakeGitHubIssues(username="testuser", issues={42: plan_issue})
 
-        executor = FakeClaudeExecutor()
+        executor = FakePromptExecutor()
 
         repo = RepoContext(
             root=env.cwd,
@@ -406,7 +406,7 @@ def test_land_execute_no_objective_when_plan_has_no_objective() -> None:
             repo=repo,
             use_graphite=True,
             issues=issues_ops,
-            claude_executor=executor,
+            prompt_executor=executor,
         )
 
         # Execute without --objective-number - plan has no objective_id
@@ -505,7 +505,7 @@ def test_land_execute_no_objective_when_branch_not_linked_to_plan() -> None:
 
         issues_ops = FakeGitHubIssues(username="testuser")
 
-        executor = FakeClaudeExecutor()
+        executor = FakePromptExecutor()
 
         repo = RepoContext(
             root=env.cwd,
@@ -522,7 +522,7 @@ def test_land_execute_no_objective_when_branch_not_linked_to_plan() -> None:
             repo=repo,
             use_graphite=True,
             issues=issues_ops,
-            claude_executor=executor,
+            prompt_executor=executor,
         )
 
         # Execute without --objective-number - branch not linked to plan

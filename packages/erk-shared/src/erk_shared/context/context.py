@@ -3,7 +3,7 @@
 This module provides ErkContext - the unified context that holds all dependencies
 for erk and erk-kits operations.
 
-The ABCs for erk-specific services (ClaudeExecutor, ConfigStore, ScriptWriter,
+The ABCs for erk-specific services (PromptExecutor, ConfigStore, ScriptWriter,
 PlanListService) are defined in erk_shared.core, enabling
 proper type hints without circular imports. Real implementations remain in erk.
 """
@@ -19,8 +19,8 @@ from erk_shared.context.types import (
     NoRepoSentinel,
     RepoContext,
 )
-from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.core.plan_list_service import PlanListService
+from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.git import GitBranchManager
@@ -40,7 +40,6 @@ from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
-from erk_shared.gateway.prompt_executor.abc import PromptExecutor
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.backend import PlanBackend
@@ -85,7 +84,6 @@ class ErkContext:
     codespace: Codespace
 
     # Erk-specific services (ABCs now in erk_shared.core for proper type hints)
-    claude_executor: ClaudeExecutor
     erk_installation: ErkInstallation
     script_writer: ScriptWriter
     codespace_registry: CodespaceRegistry
@@ -197,7 +195,6 @@ class ErkContext:
         github: GitHub | None = None,
         claude_installation: ClaudeInstallation | None = None,
         prompt_executor: PromptExecutor | None = None,
-        claude_executor: ClaudeExecutor | None = None,
         debug: bool = False,
         repo_root: Path | None = None,
         cwd: Path | None = None,
@@ -214,7 +211,6 @@ class ErkContext:
             github: Optional GitHub implementation. If None, creates FakeGitHub.
             claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
             prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
-            claude_executor: Optional ClaudeExecutor. If None, creates FakeClaudeExecutor.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
             cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -238,7 +234,6 @@ class ErkContext:
             github=github,
             claude_installation=claude_installation,
             prompt_executor=prompt_executor,
-            claude_executor=claude_executor,
             debug=debug,
             repo_root=repo_root,
             cwd=cwd,

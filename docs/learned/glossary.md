@@ -620,7 +620,7 @@ A boolean field on `PullRequestInfo` indicating whether a PR will automatically 
 | `true`  | PR was created with "Closes #N" (or equivalent) in initial body                              |
 | `false` | PR merely references the issue without closing keywords, or keyword was added after creation |
 
-**Display**: In `erk plan list`, PRs with `will_close_target: true` show a 🔗 indicator.
+**Display**: In `erk plan list`, PRs with `will_close_target: true` show a link indicator.
 
 **Critical Timing**: This field is determined at PR creation time. Editing the PR body afterward to add "Closes #N" does **not** update `willCloseTarget`. This is why `erk plan submit` must include the closing keyword in the initial `create_pr()` call.
 
@@ -670,11 +670,11 @@ yield CompletionEvent(MyResult(success=True, data=data))
 
 **Related**: [Claude CLI Progress Feedback Pattern](architecture/claude-cli-progress.md)
 
-### ClaudeEvent
+### ExecutorEvent
 
 A union type of frozen dataclasses representing events from Claude CLI streaming execution.
 
-**Location**: `src/erk/core/claude_executor.py`
+**Location**: `src/erk/core/prompt_executor.py`
 
 **Purpose**: Typed events enabling pattern matching for Claude CLI output processing.
 
@@ -697,7 +697,7 @@ A union type of frozen dataclasses representing events from Claude CLI streaming
 **Union Type**:
 
 ```python
-ClaudeEvent = (
+ExecutorEvent = (
     TextEvent | ToolEvent | SpinnerUpdateEvent |
     PrUrlEvent | PrNumberEvent | PrTitleEvent | IssueNumberEvent |
     ErrorEvent | NoOutputEvent | NoTurnsEvent | ProcessErrorEvent
