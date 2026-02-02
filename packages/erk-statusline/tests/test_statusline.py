@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import time
 from pathlib import Path
@@ -42,6 +43,7 @@ from erk_statusline.statusline import (
     get_pr_info_via_branch_manager,
     get_repo_info,
     get_worktree_info_via_gateway,
+    main,
 )
 
 
@@ -1634,3 +1636,24 @@ class TestFetchGitHubDataViaGateway:
         assert len(result.check_contexts) == 1
         assert result.review_thread_counts == (3, 5)
         assert result.from_fallback is False
+
+
+class TestMainSetsGitOptionalLocks:
+    """Test that main() sets GIT_OPTIONAL_LOCKS=0 to prevent lock contention."""
+
+    def test_main_sets_git_optional_locks_env_var(self) -> None:
+        """main() should set GIT_OPTIONAL_LOCKS=0 before any git operations.
+
+        We provide minimal valid stdin so main() can run to completion.
+        The key assertion is that the env var is set after main() returns.
+        """
+        os.environ.pop("GIT_OPTIONAL_LOCKS", None)
+        stdin_payload = {
+            "workspace": {"current_dir": ""},
+            "session_id": "test",
+            "model": {},
+        }
+        with patch("json.load", return_value=stdin_payload):
+            with patch("builtins.print"):
+                main()
+        assert os.environ["GIT_OPTIONAL_LOCKS"] == "0"

@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import subprocess
 import sys
 import time
@@ -1130,6 +1131,11 @@ def build_gh_label(
 
 def main():
     """Main entry point."""
+    # Prevent git from taking optional locks (e.g., index refresh during status).
+    # The statusline is read-only and runs concurrently — lock contention causes
+    # orphaned .git/index.lock files that block all git operations.
+    os.environ["GIT_OPTIONAL_LOCKS"] = "0"
+
     from erk_statusline.context import create_context
 
     try:
