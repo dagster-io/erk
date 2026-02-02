@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: `2d8665c80` -->
+<!-- As of: `231cb201d` -->
 
 ### Major Changes
 
@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consolidate `erk init capability list` and `erk init capability check` into unified `erk init capability list [name]` command (57a406f39)
 - Add plan context feedback to `erk pr summarize`, showing which plan issue is being incorporated (d4c1c2019)
 - Prevent duplicate inline review comments by deduplicating during review execution (19f88f463)
+- Add `erk objective check` command for validating objective roadmap status, labels, and consistency (2ea5d8bfb)
+- Add `-d/--dangerous` flag to `erk objective next-plan` for skipping permissions during plan creation (8956a07f3)
+- Embed implementation plan in PR description as a collapsible `<details>` section (a99a6efab)
+- Make Files Changed and Implementation Plan sections collapsible in PR body (ca46dcbcb)
+- Add Quick Start section to plan review PRs with copy-pasteable `erk prepare` and `erk implement` commands (75ac22399)
 
 ### Changed
 
@@ -28,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix detached HEAD state after landing PR from root worktree (8a952099c)
 - Remove `--docker` and `--codespace` flags from `implement`/`prepare` commands; standalone `erk codespace` commands preserved (f1f0ac79c)
 - Encode objective ID in branch names with `P{issue}-O{objective}-{slug}-{timestamp}` pattern (eb7988c88)
+- Automatically close review PRs when plan implementation starts via `erk implement` (ab0906b75)
+- Objective roadmap tables now show explicit status values (`done`, `in-progress`, `pending`) instead of `-` (1c493b37f)
 
 ### Fixed
 
@@ -38,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix remote implementation creates wrong branch (c7e2a08fe)
 - Fix pr-fix-conflicts "Argument list too long" error in PR comment formatting (7df756fb6)
 - Fix hardcoded PR URL in plan-create-review-pr, making it portable across repositories (57aa7ed96)
+- Fix Graphite tracking divergence after commit amend in `erk pr submit` finalization (daeb7015e)
+- Fix placeholder branch creation failing in multi-worktree scenarios by bypassing Graphite for ephemeral stub branches (13ca6fa2f)
 
 ### Removed
 
