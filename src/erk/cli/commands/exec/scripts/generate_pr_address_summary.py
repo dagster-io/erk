@@ -298,7 +298,7 @@ def generate_pr_address_summary(
 
     prompt = _build_summary_prompt(diff_content)
     result = executor.execute_prompt(
-        prompt, model="haiku", tools=None, cwd=repo_root, system_prompt=None
+        prompt, model="haiku", tools=None, cwd=repo_root, system_prompt=None, dangerous=False
     )
 
     if not result.success:

@@ -223,7 +223,7 @@ def _update_pr_body_impl(
     # Generate summary using Claude
     prompt = _build_prompt(diff_content, current_branch, parent_branch, repo_root)
     result = executor.execute_prompt(
-        prompt, model="haiku", tools=None, cwd=repo_root, system_prompt=None
+        prompt, model="haiku", tools=None, cwd=repo_root, system_prompt=None, dangerous=False
     )
 
     # Separate failure modes for better diagnostics
