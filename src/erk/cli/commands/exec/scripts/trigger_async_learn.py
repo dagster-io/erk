@@ -26,18 +26,40 @@ Examples:
 """
 
 import json
-import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import NoReturn, cast
+from typing import NoReturn
 
 import click
 
-from erk_shared.context.helpers import require_github, require_repo_root
-from erk_shared.gateway.github.parsing import construct_workflow_run_url
-from erk_shared.learn.extraction.get_learn_sessions_result import (
-    GetLearnSessionsResultDict,
+from erk.cli.commands.exec.scripts.get_learn_sessions import _discover_sessions
+from erk.cli.commands.exec.scripts.preprocess_session import (
+    deduplicate_assistant_messages,
+    deduplicate_documentation_blocks,
+    discover_agent_logs,
+    is_empty_session,
+    is_warmup_session,
+    process_log_file,
+    split_entries_to_chunks,
+    truncate_tool_parameters,
 )
+from erk.cli.commands.exec.scripts.upload_learn_materials import (
+    combine_learn_material_files,
+)
+from erk_shared.context.helpers import (
+    require_claude_installation,
+    require_cwd,
+    require_github,
+    require_issues,
+    require_repo_root,
+)
+from erk_shared.gateway.github.abc import GistCreateError
+from erk_shared.gateway.github.checks import GitHubChecks
+from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.gateway.github.parsing import construct_workflow_run_url
+from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.non_ideal_state import GitHubAPIFailed
 
 LEARN_WORKFLOW = "learn.yml"
 
@@ -83,123 +105,156 @@ def _output_error(message: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def _run_subprocess(cmd: list[str], *, description: str, emoji: str) -> dict[str, object]:
-    """Run subprocess, capture stdout JSON, check exit code.
+def _preprocess_session_direct(
+    *,
+    session_path: Path,
+    max_tokens: int,
+    output_dir: Path,
+    prefix: str,
+) -> list[Path]:
+    """Preprocess a session log file directly using Python functions.
+
+    Replicates the orchestration from the preprocess-session CLI command:
+    process log file, apply filters, discover agent logs, generate XML,
+    and write output files.
 
     Args:
-        cmd: Command to run (list of strings)
-        description: Human-readable description for error messages
-        emoji: Emoji prefix for the output message (empty string for no prefix)
-
-    Returns:
-        Parsed JSON from stdout
-
-    Raises:
-        SystemExit: On subprocess failure (outputs error JSON and exits)
-    """
-    if emoji:
-        prefix = f"{emoji} "
-    else:
-        prefix = ""
-    message = click.style(f"{prefix}{description}...", fg="cyan")
-    click.echo(message, err=True)
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-
-    if result.returncode != 0:
-        error_msg = f"{description} failed: {result.stderr.strip() or result.stdout.strip()}"
-        _output_error(error_msg)
-
-    if not result.stdout.strip():
-        _output_error(f"{description} returned empty output")
-
-    try:
-        return json.loads(result.stdout)
-    except json.JSONDecodeError as e:
-        _output_error(f"{description} returned invalid JSON: {e}")
-        # This line is never reached due to SystemExit above, but satisfies type checker
-        return {}
-
-
-def _run_subprocess_lenient(
-    cmd: list[str], *, description: str, emoji: str
-) -> dict[str, object] | None:
-    """Run subprocess, capture stdout JSON, return None on failure.
-
-    Unlike _run_subprocess, this does not exit on subprocess failure.
-    It logs a dim warning to stderr and returns None instead.
-
-    Args:
-        cmd: Command to run (list of strings)
-        description: Human-readable description for error messages
-        emoji: Emoji prefix for the output message (empty string for no prefix)
-
-    Returns:
-        Parsed JSON from stdout on success, None on failure
-    """
-    if emoji:
-        prefix = f"{emoji} "
-    else:
-        prefix = ""
-    message = click.style(f"{prefix}{description}...", fg="cyan")
-    click.echo(message, err=True)
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-
-    if result.returncode != 0:
-        error_output = result.stderr.strip() or result.stdout.strip()
-        warning = click.style(
-            f"   ⏭️  {description} failed, skipping: {error_output}",
-            dim=True,
-        )
-        click.echo(warning, err=True)
-        return None
-
-    if not result.stdout.strip():
-        return None
-
-    try:
-        return json.loads(result.stdout)
-    except json.JSONDecodeError:
-        return None
-
-
-def _run_preprocess_session(cmd: list[str], *, description: str) -> list[str]:
-    """Run preprocess-session subprocess and return output file paths.
-
-    Unlike _run_subprocess, this does NOT parse stdout as JSON.
-    preprocess-session outputs file paths (one per line) to stdout,
-    or empty stdout when a session is filtered (empty/warmup).
-
-    Stderr from the subprocess (e.g. compression stats) is forwarded
-    with indentation for diagnostic visibility.
-
-    Args:
-        cmd: Command to run (list of strings)
-        description: Human-readable description for error messages
+        session_path: Path to the session JSONL file
+        max_tokens: Maximum tokens per output chunk
+        output_dir: Directory to write output files
+        prefix: Prefix for output filenames
 
     Returns:
         List of output file paths (may be empty if session was filtered)
-
-    Raises:
-        SystemExit: On subprocess failure (outputs error JSON and exits)
     """
-    message = click.style(f"🔄 {description}...", fg="cyan")
-    click.echo(message, err=True)
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    session_id = session_path.stem
 
-    # Forward stderr diagnostics (e.g. compression stats) with indentation
-    if result.stderr and result.stderr.strip():
-        for line in result.stderr.strip().splitlines():
-            click.echo(f"   {line}", err=True)
+    # Process main session log
+    entries, _total_entries, _skipped_entries = process_log_file(
+        session_path, session_id=session_id, enable_filtering=True
+    )
 
-    if result.returncode != 0:
-        error_msg = f"{description} failed: {result.stderr.strip() or result.stdout.strip()}"
-        _output_error(error_msg)
-
-    stdout = result.stdout.strip()
-    if not stdout:
+    # Apply filtering
+    if is_empty_session(entries):
+        return []
+    if is_warmup_session(entries):
         return []
 
-    return [line for line in stdout.splitlines() if line.strip()]
+    entries = deduplicate_documentation_blocks(entries)
+    entries = truncate_tool_parameters(entries)
+    entries = deduplicate_assistant_messages(entries)
+
+    # Track original bytes for compression metrics
+    original_bytes = len(session_path.read_text(encoding="utf-8"))
+
+    # Collect all entries with their source labels
+    all_entries_with_labels: list[tuple[list[dict], str | None]] = [(entries, None)]
+
+    # Discover and process agent logs
+    agent_logs = discover_agent_logs(session_path, session_id)
+    for agent_log in agent_logs:
+        agent_entries, _agent_total, _agent_skipped = process_log_file(
+            agent_log, session_id=session_id, enable_filtering=True
+        )
+
+        if is_empty_session(agent_entries):
+            continue
+        if is_warmup_session(agent_entries):
+            continue
+
+        agent_entries = deduplicate_documentation_blocks(agent_entries)
+        agent_entries = truncate_tool_parameters(agent_entries)
+        agent_entries = deduplicate_assistant_messages(agent_entries)
+
+        original_bytes += len(agent_log.read_text(encoding="utf-8"))
+        source_label = f"agent-{agent_log.stem.replace('agent-', '')}"
+        all_entries_with_labels.append((agent_entries, source_label))
+
+    # Generate XML sections with splitting
+    xml_sections: list[str] = []
+    for session_entries, source_label in all_entries_with_labels:
+        chunks = split_entries_to_chunks(
+            session_entries,
+            max_tokens=max_tokens,
+            source_label=source_label,
+            enable_pruning=True,
+        )
+        xml_sections.extend(chunks)
+
+    # Log compression metrics
+    compressed_size = sum(len(section) for section in xml_sections)
+    if original_bytes > 0:
+        reduction_pct = ((original_bytes - compressed_size) / original_bytes) * 100
+        stats_msg = (
+            f"📉 Token reduction: {reduction_pct:.1f}% "
+            f"({original_bytes:,} → {compressed_size:,} chars)"
+        )
+        click.echo(stats_msg, err=True)
+
+    # Write output files
+    output_dir.mkdir(parents=True, exist_ok=True)
+    filename_session_id = session_path.stem
+    output_paths: list[Path] = []
+
+    if len(xml_sections) > 1:
+        for i, section in enumerate(xml_sections, start=1):
+            file_path = output_dir / f"{prefix}-{filename_session_id}-part{i}.xml"
+            file_path.write_text(section, encoding="utf-8")
+            output_paths.append(file_path)
+    else:
+        file_path = output_dir / f"{prefix}-{filename_session_id}.xml"
+        file_path.write_text("\n\n".join(xml_sections), encoding="utf-8")
+        output_paths.append(file_path)
+
+    return output_paths
+
+
+def _get_pr_for_plan_direct(
+    *,
+    github_issues,
+    github,
+    repo_root: Path,
+    issue_number: int,
+) -> dict[str, object] | None:
+    """Look up the PR associated with a plan issue using direct gateway calls.
+
+    Args:
+        github_issues: GitHub issues gateway
+        github: GitHub gateway
+        repo_root: Repository root path
+        issue_number: Plan issue number
+
+    Returns:
+        Dict with pr_number and pr details on success, None on failure
+    """
+    issue = github_issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        return None
+
+    block = find_metadata_block(issue.body, "plan-header")
+    if block is None:
+        return None
+
+    branch_name = block.data.get("branch_name")
+    if branch_name is None:
+        return None
+
+    pr_result = github.get_pr_for_branch(repo_root, branch_name)
+    if isinstance(pr_result, PRNotFound):
+        return None
+
+    return {
+        "success": True,
+        "pr_number": pr_result.number,
+        "pr": {
+            "number": pr_result.number,
+            "title": pr_result.title,
+            "state": pr_result.state,
+            "url": pr_result.url,
+            "head_ref_name": pr_result.head_ref_name,
+            "base_ref_name": pr_result.base_ref_name,
+        },
+    }
 
 
 @click.command(name="trigger-async-learn")
@@ -228,30 +283,31 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         return
 
     repo_root = require_repo_root(ctx)
+    cwd = require_cwd(ctx)
     github = require_github(ctx)
+    github_issues = require_issues(ctx)
+    claude_installation = require_claude_installation(ctx)
 
-    # Step 1: Get session sources for the plan
-    sessions_result = _run_subprocess(
-        ["erk", "exec", "get-learn-sessions", str(issue_number)],
-        description="Discovering sessions",
-        emoji="📋",
+    # Step 1: Discover session sources for the plan (direct function call)
+    message = click.style("📋 Discovering sessions...", fg="cyan")
+    click.echo(message, err=True)
+
+    sessions = _discover_sessions(
+        github_issues=github_issues,
+        claude_installation=claude_installation,
+        repo_root=repo_root,
+        cwd=cwd,
+        issue_number=issue_number,
     )
 
-    if not sessions_result.get("success"):
-        _output_error(
-            f"Failed to get session sources: {sessions_result.get('error', 'unknown error')}"
-        )
+    if not sessions.get("success"):
+        _output_error(f"Failed to get session sources: {sessions.get('error', 'unknown error')}")
         return
-
-    sessions = cast(GetLearnSessionsResultDict, sessions_result)
 
     session_sources = sessions["session_sources"]
-    if not isinstance(session_sources, list):
-        _output_error("Invalid session_sources format - expected list")
-        return
 
     # Diagnostic: log session source summary
-    planning_session_id = sessions_result.get("planning_session_id")
+    planning_session_id = sessions.get("planning_session_id")
     planning_count = 0
     for s in session_sources:
         if not isinstance(s, dict):
@@ -272,12 +328,12 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         sid = source_item.get("session_id", "unknown")
         source_type = source_item.get("source_type", "unknown")
         if sid == planning_session_id:
-            prefix = "planning"
+            label = "planning"
             emoji = "📝"
         else:
-            prefix = "impl"
+            label = "impl"
             emoji = "🔧"
-        session_line = click.style(f"     {emoji} {prefix}: {sid} ({source_type})", dim=True)
+        session_line = click.style(f"     {emoji} {label}: {sid} ({source_type})", dim=True)
         click.echo(session_line, err=True)
 
     # Step 2: Create learn materials directory
@@ -287,7 +343,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
     message = click.style(f"📂 Created {dirname}", fg="cyan")
     click.echo(message, err=True)
 
-    # Step 3: Preprocess each local session source
+    # Step 3: Preprocess each local session source (direct function calls)
     for source_item in session_sources:
         if not isinstance(source_item, dict):
             continue
@@ -295,28 +351,26 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         if source_item.get("source_type") != "local":
             continue
 
-        session_path = source_item.get("path")
-        if not isinstance(session_path, str):
+        session_path_str = source_item.get("path")
+        if not isinstance(session_path_str, str):
             continue
 
         session_id = source_item.get("session_id")
         planning_session_id = sessions["planning_session_id"]
         prefix = "planning" if session_id == planning_session_id else "impl"
 
-        output_paths = _run_preprocess_session(
-            [
-                "erk",
-                "exec",
-                "preprocess-session",
-                session_path,
-                "--max-tokens",
-                "20000",
-                "--output-dir",
-                str(learn_dir),
-                "--prefix",
-                prefix,
-            ],
-            description=f"Preprocessing {prefix} session",
+        message = click.style(f"🔄 Preprocessing {prefix} session...", fg="cyan")
+        click.echo(message, err=True)
+
+        session_path = Path(session_path_str)
+        if not session_path.exists():
+            _output_error(f"Preprocessing {prefix} session failed: Session file not found")
+
+        output_paths = _preprocess_session_direct(
+            session_path=session_path,
+            max_tokens=20000,
+            output_dir=learn_dir,
+            prefix=prefix,
         )
 
         if not output_paths:
@@ -325,88 +379,124 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
             continue
 
         # Diagnostic: log output file sizes
-        for output_path in output_paths:
-            output_file = Path(output_path)
+        for output_file in output_paths:
             if output_file.exists():
                 char_count = len(output_file.read_text(encoding="utf-8"))
                 message = click.style(f"   📄 {output_file.name} ({char_count:,} chars)", dim=True)
                 click.echo(message, err=True)
 
     # Step 4: Get PR for plan (if exists) and fetch review comments
-    pr_result = _run_subprocess_lenient(
-        ["erk", "exec", "get-pr-for-plan", str(issue_number)],
-        description="Getting PR for plan",
-        emoji="🔍",
+    message = click.style("🔍 Getting PR for plan...", fg="cyan")
+    click.echo(message, err=True)
+
+    pr_result = _get_pr_for_plan_direct(
+        github_issues=github_issues,
+        github=github,
+        repo_root=repo_root,
+        issue_number=issue_number,
     )
 
-    if pr_result is not None and pr_result.get("success") and pr_result.get("pr_number"):
+    if pr_result is None:
+        warning = click.style(
+            "   ⏭️  Getting PR for plan failed, skipping: No PR found",
+            dim=True,
+        )
+        click.echo(warning, err=True)
+    elif pr_result.get("success") and pr_result.get("pr_number"):
         pr_number = pr_result["pr_number"]
+        assert isinstance(pr_number, int)
 
-        # Fetch review comments
-        review_comments_result = _run_subprocess(
-            [
-                "erk",
-                "exec",
-                "get-pr-review-comments",
-                "--pr",
-                str(pr_number),
-                "--include-resolved",
+        # Fetch review comments (direct gateway call)
+        message = click.style("💬 Fetching review comments...", fg="cyan")
+        click.echo(message, err=True)
+
+        threads = github.get_pr_review_threads(repo_root, pr_number, include_resolved=True)
+        valid_threads = [t for t in threads if t.id]
+
+        review_data = {
+            "success": True,
+            "pr_number": pr_number,
+            "threads": [
+                {
+                    "id": t.id,
+                    "path": t.path,
+                    "line": t.line,
+                    "is_outdated": t.is_outdated,
+                    "comments": [
+                        {
+                            "author": c.author,
+                            "body": c.body,
+                            "created_at": c.created_at,
+                        }
+                        for c in t.comments
+                    ],
+                }
+                for t in valid_threads
             ],
-            description="Fetching review comments",
-            emoji="💬",
-        )
+        }
 
-        # Write to file
         review_comments_file = learn_dir / "pr-review-comments.json"
-        review_comments_file.write_text(
-            json.dumps(review_comments_result, indent=2), encoding="utf-8"
-        )
+        review_comments_file.write_text(json.dumps(review_data, indent=2), encoding="utf-8")
         message = click.style(f"   📄 Wrote {review_comments_file.name}", dim=True)
         click.echo(message, err=True)
 
-        # Fetch discussion comments
-        discussion_comments_result = _run_subprocess(
-            ["erk", "exec", "get-pr-discussion-comments", "--pr", str(pr_number)],
-            description="Fetching discussion comments",
-            emoji="💬",
-        )
+        # Fetch discussion comments (direct gateway call)
+        message = click.style("💬 Fetching discussion comments...", fg="cyan")
+        click.echo(message, err=True)
 
-        # Write to file
+        comments_result = GitHubChecks.issue_comments(github_issues, repo_root, pr_number)
+
+        if isinstance(comments_result, GitHubAPIFailed):
+            discussion_data: dict[str, object] = {
+                "success": False,
+                "error": comments_result.message,
+            }
+        else:
+            discussion_data = {
+                "success": True,
+                "pr_number": pr_number,
+                "comments": [
+                    {
+                        "id": c.id,
+                        "author": c.author,
+                        "body": c.body,
+                        "url": c.url,
+                    }
+                    for c in comments_result
+                ],
+            }
+
         discussion_comments_file = learn_dir / "pr-discussion-comments.json"
-        discussion_comments_file.write_text(
-            json.dumps(discussion_comments_result, indent=2), encoding="utf-8"
-        )
+        discussion_comments_file.write_text(json.dumps(discussion_data, indent=2), encoding="utf-8")
         message = click.style(f"   📄 Wrote {discussion_comments_file.name}", dim=True)
         click.echo(message, err=True)
 
-    # Step 5: Upload learn materials to gist
-    upload_result = _run_subprocess(
-        [
-            "erk",
-            "exec",
-            "upload-learn-materials",
-            "--learn-dir",
-            str(learn_dir),
-            "--issue",
-            str(issue_number),
-        ],
-        description="Uploading to gist",
-        emoji="☁️",
+    # Step 5: Upload learn materials to gist (direct function calls)
+    message = click.style("☁️ Uploading to gist...", fg="cyan")
+    click.echo(message, err=True)
+
+    learn_files = sorted(f for f in learn_dir.iterdir() if f.is_file())
+    if not learn_files:
+        _output_error("No files found in learn directory")
+        return
+
+    combined_content = combine_learn_material_files(learn_dir)
+
+    gist_result = github.create_gist(
+        filename=f"learn-materials-plan-{issue_number}.txt",
+        content=combined_content,
+        description=f"Learn materials for plan #{issue_number}",
+        public=False,
     )
 
-    if not upload_result.get("success"):
-        _output_error(
-            f"Failed to upload learn materials: {upload_result.get('error', 'unknown error')}"
-        )
+    if isinstance(gist_result, GistCreateError):
+        _output_error(f"Failed to upload learn materials: {gist_result.message}")
         return
 
-    gist_url = upload_result.get("gist_url")
-    if gist_url is None or not isinstance(gist_url, str):
-        _output_error("Upload succeeded but no gist_url in response")
-        return
+    gist_url = gist_result.gist_url
+    file_count = len(learn_files)
+    total_size = len(combined_content)
 
-    file_count = upload_result.get("file_count", 0)
-    total_size = upload_result.get("total_size", 0)
     url_styled = click.style(f"{gist_url}", fg="blue", underline=True)
     stats_styled = click.style(f"({file_count} file(s), {total_size:,} chars)", dim=True)
     click.echo(f"   🔗 {url_styled} {stats_styled}", err=True)

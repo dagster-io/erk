@@ -10,15 +10,21 @@ Output:
 """
 
 import json
-import subprocess
 from dataclasses import asdict, dataclass
 from typing import NoReturn
 
 import click
 
-from erk_shared.context.helpers import require_github as require_github_gateway
-from erk_shared.context.helpers import require_issues as require_github_issues
-from erk_shared.context.helpers import require_repo_root
+from erk_shared.context.helpers import (
+    require_git,
+    require_repo_root,
+)
+from erk_shared.context.helpers import (
+    require_github as require_github_gateway,
+)
+from erk_shared.context.helpers import (
+    require_issues as require_github_issues,
+)
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRNotFound
@@ -48,31 +54,6 @@ def _exit_with_error(*, error: str, message: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def _infer_branch_from_git(issue_number: int) -> str:
-    """Attempt to infer branch name from current git context.
-
-    This handles cases where impl-signal failed to set branch_name
-    in the plan header. Checks if the current branch matches the
-    erk naming pattern P{issue_number}-*.
-    """
-    git_branch_result = subprocess.run(
-        ["git", "branch", "--show-current"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-    if git_branch_result.returncode == 0:
-        current_branch = git_branch_result.stdout.strip()
-        if current_branch.startswith(f"P{issue_number}-"):
-            return current_branch
-
-    _exit_with_error(
-        error="no-branch-in-plan",
-        message=f"Issue #{issue_number} plan-header has no branch_name field",
-    )
-
-
 @click.command(name="get-pr-for-plan")
 @click.argument("issue_number", type=int)
 @click.pass_context
@@ -87,15 +68,13 @@ def get_pr_for_plan(
     """
     github_issues = require_github_issues(ctx)
     github = require_github_gateway(ctx)
+    git = require_git(ctx)
     repo_root = require_repo_root(ctx)
 
     # Fetch current issue
     issue = github_issues.get_issue(repo_root, issue_number)
     if isinstance(issue, IssueNotFound):
         return _exit_with_error(error="plan-not-found", message=f"Issue #{issue_number} not found")
-
-    # At this point issue is guaranteed to be IssueInfo
-    assert not isinstance(issue, IssueNotFound)
 
     # Extract plan-header block
     block = find_metadata_block(issue.body, "plan-header")
@@ -105,13 +84,19 @@ def get_pr_for_plan(
             message=f"Issue #{issue_number} has no plan-header metadata block",
         )
 
-    # At this point block is guaranteed to be MetadataBlock
-    assert block is not None
-
     # Get branch_name field
-    branch_name = block.data.get("branch_name")
+    branch_name: str | None = block.data.get("branch_name")
     if branch_name is None:
-        branch_name = _infer_branch_from_git(issue_number)
+        # Attempt to infer branch from current git context
+        # This handles cases where impl-signal failed to set branch_name
+        current_branch = git.branch.get_current_branch(repo_root)
+        if current_branch is not None and current_branch.startswith(f"P{issue_number}-"):
+            branch_name = current_branch
+        else:
+            return _exit_with_error(
+                error="no-branch-in-plan",
+                message=f"Issue #{issue_number} plan-header has no branch_name field",
+            )
 
     # At this point branch_name is guaranteed to be a string
     assert branch_name is not None
@@ -123,9 +108,6 @@ def get_pr_for_plan(
             error="no-pr-for-branch",
             message=f"No PR found for branch '{branch_name}'",
         )
-
-    # At this point pr_result is guaranteed to be PRDetails
-    assert not isinstance(pr_result, PRNotFound)
 
     # Return PR details
     pr_data = {
