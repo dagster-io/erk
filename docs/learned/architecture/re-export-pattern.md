@@ -23,14 +23,7 @@ The re-export pattern allows gateway implementation modules to expose ABC types 
 
 A **re-export** is an import that exists solely to make a symbol available through the current module, not for use within the module itself.
 
-```python
-# src/erk/core/prompt_executor.py
-from erk_shared.core.prompt_executor import (
-    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
-    PromptExecutor,
-    PromptResult,
-)
-```
+See `src/erk/core/prompt_executor.py:22-32` for a real example where `CommandResult` is re-exported with `# noqa: F401` comments explaining the purpose of each re-export.
 
 Consumers can then import from the shorter path:
 
