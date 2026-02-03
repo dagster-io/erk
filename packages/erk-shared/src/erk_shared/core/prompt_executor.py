@@ -185,7 +185,7 @@ class PromptExecutor(ABC):
         verbose: bool = False,
         debug: bool = False,
         model: str | None = None,
-        permission_mode: PermissionMode = "edits",
+        permission_mode: PermissionMode,
         allow_dangerous: bool = False,
     ) -> Iterator[ExecutorEvent]:
         """Execute command and yield typed events in real-time.
@@ -197,7 +197,7 @@ class PromptExecutor(ABC):
             verbose: Whether to show raw output (True) or filtered output (False)
             debug: Whether to emit debug output for stream parsing
             model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
-            permission_mode: Generic permission mode (default: "edits")
+            permission_mode: Generic permission mode. See PermissionMode.
             allow_dangerous: Whether to pass --allow-dangerously-skip-permissions
 
         Yields:
@@ -224,7 +224,7 @@ class PromptExecutor(ABC):
         dangerous: bool,
         verbose: bool = False,
         model: str | None = None,
-        permission_mode: PermissionMode = "edits",
+        permission_mode: PermissionMode,
         allow_dangerous: bool = False,
     ) -> CommandResult:
         """Execute command and return final result (non-streaming).
@@ -239,7 +239,7 @@ class PromptExecutor(ABC):
             dangerous: Whether to skip permission prompts (--dangerously-skip-permissions)
             verbose: Whether to show raw output (True) or filtered output (False)
             model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
-            permission_mode: Generic permission mode (default: "edits")
+            permission_mode: Generic permission mode. See PermissionMode.
             allow_dangerous: Whether to pass --allow-dangerously-skip-permissions
 
         Returns:
@@ -322,7 +322,7 @@ class PromptExecutor(ABC):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
-        permission_mode: PermissionMode = "edits",
+        permission_mode: PermissionMode,
     ) -> None:
         """Execute in interactive mode by replacing current process.
 

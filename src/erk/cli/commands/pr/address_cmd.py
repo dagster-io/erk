@@ -57,6 +57,7 @@ def address(ctx: ErkContext, *, dangerous: bool) -> None:
         command="/erk:pr-address",
         worktree_path=cwd,
         dangerous=True,
+        permission_mode="edits",
     )
 
     if not result.success:

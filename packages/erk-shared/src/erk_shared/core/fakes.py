@@ -95,7 +95,7 @@ class FakePromptExecutor(PromptExecutor):
         verbose: bool = False,
         debug: bool = False,
         model: str | None = None,
-        permission_mode: PermissionMode = "edits",
+        permission_mode: PermissionMode,
         allow_dangerous: bool = False,
     ) -> Iterator[ExecutorEvent]:
         yield from self.streaming_events
@@ -108,7 +108,7 @@ class FakePromptExecutor(PromptExecutor):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
-        permission_mode: PermissionMode = "edits",
+        permission_mode: PermissionMode,
     ) -> None:
         self.interactive_calls.append(
             InteractiveCall(

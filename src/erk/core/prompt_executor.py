@@ -100,7 +100,7 @@ class ClaudePromptExecutor(PromptExecutor):
         verbose: bool = False,
         debug: bool = False,
         model: str | None = None,
-        permission_mode: PermissionMode = "edits",
+        permission_mode: PermissionMode,
         allow_dangerous: bool = False,
     ) -> Iterator[ExecutorEvent]:
         """Execute Claude CLI command and yield typed events in real-time.
@@ -457,7 +457,7 @@ class ClaudePromptExecutor(PromptExecutor):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
-        permission_mode: PermissionMode = "edits",
+        permission_mode: PermissionMode,
     ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 
