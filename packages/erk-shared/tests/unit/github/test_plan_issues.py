@@ -560,6 +560,7 @@ class TestCreateObjectiveIssue:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
+            parent_objective=None,
         )
 
         assert result.success is True
@@ -585,6 +586,7 @@ class TestCreateObjectiveIssue:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
+            parent_objective=None,
         )
 
         assert result.success is True
@@ -606,6 +608,7 @@ class TestCreateObjectiveIssue:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
+            parent_objective=None,
         )
 
         assert result.success is True
@@ -631,6 +634,7 @@ class TestCreateObjectiveIssue:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
+            parent_objective=None,
         )
 
         assert result.success is True
@@ -649,6 +653,7 @@ class TestCreateObjectiveIssue:
             plan_content=plan_content,
             title=None,
             extra_labels=None,
+            parent_objective=None,
         )
 
         assert result.success is True
@@ -667,6 +672,7 @@ class TestCreateObjectiveIssue:
             plan_content=plan_content,
             title=None,
             extra_labels=["priority-high"],
+            parent_objective=None,
         )
 
         assert result.success is True
@@ -675,6 +681,52 @@ class TestCreateObjectiveIssue:
         assert "erk-plan" not in labels  # objectives don't get erk-plan
         assert "erk-objective" in labels
         assert "priority-high" in labels
+
+    def test_objective_with_parent_objective_has_metadata_block(self, tmp_path: Path) -> None:
+        """Objective with parent_objective includes objective-header metadata block."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# Child Objective\n\nContent..."
+
+        result = create_objective_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            title=None,
+            extra_labels=None,
+            parent_objective=100,
+        )
+
+        assert result.success is True
+        body, _, _ = fake_gh.created_issues[0]
+
+        # Body should contain objective-header metadata block
+        assert "```erk-metadata:objective-header" in body
+        assert "parent_objective: 100" in body
+        # Content should still be present
+        assert "# Child Objective" in body
+        assert "Content..." in body
+
+    def test_objective_without_parent_has_no_metadata_block(self, tmp_path: Path) -> None:
+        """Objective without parent_objective has no metadata block (backward compatible)."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# Standalone Objective\n\nContent..."
+
+        result = create_objective_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            title=None,
+            extra_labels=None,
+            parent_objective=None,
+        )
+
+        assert result.success is True
+        body, _, _ = fake_gh.created_issues[0]
+
+        # Body should NOT contain metadata block
+        assert "```erk-metadata:objective-header" not in body
+        # Body should be just the plain content
+        assert body.strip() == plan_content.strip()
 
 
 class TestCreatePlanIssueCommandsSection:

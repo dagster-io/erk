@@ -90,8 +90,19 @@ def _get_existing_saved_objective(session_id: str, repo_root: Path) -> int | Non
     default=None,
     help="Session ID for scoped plan lookup",
 )
+@click.option(
+    "--parent-objective",
+    type=int,
+    default=None,
+    help="Parent objective issue number (enables hierarchical objectives)",
+)
 @click.pass_context
-def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: str | None) -> None:
+def objective_save_to_issue(
+    ctx: click.Context,
+    output_format: str,
+    session_id: str | None,
+    parent_objective: int | None,
+) -> None:
     """Save plan as objective GitHub issue.
 
     Creates a GitHub issue with only the erk-objective label (NOT erk-plan).
@@ -162,6 +173,7 @@ def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: 
         plan_content=plan,
         title=None,
         extra_labels=None,
+        parent_objective=parent_objective,
     )
 
     if not result.success:

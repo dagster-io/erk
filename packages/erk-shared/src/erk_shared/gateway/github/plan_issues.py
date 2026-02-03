@@ -17,6 +17,9 @@ from pathlib import Path
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.core import format_plan_commands_section
+from erk_shared.gateway.github.metadata.objective_header import (
+    format_objective_issue_body,
+)
 from erk_shared.gateway.github.metadata.plan_header import (
     format_plan_content_comment,
     format_plan_header_body,
@@ -243,12 +246,14 @@ def create_objective_issue(
     *,
     title: str | None,
     extra_labels: list[str] | None,
+    parent_objective: int | None,
 ) -> CreatePlanIssueResult:
     """Create objective issue with erk-objective label.
 
     Objectives are roadmaps, not implementation plans. They have:
     - Labels: erk-objective (NOT erk-plan - objectives are not plans)
-    - Plan content directly in body (no metadata block)
+    - Optional objective-header metadata block (if parent_objective is set)
+    - Plan content in body (with or without metadata)
     - No comment (content is in body)
     - No title suffix
     - No commands section
@@ -259,6 +264,7 @@ def create_objective_issue(
         plan_content: The full plan markdown content
         title: Optional title (extracted from H1 if None)
         extra_labels: Additional labels beyond erk-objective
+        parent_objective: Optional parent objective issue number
 
     Returns:
         CreatePlanIssueResult with success status and details
@@ -300,12 +306,17 @@ def create_objective_issue(
             error=label_errors,
         )
 
-    # Step 4: Create issue with plan content directly in body (no metadata)
+    # Step 4: Create issue with plan content (with optional metadata block)
+    issue_body = format_objective_issue_body(
+        plan_content=plan_content,
+        parent_objective=parent_objective,
+    )
+
     try:
         result = github_issues.create_issue(
             repo_root=repo_root,
             title=title,  # No suffix for objectives
-            body=plan_content.strip(),
+            body=issue_body,
             labels=labels,
         )
     except RuntimeError as e:

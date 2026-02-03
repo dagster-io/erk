@@ -756,3 +756,47 @@ class PlanHeaderSchema(MetadataBlockSchema):
 
 # Backward compatibility alias
 PlanIssueSchema = PlanSchema
+
+
+# Objective-header field name constants with Literal types
+PARENT_OBJECTIVE: Literal["parent_objective"] = "parent_objective"
+
+
+@dataclass(frozen=True)
+class ObjectiveHeaderSchema(MetadataBlockSchema):
+    """Schema for objective-header blocks.
+
+    Fields:
+        schema_version: Internal version identifier ("1")
+        parent_objective: Parent objective issue number (nullable)
+    """
+
+    def validate(self, data: dict[str, Any]) -> None:
+        """Validate objective-header data structure."""
+        required_fields = {"schema_version"}
+        optional_fields = {PARENT_OBJECTIVE}
+
+        # Check required fields exist
+        missing = required_fields - set(data.keys())
+        if missing:
+            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+
+        # Validate schema_version
+        if data["schema_version"] != "1":
+            raise ValueError(f"Invalid schema_version '{data['schema_version']}'. Must be '1'")
+
+        # Validate optional parent_objective field
+        if PARENT_OBJECTIVE in data and data[PARENT_OBJECTIVE] is not None:
+            if not isinstance(data[PARENT_OBJECTIVE], int):
+                raise ValueError("parent_objective must be an integer or null")
+            if data[PARENT_OBJECTIVE] <= 0:
+                raise ValueError("parent_objective must be positive when provided")
+
+        # Check for unexpected fields
+        known_fields = required_fields | optional_fields
+        unknown_fields = set(data.keys()) - known_fields
+        if unknown_fields:
+            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+
+    def get_key(self) -> str:
+        return "objective-header"

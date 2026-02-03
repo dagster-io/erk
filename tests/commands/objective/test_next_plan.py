@@ -57,6 +57,7 @@ def test_next_plan_launches_claude_with_issue_number() -> None:
 def test_next_plan_launches_claude_with_url() -> None:
     """Test next-plan launches Claude with the correct command for GitHub URL."""
     runner = CliRunner()
+    ctx = context_for_test()
     url = "https://github.com/owner/repo/issues/3679"
     global_config = GlobalConfig.test(erk_root=Path("/tmp/erk"))
     ctx = context_for_test(global_config=global_config)
