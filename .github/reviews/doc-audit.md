@@ -21,14 +21,14 @@ Read `.claude/commands/local/audit-doc.md` to understand the audit methodology a
 
 This command defines six value categories:
 
-| Category        | Description                                                                             | Action                                                    |
-| --------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                   | Replace with "Read `path:line`" reference                 |
-| **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                         | Flag as high-maintenance; consider code reference instead |
-| **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files  | Keep                                                      |
-| **CONTEXTUAL**  | Connects multiple code locations into a coherent narrative the code alone can't provide | Keep                                                      |
-| **EXAMPLES**    | Code examples that are essentially identical to what exists in source/tests             | Replace with reference to actual test/source              |
-| **CONTRADICTS** | States something that is factually wrong per the current codebase (wrong function names, incorrect behavior descriptions, outdated patterns) | Flag as high-priority fix; correct or delete |
+| Category        | Description                                                                                                                                  | Action                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                                                        | Replace with "Read `path:line`" reference                 |
+| **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                                                                              | Flag as high-maintenance; consider code reference instead |
+| **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                                                       | Keep                                                      |
+| **CONTEXTUAL**  | Connects multiple code locations into a coherent narrative the code alone can't provide                                                      | Keep                                                      |
+| **EXAMPLES**    | Code examples that are essentially identical to what exists in source/tests                                                                  | Replace with reference to actual test/source              |
+| **CONTRADICTS** | States something that is factually wrong per the current codebase (wrong function names, incorrect behavior descriptions, outdated patterns) | Flag as high-priority fix; correct or delete              |
 
 ## Step 3: For Each Changed Doc, Apply Audit-Doc Phases 2-4
 
