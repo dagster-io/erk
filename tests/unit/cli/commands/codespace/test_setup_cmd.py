@@ -115,3 +115,22 @@ def test_setup_passes_branch_option_to_gh_command() -> None:
     # Should output the command with --branch flag
     assert "--branch" in result.output
     assert "feature-branch" in result.output
+
+
+def test_setup_passes_machine_option_to_gh_command() -> None:
+    """setup command passes --machine option to gh codespace create."""
+    runner = CliRunner()
+
+    codespace_registry = FakeCodespaceRegistry()
+    ctx = context_for_test(codespace_registry=codespace_registry)
+
+    result = runner.invoke(
+        cli,
+        ["codespace", "setup", "mybox", "--machine", "standardLinux32gb"],
+        obj=ctx,
+        catch_exceptions=True,
+    )
+
+    # Should output the command with --machine flag
+    assert "--machine" in result.output
+    assert "standardLinux32gb" in result.output

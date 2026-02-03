@@ -7,6 +7,14 @@
       "version": "latest"
     }
   },
+  "hostRequirements": {
+    "cpus": {
+      "min": 16
+    },
+    "memory": {
+      "min": "64gb"
+    }
+  },
   "remoteEnv": {
     "UV_LINK_MODE": "copy"
   },
