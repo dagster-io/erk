@@ -39,6 +39,6 @@ def replan_plan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
     # Replace current process with Claude
     command = f"/erk:replan {' '.join(issue_refs)}"
     try:
-        ctx.claude_launcher.launch_interactive(config, command=command)
+        ctx.agent_launcher.launch_interactive(config, command=command)
     except RuntimeError as e:
         raise click.ClickException(str(e)) from e

@@ -1,6 +1,6 @@
-"""Claude launcher abstraction for testing.
+"""Agent launcher abstraction for testing.
 
-This module provides an ABC for Claude CLI launches to enable
+This module provides an ABC for agent CLI launches to enable
 testing without actually executing Claude or replacing the process.
 """
 
@@ -10,8 +10,8 @@ from typing import NoReturn
 from erk_shared.context.types import InteractiveClaudeConfig
 
 
-class ClaudeLauncher(ABC):
-    """Abstract Claude launcher for dependency injection."""
+class AgentLauncher(ABC):
+    """Abstract agent launcher for dependency injection."""
 
     @abstractmethod
     def launch_interactive(self, config: InteractiveClaudeConfig, *, command: str) -> NoReturn:

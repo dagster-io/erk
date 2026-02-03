@@ -1,6 +1,6 @@
-"""Real ClaudeLauncher implementation using Claude CLI.
+"""Real AgentLauncher implementation using Claude CLI.
 
-RealClaudeLauncher provides process replacement to launch Claude CLI
+RealAgentLauncher provides process replacement to launch Claude CLI
 interactively.
 """
 
@@ -9,7 +9,7 @@ import shutil
 from typing import NoReturn
 
 from erk_shared.context.types import InteractiveClaudeConfig
-from erk_shared.gateway.claude_launcher.abc import ClaudeLauncher
+from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 
 
 def build_claude_args(
@@ -47,7 +47,7 @@ def build_claude_args(
     return args
 
 
-class RealClaudeLauncher(ClaudeLauncher):
+class RealAgentLauncher(AgentLauncher):
     """Production implementation using Claude CLI for interactive sessions."""
 
     def launch_interactive(self, config: InteractiveClaudeConfig, *, command: str) -> NoReturn:

@@ -15,8 +15,8 @@ from erk_shared.core.fakes import (
     FakeScriptWriter,
 )
 from erk_shared.core.prompt_executor import PromptExecutor
+from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
-from erk_shared.gateway.claude_launcher.abc import ClaudeLauncher
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
@@ -34,7 +34,7 @@ def context_for_test(
     github: GitHub | None = None,
     graphite: Graphite | None = None,
     claude_installation: ClaudeInstallation | None = None,
-    claude_launcher: ClaudeLauncher | None = None,
+    agent_launcher: AgentLauncher | None = None,
     prompt_executor: PromptExecutor | None = None,
     codespace: Codespace | None = None,
     debug: bool = False,
@@ -56,7 +56,7 @@ def context_for_test(
         github: Optional GitHub implementation. If None, creates FakeGitHub.
         graphite: Optional Graphite implementation. If None, creates FakeGraphite.
         claude_installation: Optional ClaudeInstallation. If None, creates FakeClaudeInstallation.
-        claude_launcher: Optional ClaudeLauncher. If None, creates FakeClaudeLauncher.
+        agent_launcher: Optional AgentLauncher. If None, creates FakeAgentLauncher.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         codespace: Optional Codespace. If None, creates FakeCodespace.
         debug: Whether to enable debug mode (default False).
@@ -74,8 +74,8 @@ def context_for_test(
         >>> git_ops = FakeGit()
         >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
     """
+    from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
     from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-    from erk_shared.gateway.claude_launcher.fake import FakeClaudeLauncher
     from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
@@ -127,8 +127,8 @@ def context_for_test(
     resolved_prompt_executor: PromptExecutor = (
         prompt_executor if prompt_executor is not None else FakePromptExecutor()
     )
-    resolved_claude_launcher: ClaudeLauncher = (
-        claude_launcher if claude_launcher is not None else FakeClaudeLauncher()
+    resolved_agent_launcher: AgentLauncher = (
+        agent_launcher if agent_launcher is not None else FakeAgentLauncher()
     )
     resolved_codespace: Codespace = codespace if codespace is not None else FakeCodespace()
     resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
@@ -169,7 +169,7 @@ def context_for_test(
         shell=FakeShell(),
         completion=FakeCompletion(),
         codespace=resolved_codespace,
-        claude_launcher=resolved_claude_launcher,
+        agent_launcher=resolved_agent_launcher,
         script_writer=FakeScriptWriter(),
         codespace_registry=FakeCodespaceRegistry(),
         plan_list_service=FakePlanListService(),

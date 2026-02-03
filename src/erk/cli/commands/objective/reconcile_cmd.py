@@ -54,6 +54,6 @@ def reconcile_objectives(ctx: ErkContext, objective: int) -> None:
 
     # Replace current process with Claude
     try:
-        ctx.claude_launcher.launch_interactive(config, command=command)
+        ctx.agent_launcher.launch_interactive(config, command=command)
     except RuntimeError as e:
         raise click.ClickException(str(e)) from e
