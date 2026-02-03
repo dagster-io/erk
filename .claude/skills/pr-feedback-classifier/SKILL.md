@@ -4,7 +4,7 @@ description: >
   Fetches and classifies PR review feedback with context isolation.
   Returns structured JSON with thread IDs for deterministic resolution.
   Use when analyzing PR comments before addressing them.
-argument-hint: "[--include-resolved]"
+argument-hint: "[--pr <number>] [--include-resolved]"
 context: fork
 agent: general-purpose
 ---
@@ -15,6 +15,7 @@ Fetch and classify all PR review feedback for the current branch's PR.
 
 ## Arguments
 
+- `--pr <number>`: Target a specific PR by number (default: current branch's PR)
 - `--include-resolved`: Include resolved threads (for reference)
 
 Check `$ARGUMENTS` for flags.
@@ -22,22 +23,30 @@ Check `$ARGUMENTS` for flags.
 ## Steps
 
 1. **Get current branch and PR info:**
+   - **If `--pr <number>` specified in `$ARGUMENTS`**:
 
-   ```bash
-   git rev-parse --abbrev-ref HEAD
-   gh pr view --json number,title,url -q '{number: .number, title: .title, url: .url}'
-   ```
+     ```bash
+     gh pr view <number> --json number,title,url -q '{number: .number, title: .title, url: .url}'
+     ```
+
+   - **If `--pr` not specified** (use current branch):
+     ```bash
+     git rev-parse --abbrev-ref HEAD
+     gh pr view --json number,title,url -q '{number: .number, title: .title, url: .url}'
+     ```
 
 2. **Fetch all comments:**
 
    ```bash
    # If --include-resolved in $ARGUMENTS:
-   erk exec get-pr-review-comments --include-resolved
+   erk exec get-pr-review-comments [--pr <number>] --include-resolved
    # Otherwise:
-   erk exec get-pr-review-comments
+   erk exec get-pr-review-comments [--pr <number>]
 
-   erk exec get-pr-discussion-comments
+   erk exec get-pr-discussion-comments [--pr <number>]
    ```
+
+   Note: Pass `--pr <number>` to both exec commands when specified in `$ARGUMENTS`.
 
 3. **Classify each comment** using the Comment Classification Model below.
 

@@ -12,7 +12,9 @@ Fetches unresolved PR review comments and discussion comments, displays a summar
 
 ```bash
 /erk:pr-preview-address
-/erk:pr-preview-address --all    # Include resolved threads
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
 ```
 
 ## Agent Instructions
@@ -26,7 +28,7 @@ Fetches unresolved PR review comments and discussion comments, displays a summar
 Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
 
 ```
-/pr-feedback-classifier [--include-resolved if --all was specified]
+/pr-feedback-classifier [--pr <number> if specified] [--include-resolved if --all was specified]
 ```
 
 Parse the JSON response.

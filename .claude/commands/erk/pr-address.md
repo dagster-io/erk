@@ -12,7 +12,9 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 
 ```bash
 /erk:pr-address
-/erk:pr-address --all    # Include resolved threads (for reference)
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
 ```
 
 ## Prerequisite
@@ -31,9 +33,20 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 
 Before classifying feedback, determine if this is a plan review PR:
 
-1. Get the current PR number: `gh pr view --json number -q .number`
-2. Check if the PR has the `erk-plan-review` label: `gh pr view --json labels -q '.labels[].name'` and check for `erk-plan-review` in the output
-3. If YES: extract the plan issue number from the PR body (which contains `**Plan Issue:** #NNN`): `gh pr view --json body -q .body` and parse the issue number from the `**Plan Issue:** #NNN` line. Enter **Plan Review Mode** (see [Plan Review Mode](#plan-review-mode) below). Skip normal Phases 1-4.
+1. Get the PR number:
+   - **If `--pr <number>` specified in `$ARGUMENTS`**: Use that number
+   - **Otherwise**: Get current branch's PR: `gh pr view --json number -q .number`
+
+2. Check if the PR has the `erk-plan-review` label:
+   - **If `--pr <number>` specified**: `gh pr view <number> --json labels -q '.labels[].name'`
+   - **Otherwise**: `gh pr view --json labels -q '.labels[].name'`
+
+3. If YES: extract the plan issue number from the PR body (which contains `**Plan Issue:** #NNN`):
+   - **If `--pr <number>` specified**: `gh pr view <number> --json body -q .body`
+   - **Otherwise**: `gh pr view --json body -q .body`
+   - Parse the issue number from the `**Plan Issue:** #NNN` line
+   - Enter **Plan Review Mode** (see [Plan Review Mode](#plan-review-mode) below). Skip normal Phases 1-4.
+
 4. If NO: proceed with standard code review flow (Phase 1)
 
 ### Phase 1: Classify Feedback
@@ -41,7 +54,7 @@ Before classifying feedback, determine if this is a plan review PR:
 Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback with context isolation:
 
 ```
-/pr-feedback-classifier [--include-resolved if --all was specified]
+/pr-feedback-classifier [--pr <number> if specified] [--include-resolved if --all was specified]
 ```
 
 Parse the JSON response. The skill returns:
@@ -288,7 +301,7 @@ Store the result as `ORIGINAL_BRANCH`.
 
 ### Plan Review Phase 2: Classify Feedback
 
-Same as standard Phase 1 — invoke `/pr-feedback-classifier` to fetch and classify all PR feedback.
+Same as standard Phase 1 — invoke `/pr-feedback-classifier [--pr <number> if specified]` to fetch and classify all PR feedback.
 
 ### Plan Review Phase 3: Display Batched Plan
 
