@@ -183,53 +183,11 @@ Examples:
 
 ### Command with Bulleted List and Examples
 
-From `src/erk/cli/commands/doctor.py:114-137`:
-
-```python
-def doctor_cmd(...) -> None:
-    """Run diagnostic checks on erk setup.
-
-    Checks for:
-
-    \b
-      - Repository Setup: git config, Claude settings, erk config, hooks
-      - User Setup: prerequisites (erk, claude, gt, gh, uv), GitHub auth
-
-    Examples:
-
-    \b
-      # Run checks (condensed output)
-      erk doctor
-
-      # Show all individual checks
-      erk doctor --verbose
-
-      # Include early dogfooder migration checks
-      erk doctor --dogfooder
-
-      # Clear hook execution logs
-      erk doctor --clear-hook-logs
-    """
-```
+See `src/erk/cli/commands/doctor.py:114-137` for the full docstring. Key pattern: uses `\b` before both the bulleted "Checks for:" list and the "Examples:" section.
 
 ### Command with Only Examples
 
-From `src/erk/cli/commands/branch/delete_cmd.py`:
-
-```python
-def delete_branch_cmd(...) -> None:
-    """Delete a git branch by name.
-
-    Examples:
-
-    \b
-      # Delete a local branch
-      erk branch delete my-feature
-
-      # Delete a remote branch
-      erk branch delete --remote origin/my-feature
-    """
-```
+See `src/erk/cli/commands/branch/delete_cmd.py` for a minimal example using `\b` only before the "Examples:" section.
 
 ## Coverage Statistics
 
