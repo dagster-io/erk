@@ -21,6 +21,7 @@ def remove_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
 
     Required capabilities (like erk-hooks) cannot be removed.
 
+    \b
     Examples:
         erk init capability remove dignified-python
         erk init capability remove learned-docs devrun-agent
