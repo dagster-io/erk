@@ -26,6 +26,7 @@ from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.git import GitBranchManager
 from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+from erk_shared.gateway.claude_launcher.abc import ClaudeLauncher
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry
 from erk_shared.gateway.completion.abc import Completion
@@ -82,6 +83,7 @@ class ErkContext:
     shell: Shell
     completion: Completion
     codespace: Codespace
+    claude_launcher: ClaudeLauncher
 
     # Erk-specific services (ABCs now in erk_shared.core for proper type hints)
     erk_installation: ErkInstallation

@@ -72,6 +72,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     from erk_shared.context.context import ErkContext
     from erk_shared.context.types import LoadedConfig, NoRepoSentinel, RepoContext
     from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
+    from erk_shared.gateway.claude_launcher.fake import FakeClaudeLauncher
     from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.real import ScriptConsole
@@ -140,6 +141,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         shell=FakeShell(),
         completion=FakeCompletion(),
         codespace=FakeCodespace(),
+        claude_launcher=FakeClaudeLauncher(),
         script_writer=FakeScriptWriter(),
         codespace_registry=FakeCodespaceRegistry(),
         plan_list_service=FakePlanListService(),

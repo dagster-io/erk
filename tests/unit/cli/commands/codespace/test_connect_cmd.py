@@ -6,6 +6,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
+from erk_shared.gateway.codespace.fake import FakeCodespace
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
 from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
 
@@ -62,39 +63,33 @@ def test_connect_shows_error_when_default_not_found() -> None:
     assert "Default codespace 'mybox' not found" in result.output
 
 
-def test_connect_outputs_connecting_message_for_valid_codespace(monkeypatch) -> None:
-    """connect command outputs connecting message and calls os.execvp with correct args."""
+def test_connect_outputs_connecting_message_for_valid_codespace() -> None:
+    """connect command outputs connecting message and calls codespace SSH with correct args."""
     runner = CliRunner()
 
     cs = RegisteredCodespace(
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    ctx = context_for_test(codespace_registry=codespace_registry)
+    fake_codespace = FakeCodespace()
+    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
 
-    # Track execvp calls instead of actually replacing the process
-    execvp_calls: list[tuple[str, list[str]]] = []
+    result = runner.invoke(cli, ["codespace", "connect"], obj=ctx)
 
-    def mock_execvp(file: str, args: list[str]) -> None:
-        execvp_calls.append((file, args))
-
-    monkeypatch.setattr("os.execvp", mock_execvp)
-
-    result = runner.invoke(cli, ["codespace", "connect"], obj=ctx, catch_exceptions=False)
-
+    # FakeCodespace.exec_ssh_interactive raises SystemExit(0), which CliRunner catches
     assert result.exit_code == 0
-    assert "Connecting to codespace 'mybox'" in result.output
 
-    # Verify execvp was called with correct arguments
-    assert len(execvp_calls) == 1
-    file, args = execvp_calls[0]
-    assert file == "gh"
-    assert "codespace" in args
-    assert "ssh" in args
-    assert "user-mybox-abc123" in args  # gh_name
+    # Verify exec_ssh_interactive was called with correct arguments
+    assert fake_codespace.exec_called
+    assert fake_codespace.last_call is not None
+    assert fake_codespace.last_call.gh_name == "user-mybox-abc123"
+    assert fake_codespace.last_call.interactive is True
+    # Verify the command includes Claude setup
+    assert "claude" in fake_codespace.last_call.remote_command
+    assert "git pull" in fake_codespace.last_call.remote_command
 
 
-def test_connect_with_explicit_name(monkeypatch) -> None:
+def test_connect_with_explicit_name() -> None:
     """connect command works with explicit codespace name."""
     runner = CliRunner()
 
@@ -105,29 +100,21 @@ def test_connect_with_explicit_name(monkeypatch) -> None:
         name="box2", gh_name="user-box2-def", created_at=datetime(2026, 1, 20, 9, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs1, cs2], default_codespace="box1")
-    ctx = context_for_test(codespace_registry=codespace_registry)
-
-    # Track execvp calls
-    execvp_calls: list[tuple[str, list[str]]] = []
-
-    def mock_execvp(file: str, args: list[str]) -> None:
-        execvp_calls.append((file, args))
-
-    monkeypatch.setattr("os.execvp", mock_execvp)
+    fake_codespace = FakeCodespace()
+    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
 
     # Connect to non-default codespace
-    result = runner.invoke(cli, ["codespace", "connect", "box2"], obj=ctx, catch_exceptions=False)
+    result = runner.invoke(cli, ["codespace", "connect", "box2"], obj=ctx)
 
     assert result.exit_code == 0
-    assert "Connecting to codespace 'box2'" in result.output
 
-    # Verify execvp was called with box2's gh_name
-    assert len(execvp_calls) == 1
-    _, args = execvp_calls[0]
-    assert "user-box2-def" in args  # box2's gh_name, not box1's
+    # Verify SSH was called with box2's gh_name
+    assert fake_codespace.exec_called
+    assert fake_codespace.last_call is not None
+    assert fake_codespace.last_call.gh_name == "user-box2-def"  # box2's gh_name, not box1's
 
 
-def test_connect_with_shell_flag_drops_to_shell(monkeypatch) -> None:
+def test_connect_with_shell_flag_drops_to_shell() -> None:
     """connect --shell drops into shell instead of launching Claude."""
     runner = CliRunner()
 
@@ -135,28 +122,17 @@ def test_connect_with_shell_flag_drops_to_shell(monkeypatch) -> None:
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    ctx = context_for_test(codespace_registry=codespace_registry)
+    fake_codespace = FakeCodespace()
+    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
 
-    execvp_calls: list[tuple[str, list[str]]] = []
-
-    def mock_execvp(file: str, args: list[str]) -> None:
-        execvp_calls.append((file, args))
-
-    monkeypatch.setattr("os.execvp", mock_execvp)
-
-    result = runner.invoke(
-        cli, ["codespace", "connect", "--shell"], obj=ctx, catch_exceptions=False
-    )
+    result = runner.invoke(cli, ["codespace", "connect", "--shell"], obj=ctx)
 
     assert result.exit_code == 0
-    assert len(execvp_calls) == 1
-    _, args = execvp_calls[0]
-
-    # Find the remote command argument (after -t)
-    t_index = args.index("-t")
-    remote_command = args[t_index + 1]
+    assert fake_codespace.exec_called
+    assert fake_codespace.last_call is not None
 
     # Should use simple login shell, not claude or setup commands
+    remote_command = fake_codespace.last_call.remote_command
     assert remote_command == "bash -l"
     assert "claude" not in remote_command
     assert "git pull" not in remote_command

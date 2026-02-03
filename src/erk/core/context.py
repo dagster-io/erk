@@ -37,6 +37,7 @@ from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+from erk_shared.gateway.claude_launcher.abc import ClaudeLauncher
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.codespace.real import RealCodespace
 from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry
@@ -98,6 +99,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from tests.fakes.script_writer import FakeScriptWriter
 
     from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    from erk_shared.gateway.claude_launcher.fake import FakeClaudeLauncher
     from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
     from erk_shared.gateway.completion.fake import FakeCompletion
@@ -133,6 +135,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         console=fake_console,
         shell=FakeShell(),
         codespace=fake_codespace,
+        claude_launcher=FakeClaudeLauncher(),
         completion=FakeCompletion(),
         time=fake_time,
         erk_installation=FakeErkInstallation(),
@@ -162,6 +165,7 @@ def context_for_test(
     console: Console | None = None,
     shell: Shell | None = None,
     codespace: Codespace | None = None,
+    claude_launcher: ClaudeLauncher | None = None,
     completion: Completion | None = None,
     time: Time | None = None,
     erk_installation: ErkInstallation | None = None,
@@ -216,6 +220,7 @@ def context_for_test(
     from tests.test_utils.paths import sentinel_path
 
     from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    from erk_shared.gateway.claude_launcher.fake import FakeClaudeLauncher
     from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
     from erk_shared.gateway.completion.fake import FakeCompletion
@@ -296,6 +301,9 @@ def context_for_test(
     if codespace is None:
         codespace = FakeCodespace()
 
+    if claude_launcher is None:
+        claude_launcher = FakeClaudeLauncher()
+
     if completion is None:
         completion = FakeCompletion()
 
@@ -355,6 +363,7 @@ def context_for_test(
         console=console,
         shell=shell,
         codespace=codespace,
+        claude_launcher=claude_launcher,
         completion=completion,
         time=time,
         erk_installation=erk_installation,
@@ -563,8 +572,10 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
 
     # 10. Create claude installation and prompt executor
     from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
+    from erk_shared.gateway.claude_launcher.real import RealClaudeLauncher
 
     real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
+    real_claude_launcher: ClaudeLauncher = RealClaudeLauncher()
     prompt_executor: PromptExecutor = ClaudePromptExecutor(console=console)
 
     # 11. Create context with all values
@@ -578,6 +589,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         console=console,
         shell=RealShell(),
         codespace=RealCodespace(),
+        claude_launcher=real_claude_launcher,
         completion=RealCompletion(),
         time=time,
         erk_installation=erk_installation,
