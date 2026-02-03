@@ -125,7 +125,7 @@ Shares most exec flags plus these TUI-only additions:
 
 ## Permission/Sandbox Mapping for Erk
 
-How erk's `PermissionMode` maps to both backends:
+How erk's `PermissionMode` maps to both backends. This is the single source of truth for the cross-backend mapping. Claude mappings are also defined in code at `_PERMISSION_MODE_TO_CLAUDE` in `packages/erk-shared/src/erk_shared/context/types.py`. See also [PermissionMode Abstraction](../../architecture/permission-modes.md).
 
 | Erk PermissionMode | Claude `--permission-mode`         | Codex exec            | Codex TUI                                 |
 | ------------------ | ---------------------------------- | --------------------- | ----------------------------------------- |

@@ -23,14 +23,7 @@ read_when:
 
 ## Backend Mappings
 
-This is the core high-value content — the cross-backend mapping not visible in any single file:
-
-| Erk PermissionMode | Claude Code CLI                  | Codex exec            | Codex TUI                                 |
-| ------------------ | -------------------------------- | --------------------- | ----------------------------------------- |
-| `safe`             | `--permission-mode default`      | `--sandbox read-only` | `--sandbox read-only -a untrusted`        |
-| `edits`            | `--permission-mode acceptEdits`  | `--full-auto`         | `--sandbox workspace-write -a on-request` |
-| `plan`             | `--permission-mode plan`         | `--sandbox read-only` | `--sandbox read-only -a never`            |
-| `dangerous`        | `--dangerously-skip-permissions` | `--yolo`              | `--yolo`                                  |
+The Claude mapping is defined in `_PERMISSION_MODE_TO_CLAUDE` in `packages/erk-shared/src/erk_shared/context/types.py`. The cross-backend mapping (including Codex) is documented in the [Codex CLI Reference](../integrations/codex/codex-cli-reference.md#permissionsandbox-mapping-for-erk).
 
 For `dangerous` mode, erk must pass both `--permission-mode bypassPermissions` AND `--dangerously-skip-permissions` for Claude.
 
