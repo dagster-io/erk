@@ -1,5 +1,7 @@
 ---
 title: Git and Graphite Edge Cases Catalog
+last_audited: "2026-02-03 15:20 PT"
+audit_result: edited
 read_when:
   - "debugging unexpected git/gt behavior"
   - "handling rebase/restack edge cases"
@@ -55,7 +57,7 @@ unmerged_files = [
 ]
 ```
 
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/restack_finalize.py`
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/`
 
 ## Transient Dirty State After Rebase
 
@@ -75,7 +77,7 @@ if not ops.git.is_worktree_clean(cwd):
         yield CompletionEvent(RestackFinalizeError(...))
 ```
 
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/restack_finalize.py`
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/`
 
 ## Unmerged File Status Codes
 
@@ -224,7 +226,7 @@ def create_branch(
 
 **Anti-Pattern**: Calling `graphite.track_branch()` directly with user-provided branch names that might contain `origin/` prefix.
 
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py`
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py`
 
 ## Parent Branch Divergence Detection
 
@@ -259,7 +261,7 @@ Or if you have local changes to keep, push them first:
 - Parent branch was rebased/amended remotely
 - `gt sync` was not run after another user pushed to parent
 
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py` - `_ensure_local_matches_remote()` method
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` - `_ensure_local_matches_remote()` method
 
 ## Branch Restoration After Graphite Tracking
 
@@ -276,7 +278,7 @@ Or if you have local changes to keep, push them first:
 
 This ensures callers can create multiple branches without unexpected working directory changes.
 
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py`
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py`
 
 ## RestackError Handling Patterns
 
@@ -409,5 +411,4 @@ When you discover a new edge case, add it to this document with:
 
 ## Related Documentation
 
-- [Three-Phase Restack Architecture](restack-operations.md)
 - [Erk Architecture Patterns](erk-architecture.md)

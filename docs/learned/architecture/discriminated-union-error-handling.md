@@ -1,10 +1,11 @@
 ---
 title: Discriminated Union Error Handling
+last_audited: "2026-02-03 15:05 PT"
+audit_result: edited
 read_when:
   - "designing return types for operations that may fail"
   - "implementing T | ErrorType patterns"
   - "handling errors without exceptions"
-  - "working with GeneratedPlan, PlanGenerationError, or similar types"
 tripwires:
   - action: "choosing between exceptions and discriminated unions for operation failures"
     warning: "If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section."
@@ -23,9 +24,9 @@ A LBYL-compliant pattern for handling expected failures without exceptions. Retu
 Examples in this document reference actual type definitions. See canonical sources:
 
 - **GitHub operations**: `packages/erk-shared/src/erk_shared/gateway/github/types.py`
-- **Git worktree operations**: `packages/erk-shared/src/erk_shared/gateway/git/worktree/types.py`
 - **Git branch operations**: `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py`
 - **Git remote operations**: `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py`
+- **NonIdealState protocol**: `packages/erk-shared/src/erk_shared/non_ideal_state.py`
 
 ## The Pattern
 
@@ -78,18 +79,13 @@ Worktree add/remove failures are _expected_ — but they're still better as exce
 
 ```python
 # All callers do the same thing: extract message and stop
-result = git.worktree.add_worktree(repo_root, path, branch)
-if isinstance(result, WorktreeAddError):
-    raise UserFacingCliError(result.message)  # Every caller does this
-
-# vs. exceptions — simpler, same behavior
 try:
     git.worktree.add_worktree(repo_root, path, branch)
-except WorktreeError as e:
+except RuntimeError as e:
     raise UserFacingCliError(str(e))
 ```
 
-The discriminated union buys nothing here: no caller inspects the error type, no caller branches on the error content, and every caller terminates identically. The union just adds ceremony.
+The exception pattern is simpler here: no caller inspects the error type, no caller branches on the error content, and every caller terminates identically.
 
 Contrast with `submit_branch` and `create_branch`, where callers _do_ branch:
 
@@ -102,71 +98,15 @@ elif isinstance(result, SubmitError):
     # Continue: retry with different options
     retry_submit(result)
 
-# Git branch creation (PR #6348)
+# Git branch creation
 result = git_ops.create_branch(name="feature", start_point="main")
-if result.type == "branch_already_exists":
+if isinstance(result, BranchAlreadyExists):
     # Continue: use existing branch or prompt for new name
     logger.info(f"Branch {result.branch_name} already exists, using it")
     return result.branch_name
-elif result.type == "error":
-    # Terminate: unexpected git failure
-    raise UserFacingCliError(f"Failed to create branch: {result.message}")
-# Success case continues
+
+# Type narrowing: result is now BranchCreated
 return result.branch_name
-```
-
-## Examples in the Codebase
-
-### Plan Generation
-
-```python
-@dataclass(frozen=True)
-class GeneratedPlan:
-    content: str
-    title: str
-
-@dataclass(frozen=True)
-class PlanGenerationError:
-    message: str
-
-def generate_plan_for_step(...) -> GeneratedPlan | PlanGenerationError:
-    result = executor.execute_prompt(prompt, model="haiku")
-    if not result.success:
-        return PlanGenerationError(message=result.error or "Unknown error")
-    return GeneratedPlan(content=..., title=...)
-```
-
-### Roadmap Updates
-
-```python
-@dataclass(frozen=True)
-class RoadmapUpdateResult:
-    success: bool
-    updated_body: str | None
-    error: str | None
-
-def update_roadmap_with_plan(...) -> RoadmapUpdateResult:
-    if not result.success:
-        return RoadmapUpdateResult(success=False, updated_body=None, error=...)
-    return RoadmapUpdateResult(success=True, updated_body=..., error=None)
-```
-
-### Next Step Inference
-
-```python
-@dataclass(frozen=True)
-class NextStepResult:
-    has_next_step: bool
-    step_id: str | None
-    step_description: str | None
-    ...
-
-@dataclass(frozen=True)
-class InferenceError:
-    message: str
-
-def infer_next_step(...) -> NextStepResult | InferenceError:
-    ...
 ```
 
 ## Concrete Examples
@@ -189,8 +129,6 @@ if merge_result is not True:
 
 **After** (explicit types):
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py -->
-
 See `MergeResult` and `MergeError` type definitions in `packages/erk-shared/src/erk_shared/gateway/github/types.py`.
 
 Example caller pattern:
@@ -203,221 +141,57 @@ def merge_pr(self, repo_root: Path, pr_number: int, ...) -> MergeResult | MergeE
 # Caller pattern (type-safe)
 merge_result = ops.github.merge_pr(repo_root, pr_number, ...)
 if isinstance(merge_result, MergeError):
-    return LandPrError(
+    return LandError(
+        phase="execution",
         error_type="merge-failed",
         message=f"Failed to merge PR #{pr_number}\n\n{merge_result.message}",
+        details={"pr_number": str(pr_number)}
     )
 # Type narrowing: merge_result is now MergeResult
 ```
 
-**Migration Checklist** (from PR #6294):
+**Migration Checklist**:
 
-1. Define types in `gateway/github/types.py`
-2. Update ABC signature in `gateway/github/abc.py`
+1. Define types in appropriate `types.py` module
+2. Update ABC signature
 3. Update all 5 implementations:
-   - `real.py` - Return `MergeError` for subprocess errors
+   - `real.py` - Return ErrorType for subprocess/API errors
    - `fake.py` - Return union types in test implementation
-   - `dry_run.py` - Return `MergeResult` for no-op
+   - `dry_run.py` - Return SuccessType for no-op
    - `printing.py` - Update signature
-4. Update all call sites (3 in land workflow)
-5. Update tests to check `isinstance(result, MergeError)`
+4. Update all call sites
+5. Update tests to check `isinstance(result, ErrorType)`
 
-### Example 2: `get_issue` - Exception to Discriminated Union (Planned)
+### Example 2: BranchCreated/BranchAlreadyExists - create_branch Gateway
 
-**Before** (exception-based):
-
-```python
-def get_issue(self, issue_number: int) -> IssueDetails:
-    """Raises IssueNotFoundError if issue doesn't exist."""
-```
-
-**After** (discriminated union):
-
-```python
-@dataclass(frozen=True)
-class IssueInfo:
-    number: int
-    title: str
-    body: str
-    state: str
-
-@dataclass(frozen=True)
-class IssueNotFound:
-    issue_number: int
-    message: str
-
-    @property
-    def error_type(self) -> str:
-        return "issue-not-found"
-
-def get_issue(self, issue_number: int) -> IssueInfo | IssueNotFound:
-    """Returns IssueInfo if found, IssueNotFound otherwise."""
-```
-
-This pattern is documented in PR #6304 but not yet merged to master.
-
-### Example 3: Gateway Conversion Examples - Worktree and Branch Operations
-
-The worktree and branch gateway methods demonstrate the full discriminated union conversion pattern across multiple gateways. These conversions follow the NonIdealState protocol pattern from `remote_ops/types.py`.
-
-#### WorktreeAdded/WorktreeAddError - add_worktree Gateway
-
-**Before** (exception-based):
-
-```python
-# ABC definition
-def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> None:
-    """Raises WorktreeAddError if worktree cannot be created."""
-```
-
-**After** (discriminated union):
-
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/worktree/types.py -->
-
-See `WorktreeAdded` and `WorktreeAddError` type definitions in `packages/erk-shared/src/erk_shared/gateway/git/worktree/types.py`.
+See `BranchCreated` and `BranchAlreadyExists` type definitions in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py`.
 
 ABC signature:
 
 ```python
-# ABC definition (gateway/git/worktree/abc.py)
-def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> WorktreeAdded | WorktreeAddError:
-    """Returns WorktreeAdded on success, WorktreeAddError on failure."""
+# ABC definition (gateway/git/branch_ops/abc.py)
+def create_branch(self, *, repo_root: Path, branch_name: str, start_point: str) -> BranchCreated | BranchAlreadyExists:
+    """Returns BranchCreated on success, BranchAlreadyExists if branch exists."""
 ```
 
-**Implementation pattern** across 5 files:
-
-- `abc.py` - Abstract method with union return type
-- `real.py` - Parse subprocess errors, return `WorktreeAddError` for failures
-- `fake.py` - Check injected error first, then return success/error based on test setup
-- `dry_run.py` - Always return `WorktreeAdded` (no-op)
-- `printing.py` - Print operation details, return `WorktreeAdded`
-
-**Call site pattern** (18 call sites throughout codebase):
+**Call site pattern**:
 
 ```python
-result = ops.git_worktree.add_worktree(repo_root=root, path=wt_path, branch=branch)
-if isinstance(result, WorktreeAddError):
-    return SetupError(
-        error_type="worktree-creation-failed",
-        message=f"Failed to create worktree at {wt_path}\n\n{result.message}",
-    )
-# Type narrowing: result is now WorktreeAdded
+result = git_ops.create_branch(repo_root=root, branch_name=name, start_point="main")
+if isinstance(result, BranchAlreadyExists):
+    # Continue: use existing branch or prompt for new name
+    logger.info(f"Branch {result.branch_name} already exists")
+    return result.branch_name
+
+# Type narrowing: result is now BranchCreated
+return result.branch_name
 ```
 
-#### WorktreeRemoved/WorktreeRemoveError - remove_worktree Gateway
+### Example 3: LandError - Structured Pipeline Error
 
-**Before** (exception-based):
+The land command pipeline uses a structured error type that extends the discriminated union pattern with pipeline-specific metadata.
 
-```python
-def remove_worktree(self, *, repo_root: Path, path: Path) -> None:
-    """Raises WorktreeRemoveError if worktree cannot be removed."""
-```
-
-**After** (discriminated union with mixed exception handling):
-
-```python
-# Type definitions (gateway/git/worktree/types.py)
-@dataclass(frozen=True)
-class WorktreeRemoved:
-    """Success result from removing a worktree."""
-    path: Path
-
-@dataclass(frozen=True)
-class WorktreeRemoveError:
-    """Error result from removing a worktree. Implements NonIdealState."""
-    path: Path
-    message: str
-
-    @property
-    def error_type(self) -> str:
-        return "worktree-remove-failed"
-
-# ABC definition
-def remove_worktree(self, *, repo_root: Path, path: Path) -> WorktreeRemoved | WorktreeRemoveError:
-    """Returns WorktreeRemoved on success, WorktreeRemoveError on failure.
-
-    Note: Cleanup operations like 'git worktree prune' may still raise exceptions
-    if they fail, as this indicates corrupted repository state.
-    """
-```
-
-**Key nuance**: The main `remove_worktree` operation returns discriminated union, but cleanup operations (like `git worktree prune`) remain exception-based because their failure indicates corrupted state requiring different handling. See [gateway-specific-patterns.md](gateway-specific-patterns.md) for details on mixed exception/union handling.
-
-**Call site pattern** (12 call sites: 4 production, 8 test):
-
-```python
-result = ops.git_worktree.remove_worktree(repo_root=root, path=wt_path)
-if isinstance(result, WorktreeRemoveError):
-    click.echo(f"Warning: Failed to remove worktree: {result.message}", err=True)
-    return 1
-# Type narrowing: result is now WorktreeRemoved
-```
-
-**LBYL violation fix**: Before this conversion, `delete_cmd.py:150-168` used `_remove_worktree_safe()` wrapper to catch exceptions - a LBYL violation. The discriminated union pattern eliminates the need for try/except wrappers.
-
-#### BranchCreated/BranchCreateError - create_branch Gateway
-
-**Before** (exception-based):
-
-```python
-def create_branch(self, *, repo_root: Path, branch_name: str, start_point: str) -> None:
-    """Raises BranchCreateError if branch cannot be created."""
-```
-
-**After** (discriminated union):
-
-```python
-# Type definitions (gateway/git/branch/types.py)
-@dataclass(frozen=True)
-class BranchCreated:
-    """Success result from creating a branch."""
-    branch_name: str
-    start_point: str
-
-@dataclass(frozen=True)
-class BranchCreateError:
-    """Error result from creating a branch. Implements NonIdealState."""
-    branch_name: str
-    message: str
-
-    @property
-    def error_type(self) -> str:
-        return "branch-create-failed"
-
-# ABC definition (gateway/git/branch/abc.py)
-def create_branch(self, *, repo_root: Path, branch_name: str, start_point: str) -> BranchCreated | BranchCreateError:
-    """Returns BranchCreated on success, BranchCreateError on failure."""
-```
-
-**Multi-caller example**: `create_branch` is called from multiple contexts:
-
-- Worktree creation workflows
-- Branch management commands
-- Plan implementation setup
-
-Each caller uses the same isinstance() pattern, with context-specific error handling.
-
-**Migration reference**: See PR #6350 (add_worktree), PR #6346 (remove_worktree) for complete conversion examples.
-
-### 5-Place Implementation Checklist
-
-When converting a gateway method to discriminated union:
-
-1. **Types file**: Define `SuccessType` and `ErrorType` dataclasses with `@property error_type() -> str`
-2. **ABC**: Update abstract method signature to `-> SuccessType | ErrorType`
-3. **Real implementation**: Parse subprocess/API errors, return ErrorType for failures
-4. **Fake implementation**: Add error injection parameters, check injected error FIRST
-5. **Dry-run/Printing**: Update signatures, typically return SuccessType
-6. **All call sites**: Replace try/except with `isinstance(result, ErrorType)` checks
-7. **All tests**: Update to check `isinstance(result, ErrorType)` instead of catching exceptions
-
-Cross-reference: [gateway-abc-implementation.md](gateway-abc-implementation.md) for detailed 5-place update pattern.
-
-### Example 4: LandError - Structured Pipeline Error
-
-The land command pipeline uses a structured error type that extends the discriminated union pattern with pipeline-specific metadata. This demonstrates how discriminated unions can encode rich error context for complex workflows.
-
-**LandError definition** (`land_pipeline.py:82-89`):
+**LandError definition** (`land_pipeline.py`):
 
 ```python
 @dataclass(frozen=True)
@@ -426,11 +200,7 @@ class LandError:
     phase: str              # Which pipeline stage failed ('validation' or 'execution')
     error_type: str         # Machine-readable error classification
     message: str            # Human-readable description
-    details: dict[str, Any] | None = None  # Optional structured context
-
-    @property
-    def error_type(self) -> str:
-        return self.error_type
+    details: dict[str, str] # Structured context (note: NOT dict[str, Any] | None)
 ```
 
 **Pipeline step signature**:
@@ -461,10 +231,8 @@ def run_validation_pipeline(ctx: ErkContext, state: LandState) -> LandState | La
 
 1. **Phase tracking**: Caller knows if error occurred in validation vs execution
 2. **Machine-readable error_type**: Enables specific error handling (e.g., "pr-checks-failing" vs "merge-conflict")
-3. **Structured details**: Optional dict for additional context (PR number, check names, etc.)
+3. **Structured details**: Dict for additional context (PR number, check names, etc.)
 4. **Pipeline composition**: Each step has same signature, enabling functional composition
-
-**Reference**: See [linear-pipelines.md](linear-pipelines.md) for complete land pipeline architecture.
 
 ## Consumer Pattern
 
@@ -480,7 +248,7 @@ push_result = ctx.git.remote.push_to_remote(repo.root, "origin", branch)
 if isinstance(push_result, PushError):
     raise UserFacingCliError(push_result.message)
 
-# Type narrowing: push_result is now PushSuccess
+# Type narrowing: push_result is now PushResult
 user_output(click.style("✓", fg="green") + " Branch pushed successfully")
 ```
 
@@ -496,13 +264,13 @@ user_output(click.style("✓", fg="green") + " Branch pushed successfully")
 For library code (non-CLI), check the error case and return or propagate:
 
 ```python
-result = generate_plan_for_step(executor, ...)
+result = some_operation(...)
 
-if isinstance(result, PlanGenerationError):
+if isinstance(result, OperationError):
     return result  # Propagate error to caller
 
-# Type narrowing: result is now GeneratedPlan
-return process_plan(result)
+# Type narrowing: result is now SuccessType
+return process_result(result)
 ```
 
 ## Design Guidelines
@@ -525,15 +293,18 @@ Error types should include enough information for callers to handle them appropr
 class PRNotFound:
     branch: str | None = None    # What was looked up
     pr_number: int | None = None
+    message: str
 ```
 
 ### Naming Conventions
 
-| Convention           | Example                                   |
-| -------------------- | ----------------------------------------- |
-| `<Operation>Error`   | `PlanGenerationError`                     |
-| `<Resource>NotFound` | `PRNotFound`, `ResourceNotFound`          |
-| `<Operation>Result`  | `RoadmapUpdateResult` (with success bool) |
+| Convention           | Example                         |
+| -------------------- | ------------------------------- |
+| `<Operation>Error`   | `SubmitError`, `MergeError`     |
+| `<Resource>NotFound` | `PRNotFound`, `IssueNotFound`   |
+| `<Operation>Result`  | `MergeResult`, `PushResult`     |
+| `<Resource>Created`  | `BranchCreated`                 |
+| `<Resource>Exists`   | `BranchAlreadyExists`           |
 
 ## Comparison with Other Patterns
 
@@ -564,162 +335,7 @@ def fetch() -> Data | Error:
     ...
 ```
 
-## Exec Command Error Pattern
-
-Exec commands (scripts in `src/erk/cli/commands/exec/scripts/`) MUST use frozen dataclass discriminated unions for their JSON output. This ensures callers get a clear contract for success and error cases.
-
-### The Pattern
-
-Exec commands use a three-layer approach:
-
-1. **Custom exception type** for internal error propagation
-2. **Frozen dataclass discriminated unions** for the JSON contract (Success | Error)
-3. **CLI boundary conversion** that catches exceptions and converts to JSON
-
-### Implementation Template
-
-```python
-# 1. Define the success and error dataclasses
-@dataclass(frozen=True)
-class MyCommandSuccess:
-    """Success response for my-command."""
-    success: bool
-    result_field1: str
-    result_field2: int
-    # Include all relevant success data
-
-@dataclass(frozen=True)
-class MyCommandError:
-    """Error response for my-command."""
-    success: bool
-    error: str      # Machine-readable error type
-    message: str    # Human-readable error message
-
-# 2. Define custom exception for internal use
-class MyCommandException(Exception):
-    """Exception raised during my-command execution."""
-
-    def __init__(self, error: str, message: str) -> None:
-        super().__init__(message)
-        self.error = error
-        self.message = message
-
-# 3. Implementation function raises exceptions
-def _my_command_impl(...) -> MyCommandSuccess:
-    if something_wrong:
-        raise MyCommandException(
-            error="resource-not-found",
-            message="The resource could not be found"
-        )
-
-    return MyCommandSuccess(
-        success=True,
-        result_field1="value",
-        result_field2=42
-    )
-
-# 4. CLI command converts exceptions to JSON at boundary
-@click.command()
-def my_command(...) -> None:
-    try:
-        result = _my_command_impl(...)
-        click.echo(json.dumps(asdict(result)))
-    except MyCommandException as e:
-        error = MyCommandError(
-            success=False,
-            error=e.error,
-            message=e.message
-        )
-        click.echo(json.dumps(asdict(error)))
-        raise SystemExit(1) from None
-```
-
-### Why This Hybrid Approach?
-
-This pattern combines **exceptions internally** with **discriminated unions externally**:
-
-- **Internal exceptions**: Simplify control flow within implementation (can propagate through helper functions)
-- **External discriminated unions**: Provide clear JSON contract for callers (LBYL-compliant)
-- **CLI boundary conversion**: Single point where exceptions become JSON errors
-
-Benefits:
-
-1. **Internal code simplicity**: Helper functions can raise exceptions without needing to thread error types through
-2. **Clear JSON contract**: Callers get typed `Success | Error` discriminated union via JSON
-3. **LBYL for callers**: Calling code can check `success` field before accessing result fields
-4. **Type safety**: Both success and error cases are frozen dataclasses with explicit fields
-
-### Exemplar: plan_review_complete
-
-The `plan_review_complete.py` script demonstrates this pattern:
-
-**Success fields:**
-
-```python
-@dataclass(frozen=True)
-class PlanReviewCompleteSuccess:
-    success: bool
-    issue_number: int
-    pr_number: int
-    branch_name: str
-    branch_deleted: bool
-    local_branch_deleted: bool
-```
-
-**Error fields:**
-
-```python
-@dataclass(frozen=True)
-class PlanReviewCompleteError:
-    success: bool
-    error: str
-    message: str
-```
-
-**CLI boundary conversion** (lines 183-191):
-
-```python
-try:
-    result = _plan_review_complete_impl(...)
-    click.echo(json.dumps(asdict(result)))
-except PlanReviewCompleteException as e:
-    error_response = PlanReviewCompleteError(
-        success=False,
-        error=e.error,
-        message=e.message,
-    )
-    click.echo(json.dumps(asdict(error_response)))
-    raise SystemExit(1) from None
-```
-
-### Success Field Guidelines
-
-Success dataclasses should include all relevant data the caller needs:
-
-- **Resource identifiers**: issue_number, pr_number, branch_name
-- **Operation results**: branch_deleted, local_branch_deleted
-- **Generated content**: URLs, file paths, computed values
-
-The `success: bool` field allows generic checking before parsing specific fields.
-
-### Error Field Guidelines
-
-Error dataclasses should include:
-
-- **success: bool**: Always `False`, allows generic success checking
-- **error: str**: Machine-readable error type (e.g., "pr-not-found", "branch-exists")
-- **message: str**: Human-readable error message for display
-- **Optional context fields**: Additional data for specific error types
-
-### Related Exec Commands
-
-This pattern is used in:
-
-- `plan_review_complete.py` (lines 37-64, 183-191)
-- `plan_create_review_pr.py` (lines 32-57)
-- Other exec scripts that need structured JSON output
-
-## Gateway Discriminated Unions: PushResult/PullRebaseResult
+## Gateway Discriminated Unions: PushResult/PushError
 
 Git remote operations return discriminated unions at the gateway boundary:
 
@@ -758,26 +374,7 @@ class SubmitError:
 
 The pipeline runner short-circuits on the first `isinstance(result, SubmitError)` check. See `src/erk/cli/commands/pr/submit_pipeline.py:74-81`.
 
-## LBYL isinstance() Pattern in Exec Commands
-
-Exec commands use isinstance() checks after gateway calls:
-
-```python
-# From objective_roadmap_update.py
-issue = ctx.github.issues.get_issue(repo_root, objective_number)
-if isinstance(issue, IssueNotFound):
-    # Handle error — never use try/except for this
-    return error_response(...)
-
-# Type narrowing: issue is now IssueInfo
-phases, warnings = parse_roadmap(issue.body)
-```
-
-This pattern keeps LBYL principles consistent from gateway layer through exec command layer.
-
 ## Related Documentation
 
-- [Not-Found Sentinel Pattern](not-found-sentinel.md) - Specific pattern for lookup operations
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - Gateways often use this pattern
-- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
-- [State Threading Pattern](state-threading-pattern.md) - Pipeline discriminated union pattern
+- [NonIdealState Protocol](../reference/non-ideal-state-protocol.md) - Protocol for error types

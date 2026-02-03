@@ -1,5 +1,7 @@
 ---
 title: CLI Output Styling Guide
+last_audited: "2026-02-03 15:30 PT"
+audit_result: edited
 read_when:
   - "styling CLI output"
   - "using colors in CLI"
@@ -816,5 +818,4 @@ See `src/erk/tui/widgets/clickable_link.py` for `escape_markup()` usage patterns
 
 ## See Also
 
-- [script-mode.md](script-mode.md) - Script mode for shell integration (suppressing diagnostics)
 - [DataTable Rich Markup Escaping](../textual/datatable-markup-escaping.md) - TUI-specific markup escaping
