@@ -1,4 +1,6 @@
 ---
+last_audited: "2026-02-03"
+audit_result: edited
 title: Interactive Claude Configuration
 read_when:
   - "configuring Claude CLI launches from erk commands"
@@ -199,7 +201,7 @@ allow_dangerous_override=dangerous_flag  # False disables, should be None
 
 **From:** `src/erk/cli/commands/objective/next_plan_cmd.py`
 
-See `next_plan()` in `src/erk/cli/commands/objective/next_plan_cmd.py:18` for the full implementation.
+See `next_plan()` in `src/erk/cli/commands/objective/next_plan_cmd.py:25` for the full implementation.
 
 ## Related Documentation
 

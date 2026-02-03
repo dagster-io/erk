@@ -1,6 +1,6 @@
 ---
 title: Git and Graphite Edge Cases Catalog
-last_audited: "2026-02-03 15:20 PT"
+last_audited: "2026-02-03"
 audit_result: edited
 read_when:
   - "debugging unexpected git/gt behavior"
@@ -42,7 +42,7 @@ This document catalogs surprising edge cases and quirks discovered when working 
 
 ```python
 # WRONG: Assuming no rebase dirs = clean state
-if not ops.git.is_rebase_in_progress(cwd):
+if not git.rebase_ops.is_rebase_in_progress(cwd):
     # Might still have unmerged files!
     pass
 
@@ -70,11 +70,11 @@ unmerged_files = [
 **Workaround**: Retry with brief delay (100ms) before failing.
 
 ```python
-if not ops.git.is_worktree_clean(cwd):
-    ops.time.sleep(0.1)  # Brief delay for transient files
-    if not ops.git.is_worktree_clean(cwd):
-        # Now it's actually dirty
-        yield CompletionEvent(RestackFinalizeError(...))
+if not git.worktree.is_worktree_clean(cwd):
+    time.sleep(0.1)  # Brief delay for transient files
+    if not git.worktree.is_worktree_clean(cwd):
+        # Now it's actually dirty - handle error
+        ...
 ```
 
 **Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/`
@@ -207,24 +207,11 @@ gt restack --no-interactive
 
 **Why It's Surprising**: Git and Graphite are often used together, and Git's flexibility with branch references creates an expectation that Graphite would also accept remote refs. The error messages from Graphite don't clearly indicate that the issue is the `origin/` prefix.
 
-**Solution**: The `BranchManager.create_branch()` method in `GraphiteBranchManager` normalizes branch names before calling `graphite.track_branch()`:
+**Solution**: The `GraphiteBranchManager.create_branch()` method normalizes branch names before calling `graphite_branch_ops.track_branch()`. It strips the `origin/` prefix and ensures the local parent matches remote before tracking.
 
-```python
-def create_branch(
-    self,
-    repo_root: Path,
-    branch_name: str,
-    base_branch: str,
-) -> None:
-    self.git.create_branch(repo_root, branch_name, base_branch)
-    # Graphite's `gt track` only accepts local branch names, not remote refs
-    parent_for_graphite = base_branch.removeprefix("origin/")
-    self.graphite.track_branch(repo_root, branch_name, parent_for_graphite)
-```
+**Design Pattern**: Tool quirks should be absorbed at abstraction boundaries. Callers (like the submit command) don't need to know about Graphite's limitations -- they can pass remote refs freely and trust `BranchManager` to handle normalization.
 
-**Design Pattern**: Tool quirks should be absorbed at abstraction boundaries. Callers (like the submit command) don't need to know about Graphite's limitations—they can pass remote refs freely and trust `BranchManager` to handle normalization.
-
-**Anti-Pattern**: Calling `graphite.track_branch()` directly with user-provided branch names that might contain `origin/` prefix.
+**Anti-Pattern**: Calling `graphite_branch_ops.track_branch()` directly with user-provided branch names that might contain `origin/` prefix.
 
 **Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py`
 
@@ -320,30 +307,24 @@ Type definitions: `packages/erk-shared/src/erk_shared/gateway/gt/types.py:26-43`
 
 ### Detection Pattern
 
-Compare the git commit SHA against Graphite's tracked SHA:
+Use `is_branch_diverged_from_tracking()` on the Graphite gateway ABC to compare git commit SHA against Graphite's tracked SHA:
 
 ```python
-def is_graphite_tracking_diverged(
-    commit_sha: str | None,
-    graphite_tracked_sha: str | None,
-) -> bool:
-    """Check if Graphite tracking has diverged from git."""
-    # CRITICAL: Both must be non-None for valid comparison
-    if commit_sha is None or graphite_tracked_sha is None:
-        return False  # Can't determine divergence
-    return commit_sha != graphite_tracked_sha
+if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name):
+    # Branch SHA differs from Graphite's cached revision
+    ...
 ```
 
-The `None` check is critical - returning `False` when either value is `None` avoids false negatives on new branches that haven't been tracked yet.
+When implementing divergence checks, both `commit_sha` and `graphite_tracked_sha` must be non-None for a valid comparison. Returning `False` when either is `None` avoids false negatives on new branches that haven't been tracked yet.
 
 ### Auto-Fix Pattern
 
 Use `retrack_branch()` to resynchronize:
 
 ```python
-if is_graphite_tracking_diverged(commit_sha, graphite_tracked_sha):
+if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name):
     # Re-track to update Graphite's SHA
-    ctx.graphite.retrack_branch(repo_root, branch_name)
+    ctx.graphite_branch_ops.retrack_branch(repo_root, branch_name)
 ```
 
 ### When Divergence Occurs
@@ -371,8 +352,8 @@ if is_graphite_tracking_diverged(commit_sha, graphite_tracked_sha):
 
 ```python
 # Check if branch SHA differs from Graphite's cached revision
-is_diverged = graphite.is_branch_diverged_from_tracking(
-    git, repo_root, branch_name
+is_diverged = ctx.graphite.is_branch_diverged_from_tracking(
+    ctx.git, repo_root, branch_name
 )
 ```
 
@@ -380,15 +361,15 @@ is_diverged = graphite.is_branch_diverged_from_tracking(
 
 ```python
 # Retrack to update Graphite's internal cache
-if graphite.is_branch_diverged_from_tracking(git, repo_root, branch_name):
-    graphite_branch_ops.retrack_branch(repo_root, branch_name)
+if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name):
+    ctx.graphite_branch_ops.retrack_branch(repo_root, branch_name)
 ```
 
 **Where Auto-Fixes Are Implemented**:
 
 1. **sync_cmd.py**: After `gt restack` operations (two code paths)
-   - Line ~260: After restack in sync's rebase path
-   - Line ~304: After restack before Graphite submission
+   - Line ~250: After restack in sync's rebase path
+   - Line ~315: After restack before Graphite submission
 2. **branch_manager/graphite.py**: Before tracking child branches
    - Auto-fixes diverged parent before `gt track` to prevent creation failures
 
@@ -396,8 +377,8 @@ if graphite.is_branch_diverged_from_tracking(git, repo_root, branch_name):
 
 - Gateway method: `packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/real.py` (`retrack_branch()`)
 - Divergence detection: `packages/erk-shared/src/erk_shared/gateway/graphite/abc.py` (`is_branch_diverged_from_tracking()`)
-- Sync auto-fix: `src/erk/cli/commands/pr/sync_cmd.py:260,304`
-- Branch creation auto-fix: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py`
+- Sync auto-fix: `src/erk/cli/commands/pr/sync_cmd.py:250,315`
+- Branch creation auto-fix: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py`
 - Fix commit: `8b8b06b5` (PR #6052)
 
 ## Adding New Quirks

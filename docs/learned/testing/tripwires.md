@@ -14,7 +14,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before Test only success cases for batch commands** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Cover: all success, partial failure, validation errors, and JSON structure. See test organization categories.
 
-**CRITICAL: Before accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. Access properties via subgateway (e.g., `git.commit_ops.staged_files`), not top-level.
+**CRITICAL: Before accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
 
 **CRITICAL: Before adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
 

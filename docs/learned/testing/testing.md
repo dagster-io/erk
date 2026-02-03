@@ -1,5 +1,7 @@
 ---
 title: Erk Test Reference
+last_audited: "2026-02-03"
+audit_result: edited
 read_when:
   - "writing tests for erk"
   - "using erk fakes"
@@ -10,7 +12,7 @@ tripwires:
   - action: "implementing interactive prompts with ctx.console.confirm()"
     warning: "Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. See tests/commands/submit/test_existing_branch_detection.py for examples."
   - action: "accessing FakeGit properties in tests"
-    warning: "Access properties via subgateway (e.g., `git.commit_ops.staged_files`), not top-level."
+    warning: "FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway."
 ---
 
 # Erk Test Reference
@@ -47,11 +49,11 @@ make test-all
 make all-ci
 ```
 
-| Target                  | What It Runs                               | Speed   |
-| ----------------------- | ------------------------------------------ | ------- |
-| `make test`             | Unit tests (tests/unit/, commands/, core/) | ⚡ Fast |
-| `make test-integration` | Integration tests (tests/integration/)     | 🐌 Slow |
-| `make test-all`         | Both unit + integration                    | 🐌 Slow |
+| Target                  | What It Runs                               | Speed |
+| ----------------------- | ------------------------------------------ | ----- |
+| `make test`             | Unit tests (tests/unit/, commands/, core/) | Fast  |
+| `make test-integration` | Integration tests (tests/integration/)     | Slow  |
+| `make test-all`         | Both unit + integration                    | Slow  |
 
 ## Test Directory Structure
 
@@ -69,11 +71,22 @@ tests/
 
 ### FakeGit
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/fake.py:112-165 -->
+See `FakeGit` class in `packages/erk-shared/src/erk_shared/gateway/git/fake.py`.
 
-See `FakeGit` class and constructor in `packages/erk-shared/src/erk_shared/gateway/git/fake.py:112-165`.
+FakeGit provides top-level properties for test assertions:
 
-**Note**: FakeGit now uses subgateways. Access mutation tracking properties via subgateway (e.g., `git.commit_ops.staged_files`, `git.branch_ops.deleted_branches`), not top-level.
+```python
+# Top-level properties available on FakeGit
+git.staged_files        # list[str] - files staged via add/stage
+git.deleted_branches    # list[str] - branches deleted via delete_branch()
+git.added_worktrees     # list[tuple[Path, str | None]] - worktrees added
+git.removed_worktrees   # list[Path] - worktrees removed
+git.created_branches    # list[tuple[Path, str, str, bool]] - branches created
+git.pushed_branches     # list[PushedBranch] - branches pushed
+git.commits             # list[CommitRecord] - commits made
+```
+
+Worktree operations are internally delegated to a `FakeWorktree` sub-gateway, but the top-level properties on `FakeGit` provide convenient access.
 
 #### FakeGit Path Resolution
 
@@ -110,8 +123,8 @@ git_ops = FakeGit(
 
 On macOS, `/tmp` and `/var` are symlinks to `/private/tmp` and `/private/var`. When paths are resolved:
 
-- `Path("/tmp/foo").resolve()` → `/private/tmp/foo`
-- `Path("/var/folders/...").resolve()` → `/private/var/folders/...`
+- `Path("/tmp/foo").resolve()` -> `/private/tmp/foo`
+- `Path("/var/folders/...").resolve()` -> `/private/var/folders/...`
 
 **Impact on tests:** If FakeGit is configured with unresolved paths but the code under test calls `.resolve()`, lookups fail.
 
@@ -119,194 +132,65 @@ On macOS, `/tmp` and `/var` are symlinks to `/private/tmp` and `/private/var`. W
 
 **If you see path mismatch errors:** Ensure FakeGit's path resolution methods are being used (they handle symlinks), not direct dict lookups.
 
-#### FakeGit Property Access
+#### FakeWorktree Error Injection
 
-After Phase 8 refactoring, FakeGit uses subgateways for all operations. Access mutation tracking properties via subgateway, not top-level:
-
-```python
-# CORRECT - Access via subgateway
-git.commit_ops.staged_files
-git.branch_ops.deleted_branches
-git.worktree_ops.added_worktrees
-
-# INCORRECT - No top-level properties
-git.staged_files  # AttributeError
-git.deleted_branches  # AttributeError
-```
-
-#### FakeWorktree Error Injection Pattern
-
-When testing discriminated union error paths in gateway methods, use constructor-injected error parameters. The FakeGitWorktree gateway demonstrates the canonical pattern:
-
-**Naming convention**: `{method_name}_error` (e.g., `add_worktree_error`, `remove_worktree_error`)
-
-**Constructor pattern**:
+FakeWorktree (in `packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py`) uses string-based error injection via constructor parameters. Errors raise `RuntimeError`:
 
 ```python
-from erk_shared.gateway.git.worktree import FakeGitWorktree
-from erk_shared.gateway.git.worktree.types import WorktreeAddError, WorktreeRemoveError
+from erk_shared.gateway.git.worktree.fake import FakeWorktree
 
-fake_worktree = FakeGitWorktree(
-    add_worktree_error=WorktreeAddError(
-        path=Path("/path/to/worktree"),
-        branch="feature",
-        message="Worktree already exists",
-    ),
-    remove_worktree_error=WorktreeRemoveError(
-        path=Path("/path/to/worktree"),
-        message="Worktree is locked",
-    ),
+# Inject error for add_worktree
+fake_worktree = FakeWorktree(
+    add_worktree_error="Worktree already exists",
+    remove_worktree_error="Worktree is locked",
 )
 ```
 
-**Implementation pattern** (inside FakeGitWorktree):
+When `add_worktree_error` or `remove_worktree_error` is set, the corresponding method raises `RuntimeError` with that message. Error injection is checked FIRST in the method body, before any success logic executes.
+
+You can also inject these errors via the top-level `FakeGit` constructor:
 
 ```python
-def add_worktree(self, *, repo_root: Path, path: Path, branch: str) -> WorktreeAdded | WorktreeAddError:
-    # Check injected error FIRST (before any success logic)
-    if self._add_worktree_error is not None:
-        return self._add_worktree_error
-
-    # Success path
-    return WorktreeAdded(path=path, branch=branch)
-```
-
-**Key principle**: Error injection is checked FIRST in the method body, before any success logic executes.
-
-**Test pattern for success path**:
-
-```python
-def test_add_worktree_success() -> None:
-    """Test successful worktree addition."""
-    fake_worktree = FakeGitWorktree()  # No error injected
-    result = fake_worktree.add_worktree(
-        repo_root=Path("/repo"),
-        path=Path("/repo/.worktrees/feature"),
-        branch="feature",
-    )
-    assert isinstance(result, WorktreeAdded)
-    assert result.path == Path("/repo/.worktrees/feature")
-    assert result.branch == "feature"
-```
-
-**Test pattern for error path**:
-
-```python
-def test_add_worktree_error() -> None:
-    """Test worktree addition failure."""
-    error = WorktreeAddError(
-        path=Path("/repo/.worktrees/feature"),
-        branch="feature",
-        message="Worktree already exists",
-    )
-    fake_worktree = FakeGitWorktree(add_worktree_error=error)
-
-    result = fake_worktree.add_worktree(
-        repo_root=Path("/repo"),
-        path=Path("/repo/.worktrees/feature"),
-        branch="feature",
-    )
-
-    assert isinstance(result, WorktreeAddError)
-    assert result.message == "Worktree already exists"
-    assert result.error_type == "worktree-add-failed"
-```
-
-**Reference test patterns**: Tests in `tests/unit/gateway/git/worktree/` demonstrate success and error path testing for both `add_worktree` and `remove_worktree` operations.
-
-**Cross-reference**: See [gateway-fake-testing-exemplar.md](../architecture/gateway-fake-testing-exemplar.md) for comprehensive fake testing patterns.
-
-### FakeConfigStore
-
-```python
-from tests.fakes.config import FakeConfigStore
-
-config_store = FakeConfigStore(
-    exists: bool = True,
-    erks_root: Path | None = None,
-    use_graphite: bool = False,
-    shell_setup_complete: bool = False,
-    show_pr_checks: bool = False,
+git = FakeGit(
+    add_worktree_error="Worktree already exists",
+    remove_worktree_error="Worktree is locked",
 )
 ```
 
 ### FakeGitHub
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py:38-80 -->
-
-See `FakeGitHub` class and constructor in `packages/erk-shared/src/erk_shared/gateway/github/fake.py:38-80`.
+See `FakeGitHub` class in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`.
 
 **Important: Dual-mapping for branch lookups** - `get_pr_for_branch()` requires BOTH `prs` AND `pr_details` to be configured. If only `prs` is configured, the method returns `PRNotFound` because the second lookup fails.
 
 ### FakeGraphite
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/graphite/fake.py:28-90 -->
-
-See `FakeGraphite` class and constructor in `packages/erk-shared/src/erk_shared/gateway/graphite/fake.py:28-90`.
+See `FakeGraphite` class in `packages/erk-shared/src/erk_shared/gateway/graphite/fake.py`.
 
 ### FakeShell
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/shell/fake.py:57-105 -->
+See `FakeShell` class in `packages/erk-shared/src/erk_shared/gateway/shell/fake.py`.
 
-See `FakeShell` class and constructor in `packages/erk-shared/src/erk_shared/gateway/shell/fake.py:57-105`.
+### FakeGitBranchOps
 
-## Fake Error Simulation
+See `FakeGitBranchOps` class in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py`.
 
-Fakes support error simulation via constructor parameters. This pattern is used extensively in gateway testing for discriminated union error handling.
-
-**Pattern**: Error parameters accept the error discriminant type:
+This fake supports error injection via the `create_branch_error` constructor parameter, which accepts a `BranchAlreadyExists` instance:
 
 ```python
-from tests.fakes.git_branch_ops import FakeGitBranchOps
-from erk.gateway.git_branch_ops.types import CreateBranchResult
+from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 
 fake = FakeGitBranchOps(
-    create_branch_error=CreateBranchResult(
-        type="branch_already_exists",
-        branch_name="feature",
-    )
+    branch_heads={"feature": "abc123", "origin/feature": "abc123"},
 )
 
-result = fake.create_branch(name="feature", start_point="main")
-assert result.type == "branch_already_exists"
-```
-
-**Benefits:**
-
-- Fast: No subprocess overhead
-- Deterministic: Error behavior controlled by test
-- Type-safe: Constructor param matches method return type
-- Realistic: Uses same discriminant types as real implementation
-
-**Common error simulation patterns:**
-
-```python
-# Simulate branch already exists
-FakeGitBranchOps(
-    create_branch_error=CreateBranchResult(
-        type="branch_already_exists",
-        branch_name="existing-branch",
-    )
-)
-
-# Simulate worktree add failure
-FakeWorktreeOps(
-    add_worktree_error=AddWorktreeResult(
-        type="worktree_path_occupied",
-        path=Path("/path/to/worktree"),
-    )
-)
-
-# Simulate generic error
-FakeGitBranchOps(
-    create_branch_error=CreateBranchResult(
-        type="error",
-        message="git command failed",
-    )
+# With error injection
+fake_with_error = FakeGitBranchOps(
+    branch_heads={"feature": "abc123"},
+    # create_branch will return BranchAlreadyExists instead of BranchCreated
 )
 ```
-
-**Error boundary testing**: Fakes do NOT use try/except (see [Gateway Error Boundaries](../architecture/gateway-error-boundaries.md)). They return error discriminants based on constructor params, making error paths easy to test without mocking exceptions.
 
 ## Fixture Selection Guide
 
@@ -329,10 +213,10 @@ If you see `"Called .exists() on sentinel path"`:
 
 ```
 Does the code under test:
-├── Create/write files directly? → erk_isolated_fs_env()
-├── Call .exists()/.is_dir() on paths? → erk_isolated_fs_env()
-├── Only use injected fakes? → erk_inmem_env()
-└── Need real git commands? → cli_test_repo()
+├── Create/write files directly? -> erk_isolated_fs_env()
+├── Call .exists()/.is_dir() on paths? -> erk_isolated_fs_env()
+├── Only use injected fakes? -> erk_inmem_env()
+└── Need real git commands? -> cli_test_repo()
 ```
 
 ## Test Context Helpers
@@ -348,17 +232,18 @@ ctx = create_test_context()
 # Custom fakes
 ctx = create_test_context(
     git=FakeGit(worktrees={...}),
-    config_store=FakeConfigStore(erks_root=Path("/tmp/ws")),
     dry_run=True,
 )
 ```
 
-### ErkContext.for_test()
+This is a convenience wrapper around `context_for_test()` from `erk.core.context`.
+
+### context_for_test()
 
 ```python
-from erk.core.context import ErkContext
+from erk.core.context import context_for_test
 
-test_ctx = ErkContext.for_test(
+test_ctx = context_for_test(
     git=git,
     global_config=global_config,
     cwd=env.cwd,
@@ -377,7 +262,7 @@ def test_command() -> None:
     with erk_isolated_fs_env(runner) as env:
         # env provides: cwd, git_dir, root_worktree, erks_root
         git = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        test_ctx = ErkContext.for_test(git=git, cwd=env.cwd)
+        test_ctx = context_for_test(git=git, cwd=env.cwd)
 
         result = runner.invoke(cli, ["command"], obj=test_ctx)
         assert result.exit_code == 0
@@ -424,7 +309,7 @@ def test_create_command() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
         )
-        test_ctx = ErkContext.for_test(git=git, cwd=env.cwd)
+        test_ctx = context_for_test(git=git, cwd=env.cwd)
 
         result = runner.invoke(cli, ["create", "feature"], obj=test_ctx)
 
@@ -433,13 +318,13 @@ def test_create_command() -> None:
         assert len(git.added_worktrees) == 1
 ```
 
-## 🔴 CRITICAL: Never Hardcode Paths
+## CRITICAL: Never Hardcode Paths
 
 ```python
-# ❌ FORBIDDEN - breaks in CI, risks global config mutation
+# FORBIDDEN - breaks in CI, risks global config mutation
 cwd=Path("/test/default/cwd")
 
-# ✅ CORRECT - use environment helpers
+# CORRECT - use environment helpers
 with erk_isolated_fs_env(runner) as env:
     cwd=env.cwd
 ```
@@ -472,157 +357,24 @@ assert "git worktree remove" in script
 assert str(worktree_path) in script
 ```
 
-### Script Writer Fixture Selection
-
-Different test fixtures use different script writer implementations:
-
-| Fixture               | Script Writer       | How to Read Scripts                    |
-| --------------------- | ------------------- | -------------------------------------- |
-| `erk_inmem_env`       | `InMemScriptWriter` | `script_writer.get_script_content(id)` |
-| `erk_isolated_fs_env` | `RealScriptWriter`  | `script_path.read_text()`              |
-
-**Pattern for `erk_inmem_env` tests:**
-
-```python
-with erk_inmem_env() as env:
-    script_writer = InMemScriptWriter()
-    # ... invoke command that writes script ...
-    script = script_writer.get_script_content(script_id)
-    assert "expected content" in script
-```
-
-**Pattern for `erk_isolated_fs_env` tests:**
-
-```python
-with erk_isolated_fs_env(runner) as env:
-    # ... invoke command that writes script to filesystem ...
-    script = script_path.read_text()
-    assert "expected content" in script
-```
-
-Choose the fixture based on what you're testing - use `erk_inmem_env` for pure logic with fakes, use `erk_isolated_fs_env` when scripts are written to the real filesystem.
-
-## Branch Divergence Testing
-
-Testing code that validates local vs remote branch divergence requires specific FakeGit setup.
-
-### Setting Up Diverged Branches
-
-```python
-from tests.fakes.gitops import FakeGit
-
-# Set up diverged local and remote branches
-fake_git = FakeGit()
-fake_git.branch_heads = {
-    "feature-branch": "abc1234",       # Local has different commit
-    "origin/feature-branch": "def5678", # Remote has different commit
-}
-fake_git.local_branches = {"feature-branch", "main"}
-```
-
-### Testing Divergence Detection
-
-```python
-def test_divergence_raises_error() -> None:
-    fake_git = FakeGit()
-    fake_git.branch_heads = {
-        "parent": "local-sha",
-        "origin/parent": "remote-sha",  # Different from local
-    }
-    fake_git.local_branches = {"parent", "main"}
-
-    branch_manager = GraphiteBranchManager(
-        git=fake_git,
-        git_branch_ops=FakeGitBranchOps(),
-        graphite=FakeGraphite(),
-        graphite_branch_ops=FakeGraphiteBranchOps(),
-        github=FakeGitHub(),
-    )
-
-    with pytest.raises(RuntimeError, match="has diverged"):
-        branch_manager.create_branch(repo_root, "child", "origin/parent")
-```
-
-### Testing Sync Scenarios
-
-```python
-def test_synced_branches_succeed() -> None:
-    fake_git = FakeGit()
-    fake_git.branch_heads = {
-        "parent": "same-sha",
-        "origin/parent": "same-sha",  # Same as local
-    }
-    # ... should succeed without error
-```
-
-## FakeGraphite Sub-Gateway Linking
-
-When testing code that uses `GraphiteBranchManager`, you need to link FakeGraphite with its FakeGraphiteBranchOps sub-gateway.
-
-### The create_linked_branch_ops() Pattern
-
-```python
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
-
-# Create linked fake pair
-fake_graphite = FakeGraphite()
-fake_graphite_branch_ops = FakeGraphiteBranchOps()
-
-# Use in GraphiteBranchManager
-branch_manager = GraphiteBranchManager(
-    git=fake_git,
-    git_branch_ops=fake_git_branch_ops,
-    graphite=fake_graphite,
-    graphite_branch_ops=fake_graphite_branch_ops,
-    github=fake_github,
-)
-```
-
-### Asserting on Sub-Gateway Mutations
-
-```python
-def test_branch_tracked_via_graphite() -> None:
-    fake_graphite_branch_ops = FakeGraphiteBranchOps()
-    # ... set up branch_manager with fake_graphite_branch_ops ...
-
-    branch_manager.create_branch(repo_root, "feature", "main")
-
-    # Assert on sub-gateway mutations
-    assert ("feature", "main") in fake_graphite_branch_ops.tracked_branches
-```
-
-## BranchManager Test Placement
-
-Tests for BranchManager implementations live in:
-
-```
-tests/unit/branch_manager/
-├── test_git_branch_manager.py      # GitBranchManager tests
-├── test_graphite_branch_manager.py # GraphiteBranchManager tests
-└── test_fake_branch_manager.py     # FakeBranchManager tests
-```
-
-Integration tests for real sub-gateways:
-
-```
-tests/integration/
-├── test_real_git_branch_ops.py
-└── test_real_graphite_branch_ops.py
-```
-
 ## FakeConsole for Interactive Prompts
 
 FakeConsole enables testing code that uses `ctx.console.confirm()` for user prompts.
 
+Source: `packages/erk-shared/src/erk_shared/gateway/console/fake.py`
+
 ### Constructor Parameters
 
+All parameters are required keyword-only arguments:
+
 ```python
+from erk_shared.gateway.console.fake import FakeConsole
+
 FakeConsole(
     is_interactive=True,        # Whether stdin is TTY
-    is_stdout_tty=None,         # Defaults to is_interactive
-    is_stderr_tty=None,         # Defaults to is_interactive
-    confirm_responses=[...],    # List of boolean responses
+    is_stdout_tty=None,         # Defaults to is_interactive if None
+    is_stderr_tty=None,         # Defaults to is_interactive if None
+    confirm_responses=[...],    # List of boolean responses (None for no confirms)
 )
 ```
 
@@ -664,11 +416,58 @@ If `confirm()` is called but no responses remain, FakeConsole raises `AssertionE
 
 See `tests/commands/submit/test_existing_branch_detection.py` for comprehensive examples of testing interactive prompts.
 
+## GraphiteBranchManager Testing
+
+`GraphiteBranchManager` is a frozen dataclass in `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` with fields:
+
+```python
+@dataclass(frozen=True)
+class GraphiteBranchManager(BranchManager):
+    git: Git
+    graphite: Graphite
+    graphite_branch_ops: GraphiteBranchOps
+    github: GitHub
+```
+
+### Test Setup Pattern
+
+```python
+from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
+
+branch_manager = GraphiteBranchManager(
+    git=FakeGit(...),
+    graphite=FakeGraphite(...),
+    graphite_branch_ops=FakeGraphiteBranchOps(),
+    github=FakeGitHub(...),
+)
+```
+
+### BranchManager Test Placement
+
+Tests for GraphiteBranchManager live in:
+
+```
+tests/unit/branch_manager/
+└── test_graphite_branch_manager.py
+```
+
+Integration tests for real sub-gateways:
+
+```
+tests/integration/
+├── test_real_git_branch_ops.py
+└── test_real_graphite_branch_ops.py
+```
+
 ## Test Naming for Return Type Refactoring
 
 When refactoring gateway methods from exception-based to discriminated unions, update test names to reflect the new pattern.
 
-### Pattern: Exception → Union
+### Pattern: Exception -> Union
 
 | Old Test Name (Exception-Based)       | New Test Name (Discriminated Union)      |
 | ------------------------------------- | ---------------------------------------- |
@@ -698,48 +497,6 @@ When renaming tests for discriminated union migration:
 3. [ ] Update docstring to describe return type (not exception)
 4. [ ] Verify fake setup returns type (not raises exception)
 5. [ ] Update related parametrized test names
-
-### Example: merge_pr Migration
-
-From PR #6294:
-
-**Before (Exception/Boolean):**
-
-```python
-def test_merge_pr_success_returns_true() -> None:
-    """Test merge_pr returns True on success."""
-    result = github.merge_pr(repo_root, 123)
-    assert result is True
-
-def test_merge_pr_failure_returns_error_string() -> None:
-    """Test merge_pr returns error string on failure."""
-    result = github.merge_pr(repo_root, 999)  # triggers error
-    assert isinstance(result, str)
-    assert "failed" in result.lower()
-```
-
-**After (Discriminated Union):**
-
-```python
-def test_merge_pr_returns_merge_result() -> None:
-    """Test merge_pr returns MergeResult on success."""
-    result = github.merge_pr(repo_root, 123)
-    assert isinstance(result, MergeResult)
-    assert result.pr_number == 123
-
-def test_merge_pr_returns_merge_error() -> None:
-    """Test merge_pr returns MergeError on failure."""
-    result = github.merge_pr(repo_root, 999)
-    assert isinstance(result, MergeError)
-    assert result.pr_number == 999
-    assert "failed" in result.message.lower()
-```
-
-**Key Changes:**
-
-- Test names describe return types (not booleans/exceptions)
-- Assertions check `isinstance(result, Type)` (not `is True` or exception catching)
-- Docstrings describe what's returned (not what's raised)
 
 ## Related
 

@@ -1,6 +1,6 @@
 ---
 title: Discriminated Union Error Handling
-last_audited: "2026-02-03 15:05 PT"
+last_audited: "2026-02-03"
 audit_result: edited
 read_when:
   - "designing return types for operations that may fail"
@@ -99,14 +99,13 @@ elif isinstance(result, SubmitError):
     retry_submit(result)
 
 # Git branch creation
-result = git_ops.create_branch(name="feature", start_point="main")
+result = git_ops.create_branch(cwd, "feature", "main", force=False)
 if isinstance(result, BranchAlreadyExists):
     # Continue: use existing branch or prompt for new name
     logger.info(f"Branch {result.branch_name} already exists, using it")
     return result.branch_name
 
-# Type narrowing: result is now BranchCreated
-return result.branch_name
+# Type narrowing: result is now BranchCreated (empty marker type)
 ```
 
 ## Concrete Examples
@@ -170,21 +169,22 @@ ABC signature:
 
 ```python
 # ABC definition (gateway/git/branch_ops/abc.py)
-def create_branch(self, *, repo_root: Path, branch_name: str, start_point: str) -> BranchCreated | BranchAlreadyExists:
+def create_branch(self, cwd: Path, branch_name: str, start_point: str, *, force: bool) -> BranchCreated | BranchAlreadyExists:
     """Returns BranchCreated on success, BranchAlreadyExists if branch exists."""
 ```
+
+Note: `BranchCreated` is an empty marker dataclass (no fields). `BranchAlreadyExists` carries `branch_name: str` and `message: str`.
 
 **Call site pattern**:
 
 ```python
-result = git_ops.create_branch(repo_root=root, branch_name=name, start_point="main")
+result = git_ops.create_branch(repo_root, name, "main", force=False)
 if isinstance(result, BranchAlreadyExists):
     # Continue: use existing branch or prompt for new name
     logger.info(f"Branch {result.branch_name} already exists")
     return result.branch_name
 
 # Type narrowing: result is now BranchCreated
-return result.branch_name
 ```
 
 ### Example 3: LandError - Structured Pipeline Error
@@ -291,9 +291,8 @@ Error types should include enough information for callers to handle them appropr
 ```python
 @dataclass(frozen=True)
 class PRNotFound:
-    branch: str | None = None    # What was looked up
-    pr_number: int | None = None
-    message: str
+    pr_number: int | None = None  # Set when looking up by number
+    branch: str | None = None     # Set when looking up by branch
 ```
 
 ### Naming Conventions
@@ -369,12 +368,12 @@ class SubmitError:
     phase: str       # Which pipeline step failed
     error_type: str  # Machine-readable error classification
     message: str     # Human-readable description
-    details: str | None
+    details: dict[str, str]
 ```
 
-The pipeline runner short-circuits on the first `isinstance(result, SubmitError)` check. See `src/erk/cli/commands/pr/submit_pipeline.py:74-81`.
+The pipeline runner short-circuits on the first `isinstance(result, SubmitError)` check. See `src/erk/cli/commands/pr/submit_pipeline.py`.
 
 ## Related Documentation
 
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - Gateways often use this pattern
-- [NonIdealState Protocol](../reference/non-ideal-state-protocol.md) - Protocol for error types
+- **NonIdealState protocol**: `packages/erk-shared/src/erk_shared/non_ideal_state.py` - Protocol for error types

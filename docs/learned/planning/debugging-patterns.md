@@ -1,5 +1,7 @@
 ---
 title: "Source Code Investigation Pattern for Debugging"
+last_audited: "2026-02-03"
+audit_result: edited
 read_when:
   - Debugging validation failures
   - Encountering errors with unclear root causes
@@ -26,11 +28,11 @@ Error: Missing required checkout footer for PR #123
 # "checkout footer" -> search terms: "checkout_footer", "has_checkout", "footer"
 
 # 3. Grep codebase for validation function
-$ grep -r "checkout_footer" src/
-src/erk_shared/gateway/pr/submit.py: def has_checkout_footer_for_pr(...)
+$ grep -r "checkout_footer" packages/ src/
+packages/erk-shared/src/erk_shared/gateway/pr/submit.py: def has_checkout_footer_for_pr(...)
 
 # 4. Read the validation source
-$ cat src/erk_shared/gateway/pr/submit.py
+$ cat packages/erk-shared/src/erk_shared/gateway/pr/submit.py
 # Find has_checkout_footer_for_pr() function
 # Discover pattern requirement: r"erk pr checkout \d+"
 
@@ -113,11 +115,11 @@ Error: Missing required checkout footer for PR #123
 
 ```bash
 # Step 1: Grep for validation function
-$ grep -r "has_checkout_footer" src/
-src/erk_shared/gateway/pr/submit.py: def has_checkout_footer_for_pr(body: str, pr_number: int) -> bool:
+$ grep -r "has_checkout_footer" packages/ src/
+packages/erk-shared/src/erk_shared/gateway/pr/submit.py: def has_checkout_footer_for_pr(body: str, pr_number: int) -> bool:
 
 # Step 2: Read the source
-$ cat src/erk_shared/gateway/pr/submit.py
+$ cat packages/erk-shared/src/erk_shared/gateway/pr/submit.py
 ```
 
 Source code revealed:
@@ -125,8 +127,7 @@ Source code revealed:
 ```python
 def has_checkout_footer_for_pr(body: str, pr_number: int) -> bool:
     """Check if PR body contains checkout footer for this PR."""
-    pattern = rf"erk pr checkout {pr_number}"
-    return bool(re.search(pattern, body))
+    return bool(re.search(rf"erk pr checkout {pr_number}\b", body))
 ```
 
 **Key insight**: Must be exactly `erk pr checkout <number>`, not semantic equivalents.

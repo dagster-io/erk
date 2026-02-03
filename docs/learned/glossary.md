@@ -1,7 +1,7 @@
 ---
 title: Erk Glossary
-last_audited: "2026-02-03 15:30 PT"
-audit_result: clean
+last_audited: "2026-02-03"
+audit_result: edited
 read_when:
   - "understanding project terminology"
   - "confused about domain-specific terms"
@@ -258,7 +258,7 @@ source <(erk wt co my-worktree --script)
 
 ## Git & Graphite Concepts
 
-**For comprehensive gt documentation**: See [tools/gt.md](tools/gt.md)
+**For comprehensive gt documentation**: See [Graphite Branch Setup](erk/graphite-branch-setup.md)
 
 ### Force-Push After Squash
 
@@ -480,15 +480,16 @@ A frozen dataclass containing repository information.
 **Key Fields**:
 
 - `root: Path` - Working tree root for git commands (worktree or main repo)
-- `main_repo_root: Path` - Main repository root (consistent across worktrees)
 - `repo_name: str` - Repository name
 - `repo_dir: Path` - Path to erk metadata directory (`~/.erk/repos/<repo-name>`)
 - `worktrees_dir: Path` - Path to worktrees directory (`~/.erk/repos/<repo-name>/worktrees`)
+- `pool_json_path: Path` - Path to pool state file (`~/.erk/repos/<repo-name>/pool.json`)
+- `main_repo_root: Path | None` - Main repository root (defaults to `root` for backwards compatibility)
 - `github: GitHubRepoId | None` - GitHub repository identity, if available
 
 **Creation**: `discover_repo_or_sentinel(git, Path.cwd())`
 
-See `src/erk/core/repo_discovery.py` for the canonical definition.
+See `packages/erk-shared/src/erk_shared/context/types.py` for the canonical definition (discovery logic in `src/erk/core/repo_discovery.py`).
 
 #### root vs main_repo_root
 
@@ -509,12 +510,18 @@ A frozen dataclass containing all injected dependencies.
 
 **Key Integration Fields**:
 
-- `git: Git` - Git operations
-- `github: GitHub` - GitHub PR operations
+- `git: Git` - Git operations (branch ops via `git.branch` subgateway)
+- `github: GitHub` - GitHub PR operations (issues via `github.issues` property)
+- `github_admin: GitHubAdmin` - GitHub Actions admin operations
 - `graphite: Graphite` - Graphite CLI operations
+- `graphite_branch_ops: GraphiteBranchOps | None` - None when Graphite disabled
+- `console: Console` - TTY detection, user feedback, and confirmation prompts
+- `time: Time` - Time abstraction
 - `shell: Shell` - Shell detection
 - `completion: Completion` - Shell completion generation
 - `script_writer: ScriptWriter` - Activation script generation
+- `plan_store: PlanStore` - Plan storage operations
+- `prompt_executor: PromptExecutor` - Claude CLI execution
 
 **Configuration Fields**:
 
@@ -529,10 +536,10 @@ A frozen dataclass containing all injected dependencies.
 
 **Factory Methods**:
 
-- `create_context(dry_run=False)` - Production context with real implementations
-- `ErkContext.for_test(...)` - Test context with configurable fakes
+- `create_context(dry_run=..., script=..., debug=...)` - Production context with real implementations
+- `context_for_test(...)` - Test context with configurable fakes (standalone function, not class method)
 
-See `src/erk/core/context.py` for the canonical definition.
+See `packages/erk-shared/src/erk_shared/context/context.py` for the canonical definition (re-exported from `src/erk/core/context.py`).
 
 ### PRDetails
 
@@ -676,7 +683,7 @@ yield CompletionEvent(MyResult(success=True, data=data))
 
 A union type of frozen dataclasses representing events from Claude CLI streaming execution.
 
-**Location**: `src/erk/core/prompt_executor.py`
+**Location**: `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
 
 **Purpose**: Typed events enabling pattern matching for Claude CLI output processing.
 
@@ -763,10 +770,10 @@ class Git(ABC):
 - `Git` - Git operations
 - `GitHub` - GitHub API operations
 - `Graphite` - Graphite CLI operations
-- `ConfigStore` - Configuration operations
 - `Shell` - Shell detection and tool availability
 - `Completion` - Shell completion generation
 - `ScriptWriter` - Activation script generation
+- `Console` - TTY detection, user feedback, and confirmation prompts
 
 **Purpose**: Abstraction enabling testing with fakes.
 
@@ -1262,110 +1269,13 @@ A single evaluation cycle where Claude assesses current state against the object
 3. Reports status with optional gap description
 4. If gaps found, creates bounded implementation plan
 
-**CLI**: `erk objective turn <objective-name>`
-
-### ObjectiveType
-
-Discriminator for objective behavior:
-
-| Type          | Description                       | Example                        |
-| ------------- | --------------------------------- | ------------------------------ |
-| `COMPLETABLE` | Finite end state exists           | "Migrate all errors to Ensure" |
-| `PERPETUAL`   | Ongoing guard, never fully "done" | "No direct time.sleep() calls" |
-
-**Impact**: `COMPLETABLE` objectives can report `STATUS: COMPLETE`. `PERPETUAL` objectives always find gaps or report nothing to do in this turn.
-
-### ObjectiveDefinition
-
-A frozen dataclass containing the static configuration for an objective.
-
-**Location**: `.erk/objectives/<name>/definition.yaml`
-
-**Fields**:
-
-| Field                | Purpose                                       |
-| -------------------- | --------------------------------------------- |
-| `name`               | Unique identifier (kebab-case)                |
-| `objective_type`     | COMPLETABLE or PERPETUAL                      |
-| `desired_state`      | What "done" looks like                        |
-| `rationale`          | Why this objective matters                    |
-| `examples`           | Before/after patterns showing desired changes |
-| `scope_includes`     | Directories/patterns to examine               |
-| `scope_excludes`     | Directories/patterns to skip                  |
-| `evaluation_prompt`  | Instructions for assessing gaps               |
-| `plan_sizing_prompt` | Guidelines for bounding plan size             |
-
-**File**: `packages/erk-shared/src/erk_shared/objectives/types.py`
-
-### ObjectiveNotes
-
-Accumulated knowledge from previous turns. Notes persist across future turns, building institutional memory about edge cases, patterns, and decisions.
-
-**Location**: `.erk/objectives/<name>/notes.yaml`
-
-**Entry fields**:
-
-- `timestamp`: ISO 8601 format
-- `content`: The insight or observation
-- `source_turn`: Optional reference to generating turn
-
-**Purpose**: Prevent rediscovering the same insights. If a previous turn learned "files in vendor/ should be excluded", that knowledge persists.
-
-### TurnResult
-
-A frozen dataclass capturing the outcome of running a turn.
-
-**Fields**:
-
-| Field               | Type          | Description                   |
-| ------------------- | ------------- | ----------------------------- |
-| `objective_name`    | `str`         | Which objective was evaluated |
-| `gap_found`         | `bool`        | Whether work remains          |
-| `gap_description`   | `str \| None` | Human-readable gap summary    |
-| `plan_issue_number` | `int \| None` | GitHub issue created for plan |
-| `plan_issue_url`    | `str \| None` | URL to the created issue      |
-| `timestamp`         | `str`         | ISO 8601 format               |
-
-**File**: `packages/erk-shared/src/erk_shared/objectives/types.py`
-
-### StepStatus
-
-An enumeration of possible step states in an objective roadmap.
-
-| Status        | Description                             |
-| ------------- | --------------------------------------- |
-| `PENDING`     | Step not yet started                    |
-| `BLOCKED`     | Step explicitly blocked (Status column) |
-| `SKIPPED`     | Step explicitly skipped (Status column) |
-| `DONE`        | Step completed (PR merged)              |
-| `IN_PROGRESS` | Plan in progress for this step          |
-
-**Note**: Status column values (blocked, skipped) override PR column inference.
-
-### ReconcileAction
-
-A frozen dataclass representing the action determined by the reconciler for an objective.
-
-**Fields**:
-
-| Field              | Type          | Description                       |
-| ------------------ | ------------- | --------------------------------- |
-| `action_type`      | `str`         | "create_plan", "none", or "error" |
-| `step_id`          | `str \| None` | Step ID if creating plan          |
-| `step_description` | `str \| None` | Step description                  |
-| `phase_name`       | `str \| None` | Phase containing the step         |
-| `reason`           | `str`         | Human-readable explanation        |
-
-**File**: `packages/erk-shared/src/erk_shared/objectives/types.py`
+**CLI**: `erk objective next-plan <objective-name>`
 
 ### Key Files
 
-| Concern | Location                                                   |
-| ------- | ---------------------------------------------------------- |
-| Types   | `packages/erk-shared/src/erk_shared/objectives/types.py`   |
-| Turn    | `packages/erk-shared/src/erk_shared/objectives/turn.py`    |
-| Storage | `packages/erk-shared/src/erk_shared/objectives/storage.py` |
-| CLI     | `src/erk/cli/commands/objective/`                          |
+| Concern | Location                          |
+| ------- | --------------------------------- |
+| CLI     | `src/erk/cli/commands/objective/` |
 
 ---
 

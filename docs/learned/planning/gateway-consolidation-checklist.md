@@ -1,7 +1,7 @@
 ---
 title: Gateway Consolidation Checklist
-last_audited: "2026-02-03 15:30 PT"
-audit_result: clean
+last_audited: "2026-02-03"
+audit_result: edited
 read_when:
   - "moving gateways to gateway/ directory"
   - "consolidating gateway packages"
@@ -26,7 +26,7 @@ Confirm the package follows the standard gateway pattern:
 - Has `real.py` with production implementation
 - Has `fake.py` with test implementation
 - May have `dry_run.py` and/or `printing.py` wrappers
-- Has `__init__.py` with re-exports
+- Has `__init__.py` with submodule docstring
 
 ### 2. Create Target Directory
 
@@ -72,16 +72,16 @@ from erk_shared.gateway.command_executor.abc import CommandExecutor
 
 ### 5. Create **init**.py
 
-Add `__init__.py` with re-exports for clean imports:
+Add `__init__.py` with a docstring pointing to submodules (per erk's no-re-exports convention):
 
 ```python
-"""CommandExecutor gateway package."""
+"""Command execution interface for TUI operations.
 
-from erk_shared.gateway.command_executor.abc import CommandExecutor
-from erk_shared.gateway.command_executor.fake import FakeCommandExecutor
-from erk_shared.gateway.command_executor.real import RealCommandExecutor
-
-__all__ = ["CommandExecutor", "FakeCommandExecutor", "RealCommandExecutor"]
+Import from submodules:
+- abc: CommandExecutor
+- real: RealCommandExecutor
+- fake: FakeCommandExecutor
+"""
 ```
 
 ### 6. Update All Import Sites
@@ -104,7 +104,8 @@ from erk_shared.tui.commands.real_executor import RealCommandExecutor
 **After:**
 
 ```python
-from erk_shared.gateway.command_executor import CommandExecutor, RealCommandExecutor
+from erk_shared.gateway.command_executor.abc import CommandExecutor
+from erk_shared.gateway.command_executor.real import RealCommandExecutor
 ```
 
 See [LibCST Systematic Imports](../refactoring/libcst-systematic-imports.md) for automated refactoring.
@@ -144,7 +145,7 @@ git commit -m "Move <GatewayName> gateway to gateway/ directory
 Consolidates <GatewayName> into unified gateway structure:
 - Moved from packages/erk-shared/src/erk_shared/<old-path>/
 - Updated imports across codebase
-- Added __init__.py for clean re-exports"
+- Added __init__.py with submodule docstring"
 
 git push
 gh pr create --fill
@@ -187,7 +188,7 @@ if TYPE_CHECKING:
 
 **Cause:** Forgot to create `__init__.py` in new directory.
 
-**Fix:** Create `__init__.py` with re-exports.
+**Fix:** Create `__init__.py` with submodule docstring.
 
 ## Batch Operations
 

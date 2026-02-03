@@ -4,11 +4,15 @@ read_when:
   - "writing implementation plans"
   - "creating consolidated plans"
   - "avoiding sparse plan content"
+last_audited: "2026-02-03"
+audit_result: edited
 ---
 
 # Context Preservation Patterns
 
 Example-driven guidance showing the difference between sparse and comprehensive plan content.
+
+> **Note:** The "correct pattern" examples below are **illustrative** — they show the _format and level of detail_ a good plan should have. Specific file paths, line numbers, and function names in the examples may not match the current codebase.
 
 ## Table of Contents
 
@@ -200,8 +204,8 @@ All necessary context must be **explicit in the plan**.
    - **Location:** `src/erk/gateway/abc.py:105-142`
    - **Signature:** `class CommandExecutor(ABC, WorkspaceContext)`
 3. Reference `sanitize_worktree_name()` helper
-   - **Location:** `src/erk/utils/naming.py:45-67`
-   - **Signature:** `def sanitize_worktree_name(title: str, max_length: int = 31) -> str`
+   - **Location:** `packages/erk-shared/src/erk_shared/naming.py:69`
+   - **Signature:** `def sanitize_worktree_name(name: str) -> str`
 ```
 
 **Why better:**
