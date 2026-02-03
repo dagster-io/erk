@@ -26,7 +26,23 @@ Performed by `parse_roadmap()` in `objective_roadmap_shared.py`:
 
 Validation warnings are collected and returned alongside parsed data — parsing continues even with warnings.
 
-## Semantic Validation (Update Command)
+## Semantic Validation (Check Command)
+
+Performed by `objective check` command in `check_cmd.py:166-197`:
+
+| Check # | Rule                                         | Source Lines | Description                                                                 |
+| ------- | -------------------------------------------- | ------------ | --------------------------------------------------------------------------- |
+| 1       | Has erk-objective label                      | 87–92        | Issue must have `erk-objective` label                                       |
+| 2       | Roadmap parseable                            | 95–109       | Issue body must contain valid roadmap with at least one phase               |
+| 3       | Status/PR consistency                        | 111–141      | Steps with PR `#NNN` should have status `done`, plan `#NNN` → `in_progress` |
+| 4       | No orphaned done statuses                    | 143–153      | Steps with status `done` must have a PR reference                           |
+| 5       | Phase numbering sequential                   | 155–162      | Phases must be in order (1, 2, 3 or 1A, 1B, 2A, etc.)                       |
+| 6       | Depends On references valid (planned, 7-col) | Not impl     | All step IDs in depends_on field must exist in roadmap                      |
+| 7       | Step type safety validation (planned, 7-col) | Not impl     | step_type must be one of: "task", "milestone", "research"                   |
+
+**Checks 6-7** are planned for the 7-column roadmap format extension and will be implemented when that format is added.
+
+## Update Command Validation
 
 Performed by `objective_roadmap_update.py`:
 

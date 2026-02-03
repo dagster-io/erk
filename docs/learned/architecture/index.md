@@ -68,6 +68,7 @@
 - **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
 - **[optional-field-propagation.md](optional-field-propagation.md)** — transforming dataclass instances in pipelines, debugging null metadata fields, adding optional fields to dataclasses
 - **[parallel-agent-pattern.md](parallel-agent-pattern.md)** — launching multiple agents concurrently, using Task with run_in_background, collecting results with TaskOutput, running agents in parallel
+- **[parameter-threading-pattern.md](parameter-threading-pattern.md)** — adding parameters to multi-layer commands (skill → command → exec), working with slash commands that call erk exec, understanding parameter flow through command layers
 - **[pathlib-symlinks.md](pathlib-symlinks.md)** — Writing file validation code, Debugging unexpected path resolution behavior, Working with symlinked configuration files
 - **[phase-zero-detection-pattern.md](phase-zero-detection-pattern.md)** — adding conditional execution to phase-based commands, implementing mode variants in CLI commands, modifying pr-address or similar multi-phase workflows
 - **[pipeline-transformation-patterns.md](pipeline-transformation-patterns.md)** — designing data transformation pipelines, deciding when to enrich vs filter data, troubleshooting lost metadata in pipelines

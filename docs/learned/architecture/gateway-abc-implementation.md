@@ -427,8 +427,8 @@ When adding methods that benefit from testability (lock waiting, retry logic, ti
 
 ```python
 class RealGitBranchOps(GitBranchOps):
-    def __init__(self, time: Time | None = None) -> None:
-        self._time = time if time is not None else RealTime()
+    def __init__(self, *, time: Time) -> None:
+        self._time = time
 
     def checkout_branch(self, cwd: Path, branch: str) -> None:
         # Use injected dependency before operation
