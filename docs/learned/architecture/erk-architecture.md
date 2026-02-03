@@ -845,9 +845,9 @@ def execute_quick_submit(ctx: ErkContext) -> None:
 
 ### How BranchManager is Created
 
-<!-- Source: packages/erk-shared/src/erk_shared/context/context.py:165-187 -->
+<!-- Source: packages/erk-shared/src/erk_shared/context/context.py -->
 
-`ErkContext.branch_manager` property automatically selects the right implementation. See the `branch_manager` property in `packages/erk-shared/src/erk_shared/context/context.py:165-187` for the complete implementation including DryRun unwrapping logic.
+`ErkContext.branch_manager` property automatically selects the right implementation. See the `branch_manager` property in `packages/erk-shared/src/erk_shared/context/context.py` for the complete implementation including DryRun unwrapping logic.
 
 ### Adding New Operations to BranchManager
 
@@ -896,9 +896,9 @@ def test_quick_submit_tracks_submission() -> None:
 
 ### context.branch_manager Property
 
-<!-- Source: packages/erk-shared/src/erk_shared/context/context.py:165-187 -->
+<!-- Source: packages/erk-shared/src/erk_shared/context/context.py -->
 
-The `ErkContext.branch_manager` property provides automatic wrapper unwrapping for dry-run mode. See the complete implementation in `packages/erk-shared/src/erk_shared/context/context.py:165-187`.
+The `ErkContext.branch_manager` property provides automatic wrapper unwrapping for dry-run mode. See the complete implementation in `packages/erk-shared/src/erk_shared/context/context.py`.
 
 This unwrapping is necessary because:
 
@@ -912,9 +912,9 @@ When operations have optional behavior based on availability of resources, use g
 
 ### Pattern: Branch Lookup Fallback
 
-<!-- Source: src/erk/cli/commands/submit.py:165-185 -->
+<!-- Source: src/erk/cli/commands/submit.py -->
 
-The `get_learn_plan_parent_branch()` function (see `src/erk/cli/commands/submit.py:165-185`) gracefully handles missing parent plans by returning `None` when no parent is found.
+The `get_learn_plan_parent_branch()` function (see `src/erk/cli/commands/submit.py`) gracefully handles missing parent plans by returning `None` when no parent is found.
 
 Callers check the return value and fall back to trunk:
 

@@ -127,6 +127,15 @@ test_ctx = ErkContext.for_test(
 
 This static method accepts a smaller set of parameters (`github_issues`, `git`, `github`, `claude_installation`, `prompt_executor`, `debug`, `repo_root`, `cwd`, `repo_info`). It does NOT accept `global_config`.
 
+**When to use which:**
+
+| Scenario | Use | Why |
+|---|---|---|
+| CLI command tests needing `global_config` | `context_for_test()` | Only factory that accepts `global_config` |
+| CLI command tests with `erk_isolated_fs_env` | `env.build_context()` | Wraps `context_for_test()` with env defaults |
+| Tests in `erk_shared` or without `global_config` needs | `ErkContext.for_test()` | Available without depending on `erk.core` |
+| Default choice for most tests | `context_for_test()` | Broadest parameter set, fills in fake defaults |
+
 **Key points**:
 
 - `GlobalConfig` uses `erk_root` (not `erks_root`)

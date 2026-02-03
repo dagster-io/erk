@@ -296,34 +296,18 @@ class FakeGitHub(GitHub):
 **Implementation**: Use LBYL (Look Before You Leap) to check existence before attempting the operation:
 
 ```python
-# real.py - Check existence first, return early if missing
+# real.py - LBYL check existence, then delete
 def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-    """Delete a local branch.
-
-    Idempotent: if branch doesn't exist, returns successfully.
-    """
-    # LBYL: Check if branch exists before attempting delete
-    check_result = run_subprocess_with_context(
-        cmd=["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
-        operation_context=f"check if branch '{branch_name}' exists",
-        cwd=cwd,
-        check=False,
-    )
-    if check_result.returncode != 0:
-        # Branch doesn't exist - goal achieved
-        return
-
-    flag = "-D" if force else "-d"
-    run_subprocess_with_context(
-        cmd=["git", "branch", flag, branch_name],
-        operation_context=f"delete branch '{branch_name}'",
-        cwd=cwd,
-    )
+    # Check if branch exists (show-ref), return early if missing
+    # Then delete with -D (force) or -d flag
+    ...
 ```
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py -->
 
 **Key principle**: Use LBYL _to implement_ idempotency for operations that would otherwise fail on missing resources. This is different from operations that are _already_ idempotent (like `git fetch`), which don't need LBYL checks.
 
-See the canonical implementation at `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:59-80`.
+See the canonical implementation in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py`.
 
 **5-file verification checklist** for idempotent behavioral changes:
 
@@ -443,8 +427,8 @@ When adding methods that benefit from testability (lock waiting, retry logic, ti
 
 ```python
 class RealGitBranchOps(GitBranchOps):
-    def __init__(self, *, time: Time) -> None:
-        self._time = time
+    def __init__(self, time: Time | None = None) -> None:
+        self._time = time if time is not None else RealTime()
 
     def checkout_branch(self, cwd: Path, branch: str) -> None:
         # Use injected dependency before operation
