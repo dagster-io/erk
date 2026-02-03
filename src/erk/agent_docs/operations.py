@@ -7,10 +7,11 @@ files with frontmatter metadata.
 from collections import defaultdict
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, cast, get_args
 
 from erk.agent_docs.models import (
     AgentDocFrontmatter,
+    AuditResult,
     AgentDocValidationResult,
     CategoryInfo,
     CategoryTripwireStats,
@@ -204,7 +205,7 @@ def validate_agent_doc_frontmatter(
     if audit_result_data is not None:
         if not isinstance(audit_result_data, str):
             errors.append("Field 'audit_result' must be a string")
-        elif audit_result_data not in ("clean", "edited"):
+        elif audit_result_data not in get_args(AuditResult):
             errors.append(
                 f"Field 'audit_result' must be 'clean' or 'edited', got '{audit_result_data}'"
             )
