@@ -74,7 +74,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before changing gateway return type to discriminated union** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern.
 
-**CRITICAL: Before changing `permission_mode_to_claude()` (or future `permission_mode_to_codex()`) implementations** → Read [PermissionMode Abstraction](permission-modes.md) first. Verify both Claude and Codex backend implementations maintain identical enum-to-mode mappings.
+**CRITICAL: Before changing permission_mode_to_claude() (or future permission_mode_to_codex()) implementations** → Read [PermissionMode Abstraction](permission-modes.md) first. Verify both Claude and Codex backend implementations maintain identical enum-to-mode mappings.
 
 **CRITICAL: Before checking if get_pr_for_branch() returned a PR** → Read [Not-Found Sentinel Pattern](not-found-sentinel.md) first. Use `isinstance(pr, PRNotFound)` not `pr is not None`. PRNotFound is a sentinel object, not None.
 
@@ -130,7 +130,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before modifying PR footer format validation** → Read [PR Footer Format Validation](pr-footer-validation.md) first. Update generator, parser, AND validator in sync. Old PRs must remain parseable during migration. Add support for new format before deprecating old format.
 
-**CRITICAL: Before modifying PermissionMode enum or permission mode mappings** → Read [PermissionMode Abstraction](permission-modes.md) first. `permission_mode_to_claude()` (and future `permission_mode_to_codex()`) must stay in sync. Update both when changing mappings.
+**CRITICAL: Before modifying PermissionMode enum or permission mode mappings** → Read [PermissionMode Abstraction](permission-modes.md) first. permission_mode_to_claude() (and future permission_mode_to_codex()) must stay in sync. Update both when changing mappings.
 
 **CRITICAL: Before mutating pipeline state directly instead of using dataclasses.replace()** → Read [State Threading Pattern](state-threading-pattern.md) first. Pipeline state must be frozen. Use dataclasses.replace() to create new state at each step.
 
