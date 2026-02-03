@@ -363,3 +363,56 @@ This objective tests display format idempotency.
         assert result2.exit_code == 0
         assert "already saved objective #1" in result2.output
         assert "Skipping duplicate creation" in result2.output
+
+
+# --- Parent objective tests ---
+
+
+def test_objective_save_to_issue_with_parent_objective() -> None:
+    """Test that --parent-objective includes objective-header metadata in issue body."""
+    fake_gh = FakeGitHubIssues()
+    fake_store = FakeClaudeInstallation.for_test(plans={"parent-test": VALID_PLAN_CONTENT})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        objective_save_to_issue,
+        ["--format", "json", "--parent-objective", "42"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Verify issue body contains objective-header metadata with parent_objective
+    title, body, labels = fake_gh.created_issues[0]
+    assert "objective-header" in body
+    assert "parent_objective" in body
+    assert "42" in body
+
+
+def test_objective_save_to_issue_without_parent_objective() -> None:
+    """Test that without --parent-objective, no objective-header metadata is added."""
+    fake_gh = FakeGitHubIssues()
+    fake_store = FakeClaudeInstallation.for_test(plans={"no-parent-test": VALID_PLAN_CONTENT})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        objective_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Verify issue body does NOT contain objective-header metadata
+    title, body, labels = fake_gh.created_issues[0]
+    assert "objective-header" not in body
