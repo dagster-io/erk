@@ -5,96 +5,33 @@ read_when:
   - "implementing IPC communication in erkdesk"
   - "understanding context bridge security"
   - "adding new erkdesk capabilities"
+last_audited: "2026-02-03"
+audit_result: edited
 ---
 
 # Preload Bridge Patterns
 
-The preload script is the **only** safe way to expose Node.js APIs to the Electron renderer process. It uses `contextBridge` to create a controlled API surface on `window.erkdesk`.
+The preload script is the **only** safe way to expose Node.js APIs to the Electron renderer process.
 
 ## The Security Model
 
-**Constraint**: Renderer process has `contextIsolation: true` and `nodeIntegration: false`
-
-**Result**: Renderer can't access Node.js directly (no `require()`, no `fs`, no `process`)
-
-**Solution**: Preload script runs with Node.js access AND can inject APIs into renderer's `window` object
-
-**Boundary**: `contextBridge` is the gatekeeper — only explicitly exposed APIs are available
+- **Constraint**: Renderer has `contextIsolation: true` and `nodeIntegration: false`
+- **Result**: Renderer can't access Node.js directly
+- **Solution**: Preload script uses `contextBridge` to inject specific APIs into `window.erkdesk`
+- **Boundary**: Only explicitly exposed APIs are available to the renderer
 
 ## Current Implementation
 
-**File**: `erkdesk/src/main/preload.ts`
+**Preload**: `erkdesk/src/main/preload.ts`
+**Types**: `erkdesk/src/types/erkdesk.d.ts` (full `ErkdeskAPI` interface)
 
-```typescript
-import { contextBridge } from "electron";
+The preload exposes 8 IPC bridge methods on `window.erkdesk`:
 
-contextBridge.exposeInMainWorld("erkdesk", {
-  version: "0.1.0",
-  // Future IPC methods will go here:
-  // - fetchDashData()
-  // - executeCommand()
-});
-```
+- `updateWebViewBounds()`, `loadWebViewURL()` — WebView management
+- `fetchPlans()`, `executeAction()` — Request/response IPC
+- `startStreamingAction()`, `onActionOutput()`, `onActionCompleted()`, `removeActionListeners()` — Streaming IPC
 
-**What this does**:
-
-1. Creates `window.erkdesk` object in renderer context
-2. Exposes only the properties defined in the object literal
-3. Currently exposes only a version string (placeholder)
-
-**Renderer access**:
-
-```typescript
-// In React components
-console.log(window.erkdesk.version); // "0.1.0"
-```
-
-## Pattern: Exposing IPC Methods
-
-To add a new capability (e.g., fetching dashboard data):
-
-### Step 1: Add IPC Handler in Main Process
-
-**File**: `src/main/index.ts`
-
-```typescript
-import { ipcMain } from "electron";
-
-ipcMain.handle("fetch-dash-data", async () => {
-  // Fetch data from erk CLI or filesystem
-  const data = await fetchDashboardData();
-  return data;
-});
-```
-
-### Step 2: Expose Method in Preload
-
-**File**: `src/main/preload.ts`
-
-```typescript
-import { contextBridge, ipcRenderer } from "electron";
-
-contextBridge.exposeInMainWorld("erkdesk", {
-  version: "0.1.0",
-  fetchDashData: () => ipcRenderer.invoke("fetch-dash-data"),
-});
-```
-
-### Step 3: Call from Renderer
-
-**File**: `src/renderer/App.tsx`
-
-```typescript
-const [data, setData] = useState(null);
-
-useEffect(() => {
-  window.erkdesk.fetchDashData().then(setData);
-}, []);
-```
-
-## Why Not Expose ipcRenderer Directly?
-
-**Dangerous pattern** (NEVER do this):
+## Security Anti-Pattern: Never Expose ipcRenderer Directly
 
 ```typescript
 // WRONG - Security vulnerability!
@@ -103,102 +40,37 @@ contextBridge.exposeInMainWorld("erkdesk", {
 });
 ```
 
-**Problem**: Renderer gains unrestricted access to ALL IPC channels, including ones you didn't intend.
+**Problem**: Renderer gains unrestricted access to ALL IPC channels. Only expose specific, validated methods.
 
-**Attack scenario**:
+## Adding a New IPC Method
 
-1. Renderer loads untrusted content (e.g., user-provided HTML)
-2. Malicious script calls `window.erkdesk.ipcRenderer.send("delete-files", "/*")`
-3. Main process executes the command
+### Checklist
 
-**Correct pattern**: Only expose specific, validated methods.
+1. **Add IPC handler** in main process (`erkdesk/src/main/index.ts`):
 
-## Current State: No TypeScript Types
+   ```typescript
+   ipcMain.handle("my-channel", async (event, args) => { ... });
+   ```
 
-**Missing**: TypeScript definitions for `window.erkdesk`
+2. **Expose method** in preload (`erkdesk/src/main/preload.ts`):
 
-**Workaround**: Use type assertions in renderer:
+   ```typescript
+   myMethod: (args) => ipcRenderer.invoke("my-channel", args),
+   ```
 
-```typescript
-declare global {
-  interface Window {
-    erkdesk: {
-      version: string;
-      fetchDashData?: () => Promise<DashData>;
-    };
-  }
-}
-```
+3. **Add TypeScript types** in `erkdesk/src/types/erkdesk.d.ts`:
+   - Add method to `ErkdeskAPI` interface
+   - Add any new parameter/return types
 
-**Future**: Add `erkdesk.d.ts` type definitions file.
+4. **Call from renderer** via `window.erkdesk.myMethod(args)`
 
-## Pattern: Two-Way Communication
+## Security Boundary Mental Model
 
-For events from main process to renderer:
+- **Above**: Main process (full Node.js access, trusted code)
+- **At**: Preload script (validates and sanitizes all communication)
+- **Below**: Renderer process (sandboxed, treat as untrusted)
 
-### Main Process Sends Event
-
-```typescript
-// In main process
-mainWindow.webContents.send("dashboard-updated", newData);
-```
-
-### Preload Exposes Listener
-
-```typescript
-contextBridge.exposeInMainWorld("erkdesk", {
-  onDashboardUpdate: (callback) => {
-    ipcRenderer.on("dashboard-updated", (event, data) => callback(data));
-  },
-});
-```
-
-### Renderer Subscribes
-
-```typescript
-useEffect(() => {
-  window.erkdesk.onDashboardUpdate((data) => {
-    setDashData(data);
-  });
-}, []);
-```
-
-## Reserved Namespace: window.erkdesk
-
-All erkdesk-specific APIs live under `window.erkdesk`. This:
-
-1. Avoids naming conflicts with other libraries
-2. Makes it clear which APIs are erkdesk-specific
-3. Groups related functionality
-
-**Future expansion**:
-
-```typescript
-window.erkdesk = {
-  version: "0.1.0",
-  dashboard: {
-    fetch: () => Promise<DashData>,
-    subscribe: (callback) => void,
-  },
-  commands: {
-    execute: (cmd: string) => Promise<CommandResult>,
-  },
-  worktrees: {
-    list: () => Promise<WorktreeInfo[]>,
-    switch: (path: string) => Promise<void>,
-  },
-};
-```
-
-## Security Boundary
-
-The preload script is the **security boundary**:
-
-- **Above the boundary**: Main process (full Node.js access, trusted code)
-- **Below the boundary**: Renderer process (sandboxed, potentially untrusted content)
-- **At the boundary**: Preload script (validates and sanitizes all communication)
-
-**Principle**: Treat renderer as untrusted. Validate all inputs from renderer before acting.
+**Principle**: Validate all inputs from renderer before acting.
 
 ## Related Documentation
 
