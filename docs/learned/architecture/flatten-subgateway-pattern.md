@@ -84,6 +84,7 @@ class FakeGit(Git):
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/git/fake.py -->
 
 **Critical pattern:** Pass references to parent's state containers to the fake subgateway constructor, then call `link_mutation_tracking()` to connect mutation lists. This enables **linked mutation tracking** -- changes made through the subgateway update the parent's state, allowing queries through the parent to observe the mutations. See `FakeGit.__init__` in `packages/erk-shared/src/erk_shared/gateway/git/fake.py` for the full implementation.
+
 ### 4. DryRun Layer (dry_run.py)
 
 ```python
