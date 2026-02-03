@@ -4,6 +4,8 @@ read_when:
   - "adding non-abstract methods to gateway ABCs"
   - "composing primitive gateway operations into higher-level methods"
   - "handling exception type differences between real and fake implementations"
+last_audited: "2026-02-01 20:34 PT"
+audit_result: edited
 ---
 
 # ABC Convenience Method Pattern
@@ -18,53 +20,20 @@ Use this pattern when:
 - Error handling logic is complex and should be centralized
 - You want to provide an ergonomic API without adding abstract methods
 
-## Pattern: Idempotent Wrappers
+## Canonical Example
 
-The most common use case is wrapping a primitive operation with error handling that treats certain failures as success.
-
-**Example: `squash_branch_idempotent()`**
-
-The primitive `squash_branch()` raises an error when there's nothing to squash. The idempotent wrapper treats this as success:
-
-```python
-class Graphite(ABC):
-    @abstractmethod
-    def squash_branch(self, repo_root: Path, *, quiet: bool = False) -> None:
-        """Primitive operation - raises on any failure."""
-        ...
-
-    def squash_branch_idempotent(
-        self, repo_root: Path, *, quiet: bool = True
-    ) -> SquashSuccess | SquashError:
-        """Convenience method - handles 'nothing to squash' gracefully."""
-        try:
-            self.squash_branch(repo_root, quiet=quiet)
-            return SquashSuccess(success=True, action="squashed", ...)
-        except (RuntimeError, subprocess.CalledProcessError) as e:
-            if "nothing to squash" in str(e).lower():
-                return SquashSuccess(success=True, action="already_single_commit", ...)
-            # Handle other errors...
-```
+See `squash_branch_idempotent()` in `packages/erk-shared/src/erk_shared/gateway/graphite/abc.py`. This wraps the primitive `squash_branch()` with idempotent error handling, returning a discriminated union (`SquashSuccess | SquashError`) instead of raising.
 
 ## Exception Type Compatibility
 
-A critical consideration: **real and fake implementations may raise different exception types**.
+Real and fake implementations may raise different exception types:
 
 | Implementation | Exception Type                  | Source                          |
 | -------------- | ------------------------------- | ------------------------------- |
 | Real           | `RuntimeError`                  | `run_subprocess_with_context()` |
 | Fake           | `subprocess.CalledProcessError` | Direct raise for testing        |
 
-**Solution**: Catch both exception types:
-
-```python
-except (RuntimeError, subprocess.CalledProcessError) as e:
-    # Build error message handling both types
-    if isinstance(e, subprocess.CalledProcessError):
-        error_msg = (e.stderr or "") + (e.stdout or "")
-    else:
-        error_msg = str(e)
-```
+**Solution**: Catch both types in the convenience method. See the `except` clause in `squash_branch_idempotent()` for the pattern.
 
 ## Benefits Over Abstract Methods
 
@@ -87,13 +56,7 @@ In those cases, add an abstract method following the [Gateway ABC Implementation
 
 ## Git vs Graphite View Divergence
 
-A specific case this pattern solves: **git commit counts can differ from Graphite's view**.
-
-- Git counts commits against trunk (master/main)
-- Graphite counts commits against the Graphite parent branch
-- When local master hasn't been updated, these counts diverge
-
-The idempotent pattern handles this gracefully - if git thinks there are 2 commits but Graphite sees 1, the "nothing to squash" error is treated as success.
+Git commit counts (against trunk) can differ from Graphite's view (against parent branch) when local master hasn't been updated. The idempotent pattern handles this gracefully — "nothing to squash" is treated as success.
 
 ## Related Documentation
 

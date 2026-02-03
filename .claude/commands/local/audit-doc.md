@@ -29,6 +29,14 @@ Parse `$ARGUMENTS` to resolve the doc path:
 
 Read the document fully and extract frontmatter (`title`, `read_when`, `tripwires`).
 
+If the frontmatter contains `last_audited` and `audit_result`, display them at the start of the report:
+
+```
+Last audited: YYYY-MM-DD HH:MM PT (result: clean/edited)
+```
+
+If no audit metadata is present, note: "No previous audit recorded."
+
 ### Phase 2: Extract Code References
 
 Parse the document to identify all references to source code:
@@ -112,13 +120,30 @@ Output a structured analysis:
 
 Use AskUserQuestion to offer:
 
-- "Show me the recommended rewrite"
-- "Apply the recommended rewrite"
-- "No action, just noting the findings"
+- **"Apply recommended rewrite"** — rewrite the doc to remove duplicative content (only offer if verdict is SIMPLIFY or REPLACE WITH CODE REFS)
+- **"Mark as audited (clean)"** — stamp frontmatter with audit date and `clean` result (use when verdict is KEEP)
+- **"Mark as audited (with rewrite)"** — apply the rewrite AND stamp frontmatter (only offer if verdict is SIMPLIFY or REPLACE WITH CODE REFS)
+- **"No action"** — just noting findings
 
-### Phase 7: Execute (if rewrite selected)
+### Phase 7: Execute Actions
 
-If user chooses "Apply the recommended rewrite", use the Edit tool to update the document.
+Based on the user's choice:
+
+**If rewrite selected** (either "Apply recommended rewrite" or "Mark as audited (with rewrite)"):
+Use the Edit tool to apply the recommended rewrite to the document.
+
+**If audit stamp selected** (either "Mark as audited (clean)" or "Mark as audited (with rewrite)"):
+Update the document's YAML frontmatter to add or update audit metadata:
+
+```yaml
+last_audited: "YYYY-MM-DD HH:MM PT"
+audit_result: clean | edited
+```
+
+- Use `clean` when the audit found no significant issues (KEEP verdict, no rewrite applied)
+- Use `edited` when the doc was rewritten to remove duplicative content
+
+If the document already has `last_audited` / `audit_result` fields, overwrite them with the new values. Use the current date and time in Pacific time, down to the minute.
 
 ## Design Principles
 
