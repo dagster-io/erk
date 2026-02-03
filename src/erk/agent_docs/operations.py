@@ -11,8 +11,8 @@ from typing import Any, cast, get_args
 
 from erk.agent_docs.models import (
     AgentDocFrontmatter,
-    AuditResult,
     AgentDocValidationResult,
+    AuditResult,
     CategoryInfo,
     CategoryTripwireStats,
     CollectedTripwire,
@@ -200,7 +200,7 @@ def validate_agent_doc_frontmatter(
             last_audited = last_audited_data
 
     # Check audit_result (optional)
-    audit_result: str | None = None
+    audit_result: AuditResult | None = None
     audit_result_data = data.get("audit_result")
     if audit_result_data is not None:
         if not isinstance(audit_result_data, str):
@@ -210,7 +210,7 @@ def validate_agent_doc_frontmatter(
                 f"Field 'audit_result' must be 'clean' or 'edited', got '{audit_result_data}'"
             )
         else:
-            audit_result = audit_result_data
+            audit_result = cast(AuditResult, audit_result_data)
 
     if errors:
         return None, errors
