@@ -145,12 +145,12 @@ Non-ideal state types live in the gateway's `types.py` file, alongside the succe
 
 **Methods using discriminated unions** (callers branch on error):
 
-| Method           | Return type                             | Gateway        |
-| ---------------- | --------------------------------------- | -------------- |
-| `merge_pr`       | `MergeResult \| MergeError`             | GitHub         |
-| `push_to_remote` | `PushResult \| PushError`               | Git remote_ops |
-| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`   | Git remote_ops |
-| `create_branch`  | `BranchCreated \| BranchAlreadyExists`  | Git branch_ops |
+| Method           | Return type                               | Gateway        |
+| ---------------- | ----------------------------------------- | -------------- |
+| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+| `create_branch`  | `BranchCreated \| BranchAlreadyExists`    | Git branch_ops |
 | `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
 
 **Methods using exceptions** (all callers terminate):
@@ -180,6 +180,7 @@ When changing an existing gateway method's return type (e.g., converting from ex
 **Canonical Example**:
 
 **PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+
 - Changed 4 files in gateway implementations
 - Updated 3 call sites in land workflow
 - Updated tests to use `isinstance(result, MergeError)`

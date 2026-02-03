@@ -298,13 +298,13 @@ class PRNotFound:
 
 ### Naming Conventions
 
-| Convention           | Example                         |
-| -------------------- | ------------------------------- |
-| `<Operation>Error`   | `SubmitError`, `MergeError`     |
-| `<Resource>NotFound` | `PRNotFound`, `IssueNotFound`   |
-| `<Operation>Result`  | `MergeResult`, `PushResult`     |
-| `<Resource>Created`  | `BranchCreated`                 |
-| `<Resource>Exists`   | `BranchAlreadyExists`           |
+| Convention           | Example                       |
+| -------------------- | ----------------------------- |
+| `<Operation>Error`   | `SubmitError`, `MergeError`   |
+| `<Resource>NotFound` | `PRNotFound`, `IssueNotFound` |
+| `<Operation>Result`  | `MergeResult`, `PushResult`   |
+| `<Resource>Created`  | `BranchCreated`               |
+| `<Resource>Exists`   | `BranchAlreadyExists`         |
 
 ## Comparison with Other Patterns
 
