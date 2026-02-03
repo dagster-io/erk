@@ -68,7 +68,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before calling os.chdir() in erk code** → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
 
-**CRITICAL: Before changing permission_mode_to_*() implementations** → Read [PermissionMode Abstraction](permission-modes.md) first. Verify both Claude and Codex backend implementations maintain identical enum-to-mode mappings.
+**CRITICAL: Before changing permission*mode_to*\*() implementations** → Read [PermissionMode Abstraction](permission-modes.md) first. Verify both Claude and Codex backend implementations maintain identical enum-to-mode mappings.
 
 **CRITICAL: Before changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
 
@@ -130,7 +130,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before modifying PR footer format validation** → Read [PR Footer Format Validation](pr-footer-validation.md) first. Update generator, parser, AND validator in sync. Old PRs must remain parseable during migration. Add support for new format before deprecating old format.
 
-**CRITICAL: Before modifying PermissionMode enum or permission mode mappings** → Read [PermissionMode Abstraction](permission-modes.md) first. Two permission_mode_to_*() functions must stay in sync (Claude backend and Codex backend). Update both when changing mappings.
+**CRITICAL: Before modifying PermissionMode enum or permission mode mappings** → Read [PermissionMode Abstraction](permission-modes.md) first. Two permission*mode_to*\*() functions must stay in sync (Claude backend and Codex backend). Update both when changing mappings.
 
 **CRITICAL: Before mutating pipeline state directly instead of using dataclasses.replace()** → Read [State Threading Pattern](state-threading-pattern.md) first. Pipeline state must be frozen. Use dataclasses.replace() to create new state at each step.
 

@@ -129,10 +129,10 @@ How erk's `PermissionMode` maps to both backends:
 
 | Erk PermissionMode | Claude `--permission-mode`         | Codex exec            | Codex TUI                                 |
 | ------------------ | ---------------------------------- | --------------------- | ----------------------------------------- |
-| `safe`          | `default`                          | `--sandbox read-only` | `--sandbox read-only -a untrusted`        |
-| `edits`         | `acceptEdits`                      | `--full-auto`         | `--sandbox workspace-write -a on-request` |
-| `plan`          | `plan`                             | `--sandbox read-only` | `--sandbox read-only -a never`            |
-| `dangerous`     | + `--dangerously-skip-permissions` | `--yolo`              | `--yolo`                                  |
+| `safe`             | `default`                          | `--sandbox read-only` | `--sandbox read-only -a untrusted`        |
+| `edits`            | `acceptEdits`                      | `--full-auto`         | `--sandbox workspace-write -a on-request` |
+| `plan`             | `plan`                             | `--sandbox read-only` | `--sandbox read-only -a never`            |
+| `dangerous`        | + `--dangerously-skip-permissions` | `--yolo`              | `--yolo`                                  |
 
 ## TUI Interaction Pattern for Erk
 

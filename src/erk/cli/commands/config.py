@@ -30,7 +30,6 @@ _CLI_KEY_TO_ATTR: dict[str, str] = {
 }
 
 
-
 def _resolve_section_attr(cli_key_prefix: str) -> str:
     """Resolve a CLI key prefix to the corresponding GlobalConfig attribute name."""
     return _CLI_KEY_TO_ATTR.get(cli_key_prefix, cli_key_prefix)
