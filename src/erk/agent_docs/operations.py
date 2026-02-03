@@ -189,6 +189,28 @@ def validate_agent_doc_frontmatter(
         tripwires, tripwire_errors = _validate_tripwires(tripwires_data)
         errors.extend(tripwire_errors)
 
+    # Check last_audited (optional)
+    last_audited: str | None = None
+    last_audited_data = data.get("last_audited")
+    if last_audited_data is not None:
+        if not isinstance(last_audited_data, str):
+            errors.append("Field 'last_audited' must be a string")
+        else:
+            last_audited = last_audited_data
+
+    # Check audit_result (optional)
+    audit_result: str | None = None
+    audit_result_data = data.get("audit_result")
+    if audit_result_data is not None:
+        if not isinstance(audit_result_data, str):
+            errors.append("Field 'audit_result' must be a string")
+        elif audit_result_data not in ("clean", "edited"):
+            errors.append(
+                f"Field 'audit_result' must be 'clean' or 'edited', got '{audit_result_data}'"
+            )
+        else:
+            audit_result = audit_result_data
+
     if errors:
         return None, errors
 
@@ -199,6 +221,8 @@ def validate_agent_doc_frontmatter(
         title=title,
         read_when=cast(list[str], read_when),
         tripwires=tripwires,
+        last_audited=last_audited,
+        audit_result=audit_result,
     ), []
 
 

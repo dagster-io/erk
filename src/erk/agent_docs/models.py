@@ -35,6 +35,8 @@ class AgentDocFrontmatter:
     title: str
     read_when: list[str]
     tripwires: list[Tripwire]
+    last_audited: str | None
+    audit_result: str | None
 
     def is_valid(self) -> bool:
         """Check if this frontmatter has all required fields."""
