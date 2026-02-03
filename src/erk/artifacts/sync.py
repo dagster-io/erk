@@ -159,13 +159,23 @@ def _sync_agent_artifacts(
 
 
 def _sync_commands(
-    source_commands_dir: Path, target_commands_dir: Path
+    source_commands_dir: Path,
+    target_commands_dir: Path,
+    *,
+    installed_capabilities: frozenset[str],
 ) -> tuple[int, list[SyncedArtifact]]:
     """Sync bundled commands to project. Only syncs erk namespace.
+
+    Filters commands based on capability management: capability-managed commands
+    are only synced if their capability is installed. Non-managed commands sync
+    unconditionally.
 
     Returns tuple of (file_count, synced_artifacts).
     Each command is tracked individually.
     """
+    # Inline import: artifact_health.py imports get_bundled_*_dir from this module
+    from erk.artifacts.artifact_health import _get_bundled_by_type
+
     if not source_commands_dir.exists():
         return 0, []
 
@@ -173,8 +183,37 @@ def _sync_commands(
     if not source.exists():
         return 0, []
 
+    # Get commands that should be synced (includes required + installed capability commands)
+    commands_to_sync = _get_bundled_by_type(
+        "command", installed_capabilities=installed_capabilities
+    )
+
+    # Get ALL managed commands (to know which ones are capability-gated)
+    all_managed_commands = _get_bundled_by_type("command", installed_capabilities=None)
+
     target = target_commands_dir / "erk"
-    count = _copy_directory_contents(source, target)
+    target.mkdir(parents=True, exist_ok=True)
+
+    # Copy commands selectively based on capability filtering
+    count = 0
+    for source_path in source.rglob("*.md"):
+        relative = source_path.relative_to(source)
+        # Extract command name (e.g., "learn.md" -> "learn", "system/impl.md" -> "impl")
+        command_name = source_path.stem
+
+        # Determine if this command should be synced
+        is_managed = command_name in all_managed_commands
+        should_sync = command_name in commands_to_sync
+
+        if is_managed and not should_sync:
+            # This is a capability-managed command whose capability is not installed - skip it
+            continue
+
+        # Either non-managed (always sync) or managed with installed capability (sync)
+        target_path = target / relative
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, target_path)
+        count += 1
 
     # Track each command file individually (including nested directories)
     synced: list[SyncedArtifact] = []
@@ -390,6 +429,7 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     artifacts.extend(_hash_agent_artifacts(agents_dir, agent_names))
 
     # Hash commands from source (including nested directories)
+    # In erk repo, installed_capabilities=None means hash all commands
     commands_dir = bundled_claude_dir / "commands" / "erk"
     if commands_dir.exists():
         for cmd_file in sorted(commands_dir.rglob("*.md")):
@@ -634,7 +674,9 @@ def sync_artifacts(
     all_synced.extend(synced)
 
     count, synced = _sync_commands(
-        config.bundled_claude_dir / "commands", target_claude_dir / "commands"
+        config.bundled_claude_dir / "commands",
+        target_claude_dir / "commands",
+        installed_capabilities=config.installed_capabilities,
     )
     total_copied += count
     all_synced.extend(synced)

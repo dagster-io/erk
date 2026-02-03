@@ -189,12 +189,18 @@ class LearnedDocsCapability(Capability):
             CapabilityArtifact(path="docs/learned/index.md", artifact_type="file"),
             CapabilityArtifact(path=".claude/skills/learned-docs/", artifact_type="directory"),
             CapabilityArtifact(path=".claude/skills/learned-docs/SKILL.md", artifact_type="file"),
+            CapabilityArtifact(path=".claude/agents/learn/", artifact_type="directory"),
+            CapabilityArtifact(path=".claude/commands/erk/learn.md", artifact_type="file"),
         ]
 
     @property
     def managed_artifacts(self) -> list[ManagedArtifact]:
-        """Declare learned-docs skill as managed artifact."""
-        return [ManagedArtifact(name="learned-docs", artifact_type="skill")]
+        """Declare learned-docs skill, learn command, and learn agent as managed artifacts."""
+        return [
+            ManagedArtifact(name="learned-docs", artifact_type="skill"),
+            ManagedArtifact(name="learn", artifact_type="command"),
+            ManagedArtifact(name="learn", artifact_type="agent"),
+        ]
 
     def is_installed(self, repo_root: Path | None) -> bool:
         """Check if docs/learned/ directory exists."""
@@ -202,7 +208,11 @@ class LearnedDocsCapability(Capability):
         return (repo_root / "docs" / "learned").exists()
 
     def install(self, repo_root: Path | None) -> CapabilityResult:
-        """Create docs/learned/ directory and learned-docs skill."""
+        """Create docs/learned/ directory, learned-docs skill, learn command, and learn agent."""
+        import shutil
+
+        from erk.artifacts.paths import get_bundled_claude_dir
+
         assert repo_root is not None, "LearnedDocsCapability requires repo_root"
         created_files: list[str] = []
 
@@ -231,6 +241,25 @@ class LearnedDocsCapability(Capability):
             skill_file.write_text(LEARNED_DOCS_SKILL, encoding="utf-8")
             created_files.append(".claude/skills/learned-docs/SKILL.md")
 
+        # Copy learn agent directory from bundled artifacts
+        bundled_claude_dir = get_bundled_claude_dir()
+        learn_agent_src = bundled_claude_dir / "agents" / "learn"
+        learn_agent_dst = repo_root / ".claude" / "agents" / "learn"
+
+        if learn_agent_src.exists() and not learn_agent_dst.exists():
+            learn_agent_dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(learn_agent_src, learn_agent_dst)
+            created_files.append(".claude/agents/learn/")
+
+        # Copy learn command from bundled artifacts
+        learn_cmd_src = bundled_claude_dir / "commands" / "erk" / "learn.md"
+        learn_cmd_dst = repo_root / ".claude" / "commands" / "erk" / "learn.md"
+
+        if learn_cmd_src.exists() and not learn_cmd_dst.exists():
+            learn_cmd_dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(learn_cmd_src, learn_cmd_dst)
+            created_files.append(".claude/commands/erk/learn.md")
+
         if not created_files:
             return CapabilityResult(
                 success=True,
@@ -244,7 +273,7 @@ class LearnedDocsCapability(Capability):
         )
 
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
-        """Remove docs/learned/ directory and learned-docs skill."""
+        """Remove docs/learned/ directory, learned-docs skill, learn command, and learn agent."""
         assert repo_root is not None, "LearnedDocsCapability requires repo_root"
         import shutil
 
@@ -255,6 +284,18 @@ class LearnedDocsCapability(Capability):
         if skill_dir.exists():
             shutil.rmtree(skill_dir)
             removed.append(".claude/skills/learned-docs/")
+
+        # Remove learn agent directory
+        learn_agent_dir = repo_root / ".claude" / "agents" / "learn"
+        if learn_agent_dir.exists():
+            shutil.rmtree(learn_agent_dir)
+            removed.append(".claude/agents/learn/")
+
+        # Remove learn command file
+        learn_cmd_file = repo_root / ".claude" / "commands" / "erk" / "learn.md"
+        if learn_cmd_file.exists():
+            learn_cmd_file.unlink()
+            removed.append(".claude/commands/erk/learn.md")
 
         # Remove docs/learned directory
         docs_dir = repo_root / "docs" / "learned"

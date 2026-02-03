@@ -6,14 +6,13 @@
 <summary><code>plan-header</code></summary>
 
 ```yaml
-
-schema_version: '2'
-created_at: '2026-02-03T00:13:09.075095+00:00'
+schema_version: "2"
+created_at: "2026-02-03T00:13:09.075095+00:00"
 created_by: schrockn
 plan_comment_id: 3837960396
-last_dispatched_run_id: '21611360917'
+last_dispatched_run_id: "21611360917"
 last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFCCMylQ
-last_dispatched_at: '2026-02-03T00:18:16.008578+00:00'
+last_dispatched_at: "2026-02-03T00:18:16.008578+00:00"
 last_local_impl_at: null
 last_local_impl_event: null
 last_local_impl_session: null
@@ -22,7 +21,6 @@ last_remote_impl_at: null
 last_remote_impl_run_id: null
 last_remote_impl_session_id: null
 created_from_session: 750b9584-eabc-4eae-b885-5ff7909ac50f
-
 ```
 
 </details>
