@@ -60,13 +60,22 @@ For each referenced source file:
 
 For each section of the document, classify it into one of these value categories:
 
-| Category        | Description                                                                             | Action                                                    |
-| --------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                   | Replace with "Read `path:line`" reference                 |
-| **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                         | Flag as high-maintenance; consider code reference instead |
-| **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files  | Keep                                                      |
-| **CONTEXTUAL**  | Connects multiple code locations into a coherent narrative the code alone can't provide | Keep                                                      |
-| **EXAMPLES**    | Code examples that are essentially identical to what exists in source/tests             | Replace with reference to actual test/source              |
+| Category        | Description                                                                                                                                  | Action                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                                                        | Replace with "Read `path:line`" reference                 |
+| **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                                                                              | Flag as high-maintenance; consider code reference instead |
+| **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                                                       | Keep                                                      |
+| **CONTEXTUAL**  | Connects multiple code locations into a coherent narrative the code alone can't provide                                                      | Keep                                                      |
+| **EXAMPLES**    | Code examples that are essentially identical to what exists in source/tests                                                                  | Replace with reference to actual test/source              |
+| **CONTRADICTS** | States something that is factually wrong per the current codebase (wrong function names, incorrect behavior descriptions, outdated patterns) | Flag as high-priority fix; correct or delete              |
+
+**Specific things to flag as contradictory:**
+
+- Prose describing behavior that doesn't match actual code behavior
+- Function/class names that don't exist or have been renamed
+- Described parameters, return types, or signatures that don't match source
+- Workflow descriptions that reference removed or restructured code paths
+- Pattern guidance that contradicts what the codebase actually does
 
 **Specific things to flag as duplicative:**
 
@@ -93,6 +102,8 @@ Output a structured analysis:
 
 ### Verdict: KEEP / SIMPLIFY / REPLACE WITH CODE REFS / CONSIDER DELETING
 
+(Any CONTRADICTS content should push toward SIMPLIFY or higher severity — contradictory docs are actively harmful and worse than duplicative content.)
+
 ### Value Breakdown
 
 | Section | Lines | Classification | Reasoning |
@@ -102,6 +113,10 @@ Output a structured analysis:
 ### Duplicative Content (X% of document)
 
 [List specific sections that restate code, with the source location that makes them redundant]
+
+### Contradictions
+
+[List sections that state something factually wrong per the current codebase, with the source location that disproves the claim. If none found, omit this section.]
 
 ### High-Value Content (X% of document)
 
@@ -149,7 +164,7 @@ If the document already has `last_audited` / `audit_result` fields, overwrite th
 
 1. **Adversarial framing**: Be skeptical of documentation value by default. The burden of proof is on the doc to justify its existence vs just reading code.
 
-2. **Percentage-based scoring**: Show what % of the doc is duplicative for quick signal. A doc that's 80% duplicative is a strong candidate for simplification.
+2. **Percentage-based scoring**: Show what % of the doc is duplicative or contradictory for quick signal. A doc that's 80% duplicative is a strong candidate for simplification. Any contradictory content is treated as at least as severe as duplicative content in verdict calculations.
 
 3. **Section-level granularity**: Don't just give a doc-level verdict. Show which sections add value and which don't, so the user can surgically edit.
 
