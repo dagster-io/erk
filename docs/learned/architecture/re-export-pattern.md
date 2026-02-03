@@ -82,13 +82,7 @@ CommandResult,  # noqa: F401 - re-exported for <consumer-description>
 
 ### Real-World Example
 
-```python
-# src/erk/core/prompt_executor.py:22-23
-from erk_shared.core.prompt_executor import (
-    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
-    # ... other imports used in this module ...
-)
-```
+See `src/erk/core/prompt_executor.py:22-23` for a real example where `CommandResult` is re-exported with `# noqa: F401 - re-exported for erk.cli.output`.
 
 This tells readers:
 
