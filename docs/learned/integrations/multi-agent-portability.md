@@ -9,7 +9,7 @@ research_date: "2026-01-18"
 status: "research - may become outdated"
 ---
 
-> **Updated February 2026**: For ground-truth Codex CLI details verified against source code, see [Codex CLI Reference](codex-cli-reference.md), [Codex JSONL Format](codex-jsonl-format.md), and [Codex Skills System](codex-skills-system.md).
+> **Updated February 2026**: For ground-truth Codex CLI details verified against source code, see [Codex CLI Reference](codex/codex-cli-reference.md), [Codex JSONL Format](codex/codex-jsonl-format.md), and [Codex Skills System](codex/codex-skills-system.md).
 
 # Multi-Agent Portability Research
 

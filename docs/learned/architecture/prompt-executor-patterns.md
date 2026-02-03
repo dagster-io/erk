@@ -263,8 +263,8 @@ For multi-backend support, these should route through `PromptExecutor` or a back
 
 ### Related Codex Documentation
 
-- [Codex CLI Reference](../integrations/codex-cli-reference.md) — Flag mapping between Claude and Codex
-- [Codex JSONL Format](../integrations/codex-jsonl-format.md) — Codex streaming event format
+- [Codex CLI Reference](../integrations/codex/codex-cli-reference.md) — Flag mapping between Claude and Codex
+- [Codex JSONL Format](../integrations/codex/codex-jsonl-format.md) — Codex streaming event format
 
 ## Related Topics
 
