@@ -121,32 +121,48 @@ executor = FakePromptExecutor(simulated_zero_turns=True)
 
 ## Real-World Usage Example
 
-The `erk land` command demonstrates `execute_command()` for optional post-operation actions:
+The `erk land` command demonstrates `stream_command_with_feedback()` for optional post-operation actions. This wrapper around `execute_command_streaming()` provides live progress output:
 
 ```python
-def _prompt_objective_update(
+def prompt_objective_update(
     ctx: ErkContext,
+    *,
     repo_root: Path,
     objective_number: int,
     pr_number: int,
+    branch: str,
     force: bool,
 ) -> None:
     """Prompt user to update objective after landing."""
     user_output(f"   Linked to Objective #{objective_number}")
 
-    if force:
-        # --force skips prompts, show command for later
-        user_output("   Run '/erk:objective-update-with-landed-pr' to update objective")
-        return
-
-    # User chooses to run now
-    result = ctx.prompt_executor.execute_command(
-        "/erk:objective-update-with-landed-pr",
-        repo_root,
-        dangerous=True,  # Skip permission prompts for non-interactive
+    cmd = (
+        f"/erk:objective-update-with-landed-pr "
+        f"--pr {pr_number} --objective {objective_number} --branch {branch} --auto-close"
     )
+
+    if force:
+        # --force skips prompt but still executes the update
+        user_output("Starting objective update...")
+        result = stream_command_with_feedback(
+            executor=ctx.prompt_executor,
+            command=cmd,
+            worktree_path=repo_root,
+            dangerous=True,
+        )
+    else:
+        if not ctx.console.confirm("Update objective now?", default=True):
+            user_output(f"Skipped. To update later, run:\n  {cmd}")
+            return
+        result = stream_command_with_feedback(
+            executor=ctx.prompt_executor,
+            command=cmd,
+            worktree_path=repo_root,
+            dangerous=True,
+        )
+
     if result.success:
-        user_output(click.style("✓", fg="green") + " Objective updated")
+        user_output(click.style("✓", fg="green") + " Objective updated successfully")
     else:
         user_output(
             click.style("⚠", fg="yellow")
@@ -156,6 +172,7 @@ def _prompt_objective_update(
 
 Key points:
 
+- Use `stream_command_with_feedback()` for live progress output during long-running operations
 - Use `dangerous=True` when the user has already confirmed the action
 - Handle both success and failure gracefully
 - Provide fallback command for manual retry on failure
