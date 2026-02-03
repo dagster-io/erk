@@ -1,14 +1,10 @@
 """Reconcile auto-advance objectives."""
 
-import os
-import shutil
-
 import click
 
 from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk.core.interactive_claude import build_claude_args
 from erk_shared.context.types import InteractiveClaudeConfig, RepoContext
 from erk_shared.gateway.github.issues.types import IssueNotFound
 
@@ -42,11 +38,6 @@ def reconcile_objectives(ctx: ErkContext, objective: int) -> None:
         raise SystemExit(1)
 
     # Launch Claude with full codebase access
-    if shutil.which("claude") is None:
-        raise click.ClickException(
-            "Claude CLI not found\nInstall from: https://claude.com/download"
-        )
-
     command = f"/erk:objective-next-plan {objective}"
 
     # Get interactive Claude config with plan mode override
@@ -61,8 +52,8 @@ def reconcile_objectives(ctx: ErkContext, objective: int) -> None:
         allow_dangerous_override=None,
     )
 
-    # Build Claude CLI arguments
-    cmd_args = build_claude_args(config, command=command)
-
     # Replace current process with Claude
-    os.execvp("claude", cmd_args)
+    try:
+        ctx.agent_launcher.launch_interactive(config, command=command)
+    except RuntimeError as e:
+        raise click.ClickException(str(e)) from e

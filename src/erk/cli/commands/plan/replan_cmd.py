@@ -1,12 +1,8 @@
 """Launch Claude to replan existing erk-plan issue(s)."""
 
-import os
-import shutil
-
 import click
 
 from erk.core.context import ErkContext
-from erk.core.interactive_claude import build_claude_args
 from erk_shared.context.types import InteractiveClaudeConfig
 
 
@@ -28,12 +24,6 @@ def replan_plan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
         erk plan replan https://github.com/owner/repo/issues/2521
         erk plan replan 123 456 789  # Consolidate multiple plans
     """
-    # Verify Claude CLI is available
-    if shutil.which("claude") is None:
-        raise click.ClickException(
-            "Claude CLI not found\nInstall from: https://claude.com/download"
-        )
-
     # Get interactive Claude config with plan mode override
     if ctx.global_config is None:
         ic_config = InteractiveClaudeConfig.default()
@@ -46,8 +36,9 @@ def replan_plan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
         allow_dangerous_override=None,
     )
 
-    # Build Claude CLI arguments with space-separated issue refs
-    cmd_args = build_claude_args(config, command=f"/erk:replan {' '.join(issue_refs)}")
-
     # Replace current process with Claude
-    os.execvp("claude", cmd_args)
+    command = f"/erk:replan {' '.join(issue_refs)}"
+    try:
+        ctx.agent_launcher.launch_interactive(config, command=command)
+    except RuntimeError as e:
+        raise click.ClickException(str(e)) from e

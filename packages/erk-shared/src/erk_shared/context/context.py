@@ -22,6 +22,7 @@ from erk_shared.context.types import (
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
+from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.git import GitBranchManager
 from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
@@ -82,6 +83,7 @@ class ErkContext:
     shell: Shell
     completion: Completion
     codespace: Codespace
+    agent_launcher: AgentLauncher
 
     # Erk-specific services (ABCs now in erk_shared.core for proper type hints)
     erk_installation: ErkInstallation

@@ -1,13 +1,9 @@
 """Launch Claude to create a plan from an objective step."""
 
-import os
-import shutil
-
 import click
 
 from erk.cli.alias import alias
 from erk.core.context import ErkContext
-from erk.core.interactive_claude import build_claude_args
 from erk_shared.context.types import InteractiveClaudeConfig
 
 
@@ -32,12 +28,6 @@ def next_plan(ctx: ErkContext, issue_ref: str, dangerous: bool) -> None:
     mode and other settings are configured via [interactive-claude] in
     ~/.erk/config.toml.
     """
-    # Verify Claude CLI is available
-    if shutil.which("claude") is None:
-        raise click.ClickException(
-            "Claude CLI not found\nInstall from: https://claude.com/download"
-        )
-
     # Build command with argument
     command = f"/erk:objective-next-plan {issue_ref}"
 
@@ -58,8 +48,8 @@ def next_plan(ctx: ErkContext, issue_ref: str, dangerous: bool) -> None:
         allow_dangerous_override=allow_dangerous_override,
     )
 
-    # Build Claude CLI arguments
-    cmd_args = build_claude_args(config, command=command)
-
     # Replace current process with Claude
-    os.execvp("claude", cmd_args)
+    try:
+        ctx.agent_launcher.launch_interactive(config, command=command)
+    except RuntimeError as e:
+        raise click.ClickException(str(e)) from e

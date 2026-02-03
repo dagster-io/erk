@@ -1,7 +1,5 @@
 """Connect to a codespace and launch Claude."""
 
-import os
-
 import click
 
 from erk.cli.commands.codespace.resolve import resolve_codespace
@@ -40,17 +38,5 @@ def connect_codespace(ctx: ErkContext, name: str | None, *, shell: bool) -> None
         claude_command = "claude --dangerously-skip-permissions"
         remote_command = f"bash -l -c '{setup_commands} && {claude_command}'"
 
-    # GH-API-AUDIT: REST - codespace SSH connection
-    os.execvp(
-        "gh",
-        [
-            "gh",
-            "codespace",
-            "ssh",
-            "-c",
-            codespace.gh_name,
-            "--",
-            "-t",
-            remote_command,
-        ],
-    )
+    # Replace current process with SSH session to codespace
+    ctx.codespace.exec_ssh_interactive(codespace.gh_name, remote_command)
