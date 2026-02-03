@@ -7,21 +7,21 @@ testing without actually executing Claude or replacing the process.
 from abc import ABC, abstractmethod
 from typing import NoReturn
 
-from erk_shared.context.types import InteractiveClaudeConfig
+from erk_shared.context.types import InteractiveAgentConfig
 
 
 class AgentLauncher(ABC):
     """Abstract agent launcher for dependency injection."""
 
     @abstractmethod
-    def launch_interactive(self, config: InteractiveClaudeConfig, *, command: str) -> NoReturn:
-        """Replace current process with Claude CLI session.
+    def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -> NoReturn:
+        """Replace current process with agent CLI session.
 
         Uses os.execvp() to replace the current process, so this
         method never returns.
 
         Args:
-            config: InteractiveClaudeConfig with resolved values
+            config: InteractiveAgentConfig with resolved values
             command: The slash command to execute (empty string for no command)
 
         Note:

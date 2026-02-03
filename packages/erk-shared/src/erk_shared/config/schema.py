@@ -184,7 +184,7 @@ class FieldMetadata:
         self.default = default
         self.default_display = default_display
         self.dynamic = dynamic
-        self.section = section  # None for top-level, "interactive_claude" for nested
+        self.section = section  # None for top-level, "interactive_agent" for nested
 
 
 def get_field_metadata(model: type[BaseModel], field_name: str) -> FieldMetadata:
@@ -278,7 +278,7 @@ def is_global_config_key(key: str) -> bool:
 # Section registry: (schema_model, section_name, heading)
 _GLOBAL_CONFIG_SECTIONS: list[tuple[type[BaseModel], str | None, str]] = [
     (GlobalConfigSchema, None, "Global configuration"),
-    (InteractiveClaudeConfigSchema, "interactive_claude", "Interactive Claude configuration"),
+    (InteractiveClaudeConfigSchema, "interactive_agent", "Interactive Claude configuration"),
 ]
 
 

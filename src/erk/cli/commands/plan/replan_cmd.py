@@ -3,7 +3,7 @@
 import click
 
 from erk.core.context import ErkContext
-from erk_shared.context.types import InteractiveClaudeConfig
+from erk_shared.context.types import InteractiveAgentConfig
 
 
 @click.command("replan")
@@ -26,10 +26,10 @@ def replan_plan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
     """
     # Get interactive Claude config with plan mode override
     if ctx.global_config is None:
-        ic_config = InteractiveClaudeConfig.default()
+        ia_config = InteractiveAgentConfig.default()
     else:
-        ic_config = ctx.global_config.interactive_claude
-    config = ic_config.with_overrides(
+        ia_config = ctx.global_config.interactive_agent
+    config = ia_config.with_overrides(
         permission_mode_override="plan",
         model_override=None,
         dangerous_override=None,

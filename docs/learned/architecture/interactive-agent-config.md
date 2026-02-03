@@ -36,9 +36,9 @@ The `InteractiveAgentConfig` type stores configuration for launching interactive
 
 Future versions will support `[interactive-agent]` section. Config loading will check `[interactive-agent]` first, then fall back to `[interactive-claude]` if not found. Existing configs continue working without migration.
 
-See [SandboxMode](sandbox-modes.md) for how permission modes map to both Claude and Codex backends.
+See [PermissionMode](permission-modes.md) for how permission modes map to both Claude and Codex backends.
 
 ## Related Documentation
 
-- [SandboxMode](sandbox-modes.md) - Permission mode mappings to Claude/Codex
+- [PermissionMode](permission-modes.md) - Permission mode mappings to Claude/Codex
 - [Global Config](../config/global-config.md) - Complete global config structure

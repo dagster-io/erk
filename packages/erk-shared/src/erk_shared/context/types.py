@@ -5,7 +5,9 @@ This module provides the core data types used by ErkContext:
 - NoRepoSentinel: Sentinel for when not in a repository
 - GlobalConfig: Global erk configuration
 - LoadedConfig: Repository-level configuration
-- InteractiveClaudeConfig: Configuration for interactive Claude launches
+- InteractiveAgentConfig: Configuration for interactive agent launches (Claude or Codex)
+- AgentBackend: Type for agent backend selection
+- PermissionMode: Generic permission mode for both Claude and Codex
 """
 
 from __future__ import annotations
@@ -16,12 +18,36 @@ from typing import Literal, Self
 
 from erk_shared.gateway.github.types import GitHubRepoId
 
+# Agent backend types
+AgentBackend = Literal["claude", "codex"]
+
 # Claude CLI permission modes:
 # - "default": Default mode with permission prompts
 # - "acceptEdits": Accept edits without prompts (--permission-mode acceptEdits)
 # - "plan": Plan mode for exploration and planning (--permission-mode plan)
 # - "bypassPermissions": Bypass all permissions (--permission-mode bypassPermissions)
 ClaudePermissionMode = Literal["default", "acceptEdits", "plan", "bypassPermissions"]
+
+# Generic permission mode that maps to both Claude and Codex
+# - "safe": Default mode with permission prompts (Claude "default", Codex "--sandbox read-only")
+# - "edits": Accept edits without prompts (Claude "acceptEdits", Codex "--full-auto")
+# - "plan": Plan mode for exploration (Claude "plan", Codex "--sandbox read-only")
+# - "dangerous": Bypass all permissions (Claude skip permissions, Codex "--yolo")
+PermissionMode = Literal["safe", "edits", "plan", "dangerous"]
+
+_PERMISSION_MODE_TO_CLAUDE: dict[PermissionMode, ClaudePermissionMode] = {
+    "safe": "default",
+    "edits": "acceptEdits",
+    "plan": "plan",
+    "dangerous": "bypassPermissions",
+}
+
+
+def permission_mode_to_claude(permission_mode: PermissionMode) -> ClaudePermissionMode:
+    """Map generic permission mode to Claude-specific permission mode."""
+    if permission_mode in _PERMISSION_MODE_TO_CLAUDE:
+        return _PERMISSION_MODE_TO_CLAUDE[permission_mode]
+    raise ValueError(f"Unknown permission_mode: {permission_mode}")
 
 
 @dataclass(frozen=True)
@@ -70,35 +96,38 @@ class NoRepoSentinel:
 
 
 @dataclass(frozen=True)
-class InteractiveClaudeConfig:
-    """Configuration for interactive Claude CLI launches.
+class InteractiveAgentConfig:
+    """Configuration for interactive agent CLI launches.
 
     All fields are optional in the config file. CLI flags always override
-    config values. This is loaded from [interactive-claude] section in
-    ~/.erk/config.toml.
+    config values. This is loaded from [interactive-agent] section in
+    ~/.erk/config.toml (with backward compatibility for [interactive-claude]).
 
     Attributes:
-        model: Claude model to use (e.g., "claude-opus-4-5")
+        backend: Which agent backend to use (claude or codex)
+        model: Model to use (e.g., "claude-opus-4-5" or "gpt-4")
         verbose: Whether to show verbose output
-        permission_mode: Claude CLI permission mode. See ClaudePermissionMode for options.
-        dangerous: Whether to skip permission prompts (--dangerously-skip-permissions)
-        allow_dangerous: Whether to enable --allow-dangerously-skip-permissions flag,
+        permission_mode: Generic permission mode. See PermissionMode for options.
+        dangerous: Whether to skip permission prompts
+        allow_dangerous: Whether to enable allowing dangerous operations,
             which lets the user opt into skipping prompts during a session
     """
 
+    backend: AgentBackend
     model: str | None
     verbose: bool
-    permission_mode: ClaudePermissionMode
+    permission_mode: PermissionMode
     dangerous: bool
     allow_dangerous: bool
 
     @staticmethod
-    def default() -> InteractiveClaudeConfig:
+    def default() -> InteractiveAgentConfig:
         """Create default configuration with sensible defaults."""
-        return InteractiveClaudeConfig(
+        return InteractiveAgentConfig(
+            backend="claude",
             model=None,
             verbose=False,
-            permission_mode="acceptEdits",
+            permission_mode="edits",
             dangerous=False,
             allow_dangerous=False,
         )
@@ -106,11 +135,11 @@ class InteractiveClaudeConfig:
     def with_overrides(
         self: Self,
         *,
-        permission_mode_override: ClaudePermissionMode | None,
+        permission_mode_override: PermissionMode | None,
         model_override: str | None,
         dangerous_override: bool | None,
         allow_dangerous_override: bool | None,
-    ) -> InteractiveClaudeConfig:
+    ) -> InteractiveAgentConfig:
         """Create a new config with CLI overrides applied.
 
         CLI flags always override config values. Pass None to keep config value.
@@ -122,14 +151,15 @@ class InteractiveClaudeConfig:
             allow_dangerous_override: Override allow_dangerous if not None
 
         Returns:
-            New InteractiveClaudeConfig with overrides applied
+            New InteractiveAgentConfig with overrides applied
         """
-        new_permission_mode: ClaudePermissionMode = (
+        new_permission_mode: PermissionMode = (
             permission_mode_override
             if permission_mode_override is not None
             else self.permission_mode
         )
-        return InteractiveClaudeConfig(
+        return InteractiveAgentConfig(
+            backend=self.backend,
             model=model_override if model_override is not None else self.model,
             verbose=self.verbose,
             permission_mode=new_permission_mode,
@@ -158,7 +188,7 @@ class GlobalConfig:
     show_hidden_commands: bool = False
     prompt_learn_on_land: bool = True
     shell_integration: bool = False
-    interactive_claude: InteractiveClaudeConfig = InteractiveClaudeConfig.default()
+    interactive_agent: InteractiveAgentConfig = InteractiveAgentConfig.default()
 
     @staticmethod
     def test(
@@ -171,7 +201,7 @@ class GlobalConfig:
         show_hidden_commands: bool = False,
         prompt_learn_on_land: bool = True,
         shell_integration: bool = False,
-        interactive_claude: InteractiveClaudeConfig | None = None,
+        interactive_agent: InteractiveAgentConfig | None = None,
     ) -> GlobalConfig:
         """Create a GlobalConfig with sensible test defaults."""
         return GlobalConfig(
@@ -183,10 +213,10 @@ class GlobalConfig:
             show_hidden_commands=show_hidden_commands,
             prompt_learn_on_land=prompt_learn_on_land,
             shell_integration=shell_integration,
-            interactive_claude=(
-                interactive_claude
-                if interactive_claude is not None
-                else InteractiveClaudeConfig.default()
+            interactive_agent=(
+                interactive_agent
+                if interactive_agent is not None
+                else InteractiveAgentConfig.default()
             ),
         )
 

@@ -7,7 +7,7 @@ from erk.cli.commands.init.main import create_and_save_global_config
 from erk.cli.commands.wt.create_cmd import make_env_content
 from erk.cli.config import load_config
 from erk.core.context import context_for_test
-from erk_shared.context.types import GlobalConfig, InteractiveClaudeConfig
+from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
 from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from tests.fakes.shell import FakeShell
@@ -270,11 +270,11 @@ allow_dangerous = true
     installation = RealErkInstallation()
     loaded = installation.load_config()
 
-    assert loaded.interactive_claude.model == "claude-opus-4-5"
-    assert loaded.interactive_claude.verbose is True
-    assert loaded.interactive_claude.permission_mode == "plan"
-    assert loaded.interactive_claude.dangerous is True
-    assert loaded.interactive_claude.allow_dangerous is True
+    assert loaded.interactive_agent.model == "claude-opus-4-5"
+    assert loaded.interactive_agent.verbose is True
+    assert loaded.interactive_agent.permission_mode == "plan"
+    assert loaded.interactive_agent.dangerous is True
+    assert loaded.interactive_agent.allow_dangerous is True
 
 
 def test_load_config_interactive_claude_defaults(
@@ -298,11 +298,11 @@ shell_setup_complete = true
     loaded = installation.load_config()
 
     # Should get default values
-    assert loaded.interactive_claude.model is None
-    assert loaded.interactive_claude.verbose is False
-    assert loaded.interactive_claude.permission_mode == "acceptEdits"
-    assert loaded.interactive_claude.dangerous is False
-    assert loaded.interactive_claude.allow_dangerous is False
+    assert loaded.interactive_agent.model is None
+    assert loaded.interactive_agent.verbose is False
+    assert loaded.interactive_agent.permission_mode == "edits"
+    assert loaded.interactive_agent.dangerous is False
+    assert loaded.interactive_agent.allow_dangerous is False
 
 
 def test_load_config_interactive_claude_partial(
@@ -329,11 +329,11 @@ model = "opus"
     loaded = installation.load_config()
 
     # Only model is set, others should be defaults
-    assert loaded.interactive_claude.model == "opus"
-    assert loaded.interactive_claude.verbose is False
-    assert loaded.interactive_claude.permission_mode == "acceptEdits"
-    assert loaded.interactive_claude.dangerous is False
-    assert loaded.interactive_claude.allow_dangerous is False
+    assert loaded.interactive_agent.model == "opus"
+    assert loaded.interactive_agent.verbose is False
+    assert loaded.interactive_agent.permission_mode == "edits"
+    assert loaded.interactive_agent.dangerous is False
+    assert loaded.interactive_agent.allow_dangerous is False
 
 
 def test_save_config_with_interactive_claude(
@@ -353,7 +353,8 @@ def test_save_config_with_interactive_claude(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
-        interactive_claude=InteractiveClaudeConfig(
+        interactive_agent=InteractiveAgentConfig(
+            backend="claude",
             model="claude-opus-4-5",
             verbose=True,
             permission_mode="plan",
@@ -390,7 +391,7 @@ def test_save_config_interactive_claude_defaults_not_written(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
-        # interactive_claude defaults to InteractiveClaudeConfig.default()
+        # interactive_agent defaults to InteractiveAgentConfig.default()
     )
     installation.save_config(config)
 
@@ -416,10 +417,11 @@ def test_save_config_interactive_claude_partial_non_defaults(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
-        interactive_claude=InteractiveClaudeConfig(
+        interactive_agent=InteractiveAgentConfig(
+            backend="claude",
             model="opus",
             verbose=False,  # default
-            permission_mode="acceptEdits",  # default
+            permission_mode="edits",  # default
             dangerous=False,  # default
             allow_dangerous=False,  # default
         ),
@@ -456,7 +458,8 @@ def test_roundtrip_interactive_claude_config(
         use_graphite=True,
         shell_setup_complete=True,
         github_planning=True,
-        interactive_claude=InteractiveClaudeConfig(
+        interactive_agent=InteractiveAgentConfig(
+            backend="claude",
             model="opus",
             verbose=True,
             permission_mode="plan",
@@ -468,8 +471,8 @@ def test_roundtrip_interactive_claude_config(
 
     # Load and verify round-trip
     loaded = installation.load_config()
-    assert loaded.interactive_claude.model == "opus"
-    assert loaded.interactive_claude.verbose is True
-    assert loaded.interactive_claude.permission_mode == "plan"
-    assert loaded.interactive_claude.dangerous is True
-    assert loaded.interactive_claude.allow_dangerous is True
+    assert loaded.interactive_agent.model == "opus"
+    assert loaded.interactive_agent.verbose is True
+    assert loaded.interactive_agent.permission_mode == "plan"
+    assert loaded.interactive_agent.dangerous is True
+    assert loaded.interactive_agent.allow_dangerous is True

@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import NamedTuple
 
-from erk_shared.context.types import ClaudePermissionMode
+from erk_shared.context.types import PermissionMode
 from erk_shared.core.plan_list_service import PlanListData, PlanListService
 from erk_shared.core.prompt_executor import (
     ExecutorEvent,
@@ -29,7 +29,7 @@ class InteractiveCall(NamedTuple):
     command: str
     target_subpath: Path | None
     model: str | None
-    permission_mode: ClaudePermissionMode
+    permission_mode: PermissionMode
 
 
 class PromptCall(NamedTuple):
@@ -95,7 +95,7 @@ class FakePromptExecutor(PromptExecutor):
         verbose: bool = False,
         debug: bool = False,
         model: str | None = None,
-        permission_mode: ClaudePermissionMode = "acceptEdits",
+        permission_mode: PermissionMode = "edits",
         allow_dangerous: bool = False,
     ) -> Iterator[ExecutorEvent]:
         yield from self.streaming_events
@@ -108,7 +108,7 @@ class FakePromptExecutor(PromptExecutor):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
-        permission_mode: ClaudePermissionMode = "acceptEdits",
+        permission_mode: PermissionMode = "edits",
     ) -> None:
         self.interactive_calls.append(
             InteractiveCall(

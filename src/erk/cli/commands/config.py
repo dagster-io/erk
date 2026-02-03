@@ -23,6 +23,18 @@ from erk_shared.config.schema import (
 from erk_shared.context.types import GlobalConfig
 from erk_shared.output.output import machine_output, user_output
 
+# Maps CLI key prefix to GlobalConfig attribute name.
+# User-facing keys use "interactive_claude.*" but GlobalConfig attribute is "interactive_agent".
+_CLI_KEY_TO_ATTR: dict[str, str] = {
+    "interactive_claude": "interactive_agent",
+}
+
+
+
+def _resolve_section_attr(cli_key_prefix: str) -> str:
+    """Resolve a CLI key prefix to the corresponding GlobalConfig attribute name."""
+    return _CLI_KEY_TO_ATTR.get(cli_key_prefix, cli_key_prefix)
+
 
 def _get_env_value(cfg: LoadedConfig, parts: list[str], key: str) -> None:
     """Handle env.* configuration keys.
@@ -121,7 +133,7 @@ def config_group() -> None:
 @config_group.command("keys")
 def config_keys() -> None:
     """List all available configuration keys with descriptions."""
-    # Global config sections (including interactive_claude)
+    # Global config sections (including interactive_agent)
     for heading, fields in get_global_config_sections():
         user_output(click.style(f"\n{heading} keys:", bold=True))
         formatter = click.HelpFormatter()
@@ -335,7 +347,8 @@ def config_get(ctx: ErkContext, key: str) -> None:
             ctx.global_config, f"Global config not found at {ctx.erk_installation.config_path()}"
         )
         Ensure.invariant(len(parts) == 2, f"Invalid key: {key}")
-        section_obj = getattr(global_config, parts[0])  # e.g., global_config.interactive_claude
+        attr_name = _resolve_section_attr(parts[0])
+        section_obj = getattr(global_config, attr_name)  # e.g., global_config.interactive_agent
         value = getattr(section_obj, parts[1])
         machine_output(_format_config_value(value) if value is not None else "")
         return
@@ -465,7 +478,8 @@ def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: s
         )
         Ensure.invariant(len(parts) == 2, f"Invalid key: {key}")
 
-        section_obj = getattr(global_config, parts[0])  # e.g., interactive_claude
+        attr_name = _resolve_section_attr(parts[0])
+        section_obj = getattr(global_config, attr_name)  # e.g., interactive_agent
         current_value = getattr(section_obj, parts[1])
         parsed_value = (
             _parse_config_value(parts[1], value, type(current_value))
@@ -474,7 +488,7 @@ def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: s
         )
 
         new_section = replace(section_obj, **{parts[1]: parsed_value})
-        new_config = replace(global_config, **{parts[0]: new_section})
+        new_config = replace(global_config, **{attr_name: new_section})
         ctx.erk_installation.save_config(new_config)
         user_output(f"Set {key}={value}")
         return

@@ -18,8 +18,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from erk_shared.context.types import ClaudePermissionMode
+    from erk_shared.context.types import PermissionMode
 
+from erk_shared.context.types import permission_mode_to_claude
 from erk_shared.core.prompt_executor import (
     CommandResult,  # noqa: F401 - re-exported for erk.cli.output
     ErrorEvent,
@@ -99,7 +100,7 @@ class ClaudePromptExecutor(PromptExecutor):
         verbose: bool = False,
         debug: bool = False,
         model: str | None = None,
-        permission_mode: ClaudePermissionMode = "acceptEdits",
+        permission_mode: PermissionMode = "edits",
         allow_dangerous: bool = False,
     ) -> Iterator[ExecutorEvent]:
         """Execute Claude CLI command and yield typed events in real-time.
@@ -114,12 +115,15 @@ class ClaudePromptExecutor(PromptExecutor):
         - In filtered mode: parses stream-json and yields events in real-time
         - In debug mode: emits additional debug information to stderr
         """
+        # Map generic permission_mode to Claude-specific permission_mode
+        claude_permission_mode = permission_mode_to_claude(permission_mode)
+
         cmd_args = [
             "claude",
             "--print",
             "--verbose",
             "--permission-mode",
-            permission_mode,
+            claude_permission_mode,
             "--output-format",
             "stream-json",
         ]
@@ -453,7 +457,7 @@ class ClaudePromptExecutor(PromptExecutor):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
-        permission_mode: ClaudePermissionMode = "acceptEdits",
+        permission_mode: PermissionMode = "edits",
     ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 
@@ -484,8 +488,11 @@ class ClaudePromptExecutor(PromptExecutor):
         else:
             os.chdir(worktree_path)
 
+        # Map generic permission_mode to Claude-specific permission_mode
+        claude_permission_mode = permission_mode_to_claude(permission_mode)
+
         # Build command arguments
-        cmd_args = ["claude", "--permission-mode", permission_mode]
+        cmd_args = ["claude", "--permission-mode", claude_permission_mode]
         if dangerous:
             cmd_args.append("--dangerously-skip-permissions")
         if model is not None:

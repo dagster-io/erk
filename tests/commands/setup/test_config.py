@@ -1615,7 +1615,7 @@ def test_config_set_interactive_claude_verbose() -> None:
 
         # Verify it was saved
         saved_config = test_ctx.erk_installation.load_config()
-        assert saved_config.interactive_claude.verbose is True
+        assert saved_config.interactive_agent.verbose is True
 
 
 def test_config_set_interactive_claude_permission_mode() -> None:
@@ -1634,7 +1634,7 @@ def test_config_set_interactive_claude_permission_mode() -> None:
 
         # Verify it was saved
         saved_config = test_ctx.erk_installation.load_config()
-        assert saved_config.interactive_claude.permission_mode == "plan"
+        assert saved_config.interactive_agent.permission_mode == "plan"
 
 
 def test_config_set_interactive_claude_model() -> None:
@@ -1653,7 +1653,7 @@ def test_config_set_interactive_claude_model() -> None:
 
         # Verify it was saved
         saved_config = test_ctx.erk_installation.load_config()
-        assert saved_config.interactive_claude.model == "claude-opus-4-5"
+        assert saved_config.interactive_agent.model == "claude-opus-4-5"
 
 
 def test_config_get_interactive_claude_verbose() -> None:

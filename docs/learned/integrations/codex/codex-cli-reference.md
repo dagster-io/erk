@@ -125,10 +125,10 @@ Shares most exec flags plus these TUI-only additions:
 
 ## Permission/Sandbox Mapping for Erk
 
-How erk's planned `SandboxMode` maps to both backends:
+How erk's `PermissionMode` maps to both backends:
 
-| Erk SandboxMode | Claude `--permission-mode`         | Codex exec            | Codex TUI                                 |
-| --------------- | ---------------------------------- | --------------------- | ----------------------------------------- |
+| Erk PermissionMode | Claude `--permission-mode`         | Codex exec            | Codex TUI                                 |
+| ------------------ | ---------------------------------- | --------------------- | ----------------------------------------- |
 | `safe`          | `default`                          | `--sandbox read-only` | `--sandbox read-only -a untrusted`        |
 | `edits`         | `acceptEdits`                      | `--full-auto`         | `--sandbox workspace-write -a on-request` |
 | `plan`          | `plan`                             | `--sandbox read-only` | `--sandbox read-only -a never`            |

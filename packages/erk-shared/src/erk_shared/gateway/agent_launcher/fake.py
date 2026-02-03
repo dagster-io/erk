@@ -8,7 +8,7 @@ and deterministic tests.
 from dataclasses import dataclass
 from typing import NoReturn
 
-from erk_shared.context.types import InteractiveClaudeConfig
+from erk_shared.context.types import InteractiveAgentConfig
 from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 
 
@@ -17,11 +17,11 @@ class AgentLaunchCall:
     """Record of an agent launch call for test assertions.
 
     Attributes:
-        config: InteractiveClaudeConfig that was used
+        config: InteractiveAgentConfig that was used
         command: Command that was passed to Claude
     """
 
-    config: InteractiveClaudeConfig
+    config: InteractiveAgentConfig
     command: str
 
 
@@ -70,14 +70,14 @@ class FakeAgentLauncher(AgentLauncher):
             return None
         return self._launch_calls[-1]
 
-    def launch_interactive(self, config: InteractiveClaudeConfig, *, command: str) -> NoReturn:
+    def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -> NoReturn:
         """Track agent launch call.
 
         In production, this replaces the process. In tests, we record the call
         and raise SystemExit to simulate the process ending.
 
         Args:
-            config: InteractiveClaudeConfig with resolved values
+            config: InteractiveAgentConfig with resolved values
             command: The slash command to execute (empty string for no command)
 
         Raises:

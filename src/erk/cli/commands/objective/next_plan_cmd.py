@@ -4,7 +4,7 @@ import click
 
 from erk.cli.alias import alias
 from erk.core.context import ErkContext
-from erk_shared.context.types import InteractiveClaudeConfig
+from erk_shared.context.types import InteractiveAgentConfig
 
 
 @alias("np")
@@ -33,15 +33,15 @@ def next_plan(ctx: ErkContext, issue_ref: str, dangerous: bool) -> None:
 
     # Get interactive Claude config with plan mode override
     if ctx.global_config is None:
-        ic_config = InteractiveClaudeConfig.default()
+        ia_config = InteractiveAgentConfig.default()
     else:
-        ic_config = ctx.global_config.interactive_claude
+        ia_config = ctx.global_config.interactive_agent
     if dangerous:
         allow_dangerous_override = True
     else:
         allow_dangerous_override = None
 
-    config = ic_config.with_overrides(
+    config = ia_config.with_overrides(
         permission_mode_override="plan",
         model_override=None,
         dangerous_override=None,
