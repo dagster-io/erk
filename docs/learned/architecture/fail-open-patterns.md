@@ -326,38 +326,14 @@ When triggering async learn for a plan, we need the associated PR number to fetc
 
 **Layer 1: Lenient Handler** (`_get_pr_for_plan_direct`)
 
+See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py:212-257`.
+
 ```python
+# Signature and return type (see source for full implementation):
 def _get_pr_for_plan_direct(
-    *,
-    github_issues,
-    github,
-    repo_root: Path,
-    issue_number: int,
+    *, github_issues, github, repo_root: Path, issue_number: int,
 ) -> dict[str, object] | None:
-    """Look up the PR associated with a plan issue using direct gateway calls.
-
-    Returns:
-        Dict with pr_number and pr details on success, None on failure
-    """
-    issue = github_issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
-        return None
-
-    block = find_metadata_block(issue.body, "plan-header")
-    if block is None:
-        return None
-
-    branch_name = block.data.get("branch_name")
-    if branch_name is None:
-        # LENIENT: Missing branch_name is not an error, just return None
-        return None
-
-    pr_result = github.get_pr_for_branch(repo_root, branch_name)
-    if isinstance(pr_result, PRNotFound):
-        # LENIENT: No PR found is not an error, just return None
-        return None
-
-    return {"pr_number": pr_result.number, ...}
+    # Returns None on ANY failure: missing issue, metadata, branch, or PR
 ```
 
 **Key characteristics:**

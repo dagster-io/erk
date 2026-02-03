@@ -34,20 +34,11 @@ There's a time gap between steps 1 and 2 where the plan exists but the branch do
 
 When `branch_name` is missing, `get_pr_for_plan.py` attempts to infer it from the current git context:
 
+See branch name inference logic in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py:88-99`.
+
 ```python
-# src/erk/cli/commands/exec/scripts/get_pr_for_plan.py:88-99
-branch_name: str | None = block.data.get("branch_name")
-if branch_name is None:
-    # Attempt to infer branch from current git context
-    # This handles cases where impl-signal failed to set branch_name
-    current_branch = git.branch.get_current_branch(repo_root)
-    if current_branch is not None and current_branch.startswith(f"P{issue_number}-"):
-        branch_name = current_branch
-    else:
-        return _exit_with_error(
-            error="no-branch-in-plan",
-            message=f"Issue #{issue_number} plan-header has no branch_name field",
-        )
+# Pattern: if branch_name is missing from metadata, infer from current git branch
+# matching P{issue_number}- prefix. Falls back to error if no match.
 ```
 
 ### Recovery Pattern

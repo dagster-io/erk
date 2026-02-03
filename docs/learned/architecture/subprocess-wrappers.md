@@ -270,40 +270,14 @@ Some subprocess operations should fail gracefully while others should fail fast.
 
 Use when the operation is **optional** and the caller should decide how to handle absence:
 
+See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py:212-257`.
+
 ```python
+# Signature and return type (see source for full implementation):
 def _get_pr_for_plan_direct(
-    *,
-    github_issues,
-    github,
-    repo_root: Path,
-    issue_number: int,
+    *, github_issues, github, repo_root: Path, issue_number: int,
 ) -> dict[str, object] | None:
-    """Look up PR for a plan issue (lenient).
-
-    Returns:
-        PR metadata dict on success, None on ANY failure
-    """
-    # Missing issue? Return None
-    issue = github_issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
-        return None
-
-    # Missing metadata? Return None
-    block = find_metadata_block(issue.body, "plan-header")
-    if block is None:
-        return None
-
-    # Missing branch_name? Return None (no error)
-    branch_name = block.data.get("branch_name")
-    if branch_name is None:
-        return None
-
-    # PR not found? Return None
-    pr_result = github.get_pr_for_branch(repo_root, branch_name)
-    if isinstance(pr_result, PRNotFound):
-        return None
-
-    return {"pr_number": pr_result.number, ...}
+    # Returns None on ANY failure: missing issue, metadata, branch, or PR
 ```
 
 **Characteristics:**
@@ -322,43 +296,14 @@ def _get_pr_for_plan_direct(
 
 Use when the operation is **critical** and failure should be explicit:
 
+See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py:60-122`.
+
 ```python
+# Signature (see source for full implementation):
 def get_pr_for_plan(
-    *,
-    ctx: ErkContext,
-    repo_root: Path,
-    issue_number: int,
+    *, ctx: ErkContext, repo_root: Path, issue_number: int,
 ) -> int:
-    """Look up PR for a plan issue (strict).
-
-    Returns:
-        PR number
-
-    Raises:
-        ValueError: If plan has no branch_name or PR not found
-    """
-    issue = ctx.issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
-        raise ValueError(f"Issue #{issue_number} not found")
-
-    block = find_metadata_block(issue.body, "plan-header")
-    if block is None:
-        raise ValueError(f"Issue #{issue_number} has no plan-header")
-
-    branch_name = block.data.get("branch_name")
-    if branch_name is None:
-        # Attempt recovery via pattern matching
-        current_branch = ctx.git.branch.get_current_branch(repo_root)
-        if current_branch and current_branch.startswith(f"P{issue_number}-"):
-            branch_name = current_branch
-        else:
-            raise ValueError(f"Issue #{issue_number} has no branch_name")
-
-    pr_result = ctx.github.get_pr_for_branch(repo_root, branch_name)
-    if isinstance(pr_result, PRNotFound):
-        raise ValueError(f"No PR found for branch '{branch_name}'")
-
-    return pr_result.number
+    # Raises ValueError on ANY failure; attempts branch_name recovery via pattern matching
 ```
 
 **Characteristics:**
