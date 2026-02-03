@@ -481,6 +481,11 @@ def _create_branch_and_pr(
         f"**Plan:** {issue_ref}\n\n"
         f"**Status:** Queued for implementation\n\n"
         f"This PR will be marked ready for review after implementation completes.\n\n"
+        f"## Implementation Plan\n\n"
+        f"<details>\n"
+        f"<summary><strong>Implementation Plan</strong> (Issue #{issue_number})</summary>\n\n"
+        f"{plan.body}\n\n"
+        f"</details>\n\n"
         f"---\n\n"
         f"Closes {issue_ref}"
     )
