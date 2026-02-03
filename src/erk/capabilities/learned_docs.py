@@ -1,7 +1,9 @@
 """LearnedDocsCapability - agent-discoverable documentation system."""
 
+import shutil
 from pathlib import Path
 
+from erk.artifacts.paths import get_bundled_claude_dir
 from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
@@ -209,10 +211,6 @@ class LearnedDocsCapability(Capability):
 
     def install(self, repo_root: Path | None) -> CapabilityResult:
         """Create docs/learned/ directory, learned-docs skill, learn command, and learn agent."""
-        import shutil
-
-        from erk.artifacts.paths import get_bundled_claude_dir
-
         assert repo_root is not None, "LearnedDocsCapability requires repo_root"
         created_files: list[str] = []
 
@@ -275,7 +273,6 @@ class LearnedDocsCapability(Capability):
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
         """Remove docs/learned/ directory, learned-docs skill, learn command, and learn agent."""
         assert repo_root is not None, "LearnedDocsCapability requires repo_root"
-        import shutil
 
         removed: list[str] = []
 
