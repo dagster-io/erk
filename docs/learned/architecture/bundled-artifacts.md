@@ -46,23 +46,11 @@ The `ManagedArtifactType` literal defines valid artifact types:
 
 ### Example: SkillCapability
 
-```python
-class SkillCapability(Capability):
-    @property
-    def managed_artifacts(self) -> list[ManagedArtifact]:
-        return [ManagedArtifact(name=self.skill_name, artifact_type="skill")]
-```
+Each `SkillCapability` returns a single artifact for its skill name. See `src/erk/core/capabilities/skill_capability.py:62-64` for the implementation.
 
 ### Example: HooksCapability
 
-```python
-@property
-def managed_artifacts(self) -> list[ManagedArtifact]:
-    return [
-        ManagedArtifact(name="user-prompt-hook", artifact_type="hook"),
-        ManagedArtifact(name="exit-plan-mode-hook", artifact_type="hook"),
-    ]
-```
+The hooks capability declares its managed hook artifacts. See `src/erk/capabilities/hooks.py:55-60` for the implementation.
 
 ## Capability Installation
 
@@ -89,6 +77,43 @@ Files bundled at `erk/data/`:
 | `erk/data/github/` | `.github/` |
 
 Configured in `pyproject.toml` via `force-include`.
+
+## Codex Portability Classification
+
+Erk classifies skills into two tiers for external distribution:
+
+### Codex-Portable Skills
+
+Skills that work with any AI coding agent. These have no Claude-specific dependencies (hooks, session logs, Claude Code commands).
+
+The authoritative list is the set of skills with force-include mappings in `pyproject.toml` under `[tool.hatch.build.targets.wheel.force-include]`.
+
+**Portability Criteria:**
+
+- No Claude-specific hook dependencies
+- No session log parsing or storage
+- No Claude Code slash commands
+- YAML frontmatter with `name` (<=64 chars) and `description` (<=1024 chars)
+
+### Claude-Only Skills
+
+Skills requiring Claude-specific features. These cannot be ported.
+
+**Why Claude-only:** Session inspection, CI iteration hooks, command/skill creators that output Claude format
+
+### Bundled Path Resolution
+
+| Install Type | `get_bundled_claude_dir()` Returns |
+| ------------ | ---------------------------------- |
+| Wheel        | `erk/data/claude/`                 |
+| Editable     | `.claude/` (shared with Claude)    |
+
+See `get_bundled_claude_dir()` in `src/erk/artifacts/paths.py` for the implementation.
+
+### Adding a New Codex-Portable Skill
+
+1. Create skill in `.claude/skills/<name>/SKILL.md` with required frontmatter
+2. Add force-include mapping in `pyproject.toml` under `[tool.hatch.build.targets.wheel.force-include]`
 
 ## Sync Functions
 

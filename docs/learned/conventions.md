@@ -51,6 +51,13 @@ All files in `.claude/` (commands, skills, agents, hooks) MUST use `kebab-case`.
 
 **Exception:** Python scripts within artifacts may use `snake_case` (they're code, not artifacts).
 
+## Skill File Naming
+
+Skill directories must use the standard filename `SKILL.md` (uppercase). The validation tests will fail for skills using `skill.md` or other variants.
+
+**Correct:** `.claude/skills/my-skill/SKILL.md`
+**Wrong:** `.claude/skills/my-skill/skill.md`
+
 ## Brand Names
 
 Use proper capitalization for brand names:
