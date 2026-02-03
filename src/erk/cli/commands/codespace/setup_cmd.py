@@ -102,7 +102,7 @@ def setup_codespace(
         "--method",
         "POST",
         "/user/codespaces",
-        "-f",
+        "-F",
         f"repository_id={repo_id}",
         "-f",
         f"machine={machine}",
