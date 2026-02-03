@@ -21,6 +21,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [desktop-dash](desktop-dash/tripwires.md)   | 16        | `desktop-dash/` code                          |
 | [gateway](gateway/tripwires.md)             | 2         | `gateway/` code                               |
 | [hooks](hooks/tripwires.md)                 | 2         | `.claude/hooks/`, hook development            |
+| [integrations](integrations/tripwires.md)   | 7         | `integrations/` code                          |
 | [objectives](objectives/tripwires.md)       | 9         | `objectives/` code                            |
 | [planning](planning/tripwires.md)           | 25        | `.impl/`, `.worker-impl/`, planning workflows |
 | [pr-operations](pr-operations/tripwires.md) | 1         | `pr-operations/` code                         |

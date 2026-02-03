@@ -9,6 +9,8 @@ research_date: "2026-01-18"
 status: "research - may become outdated"
 ---
 
+> **Updated February 2026**: For ground-truth Codex CLI details verified against source code, see [Codex CLI Reference](codex/codex-cli-reference.md), [Codex JSONL Format](codex/codex-jsonl-format.md), and [Codex Skills System](codex/codex-skills-system.md).
+
 # Multi-Agent Portability Research
 
 **Research Date:** January 18, 2026
@@ -130,24 +132,25 @@ specify init my-project --ai gemini    # .gemini/commands/
 
 ### Feature Matrix
 
-| Feature                | Claude Code         | OpenAI Codex        | GitHub Copilot     | Gemini CLI          | OpenCode                       |
-| ---------------------- | ------------------- | ------------------- | ------------------ | ------------------- | ------------------------------ |
-| **Command location**   | `.claude/commands/` | `~/.codex/prompts/` | `.github/agents/`  | `.gemini/commands/` | `.opencode/commands/`          |
-| **File format**        | Markdown + YAML     | Markdown + YAML     | Markdown + YAML    | **TOML**            | Markdown + YAML                |
-| **Namespace syntax**   | `/erk:name`         | `/prompts:name`     | `@agent-name`      | `/namespace:name`   | `/name`                        |
-| **Arguments**          | `$1`-`$9`, `$NAME`  | `$1`-`$9`, `$NAME`  | In prompt          | In prompt template  | `$1`-`$9`, `$NAME`             |
-| **Config format**      | JSON                | TOML                | VS Code settings   | JSON                | JSON                           |
-| **AGENTS.md support**  | Via CLAUDE.md       | Native              | Native             | Via GEMINI.md       | Native                         |
-| **MCP support**        | Yes                 | Yes                 | Yes                | Yes                 | Yes                            |
-| **Non-interactive**    | Yes                 | Yes                 | Via GitHub Actions | Yes                 | Yes (`opencode run`)           |
-| **Session ID env var** | `CLAUDE_SESSION_ID` | Unknown             | Unknown            | Unknown             | `OPENCODE_SESSION_ID` (plugin) |
+| Feature                | Claude Code         | OpenAI Codex       | GitHub Copilot     | Gemini CLI          | OpenCode                       |
+| ---------------------- | ------------------- | ------------------ | ------------------ | ------------------- | ------------------------------ |
+| **Command location**   | `.claude/commands/` | `.codex/skills/`   | `.github/agents/`  | `.gemini/commands/` | `.opencode/commands/`          |
+| **File format**        | Markdown + YAML     | Markdown + YAML    | Markdown + YAML    | **TOML**            | Markdown + YAML                |
+| **Namespace syntax**   | `/erk:name`         | `$skill-name`      | `@agent-name`      | `/namespace:name`   | `/name`                        |
+| **Arguments**          | `$1`-`$9`, `$NAME`  | `$1`-`$9`, `$NAME` | In prompt          | In prompt template  | `$1`-`$9`, `$NAME`             |
+| **Config format**      | JSON                | TOML               | VS Code settings   | JSON                | JSON                           |
+| **AGENTS.md support**  | Via CLAUDE.md       | Native             | Native             | Via GEMINI.md       | Native                         |
+| **MCP support**        | Yes                 | Yes                | Yes                | Yes                 | Yes                            |
+| **Non-interactive**    | Yes                 | Yes                | Via GitHub Actions | Yes                 | Yes (`opencode run`)           |
+| **Session ID env var** | `CLAUDE_SESSION_ID` | Unknown            | Unknown            | Unknown             | `OPENCODE_SESSION_ID` (plugin) |
 
 ### Ease of Support Ranking
 
 1. **OpenAI Codex** - Easiest
-   - Nearly identical command format to Claude Code
-   - Same argument syntax (`$1`-`$9`, `$NAME`)
-   - TOML config (same as Claude)
+   - Skills format is structurally compatible with Claude skills
+   - SKILL.md uses same markdown + YAML frontmatter pattern
+   - JSONL streaming format is completely different — requires dedicated parser
+   - No --system-prompt, --allowedTools, or hooks
    - Native AGENTS.md support
 
 2. **OpenCode** - Very Easy

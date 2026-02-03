@@ -121,32 +121,48 @@ executor = FakePromptExecutor(simulated_zero_turns=True)
 
 ## Real-World Usage Example
 
-The `erk land` command demonstrates `execute_command()` for optional post-operation actions:
+The `erk land` command demonstrates `stream_command_with_feedback()` for optional post-operation actions. This wrapper around `execute_command_streaming()` provides live progress output:
 
 ```python
-def _prompt_objective_update(
+def prompt_objective_update(
     ctx: ErkContext,
+    *,
     repo_root: Path,
     objective_number: int,
     pr_number: int,
+    branch: str,
     force: bool,
 ) -> None:
     """Prompt user to update objective after landing."""
     user_output(f"   Linked to Objective #{objective_number}")
 
-    if force:
-        # --force skips prompts, show command for later
-        user_output("   Run '/erk:objective-update-with-landed-pr' to update objective")
-        return
-
-    # User chooses to run now
-    result = ctx.prompt_executor.execute_command(
-        "/erk:objective-update-with-landed-pr",
-        repo_root,
-        dangerous=True,  # Skip permission prompts for non-interactive
+    cmd = (
+        f"/erk:objective-update-with-landed-pr "
+        f"--pr {pr_number} --objective {objective_number} --branch {branch} --auto-close"
     )
+
+    if force:
+        # --force skips prompt but still executes the update
+        user_output("Starting objective update...")
+        result = stream_command_with_feedback(
+            executor=ctx.prompt_executor,
+            command=cmd,
+            worktree_path=repo_root,
+            dangerous=True,
+        )
+    else:
+        if not ctx.console.confirm("Update objective now?", default=True):
+            user_output(f"Skipped. To update later, run:\n  {cmd}")
+            return
+        result = stream_command_with_feedback(
+            executor=ctx.prompt_executor,
+            command=cmd,
+            worktree_path=repo_root,
+            dangerous=True,
+        )
+
     if result.success:
-        user_output(click.style("✓", fg="green") + " Objective updated")
+        user_output(click.style("✓", fg="green") + " Objective updated successfully")
     else:
         user_output(
             click.style("⚠", fg="yellow")
@@ -156,6 +172,7 @@ def _prompt_objective_update(
 
 Key points:
 
+- Use `stream_command_with_feedback()` for live progress output during long-running operations
 - Use `dangerous=True` when the user has already confirmed the action
 - Handle both success and failure gracefully
 - Provide fallback command for manual retry on failure
@@ -221,6 +238,33 @@ This is necessary because:
 3. The thread accumulates stderr parts for the final error message
 
 RealPromptExecutor uses simple `capture_output=True` since there's no streaming.
+
+## Multi-Backend Design
+
+The `PromptExecutor` ABC is designed to support multiple agent backends. The current sole implementation is `ClaudePromptExecutor`, but the interface is intentionally abstract enough to support others.
+
+### Key Abstraction Points
+
+- **`is_available()`** — Each backend checks for its own binary (`claude`, `codex`, etc.)
+- **`execute_interactive()`** — Uses `os.execvp()` to replace the process. The binary name is determined by the executor implementation, not the caller. Callers should use `os.execvp(cmd_args[0], cmd_args)` rather than hardcoding `os.execvp("claude", ...)`.
+- **`execute_command_streaming()`** — Each backend has its own JSONL format. The executor parses backend-specific events and yields the common `ExecutorEvent` union types.
+- **`execute_prompt()`** — Backend-specific flags (e.g., `--system-prompt` for Claude, which has no Codex equivalent) are handled internally by each executor.
+
+### Leaky Abstraction Warning
+
+Several commands bypass `PromptExecutor` and call the `claude` binary directly via `os.execvp()`. These are tracked for refactoring:
+
+- `src/erk/cli/commands/plan/replan_cmd.py`
+- `src/erk/cli/commands/objective/next_plan_cmd.py`
+- `src/erk/cli/commands/objective/reconcile_cmd.py`
+- `src/erk/core/interactive_claude.py` (helper that builds `["claude", ...]` args)
+
+For multi-backend support, these should route through `PromptExecutor` or a backend-aware arg builder.
+
+### Related Codex Documentation
+
+- [Codex CLI Reference](../integrations/codex/codex-cli-reference.md) — Flag mapping between Claude and Codex
+- [Codex JSONL Format](../integrations/codex/codex-jsonl-format.md) — Codex streaming event format
 
 ## Related Topics
 
