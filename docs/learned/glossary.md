@@ -1,5 +1,7 @@
 ---
 title: Erk Glossary
+last_audited: "2026-02-03 15:30 PT"
+audit_result: clean
 read_when:
   - "understanding project terminology"
   - "confused about domain-specific terms"

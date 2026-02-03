@@ -1,5 +1,7 @@
 ---
 title: Forge Vite Setup
+last_audited: "2026-02-03 15:30 PT"
+audit_result: clean
 read_when:
   - "configuring Electron Forge with Vite"
   - "understanding erkdesk build configuration"

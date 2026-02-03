@@ -1,5 +1,7 @@
 ---
 title: Claude CLI Progress Feedback Pattern
+last_audited: "2026-02-03 15:00 PT"
+audit_result: edited
 read_when:
   - "adding progress output to Claude operations"
   - "wrapping Claude CLI with user feedback"
@@ -11,35 +13,18 @@ read_when:
 
 When wrapping Claude CLI operations, use the generator-based event pattern to provide real-time progress feedback to users.
 
-## Core Components
+## Core Architecture
 
-### ProgressEvent
+### Event Types
 
-A frozen dataclass for progress notifications during operations:
+- **ProgressEvent**: Progress notifications during operations (messages with optional styling)
+- **CompletionEvent**: Wraps the final result of an operation
 
-```python
-from erk_shared.gateway.gt.events import ProgressEvent
+Import from: `erk_shared.gateway.gt.events`
 
-# Basic progress
-yield ProgressEvent("Reading diff file...")
+### Progress Event Styles
 
-# Styled progress (success, warning, error)
-yield ProgressEvent("Diff loaded (1,234 chars)", style="success")
-yield ProgressEvent("PR has merge conflicts", style="warning")
-```
-
-**Styles**: `"info"` (default), `"success"`, `"warning"`, `"error"`
-
-### CompletionEvent
-
-A frozen dataclass wrapping the final result:
-
-```python
-from erk_shared.gateway.gt.events import CompletionEvent
-
-# Return result via CompletionEvent
-yield CompletionEvent(MyResult(success=True, data=data))
-```
+Available styles: `"info"` (default), `"success"`, `"warning"`, `"error"`
 
 ## Pattern: Generator-Based Operations
 
@@ -138,39 +123,14 @@ def test_operation_emits_progress(tmp_path: Path) -> None:
 
 ## Example: CommitMessageGenerator
 
-<!-- Source: src/erk/core/commit_message_generator.py:85-189 -->
+Real example from `src/erk/core/commit_message_generator.py:85-189`. The `generate()` method demonstrates the pattern:
 
-Real example from `src/erk/core/commit_message_generator.py:85-189`. See the `generate()` method for complete implementation.
+- Yields progress events for each phase (reading diff, calling Claude, parsing response)
+- Uses styled events for success/error states
+- Returns final result via CompletionEvent
+- Handles errors gracefully with early returns
 
-```python
-def generate(
-    self, request: CommitMessageRequest
-) -> Generator[ProgressEvent | CompletionEvent[CommitMessageResult]]:
-    yield ProgressEvent("Reading diff file...")
-
-    if not request.diff_file.exists():
-        yield CompletionEvent(CommitMessageResult(
-            success=False, error_message="Diff file not found"
-        ))
-        return
-
-    diff_content = request.diff_file.read_text()
-    yield ProgressEvent(f"Diff loaded ({len(diff_content):,} chars)", style="success")
-
-    yield ProgressEvent("Analyzing changes with Claude...")
-    result = self._executor.execute_prompt(prompt, model=self._model)
-
-    if not result.success:
-        yield CompletionEvent(CommitMessageResult(
-            success=False, error_message=result.error
-        ))
-        return
-
-    yield ProgressEvent("PR description generated", style="success")
-    yield CompletionEvent(CommitMessageResult(
-        success=True, title=title, body=body
-    ))
-```
+See the source file for complete implementation details.
 
 ## When to Use This Pattern
 
