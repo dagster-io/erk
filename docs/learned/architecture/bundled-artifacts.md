@@ -86,7 +86,7 @@ Erk classifies skills into two tiers for external distribution:
 
 Skills that work with any AI coding agent. These have no Claude-specific dependencies (hooks, session logs, Claude Code commands).
 
-See `CODEX_PORTABLE_SKILLS` in `src/erk/core/capabilities/codex_portable.py` for the authoritative list (12 skills).
+See `CODEX_PORTABLE_SKILLS` in `src/erk/core/capabilities/codex_portable.py` for the authoritative list.
 
 **Portability Criteria:**
 
