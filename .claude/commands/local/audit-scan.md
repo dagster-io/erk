@@ -63,15 +63,18 @@ has_redirect: false
 import_count: 3
 ```
 
-### Phase 4: Collect Results and Score
+### Phase 4: Exclude Recently Audited, Then Score
 
-Gather all agent results. Apply this point-based scoring rubric (higher score = more urgent):
+Gather all agent results.
+
+**Exclusion rule:** Completely exclude any document whose `last_audited` date is within the last 7 days. These docs are too fresh to need re-audit. Track the excluded count for the report.
+
+Apply this point-based scoring rubric to remaining docs (higher score = more urgent):
 
 | Signal                                    | Points | Rationale                     |
 | ----------------------------------------- | ------ | ----------------------------- |
 | No `last_audited` field                   | +3     | Never been audited            |
 | `last_audited` > 30 days ago              | +2     | Stale audit                   |
-| `last_audited` > 7 days ago               | +1     | Recent but aging              |
 | Line count > 200                          | +2     | Large docs drift more         |
 | Line count > 100                          | +1     | Medium docs                   |
 | Has 3+ code blocks                        | +2     | Code examples are drift-prone |
@@ -99,7 +102,7 @@ Output a structured report:
 ```markdown
 ## Doc Audit Scan Results
 
-**Scanned:** X documents | **Skipped:** Y auto-generated files
+**Scanned:** X documents | **Skipped:** Y auto-generated files | **Excluded:** Z recently audited (within 7 days)
 
 ### HIGH Priority (X docs)
 
