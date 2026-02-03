@@ -1,5 +1,7 @@
 ---
 title: Subprocess Wrappers
+last_audited: "2026-02-03 03:56 PT"
+audit_result: edited
 read_when:
   - "using subprocess wrappers"
   - "executing shell commands"
@@ -252,6 +254,107 @@ This pattern is especially important in CI where large content is common and she
 
 - [GitHub CLI PR Comment Patterns](../ci/github-cli-comment-patterns.md) - Full guide to CI comment posting patterns
 - [GitHub Actions Output Patterns](../ci/github-actions-output-patterns.md) - For `$GITHUB_OUTPUT` (different context)
+
+## Lenient vs. Strict Handlers
+
+Some subprocess operations should fail gracefully while others should fail fast. The `_get_pr_for_plan_direct()` pattern from `trigger-async-learn` demonstrates the lenient approach.
+
+### Decision Matrix
+
+| Aspect                    | Lenient Handler                        | Strict Handler                         |
+| ------------------------- | -------------------------------------- | -------------------------------------- |
+| **Error handling**        | Returns `None` on any failure          | Raises exception or returns error type |
+| **Return type**           | `T \| None`                            | `T` or discriminated union             |
+| **Use case**              | Optional operations, fail-open         | Critical operations, fail-closed       |
+| **Caller responsibility** | Check for `None`, decide how to handle | Catch exception or check error type    |
+
+### Lenient Pattern
+
+Use when the operation is **optional** and the caller should decide how to handle absence:
+
+See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py:212-257`.
+
+```python
+# Signature and return type (see source for full implementation):
+def _get_pr_for_plan_direct(
+    *, github_issues, github, repo_root: Path, issue_number: int,
+) -> dict[str, object] | None:
+    # Returns None on ANY failure: missing issue, metadata, branch, or PR
+```
+
+**Characteristics:**
+
+- **No exceptions** - Never raises, always returns `None` on failure
+- **No error messages** - Caller decides what to log
+- **Uniform failure** - All failure modes return `None` consistently
+
+**When to use:**
+
+- Background operations that shouldn't block main workflow
+- Optional data fetching (e.g., review comments for learn)
+- Exploratory queries where absence is expected
+
+### Strict Pattern
+
+Use when the operation is **critical** and failure should be explicit:
+
+See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py:60-122`.
+
+```python
+# Signature (see source for full implementation):
+def get_pr_for_plan(
+    *, ctx: ErkContext, repo_root: Path, issue_number: int,
+) -> int:
+    # Raises ValueError on ANY failure; attempts branch_name recovery via pattern matching
+```
+
+**Characteristics:**
+
+- **Explicit errors** - Each failure mode has specific error message
+- **Recovery attempts** - May try to infer missing data before failing
+- **Clear contract** - Caller knows exceptions mean critical failure
+
+**When to use:**
+
+- User-facing commands where failure needs explanation
+- Critical path operations that cannot continue without the data
+- CLI commands that should exit with error message
+
+### Real-World Example: trigger-async-learn
+
+The `trigger-async-learn` command uses **lenient handler** for PR lookup:
+
+```python
+# Lenient: Try to get PR info, but don't fail if unavailable
+pr_info = _get_pr_for_plan_direct(...)
+if pr_info is None:
+    # No PR found - that's OK, just skip review comments
+    click.echo("No PR found for plan, skipping review comments", err=True)
+    review_comments = None
+else:
+    # PR found - fetch review comments
+    pr_number = pr_info["pr_number"]
+    review_comments = fetch_review_comments(repo_root, pr_number)
+
+# Continue with learn workflow (with or without review comments)
+upload_materials(sessions, review_comments)
+trigger_workflow(...)
+```
+
+**Why lenient?**
+
+- Learn can succeed without review comments
+- PR might not exist yet (plan created before implementation)
+- Running from GitHub Actions (no current branch for recovery)
+
+**Contrast with strict handler:**
+
+The same PR lookup in `get_pr_for_plan.py` is **strict** because it's a user-facing command where the user explicitly asked for the PR and expects either the answer or a clear error message.
+
+### See Also
+
+- [Fail-Open Patterns](fail-open-patterns.md) - When to allow graceful degradation
+- [Branch Name Inference](../planning/branch-name-inference.md) - Recovery mechanism for missing branch_name
 
 ## Summary
 

@@ -1,5 +1,7 @@
 ---
 title: Fail-Open Pattern
+last_audited: "2026-02-03 03:56 PT"
+audit_result: edited
 read_when:
   - "implementing cleanup operations"
   - "designing resilient workflows"
@@ -310,8 +312,90 @@ def land_pr(ctx: ErkContext) -> None:
 4. **Idempotency** - Failed cleanup operations can be retried later
 5. **Metadata consistency** - Careful dependency ordering prevents state corruption
 
+## Defense-in-Depth Example: trigger-async-learn
+
+The `trigger-async-learn` command demonstrates a **two-layer defense-in-depth** approach combining fail-open with root cause recovery:
+
+### The Problem
+
+When triggering async learn for a plan, we need the associated PR number to fetch review comments. But:
+
+1. **branch_name might be missing** - If impl-signal never ran or failed
+2. **PR lookup might fail** - Network error, branch doesn't have a PR yet
+3. **Review comments are optional** - Learn can succeed without them
+
+### Two-Layer Solution
+
+**Layer 1: Lenient Handler** (`_get_pr_for_plan_direct`)
+
+See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py:212-257`.
+
+```python
+# Signature and return type (see source for full implementation):
+def _get_pr_for_plan_direct(
+    *, github_issues, github, repo_root: Path, issue_number: int,
+) -> dict[str, object] | None:
+    # Returns None on ANY failure: missing issue, metadata, branch, or PR
+```
+
+**Key characteristics:**
+
+- Returns `None` on ANY failure (missing data, API errors, not found)
+- No exceptions raised
+- No error messages printed
+- Caller decides how to handle None
+
+**Layer 2: Root Cause Recovery**
+
+The caller (trigger-async-learn main function) handles the None case gracefully:
+
+```python
+def trigger_async_learn_main(issue_number: int) -> None:
+    # Try to get PR information (fail-open)
+    pr_info = _get_pr_for_plan_direct(
+        github_issues=ctx.issues,
+        github=ctx.github,
+        repo_root=repo_root,
+        issue_number=issue_number,
+    )
+
+    if pr_info is None:
+        # No PR found - that's OK, just skip review comments
+        click.echo("No PR found for plan, skipping review comments", err=True)
+        review_comments = None
+    else:
+        # PR found - fetch review comments
+        pr_number = pr_info["pr_number"]
+        review_comments = fetch_review_comments(repo_root, pr_number)
+
+    # Continue with learn workflow (with or without review comments)
+    upload_materials(sessions, review_comments)
+    trigger_workflow(...)
+```
+
+### Defense-in-Depth Benefits
+
+1. **Lenient handler isolates failure modes** - All PR lookup failures return None consistently
+2. **Root cause recovery provides context** - Caller knows WHY there's no PR info
+3. **Graceful degradation** - Learn succeeds without review comments
+4. **Future-proof** - If we add branch_name inference later (like get_pr_for_plan.py), only Layer 1 changes
+
+### Comparison with get_pr_for_plan.py
+
+The `get_pr_for_plan.py` script has **recovery logic** for missing branch_name (pattern matching against current branch). But `trigger-async-learn` intentionally does NOT:
+
+| Aspect               | get_pr_for_plan.py                   | trigger-async-learn                     |
+| -------------------- | ------------------------------------ | --------------------------------------- |
+| **Context**          | User is ON the branch right now      | Running from GitHub Actions (no branch) |
+| **branch_name=None** | Try to infer from current git branch | Return None (no recovery)               |
+| **No PR found**      | Error - user needs to know           | OK - review comments are optional       |
+| **Failure mode**     | Fail-closed (error exit)             | Fail-open (continue without PR)         |
+
+This demonstrates that fail-open vs fail-closed is **context-dependent** - the same operation (PR lookup) can be critical in one context and optional in another.
+
 ## Related Documentation
 
+- [Branch Name Inference](../planning/branch-name-inference.md) - Recovery mechanism for missing branch_name
 - [Erk Architecture Patterns](erk-architecture.md) - Fail-fast validation pattern
 - [Discriminated Union Error Handling](discriminated-union-error-handling.md) - Type-safe error handling
 - [LBYL Gateway Pattern](lbyl-gateway-pattern.md) - Precondition checking pattern

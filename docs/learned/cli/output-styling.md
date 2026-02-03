@@ -819,3 +819,4 @@ See `src/erk/tui/widgets/clickable_link.py` for `escape_markup()` usage patterns
 ## See Also
 
 - [DataTable Rich Markup Escaping](../textual/datatable-markup-escaping.md) - TUI-specific markup escaping
+- [Help Text Formatting](help-text-formatting.md) - Using `\b` for code examples and bulleted lists in Click docstrings

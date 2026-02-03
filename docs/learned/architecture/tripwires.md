@@ -38,6 +38,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding file I/O, network calls, or subprocess invocations to a class **init\***\* → Read [Erk Architecture Patterns](erk-architecture.md) first. Load `dignified-python` skill first. Class **init\*\* should be lightweight (just data assignment). Heavy operations belong in static factory methods like `from_config_path()` or `load()`. This enables direct instantiation in tests without I/O setup.
 
+**CRITICAL: Before adding re-exports to gateway implementation modules** → Read [Re-Export Pattern](re-export-pattern.md) first. Only re-export types that genuinely improve public API. Add # noqa: F401 - re-exported for <reason> comment.
+
 **CRITICAL: Before adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must add integration tests in tests/integration/test*real*\*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior.
 
 **CRITICAL: Before amending a commit when Graphite is enabled** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in sync_cmd and branch_manager.
@@ -64,7 +66,11 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before calling os.chdir() in erk code** → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx, repo_root=repo.root). Stale ctx.cwd causes FileNotFoundError.
 
+**CRITICAL: Before changing \_sandbox_to_permission_mode() implementations** → Read [SandboxMode Abstraction](sandbox-modes.md) first. Verify both Claude and Codex backend implementations maintain identical enum-to-mode mappings.
+
 **CRITICAL: Before changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
+
+**CRITICAL: Before changing config section names ([interactive-claude] or [interactive-agent])** → Read [Interactive Agent Configuration](interactive-agent-config.md) first. Maintain fallback from [interactive-agent] to [interactive-claude] for backward compatibility.
 
 **CRITICAL: Before changing gateway return type to discriminated union** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern.
 
@@ -89,6 +95,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
 
 **CRITICAL: Before creating branches in erk code** → Read [Branch Manager Decision Tree](branch-manager-decision-tree.md) first. Use the decision tree to determine whether to use ctx.branch_manager (with Graphite tracking) or ctx.git.branch (low-level git). Placeholder/ephemeral branches bypass branch_manager.
+
+**CRITICAL: Before deleting a gateway after consolidating into another** → Read [Gateway Removal Pattern](gateway-removal-pattern.md) first. Follow complete removal checklist: verify no references, delete all 5 layers, clean up ErkContext, update docs, run full test suite.
 
 **CRITICAL: Before designing a new hook or reminder system** → Read [Three-Tier Context Injection Architecture](context-injection-tiers.md) first. Consider the three-tier context architecture. Read docs/learned/architecture/context-injection-tiers.md first.
 
@@ -116,6 +124,12 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
 
+**CRITICAL: Before modifying InteractiveAgentConfig fields or config file format** → Read [Interactive Agent Configuration](interactive-agent-config.md) first. Update both config loading (RealErkInstallation.load_config) and usage sites. Check backward compatibility with [interactive-claude] section.
+
+**CRITICAL: Before modifying PR footer format validation** → Read [PR Footer Format Validation](pr-footer-validation.md) first. Update generator, parser, AND validator in sync. Old PRs must remain parseable during migration. Add support for new format before deprecating old format.
+
+**CRITICAL: Before modifying SandboxMode enum or permission mode mappings** → Read [SandboxMode Abstraction](sandbox-modes.md) first. Two \_sandbox_to_permission_mode() functions must stay in sync (Claude backend and Codex backend). Update both when changing mappings.
+
 **CRITICAL: Before mutating pipeline state directly instead of using dataclasses.replace()** → Read [State Threading Pattern](state-threading-pattern.md) first. Pipeline state must be frozen. Use dataclasses.replace() to create new state at each step.
 
 **CRITICAL: Before passing array or object variables to gh api graphql with -F and json.dumps()** → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Arrays and objects require special gh syntax: arrays use -f key[]=value1 -f key[]=value2, objects use -f key[subkey]=value. Using -F key=[...] or -F key={...} passes them as literal strings, not typed values.
@@ -133,6 +147,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before setting status explicitly when --pr is provided without --status** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. When --pr is set without --status, reset status cell to '-' to allow inference. Do not preserve the existing status — it may be stale (e.g., 'blocked' after a PR is added).
 
 **CRITICAL: Before skipping fallback strategies when the selected item might disappear** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Always provide fallback behavior when selected item not found in refreshed data (reset to 0, preserve index clamped, or clear selection).
+
+**CRITICAL: Before suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
 
 **CRITICAL: Before threading state through pipeline steps with mutable dataclasses** → Read [Land State Threading Pattern](land-state-threading.md) first. Use frozen dataclasses (@dataclass(frozen=True)) for pipeline state. Update fields with dataclasses.replace() to create new instances. Immutability enables caching, testability, and replay.
 

@@ -34,6 +34,7 @@
 - **[gateway-error-boundaries.md](gateway-error-boundaries.md)** — implementing gateway error handling, converting gateway operations to discriminated unions, deciding where try/except blocks belong in gateways
 - **[gateway-hierarchy.md](gateway-hierarchy.md)** — understanding gateway relationships, deciding which gateway to use for an operation, understanding BranchManager abstraction, understanding GraphiteDisabled sentinel pattern, querying both Graphite and GitHub for completeness, understanding dual-source patterns
 - **[gateway-inventory.md](gateway-inventory.md)** — understanding available gateways, adding a new gateway
+- **[gateway-removal-pattern.md](gateway-removal-pattern.md)** — Consolidating two gateways into one, Removing deprecated gateway implementations, Refactoring gateway hierarchies
 - **[gateway-signature-migration.md](gateway-signature-migration.md)** — changing gateway method signatures, migrating callers after gateway API changes, updating discriminated union return types across call sites
 - **[gateway-specific-patterns.md](gateway-specific-patterns.md)** — implementing gateway methods with mixed error handling, designing operations with main logic and cleanup steps, converting methods with cleanup operations to discriminated unions
 - **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
@@ -53,6 +54,7 @@
 - **[graphite-cache-invalidation.md](graphite-cache-invalidation.md)** — implementing mtime-based cache invalidation, caching Graphite branch metadata, optimizing repeated calls to git or graphite operations
 - **[hook-marker-detection.md](hook-marker-detection.md)** — Adding a new hook managed by erk, Implementing version detection for artifacts, Understanding how hook updates work
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .impl/ or .worker-impl/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
+- **[interactive-agent-config.md](interactive-agent-config.md)** — Working with global config loading (GlobalConfig), Implementing interactive agent launch behavior, Adding new agent configuration options
 - **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with issue.json, closing reference lost after erk pr submit
 - **[land-state-threading.md](land-state-threading.md)** — implementing pipelines with immutable state, using dataclasses.replace() for state updates, designing stateful workflows with frozen dataclasses
 - **[lbyl-gateway-pattern.md](lbyl-gateway-pattern.md)** — implementing existence checks before gateway operations, adding LBYL validation to CLI commands, understanding issue_exists() and similar methods
@@ -73,11 +75,14 @@
 - **[plan-file-sync-pattern.md](plan-file-sync-pattern.md)** — editing PLAN-REVIEW files locally, syncing local plan changes to GitHub issues, working with plan feedback workflows
 - **[pr-body-formatting.md](pr-body-formatting.md)** — adding GitHub-specific enhancements to PR descriptions, understanding separation between git commit messages and PR bodies, implementing badges, metadata, or HTML in PR bodies, debugging why HTML appears in git commit messages
 - **[pr-finalization-paths.md](pr-finalization-paths.md)** — debugging PR body content or issue closing, understanding local vs remote PR submission, working with 'Closes #N' in PRs
+- **[pr-footer-validation.md](pr-footer-validation.md)** — Working with PR metadata footer format, Modifying PR checkout footer generation, Debugging PR footer validation errors
 - **[pre-destruction-capture.md](pre-destruction-capture.md)** — implementing operations that destroy or transform data, designing pipelines with data capture requirements, working with git squash, rebase, or other destructive operations
 - **[prompt-executor-gateway.md](prompt-executor-gateway.md)** — executing LLM prompts from Python code, testing code that uses Claude CLI, implementing single-shot prompt execution, working with PromptExecutor or FakePromptExecutor
 - **[prompt-executor-patterns.md](prompt-executor-patterns.md)** — launching Claude from CLI commands, deciding which PromptExecutor method to use, testing code that executes Claude CLI, choosing between ClaudePromptExecutor and RealPromptExecutor
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns
+- **[re-export-pattern.md](re-export-pattern.md)** — Creating public API surface from internal gateway modules, Simplifying import paths for commonly used types, Working with ruff import linting
 - **[roadmap-mutation-semantics.md](roadmap-mutation-semantics.md)** — modifying objective roadmap update logic, understanding status inference when updating roadmap steps, working with objective-roadmap-update command
+- **[sandbox-modes.md](sandbox-modes.md)** — Working with interactive agent permissions, Implementing Codex or Claude backend integration, Modifying permission mode configuration
 - **[selection-preservation-by-value.md](selection-preservation-by-value.md)** — working with auto-refreshing lists or tables in UI components, implementing selection state that should persist across data updates, building real-time dashboard views with user-selected items, debugging cursor position resets in DataTable or list components
 - **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit
 - **[session-discovery.md](session-discovery.md)** — finding Claude Code sessions for a plan, implementing session lookup from GitHub issues, understanding dual-source discovery patterns, working with gist-based session storage, downloading remote sessions for learn workflow

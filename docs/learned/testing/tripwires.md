@@ -42,6 +42,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using monkeypatch.chdir() in exec script tests** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
 
+**CRITICAL: Before using old FakePromptExecutor API patterns in new tests** → Read [Fake API Migration Pattern - PromptExecutor Consolidation](fake-api-migration-pattern.md) first. Use simulated\_\* parameters (new API), not output=/should_fail= (old gateway API). See migration table.
+
 **CRITICAL: Before using vi.advanceTimersByTime() with Promise-based code** → Read [Vitest Fake Timers with Promises](vitest-fake-timers-with-promises.md) first. Use await vi.advanceTimersByTimeAsync() instead. Synchronous advancement blocks Promise microtasks and causes test hangs.
 
 **CRITICAL: Before writing React component tests with Vitest + jsdom** → Read [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) first. jsdom doesn't implement Element.prototype.scrollIntoView(). Stub in setup.ts with `Element.prototype.scrollIntoView = vi.fn()` before tests run to avoid TypeError.

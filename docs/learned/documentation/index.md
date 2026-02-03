@@ -5,6 +5,7 @@
 
 - **[canonical-authority-declarations.md](canonical-authority-declarations.md)** — writing documentation that could conflict with other sources, clarifying which doc is authoritative for a pattern, organizing documentation to prevent duplication
 - **[divio-documentation-system.md](divio-documentation-system.md)** — structuring documentation, deciding what type of doc to write, creating tutorials, how-to guides, or reference material, understanding why docs feel disorganized
+- **[frontmatter-tripwire-format.md](frontmatter-tripwire-format.md)** — Creating new documentation in docs/learned/, Adding tripwires to existing docs, Understanding frontmatter schema, Running erk docs sync
 - **[language-scope-auditing.md](language-scope-auditing.md)** — writing documentation that includes code examples, reviewing learned-docs for verbatim code violations, understanding what code blocks are forbidden in docs/learned/
 - **[markdown-and-prettier.md](markdown-and-prettier.md)** — writing or editing markdown documentation, understanding prettier's markdown formatting rules, resolving prettier violations in documentation
 - **[passive-context-vs-retrieval.md](passive-context-vs-retrieval.md)** — deciding whether to put knowledge in AGENTS.md or a skill, structuring documentation for agent consumption, designing how agents discover and use project knowledge, evaluating why an agent isn't using available documentation
