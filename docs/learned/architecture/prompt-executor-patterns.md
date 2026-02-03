@@ -222,6 +222,33 @@ This is necessary because:
 
 RealPromptExecutor uses simple `capture_output=True` since there's no streaming.
 
+## Multi-Backend Design
+
+The `PromptExecutor` ABC is designed to support multiple agent backends. The current sole implementation is `ClaudePromptExecutor`, but the interface is intentionally abstract enough to support others.
+
+### Key Abstraction Points
+
+- **`is_available()`** — Each backend checks for its own binary (`claude`, `codex`, etc.)
+- **`execute_interactive()`** — Uses `os.execvp()` to replace the process. The binary name is determined by the executor implementation, not the caller. Callers should use `os.execvp(cmd_args[0], cmd_args)` rather than hardcoding `os.execvp("claude", ...)`.
+- **`execute_command_streaming()`** — Each backend has its own JSONL format. The executor parses backend-specific events and yields the common `ExecutorEvent` union types.
+- **`execute_prompt()`** — Backend-specific flags (e.g., `--system-prompt` for Claude, which has no Codex equivalent) are handled internally by each executor.
+
+### Leaky Abstraction Warning
+
+Several commands bypass `PromptExecutor` and call the `claude` binary directly via `os.execvp()`. These are tracked for refactoring:
+
+- `src/erk/cli/commands/plan/replan_cmd.py`
+- `src/erk/cli/commands/objective/next_plan_cmd.py`
+- `src/erk/cli/commands/objective/reconcile_cmd.py`
+- `src/erk/core/interactive_claude.py` (helper that builds `["claude", ...]` args)
+
+For multi-backend support, these should route through `PromptExecutor` or a backend-aware arg builder.
+
+### Related Codex Documentation
+
+- [Codex CLI Reference](../integrations/codex-cli-reference.md) — Flag mapping between Claude and Codex
+- [Codex JSONL Format](../integrations/codex-jsonl-format.md) — Codex streaming event format
+
 ## Related Topics
 
 - [Subprocess Wrappers](subprocess-wrappers.md) - General subprocess patterns
