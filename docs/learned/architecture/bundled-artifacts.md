@@ -90,6 +90,47 @@ Files bundled at `erk/data/`:
 
 Configured in `pyproject.toml` via `force-include`.
 
+## Codex Portability Classification
+
+Erk classifies skills into two tiers for external distribution:
+
+### Codex-Portable Skills
+
+Skills that work with any AI coding agent. These have no Claude-specific dependencies (hooks, session logs, Claude Code commands).
+
+See `CODEX_PORTABLE_SKILLS` in `src/erk/core/capabilities/codex_portable.py` for the authoritative list (12 skills).
+
+**Portability Criteria:**
+
+- No Claude-specific hook dependencies
+- No session log parsing or storage
+- No Claude Code slash commands
+- YAML frontmatter with `name` (<=64 chars) and `description` (<=1024 chars)
+
+### Claude-Only Skills
+
+Skills requiring Claude-specific features. These cannot be ported.
+
+See `CLAUDE_ONLY_SKILLS` in `src/erk/core/capabilities/codex_portable.py` for the list (4 skills).
+
+**Why Claude-only:** Session inspection, CI iteration hooks, command/skill creators that output Claude format
+
+### Bundled Path Resolution
+
+| Install Type | `get_bundled_codex_dir()` Returns |
+| ------------ | --------------------------------- |
+| Wheel        | `erk/data/codex/`                 |
+| Editable     | `.claude/` (shared with Claude)   |
+
+See `get_bundled_codex_dir()` in `src/erk/artifacts/paths.py` for the implementation.
+
+### Adding a New Codex-Portable Skill
+
+1. Create skill in `.claude/skills/<name>/SKILL.md` with required frontmatter
+2. Add skill name to `CODEX_PORTABLE_SKILLS` in `src/erk/core/capabilities/codex_portable.py`
+3. Add force-include mapping in `pyproject.toml` under `[tool.hatch.build.targets.wheel.force-include]`
+4. Run tests: `pytest tests/unit/artifacts/test_codex_compatibility.py`
+
 ## Sync Functions
 
 The `src/erk/artifacts/sync.py` module provides:

@@ -85,6 +85,31 @@ table.add(tomlkit.comment(' key = "value"'))  # Note the leading space for align
 doc["section"] = table
 ```
 
+## Hatchling Force-Include Mappings
+
+When bundling files in wheels via `pyproject.toml`, use the `[tool.hatch.build.targets.wheel.force-include]` section.
+
+### Critical Constraint: No Duplicate Keys
+
+TOML dictionaries cannot have duplicate keys. If you need to map the same source file to multiple destinations, you cannot do this:
+
+```toml
+# WRONG - TOML parse error (duplicate key)
+[tool.hatch.build.targets.wheel.force-include]
+".claude/skills/foo" = "erk/data/claude/skills/foo"
+".claude/skills/foo" = "erk/data/codex/skills/foo"
+```
+
+**Workarounds:**
+
+1. Use a build script to copy files post-build
+2. Choose a single canonical destination (preferred for simplicity)
+3. Restructure source to avoid the conflict
+
+### Pattern: Skill Bundling
+
+See the force-include section in `pyproject.toml` for the canonical mapping pattern for Codex-portable skills. All 15 Codex-portable skills map to a single `erk/data/codex/skills/` destination in wheels.
+
 ## Reference Implementation
 
 See `src/erk/core/planner/registry_real.py` for a complete example of reading with tomllib and writing with tomlkit.

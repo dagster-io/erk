@@ -7,6 +7,7 @@ This PR implements the infrastructure layer for bundling Codex-portable skills w
 The implementation introduced a two-tier skill classification system: **Codex-portable skills** (12 skills that work with any AI agent) and **Claude-only skills** (4 skills requiring Claude-specific features). A new `get_bundled_codex_dir()` function provides path resolution that handles both wheel installs (bundled at `erk/data/codex/`) and editable installs (falls back to `.claude/`).
 
 Documentation matters because:
+
 1. **Future skill authors** need to understand the portability criteria when creating new skills
 2. **Maintenance agents** need to know how to add/remove skills from the registry and update pyproject.toml mappings
 3. **TOML constraint awareness** is critical - the implementation discovered that TOML dictionaries cannot have duplicate keys, which forced a strategic pivot in the bundling approach
@@ -50,6 +51,7 @@ Skills that work with any AI coding agent. These have no Claude-specific depende
 See `CODEX_PORTABLE_SKILLS` in `src/erk/core/capabilities/codex_portable.py` for the authoritative list (12 skills).
 
 **Portability Criteria:**
+
 - No Claude-specific hook dependencies
 - No session log parsing or storage
 - No Claude Code slash commands
@@ -94,7 +96,7 @@ See `get_bundled_codex_dir()` in `src/erk/artifacts/paths.py` for the implementa
 
 Add section on Hatchling force-include mappings:
 
-```markdown
+````markdown
 ## Hatchling Force-Include Mappings
 
 When bundling files in wheels via `pyproject.toml`, use the `[tool.hatch.build.targets.wheel.force-include]` section.
@@ -109,8 +111,10 @@ TOML dictionaries cannot have duplicate keys. If you need to map the same source
 ".claude/skills/foo" = "erk/data/claude/skills/foo"
 ".claude/skills/foo" = "erk/data/codex/skills/foo"
 ```
+````
 
 **Workarounds:**
+
 1. Use a build script to copy files post-build
 2. Choose a single canonical destination (preferred for simplicity)
 3. Restructure source to avoid the conflict
@@ -118,7 +122,8 @@ TOML dictionaries cannot have duplicate keys. If you need to map the same source
 ### Pattern: Skill Bundling
 
 See the force-include section in `pyproject.toml` for the canonical mapping pattern for Codex-portable skills. All 15 Codex-portable skills map to a single `erk/data/codex/skills/` destination in wheels.
-```
+
+````
 
 ---
 
@@ -168,7 +173,7 @@ All skill `SKILL.md` files must have YAML frontmatter with:
 **Missing frontmatter:** The `SKILL.md` file lacks the required `name` or `description` fields. Add them to the YAML frontmatter block.
 
 **File naming:** Use `SKILL.md` (uppercase), not `skill.md`.
-```
+````
 
 ---
 
@@ -236,6 +241,7 @@ Items meeting tripwire-worthiness threshold (score >= 4):
 **Target doc:** `docs/learned/reference/toml-handling.md`
 
 This is tripwire-worthy because:
+
 - The constraint is not intuitive for developers familiar with Python dicts
 - The error manifests during build/test, not immediately when editing
 - Debugging requires understanding TOML spec, not just Python
