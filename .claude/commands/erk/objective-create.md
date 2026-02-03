@@ -311,7 +311,6 @@ Once approved:
    ```bash
    erk objective check <issue-number> --json-output
    ```
-
    - If `validation_errors` is non-empty, fix the issue body and re-run until clean
    - Report clean validation in the success output
 
