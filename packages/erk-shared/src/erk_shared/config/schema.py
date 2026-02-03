@@ -28,6 +28,47 @@ class ConfigLevel(str, Enum):
     REPO_ONLY = "repo_only"
 
 
+class InteractiveClaudeConfigSchema(BaseModel):
+    """Schema for interactive_claude.* configuration keys.
+
+    Each field's cli_key uses dotted notation: interactive_claude.<subkey>.
+    """
+
+    verbose: bool = Field(
+        description="Show verbose output in interactive Claude sessions",
+        json_schema_extra={
+            "level": ConfigLevel.GLOBAL_ONLY,
+            "cli_key": "interactive_claude.verbose",
+        },
+    )
+    permission_mode: str = Field(
+        description="Claude CLI permission mode (default, acceptEdits, plan, bypassPermissions)",
+        json_schema_extra={
+            "level": ConfigLevel.GLOBAL_ONLY,
+            "cli_key": "interactive_claude.permission_mode",
+        },
+    )
+    dangerous: bool = Field(
+        description="Skip permission prompts (--dangerously-skip-permissions)",
+        json_schema_extra={
+            "level": ConfigLevel.GLOBAL_ONLY,
+            "cli_key": "interactive_claude.dangerous",
+        },
+    )
+    allow_dangerous: bool = Field(
+        description="Enable --allow-dangerously-skip-permissions flag",
+        json_schema_extra={
+            "level": ConfigLevel.GLOBAL_ONLY,
+            "cli_key": "interactive_claude.allow_dangerous",
+        },
+    )
+    model: str | None = Field(
+        default=None,
+        description="Claude model to use (e.g., claude-opus-4-5)",
+        json_schema_extra={"level": ConfigLevel.GLOBAL_ONLY, "cli_key": "interactive_claude.model"},
+    )
+
+
 class GlobalConfigSchema(BaseModel):
     """Schema for global configuration keys.
 
@@ -134,6 +175,7 @@ class FieldMetadata:
         default: object,
         default_display: object,
         dynamic: bool,
+        section: str | None = None,
     ) -> None:
         self.field_name = field_name
         self.cli_key = cli_key
@@ -142,6 +184,7 @@ class FieldMetadata:
         self.default = default
         self.default_display = default_display
         self.dynamic = dynamic
+        self.section = section  # None for top-level, "interactive_claude" for nested
 
 
 def get_field_metadata(model: type[BaseModel], field_name: str) -> FieldMetadata:
@@ -230,3 +273,41 @@ def get_global_config_key_names() -> set[str]:
 def is_global_config_key(key: str) -> bool:
     """Check if a key is a global configuration key."""
     return key in get_global_config_key_names()
+
+
+# Section registry: (schema_model, section_name, heading)
+_GLOBAL_CONFIG_SECTIONS: list[tuple[type[BaseModel], str | None, str]] = [
+    (GlobalConfigSchema, None, "Global configuration"),
+    (InteractiveClaudeConfigSchema, "interactive_claude", "Interactive Claude configuration"),
+]
+
+
+def get_all_global_config_fields() -> Iterator[FieldMetadata]:
+    """Yield ALL global config fields across all sections.
+
+    This is the single source of truth for what keys exist.
+    config list, config get, config set, and config keys all use this.
+    """
+    for schema, section, _heading in _GLOBAL_CONFIG_SECTIONS:
+        for meta in iter_displayable_fields(schema):
+            meta.section = section
+            yield meta
+
+
+def get_global_config_sections() -> list[tuple[str, list[FieldMetadata]]]:
+    """Yield (heading, fields) for each global config section. Used by config list/keys."""
+    result = []
+    for schema, section, heading in _GLOBAL_CONFIG_SECTIONS:
+        fields = list(iter_displayable_fields(schema))
+        for f in fields:
+            f.section = section
+        result.append((heading, fields))
+    return result
+
+
+def is_any_global_config_key(key: str) -> bool:
+    """Check if a key is a global config key.
+
+    Examples: 'interactive_claude.verbose', 'use_graphite'
+    """
+    return key in {meta.cli_key for meta in get_all_global_config_fields()}
