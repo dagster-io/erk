@@ -129,6 +129,10 @@ def setup_codespace(
 
     # Parse the JSON response to get the codespace name
     response = json.loads(result.stdout)
+    if "name" not in response:
+        click.echo("Error: API response missing 'name' field.", err=True)
+        click.echo(f"Response: {result.stdout.strip()}", err=True)
+        raise SystemExit(1)
     gh_name = response["name"]
 
     registered = RegisteredCodespace(
