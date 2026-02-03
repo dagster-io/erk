@@ -1,5 +1,7 @@
 ---
 title: Click Patterns
+last_audited: "2026-02-03 03:56 PT"
+audit_result: edited
 read_when:
   - "implementing CLI options with complex behavior"
   - "creating flags that optionally accept values"

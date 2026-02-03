@@ -1,5 +1,7 @@
 ---
 title: Frontmatter Tripwire Format
+last_audited: "2026-02-03 03:56 PT"
+audit_result: edited
 read_when:
   - "Creating new documentation in docs/learned/"
   - "Adding tripwires to existing docs"

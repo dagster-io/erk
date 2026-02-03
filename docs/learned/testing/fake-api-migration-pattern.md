@@ -1,5 +1,7 @@
 ---
 title: Fake API Migration Pattern - PromptExecutor Consolidation
+last_audited: "2026-02-03 03:56 PT"
+audit_result: edited
 tripwires:
   - action: "using old FakePromptExecutor API patterns in new tests"
     warning: "Use simulated_* parameters (new API), not output=/should_fail= (old gateway API). See migration table."
