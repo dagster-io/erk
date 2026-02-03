@@ -14,9 +14,10 @@ from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext, write_trunk_to_pyproject
 from erk_shared.config.schema import (
     ConfigLevel,
-    get_global_config_fields,
+    get_global_config_sections,
     get_overridable_keys,
     get_repo_config_fields,
+    is_any_global_config_key,
     is_global_config_key,
 )
 from erk_shared.context.types import GlobalConfig
@@ -120,13 +121,13 @@ def config_group() -> None:
 @config_group.command("keys")
 def config_keys() -> None:
     """List all available configuration keys with descriptions."""
-    formatter = click.HelpFormatter()
-
-    # Global config section
-    user_output(click.style("Global configuration keys:", bold=True))
-    global_rows = [(meta.cli_key, meta.description) for meta in get_global_config_fields()]
-    formatter.write_dl(global_rows)
-    user_output(formatter.getvalue().rstrip())
+    # Global config sections (including interactive_claude)
+    for heading, fields in get_global_config_sections():
+        user_output(click.style(f"\n{heading} keys:", bold=True))
+        formatter = click.HelpFormatter()
+        rows = [(meta.cli_key, meta.description) for meta in fields]
+        formatter.write_dl(rows)
+        user_output(formatter.getvalue().rstrip())
 
     user_output("")
 
@@ -194,42 +195,44 @@ def config_list(ctx: ErkContext) -> None:
         repo_only_config = load_config(ctx.repo.root)
         local_only_config = load_local_config(ctx.repo.root)
 
-    # Display global config
-    user_output(click.style("Global configuration:", bold=True))
+    # Display global config sections (schema-driven)
     if ctx.global_config:
-        for meta in get_global_config_fields():
-            is_overridable = meta.level == ConfigLevel.OVERRIDABLE
-            # For overridable keys, show effective value with source annotation
-            if is_overridable and repo_only_config and local_only_config:
-                effective_value = _get_effective_value_for_overridable_key(
-                    meta.field_name,
-                    global_config=ctx.global_config,
-                    merged_config=ctx.local_config,
-                )
-                source = _get_overridable_key_source(
-                    meta.field_name,
-                    repo_config=repo_only_config,
-                    local_config=local_only_config,
-                )
-                user_output(f"  {meta.cli_key}={_format_config_value(effective_value)}{source}")
-            else:
-                # Non-overridable key or not in repo - show global value
-                value = getattr(ctx.global_config, meta.field_name)
-                user_output(f"  {meta.cli_key}={_format_config_value(value)}")
-
-        # Interactive Claude configuration
-        ic = ctx.global_config.interactive_claude
-        user_output(click.style("\nInteractive Claude configuration:", bold=True))
-        if ic.model:
-            user_output(f"  interactive_claude.model={ic.model}")
-        user_output(f"  interactive_claude.verbose={_format_config_value(ic.verbose)}")
-        user_output(f"  interactive_claude.permission_mode={ic.permission_mode}")
-        user_output(f"  interactive_claude.dangerous={_format_config_value(ic.dangerous)}")
-        user_output(
-            f"  interactive_claude.allow_dangerous={_format_config_value(ic.allow_dangerous)}"
-        )
+        for heading, fields in get_global_config_sections():
+            user_output(click.style(f"{heading}:", bold=True))
+            for meta in fields:
+                # Determine where to read the value from
+                if meta.section is None:
+                    # Top-level field: read from ctx.global_config.<field_name>
+                    is_overridable = meta.level == ConfigLevel.OVERRIDABLE
+                    if is_overridable and repo_only_config and local_only_config:
+                        effective_value = _get_effective_value_for_overridable_key(
+                            meta.field_name,
+                            global_config=ctx.global_config,
+                            merged_config=ctx.local_config,
+                        )
+                        source = _get_overridable_key_source(
+                            meta.field_name,
+                            repo_config=repo_only_config,
+                            local_config=local_only_config,
+                        )
+                        user_output(
+                            f"  {meta.cli_key}={_format_config_value(effective_value)}{source}"
+                        )
+                    else:
+                        value = getattr(ctx.global_config, meta.field_name)
+                        user_output(f"  {meta.cli_key}={_format_config_value(value)}")
+                else:
+                    # Sectioned field: read from ctx.global_config.<section>.<field_name>
+                    section_obj = getattr(ctx.global_config, meta.section)
+                    value = getattr(section_obj, meta.field_name)
+                    # Skip None values (e.g., model if not set)
+                    if value is not None:
+                        user_output(f"  {meta.cli_key}={_format_config_value(value)}")
+            user_output("")  # Blank line between sections
     else:
+        user_output(click.style("Global configuration:", bold=True))
         user_output("  (not configured - run 'erk init' to create)")
+        user_output("")
 
     # Display local config
     user_output(click.style("\nRepository configuration:", bold=True))
@@ -317,13 +320,24 @@ def config_get(ctx: ErkContext, key: str) -> None:
     """Print the value of a given configuration key."""
     parts = key.split(".")
 
-    # Handle global config keys
+    # Handle global config keys (top-level)
     if is_global_config_key(parts[0]):
         global_config = Ensure.not_none(
             ctx.global_config, f"Global config not found at {ctx.erk_installation.config_path()}"
         )
         value = getattr(global_config, parts[0])
         machine_output(_format_config_value(value))
+        return
+
+    # Handle sectioned global keys (e.g., interactive_claude.verbose)
+    if is_any_global_config_key(key) and not is_global_config_key(parts[0]):
+        global_config = Ensure.not_none(
+            ctx.global_config, f"Global config not found at {ctx.erk_installation.config_path()}"
+        )
+        Ensure.invariant(len(parts) == 2, f"Invalid key: {key}")
+        section_obj = getattr(global_config, parts[0])  # e.g., global_config.interactive_claude
+        value = getattr(section_obj, parts[1])
+        machine_output(_format_config_value(value) if value is not None else "")
         return
 
     # Handle repo config keys
@@ -395,7 +409,7 @@ def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: s
     # Parse key into parts
     parts = key.split(".")
 
-    # Handle global config keys
+    # Handle global config keys (top-level)
     if is_global_config_key(parts[0]):
         # Check if this key is overridable at repo/local level
         is_overridable = parts[0] in get_overridable_keys()
@@ -437,6 +451,30 @@ def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: s
         # Create new config with updated value using dataclasses.replace
         new_config = replace(global_config, **{parts[0]: parsed_value})
 
+        ctx.erk_installation.save_config(new_config)
+        user_output(f"Set {key}={value}")
+        return
+
+    # Handle sectioned global keys (e.g., interactive_claude.verbose)
+    if is_any_global_config_key(key) and not is_global_config_key(parts[0]):
+        Ensure.invariant(not (local or repo_flag), f"Key '{key}' can only be set at global level")
+        config_path = ctx.erk_installation.config_path()
+        global_config = Ensure.not_none(
+            ctx.global_config,
+            f"Global config not found at {config_path}. Run 'erk init' to create it.",
+        )
+        Ensure.invariant(len(parts) == 2, f"Invalid key: {key}")
+
+        section_obj = getattr(global_config, parts[0])  # e.g., interactive_claude
+        current_value = getattr(section_obj, parts[1])
+        parsed_value = (
+            _parse_config_value(parts[1], value, type(current_value))
+            if current_value is not None
+            else value
+        )
+
+        new_section = replace(section_obj, **{parts[1]: parsed_value})
+        new_config = replace(global_config, **{parts[0]: new_section})
         ctx.erk_installation.save_config(new_config)
         user_output(f"Set {key}={value}")
         return

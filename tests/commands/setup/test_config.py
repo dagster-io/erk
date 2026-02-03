@@ -1594,3 +1594,141 @@ def test_config_set_trunk_branch_rejects_repo_flag() -> None:
 
         assert result.exit_code == 1
         assert "trunk-branch lives in pyproject.toml" in result.output
+
+
+# interactive_claude config tests
+
+
+def test_config_set_interactive_claude_verbose() -> None:
+    """Test setting interactive_claude.verbose config value."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(git=git_ops)
+
+        result = runner.invoke(
+            cli, ["config", "set", "interactive_claude.verbose", "true"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set interactive_claude.verbose=true" in result.output
+
+        # Verify it was saved
+        saved_config = test_ctx.erk_installation.load_config()
+        assert saved_config.interactive_claude.verbose is True
+
+
+def test_config_set_interactive_claude_permission_mode() -> None:
+    """Test setting interactive_claude.permission_mode config value."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(git=git_ops)
+
+        result = runner.invoke(
+            cli, ["config", "set", "interactive_claude.permission_mode", "plan"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set interactive_claude.permission_mode=plan" in result.output
+
+        # Verify it was saved
+        saved_config = test_ctx.erk_installation.load_config()
+        assert saved_config.interactive_claude.permission_mode == "plan"
+
+
+def test_config_set_interactive_claude_model() -> None:
+    """Test setting interactive_claude.model config value."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(git=git_ops)
+
+        result = runner.invoke(
+            cli, ["config", "set", "interactive_claude.model", "claude-opus-4-5"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set interactive_claude.model=claude-opus-4-5" in result.output
+
+        # Verify it was saved
+        saved_config = test_ctx.erk_installation.load_config()
+        assert saved_config.interactive_claude.model == "claude-opus-4-5"
+
+
+def test_config_get_interactive_claude_verbose() -> None:
+    """Test getting interactive_claude.verbose config value."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(git=git_ops)
+
+        result = runner.invoke(cli, ["config", "get", "interactive_claude.verbose"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "false" in result.output.strip()
+
+
+def test_config_set_interactive_claude_with_local_flag_fails() -> None:
+    """Test that interactive_claude keys cannot be set with --local flag."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo_dir = env.setup_repo_structure()
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["config", "set", "--local", "interactive_claude.verbose", "true"], obj=test_ctx
+        )
+
+        assert result.exit_code == 1
+        assert "can only be set at global level" in result.output
+
+
+def test_config_keys_includes_interactive_claude() -> None:
+    """Test that config keys includes interactive_claude keys."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context()
+
+        result = runner.invoke(cli, ["config", "keys"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "Interactive Claude configuration keys:" in result.output
+        assert "interactive_claude.verbose" in result.output
+        assert "interactive_claude.permission_mode" in result.output
+        assert "interactive_claude.dangerous" in result.output
+        assert "interactive_claude.allow_dangerous" in result.output
+        assert "interactive_claude.model" in result.output
+
+
+def test_config_list_shows_interactive_claude() -> None:
+    """Test that config list shows interactive_claude section."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo_dir = env.setup_repo_structure()
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(cli, ["config", "list"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "Interactive Claude configuration:" in result.output
+        assert "interactive_claude.verbose=" in result.output
+        assert "interactive_claude.permission_mode=" in result.output
+        assert "interactive_claude.dangerous=" in result.output
+        assert "interactive_claude.allow_dangerous=" in result.output
