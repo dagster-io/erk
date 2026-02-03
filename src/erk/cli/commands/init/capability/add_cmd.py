@@ -22,6 +22,7 @@ def add_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
     Project-level capabilities require being in a git repository.
     User-level capabilities can be installed from anywhere.
 
+    \b
     Examples:
         erk init capability add learned-docs
         erk init capability add learned-docs dignified-python
