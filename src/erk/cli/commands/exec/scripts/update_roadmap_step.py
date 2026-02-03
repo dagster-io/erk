@@ -60,6 +60,15 @@ def _find_step_pr(body: str, step_id: str) -> tuple[str | None, bool]:
     return None, False
 
 
+def _compute_display_status(new_pr: str) -> str:
+    """Compute the display status from a PR reference value."""
+    if new_pr.startswith("#"):
+        return "done"
+    if new_pr.startswith("plan #"):
+        return "in-progress"
+    return "pending"
+
+
 def _replace_step_pr_in_body(body: str, step_id: str, new_pr: str) -> str | None:
     """Replace the PR cell for a step in the raw markdown body.
 
@@ -80,17 +89,8 @@ def _replace_step_pr_in_body(body: str, step_id: str, new_pr: str) -> str | None
     )
 
     match_7col = pattern_7col.search(body)
-    if match_7col is not None:
-        # Determine display status from PR value
-        if new_pr.startswith("#"):
-            display_status = "done"
-        elif new_pr.startswith("plan #"):
-            display_status = "in-progress"
-        else:
-            display_status = "pending"
-
-        # Build replacement: preserve step_id, description, type, issue, depends_on
-        # and set computed status and pr
+    if match_7col:
+        display_status = _compute_display_status(new_pr)
         pr_display = new_pr if new_pr else "-"
         replacement = (
             f"|{match_7col.group(1)}|{match_7col.group(2)}|{match_7col.group(3)}|"
@@ -110,16 +110,7 @@ def _replace_step_pr_in_body(body: str, step_id: str, new_pr: str) -> str | None
     if match_4col is None:
         return None
 
-    # Determine display status from PR value
-    if new_pr.startswith("#"):
-        display_status = "done"
-    elif new_pr.startswith("plan #"):
-        display_status = "in-progress"
-    else:
-        display_status = "pending"
-
-    # Build replacement: preserve step_id cell and description cell,
-    # set computed status and pr
+    display_status = _compute_display_status(new_pr)
     pr_display = new_pr if new_pr else "-"
     replacement = f"|{match_4col.group(1)}|{match_4col.group(2)}| {display_status} | {pr_display} |"
 
