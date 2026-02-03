@@ -70,6 +70,7 @@
 - **[parallel-agent-pattern.md](parallel-agent-pattern.md)** — launching multiple agents concurrently, using Task with run_in_background, collecting results with TaskOutput, running agents in parallel
 - **[parameter-threading-pattern.md](parameter-threading-pattern.md)** — adding parameters to multi-layer commands (skill → command → exec), working with slash commands that call erk exec, understanding parameter flow through command layers
 - **[pathlib-symlinks.md](pathlib-symlinks.md)** — Writing file validation code, Debugging unexpected path resolution behavior, Working with symlinked configuration files
+- **[permission-modes.md](permission-modes.md)** — Working with interactive agent permissions, Implementing Codex or Claude backend integration, Modifying permission mode configuration
 - **[phase-zero-detection-pattern.md](phase-zero-detection-pattern.md)** — adding conditional execution to phase-based commands, implementing mode variants in CLI commands, modifying pr-address or similar multi-phase workflows
 - **[pipeline-transformation-patterns.md](pipeline-transformation-patterns.md)** — designing data transformation pipelines, deciding when to enrich vs filter data, troubleshooting lost metadata in pipelines
 - **[plan-context-integration.md](plan-context-integration.md)** — using PlanContextProvider for PR generation, extracting plan content from branches, understanding how PR descriptions get plan context
@@ -83,7 +84,6 @@
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns
 - **[re-export-pattern.md](re-export-pattern.md)** — Creating public API surface from internal gateway modules, Simplifying import paths for commonly used types, Working with ruff import linting
 - **[roadmap-mutation-semantics.md](roadmap-mutation-semantics.md)** — modifying objective roadmap update logic, understanding status inference when updating roadmap steps, working with objective-roadmap-update command
-- **[permission-modes.md](permission-modes.md)** — Working with interactive agent permissions, Implementing Codex or Claude backend integration, Modifying permission mode configuration
 - **[selection-preservation-by-value.md](selection-preservation-by-value.md)** — working with auto-refreshing lists or tables in UI components, implementing selection state that should persist across data updates, building real-time dashboard views with user-selected items, debugging cursor position resets in DataTable or list components
 - **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit
 - **[session-discovery.md](session-discovery.md)** — finding Claude Code sessions for a plan, implementing session lookup from GitHub issues, understanding dual-source discovery patterns, working with gist-based session storage, downloading remote sessions for learn workflow
