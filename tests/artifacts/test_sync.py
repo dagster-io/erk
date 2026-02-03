@@ -318,9 +318,7 @@ def test_sync_commands_only_syncs_erk_namespace(tmp_path: Path) -> None:
 
     target_dir = tmp_path / "target" / "commands"
 
-    copied, _ = _sync_commands(
-        source_dir, target_dir, installed_capabilities=frozenset()
-    )
+    copied, _ = _sync_commands(source_dir, target_dir, installed_capabilities=frozenset())
 
     # Should copy exactly 1 file (the erk namespace command)
     assert copied == 1
@@ -349,9 +347,7 @@ def test_sync_commands_handles_nested_directories(tmp_path: Path) -> None:
 
     target_dir = tmp_path / "target" / "commands"
 
-    copied, synced = _sync_commands(
-        source_dir, target_dir, installed_capabilities=frozenset()
-    )
+    copied, synced = _sync_commands(source_dir, target_dir, installed_capabilities=frozenset())
 
     # Should copy both files (flat + nested)
     assert copied == 2

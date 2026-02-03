@@ -15,9 +15,7 @@ class TestIsLearnedDocsAvailable:
         docs_dir.mkdir(parents=True)
 
         with (
-            patch(
-                "erk.cli.capability_check.RealGitRepoOps"
-            ) as mock_repo_ops_cls,
+            patch("erk.cli.capability_check.RealGitRepoOps") as mock_repo_ops_cls,
         ):
             mock_repo_ops = mock_repo_ops_cls.return_value
             mock_repo_ops.get_git_common_dir.return_value = tmp_path / ".git"
@@ -30,9 +28,7 @@ class TestIsLearnedDocsAvailable:
     def test_returns_false_when_docs_learned_missing(self, tmp_path: Path) -> None:
         """Returns False when docs/learned/ does not exist."""
         with (
-            patch(
-                "erk.cli.capability_check.RealGitRepoOps"
-            ) as mock_repo_ops_cls,
+            patch("erk.cli.capability_check.RealGitRepoOps") as mock_repo_ops_cls,
         ):
             mock_repo_ops = mock_repo_ops_cls.return_value
             mock_repo_ops.get_git_common_dir.return_value = tmp_path / ".git"
@@ -45,9 +41,7 @@ class TestIsLearnedDocsAvailable:
     def test_returns_false_outside_git_repo(self) -> None:
         """Returns False when not in a git repository."""
         with (
-            patch(
-                "erk.cli.capability_check.RealGitRepoOps"
-            ) as mock_repo_ops_cls,
+            patch("erk.cli.capability_check.RealGitRepoOps") as mock_repo_ops_cls,
         ):
             mock_repo_ops = mock_repo_ops_cls.return_value
             mock_repo_ops.get_git_common_dir.return_value = None
