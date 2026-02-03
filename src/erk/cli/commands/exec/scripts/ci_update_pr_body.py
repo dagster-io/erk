@@ -65,6 +65,7 @@ class UpdateSuccess:
 
     success: bool
     pr_number: int
+    summary_source: Literal["ai", "commit-message", "minimal-fallback"]
 
 
 @dataclass(frozen=True)
@@ -109,6 +110,78 @@ def _build_prompt(
 ```
 
 Generate a commit message for this diff:"""
+
+
+def _try_ai_summary(
+    *,
+    executor: PromptExecutor,
+    repo_root: Path,
+    diff_content: str,
+    current_branch: str,
+    parent_branch: str,
+) -> str | None:
+    """Try to generate AI summary from diff.
+
+    Args:
+        executor: PromptExecutor for Claude
+        repo_root: Repository root path
+        diff_content: Truncated diff content
+        current_branch: Current branch name
+        parent_branch: Parent branch name
+
+    Returns:
+        AI-generated summary on success, None on any failure
+    """
+    prompt = _build_prompt(diff_content, current_branch, parent_branch, repo_root)
+    result = executor.execute_prompt(
+        prompt, model="haiku", tools=None, cwd=repo_root, system_prompt=None, dangerous=False
+    )
+
+    if not result.success:
+        return None
+
+    if not result.output or not result.output.strip():
+        return None
+
+    return result.output
+
+
+def _get_fallback_summary(git: Git, repo_root: Path, parent_branch: str) -> str | None:
+    """Get fallback summary from commit messages.
+
+    Filters out noise commits like .worker-impl/ deletions and CI triggers.
+
+    Args:
+        git: Git interface
+        repo_root: Repository root path
+        parent_branch: Parent branch name
+
+    Returns:
+        Joined meaningful commit messages as bullets, or None if none found
+    """
+    commit_messages = git.commit.get_commit_messages_since(repo_root, parent_branch)
+
+    # Filter out noise commits
+    noise_prefixes = [
+        "Remove .worker-impl/",
+        "Trigger CI workflows",
+        "Update plan for issue",
+        "Add plan for issue",
+    ]
+
+    meaningful_messages = []
+    for message in commit_messages:
+        if not any(message.startswith(prefix) for prefix in noise_prefixes):
+            meaningful_messages.append(message)
+
+    if not meaningful_messages:
+        return None
+
+    # Format as bullet list if multiple commits
+    if len(meaningful_messages) == 1:
+        return meaningful_messages[0]
+
+    return "\n".join(f"- {msg}" for msg in meaningful_messages)
 
 
 def _build_pr_body(
@@ -158,7 +231,7 @@ def _update_pr_body_impl(
     run_url: str | None,
     plans_repo: str | None,
 ) -> UpdateSuccess | UpdateError:
-    """Implementation of PR body update.
+    """Implementation of PR body update with fallback logic.
 
     Args:
         git: Git interface
@@ -171,7 +244,7 @@ def _update_pr_body_impl(
         plans_repo: Target repo in "owner/repo" format for cross-repo plans
 
     Returns:
-        UpdateSuccess on success, UpdateError on failure
+        UpdateSuccess with summary_source on success, UpdateError only for unrecoverable errors
     """
     # Get current branch
     current_branch = git.branch.get_current_branch(repo_root)
@@ -195,60 +268,45 @@ def _update_pr_body_impl(
 
     pr_number = pr_result.number
 
-    # Get PR diff
-    try:
-        pr_diff = github.get_pr_diff(repo_root, pr_number)
-    except RuntimeError as e:
-        return UpdateError(
-            success=False,
-            error="diff-fetch-failed",
-            message=f"Failed to get PR diff: {e}",
-            stderr=None,
-        )
-
-    if not pr_diff.strip():
-        return UpdateError(
-            success=False,
-            error="empty-diff",
-            message="PR diff is empty",
-            stderr=None,
-        )
-
-    # Truncate diff if needed
-    diff_content, _was_truncated = truncate_diff(pr_diff)
-
     # Get parent branch for context
     parent_branch = git.branch.detect_trunk_branch(repo_root)
 
-    # Generate summary using Claude
-    prompt = _build_prompt(diff_content, current_branch, parent_branch, repo_root)
-    result = executor.execute_prompt(
-        prompt, model="haiku", tools=None, cwd=repo_root, system_prompt=None, dangerous=False
-    )
+    # Try to get PR diff (non-fatal if fails)
+    diff_content: str | None = None
+    try:
+        pr_diff = github.get_pr_diff(repo_root, pr_number)
+        if pr_diff.strip():
+            diff_content, _was_truncated = truncate_diff(pr_diff)
+    except RuntimeError:
+        # Diff fetch failed - will fall back to commit messages
+        pass
 
-    # Separate failure modes for better diagnostics
-    if not result.success:
-        stderr_preview = result.error[:500] if result.error else None
-        return UpdateError(
-            success=False,
-            error="claude-execution-failed",
-            message="Claude CLI returned non-zero exit code",
-            stderr=stderr_preview,
+    # Tier 1: Try AI-generated summary (only if diff is available)
+    summary: str | None = None
+    summary_source: Literal["ai", "commit-message", "minimal-fallback"] = "ai"
+
+    if diff_content is not None:
+        summary = _try_ai_summary(
+            executor=executor,
+            repo_root=repo_root,
+            diff_content=diff_content,
+            current_branch=current_branch,
+            parent_branch=parent_branch,
         )
 
-    # Check for empty output (success=True but no content)
-    if not result.output or not result.output.strip():
-        stderr_preview = result.error[:500] if result.error else None
-        return UpdateError(
-            success=False,
-            error="claude-empty-output",
-            message="Claude returned empty output (check API quota, rate limits, or token)",
-            stderr=stderr_preview,
-        )
+    # Tier 2: Fall back to commit messages
+    if summary is None:
+        summary = _get_fallback_summary(git, repo_root, parent_branch)
+        summary_source = "commit-message"
+
+    # Tier 3: Last resort minimal message
+    if summary is None:
+        summary = "Implementation complete. See commit history for details."
+        summary_source = "minimal-fallback"
 
     # Build full PR body
     pr_body = _build_pr_body(
-        summary=result.output,
+        summary=summary,
         pr_number=pr_number,
         issue_number=issue_number,
         run_id=run_id,
@@ -256,7 +314,7 @@ def _update_pr_body_impl(
         plans_repo=plans_repo,
     )
 
-    # Update PR body
+    # Update PR body (only truly unrecoverable error)
     try:
         github.update_pr_body(repo_root, pr_number, pr_body)
     except RuntimeError as e:
@@ -267,7 +325,7 @@ def _update_pr_body_impl(
             stderr=None,
         )
 
-    return UpdateSuccess(success=True, pr_number=pr_number)
+    return UpdateSuccess(success=True, pr_number=pr_number, summary_source=summary_source)
 
 
 @click.command(name="ci-update-pr-body")

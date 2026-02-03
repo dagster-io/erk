@@ -23,6 +23,7 @@ This ensures the PR body is always updated, regardless of Claude/diff failures.
 ### `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`
 
 1. **Add `summary_source` field to `UpdateSuccess`**:
+
    ```python
    @dataclass(frozen=True)
    class UpdateSuccess:
@@ -51,12 +52,14 @@ This ensures the PR body is always updated, regardless of Claude/diff failures.
 ### `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py`
 
 **Update existing tests** that now succeed via fallback instead of returning errors:
+
 - `test_impl_empty_diff` — now succeeds with commit-message or minimal-fallback source
 - `test_impl_claude_failure` — now succeeds with commit-message or minimal-fallback source
 - `test_impl_claude_failure_truncates_long_stderr` — remove (error path no longer exists)
 - `test_impl_claude_empty_output` — now succeeds with fallback
 
 **Add new tests**:
+
 - `test_get_fallback_summary_single_commit` — one meaningful commit returns it
 - `test_get_fallback_summary_filters_noise` — filters .worker-impl/CI noise commits
 - `test_get_fallback_summary_no_meaningful` — all noise returns None

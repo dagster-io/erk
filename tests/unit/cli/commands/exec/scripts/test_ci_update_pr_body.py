@@ -101,7 +101,7 @@ def test_build_pr_body_omits_workflow_link_when_not_provided() -> None:
 
 
 def test_impl_success(tmp_path: Path) -> None:
-    """Test successful PR body update."""
+    """Test successful PR body update with AI summary."""
     # Create FakeGit with current branch
     git = FakeGit(current_branches={tmp_path: "feature-branch"})
 
@@ -157,6 +157,7 @@ def test_impl_success(tmp_path: Path) -> None:
     assert isinstance(result, UpdateSuccess)
     assert result.success is True
     assert result.pr_number == 123
+    assert result.summary_source == "ai"
 
 
 def test_impl_no_pr_for_branch(tmp_path: Path) -> None:
@@ -183,7 +184,7 @@ def test_impl_no_pr_for_branch(tmp_path: Path) -> None:
 
 
 def test_impl_empty_diff(tmp_path: Path) -> None:
-    """Test error when PR diff is empty."""
+    """Test that empty diff falls back to minimal fallback."""
     git = FakeGit(current_branches={tmp_path: "feature-branch"})
 
     pr_details = PRDetails(
@@ -232,13 +233,15 @@ def test_impl_empty_diff(tmp_path: Path) -> None:
         plans_repo=None,
     )
 
-    assert isinstance(result, UpdateError)
-    assert result.success is False
-    assert result.error == "empty-diff"
+    # Now succeeds with minimal fallback
+    assert isinstance(result, UpdateSuccess)
+    assert result.success is True
+    assert result.pr_number == 123
+    assert result.summary_source == "minimal-fallback"
 
 
 def test_impl_claude_failure(tmp_path: Path) -> None:
-    """Test error when Claude execution fails."""
+    """Test that Claude failure falls back to minimal fallback."""
     git = FakeGit(current_branches={tmp_path: "feature-branch"})
 
     pr_details = PRDetails(
@@ -289,77 +292,15 @@ def test_impl_claude_failure(tmp_path: Path) -> None:
         plans_repo=None,
     )
 
-    assert isinstance(result, UpdateError)
-    assert result.success is False
-    assert result.error == "claude-execution-failed"
-    assert "non-zero exit code" in result.message
-    assert result.stderr == "API error"
-
-
-def test_impl_claude_failure_truncates_long_stderr(tmp_path: Path) -> None:
-    """Test that long stderr is truncated to 500 characters."""
-    git = FakeGit(current_branches={tmp_path: "feature-branch"})
-
-    pr_details = PRDetails(
-        number=123,
-        url="https://github.com/owner/repo/pull/123",
-        title="Test PR",
-        body="Old body",
-        state="OPEN",
-        is_draft=False,
-        base_ref_name="main",
-        head_ref_name="feature-branch",
-        is_cross_repository=False,
-        mergeable="MERGEABLE",
-        merge_state_status="CLEAN",
-        owner="test-owner",
-        repo="test-repo",
-    )
-
-    github = FakeGitHub(
-        prs={
-            "feature-branch": PullRequestInfo(
-                number=123,
-                state="OPEN",
-                url="https://github.com/owner/repo/pull/123",
-                is_draft=False,
-                title="Test PR",
-                checks_passing=True,
-                owner="test-owner",
-                repo="test-repo",
-            )
-        },
-        pr_details={123: pr_details},
-        pr_diffs={123: "+some diff"},
-    )
-
-    # Create a very long error message (> 500 chars)
-    long_error = "x" * 600
-    executor = FakePromptExecutor(
-        prompt_results=[PromptResult(success=False, output="", error=long_error)]
-    )
-
-    result = _update_pr_body_impl(
-        git=git,
-        github=github,
-        executor=executor,
-        repo_root=tmp_path,
-        issue_number=456,
-        run_id=None,
-        run_url=None,
-        plans_repo=None,
-    )
-
-    assert isinstance(result, UpdateError)
-    assert result.success is False
-    assert result.error == "claude-execution-failed"
-    # Stderr should be truncated to 500 characters
-    assert result.stderr is not None
-    assert len(result.stderr) == 500
+    # Now succeeds with minimal fallback
+    assert isinstance(result, UpdateSuccess)
+    assert result.success is True
+    assert result.pr_number == 123
+    assert result.summary_source == "minimal-fallback"
 
 
 def test_impl_claude_empty_output(tmp_path: Path) -> None:
-    """Test error when Claude returns success but with empty output."""
+    """Test that Claude empty output falls back to minimal fallback."""
     git = FakeGit(current_branches={tmp_path: "feature-branch"})
 
     pr_details = PRDetails(
@@ -410,11 +351,321 @@ def test_impl_claude_empty_output(tmp_path: Path) -> None:
         plans_repo=None,
     )
 
-    assert isinstance(result, UpdateError)
-    assert result.success is False
-    assert result.error == "claude-empty-output"
-    assert "empty output" in result.message.lower()
-    assert result.stderr is None
+    # Now succeeds with minimal fallback
+    assert isinstance(result, UpdateSuccess)
+    assert result.success is True
+    assert result.pr_number == 123
+    assert result.summary_source == "minimal-fallback"
+
+
+# ============================================================================
+# 2B. Fallback Tests
+# ============================================================================
+
+
+def test_get_fallback_summary_single_commit(tmp_path: Path) -> None:
+    """Test _get_fallback_summary with a single meaningful commit."""
+    from erk.cli.commands.exec.scripts.ci_update_pr_body import _get_fallback_summary
+
+    git = FakeGit(commit_messages_since={(tmp_path, "main"): ["Add new feature for user auth"]})
+
+    result = _get_fallback_summary(git, tmp_path, "main")
+
+    assert result == "Add new feature for user auth"
+
+
+def test_get_fallback_summary_filters_noise(tmp_path: Path) -> None:
+    """Test _get_fallback_summary filters out noise commits."""
+    from erk.cli.commands.exec.scripts.ci_update_pr_body import _get_fallback_summary
+
+    git = FakeGit(
+        commit_messages_since={
+            (tmp_path, "main"): [
+                "Add new feature",
+                "Remove .worker-impl/ after implementation",
+                "Trigger CI workflows",
+                "Update plan for issue #123",
+            ]
+        }
+    )
+
+    result = _get_fallback_summary(git, tmp_path, "main")
+
+    assert result == "Add new feature"
+
+
+def test_get_fallback_summary_no_meaningful(tmp_path: Path) -> None:
+    """Test _get_fallback_summary returns None when all commits are noise."""
+    from erk.cli.commands.exec.scripts.ci_update_pr_body import _get_fallback_summary
+
+    git = FakeGit(
+        commit_messages_since={
+            (tmp_path, "main"): [
+                "Remove .worker-impl/ after implementation",
+                "Trigger CI workflows",
+            ]
+        }
+    )
+
+    result = _get_fallback_summary(git, tmp_path, "main")
+
+    assert result is None
+
+
+def test_get_fallback_summary_multiple(tmp_path: Path) -> None:
+    """Test _get_fallback_summary formats multiple commits as bullets."""
+    from erk.cli.commands.exec.scripts.ci_update_pr_body import _get_fallback_summary
+
+    git = FakeGit(
+        commit_messages_since={
+            (tmp_path, "main"): [
+                "Add user authentication",
+                "Add password reset feature",
+                "Update tests",
+            ]
+        }
+    )
+
+    result = _get_fallback_summary(git, tmp_path, "main")
+
+    assert result == "- Add user authentication\n- Add password reset feature\n- Update tests"
+
+
+def test_impl_claude_failure_falls_back_to_commit_message(tmp_path: Path) -> None:
+    """Test that Claude failure falls back to commit message when available."""
+    git = FakeGit(
+        current_branches={tmp_path: "feature-branch"},
+        commit_messages_since={(tmp_path, "main"): ["Add feature for user auth"]},
+    )
+
+    pr_details = PRDetails(
+        number=123,
+        url="https://github.com/owner/repo/pull/123",
+        title="Test PR",
+        body="Old body",
+        state="OPEN",
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name="feature-branch",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+    )
+
+    github = FakeGitHub(
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
+        pr_details={123: pr_details},
+        pr_diffs={123: "+some diff"},
+    )
+
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=False, output="", error="API error")]
+    )
+
+    result = _update_pr_body_impl(
+        git=git,
+        github=github,
+        executor=executor,
+        repo_root=tmp_path,
+        issue_number=456,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
+    )
+
+    assert isinstance(result, UpdateSuccess)
+    assert result.success is True
+    assert result.pr_number == 123
+    assert result.summary_source == "commit-message"
+
+
+def test_impl_diff_unavailable_falls_back(tmp_path: Path) -> None:
+    """Test that diff fetch failure falls back to commit message."""
+    git = FakeGit(
+        current_branches={tmp_path: "feature-branch"},
+        commit_messages_since={(tmp_path, "main"): ["Fix critical bug in auth"]},
+    )
+
+    pr_details = PRDetails(
+        number=123,
+        url="https://github.com/owner/repo/pull/123",
+        title="Test PR",
+        body="Old body",
+        state="OPEN",
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name="feature-branch",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+    )
+
+    # Configure FakeGitHub to raise RuntimeError when getting diff
+    github = FakeGitHub(
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
+        pr_details={123: pr_details},
+        pr_diff_error="Diff too large",
+    )
+
+    executor = FakePromptExecutor()
+
+    result = _update_pr_body_impl(
+        git=git,
+        github=github,
+        executor=executor,
+        repo_root=tmp_path,
+        issue_number=456,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
+    )
+
+    assert isinstance(result, UpdateSuccess)
+    assert result.success is True
+    assert result.pr_number == 123
+    assert result.summary_source == "commit-message"
+
+
+def test_impl_all_fallbacks_fail_uses_minimal(tmp_path: Path) -> None:
+    """Test that when all fallbacks fail, minimal message is used."""
+    git = FakeGit(
+        current_branches={tmp_path: "feature-branch"},
+        commit_messages_since={(tmp_path, "main"): []},  # No commits
+    )
+
+    pr_details = PRDetails(
+        number=123,
+        url="https://github.com/owner/repo/pull/123",
+        title="Test PR",
+        body="Old body",
+        state="OPEN",
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name="feature-branch",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+    )
+
+    github = FakeGitHub(
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
+        pr_details={123: pr_details},
+        pr_diffs={123: ""},  # Empty diff
+    )
+
+    executor = FakePromptExecutor()
+
+    result = _update_pr_body_impl(
+        git=git,
+        github=github,
+        executor=executor,
+        repo_root=tmp_path,
+        issue_number=456,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
+    )
+
+    assert isinstance(result, UpdateSuccess)
+    assert result.success is True
+    assert result.pr_number == 123
+    assert result.summary_source == "minimal-fallback"
+
+
+def test_impl_success_reports_ai_source(tmp_path: Path) -> None:
+    """Test that successful AI generation reports source='ai'."""
+    git = FakeGit(current_branches={tmp_path: "feature-branch"})
+
+    pr_details = PRDetails(
+        number=123,
+        url="https://github.com/owner/repo/pull/123",
+        title="Test PR",
+        body="Old body",
+        state="OPEN",
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name="feature-branch",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+    )
+
+    github = FakeGitHub(
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
+        pr_details={123: pr_details},
+        pr_diffs={123: "+add feature"},
+    )
+
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="AI generated summary", error=None)]
+    )
+
+    result = _update_pr_body_impl(
+        git=git,
+        github=github,
+        executor=executor,
+        repo_root=tmp_path,
+        issue_number=456,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
+    )
+
+    assert isinstance(result, UpdateSuccess)
+    assert result.success is True
+    assert result.summary_source == "ai"
 
 
 # ============================================================================
@@ -636,10 +887,12 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
     # Verify expected keys
     assert "success" in output
     assert "pr_number" in output
+    assert "summary_source" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
     assert isinstance(output["pr_number"], int)
+    assert isinstance(output["summary_source"], str)
 
 
 def test_cli_json_output_structure_error(tmp_path: Path) -> None:
