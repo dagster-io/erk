@@ -1,6 +1,6 @@
 ---
 title: Gateway ABC Implementation Checklist
-last_audited: "2026-02-03 15:15 PT"
+last_audited: "2026-02-03"
 audit_result: edited
 read_when:
   - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
@@ -297,33 +297,33 @@ class FakeGitHub(GitHub):
 
 ```python
 # real.py - Check existence first, return early if missing
-def delete_branch(self, repo_root: Path, branch_name: str) -> None:
+def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
     """Delete a local branch.
 
     Idempotent: if branch doesn't exist, returns successfully.
     """
-    # LBYL check - does branch exist?
-    result = run_subprocess_with_context(
-        ["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
-        cwd=repo_root,
+    # LBYL: Check if branch exists before attempting delete
+    check_result = run_subprocess_with_context(
+        cmd=["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
+        operation_context=f"check if branch '{branch_name}' exists",
+        cwd=cwd,
         check=False,
     )
-
-    if result.returncode != 0:
-        # Branch doesn't exist - already in desired state
+    if check_result.returncode != 0:
+        # Branch doesn't exist - goal achieved
         return
 
-    # Branch exists - proceed with deletion
+    flag = "-D" if force else "-d"
     run_subprocess_with_context(
-        ["git", "branch", "-D", branch_name],
-        cwd=repo_root,
-        check=True,
+        cmd=["git", "branch", flag, branch_name],
+        operation_context=f"delete branch '{branch_name}'",
+        cwd=cwd,
     )
 ```
 
 **Key principle**: Use LBYL _to implement_ idempotency for operations that would otherwise fail on missing resources. This is different from operations that are _already_ idempotent (like `git fetch`), which don't need LBYL checks.
 
-See the canonical implementation at `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:38-59`.
+See the canonical implementation at `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:59-80`.
 
 **5-file verification checklist** for idempotent behavioral changes:
 
@@ -375,15 +375,14 @@ class RealGitHub(GitHub):
         return self._issues
 
     @classmethod
-    def for_test(cls, *, time: Time | None = None, repo_info: RepoInfo | None = None) -> "RealGitHub":
+    def for_test(cls, time: Time | None = None, repo_info: RepoInfo | None = None) -> "RealGitHub":
         """Factory for tests that need Real implementation with sensible defaults."""
+        from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
         from erk_shared.gateway.time.fake import FakeTime
-        from erk_shared.gateway.github.issues import RealGitHubIssues
-        effective_time = time if time is not None else FakeTime()
         return cls(
-            time=effective_time,
+            time=time if time is not None else FakeTime(),
             repo_info=repo_info,
-            issues=RealGitHubIssues(target_repo=None, time=effective_time),
+            issues=FakeGitHubIssues(),
         )
 ```
 
@@ -440,18 +439,28 @@ class PrintingGitHub(GitHub):
 
 When adding methods that benefit from testability (lock waiting, retry logic, timeouts), consider injecting dependencies via constructor rather than adding parameters to each method.
 
-**Example Pattern** (from `RealGit`):
+**Example Pattern** (from `RealGitBranchOps`):
+
+```python
+class RealGitBranchOps(GitBranchOps):
+    def __init__(self, *, time: Time) -> None:
+        self._time = time
+
+    def checkout_branch(self, cwd: Path, branch: str) -> None:
+        # Use injected dependency before operation
+        wait_for_index_lock(cwd, self._time)
+        # ... actual git operation
+```
+
+The parent `RealGit` creates subgateways with the shared Time dependency:
 
 ```python
 class RealGit(Git):
-    def __init__(self, *, time: Time | None = None) -> None:
-        # Accept optional dependency, default to production implementation
+    def __init__(self, time: Time | None = None) -> None:
         self._time = time if time is not None else RealTime()
-
-    def checkout_branch(self, repo_root: Path, branch: str) -> None:
-        # Use injected dependency before operation
-        wait_for_index_lock(repo_root, self._time)
-        # ... actual git operation
+        self._branch = RealGitBranchOps(time=self._time)
+        self._remote = RealGitRemoteOps(time=self._time)
+        # ... other subgateways
 ```
 
 **Benefits**:
@@ -474,14 +483,14 @@ The BranchManager abstraction handles Graphite vs Git differences. To enforce th
 - `GitBranchOps`: Branch mutations from Git ABC
 - `GraphiteBranchOps`: Branch mutations from Graphite ABC
 
-Query methods remain on the main gateways for convenience.
+All methods (both queries and mutations) now live on subgateways. The main Git ABC is a pure facade with only property accessors.
 
 ### Sub-Gateway Structure
 
 ```
 packages/erk-shared/src/erk_shared/gateway/git/
-├── abc.py             # Main Git ABC (queries + branch_ops property)
-├── branch_ops/        # Sub-gateway for mutations
+├── abc.py             # Main Git ABC (pure facade with property accessors)
+├── branch_ops/        # Sub-gateway for branch operations
 │   ├── __init__.py
 │   ├── abc.py         # GitBranchOps ABC
 │   ├── real.py
@@ -498,28 +507,32 @@ The main gateway ABC exposes the sub-gateway via a property:
 class Git(ABC):
     @property
     @abstractmethod
-    def branch_ops(self) -> GitBranchOps:
-        """Return the branch operations sub-gateway."""
+    def branch(self) -> GitBranchOps:
+        """Access branch operations subgateway."""
         ...
 
-    # Query methods remain here
-    @abstractmethod
-    def get_current_branch(self, cwd: Path) -> str:
-        ...
+    # Git ABC is now a pure facade - all methods live on subgateways
+    # Other property accessors: worktree, remote, commit, status, rebase, tag, repo, analysis, config
 ```
 
 ### Query vs Mutation Split
 
-| Category | Where       | Examples                                                                 |
-| -------- | ----------- | ------------------------------------------------------------------------ |
-| Query    | Main ABC    | `get_current_branch()`, `list_local_branches()`, `get_repository_root()` |
-| Mutation | Sub-gateway | `create_branch()`, `delete_branch()`, `checkout_branch()`                |
+The Git ABC is now a **pure facade** -- it contains ONLY property accessors to subgateways. Both query and mutation methods live on subgateways:
 
-### Why Split?
+| Subgateway    | Property accessor | Examples                                                     |
+| ------------- | ----------------- | ------------------------------------------------------------ |
+| `branch_ops/` | `git.branch`      | `get_current_branch()`, `create_branch()`, `delete_branch()` |
+| `repo_ops/`   | `git.repo`        | `get_repository_root()`                                      |
+| `remote_ops/` | `git.remote`      | `push_to_remote()`, `fetch()`                                |
+| `worktree/`   | `git.worktree`    | `list_worktrees()`, `add_worktree()`                         |
+| `rebase_ops/` | `git.rebase`      | `rebase_onto()`, `rebase_abort()`                            |
+
+### Why Pure Facade?
 
 1. **Enforcement**: Callers can't bypass BranchManager to mutate branches directly
-2. **Clarity**: Clear distinction between read and write operations
-3. **Testing**: FakeBranchManager can track mutations without full gateway wiring
+2. **Clear ownership**: Each operation belongs to exactly one subgateway
+3. **Discoverability**: Callers navigate through properties (IDE autocomplete)
+4. **Testing**: FakeBranchManager can track mutations without full gateway wiring
 
 ### Implementation Checklist
 
@@ -537,21 +550,18 @@ Fakes need special handling to share state between main gateway and sub-gateway:
 
 ```python
 class FakeGit(Git):
-    def __init__(self) -> None:
-        self._branch_ops = FakeGitBranchOps()
-
     @property
-    def branch_ops(self) -> GitBranchOps:
-        return self._branch_ops
+    def branch(self) -> GitBranchOps:
+        return self._branch_gateway
 
-    @classmethod
-    def create_linked_branch_ops(cls) -> tuple["FakeGit", FakeGitBranchOps]:
-        """Create FakeGit with linked FakeGitBranchOps for testing.
+    def create_linked_branch_ops(self) -> FakeGitBranchOps:
+        """Return the FakeGitBranchOps linked to this FakeGit's state.
 
-        Returns both so tests can assert on branch_ops mutations.
+        The returned FakeGitBranchOps shares mutable state and mutation tracking
+        with this FakeGit instance. This allows tests to check FakeGit properties
+        like deleted_branches while mutations happen through BranchManager.
         """
-        fake = cls()
-        return fake, fake._branch_ops
+        ...
 ```
 
 ### Reference Implementations
@@ -603,11 +613,7 @@ Pass parent methods as `Callable` parameters in the constructor:
 
 ```python
 class RealGitRebaseOps(GitRebaseOps):
-    def __init__(
-        self,
-        get_git_common_dir: Callable[[Path], Path],
-        get_conflicted_files: Callable[[Path], list[str]],
-    ) -> None:
+    def __init__(self, get_git_common_dir: Callable, get_conflicted_files: Callable) -> None:
         self._get_git_common_dir = get_git_common_dir
         self._get_conflicted_files = get_conflicted_files
 ```

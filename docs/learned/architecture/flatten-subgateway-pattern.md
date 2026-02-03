@@ -1,5 +1,7 @@
 ---
 title: Flatten Subgateway Pattern
+last_audited: "2026-02-03"
+audit_result: edited
 read_when:
   - "creating or migrating subgateways"
   - "exposing subgateway operations through parent gateway"
@@ -33,7 +35,7 @@ The pattern requires implementing the property across all 5 gateway layers:
 
 The Git gateway exposes branch operations through the `branch` property. See the canonical implementation in `packages/erk-shared/src/erk_shared/gateway/git/`.
 
-### 1. ABC Layer (abc.py:19-21, 105-109)
+### 1. ABC Layer (abc.py)
 
 ```python
 from typing import TYPE_CHECKING
@@ -51,7 +53,7 @@ class Git(ABC):
 
 **Key technique:** `TYPE_CHECKING` guard prevents circular imports while maintaining type safety. The import only exists during type checking, not at runtime.
 
-### 2. Real Layer (real.py:37, 44-47)
+### 2. Real Layer (real.py)
 
 ```python
 class RealGit(Git):
@@ -68,25 +70,34 @@ class RealGit(Git):
 
 **Pattern:** Instantiate the concrete subgateway in `__init__`, store in a private attribute, return via property. Pass shared dependencies (like `time`) to maintain consistency across gateways.
 
-### 3. Fake Layer (fake.py:271-276, 302-305)
+### 3. Fake Layer (fake.py)
 
 ```python
 class FakeGit(Git):
-    def __init__(self) -> None:
-        # Shared state containers
-        self._worktrees: dict[Path, Worktree] = {}
-        self._current_branches: dict[Path, str] = {}
-        self._local_branches: dict[Path, list[str]] = {}
-        self._remote_branches: dict[Path, dict[str, list[str]]] = {}
-        self._branch_heads: dict[tuple[Path, str], str] = {}
+    def __init__(self, *, ...) -> None:
+        # State containers (populated from constructor kwargs)
+        self._current_branches = current_branches or {}
+        self._local_branches = local_branches or {}
+        self._branch_heads = branch_heads or {}
+        # ... many more state fields
 
-        # Link subgateway to shared state
+        # Construct subgateway with shared state references
         self._branch_gateway = FakeGitBranchOps(
             worktrees=self._worktrees,
             current_branches=self._current_branches,
             local_branches=self._local_branches,
             remote_branches=self._remote_branches,
             branch_heads=self._branch_heads,
+            trunk_branches=self._trunk_branches,
+            # ... additional state references
+        )
+        # Link mutation tracking so parent sees subgateway mutations
+        self._branch_gateway.link_mutation_tracking(
+            created_branches=self._created_branches,
+            deleted_branches=self._deleted_branches,
+            checked_out_branches=self._checked_out_branches,
+            detached_checkouts=self._detached_checkouts,
+            created_tracking_branches=self._created_tracking_branches,
         )
 
     @property
@@ -95,11 +106,9 @@ class FakeGit(Git):
         return self._branch_gateway
 ```
 
-**Critical pattern:** Pass references to parent's state containers to the fake subgateway. This enables **linked mutation tracking** - changes made through the subgateway update the parent's state, allowing queries through the parent to observe the mutations.
+**Critical pattern:** Pass references to parent's state containers to the fake subgateway constructor, then call `link_mutation_tracking()` to connect mutation lists. This enables **linked mutation tracking** -- changes made through the subgateway update the parent's state, allowing queries through the parent to observe the mutations.
 
-See `docs/learned/testing/linked-mutation-tracking.md` for the full pattern.
-
-### 4. DryRun Layer (dry_run.py:52-55)
+### 4. DryRun Layer (dry_run.py)
 
 ```python
 class DryRunGit(Git):
@@ -114,14 +123,11 @@ class DryRunGit(Git):
 
 **Pattern:** Wrap the inner gateway's subgateway property with the corresponding DryRun variant. This maintains the wrapper chain through property access.
 
-### 5. Printing Layer (printing.py:45-50)
+### 5. Printing Layer (printing.py)
 
 ```python
-class PrintingGit(Git):
-    def __init__(self, wrapped: Git, script_mode: bool, dry_run: bool) -> None:
-        self._wrapped = wrapped
-        self._script_mode = script_mode
-        self._dry_run = dry_run
+class PrintingGit(PrintingBase, Git):
+    # Inherits __init__(wrapped, *, script_mode, dry_run) from PrintingBase
 
     @property
     def branch(self) -> GitBranchOps:
@@ -131,7 +137,7 @@ class PrintingGit(Git):
         )
 ```
 
-**Pattern:** Similar to DryRun, but pass configuration (script_mode, dry_run) to the printing wrapper.
+**Pattern:** Similar to DryRun, but inherits from `PrintingBase` which provides the common `__init__` with `wrapped`, `script_mode`, and `dry_run`. Each property passes these configuration values to the printing subgateway wrapper.
 
 ## Read-Only Subgateways
 
@@ -274,6 +280,5 @@ See [Gateway ABC Implementation](gateway-abc-implementation.md#abc-method-remova
 ## Related Topics
 
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - Full 5-layer gateway pattern
-- [Linked Mutation Tracking](../testing/linked-mutation-tracking.md) - How fakes share state
 - [Gateway Hierarchy](gateway-hierarchy.md) - BranchManager factory pattern
 - [Tripwires](tripwires.md) - Anti-patterns to avoid

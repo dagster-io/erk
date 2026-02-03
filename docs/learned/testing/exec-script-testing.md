@@ -1,5 +1,7 @@
 ---
 title: Exec Script Testing Patterns
+last_audited: "2026-02-03"
+audit_result: edited
 read_when:
   - "testing exec CLI commands"
   - "writing integration tests for scripts"
@@ -24,7 +26,7 @@ All exec script tests MUST use `ErkContext.for_test()` for dependency injection:
 
 ```python
 from click.testing import CliRunner
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 from erk.cli.commands.exec.scripts.my_command import my_command
 
 def test_my_command(tmp_path: Path) -> None:
@@ -186,36 +188,34 @@ Using `home_dir: Path | None = None` with fallback `Path.home()` still triggers 
 2. Makes the testability boundary clear
 3. Prevents accidental use of real home in tests
 
-**Source example**: `src/erk/cli/commands/docker_executor.py:build_docker_run_args()`
+**Principle**: Make `home_dir` a required parameter in any function that needs home directory paths. Call `Path.home()` only at the CLI boundary.
 
 ## Testing Branch Operations
 
-When testing exec scripts that create and checkout branches, use FakeBranchManager to verify the operation sequence.
+When testing exec scripts that create and checkout branches, use `FakeBranchManager` to verify the operation sequence.
 
 ### Pattern: Verify create_branch + checkout_branch Sequence
 
+`FakeBranchManager` is located at `erk_shared.gateway.branch_manager.fake`. It tracks branch operations via internal lists exposed as read-only properties:
+
+- `created_branches` - list of `(branch_name, base_branch)` tuples
+- `checked_out_branches` - list of branch names
+- `tracked_branches` - list of `(branch_name, parent_branch)` tuples
+
 ```python
-from erk_shared.context.testing import context_for_test
-from erk_shared.branch_manager.fake import FakeBranchManager
+from erk_shared.gateway.branch_manager.fake import FakeBranchManager
 
-def test_setup_creates_and_checks_out_branch(tmp_path: Path) -> None:
-    """Verify branch creation is followed by checkout."""
-    fake_branch_manager = FakeBranchManager(
-        current_branch="main",
-        tracked_branches={"main": None},
-    )
-    ctx = context_for_test(
-        cwd=tmp_path,
-        branch_manager=fake_branch_manager,
-    )
+# Create a FakeBranchManager
+fake_branch_manager = FakeBranchManager()
 
-    # Run the command
-    result = runner.invoke(setup_impl_from_issue, ["123"], obj=ctx)
-
-    # Verify branch was created AND checked out
-    assert "P123-" in str(fake_branch_manager.created_branches)
-    assert fake_branch_manager.current_branch.startswith("P123-")
+# After running a command that creates and checks out a branch:
+# Verify branch was created
+assert any("P123-" in name for name, _ in fake_branch_manager.created_branches)
+# Verify branch was checked out
+assert any("P123-" in name for name in fake_branch_manager.checked_out_branches)
 ```
+
+Note: `context_for_test()` (from `erk.core.context`) does not accept a `branch_manager` parameter directly. Branch manager is derived from the `ErkContext` based on git/graphite configuration.
 
 ### Why This Matters
 
@@ -277,41 +277,26 @@ def test_idempotency_all_formats(format_flag: str, tmp_path: Path) -> None:
 
 When a gateway method changes from exception-based to discriminated union (e.g., `T | ErrorType`), update exec script tests to check return types instead of catching exceptions.
 
-### Before: Exception-Based Pattern
-
-```python
-def test_issue_not_found(fake_github: FakeGitHub) -> None:
-    """Test error handling when issue doesn't exist."""
-    fake_github.issue_not_found_error = True  # Fake raises exception
-
-    result = runner.invoke(cli, ["exec", "get-issue", "123"])
-
-    assert result.exit_code == 1
-    assert "Issue not found" in result.output
-```
-
-### After: Discriminated Union Pattern
-
-```python
-def test_issue_not_found(fake_github: FakeGitHub) -> None:
-    """Test error handling when issue doesn't exist."""
-    # Fake returns IssueNotFound sentinel instead of raising
-    fake_github.set_issue_result(123, IssueNotFound(issue_number=123, message="Issue not found"))
-
-    result = runner.invoke(cli, ["exec", "get-issue", "123"])
-
-    assert result.exit_code == 1
-    assert "Issue not found" in result.output
-```
-
 ### Key Differences
 
 | Aspect              | Exception-Based                     | Discriminated Union                     |
 | ------------------- | ----------------------------------- | --------------------------------------- |
-| Fake setup          | Set error flag → raises exception   | Set return value → returns error type   |
-| Gateway behavior    | `raise IssueNotFoundError()`        | `return IssueNotFound(...)`             |
-| Exec script pattern | `try/except` block                  | `if isinstance(result, IssueNotFound):` |
+| Fake setup          | Set error flag, fake raises         | Configure fake to return error type     |
+| Gateway behavior    | `raise SomeError()`                 | `return SomeErrorSentinel(...)`         |
+| Exec script pattern | `try/except` block                  | `if isinstance(result, ErrorSentinel):` |
 | Test assertion      | Verify exception caught & formatted | Verify error type returned & formatted  |
+
+### Real Example: IssueNotFound
+
+The `IssueNotFound` sentinel (`erk_shared.gateway.github.issues.types`) is used in union return types. `FakeGitHubIssues` handles this by returning `IssueNotFound` when the requested issue number is not in its `issues` dict, rather than raising an exception.
+
+```python
+# FakeGitHubIssues constructor configures known issues:
+fake_issues = FakeGitHubIssues(issues={42: some_issue_info})
+
+# When code requests issue 999, the fake returns IssueNotFound
+# The exec script checks: if isinstance(result, IssueNotFound): ...
+```
 
 ### Migration Checklist
 
@@ -322,42 +307,6 @@ When migrating exec script tests for discriminated unions:
 3. [ ] Verify test still checks exit code and error message
 4. [ ] Verify test covers both success and error paths
 5. [ ] Update test names if needed (e.g., `test_issue_not_found_exception` → `test_issue_not_found`)
-
-### Example: Actual Migration
-
-From PR #6304 (hypothetical `get_issue` conversion):
-
-**Before:**
-
-```python
-# Fake gateway
-def get_issue(self, issue_number: int) -> IssueDetails:
-    if self.issue_not_found_error:
-        raise IssueNotFoundError(f"Issue {issue_number} not found")
-    return self.issues[issue_number]
-
-# Test
-def test_issue_not_found():
-    fake.issue_not_found_error = True
-    result = runner.invoke(cli, ["exec", "get-issue", "123"])
-    assert result.exit_code == 1
-```
-
-**After:**
-
-```python
-# Fake gateway
-def get_issue(self, issue_number: int) -> IssueInfo | IssueNotFound:
-    if issue_number in self.issue_results:
-        return self.issue_results[issue_number]
-    return IssueNotFound(issue_number=issue_number, message=f"Issue {issue_number} not found")
-
-# Test
-def test_issue_not_found():
-    fake.set_issue_result(123, IssueNotFound(issue_number=123, message="Issue not found"))
-    result = runner.invoke(cli, ["exec", "get-issue", "123"])
-    assert result.exit_code == 1
-```
 
 ## Testing Interactive/NoReturn Gateway Methods
 
@@ -380,6 +329,11 @@ Methods with `NoReturn` type annotation never return. Testing them directly woul
 **From:** `tests/unit/cli/commands/codespace/run/objective/test_next_plan_cmd.py`
 
 ```python
+from erk.cli.cli import cli
+from erk.core.context import context_for_test
+from erk_shared.gateway.codespace.fake import FakeCodespace
+from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
+
 def test_run_next_plan_starts_codespace_and_runs_command() -> None:
     """run objective next-plan starts the codespace and runs the command."""
     runner = CliRunner()
@@ -389,7 +343,6 @@ def test_run_next_plan_starts_codespace_and_runs_command() -> None:
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
     ctx = context_for_test(codespace=fake_codespace, codespace_registry=codespace_registry)
 
-    # Invoke the command (which calls exec_ssh_interactive internally)
     result = runner.invoke(
         cli,
         ["codespace", "run", "objective", "next-plan", "42"],
@@ -397,7 +350,10 @@ def test_run_next_plan_starts_codespace_and_runs_command() -> None:
         catch_exceptions=False,
     )
 
-    # Verify the call was made via the fake
+    # Verify start_codespace was called
+    assert fake_codespace.started_codespaces == ["user-mybox-abc123"]
+
+    # Verify exec_ssh_interactive was called with correct parameters
     assert fake_codespace.exec_called is True
     assert len(fake_codespace.ssh_calls) == 1
     call = fake_codespace.ssh_calls[0]
@@ -456,6 +412,5 @@ See [SSH Command Execution](../architecture/ssh-command-execution.md) for when t
 ## Related Documentation
 
 - [CLI Testing Patterns](cli-testing.md) - General CLI testing patterns
-- [Progress Schema Reference](../planning/progress-schema.md) - For testing progress commands
 - [SSH Command Execution](../architecture/ssh-command-execution.md) - Decision framework for SSH methods
 - Source: `src/erk/cli/commands/exec/scripts/AGENTS.md` - Exec script standards

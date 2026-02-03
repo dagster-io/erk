@@ -6,6 +6,8 @@ read_when:
   - "refactoring imports across many files"
   - "renaming modules or packages"
   - "consolidating gateway locations"
+last_audited: "2026-02-03"
+audit_result: edited
 ---
 
 # LibCST Systematic Import Refactoring
@@ -385,5 +387,5 @@ if updated_node.relative:
 ## Related Topics
 
 - [Gateway Consolidation Checklist](../planning/gateway-consolidation-checklist.md) - Full consolidation process
-- [libcst-refactor Agent](../../.claude/agents/libcst-refactor/) - Automated refactoring
+- [libcst-refactor Agent](../../.claude/agents/libcst-refactor.md) - Automated refactoring
 - [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) - Gateway structure

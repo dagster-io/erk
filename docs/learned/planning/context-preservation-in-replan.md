@@ -1,5 +1,7 @@
 ---
 title: Context Preservation in Replan Workflow
+last_audited: "2026-02-03"
+audit_result: edited
 read_when:
   - "implementing replan workflow"
   - "creating consolidated plans"
@@ -289,8 +291,8 @@ A comprehensive plan:
 
 The canonical implementation of Steps 6a-6b is in `.claude/commands/erk/replan.md`:
 
-- **Step 6a**: Lines 209-223 (Gather Investigation Context)
-- **Step 6b**: Lines 225-250 (Enter Plan Mode with Full Context)
+- **Step 6a**: Lines 224-238 (Gather Investigation Context)
+- **Step 6b**: Lines 239-265 (Enter Plan Mode with Full Context)
 
 ### Learn Plan Specific
 

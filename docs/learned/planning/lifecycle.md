@@ -1,5 +1,7 @@
 ---
 title: Plan Lifecycle
+last_audited: "2026-02-03"
+audit_result: edited
 read_when:
   - "creating a plan"
   - "closing a plan"
@@ -1096,5 +1098,5 @@ gh pr view "$PR_NUMBER"
 ## Related Documentation
 
 - [Planning Workflow](workflow.md) - `.impl/` folder structure and commands
-- [Kit CLI Commands](../kits/cli-commands.md) - Available `erk exec` commands
+- [Exec Command Patterns](../cli/exec-command-patterns.md) - Available `erk exec` commands
 - [Glossary](../glossary.md) - Erk terminology definitions

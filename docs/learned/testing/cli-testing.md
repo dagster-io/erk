@@ -1,5 +1,7 @@
 ---
 title: CLI Testing Patterns
+last_audited: "2026-02-03"
+audit_result: edited
 read_when:
   - "writing tests for erk CLI commands"
   - "using ErkContext.for_test()"
@@ -22,8 +24,8 @@ Erk CLI commands use Click's context system (`@click.pass_context`) to receive d
 
 ```python
 from click.testing import CliRunner
-from erk_shared.context import ErkContext
-from erk_shared.gateway.github.issues import FakeGitHubIssues
+from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 
 def test_my_command() -> None:
     """Test command with fake dependencies."""
@@ -55,9 +57,9 @@ This pattern is **mandatory** for testing erk CLI commands because:
 
 ### API Signature
 
-<!-- Source: packages/erk-shared/src/erk_shared/context/context.py:193-250 -->
+<!-- Source: packages/erk-shared/src/erk_shared/context/context.py -->
 
-See `ErkContext.for_test()` method in `packages/erk-shared/src/erk_shared/context/context.py:193-250` for complete API signature and default values.
+See `ErkContext.for_test()` method in `packages/erk-shared/src/erk_shared/context/context.py` for complete API signature and default values. Key parameters include `github_issues`, `git`, `github`, `claude_installation`, `prompt_executor`, `debug`, `repo_root`, `cwd`, and `repo_info`.
 
 ## Testing Patterns
 
@@ -170,10 +172,6 @@ def test_command_with_multiple_dependencies() -> None:
     fake_gh_issues = FakeGitHubIssues()
     runner = CliRunner()
 
-    # Pre-configure git state
-    fake_git.branches["feature"] = "abc123"
-    fake_git.current_branch = "feature"
-
     # Act
     result = runner.invoke(
         my_command,
@@ -194,31 +192,31 @@ def test_command_with_multiple_dependencies() -> None:
 
 ### Example 1: Testing plan-save-to-issue
 
-From `test_plan_save_to_issue.py`:
+From `tests/unit/cli/commands/exec/scripts/test_plan_save_to_issue.py`:
 
 ```python
-def test_plan_save_to_issue_success(plans_dir: Path, tmp_path: Path) -> None:
+from erk_shared.context.context import ErkContext
+from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+
+def test_plan_save_to_issue_success() -> None:
     """Test successful plan extraction and issue creation."""
-    # Arrange: Create plan file and configure fakes
-    plan = "# My Feature\n\n- Step 1\n- Step 2"
-    (plans_dir / "test-project-abc123.md").write_text(plan)
-
     fake_gh = FakeGitHubIssues()
-    fake_git = FakeGit(
-        current_branches={tmp_path: "feature"},
-        trunk_branches={tmp_path: "main"},
-    )
-    fake_store = FakeClaudeCodeSessionStore(current_session_id=None)
+    plan_content = """# My Feature
 
+This is a comprehensive feature plan that includes all the necessary details.
+
+- Step 1: Implement the feature
+- Step 2: Add tests for the feature"""
+    fake_store = FakeClaudeInstallation.for_test(plans={"test-plan": plan_content})
     runner = CliRunner()
+
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
-            git=fake_git,
-            session_store=fake_store,
-            cwd=tmp_path,
+            claude_installation=fake_store,
         ),
     )
 
@@ -236,16 +234,21 @@ def test_plan_save_to_issue_success(plans_dir: Path, tmp_path: Path) -> None:
 - Inspects fake state after command execution
 - Validates JSON output format
 
-### Example 2: Testing with Session Store
+### Example 2: Testing with Claude Installation Fake
 
 ```python
-def test_uses_session_store_for_current_session_id(tmp_path: Path) -> None:
-    """Test that command uses session store for current session ID."""
+from erk_shared.gateway.claude_installation.fake import (
+    FakeClaudeInstallation,
+    FakeProject,
+    FakeSessionData,
+)
+
+def test_uses_session_data(tmp_path: Path) -> None:
+    """Test that command uses session data from claude installation."""
     session_id = "store-session-abc123"
     session_content = '{"type": "user", "message": {"content": "test"}}\n'
 
-    fake_store = FakeClaudeCodeSessionStore(
-        current_session_id=session_id,
+    fake_installation = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -262,7 +265,7 @@ def test_uses_session_store_for_current_session_id(tmp_path: Path) -> None:
     result = runner.invoke(
         my_command,
         ["--format", "json"],
-        obj=ErkContext.for_test(session_store=fake_store, cwd=tmp_path),
+        obj=ErkContext.for_test(claude_installation=fake_installation, cwd=tmp_path),
     )
 
     assert result.exit_code == 0
@@ -272,15 +275,15 @@ def test_uses_session_store_for_current_session_id(tmp_path: Path) -> None:
 
 **Key points:**
 
-- Uses `FakeClaudeCodeSessionStore` for session data
-- No file system or mocking needed for session ID lookup
+- Uses `FakeClaudeInstallation` with `FakeProject` and `FakeSessionData`
+- No file system or mocking needed for session data
 - See [Testing with FakeClaudeCodeSessionStore](session-store-testing.md) for more details
 
 ## Comparison with Other Testing Approaches
 
 ### vs CliRunner with Real Context
 
-❌ **DON'T DO THIS:**
+**DON'T DO THIS:**
 
 ```python
 def test_command_with_real_context() -> None:
@@ -290,7 +293,7 @@ def test_command_with_real_context() -> None:
     # This will call real git/gh/gt commands!
 ```
 
-✅ **DO THIS:**
+**DO THIS:**
 
 ```python
 def test_command_with_fake_context() -> None:
@@ -352,12 +355,12 @@ When writing tests for erk CLI commands:
 ### Mistake 1: Not Passing Context
 
 ```python
-# ❌ WRONG: Command will fail because ctx.obj is None
+# WRONG: Command will fail because ctx.obj is None
 result = runner.invoke(my_command, ["--arg", "value"])
 ```
 
 ```python
-# ✅ CORRECT: Pass context via obj parameter
+# CORRECT: Pass context via obj parameter
 result = runner.invoke(
     my_command,
     ["--arg", "value"],
@@ -368,7 +371,7 @@ result = runner.invoke(
 ### Mistake 2: Creating Fake Inside invoke()
 
 ```python
-# ❌ WRONG: Can't inspect fake state after test
+# WRONG: Can't inspect fake state after test
 result = runner.invoke(
     my_command,
     obj=ErkContext.for_test(github_issues=FakeGitHubIssues()),
@@ -377,7 +380,7 @@ result = runner.invoke(
 ```
 
 ```python
-# ✅ CORRECT: Create fake before invoke()
+# CORRECT: Create fake before invoke()
 fake_gh = FakeGitHubIssues()
 result = runner.invoke(
     my_command,
@@ -389,7 +392,7 @@ result = runner.invoke(
 ### Mistake 3: Hardcoding Paths
 
 ```python
-# ❌ WRONG: Hardcoded path might not exist
+# WRONG: Hardcoded path might not exist
 result = runner.invoke(
     my_command,
     obj=ErkContext.for_test(cwd=Path("/fake/worktree")),
@@ -398,7 +401,7 @@ result = runner.invoke(
 ```
 
 ```python
-# ✅ CORRECT: Use tmp_path fixture
+# CORRECT: Use tmp_path fixture
 def test_command(tmp_path: Path) -> None:
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()

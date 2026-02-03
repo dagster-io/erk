@@ -1,4 +1,6 @@
 ---
+last_audited: "2026-02-03"
+audit_result: edited
 title: Erk Architecture Patterns
 read_when:
   - "understanding erk architecture"
@@ -11,7 +13,7 @@ tripwires:
   - action: "passing dry_run boolean flags through business logic function parameters"
     warning: "Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands."
   - action: "calling os.chdir() in erk code"
-    warning: "After os.chdir(), regenerate context using regenerate_context(ctx, repo_root=repo.root). Stale ctx.cwd causes FileNotFoundError."
+    warning: "After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError."
   - action: "importing time module or calling time.sleep() or datetime.now()"
     warning: "Use context.time.sleep() and context.time.now() for testability. Direct time.sleep() makes tests slow and datetime.now() makes tests non-deterministic."
   - action: "implementing CLI flags that affect post-mutation behavior"
@@ -125,12 +127,12 @@ from erk.core.context import regenerate_context
 
 # After os.chdir()
 os.chdir(new_directory)
-ctx = regenerate_context(ctx, repo_root=repo.root)
+ctx = regenerate_context(ctx)
 
 # After worktree removal
 if removed_current_worktree:
     os.chdir(safe_directory)
-    ctx = regenerate_context(ctx, repo_root=repo.root)
+    ctx = regenerate_context(ctx)
 ```
 
 ### Why Regenerate
@@ -232,7 +234,7 @@ assert fake_time.sleep_calls == [2.0]
 
 ### Real-World Examples
 
-**Retry with exponential backoff**: Use `context.time.sleep(delay)` in retry loops for instant test execution. See `src/erk/cli/commands/land_stack/` for production patterns.
+**Retry with exponential backoff**: Use `context.time.sleep(delay)` in retry loops for instant test execution. See `src/erk/cli/commands/land_cmd.py` and `src/erk/cli/commands/land_pipeline.py` for production patterns.
 
 **GitHub API stabilization**:
 
@@ -327,30 +329,35 @@ Erk uses a consistent directory structure for all gateways (git, github, graphit
 
 ```
 packages/erk-shared/src/erk_shared/
-├── git/                           # Core git gateway
-│   ├── __init__.py                # Re-exports all implementations
-│   ├── abc.py                     # ABC interface definition
-│   ├── real.py                    # Production implementation
-│   ├── fake.py                    # In-memory test implementation
-│   ├── dry_run.py                 # No-op wrapper for dry-run mode
-│   └── printing.py                # (Optional) Wrapper that logs operations
-├── github/                        # GitHub API gateway
-│   ├── __init__.py
-│   ├── abc.py
-│   ├── real.py
-│   └── fake.py
-└── gateway/                       # Domain-specific gateways
-    ├── erk_wt/                    # Erk worktree operations
+└── gateway/                           # All gateways live here
+    ├── git/                           # Core git gateway
+    │   ├── __init__.py
+    │   ├── abc.py                     # ABC interface definition
+    │   ├── real.py                    # Production implementation
+    │   ├── fake.py                    # In-memory test implementation
+    │   ├── dry_run.py                 # No-op wrapper for dry-run mode
+    │   ├── lock.py                    # Git lock handling
+    │   └── printing.py                # Wrapper that logs operations
+    ├── github/                        # GitHub API gateway
     │   ├── __init__.py
     │   ├── abc.py
     │   ├── real.py
-    │   └── fake.py
-    ├── graphite/                  # Graphite stack operations
+    │   ├── fake.py
+    │   └── dry_run.py
+    ├── graphite/                      # Graphite stack operations
     │   ├── __init__.py
     │   ├── abc.py
     │   ├── real.py
+    │   ├── fake.py
+    │   ├── disabled.py
+    │   └── dry_run.py
+    ├── branch_manager/                # Branch workflow abstraction
+    │   ├── __init__.py
+    │   ├── abc.py
+    │   ├── git.py
+    │   ├── graphite.py
     │   └── fake.py
-    └── time/                      # Time abstraction
+    └── time/                          # Time abstraction
         ├── __init__.py
         ├── abc.py
         ├── real.py
@@ -425,33 +432,28 @@ class DryRunMyGateway(MyGateway):
         return ""  # No-op, return empty or default value
 ```
 
-**`__init__.py`** - Re-export pattern:
+**`__init__.py`** - Lightweight docstring (no re-exports):
 
 ```python
-"""MyGateway operations."""
+"""MyGateway operations.
 
-from erk_shared.my_gateway.abc import MyGateway
-from erk_shared.my_gateway.real import RealMyGateway
-from erk_shared.my_gateway.fake import FakeMyGateway
-
-__all__ = [
-    "MyGateway",      # ABC interface
-    "RealMyGateway",  # Production implementation
-    "FakeMyGateway",  # Test implementation
-]
+Import from submodules:
+- abc: MyGateway
+- real: RealMyGateway
+"""
 ```
+
+Note: Erk gateway `__init__.py` files do NOT re-export classes. Consumers import directly from the submodule files (e.g., `from erk_shared.gateway.git.abc import Git`).
 
 ### Gateway Locations
 
-**Core gateways** (used across the codebase):
+All gateways live under `packages/erk-shared/src/erk_shared/gateway/`:
 
-- `packages/erk-shared/src/erk_shared/gateway/git/` - Git operations
-- `packages/erk-shared/src/erk_shared/gateway/github/` - GitHub API
-- `packages/erk-shared/src/erk_shared/graphite/` - Graphite stack operations
-
-**Domain gateways** (specific domains):
-
-- `packages/erk-shared/src/erk_shared/gateway/<name>/` - Domain-specific operations
+- `gateway/git/` - Git operations
+- `gateway/github/` - GitHub API
+- `gateway/graphite/` - Graphite stack operations
+- `gateway/branch_manager/` - Branch workflow abstraction (Graphite vs Git)
+- `gateway/time/` - Time abstraction for testing
 
 ### When to Create a New Gateway
 
@@ -470,20 +472,17 @@ __all__ = [
 
 ### Import Pattern
 
-**From consumers:**
+**Import from submodule files directly:**
 
 ```python
-# Import from gateway subpackages
-from erk_shared.gateway.git import Git, RealGit, FakeGit
-from erk_shared.gateway.github import GitHub, RealGitHub, FakeGitHub
+# Import ABC from abc.py, implementations from their respective files
+from erk_shared.gateway.git.abc import Git, WorktreeInfo
+from erk_shared.gateway.git.real import RealGit
+from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.abc import GitHub
 ```
 
-**Not this:**
-
-```python
-# DON'T import from implementation files directly
-from erk_shared.gateway.git.real import RealGit  # Bypasses __init__.py
-```
+Gateway `__init__.py` files do not re-export, so always import from the specific submodule.
 
 ### Testing All Four Layers
 
@@ -610,13 +609,13 @@ Commands that need to behave differently on trunk vs feature branches use the br
 - `trunk_branch`: Name of the trunk branch (main or master)
 - `is_on_trunk`: True if current branch is trunk
 
-See `erk_shared/extraction/types.py` for the dataclass definition.
+See `erk_shared/learn/extraction/types.py` for the dataclass definition.
 
 ### Helper Function
 
 The `get_branch_context()` helper detects current branch, trunk branch (prefers 'main', falls back to 'master'), and whether current branch is trunk.
 
-See `erk_shared/extraction/session_discovery.py` for the canonical implementation.
+See `erk_shared/learn/extraction/session_discovery.py` for the canonical implementation.
 
 ### When to Use
 
@@ -641,7 +640,7 @@ Commands typically use branch context to decide behavior:
 - **On trunk**: Show all feature branches, repository-wide queries
 - **On feature branch**: Show items for current feature only, branch-relative queries
 
-See `kit_cli_commands/erk/list_sessions.py` for a real-world usage example.
+See `src/erk/cli/commands/exec/scripts/list_sessions.py` for a real-world usage example.
 
 ### Testing Branch Context
 
@@ -952,12 +951,15 @@ Some operations cannot complete while the shell is inside the target directory:
 Pass shell commands to `render_activation_script()` via the `post_cd_commands` parameter. These commands execute after the `cd` command completes.
 
 ```python
-from erk.core.activation import render_activation_script
+from erk.cli.activation import render_activation_script
 
 def navigate_with_cleanup(target_worktree: Path, cleanup_commands: list[str]) -> str:
     return render_activation_script(
-        directory=target_worktree,
+        worktree_path=target_worktree,
+        target_subpath=None,
         post_cd_commands=cleanup_commands,
+        final_message="echo 'Navigated with cleanup'",
+        comment="# navigate-with-cleanup",
     )
 ```
 
