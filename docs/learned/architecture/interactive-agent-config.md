@@ -21,24 +21,20 @@ The `InteractiveAgentConfig` type stores configuration for launching interactive
 
 ## Code References
 
-- **Type definition**: `packages/erk-shared/src/erk_shared/context/types.py:72-93` (InteractiveClaudeConfig)
-- **Config loading**: `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py:62-69`
-- **Default values**: `packages/erk-shared/src/erk_shared/context/types.py:95-102` (InteractiveClaudeConfig.default())
+Type definition, config loading, and default values are in `packages/erk-shared/src/erk_shared/context/types.py` (`InteractiveAgentConfig`). Config loading is in `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py`.
 
 ## Key Behaviors
 
-- **CLI flags ALWAYS override config values.** The config provides defaults when flags are omitted. Example: `erk agent --model claude-sonnet-4-5` overrides the `model` field from config.
-- **Missing `[interactive-claude]` section** returns empty dict `{}`, so all fields use dataclass defaults.
-- **Boolean coercion** via `bool()` for safety on verbose, dangerous, allow_dangerous fields.
-- **String values** (like `permission_mode`) are NOT validated at load time.
+- **CLI flags ALWAYS override config values.** The config provides defaults when flags are omitted.
+- **Boolean coercion** via `bool()` for safety on boolean fields (e.g., `verbose`, `dangerous`).
 
 ## Backward Compatibility
 
 Future versions will support `[interactive-agent]` section. Config loading will check `[interactive-agent]` first, then fall back to `[interactive-claude]` if not found. Existing configs continue working without migration.
 
-See [SandboxMode](sandbox-modes.md) for how permission modes map to both Claude and Codex backends.
+See [PermissionMode](permission-modes.md) for how permission modes map to both Claude and Codex backends.
 
 ## Related Documentation
 
-- [SandboxMode](sandbox-modes.md) - Permission mode mappings to Claude/Codex
+- [PermissionMode](permission-modes.md) - Permission mode mappings to Claude/Codex
 - [Global Config](../config/global-config.md) - Complete global config structure

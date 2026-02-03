@@ -282,6 +282,7 @@ def execute_interactive_mode(
             command="/erk:plan-implement",
             target_subpath=None,
             model=model,
+            permission_mode="edits",
         )
     except RuntimeError as e:
         raise click.ClickException(str(e)) from e
@@ -336,6 +337,7 @@ def execute_non_interactive_mode(
                 dangerous=dangerous,
                 verbose=True,
                 model=model,
+                permission_mode="edits",
             )
         else:
             # Filtered mode - streaming with live print-based feedback
@@ -345,6 +347,7 @@ def execute_non_interactive_mode(
                 worktree_path=worktree_path,
                 dangerous=dangerous,
                 model=model,
+                permission_mode="edits",
             )
 
         all_results.append(result)

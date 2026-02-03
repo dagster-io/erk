@@ -5,7 +5,7 @@ import click
 from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk_shared.context.types import InteractiveClaudeConfig, RepoContext
+from erk_shared.context.types import InteractiveAgentConfig, RepoContext
 from erk_shared.gateway.github.issues.types import IssueNotFound
 
 
@@ -40,12 +40,12 @@ def reconcile_objectives(ctx: ErkContext, objective: int) -> None:
     # Launch Claude with full codebase access
     command = f"/erk:objective-next-plan {objective}"
 
-    # Get interactive Claude config with plan mode override
+    # Get interactive agent config with plan mode override
     if ctx.global_config is None:
-        ic_config = InteractiveClaudeConfig.default()
+        ia_config = InteractiveAgentConfig.default()
     else:
-        ic_config = ctx.global_config.interactive_claude
-    config = ic_config.with_overrides(
+        ia_config = ctx.global_config.interactive_agent
+    config = ia_config.with_overrides(
         permission_mode_override="plan",
         model_override=None,
         dangerous_override=None,

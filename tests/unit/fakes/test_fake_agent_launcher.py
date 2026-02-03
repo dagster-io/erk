@@ -2,7 +2,7 @@
 
 import pytest
 
-from erk_shared.context.types import InteractiveClaudeConfig
+from erk_shared.context.types import InteractiveAgentConfig
 from erk_shared.gateway.agent_launcher.fake import AgentLaunchCall, FakeAgentLauncher
 
 
@@ -12,8 +12,9 @@ class TestFakeAgentLauncherLaunchInteractive:
     def test_launch_tracks_calls(self) -> None:
         """launch_interactive() calls are tracked in launch_calls property."""
         launcher = FakeAgentLauncher()
-        config1 = InteractiveClaudeConfig.default()
-        config2 = InteractiveClaudeConfig(
+        config1 = InteractiveAgentConfig.default()
+        config2 = InteractiveAgentConfig(
+            backend="claude",
             model="claude-opus-4-5",
             verbose=False,
             permission_mode="plan",
@@ -38,8 +39,8 @@ class TestFakeAgentLauncherLaunchInteractive:
     def test_last_call_returns_most_recent(self) -> None:
         """last_call returns most recent launch call."""
         launcher = FakeAgentLauncher()
-        config1 = InteractiveClaudeConfig.default()
-        config2 = InteractiveClaudeConfig.default()
+        config1 = InteractiveAgentConfig.default()
+        config2 = InteractiveAgentConfig.default()
 
         with pytest.raises(SystemExit):
             launcher.launch_interactive(config1, command="first")
@@ -64,7 +65,7 @@ class TestFakeAgentLauncherLaunchInteractive:
     def test_launch_sets_launch_called_flag(self) -> None:
         """launch_interactive() sets launch_called flag."""
         launcher = FakeAgentLauncher()
-        config = InteractiveClaudeConfig.default()
+        config = InteractiveAgentConfig.default()
 
         with pytest.raises(SystemExit):
             launcher.launch_interactive(config, command="test")
@@ -74,7 +75,7 @@ class TestFakeAgentLauncherLaunchInteractive:
     def test_launch_raises_system_exit(self) -> None:
         """launch_interactive() raises SystemExit to simulate process replacement."""
         launcher = FakeAgentLauncher()
-        config = InteractiveClaudeConfig.default()
+        config = InteractiveAgentConfig.default()
 
         with pytest.raises(SystemExit) as exc_info:
             launcher.launch_interactive(config, command="test")
@@ -94,7 +95,7 @@ class TestFakeAgentLauncherLaunchError:
     def test_launch_error_raises_runtime_error(self) -> None:
         """launch_interactive() raises RuntimeError when launch_error is set."""
         launcher = FakeAgentLauncher(launch_error="Claude CLI not found")
-        config = InteractiveClaudeConfig.default()
+        config = InteractiveAgentConfig.default()
 
         with pytest.raises(RuntimeError, match="Claude CLI not found"):
             launcher.launch_interactive(config, command="test")
@@ -102,7 +103,7 @@ class TestFakeAgentLauncherLaunchError:
     def test_launch_error_does_not_track_call(self) -> None:
         """launch_interactive() does not track the call when launch_error is set."""
         launcher = FakeAgentLauncher(launch_error="test error")
-        config = InteractiveClaudeConfig.default()
+        config = InteractiveAgentConfig.default()
 
         with pytest.raises(RuntimeError):
             launcher.launch_interactive(config, command="test")
@@ -117,7 +118,7 @@ class TestFakeAgentLauncherDefensiveCopying:
     def test_launch_calls_returns_copy_of_list(self) -> None:
         """launch_calls returns a copy to prevent external mutation."""
         launcher = FakeAgentLauncher()
-        config = InteractiveClaudeConfig.default()
+        config = InteractiveAgentConfig.default()
 
         with pytest.raises(SystemExit):
             launcher.launch_interactive(config, command="test")
@@ -136,7 +137,7 @@ class TestAgentLaunchCall:
 
     def test_frozen_dataclass_immutable(self) -> None:
         """AgentLaunchCall is immutable."""
-        config = InteractiveClaudeConfig.default()
+        config = InteractiveAgentConfig.default()
         call = AgentLaunchCall(config=config, command="test")
 
         with pytest.raises(AttributeError):
@@ -144,15 +145,16 @@ class TestAgentLaunchCall:
 
     def test_equality_based_on_values(self) -> None:
         """Two AgentLaunchCall instances with same values are equal."""
-        config = InteractiveClaudeConfig.default()
+        config = InteractiveAgentConfig.default()
         call1 = AgentLaunchCall(config=config, command="test")
         call2 = AgentLaunchCall(config=config, command="test")
 
         assert call1 == call2
 
     def test_config_field_stores_config(self) -> None:
-        """config field stores the InteractiveClaudeConfig."""
-        config = InteractiveClaudeConfig(
+        """config field stores the InteractiveAgentConfig."""
+        config = InteractiveAgentConfig(
+            backend="claude",
             model="claude-opus-4-5",
             verbose=True,
             permission_mode="plan",
@@ -168,7 +170,7 @@ class TestAgentLaunchCall:
 
     def test_command_field_stores_command(self) -> None:
         """command field stores the slash command string."""
-        config = InteractiveClaudeConfig.default()
+        config = InteractiveAgentConfig.default()
         call = AgentLaunchCall(config=config, command="/erk:plan-implement 123")
 
         assert call.command == "/erk:plan-implement 123"

@@ -17,7 +17,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 if TYPE_CHECKING:
-    from erk_shared.context.types import ClaudePermissionMode
+    from erk_shared.context.types import PermissionMode
 
 from erk.core.prompt_executor import (
     CommandResult,
@@ -132,7 +132,7 @@ def stream_command_with_feedback(
     dangerous: bool,
     model: str | None = None,
     debug: bool = False,
-    permission_mode: ClaudePermissionMode = "acceptEdits",
+    permission_mode: PermissionMode,
     allow_dangerous: bool = False,
 ) -> CommandResult:
     """Stream Claude command execution with live print-based feedback.
@@ -156,7 +156,7 @@ def stream_command_with_feedback(
         dangerous: Whether to skip permission prompts (--dangerously-skip-permissions)
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         debug: Whether to show debug output for stream parsing
-        permission_mode: Claude CLI permission mode (default: "acceptEdits")
+        permission_mode: Generic permission mode. See PermissionMode.
         allow_dangerous: Whether to pass --allow-dangerously-skip-permissions
 
     Returns:
@@ -305,6 +305,7 @@ def stream_fix_conflicts(
         command="/erk:fix-conflicts",
         worktree_path=worktree_path,
         dangerous=True,  # Conflict resolution modifies git state
+        permission_mode="edits",
     ):
         match event:
             case TextEvent(content=content):
@@ -421,6 +422,7 @@ def stream_sync_divergence(
         command="/erk:sync-divergence",
         worktree_path=worktree_path,
         dangerous=True,  # Divergence resolution modifies git state
+        permission_mode="edits",
     ):
         match event:
             case TextEvent(content=content):

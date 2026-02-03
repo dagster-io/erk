@@ -125,14 +125,14 @@ Shares most exec flags plus these TUI-only additions:
 
 ## Permission/Sandbox Mapping for Erk
 
-How erk's planned `SandboxMode` maps to both backends:
+How erk's `PermissionMode` maps to both backends. This is the single source of truth for the cross-backend mapping. Claude mappings are also defined in code at `_PERMISSION_MODE_TO_CLAUDE` in `packages/erk-shared/src/erk_shared/context/types.py`. See also [PermissionMode Abstraction](../../architecture/permission-modes.md).
 
-| Erk SandboxMode | Claude `--permission-mode`         | Codex exec            | Codex TUI                                 |
-| --------------- | ---------------------------------- | --------------------- | ----------------------------------------- |
-| `safe`          | `default`                          | `--sandbox read-only` | `--sandbox read-only -a untrusted`        |
-| `edits`         | `acceptEdits`                      | `--full-auto`         | `--sandbox workspace-write -a on-request` |
-| `plan`          | `plan`                             | `--sandbox read-only` | `--sandbox read-only -a never`            |
-| `dangerous`     | + `--dangerously-skip-permissions` | `--yolo`              | `--yolo`                                  |
+| Erk PermissionMode | Claude `--permission-mode`         | Codex exec            | Codex TUI                                 |
+| ------------------ | ---------------------------------- | --------------------- | ----------------------------------------- |
+| `safe`             | `default`                          | `--sandbox read-only` | `--sandbox read-only -a untrusted`        |
+| `edits`            | `acceptEdits`                      | `--full-auto`         | `--sandbox workspace-write -a on-request` |
+| `plan`             | `plan`                             | `--sandbox read-only` | `--sandbox read-only -a never`            |
+| `dangerous`        | + `--dangerously-skip-permissions` | `--yolo`              | `--yolo`                                  |
 
 ## TUI Interaction Pattern for Erk
 

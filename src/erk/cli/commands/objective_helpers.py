@@ -199,6 +199,7 @@ def prompt_objective_update(
             command=cmd,
             worktree_path=repo_root,
             dangerous=True,
+            permission_mode="edits",
         )
 
         if result.success:
@@ -228,6 +229,7 @@ def prompt_objective_update(
             command=cmd,
             worktree_path=repo_root,
             dangerous=True,
+            permission_mode="edits",
         )
 
         # Add feedback AFTER streaming completes

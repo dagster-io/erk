@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from erk_shared.context.types import ClaudePermissionMode
+    from erk_shared.context.types import PermissionMode
 
 from erk_shared.core.prompt_executor import (
     CommandResult,
@@ -142,7 +142,7 @@ class FakePromptExecutor(PromptExecutor):
         verbose: bool = False,
         debug: bool = False,
         model: str | None = None,
-        permission_mode: ClaudePermissionMode = "acceptEdits",
+        permission_mode: PermissionMode,
         allow_dangerous: bool = False,
     ) -> Iterator[ExecutorEvent]:
         """Track command execution and yield simulated typed events.
@@ -229,6 +229,8 @@ class FakePromptExecutor(PromptExecutor):
         dangerous: bool,
         verbose: bool = False,
         model: str | None = None,
+        permission_mode: PermissionMode,
+        allow_dangerous: bool = False,
     ) -> CommandResult:
         """Track command execution without running subprocess.
 
@@ -281,7 +283,7 @@ class FakePromptExecutor(PromptExecutor):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
-        permission_mode: ClaudePermissionMode = "acceptEdits",
+        permission_mode: PermissionMode,
     ) -> None:
         """Track interactive execution without replacing process.
 

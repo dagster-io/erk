@@ -194,6 +194,7 @@ def learn_cmd(
             dangerous=dangerous,
             command=f"/erk:learn {issue_number}",
             target_subpath=None,
+            permission_mode="edits",
         )
 
 

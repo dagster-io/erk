@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 import tomlkit
 
-from erk_shared.context.types import GlobalConfig, InteractiveClaudeConfig
+from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 
 if TYPE_CHECKING:
@@ -59,14 +59,15 @@ class RealErkInstallation(ErkInstallation):
         if not root:
             raise ValueError(f"Missing 'erk_root' in {config_path}")
 
-        # Parse optional [interactive-claude] section
-        ic_data = data.get("interactive-claude", {})
-        interactive_claude = InteractiveClaudeConfig(
-            model=ic_data.get("model"),
-            verbose=bool(ic_data.get("verbose", False)),
-            permission_mode=ic_data.get("permission_mode", "acceptEdits"),
-            dangerous=bool(ic_data.get("dangerous", False)),
-            allow_dangerous=bool(ic_data.get("allow_dangerous", False)),
+        # Parse optional [interactive-agent] section (with backward compat for [interactive-claude])
+        ia_data = data.get("interactive-agent", data.get("interactive-claude", {}))
+        interactive_agent = InteractiveAgentConfig(
+            backend=ia_data.get("backend", "claude"),
+            model=ia_data.get("model"),
+            verbose=bool(ia_data.get("verbose", False)),
+            permission_mode=ia_data.get("permission_mode", ia_data.get("sandbox_mode", "edits")),
+            dangerous=bool(ia_data.get("dangerous", False)),
+            allow_dangerous=bool(ia_data.get("allow_dangerous", False)),
         )
 
         return GlobalConfig(
@@ -80,7 +81,7 @@ class RealErkInstallation(ErkInstallation):
             show_hidden_commands=bool(data.get("show_hidden_commands", False)),
             prompt_learn_on_land=bool(data.get("prompt_learn_on_land", True)),
             shell_integration=bool(data.get("shell_integration", False)),
-            interactive_claude=interactive_claude,
+            interactive_agent=interactive_agent,
         )
 
     def save_config(self, config: GlobalConfig) -> None:
@@ -141,8 +142,8 @@ class RealErkInstallation(ErkInstallation):
         doc["shell_integration"] = config.shell_integration
 
         # Add [interactive-claude] section if any non-default values are set
-        ic = config.interactive_claude
-        ic_default = InteractiveClaudeConfig.default()
+        ic = config.interactive_agent
+        ic_default = InteractiveAgentConfig.default()
         ic_table = tomlkit.table()
         has_ic_values = False
 

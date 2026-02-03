@@ -8,12 +8,12 @@ import os
 import shutil
 from typing import NoReturn
 
-from erk_shared.context.types import InteractiveClaudeConfig
+from erk_shared.context.types import InteractiveAgentConfig, permission_mode_to_claude
 from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 
 
 def build_claude_args(
-    config: InteractiveClaudeConfig,
+    config: InteractiveAgentConfig,
     *,
     command: str,
 ) -> list[str]:
@@ -23,13 +23,14 @@ def build_claude_args(
     config.with_overrides()) to construct the argument list.
 
     Args:
-        config: InteractiveClaudeConfig with resolved values
+        config: InteractiveAgentConfig with resolved values
         command: The slash command to execute (empty string for no command)
 
     Returns:
         List of command arguments suitable for subprocess or os.execvp
     """
-    args = ["claude", "--permission-mode", config.permission_mode]
+    permission_mode = permission_mode_to_claude(config.permission_mode)
+    args = ["claude", "--permission-mode", permission_mode]
 
     if config.dangerous:
         args.append("--dangerously-skip-permissions")
@@ -50,13 +51,13 @@ def build_claude_args(
 class RealAgentLauncher(AgentLauncher):
     """Production implementation using Claude CLI for interactive sessions."""
 
-    def launch_interactive(self, config: InteractiveClaudeConfig, *, command: str) -> NoReturn:
+    def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -> NoReturn:
         """Replace current process with Claude CLI session.
 
         Uses os.execvp() to replace the current process with Claude CLI.
 
         Args:
-            config: InteractiveClaudeConfig with resolved values
+            config: InteractiveAgentConfig with resolved values
             command: The slash command to execute (empty string for no command)
 
         Raises:

@@ -8,6 +8,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
 from erk_shared.context.types import RepoContext
+from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 
@@ -104,3 +105,48 @@ def test_reconcile_requires_objective_argument(tmp_path: Path) -> None:
 
     assert result.exit_code == 2
     assert "Missing argument" in result.output or "OBJECTIVE" in result.output
+
+
+def test_reconcile_launches_agent_with_plan_mode(tmp_path: Path) -> None:
+    """Test that reconcile launches agent with plan mode and correct command."""
+    issue = _create_issue(100, labels=["erk-objective"])
+    issues_ops = FakeGitHubIssues(username="testuser", issues={100: issue})
+    fake_launcher = FakeAgentLauncher()
+
+    ctx = context_for_test(
+        issues=issues_ops,
+        agent_launcher=fake_launcher,
+        cwd=tmp_path,
+        repo=_create_repo_context(tmp_path),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["objective", "reconcile", "100"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert fake_launcher.launch_called
+    assert fake_launcher.last_call is not None
+    assert fake_launcher.last_call.command == "/erk:objective-next-plan 100"
+    assert fake_launcher.last_call.config.permission_mode == "plan"
+
+
+def test_reconcile_shows_error_when_agent_not_installed(tmp_path: Path) -> None:
+    """Test that reconcile shows error when agent CLI is not installed."""
+    issue = _create_issue(100, labels=["erk-objective"])
+    issues_ops = FakeGitHubIssues(username="testuser", issues={100: issue})
+    fake_launcher = FakeAgentLauncher(
+        launch_error="Claude CLI not found\nInstall from: https://claude.com/download"
+    )
+
+    ctx = context_for_test(
+        issues=issues_ops,
+        agent_launcher=fake_launcher,
+        cwd=tmp_path,
+        repo=_create_repo_context(tmp_path),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["objective", "reconcile", "100"], obj=ctx)
+
+    assert result.exit_code == 1
+    assert "Claude CLI not found" in result.output

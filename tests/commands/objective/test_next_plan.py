@@ -11,7 +11,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
-from erk_shared.context.types import GlobalConfig, InteractiveClaudeConfig
+from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
 from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
 
 
@@ -100,16 +100,17 @@ def test_next_plan_respects_allow_dangerous_config() -> None:
     runner = CliRunner()
 
     # Create a context with allow_dangerous enabled in interactive_claude config
-    ic_config = InteractiveClaudeConfig(
+    ic_config = InteractiveAgentConfig(
+        backend="claude",
         model=None,
         verbose=False,
-        permission_mode="acceptEdits",
+        permission_mode="edits",
         dangerous=False,
         allow_dangerous=True,
     )
     global_config = GlobalConfig.test(
         erk_root=Path("/tmp/erk"),
-        interactive_claude=ic_config,
+        interactive_agent=ic_config,
     )
     fake_launcher = FakeAgentLauncher()
     ctx = context_for_test(global_config=global_config, agent_launcher=fake_launcher)
