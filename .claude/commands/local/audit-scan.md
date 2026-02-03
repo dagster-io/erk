@@ -24,19 +24,20 @@ Parse `$ARGUMENTS` for optional `--category <name>` flag to scope the scan to `d
 1. Glob for all `.md` files in `docs/learned/` recursively (or scoped category if specified)
 2. Read the first 5 lines of each file to check for auto-generated markers
 3. **Skip** files whose first line starts with `<!-- AUTO-GENERATED` — these are generated index/tripwire files (e.g., `index.md`, `tripwires.md`, `tripwires-index.md`)
-4. Build a working list of document paths for scoring
+4. **Exclude recently audited**: Use Grep to find `last_audited` across all remaining files. Parse the date values and exclude any document whose `last_audited` date is within the last 7 days. These docs are too fresh to need re-audit.
+5. Build a working list of document paths for scoring
 
-Report: "Found X documents to scan (skipped Y auto-generated files)"
+Report: "Found X documents to scan (skipped Y auto-generated, excluded Z audited within 7 days)"
 
 ### Phase 2: Partition into Batches
 
 Split the document list into 5 roughly equal batches using round-robin assignment by file list order. This is purely mechanical — no analysis needed.
 
-### Phase 3: Launch 5 Parallel Explore Agents
+### Phase 3: Launch 5 Parallel Scoring Agents
 
 Generate a unique run ID for scratch storage: `audit-scan-<timestamp>` (e.g., `audit-scan-20260203-1430`).
 
-Launch 5 Task agents in parallel, each with `subagent_type=Explore` and `model=haiku`.
+Launch 5 Task agents in parallel, each with `subagent_type=general-purpose` and `model=haiku`.
 
 Each agent receives:
 
@@ -66,19 +67,31 @@ last_audited: 2025-01-15 (or "none")
 audit_result: clean (or "none")
 has_redirect: false
 import_count: 3
+
+path: docs/learned/category/another-file.md
+lines: 87
+code_blocks: 2
+file_path_refs: 3
+broken_paths: 0
+last_audited: none
+audit_result: none
+has_redirect: false
+import_count: 1
 ```
+
+**Agent prompt must include these explicit instructions:**
+
+> For each doc, collect signals and append to your output file. Use EXACTLY this format with no variations, no extra text, no markdown headers between entries. Separate entries with a blank line. Do NOT use Python scripts, do NOT return results inline, do NOT add commentary. ONLY write the structured output file.
 
 **Important**: Agents must use the Write tool for output, not return it inline. This prevents silent truncation for large result sets (see `agent-orchestration-safety.md`).
 
-### Phase 4: Exclude Recently Audited, Then Score
+### Phase 4: Verify Output and Score
 
 **Verify agent output files exist** before reading. For each batch file (`.erk/scratch/<run-id>/batch-<N>.md`), run `ls` to confirm it was written. If any file is missing, report which batch failed and stop — do not silently proceed with partial data.
 
 Gather all agent results by reading the scratch files.
 
-**Exclusion rule:** Completely exclude any document whose `last_audited` date is within the last 7 days. These docs are too fresh to need re-audit. Track the excluded count for the report.
-
-Apply this point-based scoring rubric to remaining docs (higher score = more urgent):
+Apply this point-based scoring rubric (higher score = more urgent):
 
 | Signal                                    | Points | Rationale                     |
 | ----------------------------------------- | ------ | ----------------------------- |
@@ -146,7 +159,7 @@ Show paths relative to `docs/learned/` for brevity.
 
 Use AskUserQuestion to offer:
 
-- **"Audit top N candidates"** — run `/local:audit-doc` on the top N HIGH-priority docs sequentially, with user confirmation between each
+- **"Audit top N candidates"** — run `/local:audit-doc` on the top N HIGH-priority docs in parallel, auto-selecting actions
 - **"Show details for a specific doc"** — let user pick one to inspect further
 - **"Export list"** — write the ranked list to `.erk/scratch/audit-scan-results.md`
 - **"No action"** — just noting findings
@@ -155,7 +168,7 @@ Use AskUserQuestion to offer:
 
 Based on user choice:
 
-- **Audit top N**: Default N to the number of available processors on the current machine (use `nproc` or `sysctl -n hw.logicalcpu` on macOS). For each selected doc, invoke `/local:audit-doc <path>` via the Skill tool. After each audit completes, ask user whether to continue to the next.
+- **Audit top N**: Default N to 10. Launch N parallel Task agents (using `subagent_type=general-purpose`), one per doc, each invoking `/local:audit-doc <path>` via the Skill tool. When running in batch mode from audit-scan, auto-select actions without prompting: if non-trivial issues are found, automatically choose "Apply rewrite + stamp"; if the doc is clean (no issues found), automatically choose "Mark as audited (clean)". Do not ask the user between docs — run all N in parallel.
 - **Show details**: Let user specify which doc. Read it and present a quick summary: title, section headings with line counts, frontmatter fields, and first few lines of each section.
 - **Export**: Write the full ranked table (all tiers) to `.erk/scratch/audit-scan-results.md` in markdown format.
 
@@ -163,7 +176,7 @@ Based on user choice:
 
 1. **Heuristic scoring, not LLM judgment**: Scoring is purely mechanical (line counts, path checks, frontmatter presence). This makes the scan fast, deterministic, and cheap. Deep judgment is deferred to `/local:audit-doc`.
 
-2. **Parallel Explore agents with haiku**: Use 5 parallel haiku-model agents to keep scanning fast and cost-effective. Each agent handles ~16-20 docs.
+2. **Parallel general-purpose agents with haiku**: Use 5 parallel haiku-model general-purpose agents to keep scanning fast and cost-effective. Each agent handles ~16-20 docs. General-purpose agents have Write tool access, which is required for structured output.
 
 3. **Integration with audit-doc**: The scan feeds into the existing deep-audit command rather than duplicating its analysis. Scan = triage, audit-doc = deep analysis.
 
