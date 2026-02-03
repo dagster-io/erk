@@ -94,13 +94,13 @@ def setup_codespace(
     # GH-API-AUDIT: REST - POST user/codespaces
     cmd = ["gh", "codespace", "create"]
 
-    if repo:
+    if repo is not None:
         cmd.extend(["--repo", repo])
 
-    if branch:
+    if branch is not None:
         cmd.extend(["--branch", branch])
 
-    if machine:
+    if machine is not None:
         cmd.extend(["--machine", machine])
 
     cmd.extend(["--display-name", name])

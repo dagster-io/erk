@@ -12,7 +12,9 @@ Layer 3 pure unit tests validate that all skills maintain Codex compatibility.
 
 ## Test Coverage
 
-See test functions in `tests/unit/artifacts/test_codex_compatibility.py`:
+**Note:** The test file and source constants below are planned but not yet implemented. This section documents the intended test structure.
+
+Planned test functions in `tests/unit/artifacts/test_codex_compatibility.py`:
 
 | Test                                                     | What It Validates                                                    |
 | -------------------------------------------------------- | -------------------------------------------------------------------- |
