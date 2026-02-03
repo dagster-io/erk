@@ -23,6 +23,11 @@ The `InteractiveAgentConfig` type stores configuration for launching interactive
 
 Type definition, config loading, and default values are in `packages/erk-shared/src/erk_shared/context/types.py` (`InteractiveAgentConfig`). Config loading is in `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py`.
 
+## Key Behaviors
+
+- **CLI flags ALWAYS override config values.** The config provides defaults when flags are omitted.
+- **Boolean coercion** via `bool()` for safety on boolean fields (e.g., `verbose`, `dangerous`).
+
 ## Backward Compatibility
 
 Future versions will support `[interactive-agent]` section. Config loading will check `[interactive-agent]` first, then fall back to `[interactive-claude]` if not found. Existing configs continue working without migration.

@@ -4,8 +4,8 @@ last_audited: "2026-02-03 03:56 PT"
 audit_result: edited
 tripwires:
   - action: "modifying PermissionMode enum or permission mode mappings"
-    warning: "Two permission_mode_to_*() functions must stay in sync (Claude backend and Codex backend). Update both when changing mappings."
-  - action: "changing permission_mode_to_*() implementations"
+    warning: "permission_mode_to_claude() (and future permission_mode_to_codex()) must stay in sync. Update both when changing mappings."
+  - action: "changing permission_mode_to_claude() (or future permission_mode_to_codex()) implementations"
     warning: "Verify both Claude and Codex backend implementations maintain identical enum-to-mode mappings."
 read_when:
   - "Working with interactive agent permissions"
@@ -40,9 +40,9 @@ There are (or will be) two `permission_mode_to_*()` functions:
 
 When modifying permission mode mappings:
 
-- [ ] Both `permission_mode_to_*()` functions updated
+- [ ] `permission_mode_to_claude()` updated (currently the only implemented backend)
 - [ ] Mapping table in this doc updated to match code
-- [ ] Test coverage for each mode on both backends
+- [ ] Test coverage for each mode (currently Claude only; extend to both backends when Codex backend is implemented)
 - [ ] Config file examples updated if field names change
 
 ## Related Documentation
