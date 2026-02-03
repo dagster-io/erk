@@ -24,6 +24,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding a new step to the submit pipeline** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to \_submit_pipeline() list.
 
+**CRITICAL: Before adding a parameter to erk exec without updating calling command** → Read [Parameter Addition Checklist](parameter-addition-checklist.md) first. 3-layer parameter threading required. Update skill argument-hint, command invocations, AND exec script. See parameter-addition-checklist.md for complete steps.
+
 **CRITICAL: Before adding bulleted lists to CLI command help text** → Read [Click Help Text Formatting](help-text-formatting.md) first. Place  before bulleted/numbered lists to prevent Click from merging items into single line.
 
 **CRITICAL: Before adding inline shell logic to a slash command instead of using erk exec** → Read [Slash Command to Exec Migration](slash-command-exec-migration.md) first. Extract reusable logic to an erk exec command. Slash commands should orchestrate exec calls, not contain business logic.

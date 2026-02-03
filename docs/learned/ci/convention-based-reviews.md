@@ -164,6 +164,7 @@ Use `--dry-run` to print the assembled prompt without running Claude.
 | Dignified Python        | `dignified-python.md`          | Python files                            | Enforces coding standards                                                        |
 | Test Coverage           | `test-coverage.md`             | Python source files                     | 6-category file bucketing, untestable file detection, marker-based deduplication |
 | Learned Docs Review     | `learned-docs.md`              | `docs/learned/**/*.md`                  | Detects verbatim source code copies in documentation                             |
+| Doc Audit Review        | `doc-audit.md`                 | `docs/learned/**/*.md`                  | 5-category classification, percentage-based quality verdict                      |
 | Dignified Code Simplify | `dignified-code-simplifier.md` | Python files                            | Simplifies code for clarity and consistency                                      |
 
 ### Test Coverage Agent Details

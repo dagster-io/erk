@@ -20,11 +20,37 @@ Code-level API reference for `objective_roadmap_shared.py` — the shared parser
 ```python
 @dataclass(frozen=True)
 class RoadmapStep:
-    step_id: str          # e.g., "1.1", "2.3"
+    id: str               # e.g., "1.1", "2.3" (note: field name is "id" not "step_id")
     description: str      # Step description text
     status: str           # "pending", "done", "in_progress", "blocked", "skipped"
     pr: str | None        # PR reference (e.g., "#123", "plan #456") or None
 ```
+
+**Important**: The field name is `id` (not `step_id`). See `objective_roadmap_shared.py:14` for actual implementation.
+
+### RoadmapStep (7-column format, planned)
+
+The parser is being extended to support a 7-column table format with additional metadata:
+
+```python
+@dataclass(frozen=True)
+class RoadmapStep:
+    id: str                     # Step ID (e.g., "1.1")
+    description: str            # What the step does
+    status: str                 # "pending", "done", "in_progress", "blocked", "skipped"
+    pr: str | None              # PR reference or None
+    step_type: str              # "task" (default), "milestone", "research"
+    issue: str | None           # GitHub issue reference (e.g., "#456") or None
+    depends_on: str | None      # Dependency on other step IDs (e.g., "1.1,2.3") or None
+```
+
+**Table header for 7-column format**:
+
+```markdown
+| Step | Description | Status | PR | Type | Issue | Depends On |
+```
+
+**Backward compatibility**: The parser will try 7-column format first, then fall back to legacy 4-column format if the table doesn't match.
 
 ### RoadmapPhase
 

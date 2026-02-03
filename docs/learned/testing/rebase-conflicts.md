@@ -136,6 +136,7 @@ This static method accepts a smaller set of parameters (`github_issues`, `git`, 
 | Tests in `erk_shared` or without `global_config` needs | `ErkContext.for_test()` | Available without depending on `erk.core`      |
 | Default choice for most tests                          | `context_for_test()`    | Broadest parameter set, fills in fake defaults |
 
+
 **Key points**:
 
 - `GlobalConfig` uses `erk_root` (not `erks_root`)

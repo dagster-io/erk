@@ -36,6 +36,7 @@
 - **[objective-commands.md](objective-commands.md)** — working with erk objective commands, implementing objective reconcile functionality, understanding auto-advance objectives
 - **[optional-arguments.md](optional-arguments.md)** — making a CLI argument optional, inferring CLI arguments from context, implementing branch-based argument defaults
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
+- **[parameter-addition-checklist.md](parameter-addition-checklist.md)** — adding a parameter to a multi-layer command, working with skills that call erk exec scripts, debugging parameter not found errors
 - **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub issues, working with .impl/ folders, debugging plan execution failures
 - **[pr-operations.md](pr-operations.md)** — creating PRs programmatically, implementing PR submission workflows, preventing duplicate PR creation
 - **[pr-submission.md](pr-submission.md)** — submitting PRs without Graphite, using /erk:git-pr-push command, understanding PR creation workflows

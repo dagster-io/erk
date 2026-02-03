@@ -16,10 +16,12 @@ Local commands (`.claude/commands/local/`) are agent instruction files that exte
 
 Batch audit commands scan the repository comprehensively and categorize multiple items:
 
-| Command           | Scope              | Purpose                             |
-| ----------------- | ------------------ | ----------------------------------- |
-| `/audit-branches` | All branches/PRs   | Identify stale branches and cleanup |
-| `/audit-plans`    | All open erk-plans | Identify stale or completed plans   |
+| Command           | Scope              | Purpose                              |
+| ----------------- | ------------------ | ------------------------------------ |
+| `/audit-branches` | All branches/PRs   | Identify stale branches and cleanup  |
+| `/audit-plans`    | All open erk-plans | Identify stale or completed plans    |
+| `/audit-scan`     | docs/learned/      | Scan docs for audit priority         |
+| `/audit-doc`      | Single doc file    | Deep audit of one documentation file |
 
 **Characteristics:**
 

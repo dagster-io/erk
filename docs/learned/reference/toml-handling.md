@@ -6,6 +6,9 @@ read_when:
   - "generating TOML configuration"
   - "working with config.toml"
   - "working with pyproject.toml"
+tripwires:
+  - action: "defining the same skill or command in multiple TOML sections"
+    warning: "TOML duplicate key constraint: Each skill/command must have a single canonical destination. See single-canonical-destination pattern in this document."
 ---
 
 # TOML File Handling
@@ -96,3 +99,44 @@ tomlkit is a dependency of `erk-shared` package. Import it as:
 ```python
 import tomlkit
 ```
+
+## TOML Duplicate Key Constraint
+
+**Problem**: TOML specification prohibits duplicate keys in the same document. If you define the same key twice, the file is invalid.
+
+### Single-Canonical-Destination Pattern
+
+**Rule**: Each entity (skill, command, config section) must have exactly ONE canonical location.
+
+**Example violation**:
+
+```toml
+# INVALID - duplicate key
+[skills.my-skill]
+source = ".codex/skills/my-skill"
+
+[skills.my-skill]  # ERROR: duplicate key
+source = ".claude/skills/my-skill"
+```
+
+**Correct approach**:
+
+```toml
+# VALID - single canonical location
+[skills.my-skill]
+source = ".codex/skills/my-skill"  # Portable skills live here
+# Will be copied to .claude/ on erk init
+```
+
+### Application: Portable vs Agent-Specific Skills
+
+When deciding where a skill should live:
+
+1. **Portable skills** → `.codex/` only (no duplicate in `.claude/`)
+2. **Claude-only skills** → `.claude/` only (no duplicate in `.codex/`)
+
+Never define the same skill in both locations. Choose one based on portability.
+
+### Reference Implementation
+
+See `docs/learned/integrations/bundled-artifacts.md` for complete portability classification.

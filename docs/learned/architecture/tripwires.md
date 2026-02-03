@@ -36,6 +36,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding a new method to Graphite ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
 
+**CRITICAL: Before adding a parameter to an erk exec script without updating the calling slash command** → Read [Parameter Threading Pattern](parameter-threading-pattern.md) first. 3-layer parameter threading: When adding a parameter, update all three layers: skill SKILL.md argument-hint, slash command .md, and erk exec script. Verify all invocations thread the parameter through.
+
 **CRITICAL: Before adding file I/O, network calls, or subprocess invocations to a class **init\***\* → Read [Erk Architecture Patterns](erk-architecture.md) first. Load `dignified-python` skill first. Class **init\*\* should be lightweight (just data assignment). Heavy operations belong in static factory methods like `from_config_path()` or `load()`. This enables direct instantiation in tests without I/O setup.
 
 **CRITICAL: Before adding re-exports to gateway implementation modules** → Read [Re-Export Pattern](re-export-pattern.md) first. Only re-export types that genuinely improve public API. Add # noqa: F401 - re-exported for <reason> comment.
