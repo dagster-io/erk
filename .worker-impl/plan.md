@@ -16,6 +16,7 @@ All existing Claude skills already have the required Codex YAML frontmatter (`na
 **Key insight**: The wheel `force-include` approach means we can map the same `.claude/skills/` source files to _both_ `erk/data/claude/skills/` and `erk/data/codex/skills/` without any build scripts or file duplication in the repo.
 
 **For editable installs**: `get_bundled_codex_dir()` returns the `.claude/` parent directory remapped -- but actually, the simpler approach is to just have the install logic (Step 1.4) read from `get_bundled_claude_dir()` and write to `.codex/skills/` in the target. This step's job is just to ensure:
+
 - The path function exists for wheel installs
 - The wheel includes codex-formatted artifacts
 - All skills pass Codex frontmatter validation
@@ -40,11 +41,13 @@ def get_bundled_codex_dir() -> Path:
 **Wait -- this is confusing.** If `get_bundled_codex_dir()` returns `.claude/` for editable installs, it defeats the purpose. The cleaner approach:
 
 **Revised**: Don't create `get_bundled_codex_dir()` at all in this step. Instead:
+
 - The skill source is always `get_bundled_claude_dir() / "skills" / skill_name`
 - The install _target_ is determined by backend: `.claude/skills/` or `.codex/skills/`
 - For wheel installs, we still need the codex force-include entries (so the wheel carries codex-packaged artifacts for non-editable users)
 
 **Final approach**: This step delivers:
+
 1. Codex force-include entries in `pyproject.toml` for wheel distribution
 2. Frontmatter validation test
 3. A `codex_portable_skills()` function that returns the list of skills suitable for Codex
@@ -119,6 +122,7 @@ CLAUDE_ONLY_SKILLS: frozenset[str] = frozenset({
 **New file**: `tests/unit/artifacts/test_codex_compatibility.py`
 
 Tests:
+
 - `test_all_skills_have_codex_required_frontmatter` -- every SKILL.md has `name` (≤64 chars) and `description` (≤1024 chars)
 - `test_portable_skills_match_bundled` -- every skill in `CODEX_PORTABLE_SKILLS` exists in `.claude/skills/`
 - `test_codex_portable_and_claude_only_cover_all_skills` -- union equals all skills (no orphans)
@@ -129,11 +133,11 @@ Tests:
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/erk/artifacts/paths.py` | Add `get_bundled_codex_dir()` |
-| `src/erk/core/capabilities/codex_portable.py` | New: portability registry |
-| `pyproject.toml` | Add Codex force-include entries |
+| File                                               | Change                               |
+| -------------------------------------------------- | ------------------------------------ |
+| `src/erk/artifacts/paths.py`                       | Add `get_bundled_codex_dir()`        |
+| `src/erk/core/capabilities/codex_portable.py`      | New: portability registry            |
+| `pyproject.toml`                                   | Add Codex force-include entries      |
 | `tests/unit/artifacts/test_codex_compatibility.py` | New: frontmatter + portability tests |
 
 ## Verification
