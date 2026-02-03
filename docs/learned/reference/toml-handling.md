@@ -108,7 +108,7 @@ TOML dictionaries cannot have duplicate keys. If you need to map the same source
 
 ### Pattern: Skill Bundling
 
-See the force-include section in `pyproject.toml` for the canonical mapping pattern for Codex-portable skills. All Codex-portable skills map to a single `erk/data/codex/skills/` destination in wheels.
+See the force-include section in `pyproject.toml` for the canonical mapping pattern for Codex-portable skills. All Codex-portable skills map to `erk/data/claude/skills/` in wheels.
 
 ## Reference Implementation
 

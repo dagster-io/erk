@@ -86,7 +86,7 @@ Erk classifies skills into two tiers for external distribution:
 
 Skills that work with any AI coding agent. These have no Claude-specific dependencies (hooks, session logs, Claude Code commands).
 
-See `CODEX_PORTABLE_SKILLS` in `src/erk/core/capabilities/codex_portable.py` for the authoritative list.
+The authoritative list is the set of skills with force-include mappings in `pyproject.toml` under `[tool.hatch.build.targets.wheel.force-include]`.
 
 **Portability Criteria:**
 
@@ -99,25 +99,21 @@ See `CODEX_PORTABLE_SKILLS` in `src/erk/core/capabilities/codex_portable.py` for
 
 Skills requiring Claude-specific features. These cannot be ported.
 
-See `CLAUDE_ONLY_SKILLS` in `src/erk/core/capabilities/codex_portable.py` for the list (4 skills).
-
 **Why Claude-only:** Session inspection, CI iteration hooks, command/skill creators that output Claude format
 
 ### Bundled Path Resolution
 
-| Install Type | `get_bundled_codex_dir()` Returns |
-| ------------ | --------------------------------- |
-| Wheel        | `erk/data/codex/`                 |
-| Editable     | `.claude/` (shared with Claude)   |
+| Install Type | `get_bundled_claude_dir()` Returns |
+| ------------ | ---------------------------------- |
+| Wheel        | `erk/data/claude/`                 |
+| Editable     | `.claude/` (shared with Claude)    |
 
-See `get_bundled_codex_dir()` in `src/erk/artifacts/paths.py` for the implementation.
+See `get_bundled_claude_dir()` in `src/erk/artifacts/paths.py` for the implementation.
 
 ### Adding a New Codex-Portable Skill
 
 1. Create skill in `.claude/skills/<name>/SKILL.md` with required frontmatter
-2. Add skill name to `CODEX_PORTABLE_SKILLS` in `src/erk/core/capabilities/codex_portable.py`
-3. Add force-include mapping in `pyproject.toml` under `[tool.hatch.build.targets.wheel.force-include]`
-4. Run tests: `pytest tests/unit/artifacts/test_codex_compatibility.py`
+2. Add force-include mapping in `pyproject.toml` under `[tool.hatch.build.targets.wheel.force-include]`
 
 ## Sync Functions
 
