@@ -32,12 +32,14 @@ def test_next_plan_launches_claude_with_issue_number() -> None:
     The next-plan command uses plan mode since it's for creating implementation plans.
     """
     runner = CliRunner()
+    global_config = GlobalConfig.test(erk_root=Path("/tmp/erk"))
+    ctx = context_for_test(global_config=global_config)
 
     with (
         patch("shutil.which", return_value="/usr/local/bin/claude"),
         patch("os.execvp") as mock_execvp,
     ):
-        runner.invoke(cli, ["objective", "next-plan", "3679"])
+        runner.invoke(cli, ["objective", "next-plan", "3679"], obj=ctx)
 
     mock_execvp.assert_called_once()
     call_args = mock_execvp.call_args
@@ -56,12 +58,14 @@ def test_next_plan_launches_claude_with_url() -> None:
     """Test next-plan launches Claude with the correct command for GitHub URL."""
     runner = CliRunner()
     url = "https://github.com/owner/repo/issues/3679"
+    global_config = GlobalConfig.test(erk_root=Path("/tmp/erk"))
+    ctx = context_for_test(global_config=global_config)
 
     with (
         patch("shutil.which", return_value="/usr/local/bin/claude"),
         patch("os.execvp") as mock_execvp,
     ):
-        runner.invoke(cli, ["objective", "next-plan", url])
+        runner.invoke(cli, ["objective", "next-plan", url], obj=ctx)
 
     mock_execvp.assert_called_once()
     call_args = mock_execvp.call_args
@@ -79,12 +83,14 @@ def test_next_plan_launches_claude_with_url() -> None:
 def test_next_plan_alias_np_works() -> None:
     """Test that 'np' alias works for next-plan command."""
     runner = CliRunner()
+    global_config = GlobalConfig.test(erk_root=Path("/tmp/erk"))
+    ctx = context_for_test(global_config=global_config)
 
     with (
         patch("shutil.which", return_value="/usr/local/bin/claude"),
         patch("os.execvp") as mock_execvp,
     ):
-        runner.invoke(cli, ["objective", "np", "123"])
+        runner.invoke(cli, ["objective", "np", "123"], obj=ctx)
 
     mock_execvp.assert_called_once()
     call_args = mock_execvp.call_args
@@ -147,12 +153,14 @@ def test_next_plan_respects_allow_dangerous_config() -> None:
 def test_next_plan_with_dangerous_flag() -> None:
     """Test that -d/--dangerous flag passes --allow-dangerously-skip-permissions to Claude."""
     runner = CliRunner()
+    global_config = GlobalConfig.test(erk_root=Path("/tmp/erk"))
+    ctx = context_for_test(global_config=global_config)
 
     with (
         patch("shutil.which", return_value="/usr/local/bin/claude"),
         patch("os.execvp") as mock_execvp,
     ):
-        runner.invoke(cli, ["objective", "next-plan", "-d", "123"])
+        runner.invoke(cli, ["objective", "next-plan", "-d", "123"], obj=ctx)
 
     mock_execvp.assert_called_once()
     call_args = mock_execvp.call_args
@@ -171,12 +179,14 @@ def test_next_plan_with_dangerous_flag() -> None:
 def test_next_plan_without_dangerous_flag() -> None:
     """Test that without -d flag, --allow-dangerously-skip-permissions is not passed."""
     runner = CliRunner()
+    global_config = GlobalConfig.test(erk_root=Path("/tmp/erk"))
+    ctx = context_for_test(global_config=global_config)
 
     with (
         patch("shutil.which", return_value="/usr/local/bin/claude"),
         patch("os.execvp") as mock_execvp,
     ):
-        runner.invoke(cli, ["objective", "next-plan", "123"])
+        runner.invoke(cli, ["objective", "next-plan", "123"], obj=ctx)
 
     mock_execvp.assert_called_once()
     call_args = mock_execvp.call_args
