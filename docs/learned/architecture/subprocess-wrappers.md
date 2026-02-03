@@ -253,6 +253,162 @@ This pattern is especially important in CI where large content is common and she
 - [GitHub CLI PR Comment Patterns](../ci/github-cli-comment-patterns.md) - Full guide to CI comment posting patterns
 - [GitHub Actions Output Patterns](../ci/github-actions-output-patterns.md) - For `$GITHUB_OUTPUT` (different context)
 
+## Lenient vs. Strict Handlers
+
+Some subprocess operations should fail gracefully while others should fail fast. The `_get_pr_for_plan_direct()` pattern from `trigger-async-learn` demonstrates the lenient approach.
+
+### Decision Matrix
+
+| Aspect                    | Lenient Handler                        | Strict Handler                         |
+| ------------------------- | -------------------------------------- | -------------------------------------- |
+| **Error handling**        | Returns `None` on any failure          | Raises exception or returns error type |
+| **Return type**           | `T \| None`                            | `T` or discriminated union             |
+| **Use case**              | Optional operations, fail-open         | Critical operations, fail-closed       |
+| **Caller responsibility** | Check for `None`, decide how to handle | Catch exception or check error type    |
+
+### Lenient Pattern
+
+Use when the operation is **optional** and the caller should decide how to handle absence:
+
+```python
+def _get_pr_for_plan_direct(
+    *,
+    github_issues,
+    github,
+    repo_root: Path,
+    issue_number: int,
+) -> dict[str, object] | None:
+    """Look up PR for a plan issue (lenient).
+
+    Returns:
+        PR metadata dict on success, None on ANY failure
+    """
+    # Missing issue? Return None
+    issue = github_issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        return None
+
+    # Missing metadata? Return None
+    block = find_metadata_block(issue.body, "plan-header")
+    if block is None:
+        return None
+
+    # Missing branch_name? Return None (no error)
+    branch_name = block.data.get("branch_name")
+    if branch_name is None:
+        return None
+
+    # PR not found? Return None
+    pr_result = github.get_pr_for_branch(repo_root, branch_name)
+    if isinstance(pr_result, PRNotFound):
+        return None
+
+    return {"pr_number": pr_result.number, ...}
+```
+
+**Characteristics:**
+
+- **No exceptions** - Never raises, always returns `None` on failure
+- **No error messages** - Caller decides what to log
+- **Uniform failure** - All failure modes return `None` consistently
+
+**When to use:**
+
+- Background operations that shouldn't block main workflow
+- Optional data fetching (e.g., review comments for learn)
+- Exploratory queries where absence is expected
+
+### Strict Pattern
+
+Use when the operation is **critical** and failure should be explicit:
+
+```python
+def get_pr_for_plan(
+    *,
+    ctx: ErkContext,
+    repo_root: Path,
+    issue_number: int,
+) -> int:
+    """Look up PR for a plan issue (strict).
+
+    Returns:
+        PR number
+
+    Raises:
+        ValueError: If plan has no branch_name or PR not found
+    """
+    issue = ctx.issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        raise ValueError(f"Issue #{issue_number} not found")
+
+    block = find_metadata_block(issue.body, "plan-header")
+    if block is None:
+        raise ValueError(f"Issue #{issue_number} has no plan-header")
+
+    branch_name = block.data.get("branch_name")
+    if branch_name is None:
+        # Attempt recovery via pattern matching
+        current_branch = ctx.git.branch.get_current_branch(repo_root)
+        if current_branch and current_branch.startswith(f"P{issue_number}-"):
+            branch_name = current_branch
+        else:
+            raise ValueError(f"Issue #{issue_number} has no branch_name")
+
+    pr_result = ctx.github.get_pr_for_branch(repo_root, branch_name)
+    if isinstance(pr_result, PRNotFound):
+        raise ValueError(f"No PR found for branch '{branch_name}'")
+
+    return pr_result.number
+```
+
+**Characteristics:**
+
+- **Explicit errors** - Each failure mode has specific error message
+- **Recovery attempts** - May try to infer missing data before failing
+- **Clear contract** - Caller knows exceptions mean critical failure
+
+**When to use:**
+
+- User-facing commands where failure needs explanation
+- Critical path operations that cannot continue without the data
+- CLI commands that should exit with error message
+
+### Real-World Example: trigger-async-learn
+
+The `trigger-async-learn` command uses **lenient handler** for PR lookup:
+
+```python
+# Lenient: Try to get PR info, but don't fail if unavailable
+pr_info = _get_pr_for_plan_direct(...)
+if pr_info is None:
+    # No PR found - that's OK, just skip review comments
+    click.echo("No PR found for plan, skipping review comments", err=True)
+    review_comments = None
+else:
+    # PR found - fetch review comments
+    pr_number = pr_info["pr_number"]
+    review_comments = fetch_review_comments(repo_root, pr_number)
+
+# Continue with learn workflow (with or without review comments)
+upload_materials(sessions, review_comments)
+trigger_workflow(...)
+```
+
+**Why lenient?**
+
+- Learn can succeed without review comments
+- PR might not exist yet (plan created before implementation)
+- Running from GitHub Actions (no current branch for recovery)
+
+**Contrast with strict handler:**
+
+The same PR lookup in `get_pr_for_plan.py` is **strict** because it's a user-facing command where the user explicitly asked for the PR and expects either the answer or a clear error message.
+
+### See Also
+
+- [Fail-Open Patterns](fail-open-patterns.md) - When to allow graceful degradation
+- [Branch Name Inference](../planning/branch-name-inference.md) - Recovery mechanism for missing branch_name
+
 ## Summary
 
 - **Gateway layer**: Use `run_subprocess_with_context()` for business logic

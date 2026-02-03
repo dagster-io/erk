@@ -1182,6 +1182,51 @@ An execution pattern where subprocess output is streamed to the UI in real-time 
 
 **Related**: [TUI Streaming Output Patterns](tui/streaming-output.md)
 
+### PromptExecutor
+
+The core ABC for launching Claude CLI in various modes (interactive, streaming, command, prompt). Consolidated from the old `ClaudeExecutor` and gateway `PromptExecutor` in PR #6587.
+
+**Location**: `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
+
+**Methods**:
+
+- `execute_interactive()` - Replace process with Claude (uses `os.execvp()`)
+- `execute_command()` - Run slash command, return CommandResult with metadata
+- `execute_command_streaming()` - Stream events in real-time (Iterator[ExecutorEvent])
+- `execute_prompt()` - Single-shot prompt execution, return PromptResult
+
+**Related**: [PromptExecutor Patterns](architecture/prompt-executor-patterns.md)
+
+### ClaudePromptExecutor
+
+The real implementation of PromptExecutor that launches the actual Claude CLI binary.
+
+**Location**: `src/erk/core/prompt_executor.py`
+
+**Key features**:
+
+- Background thread for stderr accumulation during streaming
+- Metadata extraction from JSONL events (PR numbers, issue numbers, titles)
+- Hook interaction detection (zero turns)
+- Process error handling
+
+**Related**: [PromptExecutor Patterns](architecture/prompt-executor-patterns.md)
+
+### FakePromptExecutor
+
+The test fake for PromptExecutor that simulates Claude execution without subprocess calls.
+
+**Location**: `tests/fakes/prompt_executor.py`
+
+**Key features**:
+
+- Constructor injection for predetermined behavior
+- Tracks all calls (`interactive_calls`, `executed_commands`, `prompt_calls`)
+- Simulates PR metadata, tool events, failures, hook blocking
+- No subprocess overhead in tests
+
+**Related**: [Fake API Migration Pattern](testing/fake-api-migration-pattern.md)
+
 ### Capability Marker
 
 A parameter (like `repo_root`) whose presence/absence determines which execution path or feature set is available. Used to gracefully degrade functionality.

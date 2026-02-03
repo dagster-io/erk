@@ -20,6 +20,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before calling commands that depend on `.impl/issue.json` metadata** → Read [Plan Lifecycle](lifecycle.md) first. Verify metadata file exists in worktree; if missing, operations silently return empty values.
 
+**CRITICAL: Before changing branch naming convention (P{issue}- pattern)** → Read [Branch Name Inference](branch-name-inference.md) first. Pattern matching in get_pr_for_plan.py depends on P{issue}- format. Update inference logic if pattern changes.
+
 **CRITICAL: Before consolidating issues that already have erk-consolidated label** → Read [Consolidation Labels](consolidation-labels.md) first. Filter out erk-consolidated issues before consolidation. These are outputs of previous consolidation and should not be re-consolidated.
 
 **CRITICAL: Before creating erk-learn plan for an issue that already has erk-learn label** → Read [Learn Plan Validation](learn-plan-validation.md) first. Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention).
@@ -43,6 +45,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before modifying learn command to add/remove/reorder agents** → Read [Learn Workflow](learn-workflow.md) first. Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output.
 
 **CRITICAL: Before modifying marker deletion behavior in exit-plan-mode hook** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Reusable markers (plan-saved) must persist; one-time markers (implement-now, objective-context) are consumed. Deleting reusable markers breaks state machines and enables retry loops that create duplicates.
+
+**CRITICAL: Before modifying plan-header metadata format** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name field is intentionally omitted at creation. Update recovery mechanism in get_pr_for_plan.py if changing pattern.
 
 **CRITICAL: Before reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
 

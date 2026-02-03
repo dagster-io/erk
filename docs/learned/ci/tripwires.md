@@ -34,6 +34,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before composing conditions across multiple GitHub Actions workflow steps** → Read [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) first. Verify each `steps.step_id.outputs.key` reference exists and matches actual step IDs.
 
+**CRITICAL: Before creating .claude/ markdown commands without running Prettier** → Read [Prettier Formatting for Claude Commands](claude-commands-prettier.md) first. Run 'make prettier' before committing. CI will fail on un-formatted markdown.
+
 **CRITICAL: Before editing markdown files in docs/** → Read [Markdown Formatting in CI Workflows](markdown-formatting.md) first. Run `make prettier` via devrun after markdown edits. Multi-line edits trigger Prettier failures. Never manually format - use the command.
 
 **CRITICAL: Before implementing change detection without baseline capture** → Read [erk-impl Change Detection](plan-implement-change-detection.md) first. Read this doc first. Always capture baseline state BEFORE mutation, then compare AFTER.

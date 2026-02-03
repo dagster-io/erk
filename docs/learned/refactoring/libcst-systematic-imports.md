@@ -231,6 +231,109 @@ mv packages/foo/bar.py.tmp packages/foo/bar.py
 pytest tests/unit/test_bar.py
 ```
 
+## Use Case: ABC Consolidation
+
+LibCST is particularly valuable for ABC consolidation refactorings where you're merging two abstractions into one. The PromptExecutor consolidation (PR #6587) is a canonical example.
+
+### Problem Statement
+
+When consolidating `ClaudeExecutor` into `PromptExecutor`, you need to:
+
+1. **Rename imports** - Update all `from ...claude_executor import ...` to `from ...prompt_executor import ...`
+2. **Rename types** - Change `ClaudeExecutor` → `PromptExecutor`, `ClaudeEvent` → `ExecutorEvent`, etc.
+3. **Update test constructors** - Rename `FakeClaudeExecutor(...)` → `FakePromptExecutor(...)`
+4. **Update context fields** - Change `ctx.claude_executor` → `ctx.prompt_executor`
+
+Across **40+ files** manually is error-prone. LibCST automates this.
+
+### Transformation Strategy
+
+**Step 1: Import path updates**
+
+```python
+class PromptExecutorImportTransformer(cst.CSTTransformer):
+    def leave_ImportFrom(self, original_node, updated_node):
+        # Match: from erk_shared.core.claude_executor import ...
+        # Replace with: from erk_shared.core.prompt_executor import ...
+        if m.matches(updated_node, m.ImportFrom(module=m.Attribute(
+            value=m.Attribute(value=m.Name("erk_shared"), attr=m.Name("core")),
+            attr=m.Name("claude_executor")
+        ))):
+            return updated_node.with_changes(
+                module=cst.Attribute(
+                    value=cst.Attribute(value=cst.Name("erk_shared"), attr=cst.Name("core")),
+                    attr=cst.Name("prompt_executor")
+                )
+            )
+        return updated_node
+```
+
+**Step 2: Type renames**
+
+```python
+def leave_Name(self, original_node, updated_node):
+    # Rename class/type references
+    renames = {
+        "ClaudeExecutor": "PromptExecutor",
+        "FakeClaudeExecutor": "FakePromptExecutor",
+        "ClaudeEvent": "ExecutorEvent",
+        "is_claude_available": "is_available"
+    }
+    if updated_node.value in renames:
+        return updated_node.with_changes(value=renames[updated_node.value])
+    return updated_node
+```
+
+**Step 3: Context field updates**
+
+```python
+def leave_Attribute(self, original_node, updated_node):
+    # Match: ctx.claude_executor
+    # Replace with: ctx.prompt_executor
+    if m.matches(updated_node, m.Attribute(
+        value=m.Name("ctx"),
+        attr=m.Name("claude_executor")
+    )):
+        return updated_node.with_changes(attr=cst.Name("prompt_executor"))
+    return updated_node
+```
+
+### Application
+
+Run the transformer across the codebase:
+
+```bash
+# Dry run (preview changes)
+python -m libcst.tool codemod --no-format prompt_executor_consolidation.py src/ tests/
+
+# Apply changes
+python -m libcst.tool codemod prompt_executor_consolidation.py src/ tests/
+
+# Verify with tests
+make test-unit
+```
+
+### Results from PR #6587
+
+- **40+ files updated** - All imports, types, and references renamed
+- **Zero manual edits** - Entirely automated with LibCST
+- **Tests passed immediately** - Transformation was mechanically correct
+- **2-hour refactor** - Would have taken days manually
+
+### Lessons Learned
+
+**Do:**
+
+- Test transformer on 2-3 representative files first
+- Use `with_changes()` to preserve formatting and comments
+- Verify with `ruff check` and `make test-unit` after transformation
+
+**Don't:**
+
+- Rename types that have nothing to do with the consolidation (e.g., avoid renaming user-facing "Claude" strings)
+- Transform relative imports (`.abc`, `.types`) inside moved packages
+- Apply to the entire codebase without testing on a subset first
+
 ## Common Pitfalls
 
 ### Matching Partial Paths

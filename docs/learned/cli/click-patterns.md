@@ -45,3 +45,4 @@ if environment is not None:
 
 - [Optional Arguments](optional-arguments.md) - Inferring arguments from context
 - [Output Styling](output-styling.md) - Formatting CLI output
+- [Help Text Formatting](help-text-formatting.md) - Using `\b` for code examples and bulleted lists

@@ -12,6 +12,7 @@
 - **[erkdesk-component-testing.md](erkdesk-component-testing.md)** — writing tests for erkdesk React components, testing keyboard navigation in erkdesk, testing async state updates in React components
 - **[exec-script-batch-testing.md](exec-script-batch-testing.md)** — writing tests for batch exec commands, organizing test cases for JSON stdin/stdout commands, implementing fake gateway failure injection for batch operations
 - **[exec-script-testing.md](exec-script-testing.md)** — testing exec CLI commands, writing integration tests for scripts, debugging 'Context not initialized' errors in tests, debugging flaky tests in parallel execution
+- **[fake-api-migration-pattern.md](fake-api-migration-pattern.md)** — Writing tests for prompt executor functionality, Migrating old PromptExecutor tests after consolidation, Understanding FakePromptExecutor constructor API
 - **[fake-github-testing.md](fake-github-testing.md)** — Writing tests that use FakeGitHubIssues
 - **[frozen-dataclass-test-doubles.md](frozen-dataclass-test-doubles.md)** — implementing a fake for an ABC interface, adding mutation tracking to a test double, understanding the frozen dataclass with mutable internals pattern, writing tests that assert on method call parameters
 - **[gateway-fake-testing-exemplar.md](gateway-fake-testing-exemplar.md)** — writing tests for gateway fakes with discriminated unions, implementing new fake gateway methods, testing success and error paths through fakes
