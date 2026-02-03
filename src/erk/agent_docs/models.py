@@ -4,6 +4,11 @@ This module defines the frontmatter schema for agent documentation files.
 """
 
 from dataclasses import dataclass
+from typing import Literal
+
+# "clean" — audit found no issues, doc content matches codebase reality
+# "edited" — audit found issues and the doc was updated to fix them
+AuditResult = Literal["clean", "edited"]
 
 
 @dataclass(frozen=True)
@@ -35,6 +40,8 @@ class AgentDocFrontmatter:
     title: str
     read_when: list[str]
     tripwires: list[Tripwire]
+    last_audited: str | None
+    audit_result: AuditResult | None
 
     def is_valid(self) -> bool:
         """Check if this frontmatter has all required fields."""
