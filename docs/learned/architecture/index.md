@@ -33,7 +33,7 @@
 - **[gateway-decomposition-phases.md](gateway-decomposition-phases.md)** — understanding the gateway decomposition initiative, planning new subgateway extractions, reviewing architectural history
 - **[gateway-error-boundaries.md](gateway-error-boundaries.md)** — implementing gateway error handling, converting gateway operations to discriminated unions, deciding where try/except blocks belong in gateways
 - **[gateway-hierarchy.md](gateway-hierarchy.md)** — understanding gateway relationships, deciding which gateway to use for an operation, understanding BranchManager abstraction, understanding GraphiteDisabled sentinel pattern, querying both Graphite and GitHub for completeness, understanding dual-source patterns
-- **[gateway-inventory.md](gateway-inventory.md)** — understanding available gateways, adding a new gateway, creating test doubles for external services
+- **[gateway-inventory.md](gateway-inventory.md)** — understanding available gateways, adding a new gateway
 - **[gateway-removal-pattern.md](gateway-removal-pattern.md)** — Consolidating two gateways into one, Removing deprecated gateway implementations, Refactoring gateway hierarchies
 - **[gateway-signature-migration.md](gateway-signature-migration.md)** — changing gateway method signatures, migrating callers after gateway API changes, updating discriminated union return types across call sites
 - **[gateway-specific-patterns.md](gateway-specific-patterns.md)** — implementing gateway methods with mixed error handling, designing operations with main logic and cleanup steps, converting methods with cleanup operations to discriminated unions

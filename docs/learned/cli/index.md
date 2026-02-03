@@ -29,8 +29,6 @@
 - **[exec-script-schema-patterns.md](exec-script-schema-patterns.md)** — writing an exec script that produces JSON consumed by another script, debugging silent filtering failures in exec script pipelines, adding new fields to exec script JSON output
 - **[fast-path-pattern.md](fast-path-pattern.md)** — implementing CLI commands that can skip expensive operations, adding fast path optimization to existing commands, understanding when to invoke Claude vs complete locally
 - **[help-text-formatting.md](help-text-formatting.md)** — Writing CLI command docstrings, Adding Examples sections to Click commands, Formatting bulleted lists in help text
-- **[json-schema.md](json-schema.md)** — adding --json flag to CLI commands, parsing JSON output from erk commands, implementing kit CLI commands with JSON output
-- **[json-serialization-patterns.md](json-serialization-patterns.md)** — implementing erk exec commands with JSON output, serializing dataclasses to JSON, handling datetime or tuple fields in JSON output, working with --format json option
 - **[learn-plan-land-flow.md](learn-plan-land-flow.md)** — landing PRs associated with learn plans, understanding learn plan status transitions, working with tripwire documentation promotion
 - **[list-formatting.md](list-formatting.md)** — formatting list output, designing list commands, ensuring consistent list display
 - **[local-commands.md](local-commands.md)** — designing local commands, understanding local command taxonomy, creating audit or assessment commands
