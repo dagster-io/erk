@@ -7,7 +7,9 @@ import type {
   ActionResult,
   ActionOutputEvent,
   ActionCompletedEvent,
+  TerminalSummonResult,
 } from "../types/erkdesk";
+import { toScreenCoordinates, summonTerminal } from "./terminal";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -16,6 +18,7 @@ if (require("electron-squirrel-startup")) {
 
 let webView: WebContentsView | null = null;
 let activeAction: ChildProcess | null = null;
+let lastRightPaneBounds: WebViewBounds | null = null;
 
 const createWindow = (): void => {
   const mainWindow = new BrowserWindow({
@@ -43,6 +46,7 @@ const createWindow = (): void => {
 
   // IPC: Update the WebContentsView bounds from renderer measurements.
   ipcMain.on("webview:update-bounds", (_event, bounds: WebViewBounds) => {
+    lastRightPaneBounds = bounds;
     if (!webView) return;
     webView.setBounds({
       x: Math.max(0, Math.floor(bounds.x)),
@@ -114,6 +118,22 @@ const createWindow = (): void => {
           });
         });
       });
+    },
+  );
+
+  // IPC: Summon a terminal window positioned over the right pane.
+  ipcMain.handle(
+    "terminal:summon",
+    async (_event, _planId: number): Promise<TerminalSummonResult> => {
+      const screenBounds =
+        lastRightPaneBounds !== null
+          ? toScreenCoordinates(
+              lastRightPaneBounds,
+              mainWindow.getBounds(),
+              mainWindow.getContentBounds(),
+            )
+          : null;
+      return summonTerminal(screenBounds);
     },
   );
 
@@ -192,12 +212,14 @@ const createWindow = (): void => {
     ipcMain.removeAllListeners("webview:load-url");
     ipcMain.removeHandler("plans:fetch");
     ipcMain.removeHandler("actions:execute");
+    ipcMain.removeHandler("terminal:summon");
     ipcMain.removeAllListeners("actions:start-streaming");
     if (activeAction) {
       activeAction.kill();
       activeAction = null;
     }
     webView = null;
+    lastRightPaneBounds = null;
   });
 };
 

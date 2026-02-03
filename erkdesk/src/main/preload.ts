@@ -32,6 +32,8 @@ contextBridge.exposeInMainWorld("erkdesk", {
       },
     );
   },
+  summonTerminal: (planId: number) =>
+    ipcRenderer.invoke("terminal:summon", planId),
   removeActionListeners: () => {
     ipcRenderer.removeAllListeners("action:output");
     ipcRenderer.removeAllListeners("action:completed");
