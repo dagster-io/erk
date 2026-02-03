@@ -6,6 +6,7 @@ interface ActionToolbarProps {
   selectedPlan: PlanRow | null;
   runningActionId: string | null;
   onActionStart: (actionId: string, command: string, args: string[]) => void;
+  onSummonTerminal: (planId: number) => void;
 }
 
 interface ActionDef {
@@ -76,6 +77,7 @@ const ActionToolbar: React.FC<ActionToolbarProps> = ({
   selectedPlan,
   runningActionId,
   onActionStart,
+  onSummonTerminal,
 }) => {
   const handleClick = useCallback(
     (action: ActionDef) => {
@@ -86,6 +88,16 @@ const ActionToolbar: React.FC<ActionToolbarProps> = ({
     },
     [runningActionId, selectedPlan, onActionStart],
   );
+
+  const handleSummonTerminal = useCallback(() => {
+    if (runningActionId !== null || selectedPlan === null) return;
+    onSummonTerminal(selectedPlan.issue_number);
+  }, [runningActionId, selectedPlan, onSummonTerminal]);
+
+  const terminalDisabled =
+    selectedPlan === null ||
+    !selectedPlan.exists_locally ||
+    runningActionId !== null;
 
   return (
     <div className="action-toolbar">
@@ -106,6 +118,13 @@ const ActionToolbar: React.FC<ActionToolbarProps> = ({
           </button>
         );
       })}
+      <button
+        className="action-toolbar__button"
+        disabled={terminalDisabled}
+        onClick={handleSummonTerminal}
+      >
+        Terminal
+      </button>
     </div>
   );
 };
