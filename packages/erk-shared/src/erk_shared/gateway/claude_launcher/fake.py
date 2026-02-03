@@ -31,10 +31,16 @@ class FakeClaudeLauncher(ClaudeLauncher):
     This class has NO public setup methods. All state is captured during execution.
     """
 
-    def __init__(self) -> None:
-        """Create FakeClaudeLauncher."""
+    def __init__(self, *, launch_error: str | None = None) -> None:
+        """Create FakeClaudeLauncher.
+
+        Args:
+            launch_error: If set, launch_interactive raises RuntimeError with this message.
+                Use to simulate Claude CLI not being installed.
+        """
         self._launch_calls: list[ClaudeLaunchCall] = []
         self._launch_called = False
+        self._launch_error = launch_error
 
     @property
     def launch_calls(self) -> list[ClaudeLaunchCall]:
@@ -77,6 +83,8 @@ class FakeClaudeLauncher(ClaudeLauncher):
         Raises:
             SystemExit: Always raised to simulate process replacement
         """
+        if self._launch_error is not None:
+            raise RuntimeError(self._launch_error)
         self._launch_called = True
         self._launch_calls.append(ClaudeLaunchCall(config=config, command=command))
         # Simulate process replacement by exiting

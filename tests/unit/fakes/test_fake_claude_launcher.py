@@ -88,6 +88,29 @@ class TestFakeClaudeLauncherLaunchInteractive:
         assert launcher.launch_called is False
 
 
+class TestFakeClaudeLauncherLaunchError:
+    """Tests for FakeClaudeLauncher launch_error configuration."""
+
+    def test_launch_error_raises_runtime_error(self) -> None:
+        """launch_interactive() raises RuntimeError when launch_error is set."""
+        launcher = FakeClaudeLauncher(launch_error="Claude CLI not found")
+        config = InteractiveClaudeConfig.default()
+
+        with pytest.raises(RuntimeError, match="Claude CLI not found"):
+            launcher.launch_interactive(config, command="test")
+
+    def test_launch_error_does_not_track_call(self) -> None:
+        """launch_interactive() does not track the call when launch_error is set."""
+        launcher = FakeClaudeLauncher(launch_error="test error")
+        config = InteractiveClaudeConfig.default()
+
+        with pytest.raises(RuntimeError):
+            launcher.launch_interactive(config, command="test")
+
+        assert launcher.launch_called is False
+        assert launcher.launch_calls == []
+
+
 class TestFakeClaudeLauncherDefensiveCopying:
     """Tests for FakeClaudeLauncher defensive copying behavior."""
 

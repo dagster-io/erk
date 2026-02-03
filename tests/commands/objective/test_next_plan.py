@@ -16,16 +16,13 @@ from erk_shared.gateway.claude_launcher.fake import FakeClaudeLauncher
 
 
 def test_next_plan_shows_error_when_claude_not_installed() -> None:
-    """Test next-plan shows error when Claude CLI is not installed.
-
-    RealClaudeLauncher checks for Claude CLI availability and raises RuntimeError.
-    """
+    """Test next-plan shows error when Claude CLI is not installed."""
     runner = CliRunner()
 
-    # Create launcher that will raise RuntimeError on launch
-    from erk_shared.gateway.claude_launcher.real import RealClaudeLauncher
-
-    ctx = context_for_test(claude_launcher=RealClaudeLauncher())
+    launcher = FakeClaudeLauncher(
+        launch_error="Claude CLI not found\nInstall from: https://claude.com/download"
+    )
+    ctx = context_for_test(claude_launcher=launcher)
 
     result = runner.invoke(cli, ["objective", "next-plan", "123"], obj=ctx)
 

@@ -49,4 +49,7 @@ def next_plan(ctx: ErkContext, issue_ref: str, dangerous: bool) -> None:
     )
 
     # Replace current process with Claude
-    ctx.claude_launcher.launch_interactive(config, command=command)
+    try:
+        ctx.claude_launcher.launch_interactive(config, command=command)
+    except RuntimeError as e:
+        raise click.ClickException(str(e)) from e
