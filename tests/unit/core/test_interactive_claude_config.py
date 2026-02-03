@@ -1,6 +1,8 @@
-"""Tests for InteractiveAgentConfig dataclass."""
+"""Tests for InteractiveAgentConfig dataclass and permission mode mapping."""
 
-from erk_shared.context.types import InteractiveAgentConfig
+import pytest
+
+from erk_shared.context.types import InteractiveAgentConfig, permission_mode_to_claude
 
 
 def test_default_values() -> None:
@@ -141,6 +143,32 @@ def test_with_overrides_multiple() -> None:
     assert result.dangerous is True
     assert result.allow_dangerous is True
     assert result.verbose is False  # Not overridable via this method
+
+
+def test_permission_mode_to_claude_safe() -> None:
+    """permission_mode_to_claude maps 'safe' to 'default'."""
+    assert permission_mode_to_claude("safe") == "default"
+
+
+def test_permission_mode_to_claude_edits() -> None:
+    """permission_mode_to_claude maps 'edits' to 'acceptEdits'."""
+    assert permission_mode_to_claude("edits") == "acceptEdits"
+
+
+def test_permission_mode_to_claude_plan() -> None:
+    """permission_mode_to_claude maps 'plan' to 'plan'."""
+    assert permission_mode_to_claude("plan") == "plan"
+
+
+def test_permission_mode_to_claude_dangerous() -> None:
+    """permission_mode_to_claude maps 'dangerous' to 'bypassPermissions'."""
+    assert permission_mode_to_claude("dangerous") == "bypassPermissions"
+
+
+def test_permission_mode_to_claude_unknown_raises() -> None:
+    """permission_mode_to_claude raises ValueError for unknown mode."""
+    with pytest.raises(ValueError, match="Unknown permission_mode"):
+        permission_mode_to_claude("invalid")  # type: ignore[arg-type]
 
 
 def test_with_overrides_returns_new_instance() -> None:
