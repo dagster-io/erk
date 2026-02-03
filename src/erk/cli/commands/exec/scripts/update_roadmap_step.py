@@ -64,21 +64,50 @@ def _replace_step_pr_in_body(body: str, step_id: str, new_pr: str) -> str | None
     """Replace the PR cell for a step in the raw markdown body.
 
     Uses regex to find the table row matching the step ID and replace
-    the last two cells (status and pr). The status is computed from the PR
-    value to provide human-readable status in the roadmap table.
+    the status and pr cells. Supports both 4-column and 7-column formats.
+
+    For 7-column format, preserves Type, Issue, and Depends On cells.
+    For 4-column format, only updates status and pr cells.
 
     Returns:
         Updated body string, or None if the step row was not found.
     """
-    # Match table row: | step_id | description | status | pr |
+    # Try 7-column format first: | step_id | description | type | issue | depends_on | status | pr |
+    # We preserve the first 5 cells and replace the last 2 (status and pr)
+    pattern_7col = re.compile(
+        r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$",
+        re.MULTILINE,
+    )
+
+    match_7col = pattern_7col.search(body)
+    if match_7col is not None:
+        # Determine display status from PR value
+        if new_pr.startswith("#"):
+            display_status = "done"
+        elif new_pr.startswith("plan #"):
+            display_status = "in-progress"
+        else:
+            display_status = "pending"
+
+        # Build replacement: preserve step_id, description, type, issue, depends_on
+        # and set computed status and pr
+        pr_display = new_pr if new_pr else "-"
+        replacement = (
+            f"|{match_7col.group(1)}|{match_7col.group(2)}|{match_7col.group(3)}|"
+            f"{match_7col.group(4)}|{match_7col.group(5)}| {display_status} | {pr_display} |"
+        )
+
+        return body[: match_7col.start()] + replacement + body[match_7col.end() :]
+
+    # Fall back to 4-column format: | step_id | description | status | pr |
     # The step_id is in the first cell, and we need to replace status and pr cells.
-    pattern = re.compile(
+    pattern_4col = re.compile(
         r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|$",
         re.MULTILINE,
     )
 
-    match = pattern.search(body)
-    if match is None:
+    match_4col = pattern_4col.search(body)
+    if match_4col is None:
         return None
 
     # Determine display status from PR value
@@ -92,9 +121,9 @@ def _replace_step_pr_in_body(body: str, step_id: str, new_pr: str) -> str | None
     # Build replacement: preserve step_id cell and description cell,
     # set computed status and pr
     pr_display = new_pr if new_pr else "-"
-    replacement = f"|{match.group(1)}|{match.group(2)}| {display_status} | {pr_display} |"
+    replacement = f"|{match_4col.group(1)}|{match_4col.group(2)}| {display_status} | {pr_display} |"
 
-    return body[: match.start()] + replacement + body[match.end() :]
+    return body[: match_4col.start()] + replacement + body[match_4col.end() :]
 
 
 @click.command(name="update-roadmap-step")

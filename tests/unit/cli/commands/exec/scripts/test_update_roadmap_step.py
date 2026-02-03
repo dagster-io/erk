@@ -214,3 +214,79 @@ def test_update_step_in_phase_2() -> None:
 
     updated_body = fake_gh.updated_bodies[0][1]
     assert "plan #300" in updated_body
+
+
+ROADMAP_7COL_BODY = """\
+# Objective: Multi-step Feature
+
+## Roadmap
+
+### Phase 1: Setup
+
+| Step | Description | Type | Issue | Depends On | Status | PR |
+|------|-------------|------|-------|------------|--------|-----|
+| 1.1 | Setup infra | plan | #6630 | - | - | #6631 |
+| 1.2 | Add module | objective | #7001 | - | pending | - |
+| 1.3 | Wire together | plan | - | 1.1, 1.2 | pending | - |
+"""
+
+
+def test_update_step_in_7col_table_preserves_type_issue_depends() -> None:
+    """Update a step in a 7-column table preserves Type, Issue, and Depends On columns."""
+    issue = _make_issue(6630, ROADMAP_7COL_BODY)
+    fake_gh = FakeGitHubIssues(issues={6630: issue})
+    runner = CliRunner()
+
+    # Update step 1.3 to add a plan PR
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6630", "--step", "1.3", "--pr", "plan #6650"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["step_id"] == "1.3"
+    assert output["new_pr"] == "plan #6650"
+
+    # Verify the body was updated
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "plan #6650" in updated_body
+
+    # Verify Type, Issue, and Depends On are preserved
+    # Expected row: | 1.3 | Wire together | plan | - | 1.1, 1.2 | in-progress | plan #6650 |
+    assert "| 1.3 " in updated_body
+    assert "| plan |" in updated_body
+    assert "| 1.1, 1.2 |" in updated_body
+    assert "| in-progress |" in updated_body
+
+
+def test_update_step_in_7col_table_changes_pr() -> None:
+    """Update a step in a 7-column table from plan PR to merged PR."""
+    issue = _make_issue(6630, ROADMAP_7COL_BODY)
+    fake_gh = FakeGitHubIssues(issues={6630: issue})
+    runner = CliRunner()
+
+    # Update step 1.1 to change from #6631 to a new PR
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6630", "--step", "1.1", "--pr", "#6700"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["previous_pr"] == "#6631"
+    assert output["new_pr"] == "#6700"
+
+    # Verify the body was updated
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "#6700" in updated_body
+    assert "#6631" not in updated_body
+
+    # Verify Type and Issue are preserved
+    assert "| plan |" in updated_body
+    assert "| #6630 |" in updated_body
+    assert "| done |" in updated_body

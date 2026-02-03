@@ -371,3 +371,143 @@ def test_all_steps_complete_json() -> None:
     assert output["summary"]["skipped"] == 1
     assert output["summary"]["pending"] == 0
     assert output["next_step"] is None
+
+
+def test_invalid_depends_on_reference_fails() -> None:
+    """Test that depends_on referencing non-existent step ID fails."""
+    body = """# Objective: Invalid Dependencies
+
+## Roadmap
+
+### Phase 1: Test
+
+| Step | Description | Type | Issue | Depends On | Status | PR |
+|------|-------------|------|-------|------------|--------|-----|
+| 1.1 | Setup | plan | - | - | pending | - |
+| 1.2 | Build | plan | - | 9.9 | pending | - |
+"""
+    issue = _make_issue(1000, "Objective: Invalid Dependencies", body)
+    fake_gh = FakeGitHubIssues(issues={1000: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1000"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 1
+    assert "[FAIL]" in result.output
+    assert "Invalid dependency" in result.output
+    assert "9.9" in result.output
+
+
+def test_cross_phase_dependency_passes() -> None:
+    """Test that depends_on can reference steps from different phases."""
+    body = """# Objective: Cross-phase Dependencies
+
+## Roadmap
+
+### Phase 1: Setup
+
+| Step | Description | Type | Issue | Depends On | Status | PR |
+|------|-------------|------|-------|------------|--------|-----|
+| 1.1 | Setup infra | plan | - | - | pending | - |
+
+### Phase 2: Build
+
+| Step | Description | Type | Issue | Depends On | Status | PR |
+|------|-------------|------|-------|------------|--------|-----|
+| 2.1 | Build feature | plan | - | 1.1 | pending | - |
+"""
+    issue = _make_issue(1100, "Objective: Cross-phase Dependencies", body)
+    fake_gh = FakeGitHubIssues(issues={1100: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1100"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0
+    assert "[FAIL]" not in result.output
+    assert "All Depends On references are valid" in result.output
+
+
+def test_invalid_step_type_normalized_to_plan() -> None:
+    """Test that invalid step_type values get normalized to 'plan' by parser.
+
+    The parser is lenient and defaults unrecognized types to 'plan'.
+    The validation check is a defensive safety net that would only trigger
+    if a step_type field was somehow set to an invalid value outside the parser.
+    """
+    body = """# Objective: Invalid Step Type
+
+## Roadmap
+
+### Phase 1: Test
+
+| Step | Description | Type | Issue | Depends On | Status | PR |
+|------|-------------|------|-------|------------|--------|-----|
+| 1.1 | Setup | invalid-type | - | - | pending | - |
+"""
+    issue = _make_issue(1200, "Objective: Invalid Step Type", body)
+    fake_gh = FakeGitHubIssues(issues={1200: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1200", "--json-output"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Verify the invalid type was normalized to "plan"
+    assert output["phases"][0]["steps"][0]["step_type"] == "plan"
+
+    # Verify all validation checks passed (including step type check)
+    assert all(check["passed"] for check in output["checks"])
+
+
+def test_7col_format_json_output_includes_new_fields() -> None:
+    """Test that JSON output from 7-column table includes new fields."""
+    body = """# Objective: Seven Columns
+
+## Roadmap
+
+### Phase 1: Setup
+
+| Step | Description | Type | Issue | Depends On | Status | PR |
+|------|-------------|------|-------|------------|--------|-----|
+| 1.1 | Setup infra | plan | #6630 | - | - | #6631 |
+| 1.2 | Add module | objective | #7001 | 1.1 | pending | - |
+"""
+    issue = _make_issue(1300, "Objective: Seven Columns", body)
+    fake_gh = FakeGitHubIssues(issues={1300: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1300", "--json-output"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Check that steps include new fields
+    steps = output["phases"][0]["steps"]
+    assert len(steps) == 2
+
+    assert steps[0]["step_type"] == "plan"
+    assert steps[0]["issue"] == "#6630"
+    assert steps[0]["depends_on"] == []
+
+    assert steps[1]["step_type"] == "objective"
+    assert steps[1]["issue"] == "#7001"
+    assert steps[1]["depends_on"] == ["1.1"]

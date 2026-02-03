@@ -70,6 +70,8 @@ def validate_objective(
     3. Status/PR consistency (done steps should have PRs)
     4. No orphaned statuses (done without PR reference)
     5. Phase numbering is sequential
+    6. Depends On references valid step IDs (across all phases)
+    7. Step type values are "plan" or "objective" (safety net)
 
     This function does not produce output or raise SystemExit.
 
@@ -160,6 +162,39 @@ def validate_objective(
     else:
         phase_labels = [f"{n}{s}" for n, s in phase_keys]
         checks.append((False, f"Phase numbering is not sequential: {phase_labels}"))
+
+    # Check 6: Depends On references valid step IDs (across all phases)
+    # Build set of all valid step IDs
+    all_step_ids = set()
+    for phase in phases:
+        for step in phase.steps:
+            all_step_ids.add(step.id)
+
+    invalid_dependencies: list[str] = []
+    for phase in phases:
+        for step in phase.steps:
+            for dep_id in step.depends_on:
+                if dep_id not in all_step_ids:
+                    invalid_dependencies.append(
+                        f"Step {step.id} depends on unknown step '{dep_id}'"
+                    )
+
+    if not invalid_dependencies:
+        checks.append((True, "All Depends On references are valid"))
+    else:
+        checks.append((False, f"Invalid dependency: {invalid_dependencies[0]}"))
+
+    # Check 7: Step type values are "plan" or "objective" (safety net)
+    invalid_types: list[str] = []
+    for phase in phases:
+        for step in phase.steps:
+            if step.step_type not in ("plan", "objective"):
+                invalid_types.append(f"Step {step.id} has invalid type '{step.step_type}'")
+
+    if not invalid_types:
+        checks.append((True, "All step types are valid (plan or objective)"))
+    else:
+        checks.append((False, f"Invalid step type: {invalid_types[0]}"))
 
     summary = compute_summary(phases)
     next_step = find_next_step(phases)
