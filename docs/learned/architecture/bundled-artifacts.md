@@ -46,23 +46,11 @@ The `ManagedArtifactType` literal defines valid artifact types:
 
 ### Example: SkillCapability
 
-```python
-class SkillCapability(Capability):
-    @property
-    def managed_artifacts(self) -> list[ManagedArtifact]:
-        return [ManagedArtifact(name=self.skill_name, artifact_type="skill")]
-```
+Each `SkillCapability` returns a single artifact for its skill name. See `src/erk/core/capabilities/skill_capability.py:62-64` for the implementation.
 
 ### Example: HooksCapability
 
-```python
-@property
-def managed_artifacts(self) -> list[ManagedArtifact]:
-    return [
-        ManagedArtifact(name="user-prompt-hook", artifact_type="hook"),
-        ManagedArtifact(name="exit-plan-mode-hook", artifact_type="hook"),
-    ]
-```
+The hooks capability declares its managed hook artifacts. See `src/erk/capabilities/hooks.py:55-60` for the implementation.
 
 ## Capability Installation
 
