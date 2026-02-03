@@ -6,16 +6,18 @@
 
 Add `Type` and `Depends On` columns to the objective roadmap table format, with full backwards compatibility for existing 4-column tables.
 
-**New 6-column format:**
+**New 7-column format:**
 ```markdown
-| Step | Description | Type | Depends On | Status | PR |
-|------|-------------|------|------------|--------|-----|
-| 1.1 | Setup infra | plan | | pending | |
-| 1.2 | Add module | objective | | pending | |
-| 1.3 | Wire together | plan | 1.1, 1.2 | pending | |
+| Step | Description | Type | Issue | Depends On | Status | PR |
+|------|-------------|------|-------|------------|--------|-----|
+| 1.1 | Setup infra | plan | #6630 | | done | #6631 |
+| 1.2 | Add module | objective | #7001 | | pending | |
+| 1.3 | Wire together | plan | | 1.1, 1.2 | pending | |
 ```
 
-**Old 4-column format continues to work** with defaults: `step_type="plan"`, `depends_on=[]`.
+The `Issue` column stores the linked GitHub issue number for the step — plan issues for `plan` type steps, child objective issues for `objective` type steps. The `PR` column stores the associated PR (implementation PR for plans, or empty for objectives).
+
+**Old 4-column format continues to work** with defaults: `step_type="plan"`, `depends_on=[]`, `issue=None`.
 
 ## Design Decisions
 
@@ -23,6 +25,7 @@ Add `Type` and `Depends On` columns to the objective roadmap table format, with 
 - **Cross-phase dependencies allowed**: Step 2.1 can depend on step 1.3
 - **New fields always serialized**: JSON output always includes `step_type` and `depends_on` (stable schema)
 - **No default parameter values**: New fields are required positional args on `RoadmapStep`
+- **Issue column for all step types**: The `Issue` column links to the step's GitHub issue — plan issues for `plan` steps, child objective issues for `objective` steps. The `PR` column stores the associated implementation PR.
 
 ## Implementation
 
@@ -30,43 +33,50 @@ Add `Type` and `Depends On` columns to the objective roadmap table format, with 
 
 **File:** `src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py`
 
-Add two new fields:
+Add three new fields:
 - `step_type: str` — `"plan"` or `"objective"`
+- `issue: str | None` — e.g., `"#7001"` for sub-objective steps, `None` otherwise
 - `depends_on: list[str]` — e.g., `["1.1", "1.2"]`
 
 ### 2. Update `parse_roadmap` function
 
 **File:** same
 
-- Add 6-column header regex: `| Step | Description | Type | Depends On | Status | PR |`
-- Try 6-col header first, fall back to 4-col (LBYL)
-- Add 6-column row regex (6 capture groups)
+- Add 7-column header regex: `| Step | Description | Type | Issue | Depends On | Status | PR |`
+- Try 7-col header first, fall back to 4-col (LBYL)
+- Add 7-column row regex (7 capture groups)
 - Parse `Type` column: normalize to `"plan"` or `"objective"`, default `"plan"`
+- Parse `Issue` column: store `"#NNN"` or `None` (treat `"-"` and empty as `None`)
 - Parse `Depends On` column: split on commas, strip whitespace, treat `"-"` and empty as `[]`
-- Update separator regex to handle 4-6 columns
+- Update separator regex to handle 4 or 7 columns
 - Pass new fields to `RoadmapStep` constructor
 
 ### 3. Update `serialize_phases` and `find_next_step`
 
 **File:** same
 
-- `serialize_phases`: add `step_type` and `depends_on` to step dict
+- `serialize_phases`: add `step_type`, `issue`, and `depends_on` to step dict
 - `find_next_step`: add `step_type` to returned dict
 
 ### 4. Update `_replace_step_pr_in_body`
 
 **File:** `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`
 
-- Try 6-column row regex first (preserves Type and Depends On cells, replaces Status and PR)
+- Try 7-column row regex first (preserves Type, Issue, and Depends On cells, replaces Status and PR)
 - Fall back to 4-column row regex
-- Order matters: 4-col regex would incorrectly match first 4 cells of a 6-col row
+- Order matters: 4-col regex would incorrectly match first 4 cells of a 7-col row
+- Note: The existing command updates the PR cell. The Issue cell is updated by `plan-save` (via a separate mechanism in a later step of the objective). For this PR, the Issue column is preserved as-is during PR cell updates.
 
-### 5. Add new validation checks
+### 5. Update `erk objective check` validation
 
 **File:** `src/erk/cli/commands/objective/check_cmd.py`
 
+The `erk objective check` command (`validate_objective()`) validates roadmap format and consistency. It currently runs 5 checks. This plan adds two new checks to validate the new columns:
+
 - **Check 6**: Depends On references valid step IDs (across all phases)
 - **Check 7**: Step type values are `"plan"` or `"objective"` (safety net)
+
+Existing checks (label, parsing, status/PR consistency, orphaned done, phase numbering) continue to work unchanged since `parse_roadmap` handles both 4-col and 7-col formats.
 
 ### 6. Update tests
 
@@ -77,22 +87,23 @@ Add two new fields:
 
 **Test updates:**
 - Fix all direct `RoadmapStep(...)` constructions to include new required fields
-- Add: 6-column table parsing test
+- Add: 7-column table parsing test (including Issue column)
 - Add: 4-column backwards compatibility test (default values)
-- Add: 6-column status inference test
+- Add: 7-column status inference test
 - Add: depends_on with dash/empty yields `[]`
-- Add: serialize includes new fields
-- Add: update step in 6-col table preserves Type and Depends On
+- Add: issue column with dash/empty yields `None`
+- Add: serialize includes new fields (step_type, issue, depends_on)
+- Add: update step in 7-col table preserves Type, Issue, and Depends On
 - Add: invalid depends_on reference fails validation
 - Add: cross-phase dependency passes validation
-- Add: JSON output includes new fields from 6-col table
+- Add: JSON output includes new fields from 7-col table
 
 ## Files Modified
 
 | File | Change |
 |------|--------|
 | `src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py` | Dataclass + parser |
-| `src/erk/cli/commands/exec/scripts/update_roadmap_step.py` | Dual-format row regex |
+| `src/erk/cli/commands/exec/scripts/update_roadmap_step.py` | Dual-format row regex (4-col and 7-col) |
 | `src/erk/cli/commands/objective/check_cmd.py` | 2 new validation checks |
 | `tests/unit/cli/commands/exec/scripts/test_objective_roadmap_shared.py` | New tests + fix constructors |
 | `tests/unit/cli/commands/exec/scripts/test_update_roadmap_step.py` | 6-col update tests |
