@@ -34,9 +34,14 @@ Split the document list into 5 roughly equal batches using round-robin assignmen
 
 ### Phase 3: Launch 5 Parallel Explore Agents
 
+Generate a unique run ID for scratch storage: `audit-scan-<timestamp>` (e.g., `audit-scan-20260203-1430`).
+
 Launch 5 Task agents in parallel, each with `subagent_type=Explore` and `model=haiku`.
 
-Each agent receives its batch of doc paths and collects these signals per doc:
+Each agent receives:
+
+- Its batch of doc paths
+- A scratch output path: `.erk/scratch/<run-id>/batch-<N>.md`
 
 **Per-doc signals to collect:**
 
@@ -49,7 +54,7 @@ Each agent receives its batch of doc paths and collects these signals per doc:
 - **`redirect_to` field**: Whether it exists in frontmatter
 - **Import count**: Number of `from` or `import` statements inside code blocks
 
-Each agent returns a structured result per doc in this format:
+Each agent **writes** results to its assigned scratch file (using the Write tool, not inline return) in this format per doc:
 
 ```
 path: docs/learned/category/file.md
@@ -63,9 +68,13 @@ has_redirect: false
 import_count: 3
 ```
 
+**Important**: Agents must use the Write tool for output, not return it inline. This prevents silent truncation for large result sets (see `agent-orchestration-safety.md`).
+
 ### Phase 4: Exclude Recently Audited, Then Score
 
-Gather all agent results.
+**Verify agent output files exist** before reading. For each batch file (`.erk/scratch/<run-id>/batch-<N>.md`), run `ls` to confirm it was written. If any file is missing, report which batch failed and stop — do not silently proceed with partial data.
+
+Gather all agent results by reading the scratch files.
 
 **Exclusion rule:** Completely exclude any document whose `last_audited` date is within the last 7 days. These docs are too fresh to need re-audit. Track the excluded count for the report.
 
@@ -146,7 +155,7 @@ Use AskUserQuestion to offer:
 
 Based on user choice:
 
-- **Audit top N**: Ask user how many (default: 3). For each selected doc, invoke `/local:audit-doc <path>` via the Skill tool. After each audit completes, ask user whether to continue to the next.
+- **Audit top N**: Default N to the number of available processors on the current machine (use `nproc` or `sysctl -n hw.logicalcpu` on macOS). For each selected doc, invoke `/local:audit-doc <path>` via the Skill tool. After each audit completes, ask user whether to continue to the next.
 - **Show details**: Let user specify which doc. Read it and present a quick summary: title, section headings with line counts, frontmatter fields, and first few lines of each section.
 - **Export**: Write the full ranked table (all tiers) to `.erk/scratch/audit-scan-results.md` in markdown format.
 
