@@ -50,6 +50,12 @@ def _find_codespace_by_display_name(display_name: str) -> dict | None:
     default=None,
     help="Branch to create codespace from. Defaults to default branch.",
 )
+@click.option(
+    "-m",
+    "--machine",
+    default=None,
+    help="Machine type for the codespace (e.g. basicLinux32gb, standardLinux32gb).",
+)
 @click.pass_obj
 def setup_codespace(
     ctx: ErkContext,
@@ -57,6 +63,7 @@ def setup_codespace(
     name: str | None,
     repo: str | None,
     branch: str | None,
+    machine: str | None,
 ) -> None:
     """Create and register a new codespace for remote Claude execution.
 
@@ -92,6 +99,9 @@ def setup_codespace(
 
     if branch:
         cmd.extend(["--branch", branch])
+
+    if machine:
+        cmd.extend(["--machine", machine])
 
     cmd.extend(["--display-name", name])
 
