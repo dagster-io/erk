@@ -1,5 +1,7 @@
 ---
 title: Doc Audit Review
+last_audited: "2026-02-04 05:48 PT"
+audit_result: clean
 read_when:
   - working with documentation audit system
   - understanding documentation quality classification
@@ -178,6 +180,62 @@ erk objective check 123
 ```
 
 **Verdict**: REVISE (40% duplicative) - Remove field list, keep backward compatibility explanation and pointers.
+
+## Constants and Defaults Exception
+
+**CRITICAL**: Constants and defaults in prose are classified as **HIGH VALUE**, not DUPLICATIVE.
+
+### Why This Exception Exists
+
+When documentation explains "what value is used by default" or "what constant controls this behavior," it provides **scannable context** that is hard to extract from code:
+
+**In code**:
+
+```python
+DEFAULT_MACHINE_TYPE = "premiumLinux"
+```
+
+**In docs (HIGH VALUE)**:
+
+```markdown
+The default machine type for codespace creation is `premiumLinux`.
+```
+
+### The Key Distinction
+
+- **DUPLICATIVE**: Re-expressing what the code already says clearly (field names, parameter types, class hierarchies)
+- **HIGH VALUE**: Providing scannable defaults and constants that require grep/search to find in code
+
+### Examples of HIGH VALUE Constants
+
+1. **Default values**:
+
+   ```markdown
+   By default, erk uses `premiumLinux` as the machine type for codespaces.
+   ```
+
+2. **Configuration constants**:
+
+   ```markdown
+   Session markers are stored in `.erk/scratch/<session-id>/markers/`.
+   ```
+
+3. **Timeout values**:
+   ```markdown
+   The retry mechanism waits 2 seconds between attempts.
+   ```
+
+### Why Scannability Matters
+
+Readers need to quickly answer "what's the default?" without:
+
+- Searching through implementation files
+- Reading constructor logic
+- Tracing constant definitions across modules
+
+Documentation that surfaces these values serves as an **index** to the codebase, not a duplicate of it.
+
+**Related**: [Documentation Audit Methodology](../documentation/audit-methodology.md) - Tripwire on broad exclusion rules
 
 ## Related Documentation
 

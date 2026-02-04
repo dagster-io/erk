@@ -1,5 +1,7 @@
 ---
 title: GitHub CLI Limits
+last_audited: "2026-02-04 05:48 PT"
+audit_result: edited
 read_when:
   - "using gh pr diff in production code"
   - "working with large pull requests (300+ files)"
@@ -49,17 +51,7 @@ gh api \
 
 ## Implementation Pattern
 
-See `src/erk/commands/exec/discover_reviews.py` for the production implementation:
-
-```python
-# DON'T: Use gh pr diff (fails on large PRs)
-result = subprocess.run(["gh", "pr", "diff", pr_number, "--name-only"])
-
-# DO: Use REST API with pagination
-files = github.list_pr_files(pr_number=pr_number)
-```
-
-The `GitHubGateway.list_pr_files()` method handles pagination automatically.
+See `src/erk/cli/commands/exec/scripts/discover_reviews.py` for the production implementation, which uses `github.get_pr_changed_files()` with automatic pagination.
 
 ## Why This Matters
 
@@ -90,19 +82,7 @@ This returns JSON with the codespace state. The operation is asynchronous - the 
 
 ### Implementation Pattern
 
-See `src/erk/gateway/codespace/real.py` for the production implementation:
-
-```python
-# DON'T: Use gh codespace start (does not exist)
-subprocess.run(["gh", "codespace", "start", name])
-
-# DO: Use REST API
-result = subprocess.run([
-    "gh", "api",
-    "--method", "POST",
-    f"user/codespaces/{name}/start"
-])
-```
+See `packages/erk-shared/src/erk_shared/gateway/codespace/real.py` for the production implementation using `gh api --method POST user/codespaces/{name}/start`.
 
 ## GH-API-AUDIT Annotation Convention
 
@@ -133,8 +113,17 @@ result = subprocess.run(["gh", "issue", "view", issue_number, "--json", "comment
 
 This convention identifies 66+ locations in the gateway code where we're using `gh` CLI commands that could potentially be replaced with direct REST or GraphQL API calls for better performance, error handling, or functionality.
 
+## GitHub Machines Endpoint HTTP 500 Bug
+
+The machines endpoint (`/repos/{owner}/{repo}/codespaces/machines`) returns HTTP 500 for certain repositories. The workaround uses `POST /user/codespaces` with `repository_id` instead.
+
+**Full diagnostic methodology and workaround**: See [GitHub API Diagnostics](github-api-diagnostics.md).
+**Implementation**: See `src/erk/cli/commands/codespace/setup_cmd.py`.
+**Default machine type**: `premiumLinux`
+
 ## Related Documentation
 
+- [GitHub API Diagnostics](github-api-diagnostics.md) - Repository-specific diagnostic methodology
 - [Universal Tripwires](../universal-tripwires.md) - Lists the gh pr diff tripwire
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - How GitHubGateway abstracts this
-- [Codespace Gateway](../gateway/codespace-gateway.md) - Codespace-specific gateway patterns
+- [Codespace Patterns](../cli/codespace-patterns.md) - Codespace setup patterns

@@ -12,4 +12,6 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+**CRITICAL: Before creating a new review without checking if existing reviews can be extended** → Read [Review Development Guide](development.md) first. Before creating a new review, check if an existing review type can handle the new checks. Reviews should have distinct, complementary scopes.
+
 **CRITICAL: Before flagging code as untested in PR review** → Read [Test Coverage Review Agent](test-coverage-agent.md) first. Check if file is legitimately untestable first. CLI wrappers (only Click decorators), type-only files (TypeVar/Protocol/type aliases), and ABC interfaces (only abstract methods) should be excluded from test coverage requirements.

@@ -1,5 +1,7 @@
 ---
 title: Token Optimization Patterns
+last_audited: "2026-02-04 05:48 PT"
+audit_result: clean
 read_when:
   - "designing multi-agent workflows"
   - "handling large data payloads in agent orchestration"
@@ -130,7 +132,76 @@ After optimization (Step 3 delegated to Step 4 children):
 - **TaskOutput tool**: Retrieve results from background agents when ready
 - **Summary contracts**: Define clear output formats for child agents (JSON, bullet lists, etc.)
 
+## Worked Example: objective-next-plan Command
+
+The `objective-next-plan` command demonstrates Task agent delegation for data fetching and formatting.
+
+### Problem
+
+Creating an implementation plan from an objective step requires:
+
+1. Fetching objective metadata (title, description, issue number)
+2. Fetching roadmap table with status column
+3. Parsing and mapping status values (ACTIVE → in_progress, etc.)
+4. Extracting pending steps
+5. Generating next-step recommendation
+
+**Naive approach**: LLM makes 3+ sequential fetches (objective body, roadmap, status parsing), consuming ~4500 tokens.
+
+### Solution
+
+Delegate entire data fetching and formatting to a Task agent:
+
+```python
+# Prompt structure for Task agent
+prompt = f"""
+Fetch objective context for issue #{objective_issue} and format as JSON with:
+
+1. OBJECTIVE - title, issue_number, description
+2. STATUS - ACTIVE, PLANNING, or COMPLETED
+3. ROADMAP - table with step, status, pr, notes columns
+4. PENDING_STEPS - array of incomplete steps
+5. RECOMMENDED - next_step and reason
+
+Map status values:
+- ACTIVE → in_progress
+- PLANNING → pending
+- COMPLETED → done
+
+Output structured JSON only.
+"""
+
+# Launch Task agent with haiku model
+task_agent = Task(
+    subagent_type='general-purpose',
+    model='haiku',  # Mechanical work, use cheap model
+    prompt=prompt
+)
+```
+
+### Token Savings
+
+| Approach                      | Tokens  | Turns   |
+| ----------------------------- | ------- | ------- |
+| Sequential LLM fetches        | ~4500   | 3-4     |
+| Task agent delegation (haiku) | ~2000   | 1       |
+| **Reduction**                 | **55%** | **66%** |
+
+### Model Selection
+
+- **Task agent**: haiku (mechanical data fetching and formatting)
+- **Parent agent**: sonnet (plan synthesis and reasoning)
+
+**Rationale**: Delegate mechanical work to cheap models, reserve expensive models for creative work.
+
+### Output Format
+
+Task agent returns structured JSON matching the schema in [Objective Summary Format](../reference/objective-summary-format.md).
+
+Parent agent consumes JSON directly without additional parsing turns.
+
 ## Related Documentation
 
+- [Objective Summary Format](../reference/objective-summary-format.md) - Structured output specification
 - [Replan Command](.claude/commands/erk/replan.md) - Full implementation
 - [Explore Agent](../agents/explore.md) - Investigation capabilities

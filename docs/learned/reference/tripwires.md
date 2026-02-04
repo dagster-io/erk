@@ -18,4 +18,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before forgetting that CLI flags always override config file values** → Read [Interactive Claude Configuration](interactive-claude-config.md) first. The with_overrides() pattern ensures CLI flags take precedence. Never read config directly when overrides are present.
 
+**CRITICAL: Before parsing objective summary output without structured format** → Read [Objective Summary Format](objective-summary-format.md) first. Use the documented JSON format with OBJECTIVE, STATUS, ROADMAP, PENDING_STEPS, and RECOMMENDED sections. Status mapping uses pending/done/in_progress/blocked/skipped.
+
 **CRITICAL: Before passing non-None override values when wanting to preserve config** → Read [Interactive Claude Configuration](interactive-claude-config.md) first. Pass None to preserve config value. Pass value to override. with_overrides(model_override=False) disables model, should be model_override=None.

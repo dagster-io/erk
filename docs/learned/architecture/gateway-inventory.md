@@ -3,7 +3,7 @@ title: Gateway Inventory
 read_when:
   - "understanding available gateways"
   - "adding a new gateway"
-last_audited: "2026-02-03 04:00 PT"
+last_audited: "2026-02-04 05:48 PT"
 audit_result: edited
 ---
 
@@ -21,15 +21,7 @@ Read each gateway's `abc.py` for the authoritative method list and `fake.py` for
 
 ## Implementation Layers
 
-Each gateway has up to 5 files:
-
-| File         | Purpose                                    |
-| ------------ | ------------------------------------------ |
-| `abc.py`     | Abstract base class defining the interface |
-| `real.py`    | Production implementation                  |
-| `fake.py`    | Test double with in-memory state           |
-| `types.py`   | Shared types (result dataclasses, enums)   |
-| `factory.py` | Factory function for creating instances    |
+Each gateway has up to 5 files (`abc.py`, `real.py`, `fake.py`, `types.py`, `factory.py`). See [Gateway ABC Implementation](gateway-abc-implementation.md) for the full pattern description.
 
 ## When to Use Specific Gateways
 
@@ -40,7 +32,7 @@ Each gateway has up to 5 files:
 
 ## BranchManager
 
-BranchManager (`branch_manager/`) abstracts Graphite vs plain Git branch operations. A factory at `branch_manager/factory.py` returns either `GraphiteBranchManager` or `GitBranchManager` based on Graphite availability. Read `abc.py` for the full method list (14 abstract methods as of this writing).
+BranchManager (`branch_manager/`) abstracts Graphite vs plain Git branch operations. A factory at `branch_manager/factory.py` returns either `GraphiteBranchManager` or `GitBranchManager` based on Graphite availability. Read `abc.py` for the current method list.
 
 ## Sub-Gateway Extraction History
 
@@ -51,6 +43,30 @@ Sub-gateways under `git/` (e.g., `git/branch_ops/`, `git/worktree_ops/`, `git/co
 
 This decomposition keeps each ABC focused and testable.
 
+## AgentLauncher Gateway
+
+**Purpose**: Abstract `os.execvp()` for launching Claude agent processes.
+
+**Pattern**: 3-file simplified gateway (abc.py, real.py, fake.py) — no dry_run.py or printing.py
+
+**Why simplified**: `os.execvp()` replaces the current process with no return (`NoReturn`). There's no return value to simulate in dry-run or print modes.
+
+**Key characteristics**:
+
+- **NoReturn type annotation**: Methods never return (process replacement)
+- **Test strategy**: Fake implementation allows testing without actual process replacement
+- **Integration points**: Used in 3 locations for Claude agent launches
+
+**Implementation files**:
+
+- `abc.py`: Abstract method with NoReturn annotation
+- `real.py`: Calls `os.execvp()` directly
+- `fake.py`: Records call and raises SystemExit for testing
+
+**Code reference**: `packages/erk-shared/src/erk_shared/gateway/agent_launcher/`
+
+**Related**: [Gateway ABC Implementation](gateway-abc-implementation.md) - 3-file simplified pattern section
+
 ## Adding a New Gateway
 
 1. Create directory under `gateway/` with `abc.py`, `real.py`, `fake.py`
@@ -58,3 +74,5 @@ This decomposition keeps each ABC focused and testable.
 3. Add `factory.py` if instantiation requires logic
 4. Wire into `ErkContext` (non-obvious step — check existing context setup)
 5. Add tests using the fake
+
+**Special case**: NoReturn operations (like `os.execvp()`) use 3-file simplified pattern — omit dry_run.py and printing.py

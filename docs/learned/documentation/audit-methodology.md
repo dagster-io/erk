@@ -1,5 +1,7 @@
 ---
 title: Documentation Audit Methodology
+last_audited: "2026-02-04 05:48 PT"
+audit_result: clean
 read_when:
   - auditing documentation for quality
   - cleaning up stale or incorrect docs
@@ -9,6 +11,8 @@ tripwires:
     warning: "Type references in docs must match actual codebase types. Run type verification before committing."
   - action: "bulk deleting documentation files"
     warning: "After bulk deletions, run 'erk docs sync' to fix broken cross-references."
+  - action: "creating broad exclusion rules in doc-audit classification"
+    warning: "Broad exclusion rules need explicit exceptions. Constants and defaults in prose are HIGH VALUE context, not DUPLICATIVE. Add exception rules with rationale."
 ---
 
 # Documentation Audit Methodology
@@ -221,6 +225,33 @@ These metrics demonstrate the audit methodology's effectiveness:
 - Content clarified: 10 docs
 
 **Total impact**: 553 lines of problematic documentation removed, 40+ broken references fixed, 20+ documents improved.
+
+## Classification Edge Cases
+
+### Constants and Defaults in Prose
+
+**Classification**: HIGH VALUE, not DUPLICATIVE
+
+**Rationale**: When documentation explains "what value is used by default" or "what constant controls this behavior," it provides scannable context that is hard to extract from code.
+
+**Example**:
+
+```markdown
+The default machine type for codespace creation is `basicLinux32gb`.
+```
+
+This is HIGH VALUE because:
+
+- Requires grep/search to find in code
+- Provides immediate answer to "what's the default?"
+- Serves as an index to the codebase, not a duplicate of it
+
+**Key distinction**: Scannability vs code duplication.
+
+- **DUPLICATIVE**: Re-expressing what the code already says clearly (field names, parameter types, class hierarchies)
+- **HIGH VALUE**: Surfacing defaults and constants that require navigation to find
+
+**Related**: [Doc Audit Review](../review/doc-audit-review.md) - Constants and defaults exception section
 
 ## Integration with Doc Audit Review
 

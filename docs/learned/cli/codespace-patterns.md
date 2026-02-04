@@ -1,5 +1,7 @@
 ---
 title: Codespace Patterns
+last_audited: "2026-02-04 05:48 PT"
+audit_result: edited
 read_when:
   - "implementing CLI commands that use codespaces"
   - "working with resolve_codespace() helper"
@@ -12,45 +14,9 @@ Common patterns for working with codespaces in erk CLI commands.
 
 ## resolve_codespace() Helper
 
-The `resolve_codespace()` function handles codespace name resolution with proper error handling:
+**Source**: `src/erk/cli/commands/codespace/resolve.py`
 
-```python
-from erk.cli.commands.codespace.resolve import resolve_codespace
-
-codespace = resolve_codespace(ctx.codespace_registry, name)
-```
-
-### Function Signature
-
-```python
-def resolve_codespace(
-    registry: CodespaceRegistry,
-    name: str | None
-) -> RegisteredCodespace:
-    """Resolve a codespace by name or fall back to the default.
-
-    Args:
-        registry: The codespace registry to look up from
-        name: Codespace name to look up, or None for default
-
-    Returns:
-        The resolved RegisteredCodespace
-
-    Raises:
-        SystemExit: If the codespace is not found
-    """
-```
-
-### Resolution Logic
-
-1. **If name is provided**: Look up by name
-   - If not found: Display error and exit
-2. **If name is None**: Use default codespace
-   - If default exists: Return it
-   - If default not found: Display error and exit
-   - If no default set: Display error and exit
-
-All error paths include a helpful message: `"Use 'erk codespace setup' to create one."`
+Resolves a codespace by name or falls back to the default. Takes a `CodespaceRegistry` and optional name, returns `RegisteredCodespace` or exits with a helpful error.
 
 ## Error Handling
 
@@ -121,18 +87,38 @@ def remove(ctx: ErkContext, name: str) -> None:
     # ...
 ```
 
-## RegisteredCodespace Fields
+## RegisteredCodespace Usage
 
-The returned `RegisteredCodespace` provides:
+Use `gh_name` for all GitHub CLI operations, and `name` for user-facing messages. Read the dataclass in source for current fields.
 
-- **`name`**: User-friendly short name (e.g., `"work"`)
-- **`gh_name`**: Full GitHub codespace name (e.g., `"schrockn-erk-abc123"`)
-- **`is_default`**: Whether this is the default codespace
+## Codespace Setup Command Flow
 
-Use `gh_name` for all GitHub CLI operations, and `name` for user-facing messages.
+The `erk codespace setup` command creates a new codespace via REST API, bypassing the broken machines endpoint.
+
+### REST API Creation Flow
+
+The setup command fetches the repository ID via `gh api repos/{owner}/{repo} --jq .id`, then creates the codespace via `POST /user/codespaces` with `repository_id`. This bypasses the broken machines endpoint (HTTP 500 for certain repositories).
+
+**Implementation**: See `src/erk/cli/commands/codespace/setup_cmd.py`.
+
+### Default Machine Type
+
+```python
+DEFAULT_MACHINE_TYPE = "premiumLinux"
+```
+
+Used when no machine type is explicitly specified.
+
+**Why this works**: The `POST /user/codespaces` endpoint accepts `repository_id` as an alternative to repository name, bypassing the broken machines endpoint entirely.
+
+**Code reference**: `src/erk/cli/commands/codespace/setup_cmd.py`
+
+**Related**: [GitHub CLI Limits](../architecture/github-cli-limits.md) - Machines endpoint HTTP 500 bug details
 
 ## Related Documentation
 
+- [GitHub CLI Limits](../architecture/github-cli-limits.md) - Machines endpoint HTTP 500 bug and workaround
+- [GitHub API Diagnostics](../architecture/github-api-diagnostics.md) - Repository-specific API diagnostic methodology
 - [Composable Remote Commands](../architecture/composable-remote-commands.md) - Template for remote commands using resolve_codespace()
 - [Codespace Gateway](../gateway/codespace-gateway.md) - Gateway operations using gh_name
 - [Codespace Remote Execution](../erk/codespace-remote-execution.md) - Fire-and-forget pattern

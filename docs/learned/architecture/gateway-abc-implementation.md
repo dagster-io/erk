@@ -1,7 +1,7 @@
 ---
 title: Gateway ABC Implementation Checklist
-last_audited: "2026-02-03"
-audit_result: edited
+last_audited: "2026-02-04 05:48 PT"
+audit_result: clean
 read_when:
   - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
   - "implementing new gateway operations"
@@ -54,7 +54,7 @@ All gateway ABCs (Git, GitHub, Graphite) follow the same 5-file pattern. When ad
 
 ## Simplified Gateway Pattern (3 Files)
 
-Some gateways don't benefit from dry-run or printing wrappers. The Codespace gateway uses a simplified 3-file pattern:
+Some gateways don't benefit from dry-run or printing wrappers. The Codespace gateway and AgentLauncher gateway use a simplified 3-file pattern:
 
 | Implementation | Purpose                    |
 | -------------- | -------------------------- |
@@ -67,8 +67,44 @@ Some gateways don't benefit from dry-run or printing wrappers. The Codespace gat
 - Process replacement operations (`os.execvp`) where dry-run doesn't apply
 - External SSH/remote execution where "printing" the command isn't useful
 - Operations that are inherently all-or-nothing
+- NoReturn operations that replace the current process
 
-**Example:** Codespace SSH execution replaces the current process, so there's no meaningful "dry-run" - you either exec into the codespace or you don't.
+**Example 1:** Codespace SSH execution replaces the current process, so there's no meaningful "dry-run" - you either exec into the codespace or you don't.
+
+**Example 2:** AgentLauncher uses `os.execvp()` to replace the current process with a Claude agent. The method has `NoReturn` type annotation because it never returns.
+
+### AgentLauncher Pattern
+
+**Purpose**: Abstract `os.execvp()` for launching Claude agent processes.
+
+**Key characteristics**:
+
+- `NoReturn` type annotation on methods (process replacement)
+- No dry_run.py or printing.py needed (no return value to simulate)
+- Fake raises `SystemExit` to simulate process termination in tests
+
+**Implementation**:
+
+```python
+# abc.py
+@abstractmethod
+def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -> NoReturn:
+    """Launch agent, replacing current process."""
+    ...
+
+# real.py
+def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -> NoReturn:
+    os.execvp(...)
+
+# fake.py
+def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -> NoReturn:
+    self._launches.append(AgentLaunchCall(config=config, command=command))
+    raise SystemExit(0)
+```
+
+**Integration**: Used in 3 locations for Claude agent process replacement.
+
+**Code reference**: `packages/erk-shared/src/erk_shared/gateway/agent_launcher/`
 
 ## Checklist for New Gateway Methods
 
