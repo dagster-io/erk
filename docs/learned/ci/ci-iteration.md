@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "asking devrun agent to fix errors"
     warning: "devrun is READ-ONLY. Never prompt with 'fix errors' or 'make tests pass'. Use pattern: 'Run command and report results', then parent agent fixes based on output."
+last_audited: "2026-02-04 14:18 PT"
+audit_result: clean
 ---
 
 # CI Iteration Pattern with devrun Agent
