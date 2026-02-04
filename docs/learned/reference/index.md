@@ -6,6 +6,7 @@
 - **[changelog-standards.md](changelog-standards.md)** — writing CHANGELOG.md entries, formatting changelog sections, understanding sync marker format
 - **[claude-cli-stream-json.md](claude-cli-stream-json.md)** — parsing claude cli output, extracting metadata from stream-json, working with session_id, implementing stream-json parser
 - **[cli-flag-patterns.md](cli-flag-patterns.md)** — designing CLI flag requirements, implementing conditional flag requirements, documenting flag combinations
+- **[codex-skills-registries.md](codex-skills-registries.md)** — adding a new skill to the registry, understanding which skills work with Codex vs Claude-only, working with codex_portable.py
 - **[gastown-analysis.md](gastown-analysis.md)** — learning from parallel agent orchestration systems, designing multi-agent coordination, understanding propulsion-based agent patterns, comparing erk to other agentic systems
 - **[github-actions-api.md](github-actions-api.md)** — working with GitHub Actions API, automating CI/CD workflows, managing workflow runs programmatically, writing GitHub Actions YAML workflows, configuring workflow triggers, using GitHub Actions expressions
 - **[interactive-claude-config.md](interactive-claude-config.md)** — configuring Claude CLI launches from erk commands, understanding permission modes for interactive Claude sessions, working with dangerous flags for Claude permissions, implementing commands that launch Claude interactively

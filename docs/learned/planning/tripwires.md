@@ -50,9 +50,13 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
 
+**CRITICAL: Before relying on planning_session_id being available locally** → Read [Learn Pipeline Resilience Patterns](learn-pipeline-resilience.md) first. Planning sessions may be from earlier branch/run and unavailable locally. Use erk exec get-learn-sessions to verify availability; missing sessions don't block pipeline.
+
 **CRITICAL: Before reusing existing worktrees for remote implementation** → Read [Remote Implementation Idempotency](remote-implementation-idempotency.md) first. Check if worktree already has a branch before creating new one. Reusing worktrees without checking causes PR orphaning.
 
 **CRITICAL: Before running /erk:learn in CI** → Read [Learn Workflow](learn-workflow.md) first. CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section.
+
+**CRITICAL: Before running /erk:learn with gist_url that returns empty** → Read [Learn Pipeline Resilience Patterns](learn-pipeline-resilience.md) first. Empty gist indicates preprocessing hasn't completed. This triggers silent fallback to local session discovery. Verify gist upload succeeded or provide no gist_url to skip remote sources.
 
 **CRITICAL: Before running sequential analysis that could be parallelized** → Read [Agent Orchestration for Learn Workflow](agent-orchestration.md) first. Use Tier 1 parallel agents for independent analysis (code-diff, existing-docs, session). Only use Tier 2 sequential synthesis when results must be combined.
 
