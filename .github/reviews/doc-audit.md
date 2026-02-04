@@ -81,6 +81,7 @@ For each section of the document **that appears on `+` lines in the diff** (new 
 - Basic "what it does" descriptions that match docstrings
 - Code examples that duplicate test cases
 - File path listings that could be found via glob
+- **Exception**: Constants, default values, and configuration strings mentioned in prose context are NOT duplicative — they make docs scannable and should be classified as HIGH VALUE or CONTEXTUAL
 
 **Specific things to flag as high-value:**
 
@@ -89,6 +90,7 @@ For each section of the document **that appears on `+` lines in the diff** (new 
 - Cross-cutting patterns that span multiple files
 - Historical context / "why not the obvious approach"
 - Tripwires that prevent common mistakes
+- Constants and default values mentioned in prose context (e.g., "defaults to `premiumLinux`") — these make docs scannable without requiring a code read
 
 ## Step 4: Post Inline Comments for Problematic Sections
 
