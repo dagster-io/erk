@@ -99,13 +99,13 @@ STATUS: <OPEN|CLOSED>
 
 ROADMAP:
 | Step | Phase | Description | Status |
-| 1A.1 | Phase 1A | <description> | done (PR #123) |
-| 1A.2 | Phase 1A | <description> | pending |
-| 2A.1 | Phase 2A | <description> | blocked |
+| 1.1 | Phase 1 | <description> | done (PR #123) |
+| 1.2 | Phase 1 | <description> | pending |
+| 2.1 | Phase 2 | <description> | blocked |
 
 PENDING_STEPS:
-- 1A.2: <description>
-- 3B.1: <description>
+- 1.2: <description>
+- 3.1: <description>
 
 RECOMMENDED: <step-id or "none">
 
