@@ -104,7 +104,7 @@ The setup command fetches the repository ID via `gh api repos/{owner}/{repo} --j
 ### Default Machine Type
 
 ```python
-DEFAULT_MACHINE_TYPE = "basicLinux32gb"
+DEFAULT_MACHINE_TYPE = "premiumLinux"
 ```
 
 Used when no machine type is explicitly specified.

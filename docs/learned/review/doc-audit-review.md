@@ -192,13 +192,13 @@ When documentation explains "what value is used by default" or "what constant co
 **In code**:
 
 ```python
-DEFAULT_MACHINE_TYPE = "basicLinux32gb"
+DEFAULT_MACHINE_TYPE = "premiumLinux"
 ```
 
 **In docs (HIGH VALUE)**:
 
 ```markdown
-The default machine type for codespace creation is `basicLinux32gb`.
+The default machine type for codespace creation is `premiumLinux`.
 ```
 
 ### The Key Distinction
@@ -211,7 +211,7 @@ The default machine type for codespace creation is `basicLinux32gb`.
 1. **Default values**:
 
    ```markdown
-   By default, erk uses `basicLinux32gb` as the machine type for codespaces.
+   By default, erk uses `premiumLinux` as the machine type for codespaces.
    ```
 
 2. **Configuration constants**:

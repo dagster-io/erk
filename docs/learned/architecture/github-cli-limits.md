@@ -119,7 +119,7 @@ The machines endpoint (`/repos/{owner}/{repo}/codespaces/machines`) returns HTTP
 
 **Full diagnostic methodology and workaround**: See [GitHub API Diagnostics](github-api-diagnostics.md).
 **Implementation**: See `src/erk/cli/commands/codespace/setup_cmd.py`.
-**Default machine type**: `basicLinux32gb`
+**Default machine type**: `premiumLinux`
 
 ## Related Documentation
 

@@ -88,17 +88,17 @@ Some gateways don't benefit from dry-run or printing wrappers. The Codespace gat
 ```python
 # abc.py
 @abstractmethod
-def launch_agent(self, command: list[str], env: dict[str, str]) -> NoReturn:
+def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -> NoReturn:
     """Launch agent, replacing current process."""
     ...
 
 # real.py
-def launch_agent(self, command: list[str], env: dict[str, str]) -> NoReturn:
-    os.execvp(command[0], command)
+def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -> NoReturn:
+    os.execvp(...)
 
 # fake.py
-def launch_agent(self, command: list[str], env: dict[str, str]) -> NoReturn:
-    self._launches.append((command, env))
+def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -> NoReturn:
+    self._launches.append(AgentLaunchCall(config=config, command=command))
     raise SystemExit(0)
 ```
 
