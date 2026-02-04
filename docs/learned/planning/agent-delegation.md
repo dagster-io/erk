@@ -7,8 +7,8 @@ read_when:
 tripwires:
   - action: "using background agents without waiting for completion before dependent operations"
     warning: "Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files."
-last_audited: "2026-02-04 13:41 PT"
-audit_result: clean
+last_audited: "2026-02-04 20:22 PT"
+audit_result: edited
 ---
 
 # Command-Agent Delegation Pattern
@@ -16,7 +16,7 @@ audit_result: clean
 ## Pattern Overview
 
 For architectural context and pattern rationale (WHAT and WHY), see:
-[Agent-Delegating Commands Pattern](../developer/agentic-engineering-patterns/agent-delegating-commands.md)
+[Agent-Delegating Commands Pattern](../../developer/agentic-engineering-patterns/agent-delegating-commands.md)
 
 This guide focuses on HOW to implement the pattern with step-by-step technical instructions.
 

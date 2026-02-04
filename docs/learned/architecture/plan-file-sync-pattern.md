@@ -5,9 +5,11 @@ read_when:
   - syncing local plan changes to GitHub issues
   - working with plan feedback workflows
 tripwires:
-  - action: "Call plan-update-from-feedback after editing local plan files"
+  - action: "Call plan-update-issue after editing local plan files"
     warning: "Sync is NOT automatic — GitHub issue will show stale content without explicit sync"
     score: 4
+last_audited: "2026-02-04 20:22 PT"
+audit_result: edited
 ---
 
 # Plan File Sync Pattern
@@ -24,7 +26,7 @@ Plan review PRs work with local markdown files (e.g., `PLAN-REVIEW-6252.md`). Wh
 
 ## The Solution: Explicit Sync Command
 
-After editing the local plan file, call `plan-update-from-feedback` to sync changes back to the GitHub issue:
+After editing the local plan file, call `plan-update-issue` to sync changes back to the GitHub issue:
 
 ```bash
 erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
@@ -60,18 +62,15 @@ This three-step sequence ensures both the PR and the issue are updated.
 
 ## Implementation Details
 
-### plan_update_from_feedback Command
+### plan-update-issue Command
 
 The sync command performs these operations:
 
-1. **Validate issue exists**: Check that the issue number is valid
-2. **Validate erk-plan label**: Ensure the issue is a plan issue
-3. **Extract plan_comment_id**: Get the comment ID from plan-header metadata
-4. **Find matching comment**: Locate the comment on the issue
-5. **Format content**: Wrap the plan content in plan-body markers
-6. **Update comment**: Replace the old comment with new content
+1. **Find plan file**: From session scratch, --plan-path, or ~/.claude/plans/
+2. **Get first comment ID**: Find where the plan body lives on the issue
+3. **Update comment**: Replace the old comment content with new plan content
 
-**Source:** `src/erk/cli/commands/exec/scripts/plan_update_from_feedback.py:58-127`
+**Source:** `src/erk/cli/commands/exec/scripts/plan_update_issue.py`
 
 ### Metadata Preservation: plan-body Markers
 
@@ -135,18 +134,17 @@ Skip syncing in these scenarios:
 
 The typical consumer pattern for plan file sync:
 
-```python
+```bash
 # 1. Edit the plan file
-edit_plan_file(plan_path, changes)
+# (edit PLAN-REVIEW-{issue}.md locally)
 
 # 2. Commit changes
-git_commit(f"Address feedback: {summary}")
+git add PLAN-REVIEW-{issue}.md
+git commit -m "Address feedback: ..."
+git push
 
 # 3. Sync to GitHub issue
-result = plan_update_from_feedback(issue_number, plan_path)
-if not result.success:
-    # Handle sync failure
-    ...
+erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
 ```
 
 This ensures changes are persisted locally before syncing remotely.
