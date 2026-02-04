@@ -412,7 +412,10 @@ def generate_compressed_xml(
         message = entry.get("message", {})
 
         if entry_type == "summary":
-            summary_text = message.get("summary", entry.get("summary", ""))
+            if "summary" in message:
+                summary_text = message["summary"]
+            else:
+                summary_text = entry.get("summary", "")
             if summary_text:
                 xml_lines.append(f"  <summary>{escape_xml(str(summary_text))}</summary>")
 
@@ -421,10 +424,9 @@ def generate_compressed_xml(
             duration_ms = entry.get("durationMs", "")
             escaped_subtype = escape_xml(str(subtype))
             escaped_duration = escape_xml(str(duration_ms))
-            system_xml = (
+            xml_lines.append(
                 f'  <system subtype="{escaped_subtype}" duration_ms="{escaped_duration}" />'
             )
-            xml_lines.append(system_xml)
 
         elif entry_type == "user":
             # Extract user content - may contain text and/or tool_result blocks
