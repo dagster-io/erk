@@ -16,6 +16,9 @@ FIXTURES_DIR = Path(__file__).parent.parent.parent.parent.parent / "fixtures" / 
 # Session fixture with list-based tool_result content (from Task agent responses)
 ZETA_SESSION = FIXTURES_DIR / "project_zeta" / "session-zzz11111-2222-3333-4444-555555555555.jsonl"
 
+# Session fixture with thinking blocks in assistant messages
+ETA_SESSION = FIXTURES_DIR / "project_eta" / "session-eea11111-2222-3333-4444-555555555555.jsonl"
+
 
 def test_preprocess_session_handles_list_based_tool_result_content() -> None:
     """Integration test: process session with list-based tool_result content.
@@ -79,3 +82,74 @@ def test_preprocess_session_extracts_branch_metadata_from_fixture() -> None:
 
     # Branch metadata should be extracted
     assert 'branch="feature-branch"' in result.output
+
+
+def test_preprocess_session_preserves_thinking_blocks() -> None:
+    """Integration test: thinking blocks in assistant messages are preserved.
+
+    Real Claude Code sessions with extended thinking enabled contain
+    {"type": "thinking", "thinking": "..."} content blocks in assistant messages.
+    This test verifies the preprocessor emits them as <thinking> XML elements.
+    """
+    fixture_path = ETA_SESSION
+    assert fixture_path.exists(), f"Fixture not found: {fixture_path}"
+
+    runner = CliRunner()
+    result = runner.invoke(preprocess_session, [str(fixture_path), "--stdout", "--no-filtering"])
+
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+
+    output = result.output
+
+    # Both thinking blocks should be preserved
+    assert "<thinking>" in output
+    assert "gateway layer handles external integrations" in output
+    assert "ABC pattern with Real and Fake implementations" in output
+
+    # Text content alongside thinking should also be preserved
+    assert "<assistant>The module has three main layers" in output
+    assert "<assistant>Here is the gateway pattern" in output
+
+
+def test_preprocess_session_thinking_blocks_not_stripped_by_filtering() -> None:
+    """Integration test: thinking blocks survive even with default filtering enabled.
+
+    Thinking blocks are part of the conversation content and must not be
+    stripped by content filtering or pruning logic.
+    """
+    fixture_path = ETA_SESSION
+    assert fixture_path.exists(), f"Fixture not found: {fixture_path}"
+
+    runner = CliRunner()
+    # Run WITHOUT --no-filtering to use default filtering behavior
+    result = runner.invoke(preprocess_session, [str(fixture_path), "--stdout"])
+
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+
+    output = result.output
+
+    # Thinking blocks must survive filtering
+    assert "<thinking>" in output
+    assert "gateway layer handles external integrations" in output
+
+
+def test_preprocess_session_thinking_with_tool_use_in_same_message() -> None:
+    """Integration test: thinking blocks coexist with tool_use in the same message.
+
+    Assistant messages can contain thinking, text, and tool_use blocks together.
+    All three should be preserved in the XML output.
+    """
+    fixture_path = ETA_SESSION
+    assert fixture_path.exists(), f"Fixture not found: {fixture_path}"
+
+    runner = CliRunner()
+    result = runner.invoke(preprocess_session, [str(fixture_path), "--stdout", "--no-filtering"])
+
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+
+    output = result.output
+
+    # The second assistant message has thinking + text + tool_use
+    assert "ABC pattern with Real and Fake implementations" in output
+    assert '<tool_use name="Read"' in output
+    assert '<tool_result tool="toolu_read_001">' in output
