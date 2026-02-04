@@ -90,6 +90,7 @@ Add tests:
 - `test_generate_xml_usage_metadata` — usage data emitted in XML
 
 Update existing test:
+
 - `test_process_log_file_removes_usage_field` — invert or remove, since usage is now preserved
 
 ## Verification
