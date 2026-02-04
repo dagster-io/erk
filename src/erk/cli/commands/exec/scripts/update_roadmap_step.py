@@ -231,9 +231,7 @@ def update_roadmap_step(
         raise SystemExit(1)
 
     # Replace the PR cell in the raw body
-    updated_body = _replace_step_pr_in_body(
-        issue.body, step, pr, explicit_status=explicit_status
-    )
+    updated_body = _replace_step_pr_in_body(issue.body, step, pr, explicit_status=explicit_status)
     if updated_body is None:
         click.echo(
             json.dumps(
