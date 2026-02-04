@@ -74,73 +74,67 @@ If no argument is provided, check if the current branch is associated with a pla
 
 If no default found from current branch, prompt user using AskUserQuestion with "What objective issue should I work from?"
 
-### Step 2: Fetch and Validate Issue
+### Step 2: Launch Task Agent for Data Fetching
 
-```bash
-erk exec get-issue-body <issue-number>
+Use the Task tool with `subagent_type: "general-purpose"` and `model: "haiku"` to fetch and parse objective data:
+
+**Task Prompt:**
+
+```
+Fetch and validate objective #<issue-number> and return a structured summary.
+
+Instructions:
+1. Run: erk exec get-issue-body <issue-number>
+2. Validate this is an objective:
+   - Check for 'erk-objective' label
+   - If 'erk-plan' label instead: return error "This is an erk-plan issue, not an objective"
+   - If neither label: include warning but proceed
+3. Create objective context marker:
+   erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <issue-number> objective-context
+4. Run: erk objective check <issue-number> --json-output
+5. Return a compact structured summary in this exact format:
+
+OBJECTIVE: #<number> — <title>
+STATUS: <OPEN|CLOSED>
+
+ROADMAP:
+| Step | Phase | Description | Status |
+| 1.1 | Phase 1 | <description> | done (PR #123) |
+| 1.2 | Phase 1 | <description> | pending |
+| 2.1 | Phase 2 | <description> | blocked |
+
+PENDING_STEPS:
+- 1.2: <description>
+- 3.1: <description>
+
+RECOMMENDED: <step-id or "none">
+
+WARNINGS: <any warnings about labels, roadmap format, etc., or "none">
+
+Status mapping:
+- "pending" → "pending"
+- "done" → "done (PR #XXX)"
+- "in_progress" → "plan in progress (#XXX)"
+- "blocked" → "blocked"
+- "skipped" → "skipped"
+
+Only include steps with status "pending" in PENDING_STEPS section.
+Use the "next_step" field from check output as RECOMMENDED.
 ```
 
-This returns JSON with `{success, issue_number, title, body, labels, url}`.
+Replace `<issue-number>` with the issue number from Step 1.
 
-**Validate this is an objective:**
-
-1. Check for `erk-objective` label in the `labels` array
-2. If label is `erk-plan` instead: report error "This is an erk-plan issue, not an objective. Use `/erk:plan-implement` instead."
-3. If neither label: warn but proceed
-
-### Step 2.5: Create Objective Context Marker
-
-Create a marker to persist the objective issue number for the exit-plan-mode hook.
-
-```bash
-erk exec marker create --session-id "${CLAUDE_SESSION_ID}" \
-  --associated-objective <objective-number> objective-context
-```
-
-Replace `<objective-number>` with the issue number from Step 2.
-
-This enables the exit-plan-mode-hook to suggest the correct save command with `--objective-issue` automatically.
+**Important:** The Task agent handles all JSON parsing and marker creation. The main conversation only receives the formatted summary.
 
 ### Step 3: Load Objective Skill
 
 Load the `objective` skill for format templates and guidance.
 
-### Step 4: Parse Roadmap and Display Steps
+### Step 4: Display Roadmap and Prompt User
 
-Use the objective check command to get structured step data:
+Display the roadmap table from the Task agent's output to the user.
 
-```bash
-erk objective check <issue-number> --json-output
-```
-
-This returns JSON with `phases` (each containing `steps` with `id`, `description`, `status`, `pr` fields), `summary`, and `next_step`.
-
-**Map JSON status values to display labels:**
-
-- `"pending"` → `(pending)` - available to plan
-- `"done"` → `(done, PR #XXX)` (get PR ref from step's `pr` field)
-- `"in_progress"` → `(plan in progress, #XXX)` (get PR ref from step's `pr` field)
-- `"blocked"` → `(blocked)` - cannot be worked yet
-- `"skipped"` → `(skipped)` - explicitly skipped
-
-Display steps to the user in roadmap order:
-
-```
-Objective #<number>: <title>
-
-Roadmap Steps:
-  [1] Step 1A.1: <description> (pending) ← recommended
-  [2] Step 1A.2: <description> (pending)
-  [3] Step 1B.1: <description> (done, PR #123)
-  [4] Step 2A.1: <description> (plan in progress, #456)
-  ...
-```
-
-**Ordering rule:** Present steps in natural roadmap order (as returned by the JSON). The `next_step` field from the JSON indicates the recommended step. If `next_step` is null, all steps are complete or have plans in progress.
-
-### Step 5: Prompt User to Select Step
-
-Use AskUserQuestion to ask which step to plan:
+Then use AskUserQuestion to ask which step to plan:
 
 ```
 Which step should I create a plan for?
@@ -163,7 +157,7 @@ If all steps are complete or have plans in progress, report appropriately:
 - All complete: "All roadmap steps are complete! Consider closing the objective."
 - All have plans: "All pending steps have plans in progress. You can still select one via 'Other' to create a parallel plan."
 
-### Step 5.5: Create Roadmap Step Marker
+### Step 5: Create Roadmap Step Marker
 
 After the user selects a step, create a marker to store the selected step ID for later use by `plan-save`:
 
@@ -204,7 +198,7 @@ Enter plan mode to create the implementation plan:
 
 After the plan is approved in plan mode, the `exit-plan-mode-hook` will prompt to save or implement.
 
-**If the objective-context marker was created in Step 2.5:**
+**If the objective-context marker was created in Step 2:**
 The hook will automatically suggest the correct command with `--objective-issue=<objective-number>`. Simply follow the hook's suggestion.
 
 **If the marker was not created (fallback):**
@@ -226,7 +220,7 @@ This will:
 
 After the plan is approved in plan mode, the `exit-plan-mode-hook` will prompt to save or implement.
 
-**If the objective-context marker was created in Step 2.5:**
+**If the objective-context marker was created in Step 2:**
 The hook will automatically suggest `/erk:plan-save --objective-issue=<objective-number>`.
 
 When you run this command, it will:
