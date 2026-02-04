@@ -1,5 +1,7 @@
 ---
 title: Token Optimization Patterns
+last_audited: "2026-02-04 05:48 PT"
+audit_result: clean
 read_when:
   - "designing multi-agent workflows"
   - "handling large data payloads in agent orchestration"

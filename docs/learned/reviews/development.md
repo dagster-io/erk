@@ -1,5 +1,7 @@
 ---
 title: Review Development Guide
+last_audited: "2026-02-04 05:48 PT"
+audit_result: edited
 read_when:
   - creating a new GitHub review workflow
   - adding review automation to CI
@@ -108,39 +110,15 @@ jobs:
 3. **Marker naming** - Use `review-<name>` prefix for consistency
 4. **Conditional markers** - Always write a marker (success or failure)
 
-### Step 4: Add Marker Schema
+### Step 4: Register Marker Type
 
-**File location**: `src/erk/marker/schemas.py`
-
-Add marker type to `MarkerType` enum and schema:
-
-```python
-class MarkerType(str, Enum):
-    REVIEW_MY_REVIEW = "review-my-review"
-
-MARKER_SCHEMAS = {
-    MarkerType.REVIEW_MY_REVIEW: MarkerSchema(
-        allowed_content_values=["approved", "failed", "blocked"],
-        metadata_schema={
-            "tool_version": str,
-            "check_count": int,
-        },
-    ),
-}
-```
+Register the review's marker type in the marker system. Search the codebase for existing marker registrations to find the current pattern and location (`grep -r "MarkerType\|marker.*schema" src/`).
 
 ### Step 5: Integrate with PR Checks
 
 **File location**: `src/erk/cli/commands/pr/check_cmd.py`
 
-Add review to PR check logic:
-
-```python
-# In check_reviews_status()
-my_review_marker = get_latest_marker(MarkerType.REVIEW_MY_REVIEW)
-if my_review_marker and my_review_marker.content == "failed":
-    failures.append("My review failed")
-```
+Add the new review to the PR check logic. Read the existing `check_cmd.py` to understand the current pattern for integrating review results.
 
 ### Step 6: Document the Review
 
@@ -384,6 +362,6 @@ Before creating a new review, check if existing reviews already cover:
 
 ## Code References
 
-- Workflow files: `.github/workflows/review-*.yml`
-- Marker schemas: `src/erk/marker/schemas.py`
+- Workflow files: `.github/workflows/code-reviews.yml`
+- Review specs: `.github/reviews/`
 - PR check integration: `src/erk/cli/commands/pr/check_cmd.py`

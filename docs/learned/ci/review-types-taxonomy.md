@@ -1,5 +1,7 @@
 ---
 title: Review Types Taxonomy
+last_audited: "2026-02-04 05:48 PT"
+audit_result: clean
 read_when:
   - creating a new review workflow
   - deciding whether to extend an existing review or create a new one
@@ -252,6 +254,5 @@ on:
 
 ## Code References
 
-- Workflow files: `.github/workflows/review-*.yml`
-- Marker schemas: `src/erk/marker/schemas.py`
+- Workflow files: `.github/workflows/code-reviews.yml`
 - PR check integration: `src/erk/cli/commands/pr/check_cmd.py`

@@ -1,5 +1,7 @@
 ---
 title: Objective Summary Format
+last_audited: "2026-02-04 05:48 PT"
+audit_result: clean
 read_when:
   - working with objective-next-plan command
   - implementing Task agent delegation for objective context
