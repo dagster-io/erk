@@ -62,10 +62,19 @@ packages = ["src/erk"]
 # Whitelist specific artifacts from .claude/ for distribution to external users
 # Commands: erk namespace only (not local)
 ".claude/commands/erk" = "erk/data/claude/commands/erk"
-# Skills: selected skills useful for external projects
-".claude/skills/dignified-python" = "erk/data/claude/skills/dignified-python"
-".claude/skills/learned-docs" = "erk/data/claude/skills/learned-docs"
-".claude/skills/erk-diff-analysis" = "erk/data/claude/skills/erk-diff-analysis"
+# Codex-portable skills (Codex-compatible frontmatter, generic AI agent support)
+".claude/skills/dignified-python" = "erk/data/codex/skills/dignified-python"
+".claude/skills/fake-driven-testing" = "erk/data/codex/skills/fake-driven-testing"
+".claude/skills/erk-diff-analysis" = "erk/data/codex/skills/erk-diff-analysis"
+".claude/skills/erk-exec" = "erk/data/codex/skills/erk-exec"
+".claude/skills/erk-planning" = "erk/data/codex/skills/erk-planning"
+".claude/skills/objective" = "erk/data/codex/skills/objective"
+".claude/skills/gh" = "erk/data/codex/skills/gh"
+".claude/skills/gt" = "erk/data/codex/skills/gt"
+".claude/skills/learned-docs" = "erk/data/codex/skills/learned-docs"
+".claude/skills/dignified-code-simplifier" = "erk/data/codex/skills/dignified-code-simplifier"
+".claude/skills/pr-operations" = "erk/data/codex/skills/pr-operations"
+".claude/skills/pr-feedback-classifier" = "erk/data/codex/skills/pr-feedback-classifier"
 # Agents: devrun only
 ".claude/agents/devrun.md" = "erk/data/claude/agents/devrun.md"
 # Workflows: erk-managed GitHub workflows

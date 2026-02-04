@@ -7,6 +7,7 @@ from erk.artifacts.paths import (
     _get_erk_package_dir,
     _is_editable_install,
     get_bundled_claude_dir,
+    get_bundled_codex_dir,
     get_bundled_github_dir,
 )
 from erk.artifacts.sync import (
@@ -171,6 +172,34 @@ def test_get_bundled_claude_dir_wheel_install() -> None:
         assert result == Path("/home/user/.venv/lib/python3.11/site-packages/erk/data/claude")
     _get_erk_package_dir.cache_clear()
     get_bundled_claude_dir.cache_clear()
+
+
+def test_get_bundled_codex_dir_editable_install() -> None:
+    """Returns .claude/ at repo root for editable installs (codex falls back to claude)."""
+    _get_erk_package_dir.cache_clear()
+    get_bundled_codex_dir.cache_clear()
+    with patch(
+        "erk.artifacts.paths._get_erk_package_dir",
+        return_value=Path("/home/user/code/erk/src/erk"),
+    ):
+        result = get_bundled_codex_dir()
+        assert result == Path("/home/user/code/erk/.claude")
+    _get_erk_package_dir.cache_clear()
+    get_bundled_codex_dir.cache_clear()
+
+
+def test_get_bundled_codex_dir_wheel_install() -> None:
+    """Returns erk/data/codex/ for wheel installs."""
+    _get_erk_package_dir.cache_clear()
+    get_bundled_codex_dir.cache_clear()
+    with patch(
+        "erk.artifacts.paths._get_erk_package_dir",
+        return_value=Path("/home/user/.venv/lib/python3.11/site-packages/erk"),
+    ):
+        result = get_bundled_codex_dir()
+        assert result == Path("/home/user/.venv/lib/python3.11/site-packages/erk/data/codex")
+    _get_erk_package_dir.cache_clear()
+    get_bundled_codex_dir.cache_clear()
 
 
 def test_get_bundled_github_dir_editable_install() -> None:
