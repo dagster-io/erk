@@ -25,7 +25,10 @@ Identify documentation that merely restates what code already communicates. Flag
 Parse `$ARGUMENTS` to:
 
 1. Detect if `--auto-apply` flag is present (strip from path arguments)
-2. Resolve the doc path:
+2. **CI auto-detection:** If `--auto-apply` was not explicitly passed, check for CI environment:
+   - Run: `[ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ] && echo "CI_MODE" || echo "INTERACTIVE"`
+   - If CI detected, automatically enable `--auto-apply` mode and output: "CI environment detected: enabling --auto-apply mode"
+3. Resolve the doc path:
    - If starts with `docs/learned/`: Use as-is
    - If starts with `/`: Use as absolute path
    - Otherwise: Treat as relative to `docs/learned/`
