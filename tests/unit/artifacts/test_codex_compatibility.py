@@ -42,7 +42,7 @@ def _parse_skill_frontmatter(skill_path: Path) -> dict[str, str]:
     if not skill_md.exists():
         raise ValueError(f"SKILL.md not found in {skill_path}")
 
-    content = skill_md.read_text()
+    content = skill_md.read_text(encoding="utf-8")
     if not content.startswith("---\n"):
         raise ValueError(f"Missing YAML frontmatter in {skill_md}")
 
@@ -92,13 +92,12 @@ def test_all_skills_have_codex_required_frontmatter() -> None:
 
         # Validate field constraints
         name = frontmatter["name"]
-        description = frontmatter["description"]
-
         if not isinstance(name, str):
             failures.append(f"{skill_name}: 'name' must be a string")
         elif len(name) > 64:
             failures.append(f"{skill_name}: 'name' exceeds 64 chars ({len(name)})")
 
+        description = frontmatter["description"]
         if not isinstance(description, str):
             failures.append(f"{skill_name}: 'description' must be a string")
         elif len(description) > 1024:

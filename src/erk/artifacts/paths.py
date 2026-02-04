@@ -61,8 +61,7 @@ def get_bundled_codex_dir() -> Path:
 
     if _is_editable_install():
         # Editable: return .claude/ (same format, install step handles target mapping)
-        erk_repo_root = erk_package_dir.parent.parent
-        return erk_repo_root / ".claude"
+        return erk_package_dir.parent.parent / ".claude"
 
     # Wheel install: data is bundled at erk/data/codex/
     return erk_package_dir / "data" / "codex"
