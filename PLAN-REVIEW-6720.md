@@ -157,6 +157,37 @@ Mutation tests:
 
 All existing tests must continue passing unchanged.
 
+### Step 6: Create objective lifecycle document
+
+**Create `docs/learned/objectives/objective-lifecycle.md`**
+
+Document the complete objective lifecycle based on the mutation audit from Step 4. This serves as the definitive reference for how objectives are created, read, mutated, and closed.
+
+Contents:
+- **Creation**: How objectives are created (`gh issue create` with `erk-objective` label, roadmap table format)
+- **Reading**: `parse_roadmap()` flow — frontmatter-first with table fallback
+- **Mutations**: All mutation sites with method (surgical vs full-body), trigger, and data flow
+  - `update-roadmap-step` — surgical PR cell update (plan-save, manual)
+  - `objective-update-with-landed-pr` — full-body rewrite after PR lands
+- **Frontmatter lifecycle**: When frontmatter is added (migration or new objectives), how it coexists with markdown tables (dual-write during transition)
+- **Closing**: `erk objective close` flow, triggers (all steps done)
+- **Data flow diagram**: Visual flow from creation → plan linking → PR landing → step completion → close
+
+Frontmatter:
+```yaml
+---
+title: Objective Lifecycle
+category: objectives
+read_when:
+  - "creating or modifying objective lifecycle code"
+  - "understanding how objectives are created, mutated, and closed"
+  - "adding new mutation paths to objective roadmaps"
+tripwires:
+  - action: "adding a new roadmap mutation site without updating this document"
+    warning: "All roadmap mutation sites must be documented in objective-lifecycle.md"
+---
+```
+
 ## Files
 
 | File | Action |
@@ -167,6 +198,7 @@ All existing tests must continue passing unchanged.
 | `.claude/commands/erk/objective-update-with-landed-pr.md` | **Modify** — update agent instructions for frontmatter dual-write |
 | `tests/unit/cli/commands/exec/scripts/test_objective_roadmap_frontmatter.py` | **Create** — frontmatter parser + mutation tests |
 | `tests/unit/cli/commands/exec/scripts/test_objective_roadmap_shared.py` | **Modify** — add frontmatter integration tests |
+| `docs/learned/objectives/objective-lifecycle.md` | **Create** — objective lifecycle reference (creation, mutation, closing) |
 
 ## Key Dependencies to Reuse
 
