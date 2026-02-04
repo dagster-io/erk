@@ -5,35 +5,34 @@ import subprocess
 
 import click
 
+from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
 from erk_shared.gateway.codespace_registry.real import register_codespace, set_default_codespace
 
+DEFAULT_MACHINE_TYPE = "premiumLinux"
 
-def _find_codespace_by_display_name(display_name: str) -> dict | None:
-    """Find a codespace by its display name."""
-    # GH-API-AUDIT: REST - GET user/codespaces
-    result = subprocess.run(
-        ["gh", "codespace", "list", "--json", "name,repository,displayName"],
-        capture_output=True,
-        text=True,
-        check=False,
+
+def _get_repo_id(*, repo: str | None, ctx: ErkContext) -> int:
+    """Get the GitHub repository database ID.
+
+    Uses the --repo flag if provided, otherwise derives from ctx.repo_info.
+    """
+    if repo is not None:
+        owner_repo = repo
+    elif ctx.repo_info is not None:
+        owner_repo = f"{ctx.repo_info.owner}/{ctx.repo_info.name}"
+    else:
+        click.echo("Error: No repository specified and no repo info available.", err=True)
+        click.echo("Use --repo owner/repo to specify the repository.", err=True)
+        raise SystemExit(1)
+
+    result = run_with_error_reporting(
+        ["gh", "api", f"repos/{owner_repo}", "--jq", ".id"],
+        error_prefix=f"Failed to get repository ID for '{owner_repo}'",
+        troubleshooting=["Ensure gh is authenticated", "Check the repository exists"],
     )
-    if result.returncode != 0:
-        return None
-
-    content = result.stdout.strip()
-    if not content:
-        return None
-
-    try:
-        codespaces = json.loads(content)
-        for cs in codespaces:
-            if cs.get("displayName") == display_name:
-                return cs
-        return None
-    except json.JSONDecodeError:
-        return None
+    return int(result.stdout.strip())
 
 
 @click.command("setup")
@@ -53,8 +52,8 @@ def _find_codespace_by_display_name(display_name: str) -> dict | None:
 @click.option(
     "-m",
     "--machine",
-    default=None,
-    help="Machine type for the codespace (e.g. basicLinux32gb, standardLinux32gb).",
+    default=DEFAULT_MACHINE_TYPE,
+    help=f"Machine type for the codespace (default: {DEFAULT_MACHINE_TYPE}).",
 )
 @click.pass_obj
 def setup_codespace(
@@ -63,12 +62,12 @@ def setup_codespace(
     name: str | None,
     repo: str | None,
     branch: str | None,
-    machine: str | None,
+    machine: str,
 ) -> None:
     """Create and register a new codespace for remote Claude execution.
 
-    Creates a GitHub Codespace, registers it in the local registry, and
-    opens an SSH connection for Claude login.
+    Creates a GitHub Codespace via the REST API, registers it in the local
+    registry, and opens an SSH connection for Claude login.
 
     If NAME is not provided, generates one from the repository name.
 
@@ -90,41 +89,51 @@ def setup_codespace(
         click.echo("\nUse 'erk codespace [name]' to connect to it.", err=True)
         raise SystemExit(1)
 
-    # Build gh codespace create command
-    # GH-API-AUDIT: REST - POST user/codespaces
-    cmd = ["gh", "codespace", "create"]
-
-    if repo:
-        cmd.extend(["--repo", repo])
-
-    if branch:
-        cmd.extend(["--branch", branch])
-
-    if machine:
-        cmd.extend(["--machine", machine])
-
-    cmd.extend(["--display-name", name])
-
+    # Get repository ID for REST API call
     click.echo(f"Creating codespace '{name}'...", err=True)
+    repo_id = _get_repo_id(repo=repo, ctx=ctx)
+
+    # Build gh api REST call to create codespace directly
+    # This bypasses the broken machines endpoint that gh codespace create uses
+    # GH-API-AUDIT: REST - POST user/codespaces
+    cmd = [
+        "gh",
+        "api",
+        "--method",
+        "POST",
+        "/user/codespaces",
+        "-F",
+        f"repository_id={repo_id}",
+        "-f",
+        f"machine={machine}",
+        "-f",
+        f"display_name={name}",
+        "-f",
+        "devcontainer_path=.devcontainer/devcontainer.json",
+    ]
+
+    if branch is not None:
+        cmd.extend(["-f", f"ref={branch}"])
+
     click.echo(f"Running: {' '.join(cmd)}", err=True)
     click.echo("", err=True)
 
-    result = subprocess.run(cmd, check=False)
+    result = run_with_error_reporting(
+        cmd,
+        error_prefix="Codespace creation failed",
+        troubleshooting=[
+            "Ensure gh is authenticated with codespace permissions",
+            "Check that the machine type is valid",
+        ],
+    )
 
-    if result.returncode != 0:
-        click.echo(f"\nCodespace creation failed (exit code {result.returncode}).", err=True)
+    # Parse the JSON response to get the codespace name
+    response = json.loads(result.stdout)
+    if "name" not in response:
+        click.echo("Error: API response missing 'name' field.", err=True)
+        click.echo(f"Response: {result.stdout.strip()}", err=True)
         raise SystemExit(1)
-
-    # Find and register the created codespace
-    click.echo("", err=True)
-    click.echo("Looking up created codespace...", err=True)
-
-    codespace = _find_codespace_by_display_name(name)
-    if codespace is None:
-        click.echo(f"Warning: Could not find codespace '{name}' to register.", err=True)
-        raise SystemExit(1)
-
-    gh_name = codespace.get("name", "")
+    gh_name = response["name"]
 
     registered = RegisteredCodespace(
         name=name,

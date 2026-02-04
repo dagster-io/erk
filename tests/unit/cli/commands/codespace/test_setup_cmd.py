@@ -5,9 +5,13 @@ from datetime import datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk.cli.commands.codespace.setup_cmd import DEFAULT_MACHINE_TYPE
 from erk.core.context import context_for_test
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
 from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
+from erk_shared.gateway.github.types import RepoInfo
+
+TEST_REPO_INFO = RepoInfo(owner="testorg", name="testrepo")
 
 
 def test_setup_shows_error_when_name_exists() -> None:
@@ -30,24 +34,22 @@ def test_setup_shows_error_when_name_exists() -> None:
 def test_setup_derives_name_from_repo_info() -> None:
     """setup command derives codespace name from repo_info if not provided.
 
-    This test is limited because the actual gh codespace create subprocess
-    call will fail, but we can verify the derived name is used.
+    This test is limited because the actual gh api subprocess call will fail,
+    but we can verify the derived name is used before the subprocess step.
     """
     runner = CliRunner()
 
     codespace_registry = FakeCodespaceRegistry()
-    from erk_shared.gateway.github.types import RepoInfo
-
     ctx = context_for_test(
         codespace_registry=codespace_registry,
-        repo_info=RepoInfo(owner="myorg", name="myproject"),
+        repo_info=TEST_REPO_INFO,
     )
 
     # Will fail at subprocess but should output the derived name
     result = runner.invoke(cli, ["codespace", "setup"], obj=ctx, catch_exceptions=True)
 
     # The derived name should be "{repo_name}-codespace"
-    assert "Using codespace name: myproject-codespace" in result.output
+    assert "Using codespace name: testrepo-codespace" in result.output
 
 
 def test_setup_uses_default_name_without_repo_info() -> None:
@@ -68,7 +70,7 @@ def test_setup_accepts_explicit_name() -> None:
     runner = CliRunner()
 
     codespace_registry = FakeCodespaceRegistry()
-    ctx = context_for_test(codespace_registry=codespace_registry)
+    ctx = context_for_test(codespace_registry=codespace_registry, repo_info=TEST_REPO_INFO)
 
     # Will fail at subprocess but should use the explicit name
     result = runner.invoke(
@@ -79,12 +81,29 @@ def test_setup_accepts_explicit_name() -> None:
     assert "Creating codespace 'custom-name'" in result.output
 
 
-def test_setup_passes_repo_option_to_gh_command() -> None:
-    """setup command passes --repo option to gh codespace create."""
+def test_setup_errors_without_repo_info_or_repo_flag() -> None:
+    """setup command errors when no repo_info and no --repo flag provided."""
     runner = CliRunner()
 
     codespace_registry = FakeCodespaceRegistry()
-    ctx = context_for_test(codespace_registry=codespace_registry)
+    ctx = context_for_test(codespace_registry=codespace_registry, repo_info=None)
+
+    result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=True)
+
+    assert result.exit_code == 1
+    assert "No repository specified" in result.output
+
+
+def test_setup_repo_id_lookup_uses_repo_flag() -> None:
+    """setup command uses --repo to look up repo ID when provided.
+
+    The gh api call will fail in tests, but we can verify the error output
+    includes the repo flag value, confirming it was used for the API call.
+    """
+    runner = CliRunner()
+
+    codespace_registry = FakeCodespaceRegistry()
+    ctx = context_for_test(codespace_registry=codespace_registry, repo_info=None)
 
     result = runner.invoke(
         cli,
@@ -93,44 +112,29 @@ def test_setup_passes_repo_option_to_gh_command() -> None:
         catch_exceptions=True,
     )
 
-    # Should output the command with --repo flag
-    assert "--repo" in result.output
-    assert "owner/repo" in result.output
+    # The error from run_with_error_reporting includes the command that failed
+    # which should contain the repo path
+    assert "repos/owner/repo" in result.output
 
 
-def test_setup_passes_branch_option_to_gh_command() -> None:
-    """setup command passes --branch option to gh codespace create."""
+def test_setup_repo_id_lookup_uses_repo_info() -> None:
+    """setup command uses ctx.repo_info to look up repo ID when --repo not provided.
+
+    The gh api call will fail in tests, but we can verify the error output
+    includes the repo info, confirming it was used for the API call.
+    """
     runner = CliRunner()
 
     codespace_registry = FakeCodespaceRegistry()
-    ctx = context_for_test(codespace_registry=codespace_registry)
+    ctx = context_for_test(codespace_registry=codespace_registry, repo_info=TEST_REPO_INFO)
 
-    result = runner.invoke(
-        cli,
-        ["codespace", "setup", "mybox", "--branch", "feature-branch"],
-        obj=ctx,
-        catch_exceptions=True,
-    )
+    result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=True)
 
-    # Should output the command with --branch flag
-    assert "--branch" in result.output
-    assert "feature-branch" in result.output
+    # The error from run_with_error_reporting includes the command that failed
+    # which should contain the derived owner/repo path
+    assert "repos/testorg/testrepo" in result.output
 
 
-def test_setup_passes_machine_option_to_gh_command() -> None:
-    """setup command passes --machine option to gh codespace create."""
-    runner = CliRunner()
-
-    codespace_registry = FakeCodespaceRegistry()
-    ctx = context_for_test(codespace_registry=codespace_registry)
-
-    result = runner.invoke(
-        cli,
-        ["codespace", "setup", "mybox", "--machine", "standardLinux32gb"],
-        obj=ctx,
-        catch_exceptions=True,
-    )
-
-    # Should output the command with --machine flag
-    assert "--machine" in result.output
-    assert "standardLinux32gb" in result.output
+def test_setup_default_machine_type_is_premium_linux() -> None:
+    """Default machine type constant is premiumLinux."""
+    assert DEFAULT_MACHINE_TYPE == "premiumLinux"
