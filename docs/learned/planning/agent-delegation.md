@@ -7,18 +7,15 @@ read_when:
 tripwires:
   - action: "using background agents without waiting for completion before dependent operations"
     warning: "Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files."
-last_audited: "2026-02-04 13:41 PT"
-audit_result: clean
+last_audited: "2026-02-04 14:09 PT"
+audit_result: edited
 ---
 
 # Command-Agent Delegation Pattern
 
 ## Pattern Overview
 
-For architectural context and pattern rationale (WHAT and WHY), see:
-[Agent-Delegating Commands Pattern](../developer/agentic-engineering-patterns/agent-delegating-commands.md)
-
-This guide focuses on HOW to implement the pattern with step-by-step technical instructions.
+This guide covers the command-agent delegation pattern: when to use it, how to implement it, and common pitfalls to avoid.
 
 ## Overview
 
@@ -90,27 +87,7 @@ Does command orchestrate 3+ steps?
 - Iterative error fixing
 - Cost efficiency with lighter model
 
-**Command structure:**
-
-```markdown
----
-description: Run fast CI checks iteratively
----
-
-# /fast-ci
-
-Run fast CI checks iteratively (unit tests + ty) until all pass.
-
-## Implementation
-
-Delegates to the devrun agent:
-
-Task(
-subagent_type="devrun",
-description="Run fast CI checks",
-prompt="Run unit tests with pytest, then run ty. Fix any failures iteratively."
-)
-```
+**Command structure:** See `.claude/commands/local/fast-ci.md`
 
 **Agent responsibilities:**
 
@@ -135,34 +112,7 @@ prompt="Run unit tests with pytest, then run ty. Fix any failures iteratively."
 - Rich user feedback throughout workflow
 - Typically uses haiku model for cost efficiency
 
-**Command structure:**
-
-```markdown
----
-description: Create worktree from existing plan file on disk
----
-
-# /erk:create-wt-from-plan-file
-
-Create a erk worktree from an existing plan file on disk.
-
-## What This Command Does
-
-Delegates the complete worktree creation workflow to the `planned-wt-creator` agent, which handles:
-
-1. Auto-detect most recent plan file at repository root
-2. Validate plan file (exists, readable, not empty)
-3. Run `erk create --from-plan-file` with JSON output
-4. Display plan location and next steps
-
-## Implementation
-
-Task(
-subagent_type="planned-wt-creator",
-description="Create worktree from plan",
-prompt="Execute the complete planned worktree creation workflow"
-)
-```
+**Command structure:** See historical reference in `packages/erk-kits/src/erk_kits/data/kits/erk/commands/erk/create-wt-from-plan-file.md` (deprecated)
 
 **Agent responsibilities:**
 
@@ -185,28 +135,7 @@ prompt="Execute the complete planned worktree creation workflow"
 - Reduces duplication across commands
 - Agent implements shared workflow
 
-**Shared skill pattern:**
-
-```markdown
-# CI Iteration Workflow
-
-This document describes the iterative CI workflow used by /fast-ci and /all-ci commands.
-
-## Workflow Steps
-
-1. Run specified CI checks
-2. Capture failures
-3. If failures: analyze and suggest fixes
-4. Retry until success or max attempts
-5. Report final status
-
-## Agent Invocation
-
-Both commands delegate to devrun agent:
-
-- /fast-ci: "Run pytest tests/ && pyright"
-- /all-ci: "Run make all-ci"
-```
+**Shared skill pattern:** See `.claude/skills/ci-iteration/SKILL.md` for workflow documentation shared across commands.
 
 ## Implementation Guide
 
@@ -216,59 +145,9 @@ Follow these steps to implement command-agent delegation:
 
 **Location:** `.claude/agents/<category>/<agent-name>.md`
 
-**Frontmatter requirements:**
+**Frontmatter requirements:** See existing agent files (`.claude/agents/devrun.md`) for required fields: name, description, model, color, tools.
 
-```yaml
----
-name: agent-name # Used in Task subagent_type
-description: One-line summary # Shows in kit registry
-model: haiku | sonnet | opus # Model selection (see below)
-color: blue | green | red | cyan # UI color coding
-tools: Read, Bash, Task # Available tools
----
-```
-
-**Content structure:**
-
-```markdown
-You are a specialized agent for [purpose]. You orchestrate [high-level workflow].
-
-**Philosophy**: [Why this agent exists, design principles]
-
-## Your Core Responsibilities
-
-1. [Responsibility 1]
-2. [Responsibility 2]
-   ...
-
-## Complete Workflow
-
-### Step 1: [First Step Name]
-
-[Detailed instructions for step 1]
-
-**Error handling:**
-
-- Error case 1 → formatted error message
-- Error case 2 → formatted error message
-
-### Step 2: [Second Step Name]
-
-[Detailed instructions for step 2]
-
-...
-
-## Best Practices
-
-- [Practice 1]
-- [Practice 2]
-
-## Quality Standards
-
-Before completing your work, verify:
-✅ [Success criterion 1]
-✅ [Success criterion 2]
-```
+**Content structure:** Include philosophy, core responsibilities, workflow steps with error handling, best practices, and quality standards. See `.claude/agents/devrun.md` for reference structure.
 
 ### Step 2: Define Agent Workflow Steps
 
@@ -312,52 +191,7 @@ Suggested action:
 
 **Target:** <50 lines total
 
-**Structure:**
-
-````markdown
----
-description: One-line summary
----
-
-# /command-name
-
-Brief description of what command does.
-
-## Usage
-
-```bash
-/command-name [optional-arg]
-```
-````
-
-## What This Command Does
-
-Delegates to the `agent-name` agent, which handles:
-
-1. [High-level step 1]
-2. [High-level step 2]
-   ...
-
-## Prerequisites
-
-- [Prerequisite 1]
-- [Prerequisite 2]
-
-## Implementation
-
-When this command is invoked, delegate to the agent:
-
-```
-Task(
-    subagent_type="agent-name",
-    description="Brief task description",
-    prompt="Execute the complete [workflow name] workflow"
-)
-```
-
-The agent handles all workflow orchestration, error handling, and result reporting.
-
-````
+See `.claude/commands/local/fast-ci.md` for the canonical delegation pattern: frontmatter with description, what the command does, prerequisites, and a single Task tool invocation to the agent.
 
 ### Step 5: Add to Kit Registry (if bundled)
 
@@ -366,55 +200,16 @@ If the agent is part of a kit (not project-specific), update the kit registry:
 **File:** `.erk/kits/<kit-name>/registry-entry.md`
 
 Add agent documentation:
+
 ```markdown
 ### Agents
 
 - **agent-name** - [Description]. Use Task tool with `subagent_type="agent-name"`.
-````
+```
 
 ## Agent Specifications
 
-### Frontmatter Requirements
-
-All agents must include frontmatter with these fields:
-
-```yaml
-name: agent-name # REQUIRED: Used in Task subagent_type parameter
-description: Summary # REQUIRED: One-line purpose (shown in registry)
-model: haiku # REQUIRED: Model selection (see below)
-color: blue # REQUIRED: UI color (blue, green, red, cyan, yellow)
-tools: Read, Bash, Task # REQUIRED: Available tools (comma-separated)
-```
-
-**Field constraints:**
-
-- `name`: Must be unique across all agents (kit + project), kebab-case
-- `description`: One sentence, no period at end
-- `model`: Must be one of: haiku, sonnet, opus
-- `color`: Must be one of: blue, green, red, cyan, yellow, magenta
-- `tools`: Comma-separated list from available tools
-
-### Model Selection
-
-Choose the appropriate model based on agent's cognitive requirements:
-
-| Model      | Cost        | Speed       | Use Cases                                                                                                       |
-| ---------- | ----------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
-| **haiku**  | 💰 Low      | ⚡⚡⚡ Fast | • Workflow orchestration<br>• Tool invocation<br>• JSON parsing<br>• Simple formatting<br>• Iterative execution |
-| **sonnet** | 💰💰 Medium | ⚡⚡ Medium | • Complex analysis<br>• Code review<br>• Diff analysis<br>• Decision-making<br>• Pattern matching               |
-| **opus**   | 💰💰💰 High | ⚡ Slower   | • Highly complex reasoning<br>• Novel problem solving<br>• Multi-step planning<br>• Rare, specialized tasks     |
-
-**Guidelines:**
-
-- **Default to haiku** for orchestration and tool coordination
-- **Use sonnet** when analysis or reasoning is primary task
-- **Avoid opus** unless absolutely necessary (cost implications)
-
-**Examples:**
-
-- `devrun` (haiku) - Runs tools, parses output, iterates
-- `planned-wt-creator` (haiku) - Detects files, validates, creates worktree
-- Code review agent (sonnet) - Analyzes code quality and patterns
+See existing agent files for frontmatter requirements (name, description, model, color, tools). Model selection: default to `haiku` for orchestration, use `sonnet` for analysis/reasoning, avoid `opus` unless necessary.
 
 ### Multi-Tier Agent Orchestration
 
@@ -499,21 +294,7 @@ A replan workflow spawned 3 analysis agents in parallel, then immediately launch
 
 ### Tools Available
 
-Agents can specify which tools they need:
-
-| Tool        | Purpose                                      |
-| ----------- | -------------------------------------------- |
-| `Read`      | Read files from filesystem                   |
-| `Write`     | Write files to filesystem                    |
-| `Edit`      | Edit existing files                          |
-| `Bash`      | Execute shell commands                       |
-| `Task`      | Delegate to other agents or run kit commands |
-| `Glob`      | Find files by pattern                        |
-| `Grep`      | Search file contents                         |
-| `WebFetch`  | Fetch web content                            |
-| `WebSearch` | Search the web                               |
-
-**Principle:** Only request tools the agent will actually use. Fewer tools = clearer scope.
+Agents specify tools in frontmatter. **Principle:** Only request tools the agent will actually use. Fewer tools = clearer scope.
 
 ## Examples from Codebase
 
@@ -521,18 +302,7 @@ Agents can specify which tools they need:
 
 **Pattern:** Simple tool delegation
 
-**Command:** `.claude/commands/fast-ci.md` (minimal)
-
-```markdown
-Delegates to devrun agent to run pytest and pyright iteratively.
-```
-
-**Agent:** `.claude/agents/devrun.md`
-
-- Specializes in running development tools
-- Parses tool-specific output formats
-- Iterates until success or max attempts
-- Used by multiple commands (/fast-ci, /all-ci)
+Read `.claude/commands/local/fast-ci.md` and `.claude/agents/devrun.md` for implementation.
 
 **Key insight:** One agent serves multiple commands by accepting different tool invocations.
 
@@ -540,44 +310,19 @@ Delegates to devrun agent to run pytest and pyright iteratively.
 
 **Pattern:** Agent delegation with tool restrictions for safety
 
-**Command:** `.claude/commands/local/interview.md`
+Read `.claude/commands/local/interview.md` for implementation.
 
-**Frontmatter:**
-
-```yaml
-allowed-tools: AskUserQuestion, Read, Glob, Grep
-```
-
-**Agent responsibilities:**
-
-- Conduct multi-turn interview with user
-- Ask clarifying questions about requirements
-- Search codebase to inform questions
-- Gather context before plan creation
-
-**Key insight:** Tool restrictions (`allowed-tools`) enforce read-only behavior in plan mode. The interview agent can search and ask questions but cannot write code or modify files, making it safe to use within plan mode before implementation begins.
+**Key insight:** Tool restrictions (`allowed-tools: AskUserQuestion, Read, Glob, Grep`) enforce read-only behavior, making the command safe to use within plan mode.
 
 **Use case:** Gather detailed requirements through conversation before entering plan mode or as part of planning workflow.
 
 ### Example 2: /erk:create-wt-from-plan-file → planned-wt-creator
 
-⚠️ **Note:** This command is now deprecated. The recommended workflow is to use `erk implement <issue>` instead, which creates worktrees directly from GitHub issues. This example is preserved for architectural reference.
+⚠️ **Note:** This command is now deprecated. The recommended workflow is to use `erk implement <issue>` instead. This example is preserved for architectural reference.
 
-**Pattern:** Workflow orchestration
+**Pattern:** Workflow orchestration - See `packages/erk-kits/src/erk_kits/data/kits/erk/commands/erk/create-wt-from-plan-file.md`
 
-**Command:** `packages/erk-kits/src/erk_kits/data/kits/erk/commands/erk/create-wt-from-plan-file.md` (42 lines)
-
-- Reduced from 338 lines (87% reduction)
-- All orchestration moved to agent
-
-**Agent:** `.claude/agents/erk/planned-wt-creator.md`
-
-- Plan file detection and validation
-- Worktree creation via erk CLI
-- JSON output parsing
-- Next steps display
-
-**Key insight:** Delegation enables massive simplification of command while maintaining all functionality.
+**Key insight:** Delegation enabled 87% reduction (338 → 42 lines) while maintaining all functionality.
 
 ## Anti-Patterns
 
@@ -733,27 +478,11 @@ Found 42 commits since last sync.
 
 ### Finding Available Agents
 
-**Method 3: Check AGENTS.md**
-Checklist table links to delegation pattern documentation.
+Check AGENTS.md for agent checklist table linking to delegation pattern documentation.
 
 ### Using Agents in Commands
 
-**Task tool invocation:**
-
-```python
-Task(
-    subagent_type="agent-name",  # Must match agent's "name" in frontmatter
-    description="Brief description",  # Shown in UI progress
-    prompt="Detailed instructions for agent"  # Agent receives this
-)
-```
-
-**Parameters:**
-
-- `subagent_type` (required): Agent name from frontmatter
-- `description` (required): Short task description (3-5 words)
-- `prompt` (required): Complete instructions for agent
-- `model` (optional): Override agent's default model
+Use `Task(subagent_type="agent-name", description="Brief description", prompt="Detailed instructions")`. The `subagent_type` must match the agent's `name` in frontmatter.
 
 ## Quality Standards
 

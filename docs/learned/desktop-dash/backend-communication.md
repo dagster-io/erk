@@ -4,6 +4,8 @@ read_when:
   - "connecting Electron to a Python backend"
   - "choosing between HTTP server and CLI shelling for IPC"
   - "implementing the desktop dashboard backend"
+last_audited: "2026-02-04 14:18 PT"
+audit_result: clean
 ---
 
 # Electron Backend Communication Patterns
