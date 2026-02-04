@@ -504,7 +504,7 @@ def generate_compressed_xml(
             # Emit usage metadata if present
             usage = message.get("usage", {})
             if usage:
-                parts = [f'{k}="{v}"' for k, v in usage.items()]
+                parts = [f'{escape_xml(str(k))}="{escape_xml(str(v))}"' for k, v in usage.items()]
                 xml_lines.append(f"  <usage {' '.join(parts)} />")
 
         elif entry_type == "tool_result":
