@@ -15,17 +15,22 @@ Identify documentation that merely restates what code already communicates. Flag
 ```bash
 /local:audit-doc docs/learned/architecture/subprocess-wrappers.md
 /local:audit-doc architecture/subprocess-wrappers.md   # relative to docs/learned/
+/local:audit-doc architecture/subprocess-wrappers.md --auto-apply   # skip prompts, auto-apply verdict actions
 ```
 
 ## Instructions
 
 ### Phase 1: Resolve and Read Document
 
-Parse `$ARGUMENTS` to resolve the doc path:
+Parse `$ARGUMENTS` to:
 
-- If starts with `docs/learned/`: Use as-is
-- If starts with `/`: Use as absolute path
-- Otherwise: Treat as relative to `docs/learned/`
+1. Detect if `--auto-apply` flag is present (strip from path arguments)
+2. Resolve the doc path:
+   - If starts with `docs/learned/`: Use as-is
+   - If starts with `/`: Use as absolute path
+   - Otherwise: Treat as relative to `docs/learned/`
+
+Store whether `--auto-apply` mode is active for use in Phase 6.
 
 Read the document fully and extract frontmatter (`title`, `read_when`, `tripwires`).
 
@@ -133,7 +138,17 @@ Output a structured analysis:
 [If SIMPLIFY verdict: suggest a slimmed-down version that keeps high-value content and replaces duplicative content with code references]
 ```
 
-### Phase 6: Offer Actions
+### Phase 6: Determine Action
+
+**If `--auto-apply` mode is active:**
+
+Automatically select the action based on the verdict without prompting:
+
+- **KEEP** verdict → Proceed to Phase 7 with "Mark as audited (clean)"
+- **SIMPLIFY / REPLACE WITH CODE REFS** verdict → Proceed to Phase 7 with "Mark as audited (with rewrite)" (apply rewrite + stamp)
+- **CONSIDER DELETING** verdict → Proceed to Phase 7 with "Mark as audited (clean)" (stamp only, don't auto-delete)
+
+**If `--auto-apply` mode is NOT active:**
 
 Use AskUserQuestion to offer:
 
