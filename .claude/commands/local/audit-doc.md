@@ -105,57 +105,19 @@ For each section of the document, classify it into one of these value categories
 
 ### Phase 5: Generate Report
 
-**If `--auto-apply` mode is active:**
+Complete the full internal analysis from Phase 4, but output only a brief summary regardless of mode. Never output the full value breakdown table, duplicative content detail sections, or recommended rewrite text.
 
-Output ONLY a brief summary line:
+**Output format (always):**
 
 ```
 Audit: <doc-path> | Verdict: <VERDICT> | Duplicative: X% | High-value: Y% | Contradictions: <count>
 ```
 
-Do NOT output the full structured report, value breakdown table, duplicative content details, or recommended rewrite text. These consume response tokens needed for Phase 7 edits.
+Follow with 2-3 sentences describing the planned changes. For example:
 
-Internally, still complete the full analysis to inform Phase 7 actions, but do not output the analysis as text.
+> Sections "Import Paths" and "Function Signatures" are duplicative of `src/erk/gateway/git.py:42` and should be replaced with code references. The "Anti-patterns" section contradicts the current implementation of `resolve_path()` which now uses pathlib.
 
-**If `--auto-apply` mode is NOT active:**
-
-Output a structured analysis:
-
-```markdown
-## Doc Audit: <doc-title>
-
-### Verdict: KEEP / SIMPLIFY / REPLACE WITH CODE REFS / CONSIDER DELETING
-
-(Any CONTRADICTS content should push toward SIMPLIFY or higher severity — contradictory docs are actively harmful and worse than duplicative content.)
-
-### Value Breakdown
-
-| Section | Lines | Classification | Reasoning |
-| ------- | ----- | -------------- | --------- |
-| ...     | ...   | ...            | ...       |
-
-### Duplicative Content (X% of document)
-
-[List specific sections that restate code, with the source location that makes them redundant]
-
-### Contradictions
-
-[List sections that state something factually wrong per the current codebase, with the source location that disproves the claim. If none found, omit this section.]
-
-### High-Value Content (X% of document)
-
-[List sections that provide genuine value over code]
-
-### Drift Risks
-
-[Sections likely to become stale as code evolves]
-
-### Recommended Rewrite
-
-[If SIMPLIFY verdict: suggest a slimmed-down version that keeps high-value content and replaces duplicative content with code references]
-```
-
-**CRITICAL for auto-apply mode**: The recommended rewrite must be applied directly via Edit tool in Phase 7 — never output the full rewrite as text. Composing a 300+ line rewrite as text output, then calling Edit to apply it, doubles the token cost and risks output truncation.
+Keep the full internal analysis available for Phase 7 actions — just don't dump it as text output.
 
 ### Phase 6: Determine Action
 
