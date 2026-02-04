@@ -131,8 +131,53 @@ The returned `RegisteredCodespace` provides:
 
 Use `gh_name` for all GitHub CLI operations, and `name` for user-facing messages.
 
+## Codespace Setup Command Flow
+
+The `erk codespace setup` command creates a new codespace via REST API, bypassing the broken machines endpoint.
+
+### REST API Creation Flow
+
+```python
+# Step 1: Get repository ID
+repo_id = _get_repo_id(owner, repo)
+
+# Step 2: Create codespace via REST API
+result = subprocess.run([
+    "gh", "api", "user/codespaces", "-X", "POST",
+    "-f", "ref=main",
+    "-F", f"repository_id={repo_id}",
+    "-f", f"machine={DEFAULT_MACHINE_TYPE}"
+])
+```
+
+### Repository ID Lookup
+
+The `_get_repo_id()` helper fetches repository ID via REST API:
+
+```bash
+gh api repos/{owner}/{repo} --jq .id
+```
+
+This is required because the machines endpoint (`/repos/{owner}/{repo}/codespaces/machines`) returns HTTP 500 for certain repositories (GitHub bug).
+
+### Default Machine Type
+
+```python
+DEFAULT_MACHINE_TYPE = "basicLinux32gb"
+```
+
+Used when no machine type is explicitly specified.
+
+**Why this works**: The `POST /user/codespaces` endpoint accepts `repository_id` as an alternative to repository name, bypassing the broken machines endpoint entirely.
+
+**Code reference**: `src/erk/cli/commands/codespace/setup_cmd.py`
+
+**Related**: [GitHub CLI Limits](../architecture/github-cli-limits.md) - Machines endpoint HTTP 500 bug details
+
 ## Related Documentation
 
+- [GitHub CLI Limits](../architecture/github-cli-limits.md) - Machines endpoint HTTP 500 bug and workaround
+- [GitHub API Diagnostics](../architecture/github-api-diagnostics.md) - Repository-specific API diagnostic methodology
 - [Composable Remote Commands](../architecture/composable-remote-commands.md) - Template for remote commands using resolve_codespace()
 - [Codespace Gateway](../gateway/codespace-gateway.md) - Gateway operations using gh_name
 - [Codespace Remote Execution](../erk/codespace-remote-execution.md) - Fire-and-forget pattern

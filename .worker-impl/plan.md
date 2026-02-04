@@ -4,15 +4,15 @@
 
 ## Source Plans
 
-| # | Title | Items Merged | Status |
-| --- | --- | --- | --- |
-| 6701 | Preserve Thinking Blocks and Metadata in Session Preprocessor | 7 items | NOT IMPLEMENTED - preprocessor drops metadata |
-| 6698 | Extract objective-next-plan data fetching into forked Task | 7 items | Code done (PR #6691), docs NOT done |
-| 6693 | Fix doc-audit to allow inlined constants | 3 items | NOT IMPLEMENTED |
-| 6690 | Fix codespace creation: REST API bypass | 6 items | Code done (PR #6663), docs ~25% done |
-| 6689 | PR Address: Wrap constants behind @cache | 4 items | FULLY IMPLEMENTED by PR #6692 (open) |
-| 6679 | Abstract os.execvp Behind Gateway | ~5 items | Code done (#6677), docs NOT done |
-| 6675 | Doc Audit Review Implementation | 6 items | 1/6 done, 3 NOT done |
+| #    | Title                                                         | Items Merged | Status                                        |
+| ---- | ------------------------------------------------------------- | ------------ | --------------------------------------------- |
+| 6701 | Preserve Thinking Blocks and Metadata in Session Preprocessor | 7 items      | NOT IMPLEMENTED - preprocessor drops metadata |
+| 6698 | Extract objective-next-plan data fetching into forked Task    | 7 items      | Code done (PR #6691), docs NOT done           |
+| 6693 | Fix doc-audit to allow inlined constants                      | 3 items      | NOT IMPLEMENTED                               |
+| 6690 | Fix codespace creation: REST API bypass                       | 6 items      | Code done (PR #6663), docs ~25% done          |
+| 6689 | PR Address: Wrap constants behind @cache                      | 4 items      | FULLY IMPLEMENTED by PR #6692 (open)          |
+| 6679 | Abstract os.execvp Behind Gateway                             | ~5 items     | Code done (#6677), docs NOT done              |
+| 6675 | Doc Audit Review Implementation                               | 6 items      | 1/6 done, 3 NOT done                          |
 
 ## What Changed Since Original Plans
 
@@ -25,19 +25,23 @@
 ## Investigation Findings
 
 ### Plans Already Implemented (can be closed without new work)
+
 - **#6689**: Fully implemented by PR #6692 (awaiting merge). All items verified.
 
 ### Plans with Code Done but Docs Needed
+
 - **#6698**: 5 tripwires + 1 new doc + 1 doc update
 - **#6690**: github-cli-limits, codespace-patterns, github-interface-patterns updates
 - **#6679**: AgentLauncher gateway documentation
 
 ### Plans with All Work Remaining
+
 - **#6701**: Session preprocessor metadata documentation (code changes + docs)
 - **#6693**: Doc-audit constants exception documentation
 - **#6675**: Review development guide, taxonomy, integration patterns
 
 ### Overlap Analysis
+
 - **#6690 and #6693** both reference codespace REST API and github-cli-limits.md - MERGED into single step
 - **#6689 and #6692** are the same work (PR implements plan) - #6689 ALREADY DONE
 - **#6698 and #6675** both touch review/documentation patterns - kept separate (different domains)
@@ -136,6 +140,7 @@
 ### Step 1: Add tripwires (Category A)
 
 **Files to modify:**
+
 - `docs/learned/planning/tripwires.md` - Add 3 entries after existing entries
 - `docs/learned/hooks/tripwires.md` - Add 1 entry
 - `docs/learned/cli/tripwires.md` - Add 1 entry
@@ -147,6 +152,7 @@
 ### Step 2: Create new documentation files (Category B)
 
 **Files to create:**
+
 - `docs/learned/reference/objective-summary-format.md`
 - `docs/learned/architecture/github-api-diagnostics.md`
 - `docs/learned/reviews/development.md`
@@ -157,6 +163,7 @@
 ### Step 3: Update existing documentation (Category C)
 
 **Files to modify:**
+
 - `docs/learned/planning/token-optimization-patterns.md`
 - `docs/learned/architecture/github-cli-limits.md`
 - `docs/learned/cli/codespace-patterns.md`
@@ -169,12 +176,14 @@
 ### Step 4: Update gateway documentation (Category E)
 
 **Files to modify:**
+
 - `docs/learned/architecture/gateway-inventory.md`
 - `docs/learned/architecture/gateway-abc-implementation.md`
 
 ### Step 5: Update index files and tripwires-index.md
 
 **Files to modify:**
+
 - `docs/learned/reference/index.md` - Add objective-summary-format entry
 - `docs/learned/architecture/index.md` - Add github-api-diagnostics entry
 - `docs/learned/reviews/index.md` - Already updated in Step 3
@@ -195,6 +204,7 @@
 ## Attribution
 
 Items by source:
+
 - **#6701**: Deferred to new implementation plan (Step 6)
 - **#6698**: Steps 1 (tripwires), 2 (objective-summary-format), 3 (token-optimization-patterns)
 - **#6693**: Steps 1 (audit-methodology tripwire), 3 (doc-audit-review, audit-methodology, github-cli-limits)

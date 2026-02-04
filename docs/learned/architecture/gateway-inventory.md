@@ -51,6 +51,30 @@ Sub-gateways under `git/` (e.g., `git/branch_ops/`, `git/worktree_ops/`, `git/co
 
 This decomposition keeps each ABC focused and testable.
 
+## AgentLauncher Gateway
+
+**Purpose**: Abstract `os.execvp()` for launching Claude agent processes.
+
+**Pattern**: 3-file simplified gateway (abc.py, real.py, fake.py) — no dry_run.py or printing.py
+
+**Why simplified**: `os.execvp()` replaces the current process with no return (`NoReturn`). There's no return value to simulate in dry-run or print modes.
+
+**Key characteristics**:
+
+- **NoReturn type annotation**: Methods never return (process replacement)
+- **Test strategy**: Fake implementation allows testing without actual process replacement
+- **Integration points**: Used in 3 locations for Claude agent launches
+
+**Implementation files**:
+
+- `abc.py`: Abstract method with NoReturn annotation
+- `real.py`: Calls `os.execvp()` directly
+- `fake.py`: Records call and raises SystemExit for testing
+
+**Code reference**: `packages/erk-shared/src/erk_shared/gateway/agent_launcher/`
+
+**Related**: [Gateway ABC Implementation](gateway-abc-implementation.md) - 3-file simplified pattern section
+
 ## Adding a New Gateway
 
 1. Create directory under `gateway/` with `abc.py`, `real.py`, `fake.py`
@@ -58,3 +82,5 @@ This decomposition keeps each ABC focused and testable.
 3. Add `factory.py` if instantiation requires logic
 4. Wire into `ErkContext` (non-obvious step — check existing context setup)
 5. Add tests using the fake
+
+**Special case**: NoReturn operations (like `os.execvp()`) use 3-file simplified pattern — omit dry_run.py and printing.py
