@@ -105,6 +105,20 @@ For each section of the document, classify it into one of these value categories
 
 ### Phase 5: Generate Report
 
+**If `--auto-apply` mode is active:**
+
+Output ONLY a brief summary line:
+
+```
+Audit: <doc-path> | Verdict: <VERDICT> | Duplicative: X% | High-value: Y% | Contradictions: <count>
+```
+
+Do NOT output the full structured report, value breakdown table, duplicative content details, or recommended rewrite text. These consume response tokens needed for Phase 7 edits.
+
+Internally, still complete the full analysis to inform Phase 7 actions, but do not output the analysis as text.
+
+**If `--auto-apply` mode is NOT active:**
+
 Output a structured analysis:
 
 ```markdown
@@ -140,6 +154,8 @@ Output a structured analysis:
 
 [If SIMPLIFY verdict: suggest a slimmed-down version that keeps high-value content and replaces duplicative content with code references]
 ```
+
+**CRITICAL for auto-apply mode**: The recommended rewrite must be applied directly via Edit tool in Phase 7 — never output the full rewrite as text. Composing a 300+ line rewrite as text output, then calling Edit to apply it, doubles the token cost and risks output truncation.
 
 ### Phase 6: Determine Action
 
