@@ -15,10 +15,12 @@ Wrap the data-fetching steps in an **inline Task call** within the existing comm
 ### Design
 
 **New Step 1: Parse Arguments** (stays in main — trivial)
+
 - Extract issue number from `$ARGUMENTS` (same logic as current Step 1)
 - If no argument, do the branch-detection fallback or prompt
 
 **New Step 2: Launch Task agent** for data fetching
+
 - `subagent_type: "general-purpose"`, `model: "haiku"`
 - Task prompt includes all instructions to:
   - Run `erk exec get-issue-body <number>` and validate labels
@@ -49,6 +51,7 @@ WARNINGS: (none)
 ```
 
 **New Step 3: Display and prompt** (main context)
+
 - Display the roadmap table from agent output
 - AskUserQuestion for step selection
 - Create roadmap-step marker
@@ -56,6 +59,7 @@ WARNINGS: (none)
 **Steps 4–7:** Same as current Steps 6–9 (gather context, enter plan mode, save)
 
 ### What moves to forked context
+
 - `erk exec get-issue-body` JSON parsing
 - Label validation
 - `erk objective check --json-output` JSON parsing
@@ -63,6 +67,7 @@ WARNINGS: (none)
 - Table formatting
 
 ### What stays in main context
+
 - Argument parsing (trivial)
 - Step selection prompt (AskUserQuestion — requires main context)
 - Roadmap-step marker creation
