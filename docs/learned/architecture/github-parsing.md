@@ -120,13 +120,13 @@ pr_num = parse_pr_identifier("https://github.com/owner/repo/pull/42")  # URL -> 
 
 ## Canonical Import Locations
 
-| Function                           | Import From                         | Returns                 |
-| ---------------------------------- | ----------------------------------- | ----------------------- |
-| `parse_pr_number_from_url`         | `erk_shared.gateway.github.parsing` | `int \| None`           |
-| `parse_issue_number_from_url`      | `erk_shared.gateway.github.parsing` | `int \| None`           |
+| Function                             | Import From                         | Returns                   |
+| ------------------------------------ | ----------------------------------- | ------------------------- |
+| `parse_pr_number_from_url`           | `erk_shared.gateway.github.parsing` | `int \| None`             |
+| `parse_issue_number_from_url`        | `erk_shared.gateway.github.parsing` | `int \| None`             |
 | `extract_owner_repo_from_github_url` | `erk_shared.gateway.github.parsing` | `tuple[str, str] \| None` |
-| `parse_issue_identifier`           | `erk.cli.github_parsing`            | `int` or exits          |
-| `parse_pr_identifier`              | `erk.cli.github_parsing`            | `int` or exits          |
+| `parse_issue_identifier`             | `erk.cli.github_parsing`            | `int` or exits            |
+| `parse_pr_identifier`                | `erk.cli.github_parsing`            | `int` or exits            |
 
 ## Usage Guidelines
 
