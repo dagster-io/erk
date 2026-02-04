@@ -130,9 +130,6 @@ def _prompt_existing_branch_action(
     Returns:
         - Branch name to use (existing branch)
         - None to signal "create new" (after deleting existing)
-
-    Raises:
-        SystemExit: If user aborts
     """
     if force:
         user_output(f"\nDeleting {len(existing_branches)} existing branch(es) (--force mode):")
@@ -149,17 +146,22 @@ def _prompt_existing_branch_action(
 
     # Use newest branch (latest timestamp = last alphabetically)
     branch_to_use = existing_branches[-1]
-    if ctx.console.confirm(f"Use existing branch '{branch_to_use}'?", default=True):
+
+    # Single binary prompt
+    reuse = ctx.console.confirm(
+        f"Reuse existing branch '{branch_to_use}'? "
+        "If not, a new branch and PR will be created (old draft PR will be closed)",
+        default=True,
+    )
+
+    if reuse:
         return branch_to_use
 
-    if ctx.console.confirm("Delete existing branch(es) and create new?", default=False):
-        for branch in existing_branches:
-            ctx.branch_manager.delete_branch(repo_root, branch, force=True)
-            user_output(f"Deleted branch: {branch}")
-        return None
-
-    user_output(click.style("Aborted.", fg="red"))
-    raise SystemExit(1)
+    # Delete existing branches and signal "create new"
+    for branch in existing_branches:
+        ctx.branch_manager.delete_branch(repo_root, branch, force=True)
+        user_output(f"Deleted branch: {branch}")
+    return None
 
 
 def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, issue_body: str) -> str | None:

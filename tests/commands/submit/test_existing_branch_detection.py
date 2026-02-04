@@ -103,7 +103,7 @@ def test_submit_uses_existing_branch_when_user_confirms(tmp_path: Path) -> None:
 def test_submit_deletes_existing_and_creates_new_when_user_declines_reuse(
     tmp_path: Path,
 ) -> None:
-    """Test submit deletes existing branches and creates new when user chooses."""
+    """Test submit deletes existing branches and creates new when user declines reuse."""
     plan = create_plan("123", "Implement feature X")
     repo_root = tmp_path / "repo"
     ctx, fake_git, fake_github, _, fake_graphite, repo_root = setup_submit_context(
@@ -121,8 +121,8 @@ def test_submit_deletes_existing_and_creates_new_when_user_declines_reuse(
             },
         },
         use_graphite=True,
-        # User declines "use existing", then confirms "delete and create new"
-        confirm_responses=[False, True],
+        # User declines "reuse existing" in single binary prompt
+        confirm_responses=[False],
     )
 
     runner = CliRunner()
@@ -143,8 +143,8 @@ def test_submit_deletes_existing_and_creates_new_when_user_declines_reuse(
     assert created_branch == "P123-implement-feature-x-01-15-1430"
 
 
-def test_submit_aborts_when_user_declines_both_options(tmp_path: Path) -> None:
-    """Test submit aborts when user declines both reuse and delete options."""
+def test_submit_deletes_and_creates_when_user_declines_reuse(tmp_path: Path) -> None:
+    """Test submit deletes existing and creates new when user declines reuse in single prompt."""
     plan = create_plan("123", "Implement feature X")
     repo_root = tmp_path / "repo"
     ctx, fake_git, fake_github, _, _, repo_root = setup_submit_context(
@@ -156,19 +156,22 @@ def test_submit_aborts_when_user_declines_both_options(tmp_path: Path) -> None:
             "remote_branches": {repo_root: ["origin/main"]},
             "local_branches": {repo_root: ["main", "P123-implement-feature-x-01-23-0909"]},
         },
-        # User declines "use existing", then declines "delete and create new"
-        confirm_responses=[False, False],
+        # User declines "reuse existing" in single binary prompt
+        confirm_responses=[False],
     )
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)
 
-    assert result.exit_code == 1
-    assert "Aborted." in result.output
+    assert result.exit_code == 0, result.output
+    assert "Deleted branch: P123-implement-feature-x-01-23-0909" in result.output
 
-    # Verify no branches were created or deleted
-    assert len(fake_git.created_branches) == 0
-    assert len(fake_git._deleted_branches) == 0
+    # Verify old branch was deleted
+    assert len(fake_git._deleted_branches) == 1
+    assert fake_git._deleted_branches[0] == "P123-implement-feature-x-01-23-0909"
+
+    # Verify new branch was created
+    assert len(fake_git.created_branches) == 1
 
 
 def test_submit_uses_newest_existing_branch_when_multiple_exist(tmp_path: Path) -> None:
@@ -252,7 +255,7 @@ def test_submit_proceeds_normally_when_no_existing_branches(tmp_path: Path) -> N
 
 
 def test_submit_deletes_multiple_existing_branches(tmp_path: Path) -> None:
-    """Test submit deletes all existing branches when user chooses delete."""
+    """Test submit deletes all existing branches when user declines reuse."""
     plan = create_plan("123", "Implement feature X")
     repo_root = tmp_path / "repo"
     ctx, fake_git, fake_github, _, _, repo_root = setup_submit_context(
@@ -270,8 +273,8 @@ def test_submit_deletes_multiple_existing_branches(tmp_path: Path) -> None:
                 ]
             },
         },
-        # User declines reuse, confirms delete
-        confirm_responses=[False, True],
+        # User declines "reuse existing" in single binary prompt
+        confirm_responses=[False],
     )
 
     runner = CliRunner()
