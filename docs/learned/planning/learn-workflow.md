@@ -132,6 +132,22 @@ If preprocessing fails or produces malformed output, learn agents will fail to e
 
 ## The Learn Flow
 
+## PR Inventory Building
+
+Before session analysis begins, the learn pipeline builds a file/function inventory from the PR:
+
+1. **Fetch PR metadata**: Files changed, additions/deletions, diff statistics
+2. **Create inventory**: New functions, modified files, scope summary
+3. **Pass to analysis agents**: Agents receive scope context before analyzing sessions
+
+**Why inventory first:**
+
+- Sessions may reference changes the agent doesn't know about
+- Inventory provides "what changed" context for "why it changed" analysis
+- Enables CodeDiffAnalyzer to correlate session patterns with actual changes
+
+**Implementation note:** The CodeDiffAnalyzer runs in parallel with SessionAnalyzer, both in Tier 1. The inventory is built before either agent launches.
+
 ### Step 1: Run /erk:learn on Parent Plan
 
 ```bash
