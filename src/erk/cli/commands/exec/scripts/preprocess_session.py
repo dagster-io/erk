@@ -400,11 +400,35 @@ def generate_compressed_xml(
             xml_lines.append(f'  <meta branch="{escape_xml(branch)}" />')
             break
 
+    # Extract model metadata once (from first entry with model)
+    for entry in entries:
+        if "model" in entry:
+            model = entry["model"]
+            xml_lines.append(f'  <meta model="{escape_xml(model)}" />')
+            break
+
     for entry in entries:
         entry_type = entry["type"]
         message = entry.get("message", {})
 
-        if entry_type == "user":
+        if entry_type == "summary":
+            if "summary" in message:
+                summary_text = message["summary"]
+            else:
+                summary_text = entry.get("summary", "")
+            if summary_text:
+                xml_lines.append(f"  <summary>{escape_xml(str(summary_text))}</summary>")
+
+        elif entry_type == "system":
+            subtype = entry.get("subtype", "")
+            duration_ms = entry.get("durationMs", "")
+            escaped_subtype = escape_xml(str(subtype))
+            escaped_duration = escape_xml(str(duration_ms))
+            xml_lines.append(
+                f'  <system subtype="{escaped_subtype}" duration_ms="{escaped_duration}" />'
+            )
+
+        elif entry_type == "user":
             # Extract user content - may contain text and/or tool_result blocks
             content = message.get("content", "")
             if isinstance(content, list):
@@ -462,6 +486,10 @@ def generate_compressed_xml(
                     text = content.get("text", "")
                     if text.strip():  # Only include non-empty text
                         xml_lines.append(f"  <assistant>{escape_xml(text)}</assistant>")
+                elif content.get("type") == "thinking":
+                    thinking_text = content.get("thinking", "")
+                    if thinking_text.strip():
+                        xml_lines.append(f"  <thinking>{escape_xml(thinking_text)}</thinking>")
                 elif content.get("type") == "tool_use":
                     tool_name = content.get("name", "")
                     tool_id = content.get("id", "")
@@ -474,6 +502,12 @@ def generate_compressed_xml(
                         escaped_value = escape_xml(str(value))
                         xml_lines.append(f'    <param name="{escaped_key}">{escaped_value}</param>')
                     xml_lines.append("  </tool_use>")
+
+            # Emit usage metadata if present
+            usage = message.get("usage", {})
+            if usage:
+                parts = [f'{escape_xml(str(k))}="{escape_xml(str(v))}"' for k, v in usage.items()]
+                xml_lines.append(f"  <usage {' '.join(parts)} />")
 
         elif entry_type == "tool_result":
             # Handle tool results - apply pruning if enabled
@@ -559,9 +593,9 @@ def process_log_file(
         if "gitBranch" in entry:
             filtered["gitBranch"] = entry["gitBranch"]
 
-        # Drop usage metadata from assistant messages
-        if "usage" in filtered["message"]:
-            del filtered["message"]["usage"]
+        # Preserve model field from assistant messages
+        if "model" in entry.get("message", {}):
+            filtered["model"] = entry["message"]["model"]
 
         entries.append(filtered)
 

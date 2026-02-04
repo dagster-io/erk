@@ -386,6 +386,72 @@ def test_generate_xml_tool_result_with_mixed_content_list() -> None:
     assert "Plain string item" in xml
 
 
+def test_generate_xml_assistant_thinking_block() -> None:
+    """Test XML generation for assistant message with thinking block."""
+    entries = [json.loads(fixtures.JSONL_ASSISTANT_WITH_THINKING)]
+    xml = generate_compressed_xml(entries)
+    assert fixtures.EXPECTED_XML_THINKING in xml
+
+
+def test_generate_xml_assistant_thinking_and_text() -> None:
+    """Test that both thinking and text blocks are preserved."""
+    entries = [json.loads(fixtures.JSONL_ASSISTANT_WITH_THINKING)]
+    xml = generate_compressed_xml(entries)
+    assert fixtures.EXPECTED_XML_THINKING in xml
+    assert "<assistant>Here is my response.</assistant>" in xml
+
+
+def test_generate_xml_empty_thinking_block_skipped() -> None:
+    """Test that empty thinking blocks are not emitted."""
+    entry = {
+        "type": "assistant",
+        "message": {
+            "role": "assistant",
+            "content": [
+                {"type": "thinking", "thinking": "   "},
+                {"type": "text", "text": "Response text"},
+            ],
+        },
+    }
+    xml = generate_compressed_xml([entry])
+    assert "<thinking>" not in xml
+    assert "<assistant>Response text</assistant>" in xml
+
+
+def test_generate_xml_summary_entry() -> None:
+    """Test XML generation for summary entries."""
+    entries = [json.loads(fixtures.JSONL_SUMMARY_ENTRY)]
+    xml = generate_compressed_xml(entries)
+    assert fixtures.EXPECTED_XML_SUMMARY in xml
+
+
+def test_generate_xml_system_entry() -> None:
+    """Test XML generation for system entries."""
+    entries = [json.loads(fixtures.JSONL_SYSTEM_ENTRY)]
+    xml = generate_compressed_xml(entries)
+    assert fixtures.EXPECTED_XML_SYSTEM in xml
+
+
+def test_generate_xml_usage_metadata() -> None:
+    """Test that usage metadata is emitted in XML."""
+    entries = [json.loads(fixtures.JSONL_ASSISTANT_WITH_USAGE)]
+    xml = generate_compressed_xml(entries)
+    assert fixtures.EXPECTED_XML_USAGE in xml
+
+
+def test_generate_xml_model_metadata() -> None:
+    """Test that model field is extracted to metadata."""
+    entries = [
+        {
+            "type": "assistant",
+            "message": {"content": [{"type": "text", "text": "test"}]},
+            "model": "claude-sonnet-4-5",
+        }
+    ]
+    xml = generate_compressed_xml(entries)
+    assert '<meta model="claude-sonnet-4-5" />' in xml
+
+
 # ============================================================================
 # 4. Log File Processing Tests (6 tests)
 # ============================================================================
@@ -423,13 +489,15 @@ def test_process_log_file_strips_metadata(tmp_path: Path) -> None:
     assert "isSidechain" not in entries[0]
 
 
-def test_process_log_file_removes_usage_field(tmp_path: Path) -> None:
-    """Test that usage metadata is removed from assistant messages."""
+def test_process_log_file_preserves_usage_field(tmp_path: Path) -> None:
+    """Test that usage metadata is preserved in assistant messages."""
     log_file = tmp_path / "test.jsonl"
     log_file.write_text(json.dumps(json.loads(fixtures.JSONL_ASSISTANT_TEXT)), encoding="utf-8")
 
     entries, _total, _skipped = process_log_file(log_file)
-    assert "usage" not in entries[0]["message"]
+    assert "usage" in entries[0]["message"]
+    assert entries[0]["message"]["usage"]["input_tokens"] == 100
+    assert entries[0]["message"]["usage"]["output_tokens"] == 50
 
 
 def test_process_log_file_preserves_git_branch(tmp_path: Path) -> None:

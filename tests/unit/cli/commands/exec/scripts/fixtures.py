@@ -231,3 +231,70 @@ def create_session_entry(session_id: str, slug: str | None = None) -> str:
     if slug:
         entry["slug"] = slug
     return json.dumps(entry)
+
+
+# Assistant message with thinking block
+JSONL_ASSISTANT_WITH_THINKING = """{
+  "type": "assistant",
+  "message": {
+    "role": "assistant",
+    "content": [
+      {"type": "thinking", "thinking": "Let me analyze this carefully before responding."},
+      {"type": "text", "text": "Here is my response."}
+    ],
+    "model": "claude-opus-4-5-20251101"
+  },
+  "parentUuid": "parent_thinking",
+  "sessionId": "session_thinking",
+  "gitBranch": "test-branch",
+  "timestamp": "2025-11-20T00:00:00.000Z"
+}"""
+
+# Summary entry
+JSONL_SUMMARY_ENTRY = """{
+  "type": "summary",
+  "summary": "User requested feature implementation. Assistant created plan and began execution.",
+  "sessionId": "session_summary",
+  "timestamp": "2025-11-20T00:00:00.000Z"
+}"""
+
+# System entry with turn_duration subtype
+JSONL_SYSTEM_ENTRY = """{
+  "type": "system",
+  "subtype": "turn_duration",
+  "durationMs": 1234,
+  "sessionId": "session_system",
+  "timestamp": "2025-11-20T00:00:00.000Z"
+}"""
+
+# Assistant message with usage metadata
+JSONL_ASSISTANT_WITH_USAGE = """{
+  "type": "assistant",
+  "message": {
+    "role": "assistant",
+    "content": [{"type": "text", "text": "Response with usage tracking."}],
+    "usage": {"input_tokens": 150, "output_tokens": 75},
+    "model": "claude-sonnet-4-5"
+  },
+  "parentUuid": "parent_usage",
+  "sessionId": "session_usage",
+  "gitBranch": "test-branch",
+  "timestamp": "2025-11-20T00:00:00.000Z"
+}"""
+
+# Expected XML for thinking block
+EXPECTED_XML_THINKING = (
+    """  <thinking>Let me analyze this carefully before responding.</thinking>"""
+)
+
+# Expected XML for summary entry
+EXPECTED_XML_SUMMARY = (
+    """  <summary>User requested feature implementation. """
+    """Assistant created plan and began execution.</summary>"""
+)
+
+# Expected XML for system entry
+EXPECTED_XML_SYSTEM = """  <system subtype="turn_duration" duration_ms="1234" />"""
+
+# Expected XML for usage metadata
+EXPECTED_XML_USAGE = """  <usage input_tokens="150" output_tokens="75" />"""
