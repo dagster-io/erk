@@ -25,12 +25,12 @@ Step-by-step checklist for adding new metadata fields to `CommandResult`. The pa
 
 The executor pipeline has these key locations (read each before making changes):
 
-| Component | Location | Role |
-| --- | --- | --- |
+| Component                     | Location                                                     | Role                                                                                                                                                                 |
+| ----------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ABC + types + `CommandResult` | `packages/erk-shared/src/erk_shared/core/prompt_executor.py` | Defines `CommandResult`, typed event dataclasses (`TextEvent`, `PrUrlEvent`, etc.), `ExecutorEvent` union, and `PromptExecutor` ABC with default `execute_command()` |
-| Real executor | `src/erk/core/prompt_executor.py` | `ClaudePromptExecutor` — implements `execute_command_streaming()` and `_parse_stream_json_line()` |
-| Streaming consumer | `src/erk/cli/output.py` | `stream_command_with_feedback()` — consumes `ExecutorEvent` stream with live UI |
-| Fake executor | `tests/fakes/prompt_executor.py` | `FakePromptExecutor` — test double with `simulated_*` constructor params |
+| Real executor                 | `src/erk/core/prompt_executor.py`                            | `ClaudePromptExecutor` — implements `execute_command_streaming()` and `_parse_stream_json_line()`                                                                    |
+| Streaming consumer            | `src/erk/cli/output.py`                                      | `stream_command_with_feedback()` — consumes `ExecutorEvent` stream with live UI                                                                                      |
+| Fake executor                 | `tests/fakes/prompt_executor.py`                             | `FakePromptExecutor` — test double with `simulated_*` constructor params                                                                                             |
 
 **Key design detail:** The system uses **typed frozen dataclass events** (e.g., `PrUrlEvent(url=...)`, `TextEvent(content=...)`), NOT a generic `StreamEvent` class. Each event type is a separate `@dataclass(frozen=True)` class. See `ExecutorEvent` union type in the ABC module. All streaming methods use keyword-only arguments (`*,`).
 
@@ -106,6 +106,7 @@ Add handling for the new event type in `stream_command_with_feedback()` and any 
 Add a `simulated_*` keyword-only constructor parameter and yield the corresponding typed event in `execute_command_streaming()`. Update `execute_command()` to include the field in the returned `CommandResult`.
 
 Then add tests for:
+
 - **Parsing**: `_parse_stream_json_line()` extracts the field correctly
 - **Fake simulation**: `FakePromptExecutor` yields the event
 - **Integration**: `execute_command()` captures the event into `CommandResult`
