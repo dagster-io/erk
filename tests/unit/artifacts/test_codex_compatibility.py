@@ -10,8 +10,8 @@ import pytest
 import yaml
 
 from erk.core.capabilities.codex_portable import (
-    CLAUDE_ONLY_SKILLS,
-    CODEX_PORTABLE_SKILLS,
+    claude_only_skills,
+    codex_portable_skills,
 )
 
 
@@ -113,20 +113,20 @@ def test_all_skills_have_codex_required_frontmatter() -> None:
 
 
 def test_portable_skills_match_bundled() -> None:
-    """Verify every skill in CODEX_PORTABLE_SKILLS exists in .claude/skills/."""
+    """Verify every skill in codex_portable_skills() exists in .claude/skills/."""
     claude_skills_dir = _get_claude_skills_dir()
     all_skills = _get_all_skill_names()
 
-    missing_skills = CODEX_PORTABLE_SKILLS - all_skills
+    missing_skills = codex_portable_skills() - all_skills
 
     if missing_skills:
         pytest.fail(
-            f"Skills in CODEX_PORTABLE_SKILLS not found in .claude/skills/: "
+            f"Skills in codex_portable_skills() not found in .claude/skills/: "
             f"{sorted(missing_skills)}"
         )
 
     # Verify all portable skills have valid frontmatter
-    for skill_name in CODEX_PORTABLE_SKILLS:
+    for skill_name in codex_portable_skills():
         skill_path = claude_skills_dir / skill_name
         try:
             _parse_skill_frontmatter(skill_path)
@@ -135,7 +135,7 @@ def test_portable_skills_match_bundled() -> None:
 
 
 def test_codex_portable_and_claude_only_cover_all_skills() -> None:
-    """Verify union of CODEX_PORTABLE_SKILLS and CLAUDE_ONLY_SKILLS equals all skills.
+    """Verify union of codex_portable_skills() and claude_only_skills() equals all skills.
 
     No skills should be orphaned (missing from both registries).
     No skills should be duplicated (in both registries).
@@ -143,47 +143,48 @@ def test_codex_portable_and_claude_only_cover_all_skills() -> None:
     all_skills = _get_all_skill_names()
 
     # Check for duplicates
-    duplicates = CODEX_PORTABLE_SKILLS & CLAUDE_ONLY_SKILLS
+    duplicates = codex_portable_skills() & claude_only_skills()
     if duplicates:
         pytest.fail(
-            f"Skills in both CODEX_PORTABLE_SKILLS and CLAUDE_ONLY_SKILLS: {sorted(duplicates)}"
+            f"Skills in both codex_portable_skills() and claude_only_skills(): {sorted(duplicates)}"
         )
 
     # Check for orphans
-    registered_skills = CODEX_PORTABLE_SKILLS | CLAUDE_ONLY_SKILLS
+    registered_skills = codex_portable_skills() | claude_only_skills()
     orphaned_skills = all_skills - registered_skills
 
     if orphaned_skills:
         pytest.fail(
-            f"Skills not in CODEX_PORTABLE_SKILLS or CLAUDE_ONLY_SKILLS: "
+            f"Skills not in codex_portable_skills() or claude_only_skills(): "
             f"{sorted(orphaned_skills)}\n"
             f"Add these to src/erk/core/capabilities/codex_portable.py"
         )
 
     # Check for nonexistent skills in registries
-    nonexistent_portable = CODEX_PORTABLE_SKILLS - all_skills
-    nonexistent_claude = CLAUDE_ONLY_SKILLS - all_skills
+    nonexistent_portable = codex_portable_skills() - all_skills
+    nonexistent_claude = claude_only_skills() - all_skills
 
     if nonexistent_portable or nonexistent_claude:
         failures = []
         if nonexistent_portable:
             failures.append(
-                f"CODEX_PORTABLE_SKILLS contains nonexistent skills: {sorted(nonexistent_portable)}"
+                f"codex_portable_skills() contains nonexistent skills: "
+                f"{sorted(nonexistent_portable)}"
             )
         if nonexistent_claude:
             failures.append(
-                f"CLAUDE_ONLY_SKILLS contains nonexistent skills: {sorted(nonexistent_claude)}"
+                f"claude_only_skills() contains nonexistent skills: {sorted(nonexistent_claude)}"
             )
         pytest.fail("\n".join(failures))
 
 
 def test_claude_only_skills_exist() -> None:
-    """Verify all skills in CLAUDE_ONLY_SKILLS exist in .claude/skills/."""
+    """Verify all skills in claude_only_skills() exist in .claude/skills/."""
     all_skills = _get_all_skill_names()
 
-    missing_skills = CLAUDE_ONLY_SKILLS - all_skills
+    missing_skills = claude_only_skills() - all_skills
 
     if missing_skills:
         pytest.fail(
-            f"Skills in CLAUDE_ONLY_SKILLS not found in .claude/skills/: {sorted(missing_skills)}"
+            f"Skills in claude_only_skills() not found in .claude/skills/: {sorted(missing_skills)}"
         )
