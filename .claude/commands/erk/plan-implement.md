@@ -263,19 +263,20 @@ After CI passes, clean up `.worker-impl/` if present:
 if [ -d .worker-impl/ ]; then
   git rm -rf .worker-impl/
   git commit -m "Remove .worker-impl/ after implementation"
-  git push
 fi
 ```
 
 **CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
 
-### Step 13: Create/Update PR (if .worker-impl/ present)
+### Step 13: Submit PR
 
-**Only if .worker-impl/ was present:**
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
 
 ```bash
-gh pr create --fill || gh pr edit
+erk pr submit
 ```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
 
 Then validate PR rules:
 
