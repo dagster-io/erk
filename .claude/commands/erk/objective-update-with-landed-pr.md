@@ -90,20 +90,17 @@ Your tasks:
 - **What Was Done:** Infer from PR title, PR description, and commit messages. The plan body contains the implementation plan - use it to understand what was accomplished.
 - **Lessons Learned:** Infer from implementation patterns or architectural decisions. If straightforward, note what pattern worked well.
 
-3. **Compose the updated objective body** by editing the roadmap table:
-   - Set the PR cell to `#<pr-number>` for completed steps
-   - Set the Status cell to `-` (inference determines status from PR column)
-   - If PR title meaningfully differs from step description, update the description
-   - Update "Current Focus" to describe the next pending step or next phase
+3. **Update roadmap steps** using the exec command for each completed step:
 
-**Status inference rules:**
+```bash
+erk exec update-roadmap-step <objective-number> --step <step-id> --pr "#<pr-number>" --status done
+```
 
-- Step has `#NNN` in PR column → Status `-` → inferred as `done`
-- Step has `plan #NNN` in PR column → Status `-` → inferred as `in_progress`
-- Step has no PR → Status stays as-is (inferred as `pending`)
-- `blocked`/`skipped` in Status are explicit overrides — only change if blocker is resolved
+This handles both frontmatter and table dual-write automatically. Run once per step completed by the PR.
 
-4. **Execute both writes in parallel:**
+4. **Update "Current Focus"** in the objective body to describe the next pending step or next phase. Use `erk exec update-issue-body` to write the updated body with the new Current Focus section.
+
+5. **Execute writes:**
 
 ```bash
 # Post action comment
@@ -114,18 +111,18 @@ EOF
 ```
 
 ```bash
-# Update objective body
+# Update Current Focus in objective body
 erk exec update-issue-body <issue-number> --body "$(cat <<'BODY_EOF'
-<full updated body text>
+<full updated body text with new Current Focus>
 BODY_EOF
 )"
 ```
 
-5. **Self-validate by counting steps from the body you just composed:**
+6. **Self-validate by counting steps from the body you just composed:**
    - Count total steps, done (have PR), skipped, pending, blocked, in_progress (have plan PR)
    - **DO NOT** re-fetch from GitHub — use the body you just wrote
 
-6. **Check closing triggers:**
+7. **Check closing triggers:**
 
 **If ALL steps are `done` or `skipped`:**
 

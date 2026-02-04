@@ -14,6 +14,10 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before accessing step_id on a RoadmapStep** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. The field is named 'id', not 'step_id'. This is a common mistake — check the actual dataclass definition.
 
+**CRITICAL: Before adding a new roadmap mutation site without updating this document** → Read [Objective Lifecycle](objective-lifecycle.md) first. All roadmap mutation sites must be documented in objective-lifecycle.md
+
+**CRITICAL: Before adding metadata fields to objective issues without schema definition** → Read [Objective Metadata Schema](objective-metadata-schema.md) first. Objective metadata must be defined in ObjectiveHeaderSchema (parallel to PlanHeaderSchema). Define schema first, then implement parsing.
+
 **CRITICAL: Before adding a new validation check** → Read [Roadmap Validation Architecture](roadmap-validation.md) first. Structural checks go in parse_roadmap() and return warnings alongside data. Semantic checks go in validate_objective() and produce pass/fail results. Don't mix levels.
 
 **CRITICAL: Before adding columns to the roadmap table format** → Read [Roadmap Format Versioning](roadmap-format-versioning.md) first. The 7-column extension was planned but never implemented. Read this doc to understand the migration strategy before adding columns.
