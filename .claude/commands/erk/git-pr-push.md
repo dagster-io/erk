@@ -126,7 +126,7 @@ existing_pr=$(gh pr list --head "$(git branch --show-current)" --state open --js
 **Decision logic:**
 
 - If `existing_pr` is empty or null: No existing PR, proceed to Step 7
-- If `existing_pr` has data: PR exists, skip Step 7 and go directly to Step 8
+- If `existing_pr` has data: PR exists, skip Step 7 and go directly to Step 7.5
 
 If an existing PR was found, extract its details for reporting:
 
@@ -162,8 +162,41 @@ else
 fi
 
 # Create PR using GitHub CLI
-gh pr create --title "$pr_title" --body "$pr_body"
+pr_output=$(gh pr create --title "$pr_title" --body "$pr_body")
+
+# Extract PR number from the output URL (last path segment)
+pr_number=$(echo "$pr_output" | grep -oE '[0-9]+$')
+pr_url="$pr_output"
 ```
+
+### Step 7.5: Add Checkout Footer
+
+Extract the PR number (from Step 7 if PR was created, or from Step 6.5 if existing PR was found), then generate and append the checkout footer:
+
+**Determining PR number:**
+
+- If Step 7 was executed: Use `pr_number` extracted from `gh pr create` output
+- If Step 7 was skipped: Use `pr_number` extracted from `existing_pr` in Step 6.5
+
+**Generate and append footer:**
+
+```bash
+# Get issue number from .impl/issue.json if present (for proper issue linking)
+issue_number=$(jq -r '.issue_number // empty' .impl/issue.json 2>/dev/null || echo "")
+
+# Generate footer with issue number if available
+if [ -n "$issue_number" ]; then
+    footer=$(erk exec get-pr-body-footer --pr-number "$pr_number" --issue-number "$issue_number")
+else
+    footer=$(erk exec get-pr-body-footer --pr-number "$pr_number")
+fi
+
+# Get current PR body and append footer
+current_body=$(gh pr view "$pr_number" --json body --jq '.body')
+gh pr edit "$pr_number" --body "${current_body}${footer}"
+```
+
+**Note:** The footer includes the checkout command and issue reference (if issue tracking exists). This ensures `erk pr check` passes.
 
 ### Step 8: Validate PR Rules
 
