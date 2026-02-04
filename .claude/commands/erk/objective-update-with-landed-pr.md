@@ -45,9 +45,9 @@ This returns a single JSON blob with `{success, objective, plan, pr}` containing
 
 If the branch doesn't match the pattern or no merged PR is found, ask the user for the missing information.
 
-### Step 1: Delegate to Haiku Subagent
+### Step 1: Delegate to Subagent
 
-Use the Task tool with `model: haiku` to spawn a specialized subagent that will compose the updates and execute them in one turn.
+Use the Task tool to spawn a specialized subagent that will compose the updates and execute them in one turn.
 
 The subagent prompt should include:
 
