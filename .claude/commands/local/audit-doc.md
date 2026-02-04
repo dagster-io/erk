@@ -105,41 +105,19 @@ For each section of the document, classify it into one of these value categories
 
 ### Phase 5: Generate Report
 
-Output a structured analysis:
+Complete the full internal analysis from Phase 4, but output only a brief summary regardless of mode. Never output the full value breakdown table, duplicative content detail sections, or recommended rewrite text.
 
-```markdown
-## Doc Audit: <doc-title>
+**Output format (always):**
 
-### Verdict: KEEP / SIMPLIFY / REPLACE WITH CODE REFS / CONSIDER DELETING
-
-(Any CONTRADICTS content should push toward SIMPLIFY or higher severity — contradictory docs are actively harmful and worse than duplicative content.)
-
-### Value Breakdown
-
-| Section | Lines | Classification | Reasoning |
-| ------- | ----- | -------------- | --------- |
-| ...     | ...   | ...            | ...       |
-
-### Duplicative Content (X% of document)
-
-[List specific sections that restate code, with the source location that makes them redundant]
-
-### Contradictions
-
-[List sections that state something factually wrong per the current codebase, with the source location that disproves the claim. If none found, omit this section.]
-
-### High-Value Content (X% of document)
-
-[List sections that provide genuine value over code]
-
-### Drift Risks
-
-[Sections likely to become stale as code evolves]
-
-### Recommended Rewrite
-
-[If SIMPLIFY verdict: suggest a slimmed-down version that keeps high-value content and replaces duplicative content with code references]
 ```
+Audit: <doc-path> | Verdict: <VERDICT> | Duplicative: X% | High-value: Y% | Contradictions: <count>
+```
+
+Follow with 2-3 sentences describing the planned changes. For example:
+
+> Sections "Import Paths" and "Function Signatures" are duplicative of `src/erk/gateway/git.py:42` and should be replaced with code references. The "Anti-patterns" section contradicts the current implementation of `resolve_path()` which now uses pathlib.
+
+Keep the full internal analysis available for Phase 7 actions — just don't dump it as text output.
 
 ### Phase 6: Determine Action
 

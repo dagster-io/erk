@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "using background agents without waiting for completion before dependent operations"
     warning: "Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files."
+last_audited: "2026-02-04 13:41 PT"
+audit_result: clean
 ---
 
 # Command-Agent Delegation Pattern
