@@ -24,6 +24,7 @@ Why this command exists (instead of using update-issue-body directly):
 Usage:
     erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
     erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500"
+    erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --status done
     erk exec update-roadmap-step 6423 --step 1.3 --pr ""
 
 Output:
@@ -42,6 +43,10 @@ import click
 from erk.cli.commands.exec.scripts.objective_roadmap_shared import parse_roadmap
 from erk_shared.context.helpers import require_issues, require_repo_root
 from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.core import (
+    extract_raw_metadata_blocks,
+    replace_metadata_block_in_body,
+)
 from erk_shared.gateway.github.types import BodyText
 
 
@@ -60,16 +65,68 @@ def _find_step_pr(body: str, step_id: str) -> tuple[str | None, bool]:
     return None, False
 
 
-def _replace_step_pr_in_body(body: str, step_id: str, new_pr: str) -> str | None:
+def _replace_step_pr_in_body(
+    body: str, step_id: str, new_pr: str, *, explicit_status: str | None
+) -> str | None:
     """Replace the PR cell for a step in the raw markdown body.
 
-    Uses regex to find the table row matching the step ID and replace
-    the last two cells (status and pr). The status is computed from the PR
-    value to provide human-readable status in the roadmap table.
+    Checks for frontmatter first within objective-roadmap metadata block.
+    Falls back to regex table replacement for backward compatibility.
+
+    When frontmatter exists, updates both frontmatter (source of truth)
+    and markdown table (rendered view) to keep them in sync.
+
+    Args:
+        body: Full issue body text.
+        step_id: Step ID to update (e.g., "1.3").
+        new_pr: New PR value (e.g., "#123", "plan #456", "").
+        explicit_status: If provided, use this status instead of inferring from PR.
 
     Returns:
         Updated body string, or None if the step row was not found.
     """
+    # Check for frontmatter-aware path
+    raw_blocks = extract_raw_metadata_blocks(body)
+    roadmap_block = None
+    for block in raw_blocks:
+        if block.key == "objective-roadmap":
+            roadmap_block = block
+            break
+
+    if roadmap_block is not None:
+        # Import here to avoid circular dependency
+        from erk.cli.commands.exec.scripts.objective_roadmap_frontmatter import (
+            update_step_in_frontmatter,
+        )
+
+        updated_block_content = update_step_in_frontmatter(
+            roadmap_block.body,
+            step_id,
+            pr=new_pr,
+            status=explicit_status,
+        )
+
+        if updated_block_content is None:
+            return None
+
+        # Replace the metadata block in the body
+        # replace_metadata_block_in_body expects the NEW_BLOCK_CONTENT to include the markers
+        new_block_with_markers = (
+            f"<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
+            f"<!-- erk:metadata-block:objective-roadmap -->\n"
+            f"{updated_block_content}\n"
+            f"<!-- /erk:metadata-block:objective-roadmap -->"
+        )
+        try:
+            body = replace_metadata_block_in_body(
+                body,
+                "objective-roadmap",
+                new_block_with_markers,
+            )
+        except ValueError:
+            return None
+
+    # Also update the markdown table (either as fallback or to keep in sync)
     # Match table row: | step_id | description | status | pr |
     # The step_id is in the first cell, and we need to replace status and pr cells.
     pattern = re.compile(
@@ -79,10 +136,17 @@ def _replace_step_pr_in_body(body: str, step_id: str, new_pr: str) -> str | None
 
     match = pattern.search(body)
     if match is None:
+        # If we updated frontmatter but can't find table row, still return body
+        # (maybe table doesn't exist yet, which is OK)
+        if roadmap_block is not None:
+            return body
         return None
 
-    # Determine display status from PR value
-    if new_pr.startswith("#"):
+    # Determine display status from explicit flag or PR value
+    if explicit_status is not None:
+        # Map underscore to hyphen for table display (e.g., "in_progress" → "in-progress")
+        display_status = explicit_status.replace("_", "-")
+    elif new_pr.startswith("#"):
         display_status = "done"
     elif new_pr.startswith("plan #"):
         display_status = "in-progress"
@@ -103,8 +167,23 @@ def _replace_step_pr_in_body(body: str, step_id: str, new_pr: str) -> str | None
 @click.option(
     "--pr", required=True, help="PR reference (e.g., 'plan #123', '#456', or '' to clear)"
 )
+@click.option(
+    "--status",
+    "explicit_status",
+    required=False,
+    default=None,
+    type=click.Choice(["done", "pending", "in_progress", "blocked", "skipped"]),
+    help="Explicit status to set (default: infer from PR value)",
+)
 @click.pass_context
-def update_roadmap_step(ctx: click.Context, issue_number: int, *, step: str, pr: str) -> None:
+def update_roadmap_step(
+    ctx: click.Context,
+    issue_number: int,
+    *,
+    step: str,
+    pr: str,
+    explicit_status: str | None,
+) -> None:
     """Update a step's PR cell in an objective's roadmap table."""
     github = require_issues(ctx)
     repo_root = require_repo_root(ctx)
@@ -152,7 +231,9 @@ def update_roadmap_step(ctx: click.Context, issue_number: int, *, step: str, pr:
         raise SystemExit(1)
 
     # Replace the PR cell in the raw body
-    updated_body = _replace_step_pr_in_body(issue.body, step, pr)
+    updated_body = _replace_step_pr_in_body(
+        issue.body, step, pr, explicit_status=explicit_status
+    )
     if updated_body is None:
         click.echo(
             json.dumps(

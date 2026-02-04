@@ -3,6 +3,7 @@
 
 # Objectives Documentation
 
+- **[objective-lifecycle.md](objective-lifecycle.md)** — creating or modifying objective lifecycle code, understanding how objectives are created, mutated, and closed, adding new mutation paths to objective roadmaps
 - **[objective-metadata-schema.md](objective-metadata-schema.md)** — working with objective issue frontmatter, implementing parent_objective field, understanding objective vs plan metadata
 - **[objective-roadmap-check.md](objective-roadmap-check.md)** — working with objective roadmap markdown tables, parsing or validating objective structure, implementing objective progress tracking, debugging roadmap parsing issues
 - **[research-documentation-integration.md](research-documentation-integration.md)** — creating research documentation during objective work, linking learned docs to objective issues, working with objective research phases, documenting discoveries from objective investigations

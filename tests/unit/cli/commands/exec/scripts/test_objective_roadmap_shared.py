@@ -305,3 +305,89 @@ def test_parse_roadmap_explicit_status_overrides_pr_inference() -> None:
     assert phases[0].steps[1].status == "in_progress"
     # Legacy "-" should fall back to PR inference
     assert phases[0].steps[2].status == "done"
+
+
+def test_parse_roadmap_frontmatter_preferred() -> None:
+    """Test that frontmatter is used when metadata block is present."""
+    body = """## Objective
+
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "1"
+steps:
+  - id: "1.1"
+    description: "From frontmatter"
+    status: "done"
+    pr: "#999"
+  - id: "1.2"
+    description: "Also from frontmatter"
+    status: "pending"
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
+## Roadmap
+
+### Phase 1: Test Phase
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | From table (ignored) | - | #100 |
+| 1.2 | Also from table (ignored) | - | - |
+"""
+
+    phases, errors = parse_roadmap(body)
+
+    # Should use frontmatter data, not table data
+    assert errors == []
+    assert len(phases) == 1
+    assert phases[0].name == "Test Phase"  # Extracted from markdown header
+    assert len(phases[0].steps) == 2
+    # Values come from frontmatter, not table
+    assert phases[0].steps[0].description == "From frontmatter"
+    assert phases[0].steps[0].pr == "#999"
+    assert phases[0].steps[1].description == "Also from frontmatter"
+
+
+def test_parse_roadmap_no_frontmatter_fallback() -> None:
+    """Test that table parsing works when no frontmatter is present."""
+    # This is WELL_FORMED_BODY which has no metadata block
+    phases, errors = parse_roadmap(WELL_FORMED_BODY)
+
+    # Should fall back to table parsing
+    assert errors == []
+    assert len(phases) == 2
+    assert phases[0].name == "Foundation"
+    assert len(phases[0].steps) == 3
+    # Values come from table
+    assert phases[0].steps[0].pr == "#100"
+    assert phases[0].steps[1].pr == "plan #101"
+
+
+def test_parse_roadmap_invalid_frontmatter_fallback() -> None:
+    """Test that invalid frontmatter falls back to table parsing."""
+    body = """## Objective
+
+<!-- erk:metadata-block:objective-roadmap -->
+---
+invalid: yaml: syntax [
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
+## Roadmap
+
+### Phase 1: Fallback Phase
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | From table | - | #200 |
+"""
+
+    phases, errors = parse_roadmap(body)
+
+    # Should fall back to table parsing when frontmatter is invalid
+    assert errors == []
+    assert len(phases) == 1
+    assert phases[0].name == "Fallback Phase"
+    assert len(phases[0].steps) == 1
+    assert phases[0].steps[0].pr == "#200"
