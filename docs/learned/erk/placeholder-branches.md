@@ -2,6 +2,8 @@
 title: Placeholder Branches
 read_when:
   - working with worktree pool slots, implementing slot commands, deciding when to use ctx.git.branch vs ctx.branch_manager
+last_audited: "2025-02-05 12:45 PT"
+audit_result: edited
 ---
 
 # Placeholder Branches
@@ -10,7 +12,7 @@ Placeholder branches are ephemeral branches that serve as temporary occupants fo
 
 ## What Are Placeholder Branches?
 
-Placeholder branches are named `placeholder/<slot-name>` (e.g., `placeholder/slot-1`, `placeholder/slot-2`) and serve a single purpose:
+Placeholder branches are named `__erk-slot-XX-br-stub__` (e.g., `__erk-slot-01-br-stub__`, `__erk-slot-02-br-stub__`) and serve a single purpose:
 
 **Keep pool worktrees in a valid state when no work is assigned.**
 
@@ -105,15 +107,15 @@ ctx.git.branch.delete_branch(repo.root, placeholder_branch, force=True)
 Git prevents the same branch from being checked out in multiple worktrees simultaneously. This is why each pool slot needs its own placeholder branch:
 
 ```bash
-# This fails if placeholder/slot-1 is already checked out in another worktree:
-git -C .erk/worktrees/slot-2 checkout placeholder/slot-1
-# Error: 'placeholder/slot-1' is already checked out at '.erk/worktrees/slot-1'
+# This fails if __erk-slot-01-br-stub__ is already checked out in another worktree:
+git -C .erk/worktrees/erk-slot-02 checkout __erk-slot-01-br-stub__
+# Error: '__erk-slot-01-br-stub__' is already checked out at '.erk/worktrees/erk-slot-01'
 ```
 
 Therefore:
 
-- `slot-1` uses `placeholder/slot-1`
-- `slot-2` uses `placeholder/slot-2`
+- `erk-slot-01` uses `__erk-slot-01-br-stub__`
+- `erk-slot-02` uses `__erk-slot-02-br-stub__`
 - Each slot has a unique placeholder branch
 
 ## Decision Tree: When to Bypass BranchManager
@@ -121,7 +123,7 @@ Therefore:
 ```
 Is this a placeholder branch?
 ├─ YES → Use ctx.git.branch (skip Graphite tracking)
-│         Examples: placeholder/slot-*, temp branches for pool operations
+│         Examples: __erk-slot-XX-br-stub__, temp branches for pool operations
 └─ NO → Use ctx.branch_manager (Graphite tracking required)
           Examples: feature branches, plan branches, user-created branches
 ```
@@ -130,4 +132,3 @@ Is this a placeholder branch?
 
 - [Branch Manager Decision Tree](../architecture/branch-manager-decision-tree.md) — Complete decision framework
 - [Branch Manager Abstraction](../architecture/branch-manager-abstraction.md) — BranchManager architecture
-- [Worktree Pool Operations](worktree-pool.md) — How pool slots work

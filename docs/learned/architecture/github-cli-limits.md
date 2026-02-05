@@ -1,7 +1,7 @@
 ---
 title: GitHub CLI Limits
-last_audited: "2026-02-04 05:48 PT"
-audit_result: edited
+last_audited: "2025-02-05 12:35 PT"
+audit_result: clean
 read_when:
   - "using gh pr diff in production code"
   - "working with large pull requests (300+ files)"

@@ -5,6 +5,8 @@ read_when:
   - "using Task with run_in_background"
   - "collecting results with TaskOutput"
   - "running agents in parallel"
+last_audited: "2025-02-05 12:36 PT"
+audit_result: edited
 ---
 
 # Parallel Agent Orchestration Pattern
@@ -71,19 +73,9 @@ Build a unified result from individual agent findings:
 
 ## Examples in Codebase
 
-### `/local:bulk-replan` - Parallel Issue Investigation
+### `/erk:learn` - Four-Tier Agent Orchestration
 
-Launches up to 10 Explore agents simultaneously to investigate erk-plan issues. Each agent:
-
-- Fetches issue details via REST API
-- Searches codebase for implementation evidence
-- Returns structured status (IMPLEMENTED, OBSOLETE, NEEDS_FRESH_PLAN, etc.)
-
-Results are collected and presented in a summary table for batch approval.
-
-### `/erk:learn` - Three-Tier Agent Orchestration
-
-The `/erk:learn` workflow demonstrates a three-tier agent orchestration pattern with 5 agents total:
+The `/erk:learn` workflow demonstrates a four-tier agent orchestration pattern with 6 agents total:
 
 **Tier 1: Parallel Analysis** (3 agents, launched simultaneously)
 
@@ -95,9 +87,13 @@ The `/erk:learn` workflow demonstrates a three-tier agent orchestration pattern 
 
 - **DocumentationGapIdentifier**: Combines all Tier 1 outputs, cross-references against existing docs, produces prioritized gap analysis
 
-**Tier 3: Final Synthesis** (1 agent, waits for Tier 2)
+**Tier 3: Plan Generation** (1 agent, waits for Tier 2)
 
 - **PlanSynthesizer**: Transforms gap analysis into executable learn plan with draft content starters
+
+**Tier 4: Tripwire Extraction** (1 agent, waits for Tier 3)
+
+- **TripwireExtractor**: Extracts structured tripwire candidate data from the plan into JSON format
 
 This pattern shows how parallel and sequential orchestration can be combined: independent analysis runs in parallel for speed, then dependent synthesis runs sequentially for correctness.
 

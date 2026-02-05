@@ -13,6 +13,8 @@ tripwires:
     warning: "Keep conditional logic in slash commands. Only bundle mechanical API calls where input params are known upfront."
   - action: "forgetting to add TypedDict schemas for exec script JSON output"
     warning: "Define TypedDict in erk_shared for type-safe JSON parsing. Create separate dicts for success result and error result."
+last_audited: "2025-02-05 12:37 PT"
+audit_result: edited
 ---
 
 # Slash Command LLM Turn Optimization
@@ -85,7 +87,7 @@ erk exec objective-update-context --pr <number> --objective <number> --branch <n
 
 **Exec script:** `src/erk/cli/commands/exec/scripts/objective_update_context.py`
 
-See `objective_update_context()` in `src/erk/cli/commands/exec/scripts/objective_update_context.py:47` for the full implementation.
+See `objective_update_context()` in `src/erk/cli/commands/exec/scripts/objective_update_context.py:52` for the full implementation.
 
 **Impact:** Reduced from ~8 turns to ~4 turns
 

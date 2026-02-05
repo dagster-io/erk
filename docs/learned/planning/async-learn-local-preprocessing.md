@@ -2,6 +2,8 @@
 title: Async Learn Local Preprocessing
 read_when:
   - working with async learn workflow, debugging trigger-async-learn command, understanding local vs remote session preprocessing
+last_audited: "2025-02-05 12:55 PT"
+audit_result: edited
 ---
 
 # Async Learn Local Preprocessing
@@ -27,34 +29,23 @@ The `trigger-async-learn` command orchestrates the full local learn pipeline bef
 
 **File**: `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`
 
-The command orchestrates these steps:
+The command orchestrates these steps using **direct Python function calls** (not subprocess invocations):
 
-### Step 1: Get Session Sources
+### Step 1: Discover Session Sources
 
-```bash
-erk exec get-learn-sessions <issue_number>
+Calls `_discover_sessions()` directly from `get_learn_sessions.py`:
+
+```python
+sessions = _discover_sessions(
+    github_issues=github_issues,
+    claude_installation=claude_installation,
+    repo_root=repo_root,
+    cwd=cwd,
+    issue_number=issue_number,
+)
 ```
 
-**Output**: JSON with `session_sources` array containing local and remote session metadata.
-
-**Example**:
-
-```json
-{
-  "success": true,
-  "session_sources": [
-    {
-      "source": "local",
-      "session_path": "/Users/.../.claude/projects/.../sessions/abc123.xml",
-      "session_type": "planning"
-    },
-    {
-      "source": "remote",
-      "gist_url": "https://gist.github.com/user/xyz789"
-    }
-  ]
-}
-```
+**Output**: Dict with `session_sources` list containing local and remote session metadata.
 
 ### Step 2: Create Learn Materials Directory
 
@@ -67,97 +58,68 @@ This directory holds preprocessed sessions and PR comments before uploading to g
 
 ### Step 3: Preprocess Local Sessions
 
-For each session where `source == "local"`:
+For each session where `source_type == "local"`, calls `_preprocess_session_direct()`:
 
-```bash
-erk exec preprocess-session \
-  --input <session_path> \
-  --output <learn_dir>/<prefix>-session-<issue_number>.xml
+```python
+output_paths = _preprocess_session_direct(
+    session_path=session_path,
+    max_tokens=20000,
+    output_dir=learn_dir,
+    prefix=prefix,  # "planning" or "impl"
+)
 ```
 
 **Prefix logic**:
 
-- `session_type == "planning"` → prefix = `"planning"`
+- `session_id == planning_session_id` → prefix = `"planning"`
 - Otherwise → prefix = `"impl"`
 
-**Output**: Preprocessed XML written to learn directory.
+**Output**: Preprocessed XML file(s) written to learn directory.
 
-### Step 4: Fetch PR Review Comments
+### Step 4: Fetch PR Comments
 
-```bash
-erk exec fetch-learn-pr-comments <issue_number> --output-dir <learn_dir>
+Uses direct gateway calls (no subprocess):
+
+```python
+# Review comments (inline code comments)
+threads = github.get_pr_review_threads(repo_root, pr_number, include_resolved=True)
+# Writes to: pr-review-comments.json
+
+# Discussion comments (PR conversation)
+comments_result = GitHubChecks.issue_comments(github_issues, repo_root, pr_number)
+# Writes to: pr-discussion-comments.json
 ```
 
-**Output**: `pr-comments.json` file containing review comments from the PR (if PR exists).
-
-**Graceful degradation**: If PR doesn't exist, the command outputs empty comments file.
+**Graceful degradation**: If PR doesn't exist, these steps are skipped.
 
 ### Step 5: Upload Materials to Gist
 
-```bash
-erk exec upload-learn-materials <learn_dir> --issue-number <issue_number>
-```
+Uses `combine_learn_material_files()` and direct gateway call:
 
-**Output**: JSON with `gist_url` pointing to the uploaded materials gist.
+```python
+combined_content = combine_learn_material_files(learn_dir)
+gist_result = github.create_gist(
+    filename=f"learn-materials-plan-{issue_number}.txt",
+    content=combined_content,
+    description=f"Learn materials for plan #{issue_number}",
+    public=False,
+)
+```
 
 **Format**: Delimiter-based file packing (see [Gist Materials Interchange](../architecture/gist-materials-interchange.md)).
 
 ### Step 6: Trigger GitHub Actions Workflow
 
-```bash
-gh workflow run learn.yml -f issue_number=<issue_number> -f gist_url=<gist_url>
-```
-
-**Output**: Workflow run ID and URL.
-
-## \_run_subprocess() Helper Pattern
-
-The command uses a shared helper for subprocess execution with JSON output capture:
-
-**Source**: `src/erk/cli/commands/exec/scripts/trigger_async_learn.py:82-108`
-
 ```python
-# Key pattern (see source for full implementation):
-result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-# Validates exit code, non-empty stdout, and JSON parsing
-# Calls _output_error() on any failure (which raises SystemExit)
-return json.loads(result.stdout)
+run_id = github.trigger_workflow(
+    repo_root=repo_root,
+    workflow=LEARN_WORKFLOW,  # "learn.yml"
+    inputs={"issue_number": str(issue_number), "gist_url": str(gist_url)},
+    ref="master",
+)
 ```
 
-**Pattern features**:
-
-- Captures both stdout and stderr
-- Validates JSON output
-- Provides clear error messages with step context
-- Exits on failure (no partial execution)
-
-## Dual-Path Branching: Gist URL Present vs Absent
-
-The command handles two scenarios based on whether a gist URL is already present:
-
-### Path 1: Gist URL Already Exists
-
-If `get-learn-sessions` returns a `gist_url` (session already uploaded from previous run):
-
-```python
-gist_url = sessions_result.get("gist_url")
-if gist_url:
-    # Skip preprocessing and upload, use existing gist
-    trigger_workflow(issue_number, gist_url)
-```
-
-**Use case**: Re-triggering learn for the same session without re-uploading.
-
-### Path 2: No Gist URL (Fresh Learn)
-
-If no `gist_url` in response:
-
-1. Preprocess all local sessions
-2. Fetch PR comments
-3. Upload materials to new gist
-4. Trigger workflow with new gist URL
-
-**Use case**: First-time learn or after session updates.
+**Output**: Workflow run ID used to construct workflow URL.
 
 ## Local vs Remote Sessions
 
@@ -165,18 +127,14 @@ The preprocessing step only applies to **local sessions**:
 
 ```python
 for source_item in session_sources:
-    if source.get("source") != "local":
+    if source_item.get("source_type") != "local":
         continue  # Skip remote sessions (already preprocessed)
 
-    # Preprocess local session
-    _run_subprocess([
-        "erk", "exec", "preprocess-session",
-        "--input", session_path,
-        "--output", output_path
-    ], description=f"Preprocessing {session_type} session")
+    # Preprocess local session via direct function call
+    output_paths = _preprocess_session_direct(...)
 ```
 
-**Remote sessions** (from gists) are already preprocessed, so they're copied directly without re-processing.
+**Remote sessions** (from gists) are already preprocessed, so they're not re-processed.
 
 ## Related Documentation
 

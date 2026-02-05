@@ -2,6 +2,8 @@
 title: Gist Materials Interchange Format
 read_when:
   - working with learn materials upload/download, debugging gist-based file transfer, implementing new file packing formats
+last_audited: "2025-02-05 12:32 PT"
+audit_result: edited
 ---
 
 # Gist Materials Interchange Format
@@ -22,7 +24,7 @@ Erk uses GitHub Gists as a data carrier to transfer multiple files between the l
 
 ### Upload Format
 
-**File**: `src/erk/cli/commands/exec/scripts/upload_learn_materials.py:80-87`
+**File**: `src/erk/cli/commands/exec/scripts/upload_learn_materials.py:41-60`
 
 Each file is wrapped with delimiter lines and a `FILE:` header, then joined with blank line separators:
 
@@ -55,7 +57,7 @@ FILE: metadata.json
 
 ### Download/Unpack Format
 
-**File**: `src/erk/cli/commands/exec/scripts/download_learn_materials.py:163-207`
+**File**: `src/erk/cli/commands/exec/scripts/download_learn_materials.py:174-207`
 
 The parser uses a boolean `in_header` state toggle to walk through delimiters, extract filenames, and accumulate content:
 
@@ -114,33 +116,36 @@ unpacked_files = unpack_files(packed_content)
 
 **Edge case**: If file content contains a line of 60 equals signs, it will confuse the parser. Currently unhandled (no escaping mechanism).
 
-## URL Format Normalization
+## Raw Content URL Resolution
 
-Gist URLs are normalized before storage:
+**File**: `src/erk/cli/commands/exec/scripts/download_learn_materials.py:94-97`
+
+Gist raw content is fetched by trying candidate URLs in order:
 
 ```python
-# Normalize gist URL to canonical format
-gist_url = gist_url.replace("https://gist.github.com/", "https://gist.githubusercontent.com/")
-gist_url = gist_url + "/raw" if not gist_url.endswith("/raw") else gist_url
+candidate_urls = [
+    f"https://gist.githubusercontent.com/raw/{gist_id}",
+    f"https://gist.github.com/{gist_id}/raw",
+]
 ```
 
 **Why**:
 
-- `gist.github.com` URLs redirect to HTML pages (not suitable for `curl`)
-- `gist.githubusercontent.com/.../raw` URLs return raw gist content directly
-- Normalization ensures consistent URL format for downloads
+- `gist.githubusercontent.com/raw/{id}` works for public gists without knowing the owner
+- `gist.github.com/{id}/raw` is a fallback that works with different URL formats
+- The first successful URL wins; errors trigger fallback to next candidate
 
 ## Gist Metadata
 
 Each gist uploaded for learn materials includes:
 
-| File                  | Purpose                                            |
-| --------------------- | -------------------------------------------------- |
-| `learn-materials.txt` | Main packed file containing all materials          |
-| Description           | "Learn materials for issue #{issue_number}"        |
-| Public                | Yes (required for unauthenticated downloads in CI) |
+| File                               | Purpose                                    |
+| ---------------------------------- | ------------------------------------------ |
+| `learn-materials-plan-{issue}.txt` | Main packed file containing all materials  |
+| Description                        | "Learn materials for plan #{issue_number}" |
+| Public                             | No (secret gist for privacy)               |
 
-**Source**: `upload_learn_materials.py:93-100`
+**Source**: `upload_learn_materials.py:105-110`
 
 ## Related Documentation
 

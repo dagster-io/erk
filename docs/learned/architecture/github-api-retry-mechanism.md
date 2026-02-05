@@ -10,6 +10,8 @@ tripwires:
     warning: "Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability."
   - action: "checking isinstance after RetriesExhausted without type narrowing"
     warning: "After checking `isinstance(result, RetriesExhausted)`, the else branch is type-narrowed to the success type. Use `assert isinstance(result, T)` if needed for clarity."
+last_audited: "2025-02-05 12:34 PT"
+audit_result: edited
 ---
 
 # GitHub API Retry Mechanism
@@ -56,7 +58,7 @@ Errors are detected as transient by checking for patterns in the error message:
 - `connection reset`
 - `connection timed out`
 
-See `erk_shared/github/transient_errors.py` for the canonical pattern list.
+See `erk_shared/gateway/github/transient_errors.py` for the canonical pattern list.
 
 ## The with_retries Pattern
 
@@ -137,11 +139,11 @@ See [Erk Architecture Patterns](erk-architecture.md#time-abstraction-for-testing
 
 ## Implementation Reference
 
-| File                                    | Purpose                                                |
-| --------------------------------------- | ------------------------------------------------------ |
-| `erk_shared/subprocess_utils.py`        | `execute_gh_command_with_retry()`                      |
-| `erk_shared/github/retry.py`            | `with_retries()`, `RetryRequested`, `RetriesExhausted` |
-| `erk_shared/github/transient_errors.py` | `is_transient_error()`                                 |
+| File                                            | Purpose                                                |
+| ----------------------------------------------- | ------------------------------------------------------ |
+| `erk_shared/subprocess_utils.py`                | `execute_gh_command_with_retry()`                      |
+| `erk_shared/gateway/github/retry.py`            | `with_retries()`, `RetryRequested`, `RetriesExhausted` |
+| `erk_shared/gateway/github/transient_errors.py` | `is_transient_error()`                                 |
 
 ## Related Documentation
 

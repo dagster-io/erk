@@ -8,6 +8,8 @@ read_when:
 verified_against_source: "2026-02-02"
 codex_source_path: "/Users/schrockn/code/githubs/codex"
 status: "verified against Codex source code"
+last_audited: "2025-02-05 12:52 PT"
+audit_result: edited
 ---
 
 > **Updated February 2026**: For ground-truth Codex CLI details verified against source code, see [Codex CLI Reference](codex/codex-cli-reference.md), [Codex JSONL Format](codex/codex-jsonl-format.md), and [Codex Skills System](codex/codex-skills-system.md).
@@ -53,29 +55,29 @@ Codex uses **two orthogonal axes**:
 
 **Sandbox axis** (`--sandbox`):
 
-| Codex `SandboxPolicy` | Behavior                                                     |
-| --------------------- | ------------------------------------------------------------ |
-| `ReadOnly`            | Read-only filesystem access                                  |
-| `WorkspaceWrite`      | Read-only except specified writable roots + optional network |
-| `DangerFullAccess`    | No filesystem restrictions                                   |
+| Codex `--sandbox`    | Behavior                                                     |
+| -------------------- | ------------------------------------------------------------ |
+| `read-only`          | Read-only filesystem access                                  |
+| `workspace-write`    | Read-only except specified writable roots + optional network |
+| `danger-full-access` | No filesystem restrictions                                   |
 
-**Approval axis** (`--approval`):
+**Approval axis** (`--ask-for-approval`, TUI only):
 
-| Codex `AskForApproval` | Behavior                                   |
-| ---------------------- | ------------------------------------------ |
-| `UnlessTrusted`        | Auto-approve only known-safe read commands |
-| `OnRequest`            | Model decides when to ask (default)        |
-| `OnFailure`            | Auto-approve, escalate on failure          |
-| `Never`                | Auto-approve all, never escalate           |
+| Codex `-a`   | Behavior                                   |
+| ------------ | ------------------------------------------ |
+| `untrusted`  | Auto-approve only known-safe read commands |
+| `on-request` | Model decides when to ask (default)        |
+| `on-failure` | Auto-approve, escalate on failure          |
+| `never`      | Auto-approve all, never escalate           |
 
 **Erk's `PermissionMode` mapping** (current, in `erk_shared/context/types.py`):
 
-| Erk `PermissionMode` | Claude              | Codex (proposed)                             |
-| -------------------- | ------------------- | -------------------------------------------- |
-| `"safe"`             | `default`           | `sandbox=ReadOnly, approval=UnlessTrusted`   |
-| `"edits"`            | `acceptEdits`       | `sandbox=WorkspaceWrite, approval=OnRequest` |
-| `"plan"`             | `plan`              | `sandbox=ReadOnly, approval=UnlessTrusted`   |
-| `"dangerous"`        | `bypassPermissions` | `sandbox=DangerFullAccess, approval=Never`   |
+| Erk `PermissionMode` | Claude              | Codex (proposed)                          |
+| -------------------- | ------------------- | ----------------------------------------- |
+| `"safe"`             | `default`           | `--sandbox read-only -a untrusted`        |
+| `"edits"`            | `acceptEdits`       | `--sandbox workspace-write -a on-request` |
+| `"plan"`             | `plan`              | `--sandbox read-only -a never`            |
+| `"dangerous"`        | `bypassPermissions` | `--yolo` (bypasses sandbox and approval)  |
 
 > **Note:** The dual-axis model means some Codex configurations have no direct `PermissionMode` equivalent. The mapping above covers erk's use cases.
 
