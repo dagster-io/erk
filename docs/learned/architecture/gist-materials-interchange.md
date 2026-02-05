@@ -24,16 +24,7 @@ Erk uses GitHub Gists as a data carrier to transfer multiple files between the l
 
 ### Upload Format
 
-**File**: `src/erk/cli/commands/exec/scripts/upload_learn_materials.py:41-60`
-
-Each file is wrapped with delimiter lines and a `FILE:` header, then joined with blank line separators:
-
-```python
-# Key pattern (see source for full loop):
-combined_parts.append(f"{'=' * 60}")        # Opening delimiter
-combined_parts.append(f"FILE: {file_path.name}")  # Filename header
-combined_parts.append(f"{'=' * 60}")        # Closing delimiter
-```
+Each file is wrapped with delimiter lines and a `FILE:` header, then joined with blank line separators. See `upload_learn_materials.py` for the implementation.
 
 **Example packed content**:
 
@@ -57,17 +48,7 @@ FILE: metadata.json
 
 ### Download/Unpack Format
 
-**File**: `src/erk/cli/commands/exec/scripts/download_learn_materials.py:174-207`
-
-The parser uses a boolean `in_header` state toggle to walk through delimiters, extract filenames, and accumulate content:
-
-```python
-# Key parsing logic (see source for full implementation):
-if line.strip() == "=" * 60:
-    in_header = not in_header  # Toggle header state on delimiter
-if in_header and line.startswith("FILE: "):
-    current_filename = line[6:].strip()
-```
+The parser uses a boolean `in_header` state toggle to walk through delimiters, extract filenames, and accumulate content. See `download_learn_materials.py` for the implementation.
 
 ## Delimiter Pattern Details
 
@@ -118,7 +99,7 @@ unpacked_files = unpack_files(packed_content)
 
 ## Raw Content URL Resolution
 
-Gist raw content is fetched by `_download_gist_raw_content()` in `download_learn_materials.py:73-110`, which tries candidate URLs in order until one succeeds.
+Gist raw content is fetched by trying candidate URLs in order until one succeeds. See `download_learn_materials.py` for the implementation.
 
 **Why multiple URLs**: GitHub gist raw URLs vary by context — `gist.githubusercontent.com/raw/{id}` works for public gists without knowing the owner, while `gist.github.com/{id}/raw` provides a fallback for different URL formats.
 
@@ -132,7 +113,7 @@ Each gist uploaded for learn materials includes:
 | Description                        | "Learn materials for plan #{issue_number}" |
 | Public                             | No (secret gist for privacy)               |
 
-**Source**: `upload_learn_materials.py:105-110`
+**Source**: `upload_learn_materials.py`
 
 ## Related Documentation
 

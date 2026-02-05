@@ -8,7 +8,7 @@ read_when:
 tripwires:
   - action: "implementing codespace gateway"
     warning: "Use 3-place pattern (abc, real, fake) without dry-run or print implementations."
-last_audited: "2025-02-05 12:48 PT"
+last_audited: "2026-02-05 12:48 PT"
 audit_result: edited
 ---
 
@@ -32,49 +32,19 @@ The `Codespace` ABC defines three operations:
 
 ### 1. start_codespace()
 
-Ensures a codespace is running before SSH operations:
-
-```python
-@abstractmethod
-def start_codespace(self, gh_name: str) -> None:
-    """Start a stopped codespace.
-
-    No-op if already running.
-    """
-    ...
-```
+Ensures a codespace is running before SSH operations. No-op if already running.
 
 **Real implementation**: Uses `gh api --method POST user/codespaces/{name}/start` (NOT `gh codespace start`, which doesn't exist - see [GitHub CLI Limits](../architecture/github-cli-limits.md))
 
 ### 2. run_ssh_command()
 
-Execute a command via SSH and wait for completion:
+Execute a command via SSH and wait for completion. Returns exit code.
 
-```python
-@abstractmethod
-def run_ssh_command(self, gh_name: str, remote_command: str) -> int:
-    """Run SSH command and return exit code.
-
-    Uses subprocess.run() - waits for command to finish.
-    """
-    ...
-```
-
-**Common use**: Streaming remote commands wrapped with `build_codespace_ssh_command()` - see [Codespace Remote Execution](../erk/codespace-remote-execution.md)
+**Common use**: Streaming remote commands - see [Codespace Remote Execution](../erk/codespace-remote-execution.md)
 
 ### 3. exec_ssh_interactive()
 
-Replace current process with an SSH session:
-
-```python
-@abstractmethod
-def exec_ssh_interactive(self, gh_name: str, remote_command: str) -> NoReturn:
-    """Replace process with SSH session (os.execvp).
-
-    This method never returns - process is replaced.
-    """
-    ...
-```
+Replace current process with an SSH session (via `os.execvp`). This method never returns — the process is replaced.
 
 **Use case**: Interactive shells or commands that need terminal control
 
