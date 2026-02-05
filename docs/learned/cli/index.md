@@ -30,7 +30,6 @@
 - **[fast-path-pattern.md](fast-path-pattern.md)** — implementing CLI commands that can skip expensive operations, adding fast path optimization to existing commands, understanding when to invoke Claude vs complete locally
 - **[help-text-formatting.md](help-text-formatting.md)** — Writing CLI command docstrings, Adding Examples sections to Click commands, Formatting bulleted lists in help text
 - **[learn-plan-land-flow.md](learn-plan-land-flow.md)** — landing PRs associated with learn plans, understanding learn plan status transitions, working with tripwire documentation promotion
-- **[list-formatting.md](list-formatting.md)** — formatting list output, designing list commands, ensuring consistent list display
 - **[local-commands.md](local-commands.md)** — designing local commands, understanding local command taxonomy, creating audit or assessment commands
 - **[local-remote-command-groups.md](local-remote-command-groups.md)** — creating commands with local and remote variants, using invoke_without_command=True pattern, migrating separate commands to a unified group
 - **[objective-commands.md](objective-commands.md)** — working with erk objective commands, implementing objective check or close functionality, understanding objective validation patterns

@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "accessing planning session in learn workflow"
     warning: "Session files are session-scoped, not persistent across Claude Code sessions. If planning session is unavailable, implement fallback strategy using available sessions."
+last_audited: "2026-02-05 13:55 PT"
+audit_result: edited
 ---
 
 # Session File Lifecycle and Persistence
@@ -17,10 +19,9 @@ Critical understanding of session file persistence and availability patterns.
 
 - [Core Principle: Session-Scoped Persistence](#core-principle-session-scoped-persistence)
 - [Session File Locations](#session-file-locations)
-- [When Session Files Exist](#when-session-files-exist)
 - [When Session Files Are Missing](#when-session-files-are-missing)
-- [Fallback Patterns](#fallback-patterns)
-- [Session Preprocessing Behavior](#session-preprocessing-behavior)
+- [Fallback Principles](#fallback-principles)
+- [Session Preprocessing](#session-preprocessing)
 - [Learn Workflow Implications](#learn-workflow-implications)
 
 ---
@@ -29,11 +30,11 @@ Critical understanding of session file persistence and availability patterns.
 
 **Session files persist only within the current Claude Code session.**
 
-- **Lifetime:** From session start to session end
+- **Lifetime:** From session start to session end (not guaranteed beyond)
 - **Scope:** Single Claude Code conversation
 - **Storage:** `~/.claude/projects/<project>/sessions/<session_id>.jsonl`
 
-**Critical implication:** Session files are **not guaranteed** to exist across different Claude Code sessions.
+**Critical implication:** Session files are **not guaranteed** to exist across different Claude Code sessions. Claude Code manages session storage lifecycle, and old sessions may be cleaned up. Erk cannot control this policy.
 
 ---
 
@@ -41,67 +42,15 @@ Critical understanding of session file persistence and availability patterns.
 
 ### Standard Session Files
 
-```
-~/.claude/projects/<project>/sessions/
-├── <session_id_1>.jsonl
-├── <session_id_2>.jsonl
-├── <session_id_3>.part1.jsonl   # Multi-part session
-├── <session_id_3>.part2.jsonl
-└── <session_id_4>.jsonl
-```
+Session JSONL files live in `~/.claude/projects/<project>/sessions/`. Use `erk exec list-sessions` to enumerate available sessions with metadata (timestamps, summaries, branch context). See `list_sessions.py` in `src/erk/cli/commands/exec/scripts/` for the full implementation.
 
-### Session Scratch Storage
+### Uploaded Sessions (Gist-Based)
 
-When sessions are uploaded via `erk exec upload-session`:
+Sessions can be uploaded to GitHub Gists for persistent cross-session access via `erk exec upload-session`. This creates a secret gist containing the session JSONL, and optionally updates the plan-header metadata in the associated GitHub issue with the gist URL. See `upload_session.py` in `src/erk/cli/commands/exec/scripts/` for options and behavior.
 
-```
-.erk/scratch/sessions/
-├── <session_id>/
-│   ├── session.jsonl           # Original session file
-│   ├── metadata.json           # Session metadata
-│   └── associated_issues.json  # Linked GitHub issues
-```
+### Scratch Storage
 
-Session scratch storage persists across Claude Code sessions because it's stored in the repository.
-
----
-
-## When Session Files Exist
-
-### Current Session
-
-The **current** session file always exists:
-
-```bash
-# Current session ID available via environment
-CLAUDE_SESSION_ID="abc123..."
-
-# File exists
-ls ~/.claude/projects/erk/sessions/${CLAUDE_SESSION_ID}.jsonl
-```
-
-### Recently Active Sessions
-
-Sessions from **recent** Claude Code interactions (within current project context):
-
-- Sessions from the last few hours/days
-- Sessions in the same worktree
-- Sessions for the same plan or feature
-
-### Uploaded Sessions
-
-Sessions explicitly uploaded to `.erk/scratch/sessions/` persist across sessions:
-
-```bash
-# Upload current session
-erk exec upload-session \
-  --session-file ~/.claude/projects/erk/sessions/${CLAUDE_SESSION_ID}.jsonl \
-  --session-id ${CLAUDE_SESSION_ID} \
-  --source local \
-  --issue-number 123
-```
-
-After upload, session is accessible via `.erk/scratch/sessions/<id>/session.jsonl`.
+`.erk/scratch/sessions/<session-id>/` is used for **inter-process file passing within a session** (e.g., preprocessed XML files, hook data). It is not a session archive. These directories are cleaned up by `cleanup_stale_scratch()` after 1 hour. See `erk_shared.scratch.scratch` for the implementation.
 
 ---
 
@@ -109,160 +58,55 @@ After upload, session is accessible via `.erk/scratch/sessions/<id>/session.json
 
 ### Different Claude Code Session
 
-If you're in a **different** Claude Code session from when planning occurred:
+If you are in a **different** Claude Code session from when planning occurred:
 
-- Planning session file may not exist in `~/.claude/projects/erk/sessions/`
+- Planning session file may not exist in `~/.claude/projects/<project>/sessions/`
 - Only the current session and recent sessions are available
 - Historical sessions are not guaranteed to persist
 
 ### Example Scenario
 
 1. **Monday 10am:** User creates plan (session `abc123`)
-2. **Monday 11am:** Plan saved to GitHub issue #6172
+2. **Monday 11am:** Plan saved to GitHub issue
 3. **Tuesday 2pm:** User starts new Claude Code session (session `def456`)
-4. **Tuesday 2:15pm:** `/erk:learn 6172` command runs
+4. **Tuesday 2:15pm:** `/erk:learn` command runs
 5. **Result:** Session `abc123` file may not exist in filesystem
 
-### Why This Happens
+---
 
-Claude Code manages session storage lifecycle:
+## Fallback Principles
 
-- Sessions are not infinite-retention
-- Old sessions may be cleaned up
-- Sessions may be moved or archived
+### Principle 1: Always Check Before Access (LBYL)
 
-**Erk cannot control Claude Code's session storage policy.**
+Verify session file exists before attempting to read. Never assume a session ID from metadata corresponds to a file on disk.
+
+### Principle 2: Discover What Is Available
+
+Use `erk exec get-learn-sessions <issue-number>` to discover all sessions for a plan issue. This returns planning session IDs, implementation session IDs, readable (on-disk) session IDs, and remote gist-based sessions. See `get_learn_sessions.py` in `src/erk/cli/commands/exec/scripts/` for the full discovery logic including local fallback scanning.
+
+### Principle 3: Graceful Degradation
+
+Missing sessions should **never** cause complete workflow failure. Reduce scope and continue:
+
+- If planning session is unavailable, use implementation session
+- If no tracked sessions exist, scan local sessions as fallback
+- If no sessions at all, skip session analysis and continue with other data sources
+
+### Principle 4: Anti-Pattern -- Hard Failure
+
+Do not `exit 1` on a missing session. Log a warning and continue with available data.
 
 ---
 
-## Fallback Patterns
+## Session Preprocessing
 
-### Pattern 1: Check Before Access
+Session preprocessing compresses JSONL to XML format via `erk exec preprocess-session`. Key behaviors:
 
-Always verify session file exists before attempting to read:
+- **Compression:** Achieves ~75-84% size reduction (JSONL to compact XML)
+- **Chunking:** Use `--max-tokens` to split output into multiple XML files when sessions exceed Claude's read limit
+- **Output naming:** `{prefix}-{session-id}.xml` or `{prefix}-{session-id}-part{N}.xml` for multi-part output
 
-```bash
-SESSION_ID="abc123"
-SESSION_FILE=~/.claude/projects/erk/sessions/${SESSION_ID}.jsonl
-
-if [ ! -f "$SESSION_FILE" ]; then
-  echo "Warning: Planning session ${SESSION_ID} not found"
-  # Implement fallback
-fi
-```
-
-### Pattern 2: Use Available Sessions
-
-If planning session is unavailable, use other available sessions:
-
-```bash
-# List all available sessions
-erk exec list-sessions
-
-# Use implementation session instead of planning session
-# Or use most recent session related to the issue
-```
-
-### Pattern 3: Graceful Degradation
-
-Log warning but continue workflow:
-
-```bash
-if [ ! -f "$PLANNING_SESSION" ]; then
-  echo "INFO: Planning session unavailable, using implementation session"
-  SESSION_FILE="$IMPLEMENTATION_SESSION"
-fi
-```
-
-### Pattern 4: Check Scratch Storage
-
-Check if session was uploaded to persistent storage:
-
-```bash
-SESSION_ID="abc123"
-
-# Check scratch storage first
-if [ -f ".erk/scratch/sessions/${SESSION_ID}/session.jsonl" ]; then
-  SESSION_FILE=".erk/scratch/sessions/${SESSION_ID}/session.jsonl"
-else
-  # Fall back to ~/.claude/ location
-  SESSION_FILE=~/.claude/projects/erk/sessions/${SESSION_ID}.jsonl
-fi
-
-if [ ! -f "$SESSION_FILE" ]; then
-  echo "Session ${SESSION_ID} not available"
-  # Implement fallback
-fi
-```
-
-### Pattern 5: Never Fail Entirely
-
-**Critical:** Missing session should never cause complete workflow failure.
-
-```bash
-# ANTI-PATTERN: Fail hard on missing session
-if [ ! -f "$SESSION_FILE" ]; then
-  echo "ERROR: Session not found"
-  exit 1  # ❌ Workflow dies
-fi
-
-# CORRECT PATTERN: Reduce scope but continue
-if [ ! -f "$SESSION_FILE" ]; then
-  echo "INFO: Planning session unavailable, reducing analysis scope"
-  # Continue with available data
-fi
-```
-
----
-
-## Session Preprocessing Behavior
-
-### Single-File Sessions
-
-Sessions under 20K tokens remain as single files:
-
-```
-<session_id>.jsonl
-```
-
-### Multi-Part Sessions
-
-Sessions over 20K tokens are split:
-
-```
-<session_id>.part1.jsonl   # First 20K tokens
-<session_id>.part2.jsonl   # Next 20K tokens
-<session_id>.part3.jsonl   # Remaining tokens
-```
-
-### Downstream Handling
-
-When reading sessions, check for multi-part pattern:
-
-```bash
-SESSION_ID="abc123"
-BASE_FILE=~/.claude/projects/erk/sessions/${SESSION_ID}.jsonl
-
-if [ -f "${BASE_FILE}" ]; then
-  # Single-file session
-  SESSION_FILES="${BASE_FILE}"
-elif [ -f "${BASE_FILE%.jsonl}.part1.jsonl" ]; then
-  # Multi-part session
-  SESSION_FILES="${BASE_FILE%.jsonl}.part*.jsonl"
-else
-  echo "Session ${SESSION_ID} not found"
-fi
-```
-
-### Token Compression
-
-Session preprocessing achieves 71-92% compression ratio:
-
-- **Raw conversation:** 100K tokens
-- **After preprocessing:** 25K-30K tokens
-- **Split into:** 2 parts (part1.jsonl, part2.jsonl)
-
-**Implication:** Large sessions may be split even after compression.
+For full details on compression metrics, output modes, and chunking algorithm, see [Session Preprocessing](preprocessing.md) and `preprocess_session.py` in `src/erk/cli/commands/exec/scripts/`.
 
 ---
 
@@ -270,60 +114,18 @@ Session preprocessing achieves 71-92% compression ratio:
 
 ### Planning Session Access
 
-Learn workflows (`/erk:learn`, `/local:replan-learn-plans`) ideally access:
+Learn workflows ideally access both the **planning session** (where the plan was created) and the **implementation session** (where code was written). But the planning session may not be available.
 
-1. **Planning session** - Where the plan was created
-2. **Implementation session** - Where the code was written
+### Session Discovery for Learn
 
-But planning session may not be available.
+Use `erk exec get-learn-sessions <issue-number>` to discover sessions for a plan. This command:
 
-### Handling Missing Planning Sessions
+1. Queries GitHub issue metadata for tracked session IDs
+2. Checks which sessions exist locally (readable)
+3. Falls back to scanning local sessions if no tracked sessions are readable
+4. Reports remote gist-based sessions that can be downloaded
 
-If planning session is unavailable:
-
-#### Option 1: Use Implementation Session Only
-
-```bash
-# Implementation session is more likely to be recent/available
-IMPL_SESSION=$(erk exec get-implementation-session <issue_number>)
-
-if [ -n "$IMPL_SESSION" ]; then
-  # Proceed with implementation session only
-  erk learn analyze --session-id "$IMPL_SESSION" ...
-fi
-```
-
-#### Option 2: Enumerate Available Sessions
-
-```bash
-# Get all sessions in worktree
-AVAILABLE_SESSIONS=$(erk exec list-sessions --format json)
-
-# Filter for sessions related to the issue
-# Use the most recent or most relevant session
-```
-
-#### Option 3: Skip Planning Analysis
-
-```bash
-if [ ! -f "$PLANNING_SESSION" ]; then
-  echo "INFO: Skipping planning analysis (session unavailable)"
-  echo "INFO: Proceeding with implementation analysis only"
-  # Continue with reduced scope
-fi
-```
-
-### Discovery Pattern
-
-Always enumerate sessions before assuming availability:
-
-```bash
-# Discover what's available
-erk exec list-sessions --worktree-name <name>
-
-# Choose best available session(s)
-# Proceed with available data
-```
+The learn workflow should use whichever sessions are available, prioritizing by quality but accepting partial data over failure.
 
 ---
 

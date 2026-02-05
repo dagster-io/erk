@@ -4,6 +4,8 @@ read_when:
   - "adding review capabilities"
   - "creating code review definitions"
   - "understanding ReviewCapability pattern"
+last_audited: "2026-02-05 13:55 PT"
+audit_result: edited
 ---
 
 # Adding Review Capabilities
@@ -48,10 +50,10 @@ See `src/erk/core/capabilities/registry.py` for the registration pattern.
 
 ### Step 3: Create the Review Definition
 
-The review definition must exist in bundled artifacts:
+The review definition must exist in the `.github/reviews/` directory at the erk repo root (resolved at runtime via `get_bundled_github_dir()` in `src/erk/artifacts/paths.py`):
 
 ```
-src/erk/bundled/.github/reviews/my-review.md
+.github/reviews/my-review.md
 ```
 
 The review definition file contains instructions for Claude on how to review code for this specific standard.
@@ -91,19 +93,19 @@ This installs:
 
 ```bash
 # First install the dependency
-erk init capability install code-reviews-system
+erk init capability add code-reviews-system
 
 # List capabilities to verify registration
 erk init capability list
 
-# Check if installed
-erk init capability status review-my-review
+# Check detailed status for a specific capability
+erk init capability list review-my-review
 
 # Install
-erk init capability install review-my-review
+erk init capability add review-my-review
 
 # Uninstall
-erk init capability uninstall review-my-review
+erk init capability remove review-my-review
 ```
 
 ## Checklist
@@ -114,7 +116,7 @@ erk init capability uninstall review-my-review
 - [ ] `description` property returns human-readable text
 - [ ] Import added to `registry.py`
 - [ ] Instance added to `_all_capabilities()` tuple
-- [ ] Review definition exists at `src/erk/bundled/.github/reviews/<name>.md`
+- [ ] Review definition exists at `.github/reviews/<name>.md` (erk repo root)
 - [ ] `code-reviews-system` capability is documented as a dependency
 
 ## Related Documentation

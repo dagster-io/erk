@@ -4,6 +4,8 @@ read_when:
   - "finding session logs"
   - "inspecting agent execution"
   - "debugging session issues"
+last_audited: "2026-02-05 13:56 PT"
+audit_result: edited
 ---
 
 # Session Log Analysis Tools
@@ -12,27 +14,32 @@ CLI commands and recipes for inspecting Claude Code session logs.
 
 ## Available CLI Commands
 
-### erk find-project-dir
+### erk exec find-project-dir
 
 Find the Claude project directory for a filesystem path.
 
 ```bash
 # From current directory
-erk find-project-dir
+erk exec find-project-dir
 
 # For specific path
-erk find-project-dir /path/to/project
+erk exec find-project-dir --path /path/to/project
 ```
 
 **Output:**
 
 ```json
 {
-  "project_dir": "/Users/foo/.claude/projects/-Users-foo-code-myapp",
-  "latest_session": "abc123-def456",
-  "session_count": 5
+  "success": true,
+  "project_dir": "/Users/foo/.claude/projects/-Users-foo-code-erk",
+  "cwd": "/Users/foo/code/erk",
+  "encoded_path": "-Users-foo-code-erk",
+  "session_logs": ["abc123.jsonl", "agent-17cfd3f4.jsonl"],
+  "latest_session_id": "abc123"
 }
 ```
+
+**Source:** `src/erk/cli/commands/exec/scripts/find_project_dir.py`
 
 ### erk exec list-sessions
 
@@ -40,39 +47,53 @@ Discover Claude Code sessions for the current worktree.
 
 ```bash
 # List sessions for current worktree
-erk exec list-sessions [--limit N] [--min-size BYTES]
+erk exec list-sessions [--limit N] [--min-size BYTES] [--session-id ID]
 ```
 
 **Output format:**
 
 ```json
 {
+  "success": true,
   "branch_context": {
-    "is_on_trunk": false,
     "current_branch": "feature-branch",
-    "trunk_branch": "main"
+    "trunk_branch": "master",
+    "is_on_trunk": false
   },
   "current_session_id": "abc123-def456",
   "sessions": [
     {
       "session_id": "abc123-def456",
-      "mtime_display": "2h ago",
+      "mtime_display": "Dec 3, 11:38 AM",
+      "mtime_relative": "2h ago",
+      "mtime_unix": 1733250000.0,
       "size_bytes": 125000,
-      "summary": "125KB"
+      "summary": "Implement feature XYZ",
+      "is_current": true,
+      "branch": "feature-branch",
+      "session_path": "/Users/foo/.claude/projects/-Users-foo-code-erk/abc123-def456.jsonl"
     }
   ],
-  "project_dir": "/Users/foo/.claude/projects/-Users-foo-code-myapp",
+  "project_dir": "claude-code-project",
   "filtered_count": 3
 }
 ```
 
 **Fields:**
 
-- `branch_context`: Current branch info and trunk detection
+- `success`: Whether the operation succeeded
+- `branch_context`: Current branch info and trunk detection (`current_branch`, `trunk_branch`, `is_on_trunk`)
 - `current_session_id`: ID passed via `--session-id` CLI option
-- `sessions`: List with `session_id`, `mtime_display`, `size_bytes`, `summary`
-- `project_dir`: Path to session log files
+- `sessions`: List of session objects with:
+  - `session_id`, `mtime_display`, `mtime_relative`, `mtime_unix`: Identification and timestamps
+  - `size_bytes`, `summary`: Size and first user message excerpt
+  - `is_current`: Whether this matches the `--session-id` argument
+  - `branch`: Git branch active during the session (extracted from session content)
+  - `session_path`: Absolute path to the session `.jsonl` file
+- `project_dir`: Abstract project directory identifier
 - `filtered_count`: Number of tiny sessions filtered out (below `--min-size`)
+
+**Source:** `src/erk/cli/commands/exec/scripts/list_sessions.py`
 
 **Branch context detection:**
 
@@ -129,34 +150,28 @@ erk exec preprocess-session ~/.claude/projects/.../abc123.jsonl --stdout | head 
 
 ## Finding Session Logs
 
-### By Current Directory
+Use `erk exec find-project-dir` for the project directory and `erk exec list-sessions` for session discovery. These commands replace manual shell recipes. For example:
 
 ```bash
-# Get project directory
-PROJECT_DIR=$(erk find-project-dir | jq -r '.project_dir')
+# Get project directory and latest session
+erk exec find-project-dir
 
-# List all sessions
-ls -lt "$PROJECT_DIR"/*.jsonl | grep -v agent-
+# List sessions with metadata, branch info, and file paths
+erk exec list-sessions --limit 20 --min-size 1000
 ```
 
-### By Session ID
-
-If you have a session ID but don't know the project:
+For searching by session ID across all projects:
 
 ```bash
-# Search all projects for session ID
 SESSION_ID="abc123-def456"
 find ~/.claude/projects -name "${SESSION_ID}.jsonl" 2>/dev/null
 ```
 
-### Latest Session
-
-```bash
-# Most recently modified session (excluding agent logs)
-ls -t ~/.claude/projects/-Users-*/*.jsonl | grep -v agent- | head -1
-```
-
 ## Analysis Recipes
+
+Use `erk exec preprocess-session` to convert raw JSONL to readable XML, then analyze. For context-level analysis, use the `/erk:analyze-context` slash command.
+
+For ad-hoc jq analysis on raw JSONL files:
 
 ### Count Tool Calls by Type
 
@@ -168,27 +183,6 @@ cat "$SESSION_LOG" | jq -s '
    .message.content[]? | select(.type == "tool_use") | .name] |
   group_by(.) | map({tool: .[0], count: length}) |
   sort_by(-.count)
-'
-```
-
-**Sample output:**
-
-```json
-[
-  { "tool": "Read", "count": 48 },
-  { "tool": "Edit", "count": 44 },
-  { "tool": "Glob", "count": 10 },
-  { "tool": "Task", "count": 5 }
-]
-```
-
-### Sum Tool Result Sizes
-
-```bash
-cat "$SESSION_LOG" | jq -s '
-  [.[] | select(.type == "tool_result") |
-   (.message.content[0].text // "" | length)] |
-  {total_chars: add, count: length, avg: (add / length | floor)}
 '
 ```
 
@@ -204,29 +198,6 @@ cat "$SESSION_LOG" | jq -c '
 ' | jq -s 'sort_by(-.size) | .[0:10]'
 ```
 
-### Extract User Messages
-
-```bash
-cat "$SESSION_LOG" | jq -r '
-  select(.type == "user") |
-  .message.content[0].text
-'
-```
-
-### Find Agent Logs for Session
-
-```bash
-SESSION_ID="abc123-def456"
-PROJECT_DIR=$(erk find-project-dir | jq -r '.project_dir')
-
-# Find agent logs that reference this session
-for f in "$PROJECT_DIR"/agent-*.jsonl; do
-  if head -10 "$f" | jq -e "select(.sessionId == \"$SESSION_ID\")" > /dev/null 2>&1; then
-    echo "$f"
-  fi
-done
-```
-
 ## Debugging Workflows
 
 ### Session Blew Out Context
@@ -234,7 +205,7 @@ done
 1. Find the session log:
 
    ```bash
-   erk find-project-dir
+   erk exec find-project-dir
    ```
 
 2. Count tool result sizes:
@@ -262,7 +233,7 @@ See [context-analysis.md](context-analysis.md) for optimization strategies.
 
    ```bash
    SESSION_ID="abc123-def456"
-   PROJECT_DIR=$(erk find-project-dir | jq -r '.project_dir')
+   PROJECT_DIR=$(erk exec find-project-dir | jq -r '.project_dir')
    ls -lt "$PROJECT_DIR"/agent-*.jsonl | head -5
    ```
 

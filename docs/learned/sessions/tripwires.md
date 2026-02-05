@@ -22,4 +22,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before reading or extracting data from agent session files** → Read [Agent Session Files](agent-session-files.md) first. Agent session files use `agent-` prefix and require dedicated reading logic. Check `session_id.startswith("agent-")` and route to `_read_agent_session_entries()`. Using generic `_iter_session_entries()` skips agent files silently.
 
+**CRITICAL: Before using get-session-metadata or get-session-for-issue exec commands** → Read [Session Discovery and Fallback Patterns](discovery-fallback.md) first. These commands do not exist. Use 'erk exec list-sessions' with --limit, --min-size, and --session-id flags only.
+
 **CRITICAL: Before working with session-specific data** → Read [Parallel Session Awareness](parallel-session-awareness.md) first. Multiple sessions can run in parallel. NEVER use "most recent by mtime" for session data lookup - always scope by session ID.
