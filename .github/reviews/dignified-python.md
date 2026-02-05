@@ -82,7 +82,7 @@ If a function has 5+ parameters AND has the `*` marker, it is compliant - skip i
 Many rules have explicit exceptions documented in the skill files you loaded in Step 1. Before flagging a violation, verify that NO exception applies. Common exceptions include:
 
 - **5+ parameters rule**: Does NOT apply to ABC/Protocol method signatures or Click command callbacks (Click injects parameters positionally)
-- **LBYL rule**: Exceptions allowed at error boundaries, for third-party API compatibility, or when adding context before re-raising
+- **LBYL rule**: Exceptions allowed at error boundaries, for third-party API compatibility, or when adding context before re-raising. `assert` used purely for type narrowing after a guard check is NOT a violation (e.g., `assert x is not None` after `if not is_valid: return None` where `is_valid` checks `x is not None`)
 - **Import-time side effects**: Static constants are acceptable
 
 If the code matches a documented exception, it is NOT a violation. Do not flag it.
