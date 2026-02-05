@@ -21,6 +21,7 @@ The capability system enables optional features to be installed via `erk init ca
 All capabilities inherit from the `Capability` ABC in `src/erk/core/capabilities/base.py`.
 
 See the base class for the complete interface including:
+
 - Required properties: `name`, `description`, `scope`, `installation_check_description`, `artifacts`, `managed_artifacts`
 - Required methods: `is_installed()`, `install()`, `uninstall()`
 - Optional: `required` property (default `False`), `preflight()` method
@@ -82,6 +83,7 @@ installed = ["dignified-python", "fake-driven-testing", "erk-impl"]
 ### Tracking API
 
 From `erk.artifacts.state`:
+
 - `add_installed_capability(project_dir, name)` — Record capability installation
 - `remove_installed_capability(project_dir, name)` — Record capability removal
 - `load_installed_capabilities(project_dir) -> frozenset[str]` — Load installed capability names
@@ -93,6 +95,7 @@ Capability classes should call tracking functions during `install()` and `uninst
 ### Health Check Filtering
 
 `erk doctor` uses installed capabilities to filter which artifacts are checked:
+
 - When `installed_capabilities=None`: All artifacts returned (used within erk repo itself)
 - When `frozenset` passed: Only artifacts from installed capabilities (consumer repos)
 
