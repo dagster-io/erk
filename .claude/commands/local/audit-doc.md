@@ -1,5 +1,5 @@
 ---
-description: Audit a learned doc for value vs code duplication
+description: Audit a learned doc for accuracy and value vs code
 ---
 
 # /local:audit-doc
@@ -8,7 +8,7 @@ Adversarially analyze a `docs/learned/` document to assess whether it provides m
 
 ## Goal
 
-Identify documentation that merely restates what code already communicates. Flag duplicative content for simplification or replacement with code references.
+Identify documentation that: (1) describes systems, workflows, or concepts inaccurately, or (2) merely restates what code already communicates. Flag inaccurate content for correction and duplicative content for simplification or replacement with code references.
 
 ## Usage
 
@@ -64,13 +64,49 @@ For each referenced source file:
 - Find the referenced functions/classes
 - Capture docstrings, type signatures, and inline comments
 
+### Phase 3.5: Verify System Descriptions
+
+**Primary task:** For each section that describes how a system, workflow, or component works, verify the description matches reality.
+
+**System behavior verification:**
+
+- When doc says "X does Y", trace through the actual code to confirm
+- When doc describes a workflow sequence, verify the code follows that sequence
+- When doc explains why a pattern is used, check the pattern is actually present
+
+**Concept accuracy verification:**
+
+- When doc defines a term (e.g., "a gateway is..."), verify usage in codebase matches
+- When doc describes component responsibilities, verify the component actually does those things
+
+**Concrete claim verification (supporting checks):**
+
+**Import claims**: For each `from X import Y` or `import X` in code blocks:
+
+- Attempt verification by checking if the module path exists in the codebase
+- Mark as VERIFIED, BROKEN, or CANNOT_VERIFY
+
+**Symbol claims**: For each function/class name mentioned in prose:
+
+- Search source code for definition (`def name` or `class name`)
+- Mark as VERIFIED (found), MISSING (not found), or AMBIGUOUS (multiple matches)
+
+**Type claims**: For each "returns X" or "raises X" claim:
+
+- Find the referenced function's signature/implementation
+- Check if return type or exception type matches
+- Mark as VERIFIED, MISMATCH, or CANNOT_VERIFY
+
+Record verification results for use in Phase 4 and Phase 5.
+
 ### Phase 4: Adversarial Analysis
 
 For each section of the document, classify it into one of these value categories:
 
 | Category        | Description                                                                                                                                  | Action                                                    |
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                                                        | Replace with "Read `path:line`" reference                 |
+| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                                                        | Replace with "Read `path`" reference                      |
+| **STALE**       | Was once accurate but code has changed (broken imports, renamed functions, moved files)                                                      | Update to match current code                              |
 | **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                                                                              | Flag as high-maintenance; consider code reference instead |
 | **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                                                       | Keep                                                      |
 | **CONTEXTUAL**  | Connects multiple code locations into a coherent narrative the code alone can't provide                                                      | Keep                                                      |
@@ -79,11 +115,31 @@ For each section of the document, classify it into one of these value categories
 
 **Specific things to flag as contradictory:**
 
-- Prose describing behavior that doesn't match actual code behavior
-- Function/class names that don't exist or have been renamed
-- Described parameters, return types, or signatures that don't match source
-- Workflow descriptions that reference removed or restructured code paths
-- Pattern guidance that contradicts what the codebase actually does
+**System/Concept Descriptions (highest priority):**
+
+- Descriptions of how a system works that don't match actual implementation
+- Workflow explanations where steps are missing, reordered, or no longer exist
+- Component behavior descriptions that don't match what the code actually does
+- Architectural pattern descriptions that don't reflect current codebase structure
+- "When X happens, Y occurs" statements that aren't true in the code
+
+**Mechanical Accuracy (supporting checks):**
+
+- Import paths that don't resolve to actual modules
+- Function/class names that don't exist in the codebase
+- Return type claims that don't match actual function signatures
+- Exception type claims (e.g., "raises RuntimeError") that the function doesn't raise
+
+**Distinguishing STALE from CONTRADICTS:**
+
+- **CONTRADICTS**: The claim was never true, or states something opposite to code behavior
+  - Example: "This function returns a list" when it returns a dict
+
+- **STALE**: The claim was once true but code has evolved
+  - Example: Import path changed from `erk.core.foo` to `erk_shared.foo`
+  - Example: Function was renamed from `old_name()` to `new_name()`
+
+STALE content should be updated; CONTRADICTS content needs deeper review to understand the discrepancy.
 
 **Specific things to flag as duplicative:**
 
@@ -110,12 +166,18 @@ Complete the full internal analysis from Phase 4, but output only a brief summar
 **Output format (always):**
 
 ```
-Audit: <doc-path> | Verdict: <VERDICT> | Duplicative: X% | High-value: Y% | Contradictions: <count>
+Audit: <doc-path> | Verdict: <VERDICT> | Duplicative: X% | Stale: X% | High-value: Y% | Contradictions: <count>
+```
+
+Add a verification summary line:
+
+```
+Verification: X verified | Y broken/stale
 ```
 
 Follow with 2-3 sentences describing the planned changes. For example:
 
-> Sections "Import Paths" and "Function Signatures" are duplicative of `src/erk/gateway/git.py:42` and should be replaced with code references. The "Anti-patterns" section contradicts the current implementation of `resolve_path()` which now uses pathlib.
+> Sections "Import Paths" and "Function Signatures" are duplicative of `src/erk/gateway/git.py` and should be replaced with code references. The "Anti-patterns" section contradicts the current implementation of `resolve_path()` which now uses pathlib.
 
 Keep the full internal analysis available for Phase 7 actions — just don't dump it as text output.
 
@@ -126,6 +188,7 @@ Keep the full internal analysis available for Phase 7 actions — just don't dum
 Automatically select the action based on the verdict without prompting:
 
 - **KEEP** verdict → Proceed to Phase 7 with "Mark as audited (clean)"
+- **NEEDS_UPDATE** verdict → Proceed to Phase 7 with "Apply accuracy fixes + stamp"
 - **SIMPLIFY / REPLACE WITH CODE REFS** verdict → Proceed to Phase 7 with "Mark as audited (with rewrite)" (apply rewrite + stamp)
 - **CONSIDER DELETING** verdict → Proceed to Phase 7 with "Mark as audited (clean)" (stamp only, don't auto-delete)
 
@@ -134,6 +197,7 @@ Automatically select the action based on the verdict without prompting:
 Use AskUserQuestion to offer:
 
 - **"Apply recommended rewrite"** — rewrite the doc to remove duplicative content (only offer if verdict is SIMPLIFY or REPLACE WITH CODE REFS)
+- **"Apply accuracy fixes"** — fix stale imports, correct renamed symbols (only offer if verification found STALE/BROKEN claims but doc is otherwise valuable)
 - **"Mark as audited (clean)"** — stamp frontmatter with audit date and `clean` result (use when verdict is KEEP)
 - **"Mark as audited (with rewrite)"** — apply the rewrite AND stamp frontmatter (only offer if verdict is SIMPLIFY or REPLACE WITH CODE REFS)
 - **"No action"** — just noting findings
