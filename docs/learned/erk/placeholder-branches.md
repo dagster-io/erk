@@ -2,7 +2,7 @@
 title: Placeholder Branches
 read_when:
   - working with worktree pool slots, implementing slot commands, deciding when to use ctx.git.branch vs ctx.branch_manager
-last_audited: "2026-02-05 12:45 PT"
+last_audited: "2026-02-05 13:25 PT"
 audit_result: edited
 ---
 
@@ -32,9 +32,7 @@ Placeholder branches bypass `ctx.branch_manager` and use `ctx.git.branch` direct
 ```python
 # WRONG: Using branch_manager for placeholder branches
 ctx.branch_manager.create_branch(
-    path=repo.root,
-    branch_name=placeholder_branch,
-    base_branch=trunk
+    repo.root, placeholder_branch, trunk
 )
 # This would tell Graphite to track the branch (wrong behavior)
 
@@ -45,7 +43,7 @@ create_result = ctx.git.branch.create_branch(
 # This creates a local branch without Graphite metadata
 ```
 
-**Source**: `unassign_cmd.py:76-82`, `init_pool_cmd.py:108`
+**Source**: See `execute_unassign()` in `unassign_cmd.py` and `slot_init_pool()` in `init_pool_cmd.py`
 
 ## Why Graphite Tracking Is Wrong
 
@@ -72,7 +70,7 @@ ctx.git.branch.create_branch(repo.root, placeholder_branch, trunk, force=False)
 
 # 3. Create worktree and checkout placeholder branch
 worktree_path.mkdir(parents=True, exist_ok=True)
-ctx.git.worktree.create_worktree(repo.root, worktree_path, placeholder_branch)
+ctx.git.worktree.add_worktree(repo.root, worktree_path, branch=placeholder_branch, ref=None, create_branch=False)
 ```
 
 ### Usage (Slot Unassign)

@@ -4,8 +4,8 @@ read_when:
   - "designing the desktop dashboard UX"
   - "deciding which TUI features to carry forward to Electron"
   - "understanding the interaction model differences between TUI and desktop"
-last_audited: "2026-02-05 12:38 PT"
-audit_result: clean
+last_audited: "2026-02-05 13:22 PT"
+audit_result: edited
 ---
 
 # Desktop Dashboard Interaction Model
@@ -42,7 +42,7 @@ In the TUI, the plan table is the primary workspace:
 │  ↓                                 │
 │  [List of 20 plans]                │
 │  j/k to navigate                   │
-│  Press 'i' → Opens modal           │
+│  Press Enter → Opens modal          │
 └────────────────────────────────────┘
 
          (Modal appears on top)
@@ -88,19 +88,25 @@ In the desktop dashboard, the right pane is the primary workspace:
 
 ### TUI Model (Keyboard Shortcuts)
 
-The TUI uses memorized keyboard shortcuts:
+The TUI uses memorized keyboard shortcuts (main table context):
 
-- `s` - submit to queue
-- `i` - open issue
-- `p` - open PR
-- `5` - fix conflicts
-- `e` - copy checkout+sync command
+- `s` - toggle sort mode
+- `i` - show implement command
+- `p` - open PR in browser
+- `enter` - open plan detail modal
+
+And in the detail modal, a different set of shortcuts:
+
+- `5` - fix conflicts remote
+- `e` - copy PR checkout+sync command
+- `c` - copy local checkout command
+- `1` - copy prepare command
 
 **Why this works in TUI:**
 
 - Keyboard is the only input method
 - Power users memorize shortcuts
-- Command palette provides discovery (`Ctrl+K`)
+- Command palette provides discovery (`Ctrl+P`)
 
 **Why this doesn't work in desktop:**
 
@@ -112,15 +118,17 @@ The TUI uses memorized keyboard shortcuts:
 
 The desktop dashboard uses GUI-native affordances:
 
-**Contextual Toolbar:**
+**Contextual Toolbar (implemented):**
 
 ```
-┌────────────────────────────────────┐
-│ [Submit] [Land] [Address] [Close]  │  ← Buttons appear/disappear based on selection
-└────────────────────────────────────┘
+┌────────────────────────────────────────────────────┐
+│ [Submit] [Land] [Address] [Fix Conflicts] [Close]  │  ← Buttons disable based on plan state
+└────────────────────────────────────────────────────┘
 ```
 
-**Right-Click Context Menu:**
+See `ActionToolbar.tsx` for the `ACTIONS` array with `isAvailable` predicates.
+
+**Right-Click Context Menu (planned, not yet implemented):**
 
 ```
 ┌─────────────────────────┐
@@ -191,9 +199,9 @@ The TUI requires users to visually scan for changes:
 
 **Problem:** Requires active attention. Users miss changes between refreshes.
 
-### Desktop Model (Notification-Driven)
+### Desktop Model (Notification-Driven) — Planned, Not Yet Implemented
 
-The desktop dashboard proactively notifies users:
+The desktop dashboard will proactively notify users (Phase 3 feature):
 
 **Notification Badges on Rows:**
 
@@ -236,17 +244,17 @@ The desktop dashboard proactively notifies users:
 
 ## Comparison Table: TUI vs Desktop
 
-| Aspect                     | TUI                                  | Desktop Dashboard                      |
-| -------------------------- | ------------------------------------ | -------------------------------------- |
-| **Primary workspace**      | Plan table                           | Right pane (embedded GitHub)           |
-| **Detail view**            | Modal overlay                        | Right pane (persistent)                |
-| **Action discovery**       | Keyboard shortcuts + command palette | Toolbar + context menu                 |
-| **Navigation**             | Keyboard only (j/k)                  | Mouse + keyboard                       |
-| **State change detection** | Visual scanning                      | Notification badges + OS notifications |
-| **Actions**                | Memorized shortcuts                  | Discoverable GUI elements              |
-| **Context richness**       | Text-only modal                      | Full GitHub UI                         |
-| **Viewport**               | 80x24 typical                        | 1920x1080 typical                      |
-| **Use case**               | Quick terminal-based monitoring      | Persistent command center              |
+| Aspect                     | TUI                                  | Desktop Dashboard                                |
+| -------------------------- | ------------------------------------ | ------------------------------------------------ |
+| **Primary workspace**      | Plan table                           | Right pane (embedded GitHub)                     |
+| **Detail view**            | Modal overlay                        | Right pane (persistent)                          |
+| **Action discovery**       | Keyboard shortcuts + command palette | Toolbar (context menu planned)                   |
+| **Navigation**             | Keyboard only (j/k)                  | Mouse + keyboard                                 |
+| **State change detection** | Visual scanning                      | Notification badges + OS notifications (planned) |
+| **Actions**                | Memorized shortcuts                  | Discoverable GUI elements                        |
+| **Context richness**       | Text-only modal                      | Full GitHub UI                                   |
+| **Viewport**               | 80x24 typical                        | 1920x1080 typical                                |
+| **Use case**               | Quick terminal-based monitoring      | Persistent command center                        |
 
 ## Design Principles
 
