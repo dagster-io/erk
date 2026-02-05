@@ -2,7 +2,7 @@
 title: Gist Materials Interchange Format
 read_when:
   - working with learn materials upload/download, debugging gist-based file transfer, implementing new file packing formats
-last_audited: 2026-02-05
+last_audited: "2026-02-05"
 audit_result: edited
 ---
 

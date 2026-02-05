@@ -2,7 +2,7 @@
 title: Async Learn Local Preprocessing
 read_when:
   - working with async learn workflow, debugging trigger-async-learn command, understanding local vs remote session preprocessing
-last_audited: 2026-02-05
+last_audited: "2026-02-05"
 audit_result: edited
 ---
 

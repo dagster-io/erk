@@ -2,7 +2,7 @@
 title: Placeholder Branches
 read_when:
   - working with worktree pool slots, implementing slot commands, deciding when to use ctx.git.branch vs ctx.branch_manager
-last_audited: 2026-02-05
+last_audited: "2026-02-05"
 audit_result: edited
 ---
 

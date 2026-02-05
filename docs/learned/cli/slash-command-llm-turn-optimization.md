@@ -6,7 +6,7 @@ read_when:
   - "noticing repeated sequential subprocess calls in slash commands"
   - "designing exec scripts for bundled API operations"
 category: cli
-last_audited: 2026-02-05
+last_audited: "2026-02-05"
 audit_result: edited
 tripwires:
   - action: "making LLM fetch data sequentially when it could be bundled"

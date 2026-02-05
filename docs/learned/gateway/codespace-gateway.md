@@ -8,7 +8,7 @@ read_when:
 tripwires:
   - action: "implementing codespace gateway"
     warning: "Use 3-place pattern (abc, real, fake) without dry-run or print implementations."
-last_audited: 2026-02-05
+last_audited: "2026-02-05"
 audit_result: edited
 ---
 

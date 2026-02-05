@@ -1,6 +1,6 @@
 ---
 title: GitHub CLI Limits
-last_audited: 2026-02-05
+last_audited: "2026-02-05"
 audit_result: clean
 read_when:
   - "using gh pr diff in production code"
