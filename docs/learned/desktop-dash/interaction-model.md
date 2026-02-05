@@ -4,6 +4,8 @@ read_when:
   - "designing the desktop dashboard UX"
   - "deciding which TUI features to carry forward to Electron"
   - "understanding the interaction model differences between TUI and desktop"
+last_audited: 2026-02-05
+audit_result: edited
 ---
 
 # Desktop Dashboard Interaction Model
@@ -291,7 +293,7 @@ Make the right pane prominent and primary.
 
 ## Implementation Priorities
 
-### Phase 1: Get the Core Right
+### Phase 1: Get the Core Right ✅ COMPLETE
 
 - Split-pane layout (resizable)
 - Plan list with j/k navigation
@@ -300,16 +302,20 @@ Make the right pane prominent and primary.
 
 **Test:** Can I navigate plans with j/k and see the PR load on the right?
 
-### Phase 2: GUI-Native Actions
+**Status**: Implemented in `erkdesk/` (see `SplitPane.tsx`, `App.tsx`, `main/index.ts`)
 
-- Contextual toolbar (buttons appear/disappear)
-- Right-click context menu
-- Streaming output drawer for long-running actions
-- Status indicators (colored dots, not emoji)
+### Phase 2: GUI-Native Actions ⚠️ IN PROGRESS
+
+- ✅ Contextual toolbar (buttons appear/disappear) - See `ActionToolbar.tsx`
+- ❌ Right-click context menu - NOT YET IMPLEMENTED
+- ✅ Streaming output drawer for long-running actions - See `LogPanel.tsx`
+- Status indicators (colored dots, not emoji) - See [Visual Status Indicators](visual-status-indicators.md)
 
 **Test:** Can I land a PR by clicking a toolbar button and see streaming output?
 
-### Phase 3: Notifications
+**Status**: Toolbar and streaming work; context menu planned for future iteration.
+
+### Phase 3: Notifications ⏳ NOT YET IMPLEMENTED
 
 - Diff previous state against new state
 - Badge rows with state changes since last selection
@@ -317,6 +323,8 @@ Make the right pane prominent and primary.
 - OS notifications for new PR comments
 
 **Test:** Does a GitHub Action completion trigger an OS notification and badge the row?
+
+**Status**: Not yet started. Desktop dashboard currently uses visual polling (15s auto-refresh) like TUI.
 
 ## Related Documentation
 

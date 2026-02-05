@@ -8,6 +8,8 @@ read_when:
 verified_against_source: "2026-02-02"
 codex_source_path: "/Users/schrockn/code/githubs/codex"
 status: "verified against Codex source code"
+last_audited: "2026-02-05"
+audit_result: edited
 ---
 
 > **Updated February 2026**: For ground-truth Codex CLI details verified against source code, see [Codex CLI Reference](codex/codex-cli-reference.md), [Codex JSONL Format](codex/codex-jsonl-format.md), and [Codex Skills System](codex/codex-skills-system.md).
@@ -68,14 +70,16 @@ Codex uses **two orthogonal axes**:
 | `OnFailure`            | Auto-approve, escalate on failure          |
 | `Never`                | Auto-approve all, never escalate           |
 
-**Erk's `PermissionMode` mapping** (current, in `erk_shared/context/types.py`):
+**Erk's `PermissionMode` mapping** is defined in `packages/erk-shared/src/erk_shared/context/types.py`. The type uses a simplified four-mode model that maps to both backends:
 
-| Erk `PermissionMode` | Claude              | Codex (proposed)                             |
-| -------------------- | ------------------- | -------------------------------------------- |
-| `"safe"`             | `default`           | `sandbox=ReadOnly, approval=UnlessTrusted`   |
-| `"edits"`            | `acceptEdits`       | `sandbox=WorkspaceWrite, approval=OnRequest` |
-| `"plan"`             | `plan`              | `sandbox=ReadOnly, approval=UnlessTrusted`   |
-| `"dangerous"`        | `bypassPermissions` | `sandbox=DangerFullAccess, approval=Never`   |
+| Erk `PermissionMode` | Claude              | Codex exec            |
+| -------------------- | ------------------- | --------------------- |
+| `"safe"`             | `default`           | `--sandbox read-only` |
+| `"edits"`            | `acceptEdits`       | `--full-auto`         |
+| `"plan"`             | `plan`              | `--sandbox read-only` |
+| `"dangerous"`        | `bypassPermissions` | `--yolo`              |
+
+For the complete cross-backend mapping including Codex TUI modes and dual-axis breakdowns, see [Codex CLI Reference](codex/codex-cli-reference.md#permissionsandbox-mapping-for-erk).
 
 > **Note:** The dual-axis model means some Codex configurations have no direct `PermissionMode` equivalent. The mapping above covers erk's use cases.
 

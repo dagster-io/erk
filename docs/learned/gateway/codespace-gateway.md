@@ -8,6 +8,8 @@ read_when:
 tripwires:
   - action: "implementing codespace gateway"
     warning: "Use 3-place pattern (abc, real, fake) without dry-run or print implementations."
+last_audited: 2026-02-05
+audit_result: edited
 ---
 
 # Codespace Gateway Pattern
@@ -19,8 +21,8 @@ The codespace gateway provides an abstraction for SSH operations on GitHub Codes
 Unlike most gateways (which have 5 places: abc, real, fake, dry-run, print), the codespace gateway has only 3:
 
 1. **ABC**: `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py`
-2. **Real**: `src/erk/gateway/codespace/real.py`
-3. **Fake**: `tests/erk/gateway/codespace/fake.py`
+2. **Real**: `packages/erk-shared/src/erk_shared/gateway/codespace/real.py`
+3. **Fake**: `packages/erk-shared/src/erk_shared/gateway/codespace/fake.py`
 
 **No dry-run or print implementations** - codespace operations are inherently remote and can't be meaningfully dry-run locally.
 
@@ -78,24 +80,26 @@ def exec_ssh_interactive(self, gh_name: str, remote_command: str) -> NoReturn:
 
 ## Implementation Locations
 
-| Implementation | Path                                                          | Purpose                      |
-| -------------- | ------------------------------------------------------------- | ---------------------------- |
-| ABC            | `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py` | Interface definition         |
-| Real           | `src/erk/gateway/codespace/real.py`                           | Production implementation    |
-| Fake           | `tests/erk/gateway/codespace/fake.py`                         | Test double with call traces |
+| Implementation | Path                                                           | Purpose                      |
+| -------------- | -------------------------------------------------------------- | ---------------------------- |
+| ABC            | `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py`  | Interface definition         |
+| Real           | `packages/erk-shared/src/erk_shared/gateway/codespace/real.py` | Production implementation    |
+| Fake           | `packages/erk-shared/src/erk_shared/gateway/codespace/fake.py` | Test double with call traces |
 
 ## Testing Pattern
 
 The fake implementation records calls for verification:
 
 ```python
+from erk_shared.gateway.codespace.fake import FakeCodespace, SSHCall
+
 # Test code
 fake_codespace = FakeCodespace()
 fake_codespace.run_ssh_command("mycodespace", "echo hello")
 
 # Verify
-assert fake_codespace.calls == [
-    ("run_ssh_command", "mycodespace", "echo hello")
+assert fake_codespace.ssh_calls == [
+    SSHCall(gh_name="mycodespace", remote_command="echo hello", interactive=False)
 ]
 ```
 

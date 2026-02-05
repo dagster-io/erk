@@ -5,6 +5,8 @@ read_when:
   - "using Task with run_in_background"
   - "collecting results with TaskOutput"
   - "running agents in parallel"
+last_audited: 2026-02-05
+audit_result: edited
 ---
 
 # Parallel Agent Orchestration Pattern
@@ -71,19 +73,19 @@ Build a unified result from individual agent findings:
 
 ## Examples in Codebase
 
-### `/local:bulk-replan` - Parallel Issue Investigation
+### `/local:replan-learn-plans` - Learn Plan Consolidation
 
-Launches up to 10 Explore agents simultaneously to investigate erk-plan issues. Each agent:
+Consolidates multiple open erk-learn plan issues into a unified documentation plan. Uses the `/erk:replan` workflow, which launches Explore agents in parallel to investigate each source plan. Each agent:
 
-- Fetches issue details via REST API
-- Searches codebase for implementation evidence
-- Returns structured status (IMPLEMENTED, OBSOLETE, NEEDS_FRESH_PLAN, etc.)
+- Fetches plan details via REST API
+- Analyzes implementation status and documentation needs
+- Returns structured findings for consolidation
 
-Results are collected and presented in a summary table for batch approval.
+Results are synthesized into a single consolidated plan for batch implementation.
 
 ### `/erk:learn` - Three-Tier Agent Orchestration
 
-The `/erk:learn` workflow demonstrates a three-tier agent orchestration pattern with 5 agents total:
+The `/erk:learn` workflow demonstrates a three-tier agent orchestration pattern with 6 agents total:
 
 **Tier 1: Parallel Analysis** (3 agents, launched simultaneously)
 
@@ -91,15 +93,16 @@ The `/erk:learn` workflow demonstrates a three-tier agent orchestration pattern 
 - **CodeDiffAnalyzer**: Analyzes PR diff for new files, functions, gateway methods
 - **ExistingDocsChecker**: Scans docs/learned/ for potential conflicts/updates
 
-**Tier 2: Sequential Synthesis** (1 agent, waits for Tier 1)
+**Tier 2: Sequential Synthesis** (2 agents, run sequentially after Tier 1)
 
 - **DocumentationGapIdentifier**: Combines all Tier 1 outputs, cross-references against existing docs, produces prioritized gap analysis
-
-**Tier 3: Final Synthesis** (1 agent, waits for Tier 2)
-
 - **PlanSynthesizer**: Transforms gap analysis into executable learn plan with draft content starters
 
-This pattern shows how parallel and sequential orchestration can be combined: independent analysis runs in parallel for speed, then dependent synthesis runs sequentially for correctness.
+**Tier 3: Tripwire Extraction** (1 agent, runs after Tier 2)
+
+- **TripwireExtractor**: Extracts structured tripwire candidate data from the synthesized plan into machine-readable JSON
+
+This pattern shows how parallel and sequential orchestration can be combined: independent analysis runs in parallel for speed, then multi-stage sequential synthesis runs for correctness (gap identification → plan creation → tripwire extraction).
 
 ## Comparison to Agent Delegation
 

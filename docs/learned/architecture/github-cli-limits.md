@@ -1,7 +1,7 @@
 ---
 title: GitHub CLI Limits
-last_audited: "2026-02-04 05:48 PT"
-audit_result: edited
+last_audited: 2026-02-05
+audit_result: clean
 read_when:
   - "using gh pr diff in production code"
   - "working with large pull requests (300+ files)"
@@ -38,7 +38,7 @@ Use the GitHub REST API `/repos/{owner}/{repo}/pulls/{pr}/files` endpoint, which
 ```bash
 gh api \
   --paginate \
-  --jq '.[].filename' \
+  -q '.[].filename' \
   "repos/{owner}/{repo}/pulls/${PR_NUMBER}/files"
 ```
 

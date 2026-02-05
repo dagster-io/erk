@@ -10,6 +10,8 @@ tripwires:
     warning: "Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability."
   - action: "checking isinstance after RetriesExhausted without type narrowing"
     warning: "After checking `isinstance(result, RetriesExhausted)`, the else branch is type-narrowed to the success type. Use `assert isinstance(result, T)` if needed for clarity."
+last_audited: 2026-02-05
+audit_result: edited
 ---
 
 # GitHub API Retry Mechanism
@@ -32,7 +34,7 @@ These errors are typically recoverable with a simple retry after a short delay.
 The `execute_gh_command_with_retry()` function wraps `execute_gh_command()` with automatic retry logic:
 
 ```python
-from erk_shared.subprocess_utils import execute_gh_command_with_retry
+from erk_shared.gateway.github.parsing import execute_gh_command_with_retry
 
 # With retry (recommended for network-sensitive operations)
 result = execute_gh_command_with_retry(cmd, cwd, time_impl)
@@ -137,11 +139,12 @@ See [Erk Architecture Patterns](erk-architecture.md#time-abstraction-for-testing
 
 ## Implementation Reference
 
-| File                                    | Purpose                                                |
-| --------------------------------------- | ------------------------------------------------------ |
-| `erk_shared/subprocess_utils.py`        | `execute_gh_command_with_retry()`                      |
-| `erk_shared/github/retry.py`            | `with_retries()`, `RetryRequested`, `RetriesExhausted` |
-| `erk_shared/github/transient_errors.py` | `is_transient_error()`                                 |
+| File                                                                    | Purpose                                                |
+| ----------------------------------------------------------------------- | ------------------------------------------------------ |
+| `packages/erk-shared/src/erk_shared/gateway/github/parsing.py`          | `execute_gh_command_with_retry()` (primary location)   |
+| `packages/erk-shared/src/erk_shared/subprocess_utils.py`                | `execute_gh_command_with_retry()` (also available)     |
+| `packages/erk-shared/src/erk_shared/gateway/github/retry.py`            | `with_retries()`, `RetryRequested`, `RetriesExhausted` |
+| `packages/erk-shared/src/erk_shared/gateway/github/transient_errors.py` | `is_transient_error()`                                 |
 
 ## Related Documentation
 

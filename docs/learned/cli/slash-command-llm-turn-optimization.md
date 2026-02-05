@@ -6,6 +6,8 @@ read_when:
   - "noticing repeated sequential subprocess calls in slash commands"
   - "designing exec scripts for bundled API operations"
 category: cli
+last_audited: 2026-02-05
+audit_result: edited
 tripwires:
   - action: "making LLM fetch data sequentially when it could be bundled"
     warning: "Extract 3+ mechanical sequential calls into an exec script. Bundle objective/plan/PR fetches into objective-update-context pattern."
@@ -85,7 +87,7 @@ erk exec objective-update-context --pr <number> --objective <number> --branch <n
 
 **Exec script:** `src/erk/cli/commands/exec/scripts/objective_update_context.py`
 
-See `objective_update_context()` in `src/erk/cli/commands/exec/scripts/objective_update_context.py:47` for the full implementation.
+See `objective_update_context()` in `src/erk/cli/commands/exec/scripts/objective_update_context.py:52` for the full implementation.
 
 **Impact:** Reduced from ~8 turns to ~4 turns
 
