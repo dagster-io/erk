@@ -214,3 +214,176 @@ def test_update_step_in_phase_2() -> None:
 
     updated_body = fake_gh.updated_bodies[0][1]
     assert "plan #300" in updated_body
+
+
+FRONTMATTER_ROADMAP_BODY = """\
+# Objective: Build Feature X
+
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "1"
+steps:
+  - id: "1.1"
+    description: "Set up project structure"
+    status: "done"
+    pr: "#100"
+  - id: "1.2"
+    description: "Add core types"
+    status: "in_progress"
+    pr: "plan #200"
+  - id: "1.3"
+    description: "Add utility functions"
+    status: "pending"
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
+## Roadmap
+
+### Phase 1: Foundation (1 PR)
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | Set up project structure | done | #100 |
+| 1.2 | Add core types | in-progress | plan #200 |
+| 1.3 | Add utility functions | pending | - |
+"""
+
+
+def test_update_with_frontmatter() -> None:
+    """Update step when frontmatter is present updates both YAML and table."""
+    issue = _make_issue(6423, FRONTMATTER_ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--pr", "#999"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["new_pr"] == "#999"
+
+    # Verify both frontmatter and table were updated
+    updated_body = fake_gh.updated_bodies[0][1]
+    # Frontmatter should contain the new PR (YAML may use single or double quotes)
+    assert "pr: '#999'" in updated_body or 'pr: "#999"' in updated_body
+    # Table should also be updated
+    assert "| 1.3 " in updated_body
+    assert "| done |" in updated_body or "#999" in updated_body
+
+
+def test_update_with_frontmatter_preserves_other_steps() -> None:
+    """Update with frontmatter preserves other steps' data."""
+    issue = _make_issue(6423, FRONTMATTER_ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.2", "--pr", "#777"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0
+    updated_body = fake_gh.updated_bodies[0][1]
+
+    # Original step 1.1 should remain unchanged in frontmatter
+    # (YAML may use single or double quotes)
+    assert "id: '1.1'" in updated_body or 'id: "1.1"' in updated_body
+    assert "pr: '#100'" in updated_body or 'pr: "#100"' in updated_body
+    assert "status: done" in updated_body  # No quotes for simple strings
+    # Step 1.3 should remain unchanged
+    assert "id: '1.3'" in updated_body or 'id: "1.3"' in updated_body
+    assert "pr: null" in updated_body
+
+
+def test_fallback_to_table_when_no_frontmatter() -> None:
+    """When no frontmatter exists, fall back to table-only update."""
+    # Use the original ROADMAP_BODY which has no metadata block
+    issue = _make_issue(6423, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--pr", "#888"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    # Should update table
+    assert "#888" in updated_body
+    # Should NOT have metadata block (since original didn't have one)
+    assert "erk:metadata-block:objective-roadmap" not in updated_body
+
+
+def test_explicit_status_option_table_only() -> None:
+    """--status flag sets explicit status in table instead of inferring from PR."""
+    issue = _make_issue(6423, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--pr", "#500", "--status", "done"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "#500" in updated_body
+    assert "| done |" in updated_body
+
+
+def test_explicit_status_option_with_frontmatter() -> None:
+    """--status flag sets explicit status in both frontmatter and table."""
+    issue = _make_issue(6423, FRONTMATTER_ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--pr", "#500", "--status", "done"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    # Frontmatter should have status: done
+    assert "status: done" in updated_body
+    # Table should also show done
+    assert "| done |" in updated_body
+
+
+def test_status_without_flag_defaults_to_pending_in_frontmatter() -> None:
+    """Without --status, frontmatter status resets to pending for inference."""
+    issue = _make_issue(6423, FRONTMATTER_ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--pr", "plan #600"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    # Frontmatter status should be pending (reset for inference)
+    # The step 1.3 should have status: pending in YAML
+    assert "status: pending" in updated_body

@@ -12,6 +12,8 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+**CRITICAL: Before adding a new roadmap mutation site without updating this document** → Read [Objective Lifecycle](objective-lifecycle.md) first. All roadmap mutation sites must be documented in objective-lifecycle.md
+
 **CRITICAL: Before adding metadata fields to objective issues without schema definition** → Read [Objective Metadata Schema](objective-metadata-schema.md) first. Objective metadata must be defined in ObjectiveHeaderSchema (parallel to PlanHeaderSchema). Define schema first, then implement parsing.
 
 **CRITICAL: Before creating a new roadmap data type without using frozen dataclass** → Read [Roadmap Parser API Reference](roadmap-parser-api.md) first. RoadmapStep and RoadmapPhase are frozen dataclasses. New roadmap types must follow this pattern.
