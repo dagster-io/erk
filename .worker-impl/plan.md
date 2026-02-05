@@ -23,6 +23,7 @@ Docs describe systems and concepts at multiple levels:
 These high-level descriptions are the most valuable content to verify - they're what agents rely on to understand the system. Mechanical checks (imports, line numbers) support this but aren't the primary goal.
 
 **Drift risk by description type:**
+
 - **HIGH**: Workflow sequences, component behavior descriptions
 - **MEDIUM**: Architectural rationale, pattern explanations
 - **LOW**: Conceptual definitions (these change rarely)
@@ -34,21 +35,23 @@ These high-level descriptions are the most valuable content to verify - they're 
 ### 1. Update Goal Statement
 
 **Current:**
+
 > Score them by audit priority using heuristic signals
 
 **New:**
+
 > Score them by audit priority using heuristic signals, including indicators of prose-reality drift risk
 
 ### 2. Add New Signals to Phase 3
 
 Add to the "Per-doc signals to collect" list:
 
-| Signal | Description |
-|--------|-------------|
+| Signal                | Description                                                                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | **behavioral_claims** | Count of statements containing "returns", "raises", "does", "will", "must", "always", "never" in prose (outside code blocks) |
-| **step_sequences** | Count of numbered lists with 3+ items (procedural descriptions drift quickly) |
-| **line_number_refs** | Count of `:line` or `line X` patterns (need accuracy verification) |
-| **symbol_refs** | Count of inline code that looks like function/class names (e.g., backtick-wrapped CamelCase or snake_case identifiers) |
+| **step_sequences**    | Count of numbered lists with 3+ items (procedural descriptions drift quickly)                                                |
+| **line_number_refs**  | Count of `:line` or `line X` patterns (need accuracy verification)                                                           |
+| **symbol_refs**       | Count of inline code that looks like function/class names (e.g., backtick-wrapped CamelCase or snake_case identifiers)       |
 
 ### 3. Update Output Format
 
@@ -63,11 +66,11 @@ symbol_refs: 8
 
 ### 4. Add New Scoring Rules in Phase 4
 
-| Signal | Points | Rationale |
-|--------|--------|-----------|
-| Has step sequences (step_sequences > 0) | +1 | Procedural descriptions drift quickly |
-| High behavioral claim density (behavioral_claims / lines > 0.1) | +2 | Dense claims = more verification needed |
-| Has line number references | +1 | Line numbers go stale with refactoring |
+| Signal                                                          | Points | Rationale                               |
+| --------------------------------------------------------------- | ------ | --------------------------------------- |
+| Has step sequences (step_sequences > 0)                         | +1     | Procedural descriptions drift quickly   |
+| High behavioral claim density (behavioral_claims / lines > 0.1) | +2     | Dense claims = more verification needed |
+| Has line number references                                      | +1     | Line numbers go stale with refactoring  |
 
 ### 5. Update Report Stats Section
 
@@ -75,6 +78,7 @@ Add to Phase 6 report:
 
 ```markdown
 ### Stats
+
 - ...existing stats...
 - Docs with step sequences: X docs
 - Total behavioral claims across all docs: X
@@ -87,9 +91,11 @@ Add to Phase 6 report:
 ### 1. Update Goal Statement
 
 **Current:**
+
 > Identify documentation that merely restates what code already communicates.
 
 **New:**
+
 > Identify documentation that: (1) describes systems, workflows, or concepts inaccurately, or (2) merely restates what code already communicates.
 
 Note the priority order: accuracy of system descriptions comes first, duplication second.
@@ -97,9 +103,11 @@ Note the priority order: accuracy of system descriptions comes first, duplicatio
 ### 2. Update Description in Frontmatter
 
 **Current:**
+
 > description: Audit a learned doc for value vs code duplication
 
 **New:**
+
 > description: Audit a learned doc for accuracy and value vs code
 
 ### 3. Add New Phase 3.5: System Description Verification
@@ -112,30 +120,36 @@ Insert between Phase 3 (Read Referenced Source Code) and Phase 4 (Adversarial An
 **Primary task:** For each section that describes how a system, workflow, or component works, verify the description matches reality.
 
 **System behavior verification:**
+
 - When doc says "X does Y", trace through the actual code to confirm
 - When doc describes a workflow sequence, verify the code follows that sequence
 - When doc explains why a pattern is used, check the pattern is actually present
 
 **Concept accuracy verification:**
+
 - When doc defines a term (e.g., "a gateway is..."), verify usage in codebase matches
 - When doc describes component responsibilities, verify the component actually does those things
 
 **Concrete claim verification (supporting checks):**
 
 **Import claims**: For each `from X import Y` or `import X` in code blocks:
+
 - Attempt verification by checking if the module path exists in the codebase
 - Mark as VERIFIED, BROKEN, or CANNOT_VERIFY
 
 **Symbol claims**: For each function/class name mentioned in prose:
+
 - Search source code for definition (`def name` or `class name`)
 - Mark as VERIFIED (found), MISSING (not found), or AMBIGUOUS (multiple matches)
 
 **Type claims**: For each "returns X" or "raises X" claim:
+
 - Find the referenced function's signature/implementation
 - Check if return type or exception type matches
 - Mark as VERIFIED, MISMATCH, or CANNOT_VERIFY
 
 **Line number claims**: For each `file:line` reference:
+
 - Read the file and check if the line contains relevant content
 - Mark as ACCURATE (within 5 lines), STALE (off by 6+), or BROKEN (file missing)
 
@@ -146,8 +160,8 @@ Record verification results for use in Phase 4 and Phase 5.
 
 Expand the value categories table:
 
-| Category | Description | Action |
-|----------|-------------|--------|
+| Category  | Description                                                                             | Action                       |
+| --------- | --------------------------------------------------------------------------------------- | ---------------------------- |
 | **STALE** | Was once accurate but code has changed (broken imports, renamed functions, moved files) | Update to match current code |
 
 ### 5. Expand CONTRADICTS Guidance
@@ -156,6 +170,7 @@ Add to "Specific things to flag as contradictory":
 
 ```markdown
 **System/Concept Descriptions (highest priority):**
+
 - Descriptions of how a system works that don't match actual implementation
 - Workflow explanations where steps are missing, reordered, or no longer exist
 - Component behavior descriptions that don't match what the code actually does
@@ -163,6 +178,7 @@ Add to "Specific things to flag as contradictory":
 - "When X happens, Y occurs" statements that aren't true in the code
 
 **Mechanical Accuracy (supporting checks):**
+
 - Import paths that don't resolve to actual modules
 - Function/class names that don't exist in the codebase
 - Return type claims that don't match actual function signatures
@@ -189,16 +205,19 @@ STALE content should be updated; CONTRADICTS content needs deeper review to unde
 ### 7. Update Phase 5 Output Format
 
 **Current:**
+
 ```
 Audit: <doc-path> | Verdict: <VERDICT> | Duplicative: X% | High-value: Y% | Contradictions: <count>
 ```
 
 **New:**
+
 ```
 Audit: <doc-path> | Verdict: <VERDICT> | Duplicative: X% | Stale: X% | High-value: Y% | Contradictions: <count>
 ```
 
 Add a verification summary line:
+
 ```
 Verification: X verified | Y broken/stale
 ```
@@ -218,6 +237,7 @@ Add new action option:
 ```
 
 Update auto-apply logic:
+
 ```markdown
 - **NEEDS_UPDATE** verdict → Proceed to Phase 7 with "Apply accuracy fixes + stamp"
 ```
@@ -232,6 +252,7 @@ Update auto-apply logic:
 ## Verification
 
 After implementation:
+
 1. Run `audit-scan` and confirm new signals appear in output
 2. Run `audit-doc` on a doc that describes a system workflow - verify it checks whether the description matches actual code behavior
 3. Run `audit-doc` on a doc with known stale content (e.g., outdated line numbers) - verify STALE is detected
