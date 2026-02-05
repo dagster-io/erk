@@ -2,7 +2,7 @@
 title: Gist Materials Interchange Format
 read_when:
   - working with learn materials upload/download, debugging gist-based file transfer, implementing new file packing formats
-last_audited: "2025-02-05 12:32 PT"
+last_audited: "2026-02-05 12:32 PT"
 audit_result: edited
 ---
 
@@ -118,22 +118,9 @@ unpacked_files = unpack_files(packed_content)
 
 ## Raw Content URL Resolution
 
-**File**: `src/erk/cli/commands/exec/scripts/download_learn_materials.py:94-97`
+Gist raw content is fetched by `_download_gist_raw_content()` in `download_learn_materials.py:73-110`, which tries candidate URLs in order until one succeeds.
 
-Gist raw content is fetched by trying candidate URLs in order:
-
-```python
-candidate_urls = [
-    f"https://gist.githubusercontent.com/raw/{gist_id}",
-    f"https://gist.github.com/{gist_id}/raw",
-]
-```
-
-**Why**:
-
-- `gist.githubusercontent.com/raw/{id}` works for public gists without knowing the owner
-- `gist.github.com/{id}/raw` is a fallback that works with different URL formats
-- The first successful URL wins; errors trigger fallback to next candidate
+**Why multiple URLs**: GitHub gist raw URLs vary by context — `gist.githubusercontent.com/raw/{id}` works for public gists without knowing the owner, while `gist.github.com/{id}/raw` provides a fallback for different URL formats.
 
 ## Gist Metadata
 
