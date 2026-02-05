@@ -214,3 +214,177 @@ def test_update_step_in_phase_2() -> None:
 
     updated_body = fake_gh.updated_bodies[0][1]
     assert "plan #300" in updated_body
+
+
+def test_update_multiple_steps_success() -> None:
+    """Update multiple steps in a single operation - all succeed."""
+    issue = _make_issue(6697, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6697: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6697", "--step", "1.2", "--step", "1.3", "--step", "2.1", "--pr", "plan #6759"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["issue_number"] == 6697
+    assert output["new_pr"] == "plan #6759"
+    assert output["url"] == "https://github.com/test/repo/issues/6697"
+
+    # Verify steps array
+    assert "steps" in output
+    assert len(output["steps"]) == 3
+
+    # Check step 1.2 (previously had "plan #200")
+    step_1_2 = next(s for s in output["steps"] if s["step_id"] == "1.2")
+    assert step_1_2["success"] is True
+    assert step_1_2["previous_pr"] == "plan #200"
+
+    # Check step 1.3 (previously empty)
+    step_1_3 = next(s for s in output["steps"] if s["step_id"] == "1.3")
+    assert step_1_3["success"] is True
+    assert step_1_3["previous_pr"] is None
+
+    # Check step 2.1 (previously empty)
+    step_2_1 = next(s for s in output["steps"] if s["step_id"] == "2.1")
+    assert step_2_1["success"] is True
+    assert step_2_1["previous_pr"] is None
+
+    # Verify single API call was made
+    assert len(fake_gh.updated_bodies) == 1
+    updated_body = fake_gh.updated_bodies[0][1]
+
+    # All three steps should have the new PR
+    assert updated_body.count("plan #6759") == 3
+    # Old PR should be gone
+    assert "plan #200" not in updated_body
+
+
+def test_update_multiple_steps_partial_failure() -> None:
+    """Update multiple steps where some don't exist."""
+    issue = _make_issue(6697, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6697: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6697", "--step", "1.2", "--step", "9.9", "--step", "2.1", "--pr", "plan #6759"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["issue_number"] == 6697
+    assert output["new_pr"] == "plan #6759"
+
+    # Verify steps array
+    assert len(output["steps"]) == 3
+
+    # Check step 1.2 succeeded
+    step_1_2 = next(s for s in output["steps"] if s["step_id"] == "1.2")
+    assert step_1_2["success"] is True
+    assert step_1_2["previous_pr"] == "plan #200"
+
+    # Check step 9.9 failed
+    step_9_9 = next(s for s in output["steps"] if s["step_id"] == "9.9")
+    assert step_9_9["success"] is False
+    assert step_9_9["error"] == "step_not_found"
+
+    # Check step 2.1 succeeded (processing continued after failure)
+    step_2_1 = next(s for s in output["steps"] if s["step_id"] == "2.1")
+    assert step_2_1["success"] is True
+    assert step_2_1["previous_pr"] is None
+
+    # API call should still have been made for successful steps
+    assert len(fake_gh.updated_bodies) == 1
+    updated_body = fake_gh.updated_bodies[0][1]
+
+    # The two successful steps should have the new PR
+    assert updated_body.count("plan #6759") == 2
+
+
+def test_update_multiple_steps_same_phase() -> None:
+    """Update multiple steps within the same phase."""
+    issue = _make_issue(6697, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6697: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6697", "--step", "1.1", "--step", "1.2", "--step", "1.3", "--pr", "#555"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # All three steps in Phase 1 should be updated
+    assert len(output["steps"]) == 3
+    for step_result in output["steps"]:
+        assert step_result["success"] is True
+
+    # Verify all steps have merged PR status
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert updated_body.count("#555") == 3
+    # All should have "done" status
+    assert updated_body.count("| done |") >= 3
+
+
+def test_update_multiple_steps_cross_phase() -> None:
+    """Update steps across different phases."""
+    issue = _make_issue(6697, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6697: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6697", "--step", "1.1", "--step", "2.2", "--pr", "plan #777"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert len(output["steps"]) == 2
+
+    # Both steps should succeed
+    step_1_1 = next(s for s in output["steps"] if s["step_id"] == "1.1")
+    assert step_1_1["success"] is True
+    assert step_1_1["previous_pr"] == "#100"
+
+    step_2_2 = next(s for s in output["steps"] if s["step_id"] == "2.2")
+    assert step_2_2["success"] is True
+    assert step_2_2["previous_pr"] is None
+
+    # Verify both phases updated
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert updated_body.count("plan #777") == 2
+
+
+def test_single_step_maintains_legacy_format() -> None:
+    """Single --step usage maintains backward-compatible output format."""
+    issue = _make_issue(6423, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--pr", "plan #6464"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+
+    # Should use legacy format (no "steps" array)
+    assert "steps" not in output
+    assert output["success"] is True
+    assert output["step_id"] == "1.3"
+    assert output["previous_pr"] is None
+    assert output["new_pr"] == "plan #6464"
