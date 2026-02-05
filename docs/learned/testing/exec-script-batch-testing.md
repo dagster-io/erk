@@ -8,6 +8,8 @@ tripwires:
   - action: "Test only success cases for batch commands"
     warning: "Cover: all success, partial failure, validation errors, and JSON structure. See test organization categories."
     score: 7
+last_audited: "2026-02-05"
+audit_result: edited
 ---
 
 # Exec Script Batch Testing
@@ -16,7 +18,7 @@ Batch exec commands require comprehensive test coverage across four categories: 
 
 ## Test Organization Categories
 
-Organize batch command tests into these four groups:
+Organize batch command tests into these four groups. See the reference implementation at `tests/unit/cli/commands/exec/scripts/test_resolve_review_threads.py` for a working example.
 
 ### 1. Success Cases
 
@@ -26,24 +28,8 @@ Test scenarios where all items in the batch succeed.
 
 - Empty batch (no items)
 - Single item batch
-- Multiple items batch (typical: 3-5 items)
-- Maximum reasonable batch size (if applicable)
-- Items with optional fields present/absent
-
-**Example test names:**
-
-- `test_resolve_threads_all_success`
-- `test_resolve_threads_single_item`
-- `test_resolve_threads_with_comments`
-- `test_resolve_threads_empty_batch`
-
-**Assertions:**
-
-```python
-assert result["success"] is True  # Top-level AND semantics
-assert len(result["results"]) == expected_count
-assert all(item["success"] for item in result["results"])
-```
+- Multiple items batch (typical: 2-3 items)
+- Items with optional fields present/absent (e.g., explicit null comment vs omitted comment)
 
 ### 2. Partial Failure
 
@@ -51,27 +37,11 @@ Test scenarios where some items succeed and some fail.
 
 **What to cover:**
 
-- First item fails, rest succeed
-- Last item fails, rest succeed
-- Middle item fails
-- Multiple scattered failures
+- One item fails, rest succeed
 - All items fail
+- Mixed success/failure patterns
 
-**Example test names:**
-
-- `test_resolve_threads_first_item_fails`
-- `test_resolve_threads_multiple_failures`
-- `test_resolve_threads_all_items_fail`
-
-**Assertions:**
-
-```python
-assert result["success"] is False  # Top-level false if any item failed
-assert result["results"][0]["success"] is True   # First succeeded
-assert result["results"][1]["success"] is False  # Second failed
-assert "error" in result["results"][1]
-assert "error_type" in result["results"][1]
-```
+Top-level `success` field uses AND semantics: false if any item failed. Each individual result carries its own `success`, `error_type`, and `message` fields on failure.
 
 ### 3. Input Validation
 
@@ -79,112 +49,33 @@ Test scenarios where input is rejected before processing.
 
 **What to cover:**
 
-- Invalid item identifiers (malformed thread IDs, etc.)
-- Missing required fields
-- Type mismatches (string instead of int)
-- Constraint violations (negative numbers, out-of-range values)
+- Non-array JSON input (object instead of array)
+- Non-object items in array (string instead of dict)
+- Missing required fields (e.g., `thread_id`)
+- Type mismatches (integer instead of string)
+- Invalid JSON (parse failure)
 
-**Example test names:**
-
-- `test_resolve_threads_invalid_thread_id_format`
-- `test_resolve_threads_missing_thread_id`
-- `test_resolve_threads_multiple_validation_errors`
-
-**Assertions:**
-
-```python
-assert result["success"] is False
-assert "validation_errors" in result
-assert "results" not in result  # No processing occurred
-assert len(result["validation_errors"]) == expected_count
-```
+Validation errors return a top-level error response with `success: false`, `error_type`, and `message`. No `results` array is present in validation error responses.
 
 **Critical check:** Ensure no items were processed when validation fails (no side effects).
 
 ### 4. JSON Structure Verification
 
-Test that output conforms to the expected schema.
-
-**What to cover:**
-
-- Required fields present in success response
-- Required fields present in error response
-- Optional fields absent when not applicable
-- Field types match spec (bool, string, int, list)
-- Nested structure correctness
-
-**Example test names:**
-
-- `test_resolve_threads_output_schema_success`
-- `test_resolve_threads_output_schema_partial_failure`
-- `test_resolve_threads_output_schema_validation_error`
-
-**Assertions:**
-
-```python
-# Success case schema
-assert isinstance(result["success"], bool)
-assert isinstance(result["results"], list)
-for item in result["results"]:
-    assert isinstance(item["success"], bool)
-    assert isinstance(item["thread_id"], str)
-    if not item["success"]:
-        assert isinstance(item["error"], str)
-        assert isinstance(item["error_type"], str)
-```
+Test that output conforms to the expected schema for both success and error cases. Verify field presence, types, and nested structure correctness.
 
 ## FakeGateway Failure Injection Pattern
 
 To test partial failures, inject failures into fake gateways via a failure set parameter.
 
-### Pattern: resolve_thread_failures Parameter
+### Pattern: Constructor-Injected Failure Set
+
+`FakeGitHub` accepts a `resolve_thread_failures` parameter (type `set[str] | None`) in its constructor. When `resolve_review_thread()` is called with a thread ID in this set, it returns `False` to simulate failure. See the implementation in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`.
+
+Usage in tests:
 
 ```python
-class FakeGitHub(GitHub):
-    def __init__(
-        self,
-        *,
-        resolve_thread_failures: set[str] | None = None,
-        # ... other fake config
-    ):
-        self._resolve_thread_failures = resolve_thread_failures or set()
-
-    def resolve_pr_review_thread(
-        self,
-        *,
-        thread_id: str,
-        comment: str | None = None,
-    ) -> bool:
-        if thread_id in self._resolve_thread_failures:
-            return False  # Simulate failure for this thread
-        # Normal success logic
-        return True
-```
-
-### Usage in Tests
-
-```python
-def test_resolve_threads_partial_failure(tmp_path):
-    # Inject failures for specific thread IDs
-    fake_github = FakeGitHub(
-        resolve_thread_failures={"PRRT_fail1", "PRRT_fail2"}
-    )
-
-    # Prepare batch input
-    items = [
-        {"thread_id": "PRRT_success"},
-        {"thread_id": "PRRT_fail1"},    # Will fail
-        {"thread_id": "PRRT_fail2"},    # Will fail
-    ]
-
-    # Run batch command
-    result = run_batch_command(items, fake_github)
-
-    # Verify partial failure
-    assert result["success"] is False
-    assert result["results"][0]["success"] is True
-    assert result["results"][1]["success"] is False
-    assert result["results"][2]["success"] is False
+# Configure fake to fail on specific thread IDs
+fake_github = FakeGitHub(resolve_thread_failures={"PRRT_2"})
 ```
 
 ### Why Set-Based Injection
@@ -196,126 +87,15 @@ def test_resolve_threads_partial_failure(tmp_path):
 - **Type-safe**: Compile-time checking for thread ID typos
 - **Testable**: Easy to verify the fake itself
 
-**Alternative (anti-pattern): Exception-based injection**
+**Alternative (anti-pattern): Stateful injection**
 
-```python
-# DON'T DO THIS
-def resolve_pr_review_thread(self, *, thread_id: str) -> bool:
-    if self._should_fail_next:
-        raise RuntimeError("Simulated failure")
-    # ...
-```
+Do not use stateful approaches like `_should_fail_next` flags. These are order-dependent, brittle, and unclear about which item will fail. Set-based injection makes the failure configuration declarative and independent of processing order.
 
-**Why this is worse:**
+## Test File Organization
 
-- Stateful (must track "next" operation)
-- Brittle (order-dependent)
-- Unclear (which item will fail?)
-- Hard to test multiple failures in one batch
+Batch command tests use plain functions (not test classes) organized with section comment headers. This follows the project convention of preferring `def test_*()` over `class Test*`. See the actual structure in `tests/unit/cli/commands/exec/scripts/test_resolve_review_threads.py`.
 
-## Complete Test File Structure
-
-```python
-# tests/unit/cli/commands/exec/scripts/test_resolve_review_threads.py
-
-class TestResolveReviewThreadsSuccess:
-    """Success cases - all items succeed."""
-
-    def test_all_items_succeed(self): ...
-    def test_single_item(self): ...
-    def test_empty_batch(self): ...
-    def test_with_comments(self): ...
-
-class TestResolveReviewThreadsPartialFailure:
-    """Partial failure cases - some items fail."""
-
-    def test_first_item_fails(self): ...
-    def test_last_item_fails(self): ...
-    def test_multiple_failures(self): ...
-    def test_all_items_fail(self): ...
-
-class TestResolveReviewThreadsValidation:
-    """Validation error cases - input rejected upfront."""
-
-    def test_invalid_thread_id_format(self): ...
-    def test_missing_thread_id(self): ...
-    def test_multiple_validation_errors(self): ...
-
-class TestResolveReviewThreadsSchema:
-    """JSON structure verification."""
-
-    def test_success_schema(self): ...
-    def test_partial_failure_schema(self): ...
-    def test_validation_error_schema(self): ...
-```
-
-**Test count estimate:** 15 tests minimum for comprehensive batch command coverage.
-
-## Parametrized Testing for Failure Patterns
-
-Use `pytest.mark.parametrize` to cover failure pattern variations:
-
-```python
-@pytest.mark.parametrize(
-    "failures, expected_success_count, expected_failure_count",
-    [
-        ({"PRRT_2"}, 2, 1),           # Middle fails
-        ({"PRRT_1", "PRRT_3"}, 1, 2), # First and last fail
-        (set(), 3, 0),                # None fail (all success)
-        ({"PRRT_1", "PRRT_2", "PRRT_3"}, 0, 3),  # All fail
-    ],
-)
-def test_resolve_threads_failure_patterns(failures, expected_success_count, expected_failure_count):
-    fake_github = FakeGitHub(resolve_thread_failures=failures)
-    items = [
-        {"thread_id": "PRRT_1"},
-        {"thread_id": "PRRT_2"},
-        {"thread_id": "PRRT_3"},
-    ]
-    result = run_batch_command(items, fake_github)
-
-    success_count = sum(1 for r in result["results"] if r["success"])
-    failure_count = sum(1 for r in result["results"] if not r["success"])
-
-    assert success_count == expected_success_count
-    assert failure_count == expected_failure_count
-```
-
-This single test covers 4 failure patterns with minimal duplication.
-
-## Testing Upfront Validation
-
-Critical: verify that validation failures prevent ANY processing.
-
-```python
-def test_validation_prevents_processing(monkeypatch):
-    # Mock the actual operation to track if it's called
-    operation_called = []
-
-    def mock_resolve_thread(thread_id: str) -> bool:
-        operation_called.append(thread_id)
-        return True
-
-    monkeypatch.setattr(
-        "erk.cli.commands.exec.scripts.resolve_review_threads._resolve_thread",
-        mock_resolve_thread,
-    )
-
-    # Invalid input
-    items = [
-        {"thread_id": "PRRT_valid"},
-        {"thread_id": "invalid"},  # Validation error
-    ]
-
-    result = run_batch_command(items)
-
-    # Validation failed
-    assert result["success"] is False
-    assert "validation_errors" in result
-
-    # CRITICAL: No operations were performed
-    assert len(operation_called) == 0
-```
+Tests use `CliRunner.invoke()` with `ErkContext.for_test()` for dependency injection -- never `monkeypatch` or `run_batch_command()` helpers. The fake gateway tracks mutations via read-only properties (e.g., `fake_github.resolved_thread_ids`, `fake_github.thread_replies`) for test assertions.
 
 ## Related Documentation
 

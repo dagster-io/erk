@@ -2,8 +2,10 @@
 title: Objective Commands
 read_when:
   - "working with erk objective commands"
-  - "implementing objective reconcile functionality"
-  - "understanding auto-advance objectives"
+  - "implementing objective check or close functionality"
+  - "understanding objective validation patterns"
+last_audited: "2026-02-05"
+audit_result: edited
 tripwires:
   - action: "displaying user-provided text in Rich CLI tables without escaping"
     warning: "Use `escape_markup(value)` for user data in Rich tables. Brackets like `[text]` are interpreted as style tags and will disappear."
@@ -15,189 +17,88 @@ The `erk objective` command group manages erk objectives - high-level goals that
 
 ## Command Overview
 
-| Command                   | Alias | Description                        |
-| ------------------------- | ----- | ---------------------------------- |
-| `erk objective reconcile` | `rec` | Reconcile auto-advance objectives  |
-| `erk objective list`      | `ls`  | List open objectives               |
-| `erk objective create`    | -     | Create a new objective             |
-| `erk objective next-plan` | `np`  | Create plan from an objective step |
+| Command                   | Alias | Description                                      |
+| ------------------------- | ----- | ------------------------------------------------ |
+| `erk objective check`     | `ch`  | Validate an objective's format and roadmap       |
+| `erk objective close`     | `c`   | Close an objective GitHub issue                  |
+| `erk objective list`      | `ls`  | List open objectives                             |
+| `erk objective next-plan` | `np`  | Launch Claude to create plan from objective step |
+| `erk objective reconcile` | `rec` | Validate and launch Claude for objective step    |
+
+All commands are registered via `register_with_aliases()` in `src/erk/cli/commands/objective/__init__.py`.
 
 ## Next-Plan Command
 
 The `erk objective next-plan` command launches Claude in plan mode to create an implementation plan from an objective step.
 
-### Usage
+### Key Behavior
 
-```bash
-# Create plan from objective issue
-erk objective next-plan 6423
+1. **Resolves config**: Loads `InteractiveAgentConfig` from `[interactive-agent]` in `~/.erk/config.toml`
+2. **Forces plan mode**: Calls `ia_config.with_overrides(permission_mode_override="plan")` to ensure plan mode regardless of config
+3. **Launches Claude**: Calls `ctx.agent_launcher.launch_interactive()` with the `/erk:objective-next-plan` slash command
+4. **Supports `--dangerous` flag**: Passes `--allow-dangerously-skip-permissions` to Claude when set
 
-# Using alias
-erk objective np 6423
+See `next_plan_cmd.py` for implementation, `InteractiveAgentConfig.with_overrides()` in `erk_shared/context/types.py` for the override pattern.
 
-# From GitHub URL
-erk objective next-plan https://github.com/owner/repo/issues/6423
-```
+### Permission Override Pattern
 
-### Arguments
-
-| Argument    | Description                          |
-| ----------- | ------------------------------------ |
-| `ISSUE_REF` | Objective issue number or GitHub URL |
-
-### Behavior
-
-1. **Validates Claude CLI**: Checks that `claude` command is available
-2. **Launches Claude**: Starts Claude Code in plan mode with `/erk:objective-next-plan <issue_ref>`
-3. **Permission Mode**: Automatically sets `--permission-mode plan`
-4. **Config Integration**: Respects `[interactive-claude]` settings from `~/.erk/config.toml`
-
-### Permission Mode
-
-The command always launches Claude in **plan mode** (`--permission-mode plan`), regardless of config file settings. This ensures the agent creates a plan document rather than immediately implementing.
-
-**Implementation pattern:**
-
-```python
-config = ic_config.with_overrides(
-    permission_mode_override="plan",
-    model_override=None,
-    dangerous_override=None,
-    allow_dangerous_override=None,
-)
-```
-
-The `with_overrides()` method conditionally overrides config values:
+The `with_overrides()` method on `InteractiveAgentConfig` conditionally overrides config values:
 
 - Setting to a value (like `"plan"`) forces that mode
 - Setting to `None` preserves the config file value
 
-### Codespace Variant
-
-For remote execution, use `erk codespace run objective next-plan`:
-
-```bash
-# Execute on remote codespace
-erk codespace run objective next-plan 6423
-```
-
-The remote variant follows the same permission model as the local command.
+This pattern is reused by both `next-plan` and `reconcile` commands.
 
 ### Related Slash Command
 
-After launching, Claude executes `/erk:objective-next-plan` which:
+After launching, Claude executes `/erk:objective-next-plan` (file: `.claude/commands/erk/objective-next-plan.md`), which:
 
 1. Fetches the objective issue
 2. Analyzes the roadmap
 3. Guides the user through planning an implementation for a step
 4. Saves the plan to a GitHub issue
 
-See `.claude/commands/erk/objective-next-plan.md` for the slash command implementation.
-
 ## Reconcile Command
 
-The `erk objective reconcile` command analyzes objectives and determines next actions (typically creating plans for pending steps).
+The `erk objective reconcile` command validates an objective and launches Claude to create a plan for its next step. It is functionally similar to `next-plan` but adds LBYL validation.
 
-### Usage
+### Key Differences from Next-Plan
 
-```bash
-# Reconcile all auto-advance objectives
-erk objective reconcile
-
-# Target a specific objective (positional argument)
-erk objective reconcile 123
-
-# Preview without executing
-erk objective reconcile --dry-run
-erk objective reconcile 123 --dry-run
-```
-
-### Arguments and Flags
-
-| Argument/Flag | Description                                        |
-| ------------- | -------------------------------------------------- |
-| `OBJECTIVE`   | Optional issue number to target specific objective |
-| `--dry-run`   | Show planned actions without executing             |
+- **Required argument**: Takes a required `OBJECTIVE` integer (issue number), not optional
+- **LBYL validation**: Checks `issue_exists()` and verifies `erk-objective` label before launching
+- **No `--dangerous` flag**: Always launches with default permissions
 
 ### Validation (LBYL Pattern)
 
-The positional objective argument uses Look Before You Leap validation:
+The command performs Look Before You Leap validation before launching Claude:
 
-1. **Check existence**: `issue_exists(repo_root, number)` before fetching
-2. **Check labels**: Verify `erk-objective` label exists
-3. **Fail early**: Exit with clear error if validation fails
+1. **Check existence**: `ctx.github.issues.issue_exists(repo.root, objective)` before fetching
+2. **Check labels**: Verify `erk-objective` label exists on the issue
+3. **Fail early**: Exit with clear error message if validation fails
 
-This pattern prevents cryptic errors from `get_issue()` on non-existent issues.
+This pattern prevents cryptic errors from launching Claude with an invalid objective. See `reconcile_cmd.py` for implementation.
 
-### Output Format
+## Check Command
 
-The command displays a Rich table with columns:
+The `erk objective check` command validates an objective's format and roadmap consistency without launching Claude.
 
-| Column   | Content                                            |
-| -------- | -------------------------------------------------- |
-| `#`      | Objective issue number                             |
-| `Title`  | Objective title (user-provided, needs escaping)    |
-| `Action` | Determined action (`create_plan`, `skip`, `error`) |
-| `Step`   | Target step ID or `-`                              |
-| `Reason` | (dry-run) Why this action was chosen               |
-| `Result` | (live) Execution result or error                   |
+### Validation Checks
 
-### Rich Markup Escaping
+1. Issue has `erk-objective` label
+2. Roadmap parses successfully
+3. Status/PR consistency (done steps should have PR references)
+4. No orphaned done statuses
+5. Phase numbering is sequential
 
-When displaying user-provided titles in Rich tables, bracket sequences like `[text]` are interpreted as Rich style tags. Always escape user data:
+Supports `--json-output` for structured output. See `check_cmd.py` and the `validate_objective()` function for implementation.
 
-```python
-from rich.markup import escape as escape_markup
+## Close Command
 
-# WRONG: User title with brackets disappears
-table.add_row(f"#{issue.number}", issue.title, ...)
+The `erk objective close` command closes an objective GitHub issue after validation (must have `erk-objective` label, must be open). Prompts for confirmation unless `--force` is provided. See `close_cmd.py` for implementation.
 
-# CORRECT: Escape user data
-table.add_row(f"#{issue.number}", escape_markup(issue.title), ...)
-```
+## Rich Markup Escaping
 
-See [CLI Output Styling Guide](output-styling.md#rich-markup-escaping-in-cli-tables) for complete details.
-
-## Auto-Advance Objectives
-
-An **auto-advance objective** is an objective issue with both labels:
-
-- `erk-objective`
-- `auto-advance`
-
-The reconcile command processes these automatically when run without a specific objective argument.
-
-## Session-Based Idempotency
-
-Some objective commands support session-based deduplication to prevent double-execution during retries.
-
-### Behavior with `--session-id`
-
-When `--session-id` is provided:
-
-1. The command checks if it already ran for this session
-2. If previously executed, returns early with `skipped_duplicate: true`
-3. If not, executes normally and records the session
-
-### JSON Response with Deduplication
-
-```json
-{
-  "success": true,
-  "skipped_duplicate": true,
-  "message": "Already executed in this session"
-}
-```
-
-### Scope
-
-Session-based deduplication is:
-
-- **Within session**: Same session ID gets deduplicated
-- **Cross-session**: Different sessions execute independently
-- **Opt-in**: Only active when `--session-id` is provided
-
-This prevents issues like duplicate plan creation when hooks retry or Claude retries a blocked command.
+When displaying user-provided titles in Rich tables, bracket sequences like `[text]` are interpreted as Rich style tags. Always escape user data with `escape_markup()` from `rich.markup`. See [CLI Output Styling Guide](output-styling.md#rich-markup-escaping-in-cli-tables) for complete details.
 
 ## Related Documentation
 

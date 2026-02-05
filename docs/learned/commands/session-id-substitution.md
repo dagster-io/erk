@@ -5,190 +5,68 @@ read_when:
   - "developing hooks that interact with Claude sessions"
   - "debugging session ID unavailable errors"
   - "passing session metadata to erk exec scripts"
+last_audited: "2026-02-05"
+audit_result: edited
 ---
 
 # Session ID Substitution
 
-Claude session IDs can be accessed in commands and hooks, but the mechanism differs between contexts. Understanding these differences prevents "session ID unavailable" errors.
+Claude session IDs are accessed differently in commands vs hooks. Understanding the difference prevents "session ID unavailable" errors.
 
-## Context-Specific Mechanisms
+## Two Mechanisms
 
-### In Skills and Commands
+| Context         | Mechanism                                                            | Example                                                                       |
+| --------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Skills/Commands | `${CLAUDE_SESSION_ID}` string substitution (since Claude Code 2.1.9) | `erk exec marker create --session-id "${CLAUDE_SESSION_ID}"`                  |
+| Hooks           | Session ID via **stdin JSON** (`hook_input["session_id"]`)           | See `src/erk/hooks/decorators.py` — `@hook_command` extracts it automatically |
 
-**Method**: String substitution via `${CLAUDE_SESSION_ID}`
-
-**Support**: Available since Claude Code 2.1.9
-
-**Usage**:
-
-```bash
-erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --type plan
-```
-
-**How it works**:
-
-- Claude Code intercepts the string `${CLAUDE_SESSION_ID}` before execution
-- Substitutes the actual session ID value
-- Passes the resolved command to the shell
-
-**Availability**: Always available in skill and command contexts
-
-### In Hooks
-
-**Method**: Session ID passed via **stdin JSON**, not environment variables
-
-**Usage** (in Python hook):
-
-```python
-import json
-import sys
-
-# Read hook input from stdin
-hook_input = json.loads(sys.stdin.read())
-session_id = hook_input.get("session_id")
-
-# Generate command for Claude with interpolated value
-command = f"erk exec marker create --session-id {session_id}"
-print(command)  # stdout becomes system reminder for Claude
-```
-
-**Key difference**: Hooks receive session metadata as structured input, then **generate commands for Claude** that include the session ID value directly.
-
-**Why not `${CLAUDE_SESSION_ID}` in hooks?**
-
-- Hooks execute in Python, not in Claude's command interpolation context
-- Hook output (stdout) becomes system reminders for Claude
-- By the time Claude sees the output, it's already a plain string
-
-### When Generating Commands for Claude from Hooks
-
-If a hook needs to tell Claude to run a command with session ID:
-
-```python
-# Hook code (Python)
-session_id = hook_input["session_id"]
-
-# Generate command with actual value interpolated
-output = f"erk exec marker create --session-id {session_id}"
-print(output)
-```
-
-**Result**: Claude sees a system reminder containing:
-
-```
-erk exec marker create --session-id abc123-def456-...
-```
-
-Claude can then execute this exact command without needing substitution.
+See AGENTS.md "Claude Environment Manipulation" section for the canonical reference.
 
 ## Best-Effort Pattern
 
-For commands where session ID may be unavailable (e.g., running outside Claude Code):
+For non-critical session markers in commands:
 
 ```bash
 erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2>/dev/null || true
 ```
 
-**Components**:
-
-- `2>/dev/null`: Suppress error output if command fails
-- `|| true`: Ensure non-zero exit code doesn't halt execution
-
-**When to use**:
-
-- Session markers that are nice-to-have but not critical
-- Commands that should work both inside and outside Claude Code
-- Non-blocking telemetry or logging
-
-## Error Handling
-
-### Session ID Required but Unavailable
-
-If a command absolutely requires session ID:
-
-```bash
-if [ -z "${CLAUDE_SESSION_ID}" ]; then
-  echo "Error: Session ID required but not available"
-  exit 1
-fi
-
-erk exec marker create --session-id "${CLAUDE_SESSION_ID}"
-```
-
-### Session ID Optional
-
-If a command can work without session ID:
-
-```bash
-# Use session ID if available, skip if not
-erk exec marker create --session-id "${CLAUDE_SESSION_ID}" 2>/dev/null || \
-  erk exec marker create --no-session
-```
-
-## Documentation in AGENTS.md
-
-From `AGENTS.md` Section "Claude Environment Manipulation":
-
-> **In skills/commands**: Use `${CLAUDE_SESSION_ID}` string substitution (supported since Claude Code 2.1.9)
->
-> **In hooks**: Hooks receive session ID via **stdin JSON**, not environment variables. When generating commands for Claude from hooks, interpolate the actual value.
-
-This is the canonical reference for session ID access patterns.
+Use this when session ID is nice-to-have but not critical (markers, telemetry, logging).
 
 ## Common Mistakes
 
-### 1. Using ${CLAUDE_SESSION_ID} in Hook Output
-
-**Wrong**:
+### Using ${CLAUDE_SESSION_ID} in Hook Output
 
 ```python
-# In hook code
-print(f"erk exec marker --session-id ${CLAUDE_SESSION_ID}")
-```
+# WRONG: Python doesn't expand Claude substitutions
+print(f"erk exec marker --session-id ${{CLAUDE_SESSION_ID}}")
 
-**Right**:
-
-```python
-# In hook code
+# CORRECT: Interpolate the actual value from stdin JSON
 session_id = hook_input["session_id"]
 print(f"erk exec marker --session-id {session_id}")
 ```
 
-### 2. Expecting Environment Variable in Hooks
-
-**Wrong**:
+### Expecting Environment Variable in Hooks
 
 ```python
-# In hook code
-session_id = os.environ["CLAUDE_SESSION_ID"]  # Doesn't exist!
-```
+# WRONG: No CLAUDE_SESSION_ID env var exists
+session_id = os.environ["CLAUDE_SESSION_ID"]
 
-**Right**:
-
-```python
-# In hook code
+# CORRECT: Read from stdin JSON (or use @hook_command decorator)
 hook_input = json.loads(sys.stdin.read())
 session_id = hook_input["session_id"]
 ```
 
-### 3. Not Handling Unavailable Session ID
-
-**Wrong**:
+### Not Handling Unavailable Session ID
 
 ```bash
-# In command - will error outside Claude Code
+# WRONG: Will error outside Claude Code
 erk exec marker --session-id "${CLAUDE_SESSION_ID}"
-```
 
-**Right**:
-
-```bash
-# In command - gracefully handles unavailability
+# CORRECT: Gracefully handles unavailability
 erk exec marker --session-id "${CLAUDE_SESSION_ID}" 2>/dev/null || true
 ```
 
 ## Related Documentation
 
-- [Hook Development](../hooks/hook-development.md) - Hook stdin/stdout contracts
-- [Command Development](command-development.md) - Writing robust commands
-- [AGENTS.md](../../AGENTS.md) - Canonical session ID documentation
+- [AGENTS.md](../../AGENTS.md) — Canonical session ID documentation
+- `src/erk/hooks/decorators.py` — Hook decorator that extracts session ID from stdin
