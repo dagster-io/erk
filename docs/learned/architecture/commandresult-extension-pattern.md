@@ -5,8 +5,8 @@ read_when:
   - "extending CommandResult dataclass"
   - "adding metadata extraction"
   - "implementing new CommandResult field"
-last_audited: "2026-02-04 11:35 PST"
-audit_result: edited
+last_audited: "2026-02-05 14:18 PT"
+audit_result: clean
 ---
 
 # CommandResult Extension Pattern

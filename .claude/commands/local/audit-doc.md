@@ -105,15 +105,15 @@ Record verification results for use in Phase 4 and Phase 5.
 
 For each section of the document, classify it into one of these value categories:
 
-| Category        | Description                                                                                                                                  | Action                                                    |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                                                        | Replace with "Read `path`" reference                      |
-| **STALE**       | Was once accurate but code has changed (broken imports, renamed functions, moved files)                                                      | Update to match current code                              |
-| **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                                                                              | Flag as high-maintenance; consider code reference instead |
-| **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                                                       | Keep                                                      |
-| **CONTEXTUAL**  | Connects multiple code locations into a coherent narrative the code alone can't provide                                                      | Keep                                                      |
-| **EXAMPLES**    | Code examples that are essentially identical to what exists in source/tests                                                                  | Replace with reference to actual test/source              |
-| **CONTRADICTS** | States something that is factually wrong per the current codebase (wrong function names, incorrect behavior descriptions, outdated patterns) | Flag as high-priority fix; correct or delete              |
+| Category        | Description                                                                                                                                  | Action                                                          |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                                                        | Replace with "Read `path`" reference                            |
+| **STALE**       | Was once accurate but code has changed (broken imports, renamed functions, moved files)                                                      | Remove code block; replace with code reference                  |
+| **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                                                                              | Flag as high-maintenance; consider code reference instead       |
+| **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                                                       | Keep                                                            |
+| **CONTEXTUAL**  | Connects multiple code locations into a coherent narrative the code alone can't provide                                                      | Keep                                                            |
+| **EXAMPLES**    | Code examples that are essentially identical to what exists in source/tests                                                                  | Remove code block; replace with reference to actual test/source |
+| **CONTRADICTS** | States something that is factually wrong per the current codebase (wrong function names, incorrect behavior descriptions, outdated patterns) | Flag as high-priority fix; correct or delete                    |
 
 **Specific things to flag as contradictory:**
 
@@ -143,12 +143,14 @@ For each section of the document, classify it into one of these value categories
 
 STALE content should be updated; CONTRADICTS content needs deeper review to understand the discrepancy.
 
+**Code blocks are high-drift-risk by default.** When a code block reproduces actual source code (implementation patterns, usage examples, function signatures), it will inevitably drift from reality. The default action is to **remove the code block and replace it with a prose reference** to the actual source location (e.g., "See `ClassName.method()` in `path/to/file.py`"). Only keep inline code blocks when they demonstrate an **anti-pattern** (wrong way vs right way) or illustrate a concept that doesn't exist as a single function in the codebase.
+
 **Specific things to flag as duplicative:**
 
 - Import paths (agents can find these via grep)
 - Function signatures (agents can read the source)
 - Basic "what it does" descriptions that match docstrings
-- Code examples that duplicate test cases
+- Code examples that duplicate source or test code
 - File path listings that could be found via glob
 - **Exception**: Constants, default values, and configuration strings mentioned in prose context are NOT duplicative — they make docs scannable and should be classified as HIGH VALUE or CONTEXTUAL
 

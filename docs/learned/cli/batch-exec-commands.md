@@ -14,6 +14,8 @@ tripwires:
   - action: "Return non-zero exit codes for batch command failures"
     warning: "Always exit 0, encode errors in JSON output with per-item success fields."
     score: 6
+last_audited: "2026-02-05 14:25 PT"
+audit_result: edited
 ---
 
 # Batch Exec Commands
@@ -37,22 +39,28 @@ A batch exec command:
 **CRITICAL**: Validate the entire input array before processing any items.
 
 ```python
-# CORRECT: Validate all upfront
-def validate_all_items(items: list[BatchItem]) -> list[ValidationError] | None:
-    errors = []
-    for item in items:
-        if not item.thread_id.startswith("PRRT_"):
-            errors.append({"item": item, "error": "Invalid thread ID"})
-    return errors if errors else None
+# CORRECT: Validate all upfront, return error or validated items
+def validate_batch_input(data: object) -> list[ValidatedItem] | BatchError:
+    if not isinstance(data, list):
+        return BatchError(success=False, error_type="invalid-input", message="...")
+    validated = []
+    for idx, item in enumerate(data):
+        if not isinstance(item, dict) or "required_field" not in item:
+            return BatchError(success=False, error_type="invalid-input", message=f"Item {idx} invalid")
+        validated.append(item)
+    return validated
 
-errors = validate_all_items(items)
-if errors:
-    return {"success": False, "validation_errors": errors}
+validated = validate_batch_input(data)
+if isinstance(validated, BatchError):
+    output_json(validated)
+    raise SystemExit(0)
 
 # Now process all items (validation passed)
-for item in items:
+for item in validated:
     process_item(item)
 ```
+
+See `_validate_batch_input()` in `resolve_review_threads.py` for the concrete implementation.
 
 **WRONG: Process during validation**
 
@@ -129,12 +137,15 @@ except Exception as e:
 **When to use non-zero exits:**
 
 - Context initialization failures (can't even load config)
-- JSON parse errors on stdin (invalid input format)
 - Situations where JSON output is impossible
+
+Note: JSON parse errors on stdin still exit 0 with an error JSON response (see `resolve_review_threads.py` for the pattern).
 
 ### Output Structure
 
-Standard batch result structure:
+Standard batch result structure (two response shapes):
+
+**Success/partial failure** (validation passed, items were processed):
 
 ```typescript
 {
@@ -147,10 +158,17 @@ Standard batch result structure:
       "error"?: string,        // Present if success=false
       "error_type"?: string    // Machine-readable error category
     }
-  ],
-  "validation_errors"?: [...], // Present if input validation failed
-  "error"?: string,            // Present for catastrophic failures
-  "error_type"?: string
+  ]
+}
+```
+
+**Validation/parse error** (items were never processed):
+
+```typescript
+{
+  "success": false,
+  "error_type": string,        // e.g. "invalid-input", "invalid-json"
+  "message": string            // Human-readable error description
 }
 ```
 
@@ -216,58 +234,24 @@ The `resolve-review-threads` command demonstrates the pattern.
 ```json
 {
   "success": false,
-  "validation_errors": [
-    {
-      "index": 1,
-      "thread_id": "invalid",
-      "error": "Thread ID must start with PRRT_"
-    }
-  ]
+  "error_type": "invalid-input",
+  "message": "Item at index 1 missing required 'thread_id' field"
 }
 ```
 
-Note: No `results` array on validation failure—items were never processed.
+Note: No `results` array on validation failure -- the response uses `BatchResolveError` shape with `error_type` and `message` instead.
 
 ## Data Structures
 
-Common patterns for batch command types:
+See the reference implementation in `src/erk/cli/commands/exec/scripts/resolve_review_threads.py` for concrete types:
 
-### BatchResult (Top-Level)
+- **`BatchResolveResult`** (frozen dataclass): Top-level result with `success: bool` and `results: list[dict[str, object]]`
+- **`BatchResolveError`** (frozen dataclass): Error response with `success: bool`, `error_type: str`, `message: str`
+- **`ThreadResolutionItem`** (TypedDict): Input item schema with `thread_id: str` and `comment: str | None`
 
-```python
-@dataclass(frozen=True)
-class BatchResolveResult:
-    success: bool
-    results: list[ThreadResolutionItem]
-```
+Per-item output results use `ResolveThreadSuccess` / `ResolveThreadError` from `resolve_review_thread.py`, serialized to dicts via `asdict()`.
 
-### Item Result (Per-Item)
-
-```python
-# TypedDict for flexibility with optional fields
-class ThreadResolutionItem(TypedDict, total=False):
-    thread_id: str
-    success: bool
-    comment_added: bool  # Optional success detail
-    error: str           # Present if success=false
-    error_type: str      # Machine-readable error
-```
-
-**Why TypedDict instead of dataclass:**
-
-- Optional fields without defaults (violates dignified-python for dataclasses)
-- Conditional field presence (error only if success=false)
-- Direct JSON serialization (no asdict() needed)
-
-### Validation Error
-
-```python
-@dataclass(frozen=True)
-class BatchValidationError:
-    index: int
-    item_id: str
-    error: str
-```
+**Design note:** Input items use `TypedDict` for direct JSON compatibility. Output results use frozen dataclasses with `asdict()` for serialization. Validation errors use the same `BatchResolveError` dataclass as other error responses.
 
 ## Testing Batch Commands
 
