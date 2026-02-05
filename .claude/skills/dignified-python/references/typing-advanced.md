@@ -73,6 +73,24 @@ Skip the assertion only in these narrow cases:
 
 ---
 
+## Assert for Type Narrowing
+
+Beyond `cast()`, bare `assert` statements are acceptable for type narrowing when:
+
+1. A prior guard check already establishes the invariant
+2. The assert is redundant at runtime but informs the type checker
+
+```python
+# CORRECT: Guard establishes invariant, assert narrows type
+if not result.is_valid:
+    return None
+assert result.metadata is not None  # Type narrowing only
+```
+
+This is NOT a LBYL violation — removing the assert wouldn't cause a runtime error, it would only lose type information.
+
+---
+
 ## Programmatically Significant Strings
 
 **Use `Literal` types for strings that have programmatic meaning.**
