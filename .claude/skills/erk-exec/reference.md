@@ -1144,10 +1144,11 @@ Update a step's PR cell in an objective's roadmap table.
 
 **Options:**
 
-| Flag     | Type | Required | Default        | Description                                              |
-| -------- | ---- | -------- | -------------- | -------------------------------------------------------- |
-| `--step` | TEXT | Yes      | Sentinel.UNSET | Step ID to update (e.g., '1.3')                          |
-| `--pr`   | TEXT | Yes      | Sentinel.UNSET | PR reference (e.g., 'plan #123', '#456', or '' to clear) |
+| Flag       | Type   | Required | Default        | Description                                              |
+| ---------- | ------ | -------- | -------------- | -------------------------------------------------------- |
+| `--step`   | TEXT   | Yes      | Sentinel.UNSET | Step ID to update (e.g., '1.3')                          |
+| `--pr`     | TEXT   | Yes      | Sentinel.UNSET | PR reference (e.g., 'plan #123', '#456', or '' to clear) |
+| `--status` | CHOICE | No       | -              | Explicit status to set (default: infer from PR value)    |
 
 ### upload-learn-materials
 
