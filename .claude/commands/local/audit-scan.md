@@ -1,5 +1,7 @@
 ---
 description: Scan docs/learned/ for documents most in need of audit
+context: fork
+agent: general-purpose
 ---
 
 # /local:audit-scan

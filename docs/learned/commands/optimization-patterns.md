@@ -14,13 +14,12 @@ Patterns for reducing command file size and context consumption through modulari
 
 ## Why Command Size Matters
 
-Command text is loaded **every time** the command is invoked. Unlike skills (loaded once per session), commands consume context on each use.
+Since Claude Code 2.1.0, commands and skills are equivalent - both are loaded when invoked. Command text in `.claude/commands/` behaves identically to skills in `.claude/skills/`.
 
-| Content Type        | When Loaded      | Optimization Impact                 |
-| ------------------- | ---------------- | ----------------------------------- |
-| Command text        | Every invocation | High - reduce aggressively          |
-| `@` referenced docs | Once per session | Medium - extract reference material |
-| Skills              | Once per session | Low - already optimized             |
+| Content Type        | When Loaded                           | Optimization Impact                 |
+| ------------------- | ------------------------------------- | ----------------------------------- |
+| Command/skill text  | When invoked (unless cached)          | High - reduce aggressively          |
+| `@` referenced docs | Once per session (cached after first) | Medium - extract reference material |
 
 ## The @ Reference Pattern
 

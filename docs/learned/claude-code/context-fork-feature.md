@@ -1,20 +1,21 @@
 ---
-title: Context Fork Feature for Skills
+title: Context Fork Feature
 read_when:
   - "creating skills that need context isolation"
-  - "building skills that fetch large data"
-  - "implementing skills that should run in subagents"
-  - "reducing context window usage with skills"
+  - "creating commands that need context isolation"
+  - "building skills or commands that fetch large data"
+  - "implementing skills or commands that should run in subagents"
+  - "reducing context window usage with skills or commands"
 tripwires:
-  - action: "creating a skill with context: fork without explicit task instructions"
-    warning: "Skills with context: fork need actionable task prompts. Guidelines-only skills return empty output."
+  - action: "creating a skill or command with context: fork without explicit task instructions"
+    warning: "Skills/commands with context: fork need actionable task prompts. Guidelines-only content returns empty output."
 ---
 
-# Context Fork Feature for Skills
+# Context Fork Feature
 
 ## Overview
 
-The `context: fork` frontmatter option (added in Claude Code 2.1.0) runs a skill in an isolated subagent context. The skill content becomes the prompt driving the subagent, which runs without access to conversation history.
+The `context: fork` frontmatter option (added in Claude Code 2.1.0) runs a skill or command in an isolated subagent context. Since Claude Code 2.1.0, commands in `.claude/commands/` support the same frontmatter options as skills, including `context: fork`. The skill/command content becomes the prompt driving the subagent, which runs without access to conversation history.
 
 ## When to Use
 
@@ -27,16 +28,18 @@ Use `context: fork` when:
 
 Do NOT use `context: fork` when:
 
-- Skill contains only guidelines/conventions (no actionable task)
-- Skill needs conversation context to work
-- Skill is reference material Claude should apply inline
+- Skill/command contains only guidelines/conventions (no actionable task)
+- Skill/command needs conversation context to work
+- Skill/command is reference material Claude should apply inline
 
 ## Frontmatter Options
 
+Since Claude Code 2.1.0, files in `.claude/commands/` support the same frontmatter as skills:
+
 ```yaml
 ---
-name: my-skill
-description: What this skill does
+name: my-skill # Optional for commands (inferred from filename)
+description: What this skill/command does
 context: fork # Run in isolated subagent
 agent: general-purpose # Which agent type (optional)
 argument-hint: "[--flag]" # Help text for arguments
@@ -54,9 +57,9 @@ argument-hint: "[--flag]" # Help text for arguments
 
 The canonical use case is fetching large data and returning compact structured output:
 
-1. Skill fetches data (API calls, file reads)
-2. Skill classifies/processes data
-3. Skill outputs structured JSON
+1. Skill/command fetches data (API calls, file reads)
+2. Skill/command classifies/processes data
+3. Skill/command outputs structured JSON
 4. Main conversation parses JSON and acts on it
 
 **Token savings**: ~65-70% reduction vs inline fetch (raw JSON never enters main context).
@@ -92,25 +95,26 @@ Fetch PR comments and return structured JSON.
 }
 ```
 
-## Invoking Forked Skills
+## Invoking Forked Skills and Commands
 
-From commands or conversation, invoke with:
+From conversation, invoke with:
 
 ```
 /skill-name [arguments]
+/command-name [arguments]
 ```
 
-Arguments are available to the skill via `$ARGUMENTS`.
+Arguments are available to the skill/command via `$ARGUMENTS`.
 
 ## Important Considerations
 
-1. **Explicit instructions required**: The skill content IS the task. Guidelines-only content produces empty or unhelpful output.
+1. **Explicit instructions required**: The skill/command content IS the task. Guidelines-only content produces empty or unhelpful output.
 
-2. **No conversation history**: Subagent starts fresh. Include all needed context in skill content.
+2. **No conversation history**: Subagent starts fresh. Include all needed context in skill/command content.
 
 3. **Output format**: Define explicit output format. Subagent cannot infer what main conversation needs.
 
-4. **Arguments via $ARGUMENTS**: Pass flags through skill arguments, not conversation context.
+4. **Arguments via $ARGUMENTS**: Pass flags through skill/command arguments, not conversation context.
 
 5. **JSON output**: For structured data, specify "output ONLY JSON" to avoid prose wrapper.
 
