@@ -81,6 +81,25 @@ Exceptions are ONLY acceptable at:
 
 For detailed exception handling patterns including B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
 
+### Assert for Type Narrowing
+
+`assert` is acceptable when used **solely to narrow types** after a guard check has already established the invariant:
+
+```python
+# CORRECT: assert for type narrowing after guard check
+if not result.is_valid:
+    return None
+# is_valid guarantees metadata is not None, assert narrows the type
+assert result.metadata is not None
+process(result.metadata)
+
+# WRONG: assert as control flow (no prior guard)
+assert result.metadata is not None  # This IS control flow
+process(result.metadata)
+```
+
+The key distinction: if removing the assert would cause a runtime error, it's control flow (WRONG). If removing it would only lose type information, it's type narrowing (ACCEPTABLE).
+
 ---
 
 ## Path Operations
