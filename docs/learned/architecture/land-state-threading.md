@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "threading state through pipeline steps with mutable dataclasses"
     warning: "Use frozen dataclasses (@dataclass(frozen=True)) for pipeline state. Update fields with dataclasses.replace() to create new instances. Immutability enables caching, testability, and replay."
+last_audited: "2026-02-05 14:21 PT"
+audit_result: edited
 ---
 
 # Land State Threading Pattern
@@ -15,59 +17,18 @@ Pipeline steps thread immutable state through functional transformations. The la
 
 ## Core Pattern: Frozen Dataclass State
 
-State is represented as a frozen dataclass:
-
-```python
-@dataclass(frozen=True)
-class LandState:
-    """Immutable state threaded through land pipeline."""
-    # CLI inputs (user-controllable)
-    pr_number_or_branch: int | str | None
-    skip_objective_update: bool
-    skip_update_main: bool
-
-    # Resolved values (populated during validation)
-    pr_number: int | None = None
-    pr_details: PRDetails | None = None
-    target_branch: str | None = None
-    repo_root: Path | None = None
-
-    # Derived flags (computed from resolved values)
-    is_learn_plan: bool = False
-    has_review_pr: bool = False
-    target_is_trunk: bool = False
-
-    # Learn plan metadata (populated if is_learn_plan)
-    learn_issue_number: int | None = None
-    learn_tripwire_files: list[Path] | None = None
-```
+See `LandState` in `src/erk/cli/commands/land_pipeline.py` (lines 50-79) for the reference implementation.
 
 **Key characteristics**:
 
-- `frozen=True` - Immutable after creation
+- `@dataclass(frozen=True)` -- immutable after creation
 - Fields populate progressively through pipeline stages
-- ~13 fields tracking validation → resolution → execution flow
+- 21 fields organized into three groups: CLI inputs, resolved target (populated by `resolve_target`), and derived values (populated by later steps)
+- Every step has the signature `(ErkContext, LandState) -> LandState | LandError`
 
 ## State Update with dataclasses.replace()
 
-Pipeline steps create new state instances:
-
-```python
-def resolve_target(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    """Resolve PR number and target branch from input."""
-    # Validation logic...
-    pr_number = ...
-    pr_details = ...
-    target_branch = pr_details.base_branch
-
-    # Create new state with updated fields
-    return dataclasses.replace(
-        state,
-        pr_number=pr_number,
-        pr_details=pr_details,
-        target_branch=target_branch,
-    )
-```
+Pipeline steps create new state instances rather than mutating. See `resolve_target()` in `land_pipeline.py` for a concrete example -- it returns `dataclasses.replace(state, branch=..., pr_number=..., pr_details=..., ...)`.
 
 **Benefits**:
 
@@ -76,146 +37,72 @@ def resolve_target(ctx: ErkContext, state: LandState) -> LandState | LandError:
 - Compiler catches typos in field names
 - Explicit about which fields change
 
-## Field Lifecycle: CLI Inputs → Resolution → Validation → Execution
+## Field Lifecycle: CLI Inputs -> Resolution -> Execution
 
-State fields populate in stages:
+State fields populate in stages. See `make_initial_state()` and `make_execution_state()` in `land_pipeline.py` for how initial state is constructed.
 
 ### Stage 1: Initial State (from CLI)
 
-```python
-state = LandState(
-    pr_number_or_branch=None,  # User didn't specify PR
-    skip_objective_update=False,
-    skip_update_main=False,
-)
-```
-
-Fields: Only CLI inputs set
+Created by `make_initial_state()`. Only CLI flags and pre-discovered repo paths are set. Discovery fields like `branch`, `pr_number`, `pr_details` start as empty defaults (`""`, `0`, `None`).
 
 ### Stage 2: After resolve_target Step
 
-```python
-state = dataclasses.replace(
-    state,
-    pr_number=123,
-    pr_details=PRDetails(...),
-    target_branch="main",
-)
-```
+Populates: `branch`, `pr_number`, `pr_details`, `worktree_path`, `is_current_branch`, `use_graphite`, `target_child_branch`.
 
-Fields: CLI inputs + resolved PR info
+### Stage 3: After validate_pr Step
 
-### Stage 3: After validate_checks Step
+Validates PR state (OPEN, base is trunk, no unresolved comments). Returns state unchanged on success.
 
-```python
-state = dataclasses.replace(
-    state,
-    is_learn_plan=True,  # Detected from PR labels
-    has_review_pr=False,
-)
-```
+### Stage 4: After check_learn_status and gather_confirmations Steps
 
-Fields: CLI inputs + resolved PR + derived flags
+Populates: `plan_issue_number`, `cleanup_confirmed`.
 
-### Stage 4: After check_learn_status Step (Execution Pipeline)
+### Stage 5: After resolve_objective Step
 
-```python
-state = dataclasses.replace(
-    state,
-    learn_issue_number=456,
-    learn_tripwire_files=[Path("docs/learned/architecture/tripwires.md")],
-)
-```
+Populates: `objective_number`. This completes the validation pipeline.
 
-Fields: All validation fields + learn metadata
+### Stage 6: Execution Pipeline
+
+`merge_pr` populates `merged_pr_number`. Remaining steps (`update_objective`, `update_learn_plan`, `promote_tripwires`, `close_review_pr`, `cleanup_and_navigate`) perform side effects and return state unchanged.
+
+## Progressive Population Pattern
+
+Fields start as defaults, then populate as pipeline progresses:
+
+| Field               | Stage      | Populated By Step      |
+| ------------------- | ---------- | ---------------------- |
+| `branch`            | Validation | `resolve_target`       |
+| `pr_number`         | Validation | `resolve_target`       |
+| `pr_details`        | Validation | `resolve_target`       |
+| `worktree_path`     | Validation | `resolve_target`       |
+| `is_current_branch` | Validation | `resolve_target`       |
+| `use_graphite`      | Validation | `resolve_target`       |
+| `plan_issue_number` | Validation | `check_learn_status`   |
+| `cleanup_confirmed` | Validation | `gather_confirmations` |
+| `objective_number`  | Validation | `resolve_objective`    |
+| `merged_pr_number`  | Execution  | `merge_pr`             |
+
+**Pattern**: CLI input fields are required (no defaults). Discovery/derived fields use sentinel defaults (`""`, `0`, `None`, `False`) and are populated by pipeline steps.
 
 ## Benefits of Immutability
 
 ### 1. Testability
 
-Tests can assert on state at any pipeline stage:
-
-```python
-def test_resolve_target_updates_pr_number() -> None:
-    """resolve_target should populate pr_number field."""
-    initial_state = make_initial_state(pr_number_or_branch="feature-branch")
-    ctx = create_test_context(...)
-
-    result = resolve_target(ctx, initial_state)
-
-    assert isinstance(result, LandState)  # Not an error
-    assert result.pr_number == 123
-    assert result.pr_details is not None
-    # Original state unchanged
-    assert initial_state.pr_number is None
-```
+Tests can assert on state at any pipeline stage. Each step is independently testable -- pass in a constructed `LandState`, call the step, assert on the returned state. The original state is never modified. See tests in `tests/unit/cli/commands/land/pipeline/` for examples.
 
 ### 2. Replay Capability
 
-Same initial state + same context always produces same result:
-
-```python
-state = make_initial_state(pr_number_or_branch=123)
-
-# Run validation twice with same inputs
-result1 = run_validation_pipeline(ctx, state)
-result2 = run_validation_pipeline(ctx, state)
-
-# Results are identical (cached)
-assert result1 is result2
-```
+Same initial state + same context always produces same result. This is especially valuable for the two-pipeline architecture where validation runs in the CLI process and execution runs in a separate `erk exec land-execute` process.
 
 ### 3. Debugging
 
-Can reconstruct exact state at any pipeline stage by logging state snapshots:
-
-```python
-def resolve_target(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    logger.debug(f"resolve_target: input state = {state}")
-    # ... logic ...
-    new_state = dataclasses.replace(state, pr_number=pr_number)
-    logger.debug(f"resolve_target: output state = {new_state}")
-    return new_state
-```
-
-## Progressive Population Pattern
-
-Fields start as `None`, then populate as pipeline progresses:
-
-| Field                   | Stage      | Populated By Step    |
-| ----------------------- | ---------- | -------------------- |
-| `pr_number`             | Validation | `resolve_target`     |
-| `pr_details`            | Validation | `resolve_target`     |
-| `target_branch`         | Validation | `resolve_target`     |
-| `is_learn_plan`         | Validation | `validate_checks`    |
-| `learn_issue_number`    | Execution  | `check_learn_status` |
-| `learn_tripwire_files   | Execution  | `update_learn_plan`  |
-| `skip_objective_update` | Initial    | CLI argument         |
-| `skip_update_main`      | Initial    | CLI argument         |
-
-**Pattern**: Required fields have no default; optional fields default to `None` or `False`.
+Can reconstruct exact state at any pipeline stage by logging state snapshots before and after each step.
 
 ## Type Narrowing After Validation
 
-After validation pipeline, certain fields are guaranteed non-None:
+After the validation pipeline, certain fields are guaranteed populated (e.g., `pr_number`, `branch`, `pr_details`). However, Python's type system doesn't track field-level narrowing -- the types still show `int | None` etc.
 
-```python
-# After validation
-validated_state = run_validation_pipeline(ctx, initial_state)
-if isinstance(validated_state, LandError):
-    handle_error(validated_state)
-    return
-
-# Type narrowing: validated_state is LandState (not error)
-# However, fields like pr_number could still be None at runtime
-# (validation doesn't populate all fields)
-
-# Execution pipeline can assume validated fields are non-None
-assert validated_state.pr_number is not None
-assert validated_state.target_branch is not None
-```
-
-**Caveat**: Python's type system doesn't track field-level narrowing. Use assertions or early returns in execution steps if fields must be non-None.
+**Caveat**: Use assertions or early returns in execution steps if fields must be non-None. See `gather_confirmations()` in `land_pipeline.py` for an example: `assert state.pr_details is not None`.
 
 ## Comparison to Mutable State
 
@@ -227,17 +114,11 @@ class LandState:  # NOT frozen
     pr_number: int | None = None
 
 def resolve_target(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    # Mutates input state
     state.pr_number = 123  # BAD: modifies caller's state
     return state
 ```
 
-**Problems**:
-
-- Caller's state is modified (unexpected side effect)
-- Can't replay - state changes after first run
-- Can't cache - same input produces different results
-- Hard to test - need to reset state between tests
+**Problems**: Caller's state is modified (unexpected side effect), can't replay, can't cache, hard to test.
 
 ### Immutable Approach (DO)
 
@@ -247,42 +128,18 @@ class LandState:
     pr_number: int | None = None
 
 def resolve_target(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    # Creates new state, input unchanged
     return dataclasses.replace(state, pr_number=123)  # GOOD: immutable
 ```
 
-**Benefits**:
-
-- Input state unchanged
-- Safe to replay with same input
-- Cacheable with `@cache` decorator
-- Easy to test - no state cleanup needed
+**Benefits**: Input state unchanged, safe to replay, cacheable, easy to test.
 
 ## Reference Implementation
 
-**File**: `src/erk/cli/commands/workflows/land_pipeline.py:50-79`
-
-**LandState Definition**:
-
-```python
-@dataclass(frozen=True)
-class LandState:
-    """State threaded through land pipeline."""
-    # ~13 fields with clear lifecycle
-    # See lines 50-79 for complete definition
-```
-
-**Usage in Pipeline Steps**: Every step function signature:
-
-```python
-def step_name(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    # Validation logic
-    if error_condition:
-        return LandError(...)
-
-    # State update (immutable)
-    return dataclasses.replace(state, new_field=value)
-```
+- **LandState definition**: `src/erk/cli/commands/land_pipeline.py` (lines 50-79)
+- **Pipeline step definitions**: Same file, validation steps (lines 104-402) and execution steps (lines 410-555)
+- **Pipeline runners**: `run_validation_pipeline()` and `run_execution_pipeline()` in the same file
+- **State factories**: `make_initial_state()` and `make_execution_state()` in the same file
+- **Tests**: `tests/unit/cli/commands/land/pipeline/`
 
 ## Related Documentation
 

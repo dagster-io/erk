@@ -4,6 +4,8 @@ read_when:
   - "running Claude in GitHub Actions workflows"
   - "configuring non-interactive Claude execution"
   - "capturing Claude output in CI"
+last_audited: "2026-02-05 14:24 PT"
+audit_result: edited
 ---
 
 # GitHub Actions Claude Integration
@@ -12,30 +14,14 @@ Running Claude Code in GitHub Actions requires specific flags for non-interactiv
 
 ## Required Flags
 
-```yaml
-run: |
-  claude --print \
-    --verbose \
-    --output-format stream-json \
-    --dangerously-skip-permissions \
-    "/your:command"
-```
-
-### Flag Breakdown
-
-| Flag                             | Purpose                                           |
-| -------------------------------- | ------------------------------------------------- |
-| `--print`                        | Output to stdout (required for any output)        |
-| `--verbose`                      | Enable detailed output (required for stream-json) |
-| `--output-format stream-json`    | Structured JSON output per event                  |
-| `--dangerously-skip-permissions` | Skip interactive permission prompts               |
+All Claude-invoking workflows use the same four flags: `--print`, `--verbose`, `--output-format stream-json`, and `--dangerously-skip-permissions`. See `.github/workflows/learn.yml` for a canonical working example.
 
 ### Critical: --verbose Is Required for stream-json
 
-The `--output-format stream-json` option **requires** `--verbose`. Without it, the command fails silently or with a cryptic error. This is a Claude Code CLI requirement.
+The `--output-format stream-json` option **requires** `--verbose`. Without it, the command fails silently or with a cryptic error.
 
 ```bash
-# WRONG: Fails with "stream-json requires --verbose"
+# WRONG: Fails
 claude --print --output-format stream-json ...
 
 # CORRECT: Include --verbose
@@ -44,55 +30,11 @@ claude --print --verbose --output-format stream-json ...
 
 ## Environment Variables
 
-```yaml
-env:
-  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-  GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }} # Or GITHUB_TOKEN
-```
+Workflows require `ANTHROPIC_API_KEY` and `GH_TOKEN` (or `GITHUB_TOKEN`). Some workflows also use `CLAUDE_CODE_OAUTH_TOKEN` for authenticated Claude Code access.
 
 ## Model Selection
 
-For cost-sensitive CI jobs, specify a faster/cheaper model:
-
-```yaml
-claude --print \
---model claude-haiku-4-5 \
---verbose \
-```
-
-Models ranked by speed/cost (fastest first):
-
-1. `claude-haiku-4-5` - Best for simple tasks
-2. `claude-sonnet-4-5` - Good balance
-3. `claude-opus-4-5` - Most capable, slowest
-
-## Output Capture
-
-The `stream-json` format outputs one JSON object per line (newline-delimited JSON). Parse with `jq`:
-
-```yaml
-- name: Run Claude
-  id: claude
-  run: |
-    output=$(claude --print --verbose --output-format stream-json ...)
-    echo "result=$output" >> "$GITHUB_OUTPUT"
-
-- name: Parse Result
-  run: |
-    echo '${{ steps.claude.outputs.result }}' | jq -r '.text'
-```
-
-## Permissions Acknowledgment
-
-The `--dangerously-skip-permissions` flag bypasses all interactive permission prompts. This is safe in CI because:
-
-- The workflow already has explicit permissions (`permissions:` block)
-- No human is available to approve prompts
-- Repository access is controlled via GitHub secrets
-
-## Canonical Example
-
-See `.github/workflows/learn.yml` for a complete working example.
+For cost-sensitive CI jobs, specify a model via `--model`. Refer to `.github/workflows/` for current pinned model IDs used in each workflow.
 
 ## Common Errors
 
@@ -102,37 +44,6 @@ See `.github/workflows/learn.yml` for a complete working example.
 | "Permission denied"              | Missing `--dangerously-skip-permissions` | Add the flag           |
 | No output captured               | Missing `--print`                        | Add `--print`          |
 | Authentication failed            | Missing `ANTHROPIC_API_KEY`              | Add secret to workflow |
-
-## Workflow Flag Consistency Matrix
-
-All Claude-invoking workflows should use the same flag pattern for consistency:
-
-| Workflow             | `--print` | `--verbose` | `--output-format` | `--dangerously-skip-permissions` |
-| -------------------- | --------- | ----------- | ----------------- | -------------------------------- |
-| plan-implement.yml   | Yes       | Yes         | stream-json       | Yes                              |
-| learn.yml            | Yes       | Yes         | stream-json       | Yes                              |
-| pr-address.yml       | Yes       | Yes         | stream-json       | Yes                              |
-| ci.yml (AI lint fix) | Yes       | Yes         | stream-json       | Yes                              |
-
-**All workflows use identical flags.** When adding new Claude-invoking workflows, follow this pattern:
-
-```yaml
-claude --print \
---model <model-name> \
---output-format stream-json \
---dangerously-skip-permissions \
---verbose \
-"/your:command"
-```
-
-**Flag order**: While flag order doesn't affect functionality, maintaining consistent ordering improves readability. The canonical order is:
-
-1. `--print`
-2. `--model`
-3. `--output-format stream-json`
-4. `--dangerously-skip-permissions`
-5. `--verbose`
-6. Command/prompt
 
 ## Related Topics
 

@@ -10,6 +10,8 @@ tripwires:
     warning: "Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work."
   - action: "passing array or object variables to gh api graphql with -F and json.dumps()"
     warning: "Arrays and objects require special gh syntax: arrays use -f key[]=value1 -f key[]=value2, objects use -f key[subkey]=value. Using -F key=[...] or -F key={...} passes them as literal strings, not typed values."
+last_audited: "2026-02-05 14:20 PT"
+audit_result: edited
 ---
 
 # GitHub GraphQL API Patterns
@@ -113,61 +115,18 @@ cmd.extend(["-F", f"first={limit}"])
 
 ## Query Organization
 
-Store GraphQL queries in a dedicated module rather than inline strings:
+Store GraphQL queries as module-level constants in `erk_shared.gateway.github.graphql_queries` rather than inline strings. See `GET_PR_REVIEW_THREADS_QUERY`, `RESOLVE_REVIEW_THREAD_MUTATION`, and other constants in that module for the current query definitions.
 
-```python
-# packages/erk-shared/src/erk_shared/github/graphql_queries.py
-
-GET_PR_REVIEW_THREADS_QUERY = """query($owner: String!, $repo: String!, $number: Int!) {
-  repository(owner: $owner, name: $repo) {
-    pullRequest(number: $number) {
-      reviewThreads(first: 100) {
-        nodes {
-          id
-          isResolved
-          ...
-        }
-      }
-    }
-  }
-}"""
-```
-
-Benefits:
-
-- Queries are easier to read and maintain
-- Syntax highlighting in editors
-- Reusable across multiple methods
-- Easier to test query structure
+Benefits: queries are easier to read, get syntax highlighting, and are reusable across methods.
 
 ## Implementation Pattern
 
-```python
-from erk_shared.gateway.github.graphql_queries import GET_PR_REVIEW_THREADS_QUERY
-from erk_shared.gateway.github.parsing import execute_gh_command
+See `RealGitHub.get_pr_review_threads()` in `erk_shared/gateway/github/real.py` for the canonical implementation. Key points:
 
-def get_pr_review_threads(self, repo_root: Path, pr_number: int) -> list[PRReviewThread]:
-    repo_info = self.get_repo_info(repo_root)
-
-    # Pass variables individually: -f for strings, -F for typed values
-    cmd = [
-        "gh",
-        "api",
-        "graphql",
-        "-f",
-        f"query={GET_PR_REVIEW_THREADS_QUERY}",
-        "-f",
-        f"owner={repo_info.owner}",
-        "-f",
-        f"repo={repo_info.name}",
-        "-F",
-        f"number={pr_number}",
-    ]
-
-    stdout = execute_gh_command(cmd, repo_root)
-    response = json.loads(stdout)
-    return self._parse_response(response)
-```
+- Import query constants from `erk_shared.gateway.github.graphql_queries`
+- Use `execute_gh_command_with_retry()` (not `execute_gh_command()`) for automatic retry on transient errors
+- Access repo info via `self._repo_info` (stored field), not a method call
+- Pass variables individually: `-f` for strings, `-F` for typed values
 
 ## Common Pitfalls
 
@@ -218,7 +177,8 @@ Test queries manually before implementing:
 
 ```bash
 # Test with heredoc for readability
-gh api graphql -F owner=dagster-io -F repo=erk -F number=123 -f query='
+# Note: -f for strings (owner, repo), -F for typed values (number as Int)
+gh api graphql -f owner=dagster-io -f repo=erk -F number=123 -f query='
 query($owner: String!, $repo: String!, $number: Int!) {
   repository(owner: $owner, name: $repo) {
     pullRequest(number: $number) {
