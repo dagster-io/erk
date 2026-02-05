@@ -8,6 +8,8 @@ read_when:
 tripwires:
   - action: "implementing codespace gateway"
     warning: "Use 3-place pattern (abc, real, fake) without dry-run or print implementations."
+last_audited: "2026-02-05 12:48 PT"
+audit_result: edited
 ---
 
 # Codespace Gateway Pattern
@@ -19,8 +21,8 @@ The codespace gateway provides an abstraction for SSH operations on GitHub Codes
 Unlike most gateways (which have 5 places: abc, real, fake, dry-run, print), the codespace gateway has only 3:
 
 1. **ABC**: `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py`
-2. **Real**: `src/erk/gateway/codespace/real.py`
-3. **Fake**: `tests/erk/gateway/codespace/fake.py`
+2. **Real**: `packages/erk-shared/src/erk_shared/gateway/codespace/real.py`
+3. **Fake**: `packages/erk-shared/src/erk_shared/gateway/codespace/fake.py`
 
 **No dry-run or print implementations** - codespace operations are inherently remote and can't be meaningfully dry-run locally.
 
@@ -30,74 +32,52 @@ The `Codespace` ABC defines three operations:
 
 ### 1. start_codespace()
 
-Ensures a codespace is running before SSH operations:
-
-```python
-@abstractmethod
-def start_codespace(self, gh_name: str) -> None:
-    """Start a stopped codespace.
-
-    No-op if already running.
-    """
-    ...
-```
+Ensures a codespace is running before SSH operations. No-op if already running.
 
 **Real implementation**: Uses `gh api --method POST user/codespaces/{name}/start` (NOT `gh codespace start`, which doesn't exist - see [GitHub CLI Limits](../architecture/github-cli-limits.md))
 
 ### 2. run_ssh_command()
 
-Execute a command via SSH and wait for completion:
+Execute a command via SSH and wait for completion. Returns exit code.
 
-```python
-@abstractmethod
-def run_ssh_command(self, gh_name: str, remote_command: str) -> int:
-    """Run SSH command and return exit code.
-
-    Uses subprocess.run() - waits for command to finish.
-    """
-    ...
-```
-
-**Common use**: Streaming remote commands wrapped with `build_codespace_ssh_command()` - see [Codespace Remote Execution](../erk/codespace-remote-execution.md)
+**Common use**: Streaming remote commands - see [Codespace Remote Execution](../erk/codespace-remote-execution.md)
 
 ### 3. exec_ssh_interactive()
 
-Replace current process with an SSH session:
-
-```python
-@abstractmethod
-def exec_ssh_interactive(self, gh_name: str, remote_command: str) -> NoReturn:
-    """Replace process with SSH session (os.execvp).
-
-    This method never returns - process is replaced.
-    """
-    ...
-```
+Replace current process with an SSH session (via `os.execvp`). This method never returns — the process is replaced.
 
 **Use case**: Interactive shells or commands that need terminal control
 
 ## Implementation Locations
 
-| Implementation | Path                                                          | Purpose                      |
-| -------------- | ------------------------------------------------------------- | ---------------------------- |
-| ABC            | `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py` | Interface definition         |
-| Real           | `src/erk/gateway/codespace/real.py`                           | Production implementation    |
-| Fake           | `tests/erk/gateway/codespace/fake.py`                         | Test double with call traces |
+| Implementation | Path                                                           | Purpose                      |
+| -------------- | -------------------------------------------------------------- | ---------------------------- |
+| ABC            | `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py`  | Interface definition         |
+| Real           | `packages/erk-shared/src/erk_shared/gateway/codespace/real.py` | Production implementation    |
+| Fake           | `packages/erk-shared/src/erk_shared/gateway/codespace/fake.py` | Test double with call traces |
 
 ## Testing Pattern
 
-The fake implementation records calls for verification:
+The fake implementation uses `SSHCall` dataclass objects to track calls for verification:
 
 ```python
+from erk_shared.gateway.codespace.fake import FakeCodespace, SSHCall
+
 # Test code
 fake_codespace = FakeCodespace()
 fake_codespace.run_ssh_command("mycodespace", "echo hello")
 
 # Verify
-assert fake_codespace.calls == [
-    ("run_ssh_command", "mycodespace", "echo hello")
+assert fake_codespace.ssh_calls == [
+    SSHCall(gh_name="mycodespace", remote_command="echo hello", interactive=False)
 ]
 ```
+
+Additional properties for assertions:
+
+- `fake_codespace.started_codespaces` - list of codespace names passed to `start_codespace()`
+- `fake_codespace.exec_called` - bool indicating if `exec_ssh_interactive()` was called
+- `fake_codespace.last_call` - the most recent `SSHCall`, or `None`
 
 ## Why No Dry-Run?
 

@@ -215,14 +215,14 @@ Use the Edit tool to apply the recommended rewrite to the document.
 Update the document's YAML frontmatter to add or update audit metadata:
 
 ```yaml
-last_audited: "YYYY-MM-DD HH:MM PT"
+last_audited: "2026-02-05 12:45 PT"
 audit_result: clean | edited
 ```
 
 - Use `clean` when the audit found no significant issues (KEEP verdict, no rewrite applied)
 - Use `edited` when the doc was rewritten to remove duplicative content
 
-If the document already has `last_audited` / `audit_result` fields, overwrite them with the new values. Use the current date and time in Pacific time, down to the minute.
+If the document already has `last_audited` / `audit_result` fields, overwrite them with the new values. Use the **current date and time in Pacific time, down to the minute**. Format: `YYYY-MM-DD HH:MM PT` (24-hour format, e.g., "2026-02-05 14:30 PT").
 
 ## Design Principles
 

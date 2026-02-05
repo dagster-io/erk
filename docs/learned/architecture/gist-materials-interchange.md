@@ -2,6 +2,8 @@
 title: Gist Materials Interchange Format
 read_when:
   - working with learn materials upload/download, debugging gist-based file transfer, implementing new file packing formats
+last_audited: "2026-02-05 12:32 PT"
+audit_result: edited
 ---
 
 # Gist Materials Interchange Format
@@ -22,16 +24,7 @@ Erk uses GitHub Gists as a data carrier to transfer multiple files between the l
 
 ### Upload Format
 
-**File**: `src/erk/cli/commands/exec/scripts/upload_learn_materials.py:80-87`
-
-Each file is wrapped with delimiter lines and a `FILE:` header, then joined with blank line separators:
-
-```python
-# Key pattern (see source for full loop):
-combined_parts.append(f"{'=' * 60}")        # Opening delimiter
-combined_parts.append(f"FILE: {file_path.name}")  # Filename header
-combined_parts.append(f"{'=' * 60}")        # Closing delimiter
-```
+Each file is wrapped with delimiter lines and a `FILE:` header, then joined with blank line separators. See `upload_learn_materials.py` for the implementation.
 
 **Example packed content**:
 
@@ -55,17 +48,7 @@ FILE: metadata.json
 
 ### Download/Unpack Format
 
-**File**: `src/erk/cli/commands/exec/scripts/download_learn_materials.py:163-207`
-
-The parser uses a boolean `in_header` state toggle to walk through delimiters, extract filenames, and accumulate content:
-
-```python
-# Key parsing logic (see source for full implementation):
-if line.strip() == "=" * 60:
-    in_header = not in_header  # Toggle header state on delimiter
-if in_header and line.startswith("FILE: "):
-    current_filename = line[6:].strip()
-```
+The parser uses a boolean `in_header` state toggle to walk through delimiters, extract filenames, and accumulate content. See `download_learn_materials.py` for the implementation.
 
 ## Delimiter Pattern Details
 
@@ -114,33 +97,23 @@ unpacked_files = unpack_files(packed_content)
 
 **Edge case**: If file content contains a line of 60 equals signs, it will confuse the parser. Currently unhandled (no escaping mechanism).
 
-## URL Format Normalization
+## Raw Content URL Resolution
 
-Gist URLs are normalized before storage:
+Gist raw content is fetched by trying candidate URLs in order until one succeeds. See `download_learn_materials.py` for the implementation.
 
-```python
-# Normalize gist URL to canonical format
-gist_url = gist_url.replace("https://gist.github.com/", "https://gist.githubusercontent.com/")
-gist_url = gist_url + "/raw" if not gist_url.endswith("/raw") else gist_url
-```
-
-**Why**:
-
-- `gist.github.com` URLs redirect to HTML pages (not suitable for `curl`)
-- `gist.githubusercontent.com/.../raw` URLs return raw gist content directly
-- Normalization ensures consistent URL format for downloads
+**Why multiple URLs**: GitHub gist raw URLs vary by context — `gist.githubusercontent.com/raw/{id}` works for public gists without knowing the owner, while `gist.github.com/{id}/raw` provides a fallback for different URL formats.
 
 ## Gist Metadata
 
 Each gist uploaded for learn materials includes:
 
-| File                  | Purpose                                            |
-| --------------------- | -------------------------------------------------- |
-| `learn-materials.txt` | Main packed file containing all materials          |
-| Description           | "Learn materials for issue #{issue_number}"        |
-| Public                | Yes (required for unauthenticated downloads in CI) |
+| File                               | Purpose                                    |
+| ---------------------------------- | ------------------------------------------ |
+| `learn-materials-plan-{issue}.txt` | Main packed file containing all materials  |
+| Description                        | "Learn materials for plan #{issue_number}" |
+| Public                             | No (secret gist for privacy)               |
 
-**Source**: `upload_learn_materials.py:93-100`
+**Source**: `upload_learn_materials.py`
 
 ## Related Documentation
 
