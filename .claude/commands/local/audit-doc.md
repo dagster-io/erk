@@ -97,11 +97,6 @@ For each referenced source file:
 - Check if return type or exception type matches
 - Mark as VERIFIED, MISMATCH, or CANNOT_VERIFY
 
-**Line number claims**: For each `file:line` reference:
-
-- Read the file and check if the line contains relevant content
-- Mark as ACCURATE (within 5 lines), STALE (off by 6+), or BROKEN (file missing)
-
 Record verification results for use in Phase 4 and Phase 5.
 
 ### Phase 4: Adversarial Analysis
@@ -110,7 +105,7 @@ For each section of the document, classify it into one of these value categories
 
 | Category        | Description                                                                                                                                  | Action                                                    |
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                                                        | Replace with "Read `path:line`" reference                 |
+| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                                                        | Replace with "Read `path`" reference                      |
 | **STALE**       | Was once accurate but code has changed (broken imports, renamed functions, moved files)                                                      | Update to match current code                              |
 | **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                                                                              | Flag as high-maintenance; consider code reference instead |
 | **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                                                       | Keep                                                      |
@@ -134,7 +129,6 @@ For each section of the document, classify it into one of these value categories
 - Function/class names that don't exist in the codebase
 - Return type claims that don't match actual function signatures
 - Exception type claims (e.g., "raises RuntimeError") that the function doesn't raise
-- Line number references that point to wrong content (off by 6+ lines)
 
 **Distinguishing STALE from CONTRADICTS:**
 
@@ -144,7 +138,6 @@ For each section of the document, classify it into one of these value categories
 - **STALE**: The claim was once true but code has evolved
   - Example: Import path changed from `erk.core.foo` to `erk_shared.foo`
   - Example: Function was renamed from `old_name()` to `new_name()`
-  - Example: Line number reference points to different code after refactoring
 
 STALE content should be updated; CONTRADICTS content needs deeper review to understand the discrepancy.
 
@@ -184,7 +177,7 @@ Verification: X verified | Y broken/stale
 
 Follow with 2-3 sentences describing the planned changes. For example:
 
-> Sections "Import Paths" and "Function Signatures" are duplicative of `src/erk/gateway/git.py:42` and should be replaced with code references. The "Anti-patterns" section contradicts the current implementation of `resolve_path()` which now uses pathlib.
+> Sections "Import Paths" and "Function Signatures" are duplicative of `src/erk/gateway/git.py` and should be replaced with code references. The "Anti-patterns" section contradicts the current implementation of `resolve_path()` which now uses pathlib.
 
 Keep the full internal analysis available for Phase 7 actions — just don't dump it as text output.
 
@@ -204,7 +197,7 @@ Automatically select the action based on the verdict without prompting:
 Use AskUserQuestion to offer:
 
 - **"Apply recommended rewrite"** — rewrite the doc to remove duplicative content (only offer if verdict is SIMPLIFY or REPLACE WITH CODE REFS)
-- **"Apply accuracy fixes"** — fix stale imports, update line numbers, correct renamed symbols (only offer if verification found STALE/BROKEN claims but doc is otherwise valuable)
+- **"Apply accuracy fixes"** — fix stale imports, correct renamed symbols (only offer if verification found STALE/BROKEN claims but doc is otherwise valuable)
 - **"Mark as audited (clean)"** — stamp frontmatter with audit date and `clean` result (use when verdict is KEEP)
 - **"Mark as audited (with rewrite)"** — apply the rewrite AND stamp frontmatter (only offer if verdict is SIMPLIFY or REPLACE WITH CODE REFS)
 - **"No action"** — just noting findings
