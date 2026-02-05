@@ -101,18 +101,18 @@ At session startup, only `name` and `description` are loaded into context (~50 t
 
 ## Comparison with Claude Skills
 
-| Aspect               | Claude Code Skills                         | Codex Skills                                         |
-| -------------------- | ------------------------------------------ | ---------------------------------------------------- |
-| Location             | `.claude/skills/`                          | `.codex/skills/`                                     |
-| File format          | `SKILL.md` with optional YAML frontmatter  | `SKILL.md` with required YAML frontmatter            |
-| Required frontmatter | None (content-only is valid)               | `name` and `description` required                    |
-| Invocation           | `@` references, auto-loaded, hook triggers | `$skill-name` mention, implicit matching             |
-| Loading behavior     | All skills loaded into context at startup  | Progressive: metadata at startup, body on invocation |
-| Script support       | No (instructions only)                     | Yes (`scripts/` directory for executable code)       |
-| UI metadata          | No                                         | Yes (`agents/openai.yaml`)                           |
-| Scope levels         | Repo (`.claude/`) or user (`~/.claude/`)   | Repo, user, system, admin (4 levels)                 |
-| Commands             | Separate `.claude/commands/` system        | Merged into skills (no separate commands)            |
-| Hooks                | PreToolUse, PostToolUse, etc.              | Not available                                        |
+| Aspect               | Claude Code Skills                                                 | Codex Skills                                         |
+| -------------------- | ------------------------------------------------------------------ | ---------------------------------------------------- |
+| Location             | `.claude/skills/`                                                  | `.codex/skills/`                                     |
+| File format          | `SKILL.md` with optional YAML frontmatter                          | `SKILL.md` with required YAML frontmatter            |
+| Required frontmatter | None (content-only is valid)                                       | `name` and `description` required                    |
+| Invocation           | `@` references, auto-loaded, hook triggers                         | `$skill-name` mention, implicit matching             |
+| Loading behavior     | All skills loaded into context at startup                          | Progressive: metadata at startup, body on invocation |
+| Script support       | No (instructions only)                                             | Yes (`scripts/` directory for executable code)       |
+| UI metadata          | No                                                                 | Yes (`agents/openai.yaml`)                           |
+| Scope levels         | Repo (`.claude/`) or user (`~/.claude/`)                           | Repo, user, system, admin (4 levels)                 |
+| Commands             | Merged into skills (`.claude/commands/` is backwards-compat alias) | Merged into skills (no separate commands)            |
+| Hooks                | PreToolUse, PostToolUse, etc.                                      | Not available                                        |
 
 ## Porting Strategy for Erk
 
@@ -122,7 +122,7 @@ Claude's `.claude/skills/` SKILL.md files are structurally compatible with Codex
 
 2. **Install to both directories**: When erk installs skills to a project, write to both `.claude/skills/` and `.codex/skills/`.
 
-3. **Handle commands**: Claude has a separate `.claude/commands/` system. Codex merges commands into skills. Erk commands would need to be represented as Codex skills.
+3. **Handle commands**: As of Claude Code 2.1.0, `.claude/commands/` files are backwards-compatible aliases for skills. Both Claude and Codex treat commands as skills, so erk's commands can be ported directly to `.codex/skills/`.
 
 4. **Script support**: Codex skills can include `scripts/` with executable code. This could replace some of erk's hook-based behavior.
 

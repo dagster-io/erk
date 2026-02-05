@@ -1,5 +1,7 @@
 ---
 description: Audit a learned doc for accuracy and value vs code
+context: fork
+agent: general-purpose
 ---
 
 # /local:audit-doc
