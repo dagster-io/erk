@@ -24,7 +24,7 @@ Artifact management is unified through the capability system. Each capability de
 
 See `src/erk/core/capabilities/registry.py` for `get_managed_artifacts()` and `is_capability_managed()`. See `src/erk/core/capabilities/base.py` for `ManagedArtifactType` (the 8 valid artifact types: skill, command, agent, workflow, action, hook, prompt, review).
 
-For examples of capabilities declaring managed artifacts, see `SkillCapability.managed_artifacts` in `src/erk/core/capabilities/skill_capability.py` and `HooksCapability.managed_artifacts` in `src/erk/core/capabilities/hooks.py`.
+For examples of capabilities declaring managed artifacts, see `SkillCapability.managed_artifacts` in `src/erk/core/capabilities/skill_capability.py` and `HooksCapability.managed_artifacts` in `src/erk/capabilities/hooks.py`.
 
 ## Capability Installation
 

@@ -57,7 +57,7 @@ See `init_pool_cmd.py` and `unassign_cmd.py` in `src/erk/cli/commands/slot/` for
 
 **When**: The branch will become part of a stack, pushed to remote, or used for a PR.
 
-See `setup_impl_from_issue.py` in `src/erk/cli/commands/exec/` for a working example of `ctx.branch_manager.create_branch()` followed by `checkout_branch()`.
+See `setup_impl_from_issue.py` in `src/erk/cli/commands/exec/scripts/` for a working example of `ctx.branch_manager.create_branch()` followed by `checkout_branch()`.
 
 ### Examples
 
