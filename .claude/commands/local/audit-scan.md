@@ -4,7 +4,7 @@ description: Scan docs/learned/ for documents most in need of audit
 
 # /local:audit-scan
 
-Scan all `docs/learned/` files, score them by audit priority using heuristic signals, and present a tiered report of candidates for deep audit via `/local:audit-doc`.
+Scan all `docs/learned/` files, score them by audit priority using heuristic signals, including indicators of prose-reality drift risk, and present a tiered report of candidates for deep audit via `/local:audit-doc`.
 
 ## Usage
 
@@ -54,6 +54,10 @@ Each agent receives:
 - **`audit_result` field**: Value if present (e.g., `clean`, `edited`)
 - **`redirect_to` field**: Whether it exists in frontmatter
 - **Import count**: Number of `from` or `import` statements inside code blocks
+- **Behavioral claims**: Count of statements containing "returns", "raises", "does", "will", "must", "always", "never" in prose (outside code blocks)
+- **Step sequences**: Count of numbered lists with 3+ items (procedural descriptions drift quickly)
+- **Line number refs**: Count of `:line` or `line X` patterns (need accuracy verification)
+- **Symbol refs**: Count of inline code that looks like function/class names (e.g., backtick-wrapped CamelCase or snake_case identifiers)
 
 Each agent **writes** results to its assigned scratch file (using the Write tool, not inline return) in this format per doc:
 
@@ -67,6 +71,10 @@ last_audited: 2025-01-15 (or "none")
 audit_result: clean (or "none")
 has_redirect: false
 import_count: 3
+behavioral_claims: 12
+step_sequences: 2
+line_number_refs: 5
+symbol_refs: 8
 
 path: docs/learned/category/another-file.md
 lines: 87
@@ -77,6 +85,10 @@ last_audited: none
 audit_result: none
 has_redirect: false
 import_count: 1
+behavioral_claims: 5
+step_sequences: 0
+line_number_refs: 0
+symbol_refs: 3
 ```
 
 **Agent prompt must include these explicit instructions:**
@@ -93,18 +105,21 @@ Gather all agent results by reading the scratch files.
 
 Apply this point-based scoring rubric (higher score = more urgent):
 
-| Signal                                    | Points | Rationale                     |
-| ----------------------------------------- | ------ | ----------------------------- |
-| No `last_audited` field                   | +3     | Never been audited            |
-| `last_audited` > 30 days ago              | +2     | Stale audit                   |
-| Line count > 200                          | +2     | Large docs drift more         |
-| Line count > 100                          | +1     | Medium docs                   |
-| Has 3+ code blocks                        | +2     | Code examples are drift-prone |
-| Has 5+ file path references               | +2     | Path references go stale      |
-| Any broken path detected                  | +3     | Already broken                |
-| Has import statements in code blocks      | +1     | Import paths drift            |
-| Has `redirect_to` field                   | -2     | Already a stub, low priority  |
-| `audit_result: edited` (recently cleaned) | -1     | Recently maintained           |
+| Signal                                                          | Points | Rationale                               |
+| --------------------------------------------------------------- | ------ | --------------------------------------- |
+| No `last_audited` field                                         | +3     | Never been audited                      |
+| `last_audited` > 30 days ago                                    | +2     | Stale audit                             |
+| Line count > 200                                                | +2     | Large docs drift more                   |
+| Line count > 100                                                | +1     | Medium docs                             |
+| Has 3+ code blocks                                              | +2     | Code examples are drift-prone           |
+| Has 5+ file path references                                     | +2     | Path references go stale                |
+| Any broken path detected                                        | +3     | Already broken                          |
+| Has import statements in code blocks                            | +1     | Import paths drift                      |
+| Has step sequences (step_sequences > 0)                         | +1     | Procedural descriptions drift quickly   |
+| High behavioral claim density (behavioral_claims / lines > 0.1) | +2     | Dense claims = more verification needed |
+| Has line number references                                      | +1     | Line numbers go stale with refactoring  |
+| Has `redirect_to` field                                         | -2     | Already a stub, low priority            |
+| `audit_result: edited` (recently cleaned)                       | -1     | Recently maintained                     |
 
 ### Phase 5: Rank and Tier
 
@@ -151,6 +166,8 @@ Output a structured report:
 - Last audited >30 days: X docs
 - Broken paths detected: X docs
 - Total documents with redirect stubs: X docs
+- Docs with step sequences: X docs
+- Total behavioral claims across all docs: X
 ```
 
 Show paths relative to `docs/learned/` for brevity.
