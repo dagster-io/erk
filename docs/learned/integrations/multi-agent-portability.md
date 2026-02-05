@@ -8,7 +8,7 @@ read_when:
 verified_against_source: "2026-02-02"
 codex_source_path: "/Users/schrockn/code/githubs/codex"
 status: "verified against Codex source code"
-last_audited: "2026-02-05 12:52 PT"
+last_audited: "2026-02-05 13:30 PT"
 audit_result: edited
 ---
 
@@ -72,12 +72,12 @@ Codex uses **two orthogonal axes**:
 
 **Erk's `PermissionMode` mapping** (current, in `erk_shared/context/types.py`):
 
-| Erk `PermissionMode` | Claude              | Codex (proposed)                          |
-| -------------------- | ------------------- | ----------------------------------------- |
-| `"safe"`             | `default`           | `--sandbox read-only -a untrusted`        |
-| `"edits"`            | `acceptEdits`       | `--sandbox workspace-write -a on-request` |
-| `"plan"`             | `plan`              | `--sandbox read-only -a never`            |
-| `"dangerous"`        | `bypassPermissions` | `--yolo` (bypasses sandbox and approval)  |
+| Erk `PermissionMode` | Claude              | Codex                                    |
+| -------------------- | ------------------- | ---------------------------------------- |
+| `"safe"`             | `default`           | `--sandbox read-only`                    |
+| `"edits"`            | `acceptEdits`       | `--full-auto`                            |
+| `"plan"`             | `plan`              | `--sandbox read-only`                    |
+| `"dangerous"`        | `bypassPermissions` | `--yolo` (bypasses sandbox and approval) |
 
 > **Note:** The dual-axis model means some Codex configurations have no direct `PermissionMode` equivalent. The mapping above covers erk's use cases.
 
@@ -123,29 +123,7 @@ For exact file paths and invocation syntax, see each tool's documentation.
 
 ## Non-Interactive Execution
 
-**Claude Code:**
-
-```bash
-claude -p "prompt"                    # Run prompt, exit
-claude -p "prompt" --output-format stream-json  # Structured events
-```
-
-**Codex:**
-
-```bash
-codex exec "prompt"                   # Run prompt, exit
-codex exec --json "prompt"            # Streaming JSONL events
-codex -q "prompt"                     # Quiet/non-interactive mode
-```
-
-Both support structured event output for programmatic consumption.
-
-**Codex extras:**
-
-- `codex exec --sandbox <mode> --approval <mode>` — per-execution permission control
-- `codex resume [SESSION_ID]` — resume previous session
-- `codex fork [SESSION_ID]` — fork from previous session
-- `codex app-server` — WebSocket API server for IDE/desktop clients
+Both tools support non-interactive prompt execution with structured event output: Claude via `claude -p` with `--output-format stream-json`, Codex via `codex exec` with `--json`. Codex additionally supports session resume/fork and a WebSocket app-server API for IDE/desktop integration.
 
 ---
 

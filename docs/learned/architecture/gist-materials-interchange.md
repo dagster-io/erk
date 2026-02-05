@@ -2,7 +2,7 @@
 title: Gist Materials Interchange Format
 read_when:
   - working with learn materials upload/download, debugging gist-based file transfer, implementing new file packing formats
-last_audited: "2026-02-05 12:32 PT"
+last_audited: "2026-02-05 13:15 PT"
 audit_result: edited
 ---
 
@@ -75,23 +75,7 @@ The unpacker uses a state machine with two states:
 
 ## Round-Trip Guarantees
 
-The format guarantees round-trip consistency:
-
-**Upload**:
-
-```python
-files = [Path("session.xml"), Path("comments.json")]
-packed_content = pack_files(files)
-gist_url = upload_to_gist(packed_content)
-```
-
-**Download**:
-
-```python
-packed_content = download_from_gist(gist_url)
-unpacked_files = unpack_files(packed_content)
-# unpacked_files == original files (content preserved)
-```
+The format guarantees round-trip consistency. Upload packs files via `combine_learn_material_files()` in `upload_learn_materials.py`, and download unpacks via the state machine parser in `download_learn_materials.py`.
 
 **Invariant**: If file content doesn't contain lines matching `"=" * 60`, unpacking is guaranteed to restore original content exactly.
 

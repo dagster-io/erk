@@ -2,7 +2,7 @@
 title: Async Learn Local Preprocessing
 read_when:
   - working with async learn workflow, debugging trigger-async-learn command, understanding local vs remote session preprocessing
-last_audited: "2026-02-05 12:55 PT"
+last_audited: "2026-02-05 13:30 PT"
 audit_result: edited
 ---
 
@@ -33,111 +33,39 @@ The command orchestrates these steps using **direct Python function calls** (not
 
 ### Step 1: Discover Session Sources
 
-Calls `_discover_sessions()` directly from `get_learn_sessions.py`:
-
-```python
-sessions = _discover_sessions(
-    github_issues=github_issues,
-    claude_installation=claude_installation,
-    repo_root=repo_root,
-    cwd=cwd,
-    issue_number=issue_number,
-)
-```
-
-**Output**: Dict with `session_sources` list containing local and remote session metadata.
+Calls `_discover_sessions()` imported from `get_learn_sessions.py`, passing `github_issues`, `claude_installation`, `repo_root`, `cwd`, and `issue_number`. Returns a dict with a `session_sources` list containing local and remote session metadata.
 
 ### Step 2: Create Learn Materials Directory
 
-```python
-learn_dir = repo_root / ".erk" / "scratch" / f"learn-{issue_number}"
-learn_dir.mkdir(parents=True, exist_ok=True)
-```
-
-This directory holds preprocessed sessions and PR comments before uploading to gist.
+Creates `.erk/scratch/learn-{issue_number}` under the repo root. This directory holds preprocessed sessions and PR comments before uploading to gist.
 
 ### Step 3: Preprocess Local Sessions
 
-For each session where `source_type == "local"`, calls `_preprocess_session_direct()`:
-
-```python
-output_paths = _preprocess_session_direct(
-    session_path=session_path,
-    max_tokens=20000,
-    output_dir=learn_dir,
-    prefix=prefix,  # "planning" or "impl"
-)
-```
-
-**Prefix logic**:
-
-- `session_id == planning_session_id` → prefix = `"planning"`
-- Otherwise → prefix = `"impl"`
-
-**Output**: Preprocessed XML file(s) written to learn directory.
+For each session where `source_type == "local"`, calls `_preprocess_session_direct()` with `max_tokens=20000`. Sessions matching the planning session ID get prefix `"planning"`; all others get `"impl"`. Empty and warmup sessions are filtered out. Output is preprocessed XML file(s) written to the learn directory.
 
 ### Step 4: Fetch PR Comments
 
-Uses direct gateway calls (no subprocess):
+Looks up the PR associated with the plan issue via `_get_pr_for_plan_direct()`, then fetches two types of comments using direct gateway calls:
 
-```python
-# Review comments (inline code comments)
-threads = github.get_pr_review_threads(repo_root, pr_number, include_resolved=True)
-# Writes to: pr-review-comments.json
-
-# Discussion comments (PR conversation)
-comments_result = GitHubChecks.issue_comments(github_issues, repo_root, pr_number)
-# Writes to: pr-discussion-comments.json
-```
+- **Review comments** (inline code comments) via `github.get_pr_review_threads()` -- writes to `pr-review-comments.json`
+- **Discussion comments** (PR conversation) via `GitHubChecks.issue_comments()` -- writes to `pr-discussion-comments.json`
 
 **Graceful degradation**: If PR doesn't exist, these steps are skipped.
 
 ### Step 5: Upload Materials to Gist
 
-Uses `combine_learn_material_files()` and direct gateway call:
-
-```python
-combined_content = combine_learn_material_files(learn_dir)
-gist_result = github.create_gist(
-    filename=f"learn-materials-plan-{issue_number}.txt",
-    content=combined_content,
-    description=f"Learn materials for plan #{issue_number}",
-    public=False,
-)
-```
-
-**Format**: Delimiter-based file packing (see [Gist Materials Interchange](../architecture/gist-materials-interchange.md)).
+Combines all files in the learn directory using `combine_learn_material_files()` from `upload_learn_materials.py`, then uploads as a single secret gist via `github.create_gist()`. See [Gist Materials Interchange](../architecture/gist-materials-interchange.md) for the delimiter-based file packing format.
 
 ### Step 6: Trigger GitHub Actions Workflow
 
-```python
-run_id = github.trigger_workflow(
-    repo_root=repo_root,
-    workflow=LEARN_WORKFLOW,  # "learn.yml"
-    inputs={"issue_number": str(issue_number), "gist_url": str(gist_url)},
-    ref="master",
-)
-```
-
-**Output**: Workflow run ID used to construct workflow URL.
+Calls `github.trigger_workflow()` with workflow `learn.yml`, passing `issue_number` and `gist_url` as inputs, targeting the `master` ref. Returns a workflow run ID used to construct the workflow URL.
 
 ## Local vs Remote Sessions
 
-The preprocessing step only applies to **local sessions**:
-
-```python
-for source_item in session_sources:
-    if source_item.get("source_type") != "local":
-        continue  # Skip remote sessions (already preprocessed)
-
-    # Preprocess local session via direct function call
-    output_paths = _preprocess_session_direct(...)
-```
-
-**Remote sessions** (from gists) are already preprocessed, so they're not re-processed.
+The preprocessing step (Step 3) only applies to **local sessions** (those with `source_type == "local"`). Remote sessions from gists are already preprocessed, so they are skipped during the local preprocessing loop. See `_preprocess_session_direct()` in `trigger_async_learn.py` for the full preprocessing pipeline.
 
 ## Related Documentation
 
-- [Gist Materials Interchange](../architecture/gist-materials-interchange.md) — Gist file packing format
-- [Session Preprocessing](../sessions/preprocessing.md) — What preprocessing does to session XML
-- [Learn Workflow](learn-workflow.md) — Complete async learn flow
+- [Gist Materials Interchange](../architecture/gist-materials-interchange.md) -- Gist file packing format
+- [Session Preprocessing](../sessions/preprocessing.md) -- What preprocessing does to session XML
+- [Learn Workflow](learn-workflow.md) -- Complete async learn flow

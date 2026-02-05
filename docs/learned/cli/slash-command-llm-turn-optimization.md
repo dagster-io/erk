@@ -13,7 +13,7 @@ tripwires:
     warning: "Keep conditional logic in slash commands. Only bundle mechanical API calls where input params are known upfront."
   - action: "forgetting to add TypedDict schemas for exec script JSON output"
     warning: "Define TypedDict in erk_shared for type-safe JSON parsing. Create separate dicts for success result and error result."
-last_audited: "2026-02-05 12:37 PT"
+last_audited: "2026-02-05 13:19 PT"
 audit_result: edited
 ---
 
@@ -110,10 +110,7 @@ See `packages/erk-shared/src/erk_shared/objective_update_context_result.py` for 
 
 After fetching bundled data, execute independent writes in parallel:
 
-**From:** `.claude/commands/erk/objective-update-with-landed-pr.md` Step 3
-
-````markdown
-Execute the action comment and body update in parallel:
+**From:** `.claude/commands/erk/objective-update-with-landed-pr.md` Step 0 subagent instructions (task 4)
 
 ```bash
 # Post action comment
@@ -122,7 +119,6 @@ gh issue comment <issue-number> --body "$(cat <<'EOF'
 EOF
 )"
 ```
-````
 
 ```bash
 # Update objective body
@@ -131,8 +127,6 @@ erk exec update-issue-body <issue-number> --body "$(cat <<'BODY_EOF'
 BODY_EOF
 )"
 ```
-
-````
 
 The LLM can invoke both Bash tools in a single message, running them concurrently.
 
@@ -149,7 +143,7 @@ if llm_needs_to_analyze(result1):
     result2 = fetch_more_data()
 else:
     result2 = fetch_different_data()
-````
+```
 
 Keep this in the slash command so the LLM can make decisions between steps.
 
