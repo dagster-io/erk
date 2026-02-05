@@ -7,7 +7,6 @@ from erk.cli.commands.objective.check_cmd import check_objective
 from erk.cli.commands.objective.close_cmd import close_objective
 from erk.cli.commands.objective.list_cmd import list_objectives
 from erk.cli.commands.objective.next_plan_cmd import next_plan
-from erk.cli.commands.objective.reconcile_cmd import reconcile_objectives
 from erk.cli.help_formatter import ErkCommandGroup
 
 
@@ -21,4 +20,3 @@ register_with_aliases(objective_group, check_objective)
 register_with_aliases(objective_group, close_objective)
 register_with_aliases(objective_group, list_objectives)
 register_with_aliases(objective_group, next_plan)
-register_with_aliases(objective_group, reconcile_objectives)

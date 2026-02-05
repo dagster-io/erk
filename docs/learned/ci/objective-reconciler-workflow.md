@@ -99,15 +99,9 @@ Costs scale linearly with number of objectives processed.
 
 ## Integration Points
 
-### CLI Command
+### Slash Command
 
-The workflow invokes `erk objective reconcile`:
-
-```bash
-erk objective reconcile \
-  ${DRY_RUN:+--dry-run} \
-  ${OBJECTIVE:+$OBJECTIVE}
-```
+The workflow launches Claude with `/erk:objective-next-plan` to create plans for pending objective steps.
 
 ### Label Dependencies
 
