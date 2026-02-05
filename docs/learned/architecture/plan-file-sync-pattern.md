@@ -8,8 +8,8 @@ tripwires:
   - action: "Call plan-update-from-feedback after editing local plan files"
     warning: "Sync is NOT automatic — GitHub issue will show stale content without explicit sync"
     score: 4
-last_audited: "2026-02-04 14:18 PT"
-audit_result: clean
+last_audited: "2026-02-05 15:12 PT"
+audit_result: edited
 ---
 
 # Plan File Sync Pattern
@@ -26,7 +26,7 @@ Plan review PRs work with local markdown files (e.g., `PLAN-REVIEW-6252.md`). Wh
 
 ## The Solution: Explicit Sync Command
 
-After editing the local plan file, call `plan-update-from-feedback` to sync changes back to the GitHub issue:
+After editing the local plan file, call `plan-update-issue` to sync changes back to the GitHub issue:
 
 ```bash
 erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
@@ -56,15 +56,15 @@ git push
 erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
 ```
 
-**Source:** `.claude/commands/erk/pr-address.md:319-322`
+**Source:** `.claude/commands/erk/pr-address.md` (Plan Review Mode section)
 
 This three-step sequence ensures both the PR and the issue are updated.
 
 ## Implementation Details
 
-### plan_update_from_feedback Command
+### plan-update-issue Command
 
-The sync command performs these operations:
+The sync command (`plan_update_from_feedback.py`) performs these operations:
 
 1. **Validate issue exists**: Check that the issue number is valid
 2. **Validate erk-plan label**: Ensure the issue is a plan issue
@@ -73,7 +73,7 @@ The sync command performs these operations:
 5. **Format content**: Wrap the plan content in plan-body markers
 6. **Update comment**: Replace the old comment with new content
 
-**Source:** `src/erk/cli/commands/exec/scripts/plan_update_from_feedback.py:58-127`
+**Source:** `src/erk/cli/commands/exec/scripts/plan_update_from_feedback.py`
 
 ### Metadata Preservation: plan-body Markers
 
@@ -197,7 +197,7 @@ The extra sync step is necessary because plan content lives in both the PR (for 
 ## Related Documentation
 
 - [PR-Based Plan Review Workflow](../planning/pr-review-workflow.md) - Complete plan review process
-- [Plan Header Metadata](../planning/plan-header-metadata.md) - plan_comment_id field
+- Plan header metadata in issue body contains `plan_comment_id` field for sync targeting
 - [PR Address Workflows](../erk/pr-address-workflows.md) - Plan review mode integration
 
 ## Attribution
