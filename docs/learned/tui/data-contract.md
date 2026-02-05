@@ -4,6 +4,8 @@ read_when:
   - "building on top of the TUI data layer"
   - "serializing PlanRowData to JSON"
   - "understanding what data the dashboard displays"
+last_audited: "2026-02-05"
+audit_result: edited
 ---
 
 # TUI Data Contract Reference
@@ -12,16 +14,16 @@ Complete reference for the TUI data layer: PlanRowData fields, PlanDataProvider 
 
 ## PlanRowData Fields
 
-The `PlanRowData` frozen dataclass contains 40 fields organized into 7 categories. All data is immutable to ensure table state consistency.
+The `PlanRowData` frozen dataclass (`src/erk/tui/data/types.py`) contains 38 fields organized into 9 categories. All data is immutable to ensure table state consistency.
 
 ### Identifiers (4 fields)
 
-| Field          | Type  | Nullable | Description                         |
-| -------------- | ----- | -------- | ----------------------------------- |
-| `issue_number` | `int` | No       | GitHub issue number                 |
-| `issue_url`    | `str` | Yes      | Full URL to the GitHub issue        |
-| `pr_number`    | `int` | Yes      | PR number if linked, None otherwise |
-| `pr_url`       | `str` | Yes      | URL to PR (GitHub or Graphite)      |
+| Field          | Type  | Nullable | Description                                        |
+| -------------- | ----- | -------- | -------------------------------------------------- |
+| `issue_number` | `int` | No       | GitHub issue number                                |
+| `issue_url`    | `str` | Yes      | Full URL to the GitHub issue (None if unavailable) |
+| `pr_number`    | `int` | Yes      | PR number if linked, None otherwise                |
+| `pr_url`       | `str` | Yes      | URL to PR (GitHub or Graphite)                     |
 
 ### Title Fields (3 fields)
 
@@ -37,7 +39,7 @@ The `PlanRowData` frozen dataclass contains 40 fields organized into 7 categorie
 | ------------ | ----- | -------- | ------------------------------ |
 | `issue_body` | `str` | No       | Raw issue body text (markdown) |
 
-### Display Strings (8 fields)
+### Display Strings (10 fields)
 
 Pre-formatted strings with emoji and relative times. Ready for direct rendering or conversion to GUI indicators.
 
@@ -86,14 +88,13 @@ Pre-formatted strings with emoji and relative times. Ready for direct rendering 
 | `run_url`        | `str`                              | Yes      | URL to the GitHub Actions run page                                     |
 | `log_entries`    | `tuple[tuple[str, str, str], ...]` | No       | List of `(event_name, timestamp, comment_url)` tuples for plan log     |
 
-### PR State Fields (4 fields)
+### PR State Fields (3 fields)
 
 | Field                    | Type  | Nullable | Description                                |
 | ------------------------ | ----- | -------- | ------------------------------------------ |
 | `pr_state`               | `str` | Yes      | PR state: `"OPEN"`, `"MERGED"`, `"CLOSED"` |
 | `resolved_comment_count` | `int` | No       | Count of resolved PR review comments       |
 | `total_comment_count`    | `int` | No       | Total count of PR review comments          |
-| `comments_display`       | `str` | No       | Formatted display (e.g., `"3/5"` or `"-"`) |
 
 ### Learn Status Fields (5 fields)
 
@@ -105,78 +106,43 @@ Pre-formatted strings with emoji and relative times. Ready for direct rendering 
 | `learn_plan_pr`           | `int`  | Yes      | PR number (for `plan_completed` status)                   |
 | `learn_run_url`           | `str`  | Yes      | URL to GitHub Actions workflow run (for `pending` status) |
 
-### Objective Fields (2 fields)
+### Objective Fields (1 field)
 
-| Field               | Type  | Nullable | Description                                              |
-| ------------------- | ----- | -------- | -------------------------------------------------------- |
-| `objective_issue`   | `int` | Yes      | Objective issue number (for linking plans to objectives) |
-| `objective_display` | `str` | No       | Formatted display string (e.g., `"#123"` or `"-"`)       |
+| Field             | Type  | Nullable | Description                                              |
+| ----------------- | ----- | -------- | -------------------------------------------------------- |
+| `objective_issue` | `int` | Yes      | Objective issue number (for linking plans to objectives) |
 
 ## PlanDataProvider ABC
 
-Abstract interface for fetching plan data. Implementations must provide this interface.
+Abstract interface for fetching plan data (`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py`). Implementations must provide 3 abstract properties and 5 abstract methods:
 
-```python
-class PlanDataProvider(ABC):
-    @property
-    @abstractmethod
-    def repo_root(self) -> Path:
-        """Get the repository root path."""
-        ...
+**Properties:** `repo_root` (Path), `clipboard` (Clipboard), `browser` (BrowserLauncher)
 
-    @property
-    @abstractmethod
-    def clipboard(self) -> Clipboard:
-        """Get the clipboard interface for copy operations."""
-        ...
+**Methods:**
 
-    @property
-    @abstractmethod
-    def browser(self) -> BrowserLauncher:
-        """Get the browser launcher interface for opening URLs."""
-        ...
-
-    @abstractmethod
-    def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
-        """Fetch plans matching the given filters."""
-        ...
-
-    @abstractmethod
-    def close_plan(self, issue_number: int, issue_url: str) -> list[int]:
-        """Close a plan and its linked PRs. Returns list of PR numbers closed."""
-        ...
-
-    @abstractmethod
-    def submit_to_queue(self, issue_number: int, issue_url: str) -> None:
-        """Submit a plan to the implementation queue."""
-        ...
-
-    @abstractmethod
-    def fetch_branch_activity(self, rows: list[PlanRowData]) -> dict[int, BranchActivity]:
-        """Fetch branch activity for plans that exist locally."""
-        ...
-
-    @abstractmethod
-    def fetch_plan_content(self, issue_number: int, issue_body: str) -> str | None:
-        """Fetch plan content from the first comment of an issue."""
-        ...
-```
+| Method                  | Signature                              | Returns                     |
+| ----------------------- | -------------------------------------- | --------------------------- |
+| `fetch_plans`           | `(filters: PlanFilters)`               | `list[PlanRowData]`         |
+| `close_plan`            | `(issue_number: int, issue_url: str)`  | `list[int]` (PR numbers)    |
+| `submit_to_queue`       | `(issue_number: int, issue_url: str)`  | `None`                      |
+| `fetch_branch_activity` | `(rows: list[PlanRowData])`            | `dict[int, BranchActivity]` |
+| `fetch_plan_content`    | `(issue_number: int, issue_body: str)` | `str \| None`               |
 
 ## PlanFilters
 
-Filter options for plan list queries.
+Filter options for plan list queries (`src/erk/tui/data/types.py`). Frozen dataclass with 7 fields:
 
-```python
-@dataclass(frozen=True)
-class PlanFilters:
-    labels: tuple[str, ...]      # Filter by labels (default: ["erk-plan"])
-    state: str | None            # "open", "closed", or None for all
-    run_state: str | None        # Filter by workflow run state
-    limit: int | None            # Maximum number of results
-    show_prs: bool               # Whether to include PR data
-    show_runs: bool              # Whether to include workflow run data
-    creator: str | None          # Filter by creator username
-```
+| Field       | Type              | Description                                |
+| ----------- | ----------------- | ------------------------------------------ |
+| `labels`    | `tuple[str, ...]` | Filter by labels (default: `["erk-plan"]`) |
+| `state`     | `str \| None`     | `"open"`, `"closed"`, or None for all      |
+| `run_state` | `str \| None`     | Filter by workflow run state               |
+| `limit`     | `int \| None`     | Maximum number of results                  |
+| `show_prs`  | `bool`            | Whether to include PR data                 |
+| `show_runs` | `bool`            | Whether to include workflow run data       |
+| `creator`   | `str \| None`     | Filter by creator username                 |
+
+Also provides `PlanFilters.default()` factory for standard open erk-plan queries.
 
 ## RealPlanDataProvider Data Fetch Flow
 
@@ -205,7 +171,7 @@ When serializing PlanRowData to JSON (for desktop dashboard CLI command):
 
 3. **Display strings** contain emoji that may need special handling depending on the consuming frontend
 
-Example serialization:
+Illustrative serialization pattern (not in codebase):
 
 ```python
 def serialize_plan_row_data(row: PlanRowData) -> dict:
