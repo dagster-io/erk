@@ -9,6 +9,8 @@ tripwires:
     warning: "Commands with user interaction must check `in_github_actions()` and skip prompts in CI. Interactive prompts hang indefinitely in GitHub Actions workflows."
   - action: "using blocking operations (user confirmation, editor launch) in CI-executed code paths"
     warning: "Check `in_github_actions()` before any blocking operation. CI has no terminal for user input."
+last_audited: "2026-02-05"
+audit_result: edited
 ---
 
 # CI-Aware Commands
@@ -42,15 +44,7 @@ else:
 
 ### Implementation
 
-The detection is simple - it checks the `GITHUB_ACTIONS` environment variable:
-
-```python
-def in_github_actions() -> bool:
-    """Check if code is running in GitHub Actions CI."""
-    return os.environ.get("GITHUB_ACTIONS") == "true"
-```
-
-See `erk_shared/env.py` for the canonical implementation.
+The detection checks the `GITHUB_ACTIONS` environment variable. See `packages/erk-shared/src/erk_shared/env.py` for the canonical implementation.
 
 ## When to Use CI Detection
 

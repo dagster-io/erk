@@ -5,6 +5,8 @@ read_when:
   - "debugging why a PR isn't linked to its issue"
   - "working with .impl/issue.json"
   - "creating PRs that close issues"
+last_audited: "2026-02-05"
+audit_result: edited
 ---
 
 # Issue-PR Linkage Storage Model
@@ -32,7 +34,7 @@ The primary path for creating issue-PR linkages:
 
 **Key implementation**: `src/erk/cli/commands/submit.py`
 
-### Via `/gt:pr-submit` or `/erk:git-pr-push`
+### Via `/erk:pr-submit` or `/erk:git-pr-push`
 
 Slash commands that create PRs read the issue reference from local storage:
 
@@ -40,7 +42,7 @@ Slash commands that create PRs read the issue reference from local storage:
 2. If found, append `Closes #N` to PR body
 3. Uses `erk exec get-closing-text` to read the reference
 
-**Key implementation**: `packages/erk-kits/.../get_closing_text.py`
+**Key implementation**: `src/erk/cli/commands/exec/scripts/get_closing_text.py`
 
 ## Storage Locations
 
@@ -49,14 +51,16 @@ Slash commands that create PRs read the issue reference from local storage:
 ```json
 {
   "issue_number": 123,
-  "issue_url": "https://github.com/owner/repo/issues/123"
+  "issue_url": "https://github.com/owner/repo/issues/123",
+  "created_at": "2025-01-15T10:30:00+00:00",
+  "synced_at": "2025-01-15T10:30:00+00:00"
 }
 ```
 
 This file maps the current worktree to its source GitHub issue.
 
 - Created by `erk plan submit` (as `.worker-impl/`)
-- Created by `erk create --from-plan` (as `.impl/`)
+- Created by `erk wt create --from-plan` (as `.impl/`)
 - Read by slash commands when creating PRs
 
 ### PR Body: `Closes #N`
@@ -133,13 +137,13 @@ gh pr view --json body -q '.body'
 
 ## Key Files
 
-| Purpose                  | Location                                             |
-| ------------------------ | ---------------------------------------------------- |
-| Issue reference reading  | `packages/erk-shared/src/erk_shared/impl_folder.py`  |
-| PR creation with Closes  | `src/erk/cli/commands/submit.py`                     |
-| Get closing text command | `packages/erk-kits/.../get_closing_text.py`          |
-| Timeline event parsing   | `packages/erk-shared/src/erk_shared/github/real.py`  |
-| PullRequestInfo type     | `packages/erk-shared/src/erk_shared/github/types.py` |
+| Purpose                  | Location                                                     |
+| ------------------------ | ------------------------------------------------------------ |
+| Issue reference reading  | `packages/erk-shared/src/erk_shared/impl_folder.py`          |
+| PR creation with Closes  | `src/erk/cli/commands/submit.py`                             |
+| Get closing text command | `src/erk/cli/commands/exec/scripts/get_closing_text.py`      |
+| Timeline event parsing   | `packages/erk-shared/src/erk_shared/gateway/github/real.py`  |
+| PullRequestInfo type     | `packages/erk-shared/src/erk_shared/gateway/github/types.py` |
 
 ## Related Topics
 

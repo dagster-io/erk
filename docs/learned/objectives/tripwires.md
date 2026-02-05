@@ -12,8 +12,6 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
-**CRITICAL: Before adding metadata fields to objective issues without schema definition** → Read [Objective Metadata Schema](objective-metadata-schema.md) first. Objective metadata must be defined in ObjectiveHeaderSchema (parallel to PlanHeaderSchema). Define schema first, then implement parsing.
-
 **CRITICAL: Before creating a new roadmap data type without using frozen dataclass** → Read [Roadmap Parser API Reference](roadmap-parser-api.md) first. RoadmapStep and RoadmapPhase are frozen dataclasses. New roadmap types must follow this pattern.
 
 **CRITICAL: Before creating or modifying roadmap step IDs** → Read [Roadmap Parser](roadmap-parser.md) first. Step IDs should use plain numbers (1.1, 2.1), not letter format (1A.1, 1B.1).
