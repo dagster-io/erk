@@ -5,6 +5,8 @@ read_when:
   - "understanding Electron Forge Vite setup"
   - "adding new erkdesk features"
   - "debugging erkdesk build issues"
+last_audited: "2026-02-05 04:02 PT"
+audit_result: clean
 ---
 
 # Erkdesk Project Structure
