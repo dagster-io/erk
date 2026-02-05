@@ -5,6 +5,8 @@ read_when:
   - "understanding Electron Forge Vite setup"
   - "adding new erkdesk features"
   - "debugging erkdesk build issues"
+last_audited: "2026-02-05 09:45 PT"
+audit_result: edited
 ---
 
 # Erkdesk Project Structure
@@ -13,23 +15,11 @@ Erkdesk is a standalone pnpm project implementing an Electron desktop applicatio
 
 ## Directory Layout
 
-```
-erkdesk/
-├── src/
-│   ├── main/          # Electron main process (Node.js)
-│   │   ├── index.ts   # Main process entry point
-│   │   └── preload.ts # Preload script (context bridge)
-│   └── renderer/      # Renderer process (React)
-│       ├── App.tsx    # React application
-│       ├── index.tsx  # Renderer entry point
-│       └── vite.config.ts  # Renderer-specific Vite config
-├── forge.config.ts    # Electron Forge configuration
-├── vite.main.config.ts     # Main process Vite config
-├── vite.preload.config.ts  # Preload script Vite config
-├── package.json       # Dependencies and scripts
-├── .npmrc             # pnpm configuration (hoisted mode)
-└── tsconfig.json      # TypeScript configuration
-```
+See `erkdesk/` for current structure. Key locations:
+
+- `src/main/` — Electron main process (Node.js)
+- `src/renderer/` — Renderer process (React)
+- `forge.config.ts` — Electron Forge configuration
 
 ## Build System Architecture
 
@@ -37,98 +27,20 @@ erkdesk/
 
 Erkdesk uses **three separate Vite configurations** orchestrated by Electron Forge's VitePlugin:
 
-1. **Main Process** (`vite.main.config.ts`)
-   - Target: Node.js environment
-   - Entry: `src/main/index.ts`
-   - ESM module resolution
-   - Creates the Electron main process bundle
+1. **Main Process** (`vite.main.config.ts`) — Node.js environment, creates the Electron main process bundle
+2. **Preload Script** (`vite.preload.config.ts`) — Renderer with Node.js access, minimal bundle for context bridge
+3. **Renderer Process** (`src/renderer/vite.config.ts`) — Browser environment with React and HMR
 
-2. **Preload Script** (`vite.preload.config.ts`)
-   - Target: Renderer process (but with Node.js access)
-   - Entry: `src/main/preload.ts`
-   - Externalizes `electron` dependency
-   - Minimal bundle for context bridge
-
-3. **Renderer Process** (`src/renderer/vite.config.ts`)
-   - Target: Browser environment
-   - Entry: `src/renderer/index.tsx`
-   - React plugin enabled
-   - HMR (Hot Module Replacement) in development
-
-### Forge Configuration
-
-The `forge.config.ts` file orchestrates the build:
-
-```typescript
-new VitePlugin({
-  build: [
-    {
-      entry: "src/main/index.ts",
-      config: "vite.main.config.ts",
-      target: "main",
-    },
-    {
-      entry: "src/main/preload.ts",
-      config: "vite.preload.config.ts",
-      target: "preload",
-    },
-  ],
-  renderer: [
-    {
-      name: "main_window",
-      config: "src/renderer/vite.config.ts",
-    },
-  ],
-});
-```
-
-**Key insight**: Electron Forge coordinates all three builds, ensuring they work together correctly.
+**Key insight**: Electron Forge coordinates all three builds via `forge.config.ts`, ensuring they work together correctly. See `erkdesk/forge.config.ts` for the VitePlugin configuration.
 
 ## Makefile Targets
 
-Three make targets provide erkdesk operations:
+Run `make erkdesk-<target>` for development operations. See `Makefile` for exact commands:
 
-### erkdesk-start
-
-```bash
-make erkdesk-start
-```
-
-**Action**: `cd erkdesk && pnpm start`
-
-Launches the Electron app in development mode with:
-
-- HMR for renderer process
-- Auto-reload for main process changes
-- DevTools auto-open
-
-### erkdesk-package
-
-```bash
-make erkdesk-package
-```
-
-**Action**: `cd erkdesk && pnpm run package`
-
-Creates a packaged application (no installer):
-
-- Bundles app for current platform
-- ASAR archive enabled
-- Ready for local testing
-
-### erkdesk-make
-
-```bash
-make erkdesk-make
-```
-
-**Action**: `cd erkdesk && pnpm run make`
-
-Creates distributable artifacts:
-
-- ZIP archives via MakerZIP
-- Supports: darwin, linux, win32
-- Output in `out/make/` directory
+- `erkdesk-start` — Launch in dev mode (HMR, auto-reload, DevTools)
+- `erkdesk-package` — Create packaged app (no installer)
+- `erkdesk-make` — Create distributables (ZIP for darwin/linux/win32)
+- `erkdesk-test` — Run test suite
 
 ## Standalone vs Workspace
 
@@ -136,7 +48,6 @@ Creates distributable artifacts:
 
 - Has its own `package.json` and `pnpm-lock.yaml`
 - Dependencies managed independently
-- No shared workspace dependencies
 
 **Why standalone?**:
 
@@ -146,76 +57,13 @@ Creates distributable artifacts:
 
 ## Distribution Strategy
 
-The project uses **MakerZIP** for cross-platform distribution:
+Uses **MakerZIP** for cross-platform distribution (simple unzip-and-run). Future options: MakerDMG (macOS), MakerDeb (Linux), MakerSquirrel (Windows).
 
-```typescript
-makers: [new MakerZIP({}, ["darwin", "linux", "win32"])];
-```
+## CI Integration
 
-**Benefits**:
+The `erkdesk-tests` job in `.github/workflows/ci.yml` runs tests on every push.
 
-- Simple cross-platform distribution (no platform-specific installers yet)
-- Users unzip and run
-- Future: Can add MakerDMG (macOS), MakerDeb (Linux), MakerSquirrel (Windows)
-
-## Development Workflow
-
-1. **Start development server**:
-
-   ```bash
-   make erkdesk-start
-   ```
-
-2. **Make changes**:
-   - Main process: Edit `src/main/index.ts`, auto-reload triggers
-   - Renderer: Edit `src/renderer/App.tsx`, HMR updates instantly
-   - Preload: Edit `src/main/preload.ts`, auto-reload triggers
-
-3. **Test packaging**:
-
-   ```bash
-   make erkdesk-package
-   ```
-
-4. **Build distributables**:
-   ```bash
-   make erkdesk-make
-   ```
-
-## Testing
-
-Erkdesk uses **Vitest + React Testing Library + jsdom** for component testing.
-
-### Test Stack
-
-- **Vitest**: Fast test runner with native ESM support
-- **React Testing Library**: Component testing with user-centric queries
-- **jsdom**: Simulated DOM environment for Node.js
-
-### Running Tests
-
-```bash
-# Via pnpm
-cd erkdesk && pnpm test
-
-# Via make
-make erkdesk-test
-```
-
-### CI Integration
-
-The `erkdesk-tests` job in `.github/workflows/ci.yml` runs the test suite on every push. Tests must pass before merge.
-
-**Key CI property**: The `erkdesk-tests` job is **excluded** from the `autofix` job's needs list. Why? The autofix job can only fix linting/formatting issues, not test failures. Including test jobs would cause the entire pipeline to block on test failures that autofix cannot resolve.
-
-### Configuration
-
-See [Vitest Setup](vitest-setup.md) for detailed configuration patterns, including:
-
-- Test file patterns and discovery
-- jsdom environment configuration
-- Coverage setup
-- Mock patterns for window/DOM APIs
+**Key CI property**: The `erkdesk-tests` job is **excluded** from the `autofix` job's needs list. Why? Autofix can only fix linting/formatting issues, not test failures. Including test jobs would block the pipeline on failures autofix cannot resolve.
 
 ## Related Documentation
 

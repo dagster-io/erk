@@ -4,6 +4,8 @@ read_when:
   - "using .impl/ folders"
   - "understanding plan file structure"
   - "implementing plans"
+last_audited: "2026-02-05 10:01 PT"
+audit_result: clean
 ---
 
 # Planning Workflow

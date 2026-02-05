@@ -2,6 +2,8 @@
 title: SplitPane Implementation
 read_when:
   - working on split-pane layout, debugging bounds reporting, implementing resizable panels in erkdesk
+last_audited: "2026-02-05 09:48 PT"
+audit_result: edited
 ---
 
 # SplitPane Implementation
@@ -11,174 +13,41 @@ The `SplitPane` component provides a resizable two-panel layout where:
 - **Left pane** contains React UI (file tree, controls, etc.)
 - **Right pane** is a placeholder for Electron's `WebContentsView` overlay
 
-## Component Architecture
+**Source**: `erkdesk/src/renderer/components/SplitPane.tsx`
 
-**File**: `erkdesk/src/renderer/components/SplitPane.tsx`
+## Key Constants
 
-### Props
-
-```typescript
-interface SplitPaneProps {
-  leftPane: React.ReactNode; // Content for left panel
-  minLeftWidth?: number; // Default: 200px
-  minRightWidth?: number; // Default: 400px
-  defaultLeftWidth?: number; // Default: 300px
-}
-```
-
-### Constants
-
-```typescript
-const DIVIDER_WIDTH = 4; // Width of the draggable divider (in pixels)
-```
-
-**Note**: This constant is hardcoded in the component but critical for bounds calculations. It represents the space between the left pane and the WebContentsView.
+- `DIVIDER_WIDTH = 4` — Width of the draggable divider in pixels, critical for bounds calculations
 
 ## Bounds Reporting Lifecycle
 
-The component reports WebContentsView bounds to the main process via `window.erkdesk.updateWebViewBounds()` on three triggers:
+The component reports WebContentsView bounds to the main process via `window.erkdesk.updateWebViewBounds()` on four triggers:
 
-### 1. Initial Mount
+1. **Initial mount** — `useEffect` with `[leftWidth, reportBounds]` dependency
+2. **Divider drag** — Setting `leftWidth` state triggers the effect
+3. **Window resize** — Event listener calls `reportBounds()`
+4. **Right pane resize** — `ResizeObserver` detects size changes (e.g., when log panel appears)
 
-When the component mounts, `reportBounds()` is called via `useEffect`:
-
-```typescript
-useEffect(() => {
-  reportBounds();
-}, [leftWidth, reportBounds]);
-```
-
-This ensures the WebContentsView is positioned correctly on initial render.
-
-### 2. Divider Drag
-
-When the user drags the divider to resize the split:
-
-```typescript
-const onMouseMove = (e: MouseEvent) => {
-  const container = containerRef.current;
-  if (!container) return;
-  const containerRect = container.getBoundingClientRect();
-  const maxLeft = containerRect.width - DIVIDER_WIDTH - minRightWidth;
-  const newLeft = e.clientX - containerRect.left;
-  setLeftWidth(Math.max(minLeftWidth, Math.min(maxLeft, newLeft)));
-};
-```
-
-Setting `leftWidth` triggers the `useEffect` dependency, which calls `reportBounds()`.
-
-### 3. Window Resize
-
-When the window is resized, bounds must be recalculated:
-
-```typescript
-useEffect(() => {
-  window.addEventListener("resize", reportBounds);
-  return () => window.removeEventListener("resize", reportBounds);
-}, [reportBounds]);
-```
-
-This ensures the WebContentsView stays correctly positioned when the window size changes.
-
-## Bounds Calculation
-
-The `reportBounds` function uses `getBoundingClientRect()` on the right pane placeholder:
-
-```typescript
-const reportBounds = useCallback(() => {
-  const el = rightPaneRef.current;
-  if (!el) return;
-  const rect = el.getBoundingClientRect();
-  window.erkdesk.updateWebViewBounds({
-    x: rect.x,
-    y: rect.y,
-    width: rect.width,
-    height: rect.height,
-  });
-}, []);
-```
-
-**Why this works**:
-
-- The right pane div has `flex: 1`, so it expands to fill remaining space.
-- `getBoundingClientRect()` returns the actual rendered position and size.
-- The main process receives these measurements and applies them to the WebContentsView.
+**Why `getBoundingClientRect()` works**: The right pane div has `flex: 1`, so it expands to fill remaining space. The function returns the actual rendered position and size, which the main process applies to the WebContentsView.
 
 ## Minimum Width Constraints
 
-### Left Pane
+- **Left pane**: `minLeftWidth` (default 200px) enforced via `Math.max()` during drag
+- **Right pane**: `minRightWidth` (default 400px) enforced by calculating `maxLeft`:
+  ```
+  maxLeft = containerRect.width - DIVIDER_WIDTH - minRightWidth
+  ```
 
-```typescript
-minLeftWidth = 200; // Default minimum
-```
-
-Enforced during drag:
-
-```typescript
-setLeftWidth(Math.max(minLeftWidth, Math.min(maxLeft, newLeft)));
-```
-
-### Right Pane
-
-```typescript
-minRightWidth = 400; // Default minimum
-```
-
-Enforced by calculating `maxLeft`:
-
-```typescript
-const maxLeft = containerRect.width - DIVIDER_WIDTH - minRightWidth;
-```
-
-This ensures the left pane cannot grow so large that the right pane would be smaller than `minRightWidth`.
+This prevents the left pane from growing so large that the right pane would be smaller than `minRightWidth`.
 
 ## Defensive Bounds Handling
 
-While the component reports measured bounds directly, the **main process** applies defensive clamping:
+The **main process** applies defensive clamping (see `erkdesk/src/main/index.ts:47-52`):
 
-```typescript
-// In erkdesk/src/main/index.ts
-webView.setBounds({
-  x: Math.max(0, Math.floor(bounds.x)),
-  y: Math.max(0, Math.floor(bounds.y)),
-  width: Math.max(0, Math.floor(bounds.width)),
-  height: Math.max(0, Math.floor(bounds.height)),
-});
-```
-
-**Rationale**: Even though React's `getBoundingClientRect()` should return valid values, the main process clamps to prevent:
-
-- Negative coordinates (e.g., from browser quirks)
-- Fractional pixels (Electron expects integer bounds)
+- `Math.max(0, ...)` — Prevents negative coordinates from browser quirks
+- `Math.floor(...)` — Electron expects integer bounds, not fractional pixels
 
 See [Defensive Bounds Handling](defensive-bounds-handling.md) for details.
-
-## Divider Interaction
-
-### Dragging State
-
-```typescript
-const [isDragging, setIsDragging] = useState(false);
-```
-
-- `onMouseDown` on divider → `setIsDragging(true)`
-- `onMouseUp` anywhere → `setIsDragging(false)`
-
-### Visual Feedback
-
-```typescript
-backgroundColor: isDragging ? "#999" : "#ccc";
-```
-
-The divider darkens during drag to indicate active resizing.
-
-### Cursor
-
-```typescript
-cursor: "col-resize";
-```
-
-Shows horizontal resize cursor when hovering over the divider.
 
 ## Layout Structure
 
@@ -204,18 +73,7 @@ Shows horizontal resize cursor when hovering over the divider.
 
 ## IPC Cleanup
 
-The component does **not** handle cleanup — the main process removes IPC listeners when the window closes:
-
-```typescript
-// In erkdesk/src/main/index.ts
-mainWindow.on("closed", () => {
-  ipcMain.removeAllListeners("webview:update-bounds");
-  ipcMain.removeAllListeners("webview:load-url");
-  webView = null;
-});
-```
-
-See [WebView API](webview-api.md) for IPC cleanup details.
+The component does **not** handle cleanup — the main process removes all IPC listeners when the window closes. See `erkdesk/src/main/index.ts:190-201` for the cleanup code.
 
 ## Related Documentation
 

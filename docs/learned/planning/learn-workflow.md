@@ -13,6 +13,8 @@ tripwires:
     warning: "CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section."
   - action: "gathering sessions for preprocessing"
     warning: "Sessions >100k characters MUST be preprocessed first. Use erk exec preprocess-session for ~99% token reduction."
+last_audited: "2026-02-05 09:59 PT"
+audit_result: clean
 ---
 
 # Learn Workflow
