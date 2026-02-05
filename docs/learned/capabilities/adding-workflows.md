@@ -4,6 +4,8 @@ read_when:
   - "adding workflow capabilities"
   - "creating GitHub Actions workflow capabilities"
   - "understanding workflow capability pattern"
+last_audited: "2026-02-05 13:55 PT"
+audit_result: edited
 ---
 
 # Adding Workflow Capabilities
@@ -31,37 +33,21 @@ src/erk/capabilities/workflows/<workflow_name>.py
 
 Create `src/erk/capabilities/workflows/my_workflow.py`.
 
-See `src/erk/capabilities/workflows/learn.py` for the canonical pattern. Workflow capabilities extend `Capability` directly and implement:
+See `LearnWorkflowCapability` in `src/erk/capabilities/workflows/learn.py` for the canonical single-file pattern, and `ErkImplWorkflowCapability` in `src/erk/capabilities/workflows/erk_impl.py` for a multi-artifact pattern. Workflow capabilities extend `Capability` directly and implement all abstract members from `src/erk/core/capabilities/base.py`:
 
-- `name`, `description`, `scope` - Identity properties
+- `name`, `description`, `scope`, `installation_check_description` - Identity properties
 - `artifacts`, `managed_artifacts` - Track installed files
 - `is_installed()` - Check if workflow file exists
 - `install()` - Copy from bundled artifacts, record installation
 - `uninstall()` - Remove workflow file, clear installation record
 
-Key patterns from the canonical example:
-
-- Use `get_bundled_github_dir()` to find source files
-- Create parent directories with `mkdir(parents=True, exist_ok=True)`
-- Use `shutil.copy2()` to preserve file metadata
-- Record state with `add_installed_capability()`
-
 ### Step 2: Register in Registry
 
-In `src/erk/core/capabilities/registry.py`:
+In `src/erk/core/capabilities/registry.py`, add an import and add an instance to the `_all_capabilities()` tuple.
 
-1. Add import at top of file
-2. Add instance to the `_all_capabilities()` tuple
+### Step 3: Add the Workflow File
 
-See `src/erk/core/capabilities/registry.py` for the registration pattern.
-
-### Step 3: Bundle the Workflow File
-
-The workflow YAML must exist in bundled artifacts:
-
-```
-src/erk/bundled/.github/workflows/my-workflow.yml
-```
+The workflow YAML must exist in a location resolved by `get_bundled_github_dir()` (see `src/erk/artifacts/paths.py`). For editable installs this is the repo root `.github/` directory; for wheel installs it is `erk/data/github/`. Place the workflow file at `.github/workflows/<name>.yml` in the repo.
 
 ## Why No Template Base Class?
 
@@ -74,44 +60,33 @@ Unlike skills, reminders, and reviews, workflows:
 
 Each workflow capability is different enough that a template would add complexity without significant benefit.
 
-## Example: LearnWorkflowCapability
-
-See `src/erk/capabilities/workflows/learn.py` for a complete example.
-
-Key patterns:
-
-- Uses `get_bundled_github_dir()` to find source files
-- Creates parent directories with `mkdir(parents=True, exist_ok=True)`
-- Uses `shutil.copy2()` to preserve file metadata
-- Records installation state with `add_installed_capability()`
-
 ## Testing
 
 ```bash
 # List capabilities to verify registration
 erk init capability list
 
-# Check if installed
-erk init capability status my-workflow
+# Check detailed status for a specific capability
+erk init capability list my-workflow
 
 # Install
-erk init capability install my-workflow
+erk init capability add my-workflow
 
-# Uninstall
-erk init capability uninstall my-workflow
+# Remove
+erk init capability remove my-workflow
 ```
 
 ## Checklist
 
 - [ ] File created at `src/erk/capabilities/workflows/<name>.py`
 - [ ] Class extends `Capability` directly
-- [ ] All required properties implemented
+- [ ] All abstract properties implemented (including `installation_check_description`)
 - [ ] `is_installed()` checks for workflow file
-- [ ] `install()` copies from bundled artifacts
+- [ ] `install()` copies from bundled artifacts via `get_bundled_github_dir()`
 - [ ] `uninstall()` removes the workflow file
 - [ ] Import added to `registry.py`
 - [ ] Instance added to `_all_capabilities()` tuple
-- [ ] Bundled workflow exists at `src/erk/bundled/.github/workflows/<name>.yml`
+- [ ] Workflow YAML exists at `.github/workflows/<name>.yml`
 
 ## Related Documentation
 

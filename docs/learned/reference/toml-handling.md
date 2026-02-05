@@ -1,5 +1,7 @@
 ---
 title: TOML File Handling
+last_audited: "2026-02-05 16:53 PT"
+audit_result: edited
 read_when:
   - "reading TOML files"
   - "writing TOML files"
@@ -8,135 +10,36 @@ read_when:
   - "working with pyproject.toml"
 tripwires:
   - action: "defining the same skill or command in multiple TOML sections"
-    warning: "TOML duplicate key constraint: Each skill/command must have a single canonical destination. See single-canonical-destination pattern in this document."
+    warning: "TOML duplicate key constraint: Each skill/command must have a single canonical destination. See bundled-artifacts.md for portability classification."
 ---
 
 # TOML File Handling
 
-This document defines the standard patterns for reading and writing TOML files in erk.
+Standard patterns for reading and writing TOML files in erk.
 
-## Reading: Use tomllib (stdlib)
+## Library Choice
 
-For reading TOML files, use Python's built-in `tomllib` module (available since Python 3.11):
+- **Reading**: Use `tomllib` (stdlib, Python 3.11+)
+- **Writing**: Use `tomlkit` (preserves formatting, adds comments programmatically)
 
-```python
-import tomllib
-from pathlib import Path
+`tomlkit` is a dependency of `erk-shared` (see `packages/erk-shared/pyproject.toml`).
 
-def load_config(path: Path) -> dict:
-    content = path.read_text(encoding="utf-8")
-    return tomllib.loads(content)
-```
+## Why tomlkit over f-strings?
 
-## Writing: Use tomlkit (preserves formatting)
-
-For writing TOML files, use `tomlkit` to produce well-formatted, human-readable output:
-
-```python
-import tomlkit
-
-def build_config() -> str:
-    doc = tomlkit.document()
-    doc.add(tomlkit.comment("Configuration file"))
-    doc["key"] = "value"
-    doc["enabled"] = True
-
-    # Add a section/table
-    section = tomlkit.table()
-    section["nested_key"] = "nested_value"
-    doc["section"] = section
-
-    return tomlkit.dumps(doc)
-```
-
-### Why tomlkit over f-strings?
-
-1. **Proper escaping**: tomlkit handles special characters correctly
+1. **Proper escaping**: Handles special characters correctly
 2. **Consistent formatting**: Produces valid TOML with proper quoting
 3. **Maintainability**: Structure is explicit in code, not hidden in string templates
 4. **Comments**: Can add comments programmatically
 
-### Common Patterns
+## Reference Implementations
 
-**Adding a header comment:**
+For real usage of both libraries, see:
 
-```python
-doc = tomlkit.document()
-doc.add(tomlkit.comment("Header comment"))
-```
-
-**Adding a blank line:**
-
-```python
-doc.add(tomlkit.nl())
-```
-
-**Creating a table with comments:**
-
-```python
-table = tomlkit.table()
-table.add(tomlkit.comment("Description of this section"))
-table["key"] = "value"
-doc["section_name"] = table
-```
-
-**Writing commented-out example values:**
-
-```python
-table = tomlkit.table()
-table.add(tomlkit.comment(' key = "value"'))  # Note the leading space for alignment
-doc["section"] = table
-```
-
-## Reference Implementation
-
-See `src/erk/core/planner/registry_real.py` for a complete example of reading with tomllib and writing with tomlkit.
-
-## Dependency
-
-tomlkit is a dependency of `erk-shared` package. Import it as:
-
-```python
-import tomlkit
-```
+- `src/erk/cli/commands/init/main.py` - tomlkit for generating config files
+- `src/erk/cli/commands/project/init_cmd.py` - tomlkit for project initialization
+- `src/erk/cli/config.py` - tomllib for reading configuration
+- `src/erk/core/context.py` - tomllib for reading TOML data
 
 ## TOML Duplicate Key Constraint
 
-**Problem**: TOML specification prohibits duplicate keys in the same document. If you define the same key twice, the file is invalid.
-
-### Single-Canonical-Destination Pattern
-
-**Rule**: Each entity (skill, command, config section) must have exactly ONE canonical location.
-
-**Example violation**:
-
-```toml
-# INVALID - duplicate key
-[skills.my-skill]
-source = ".codex/skills/my-skill"
-
-[skills.my-skill]  # ERROR: duplicate key
-source = ".claude/skills/my-skill"
-```
-
-**Correct approach**:
-
-```toml
-# VALID - single canonical location
-[skills.my-skill]
-source = ".codex/skills/my-skill"  # Portable skills live here
-# Will be copied to .claude/ on erk init
-```
-
-### Application: Portable vs Agent-Specific Skills
-
-When deciding where a skill should live:
-
-1. **Portable skills** → `.codex/` only (no duplicate in `.claude/`)
-2. **Claude-only skills** → `.claude/` only (no duplicate in `.codex/`)
-
-Never define the same skill in both locations. Choose one based on portability.
-
-### Reference Implementation
-
-See `docs/learned/integrations/bundled-artifacts.md` for complete portability classification.
+TOML prohibits duplicate keys in the same document. Each entity (skill, command, config section) must have exactly ONE canonical location. See [bundled-artifacts.md](../integrations/bundled-artifacts.md) for the complete portability classification pattern.
