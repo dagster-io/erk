@@ -13,7 +13,7 @@ tripwires:
     warning: "Keep conditional logic in slash commands. Only bundle mechanical API calls where input params are known upfront."
   - action: "forgetting to add TypedDict schemas for exec script JSON output"
     warning: "Define TypedDict in erk_shared for type-safe JSON parsing. Create separate dicts for success result and error result."
-last_audited: "2025-02-05 12:37 PT"
+last_audited: "2026-02-05 12:37 PT"
 audit_result: edited
 ---
 

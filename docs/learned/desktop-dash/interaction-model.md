@@ -4,7 +4,7 @@ read_when:
   - "designing the desktop dashboard UX"
   - "deciding which TUI features to carry forward to Electron"
   - "understanding the interaction model differences between TUI and desktop"
-last_audited: "2025-02-05 12:38 PT"
+last_audited: "2026-02-05 12:38 PT"
 audit_result: clean
 ---
 
