@@ -4,6 +4,8 @@ read_when:
   - "creating commits for significant changes"
   - "preparing PR submissions"
   - "using /erk:git-pr-push command"
+last_audited: "2026-02-05 10:08 PT"
+audit_result: clean
 ---
 
 # Skill-Based Commit Message Generation

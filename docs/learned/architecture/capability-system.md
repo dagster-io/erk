@@ -6,6 +6,8 @@ read_when:
   - adding installable features
   - working with capability tracking in state.toml
   - understanding how erk doctor filters artifacts by installed capabilities
+last_audited: "2026-02-05 10:11 PT"
+audit_result: edited
 ---
 
 # Capability System Architecture
@@ -18,45 +20,16 @@ The capability system enables optional features to be installed via `erk init ca
 
 All capabilities inherit from the `Capability` ABC in `src/erk/core/capabilities/base.py`.
 
-**Required properties:**
-
-| Property                         | Type                       | Purpose                                   |
-| -------------------------------- | -------------------------- | ----------------------------------------- |
-| `name`                           | `str`                      | CLI identifier (e.g., "tripwires-review") |
-| `description`                    | `str`                      | Short description for list output         |
-| `scope`                          | `CapabilityScope`          | "project" or "user"                       |
-| `installation_check_description` | `str`                      | What `is_installed()` checks              |
-| `artifacts`                      | `list[CapabilityArtifact]` | Files/dirs created                        |
-| `managed_artifacts`              | `list[ManagedArtifact]`    | Artifacts this capability manages         |
-
-**Required methods:**
-
-| Method                                                   | Purpose                    |
-| -------------------------------------------------------- | -------------------------- |
-| `is_installed(repo_root: Path \| None) -> bool`          | Check if already installed |
-| `install(repo_root: Path \| None) -> CapabilityResult`   | Install the capability     |
-| `uninstall(repo_root: Path \| None) -> CapabilityResult` | Uninstall the capability   |
-
-**Optional:**
-
-| Property/Method        | Default | Purpose                               |
-| ---------------------- | ------- | ------------------------------------- |
-| `required`             | `False` | Auto-install during erk init          |
-| `preflight(repo_root)` | Success | Pre-flight checks before installation |
+See the base class for the complete interface including:
+- Required properties: `name`, `description`, `scope`, `installation_check_description`, `artifacts`, `managed_artifacts`
+- Required methods: `is_installed()`, `install()`, `uninstall()`
+- Optional: `required` property (default `False`), `preflight()` method
 
 ### Registry
 
 The registry in `src/erk/core/capabilities/registry.py` maintains a cached tuple of all capability instances.
 
-**Query functions:**
-
-| Function                            | Purpose                                      |
-| ----------------------------------- | -------------------------------------------- |
-| `get_capability(name)`              | Get capability by name                       |
-| `list_capabilities()`               | All capabilities                             |
-| `list_required_capabilities()`      | Only `required=True` capabilities            |
-| `get_managed_artifacts()`           | All managed artifact mappings                |
-| `is_capability_managed(name, type)` | Check if artifact is managed by a capability |
+**Key functions:** `get_capability(name)`, `list_capabilities()`, `list_required_capabilities()`, `get_managed_artifacts()`, `is_capability_managed(name, type)`
 
 ### Scopes
 
@@ -69,40 +42,7 @@ The registry in `src/erk/core/capabilities/registry.py` maintains a cached tuple
 
 Capabilities declare which artifacts they manage using the `managed_artifacts` property. This enables the registry to serve as the single source of truth for artifact detection and health checks.
 
-**ManagedArtifact dataclass:**
-
-```python
-@dataclass(frozen=True)
-class ManagedArtifact:
-    name: str                      # e.g., "dignified-python", "ruff-format-hook"
-    artifact_type: ManagedArtifactType
-```
-
-**ManagedArtifactType values:**
-
-| Type       | Description                        |
-| ---------- | ---------------------------------- |
-| `skill`    | Claude skills in `.claude/skills/` |
-| `command`  | Claude commands                    |
-| `agent`    | Claude agents                      |
-| `workflow` | GitHub Actions workflows           |
-| `action`   | GitHub Actions custom actions      |
-| `hook`     | Claude Code hooks                  |
-| `prompt`   | `.github/prompts/` files           |
-
-**Example implementation:**
-
-```python
-class HooksCapability(Capability):
-    @property
-    def managed_artifacts(self) -> list[ManagedArtifact]:
-        return [
-            ManagedArtifact(name="user-prompt-hook", artifact_type="hook"),
-            ManagedArtifact(name="exit-plan-mode-hook", artifact_type="hook"),
-        ]
-```
-
-**Usage:** The registry uses these declarations to answer "is this artifact erk-managed?" via `is_capability_managed(name, type)`. This replaces the previous `BUNDLED_*` frozensets in `artifact_health.py`.
+See `ManagedArtifact` dataclass and `ManagedArtifactType` in `src/erk/core/capabilities/base.py` for the complete type definitions.
 
 ## Capability Types
 
@@ -116,7 +56,7 @@ class HooksCapability(Capability):
 ## Creating a New Capability
 
 1. Create class in `src/erk/core/capabilities/`
-2. Implement required properties and methods
+2. Implement required properties and methods (see `Capability` ABC)
 3. Add to `_all_capabilities()` tuple in `registry.py`
 4. Add tests in `tests/core/capabilities/`
 
@@ -127,10 +67,6 @@ For workflow capabilities that install GitHub Actions, see [Workflow Capability 
 ## Capability Tracking
 
 When capabilities are installed or uninstalled, their state is tracked in `.erk/state.toml`. This enables `erk doctor` to only check artifacts for capabilities that have been explicitly installed.
-
-### State File Location
-
-`.erk/state.toml` in the repository root (or worktree root for worktree-specific state).
 
 ### State File Format
 
@@ -146,45 +82,19 @@ installed = ["dignified-python", "fake-driven-testing", "erk-impl"]
 ### Tracking API
 
 From `erk.artifacts.state`:
-
-| Function                                                     | Purpose                         |
-| ------------------------------------------------------------ | ------------------------------- |
-| `add_installed_capability(project_dir, name)`                | Record capability installation  |
-| `remove_installed_capability(project_dir, name)`             | Record capability removal       |
-| `load_installed_capabilities(project_dir) -> frozenset[str]` | Load installed capability names |
+- `add_installed_capability(project_dir, name)` — Record capability installation
+- `remove_installed_capability(project_dir, name)` — Record capability removal
+- `load_installed_capabilities(project_dir) -> frozenset[str]` — Load installed capability names
 
 ### Implementation Pattern
 
-**Capability classes** should call tracking functions during `install()` and `uninstall()`:
-
-```python
-class DignifiedPythonCapability(SkillCapability):
-    def install(self, repo_root: Path | None) -> CapabilityResult:
-        result = super().install(repo_root)
-        if result.success and repo_root:
-            add_installed_capability(repo_root, self.name)
-        return result
-
-    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
-        result = super().uninstall(repo_root)
-        if result.success and repo_root:
-            remove_installed_capability(repo_root, self.name)
-        return result
-```
+Capability classes should call tracking functions during `install()` and `uninstall()`. See existing implementations like `DignifiedPythonCapability` for the pattern.
 
 ### Health Check Filtering
 
-`erk doctor` uses the installed capabilities to filter which artifacts are checked:
-
-```python
-# In health_checks.py
-installed = load_installed_capabilities(project_dir)
-
-# _get_bundled_by_type() now accepts installed_capabilities parameter
-skills = _get_bundled_by_type("skill", installed_capabilities=installed)
-```
-
-**Key insight**: When `installed_capabilities=None`, all artifacts are returned (used only when syncing within the erk repo itself). When a `frozenset` is passed, only artifacts from installed capabilities are returned (used for both sync and doctor operations in consumer repos).
+`erk doctor` uses installed capabilities to filter which artifacts are checked:
+- When `installed_capabilities=None`: All artifacts returned (used within erk repo itself)
+- When `frozenset` passed: Only artifacts from installed capabilities (consumer repos)
 
 ### Required vs Optional Capabilities
 
@@ -194,7 +104,7 @@ skills = _get_bundled_by_type("skill", installed_capabilities=installed)
 | Doctor check | Always checked             | Only if installed           |
 | Example      | hooks                      | dignified-python, workflows |
 
-Required capabilities don't need tracking—they're always installed and always checked. Optional capabilities use the `[capabilities]` tracking to determine doctor check scope.
+Required capabilities don't need tracking—they're always installed and always checked.
 
 ## CLI Commands
 

@@ -9,6 +9,8 @@ tripwires:
     warning: "Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-roadmap-step) to preserve other cells and avoid race conditions."
   - action: "using surgical update for complete table rewrites"
     warning: "Surgical updates only change one cell. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr)."
+last_audited: "2026-02-05 09:55 PT"
+audit_result: clean
 ---
 
 # Roadmap Mutation Patterns
