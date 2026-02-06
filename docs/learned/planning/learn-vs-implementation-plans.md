@@ -4,6 +4,8 @@ read_when:
   - "choosing between plan types"
   - "creating erk-learn plans"
   - "understanding plan workflows"
+last_audited: "2026-02-05 18:56 PT"
+audit_result: edited
 ---
 
 # Learn Plans vs. Implementation Plans
@@ -220,28 +222,13 @@ Both plan types can be associated with objectives:
 
 ## Plan-Header Differences
 
-### Implementation Plan Header
+Both plan types use the same `plan-header` metadata block schema (see `PlanHeaderSchema` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`). The metadata is embedded in the issue body as an HTML comment block (`<!-- erk:metadata-block:plan-header -->`), not bare YAML.
 
-```yaml
-created_at: 2025-01-20T14:30:00Z
-created_by: username
-branch_name: P6167-add-context-pre-01-20-1430
-pr_number: 5678
-objective_issue: 6100 # Optional
-```
+**Key fields shared by both types:** `created_at`, `created_by`, `branch_name`, `objective_issue`
 
-### Learn Plan Header
+**Learn-plan-specific field:** `learned_from_issue` -- links the learn plan back to its parent implementation plan issue number. This field is what distinguishes a learn plan header from an implementation plan header.
 
-```yaml
-created_at: 2025-01-27T08:20:00Z
-created_by: username
-branch_name: P6172-erk-learn-add-context-pre-01-27-0820
-pr_number: 5789
-objective_issue: 6100 # Inherited from parent
-learned_from_issue: 6167 # Points to parent implementation
-```
-
-**Key difference:** `learned_from_issue` field links learn plan to parent.
+Note: `pr_number` is NOT a plan-header field. PR numbers are tracked separately through the GitHub PR system and linked via branch names.
 
 ---
 
@@ -249,27 +236,15 @@ learned_from_issue: 6167 # Points to parent implementation
 
 ### Implementation Plans
 
-**Default:** Trunk (main or master)
-
-```bash
-erk plan submit 6167
-# Creates branch from main
-```
+**Default:** Trunk (main or master), or the current branch if it exists on remote.
 
 ### Learn Plans
 
-**Default:** Parent implementation branch
+**Default:** Parent implementation branch (auto-detected from `learned_from_issue` in plan header).
 
-```bash
-erk plan submit 6172
-# Reads learned_from_issue: 6167
-# Gets branch_name from issue #6167
-# Creates branch from P6167-add-context-pre-01-20-1430
-```
+**How it works:** `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py` extracts `learned_from_issue` from the learn plan's issue body, fetches the parent issue, and returns its `branch_name`. The submit command then stacks the learn plan branch on top of the parent branch.
 
-**Fallback:** If parent lookup fails, falls back to trunk.
-
-**Implementation:** See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py`
+**Fallback:** If parent lookup fails (parent issue not found, no branch_name set, or parent branch not on remote), falls back to trunk.
 
 ---
 

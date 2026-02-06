@@ -6,6 +6,8 @@ read_when:
   - "analyzing GitHub issues or PRs"
   - "need to reduce context window usage"
   - "returning structured data from a Task"
+last_audited: "2026-02-05"
+audit_result: clean
 ---
 
 # Task Context Isolation Pattern

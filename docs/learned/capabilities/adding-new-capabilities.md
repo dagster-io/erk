@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "using `is_reminder_installed()` in hook check"
     warning: "Capability class MUST be defined in reminders/ folder AND registered in registry.py @cache tuple. Incomplete registration causes silent hook failures."
+last_audited: "2026-02-05"
+audit_result: clean
 ---
 
 # Adding New Capabilities

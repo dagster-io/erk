@@ -7,167 +7,37 @@ read_when:
 tripwires:
   - action: "adding a parameter to an erk exec script without updating the calling slash command"
     warning: "3-layer parameter threading: When adding a parameter, update all three layers: skill SKILL.md argument-hint, slash command .md, and erk exec script. Verify all invocations thread the parameter through."
+last_audited: "2026-02-05"
+audit_result: edited
 ---
 
 # Parameter Threading Pattern
 
 Many erk commands have a 3-layer architecture where parameters must be threaded through multiple invocation layers:
 
-1. **Skill layer** (`.claude/skills/*/SKILL.md`) - Defines available parameters in frontmatter
+1. **Skill layer** (`.claude/skills/*/SKILL.md`) - Defines available parameters in `argument-hint` frontmatter
 2. **Command layer** (`.claude/commands/*.md`) - Calls erk exec scripts with parameters
-3. **Exec script layer** (`src/erk/cli/commands/exec/scripts/*.py`) - Implements the logic
+3. **Exec script layer** (`src/erk/cli/commands/exec/scripts/*.py`) - Implements the logic with Click options
 
 When adding a parameter, all three layers must be updated consistently.
 
 ## Canonical Example: `--pr <number>`
 
-The `--pr` parameter in pr-feedback-classifier demonstrates the pattern perfectly.
+The `--pr` parameter in pr-feedback-classifier demonstrates the pattern. See `.claude/skills/pr-feedback-classifier/SKILL.md` for the complete example showing all three layers.
 
-### Layer 1: Skill (argument-hint)
-
-**File**: `.claude/skills/pr-feedback-classifier/SKILL.md:7-10`
+**Layer 1 (argument-hint)**: A single-line string in SKILL.md frontmatter:
 
 ```yaml
----
-argument-hint: |
-  Optional: --pr <number> to target a specific PR instead of current branch
-  Optional: --include-resolved to show resolved comments
----
+argument-hint: "[--pr <number>] [--include-resolved]"
 ```
 
-**Purpose**: Tells Claude Code what parameters are available for this skill.
+**Layer 2 (command body)**: The skill body conditionally threads `--pr` from `$ARGUMENTS` to `erk exec` invocations.
 
-### Layer 2: Command (exec invocations)
+**Layer 3 (exec script)**: Click options on the Python command accept and use the parameter via `@click.pass_context` with `@click.option("--pr", type=int, default=None)`.
 
-**File**: `.claude/skills/pr-feedback-classifier/SKILL.md:26-49`
+## Verification Checklist
 
-````markdown
-1. **Get current branch and PR info:**
-   - **If `--pr <number>` specified in `$ARGUMENTS`**:
-     ```bash
-     gh pr view <number> --json number,title,url -q '{number: .number, title: .title, url: .url}'
-     ```
-
-2. **Fetch all comments:**
-
-   ```bash
-   # If --include-resolved in $ARGUMENTS:
-   erk exec get-pr-review-comments [--pr <number>] --include-resolved
-   # Otherwise:
-   erk exec get-pr-review-comments [--pr <number>]
-
-   erk exec get-pr-discussion-comments [--pr <number>]
-   ```
-````
-
-Note: Pass `--pr <number>` to both exec commands when specified in `$ARGUMENTS`.
-
-````
-
-**Purpose**: Threads `--pr` from `$ARGUMENTS` (where user provides it) to `erk exec` scripts.
-
-**Key pattern**: Conditional invocation based on whether parameter was provided:
-- Check `$ARGUMENTS` for the parameter
-- Pass it to exec scripts when present
-- Document that it must be threaded through
-
-### Layer 3: Exec Scripts (Click parameters)
-
-**Files**:
-- `src/erk/cli/commands/exec/scripts/get_pr_review_comments.py`
-- `src/erk/cli/commands/exec/scripts/get_pr_discussion_comments.py`
-
-```python
-@click.command()
-@click.option("--pr", type=int, required=False, help="PR number (default: current branch)")
-@click.option("--include-resolved", is_flag=True, help="Include resolved comments")
-def get_pr_review_comments(pr: int | None, include_resolved: bool) -> None:
-    """Fetch review comments from a PR."""
-    # Implementation uses pr parameter
-    ...
-````
-
-**Purpose**: Actual implementation that accepts and uses the parameter.
-
-## 5-Step Verification Checklist
-
-When adding a new parameter to a multi-layer command:
-
-### Step 1: Update argument-hint
-
-Add parameter to skill frontmatter's `argument-hint` field:
-
-```yaml
----
-argument-hint: |
-  Optional: --my-param <value> to control behavior
----
-```
-
-### Step 2: Update Arguments Section
-
-If the skill has an "Arguments" section in the body, document the parameter there:
-
-```markdown
-## Arguments
-
-- `--my-param <value>`: Controls XYZ behavior (optional)
-```
-
-### Step 3: Update Command Invocations
-
-Find all `erk exec` calls in the command and add the parameter:
-
-```bash
-# Before
-erk exec my-script
-
-# After
-erk exec my-script [--my-param <value>]
-```
-
-Add conditional logic if needed:
-
-````markdown
-- **If `--my-param <value>` specified in `$ARGUMENTS`**:
-  ```bash
-  erk exec my-script --my-param <value>
-  ```
-````
-
-- **Otherwise**:
-  ```bash
-  erk exec my-script
-  ```
-
-````
-
-### Step 4: Update Exec Script
-
-Add Click option to the script:
-
-```python
-@click.command()
-@click.option("--my-param", type=str, required=False, help="Controls XYZ")
-def my_script(my_param: str | None) -> None:
-    """Script description."""
-    ...
-````
-
-### Step 5: Verify All Invocations
-
-Search for all places that call this command/script:
-
-```bash
-# Find all invocations of the skill
-grep -r "Skill.*my-skill" .claude/
-
-# Find all invocations of the exec script
-grep -r "erk exec my-script" .claude/
-grep -r "erk exec my-script" src/
-```
-
-Verify each invocation threads the parameter if needed.
+For the step-by-step checklist when adding parameters, see [parameter-addition-checklist.md](../cli/parameter-addition-checklist.md).
 
 ## Common Mistakes
 
@@ -217,19 +87,7 @@ Verify each invocation threads the parameter if needed.
 - Command doesn't have multiple layers
 - Direct Python function calls (use function parameters instead)
 
-## Historical Example: PR #6634
-
-PR #6634 added `--pr <number>` to pr-feedback-classifier, demonstrating this pattern:
-
-1. **Updated argument-hint** to document the new parameter
-2. **Updated skill body** to show conditional invocation based on `--pr` presence
-3. **Updated two exec scripts** (`get-pr-review-comments`, `get-pr-discussion-comments`) to accept `--pr`
-4. **Verified invocations** across all calling commands
-
-The PR serves as a canonical reference for implementing parameter threading.
-
 ## Related Documentation
 
 - `.claude/skills/pr-feedback-classifier/SKILL.md` - Canonical example
-- [cli-development.md](../cli/cli-development.md) - CLI command structure
-- [parameter-addition-checklist.md](../cli/parameter-addition-checklist.md) - Detailed checklist
+- [parameter-addition-checklist.md](../cli/parameter-addition-checklist.md) - Detailed step-by-step checklist

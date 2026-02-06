@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "composing conditions across multiple GitHub Actions workflow steps"
     warning: "Verify each `steps.step_id.outputs.key` reference exists and matches actual step IDs."
+last_audited: "2026-02-05"
+audit_result: edited
 ---
 
 # GitHub Actions Workflow Patterns
@@ -127,4 +129,4 @@ Add `id:` to steps that:
 
 - [GitHub Actions Output Patterns](github-actions-output-patterns.md) - Multi-line outputs
 - [GitHub Actions Security](github-actions-security.md) - Input sanitization
-- [erk-impl Workflow Patterns](erk-impl-workflow-patterns.md) - erk-specific patterns
+- [Composite Action Patterns](composite-action-patterns.md) - Reusable GitHub Actions setup patterns

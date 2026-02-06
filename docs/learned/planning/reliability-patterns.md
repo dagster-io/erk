@@ -4,6 +4,8 @@ read_when:
   - "designing cleanup operations in workflows"
   - "choosing between agent vs workflow-native operations"
   - "implementing multi-layer failure resilience"
+last_audited: "2026-02-05"
+audit_result: edited
 ---
 
 # Workflow Reliability Patterns
@@ -123,5 +125,5 @@ Don't assume operations succeeded. Verify:
 
 ## Related Documentation
 
-- [erk-impl Workflow Patterns](../ci/erk-impl-workflow-patterns.md) - Specific erk workflow patterns
-- [erk-impl Change Detection](../ci/erk-impl-change-detection.md) - Detecting changes in workflows
+- [Composite Action Patterns](../ci/composite-action-patterns.md) - Reusable GitHub Actions setup patterns
+- [GitHub Actions Workflow Patterns](../ci/github-actions-workflow-patterns.md) - Workflow-level patterns

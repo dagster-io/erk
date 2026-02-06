@@ -7,6 +7,8 @@ read_when:
   - "understanding GraphiteDisabled sentinel pattern"
   - "querying both Graphite and GitHub for completeness"
   - "understanding dual-source patterns"
+last_audited: "2026-02-05"
+audit_result: clean
 ---
 
 # Gateway Hierarchy

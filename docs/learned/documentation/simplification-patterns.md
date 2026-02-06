@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "documenting implementation details that are derivable from code"
     warning: "Use source pointers instead of duplication. See simplification-patterns.md for patterns on replacing static docs with dynamic references."
+last_audited: "2026-02-05"
+audit_result: edited
 ---
 
 # Documentation Simplification Patterns
@@ -92,16 +94,16 @@ See `RoadmapStep` dataclass in `objective_roadmap_shared.py:10-17` for field def
 ```markdown
 The GitGateway provides these methods:
 
-- `get_current_branch() -> str` - Returns current branch name
-- `get_remote_url() -> str` - Returns remote URL
-- `is_clean_working_tree() -> bool` - Checks if working tree is clean
-- `fetch_issue(number: int) -> Issue | IssueNotFound` - Fetches issue by number
+- `get_current_branch(cwd) -> str | None` - Returns current branch name
+- `get_remote_url(repo_root, remote) -> str` - Returns remote URL
+- `has_uncommitted_changes(cwd) -> bool` - Checks if working tree has changes
+- `list_branches(cwd) -> list[str]` - Lists local branches
 ```
 
 **After** (dynamic pointer):
 
 ```markdown
-See `GitGateway` ABC in `src/erk/gateway/git_gateway.py:15-45` for available methods.
+See git gateway sub-ABCs in `packages/erk-shared/src/erk_shared/gateway/git/` (e.g., `branch_ops/abc.py`, `status_ops/abc.py`) for available methods.
 ```
 
 **Why it's better**:
@@ -123,8 +125,8 @@ See `GitGateway` ABC in `src/erk/gateway/git_gateway.py:15-45` for available met
 **Before** (duplicated in 3 docs):
 
 - `docs/learned/planning/learn-workflow.md`: 40 lines describing learn pipeline
-- `docs/learned/sessions/session-upload.md`: 35 lines describing same pipeline
-- `docs/learned/commands/local-learn.md`: 30 lines describing same pipeline
+- (second doc): 35 lines describing same pipeline
+- (third doc): 30 lines describing same pipeline
 
 **After** (single canonical doc):
 
@@ -223,9 +225,8 @@ See `src/erk/gateway/*.py` for implementations.
 
 Related workflows:
 
-- Session upload: See session-upload.md
 - Session analysis: See session-inspector skill
-- Parallel sessions: See parallel-session-coordination.md
+- Parallel sessions: See parallel-session-awareness.md
 ```
 
 **Why it's better**:
