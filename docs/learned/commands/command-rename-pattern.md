@@ -4,6 +4,8 @@ read_when:
   - "renaming a slash command"
   - "migrating command invocations"
   - "ensuring complete command name updates"
+last_audited: "2026-02-05 20:38 PT"
+audit_result: clean
 ---
 
 # Command Rename Pattern

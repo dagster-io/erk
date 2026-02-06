@@ -4,6 +4,8 @@ read_when:
   - "adding a new field to plan-header metadata"
   - "extending plan issue schema"
   - "coordinating metadata changes across files"
+last_audited: "2026-02-05 20:38 PT"
+audit_result: edited
 ---
 
 # Metadata Field Addition Workflow
@@ -12,124 +14,46 @@ Adding a new field to the plan-header metadata block requires coordinated change
 
 ## 5-File Coordination Checklist
 
-### 1. schemas.py - Define the Field
+### 1. schemas.py -- Define the Field
 
-**File:** `packages/erk-shared/src/erk_shared/github/metadata/schemas.py`
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`
 
-Add the field name to `PlanHeaderFieldName` type union:
+Three changes required in this file:
 
-```python
-PlanHeaderFieldName = Literal[
-    # ... existing fields ...
-    "your_new_field",
-]
-```
+- Add the field name as a new entry in the `PlanHeaderFieldName` Literal union type
+- Add a module-level constant with a matching `Literal` type (e.g., `YOUR_NEW_FIELD: Literal["your_new_field"] = "your_new_field"`)
+- Add validation logic inside `PlanHeaderSchema.validate()` -- follow the existing pattern of checking `if FIELD in data and data[FIELD] is not None:` then validating the type. Also add the constant to the `optional_fields` set in that method.
 
-Add constant for the field name:
+### 2. plan_header.py -- Thread the Parameter
 
-```python
-YOUR_NEW_FIELD: Literal["your_new_field"] = "your_new_field"
-```
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`
 
-If the field needs validation, add it to `validate_plan_header_data()`:
+Two functions need the new parameter added (both use keyword-only args):
 
-```python
-# Validate optional your_new_field field
-if YOUR_NEW_FIELD in data and data[YOUR_NEW_FIELD] is not None:
-    if not isinstance(data[YOUR_NEW_FIELD], str):
-        raise ValueError("your_new_field must be a string or null")
-```
+- `create_plan_header_block()` -- Add the parameter and conditionally include it in the `data` dict (follow existing pattern: `if field is not None: data[FIELD] = field`). This function returns a `MetadataBlock`, not a string.
+- `format_plan_header_body()` -- Add the same parameter and pass it through to `create_plan_header_block()`.
 
-### 2. plan_header.py - Thread the Parameter
+### 3. plan_issues.py -- Thread Through Issue Creation
 
-**File:** `packages/erk-shared/src/erk_shared/github/metadata/plan_header.py`
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py`
 
-Add parameter to `create_plan_header_block()`:
+Add the parameter to `create_plan_issue()` and pass it through to `format_plan_header_body()`. All parameters after the positional ones are keyword-only. Review the existing call site to see the current parameter threading pattern.
 
-```python
-def create_plan_header_block(
-    # ... existing params ...
-    your_new_field: str | None,
-) -> str:
-```
-
-Add to the data dict construction:
-
-```python
-if your_new_field is not None:
-    data[YOUR_NEW_FIELD] = your_new_field
-```
-
-Repeat for `create_plan_issue_body()` if it takes the same parameter.
-
-### 3. plan_issues.py - Thread Through Issue Creation
-
-**File:** `packages/erk-shared/src/erk_shared/github/plan_issues.py`
-
-Add parameter to `create_plan_issue()`:
-
-```python
-def create_plan_issue(
-    # ... existing params ...
-    your_new_field: str | None,
-) -> CreatePlanIssueResult:
-```
-
-Pass to the header creation call:
-
-```python
-body = create_plan_issue_body(
-    # ... existing args ...
-    your_new_field=your_new_field,
-)
-```
-
-### 4. plan_save_to_issue.py - Add CLI Option
+### 4. plan_save_to_issue.py -- Add CLI Option (if CLI-exposed)
 
 **File:** `src/erk/cli/commands/exec/scripts/plan_save_to_issue.py`
 
-Add Click option:
+Only needed if the field should be settable from the CLI. If so:
 
-```python
-@click.option(
-    "--your-new-field",
-    default=None,
-    help="Description of the field",
-)
-```
+- Add a `@click.option("--your-new-field", ...)` decorator to the `plan_save_to_issue` function
+- Add the corresponding parameter to the function signature
+- Pass it through to `create_plan_issue()`
 
-Add parameter to function signature:
-
-```python
-def plan_save_to_issue_cmd(
-    # ... existing params ...
-    your_new_field: str | None,
-) -> None:
-```
-
-Pass to issue creation:
-
-```python
-result = create_plan_issue(
-    # ... existing args ...
-    your_new_field=your_new_field,
-)
-```
-
-### 5. Test Fixtures - Update Helpers
+### 5. Test Helpers -- Update format_plan_header_body_for_test
 
 **File:** `tests/test_utils/plan_helpers.py`
 
-Add parameter to `make_plan_row()` helper:
-
-```python
-def make_plan_row(
-    # ... existing params ...
-    your_new_field: str | None = None,
-) -> PlanRowData:
-```
-
-Update any test that constructs Plan objects directly.
+Add the parameter to `format_plan_header_body_for_test()` and pass it through to `format_plan_header_body()`. This helper provides defaults so tests only specify the fields they care about. Also update any tests that construct plan headers directly.
 
 ## Optional: Additional Files
 

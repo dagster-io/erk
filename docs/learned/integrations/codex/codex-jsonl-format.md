@@ -2,7 +2,7 @@
 title: Codex CLI JSONL Output Format
 read_when:
   - "parsing codex exec --json output"
-  - "implementing CodexPromptExecutor streaming"
+  - "implementing a Codex PromptExecutor"
   - "mapping Codex events to ExecutorEvent types"
   - "comparing Claude and Codex streaming formats"
 tripwires:
@@ -10,6 +10,8 @@ tripwires:
     warning: "Completely different formats. Claude uses type: assistant/user/result with nested message.content[]. Codex uses type: item.completed with flattened item fields. See codex-jsonl-format.md."
   - action: "looking for session_id in Codex JSONL"
     warning: "Codex JSONL does not include session_id in events. The thread_id is provided in the thread.started event only."
+last_audited: "2026-02-05 20:38 PT"
+audit_result: edited
 ---
 
 # Codex CLI JSONL Output Format
@@ -101,83 +103,21 @@ Note: `item.type` is the item kind discriminator, while the top-level `type` is 
 
 `spawn_agent`, `send_input`, `wait`, `close_agent`
 
-## Concrete JSON Examples
+## Representative JSON Examples
 
-### thread.started
-
-```json
-{
-  "type": "thread.started",
-  "thread_id": "67e55044-10b1-426f-9247-bb680e5fe0c8"
-}
-```
-
-### turn.started
+Top-level events are simple objects. `thread.started` carries the session identifier:
 
 ```json
-{ "type": "turn.started" }
+{ "type": "thread.started", "thread_id": "67e55044-10b1-426f-9247-bb680e5fe0c8" }
 ```
 
-### turn.completed
+`turn.completed` carries token usage:
 
 ```json
-{
-  "type": "turn.completed",
-  "usage": {
-    "input_tokens": 1200,
-    "cached_input_tokens": 200,
-    "output_tokens": 345
-  }
-}
+{ "type": "turn.completed", "usage": { "input_tokens": 1200, "cached_input_tokens": 200, "output_tokens": 345 } }
 ```
 
-### turn.failed
-
-```json
-{ "type": "turn.failed", "error": { "message": "boom" } }
-```
-
-### error (stream-level)
-
-```json
-{ "type": "error", "message": "retrying" }
-```
-
-### item.completed — agent_message
-
-```json
-{
-  "type": "item.completed",
-  "item": { "id": "item_0", "type": "agent_message", "text": "hello" }
-}
-```
-
-### item.completed — reasoning
-
-```json
-{
-  "type": "item.completed",
-  "item": { "id": "item_0", "type": "reasoning", "text": "thinking..." }
-}
-```
-
-### item.started — command_execution (in progress)
-
-```json
-{
-  "type": "item.started",
-  "item": {
-    "id": "item_0",
-    "type": "command_execution",
-    "command": "bash -lc 'echo hi'",
-    "aggregated_output": "",
-    "exit_code": null,
-    "status": "in_progress"
-  }
-}
-```
-
-### item.completed — command_execution (success)
+Item events show the two-level type discrimination. A `command_execution` progresses from `item.started` (with `status: "in_progress"`, `exit_code: null`) to `item.completed` (with `status: "completed"`, populated `exit_code` and `aggregated_output`):
 
 ```json
 {
@@ -193,125 +133,7 @@ Note: `item.type` is the item kind discriminator, while the top-level `type` is 
 }
 ```
 
-### item.completed — command_execution (failure)
-
-```json
-{
-  "type": "item.completed",
-  "item": {
-    "id": "item_0",
-    "type": "command_execution",
-    "command": "sh -c 'exit 1'",
-    "aggregated_output": "",
-    "exit_code": 1,
-    "status": "failed"
-  }
-}
-```
-
-### item.completed — file_change
-
-```json
-{
-  "type": "item.completed",
-  "item": {
-    "id": "item_0",
-    "type": "file_change",
-    "changes": [
-      { "path": "a/added.txt", "kind": "add" },
-      { "path": "b/deleted.txt", "kind": "delete" },
-      { "path": "c/modified.txt", "kind": "update" }
-    ],
-    "status": "completed"
-  }
-}
-```
-
-### item.started — mcp_tool_call
-
-```json
-{
-  "type": "item.started",
-  "item": {
-    "id": "item_0",
-    "type": "mcp_tool_call",
-    "server": "server_a",
-    "tool": "tool_x",
-    "arguments": { "key": "value" },
-    "result": null,
-    "error": null,
-    "status": "in_progress"
-  }
-}
-```
-
-### item.completed — mcp_tool_call (success)
-
-```json
-{
-  "type": "item.completed",
-  "item": {
-    "id": "item_0",
-    "type": "mcp_tool_call",
-    "server": "server_a",
-    "tool": "tool_x",
-    "arguments": { "key": "value" },
-    "result": { "content": [], "structured_content": null },
-    "error": null,
-    "status": "completed"
-  }
-}
-```
-
-### item.completed — mcp_tool_call (failure)
-
-```json
-{
-  "type": "item.completed",
-  "item": {
-    "id": "item_0",
-    "type": "mcp_tool_call",
-    "server": "server_b",
-    "tool": "tool_y",
-    "arguments": { "param": 42 },
-    "result": null,
-    "error": { "message": "tool exploded" },
-    "status": "failed"
-  }
-}
-```
-
-### item.started — todo_list
-
-```json
-{
-  "type": "item.started",
-  "item": {
-    "id": "item_0",
-    "type": "todo_list",
-    "items": [
-      { "text": "step one", "completed": false },
-      { "text": "step two", "completed": false }
-    ]
-  }
-}
-```
-
-### item.updated — todo_list
-
-```json
-{
-  "type": "item.updated",
-  "item": {
-    "id": "item_0",
-    "type": "todo_list",
-    "items": [
-      { "text": "step one", "completed": true },
-      { "text": "step two", "completed": false }
-    ]
-  }
-}
-```
+Other item types follow the same envelope pattern. The `item.type` field changes (e.g., `agent_message`, `file_change`, `mcp_tool_call`, `todo_list`) and the sibling fields vary per the Item Types table above. Error variants use `turn.failed` with `error.message` or top-level `{ "type": "error", "message": "..." }`.
 
 ## Key Structural Differences from Claude
 
@@ -325,9 +147,9 @@ Note: `item.type` is the item kind discriminator, while the top-level `type` is 
 | Completion signal     | `type: "result"` with `num_turns`, `is_error` | `turn.completed` with `usage`                 |
 | Error reporting       | Non-zero exit code + stderr                   | `turn.failed` or `error` events               |
 
-## Event-to-ExecutorEvent Mapping for Erk
+## Planned Event-to-ExecutorEvent Mapping for Erk
 
-When building a `CodexPromptExecutor`, map Codex events to erk's `ExecutorEvent` union:
+No `CodexPromptExecutor` exists yet. When one is built, it should map Codex events to erk's `ExecutorEvent` union (defined in `erk_shared.core.prompt_executor`):
 
 | Codex Event                            | Erk ExecutorEvent                             |
 | -------------------------------------- | --------------------------------------------- |

@@ -8,6 +8,8 @@ tripwires:
   - action: "Use !contains() pattern for label-based gating"
     warning: "Negation is critical — contains() without ! skips all push events"
     score: 5
+last_audited: "2026-02-05 20:38 PT"
+audit_result: edited
 ---
 
 # GitHub Actions Workflow Gating Patterns
@@ -32,11 +34,7 @@ Each layer serves a different purpose and they work together to create flexible,
 if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
 ```
 
-This pattern appears in:
-
-- `.github/workflows/ci.yml:20` - check-submission job
-- `.github/workflows/ci.yml:135` - autofix job
-- `.github/workflows/code-reviews.yml:11` - discover job
+This pattern appears in the `check-submission` and `autofix` jobs in `.github/workflows/ci.yml`, and the `discover` job in `.github/workflows/code-reviews.yml`.
 
 ### Why Negation is Critical
 
@@ -107,13 +105,14 @@ The combined condition ensures CI only runs on PRs that are both:
 ```yaml
 on:
   pull_request:
-    types: [opened, synchronize, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review]
 ```
 
 The `ready_for_review` trigger complements the draft exclusion by ensuring CI runs when a draft PR is marked ready:
 
 - **opened**: PR created as ready (draft check passes)
 - **synchronize**: PR updated with new commits (draft check evaluates current state)
+- **reopened**: PR reopened after being closed
 - **ready_for_review**: Draft PR marked ready (draft check now passes)
 
 Without `ready_for_review`, CI wouldn't run when a draft PR transitions to ready until the next push.
@@ -124,15 +123,15 @@ Without `ready_for_review`, CI wouldn't run when a draft PR transitions to ready
 
 ```yaml
 on:
-  pull_request:
-    types: [opened, synchronize, ready_for_review]
   push:
-    branches: [master, main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
 ```
 
 **Purpose**: Control which events start the workflow at all.
 
-**Effect**: The workflow runs for PR events and pushes to main branches. Other events (e.g., pull_request.closed) don't trigger the workflow.
+**Effect**: The workflow runs for PR events (with specified types), all push events, and manual dispatch. Other events (e.g., pull_request.closed) don't trigger the workflow.
 
 ### Layer 2: Job Conditions
 
@@ -175,7 +174,7 @@ The layers compose: a job only runs if all three conditions are satisfied.
 
 ## Autofix Safety Pattern
 
-The autofix job uses **both** event type and label checks to ensure safe execution:
+The autofix job in `.github/workflows/ci.yml` uses **both** event type and label checks to ensure safe execution:
 
 ```yaml
 autofix:
@@ -190,7 +189,7 @@ autofix:
      needs.lint.result == 'failure' ||
      needs.prettier.result == 'failure' ||
      needs.docs-check.result == 'failure' ||
-     needs.typecheck.result == 'failure')
+     needs.ty.result == 'failure')
 ```
 
 This pattern ensures autofix:
@@ -210,50 +209,7 @@ For push events, the job-level label check via `github.event.pull_request.labels
 - **pull_request events**: Can use job-level label checks (fast path, prevents job execution)
 - **push events**: Must use step-level API queries to fetch labels
 
-The defense-in-depth approach combines both:
-
-```yaml
-autofix:
-  if: |
-    always() &&
-    (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')) &&
-    ...
-  steps:
-    - name: Discover PR
-      id: discover-pr
-      run: |
-        if [ "${{ github.event_name }}" = "pull_request" ]; then
-          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
-        else
-          # For push events, discover PR number via gh pr list
-          pr_number=$(gh pr list --head "${{ github.ref_name }}" --state open --json number --jq '.[0].number')
-          echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Check erk-plan-review label
-      id: check-label
-      if: steps.discover-pr.outputs.pr_number != ''
-      run: |
-        labels=$(gh api repos/${{ github.repository }}/pulls/${{ steps.discover-pr.outputs.pr_number }} --jq '[.labels[].name] | join(",")')
-        if echo "$labels" | grep -q "erk-plan-review"; then
-          echo "has_plan_review_label=true" >> $GITHUB_OUTPUT
-        else
-          echo "has_plan_review_label=false" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Determine if autofix should run
-      id: should-autofix
-      run: |
-        if [[ "${{ steps.check-label.outputs.has_plan_review_label }}" != "true" ]]; then
-          echo "run=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "run=false" >> "$GITHUB_OUTPUT"
-        fi
-
-    - uses: actions/setup-python@v5
-      if: steps.should-autofix.outputs.run == 'true'
-      # ... rest of autofix steps
-```
+The defense-in-depth approach combines both. The autofix job in `.github/workflows/ci.yml` implements this with a multi-step sequence: discover the PR (using `github.event.pull_request.number` for PR events or the GitHub API for push events), check for the `erk-plan-review` label via API, and gate all subsequent steps on the result. See the autofix job steps in `ci.yml` for the full implementation.
 
 **Why both layers:**
 

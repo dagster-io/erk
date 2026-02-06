@@ -4,6 +4,8 @@ read_when:
   - "writing or updating CLAUDE.md or AGENTS.md files"
   - "creating project documentation for AI agents"
   - "setting up new agent-driven projects"
+last_audited: "2026-02-05 20:38 PT"
+audit_result: edited
 ---
 
 # CLAUDE.md and AGENTS.md Best Practices
@@ -80,23 +82,7 @@ Effective preambles follow this pattern:
 
 **Core Principle**: Link to detailed docs instead of stuffing everything inline.
 
-**Pattern:**
-
-```markdown
-## Routing: What to Load Before Writing Code
-
-- **Writing Python** → Load `dignified-python` skill
-- **Writing tests** → Load `fake-driven-testing` skill
-- **Worktree operations** → Load `gt-graphite` skill
-
-**Full documentation**: See [docs/learned/index.md](docs/learned/index.md)
-```
-
-**Benefits:**
-
-- Keeps CLAUDE.md/AGENTS.md under token budget
-- Allows detailed guidance to live in skills and docs
-- Creates clear mental model of "routing file" vs "reference docs"
+Use a routing table that maps task types to skills or docs (see the "Load these skills FIRST" section in AGENTS.md for a live example). This keeps the main file under token budget while allowing detailed guidance to live in skills and documentation files.
 
 ## Critical Constraints
 
@@ -145,33 +131,11 @@ Effective preambles follow this pattern:
 
 ### HTML Comments as Signals
 
-Use HTML comments to provide meta-instructions about the file itself:
-
-```markdown
-<!-- AGENT NOTICE: This file is loaded automatically. Read FULLY before writing code. -->
-<!-- Priority: This is a ROUTING FILE. Load skills and docs as directed for complete guidance. -->
-```
-
-**Why HTML comments?**
-
-- Not rendered in markdown viewers
-- Creates clear distinction between meta-instructions and content
-- Stands out visually when Claude reads the file
+Use HTML comments for meta-instructions about the file itself (see the top of AGENTS.md for a live example: `AGENT NOTICE` and `BEHAVIORAL TRIGGERS` comments). HTML comments are not rendered in markdown viewers, creating a clear distinction between instructions about the file and the file's content.
 
 ### Behavioral Triggers
 
-Use trigger patterns to route Claude to documentation at the right moment:
-
-```markdown
-**CRITICAL: Before passing dry_run boolean flags through function parameters**
-→ Read [Erk Architecture Patterns](architecture/erk-architecture.md) first.
-```
-
-**Pattern:**
-
-- Start with trigger condition ("Before X...")
-- Point to specific documentation
-- Often includes rationale or consequence
+Use trigger patterns to route Claude to documentation at the right moment. The pattern is: start with a trigger condition ("CRITICAL: Before X..."), then point to specific documentation. See the "CRITICAL" lines in AGENTS.md for live examples. This ensures guidance is loaded just-in-time rather than cluttering every session.
 
 ### Cross-References
 
@@ -200,7 +164,7 @@ Use consistent notation for linking to related content:
 **Key sections:**
 
 - **Skill Loading Behavior**: When and how to load skills
-- **Tier-based Routing**: Mandatory → Context-Specific → Tool Routing → Documentation
+- **Documentation-First Discovery**: Grep docs/learned/ before coding
 - **Critical Constraints**: Absolute rules (FORBIDDEN/ALLOWED patterns)
 
 ### YAML Frontmatter Pattern
@@ -222,100 +186,20 @@ tripwires:
 
 ### Progressive Disclosure Tiers
 
-**Tier 1: Mandatory Skills** (always load first)
+A useful mental model for organizing content across skill and documentation layers:
 
-- Fundamentally change how you write code
-- Examples: `dignified-python`, `fake-driven-testing`
-
-**Tier 2: Context-Specific Skills** (load when context applies)
-
-- Domain-specific guidance
-- Examples: `gt-graphite`, `learned-docs`
-
-**Tier 3: Tool Routing** (use agents instead of direct commands)
-
-- Delegation patterns
-- Example: Use `devrun` agent for pytest/ty/ruff
-
-**Tier 4: Documentation Lookup** (reference when needed)
-
-- Detailed guides and patterns
-- Accessed via index: `docs/learned/index.md`
+1. **Mandatory skills** (always load first): Fundamentally change how you write code (e.g., `dignified-python`, `fake-driven-testing`)
+2. **Context-specific skills** (load when context applies): Domain-specific guidance (e.g., `gt-graphite`, `learned-docs`)
+3. **Tool routing** (use agents instead of direct commands): Delegation patterns (e.g., `devrun` agent for pytest/ty/ruff)
+4. **Documentation lookup** (reference when needed): Detailed guides accessed via `docs/learned/index.md`
 
 ## Examples
 
-### Good Preamble Pattern
+### Good vs. Bad Preamble Patterns
 
-```markdown
-# MyProject - Real-Time Analytics Platform
+**Good preamble** (~30 lines): Concise WHAT/WHY/HOW structure, links to detailed docs, universally applicable. See AGENTS.md in this project for a live example: it opens with project description, lists tech stack, then routes to skills and documentation.
 
-## What is MyProject?
-
-**MyProject** is a real-time analytics platform for processing streaming data.
-
-**Status**: Production system serving 100K+ users daily.
-
-## Core Architecture
-
-**Tech Stack:**
-
-- Python 3.11+ (FastAPI, SQLAlchemy)
-- PostgreSQL + Redis
-- Docker + Kubernetes
-
-**Design Principles:**
-
-- Event-driven architecture
-- Immutable data patterns
-- Zero-downtime deployments
-
-## How Agents Work on This Project
-
-**Routing Model**: This file directs you to load skills and docs based on task.
-
-**Key Skills:**
-
-- `backend-patterns`: API design, database migrations
-- `testing-patterns`: Integration test setup
-
-**Documentation**: See [docs/index.md](docs/index.md)
-```
-
-**Why this works:**
-
-- Concise (~30 lines)
-- Clear WHAT/WHY/HOW structure
-- Links to detailed docs
-- Universally applicable
-
-### Bad Preamble Pattern
-
-```markdown
-# MyProject
-
-This is a really great project that does analytics. We use Python and FastAPI.
-
-When you're implementing authentication, make sure to use JWT tokens with RS256
-signing. Store the private key in environment variables. Add rate limiting to
-all endpoints using the RateLimiter class in src/middleware.py.
-
-For database queries, always use SQLAlchemy ORM. Never write raw SQL. Add
-indexes to any columns you query frequently. Make sure to handle connection
-pooling properly.
-
-Follow PEP 8 style guide. Use black for formatting. Sort imports with isort.
-Add type hints to all functions. Write docstrings in Google style.
-
-[continues for 500 lines...]
-```
-
-**Why this fails:**
-
-- No clear structure
-- Mixes task-specific guidance with universal rules
-- Includes linter rules (should be in configs)
-- Way too long (degrades instruction-following)
-- No progressive disclosure
+**Bad preamble** (500+ lines): Mixes task-specific guidance with universal rules ("when implementing authentication, use JWT tokens..."), duplicates linter configs, includes framework documentation inline. Causes instruction-following degradation because Claude treats the entire file as noise.
 
 ## Sources
 

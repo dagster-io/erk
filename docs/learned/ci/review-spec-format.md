@@ -4,6 +4,8 @@ read_when:
   - creating a new code review
   - understanding review spec structure
   - debugging review behavior
+last_audited: "2026-02-05 17:40 PT"
+audit_result: edited
 ---
 
 # Review Spec Format
@@ -68,17 +70,17 @@ Post summary comment with aggregate results
 1. Categorize PR files
 2. Early exit (if no source changes)
 3. Check test coverage for each source file
-4. Flag untested files
+4. Analyze test balance
 5. Post inline comments
 6. Summary comment with table
 
 **Tripwires Review** (5 steps):
 
-1. Get changed files
-2. Scan for tripwire patterns
-3. Post inline comments
-4. Summary comment
-5. Activity log update
+1. Load tripwire index (category-specific tripwire files)
+2. Match tripwires to diff
+3. Load docs for matched tripwires (lazy loading)
+4. Post inline comments
+5. Summary comment
 
 ## Classification Taxonomy
 
@@ -113,55 +115,11 @@ Reviews define clear classification rules for what to flag vs skip.
 
 ### Inline Comment Format
 
-Reviews use consistent inline comment structure:
-
-```markdown
-**[Review Name]**: [Brief violation description]
-
-[Details about the violation]
-
-[Context/explanation]
-
-Suggested fix: [Actionable fix with example]
-```
-
-**Example** (Learned Docs):
-
-```markdown
-**Learned Docs**: Verbatim source code copy detected.
-
-Source: `src/erk/gateway/git/git.py:45-62`
-
-This code block copies ~18 lines from the source file and will go stale if the source changes.
-
-Suggested fix: Replace the code block with a source pointer:
-
-> See `Git.add()` in `src/erk/gateway/git/git.py:45`.
-```
+Reviews use a consistent inline comment structure: `**[Review Name]**: [Brief violation description]`, followed by details, context, and a suggested fix. See the Step 5 sections of each review spec in `.github/reviews/` for the exact templates (e.g., `.github/reviews/learned-docs.md` Step 5, `.github/reviews/test-coverage.md` Step 5).
 
 ### Summary Comment Format
 
-Most reviews include:
-
-1. **Header**: Review name
-2. **Table**: Aggregate results per file/category
-3. **Activity Log**: Last 10 entries
-
-**Pattern**:
-
-```markdown
-### [Review Name]
-
-| Column1 | Column2 | Status |
-| ------- | ------- | ------ |
-| ...     | ...     | ✅/❌  |
-
-### Activity Log
-
-- [timestamp] [Description of what was found/fixed]
-- [timestamp] [Previous entry]
-  ...
-```
+Most reviews include three parts: (1) a review name header, (2) a table with aggregate results per file/category, and (3) an activity log with the last 10 entries. See the Step 6 sections of each review spec in `.github/reviews/` for the exact formats.
 
 ## Activity Log Pattern
 
@@ -239,8 +197,9 @@ Instead of AST parsing:
 | Learned Docs Review     | `learned-docs.md`              | 6     | 4          | Yes          |
 | Test Coverage Review    | `test-coverage.md`             | 6     | 6          | Yes          |
 | Tripwires Review        | `tripwires.md`                 | 5     | Varies     | Yes          |
-| Dignified Python        | `dignified-python.md`          | 5     | Varies     | No           |
-| Dignified Code Simplify | `dignified-code-simplifier.md` | 4     | N/A        | No           |
+| Dignified Python        | `dignified-python.md`          | 5     | Varies     | Yes          |
+| Dignified Code Simplify | `dignified-code-simplifier.md` | 3     | N/A        | Yes          |
+| Doc Audit               | `doc-audit.md`                 | 5     | 6          | Yes          |
 
 ## Related Documentation
 

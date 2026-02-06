@@ -2,6 +2,8 @@
 title: Cli Tripwires
 read_when:
   - "working on cli code"
+last_audited: "2026-02-05 20:38 PT"
+audit_result: clean
 ---
 
 <!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->

@@ -7,7 +7,9 @@ read_when:
   - "working with commit-message-prompt.md"
 tripwire:
   trigger: "Before modifying commit-message-prompt.md in either location"
-  action: "Read [Template Synchronization](template-synchronization.md) first. Update BOTH synchronized files: .claude/skills/erk-diff-analysis/references/commit-message-prompt.md AND packages/erk-shared/src/erk_shared/gateway/gt/commit-message-prompt.md. CI test enforces byte-equality."
+  action: "Read [Template Synchronization](template-synchronization.md) first. Update BOTH synchronized files: .claude/skills/erk-diff-analysis/references/commit-message-prompt.md AND packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md. CI test enforces byte-equality."
+last_audited: "2026-02-05 20:38 PT"
+audit_result: edited
 ---
 
 # Template Synchronization
@@ -24,31 +26,13 @@ The commit message generation prompt exists in **two locations** that must be id
    - Used by the `erk-diff-analysis` skill when Claude generates commit messages
    - Loaded into Claude's context during skill execution
 
-2. **Python package**: `packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md`
+2. **Python package**: `packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md` (note: underscores, not hyphens)
    - Used by the Python CLI when invoking commit message generation
    - Read at runtime by the Graphite gateway
 
 ## Enforcement Mechanism
 
-Synchronization is enforced by `tests/unit/test_file_sync.py:18-55`, specifically the test `test_diff_analysis_guide_in_sync_with_commit_message_prompt()`.
-
-The test:
-
-1. Reads both files using UTF-8 encoding
-2. Compares content with byte-equality assertion (line 49)
-3. Fails with descriptive error if content differs
-
-**Assertion location**: `tests/unit/test_file_sync.py:49`
-
-```python
-assert claude_content == python_content, (
-    "Skill prompt and Python package prompt are out of sync!\n"
-    "These two files must have identical content:\n"
-    f"  1. {claude_docs_copy.relative_to(repo_root)}\n"
-    f"  2. {python_package_copy.relative_to(repo_root)}\n"
-    "Update both files to keep them in sync."
-)
-```
+Synchronization is enforced by `test_diff_analysis_guide_in_sync_with_commit_message_prompt()` in `tests/unit/test_file_sync.py`. The test reads both files with UTF-8 encoding and asserts byte-equality, failing with a descriptive error message if they differ.
 
 ## Why Synchronization is Required
 
@@ -75,7 +59,7 @@ When modifying the commit message prompt:
 2. Verify byte-equality before committing:
    ```bash
    diff .claude/skills/erk-diff-analysis/references/commit-message-prompt.md \
-        packages/erk-shared/src/erk_shared/gateway/gt/commit-message-prompt.md
+        packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
    ```
 3. Run the sync test locally:
    ```bash
@@ -85,4 +69,4 @@ When modifying the commit message prompt:
 ## Related Documentation
 
 - [Commit Message Generation](commit-message-generation.md) - How the prompt is used
-- [Erk Diff Analysis Skill](.claude/skills/erk-diff-analysis/skill.md) - Skill implementation
+- [Erk Diff Analysis Skill](.claude/skills/erk-diff-analysis/SKILL.md) - Skill implementation
