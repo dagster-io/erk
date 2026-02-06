@@ -108,13 +108,23 @@ Note: `item.type` is the item kind discriminator, while the top-level `type` is 
 Top-level events are simple objects. `thread.started` carries the session identifier:
 
 ```json
-{ "type": "thread.started", "thread_id": "67e55044-10b1-426f-9247-bb680e5fe0c8" }
+{
+  "type": "thread.started",
+  "thread_id": "67e55044-10b1-426f-9247-bb680e5fe0c8"
+}
 ```
 
 `turn.completed` carries token usage:
 
 ```json
-{ "type": "turn.completed", "usage": { "input_tokens": 1200, "cached_input_tokens": 200, "output_tokens": 345 } }
+{
+  "type": "turn.completed",
+  "usage": {
+    "input_tokens": 1200,
+    "cached_input_tokens": 200,
+    "output_tokens": 345
+  }
+}
 ```
 
 Item events show the two-level type discrimination. A `command_execution` progresses from `item.started` (with `status: "in_progress"`, `exit_code: null`) to `item.completed` (with `status: "completed"`, populated `exit_code` and `aggregated_output`):

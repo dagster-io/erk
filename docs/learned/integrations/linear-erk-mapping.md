@@ -68,17 +68,17 @@ Problems:
 
 Erk's `plan-header` metadata fields map to:
 
-| Erk Metadata             | Linear Equivalent                            |
-| ------------------------ | -------------------------------------------- |
-| `schema_version`         | Not needed (Linear handles schema)           |
-| `created_at`             | `Issue.createdAt`                            |
-| `created_by`             | `Issue.creator`                              |
-| `worktree_name`          | Custom field (Linear doesn't know worktrees) |
-| `plan_comment_id`        | Not needed if plan in description            |
-| `last_dispatched_*`      | Custom field or AgentSession                 |
-| `last_local_impl_*`      | **AgentSession** (native tracking)           |
-| `last_remote_impl_at`    | Custom field or AgentSession                 |
-| `objective_issue`        | Parent issue link                            |
+| Erk Metadata              | Linear Equivalent                            |
+| ------------------------- | -------------------------------------------- |
+| `schema_version`          | Not needed (Linear handles schema)           |
+| `created_at`              | `Issue.createdAt`                            |
+| `created_by`              | `Issue.creator`                              |
+| `worktree_name`           | Custom field (Linear doesn't know worktrees) |
+| `plan_comment_id`         | Not needed if plan in description            |
+| `last_dispatched_*`       | Custom field or AgentSession                 |
+| `last_local_impl_*`       | **AgentSession** (native tracking)           |
+| `last_remote_impl_at`     | Custom field or AgentSession                 |
+| `objective_issue`         | Parent issue link                            |
 | Plan steps (in plan body) | Sub-issues or checklist                      |
 
 ## Objective to Linear Issue (with label)
