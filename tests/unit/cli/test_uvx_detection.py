@@ -109,7 +109,7 @@ def test_warning_message_contains_key_phrases() -> None:
     assert "persistent installation" in message.lower()
 
     # Should mention the fix
-    assert "uv tool install" in message
+    assert "uv add erk" in message
 
 
 def test_warning_message_includes_command_name() -> None:
