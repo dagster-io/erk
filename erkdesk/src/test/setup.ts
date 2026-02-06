@@ -25,6 +25,7 @@ const mockErkdesk: ErkdeskAPI = {
   onActionOutput: vi.fn(),
   onActionCompleted: vi.fn(),
   removeActionListeners: vi.fn(),
+  summonTerminal: vi.fn().mockResolvedValue({ success: true, pid: null }),
 };
 
 Object.defineProperty(window, "erkdesk", {

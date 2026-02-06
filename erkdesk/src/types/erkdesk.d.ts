@@ -52,6 +52,12 @@ export interface ActionCompletedEvent {
   error?: string;
 }
 
+export interface TerminalSummonResult {
+  success: boolean;
+  pid: number | null;
+  error?: string;
+}
+
 export interface ErkdeskAPI {
   version: string;
   updateWebViewBounds: (bounds: WebViewBounds) => void;
@@ -62,6 +68,7 @@ export interface ErkdeskAPI {
   onActionOutput: (callback: (event: ActionOutputEvent) => void) => void;
   onActionCompleted: (callback: (event: ActionCompletedEvent) => void) => void;
   removeActionListeners: () => void;
+  summonTerminal: (planId: number) => Promise<TerminalSummonResult>;
 }
 
 declare global {

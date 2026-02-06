@@ -101,6 +101,12 @@ const App: React.FC = () => {
     [],
   );
 
+  const handleSummonTerminal = useCallback((planId: number) => {
+    window.erkdesk.summonTerminal(planId).then((result) => {
+      console.log("summonTerminal result:", result);
+    });
+  }, []);
+
   const handleLogDismiss = useCallback(() => {
     setLogVisible(false);
   }, []);
@@ -135,6 +141,7 @@ const App: React.FC = () => {
         selectedPlan={selectedPlan}
         runningActionId={runningActionId}
         onActionStart={handleActionStart}
+        onSummonTerminal={handleSummonTerminal}
       />
       <SplitPane
         leftPane={

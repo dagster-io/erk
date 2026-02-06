@@ -31,17 +31,20 @@ function makePlan(overrides: Partial<PlanRow> = {}): PlanRow {
 
 describe("ActionToolbar", () => {
   const mockOnActionStart = vi.fn();
+  const mockOnSummonTerminal = vi.fn();
 
   beforeEach(() => {
     mockOnActionStart.mockReset();
+    mockOnSummonTerminal.mockReset();
   });
 
-  it("renders all five buttons", () => {
+  it("renders all six buttons", () => {
     render(
       <ActionToolbar
         selectedPlan={makePlan()}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     expect(screen.getByText("Submit")).toBeInTheDocument();
@@ -49,6 +52,7 @@ describe("ActionToolbar", () => {
     expect(screen.getByText("Address")).toBeInTheDocument();
     expect(screen.getByText("Fix Conflicts")).toBeInTheDocument();
     expect(screen.getByText("Close")).toBeInTheDocument();
+    expect(screen.getByText("Terminal")).toBeInTheDocument();
   });
 
   it("all buttons enabled when plan has PR, run_url, and OPEN state", () => {
@@ -57,6 +61,7 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan()}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     const buttons = screen.getAllByRole("button");
@@ -71,6 +76,7 @@ describe("ActionToolbar", () => {
         selectedPlan={null}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     const buttons = screen.getAllByRole("button");
@@ -85,6 +91,7 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan({ pr_state: "MERGED" })}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     expect(screen.getByText("Land")).toBeDisabled();
@@ -97,6 +104,7 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan({ run_url: null })}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     expect(screen.getByText("Land")).toBeDisabled();
@@ -108,6 +116,7 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan({ pr_number: null })}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     expect(screen.getByText("Address")).toBeDisabled();
@@ -120,6 +129,7 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan({ issue_url: null })}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     expect(screen.getByText("Submit")).toBeDisabled();
@@ -131,6 +141,7 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan({ pr_number: null, issue_url: null })}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     expect(screen.getByText("Close")).not.toBeDisabled();
@@ -142,6 +153,7 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan()}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     const user = userEvent.setup();
@@ -160,6 +172,7 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan()}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     const user = userEvent.setup();
@@ -180,6 +193,7 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan()}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     const user = userEvent.setup();
@@ -198,6 +212,7 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan()}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     const user = userEvent.setup();
@@ -217,6 +232,7 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan()}
         runningActionId={null}
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
     const user = userEvent.setup();
@@ -235,6 +251,7 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan()}
         runningActionId="submit_to_queue"
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
 
@@ -251,10 +268,38 @@ describe("ActionToolbar", () => {
         selectedPlan={makePlan()}
         runningActionId="land_pr"
         onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
       />,
     );
 
     expect(screen.getByText("Land...")).toBeInTheDocument();
     expect(screen.getByText("Submit")).toBeInTheDocument();
+  });
+
+  it("calls onSummonTerminal with plan issue_number when Terminal clicked", async () => {
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan()}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
+      />,
+    );
+    const user = userEvent.setup();
+    await user.click(screen.getByText("Terminal"));
+
+    expect(mockOnSummonTerminal).toHaveBeenCalledWith(100);
+  });
+
+  it("disables Terminal when exists_locally is false", () => {
+    render(
+      <ActionToolbar
+        selectedPlan={makePlan({ exists_locally: false })}
+        runningActionId={null}
+        onActionStart={mockOnActionStart}
+        onSummonTerminal={mockOnSummonTerminal}
+      />,
+    );
+    expect(screen.getByText("Terminal")).toBeDisabled();
   });
 });
