@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "using background agents without waiting for completion before dependent operations"
     warning: "Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files."
-last_audited: "2026-02-04 14:09 PT"
+last_audited: "2026-02-05 15:00 PT"
 audit_result: edited
 ---
 
@@ -102,7 +102,7 @@ Does command orchestrate 3+ steps?
 
 **Examples:**
 
-- `/erk:create-wt-from-plan-file` → `planned-wt-creator` agent
+- Multi-step CLI workflows with error handling at each boundary
 
 **Characteristics:**
 
@@ -112,7 +112,7 @@ Does command orchestrate 3+ steps?
 - Rich user feedback throughout workflow
 - Typically uses haiku model for cost efficiency
 
-**Command structure:** See historical reference in `packages/erk-kits/src/erk_kits/data/kits/erk/commands/erk/create-wt-from-plan-file.md` (deprecated)
+**Command structure:** This pattern was historically demonstrated by the deprecated `create-wt-from-plan-file` command.
 
 **Agent responsibilities:**
 
@@ -193,19 +193,9 @@ Suggested action:
 
 See `.claude/commands/local/fast-ci.md` for the canonical delegation pattern: frontmatter with description, what the command does, prerequisites, and a single Task tool invocation to the agent.
 
-### Step 5: Add to Kit Registry (if bundled)
+### Step 5: Register the Agent
 
-If the agent is part of a kit (not project-specific), update the kit registry:
-
-**File:** `.erk/kits/<kit-name>/registry-entry.md`
-
-Add agent documentation:
-
-```markdown
-### Agents
-
-- **agent-name** - [Description]. Use Task tool with `subagent_type="agent-name"`.
-```
+If the agent should be discoverable, add it to `AGENTS.md` or relevant documentation so other commands can reference it.
 
 ## Agent Specifications
 
@@ -316,13 +306,9 @@ Read `.claude/commands/local/interview.md` for implementation.
 
 **Use case:** Gather detailed requirements through conversation before entering plan mode or as part of planning workflow.
 
-### Example 2: /erk:create-wt-from-plan-file → planned-wt-creator
+### Example 2: Workflow Orchestration (Historical)
 
-⚠️ **Note:** This command is now deprecated. The recommended workflow is to use `erk implement <issue>` instead. This example is preserved for architectural reference.
-
-**Pattern:** Workflow orchestration - See `packages/erk-kits/src/erk_kits/data/kits/erk/commands/erk/create-wt-from-plan-file.md`
-
-**Key insight:** Delegation enabled 87% reduction (338 → 42 lines) while maintaining all functionality.
+The deprecated `create-wt-from-plan-file` command demonstrated workflow orchestration delegation, achieving 87% reduction (338 → 42 lines) while maintaining all functionality. The pattern is now superseded by `erk implement <issue>` but the architectural insight holds: heavy orchestration belongs in agents, not commands.
 
 ## Anti-Patterns
 
@@ -432,7 +418,7 @@ Task(subagent_type="agent", prompt="Execute complete workflow")
 
 1. Main conversation calls `/local:changelog-update`
 2. Command delegates to `commit-categorizer` agent
-3. Agent fetches 2000+ lines of commit JSON via `erk-dev changelog-commits --json-output`
+3. Agent fetches commit JSON via changelog commands
 4. Agent categorizes commits using rules from agent definition
 5. Agent returns compact proposal (50-100 lines) with STATUS header
 6. Main conversation presents proposal to user, requests edits
@@ -524,7 +510,7 @@ Documentation follows a progressive disclosure model:
 **Navigation:**
 
 - `AGENTS.md` → Quick lookup during coding
-- `docs/agent/guide.md` → Navigation hub to all documentation
+- `docs/learned/guide.md` → Navigation hub to all documentation
 - This doc → Complete delegation pattern reference
 
 ## Summary

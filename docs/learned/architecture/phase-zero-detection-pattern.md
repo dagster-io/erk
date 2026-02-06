@@ -8,8 +8,8 @@ tripwires:
   - action: "Detect mode in Phase 0 before any other phases execute"
     warning: "Late detection leads to starting wrong mode then discovering the error"
     score: 5
-last_audited: "2026-02-04 14:16 PT"
-audit_result: clean
+last_audited: "2026-02-05 15:10 PT"
+audit_result: edited
 ---
 
 # Phase 0 Detection Pattern
@@ -56,12 +56,12 @@ The `/erk:pr-address` command has two modes:
 Before classifying feedback, determine if this is a plan review PR:
 
 1. Get the current PR number: `gh pr view --json number -q .number`
-2. Check if the PR has the `plan-review` label: `gh pr view --json labels -q '.labels[].name'` and check for `plan-review` in the output
+2. Check if the PR has the `erk-plan-review` label: `gh pr view --json labels -q '.labels[].name'` and check for `erk-plan-review` in the output
 3. If YES: extract the plan issue number from the PR body (which contains `**Plan Issue:** #NNN`): `gh pr view --json body -q .body` and parse the issue number from the `**Plan Issue:** #NNN` line. Enter **Plan Review Mode** (see [Plan Review Mode](#plan-review-mode) below). Skip normal Phases 1-4.
 4. If NO: proceed with standard code review flow (Phase 1)
 ```
 
-**Source:** `.claude/commands/erk/pr-address.md:30-37`
+**Source:** `.claude/commands/erk/pr-address.md` (Phase 0 section)
 
 ### Why This Works
 
@@ -246,7 +246,7 @@ Phase 0 detection often uses labels as feature switches:
 - Detection checks for specific labels
 - Labels are applied automatically by workflows
 
-**Example:** `plan-review` label is applied by `erk exec plan-create-review-pr`, then detected by Phase 0 in `/erk:pr-address`.
+**Example:** `erk-plan-review` label is applied by `erk exec plan-create-review-pr`, then detected by Phase 0 in `/erk:pr-address`.
 
 ### State Machine Transitions
 

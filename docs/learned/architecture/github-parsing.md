@@ -4,8 +4,8 @@ read_when:
   - "parsing GitHub URLs"
   - "extracting PR or issue numbers from URLs"
   - "understanding github parsing layers"
-last_audited: "2026-02-04 14:11 PT"
-audit_result: edited
+last_audited: "2026-02-05 15:05 PT"
+audit_result: clean
 ---
 
 # GitHub URL Parsing Architecture
