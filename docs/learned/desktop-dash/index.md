@@ -8,6 +8,7 @@
 - **[backend-communication.md](backend-communication.md)** — connecting Electron to a Python backend, choosing between HTTP server and CLI shelling for IPC, implementing the desktop dashboard backend
 - **[defensive-bounds-handling.md](defensive-bounds-handling.md)** — working with WebContentsView bounds, debugging Electron crashes, implementing IPC bounds updates
 - **[erkdesk-auto-refresh-patterns.md](erkdesk-auto-refresh-patterns.md)** — building auto-refreshing UI components in erkdesk, implementing periodic data fetching with React, managing URL loading to avoid redundant IPC calls, debugging duplicate webview loads or refresh issues
+- **[erkdesk-project-structure.md](erkdesk-project-structure.md)** — working on erkdesk codebase, understanding Electron Forge Vite setup, adding new erkdesk features, debugging erkdesk build issues
 - **[forge-vite-setup.md](forge-vite-setup.md)** — configuring Electron Forge with Vite, understanding erkdesk build configuration, debugging Vite build issues in Electron, adding new build targets or configs
 - **[framework-evaluation.md](framework-evaluation.md)** — choosing a framework for the desktop dashboard, embedding GitHub pages in an application, understanding why Electron was chosen for the desktop dashboard
 - **[interaction-model.md](interaction-model.md)** — designing the desktop dashboard UX, deciding which TUI features to carry forward to Electron, understanding the interaction model differences between TUI and desktop
@@ -16,6 +17,7 @@
 - **[pnpm-hoisting-pattern.md](pnpm-hoisting-pattern.md)** — setting up new Electron projects with pnpm, encountering cryptic Electron module resolution errors, debugging 'Cannot find module' errors in Electron, configuring pnpm for Electron compatibility
 - **[preload-bridge-patterns.md](preload-bridge-patterns.md)** — exposing Node.js APIs to Electron renderer, implementing IPC communication in erkdesk, understanding context bridge security, adding new erkdesk capabilities
 - **[security.md](security.md)** — implementing Electron context bridge, working with erkdesk frontend-backend communication, handling GitHub tokens in desktop app, setting up Electron security settings
+- **[split-pane-implementation.md](split-pane-implementation.md)** — working on split-pane layout, debugging bounds reporting, implementing resizable panels in erkdesk
 - **[visual-status-indicators.md](visual-status-indicators.md)** — implementing visual status indicators in erkdesk, designing CSS-only status dots with color semantics, understanding the backend data contract for status derivation
 - **[vitest-setup.md](vitest-setup.md)** — setting up test infrastructure for erkdesk, adding new tests to erkdesk, understanding erkdesk test environment
 - **[webcontentsview-lifecycle.md](webcontentsview-lifecycle.md)** — working with WebContentsView in erkdesk, implementing split-pane with embedded webview, setting up IPC for bounds updates

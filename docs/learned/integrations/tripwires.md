@@ -12,11 +12,15 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+**CRITICAL: Before adding skills to .codex/ without verifying they work outside Claude Code** → Read [Bundled Artifacts (.codex/ Directory)](bundled-artifacts.md) first. Codex portability: Verify skills don't use Claude-only features (hooks, system prompts, TodoWrite). See bundled-artifacts.md for portable vs Claude-only classification.
+
 **CRITICAL: Before assuming Codex JSONL uses same format as Claude stream-json** → Read [Codex CLI JSONL Output Format](codex/codex-jsonl-format.md) first. Completely different formats. Claude uses type: assistant/user/result with nested message.content[]. Codex uses type: item.completed with flattened item fields. See codex-jsonl-format.md.
 
 **CRITICAL: Before assuming Codex custom prompts are the current approach** → Read [Codex Skills System](codex/codex-skills-system.md) first. Custom prompts (~/.codex/prompts/\*.md) are the older mechanism, deprecated in favor of skills. Target .codex/skills/ instead.
 
 **CRITICAL: Before looking for session_id in Codex JSONL** → Read [Codex CLI JSONL Output Format](codex/codex-jsonl-format.md) first. Codex JSONL does not include session_id in events. The thread_id is provided in the thread.started event only.
+
+**CRITICAL: Before modifying skills in .codex/ that are also in .claude/** → Read [Bundled Artifacts (.codex/ Directory)](bundled-artifacts.md) first. TOML duplicate key constraint: A skill can only be defined once. Either in .codex/ (portable) OR .claude/ (Claude-only), never both. See single-canonical-destination pattern in toml-handling.md.
 
 **CRITICAL: Before using --ask-for-approval with codex exec** → Read [Codex CLI Reference](codex/codex-cli-reference.md) first. codex exec does NOT support --ask-for-approval. It hardcodes approval to Never in headless mode. Only the TUI supports this flag.
 
