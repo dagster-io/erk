@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "creating a PreToolUse hook"
     warning: "Test against edge cases. Untested hooks fail silently (exit 0, no output). Read docs/learned/testing/hook-testing.md first."
+last_audited: "2026-02-05 20:38 PT"
+audit_result: edited
 ---
 
 # Hook Testing Patterns
@@ -39,21 +41,11 @@ Key edge cases for stdin JSON extraction:
 - Non-string where string expected
 - Empty string values
 
-See `tests/unit/cli/commands/exec/scripts/test_pre_tool_use_hook.py` for the canonical example with 14 pure function tests.
+See `tests/unit/cli/commands/exec/scripts/test_pre_tool_use_hook.py` for the canonical example with 18 pure function tests covering extraction, detection, and output building.
 
 ## Integration Testing (Layer 4)
 
-Use CliRunner with ErkContext injection to test the full hook pipeline:
-
-```python
-runner = CliRunner()
-ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
-stdin_data = json.dumps({
-    "session_id": "test-session",
-    "tool_input": {"file_path": "/src/foo.py"},
-})
-result = runner.invoke(hook_command, input=stdin_data, obj=ctx)
-```
+Use `CliRunner` with `ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)` and pass stdin JSON via `input=` to test the full hook pipeline. See `TestHookIntegration` in `tests/unit/cli/commands/exec/scripts/test_pre_tool_use_hook.py` for the canonical pattern.
 
 **Key integration scenarios**:
 
@@ -65,14 +57,7 @@ result = runner.invoke(hook_command, input=stdin_data, obj=ctx)
 
 ## Capability Setup in Tests
 
-When hooks check for installed capabilities, set up the state file in `tmp_path`:
-
-```python
-state_path = tmp_path / ".erk" / "state.toml"
-state_path.parent.mkdir(parents=True, exist_ok=True)
-```
-
-Use `tomli_w.dump()` to write the state file with required capability flags. See the test file for the `_setup_dignified_python_reminder()` helper pattern.
+When hooks check for installed capabilities, set up a `state.toml` file in `tmp_path / ".erk"` using `tomli_w.dump()` with the required capability flags. See the `_setup_dignified_python_reminder()` helper in `tests/unit/cli/commands/exec/scripts/test_pre_tool_use_hook.py` for the canonical pattern.
 
 ## Stdin JSON Format
 

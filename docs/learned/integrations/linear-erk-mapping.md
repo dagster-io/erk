@@ -5,6 +5,8 @@ read_when:
   - Evaluating Linear as issue tracker for erk
   - Building Linear gateway
   - Understanding trade-offs between GitHub Issues and Linear
+last_audited: "2026-02-05 20:38 PT"
+audit_result: edited
 ---
 
 # Erk to Linear Concept Mapping
@@ -17,17 +19,7 @@ Linear's `AgentSession` is a **better fit** than erk's current GitHub metadata b
 
 ### Current Erk Approach
 
-Erk embeds YAML in GitHub issue bodies:
-
-```yaml
-<!-- erk:metadata-block:plan-header -->
-schema_version: "2"
-created_at: "2025-01-03T12:00:00Z"
-last_local_impl_at: "2025-01-03T14:00:00Z"
-last_local_impl_event: "started"
-last_local_impl_session: "abc-123-def"
-last_local_impl_user: "schrockn"
-```
+Erk embeds YAML in GitHub issue bodies via `plan-header` metadata blocks (see `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py` and `schemas.py` for the full schema with 34+ fields).
 
 Problems:
 
@@ -76,18 +68,18 @@ Problems:
 
 Erk's `plan-header` metadata fields map to:
 
-| Erk Metadata             | Linear Equivalent                            |
-| ------------------------ | -------------------------------------------- |
-| `schema_version`         | Not needed (Linear handles schema)           |
-| `created_at`             | `Issue.createdAt`                            |
-| `created_by`             | `Issue.creator`                              |
-| `worktree_name`          | Custom field (Linear doesn't know worktrees) |
-| `plan_comment_id`        | Not needed if plan in description            |
-| `last_dispatched_*`      | Custom field or AgentSession                 |
-| `last_local_impl_*`      | **AgentSession** (native tracking)           |
-| `last_remote_impl_at`    | Custom field or AgentSession                 |
-| `objective_issue`        | Parent issue link                            |
-| `steps` / `current_step` | Sub-issues or checklist                      |
+| Erk Metadata              | Linear Equivalent                            |
+| ------------------------- | -------------------------------------------- |
+| `schema_version`          | Not needed (Linear handles schema)           |
+| `created_at`              | `Issue.createdAt`                            |
+| `created_by`              | `Issue.creator`                              |
+| `worktree_name`           | Custom field (Linear doesn't know worktrees) |
+| `plan_comment_id`         | Not needed if plan in description            |
+| `last_dispatched_*`       | Custom field or AgentSession                 |
+| `last_local_impl_*`       | **AgentSession** (native tracking)           |
+| `last_remote_impl_at`     | Custom field or AgentSession                 |
+| `objective_issue`         | Parent issue link                            |
+| Plan steps (in plan body) | Sub-issues or checklist                      |
 
 ## Objective to Linear Issue (with label)
 
@@ -180,19 +172,13 @@ Linear's guidance system could replace per-repo CLAUDE.md files:
 
 Guidance cascades: Workspace to Parent Team to Team, with nearest taking precedence.
 
-## Multi-Backend Architecture
+## Multi-Backend Architecture (Proposed)
 
-Erk will support both GitHub Issues and Linear as backends for different customers, not migrate from one to the other.
+A potential future direction: support both GitHub Issues and Linear as backends for different customers, not migrate from one to the other. None of this has been implemented.
 
-### Gateway Abstraction
+### Gateway Abstraction (Proposed)
 
-The existing gateway pattern (Git, GitHub, Graphite ABCs) extends naturally to issue tracking:
-
-```
-IssueTracker ABC
-├── GitHubIssueTracker (existing behavior)
-└── LinearIssueTracker (new backend)
-```
+The existing gateway pattern in `packages/erk-shared/src/erk_shared/gateway/` (with ABCs for GitHub, BranchManager, etc.) could extend to issue tracking with a new `IssueTracker` ABC, yielding `GitHubIssueTracker` and `LinearIssueTracker` implementations.
 
 ### Backend-Specific Features
 
@@ -204,7 +190,7 @@ IssueTracker ABC
 | Worktree binding        | Metadata field         | Custom field          |
 | Graphite integration    | Native                 | External tracking     |
 
-### What the Linear Backend Enables
+### What the Linear Backend Would Enable
 
 For customers using Linear:
 
@@ -221,9 +207,9 @@ Some erk concepts remain GitHub-scoped regardless of issue tracker:
 - **Worktree management** - Git operation, backend-agnostic
 - **PR creation/sync** - GitHub PRs even if issues are in Linear
 
-### Implementation Approach
+### Implementation Approach (If Pursued)
 
-1. Extract issue-tracking operations into `IssueTracker` ABC
+1. Extract issue-tracking operations into an `IssueTracker` ABC
 2. Current GitHub code becomes `GitHubIssueTracker`
 3. New `LinearIssueTracker` implements same interface using Linear API
 4. Configuration determines which backend to use per-repo or per-workspace

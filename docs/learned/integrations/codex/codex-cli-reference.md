@@ -1,5 +1,7 @@
 ---
 title: Codex CLI Reference
+last_audited: "2026-02-05 20:38 PT"
+audit_result: edited
 read_when:
   - "implementing Codex support in erk"
   - "mapping Claude CLI flags to Codex equivalents"
@@ -147,6 +149,5 @@ Codex TUI does NOT support slash commands. The prompt (if any) is a positional a
 
 - [Codex JSONL Format](codex-jsonl-format.md) — Streaming output event format
 - [Codex Skills System](codex-skills-system.md) — Skill discovery and invocation
-- [Multi-Agent Portability](multi-agent-portability.md) — Broader multi-agent research
-- [PromptExecutor Patterns](../architecture/prompt-executor-patterns.md) — How erk abstracts agent backends
-- [Interactive Agent Configuration](../reference/interactive-claude-config.md) — Current config system (will evolve)
+- [PromptExecutor Patterns](../../architecture/prompt-executor-patterns.md) — How erk abstracts agent backends
+- [Interactive Agent Configuration](../../reference/interactive-claude-config.md) — Current config system (will evolve)

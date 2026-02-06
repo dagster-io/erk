@@ -5,6 +5,8 @@ read_when:
   - Considering Linear as an alternative to GitHub Issues
   - Building a Linear gateway for erk
   - Understanding how other tools (Cursor, Devin) integrate with Linear
+last_audited: "2026-02-05 20:38 PT"
+audit_result: edited
 ---
 
 # Linear Agent-Native Primitives
@@ -60,42 +62,15 @@ Sessions are created automatically when:
 - Agent is **@mentioned** in a comment or document
 - Agent is **mentioned in a thread**
 
-Or proactively via GraphQL mutations:
-
-- `agentSessionCreateOnIssue` - Create session linked to an issue
-- `agentSessionCreateOnComment` - Create session linked to a comment thread
+Or proactively via GraphQL mutations: `agentSessionCreateOnIssue` (linked to an issue) or `agentSessionCreateOnComment` (linked to a comment thread).
 
 ### Key Session Fields
 
-```graphql
-type AgentSession {
-  id: ID!
-  status: AgentSessionStatus!
-
-  # Relationships
-  appUser: User! # The agent
-  creator: User # Human who triggered (null if automated)
-  issue: Issue # Associated issue
-  comment: Comment # Associated comment thread
-  # Context
-  promptContext: String # Pre-formatted context for agent
-  plan: JSON # Agent's execution strategy
-  summary: String # Summary of activities
-  # Lifecycle
-  startedAt: DateTime
-  endedAt: DateTime
-
-  # External links
-  externalUrls: JSON! # Links to PRs, external resources
-  # Activities
-  activities: AgentActivityConnection!
-  pullRequests: AgentSessionToPullRequestConnection!
-}
-```
+The `AgentSession` GraphQL type includes: `id`, `status`, relationships to `appUser` (the agent), `creator` (human who triggered), `issue`, and `comment`. It also carries `promptContext` (pre-formatted context), `plan` (execution strategy as JSON), `summary`, lifecycle timestamps (`startedAt`/`endedAt`), `externalUrls` (links to PRs), and connections to `activities` and `pullRequests`. See the [Linear GraphQL Schema](https://github.com/linear/linear/blob/master/packages/sdk/src/schema.graphql) for the full type definition.
 
 ### State Management
 
-Linear manages session state automatically based on emitted activities. You don't need to manually update status - it transitions based on what activities you emit.
+Linear manages session state automatically based on emitted activities. You don't need to manually update status -- it transitions based on what activities you emit.
 
 ## AgentActivity
 
@@ -112,20 +87,7 @@ Agents emit semantic activities to communicate progress. Linear renders these in
 | `error`       | Failure reporting         | `body` (error message)          |
 | `prompt`      | User message to agent     | `body` (markdown)               |
 
-### Activity Fields
-
-```graphql
-type AgentActivity {
-  id: ID!
-  agentSession: AgentSession!
-  content: AgentActivityContent! # Union of content types
-  ephemeral: Boolean! # Disappears after next activity
-  signal: AgentActivitySignal # Modifier (auth, continue, select, stop)
-  signalMetadata: JSON
-  sourceComment: Comment # If linked to a comment
-  user: User! # Who created this activity
-}
-```
+The `AgentActivity` type carries a `content` union (typed per activity type above), an `ephemeral` flag, an optional `signal` modifier, and a link to the parent `AgentSession`. For `action` type content, fields are `action` (e.g., "read_file"), `parameter` (e.g., file path), and optional `result` (markdown).
 
 ### Activity Signals
 
@@ -142,19 +104,6 @@ The `signal` field modifies how an activity is interpreted:
 
 Set `ephemeral: true` for transient status updates (like "Currently reading file X..."). These disappear when the next activity is emitted, keeping the activity stream clean.
 
-### Action Activity Content
-
-For `action` type activities, the content includes:
-
-```graphql
-type AgentActivityActionContent {
-  action: String! # The action being performed (e.g., "read_file")
-  parameter: String! # Parameters (e.g., file path)
-  result: String # Result in Markdown (optional)
-  type: AgentActivityType!
-}
-```
-
 ## Guidance System
 
 Linear provides cascading configuration for agent behavior.
@@ -163,47 +112,19 @@ Linear provides cascading configuration for agent behavior.
 
 ```
 Workspace guidance (lowest precedence)
-    └── Parent team guidance
-        └── Current team guidance (highest precedence)
+    -> Parent team guidance
+        -> Current team guidance (highest precedence)
 ```
 
 The nearest team-specific guidance takes precedence. This allows organization-wide defaults with team-level overrides.
 
 ### Guidance in Webhooks
 
-When an `AgentSessionEvent` webhook fires, it includes:
-
-```graphql
-type AgentSessionEventWebhookPayload {
-  guidance: [GuidanceRuleWebhookPayload!]
-  # ...
-}
-
-type GuidanceRuleWebhookPayload {
-  body: String! # Guidance content in Markdown
-  origin: GuidanceRuleOriginWebhookPayload! # Organization or Team
-}
-```
-
-This is like **system prompts managed in Linear**, per-team. Agents receive behavior instructions without needing them hardcoded.
+When an `AgentSessionEvent` webhook fires, it includes a `guidance` array of `GuidanceRuleWebhookPayload` entries, each containing a `body` (markdown guidance content) and an `origin` (organization or team). This is like **system prompts managed in Linear**, per-team. Agents receive behavior instructions without needing them hardcoded.
 
 ## promptContext
 
-Linear pre-formats context for agents in the `promptContext` field.
-
-### What It Contains
-
-On `AgentSessionEvent` webhooks (for `created` events):
-
-```
-promptContext: String containing:
-  - Issue title, description, properties
-  - Relevant comments
-  - Cascading guidance from team/workspace
-  - Thread context if applicable
-```
-
-### Why It Matters
+Linear pre-formats context for agents in the `promptContext` field on `AgentSessionEvent` webhooks (for `created` events). It contains the issue title, description, properties, relevant comments, cascading guidance from team/workspace, and thread context if applicable.
 
 Agents receive **ready-to-use context**, not raw data to parse. This eliminates the need for agents to make multiple API calls to understand what they're working on.
 
@@ -211,23 +132,7 @@ Agents receive **ready-to-use context**, not raw data to parse. This eliminates 
 
 ### AgentSessionEvent
 
-Sent when agent sessions are created or updated.
-
-```graphql
-type AgentSessionEventWebhookPayload {
-  action: String! # "created" or "updated"
-  agentSession: AgentSessionWebhookPayload!
-  agentActivity: AgentActivityWebhookPayload # If activity triggered event
-  appUserId: String!
-  oauthClientId: String!
-  organizationId: String!
-
-  # Context (created events only)
-  promptContext: String
-  guidance: [GuidanceRuleWebhookPayload!]
-  previousComments: [CommentChildWebhookPayload!]
-}
-```
+Sent when agent sessions are created or updated. The payload includes `action` ("created" or "updated"), the `agentSession`, the triggering `agentActivity` (if any), OAuth/org identifiers, and -- on `created` events only -- `promptContext`, `guidance`, and `previousComments`. See the [Linear GraphQL Schema](https://github.com/linear/linear/blob/master/packages/sdk/src/schema.graphql) for the full `AgentSessionEventWebhookPayload` type.
 
 ### Timing Requirements
 
@@ -253,15 +158,7 @@ Linear provides an official MCP server for AI model integration.
 
 ### Capabilities
 
-21 tools for issue/project management:
-
-- Create/update issues
-- Query issues with filters
-- Manage projects and teams
-- Add comments
-- Update properties
-
-This enables Claude Code to interact with Linear directly without going through erk CLI.
+21 tools for issue/project management: create/update issues, query with filters, manage projects and teams, add comments, update properties. This enables Claude Code to interact with Linear directly without going through erk CLI.
 
 ## Existing Agent Integrations
 
@@ -287,66 +184,13 @@ All integrations follow:
 
 ## GraphQL API Reference
 
-### Create Agent Session on Issue
+The three key mutations for agent integration are:
 
-```graphql
-mutation CreateAgentSession(
-  $issueId: String!
-  $externalUrls: [AgentSessionExternalUrlInput!]
-) {
-  agentSessionCreateOnIssue(
-    input: { issueId: $issueId, externalUrls: $externalUrls }
-  ) {
-    success
-    agentSession {
-      id
-      status
-      startedAt
-    }
-  }
-}
-```
+- **`agentSessionCreateOnIssue`** -- Creates an `AgentSession` linked to an issue. Takes `issueId` and optional `externalUrls`. Returns the session `id`, `status`, and `startedAt`.
+- **`agentActivityCreate`** -- Emits an activity. Takes `agentSessionId`, `content` (typed per activity type), optional `ephemeral` flag, and optional `signal` modifier.
+- **`agentSessionUpdate`** -- Updates a session with `summary`, `externalUrls`, or other fields. Linear automatically transitions status based on activities.
 
-### Emit Agent Activity
-
-```graphql
-mutation EmitActivity($input: AgentActivityCreateInput!) {
-  agentActivityCreate(input: $input) {
-    success
-    agentActivity {
-      id
-      content
-    }
-  }
-}
-```
-
-Input structure:
-
-```graphql
-input AgentActivityCreateInput {
-  agentSessionId: String!
-  content: JSONObject! # Activity content (type-specific)
-  ephemeral: Boolean # Default false
-  signal: AgentActivitySignal # Optional modifier
-}
-```
-
-### Complete Agent Session
-
-Update session with summary and final external URLs:
-
-```graphql
-mutation UpdateSession($id: String!, $input: AgentSessionUpdateInput!) {
-  agentSessionUpdate(id: $id, input: $input) {
-    success
-    agentSession {
-      status
-      summary
-    }
-  }
-}
-```
+For full mutation signatures and input types, see the [Linear GraphQL Schema](https://github.com/linear/linear/blob/master/packages/sdk/src/schema.graphql).
 
 ## Sources
 

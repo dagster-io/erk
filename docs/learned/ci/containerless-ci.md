@@ -4,6 +4,8 @@ read_when:
   - Setting up Claude Code in GitHub Actions without containers
   - Comparing container vs container-less CI approaches
   - Choosing between container and container-less CI approaches
+last_audited: "2026-02-05 20:38 PT"
+audit_result: edited
 ---
 
 # Container-less CI with Native Tool Installation
@@ -14,115 +16,37 @@ This document covers the container-less approach for running Claude Code in GitH
 
 **Pros:** No image maintenance, simpler workflow, no permission workarounds needed.
 
-**Cons:** Longer install time per run (~30s), network dependency, potential version drift.
+**Cons:** Network dependency on first run (binary is cached afterward), potential version drift.
 
-## Workflow Pattern
+## Implementation: Composite Actions
 
-The native installation pattern installs tools directly on the `ubuntu-latest` runner:
+All erk workflows use composite actions to consolidate setup. There are two layers:
 
-```yaml
-jobs:
-  review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      pull-requests: write
+1. **`.github/actions/setup-claude-code/action.yml`** -- Downloads the Claude Code binary directly from GCS (bypassing the install script, which hangs in CI). Includes `actions/cache` so the binary is only downloaded on cache miss. Installs to `~/.local/bin/claude`.
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+2. **`.github/actions/erk-remote-setup/action.yml`** -- The full setup action used by most workflows. Calls `setup-claude-code`, installs uv (via `astral-sh/setup-uv@v5`), installs prettier, installs erk, validates Claude credentials, and configures git identity.
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+### Why Direct Download Instead of Install Script
 
-      - name: Install Claude Code
-        run: |
-          curl -fsSL https://claude.ai/install.sh | bash
-          echo "$HOME/.claude/local/bin" >> $GITHUB_PATH
+The standard `curl -fsSL https://claude.ai/install.sh | bash` approach frequently hangs in CI environments. The `setup-claude-code` action documents the known issues and downloads the binary directly from the same GCS bucket the install script would use. See the comments in `.github/actions/setup-claude-code/action.yml` for issue links.
 
-      - name: Install erk
-        run: uv tool install --from . --with ./packages/erk-shared erk
+### Key Details
 
-      - name: Run Claude Code
-        env:
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          claude --print \
-            --model claude-opus-4-5 \
-            --allowedTools 'Bash(gh:*),Bash(erk exec:*),Read(*)' \
-            --dangerously-skip-permissions \
-            --output-format stream-json \
-            --verbose \
-            "Your prompt here"
-```
-
-## Key Components
-
-### 1. uv Installation
-
-Uses the official `astral-sh/setup-uv@v5` action for fast, cached Python package management:
-
-```yaml
-- name: Install uv
-  uses: astral-sh/setup-uv@v5
-```
-
-### 2. Claude Code Installation
-
-Installs Claude Code via the official installer script and adds it to PATH:
-
-```yaml
-- name: Install Claude Code
-  run: |
-    curl -fsSL https://claude.ai/install.sh | bash
-    echo "$HOME/.claude/local/bin" >> $GITHUB_PATH
-```
-
-The `$GITHUB_PATH` append ensures Claude Code is available in subsequent steps.
-
-### 3. erk Installation
-
-Installs erk as a uv tool with local packages:
-
-```yaml
-- name: Install erk
-  run: uv tool install --from . --with ./packages/erk-shared erk
-```
-
-### 4. --dangerously-skip-permissions Flag
-
-Required for non-interactive CI execution. Unlike the container approach, this works on ubuntu-latest because the runner executes as a non-root user (UID typically 1001).
+- **Claude Code PATH**: `~/.local/bin` (not `~/.claude/local/bin`)
+- **`--dangerously-skip-permissions`**: Required for non-interactive CI execution. Works on `ubuntu-latest` because the runner executes as a non-root user (UID typically 1001).
+- **erk install**: `uv tool install -e . --with-editable ./packages/erk-shared` (via `erk-remote-setup`) or `uv tool install --from . --with ./packages/erk-shared erk` (in simpler workflows like `code-reviews.yml`).
 
 ## Comparison: Container vs Container-less
 
 | Aspect               | Container                                | Container-less            |
 | -------------------- | ---------------------------------------- | ------------------------- |
-| **Setup complexity** | High (Dockerfile, registry, credentials) | Low (direct installation) |
-| **Startup time**     | Variable (image pull)                    | Fast (no image pull)      |
-| **Tool versions**    | Fixed at image build                     | Always latest             |
-| **Maintenance**      | Image rebuilds required                  | None                      |
+| **Setup complexity** | High (Dockerfile, registry, credentials) | Low (composite actions)   |
+| **Startup time**     | Variable (image pull)                    | Fast (binary cached)      |
+| **Tool versions**    | Fixed at image build                     | Always latest stable      |
+| **Maintenance**      | Image rebuilds required                  | Minimal                   |
 | **Permissions**      | Complex (root user workarounds)          | Simple (runs as non-root) |
 | **Consistency**      | High (identical environment)             | Medium (runner updates)   |
 | **Package registry** | Required (GHCR auth)                     | Not required              |
-
-### Container-less Advantages
-
-- **No container image maintenance**: No Dockerfile to update, no image builds to trigger
-- **Faster startup**: No image pull latency
-- **Latest tool versions**: Always uses latest Claude Code, uv, etc.
-- **Simpler workflow**: Fewer permissions needed (`packages: read` not required)
-- **No permission workarounds**: No temp directory fixes, no root user issues
-
-### Container-less Disadvantages
-
-- **Longer install time**: ~30s for tool installation each run
-- **Network dependency**: Each run downloads tools
-- **Version drift**: Tool versions may change between runs
 
 ### When to Use Each
 
@@ -140,35 +64,27 @@ Required for non-interactive CI execution. Unlike the container approach, this w
 
 ## Workflows Using This Pattern
 
-- `.github/workflows/code-reviews.yml` - Convention-based code review system (see [convention-based-reviews.md](convention-based-reviews.md))
+All current erk CI workflows use the containerless pattern:
+
+- `.github/workflows/code-reviews.yml` -- Uses `setup-claude-code` directly plus inline uv/erk steps (see [convention-based-reviews.md](convention-based-reviews.md))
+- `.github/workflows/plan-implement.yml` -- Uses `erk-remote-setup` composite action
+- `.github/workflows/pr-address.yml` -- Uses `erk-remote-setup` composite action
+- `.github/workflows/pr-fix-conflicts.yml` -- Uses `erk-remote-setup` composite action
+- `.github/workflows/learn.yml` -- Uses `erk-remote-setup` composite action
 
 ## Troubleshooting
 
 ### Claude Code not found after installation
 
-Ensure PATH is updated:
-
-```yaml
-echo "$HOME/.claude/local/bin" >> $GITHUB_PATH
-```
+Ensure PATH includes `~/.local/bin`. The `setup-claude-code` action handles this automatically. If installing manually, add `echo "$HOME/.local/bin" >> $GITHUB_PATH`.
 
 ### Permission denied errors
 
 The `--dangerously-skip-permissions` flag requires non-root execution. On `ubuntu-latest`, this is the default.
 
-### Tool installation failures
+### Install script hangs
 
-Add retries for network resilience:
-
-```yaml
-- name: Install Claude Code
-  run: |
-    for i in 1 2 3; do
-      curl -fsSL https://claude.ai/install.sh | bash && break
-      sleep 5
-    done
-    echo "$HOME/.claude/local/bin" >> $GITHUB_PATH
-```
+Do not use `curl -fsSL https://claude.ai/install.sh | bash` in CI. Use the `setup-claude-code` composite action which downloads the binary directly from GCS with retries.
 
 ## Related Documentation
 
