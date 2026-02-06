@@ -8,6 +8,8 @@ read_when:
 tripwire:
   trigger: "Before modifying commit-message-prompt.md in either location"
   action: "Read [Template Synchronization](template-synchronization.md) first. Update BOTH synchronized files: .claude/skills/erk-diff-analysis/references/commit-message-prompt.md AND packages/erk-shared/src/erk_shared/gateway/gt/commit-message-prompt.md. CI test enforces byte-equality."
+last_audited: "2026-02-06 04:20 PT"
+audit_result: clean
 ---
 
 # Template Synchronization

@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "creating a PreToolUse hook"
     warning: "Test against edge cases. Untested hooks fail silently (exit 0, no output). Read docs/learned/testing/hook-testing.md first."
+last_audited: "2026-02-06 04:21 PT"
+audit_result: clean
 ---
 
 # Hook Testing Patterns
