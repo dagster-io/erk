@@ -29,9 +29,12 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 >
 > See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
 
-### Phase 0: Plan Review Detection
+### Phase 0: Mode Detection
 
-Before classifying feedback, determine if this is a plan review PR:
+Before classifying feedback, determine what mode to operate in:
+
+0. **Plan Mode Detection**: If you are currently in plan mode (you can only read files
+   and edit the plan file), enter **Plan Generation Mode** (see [Plan Generation Mode](#plan-generation-mode) below). Skip all other phases.
 
 1. Get the PR number:
    - **If `--pr <number>` specified in `$ARGUMENTS`**: Use that number
@@ -381,3 +384,95 @@ After all batches are complete and pushed:
 
 1. Switch back to the branch saved in Phase 1: `git checkout <ORIGINAL_BRANCH>`
 2. The plan-review branch work is complete — the user should not remain on it.
+
+---
+
+## Plan Generation Mode
+
+When Phase 0 detects that the agent is in plan mode (can only read files and edit the plan file), the entire flow switches to plan generation mode. Instead of executing fixes, the agent writes a plan document that a future implementing agent can follow.
+
+### Why This Mode Exists
+
+Plans are often implemented in fresh contexts where no skills are loaded. The plan needs to carry enough context (skill references, tool conventions) for the implementing agent to succeed without re-discovering project conventions.
+
+**Example problem**: A plan said "resolve all 11 threads" but didn't mention `erk exec resolve-review-threads`, so the implementing agent used raw `gh api graphql` calls instead.
+
+### Plan Generation Step 1: Classify Feedback (Read-Only)
+
+Run Phase 1 normally — it's entirely read-only and works in plan mode:
+
+```
+/pr-feedback-classifier [--pr <number> if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response to get `pr_number`, `pr_title`, `pr_url`, `actionable_threads`, `discussion_actions`, and `batches`.
+
+### Plan Generation Step 2: Write Plan to Plan File
+
+Write a plan document to the plan file with the following structure:
+
+#### Context Section
+
+```markdown
+## Context
+
+- **PR**: #<pr_number> — <pr_title> (<pr_url>)
+- **Load `pr-operations` skill** before resolving threads
+- **Use `erk exec` commands** for all PR thread operations — never raw `gh api` calls
+- **Use `erk exec resolve-review-threads`** (batch) to resolve threads after each commit
+```
+
+#### Batched Execution Plan
+
+Format the batches from the classifier output, including thread IDs so the implementing agent has them:
+
+```markdown
+## Execution Plan
+
+### Batch 1: <batch description> (<N> comments)
+
+| #   | Thread ID | Location  | Summary             |
+| --- | --------- | --------- | ------------------- |
+| 1   | PRRT_abc  | foo.py:42 | Use LBYL pattern    |
+| 2   | PRRT_def  | bar.py:15 | Add type annotation |
+
+### Batch 2: <batch description> (<N> comments)
+
+...
+```
+
+#### Execution Order
+
+For each batch, specify the steps:
+
+````markdown
+## Execution Order
+
+For each batch:
+
+1. Read the code at the locations listed
+2. Make the fix following reviewer feedback
+3. Run CI checks (use `devrun` agent for pytest/ty/ruff/make — not direct Bash)
+4. Commit the batch: `git add <files> && git commit -m "Address PR review comments (batch N/M)"`
+5. Resolve all review threads in the batch using `erk exec resolve-review-threads`:
+   ```bash
+   echo '[{"thread_id": "<id>", "comment": "Fixed in <commit>"}]' | erk exec resolve-review-threads
+   ```
+````
+
+6. For discussion comments, use `erk exec reply-to-discussion-comment`
+
+````
+
+#### Verification Section
+
+```markdown
+## Verification
+
+After all batches are complete, re-run `/pr-feedback-classifier` to confirm all threads are resolved.
+If any remain, address them in an additional batch.
+````
+
+### Plan Generation Step 3: Exit Plan Mode
+
+Call `ExitPlanMode` to present the plan for user approval.
