@@ -150,7 +150,7 @@ def test_step_not_found() -> None:
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is False
     assert output["error"] == "step_not_found"
@@ -168,7 +168,7 @@ def test_issue_not_found() -> None:
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is False
     assert output["error"] == "issue_not_found"
@@ -187,7 +187,7 @@ def test_no_roadmap_table() -> None:
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is False
     assert output["error"] == "no_roadmap"

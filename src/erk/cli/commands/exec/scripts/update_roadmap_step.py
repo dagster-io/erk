@@ -36,8 +36,7 @@ Output:
         Each step result: {step_id, success, previous_pr, error}
 
 Exit Codes:
-    0: Success (all steps updated) or multi-step with errors (check JSON success field)
-    1: Error - issue/roadmap not found, API error (single-step mode)
+    0: Always. Check JSON "success" field for pass/fail.
 """
 
 import json
@@ -170,7 +169,7 @@ def update_roadmap_step(
                 }
             )
         )
-        raise SystemExit(1)
+        raise SystemExit(0)
 
     # Parse roadmap to validate it exists
     phases, _ = parse_roadmap(issue.body)
@@ -184,7 +183,7 @@ def update_roadmap_step(
                 }
             )
         )
-        raise SystemExit(1)
+        raise SystemExit(0)
 
     # Validate all steps exist before processing any
     all_step_ids = {s.id for phase in phases for s in phase.steps}
@@ -203,7 +202,7 @@ def update_roadmap_step(
             all_failed=True,
         )
         click.echo(json.dumps(output))
-        raise SystemExit(1 if len(step) == 1 else 0)
+        raise SystemExit(0)
 
     # Process multiple steps with single API call
     results: list[dict[str, object]] = []
@@ -255,7 +254,7 @@ def update_roadmap_step(
             all_failed=True,
         )
         click.echo(json.dumps(output))
-        raise SystemExit(1 if len(step) == 1 else 0)
+        raise SystemExit(0)
 
     # Single API call to write all updates
     github.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
@@ -270,5 +269,3 @@ def update_roadmap_step(
         all_failed=False,
     )
     click.echo(json.dumps(output))
-    if any_failure:
-        raise SystemExit(1 if len(step) == 1 else 0)

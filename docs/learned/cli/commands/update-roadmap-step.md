@@ -132,17 +132,17 @@ Note: When using multiple steps, the command makes a **single GitHub API call** 
 
 ## Exit Codes
 
-The command returns distinct exit codes for different failure scenarios:
+The command always exits 0. Check the JSON `success` field for pass/fail:
 
-| Code | Scenario                         | JSON Error Type      |
-| ---- | -------------------------------- | -------------------- |
-| 0    | Success - all steps updated      | N/A                  |
-| 1    | Issue not found                  | `issue_not_found`    |
-| 1    | No roadmap table in issue body   | `no_roadmap`         |
-| 1    | Any step ID not found in roadmap | `step_not_found`     |
-| 1    | Replacement failed (regex error) | `replacement_failed` |
+| Scenario                         | Exit Code | JSON `success` | JSON Error Type      |
+| -------------------------------- | --------- | -------------- | -------------------- |
+| All steps updated                | 0         | `true`         | N/A                  |
+| Issue not found                  | 0         | `false`        | `issue_not_found`    |
+| No roadmap table in issue body   | 0         | `false`        | `no_roadmap`         |
+| Any step ID not found in roadmap | 0         | `false`        | `step_not_found`     |
+| Replacement failed (regex error) | 0         | `false`        | `replacement_failed` |
 
-**Multi-step behavior:** Exit code `1` is returned if **ANY** step fails, even if some steps succeeded. The `steps` array in the JSON output shows per-step success/failure status.
+Callers should always parse the JSON output and check `success` rather than relying on exit codes.
 
 ## Implementation Notes
 
