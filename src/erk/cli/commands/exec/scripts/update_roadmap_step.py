@@ -190,8 +190,7 @@ def update_roadmap_step(
     missing_steps = [s for s in step if s not in all_step_ids]
     if missing_steps:
         results = [
-            {"step_id": s, "success": False, "error": "step_not_found"}
-            for s in missing_steps
+            {"step_id": s, "success": False, "error": "step_not_found"} for s in missing_steps
         ]
         output = _build_output(
             issue_number=issue_number,
