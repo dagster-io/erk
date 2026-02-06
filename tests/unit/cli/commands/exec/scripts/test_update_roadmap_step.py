@@ -265,7 +265,7 @@ def test_update_multiple_steps_success() -> None:
 
 
 def test_update_multiple_steps_partial_failure() -> None:
-    """Update multiple steps where some don't exist."""
+    """Multi-step update rejected upfront when any step is missing."""
     issue = _make_issue(6697, ROADMAP_BODY)
     fake_gh = FakeGitHubIssues(issues={6697: issue})
     runner = CliRunner()
@@ -276,36 +276,21 @@ def test_update_multiple_steps_partial_failure() -> None:
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
-    assert result.exit_code == 1
+    # Multi-step exits 0 even on failure (check JSON success field)
+    assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is False
     assert output["issue_number"] == 6697
     assert output["new_pr"] == "plan #6759"
 
-    # Verify steps array
-    assert len(output["steps"]) == 3
+    # Only the missing step appears in results (upfront validation)
+    assert len(output["steps"]) == 1
+    assert output["steps"][0]["step_id"] == "9.9"
+    assert output["steps"][0]["success"] is False
+    assert output["steps"][0]["error"] == "step_not_found"
 
-    # Check step 1.2 succeeded
-    step_1_2 = next(s for s in output["steps"] if s["step_id"] == "1.2")
-    assert step_1_2["success"] is True
-    assert step_1_2["previous_pr"] == "plan #200"
-
-    # Check step 9.9 failed
-    step_9_9 = next(s for s in output["steps"] if s["step_id"] == "9.9")
-    assert step_9_9["success"] is False
-    assert step_9_9["error"] == "step_not_found"
-
-    # Check step 2.1 succeeded (processing continued after failure)
-    step_2_1 = next(s for s in output["steps"] if s["step_id"] == "2.1")
-    assert step_2_1["success"] is True
-    assert step_2_1["previous_pr"] is None
-
-    # API call should still have been made for successful steps
-    assert len(fake_gh.updated_bodies) == 1
-    updated_body = fake_gh.updated_bodies[0][1]
-
-    # The two successful steps should have the new PR
-    assert updated_body.count("plan #6759") == 2
+    # No API call should have been made (upfront rejection)
+    assert len(fake_gh.updated_bodies) == 0
 
 
 def test_update_multiple_steps_same_phase() -> None:
@@ -388,3 +373,35 @@ def test_single_step_maintains_legacy_format() -> None:
     assert output["step_id"] == "1.3"
     assert output["previous_pr"] is None
     assert output["new_pr"] == "plan #6464"
+
+
+def test_update_multiple_steps_all_fail() -> None:
+    """Multi-step update where ALL steps fail (none found in roadmap)."""
+    issue = _make_issue(6697, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6697: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6697", "--step", "9.1", "--step", "9.2", "--step", "9.3", "--pr", "plan #6759"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    # Multi-step exits 0 even on failure (check JSON success field)
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["issue_number"] == 6697
+    assert output["new_pr"] == "plan #6759"
+
+    # All three missing steps in results
+    assert len(output["steps"]) == 3
+    for step_result in output["steps"]:
+        assert step_result["success"] is False
+        assert step_result["error"] == "step_not_found"
+
+    step_ids = [s["step_id"] for s in output["steps"]]
+    assert step_ids == ["9.1", "9.2", "9.3"]
+
+    # No API call should have been made
+    assert len(fake_gh.updated_bodies) == 0

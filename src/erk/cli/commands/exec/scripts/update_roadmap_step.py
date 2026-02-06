@@ -36,8 +36,8 @@ Output:
         Each step result: {step_id, success, previous_pr, error}
 
 Exit Codes:
-    0: Success - all steps updated
-    1: Error - issue/roadmap not found, API error, or ANY step failed
+    0: Success (all steps updated) or multi-step with errors (check JSON success field)
+    1: Error - issue/roadmap not found, API error (single-step mode)
 """
 
 import json
@@ -49,6 +49,47 @@ from erk.cli.commands.exec.scripts.objective_roadmap_shared import parse_roadmap
 from erk_shared.context.helpers import require_issues, require_repo_root
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import BodyText
+
+
+def _step_error_message(step_id: str, issue_number: int, error: object) -> str:
+    if error == "step_not_found":
+        return f"Step '{step_id}' not found in issue #{issue_number}"
+    return f"Failed to replace PR cell for step '{step_id}'"
+
+
+def _build_output(
+    *,
+    issue_number: int,
+    step: tuple[str, ...],
+    pr: str,
+    url: str,
+    results: list[dict[str, object]],
+    all_failed: bool,
+) -> dict[str, object]:
+    """Build JSON output dict, using legacy format for single step."""
+    if len(step) == 1:
+        single_result = results[0]
+        if not single_result["success"]:
+            return {
+                "success": False,
+                "error": single_result["error"],
+                "message": _step_error_message(step[0], issue_number, single_result["error"]),
+            }
+        return {
+            "success": True,
+            "issue_number": issue_number,
+            "step_id": step[0],
+            "previous_pr": single_result.get("previous_pr"),
+            "new_pr": pr or None,
+            "url": url,
+        }
+    return {
+        "success": not all_failed,
+        "issue_number": issue_number,
+        "new_pr": pr or None,
+        "url": url,
+        "steps": results,
+    }
 
 
 def _find_step_pr(body: str, step_id: str) -> tuple[str | None, bool]:
@@ -145,6 +186,25 @@ def update_roadmap_step(
         )
         raise SystemExit(1)
 
+    # Validate all steps exist before processing any
+    all_step_ids = {s.id for phase in phases for s in phase.steps}
+    missing_steps = [s for s in step if s not in all_step_ids]
+    if missing_steps:
+        results = [
+            {"step_id": s, "success": False, "error": "step_not_found"}
+            for s in missing_steps
+        ]
+        output = _build_output(
+            issue_number=issue_number,
+            step=step,
+            pr=pr,
+            url=issue.url,
+            results=results,
+            all_failed=True,
+        )
+        click.echo(json.dumps(output))
+        raise SystemExit(1 if len(step) == 1 else 0)
+
     # Process multiple steps with single API call
     results: list[dict[str, object]] = []
     updated_body = issue.body
@@ -186,78 +246,29 @@ def update_roadmap_step(
 
     # Exit early if all steps failed
     if any_failure and not any(r["success"] for r in results):
-        # Use legacy format for single step, multi-step format otherwise
-        if len(step) == 1:
-            single_result = results[0]
-            click.echo(
-                json.dumps(
-                    {
-                        "success": False,
-                        "error": single_result["error"],
-                        "message": f"Step '{step[0]}' not found in issue #{issue_number}"
-                        if single_result["error"] == "step_not_found"
-                        else f"Failed to replace PR cell for step '{step[0]}'",
-                    }
-                )
-            )
-        else:
-            click.echo(
-                json.dumps(
-                    {
-                        "success": False,
-                        "issue_number": issue_number,
-                        "new_pr": pr if pr else None,
-                        "url": issue.url,
-                        "steps": results,
-                    }
-                )
-            )
-        raise SystemExit(1)
+        output = _build_output(
+            issue_number=issue_number,
+            step=step,
+            pr=pr,
+            url=issue.url,
+            results=results,
+            all_failed=True,
+        )
+        click.echo(json.dumps(output))
+        raise SystemExit(1 if len(step) == 1 else 0)
 
     # Single API call to write all updates
     github.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
 
-    # Build output (single step gets legacy format, multiple steps get new format)
-    if len(step) == 1:
-        # Legacy single-step output format for backward compatibility
-        single_result = results[0]
-        if not single_result["success"]:
-            click.echo(
-                json.dumps(
-                    {
-                        "success": False,
-                        "error": single_result["error"],
-                        "message": f"Step '{step[0]}' not found in issue #{issue_number}"
-                        if single_result["error"] == "step_not_found"
-                        else f"Failed to replace PR cell for step '{step[0]}'",
-                    }
-                )
-            )
-            raise SystemExit(1)
-        click.echo(
-            json.dumps(
-                {
-                    "success": True,
-                    "issue_number": issue_number,
-                    "step_id": step[0],
-                    "previous_pr": single_result.get("previous_pr"),
-                    "new_pr": pr if pr else None,
-                    "url": issue.url,
-                }
-            )
-        )
-    else:
-        # Multi-step output format with steps array
-        click.echo(
-            json.dumps(
-                {
-                    "success": not any_failure,
-                    "issue_number": issue_number,
-                    "new_pr": pr if pr else None,
-                    "url": issue.url,
-                    "steps": results,
-                }
-            )
-        )
-        if any_failure:
-            raise SystemExit(1)
+    # Build and emit output
+    output = _build_output(
+        issue_number=issue_number,
+        step=step,
+        pr=pr,
+        url=issue.url,
+        results=results,
+        all_failed=False,
+    )
+    click.echo(json.dumps(output))
+    if any_failure:
+        raise SystemExit(1 if len(step) == 1 else 0)
