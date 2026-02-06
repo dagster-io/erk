@@ -12,6 +12,8 @@ tripwires:
     warning: "Use ctx.branch_manager instead. Branch mutation methods are in GraphiteBranchOps sub-gateway, accessible only through BranchManager. Query methods (is_branch_tracked, get_parent_branch, etc.) remain on ctx.graphite."
   - action: "GraphiteBranchManager.create_branch() without explicit checkout"
     warning: "GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch."
+last_audited: "2026-02-05"
+audit_result: clean
 ---
 
 # BranchManager Abstraction

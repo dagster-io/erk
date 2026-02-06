@@ -4,6 +4,8 @@ read_when:
   - writing or updating documentation with code examples
   - deciding whether to include a code block in docs
   - addressing verbatim code violations in PRs
+last_audited: "2026-02-05"
+audit_result: clean
 ---
 
 # Source Pointers

@@ -5,6 +5,8 @@ read_when:
   - "debugging 'erk pr check' failures"
   - "working with PR body footer validation"
   - "understanding issue closing reference requirements"
+last_audited: "2026-02-05"
+audit_result: clean
 ---
 
 # PR Validation Rules

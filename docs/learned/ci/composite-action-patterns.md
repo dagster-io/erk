@@ -4,6 +4,8 @@ read_when:
   - "creating reusable GitHub Actions setup steps"
   - "using erk-remote-setup composite action"
   - "understanding GitHub Actions composite patterns"
+last_audited: "2026-02-05"
+audit_result: edited
 ---
 
 # Composite Action Patterns

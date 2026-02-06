@@ -5,6 +5,8 @@ read_when:
   - "adding mutation tracking to a test double"
   - "understanding the frozen dataclass with mutable internals pattern"
   - "writing tests that assert on method call parameters"
+last_audited: "2026-02-05"
+audit_result: edited
 ---
 
 # Frozen Dataclass Test Doubles
@@ -122,7 +124,7 @@ def test_delete_branch_tracks_force_flag() -> None:
 
 ## Reference Implementations
 
-- `FakeBranchManager`: `packages/erk-shared/src/erk_shared/branch_manager/fake.py`
+- `FakeBranchManager`: `packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py`
 - `FakeGitHub`: `packages/erk-shared/src/erk_shared/gateway/github/fake.py`
 - `FakeGitBranchOps`: `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py`
 

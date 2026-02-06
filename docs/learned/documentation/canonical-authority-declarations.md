@@ -4,6 +4,8 @@ read_when:
   - writing documentation that could conflict with other sources
   - clarifying which doc is authoritative for a pattern
   - organizing documentation to prevent duplication
+last_audited: "2026-02-05"
+audit_result: clean
 ---
 
 # Canonical Authority Declarations
