@@ -204,17 +204,23 @@ def test_learned_docs_artifacts() -> None:
 
     # Category tripwires (e.g., architecture/tripwires.md) are auto-generated
     # by 'erk docs sync', not listed as static artifacts
-    assert len(artifacts) == 5
+    assert len(artifacts) == 7
     paths = [a.path for a in artifacts]
     assert "docs/learned/" in paths
     assert "docs/learned/README.md" in paths
     assert "docs/learned/index.md" in paths
     assert ".claude/skills/learned-docs/" in paths
     assert ".claude/skills/learned-docs/SKILL.md" in paths
+    assert ".claude/agents/learn/" in paths
+    assert ".claude/commands/erk/learn.md" in paths
 
     # Verify artifact types
     for artifact in artifacts:
-        if artifact.path in ("docs/learned/", ".claude/skills/learned-docs/"):
+        if artifact.path in (
+            "docs/learned/",
+            ".claude/skills/learned-docs/",
+            ".claude/agents/learn/",
+        ):
             assert artifact.artifact_type == "directory"
         else:
             assert artifact.artifact_type == "file"
@@ -1617,9 +1623,11 @@ def test_learned_docs_capability_managed_artifacts() -> None:
     cap = LearnedDocsCapability()
     managed = cap.managed_artifacts
 
-    assert len(managed) == 1
+    assert len(managed) == 3
     names = {(a.name, a.artifact_type) for a in managed}
     assert ("learned-docs", "skill") in names
+    assert ("learn", "command") in names
+    assert ("learn", "agent") in names
 
 
 def test_default_managed_artifacts_is_empty() -> None:

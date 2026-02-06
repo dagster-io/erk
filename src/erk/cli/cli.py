@@ -6,6 +6,7 @@ from pathlib import Path
 import click
 
 from erk.cli.alias import register_with_aliases
+from erk.cli.capability_check import is_learned_docs_available
 from erk.cli.commands.admin import admin_group
 from erk.cli.commands.artifact.group import artifact_group
 from erk.cli.commands.branch import branch_group
@@ -13,7 +14,6 @@ from erk.cli.commands.cc import cc_group
 from erk.cli.commands.codespace import codespace_group
 from erk.cli.commands.completion import completion_group
 from erk.cli.commands.config import config_group
-from erk.cli.commands.docs.group import docs_group
 from erk.cli.commands.doctor import doctor_cmd
 from erk.cli.commands.down import down_cmd
 from erk.cli.commands.exec.group import exec_group
@@ -22,7 +22,6 @@ from erk.cli.commands.info import info_group
 from erk.cli.commands.init import init_group
 from erk.cli.commands.land_cmd import land
 from erk.cli.commands.launch_cmd import launch
-from erk.cli.commands.learn.learn_cmd import learn_cmd
 from erk.cli.commands.log_cmd import log_cmd
 from erk.cli.commands.md.group import md_group
 from erk.cli.commands.objective import objective_group
@@ -192,7 +191,10 @@ cli.add_command(down_cmd)
 register_with_aliases(cli, implement)  # Has @alias("impl")
 cli.add_command(init_group)
 cli.add_command(land)
-cli.add_command(learn_cmd)
+if is_learned_docs_available():
+    from erk.cli.commands.learn.learn_cmd import learn_cmd
+
+    cli.add_command(learn_cmd)
 admin_group.add_command(log_cmd)
 cli.add_command(dash)
 cli.add_command(plan_group)
@@ -210,7 +212,10 @@ cli.add_command(wt_group)
 cli.add_command(prepare_cwd_recovery_cmd)
 
 # Additional command groups
-cli.add_command(docs_group)
+if is_learned_docs_available():
+    from erk.cli.commands.docs.group import docs_group
+
+    cli.add_command(docs_group)
 cli.add_command(exec_group)
 cli.add_command(md_group)
 
