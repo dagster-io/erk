@@ -5,6 +5,8 @@ read_when:
   - setting up test infrastructure for erkdesk
   - adding new tests to erkdesk
   - understanding erkdesk test environment
+last_audited: "2026-02-06 04:17 PT"
+audit_result: edited
 ---
 
 # Vitest Configuration for erkdesk
@@ -24,31 +26,11 @@ Erkdesk uses Vite for building, making Vitest the natural choice for testing:
 
 ### vitest.config.ts
 
-```typescript
-import react from "@vitejs/plugin-react";
-import path from "path";
-import { defineConfig } from "vitest/config";
-
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    globals: true, // Enable describe/it/expect without imports
-    environment: "jsdom", // Browser-like DOM for React components
-    setupFiles: ["./vitest-setup/setup.ts"], // Load stubs and mocks
-  },
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"), // Support @ imports
-    },
-  },
-});
-```
-
-Key settings:
+See `erkdesk/vitest.config.ts` for the complete configuration. Key settings:
 
 - **`globals: true`** - makes `describe`, `it`, `expect`, `vi` available without imports (matches Jest)
 - **`environment: 'jsdom'`** - provides DOM APIs for React component rendering
-- **`setupFiles`** - runs before tests to stub missing jsdom APIs and create global mocks
+- **`setupFiles: ["./src/test/setup.ts"]`** - runs before tests to stub missing jsdom APIs and create global mocks
 
 ### tsconfig.json
 
@@ -66,35 +48,13 @@ This provides autocomplete and type checking for `describe`, `it`, `expect`, etc
 
 ### setup.ts
 
-The setup file runs once before all tests to prepare the environment:
-
-```typescript
-// erkdesk/vitest-setup/setup.ts
-import "@testing-library/jest-dom"; // Enables toBeInTheDocument() matchers
-import { vi } from "vitest";
-
-// Stub missing jsdom APIs
-Element.prototype.scrollIntoView = vi.fn();
-
-// Mock Electron IPC bridge
-declare global {
-  interface Window {
-    erkdesk: {
-      invoke: (channel: string, ...args: unknown[]) => Promise<unknown>;
-    };
-  }
-}
-
-window.erkdesk = {
-  invoke: vi.fn(),
-};
-```
+The setup file at `erkdesk/src/test/setup.ts` runs once before all tests to prepare the environment.
 
 **Setup responsibilities:**
 
 1. Load jest-dom matchers (enables `expect(element).toBeInTheDocument()`)
-2. Stub missing jsdom APIs to prevent TypeError exceptions
-3. Create global mocks for Electron-specific APIs
+2. Stub missing jsdom APIs (scrollIntoView, ResizeObserver) to prevent TypeError exceptions
+3. Create global mock for `window.erkdesk` with all Electron IPC APIs
 
 See [jsdom DOM API Stubs](../testing/vitest-jsdom-stubs.md) for details on stubbing, and [Window Mock Patterns](../testing/window-mock-patterns.md) for IPC mocking discipline.
 

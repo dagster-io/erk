@@ -4,6 +4,8 @@ read_when:
   - "renaming a slash command"
   - "migrating command invocations"
   - "ensuring complete command name updates"
+last_audited: "2026-02-06 04:15 PT"
+audit_result: edited
 ---
 
 # Command Rename Pattern
@@ -189,8 +191,3 @@ grep -r "old_command_name\|old-command-name" .
 grep -r "old-command-name" . | grep -v CHANGELOG | grep -v ".git/"
 ```
 
-## Related Documentation
-
-- [Command Development](command-development.md) - Creating new commands
-- [Slash Command Best Practices](slash-command-best-practices.md) - Command design patterns
-- [Documentation Maintenance](../documentation/maintenance.md) - Keeping docs in sync

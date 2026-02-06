@@ -4,6 +4,8 @@ read_when:
   - "adding a new field to plan-header metadata"
   - "extending plan issue schema"
   - "coordinating metadata changes across files"
+last_audited: "2026-02-06 04:19 PT"
+audit_result: edited
 ---
 
 # Metadata Field Addition Workflow
@@ -14,7 +16,7 @@ Adding a new field to the plan-header metadata block requires coordinated change
 
 ### 1. schemas.py - Define the Field
 
-**File:** `packages/erk-shared/src/erk_shared/github/metadata/schemas.py`
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`
 
 Add the field name to `PlanHeaderFieldName` type union:
 
@@ -42,7 +44,7 @@ if YOUR_NEW_FIELD in data and data[YOUR_NEW_FIELD] is not None:
 
 ### 2. plan_header.py - Thread the Parameter
 
-**File:** `packages/erk-shared/src/erk_shared/github/metadata/plan_header.py`
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`
 
 Add parameter to `create_plan_header_block()`:
 
@@ -64,7 +66,7 @@ Repeat for `create_plan_issue_body()` if it takes the same parameter.
 
 ### 3. plan_issues.py - Thread Through Issue Creation
 
-**File:** `packages/erk-shared/src/erk_shared/github/plan_issues.py`
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py`
 
 Add parameter to `create_plan_issue()`:
 

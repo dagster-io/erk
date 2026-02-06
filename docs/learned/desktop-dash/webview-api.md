@@ -2,6 +2,8 @@
 title: WebView API
 read_when:
   - working with WebContentsView in erkdesk, implementing split-pane layout, debugging bounds updates or URL loading
+last_audited: "2026-02-06 04:18 PT"
+audit_result: edited
 ---
 
 # WebView API
@@ -10,28 +12,7 @@ The erkdesk desktop application uses Electron's `WebContentsView` to embed web c
 
 ## TypeScript Interface
 
-**File**: `erkdesk/src/types/erkdesk.d.ts`
-
-```typescript
-export interface WebViewBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export interface ErkdeskAPI {
-  version: string;
-  updateWebViewBounds: (bounds: WebViewBounds) => void;
-  loadWebViewURL: (url: string) => void;
-}
-
-declare global {
-  interface Window {
-    erkdesk: ErkdeskAPI;
-  }
-}
-```
+See `erkdesk/src/types/erkdesk.d.ts` for the complete `WebViewBounds` and `ErkdeskAPI` interfaces. The API includes webview control methods (`updateWebViewBounds`, `loadWebViewURL`) plus plan fetching and action execution methods.
 
 ## IPC Channels
 
@@ -43,24 +24,7 @@ declare global {
 
 **Payload**: `WebViewBounds` object with `x`, `y`, `width`, `height` properties.
 
-**Handler** (in `erkdesk/src/main/index.ts:37-45`):
-
-```typescript
-ipcMain.on("webview:update-bounds", (_event, bounds: WebViewBounds) => {
-  if (!webView) return;
-  webView.setBounds({
-    x: Math.max(0, Math.floor(bounds.x)),
-    y: Math.max(0, Math.floor(bounds.y)),
-    width: Math.max(0, Math.floor(bounds.width)),
-    height: Math.max(0, Math.floor(bounds.height)),
-  });
-});
-```
-
-**Notes**:
-
-- Bounds are defensively clamped to `Math.max(0, ...)` and floored to prevent fractional/negative coordinates.
-- See [Defensive Bounds Handling](defensive-bounds-handling.md) for rationale.
+**Handler**: See `erkdesk/src/main/index.ts` (search for `webview:update-bounds`). Bounds are defensively clamped to `Math.max(0, ...)` and floored to prevent fractional/negative coordinates. See [Defensive Bounds Handling](defensive-bounds-handling.md) for rationale.
 
 ### `webview:load-url`
 
@@ -70,51 +34,11 @@ ipcMain.on("webview:update-bounds", (_event, bounds: WebViewBounds) => {
 
 **Payload**: String URL.
 
-**Handler** (in `erkdesk/src/main/index.ts:48-53`):
-
-```typescript
-ipcMain.on("webview:load-url", (_event, url: string) => {
-  if (!webView) return;
-  if (typeof url === "string" && url.length > 0) {
-    webView.webContents.loadURL(url);
-  }
-});
-```
-
-**Validation**: URL must be a non-empty string.
+**Handler**: See `erkdesk/src/main/index.ts` (search for `webview:load-url`). Validates that URL is a non-empty string before loading.
 
 ## Preload Bridge
 
-**File**: `erkdesk/src/main/preload.ts`
-
-The preload script exposes the `erkdesk` API to the renderer via `contextBridge`:
-
-```typescript
-contextBridge.exposeInMainWorld("erkdesk", {
-  version: "0.1.0",
-  updateWebViewBounds: (bounds: WebViewBounds) => {
-    ipcRenderer.send("webview:update-bounds", bounds);
-  },
-  loadWebViewURL: (url: string) => {
-    ipcRenderer.send("webview:load-url", url);
-  },
-});
-```
-
-**Usage in renderer**:
-
-```typescript
-// Update bounds
-window.erkdesk.updateWebViewBounds({
-  x: 400,
-  y: 0,
-  width: 600,
-  height: 800,
-});
-
-// Load URL
-window.erkdesk.loadWebViewURL("http://localhost:3000");
-```
+See `erkdesk/src/main/preload.ts` for how the `erkdesk` API is exposed to the renderer via `contextBridge.exposeInMainWorld()`. The webview methods use `ipcRenderer.send()` for fire-and-forget communication.
 
 ## Fire-and-Forget Pattern
 
@@ -145,39 +69,11 @@ The SplitPane component uses the API to report bounds on:
 2. **Divider drag** — Report new bounds as user drags the divider
 3. **Window resize** — Report updated bounds when window size changes
 
-**Example**:
-
-```typescript
-const reportBounds = (leftWidth: number) => {
-  const rightWidth = Math.max(
-    MIN_RIGHT_WIDTH,
-    containerWidth - leftWidth - DIVIDER_WIDTH,
-  );
-
-  window.erkdesk.updateWebViewBounds({
-    x: Math.floor(leftWidth + DIVIDER_WIDTH),
-    y: 0,
-    width: Math.floor(rightWidth),
-    height: Math.floor(containerHeight),
-  });
-};
-```
-
-See [SplitPane Implementation](split-pane-implementation.md) for complete lifecycle documentation.
+See [SplitPane Implementation](split-pane-implementation.md) for complete lifecycle documentation and example usage.
 
 ## IPC Cleanup
 
-When the main window closes, IPC listeners are removed to prevent memory leaks:
-
-```typescript
-mainWindow.on("closed", () => {
-  ipcMain.removeAllListeners("webview:update-bounds");
-  ipcMain.removeAllListeners("webview:load-url");
-  webView = null;
-});
-```
-
-**Source**: `erkdesk/src/main/index.ts:70-74`
+When the main window closes, IPC listeners are removed to prevent memory leaks. See the `mainWindow.on("closed", ...)` handler in `erkdesk/src/main/index.ts` for the complete cleanup sequence (removes listeners, handlers, kills active processes).
 
 ## Related Documentation
 

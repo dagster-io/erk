@@ -5,6 +5,8 @@ read_when:
   - "understanding erkdesk application lifecycle"
   - "debugging window creation or startup issues"
   - "implementing platform-specific behavior"
+last_audited: "2026-02-06 04:16 PT"
+audit_result: edited
 ---
 
 # Main Process Startup
@@ -24,35 +26,7 @@ The Electron main process controls application lifecycle and window creation. Er
 
 ## Window Creation
 
-### createWindow() Function
-
-```typescript
-const createWindow = (): void => {
-  const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  });
-
-  // Load renderer content (HMR-aware)
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
-  } else {
-    mainWindow.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
-    );
-  }
-
-  // Open DevTools in development only
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    mainWindow.webContents.openDevTools();
-  }
-};
-```
+See `createWindow()` in `erkdesk/src/main/index.ts` for the complete implementation, which creates the main browser window with security-first web preferences and sets up WebContentsView for embedded web content.
 
 ### Security Defaults
 
@@ -74,42 +48,6 @@ const createWindow = (): void => {
 
 **Security principle**: Renderer process treats untrusted content. Never give direct Node.js access.
 
-### HMR-Aware Loading
-
-The window loads differently in development vs production:
-
-**Development** (Vite dev server):
-
-```typescript
-if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-  mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL); // e.g., http://localhost:5173
-}
-```
-
-**Production** (bundled files):
-
-```typescript
-mainWindow.loadFile(
-  path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
-);
-```
-
-**Environment variables**:
-
-- `MAIN_WINDOW_VITE_DEV_SERVER_URL` — Set by Electron Forge in dev mode
-- `MAIN_WINDOW_VITE_NAME` — Matches `name` in `forge.config.ts` renderer config
-
-### DevTools Auto-Open
-
-```typescript
-if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-  mainWindow.webContents.openDevTools();
-}
-```
-
-**Behavior**: DevTools open automatically in development, never in production.
-
-**Benefit**: Immediate debugging access during development.
 
 ## Application Lifecycle
 
@@ -176,68 +114,16 @@ if (require("electron-squirrel-startup")) {
 
 **Platform**: Windows only (no-op on macOS/Linux)
 
-## Global Variables from Forge
-
-Electron Forge injects globals during build:
-
-```typescript
-// Available in main process
-MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
-MAIN_WINDOW_VITE_NAME: string;
-```
-
-**Source**: `forge.config.ts` renderer configuration:
-
-```typescript
-renderer: [
-  {
-    name: "main_window", // → MAIN_WINDOW_VITE_NAME
-    config: "src/renderer/vite.config.ts",
-  },
-];
-```
-
-**Usage**: Construct paths and detect dev vs prod mode.
 
 ## Extending Main Process
 
 ### Adding IPC Handlers
 
-To expose Node.js functionality to renderer:
-
-1. **Add handler in main process**:
-
-   ```typescript
-   import { ipcMain } from "electron";
-
-   ipcMain.handle("read-file", async (event, filePath) => {
-     return fs.readFileSync(filePath, "utf-8");
-   });
-   ```
-
-2. **Expose via preload** (see [Preload Bridge Patterns](preload-bridge-patterns.md))
-
-3. **Call from renderer**:
-   ```typescript
-   const content = await window.erkdesk.readFile("/path/to/file");
-   ```
+See existing IPC handlers in `erkdesk/src/main/index.ts` for patterns (e.g., `plans:fetch`, `actions:execute`). Expose via preload script (see [Preload Bridge Patterns](preload-bridge-patterns.md)).
 
 ### Adding Menu Bar
 
-```typescript
-import { Menu } from "electron";
-
-const menu = Menu.buildFromTemplate([
-  {
-    label: "File",
-    submenu: [{ role: "quit" }],
-  },
-]);
-
-Menu.setApplicationMenu(menu);
-```
-
-**When**: After "ready" event
+Use `Menu.buildFromTemplate()` and `Menu.setApplicationMenu()` after the "ready" event. See Electron documentation for menu API details.
 
 ## Related Documentation
 

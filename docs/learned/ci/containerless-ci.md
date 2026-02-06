@@ -4,6 +4,8 @@ read_when:
   - Setting up Claude Code in GitHub Actions without containers
   - Comparing container vs container-less CI approaches
   - Choosing between container and container-less CI approaches
+last_audited: "2026-02-06 04:23 PT"
+audit_result: clean
 ---
 
 # Container-less CI with Native Tool Installation

@@ -4,6 +4,8 @@ read_when:
   - creating a new code review
   - understanding review spec structure
   - debugging review behavior
+last_audited: "2026-02-06 04:24 PT"
+audit_result: clean
 ---
 
 # Review Spec Format
