@@ -190,4 +190,3 @@ grep -r "old_command_name\|old-command-name" .
 # Exclude false positives
 grep -r "old-command-name" . | grep -v CHANGELOG | grep -v ".git/"
 ```
-

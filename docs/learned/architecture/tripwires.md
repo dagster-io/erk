@@ -2,8 +2,6 @@
 title: Architecture Tripwires
 read_when:
   - "working on architecture code"
-last_audited: "2026-02-06 04:22 PT"
-audit_result: clean
 ---
 
 <!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->

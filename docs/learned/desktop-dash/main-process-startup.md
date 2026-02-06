@@ -48,7 +48,6 @@ See `createWindow()` in `erkdesk/src/main/index.ts` for the complete implementat
 
 **Security principle**: Renderer process treats untrusted content. Never give direct Node.js access.
 
-
 ## Application Lifecycle
 
 ### App Ready Event
@@ -113,7 +112,6 @@ if (require("electron-squirrel-startup")) {
 - Prevents app from running during installation
 
 **Platform**: Windows only (no-op on macOS/Linux)
-
 
 ## Extending Main Process
 
