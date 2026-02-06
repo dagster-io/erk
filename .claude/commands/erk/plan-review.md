@@ -110,7 +110,7 @@ URL: <pr_url>
 Next steps:
 1. Share the PR URL with reviewers
 2. Reviewers add inline comments on the plan
-3. Address feedback: /erk:pr-address (coming in Phase 2)
+3. Address feedback: /erk:pr-address
 4. When done: close the PR without merging
 
 View in browser: gh pr view <pr_number> --web
