@@ -9,8 +9,8 @@ tripwires:
     warning: "Codex portability: Verify skills don't use Claude-only features (hooks, system prompts, TodoWrite). See bundled-artifacts.md for portable vs Claude-only classification."
   - action: "modifying skills in .codex/ that are also in .claude/"
     warning: "TOML duplicate key constraint: A skill can only be defined once. Either in .codex/ (portable) OR .claude/ (Claude-only), never both. See single-canonical-destination pattern in toml-handling.md."
-last_audited: "2026-02-05 09:52 PT"
-audit_result: edited
+last_audited: "2026-02-05 12:18 PT"
+audit_result: clean
 ---
 
 # Bundled Artifacts (.codex/ Directory)

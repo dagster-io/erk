@@ -9,8 +9,8 @@ tripwires:
     warning: "Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-roadmap-step) to preserve other cells and avoid race conditions."
   - action: "using surgical update for complete table rewrites"
     warning: "Surgical updates only change one cell. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr)."
-last_audited: "2026-02-05 09:55 PT"
-audit_result: clean
+last_audited: "2026-02-05 12:25 PT"
+audit_result: edited
 ---
 
 # Roadmap Mutation Patterns
@@ -31,8 +31,8 @@ Erk provides two patterns for mutating objective roadmap tables: **surgical upda
 **What it does**:
 
 - Finds the step row by step ID (e.g., `1.3`, `2.1`)
-- Replaces only the PR cell (4th column)
-- Resets status cell to `-` for inference
+- Replaces the PR cell (4th column) with the new value
+- Computes display status from PR value (done/in-progress/pending) and sets the status cell
 - Preserves all other cells (description, other steps)
 
 **Example**:
@@ -46,10 +46,10 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
 ```diff
 | Step | Description | Status | PR |
 - | 1.3 | Add feature | pending | - |
-+ | 1.3 | Add feature | - | plan #6464 |
++ | 1.3 | Add feature | in-progress | plan #6464 |
 ```
 
-Status inference kicks in: `-` + `plan #6464` → `in_progress`
+The status is computed from the PR value: `#NNN` → done, `plan #NNN` → in-progress, empty → pending.
 
 ### When to Use Surgical Updates
 
@@ -63,13 +63,11 @@ Status inference kicks in: `-` + `plan #6464` → `in_progress`
 - Preserves manual edits to other cells
 - Simple mental model: "set step X's PR to Y"
 
-### Implementation (update_roadmap_step.py:48-87)
+### Implementation (update_roadmap_step.py)
 
-The surgical update uses regex to find and replace the PR cell:
+> **Source**: See [`update_roadmap_step.py`](../../../src/erk/cli/commands/exec/scripts/update_roadmap_step.py)
 
-> **Source**: See [`update_roadmap_step.py:63-91`](../../../src/erk/cli/commands/exec/scripts/update_roadmap_step.py)
-
-The surgical update uses regex to find the step row by ID, then replaces the PR cell (4th column) and resets the status cell (3rd column) to `-` for inference.
+The surgical update uses regex to find the step row by ID, then replaces both the status cell (3rd column, computed from PR value) and the PR cell (4th column).
 
 **LBYL pattern**: Check if step exists before attempting replacement:
 
@@ -117,15 +115,9 @@ erk exec objective-update-with-landed-pr 6423 --landed-pr 6500
 - Overwrites any manual edits made since last fetch
 - Requires parsing and regenerating full markdown
 
-### Implementation (objective_update_with_landed_pr.py)
+### Implementation
 
-The full-body update:
-
-1. Parses current roadmap with `parse_roadmap()`
-2. Finds the step with matching PR number
-3. Updates that step's status to `done`
-4. Regenerates the entire table markdown
-5. Replaces the roadmap section in the issue body
+The full-body update is a Claude command (`/erk:objective-update-with-landed-pr`), not a standalone Python script. It uses `erk exec objective-update-context` to fetch all context (objective, plan, PR) in a single call, then the LLM rewrites the roadmap table with full control over layout changes.
 
 **LBYL pattern**: Validate before mutation:
 

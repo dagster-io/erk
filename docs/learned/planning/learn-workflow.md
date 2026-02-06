@@ -13,8 +13,8 @@ tripwires:
     warning: "CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section."
   - action: "gathering sessions for preprocessing"
     warning: "Sessions >100k characters MUST be preprocessed first. Use erk exec preprocess-session for ~99% token reduction."
-last_audited: "2026-02-05 09:59 PT"
-audit_result: clean
+last_audited: "2026-02-05 12:30 PT"
+audit_result: edited
 ---
 
 # Learn Workflow
@@ -198,7 +198,7 @@ The learn plan is implemented via the normal `plan-implement` workflow (same as 
 When the PR is landed via `erk land`:
 
 1. The land command detects `learned_from_issue` in the plan header
-2. It calls `_update_parent_plan_on_learn_plan_land()`
+2. It calls `_update_parent_learn_status_if_learn_plan()`
 3. The parent plan's status is updated:
    - `learn_status` → `plan_completed`
    - `learn_plan_pr` → PR number

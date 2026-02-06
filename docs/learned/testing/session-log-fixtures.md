@@ -4,8 +4,8 @@ read_when:
   - "creating JSONL fixtures for session log tests"
   - "testing session plan extraction"
   - "writing integration tests for session parsing"
-last_audited: "2026-02-05 10:06 PT"
-audit_result: clean
+last_audited: "2026-02-05 12:45 PT"
+audit_result: edited
 ---
 
 # Session Log Test Fixtures
@@ -39,10 +39,8 @@ Organize fixtures to mirror the `~/.claude/projects/` structure:
 ```
 tests/
 └── integration/
-    └── kits/
-        └── erk/
-            └── fixtures/
-                └── session_logs/          # Base fixture directory
+    └── fixtures/
+        └── session_logs/          # Base fixture directory
                     ├── project_alpha/     # Scenario: Single session, single slug
                     │   └── session-alpha-001.jsonl
                     ├── project_beta/      # Scenario: Multiple sessions

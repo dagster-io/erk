@@ -7,7 +7,7 @@ read_when:
   - "writing GitHub Actions YAML workflows"
   - "configuring workflow triggers"
   - "using GitHub Actions expressions"
-last_audited: "2026-02-05 10:04 PT"
+last_audited: "2026-02-05 12:40 PT"
 audit_result: clean
 ---
 
