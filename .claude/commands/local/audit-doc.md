@@ -163,6 +163,25 @@ STALE content should be updated; CONTRADICTS content needs deeper review to unde
 - Tripwires that prevent common mistakes
 - Constants and default values mentioned in prose context (e.g., "defaults to `premiumLinux`") — these make docs scannable without requiring a code read
 
+### Phase 4.5: Code Block Triage
+
+For every fenced code block in the document, classify it:
+
+| Classification   | Keep?      | Criteria                                                                |
+| ---------------- | ---------- | ----------------------------------------------------------------------- |
+| **ANTI-PATTERN** | Yes        | Shows what NOT to do (wrong way vs right way)                           |
+| **CONCEPTUAL**   | Yes        | Illustrates a concept that doesn't exist as a single function in source |
+| **VERBATIM**     | **Remove** | Reproduces actual source code (implementation, signatures, usage)       |
+| **TEMPLATE**     | Maybe      | Shows a pattern for new code — keep only if the pattern isn't in source |
+
+**Default action for VERBATIM blocks:** Replace with a prose reference like:
+
+> See the bounds update handler in `path/to/file.py:44-53` — brief description of what it does and why it matters.
+
+The prose reference should capture the _insight_ (why the code matters) without reproducing the code itself.
+
+**This classification feeds the verdict:** Any doc with VERBATIM blocks that haven't been removed should receive at minimum a `SIMPLIFY` verdict, even if the code blocks are currently accurate.
+
 ### Phase 5: Generate Report
 
 Complete the full internal analysis from Phase 4, but output only a brief summary regardless of mode. Never output the full value breakdown table, duplicative content detail sections, or recommended rewrite text.
@@ -192,7 +211,7 @@ Keep the full internal analysis available for Phase 7 actions — just don't dum
 Automatically select the action based on the verdict without prompting:
 
 - **KEEP** verdict → Proceed to Phase 7 with "Mark as audited (clean)"
-- **NEEDS_UPDATE** verdict → Proceed to Phase 7 with "Apply accuracy fixes + stamp"
+- **NEEDS_UPDATE** verdict → Proceed to Phase 7 with "Apply accuracy fixes + stamp". Accuracy fixes MUST include removing VERBATIM code blocks identified in Phase 4.5 and replacing them with prose references.
 - **SIMPLIFY / REPLACE WITH CODE REFS** verdict → Proceed to Phase 7 with "Mark as audited (with rewrite)" (apply rewrite + stamp)
 - **CONSIDER DELETING** verdict → Proceed to Phase 7 with "Mark as audited (clean)" (stamp only, don't auto-delete)
 
