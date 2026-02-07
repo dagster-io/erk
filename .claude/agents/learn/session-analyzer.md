@@ -33,6 +33,17 @@ You receive:
    - Teaching gaps (what was built that needs documentation)
    - Tripwire candidates (cross-cutting concerns for future agents)
 
+4. **Source Provenance Classification (REQUIRED):**
+
+   For each extracted insight, classify its origin by examining `<tool_use>` paths in the session XML:
+   - **`CODE_OBSERVED`** — session read/wrote source files (`src/`, `tests/`, `.claude/commands/`, `.claude/skills/`, `.claude/hooks/`) and the insight derives from what was observed in that code
+   - **`DOC_SOURCED`** — session read documentation (`docs/learned/`, `CLAUDE.md`, `AGENTS.md`) and the insight paraphrases or extends what the doc described, without independent code verification
+   - **`MIXED`** — both docs and source code informed this insight
+
+   When uncertain, default to `DOC_SOURCED` (safer to over-flag for downstream verification).
+
+   Zero additional tool calls required — classification uses existing XML content.
+
 ## Error Extraction (REQUIRED)
 
 Systematically scan the session for errors:
@@ -66,8 +77,9 @@ SESSION: <session-id>
 TYPE: <planning|implementation>
 
 ## Patterns Discovered
-- [Pattern 1]: <description>
-- [Pattern 2]: <description>
+| Pattern | Description | Provenance |
+|---------|-------------|------------|
+| [Pattern 1] | <description> | CODE_OBSERVED/DOC_SOURCED/MIXED |
 
 ## External Lookups
 | Resource | Why Fetched | Key Insight |
@@ -83,12 +95,14 @@ TYPE: <planning|implementation>
 - [Correction]: <what was corrected and why>
 
 ## Documentation Opportunities
-| Item | Type | Location | Rationale |
-|------|------|----------|-----------|
-| ...  | ...  | ...      | ...       |
+| Item | Type | Location | Rationale | Provenance |
+|------|------|----------|-----------|------------|
+| ...  | ...  | ...      | ...       | CODE_OBSERVED/DOC_SOURCED/MIXED |
 
 ## Tripwire Candidates
-- [Candidate]: <trigger> → <action to take>
+| Candidate | Trigger | Action | Provenance |
+|-----------|---------|--------|------------|
+| [Candidate] | <trigger> | <action to take> | CODE_OBSERVED/DOC_SOURCED/MIXED |
 
 ## Prevention Insights
 

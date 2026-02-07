@@ -59,7 +59,13 @@ Create a narrative explaining:
 
 ### Step 4: Generate Documentation Items
 
-For each item from the gap analysis (non-SKIP items):
+**Ground Truth Gate (REQUIRED):** Before generating items, apply these filters:
+
+- `SKIP_UNVERIFIED` items MUST NOT appear as documentation items — they are phantom propagation candidates
+- `PARTIAL_EVIDENCE` items: narrow draft content to verified portions only; do NOT document unverified claims
+- Include `Provenance` and `Verification` status in each item's metadata (from gap analysis enumerated table)
+
+For each item from the gap analysis (non-SKIP and non-SKIP_UNVERIFIED items):
 
 1. **Determine location**: Map to appropriate `docs/learned/` path
 2. **Determine action**: CREATE new doc, UPDATE existing, DELETE_STALE, or UPDATE_REFERENCES
@@ -120,6 +126,8 @@ Return a complete learn plan markdown:
 **Location:** `<path>`
 **Action:** CREATE | UPDATE
 **Source:** [Plan] | [Impl] | [PR #<N>]
+**Provenance:** CODE_OBSERVED | DOC_SOURCED | MIXED
+**Verification:** VERIFIED_IN_CODE | PARTIAL_EVIDENCE | N/A
 
 **Draft Content:**
 
@@ -162,6 +170,19 @@ Existing docs with phantom references requiring action:
 **Action:** DELETE_STALE | UPDATE_REFERENCES
 **Phantom References:** `<list of missing paths>`
 **Cleanup Instructions:** <what to remove or update>
+
+## Ground Truth Verification Summary
+
+Items verified against code during gap analysis (Step 3.7):
+
+| #   | Item            | Provenance    | Verification     | Outcome                                     |
+| --- | --------------- | ------------- | ---------------- | ------------------------------------------- |
+| 1   | <verified item> | CODE_OBSERVED | VERIFIED_IN_CODE | Included as documentation item              |
+| 2   | <narrowed item> | MIXED         | PARTIAL_EVIDENCE | Scope narrowed to verified portions         |
+| 3   | <rejected item> | DOC_SOURCED   | UNVERIFIED_CLAIM | Excluded — subsystem not found in code      |
+| 4   | <rejected item> | DOC_SOURCED   | STALE_INHERITED  | Excluded — code behavior differs from claim |
+
+**Key principle:** "Never document unverified subsystem claims."
 
 ## Prevention Insights
 
@@ -215,4 +236,6 @@ Items with score 2-3 (may warrant promotion with additional context):
 6. **Source pointers over verbatim code**: Draft content starters MUST use source file references instead of copying code blocks. Code in documentation goes stale silently. See `docs/learned/documentation/source-pointers.md`.
 
 7. **Stale cleanup before new content**: DELETE_STALE items appear before CREATE items in the output. Removing phantom documentation is higher priority than adding new documentation.
+
+8. **Never document unverified subsystem claims**: SKIP_UNVERIFIED items are excluded from the plan entirely. PARTIAL_EVIDENCE items are narrowed to verified portions only. DOC_SOURCED provenance without code verification is a red flag.
 ```

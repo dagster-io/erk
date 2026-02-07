@@ -69,6 +69,33 @@ You receive:
 
    **Two-description staleness check:** When Step 4 finds two docs covering the same concept (PARTIAL_OVERLAP), check artifact refs in both. If Doc A has phantoms and Doc B doesn't → Doc A is stale.
 
+5b. **Verify Subsystem Descriptions (Behavioral Claim Verification):**
+
+For each existing doc read in Step 3, extract **behavioral claims** — statements about what a system/module/component _does_:
+
+- "The X system handles Y by doing Z"
+- "X validates/manages/orchestrates Y"
+- "When X happens, the system does Y"
+
+For each behavioral claim:
+
+1.  Identify the **implementation anchor** (class, module, or function named in the claim)
+2.  Search for the anchor: `Grep(pattern: "<name>", path: "src/erk/")`
+3.  If found, `Read` the implementation and check whether the described behavior matches actual code logic
+4.  Classify:
+    - `VERIFIED_BEHAVIOR` — implementation matches description
+    - `STALE_BEHAVIOR` — implementation exists but does something different
+    - `UNVERIFIED_SUBSYSTEM` — cannot find implementation artifacts for described system
+
+**Per-document flags** (additive to existing `STALE_DOC`/`HAS_PHANTOM_REFS`):
+
+- `HAS_PHANTOM_SUBSYSTEM` — describes a system that can't be found in code
+- `HAS_STALE_DESCRIPTIONS` — file paths valid but behavioral descriptions don't match code
+
+**Key principle:** "A valid file path does not validate a behavioral claim."
+
+**Cost:** ~5-15 additional Grep/Read calls per run.
+
 6. **Detect contradictions (staleness-first):**
 
    Before classifying a contradiction, check Step 5 phantom results:
@@ -137,6 +164,17 @@ If suggesting new documentation, these topics already have coverage:
 | Existing Doc | Phantom References | Confirmed References | Classification |
 |---|---|---|---|
 | path/to/doc.md | `src/erk/old.py` (MISSING) | `src/erk/new.py` (EXISTS) | HAS_PHANTOM_REFS |
+
+### Subsystem Description Warnings
+
+Behavioral claims in existing docs that failed code verification:
+
+| Existing Doc | Claim | Anchor Searched | Result | Classification |
+|---|---|---|---|---|
+| path/to/doc.md | "X system handles Y by doing Z" | `ClassName` in `src/erk/` | Not found | UNVERIFIED_SUBSYSTEM |
+| path/to/doc.md | "X validates Y" | `validate_y()` in `src/erk/x.py` | Behavior differs | STALE_BEHAVIOR |
+
+Per-document flags: `HAS_PHANTOM_SUBSYSTEM`, `HAS_STALE_DESCRIPTIONS`
 
 ### Contradiction Warnings
 

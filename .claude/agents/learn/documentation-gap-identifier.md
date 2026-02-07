@@ -84,6 +84,42 @@ For each contradiction from ExistingDocsChecker, apply this decision procedure I
 
 **"The default is VERIFY, not HARMONIZE."** Never propose "add disambiguation note" without first confirming both systems exist via stale reference data.
 
+### Step 3.7: Ground Truth Verification for Subsystem Claims
+
+Verify that documentation candidates describing subsystems, patterns, or architectural components are grounded in actual code behavior. This step prevents phantom propagation — where docs beget docs without code verification.
+
+**When it fires (mandatory):**
+
+- All `NEW_DOC` candidates tagged `DOC_SOURCED` or `MIXED` (from session analyzer provenance)
+- All `NEW_DOC` candidates describing a system, subsystem, pattern, or architectural component
+- All candidates where ExistingDocsChecker flagged `HAS_PHANTOM_SUBSYSTEM` or `HAS_STALE_DESCRIPTIONS`
+
+**Verification process for each candidate:**
+
+1. Extract the core claim — what system and what behavior
+2. Identify implementation anchors (classes, modules, functions)
+3. Search code: `Grep`/`Glob` for anchors in `src/erk/`
+4. If anchors found, `Read` the implementation to verify behavioral claims
+5. Classify result:
+
+| Result             | Code Evidence                             | Action                                            |
+| ------------------ | ----------------------------------------- | ------------------------------------------------- |
+| `VERIFIED_IN_CODE` | Implementation matches described behavior | Proceed with NEW_DOC                              |
+| `PARTIAL_EVIDENCE` | Some behaviors found, others not          | Narrow scope to verified portions only            |
+| `UNVERIFIED_CLAIM` | No code evidence for described system     | **SKIP** — "Subsystem claim not verified in code" |
+| `STALE_INHERITED`  | Code exists but does something different  | **SKIP** or rewrite to match actual code behavior |
+
+**Decision rule:** When in doubt, SKIP. A missing doc is less harmful than a wrong doc.
+
+**Provenance escalation:** `DOC_SOURCED` items that fail verification are almost certainly phantom propagation. SKIP with high confidence.
+
+**Key principles:**
+
+- "DOC_SOURCED items need proof" — inherited claims must be verified against code before generating new docs
+- "Subsystem descriptions are the riskiest claims" — harder to verify than file paths, more dangerous when wrong
+
+**Cost:** ~10-30 additional tool calls per run (2-5 per candidate, typically 3-10 candidates).
+
 ### Step 4: Cross-Reference Against Diff Inventory
 
 Ensure completeness by checking that every item from CodeDiffAnalyzer inventory is accounted for:
@@ -95,14 +131,15 @@ Ensure completeness by checking that every item from CodeDiffAnalyzer inventory 
 
 Assign a classification to each item:
 
-| Classification    | When to Use                                           |
-| ----------------- | ----------------------------------------------------- |
-| NEW_DOC           | New topic not covered by existing docs                |
-| UPDATE_EXISTING   | Existing doc covers related topic, needs update       |
-| UPDATE_REFERENCES | Existing doc valid but has phantom file paths         |
-| DELETE_STALE      | Existing doc describes artifacts that no longer exist |
-| TRIPWIRE          | Cross-cutting concern that applies broadly            |
-| SKIP              | Already documented, or doesn't need documentation     |
+| Classification    | When to Use                                                 |
+| ----------------- | ----------------------------------------------------------- |
+| NEW_DOC           | New topic not covered by existing docs                      |
+| UPDATE_EXISTING   | Existing doc covers related topic, needs update             |
+| UPDATE_REFERENCES | Existing doc valid but has phantom file paths               |
+| DELETE_STALE      | Existing doc describes artifacts that no longer exist       |
+| TRIPWIRE          | Cross-cutting concern that applies broadly                  |
+| SKIP              | Already documented, or doesn't need documentation           |
+| SKIP_UNVERIFIED   | Subsystem claim failed ground truth verification (Step 3.7) |
 
 ### Prevention Item Classification
 
@@ -158,11 +195,13 @@ Return a structured report:
 |--------|-------|
 | Total candidates collected | N |
 | Already documented (SKIP) | N |
+| Skipped — unverified (SKIP_UNVERIFIED) | N |
 | New documentation needed | N |
 | Updates to existing docs | N |
 | Tripwire candidates (score >= 4) | N |
 | Potential tripwires (score 2-3) | N |
 | Contradictions found | N |
+| Ground truth verifications performed | N |
 
 ## Contradiction Resolutions (HIGH Priority)
 
@@ -187,16 +226,27 @@ Existing docs with phantom references requiring cleanup:
 | path/to/stale-doc.md | `src/erk/old_module.py` (MISSING) | DELETE_STALE | All referenced artifacts removed |
 | path/to/partial-doc.md | `src/erk/renamed.py` (MISSING) | UPDATE_REFERENCES | Core content valid, paths outdated |
 
+## Ground Truth Verification Results
+
+Subsystem claims verified against code in Step 3.7:
+
+| # | Candidate | Provenance | Claim | Anchor | Verification | Action |
+|---|-----------|------------|-------|--------|--------------|--------|
+| 1 | <item> | DOC_SOURCED | "System X does Y" | `ClassName` in `src/erk/` | VERIFIED_IN_CODE | Proceed |
+| 2 | <item> | MIXED | "Module handles Z" | `module_z` in `src/erk/` | PARTIAL_EVIDENCE | Narrow scope |
+| 3 | <item> | DOC_SOURCED | "Subsystem manages W" | Not found | UNVERIFIED_CLAIM | SKIP |
+
 ## MANDATORY Enumerated Table
 
 Every inventory item MUST appear with a status and rationale:
 
-| # | Item | Type | Status | Location/Action | Rationale |
-|---|------|------|--------|-----------------|-----------|
-| 1 | new_function() | function | NEW_DOC | docs/learned/architecture/foo.md | Establishes new pattern for X |
-| 2 | existing_cmd | CLI | UPDATE_EXISTING | docs/learned/cli/commands.md | Add new flag documentation |
-| 3 | helper_func() | function | SKIP | N/A | Internal helper, no external usage |
-| 4 | Gateway.method() | gateway | TRIPWIRE | tripwires.md | Must update 5 places |
+| # | Item | Type | Status | Provenance | Verification | Location/Action | Rationale |
+|---|------|------|--------|------------|--------------|-----------------|-----------|
+| 1 | new_function() | function | NEW_DOC | CODE_OBSERVED | VERIFIED_IN_CODE | docs/learned/architecture/foo.md | Establishes new pattern for X |
+| 2 | existing_cmd | CLI | UPDATE_EXISTING | MIXED | PARTIAL_EVIDENCE | docs/learned/cli/commands.md | Add new flag documentation |
+| 3 | helper_func() | function | SKIP | CODE_OBSERVED | N/A | N/A | Internal helper, no external usage |
+| 4 | Gateway.method() | gateway | TRIPWIRE | CODE_OBSERVED | VERIFIED_IN_CODE | tripwires.md | Must update 5 places |
+| 5 | phantom_system | subsystem | SKIP_UNVERIFIED | DOC_SOURCED | UNVERIFIED_CLAIM | N/A | Subsystem claim not verified in code |
 
 ## Prioritized Action Items
 
@@ -277,3 +327,7 @@ Cross-cutting concerns to add to docs:
 8. **Two descriptions = staleness signal**: Default assumption is one is stale, not that both are valid.
 
 9. **Delete stale before adding new**: Removing a phantom doc is higher priority than creating a new doc.
+
+10. **DOC_SOURCED items need proof**: Inherited claims must be verified against code before generating new docs. Phantom propagation is the primary failure mode.
+
+11. **Subsystem descriptions are the riskiest claims**: Harder to verify than file paths, more dangerous when wrong. A valid file path does not validate a behavioral claim.
