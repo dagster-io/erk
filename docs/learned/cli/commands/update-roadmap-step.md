@@ -6,7 +6,7 @@ read_when:
 
 # Update Roadmap Step Command
 
-`erk exec update-roadmap-step` updates a single step's PR cell in an objective's roadmap table.
+`erk exec update-roadmap-step` updates one or more step PR cells in an objective's roadmap table.
 
 ## Command Rationale
 
@@ -24,10 +24,16 @@ Encoding the roadmap update logic once in a tested CLI command provides:
 ## Usage
 
 ```bash
+# Single step
 erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --pr <PR_REF>
+
+# Multiple steps
+erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --step <STEP_ID> ... --pr <PR_REF>
 ```
 
 ### Examples
+
+**Single step updates:**
 
 ```bash
 # Set step to plan phase
@@ -38,6 +44,16 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500"
 
 # Clear PR reference
 erk exec update-roadmap-step 6423 --step 1.3 --pr ""
+```
+
+**Multi-step updates:**
+
+```bash
+# Update multiple steps with same PR (single API call)
+erk exec update-roadmap-step 6697 --step 5.1 --step 5.2 --step 5.3 --pr "plan #6759"
+
+# Update steps across different phases
+erk exec update-roadmap-step 6697 --step 1.1 --step 2.3 --pr "#6800"
 ```
 
 ## Status Inference Semantics
@@ -61,7 +77,9 @@ This command is used in Step 3.5 of the plan-save workflow to link a plan issue 
 
 ## Output Format
 
-The command outputs JSON:
+### Single Step (Legacy Format)
+
+When updating a single step, the command maintains backward-compatible output:
 
 ```json
 {
@@ -74,17 +92,57 @@ The command outputs JSON:
 }
 ```
 
-## Error Codes
+### Multiple Steps (New Format)
 
-The command returns distinct exit codes for different failure scenarios:
+When updating multiple steps, the output includes a `steps` array with per-step results:
 
-| Code | Scenario                         | JSON Error Type      |
-| ---- | -------------------------------- | -------------------- |
-| 0    | Success - step updated           | N/A                  |
-| 1    | Issue not found                  | `issue_not_found`    |
-| 1    | No roadmap table in issue body   | `no_roadmap`         |
-| 1    | Step ID not found in roadmap     | `step_not_found`     |
-| 1    | Replacement failed (regex error) | `replacement_failed` |
+**All steps successful:**
+
+```json
+{
+  "success": true,
+  "issue_number": 6697,
+  "new_pr": "plan #6759",
+  "url": "https://github.com/owner/repo/issues/6697",
+  "steps": [
+    { "step_id": "5.1", "success": true, "previous_pr": null },
+    { "step_id": "5.2", "success": true, "previous_pr": null },
+    { "step_id": "5.3", "success": true, "previous_pr": null }
+  ]
+}
+```
+
+**Partial failure (some steps not found):**
+
+```json
+{
+  "success": false,
+  "issue_number": 6697,
+  "new_pr": "plan #6759",
+  "url": "https://github.com/owner/repo/issues/6697",
+  "steps": [
+    { "step_id": "5.1", "success": true, "previous_pr": null },
+    { "step_id": "9.9", "success": false, "error": "step_not_found" },
+    { "step_id": "5.3", "success": true, "previous_pr": null }
+  ]
+}
+```
+
+Note: When using multiple steps, the command makes a **single GitHub API call** with all successful replacements batched together.
+
+## Exit Codes
+
+The command always exits 0. Check the JSON `success` field for pass/fail:
+
+| Scenario                         | Exit Code | JSON `success` | JSON Error Type      |
+| -------------------------------- | --------- | -------------- | -------------------- |
+| All steps updated                | 0         | `true`         | N/A                  |
+| Issue not found                  | 0         | `false`        | `issue_not_found`    |
+| No roadmap table in issue body   | 0         | `false`        | `no_roadmap`         |
+| Any step ID not found in roadmap | 0         | `false`        | `step_not_found`     |
+| Replacement failed (regex error) | 0         | `false`        | `replacement_failed` |
+
+Callers should always parse the JSON output and check `success` rather than relying on exit codes.
 
 ## Implementation Notes
 
