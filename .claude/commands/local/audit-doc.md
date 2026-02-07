@@ -66,6 +66,10 @@ For each referenced source file:
 - Find the referenced functions/classes
 - Capture docstrings, type signatures, and inline comments
 
+**Collateral finding collection:** While reading source files, watch for stale comments and docstrings in the code you're already examining. If a comment says "returns list" but the function returns a dict, or a docstring documents a parameter that no longer exists, record a structured collateral finding. Scope limit: only record issues visible in code you're already reading for the primary audit — don't hunt through entire files.
+
+Collateral finding format: `{category, file, location, claim, reality, suggested_fix}` where category is one of: `STALE_COMMENT` (SC), `STALE_DOCSTRING` (SD), `BROKEN_CROSS_REF` (BX), `CONTRADICTING_DOC` (CD), `OBSOLETE_SYSTEM` (OS), `CONCEPTUAL_DRIFT` (CF), `STALE_FLOW` (SF).
+
 ### Phase 3.5: Verify System Descriptions
 
 **Primary task:** For each section that describes how a system, workflow, or component works, verify the description matches reality.
@@ -100,6 +104,20 @@ For each referenced source file:
 - Mark as VERIFIED, MISMATCH, or CANNOT_VERIFY
 
 Record verification results for use in Phase 4 and Phase 5.
+
+**Cross-reference collateral findings:** When following links to other `docs/learned/` files during verification, watch for issues in those referenced documents:
+
+**Conceptual issues (highest priority):** Check whether the referenced doc's _premise_ is still valid:
+
+- Does it describe a system, workflow, or component that still exists? If the system was replaced or removed → record as `OBSOLETE_SYSTEM` (OS)
+- Does it use terms/concepts whose meaning has changed in the codebase? → record as `CONCEPTUAL_DRIFT` (CF)
+- Does it describe a multi-step flow (numbered steps, flowcharts, sequence descriptions) where the actual steps in code have changed? → record as `STALE_FLOW` (SF)
+
+These checks leverage the code understanding already built in Phase 3. If the primary doc references "the plan sync workflow" and the cross-referenced doc describes a 5-step workflow but the code now has 3 steps, that's a `STALE_FLOW`.
+
+**Mechanical issues:** Broken cross-references (`BX`) — links that point to renamed/deleted files. Contradicting specific claims (`CD`) — cross-referenced doc states facts that conflict with code.
+
+**Scope limit:** Don't recursively audit referenced docs. If a referenced doc has systemic problems (e.g., describes an entirely obsolete system), note one `OBSOLETE_SYSTEM` finding recommending a separate audit rather than listing every wrong detail.
 
 ### Phase 4: Adversarial Analysis
 
@@ -185,6 +203,26 @@ Follow with 2-3 sentences describing the planned changes. For example:
 
 Keep the full internal analysis available for Phase 7 actions — just don't dump it as text output.
 
+**Collateral findings report:** If any collateral findings were recorded in Phase 3 or Phase 3.5, append them after the primary audit summary. Conceptual findings appear first (higher severity):
+
+```
+Collateral findings: <count> issues in <count> other files
+
+  CONCEPTUAL:
+  docs/learned/planning/plan-sync-workflow.md:
+    [OS] Describes the 5-step plan sync system — this was replaced by direct gateway calls in v0.9. Recommend: /local:audit-doc planning/plan-sync-workflow.md
+  docs/learned/architecture/worker-delegation.md:
+    [SF] Flow diagram shows 4 steps but code now has 6 (added validation + retry). Needs flow update.
+
+  MECHANICAL:
+  src/erk/core/subprocess.py:
+    [SC] L45: Comment says "returns list" — actually returns dict. Fix: update comment.
+  docs/learned/architecture/fail-open-patterns.md:
+    [BX] "See also" link to planning/plan-schema.md — file renamed. Fix: update link.
+```
+
+If no collateral findings were recorded, omit this section entirely.
+
 ### Phase 6: Determine Action
 
 **If `--auto-apply` mode is active:**
@@ -196,15 +234,25 @@ Automatically select the action based on the verdict without prompting:
 - **SIMPLIFY / REPLACE WITH CODE REFS** verdict → Proceed to Phase 7 with "Mark as audited (with rewrite)" (apply rewrite + stamp)
 - **CONSIDER DELETING** verdict → Proceed to Phase 7 with "Mark as audited (clean)" (stamp only, don't auto-delete)
 
+**Collateral auto-apply:** If collateral findings exist, automatically fix mechanical source code issues (`STALE_COMMENT`, `STALE_DOCSTRING`) and broken links (`BROKEN_CROSS_REF`). Do NOT auto-apply conceptual findings (`OS`, `CF`, `SF`) or contradicting doc fixes (`CD`) — these require judgment. List unapplied findings in output as reminders.
+
 **If `--auto-apply` mode is NOT active:**
 
-Use AskUserQuestion to offer:
+Use AskUserQuestion to offer two groups of options:
+
+**Primary document actions:**
 
 - **"Apply recommended rewrite"** — rewrite the doc to remove duplicative content (only offer if verdict is SIMPLIFY or REPLACE WITH CODE REFS)
 - **"Apply accuracy fixes"** — fix stale imports, correct renamed symbols (only offer if verification found STALE/BROKEN claims but doc is otherwise valuable)
 - **"Mark as audited (clean)"** — stamp frontmatter with audit date and `clean` result (use when verdict is KEEP)
 - **"Mark as audited (with rewrite)"** — apply the rewrite AND stamp frontmatter (only offer if verdict is SIMPLIFY or REPLACE WITH CODE REFS)
 - **"No action"** — just noting findings
+
+**Collateral findings actions** (only shown if collateral findings exist):
+
+- **"Apply mechanical fixes"** — fix stale comments, docstrings, and broken links in other files
+- **"Apply all fixable collateral"** — mechanical fixes + contradicting doc fixes (conceptual findings always produce audit recommendations, not inline fixes)
+- **"Skip collateral fixes"** — leave all collateral findings as-is
 
 ### Phase 7: Execute Actions
 
@@ -226,6 +274,27 @@ audit_result: clean | edited
 
 If the document already has `last_audited` / `audit_result` fields, overwrite them with the new values. Use the **current date and time in Pacific time, down to the minute**. Format: `YYYY-MM-DD HH:MM PT` (24-hour format, e.g., "2026-02-05 14:30 PT").
 
+### Phase 7b: Execute Collateral Fixes
+
+If collateral fixes were selected (either via auto-apply or interactive choice):
+
+**Mechanical fixes** (applied directly using the Edit tool):
+
+1. `STALE_COMMENT` (SC) — Update the comment to match actual code behavior
+2. `STALE_DOCSTRING` (SD) — Update the docstring to match actual signatures/behavior
+3. `BROKEN_CROSS_REF` (BX) — Update the link to point to the correct file path
+4. `CONTRADICTING_DOC` (CD) — Fix the specific contradicting claim (only when "Apply all fixable collateral" was chosen; skip ambiguous fixes with "needs manual review" note)
+
+**Conceptual findings** (never auto-fixed — always produce recommendations):
+
+- `OBSOLETE_SYSTEM` (OS): Output "Recommend: `/local:audit-doc <path>` — system described no longer exists"
+- `CONCEPTUAL_DRIFT` (CF): Output "Recommend: `/local:audit-doc <path>` — concept meaning has changed"
+- `STALE_FLOW` (SF): Output "Recommend: `/local:audit-doc <path>` — process flow outdated"
+
+These are too significant for inline correction — they need their own full audit pass. The collateral finding's value is _discovery_, not repair.
+
+Output summary of what was fixed, skipped, and recommended.
+
 ## Design Principles
 
 1. **Adversarial framing**: Be skeptical of documentation value by default. The burden of proof is on the doc to justify its existence vs just reading code.
@@ -237,3 +306,5 @@ If the document already has `last_audited` / `audit_result` fields, overwrite th
 4. **Concrete code references**: When flagging something as duplicative, always cite the specific source file and line that makes it redundant. This makes the audit actionable.
 
 5. **Drift risk as separate axis**: Something can be non-duplicative today but high-risk for drift. Call this out separately.
+
+6. **Collateral findings are opportunistic**: The audit reads source code and follows cross-references anyway. This is NOT a full audit of referenced files. Systemic problems warrant a separate `/local:audit-doc` invocation.

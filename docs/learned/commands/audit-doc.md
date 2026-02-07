@@ -60,6 +60,60 @@ read_when:
 
 **Fix:** Verify all links with `Read` tool before committing.
 
+## Collateral Findings
+
+During an audit, the agent reads source code and follows cross-references to other docs. It often discovers issues in those _other_ files. These are **collateral findings** — issues discovered as a side effect of the primary audit.
+
+### Two Tiers
+
+**Conceptual (highest danger — actively misleads agents):**
+
+| Category           | Abbrev | Found In   | Description                                         |
+| ------------------ | ------ | ---------- | --------------------------------------------------- |
+| `OBSOLETE_SYSTEM`  | OS     | Other docs | Doc describes a system that was replaced or removed |
+| `CONCEPTUAL_DRIFT` | CF     | Other docs | Doc uses terms whose meaning has changed            |
+| `STALE_FLOW`       | SF     | Other docs | Multi-step flow where steps have changed            |
+
+Conceptual findings are **discovery-only**. They are never auto-fixed — the agent outputs a recommendation to run a separate `/local:audit-doc` on the affected file. These are too significant for inline correction because they require a full audit pass to fix correctly.
+
+**Mechanical (lower danger — wrong details in otherwise-correct context):**
+
+| Category            | Abbrev | Found In     | Description                                    |
+| ------------------- | ------ | ------------ | ---------------------------------------------- |
+| `STALE_COMMENT`     | SC     | Source files | Comment doesn't match code behavior            |
+| `STALE_DOCSTRING`   | SD     | Source files | Docstring doesn't match signatures/behavior    |
+| `BROKEN_CROSS_REF`  | BX     | Other docs   | Link points to renamed/deleted file            |
+| `CONTRADICTING_DOC` | CD     | Other docs   | Cross-referenced doc claims conflict with code |
+
+Mechanical findings can be auto-fixed directly.
+
+### Report Format
+
+Collateral findings appear after the primary audit summary, grouped by severity:
+
+```
+Collateral findings: 4 issues in 3 other files
+
+  CONCEPTUAL:
+  docs/learned/planning/plan-sync-workflow.md:
+    [OS] Describes the 5-step plan sync system — replaced by direct gateway calls.
+         Recommend: /local:audit-doc planning/plan-sync-workflow.md
+
+  MECHANICAL:
+  src/erk/core/subprocess.py:
+    [SC] L45: Comment says "returns list" — actually returns dict. Fix: update comment.
+  docs/learned/architecture/fail-open-patterns.md:
+    [BX] "See also" link to planning/plan-schema.md — file renamed. Fix: update link.
+```
+
+If no collateral findings exist, this section is omitted entirely.
+
+### Auto-apply vs Interactive
+
+**Auto-apply mode** (`--auto-apply`): Automatically fixes mechanical source code issues (SC, SD) and broken links (BX). Does NOT auto-apply conceptual findings (OS, CF, SF) or contradicting doc fixes (CD). Unapplied findings are listed in output as reminders.
+
+**Interactive mode**: Shows a two-group prompt — primary document actions (unchanged) plus collateral findings actions: "Apply mechanical fixes", "Apply all fixable collateral", or "Skip collateral fixes".
+
 ## Related Documentation
 
 - [Frontmatter Tripwire Format](../documentation/frontmatter-tripwire-format.md) - YAML schema for tripwires
