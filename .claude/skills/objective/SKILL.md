@@ -51,8 +51,13 @@ capture lessons learned along the way.
 
 ### Creating an Objective
 
+Use the GitHub REST API (not `gh issue create`, which uses GraphQL with separate rate limits):
+
 ```bash
-gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(cat <<'EOF'
+# Step 1: Create the issue
+ISSUE_NUMBER=$(gh api repos/{owner}/{repo}/issues -X POST \
+  -f title="Objective: [Title]" \
+  -f "body=$(cat <<'EOF'
 # Objective: [Title]
 
 > [1-2 sentence summary]
@@ -93,7 +98,11 @@ Fill out remaining functionality.
 
 **Next action:** [What should happen next]
 EOF
-)"
+)" --jq '.number')
+
+# Step 2: Add the label (separate API call)
+gh api repos/{owner}/{repo}/issues/$ISSUE_NUMBER/labels -X POST \
+  -f "labels[]=erk-objective"
 ```
 
 ### Logging an Action

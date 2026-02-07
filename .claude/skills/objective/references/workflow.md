@@ -41,11 +41,13 @@ Do NOT create an objective for:
 5. **Add test statements** - Each sub-phase needs "Test: [acceptance criteria]"
 6. **Lock design decisions** - Choices that guide implementation
 
+Use the GitHub REST API (not `gh issue create`, which uses GraphQL with separate rate limits):
+
 ```bash
-gh issue create \
-  --title "Objective: [Descriptive Title]" \
-  --label "erk-objective" \
-  --body "$(cat <<'EOF'
+# Step 1: Create the issue
+ISSUE_NUMBER=$(gh api repos/{owner}/{repo}/issues -X POST \
+  -f title="Objective: [Descriptive Title]" \
+  -f "body=$(cat <<'EOF'
 # Objective: [Title]
 
 > [Summary]
@@ -86,7 +88,11 @@ Fill out remaining functionality.
 
 **Next action:** [First step]
 EOF
-)"
+)" --jq '.number')
+
+# Step 2: Add the label (separate API call)
+gh api repos/{owner}/{repo}/issues/$ISSUE_NUMBER/labels -X POST \
+  -f "labels[]=erk-objective"
 ```
 
 ### Naming Conventions
