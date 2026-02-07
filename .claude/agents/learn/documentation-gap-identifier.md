@@ -71,6 +71,18 @@ For each candidate, cross-reference against ExistingDocsChecker findings:
 | ALREADY_DOCUMENTED | Mark as SKIP with location reference        |
 | PARTIAL_OVERLAP    | Mark for UPDATE_EXISTING instead of new doc |
 | NEW_TOPIC          | Mark as NEW_DOC candidate                   |
+| STALE_DOC          | Mark for DELETE_OR_REWRITE                  |
+| HAS_PHANTOM_REFS   | Mark for UPDATE_REFERENCES                  |
+
+### Step 3.5: Adversarial Verification of Contradictions
+
+For each contradiction from ExistingDocsChecker, apply this decision procedure IN ORDER:
+
+1. Check stale reference warnings. If existing doc flagged `STALE_DOC` → reclassify from "contradiction" to `DELETE_STALE_ENTRY`.
+2. Two-location skepticism: If two existing docs describe the same concept, check phantom detection data. One stale → delete it. Both clean → genuine inconsistency, recommend `CONSOLIDATE`.
+3. Only if neither side has phantom refs → apply standard contradiction resolution.
+
+**"The default is VERIFY, not HARMONIZE."** Never propose "add disambiguation note" without first confirming both systems exist via stale reference data.
 
 ### Step 4: Cross-Reference Against Diff Inventory
 
@@ -83,12 +95,14 @@ Ensure completeness by checking that every item from CodeDiffAnalyzer inventory 
 
 Assign a classification to each item:
 
-| Classification  | When to Use                                       |
-| --------------- | ------------------------------------------------- |
-| NEW_DOC         | New topic not covered by existing docs            |
-| UPDATE_EXISTING | Existing doc covers related topic, needs update   |
-| TRIPWIRE        | Cross-cutting concern that applies broadly        |
-| SKIP            | Already documented, or doesn't need documentation |
+| Classification    | When to Use                                           |
+| ----------------- | ----------------------------------------------------- |
+| NEW_DOC           | New topic not covered by existing docs                |
+| UPDATE_EXISTING   | Existing doc covers related topic, needs update       |
+| UPDATE_REFERENCES | Existing doc valid but has phantom file paths         |
+| DELETE_STALE      | Existing doc describes artifacts that no longer exist |
+| TRIPWIRE          | Cross-cutting concern that applies broadly            |
+| SKIP              | Already documented, or doesn't need documentation     |
 
 ### Prevention Item Classification
 
@@ -163,6 +177,15 @@ For each contradiction:
    - Existing: <path>
    - Conflict: <description>
    - Recommended resolution: <action>
+
+## Stale Documentation Actions (HIGH Priority)
+
+Existing docs with phantom references requiring cleanup:
+
+| Existing Doc | Phantom References | Action | Rationale |
+|---|---|---|---|
+| path/to/stale-doc.md | `src/erk/old_module.py` (MISSING) | DELETE_STALE | All referenced artifacts removed |
+| path/to/partial-doc.md | `src/erk/renamed.py` (MISSING) | UPDATE_REFERENCES | Core content valid, paths outdated |
 
 ## MANDATORY Enumerated Table
 
@@ -248,3 +271,9 @@ Cross-cutting concerns to add to docs:
 5. **Attribution matters**: Track which agent identified each item for traceability
 
 6. **"Self-documenting code" is NOT a valid skip reason**: Code shows WHAT, not WHY. Context, relationships, and gotchas need documentation.
+
+7. **Contradictions are verification opportunities**: First question is "do both reference real code?" not "how to reconcile?"
+
+8. **Two descriptions = staleness signal**: Default assumption is one is stale, not that both are valid.
+
+9. **Delete stale before adding new**: Removing a phantom doc is higher priority than creating a new doc.
