@@ -27,11 +27,24 @@ You receive:
    gh pr view <pr_number> --json files,additions,deletions,title,body
    ```
 
-2. **Get the diff:**
+2. **Get the diff (with large-PR fallback):**
+
+   Try `gh pr diff` first. On failure (HTTP 406 or non-zero exit), fall back to the paginated REST API.
 
    ```bash
+   # Try full diff first (works for most PRs)
    gh pr diff <pr_number>
    ```
+
+   **If this fails** (HTTP 406 for PRs with 300+ files), use the REST API with pagination:
+
+   ```bash
+   gh api --paginate "repos/{owner}/{repo}/pulls/<pr_number>/files"
+   ```
+
+   This returns JSON with `filename`, `status`, `additions`, `deletions`, and `patch` per file. The `patch` field contains the per-file diff. For files with empty or truncated patches, read the actual file from the working tree to determine what was added (new functions, classes, etc.).
+
+   Reference: `docs/learned/architecture/github-cli-limits.md` documents this limitation.
 
 3. **Create inventory of what was built:**
    - New files created

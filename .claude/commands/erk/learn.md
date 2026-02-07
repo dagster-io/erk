@@ -36,7 +36,7 @@ Learn pipeline for plan #<issue-number>:
   1. Read local session logs from ~/.claude/projects/
   2. Preprocess sessions (compress JSONL → XML, deduplicate, truncate)
   3. Upload preprocessed XML + PR comments to a secret GitHub gist
-  4. Launch analysis agents (session, diff, docs check)
+  4. Launch analysis agents (session, diff, docs check, PR comments)
   5. Synthesize findings into a documentation plan
   6. Save plan as a new GitHub issue
 ```
@@ -95,7 +95,7 @@ Check if a `gist_url` parameter was provided in the command arguments (format: `
      - Skipping session discovery and preprocessing
    ```
 
-4. **Skip to Step 4** (Analyze Implementation). The preprocessed sessions and PR comments are already in the learn directory.
+4. **Skip to Step 4** (Gather and Analyze Sessions). The preprocessed sessions and PR comments are already in the learn directory.
 
 **If no `gist_url` is provided:**
 
@@ -126,7 +126,7 @@ Parse the JSON output to get:
 
 If no sessions are found, inform the user and stop.
 
-**Note on remote sessions:** Remote sessions appear in `session_sources` with `source_type: "remote"` and `path: null`. These sessions must be downloaded before processing (see Step 5).
+**Note on remote sessions:** Remote sessions appear in `session_sources` with `source_type: "remote"` and `path: null`. These sessions must be downloaded before processing (see Step 4).
 
 Tell the user:
 
@@ -136,82 +136,15 @@ Found N session(s) for plan #<issue-number>:
   - N remote session(s) from GitHub Actions
 ```
 
-### Step 4: Analyze Implementation
+### Step 4: Gather and Analyze Sessions
 
-Before analyzing sessions, understand what code actually changed. A smooth implementation with no errors can still add major new capabilities that need documentation.
-
-Get the PR information for this plan:
+Before gathering sessions, get the PR information for this plan (needed by analysis agents):
 
 ```bash
 erk exec get-pr-for-plan <issue-number>
 ```
 
-This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`) or an error if no PR exists.
-
-Analyze the changes:
-
-```bash
-gh pr view <pr-number> --json files,additions,deletions
-gh pr diff <pr-number>
-```
-
-**Create an inventory of what was built:**
-
-- **New files**: What files were created?
-- **New functions/classes**: What new APIs were added?
-- **New CLI commands**: Any new `@click.command` decorators?
-- **New patterns**: Any new architectural patterns established?
-- **Config changes**: New settings, capabilities, or options?
-- **External integrations**: New API calls, dependencies, or tools?
-
-**Save this inventory** - you will reference it in Step 6 to ensure everything new gets documented.
-
-#### Analyze PR Comments via Task
-
-If a PR was found for this plan, use a Task to analyze PR comments with context isolation. The Task fetches and classifies comments, returning only the insights needed for documentation planning.
-
-```
-Task(
-  subagent_type: "general-purpose",
-  model: "haiku",
-  description: "Analyze PR comments for docs",
-  prompt: |
-    Analyze PR review comments to identify documentation opportunities.
-
-    ## Steps
-    1. Run: `erk exec get-pr-review-comments --pr <pr-number> --include-resolved`
-    2. Run: `erk exec get-pr-discussion-comments --pr <pr-number>`
-    3. Classify and summarize the comments
-
-    ## Classification
-    For each comment, identify documentation opportunities:
-    - **False positives**: Reviewer misunderstood something → document to prevent future confusion
-    - **Clarification requests**: "Why does this..." → document the reasoning
-    - **Suggested alternatives**: Discussed but rejected → document the decision
-    - **Edge case questions**: "What happens if..." → document the behavior
-
-    ## Output Format
-
-    ### PR Comment Analysis Summary
-    PR #NNNN: N review threads, M discussion comments analyzed.
-
-    ### Documentation Opportunities from PR Review
-    | # | Source | Insight | Documentation Suggestion |
-    |---|--------|---------|--------------------------|
-    | 1 | Thread at abc.py:42 | Reviewer asked about LBYL pattern | Document when LBYL is required |
-    | 2 | Discussion | Clarified retry behavior | Add to API quirks doc |
-
-    ### Key Insights
-    [Bullet list of the most important documentation opportunities]
-
-    If no comments or no documentation opportunities found, output:
-    "No documentation opportunities identified from PR review comments."
-)
-```
-
-**Save the Task output** - these insights inform the documentation plan in Step 6.
-
-### Step 5: Gather and Analyze Sessions
+This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`) or an error if no PR exists. Save the PR number for the parallel agents below.
 
 **Note:** If you downloaded preprocessed materials from a gist in Step 2, skip the "Preprocess Sessions" and "Save PR Comments" subsections. The files are already in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`. Proceed to "Launch Parallel Analysis Agents".
 
@@ -284,7 +217,7 @@ Preprocessing N session(s): compressing JSONL → XML, deduplicating, truncating
 
 #### Save PR Comments
 
-If PR comments were fetched in Step 4, save them for the gist:
+If a PR exists for this plan, save PR comments for the gist:
 
 ```bash
 erk exec get-pr-review-comments --pr <pr-number> --include-resolved \
@@ -335,6 +268,7 @@ Launching analysis agents in parallel:
   - Session analyzer (1 per session file)
   - Code diff analyzer (PR #<number>)
   - Existing documentation checker
+  - PR comment analyzer (PR #<number>)
 ```
 
 **Agent 1: Session Analysis** (for each preprocessed session)
@@ -405,6 +339,52 @@ Extract search hints by:
 2. Removing common words (the, a, an, to, for, with, add, update, fix, etc.)
 3. Example: "Add parallel agent orchestration" → "parallel, agent, orchestration"
 
+**Agent 4: PR Comment Analysis** (if PR exists)
+
+Analyze PR review comments and discussion comments to identify documentation opportunities:
+
+<!-- Model: haiku - Mechanical classification of comments; deterministic pattern matching -->
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  run_in_background: true,
+  description: "Analyze PR comments for docs",
+  prompt: |
+    Analyze PR review comments to identify documentation opportunities.
+
+    ## Steps
+    1. Run: `erk exec get-pr-review-comments --pr <pr-number> --include-resolved`
+    2. Run: `erk exec get-pr-discussion-comments --pr <pr-number>`
+    3. Classify and summarize the comments
+
+    ## Classification
+    For each comment, identify documentation opportunities:
+    - **False positives**: Reviewer misunderstood something → document to prevent future confusion
+    - **Clarification requests**: "Why does this..." → document the reasoning
+    - **Suggested alternatives**: Discussed but rejected → document the decision
+    - **Edge case questions**: "What happens if..." → document the behavior
+
+    ## Output Format
+
+    ### PR Comment Analysis Summary
+    PR #NNNN: N review threads, M discussion comments analyzed.
+
+    ### Documentation Opportunities from PR Review
+    | # | Source | Insight | Documentation Suggestion |
+    |---|--------|---------|--------------------------|
+    | 1 | Thread at abc.py:42 | Reviewer asked about LBYL pattern | Document when LBYL is required |
+    | 2 | Discussion | Clarified retry behavior | Add to API quirks doc |
+
+    ### Key Insights
+    [Bullet list of the most important documentation opportunities]
+
+    If no comments or no documentation opportunities found, output:
+    "No documentation opportunities identified from PR review comments."
+)
+```
+
 #### Collect Agent Results
 
 Use TaskOutput to retrieve findings from each agent:
@@ -439,6 +419,7 @@ Then use the Write tool for each agent output:
 1. **Session analysis results** - Write to `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<session-id>.md`
 2. **Diff analysis results** - Write to `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md`
 3. **Existing docs check results** - Write to `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md`
+4. **PR comment analysis results** - Write to `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/pr-comments-analysis.md`
 
 **Example:**
 
@@ -463,9 +444,9 @@ Write(
 ls -la .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/
 ```
 
-Confirm you see the expected files (session-\*.md, diff-analysis.md, existing-docs-check.md) before proceeding. If any files are missing, the Write tool call failed and must be retried.
+Confirm you see the expected files (session-\*.md, diff-analysis.md, existing-docs-check.md, pr-comments-analysis.md) before proceeding. If any files are missing, the Write tool call failed and must be retried.
 
-#### Synthesize Agent Findings (Agent 4)
+#### Synthesize Agent Findings (Agent 5)
 
 Launch the DocumentationGapIdentifier agent to synthesize outputs from the parallel agents:
 
@@ -483,6 +464,7 @@ Task(
     - session_analysis_paths: [".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<id>.md", ...]
     - diff_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md" (or null if no PR)
     - existing_docs_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md"
+    - pr_comments_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/pr-comments-analysis.md" (or null if no PR)
     - plan_title: <title from plan issue>
 )
 ```
@@ -491,12 +473,12 @@ Task(
 
 The DocumentationGapIdentifier agent will:
 
-- Collect all candidates from session-analyzer, code-diff-analyzer, and existing-docs-checker
+- Collect all candidates from session-analyzer, code-diff-analyzer, existing-docs-checker, and PR comment analyzer
 - Deduplicate against existing documentation (ALREADY_DOCUMENTED, PARTIAL_OVERLAP, NEW_TOPIC)
 - Cross-reference against the diff inventory to ensure completeness
 - Classify items: NEW_DOC | UPDATE_EXISTING | TRIPWIRE | SKIP
 - Prioritize by impact: HIGH (gateway methods, contradictions) > MEDIUM (patterns) > LOW (helpers)
-- Produce the MANDATORY enumerated table required by Step 6
+- Produce the MANDATORY enumerated table required by Step 5
 
 Write the DocumentationGapIdentifier output to scratch storage using the Write tool:
 
@@ -507,7 +489,7 @@ Write(
 )
 ```
 
-#### Synthesize Learn Plan (Agent 5)
+#### Synthesize Learn Plan (Agent 6)
 
 Launch the PlanSynthesizer agent to transform the gap analysis into a complete learn plan:
 
@@ -526,7 +508,7 @@ Task(
     - session_analysis_paths: [".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<id>.md", ...]
     - diff_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md" (or null if no PR)
     - plan_title: <title from plan issue>
-    - gist_url: <gist URL from Step 5>
+    - gist_url: <gist URL from Step 4>
     - pr_number: <PR number if available, else null>
 )
 ```
@@ -542,7 +524,7 @@ Write(
 )
 ```
 
-#### Extract Tripwire Candidates (Agent 6)
+#### Extract Tripwire Candidates (Agent 7)
 
 Launch the TripwireExtractor agent to pull structured tripwire data from the plan:
 
@@ -579,7 +561,8 @@ Write(
 Parallel Tier (can run simultaneously):
   ├─ SessionAnalyzer (per session XML)
   ├─ CodeDiffAnalyzer (if PR exists)
-  └─ ExistingDocsChecker
+  ├─ ExistingDocsChecker
+  └─ PRCommentAnalyzer (if PR exists)
 
 Sequential Tier 1 (depends on Parallel Tier):
   └─ DocumentationGapIdentifier
@@ -624,7 +607,7 @@ Read each file and mine them thoroughly.
 - External documentation fetched (WebFetch, WebSearch)
 - Error messages and how they were resolved
 
-### Step 6: Review Synthesized Plan
+### Step 5: Review Synthesized Plan
 
 Read the PlanSynthesizer output:
 
@@ -653,36 +636,9 @@ Review the synthesized plan:
 4. **Draft content starters**: Are they actionable (not just "document this")?
 5. **Skip reasons**: Are they valid (not "self-documenting code")?
 
-#### PR Comment Analysis (Additional)
+#### PR Comment Analysis
 
-If PR comments were fetched in Step 4, mine them for additional documentation opportunities not captured by the agents:
-
-**Review Comments (Inline)**
-
-| Thread | Path | Key Insight | Documentation Opportunity |
-| ------ | ---- | ----------- | ------------------------- |
-| ...    | ...  | ...         | ...                       |
-
-Look for:
-
-- **False positives**: Reviewer misunderstood something → document to prevent future confusion
-- **Clarification requests**: "Why does this..." → document the reasoning
-- **Suggested alternatives**: Discussed but rejected → document the decision
-- **Edge case questions**: "What happens if..." → document the behavior
-
-**Discussion Comments (Main Thread)**
-
-| Author | Key Point | Documentation Opportunity |
-| ------ | --------- | ------------------------- |
-| ...    | ...       | ...                       |
-
-Look for:
-
-- Design discussions that led to choices
-- Trade-off conversations
-- Implementation details explained in prose
-
-Add any additional items from PR comments to the documentation plan.
+PR comment insights are already integrated via the PRCommentAnalyzer agent (Agent 4) → DocumentationGapIdentifier pipeline. Review the gap analysis output to verify PR comment documentation opportunities were captured correctly. If you spot additional insights not covered by the agent, add them manually to the plan.
 
 #### Reference: Common Documentation Locations
 
@@ -698,7 +654,7 @@ Add any additional items from PR comments to the documentation plan.
 
 #### Validation Checkpoint
 
-**⚠️ CHECKPOINT: Before proceeding to Step 7**
+**⚠️ CHECKPOINT: Before proceeding to Step 6**
 
 Verify the PlanSynthesizer output:
 
@@ -716,7 +672,7 @@ If the synthesized plan shows NO documentation items:
 2. Ask: "Would a future agent benefit from this?"
 3. If still no documentation needed, state: "After explicit review of N inventory items, no documentation is needed because [specific reasons for top 3 items]"
 
-Only proceed to Step 12 (skipping Steps 7-11) after this explicit justification.
+Only proceed to Step 11 (skipping Steps 6-10) after this explicit justification.
 
 #### Outdated Documentation Check (MANDATORY)
 
@@ -746,7 +702,7 @@ grep -r "<removed-feature>" docs/learned/ .claude/commands/ .claude/skills/
 
 **Include outdated doc updates in the documentation plan** alongside new documentation needs.
 
-### Step 7: Present Findings
+### Step 6: Present Findings
 
 Present the synthesized plan to the user. The PlanSynthesizer output already includes:
 
@@ -760,11 +716,11 @@ Present the synthesized plan to the user. The PlanSynthesizer output already inc
 [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ] && echo "CI_MODE" || echo "INTERACTIVE"
 ```
 
-**If CI mode (CI_MODE)**: Skip user confirmation. Auto-proceed to Step 8 to save the learn plan. This is expected behavior - CI runs should complete without user interaction.
+**If CI mode (CI_MODE)**: Skip user confirmation. Auto-proceed to Step 7 to save the learn plan. This is expected behavior - CI runs should complete without user interaction.
 
-**If interactive mode (INTERACTIVE)**: Confirm with the user before saving the learn plan. If the user decides to skip (no valuable insights), proceed to Step 12.
+**If interactive mode (INTERACTIVE)**: Confirm with the user before saving the learn plan. If the user decides to skip (no valuable insights), proceed to Step 11.
 
-### Step 8: Validate and Save Learn Plan to GitHub Issue
+### Step 7: Validate and Save Learn Plan to GitHub Issue
 
 First validate the synthesized plan has actionable content:
 
@@ -774,7 +730,7 @@ cat .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md | erk 
 
 Parse the JSON output:
 
-- If `valid: false` → Skip saving, proceed to Step 10 with `completed_no_plan`
+- If `valid: false` → Skip saving, proceed to Step 9 with `completed_no_plan`
 - If `valid: true` → Continue with save below
 
 **If plan is valid**, save it as a GitHub issue:
@@ -806,7 +762,7 @@ Learn plan saved to GitHub issue #<issue_number>
 Raw materials: <gist-url>
 ```
 
-### Step 9: Store Tripwire Candidates on Learn Plan Issue
+### Step 8: Store Tripwire Candidates on Learn Plan Issue
 
 **If plan was valid and saved**, store structured tripwire candidates as a metadata comment:
 
@@ -820,7 +776,7 @@ This stores the tripwire candidates as a machine-readable metadata block comment
 
 Parse the JSON output. If `count` is 0, no comment was added (no candidates found by the extractor). This is normal and not an error.
 
-### Step 10: Track Learn Result on Parent Plan
+### Step 9: Track Learn Result on Parent Plan
 
 **If plan was valid and saved**, update the parent plan's status to link the two issues:
 
@@ -842,14 +798,14 @@ erk exec track-learn-result \
     --status completed_no_plan
 ```
 
-### Step 11: Post-Learn Decision Menu
+### Step 10: Post-Learn Decision Menu
 
 Present a decision menu to the user for next actions.
 
-**CI Detection**: Reuse the CI check from Step 7:
+**CI Detection**: Reuse the CI check from Step 6:
 
-- If CI_MODE: Auto-select option 1 (submit) and proceed to Step 12
-- If not interactive: Auto-select option 1 (submit) and proceed to Step 12
+- If CI_MODE: Auto-select option 1 (submit) and proceed to Step 11
+- If not interactive: Auto-select option 1 (submit) and proceed to Step 11
 
 **Check for other open learn plans** (for consolidation option):
 
@@ -885,11 +841,11 @@ Post-learn actions:
 - **Submit**: Run `/erk:plan-submit`
 - **Review**: Run `gh issue view <issue_number> --web`, then inform the user they can run `/erk:plan-submit` when ready
 - **Consolidate**: Run `/local:replan-learn-plans`
-- **Done**: Proceed directly to Step 12
+- **Done**: Proceed directly to Step 11
 
-### Step 12: Track Evaluation
+### Step 11: Track Evaluation
 
-**CRITICAL: Always run this step**, regardless of which option was selected in Step 11.
+**CRITICAL: Always run this step**, regardless of which option was selected in Step 10.
 
 This ensures `erk land` won't warn about unlearned plans:
 
