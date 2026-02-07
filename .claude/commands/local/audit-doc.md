@@ -203,7 +203,7 @@ Follow with 2-3 sentences describing the planned changes. For example:
 
 Keep the full internal analysis available for Phase 7 actions — just don't dump it as text output.
 
-**Collateral findings report:** If any collateral findings were recorded in Phase 3 or Phase 3.5, append them after the primary audit summary. Conceptual findings appear first (higher severity):
+**Collateral findings report:** If any collateral findings were recorded in Phase 3 or Phase 3.5, append them after the primary audit summary. Conceptual findings appear first (higher severity). Example output (illustrative file paths):
 
 ```
 Collateral findings: <count> issues in <count> other files
