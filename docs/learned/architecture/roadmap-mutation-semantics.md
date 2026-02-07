@@ -90,17 +90,7 @@ if not phases:
 
 ## PR Cell Mutation Pattern
 
-The command uses a regex pattern for row matching and cell replacement:
-
-```python
-# Match table row: | step_id | description | status | pr |
-pattern = re.compile(
-    r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|$",
-    re.MULTILINE,
-)
-```
-
-All four cells are captured. The step_id and description cells are preserved; the status and PR cells are replaced.
+The command uses a regex pattern to match table rows by step ID and replace the status and PR cells. See `update_roadmap_step.py:75-78` for the regex. All four cells (step_id, description, status, PR) are captured; only status and PR are replaced.
 
 ## Reference Implementation
 

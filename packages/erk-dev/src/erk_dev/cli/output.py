@@ -2,6 +2,8 @@
 
 from typing import Any
 
+import click
+
 
 def user_output(
     message: Any | None = None,
@@ -19,8 +21,6 @@ def user_output(
         color: Force showing or hiding colors and other styles. By default, Click
             will remove color if the output does not look like an interactive terminal.
     """
-    import click
-
     click.echo(message, nl=nl, err=True, color=color)
 
 
@@ -40,6 +40,4 @@ def machine_output(
         color: Force showing or hiding colors and other styles. By default, Click
             will remove color if the output does not look like an interactive terminal.
     """
-    import click
-
     click.echo(message, nl=nl, err=False, color=color)

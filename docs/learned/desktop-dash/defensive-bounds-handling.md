@@ -28,40 +28,16 @@ Even though the renderer uses `getBoundingClientRect()` (which should return val
 
 ## The Solution
 
-**File**: `erkdesk/src/main/index.ts:44-53`
-
-```typescript
-ipcMain.on("webview:update-bounds", (_event, bounds: WebViewBounds) => {
-  if (!webView) return;
-  webView.setBounds({
-    x: Math.max(0, Math.floor(bounds.x)),
-    y: Math.max(0, Math.floor(bounds.y)),
-    width: Math.max(0, Math.floor(bounds.width)),
-    height: Math.max(0, Math.floor(bounds.height)),
-  });
-});
-```
+The `webview:update-bounds` IPC handler applies `Math.max(0, Math.floor(value))` to every coordinate before calling `setBounds()`. See `erkdesk/src/main/index.ts:44-53` for the implementation.
 
 ### Pattern Breakdown
 
-```typescript
-Math.max(0, Math.floor(bounds.x));
-```
+The two-step clamping — `Math.max(0, Math.floor(bounds.x))` — works as follows:
 
-**Step 1**: `Math.floor(bounds.x)` — Truncate fractional pixels to integers.
+1. `Math.floor()` truncates fractional pixels to integers (e.g., `400.7` → `400`)
+2. `Math.max(0, ...)` clamps negative values to zero (e.g., `-5` → `0`)
 
-- `400.7` → `400`
-- `200.1` → `200`
-
-**Step 2**: `Math.max(0, ...)` — Clamp negative values to zero.
-
-- `-5` → `0`
-- `400` → `400`
-
-This two-step pattern ensures:
-
-1. ✅ All values are non-negative integers
-2. ✅ Electron receives safe bounds that won't cause crashes
+This ensures Electron always receives non-negative integer bounds.
 
 ## Why Not Validate in Renderer?
 
@@ -75,44 +51,17 @@ This two-step pattern ensures:
 
 ### Renderer's Responsibility
 
-The SplitPane component ensures **logical correctness**:
-
-```typescript
-const maxLeft = containerRect.width - DIVIDER_WIDTH - minRightWidth;
-setLeftWidth(Math.max(minLeftWidth, Math.min(maxLeft, newLeft)));
-```
-
-This prevents the user from dragging the divider beyond minimum width constraints.
+The SplitPane component ensures **logical correctness** by clamping the divider position between minimum left and right widths. See `SplitPane.tsx` for the constraint logic.
 
 ### Main Process's Responsibility
 
-The main process ensures **API safety**:
-
-```typescript
-Math.max(0, Math.floor(bounds.x));
-```
-
-This prevents Electron from receiving coordinates that could cause crashes.
+The main process ensures **API safety** by applying `Math.max(0, Math.floor())` to all bounds values before passing to Electron.
 
 ## Zero-Bounds Initialization
 
-On startup, the WebContentsView is initialized with zero bounds:
+On startup, the WebContentsView is initialized with zero bounds (`{x: 0, y: 0, width: 0, height: 0}`) and loads `about:blank`. See `erkdesk/src/main/index.ts:40-42`.
 
-```typescript
-// Start invisible until renderer reports bounds.
-webView.setBounds({ x: 0, y: 0, width: 0, height: 0 });
-webView.webContents.loadURL("about:blank");
-```
-
-**Source**: `erkdesk/src/main/index.ts:40-42`
-
-**Rationale**:
-
-- The WebContentsView has no valid position until the renderer measures the split layout
-- Zero bounds make it invisible (not displayed)
-- Once the renderer reports real bounds via IPC, the view becomes visible
-
-This avoids a flash of incorrectly-positioned content during startup.
+**Rationale**: The WebContentsView has no valid position until the renderer measures the split layout. Zero bounds make it invisible, avoiding a flash of incorrectly-positioned content during startup. Once the renderer reports real bounds via IPC, the view becomes visible.
 
 ## Related Crashes Prevented
 

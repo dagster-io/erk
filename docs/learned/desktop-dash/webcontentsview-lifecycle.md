@@ -15,68 +15,23 @@ Proper initialization, bounds management, and cleanup of Electron's `WebContents
 
 ## Initialization Pattern
 
-**File**: `erkdesk/src/main/index.ts:40-42`
+The WebContentsView starts with zero bounds (`{x: 0, y: 0, width: 0, height: 0}`) and loads `about:blank`. See `erkdesk/src/main/index.ts:40-42`.
 
-```typescript
-// Start invisible until renderer reports bounds.
-webView.setBounds({ x: 0, y: 0, width: 0, height: 0 });
-webView.webContents.loadURL("about:blank");
-```
-
-**Why zero bounds**:
-
-- The WebContentsView has no valid position until the renderer measures the split layout
-- Zero bounds make it invisible (not displayed)
-- Prevents flash of incorrectly-positioned content during startup
+**Why zero bounds**: The view has no valid position until the renderer measures the split layout. Zero bounds make it invisible, preventing a flash of incorrectly-positioned content during startup.
 
 ## Bounds Update Pattern
 
-**File**: `erkdesk/src/main/index.ts:44-53`
+The `webview:update-bounds` IPC handler applies defensive clamping — `Math.max(0, Math.floor(value))` — to all coordinate values before calling `setBounds()`. See `erkdesk/src/main/index.ts:44-53`.
 
-```typescript
-ipcMain.on("webview:update-bounds", (_event, bounds: WebViewBounds) => {
-  if (!webView) return;
-  webView.setBounds({
-    x: Math.max(0, Math.floor(bounds.x)),
-    y: Math.max(0, Math.floor(bounds.y)),
-    width: Math.max(0, Math.floor(bounds.width)),
-    height: Math.max(0, Math.floor(bounds.height)),
-  });
-});
-```
-
-**Defensive clamping**:
-
-- `Math.floor()` — Convert fractional pixels to integers
-- `Math.max(0, ...)` — Prevent negative coordinates
-- **Rationale**: Electron crashes silently on fractional or negative bounds
+**Why clamping is critical**: Electron crashes silently on fractional or negative bounds. `Math.floor()` converts fractional pixels to integers; `Math.max(0, ...)` prevents negative coordinates.
 
 See [Defensive Bounds Handling](defensive-bounds-handling.md) for details.
 
 ## Cleanup Pattern
 
-**File**: `erkdesk/src/main/index.ts:190-201`
+The `mainWindow.on("closed")` handler removes all IPC listeners and handlers, kills any active child processes, and nulls the `webView` reference. See `erkdesk/src/main/index.ts:190-201`.
 
-```typescript
-mainWindow.on("closed", () => {
-  ipcMain.removeAllListeners("webview:update-bounds");
-  ipcMain.removeAllListeners("webview:load-url");
-  ipcMain.removeHandler("plans:fetch");
-  ipcMain.removeHandler("actions:execute");
-  ipcMain.removeAllListeners("actions:start-streaming");
-  if (activeAction) {
-    activeAction.kill();
-    activeAction = null;
-  }
-  webView = null;
-});
-```
-
-**Why cleanup is critical**:
-
-- IPC listeners persist after window close unless explicitly removed
-- Memory leaks if listeners accumulate across window recreations
-- Setting `webView = null` allows garbage collection
+**Why cleanup is critical**: IPC listeners persist after window close unless explicitly removed, causing memory leaks across window recreations. Nulling `webView` allows garbage collection.
 
 ## Complete Lifecycle
 
