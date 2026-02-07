@@ -14,7 +14,9 @@ tripwires:
   - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
     warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
   - action: "using subprocess.run with git command outside of a gateway"
-    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+last_audited: "2026-02-07 13:30 PT"
+audit_result: edited
 ---
 
 # Gateway ABC Implementation Checklist
@@ -39,8 +41,8 @@ All gateway ABCs (Git, GitHub, Graphite) follow the same 5-file pattern. When ad
 
 | Gateway   | Location                                                |
 | --------- | ------------------------------------------------------- |
-| Git       | `packages/erk-shared/src/erk_shared/git/`               |
-| GitHub    | `packages/erk-shared/src/erk_shared/github/`            |
+| Git       | `packages/erk-shared/src/erk_shared/gateway/git/`       |
+| GitHub    | `packages/erk-shared/src/erk_shared/gateway/github/`    |
 | Graphite  | `packages/erk-shared/src/erk_shared/gateway/graphite/`  |
 | Codespace | `packages/erk-shared/src/erk_shared/gateway/codespace/` |
 
@@ -171,12 +173,12 @@ class RealGitHub(GitHub):
     @classmethod
     def for_test(cls, *, time: Time | None = None, repo_info: RepoInfo | None = None) -> "RealGitHub":
         """Factory for tests that need Real implementation with sensible defaults."""
+        from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
         from erk_shared.gateway.time.fake import FakeTime
-        from erk_shared.github.issues import RealGitHubIssues
         return cls(
             time=time if time is not None else FakeTime(),
             repo_info=repo_info,
-            issues=RealGitHubIssues(),
+            issues=FakeGitHubIssues(),
         )
 ```
 
@@ -233,19 +235,20 @@ class PrintingGitHub(GitHub):
 
 When adding methods that benefit from testability (lock waiting, retry logic, timeouts), consider injecting dependencies via constructor rather than adding parameters to each method.
 
-**Example Pattern** (from `RealGit`):
+**Example Pattern** (from `RealGit` and its sub-gateways):
 
 ```python
 class RealGit(Git):
-    def __init__(self, *, time: Time | None = None) -> None:
+    def __init__(self, time: Time | None = None) -> None:
         # Accept optional dependency, default to production implementation
         self._time = time if time is not None else RealTime()
-
-    def checkout_branch(self, repo_root: Path, branch: str) -> None:
-        # Use injected dependency before operation
-        wait_for_index_lock(repo_root, self._time)
-        # ... actual git operation
+        # Pass injected time to sub-gateways that need it
+        self._branch = RealGitBranchOps(time=self._time)
+        self._remote = RealGitRemoteOps(time=self._time)
+        # ...
 ```
+
+Sub-gateways use the injected dependency (see `RealGitBranchOps.checkout_branch()` in `gateway/git/branch_ops/real.py` for lock waiting usage).
 
 **Benefits**:
 
@@ -254,7 +257,7 @@ class RealGit(Git):
 - Consistent with erk's dependency injection pattern for all gateways
 - Lock-waiting and retry logic execute instantly in tests
 
-**Reference Implementation**: `packages/erk-shared/src/erk_shared/git/lock.py` and `packages/erk-shared/src/erk_shared/git/real.py`
+**Reference Implementation**: `packages/erk-shared/src/erk_shared/gateway/git/lock.py` and `packages/erk-shared/src/erk_shared/gateway/git/real.py`
 
 ## Integration with Fake-Driven Testing
 

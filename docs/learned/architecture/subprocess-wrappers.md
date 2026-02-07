@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "using bare subprocess.run with check=True"
     warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations."
+last_audited: "2026-02-07 16:34 PT"
+audit_result: clean
 ---
 
 # Subprocess Execution Wrappers
@@ -34,28 +36,24 @@ Erk uses a two-layer design for subprocess execution to provide consistent error
 
 **When to use**: In business logic, gateway classes, and core functionality that may be called from multiple contexts.
 
-**Import**: `from erk.core.subprocess import run_subprocess_with_context`
+**Import**: `from erk_shared.subprocess_utils import run_subprocess_with_context`
 
-**Behavior**: Raises `RuntimeError` with rich context on failure
+**Behavior**: Raises `RuntimeError` with rich context on failure. All parameters are keyword-only.
 
 **Example**:
 
 ```python
-from erk.core.subprocess import run_subprocess_with_context
+from erk_shared.subprocess_utils import run_subprocess_with_context
 
-# ✅ CORRECT: Rich error context with stderr
+# ✅ CORRECT: Rich error context with stderr (all kwargs)
 result = run_subprocess_with_context(
-    ["git", "worktree", "add", str(path), branch],
+    cmd=["git", "worktree", "add", str(path), branch],
     operation_context=f"add worktree for branch '{branch}' at {path}",
     cwd=repo_root,
 )
 ```
 
-**Why use this**:
-
-- **Rich error messages**: Includes operation context, command, exit code, stderr
-- **Exception chaining**: Preserves original CalledProcessError for debugging
-- **Testable**: Can be caught and handled in tests
+See `run_subprocess_with_context()` in `packages/erk-shared/src/erk_shared/subprocess_utils.py` for full signature and behavior.
 
 ### run_with_error_reporting (CLI Layer)
 
@@ -73,23 +71,12 @@ from erk.cli.subprocess_utils import run_with_error_reporting
 # ✅ CORRECT: User-friendly error messages + SystemExit
 run_with_error_reporting(
     ["gh", "pr", "view", str(pr_number)],
-    operation_context="view pull request",
     cwd=repo_root,
+    error_prefix="Failed to view pull request",
 )
 ```
 
-**Why use this**:
-
-- **User-friendly**: Error messages are clear and actionable
-- **CLI semantics**: Exits immediately with non-zero code
-- **No exception handling needed**: Wrapper handles everything
-
-## Why This Matters
-
-- **Rich error messages**: Both wrappers include operation context, command, exit code, and stderr
-- **Exception chaining**: Preserves original CalledProcessError for debugging
-- **Consistent patterns**: Two clear boundaries with appropriate error handling
-- **Debugging support**: Full context available in error messages and logs
+See `run_with_error_reporting()` in `src/erk/cli/subprocess_utils.py` for full signature (supports `error_prefix`, `troubleshooting`, `show_output`).
 
 ## LBYL Patterns to Keep
 
@@ -134,10 +121,3 @@ except FileNotFoundError:
 | CLI command that must succeed  | `run_with_error_reporting()`    | SystemExit on failure is correct |
 | Optional background operation  | Explicit exception handling     | Main operation should continue   |
 | Gateway real.py implementation | `run_subprocess_with_context()` | Consistent error wrapping        |
-
-## Summary
-
-- **Gateway layer**: Use `run_subprocess_with_context()` for business logic
-- **CLI layer**: Use `run_with_error_reporting()` for command handlers
-- **Keep LBYL**: Don't migrate intentional `check=False` patterns
-- **Never use bare check=True**: Always use one of the wrapper functions

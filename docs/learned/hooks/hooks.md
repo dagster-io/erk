@@ -4,6 +4,8 @@ read_when:
   - "creating hooks"
   - "modifying hooks"
   - "understanding hook lifecycle"
+last_audited: "2026-02-07 13:40 PT"
+audit_result: edited
 ---
 
 # Claude Code Hooks Guide
@@ -521,7 +523,4 @@ This includes:
 
 - **Project-Specific Supplement**: [erk.md](erk.md)
 - **Official Claude Code Hooks**: https://code.claude.com/docs/en/hooks
-- **Official Hooks Guide**: https://code.claude.com/docs/en/hooks-guide.md
-- **erk-kits Hook Development**: `../../packages/erk-kits/docs/HOOKS.md`
-- **Kit System Overview**: `../../.erk/kits/README.md`
 - **Project Glossary**: `glossary.md`

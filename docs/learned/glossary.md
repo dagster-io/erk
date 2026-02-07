@@ -8,6 +8,8 @@ read_when:
 tripwires:
   - action: "parsing objective roadmap PR column status"
     warning: "PR column format is non-standard: empty=pending, #XXXX=done (merged PR), `plan #XXXX`=plan in progress. This is erk-specific, not GitHub convention."
+last_audited: "2026-02-07 13:43 PT"
+audit_result: edited
 ---
 
 # Erk Glossary
@@ -22,7 +24,7 @@ Definitive terminology reference for the erk project.
 
 ### activate.sh
 
-A shell script at `.erk/activate.sh` in each worktree that sets up the development environment when sourced.
+A shell script at `.erk/bin/activate.sh` in each worktree that sets up the development environment when sourced.
 
 **Purpose**: Opt-in shell integration. Users explicitly source this script rather than relying on automatic shell manipulation.
 
@@ -37,7 +39,7 @@ A shell script at `.erk/activate.sh` in each worktree that sets up the developme
 **Usage**:
 
 ```bash
-source ~/erks/erk/my-feature/.erk/activate.sh
+source ~/erks/erk/my-feature/.erk/bin/activate.sh
 ```
 
 **Generation**: Created by `write_worktree_activate_script()` during worktree creation.
@@ -303,7 +305,7 @@ shell_integration = true  # Enable auto-navigation for erk up/down/checkout
 prompt_learn_on_land = true  # Set false to disable learn prompts on erk land
 ```
 
-**Access**: Via `ConfigStore` interface.
+**Access**: Via the `GlobalConfig` frozen dataclass in `erk_shared.context.types`.
 
 ### Repo Config
 
@@ -456,15 +458,16 @@ A frozen dataclass containing repository information.
 **Key Fields**:
 
 - `root: Path` - Working tree root for git commands (worktree or main repo)
-- `main_repo_root: Path` - Main repository root (consistent across worktrees)
+- `main_repo_root: Path | None` - Main repository root (consistent across worktrees; defaults to `root`)
 - `repo_name: str` - Repository name
 - `repo_dir: Path` - Path to erk metadata directory (`~/.erk/repos/<repo-name>`)
 - `worktrees_dir: Path` - Path to worktrees directory (`~/.erk/repos/<repo-name>/worktrees`)
+- `pool_json_path: Path` - Path to pool state file (`~/.erk/repos/<repo-name>/pool.json`)
 - `github: GitHubRepoId | None` - GitHub repository identity, if available
 
-**Creation**: `discover_repo_or_sentinel(git, Path.cwd())`
+**Creation**: `discover_repo_or_sentinel(cwd, erk_root)` (see `src/erk/core/repo_discovery.py`)
 
-See `src/erk/core/repo_discovery.py` for the canonical definition.
+See `packages/erk-shared/src/erk_shared/context/types.py` for the canonical definition.
 
 #### root vs main_repo_root
 
@@ -485,36 +488,50 @@ A frozen dataclass containing all injected dependencies.
 
 **Key Integration Fields**:
 
-- `git: Git` - Git operations
-- `github: GitHub` - GitHub PR operations
+- `git: Git` - Git operations (branch ops accessed via `git.branch` subgateway)
+- `github: GitHub` - GitHub PR operations (issues via `github.issues`)
+- `github_admin: GitHubAdmin` - GitHub Actions admin operations
 - `graphite: Graphite` - Graphite CLI operations
+- `graphite_branch_ops: GraphiteBranchOps | None` - None when Graphite disabled
+- `console: Console` - TTY detection, user feedback, confirmation prompts
+- `time: Time` - Time abstraction for testability
+- `erk_installation: ErkInstallation` - `~/.erk/` installation data
+- `claude_installation: ClaudeInstallation` - `~/.claude/` installation data
+- `plan_store: PlanStore` - Plan storage operations
+- `prompt_executor: PromptExecutor` - Claude CLI execution
 - `shell: Shell` - Shell detection
 - `completion: Completion` - Shell completion generation
+- `codespace: Codespace` - Codespace operations
+- `agent_launcher: AgentLauncher` - Agent launch operations
 - `script_writer: ScriptWriter` - Activation script generation
+- `codespace_registry: CodespaceRegistry` - Codespace registry
+- `plan_list_service: PlanListService` - Plan listing operations
 
 **Configuration Fields**:
 
 - `global_config: GlobalConfig | None` - Global configuration (may be None during init)
-- `local_config: LoadedConfig | None` - Merged configuration (repo config + local overrides)
+- `local_config: LoadedConfig` - Merged configuration (repo config + local overrides)
 - `dry_run: bool` - Whether to print operations instead of executing
+- `debug: bool` - Whether debug mode is enabled
 
 **Path Fields**:
 
 - `cwd: Path` - Current working directory
 - `repo: RepoContext | NoRepoSentinel` - Repository context
+- `repo_info: RepoInfo | None` - GitHub repo identity (None when not a GitHub repo)
 
 **Factory Methods**:
 
 - `create_context(dry_run=False)` - Production context with real implementations
 - `ErkContext.for_test(...)` - Test context with configurable fakes
 
-See `src/erk/core/context.py` for the canonical definition.
+See `packages/erk-shared/src/erk_shared/context/context.py` for the canonical definition.
 
 ### PRDetails
 
 A frozen dataclass containing comprehensive PR information from a single GitHub API call.
 
-**Location**: `packages/erk-shared/src/erk_shared/github/types.py`
+**Location**: `packages/erk-shared/src/erk_shared/gateway/github/types.py`
 
 **Purpose**: Implements the "Fetch Once, Use Everywhere" pattern - fetch all commonly-needed PR fields in one API call to reduce rate limit consumption.
 
@@ -550,7 +567,7 @@ pr = github.get_pr(owner, repo, pr_number)
 
 A sentinel class returned when a PR lookup fails to find a PR.
 
-**Location**: `packages/erk-shared/src/erk_shared/github/types.py`
+**Location**: `packages/erk-shared/src/erk_shared/gateway/github/types.py`
 
 **Purpose**: Provides LBYL-style error handling for PR lookups. Instead of returning `None` (which loses context) or raising an exception (which violates LBYL), methods return this sentinel that can preserve lookup context.
 
@@ -564,7 +581,7 @@ A sentinel class returned when a PR lookup fails to find a PR.
 **Usage Pattern**:
 
 ```python
-from erk_shared.github.types import PRNotFound
+from erk_shared.gateway.github.types import PRNotFound
 
 pr = github.get_pr_for_branch(repo_root, branch)
 if isinstance(pr, PRNotFound):
@@ -587,7 +604,7 @@ else:
 
 A boolean field on `PullRequestInfo` indicating whether a PR will automatically close its linked issue when merged.
 
-**Location**: `packages/erk-shared/src/erk_shared/github/types.py`
+**Location**: `packages/erk-shared/src/erk_shared/gateway/github/types.py`
 
 **Source**: Derived from GitHub's `CrossReferencedEvent.willCloseTarget` GraphQL field.
 
@@ -648,11 +665,11 @@ yield CompletionEvent(MyResult(success=True, data=data))
 
 **Related**: [Claude CLI Progress Feedback Pattern](architecture/claude-cli-progress.md)
 
-### ClaudeEvent
+### ExecutorEvent
 
-A union type of frozen dataclasses representing events from Claude CLI streaming execution.
+A union type of frozen dataclasses representing events from prompt executor streaming execution.
 
-**Location**: `src/erk/core/claude_executor.py`
+**Location**: `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
 
 **Purpose**: Typed events enabling pattern matching for Claude CLI output processing.
 
@@ -675,7 +692,7 @@ A union type of frozen dataclasses representing events from Claude CLI streaming
 **Union Type**:
 
 ```python
-ClaudeEvent = (
+ExecutorEvent = (
     TextEvent | ToolEvent | SpinnerUpdateEvent |
     PrUrlEvent | PrNumberEvent | PrTitleEvent | IssueNumberEvent |
     ErrorEvent | NoOutputEvent | NoTurnsEvent | ProcessErrorEvent
@@ -739,10 +756,13 @@ class Git(ABC):
 - `Git` - Git operations
 - `GitHub` - GitHub API operations
 - `Graphite` - Graphite CLI operations
-- `ConfigStore` - Configuration operations
 - `Shell` - Shell detection and tool availability
 - `Completion` - Shell completion generation
 - `ScriptWriter` - Activation script generation
+- `Console` - TTY detection and user feedback
+- `Time` - Time abstraction for testability
+- `ErkInstallation` - `~/.erk/` installation data
+- `ClaudeInstallation` - `~/.claude/` installation data
 
 **Purpose**: Abstraction enabling testing with fakes.
 
@@ -1018,7 +1038,7 @@ A special type of implementation plan created by `/erk:learn`. Learn plans captu
 - Issue label: Check for `erk-learn` in `issue.labels`
 - Helper function: `is_issue_learn_plan(labels)` in `src/erk/cli/commands/submit.py`
 - Plan metadata: Check `plan_type: learn` in plan-header
-- PR label: PRs from learn plans have `erk-skip-extraction`
+- PR label: PRs from learn plans have `erk-skip-learn`
 
 **Special Behaviors**:
 
@@ -1187,25 +1207,13 @@ Discriminator for objective behavior:
 
 ### ObjectiveDefinition
 
-A frozen dataclass containing the static configuration for an objective.
+The static configuration for an objective, stored as YAML.
 
 **Location**: `.erk/objectives/<name>/definition.yaml`
 
-**Fields**:
+**Key fields**: `name`, `objective_type` (COMPLETABLE or PERPETUAL), `desired_state`, `rationale`, `examples`, `scope_includes`, `scope_excludes`, `evaluation_prompt`, `plan_sizing_prompt`.
 
-| Field                | Purpose                                       |
-| -------------------- | --------------------------------------------- |
-| `name`               | Unique identifier (kebab-case)                |
-| `objective_type`     | COMPLETABLE or PERPETUAL                      |
-| `desired_state`      | What "done" looks like                        |
-| `rationale`          | Why this objective matters                    |
-| `examples`           | Before/after patterns showing desired changes |
-| `scope_includes`     | Directories/patterns to examine               |
-| `scope_excludes`     | Directories/patterns to skip                  |
-| `evaluation_prompt`  | Instructions for assessing gaps               |
-| `plan_sizing_prompt` | Guidelines for bounding plan size             |
-
-**File**: `packages/erk-shared/src/erk_shared/objectives/types.py`
+**Note**: The typed dataclasses (`ObjectiveDefinition`, `ObjectiveNotes`, `TurnResult`) that previously lived in `packages/erk-shared/src/erk_shared/objectives/types.py` have been removed. The objectives system now operates primarily through YAML definitions and CLI commands. See `src/erk/cli/commands/objective/` for current implementation.
 
 ### ObjectiveNotes
 
@@ -1213,39 +1221,15 @@ Accumulated knowledge from previous turns. Notes persist across future turns, bu
 
 **Location**: `.erk/objectives/<name>/notes.yaml`
 
-**Entry fields**:
+**Entry fields**: `timestamp` (ISO 8601), `content` (the insight), `source_turn` (optional reference).
 
-- `timestamp`: ISO 8601 format
-- `content`: The insight or observation
-- `source_turn`: Optional reference to generating turn
-
-**Purpose**: Prevent rediscovering the same insights. If a previous turn learned "files in vendor/ should be excluded", that knowledge persists.
-
-### TurnResult
-
-A frozen dataclass capturing the outcome of running a turn.
-
-**Fields**:
-
-| Field               | Type          | Description                   |
-| ------------------- | ------------- | ----------------------------- |
-| `objective_name`    | `str`         | Which objective was evaluated |
-| `gap_found`         | `bool`        | Whether work remains          |
-| `gap_description`   | `str \| None` | Human-readable gap summary    |
-| `plan_issue_number` | `int \| None` | GitHub issue created for plan |
-| `plan_issue_url`    | `str \| None` | URL to the created issue      |
-| `timestamp`         | `str`         | ISO 8601 format               |
-
-**File**: `packages/erk-shared/src/erk_shared/objectives/types.py`
+**Purpose**: Prevent rediscovering the same insights across turns.
 
 ### Key Files
 
-| Concern | Location                                                   |
-| ------- | ---------------------------------------------------------- |
-| Types   | `packages/erk-shared/src/erk_shared/objectives/types.py`   |
-| Turn    | `packages/erk-shared/src/erk_shared/objectives/turn.py`    |
-| Storage | `packages/erk-shared/src/erk_shared/objectives/storage.py` |
-| CLI     | `src/erk/cli/commands/objective/`                          |
+| Concern | Location                              |
+| ------- | ------------------------------------- |
+| CLI     | `src/erk/cli/commands/objective/`     |
 
 ---
 
