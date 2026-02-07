@@ -62,7 +62,7 @@ read_when:
 
 ## Collateral Findings
 
-During an audit, the agent reads source code and follows cross-references to other docs. It often discovers issues in those _other_ files. These are **collateral findings** — issues discovered as a side effect of the primary audit.
+Phase 3 of the audit command collects collateral findings — issues in _other_ files discovered while reading source code for the primary audit. See Phase 3 and Phase 3.5 in `.claude/commands/local/audit-doc.md` for full collection logic.
 
 ### Two Tiers
 
@@ -89,24 +89,7 @@ Mechanical findings can be auto-fixed directly.
 
 ### Report Format
 
-Collateral findings appear after the primary audit summary, grouped by severity:
-
-```
-Collateral findings: 4 issues in 3 other files
-
-  CONCEPTUAL:
-  docs/learned/planning/plan-sync-workflow.md:
-    [OS] Describes the 5-step plan sync system — replaced by direct gateway calls.
-         Recommend: /local:audit-doc planning/plan-sync-workflow.md
-
-  MECHANICAL:
-  src/erk/core/subprocess.py:
-    [SC] L45: Comment says "returns list" — actually returns dict. Fix: update comment.
-  docs/learned/architecture/fail-open-patterns.md:
-    [BX] "See also" link to planning/plan-schema.md — file renamed. Fix: update link.
-```
-
-If no collateral findings exist, this section is omitted entirely.
+Collateral findings appear after the primary audit summary, grouped by severity (conceptual first, then mechanical). Each entry shows the abbreviated category tag, file path, and a one-line description with suggested action. See Phase 5 in `.claude/commands/local/audit-doc.md` for the exact output format.
 
 ### Auto-apply vs Interactive
 
