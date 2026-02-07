@@ -6,6 +6,8 @@ read_when:
   - "understanding ~/.claude/projects/ structure"
   - "debugging session lookup issues"
   - "implementing features that depend on project directory resolution"
+last_audited: "2026-02-07 14:08 PT"
+audit_result: edited
 ---
 
 # Claude Code Session Layout
@@ -73,8 +75,8 @@ Project directories use **deterministic path encoding**:
 
 **Implementation:**
 
-- Primary: `encode_path_to_project_folder()` in `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/find_project_dir.py:87-108`
-- Session extraction: `_get_project_dir()` in `packages/erk-shared/src/erk_shared/extraction/claude_installation/real.py`
+- Primary: `encode_path_to_project_folder()` in `src/erk/cli/commands/exec/scripts/find_project_dir.py`
+- Session extraction: `_get_project_dir()` in `packages/erk-shared/src/erk_shared/gateway/claude_installation/real.py`
 
 ### Complete Directory Tree
 
@@ -120,7 +122,7 @@ Project directories use **deterministic path encoding**:
 
 **Discovery:** Agent logs match the pattern `agent-*.jsonl` in the project directory.
 
-See `preprocess_session.py:discover_agent_logs()` for the canonical implementation.
+See `discover_agent_logs()` in `src/erk/cli/commands/exec/scripts/preprocess_session.py` for the canonical implementation.
 
 ## JSONL Format Specification
 
@@ -257,7 +259,7 @@ The slug field enables session-scoped plan extraction:
 2. Find assistant entries with a `slug` field
 3. Use the most recent slug to locate the plan file
 
-**Implementation:** See `extract_slugs_from_session()` in `packages/erk-shared/src/erk_shared/extraction/claude_installation/real.py`
+**Implementation:** See `extract_slugs_from_session()` in `packages/erk-shared/src/erk_shared/gateway/claude_installation/real.py`
 
 ## Session and Agent IDs
 
@@ -376,7 +378,7 @@ Compaction boundaries are identified by `type: "summary"` entries in the JSONL l
 
 To persist data across context compactions, use the session-scoped scratch directory at `.erk/scratch/sessions/<session-id>/`. This directory remains accessible throughout the session lifetime, even after compaction.
 
-See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implementation.
+See `get_scratch_dir()` in `packages/erk-shared/src/erk_shared/scratch/scratch.py` for the canonical implementation.
 
 ## Key Algorithms
 
@@ -397,7 +399,7 @@ See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implemen
 
 **CLI:** Use `erk exec find-project-dir` to find the project directory for the current working directory.
 
-**Implementation:** See `RealClaudeCodeSessionStore._get_project_dir()` in `packages/erk-shared/src/erk_shared/extraction/claude_code_session_store/real.py`
+**Implementation:** See `RealClaudeInstallation._get_project_dir()` in `packages/erk-shared/src/erk_shared/gateway/claude_installation/real.py`
 
 ### Finding Project Directory for Session ID
 
@@ -411,7 +413,7 @@ See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implemen
 4. Parse JSON and check if `sessionId` field matches
 5. Return project directory when match found
 
-**Implementation:** See `_get_project_dir()` in `packages/erk-shared/src/erk_shared/extraction/claude_installation/real.py`
+**Implementation:** See `_get_project_dir()` in `packages/erk-shared/src/erk_shared/gateway/claude_installation/real.py`
 
 ### cwd_hint Optimization Pattern
 
@@ -441,7 +443,7 @@ See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implemen
 - Kit commands: Working directory from context
 - Agent subprocesses: `cwd` field in session log entries
 
-**Implementation:** See `_get_project_dir()` in `packages/erk-shared/src/erk_shared/extraction/claude_installation/real.py`
+**Implementation:** See `_get_project_dir()` in `packages/erk-shared/src/erk_shared/gateway/claude_installation/real.py`
 
 ### Discovering Latest Session
 
@@ -456,7 +458,7 @@ See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implemen
 
 **CLI:** Use `erk exec find-project-dir` which outputs the latest session ID.
 
-**Implementation:** Part of `find_project_info()` in `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/find_project_dir.py`
+**Implementation:** Part of `find_project_info()` in `src/erk/cli/commands/exec/scripts/find_project_dir.py`
 
 ### Correlating Agent Logs with Session
 
@@ -470,7 +472,7 @@ Plan agents are matched using timestamp proximity:
 
 - Match agent log timestamps within 1 second of Task tool invocations
 - Used specifically for Plan subagents
-- See `discover_planning_agent_logs()` in `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/preprocess_session.py:542-623`
+- See `discover_planning_agent_logs()` in `src/erk/cli/commands/exec/scripts/preprocess_session.py`
 
 ### Reading Session Entries
 
@@ -523,7 +525,7 @@ For quick inspection, use `jq` or Python's `json` module directly on the command
 - Code handles missing `sessionId` gracefully
 - Includes entries without `sessionId` when filtering
 
-See `preprocess_session.py` for the canonical implementation.
+See `src/erk/cli/commands/exec/scripts/preprocess_session.py` for the canonical implementation.
 
 ### Empty and Warmup Sessions
 
@@ -532,7 +534,7 @@ See `preprocess_session.py` for the canonical implementation.
 - **Empty:** < 3 entries OR no meaningful user/assistant interaction
 - **Warmup:** Contains "warmup" keyword in first user message
 
-**Implementation:** See `is_empty_session()` in `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/preprocess_session.py`
+**Implementation:** See `is_empty_session()` in `src/erk/cli/commands/exec/scripts/preprocess_session.py`
 
 ### Warmup Agents (Deep Dive)
 
@@ -592,12 +594,12 @@ The Claude Code VSCode extension has known issues with warmup sessions:
 
 ### Core Modules
 
-| Module                        | Path                                                                 | Purpose                                   |
-| ----------------------------- | -------------------------------------------------------------------- | ----------------------------------------- |
-| `find_project_dir.py`         | `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/` | Project directory discovery and encoding  |
-| `preprocess_session.py`       | `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/` | Session log preprocessing and compression |
-| `session_plan_extractor.py`   | `packages/erk-kits/src/erk_kits/data/kits/erk/`                      | Extract plans from session logs           |
-| `session_id_injector_hook.py` | `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/` | Inject session ID into context            |
+| Module                        | Path                                            | Purpose                                   |
+| ----------------------------- | ----------------------------------------------- | ----------------------------------------- |
+| `find_project_dir.py`         | `src/erk/cli/commands/exec/scripts/`            | Project directory discovery and encoding  |
+| `preprocess_session.py`       | `src/erk/cli/commands/exec/scripts/`            | Session log preprocessing and compression |
+| `session_id_injector_hook.py` | `src/erk/cli/commands/exec/scripts/`            | Inject session ID into context            |
+| `real.py` (ClaudeInstallation)| `packages/erk-shared/src/erk_shared/gateway/claude_installation/` | Session/slug extraction gateway |
 
 ### Test Files
 
@@ -673,7 +675,7 @@ cat session.jsonl | jq -s '.[0]'    # First entry
 
 Agent logs are linked to parent sessions via the `sessionId` field. To find agent logs for a session, glob `agent-*.jsonl` files and check the first few entries for a matching `sessionId`.
 
-**Implementation:** See `discover_planning_agent_logs()` in `preprocess_session.py`
+**Implementation:** See `discover_planning_agent_logs()` in `src/erk/cli/commands/exec/scripts/preprocess_session.py`
 
 ### Session Summarization Patterns
 
@@ -687,7 +689,7 @@ Session summarization involves extracting key information from session logs:
 These patterns are useful for session analysis and debugging. For automated analysis, use:
 
 ```bash
-/erk:analyze-context
+/local:analyze-context
 ```
 
 ## Examples

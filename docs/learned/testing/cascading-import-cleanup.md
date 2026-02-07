@@ -4,6 +4,9 @@ read_when:
   - "removing modules from codebase"
   - "import errors after module deletion"
   - "cleaning up removed functionality"
+last_audited: "2026-02-07 13:52 PT"
+audit_result: consider_deleting
+audit_notes: "85% duplicative (generic Python advice), 0% high-value, all code examples use nonexistent paths. Flagged for manual review."
 ---
 
 # Cascading Import Cleanup Guide

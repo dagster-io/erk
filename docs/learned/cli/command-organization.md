@@ -4,6 +4,8 @@ read_when:
   - "organizing CLI commands"
   - "understanding command structure"
   - "designing command hierarchies"
+last_audited: "2026-02-07 14:05 PT"
+audit_result: edited
 ---
 
 # CLI Command Organization
@@ -16,39 +18,57 @@ Erk's CLI is organized around the principle that **plans are the dominant noun**
 
 Plans represent implementation work to be done. Since users interact with plans more frequently than they manipulate worktrees or stacks directly, plan-related commands are placed at the top level for minimal keystrokes and maximum discoverability.
 
-**Top-level plan commands:**
+**Top-level commands (truly top-level in `cli.py`):**
 
 ```bash
-erk create        # Create a new plan issue
-erk get           # View a plan
+erk implement     # Implement a plan (alias: erk impl)
 erk dash          # Display plan dashboard
-erk close         # Close a plan
-erk implement     # Implement a plan
-erk plan submit   # Submit a plan for remote execution
-erk log           # View plan execution logs
+erk up            # Navigate to parent branch
+erk down          # Navigate to child branch
 ```
 
-**Why top-level?**
+**Plan group commands (`erk plan <verb>`):**
 
-- High-frequency operations: Users create, view, and implement plans constantly
-- Natural mental model: "I want to work on a plan" → `erk implement 42`
-- Minimal friction: 2 words instead of 3 (`erk plan get` → `erk get`)
+```bash
+erk plan create   # Create a new plan issue
+erk plan view     # View a plan
+erk plan close    # Close a plan
+erk plan submit   # Submit a plan for remote execution
+erk plan log      # View plan execution history
+erk plan list     # List plans
+```
+
+**Why `implement` is top-level but others are grouped:**
+
+- `implement` is the highest-frequency plan operation
+- Other plan operations share a clear "plan" noun → natural grouping
+- See `src/erk/cli/cli.py` for the full registration
 
 ## Command Categories
 
-### Top-Level Plan Operations
+### Top-Level Commands
 
-Plan commands appear at the top level without a noun prefix:
+High-frequency commands registered directly on the CLI root:
 
-| Command     | Description                     | Frequency |
-| ----------- | ------------------------------- | --------- |
-| `dash`      | Display plan dashboard          | Very High |
-| `get`       | View plan details               | High      |
-| `create`    | Create new plan issue           | High      |
-| `close`     | Close a plan                    | Medium    |
-| `implement` | Start implementing a plan       | Very High |
-| `submit`    | Queue plan for remote execution | High      |
-| `log`       | View plan execution history     | Medium    |
+| Command     | Description                 | Frequency |
+| ----------- | --------------------------- | --------- |
+| `implement` | Start implementing a plan   | Very High |
+| `dash`      | Display plan dashboard      | Very High |
+| `up`        | Navigate to parent branch   | Very High |
+| `down`      | Navigate to child branch    | Very High |
+
+### Plan Group (`erk plan <verb>`)
+
+Plan management commands grouped under the `plan` noun:
+
+| Command        | Description                     | Frequency |
+| -------------- | ------------------------------- | --------- |
+| `plan create`  | Create new plan issue           | High      |
+| `plan view`    | View plan details               | High      |
+| `plan close`   | Close a plan                    | Medium    |
+| `plan submit`  | Queue plan for remote execution | High      |
+| `plan log`     | View plan execution history     | Medium    |
+| `plan list`    | List plans                      | Medium    |
 
 ### Grouped Commands
 
@@ -62,7 +82,8 @@ Worktree manipulation is a supporting operation, not the primary workflow:
 erk wt create <name>        # Create a new worktree
 erk wt delete <name>        # Delete a worktree
 erk wt list                 # List worktrees
-erk wt prune                # Clean up stale worktrees
+erk wt rename               # Rename a worktree
+erk wt status               # Show worktree status
 ```
 
 **Why grouped?**
@@ -76,9 +97,9 @@ erk wt prune                # Clean up stale worktrees
 Graphite stack management for dependent branches:
 
 ```bash
-erk stack submit           # Submit entire stack
-erk stack sync             # Sync stack with remote
-erk stack restack          # Rebase stack on trunk
+erk stack consolidate      # Consolidate stack branches
+erk stack move             # Move branch within stack
+erk stack split            # Split a branch in the stack
 ```
 
 **Why grouped?**
@@ -149,7 +170,7 @@ When adding a new command, use this flowchart to determine placement:
               │ NO
         ┌─────▼───────────────────────────────┐
         │ Is this Graphite stack management?   │
-        │ (restack, sync, submit stack)        │
+        │ (consolidate, move, split)           │
         └─────────┬───────────────────────────┘
                   │
             ┌─────▼─────┐
@@ -158,7 +179,7 @@ When adding a new command, use this flowchart to determine placement:
                   │
             ┌─────▼────────────────────────────┐
             │ Group under `erk stack <verb>`    │
-            │ Examples: stack submit, stack sync│
+            │ Examples: stack consolidate, move │
             └───────────────────────────────────┘
 
                   │ NO
@@ -186,21 +207,19 @@ When adding a new command, use this flowchart to determine placement:
 
 ## Good Patterns
 
-### ✅ Plan Operations at Top Level
+### ✅ Highest-Frequency Operations at Top Level
 
 ```bash
-# GOOD: Direct, minimal keystrokes
-erk create --file plan.md
+# GOOD: implement is top-level for minimal keystrokes
 erk implement 42
-erk get 42
+erk dash
 
-# BAD: Unnecessary grouping adds friction
+# Other plan operations use the plan group
 erk plan create --file plan.md
-erk plan implement 42
-erk plan get 42
+erk plan view 42
 ```
 
-**Why?** Plans are the primary workflow object. Extra nesting adds cognitive load.
+**Why?** `implement` is the most frequent operation. Other plan commands benefit from the `plan` namespace for clarity and discoverability.
 
 ### ✅ Infrastructure Grouped Under Noun
 
@@ -208,12 +227,12 @@ erk plan get 42
 # GOOD: Clear namespace, infrastructure is grouped
 erk wt create my-feature
 erk wt delete old-feature
-erk stack restack
+erk stack consolidate
 
 # BAD: Conflicts with plan operations, unclear ownership
 erk create my-feature     # Is this a plan or worktree?
 erk delete old-feature    # What am I deleting?
-erk restack               # Restack what?
+erk consolidate           # Consolidate what?
 ```
 
 **Why?** Grouping clarifies the target domain and prevents naming collisions.
@@ -236,18 +255,14 @@ erk nav down
 
 ## Anti-Patterns
 
-### ❌ Grouping High-Frequency Operations
+### ❌ Grouping the Highest-Frequency Operation
 
 ```bash
-# BAD: Adds friction to common operations
-erk plan create
-erk plan implement
-erk plan get
+# BAD: Adds friction to the most common operation
+erk plan implement 42
 
-# GOOD: Direct access for frequent tasks
-erk create
-erk implement
-erk get
+# GOOD: Top-level for implement since it's the most frequent
+erk implement 42
 ```
 
 ### ❌ Top-Level Infrastructure Commands
@@ -258,9 +273,9 @@ erk create <name>         # Create what? Plan or worktree?
 erk delete <name>         # Delete what?
 
 # GOOD: Explicit namespace
-erk create --file plan.md  # Clearly a plan
-erk wt create <name>       # Clearly a worktree
-erk wt delete <name>       # Clearly a worktree
+erk plan create --file plan.md  # Clearly a plan
+erk wt create <name>            # Clearly a worktree
+erk wt delete <name>            # Clearly a worktree
 ```
 
 ### ❌ Inconsistent Grouping
@@ -283,11 +298,11 @@ erk wt list
 
 ```bash
 # Create a plan
-erk create --file implementation-plan.md
+erk plan create --file implementation-plan.md
 
 # View plans
 erk dash                  # Display plan dashboard
-erk get 42                # View specific plan
+erk plan view 42          # View specific plan
 
 # Work on a plan
 erk implement 42          # Create worktree and start work
@@ -296,11 +311,10 @@ erk implement 42          # Create worktree and start work
 erk plan submit 42        # Queue for remote execution
 
 # Track progress
-erk log 42                # View execution history
-erk status                # Current worktree status
+erk plan log 42           # View execution history
 
 # Finish
-erk close 42              # Close completed plan
+erk plan close 42         # Close completed plan
 ```
 
 ### Worktree Management
@@ -314,7 +328,6 @@ erk wt list               # List worktrees
 
 # Clean up
 erk wt delete my-feature
-erk wt prune              # Remove stale worktrees
 ```
 
 ### Navigation
@@ -343,21 +356,7 @@ erk down                  # Move to child branch
 
 **Step 3: Register in `src/erk/cli/cli.py`**
 
-For plan commands (top-level):
-
-```python
-from erk.cli.commands.plan.create_cmd import create_plan
-
-cli.add_command(create_plan, name="create")  # Plan command
-```
-
-For grouped commands:
-
-```python
-from erk.cli.commands.wt.create_cmd import create_wt
-
-wt_group.add_command(create_wt)  # Grouped under wt
-```
+See `src/erk/cli/cli.py` for top-level registration and `src/erk/cli/commands/plan/__init__.py` for plan group registration. Commands with aliases use `register_with_aliases()` from `erk.cli.alias`.
 
 **Step 4: Add tests**
 
@@ -367,18 +366,18 @@ wt_group.add_command(create_wt)  # Grouped under wt
 
 ### Code Locations
 
-| Component         | Location                                     |
-| ----------------- | -------------------------------------------- |
-| CLI entry point   | `src/erk/cli/cli.py`                         |
-| Plan commands     | `src/erk/cli/commands/plan/`                 |
-| Worktree commands | `src/erk/cli/commands/wt/`                   |
-| Stack commands    | `src/erk/cli/commands/stack/`                |
-| Navigation        | `src/erk/cli/commands/{checkout,up,down}.py` |
-| Setup             | `src/erk/cli/commands/{init,config}.py`      |
+| Component         | Location                              |
+| ----------------- | ------------------------------------- |
+| CLI entry point   | `src/erk/cli/cli.py`                  |
+| Plan commands     | `src/erk/cli/commands/plan/`          |
+| Worktree commands | `src/erk/cli/commands/wt/`            |
+| Stack commands    | `src/erk/cli/commands/stack/`         |
+| Navigation        | `src/erk/cli/commands/{up,down}.py`   |
+| Branch group      | `src/erk/cli/commands/branch/`        |
+| Setup             | `src/erk/cli/commands/init/`          |
+| Config            | `src/erk/cli/commands/config.py`      |
 
 ## Related Documentation
 
-- [Kit CLI Commands](../kits/cli-commands.md) - Kit-based command patterns
 - [CLI Output Styling](output-styling.md) - Output formatting guidelines
-- [CLI Script Mode](script-mode.md) - Shell integration patterns
 - [Command Agent Delegation](../planning/agent-delegation.md) - When to delegate to agents

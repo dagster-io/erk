@@ -4,6 +4,8 @@ read_when:
   - "reducing command file size"
   - "using @ reference in commands"
   - "modularizing command content"
+last_audited: "2026-02-07 13:58 PT"
+audit_result: edited
 ---
 
 # Command Optimization Patterns
@@ -42,11 +44,11 @@ For each phase, follow the guide above.
 
 ### Valid Locations
 
-| Location          | Example                                 | Notes                  |
-| ----------------- | --------------------------------------- | ---------------------- |
-| `.claude/skills/` | `@.claude/skills/ci-iteration/SKILL.md` | Project-specific skill |
-| Kit docs          | `@docs/erk/execution-guide.md`          | Relative to kit root   |
-| Relative path     | `@../shared/common.md`                  | From command location  |
+| Location              | Example                                 | Notes                       |
+| --------------------- | --------------------------------------- | --------------------------- |
+| `.claude/skills/`     | `@.claude/skills/ci-iteration/SKILL.md` | Project-specific skill      |
+| `docs/learned/`       | `@docs/learned/testing/testing.md`      | Learned documentation       |
+| Relative path         | `@../shared/common.md`                  | From command location       |
 
 ### Real Example: /fast-ci
 
@@ -122,7 +124,8 @@ Look for:
 
 **Placement:**
 
-- Kit commands: `docs/<kit-name>/<command-name>/`
+- Skills directory: `.claude/skills/<skill-name>/`
+- Learned docs: `docs/learned/<category>/`
 
 ### Step 3: Replace with Reference
 
@@ -159,16 +162,6 @@ For each phase:
 2. Implement code AND tests
 3. Mark complete
 ```
-
-### Step 4: Build Artifacts
-
-After creating the external doc, run:
-
-```bash
-erk dev kit-build
-```
-
-This syncs the documentation to kit packages.
 
 ## Size Targets
 
@@ -226,15 +219,6 @@ wc -c .claude/commands/my-command.md
 # DO: Group related content
 
 @docs/execution-workflow.md
-```
-
-### Forgetting to Build
-
-```bash
-# DON'T: Create doc without building
-
-# DO: Run kit-build after creating docs
-erk dev kit-build
 ```
 
 ## Case Study: /erk:plan-implement

@@ -4,6 +4,8 @@ read_when:
   - "delegating to agents from commands"
   - "implementing command-agent pattern"
   - "workflow orchestration"
+last_audited: "2026-02-07 14:05 PT"
+audit_result: edited
 ---
 
 # Command-Agent Delegation Pattern
@@ -63,7 +65,7 @@ Does command orchestrate 3+ steps?
 | Scenario                                                        | Delegate? | Rationale                                                                        |
 | --------------------------------------------------------------- | --------- | -------------------------------------------------------------------------------- |
 | Run pytest with specialized output parsing                      | ✅ Yes    | Complex parsing, multiple tools (devrun agent)                                   |
-| Create worktree with validation, JSON parsing, formatted output | ✅ Yes    | Multi-step workflow with error handling (planned-wt-creator)                     |
+| Create worktree with validation, JSON parsing, formatted output | ✅ Yes    | Multi-step workflow with error handling                                           |
 | Submit branch: stage, diff analysis, commit, PR creation        | ❌ No     | Consolidated into inline command (sequential workflow, no complex orchestration) |
 | Run single git command with no processing                       | ❌ No     | Simple wrapper, no orchestration needed                                          |
 | Display help text or documentation                              | ❌ No     | No workflow, just content display                                                |
@@ -118,10 +120,6 @@ prompt="Run unit tests with pytest, then run ty. Fix any failures iteratively."
 
 **When to use:** Command manages a multi-step workflow with dependencies between steps.
 
-**Examples:**
-
-- `/erk:create-wt-from-plan-file` → `planned-wt-creator` agent
-
 **Characteristics:**
 
 - Agent coordinates multiple tools in sequence
@@ -129,35 +127,6 @@ prompt="Run unit tests with pytest, then run ty. Fix any failures iteratively."
 - Complex error handling at each step
 - Rich user feedback throughout workflow
 - Typically uses haiku model for cost efficiency
-
-**Command structure:**
-
-```markdown
----
-description: Create worktree from existing plan file on disk
----
-
-# /erk:create-wt-from-plan-file
-
-Create a erk worktree from an existing plan file on disk.
-
-## What This Command Does
-
-Delegates the complete worktree creation workflow to the `planned-wt-creator` agent, which handles:
-
-1. Auto-detect most recent plan file at repository root
-2. Validate plan file (exists, readable, not empty)
-3. Run `erk create --from-plan-file` with JSON output
-4. Display plan location and next steps
-
-## Implementation
-
-Task(
-subagent_type="planned-wt-creator",
-description="Create worktree from plan",
-prompt="Execute the complete planned worktree creation workflow"
-)
-```
 
 **Agent responsibilities:**
 
@@ -354,18 +323,9 @@ The agent handles all workflow orchestration, error handling, and result reporti
 
 ````
 
-### Step 5: Add to Kit Registry (if bundled)
+### Step 5: Register Agent
 
-If the agent is part of a kit (not project-specific), update the kit registry:
-
-**File:** `.erk/kits/<kit-name>/registry-entry.md`
-
-Add agent documentation:
-```markdown
-### Agents
-
-- **agent-name** - [Description]. Use Task tool with `subagent_type="agent-name"`.
-````
+Place the agent file in `.claude/agents/` (or a subdirectory for categorization). The agent's `name` field in frontmatter must be unique across all agents.
 
 ## Agent Specifications
 
@@ -435,7 +395,7 @@ Agents can specify which tools they need:
 
 **Pattern:** Simple tool delegation
 
-**Command:** `.claude/commands/fast-ci.md` (minimal)
+**Command:** `.claude/commands/local/fast-ci.md`
 
 ```markdown
 Delegates to devrun agent to run pytest and pyright iteratively.
@@ -450,25 +410,13 @@ Delegates to devrun agent to run pytest and pyright iteratively.
 
 **Key insight:** One agent serves multiple commands by accepting different tool invocations.
 
-### Example 2: /erk:create-wt-from-plan-file → planned-wt-creator
+### Example 2: Historical - /erk:create-wt-from-plan-file → planned-wt-creator
 
-⚠️ **Note:** This command is now deprecated. The recommended workflow is to use `erk implement <issue>` instead, which creates worktrees directly from GitHub issues. This example is preserved for architectural reference.
+**Note:** Both the command and agent have been deleted from the codebase. The recommended workflow is `erk implement <issue>`. This example is preserved as an architectural reference for the workflow orchestration delegation pattern.
 
-**Pattern:** Workflow orchestration
+**Pattern:** Workflow orchestration - the command was reduced from 338 lines to 42 lines by delegating all orchestration to the agent.
 
-**Command:** `packages/erk-kits/src/erk_kits/data/kits/erk/commands/erk/create-wt-from-plan-file.md` (42 lines)
-
-- Reduced from 338 lines (87% reduction)
-- All orchestration moved to agent
-
-**Agent:** `.claude/agents/erk/planned-wt-creator.md`
-
-- Plan file detection and validation
-- Worktree creation via erk CLI
-- JSON output parsing
-- Next steps display
-
-**Key insight:** Delegation enables massive simplification of command while maintaining all functionality.
+**Key insight:** Delegation enables massive simplification of commands while maintaining all functionality.
 
 ## Anti-Patterns
 
@@ -615,17 +563,16 @@ Documentation follows a progressive disclosure model:
 1. **Quick reference** - AGENTS.md checklist entry
    - One line: "Creating command that orchestrates workflow → command-agent-delegation.md"
 
-2. **Pattern documentation** - This document (docs/agent/planning/agent-delegation.md)
+2. **Pattern documentation** - This document (`docs/learned/planning/agent-delegation.md`)
    - Complete patterns, examples, anti-patterns
 
 3. **Implementation examples** - Actual commands and agents in codebase
-   - `/fast-ci` → `devrun` (simple delegation)
-   - `/erk:create-wt-from-plan-file` → `planned-wt-creator` (workflow orchestration)
+   - `/fast-ci` → `devrun` (simple delegation, see `.claude/commands/local/fast-ci.md`)
 
 **Navigation:**
 
 - `AGENTS.md` → Quick lookup during coding
-- `docs/agent/guide.md` → Navigation hub to all documentation
+- `docs/learned/guide.md` → Navigation hub to all documentation
 - This doc → Complete delegation pattern reference
 
 ## Summary
@@ -642,7 +589,7 @@ Documentation follows a progressive disclosure model:
 1. Create agent with frontmatter and workflow steps
 2. Implement comprehensive error handling
 3. Update command to delegation-only (<50 lines)
-4. Add agent to kit registry if bundled
+4. Place agent in `.claude/agents/`
 
 **Key principles:**
 

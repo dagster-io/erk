@@ -4,6 +4,8 @@ read_when:
   - "creating a new command group"
   - "adding commands to an existing group"
   - "understanding command file organization"
+last_audited: "2026-02-07 13:50 PT"
+audit_result: edited
 ---
 
 # CLI Command Group Structure
@@ -23,44 +25,51 @@ src/erk/cli/commands/
 
 ## Group Definition Pattern
 
-The `__init__.py` defines the group and registers commands:
+The `__init__.py` defines the group and registers commands using `register_with_aliases`:
 
 ```python
-"""Objective command group for managing long-running goals."""
+"""Objective management commands."""
 
 import click
 
-from erk.cli.commands.objective.get_cmd import get_objective
+from erk.cli.alias import register_with_aliases
+from erk.cli.commands.objective.check_cmd import check_objective
+from erk.cli.commands.objective.close_cmd import close_objective
 from erk.cli.commands.objective.list_cmd import list_objectives
-from erk.cli.commands.objective.turn_cmd import turn_objective
+from erk.cli.help_formatter import ErkCommandGroup
 
 
-@click.group("objective")
+@click.group("objective", cls=ErkCommandGroup)
 def objective_group() -> None:
-    """Manage objectives."""
+    """Manage objectives (multi-PR coordination issues)."""
     pass
 
 
-objective_group.add_command(list_objectives, name="list")
-objective_group.add_command(get_objective, name="get")
-objective_group.add_command(turn_objective, name="turn")
+register_with_aliases(objective_group, check_objective)
+register_with_aliases(objective_group, close_objective)
+register_with_aliases(objective_group, list_objectives)
 ```
+
+Key details:
+
+- Use `cls=ErkCommandGroup` in `@click.group()` for consistent help formatting
+- Use `register_with_aliases()` (not `add_command()`) to support command aliases
 
 ## Naming Conventions
 
-| Element           | Pattern         | Example                                       |
-| ----------------- | --------------- | --------------------------------------------- |
-| Group function    | `{noun}_group`  | `objective_group`, `plan_group`, `wt_group`   |
-| Command files     | `{verb}_cmd.py` | `create_cmd.py`, `turn_cmd.py`, `list_cmd.py` |
-| Command functions | `{verb}_{noun}` | `create_objective`, `turn_objective`          |
+| Element           | Pattern         | Example                                         |
+| ----------------- | --------------- | ----------------------------------------------- |
+| Group function    | `{noun}_group`  | `objective_group`, `plan_group`, `wt_group`     |
+| Command files     | `{verb}_cmd.py` | `check_cmd.py`, `close_cmd.py`, `list_cmd.py`   |
+| Command functions | `{verb}_{noun}` | `check_objective`, `close_objective`             |
 
 ## Individual Command Pattern
 
 Each command lives in its own `*_cmd.py` file:
 
 ```python
-# src/erk/cli/commands/objective/turn_cmd.py
-"""Turn command for evaluating objectives."""
+# src/erk/cli/commands/objective/check_cmd.py
+"""Check command for verifying objective state."""
 
 import click
 
@@ -68,10 +77,9 @@ from erk.core.context import ErkContext
 
 
 @click.command()
-@click.argument("objective_name")
 @click.pass_obj
-def turn_objective(ctx: ErkContext, objective_name: str) -> None:
-    """Run a turn to evaluate objective state and generate plans."""
+def check_objective(ctx: ErkContext) -> None:
+    """Check objective status."""
     # Implementation...
 ```
 
@@ -82,7 +90,7 @@ Groups are registered in `src/erk/cli/cli.py`:
 ```python
 from erk.cli.commands.objective import objective_group
 
-cli.add_command(objective_group, name="objective")
+cli.add_command(objective_group)
 ```
 
 ## Examples in Codebase
@@ -98,15 +106,15 @@ cli.add_command(objective_group, name="objective")
 
 1. Create `src/erk/cli/commands/{group}/{verb}_cmd.py`
 2. Import and register in `src/erk/cli/commands/{group}/__init__.py`
-3. Add test in `tests/commands/{group}/test_{verb}.py`
+3. Add tests for the new command
 
 ## Creating a New Command Group
 
 1. Create directory: `src/erk/cli/commands/{noun}/`
-2. Create `__init__.py` with group definition
+2. Create `__init__.py` with group definition (use `cls=ErkCommandGroup`, `register_with_aliases`)
 3. Create command files: `{verb}_cmd.py`
 4. Register group in `src/erk/cli/cli.py`
-5. Create test directory: `tests/commands/{noun}/`
+5. Add tests for the new commands
 
 ## Related Documentation
 

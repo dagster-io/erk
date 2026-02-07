@@ -1,5 +1,7 @@
 ---
 title: Git and Graphite Edge Cases Catalog
+last_audited: "2026-02-07 13:52 PT"
+audit_result: edited
 read_when:
   - "debugging unexpected git/gt behavior"
   - "handling rebase/restack edge cases"
@@ -28,26 +30,9 @@ This document catalogs surprising edge cases and quirks discovered when working 
 
 **Why It's Surprising**: One might assume that if `.git/rebase-merge/` doesn't exist, the rebase either completed successfully or was aborted. This is NOT true - it can be in a "half-finished" broken state.
 
-**Detection Pattern**:
+**Detection Pattern**: Don't assume no rebase dirs means clean state. After checking `git.rebase.is_rebase_in_progress(cwd)`, also check for unmerged files via `git.status.get_conflicted_files(cwd)`.
 
-```python
-# WRONG: Assuming no rebase dirs = clean state
-if not ops.git.is_rebase_in_progress(cwd):
-    # Might still have unmerged files!
-    pass
-
-# CORRECT: Check for unmerged files explicitly
-status_result = subprocess.run(
-    ["git", "-C", str(cwd), "status", "--porcelain"],
-    capture_output=True, text=True, check=False,
-)
-unmerged_prefixes = ("UU", "AA", "DD", "AU", "UA", "DU", "UD")
-unmerged_files = [
-    line[3:] for line in status_lines if line[:2] in unmerged_prefixes
-]
-```
-
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/restack_finalize.py`
+See `GitRebaseOps.is_rebase_in_progress()` in `packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/` and `GitStatusOps.get_conflicted_files()` in `packages/erk-shared/src/erk_shared/gateway/git/status_ops/` for the current implementations.
 
 ## Transient Dirty State After Rebase
 
@@ -57,17 +42,7 @@ unmerged_files = [
 - Git rebase temp files not yet removed
 - File system sync delays
 
-**Workaround**: Retry with brief delay (100ms) before failing.
-
-```python
-if not ops.git.is_worktree_clean(cwd):
-    ops.time.sleep(0.1)  # Brief delay for transient files
-    if not ops.git.is_worktree_clean(cwd):
-        # Now it's actually dirty
-        yield CompletionEvent(RestackFinalizeError(...))
-```
-
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/restack_finalize.py`
+**Workaround**: Retry with brief delay (100ms) using `context.time.sleep(0.1)` before failing. Check `git.worktree.is_worktree_clean(cwd)` again after the delay to distinguish transient from real dirty state.
 
 ## Unmerged File Status Codes
 
@@ -87,17 +62,7 @@ All indicate files needing manual resolution before the rebase can continue.
 
 ## Detached HEAD Detection
 
-**Pattern**: Check if HEAD is detached (not pointing to a branch):
-
-```python
-symbolic_result = subprocess.run(
-    ["git", "-C", str(cwd), "symbolic-ref", "-q", "HEAD"],
-    capture_output=True, text=True, check=False,
-)
-is_detached = symbolic_result.returncode != 0
-```
-
-`git rev-parse --abbrev-ref HEAD` returns "HEAD" when detached, but using `symbolic-ref` is more explicit.
+**Pattern**: To check if HEAD is detached, use `git symbolic-ref -q HEAD` (returns non-zero exit code when detached). This is more explicit than `git rev-parse --abbrev-ref HEAD` which returns the literal string "HEAD" when detached. See `GitBranchOps` in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/` for erk's branch query operations.
 
 ## Git Index Lock and Worktree Concurrency
 
@@ -121,43 +86,11 @@ is_detached = symbolic_result.returncode != 0
 - The file contains: `gitdir: /main/repo/.git/worktrees/<name>`
 - The worktree's admin directory contains `index`, `HEAD`, and a `commondir` file pointing to the shared repo
 
-**Robust Lock File Resolution**:
-
-Use `git rev-parse --git-path` to let Git resolve paths correctly for any layout:
-
-```python
-import subprocess
-from pathlib import Path
-
-def git_path(repo_root: Path, rel: str) -> Path:
-    """Let Git resolve the correct path for this worktree."""
-    out = subprocess.check_output(
-        ["git", "-C", str(repo_root), "rev-parse", "--git-path", rel],
-        text=True,
-    ).strip()
-    return Path(out)
-
-def wait_for_index_lock(repo_root: Path, time: Time, *, max_wait_seconds: float = 5.0) -> bool:
-    """Wait for index.lock to be released."""
-    lock_file = git_path(repo_root, "index.lock")
-    elapsed = 0.0
-    while lock_file.exists() and elapsed < max_wait_seconds:
-        time.sleep(0.5)
-        elapsed += 0.5
-    return not lock_file.exists()
-```
-
-This handles all cases:
-
-- Normal repos (`.git` directory)
-- Linked worktrees (`.git` file → per-worktree admin dir)
-- Uncommon layouts (`$GIT_DIR`, `$GIT_COMMON_DIR`)
+**Robust Lock File Resolution**: Use `git rev-parse --git-path index.lock` to let Git resolve the lock path correctly for any repository layout (normal repos, linked worktrees, custom `$GIT_DIR`). See `get_lock_path()` and `wait_for_index_lock()` in `packages/erk-shared/src/erk_shared/gateway/git/lock.py` for the production implementation.
 
 **Anti-Pattern**: Don't manually parse `.git` files and compute paths with `parent.parent`. The worktree admin directory structure can vary, and Git uses `commondir` files for indirection.
 
 **When to Use**: Apply lock-waiting to operations that modify the index (`checkout`, `add`, `commit`, `reset`, etc.) when running concurrent git commands in the same worktree or when updating shared refs across worktrees.
-
-**Implementation Reference**: `packages/erk-shared/src/erk_shared/git/lock.py`
 
 ## Graphite Interactive Mode Hangs
 
@@ -197,26 +130,11 @@ gt restack --no-interactive
 
 **Why It's Surprising**: Git and Graphite are often used together, and Git's flexibility with branch references creates an expectation that Graphite would also accept remote refs. The error messages from Graphite don't clearly indicate that the issue is the `origin/` prefix.
 
-**Solution**: The `BranchManager.create_branch()` method in `GraphiteBranchManager` normalizes branch names before calling `graphite.track_branch()`:
+**Solution**: `GraphiteBranchManager.create_branch()` normalizes branch names with `base_branch.removeprefix("origin/")` before calling `graphite_branch_ops.track_branch()`. It also handles divergence detection and re-tracking. See the full implementation in `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py`.
 
-```python
-def create_branch(
-    self,
-    repo_root: Path,
-    branch_name: str,
-    base_branch: str,
-) -> None:
-    self.git.create_branch(repo_root, branch_name, base_branch)
-    # Graphite's `gt track` only accepts local branch names, not remote refs
-    parent_for_graphite = base_branch.removeprefix("origin/")
-    self.graphite.track_branch(repo_root, branch_name, parent_for_graphite)
-```
+**Design Pattern**: Tool quirks should be absorbed at abstraction boundaries. Callers (like the submit command) don't need to know about Graphite's limitations -- they can pass remote refs freely and trust `BranchManager` to handle normalization.
 
-**Design Pattern**: Tool quirks should be absorbed at abstraction boundaries. Callers (like the submit command) don't need to know about Graphite's limitations—they can pass remote refs freely and trust `BranchManager` to handle normalization.
-
-**Anti-Pattern**: Calling `graphite.track_branch()` directly with user-provided branch names that might contain `origin/` prefix.
-
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py`
+**Anti-Pattern**: Calling `graphite_branch_ops.track_branch()` directly with user-provided branch names that might contain `origin/` prefix.
 
 ## Adding New Quirks
 
@@ -229,5 +147,4 @@ When you discover a new edge case, add it to this document with:
 
 ## Related Documentation
 
-- [Three-Phase Restack Architecture](restack-operations.md)
 - [Erk Architecture Patterns](erk-architecture.md)
