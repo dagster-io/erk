@@ -4,6 +4,8 @@ read_when:
   - "understanding slot pool design"
   - "implementing slot-related features"
   - "debugging slot assignment issues"
+audit_result: edited
+audit_date: 2026-02-07
 ---
 
 # Slot Pool Architecture
@@ -14,7 +16,7 @@ The worktree slot pool is a reusable pool of pre-allocated git worktrees for fas
 
 ### Pool Basics
 
-- **Pool size**: Default 4 slots, configurable via `local_config.pool_size`
+- **Pool size**: Default 4 slots, configurable via `[pool] max_slots` in `.erk/config.toml`
 - **Slot names**: `erk-slot-NN` format (e.g., `erk-slot-01`, `erk-slot-02`)
 - **Placeholder branches**: `__erk-slot-NN-br-stub__` for unassigned slots
 - **Pool persistence**: `~/.erk/repos/{repo_name}/pool.json`
@@ -29,41 +31,13 @@ Creating git worktrees is relatively slow (file system operations, git setup). T
 
 ## Data Structures
 
-### PoolState (`src/erk/core/worktree_pool.py`)
+### Data Model (`src/erk/core/worktree_pool.py`)
 
-The top-level state container:
+**`PoolState`** — Top-level container with `version`, `pool_size`, `slots`, and `assignments` fields.
+**`SlotInfo`** — Slot metadata (just a `name` field).
+**`SlotAssignment`** — Maps a branch to a slot with `slot_name`, `branch_name`, `assigned_at`, and `worktree_path`.
 
-```python
-@dataclass(frozen=True)
-class PoolState:
-    version: str                          # Schema version (currently "1.0")
-    pool_size: int                        # Maximum slots in pool
-    slots: tuple[SlotInfo, ...]           # Initialized slot metadata
-    assignments: tuple[SlotAssignment, ...]  # Current branch-to-slot mappings
-```
-
-### SlotInfo
-
-Metadata for an initialized slot:
-
-```python
-@dataclass(frozen=True)
-class SlotInfo:
-    name: str  # e.g., "erk-slot-01"
-```
-
-### SlotAssignment
-
-An active mapping of a branch to a slot:
-
-```python
-@dataclass(frozen=True)
-class SlotAssignment:
-    slot_name: str        # e.g., "erk-slot-01"
-    branch_name: str      # The git branch assigned
-    assigned_at: str      # ISO timestamp for LRU ordering
-    worktree_path: Path   # Filesystem path to worktree
-```
+See `src/erk/core/worktree_pool.py` for full definitions.
 
 ## Slot Allocation Algorithm
 
@@ -79,6 +53,7 @@ If the branch is already assigned to a slot, return that assignment immediately 
 
 - Exist in git's worktree registry
 - Are not currently assigned to any branch
+- Have no uncommitted changes
 
 This is the fast path because it reuses an existing worktree directory.
 
@@ -101,12 +76,12 @@ If no slots are available, `handle_pool_full_interactive()` handles eviction:
 
 ## Naming Conventions
 
-| Component           | Pattern                   | Example                          |
-| ------------------- | ------------------------- | -------------------------------- |
-| Slot name           | `erk-slot-NN`             | `erk-slot-01`                    |
-| Placeholder branch  | `__erk-slot-NN-br-stub__` | `__erk-slot-01-br-stub__`        |
-| Pool state file     | `pool.json`               | `~/.erk/repos/my-repo/pool.json` |
-| Worktrees directory | `{repo}/.worktrees/`      | `/path/to/repo/.worktrees/`      |
+| Component           | Pattern                               | Example                           |
+| ------------------- | ------------------------------------- | --------------------------------- |
+| Slot name           | `erk-slot-NN`                         | `erk-slot-01`                     |
+| Placeholder branch  | `__erk-slot-NN-br-stub__`             | `__erk-slot-01-br-stub__`         |
+| Pool state file     | `pool.json`                           | `~/.erk/repos/my-repo/pool.json`  |
+| Worktrees directory | `~/.erk/repos/{repo-name}/worktrees/` | `~/.erk/repos/my-repo/worktrees/` |
 
 ## Artifact Cleanup
 
@@ -135,6 +110,7 @@ The diagnostic system detects inconsistencies between:
 | `branch-mismatch`      | Worktree on different branch than pool says      |
 | `git-registry-missing` | Pool assignment not in git worktree registry     |
 | `untracked-worktree`   | Git worktree exists but not erk-managed          |
+| `closed-pr`            | PR for assigned branch is closed or merged       |
 
 ### Repair (`src/erk/cli/commands/slot/repair_cmd.py`)
 
@@ -144,24 +120,26 @@ The diagnostic system detects inconsistencies between:
 - `missing-branch` - Remove assignment (branch deleted)
 - `branch-mismatch` - Remove assignment (let user re-assign)
 - `git-registry-missing` - Remove assignment (not a valid worktree)
+- `closed-pr` - Remove assignment (PR closed/merged)
 
 ## Entry Points
 
 Commands that allocate slots via `allocate_slot_for_branch()`:
 
-| Command             | Description                             |
-| ------------------- | --------------------------------------- |
-| `erk branch create` | Creates branch and assigns to slot      |
-| `erk slot assign`   | Assigns existing branch to slot         |
-| `erk implement`     | Assigns branch for issue implementation |
-| `erk pr checkout`   | Assigns branch when checking out PR     |
+| Command               | Description                          |
+| --------------------- | ------------------------------------ |
+| `erk branch create`   | Creates branch and assigns to slot   |
+| `erk branch checkout` | Checks out existing branch into slot |
+| `erk slot assign`     | Assigns existing branch to slot      |
+| `erk pr checkout`     | Assigns branch when checking out PR  |
 
 ## Configuration
 
 In `.erk/config.toml` (local config):
 
 ```toml
-pool_size = 6  # Override default of 4
+[pool]
+max_slots = 6  # Override default of 4
 ```
 
 ## Key Source Files
