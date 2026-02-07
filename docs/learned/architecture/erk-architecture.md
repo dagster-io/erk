@@ -830,21 +830,21 @@ When you need an operation that differs between Graphite and Git:
 
 ### Existing BranchManager Methods
 
-| Method                     | GraphiteBranchManager                   | GitBranchManager        |
-| -------------------------- | --------------------------------------- | ----------------------- |
-| `create_branch()`          | `gt create`                             | `git branch`            |
-| `delete_branch()`          | `git branch -D` + graphite cleanup      | `git branch -D`         |
-| `submit_branch()`          | `gt submit --force --quiet`             | `git push -u origin`    |
-| `commit()`                 | `git commit --allow-empty`              | `git commit --allow-empty` |
-| `get_pr_for_branch()`      | Graphite cache / GitHub API             | GitHub API lookup       |
-| `get_branch_stack()`       | Stack from trunk to leaf                | `None` (not supported)  |
-| `track_branch()`           | Registers with Graphite                 | No-op                   |
-| `get_parent_branch()`      | From Graphite cache                     | `None`                  |
-| `get_child_branches()`     | From Graphite cache                     | Empty list              |
-| `checkout_branch()`        | `git checkout`                          | `git checkout`          |
-| `checkout_detached()`      | `git checkout --detach`                 | `git checkout --detach` |
-| `create_tracking_branch()` | Creates local tracking branch           | Creates local tracking branch |
-| `is_graphite_managed()`    | `True`                                  | `False`                 |
+| Method                     | GraphiteBranchManager              | GitBranchManager              |
+| -------------------------- | ---------------------------------- | ----------------------------- |
+| `create_branch()`          | `gt create`                        | `git branch`                  |
+| `delete_branch()`          | `git branch -D` + graphite cleanup | `git branch -D`               |
+| `submit_branch()`          | `gt submit --force --quiet`        | `git push -u origin`          |
+| `commit()`                 | `git commit --allow-empty`         | `git commit --allow-empty`    |
+| `get_pr_for_branch()`      | Graphite cache / GitHub API        | GitHub API lookup             |
+| `get_branch_stack()`       | Stack from trunk to leaf           | `None` (not supported)        |
+| `track_branch()`           | Registers with Graphite            | No-op                         |
+| `get_parent_branch()`      | From Graphite cache                | `None`                        |
+| `get_child_branches()`     | From Graphite cache                | Empty list                    |
+| `checkout_branch()`        | `git checkout`                     | `git checkout`                |
+| `checkout_detached()`      | `git checkout --detach`            | `git checkout --detach`       |
+| `create_tracking_branch()` | Creates local tracking branch      | Creates local tracking branch |
+| `is_graphite_managed()`    | `True`                             | `False`                       |
 
 ### When to Use BranchManager vs Direct Gateway
 

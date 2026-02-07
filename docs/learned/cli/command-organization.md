@@ -50,25 +50,25 @@ erk plan list     # List plans
 
 High-frequency commands registered directly on the CLI root:
 
-| Command     | Description                 | Frequency |
-| ----------- | --------------------------- | --------- |
-| `implement` | Start implementing a plan   | Very High |
-| `dash`      | Display plan dashboard      | Very High |
-| `up`        | Navigate to parent branch   | Very High |
-| `down`      | Navigate to child branch    | Very High |
+| Command     | Description               | Frequency |
+| ----------- | ------------------------- | --------- |
+| `implement` | Start implementing a plan | Very High |
+| `dash`      | Display plan dashboard    | Very High |
+| `up`        | Navigate to parent branch | Very High |
+| `down`      | Navigate to child branch  | Very High |
 
 ### Plan Group (`erk plan <verb>`)
 
 Plan management commands grouped under the `plan` noun:
 
-| Command        | Description                     | Frequency |
-| -------------- | ------------------------------- | --------- |
-| `plan create`  | Create new plan issue           | High      |
-| `plan view`    | View plan details               | High      |
-| `plan close`   | Close a plan                    | Medium    |
-| `plan submit`  | Queue plan for remote execution | High      |
-| `plan log`     | View plan execution history     | Medium    |
-| `plan list`    | List plans                      | Medium    |
+| Command       | Description                     | Frequency |
+| ------------- | ------------------------------- | --------- |
+| `plan create` | Create new plan issue           | High      |
+| `plan view`   | View plan details               | High      |
+| `plan close`  | Close a plan                    | Medium    |
+| `plan submit` | Queue plan for remote execution | High      |
+| `plan log`    | View plan execution history     | Medium    |
+| `plan list`   | List plans                      | Medium    |
 
 ### Grouped Commands
 
@@ -366,16 +366,16 @@ See `src/erk/cli/cli.py` for top-level registration and `src/erk/cli/commands/pl
 
 ### Code Locations
 
-| Component         | Location                              |
-| ----------------- | ------------------------------------- |
-| CLI entry point   | `src/erk/cli/cli.py`                  |
-| Plan commands     | `src/erk/cli/commands/plan/`          |
-| Worktree commands | `src/erk/cli/commands/wt/`            |
-| Stack commands    | `src/erk/cli/commands/stack/`         |
-| Navigation        | `src/erk/cli/commands/{up,down}.py`   |
-| Branch group      | `src/erk/cli/commands/branch/`        |
-| Setup             | `src/erk/cli/commands/init/`          |
-| Config            | `src/erk/cli/commands/config.py`      |
+| Component         | Location                            |
+| ----------------- | ----------------------------------- |
+| CLI entry point   | `src/erk/cli/cli.py`                |
+| Plan commands     | `src/erk/cli/commands/plan/`        |
+| Worktree commands | `src/erk/cli/commands/wt/`          |
+| Stack commands    | `src/erk/cli/commands/stack/`       |
+| Navigation        | `src/erk/cli/commands/{up,down}.py` |
+| Branch group      | `src/erk/cli/commands/branch/`      |
+| Setup             | `src/erk/cli/commands/init/`        |
+| Config            | `src/erk/cli/commands/config.py`    |
 
 ## Related Documentation
 

@@ -594,12 +594,12 @@ The Claude Code VSCode extension has known issues with warmup sessions:
 
 ### Core Modules
 
-| Module                        | Path                                            | Purpose                                   |
-| ----------------------------- | ----------------------------------------------- | ----------------------------------------- |
-| `find_project_dir.py`         | `src/erk/cli/commands/exec/scripts/`            | Project directory discovery and encoding  |
-| `preprocess_session.py`       | `src/erk/cli/commands/exec/scripts/`            | Session log preprocessing and compression |
-| `session_id_injector_hook.py` | `src/erk/cli/commands/exec/scripts/`            | Inject session ID into context            |
-| `real.py` (ClaudeInstallation)| `packages/erk-shared/src/erk_shared/gateway/claude_installation/` | Session/slug extraction gateway |
+| Module                         | Path                                                              | Purpose                                   |
+| ------------------------------ | ----------------------------------------------------------------- | ----------------------------------------- |
+| `find_project_dir.py`          | `src/erk/cli/commands/exec/scripts/`                              | Project directory discovery and encoding  |
+| `preprocess_session.py`        | `src/erk/cli/commands/exec/scripts/`                              | Session log preprocessing and compression |
+| `session_id_injector_hook.py`  | `src/erk/cli/commands/exec/scripts/`                              | Inject session ID into context            |
+| `real.py` (ClaudeInstallation) | `packages/erk-shared/src/erk_shared/gateway/claude_installation/` | Session/slug extraction gateway           |
 
 ### Test Files
 

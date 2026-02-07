@@ -44,11 +44,11 @@ For each phase, follow the guide above.
 
 ### Valid Locations
 
-| Location              | Example                                 | Notes                       |
-| --------------------- | --------------------------------------- | --------------------------- |
-| `.claude/skills/`     | `@.claude/skills/ci-iteration/SKILL.md` | Project-specific skill      |
-| `docs/learned/`       | `@docs/learned/testing/testing.md`      | Learned documentation       |
-| Relative path         | `@../shared/common.md`                  | From command location       |
+| Location          | Example                                 | Notes                  |
+| ----------------- | --------------------------------------- | ---------------------- |
+| `.claude/skills/` | `@.claude/skills/ci-iteration/SKILL.md` | Project-specific skill |
+| `docs/learned/`   | `@docs/learned/testing/testing.md`      | Learned documentation  |
+| Relative path     | `@../shared/common.md`                  | From command location  |
 
 ### Real Example: /fast-ci
 

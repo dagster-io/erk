@@ -1227,9 +1227,9 @@ Accumulated knowledge from previous turns. Notes persist across future turns, bu
 
 ### Key Files
 
-| Concern | Location                              |
-| ------- | ------------------------------------- |
-| CLI     | `src/erk/cli/commands/objective/`     |
+| Concern | Location                          |
+| ------- | --------------------------------- |
+| CLI     | `src/erk/cli/commands/objective/` |
 
 ---
 

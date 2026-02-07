@@ -57,11 +57,11 @@ Key details:
 
 ## Naming Conventions
 
-| Element           | Pattern         | Example                                         |
-| ----------------- | --------------- | ----------------------------------------------- |
-| Group function    | `{noun}_group`  | `objective_group`, `plan_group`, `wt_group`     |
-| Command files     | `{verb}_cmd.py` | `check_cmd.py`, `close_cmd.py`, `list_cmd.py`   |
-| Command functions | `{verb}_{noun}` | `check_objective`, `close_objective`             |
+| Element           | Pattern         | Example                                       |
+| ----------------- | --------------- | --------------------------------------------- |
+| Group function    | `{noun}_group`  | `objective_group`, `plan_group`, `wt_group`   |
+| Command files     | `{verb}_cmd.py` | `check_cmd.py`, `close_cmd.py`, `list_cmd.py` |
+| Command functions | `{verb}_{noun}` | `check_objective`, `close_objective`          |
 
 ## Individual Command Pattern
 

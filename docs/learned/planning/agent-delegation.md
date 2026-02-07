@@ -65,7 +65,7 @@ Does command orchestrate 3+ steps?
 | Scenario                                                        | Delegate? | Rationale                                                                        |
 | --------------------------------------------------------------- | --------- | -------------------------------------------------------------------------------- |
 | Run pytest with specialized output parsing                      | ✅ Yes    | Complex parsing, multiple tools (devrun agent)                                   |
-| Create worktree with validation, JSON parsing, formatted output | ✅ Yes    | Multi-step workflow with error handling                                           |
+| Create worktree with validation, JSON parsing, formatted output | ✅ Yes    | Multi-step workflow with error handling                                          |
 | Submit branch: stage, diff analysis, commit, PR creation        | ❌ No     | Consolidated into inline command (sequential workflow, no complex orchestration) |
 | Run single git command with no processing                       | ❌ No     | Simple wrapper, no orchestration needed                                          |
 | Display help text or documentation                              | ❌ No     | No workflow, just content display                                                |
@@ -598,3 +598,4 @@ Documentation follows a progressive disclosure model:
 - One agent can serve multiple commands
 - Use appropriate model (haiku for orchestration)
 - Follow progressive disclosure (checklist → docs → implementation)
+````
