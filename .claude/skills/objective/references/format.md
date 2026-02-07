@@ -579,3 +579,41 @@ Returns JSON with:
 Use `erk exec update-roadmap-step` for surgical updates to a single step's PR and Status cells. This command handles the correct status computation and table formatting automatically.
 
 For multi-step updates or structural changes, agents can also rewrite the full objective body via `erk exec update-issue-body`.
+
+## Large Objective Patterns
+
+### Batch-Level Granularity
+
+When objectives span many items (50+), use batch-level steps instead of per-item steps.
+Group items by priority bands or logical categories, with one roadmap step per batch.
+
+**Example**: An audit of 141 documents becomes 8 steps (one per priority/phase band),
+not 141 steps.
+
+**Why**: Per-item steps make the roadmap table unreadable and create excessive status
+tracking overhead. Batch steps keep the issue navigable.
+
+### Collapsible Item Lists
+
+Use `<details><summary>` blocks within the objective body to list individual items
+without cluttering the roadmap table:
+
+```markdown
+| Step | Description                          | Status  | PR  |
+| ---- | ------------------------------------ | ------- | --- |
+| 1.1  | Audit HIGH priority docs (score 10+) | pending |     |
+```
+
+Then in the body below the table, expand each step:
+
+```markdown
+<details>
+<summary>Step 1.1: HIGH priority docs (12 documents)</summary>
+
+- `docs/learned/architecture/erk-architecture.md` (score: 14)
+- `docs/learned/testing/testing.md` (score: 12)
+- ...
+</details>
+```
+
+This keeps the roadmap table scannable while preserving full detail for implementers.

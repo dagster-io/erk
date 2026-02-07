@@ -38,6 +38,7 @@ Before editing files, load relevant category tripwires.
 - **Python code** → `dignified-python` skill (LBYL, modern types, ABC interfaces)
 - **Test code** → `fake-driven-testing` skill (5-layer architecture, test placement)
 - **Dev tools** → Use `devrun` agent (NOT direct Bash for pytest/ty/ruff/prettier/make/gt)
+- **Objective work** → `objective` skill (creating, updating, closing objectives)
 
 ## Core Architecture
 
@@ -66,6 +67,7 @@ This file routes to skills and docs; it doesn't contain everything.
 - `fake-driven-testing`: 5-layer test architecture with comprehensive fakes
 - `gt-graphite`: Worktree stack mental model
 - `devrun`: READ-ONLY agent for running pytest/ty/ruff/make
+- `objective`: Multi-plan objective tracking (creating, updating, closing)
 
 **Documentation Index** (embedded below for ambient awareness):
 
