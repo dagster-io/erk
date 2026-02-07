@@ -599,9 +599,9 @@ Use `<details><summary>` blocks within the objective body to list individual ite
 without cluttering the roadmap table:
 
 ```markdown
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Audit HIGH priority docs (score 10+) | pending | |
+| Step | Description                          | Status  | PR  |
+| ---- | ------------------------------------ | ------- | --- |
+| 1.1  | Audit HIGH priority docs (score 10+) | pending |     |
 ```
 
 Then in the body below the table, expand each step:
