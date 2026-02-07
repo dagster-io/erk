@@ -6,8 +6,6 @@ read_when:
   - "understanding how statusline fetches GitHub data"
   - "working with Token/TokenSeq patterns"
   - "debugging statusline performance"
-last_audited: "2026-02-05 14:19 PT"
-audit_result: edited
 ---
 
 # erk-statusline Architecture Guide
@@ -16,30 +14,81 @@ The erk-statusline package provides a custom status line for Claude Code, displa
 
 ## Package Structure
 
-The package lives at `packages/erk-statusline/`. Source modules are in `src/erk_statusline/` and tests in `tests/`. Entry point: `erk_statusline.statusline:main`.
+The package lives at `packages/erk-statusline/`:
 
-Key modules:
+```
+packages/erk-statusline/
+├── src/erk_statusline/
+│   ├── __main__.py      # Entry point (python -m erk_statusline)
+│   ├── statusline.py    # Core logic: data fetching, label building, main()
+│   ├── colored_tokens.py # Token/TokenSeq pattern for colored output
+│   └── context.py       # StatuslineContext with gateway dependency injection
+└── tests/
+    ├── test_statusline.py
+    ├── test_colored_tokens.py
+    └── test_context.py
+```
 
-- `statusline.py` -- Core logic: data fetching, label building, `main()`
-- `colored_tokens.py` -- Token/TokenSeq pattern for colored output (see module docstring for full API)
-- `context.py` -- `StatuslineContext` with gateway dependency injection
+Entry point: `erk_statusline.statusline:main`
 
 ## Token/TokenSeq Pattern
 
-The statusline uses an immutable token system for building colored terminal output. See the module docstring in `colored_tokens.py` for full API documentation and usage examples.
+The statusline uses an immutable token system for building colored terminal output.
 
-Key concepts:
+### Token
 
-- **Token** -- Atomic piece of text with optional ANSI color. Colored tokens automatically restore to GRAY after rendering.
-- **TokenSeq** -- Immutable sequence of Tokens and/or other TokenSeqs. Operations like `add()` and `extend()` return new instances.
-- **Color enum** -- `CYAN` (git repo names), `YELLOW` (worktree names), `RED` (branch names), `GRAY` (default/reset), `BLUE` (hyperlinks)
-- **Helper functions** -- `context_label()`, `metadata_label()`, `hyperlink_token()` for common label patterns
+Atomic piece of text with optional ANSI color:
+
+```python
+Token("main", color=Color.CYAN)  # Renders: "\033[96mmain\033[90m"
+```
+
+When rendered, colored tokens automatically restore to GRAY.
+
+### TokenSeq
+
+Immutable sequence of Tokens and/or other TokenSeqs:
+
+```python
+seq = TokenSeq((
+    Token("(git:"),
+    Token("main", color=Color.CYAN),
+    Token(")")
+))
+print(seq.render())  # "(git:\033[96mmain\033[90m)"
+```
+
+### Color Enum
+
+Available colors in `Color`:
+
+- `CYAN` - Git repo names
+- `YELLOW` - Worktree names
+- `RED` - Branch names
+- `GRAY` - Default/reset
+- `BLUE` - Hyperlinks
+
+### Helper Functions
+
+- `context_label(sources, value, color)` - Creates `(git:main)` or `({wt, br}:name)`
+- `metadata_label(key, value)` - Creates `(st:emoji)` or `(chks:status)`
+- `hyperlink_token(url, text, color)` - Creates clickable OSC 8 hyperlinks
 
 ## Gateway Pattern (StatuslineContext)
 
-`StatuslineContext` is a frozen dataclass providing dependency injection for external services. See `context.py` for the class definition and `create_context()` factory.
+The `StatuslineContext` is a frozen dataclass providing dependency injection for external services:
 
-Fields: `cwd`, `git`, `graphite`, `github`, `branch_manager`.
+```python
+@dataclass(frozen=True)
+class StatuslineContext:
+    cwd: Path
+    git: Git
+    graphite: Graphite
+    github: GitHub
+    branch_manager: BranchManager
+```
+
+Created via `create_context(cwd)` which wires up real implementations.
 
 **Why gateways matter:**
 
@@ -49,16 +98,25 @@ Fields: `cwd`, `git`, `graphite`, `github`, `branch_manager`.
 
 ## Parallel GitHub API Fetching
 
-The statusline fetches three things in parallel using `ThreadPoolExecutor(max_workers=3)` in `fetch_github_data_via_gateway()`:
+The statusline fetches PR details and check runs in parallel using `ThreadPoolExecutor`:
 
-1. **PR details** (mergeable status, head SHA) via `_fetch_pr_details()`
-2. **Check runs** via `_fetch_check_runs()`
-3. **Review thread counts** via `_fetch_review_thread_counts()`
+```python
+with ThreadPoolExecutor(max_workers=2) as executor:
+    pr_future = executor.submit(
+        lambda: _fetch_pr_details(owner=owner, repo=repo, pr_number=pr_number, ...)
+    )
+    checks_future = executor.submit(
+        lambda: _fetch_check_runs(owner=owner, repo=repo, ref=branch, ...)
+    )
+
+    pr_details = pr_future.result(timeout=2)
+    check_contexts = checks_future.result(timeout=2)
+```
 
 **Timeouts:**
 
-- Per-call timeout: `1.5` seconds
-- Executor timeout: `2` seconds
+- Per-call timeout: 1.5 seconds
+- Executor timeout: 2 seconds
 - Error fallback to defaults (never crashes)
 
 **Why parallel:** The statusline runs on every prompt. Serial API calls would add 3+ seconds of latency.
@@ -68,8 +126,8 @@ The statusline fetches three things in parallel using `ThreadPoolExecutor(max_wo
 PR info is cached to reduce API calls:
 
 - **Cache location:** `/tmp/erk-statusline-cache/`
-- **Cache key:** Filename is `{owner}-{repo}-{hash}.json` where hash is SHA256 of branch name (first 16 hex chars)
-- **TTL:** `30` seconds
+- **Cache key:** SHA256 hash of `{owner}-{repo}-{branch}`
+- **TTL:** 30 seconds
 - **Stores:** `pr_number`, `head_sha`
 
 The cache reduces GitHub API rate limit pressure for rapidly changing status lines.
@@ -78,35 +136,88 @@ The cache reduces GitHub API rate limit pressure for rapidly changing status lin
 
 1. **Input:** JSON from stdin with workspace/model info from Claude Code
 2. **Git status:** Branch name, dirty status via Git gateway
-3. **Worktree detection:** Root vs linked worktree via `ctx.git.worktree.list_worktrees()`
+3. **Worktree detection:** Root vs linked worktree via `git.list_worktrees()`
 4. **PR lookup:** BranchManager checks Graphite cache or GitHub API
-5. **Parallel fetch:** PR mergeable status + check runs + review thread counts (3 concurrent API calls)
+5. **Parallel fetch:** PR mergeable status + check runs (GitHub REST API)
 6. **Token building:** Build TokenSeq from components
 7. **Output:** ANSI-colored string to stdout
 
 ## Adding New Statusline Entries
 
-Follow this 6-step pattern when adding new information to the statusline. Use `_fetch_review_thread_counts()` in `statusline.py` as a concrete reference implementation -- it was the most recently added fetch.
+Follow this 6-step pattern when adding new information to the statusline:
 
 ### Step 1: Fetch Data
 
-Create a `_fetch_*` function in `statusline.py` following the pattern of existing fetch functions. Use REST API when possible (GraphQL has separate rate limits). Each fetch function should accept `owner`, `repo`, `cwd`, `timeout` keyword arguments and return a typed result.
+Create a function to fetch from GitHub API. Use REST API when possible (GraphQL has separate rate limits):
+
+```python
+def _fetch_review_threads(
+    *, owner: str, repo: str, pr_number: int, cwd: str, timeout: float
+) -> ReviewThreadsResult:
+    """Fetch review thread resolution status."""
+    # Use gh api for REST, or gh api graphql for GraphQL
+    result = subprocess.run(
+        ["gh", "api", f"repos/{owner}/{repo}/pulls/{pr_number}/reviews"],
+        cwd=cwd, capture_output=True, text=True, timeout=timeout,
+    )
+    # Parse and return
+```
 
 ### Step 2: Update Data Structure
 
-Add a field to the `GitHubData` NamedTuple in `statusline.py`. Current fields include `review_thread_counts: tuple[int, int]` as a reference for how to structure new data.
+Add field to `GitHubData` NamedTuple:
+
+```python
+class GitHubData(NamedTuple):
+    # ... existing fields ...
+    review_thread_count: int  # Total review threads
+    resolved_thread_count: int  # Resolved threads
+```
 
 ### Step 3: Extend Parallel Fetch
 
-Add a new `executor.submit()` call inside the `ThreadPoolExecutor` block in `fetch_github_data_via_gateway()`. Increase `max_workers` if needed. Wire the result into the `GitHubData` return value.
+Add to `ThreadPoolExecutor` in `fetch_github_data_via_gateway()`:
+
+```python
+with ThreadPoolExecutor(max_workers=3) as executor:  # Increase from 2
+    pr_future = executor.submit(...)
+    checks_future = executor.submit(...)
+    threads_future = executor.submit(
+        lambda: _fetch_review_threads(owner=owner, repo=repo, ...)
+    )
+```
 
 ### Step 4: Create Display Function
 
-Build a function that converts the new `GitHubData` field into a display string or Token. See `build_comment_count_label()` for the pattern.
+Build a function that returns Token or string representation:
+
+```python
+def get_threads_status(github_data: GitHubData | None) -> str:
+    """Format thread resolution status."""
+    if not github_data or github_data.review_thread_count == 0:
+        return ""
+
+    resolved = github_data.resolved_thread_count
+    total = github_data.review_thread_count
+
+    if resolved == total:
+        return "cmts:check"  # All resolved
+    return f"cmts:{resolved}/{total}"
+```
 
 ### Step 5: Integrate into Label
 
-Add the new display output into `build_gh_label()` following the existing pattern of conditionally extending `parts`.
+Add to `build_gh_label()` or main statusline:
+
+```python
+# In build_gh_label()
+threads_status = get_threads_status(github_data)
+if threads_status:
+    parts.extend([
+        Token(" "),
+        Token(threads_status),
+    ])
+```
 
 ### Step 6: Add Tests
 
@@ -114,7 +225,13 @@ Add unit tests for both fetch and display functions in `tests/test_statusline.py
 
 ## Logging
 
-Logs go to `~/.erk/logs/statusline/{session-id}.log`. They are file-based to avoid polluting stderr, which would break the status line display.
+Logs go to `~/.erk/logs/statusline/{session-id}.log` for debugging:
+
+```python
+_logger.debug("Fetching GitHub data for branch=%s", branch)
+```
+
+Logs are file-based to avoid polluting stderr (which would break the status line).
 
 ## Key Design Principles
 

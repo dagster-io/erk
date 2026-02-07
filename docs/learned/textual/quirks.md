@@ -4,8 +4,6 @@ read_when:
   - "working with Textual TUI framework"
   - "debugging DataTable, App, or CSS issues in Textual"
   - "writing tests for Textual applications"
-last_audited: "2026-02-05 20:38 PT"
-audit_result: edited
 ---
 
 # Textual API Quirks and Workarounds
@@ -43,7 +41,32 @@ class MyTable(DataTable):
 
 **Problem**: Calling `DataTable.clear()` resets the cursor to row 0. If you're refreshing data, the user loses their place.
 
-**Solution**: Save cursor position before clear, restore after repopulating. The pattern is: save the selected row's key, call `clear()`, re-add rows, then restore by key match first, falling back to the clamped row index. See `PlanDataTable.populate()` in `src/erk/tui/widgets/plan_table.py` for the production implementation.
+**Solution**: Save cursor position before clear, restore after repopulating:
+
+```python
+def populate(self, rows: list[RowData]) -> None:
+    # Save current selection by row key
+    selected_key = None
+    if self._rows and self.cursor_row is not None:
+        selected_key = str(self._rows[self.cursor_row].id)
+
+    saved_cursor_row = self.cursor_row
+
+    self.clear()
+    for row in rows:
+        self.add_row(*values, key=str(row.id))
+
+    # Restore by key first, fall back to row index
+    if rows and selected_key:
+        for idx, row in enumerate(rows):
+            if str(row.id) == selected_key:
+                self.move_cursor(row=idx)
+                return
+
+    # Fall back to saved index (clamped)
+    if saved_cursor_row is not None and saved_cursor_row >= 0:
+        self.move_cursor(row=min(saved_cursor_row, len(rows) - 1))
+```
 
 ### Enter Key May Be Captured
 
@@ -64,7 +87,25 @@ def on_row_selected(self, event: DataTable.RowSelected) -> None:
 
 **Why this happens**: `event.stop()` only prevents the event from bubbling up to parent widgets. Textual still calls handlers on base classes unless you use `prevent_default()`.
 
-**Solution**: Use both `event.prevent_default()` and `event.stop()` when handling the click. See `PlanDataTable.on_click()` in `src/erk/tui/widgets/plan_table.py` for the full implementation with multiple column handlers.
+**Solution**: Use both `event.prevent_default()` and `event.stop()`:
+
+```python
+def on_click(self, event: Click) -> None:
+    coord = self.hover_coordinate
+    if coord is None:
+        return
+
+    row_index = coord.row
+    col_index = coord.column
+
+    # Handle click on specific column
+    if col_index == self._my_column_index:
+        if row_index < len(self._rows):
+            self.post_message(self.MyColumnClicked(row_index))
+            event.prevent_default()  # Stop base class from handling
+            event.stop()  # Stop bubbling to parent widgets
+            return
+```
 
 **Key insight**:
 
@@ -123,7 +164,19 @@ async def _load_data(self) -> None:
 
 **Problem**: Textual's `app.run_test()` is async. Without pytest-asyncio, tests fail with "async def functions are not natively supported".
 
-**Solution**: Add `pytest-asyncio` to dev dependencies and set `asyncio_mode = "auto"` with `asyncio_default_fixture_loop_scope = "function"` in `pyproject.toml` under `[tool.pytest.ini_options]`. See the project's `pyproject.toml` for the current configuration.
+**Solution**: Add pytest-asyncio to dev dependencies and configure in pyproject.toml:
+
+```toml
+[dependency-groups]
+dev = [
+    "pytest-asyncio>=0.23.0",
+    # ...
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+```
 
 ### Use `pilot.pause()` for Async Operations
 

@@ -4,8 +4,6 @@ read_when:
   - "understanding TUI structure"
   - "implementing TUI components"
   - "working with TUI data providers"
-last_audited: "2026-02-05"
-audit_result: edited
 ---
 
 # TUI Architecture Overview
@@ -18,45 +16,61 @@ The erk TUI is built with Textual and follows a layered architecture separating 
 src/erk/tui/
 ├── app.py              # Main Textual App (ErkDashApp)
 ├── data/               # Data layer
+│   ├── provider.py     # ABC + Real data providers
 │   └── types.py        # Data types (PlanRowData, PlanFilters)
 ├── filtering/          # Filter layer
 │   ├── logic.py        # Filter application logic
-│   └── types.py        # Filter types (FilterState, FilterMode)
-├── sorting/            # Sort layer
-│   ├── logic.py        # Sort application logic
-│   └── types.py        # Sort types (SortKey, SortState, BranchActivity)
-├── commands/           # Command palette layer
-│   ├── provider.py     # Command providers for palette
+│   └── types.py        # Filter types
+├── commands/           # Command execution layer
+│   ├── executor.py     # ABC for command execution
+│   ├── real_executor.py # Production executor
+│   ├── provider.py     # Command provider
 │   ├── registry.py     # Command registration
-│   └── types.py        # Command types (CommandDefinition, CommandContext)
-├── screens/            # Modal screens
-│   ├── help_screen.py
-│   ├── issue_body_screen.py
-│   └── plan_detail_screen.py
-├── widgets/            # UI components
-│   ├── plan_table.py   # Plan list table
-│   ├── status_bar.py   # Status bar component
-│   ├── command_output.py
-│   ├── clickable_link.py
-│   └── copyable_label.py
-├── styles/             # Textual CSS
-│   └── dash.tcss
-└── jsonl_viewer/       # Separate JSONL viewer app
+│   └── types.py        # Command types
+└── widgets/            # UI components
+    ├── plan_table.py   # Plan list table
+    ├── status_bar.py   # Status bar component
+    └── command_output.py # Command output display
 ```
-
-The `PlanDataProvider` ABC and its fake live in `erk_shared` (not in `src/erk/tui/`):
-
-- ABC: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py`
-- Fake: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`
-- Command executor ABC/real: `packages/erk-shared/src/erk_shared/gateway/command_executor/`
 
 ## Data Layer
 
 ### PlanDataProvider (ABC)
 
-Abstract interface for fetching plan data. Follows the same ABC/Fake pattern as gateways. Defined in `erk_shared.gateway.plan_data_provider.abc`.
+Abstract interface for fetching plan data. Follows the same ABC/Fake pattern as gateways.
 
-Key methods: `fetch_plans()`, `close_plan()`, `submit_to_queue()`, `fetch_branch_activity()`, `fetch_plan_content()`. Also exposes `repo_root`, `clipboard`, and `browser` properties. See the ABC source for the full interface.
+```python
+class PlanDataProvider(ABC):
+    @property
+    @abstractmethod
+    def repo_root(self) -> Path: ...
+
+    @property
+    @abstractmethod
+    def clipboard(self) -> Clipboard: ...
+
+    @property
+    @abstractmethod
+    def browser(self) -> BrowserLauncher: ...
+
+    @abstractmethod
+    def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]: ...
+
+    @abstractmethod
+    def close_plan(self, issue_number: int, issue_url: str) -> list[int]: ...
+
+    @abstractmethod
+    def submit_to_queue(self, issue_number: int, issue_url: str) -> None: ...
+```
+
+### RealPlanDataProvider
+
+Production implementation that:
+
+1. Uses `PlanListService` to fetch data from GitHub
+2. Builds worktree mapping from local filesystem
+3. Transforms `IssueInfo` → `Plan` → `PlanRowData`
+4. Applies filtering before returning
 
 ### PlanRowData
 
@@ -73,7 +87,18 @@ This separation ensures:
 
 ### PlanFilters
 
-Frozen dataclass specifying query filters. Defined in `erk.tui.data.types`. Fields: `labels`, `state`, `run_state`, `limit`, `show_prs`, `show_runs`, `creator`. See source for details and the `default()` factory method.
+Frozen dataclass specifying query filters:
+
+```python
+@dataclass(frozen=True)
+class PlanFilters:
+    labels: tuple[str, ...]      # Filter by labels
+    state: str | None            # "open", "closed", or None
+    run_state: str | None        # Filter by workflow run state
+    limit: int | None            # Max results
+    show_prs: bool               # Include PR data
+    show_runs: bool              # Include workflow run data
+```
 
 ## Command Execution Layer
 
@@ -83,64 +108,68 @@ See [Command Execution](command-execution.md) for detailed patterns on:
 - Background thread handling
 - Cross-thread UI updates
 
-The command palette is powered by `CommandDefinition` / `CommandContext` types in `erk.tui.commands.types` and providers in `erk.tui.commands.provider`. The `CommandExecutor` ABC and `RealCommandExecutor` live in `erk_shared.gateway.command_executor`.
+### Key Pattern: Exit-with-Command
+
+TUI can request command execution after exit (see [Erk Architecture](../architecture/erk-architecture.md#tui-exit-with-command-pattern)):
+
+```python
+# In TUI modal
+app.exit_command = "erk implement 123"
+self.app.exit()
+
+# In CLI after app.run()
+if app.exit_command:
+    os.execvp(args[0], args)
+```
 
 ## Widget Layer
 
-### PlanDataTable
+### PlanTable
 
-DataTable subclass (class `PlanDataTable` in `erk.tui.widgets.plan_table`) displaying plans. Columns are dynamic based on `PlanFilters.show_prs` and `show_runs` flags. Core columns: plan, title, obj, lrn, local-wt, local-impl. With PRs: adds pr, chks, comments. With runs: adds remote-impl, run-id, run-state.
+DataTable subclass displaying plans with columns:
 
-Supports click events on individual columns (plan, pr, objective, learn, local-wt, run-id) which post typed messages handled by `ErkDashApp`. See `_setup_columns()` and `on_click()` in the source for full column logic.
+| Column      | Source                | Format                      |
+| ----------- | --------------------- | --------------------------- |
+| Issue       | `issue_number`        | `#123` link                 |
+| Title       | `title`               | Truncated to 50 chars       |
+| PR          | `pr_display`          | `#456 👀` with status emoji |
+| Checks      | `checks_display`      | `✓` or `✗`                  |
+| Worktree    | `worktree_name`       | Name or empty               |
+| Local Impl  | `local_impl_display`  | `2h ago`                    |
+| Remote Impl | `remote_impl_display` | `1d ago`                    |
 
-### StatusBar
+### Status Bar
 
-Shows plan count, sort mode, last update time with fetch duration, countdown to next refresh, action messages, and key binding hints. See `StatusBar._update_display()` in `erk.tui.widgets.status_bar` for the exact layout.
+Shows:
+
+- Current filter state
+- Refresh status
+- Keyboard shortcut hints
 
 ## Testing Strategy
 
 ### Unit Testing TUI Components
 
-Use fake providers instead of mocking. `FakePlanDataProvider` lives in `erk_shared.gateway.plan_data_provider.fake` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
+Use fake providers instead of mocking:
+
+```python
+class FakePlanDataProvider(PlanDataProvider):
+    def __init__(self, plans: list[PlanRowData]) -> None:
+        self._plans = plans
+        self._closed_plans: list[int] = []
+
+    def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
+        # Apply filters to in-memory plans
+        return [p for p in self._plans if matches_filter(p, filters)]
+
+    def close_plan(self, issue_number: int, issue_url: str) -> list[int]:
+        self._closed_plans.append(issue_number)
+        return []  # No PRs in fake
+```
 
 ### Testing Async Operations
 
 See [Textual Async Testing](textual-async.md) for patterns on testing async TUI code.
-
-## Data Shape at Each Layer
-
-Understanding the data shape at each pipeline stage helps debug rendering issues.
-
-### Layer 1: GitHub API Response
-
-Raw JSON from GitHub. Issue titles are plain strings without prefixes:
-
-```json
-{
-  "number": 123,
-  "title": "Add dark mode",
-  "labels": [{ "name": "erk-plan" }, { "name": "erk-learn" }],
-  "body": "<!-- erk-metadata: {...} -->\n\n# Plan content..."
-}
-```
-
-### Layer 2: Gateway/Service Response
-
-The data provider fetches GitHub issue data and transforms it into `PlanRowData` directly. There is no intermediate `Plan` dataclass in the TUI pipeline.
-
-### Layer 3: PlanRowData (Widget Consumption)
-
-Frozen dataclass with both raw data and pre-formatted display strings. The full type has 30+ fields spanning issue data, PR data, worktree data, run data, learn workflow data, objective data, and comment data. See `PlanRowData` in `erk.tui.data.types` for the complete field list and docstring.
-
-Key design: display fields (e.g., `pr_display`, `checks_display`, `learn_display_icon`) are pre-formatted at fetch time so the table widget never does string formatting during render. Raw fields (e.g., `pr_number`, `issue_url`, `run_url`) are available for actions like opening URLs.
-
-### Layer 4: DataTable Cell
-
-Individual cell values passed to `add_row()`:
-
-- Strings are interpreted as Rich markup by default
-- `[bracketed]` text treated as style tags
-- Wrap user data in `Text()` to escape - see [DataTable Markup Escaping](../textual/datatable-markup-escaping.md)
 
 ## Design Principles
 
@@ -154,4 +183,4 @@ Individual cell values passed to `add_row()`:
 - [Command Execution](command-execution.md) - Sync vs streaming execution patterns
 - [Streaming Output](streaming-output.md) - Real-time command output display
 - [Textual Async](textual-async.md) - Async testing patterns
-- [Erk Architecture](../architecture/erk-architecture.md) - Architecture patterns
+- [Erk Architecture](../architecture/erk-architecture.md) - Exit-with-command pattern

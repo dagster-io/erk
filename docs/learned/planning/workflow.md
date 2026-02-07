@@ -4,8 +4,6 @@ read_when:
   - "using .impl/ folders"
   - "understanding plan file structure"
   - "implementing plans"
-last_audited: "2026-02-05 10:01 PT"
-audit_result: clean
 ---
 
 # Planning Workflow
@@ -58,7 +56,7 @@ Create a plan using Claude's ExitPlanMode tool. This stores the plan in session 
 
 ### 2. Choose Your Workflow
 
-When exiting plan mode, you have five options:
+When exiting plan mode, you have three options:
 
 #### Option A: Save for Later ("Save the plan")
 
@@ -100,49 +98,6 @@ For small PR iterations that don't need issue tracking:
 - Implement changes directly in the current worktree
 - Best for minor fixes or follow-up changes to existing PRs
 
-#### Option D: View/Edit ("View or edit the plan")
-
-For reviewing or refining the plan:
-
-- Review the plan content in the session
-- Make adjustments to the plan if needed
-- Loop back to choose another option
-- Best when you need to refine before committing to save or implement
-
-#### Option E: Save and Submit for Review ("Save and submit for review")
-
-Save the plan to GitHub and create a PR-based review workflow:
-
-```bash
-# Step 1: Save the plan to GitHub
-/erk:plan-save
-
-# Step 2: Read the plan-saved-issue marker to get issue number
-# (Claude reads marker file automatically)
-
-# Step 3: Create a review PR for the plan
-/erk:plan-review <issue-number>
-
-# Step 4: STOP - stay in plan mode
-```
-
-This workflow:
-
-1. Saves the plan to GitHub as an issue with `erk-plan` label
-2. Creates a GitHub marker (`plan-saved-issue`) with the issue number
-3. Creates a review PR with the plan content for feedback
-4. Labels the PR with `erk-plan-review` for special handling
-5. Stays in plan mode for further refinement
-
-Use this when you want:
-
-- Collaborative review of the plan before implementation
-- Feedback from team members on the approach
-- Version-controlled plan iteration via PR comments
-- Formal approval process before starting work
-
-See [PR-Based Plan Review Workflow](pr-review-workflow.md) for complete details.
-
 ### 3. Implement from Existing Issue (Alternative)
 
 If you have an issue number from a previously saved plan:
@@ -175,26 +130,26 @@ When a user saves their plan to GitHub (via `/erk:plan-save`), the workflow shou
 │ like to do?"        │
 └─────────┬───────────┘
           │
-    ┌─────┼─────┬─────────────┬─────────────┐
-    │     │     │             │             │
-    ▼     ▼     ▼             ▼             ▼
-┌───────┐ ┌─────────┐ ┌──────────────┐ ┌──────────┐ ┌─────────────┐
-│ Save  │ │Implement│ │ Incremental  │ │View/Edit │ │Save & Review│
-│ (A)   │ │ (B)     │ │ (C)          │ │ (D)      │ │    (E)      │
-└───┬───┘ └────┬────┘ └──────┬───────┘ └────┬─────┘ └──────┬──────┘
-    │          │             │              │              │
-    ▼          ▼             ▼              │              ▼
-┌───────┐ ┌─────────────┐ ┌──────────────┐  │      ┌──────────────┐
-│GitHub │ │Save + Setup │ │Create marker │  │      │Save to GitHub│
-│issue  │ │+ Implement  │ │Exit plan mode│  │      │Create review │
-│created│ │+ CI + PR    │ │Impl directly │  │      │PR for plan   │
-└───┬───┘ └─────────────┘ └──────────────┘  │      └──────┬───────┘
-    │                                       │              │
-    ▼                                       │              ▼
-┌───────┐                                   │      ┌──────────────┐
-│ STOP  │  ← Do NOT call ExitPlanMode       │      │    STOP      │
-│(plan  │                          ┌────────┘      │  (plan mode) │
-│mode)  │                          │ (loop back)   └──────────────┘
+    ┌─────┼─────┬─────────────┐
+    │     │     │             │
+    ▼     ▼     ▼             ▼
+┌───────┐ ┌─────────┐ ┌──────────────┐ ┌──────────┐
+│ Save  │ │Implement│ │ Incremental  │ │View/Edit │
+│ (A)   │ │ (B)     │ │ (C)          │ │          │
+└───┬───┘ └────┬────┘ └──────┬───────┘ └────┬─────┘
+    │          │             │              │
+    ▼          ▼             ▼              │
+┌───────┐ ┌─────────────┐ ┌──────────────┐  │
+│GitHub │ │Save + Setup │ │Create marker │  │
+│issue  │ │+ Implement  │ │Exit plan mode│  │
+│created│ │+ CI + PR    │ │Impl directly │  │
+└───┬───┘ └─────────────┘ └──────────────┘  │
+    │                                       │
+    ▼                                       │
+┌───────┐                                   │
+│ STOP  │  ← Do NOT call ExitPlanMode       │
+│(plan  │                          ┌────────┘
+│mode)  │                          │ (loop back)
 └───────┘                          ▼
 ```
 
@@ -312,18 +267,6 @@ During planning, examined the authentication flow:
 - **One plan per worktree** - Each worktree has its own `.impl/` folder
 
 ## Remote Implementation via GitHub Actions
-
-### How Changes Are Detected
-
-The workflow uses a **dual-check** approach to detect implementation changes:
-
-1. **Pre-implementation**: Captures `git rev-parse HEAD` before the agent runs
-2. **Post-implementation**: Checks both uncommitted changes AND new commits
-3. **Result**: Changes exist if either channel has changes
-
-This dual-check prevents false negatives when agents commit their work without leaving uncommitted changes. See [erk-impl Change Detection](../ci/erk-impl-change-detection.md) for details.
-
-### Submitting for Remote Implementation
 
 For automated implementation via GitHub Actions, use `erk plan submit`:
 

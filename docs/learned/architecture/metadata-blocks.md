@@ -21,10 +21,10 @@ Metadata blocks are wrapped in HTML comments with a collapsible details element 
 
 ## Parsing Blocks
 
-Use functions from `erk_shared.gateway.github.metadata.core`:
+Use functions from `erk_shared.github.metadata.core`:
 
 ```python
-from erk_shared.gateway.github.metadata.core import (
+from erk_shared.github.metadata.core import (
     find_metadata_block,      # Find specific block by key
     extract_metadata_value,   # Get single field from block
     parse_metadata_blocks,    # Parse all blocks in text
@@ -44,7 +44,7 @@ session_id = extract_metadata_value(comment, "impl-started", "session_id")
 Use `create_metadata_block()` and `render_metadata_block()`:
 
 ```python
-from erk_shared.gateway.github.metadata.core import (
+from erk_shared.github.metadata.core import (
     create_metadata_block,
     render_metadata_block,
 )
@@ -76,14 +76,12 @@ See [Plan Schema Reference](../planning/plan-schema.md) for field details.
 
 ### Event Blocks (Comments)
 
-| Key                   | Purpose                                |
-| --------------------- | -------------------------------------- |
-| `impl-started`        | Implementation started event           |
-| `impl-ended`          | Implementation ended event             |
-| `learn-invoked`       | Learn command was run                  |
-| `workflow-started`    | GitHub Actions workflow started        |
-| `tripwire-candidates` | Proposed tripwires from learn workflow |
-| `learn-status`        | Learn plan processing status           |
+| Key                | Purpose                         |
+| ------------------ | ------------------------------- |
+| `impl-started`     | Implementation started event    |
+| `impl-ended`       | Implementation ended event      |
+| `learn-invoked`    | Learn command was run           |
+| `workflow-started` | GitHub Actions workflow started |
 
 ### Event Block Fields
 
@@ -119,25 +117,7 @@ learn_sessions = extract_learn_sessions(comments)
 3. **Keep blocks self-contained** - Each block should have all needed context
 4. **Prefer YAML fields over nested structures** - Flat is better than nested
 
-### Tripwire Candidates Block
-
-The `tripwire-candidates` block stores proposed tripwires from the learn workflow:
-
-```yaml
-candidates:
-  - action: "calling os.chdir()"
-    warning: "Use context.time.sleep() for testability"
-    target_doc_path: "architecture/erk-architecture.md"
-```
-
-Functions in `erk_shared.gateway.github.metadata.tripwire_candidates`:
-
-- `render_tripwire_candidates_comment()` - Create comment body
-- `extract_tripwire_candidates_from_comments()` - Parse from comments
-- `validate_candidates_json()` - Validate JSON file format
-
 ## Related Documentation
 
 - [Plan Schema Reference](../planning/plan-schema.md) - plan-header and plan-body fields
 - [Plan Lifecycle](../planning/lifecycle.md) - How events flow through plan lifecycle
-- [Tripwire Promotion Workflow](../planning/tripwire-promotion-workflow.md) - How tripwires flow from learn to docs

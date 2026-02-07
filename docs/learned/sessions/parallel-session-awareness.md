@@ -7,8 +7,6 @@ read_when:
 tripwires:
   - action: "working with session-specific data"
     warning: 'Multiple sessions can run in parallel. NEVER use "most recent by mtime" for session data lookup - always scope by session ID.'
-last_audited: "2026-02-05"
-audit_result: clean
 ---
 
 # Parallel Session Awareness
@@ -215,21 +213,6 @@ def test_parallel_sessions_isolated(tmp_path: Path) -> None:
     slug = find_plan_for_session("session-aaa", tmp_path)
     assert slug == "plan-alpha"  # Not "plan-beta"!
 ```
-
-## Agent Session Special Handling
-
-Agent sessions require different reading logic than main sessions:
-
-| Session Type | File Pattern         | Reading Logic                    |
-| ------------ | -------------------- | -------------------------------- |
-| Main         | `{session-id}.jsonl` | Filter by `sessionId` in entries |
-| Agent        | `agent-{uuid}.jsonl` | Read all entries, no filtering   |
-
-**Detection**: Check if `session_id.startswith("agent-")` and route to `_read_agent_session_entries()`.
-
-Agent files are isolated - they contain only that agent's conversation. Main session files can have interleaved entries from multiple sessions.
-
-See [Agent Session Files](agent-session-files.md) for full documentation on agent session handling.
 
 ## Summary
 

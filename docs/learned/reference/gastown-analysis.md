@@ -1,7 +1,5 @@
 ---
 title: Gastown Architecture Analysis
-last_audited: "2026-02-05 20:38 PT"
-audit_result: clean
 read_when:
   - "learning from parallel agent orchestration systems"
   - "designing multi-agent coordination"
