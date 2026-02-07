@@ -275,12 +275,12 @@ Launching analysis agents in parallel:
 
 For each XML file in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`:
 
-<!-- Model: haiku - Mechanical extraction from XML; deterministic pattern matching -->
+<!-- Model: sonnet - Session analysis benefits from nuanced reasoning about patterns and decisions -->
 
 ```
 Task(
   subagent_type: "general-purpose",
-  model: "haiku",
+  model: "sonnet",
   run_in_background: true,
   description: "Analyze session <session-id>",
   prompt: |
@@ -294,12 +294,12 @@ Task(
 
 **Agent 2: Code Diff Analysis** (if PR exists)
 
-<!-- Model: haiku - Structured inventory of changes; no creative reasoning needed -->
+<!-- Model: sonnet - Diff analysis benefits from understanding architectural significance of changes -->
 
 ```
 Task(
   subagent_type: "general-purpose",
-  model: "haiku",
+  model: "sonnet",
   run_in_background: true,
   description: "Analyze PR diff",
   prompt: |
@@ -315,12 +315,12 @@ Task(
 
 Proactively search for existing documentation to prevent duplicates and detect contradictions:
 
-<!-- Model: haiku - Search and classification task; fast iteration preferred -->
+<!-- Model: sonnet - Phantom detection and contradiction analysis require reasoning about code references -->
 
 ```
 Task(
   subagent_type: "general-purpose",
-  model: "haiku",
+  model: "sonnet",
   run_in_background: true,
   description: "Check existing docs",
   prompt: |
@@ -343,12 +343,12 @@ Extract search hints by:
 
 Analyze PR review comments and discussion comments to identify documentation opportunities:
 
-<!-- Model: haiku - Mechanical classification of comments; deterministic pattern matching -->
+<!-- Model: sonnet - Comment classification benefits from understanding nuance in reviewer intent -->
 
 ```
 Task(
   subagent_type: "general-purpose",
-  model: "haiku",
+  model: "sonnet",
   run_in_background: true,
   description: "Analyze PR comments for docs",
   prompt: |
@@ -450,12 +450,12 @@ Confirm you see the expected files (session-\*.md, diff-analysis.md, existing-do
 
 Launch the DocumentationGapIdentifier agent to synthesize outputs from the parallel agents:
 
-<!-- Model: haiku - Rule-based deduplication; explicit criteria, no creativity -->
+<!-- Model: sonnet - Gap identification with adversarial verification requires reasoning about phantom references -->
 
 ```
 Task(
   subagent_type: "general-purpose",
-  model: "haiku",
+  model: "sonnet",
   description: "Identify documentation gaps",
   prompt: |
     Load and follow the agent instructions in `.claude/agents/learn/documentation-gap-identifier.md`
@@ -528,12 +528,12 @@ Write(
 
 Launch the TripwireExtractor agent to pull structured tripwire data from the plan:
 
-<!-- Model: haiku - Mechanical extraction of structured data from prose; no creativity needed -->
+<!-- Model: sonnet - Tripwire extraction benefits from understanding the significance of patterns -->
 
 ```
 Task(
   subagent_type: "general-purpose",
-  model: "haiku",
+  model: "sonnet",
   description: "Extract tripwire candidates",
   prompt: |
     Load and follow the agent instructions in `.claude/agents/learn/tripwire-extractor.md`

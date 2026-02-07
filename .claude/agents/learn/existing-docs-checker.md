@@ -51,7 +51,33 @@ You receive:
    - **Partial overlap**: Existing doc covers related topic
    - **No match**: Topic not currently documented
 
-5. **Detect contradictions:**
+5. **Verify Code References (Phantom Detection):**
+
+   For each existing doc read in Step 3, extract code artifact references:
+   - File paths matching `src/`, `packages/`, `.claude/`, `tests/` patterns
+   - Source pointer comments (e.g., `See ClassName.method() in path/to/file.py`)
+   - `erk <command>` patterns
+   - Class/function names with file locations
+
+   For each extracted file path, run `Glob(pattern: "<path>")`. If no results → mark as **PHANTOM**.
+
+   For each class/function name at a specific file location, verify with `Grep(pattern: "<name>", path: "<file>")`. If no results → mark as **PHANTOM**.
+
+   **Per-document classification:**
+   - `>50%` phantom refs → `STALE_DOC`
+   - Any phantom refs → `HAS_PHANTOM_REFS`
+
+   **Two-description staleness check:** When Step 4 finds two docs covering the same concept (PARTIAL_OVERLAP), check artifact refs in both. If Doc A has phantoms and Doc B doesn't → Doc A is stale.
+
+6. **Detect contradictions (staleness-first):**
+
+   Before classifying a contradiction, check Step 5 phantom results:
+   - Existing doc has phantom refs → classify as `STALE_NOT_CONTRADICTION`, recommend `DELETE_STALE_ENTRY` (not harmonize)
+   - New insight references phantom artifacts → flag as `INVESTIGATE`
+   - Neither side has phantoms → genuine contradiction, proceed with existing logic
+
+   **Key principle: "One ghost + one real = delete the ghost."**
+
    When reading related files, look for statements that conflict with the new insights being documented:
    - **Opposite guidance**: Doc A says "do X", new insight says "don't do X"
    - **Outdated patterns**: Existing doc recommends deprecated approach
@@ -106,6 +132,12 @@ For each topic that might be documented:
 If suggesting new documentation, these topics already have coverage:
 - <topic>: See <existing-doc-path>
 
+### Stale Reference Warnings
+
+| Existing Doc | Phantom References | Confirmed References | Classification |
+|---|---|---|---|
+| path/to/doc.md | `src/erk/old.py` (MISSING) | `src/erk/new.py` (EXISTS) | HAS_PHANTOM_REFS |
+
 ### Contradiction Warnings
 
 Potential conflicts between existing docs and new insights:
@@ -122,7 +154,7 @@ For each contradiction:
    - Existing guidance: "<quote or summary>"
    - New insight: "<conflicting statement>"
    - Severity: HIGH | MEDIUM | LOW
-   - Resolution: UPDATE_EXISTING | CLARIFY_CONTEXT | INVESTIGATE
+   - Resolution: UPDATE_EXISTING | CLARIFY_CONTEXT | INVESTIGATE | DELETE_STALE_ENTRY
 ```
 
 ## Key Principles
@@ -141,3 +173,9 @@ For each contradiction:
 - **Check tripwires.md**: Tripwires contain authoritative "CRITICAL" rules—contradicting these is HIGH severity
 - **Newer isn't always right**: The new insight may be wrong; flag for investigation, don't assume
 - **Look for absolutes**: Words like "always", "never", "required", "forbidden" signal strong claims that may conflict
+
+### Phantom Detection
+
+- **Verify before harmonizing**: When two docs describe the same concept differently, check if both reference real code first
+- **File paths are verifiable claims**: Every `src/` or `packages/` path in a doc is testable. Test it.
+- **Stale > Wrong**: A doc referencing nonexistent code actively misleads. A missing doc merely leaves a gap.

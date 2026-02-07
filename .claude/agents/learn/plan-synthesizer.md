@@ -62,7 +62,7 @@ Create a narrative explaining:
 For each item from the gap analysis (non-SKIP items):
 
 1. **Determine location**: Map to appropriate `docs/learned/` path
-2. **Determine action**: CREATE new doc or UPDATE existing
+2. **Determine action**: CREATE new doc, UPDATE existing, DELETE_STALE, or UPDATE_REFERENCES
 3. **Generate draft content starter**:
    - NOT just "document this" - provide actual starter markdown
    - Include the key points to cover
@@ -72,6 +72,10 @@ For each item from the gap analysis (non-SKIP items):
    - Point to the source file: `See ClassName.method() in path/to/file.py` (agents should grep to find the exact location)
    - Short illustrative snippets (≤5 lines) showing a pattern are acceptable
    - Follow `docs/learned/documentation/source-pointers.md` for format
+
+**For DELETE_STALE items:** Action is DELETE or REWRITE. Draft content describes what to remove and why (the phantom references detected). Do NOT generate replacement content unless gap analysis says one is needed.
+
+**For UPDATE_REFERENCES items:** Action is UPDATE. Draft content lists phantom paths and, if known, the correct current paths.
 
 ### Step 5: Describe Tripwire Insights
 
@@ -148,6 +152,17 @@ Return a complete learn plan markdown:
 **Conflict:** <description of the contradiction>
 **Resolution:** <what to do - update existing, add context, etc.>
 
+## Stale Documentation Cleanup
+
+Existing docs with phantom references requiring action:
+
+### 1. <doc title>
+
+**Location:** `<path>`
+**Action:** DELETE_STALE | UPDATE_REFERENCES
+**Phantom References:** `<list of missing paths>`
+**Cleanup Instructions:** <what to remove or update>
+
 ## Prevention Insights
 
 Errors and failed approaches discovered during implementation:
@@ -198,4 +213,6 @@ Items with score 2-3 (may warrant promotion with additional context):
 5. **Write tripwire insights naturally**: Describe action patterns, warnings, and target docs in prose. A separate extraction agent handles structured data — do not include `## Tripwire Additions` with YAML code blocks.
 
 6. **Source pointers over verbatim code**: Draft content starters MUST use source file references instead of copying code blocks. Code in documentation goes stale silently. See `docs/learned/documentation/source-pointers.md`.
+
+7. **Stale cleanup before new content**: DELETE_STALE items appear before CREATE items in the output. Removing phantom documentation is higher priority than adding new documentation.
 ```
