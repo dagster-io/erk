@@ -1149,16 +1149,14 @@ A parameter (like `repo_root`) whose presence/absence determines which execution
 
 ## Objectives System
 
-> **Two Systems**: Erk has two objective tracking mechanisms. The **code-level system**
-> described below (`erk objective turn`, `ObjectiveDefinition`, `.erk/objectives/`) handles
-> automated evaluation loops — Claude evaluates codebase state against a definition and
-> generates plans for gaps. The **GitHub-issue system** (see `.claude/skills/objective/`)
-> tracks objectives as labeled GitHub issues with roadmap tables and action comments.
-> The GitHub-issue system is used for human-visible tracking; the code-level system is
-> used for automated agent-driven objective loops. They serve different purposes and
-> are not interchangeable.
+> **Note**: The code-level objective system described below (`ObjectiveDefinition`,
+> `TurnResult`, `.erk/objectives/`) is a **design concept that was never implemented**.
+> The only active objective system is the **GitHub-issue system** (see
+> `.claude/skills/objective/`), which tracks objectives as labeled GitHub issues with
+> roadmap tables and action comments. The code-level types and CLI commands referenced
+> below do not exist in the codebase.
 
-The code-level objectives system enables incremental, bounded progress toward long-running goals. Objectives act as "plan factories" — they generate focused implementation plans rather than being implemented directly.
+The objectives system below describes a design for incremental, bounded progress toward long-running goals. Objectives would act as "plan factories" — generating focused implementation plans rather than being implemented directly.
 
 ### Objective
 
