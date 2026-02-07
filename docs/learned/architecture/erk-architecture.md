@@ -1,6 +1,4 @@
 ---
-last_audited: "2026-02-03"
-audit_result: edited
 title: Erk Architecture Patterns
 read_when:
   - "understanding erk architecture"
@@ -13,11 +11,11 @@ tripwires:
   - action: "passing dry_run boolean flags through business logic function parameters"
     warning: "Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands."
   - action: "calling os.chdir() in erk code"
-    warning: "After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError."
+    warning: "After os.chdir(), regenerate context using regenerate_context(ctx, repo_root=repo.root). Stale ctx.cwd causes FileNotFoundError."
   - action: "importing time module or calling time.sleep() or datetime.now()"
     warning: "Use context.time.sleep() and context.time.now() for testability. Direct time.sleep() makes tests slow and datetime.now() makes tests non-deterministic."
   - action: "implementing CLI flags that affect post-mutation behavior"
-    warning: "Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target)."
+    warning: "Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk pr land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target)."
   - action: "comparing worktree path to repo_root to detect root worktree"
     warning: "Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently."
   - action: "detecting current worktree using path comparisons on cwd"
@@ -27,15 +25,13 @@ tripwires:
   - action: 'using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code'
     warning: "Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables."
   - action: "injecting Time dependency into gateway real.py for lock-waiting or retry logic"
-    warning: "Accept optional Time in __init__ with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/gateway/git/lock.py for pattern."
+    warning: "Accept optional Time in __init__ with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/git/lock.py for pattern."
   - action: "adding file I/O, network calls, or subprocess invocations to a class __init__"
     warning: "Load `dignified-python` skill first. Class __init__ should be lightweight (just data assignment). Heavy operations belong in static factory methods like `from_config_path()` or `load()`. This enables direct instantiation in tests without I/O setup."
   - action: "calling ctx.git mutation methods (create_branch, delete_branch, checkout_branch, checkout_detached, create_tracking_branch)"
     warning: "Use ctx.branch_manager instead. Branch mutation methods are in GitBranchOps sub-gateway, accessible only through BranchManager. Query methods (get_current_branch, list_local_branches, etc.) remain on ctx.git."
   - action: "calling ctx.graphite mutation methods (track_branch, delete_branch, submit_branch)"
     warning: "Use ctx.branch_manager instead. Branch mutation methods are in GraphiteBranchOps sub-gateway, accessible only through BranchManager. Query methods (is_branch_tracked, get_parent_branch, etc.) remain on ctx.graphite."
-  - action: "calling GraphiteBranchManager.create_branch() without explicit checkout"
-    warning: "GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch."
 ---
 
 # Erk Architecture Patterns
@@ -127,12 +123,12 @@ from erk.core.context import regenerate_context
 
 # After os.chdir()
 os.chdir(new_directory)
-ctx = regenerate_context(ctx)
+ctx = regenerate_context(ctx, repo_root=repo.root)
 
 # After worktree removal
 if removed_current_worktree:
     os.chdir(safe_directory)
-    ctx = regenerate_context(ctx)
+    ctx = regenerate_context(ctx, repo_root=repo.root)
 ```
 
 ### Why Regenerate
@@ -203,11 +199,7 @@ def track_event(context: ErkContext, issue_number: int) -> None:
 
 ### Implementations
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/time/real.py -->
-
-**Production (RealTime)**: See `RealTime` class in `packages/erk-shared/src/erk_shared/gateway/time/real.py`
-
-Usage example:
+**Production (RealTime)**:
 
 ```python
 from erk_shared.gateway.time.real import RealTime
@@ -216,11 +208,7 @@ time = RealTime()
 time.sleep(2.0)  # Actually sleeps for 2 seconds
 ```
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/time/fake.py -->
-
-**Testing (FakeTime)**: See `FakeTime` class in `packages/erk-shared/src/erk_shared/gateway/time/fake.py`
-
-Usage example:
+**Testing (FakeTime)**:
 
 ```python
 from erk_shared.gateway.time.fake import FakeTime
@@ -234,7 +222,7 @@ assert fake_time.sleep_calls == [2.0]
 
 ### Real-World Examples
 
-**Retry with exponential backoff**: Use `context.time.sleep(delay)` in retry loops for instant test execution. See `src/erk/cli/commands/land_cmd.py` and `src/erk/cli/commands/land_pipeline.py` for production patterns.
+**Retry with exponential backoff**: Use `context.time.sleep(delay)` in retry loops for instant test execution. See `src/erk/cli/commands/land_stack/` for production patterns.
 
 **GitHub API stabilization**:
 
@@ -271,14 +259,12 @@ def test_retry_logic():
 
 ### Interface
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/time/abc.py -->
+The `Time` ABC defines abstract methods for time operations including `sleep()` and `now()`. Implementations:
 
-The `Time` ABC defines abstract methods for time operations including `sleep()` and `now()`. See `packages/erk-shared/src/erk_shared/gateway/time/abc.py` for the canonical interface definition.
+- **RealTime**: Uses actual `time.sleep()` and `datetime.now()`
+- **FakeTime**: Returns immediately, tracks calls for test assertions
 
-Implementations:
-
-- **RealTime**: Uses actual `time.sleep()` and `datetime.now()` (see `packages/erk-shared/src/erk_shared/gateway/time/real.py`)
-- **FakeTime**: Returns immediately, tracks calls for test assertions (see `packages/erk-shared/src/erk_shared/gateway/time/fake.py`)
+See `erk_shared/gateway/time/abc.py` for the canonical interface definition.
 
 ### When to Use
 
@@ -319,7 +305,60 @@ If you find code using `datetime.now()`:
 
 ## TUI Exit-with-Command Pattern
 
-_Note: This pattern has been deprecated. The `exit_command` attribute no longer exists in `ErkDashApp`. See `src/erk/tui/app.py` for current TUI architecture._
+The TUI can request command execution after exit. This allows the TUI to trigger CLI commands that require a fresh terminal (not running inside Textual).
+
+### App Side (tui/app.py)
+
+```python
+class ErkDashApp(App):
+    def __init__(self, ...):
+        ...
+        self.exit_command: str | None = None  # Command to run after exit
+
+# In a ModalScreen:
+def _on_confirmed(self, result: bool | None) -> None:
+    if result is True:
+        app = self.app
+        if isinstance(app, ErkDashApp):
+            app.exit_command = "erk implement 123"
+        self.dismiss()
+        self.app.exit()
+```
+
+### CLI Side (cli/commands/list_cmd.py)
+
+```python
+app = ErkDashApp(provider, filters)
+app.run()
+
+# After TUI exits, check for command to execute
+if app.exit_command:
+    import os
+    import shlex
+    args = shlex.split(app.exit_command)
+    os.execvp(args[0], args)  # Replaces current process
+```
+
+### When to Use
+
+Use this pattern when:
+
+- TUI action requires fresh terminal output (not Textual rendering)
+- Command needs to run interactively after TUI closes
+- Chaining from TUI to another CLI command
+
+### Testing Considerations
+
+When mocking `ErkDashApp` in tests, include the `exit_command` attribute:
+
+```python
+class MockApp:
+    def __init__(self, provider, filters, refresh_interval):
+        self.exit_command: str | None = None  # Required attribute
+
+    def run(self):
+        pass
+```
 
 ## Gateway Directory Structure
 
@@ -329,35 +368,30 @@ Erk uses a consistent directory structure for all gateways (git, github, graphit
 
 ```
 packages/erk-shared/src/erk_shared/
-└── gateway/                           # All gateways live here
-    ├── git/                           # Core git gateway
-    │   ├── __init__.py
-    │   ├── abc.py                     # ABC interface definition
-    │   ├── real.py                    # Production implementation
-    │   ├── fake.py                    # In-memory test implementation
-    │   ├── dry_run.py                 # No-op wrapper for dry-run mode
-    │   ├── lock.py                    # Git lock handling
-    │   └── printing.py                # Wrapper that logs operations
-    ├── github/                        # GitHub API gateway
-    │   ├── __init__.py
-    │   ├── abc.py
-    │   ├── real.py
-    │   ├── fake.py
-    │   └── dry_run.py
-    ├── graphite/                      # Graphite stack operations
+├── git/                           # Core git gateway
+│   ├── __init__.py                # Re-exports all implementations
+│   ├── abc.py                     # ABC interface definition
+│   ├── real.py                    # Production implementation
+│   ├── fake.py                    # In-memory test implementation
+│   ├── dry_run.py                 # No-op wrapper for dry-run mode
+│   └── printing.py                # (Optional) Wrapper that logs operations
+├── github/                        # GitHub API gateway
+│   ├── __init__.py
+│   ├── abc.py
+│   ├── real.py
+│   └── fake.py
+└── gateway/                       # Domain-specific gateways
+    ├── erk_wt/                    # Erk worktree operations
     │   ├── __init__.py
     │   ├── abc.py
     │   ├── real.py
-    │   ├── fake.py
-    │   ├── disabled.py
-    │   └── dry_run.py
-    ├── branch_manager/                # Branch workflow abstraction
-    │   ├── __init__.py
-    │   ├── abc.py
-    │   ├── git.py
-    │   ├── graphite.py
     │   └── fake.py
-    └── time/                          # Time abstraction
+    ├── graphite/                  # Graphite stack operations
+    │   ├── __init__.py
+    │   ├── abc.py
+    │   ├── real.py
+    │   └── fake.py
+    └── time/                      # Time abstraction
         ├── __init__.py
         ├── abc.py
         ├── real.py
@@ -432,28 +466,33 @@ class DryRunMyGateway(MyGateway):
         return ""  # No-op, return empty or default value
 ```
 
-**`__init__.py`** - Lightweight docstring (no re-exports):
+**`__init__.py`** - Re-export pattern:
 
 ```python
-"""MyGateway operations.
+"""MyGateway operations."""
 
-Import from submodules:
-- abc: MyGateway
-- real: RealMyGateway
-"""
+from erk_shared.my_gateway.abc import MyGateway
+from erk_shared.my_gateway.real import RealMyGateway
+from erk_shared.my_gateway.fake import FakeMyGateway
+
+__all__ = [
+    "MyGateway",      # ABC interface
+    "RealMyGateway",  # Production implementation
+    "FakeMyGateway",  # Test implementation
+]
 ```
-
-Note: Erk gateway `__init__.py` files do NOT re-export classes. Consumers import directly from the submodule files (e.g., `from erk_shared.gateway.git.abc import Git`).
 
 ### Gateway Locations
 
-All gateways live under `packages/erk-shared/src/erk_shared/gateway/`:
+**Core gateways** (used across the codebase):
 
-- `gateway/git/` - Git operations
-- `gateway/github/` - GitHub API
-- `gateway/graphite/` - Graphite stack operations
-- `gateway/branch_manager/` - Branch workflow abstraction (Graphite vs Git)
-- `gateway/time/` - Time abstraction for testing
+- `packages/erk-shared/src/erk_shared/git/` - Git operations
+- `packages/erk-shared/src/erk_shared/github/` - GitHub API
+- `packages/erk-shared/src/erk_shared/graphite/` - Graphite stack operations
+
+**Domain gateways** (specific domains):
+
+- `packages/erk-shared/src/erk_shared/gateway/<name>/` - Domain-specific operations
 
 ### When to Create a New Gateway
 
@@ -472,17 +511,20 @@ All gateways live under `packages/erk-shared/src/erk_shared/gateway/`:
 
 ### Import Pattern
 
-**Import from submodule files directly:**
+**From consumers:**
 
 ```python
-# Import ABC from abc.py, implementations from their respective files
-from erk_shared.gateway.git.abc import Git, WorktreeInfo
-from erk_shared.gateway.git.real import RealGit
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.abc import GitHub
+# Import from top-level package (uses __init__.py re-exports)
+from erk_shared.git import Git, RealGit, FakeGit
+from erk_shared.github import GitHub, RealGitHub, FakeGitHub
 ```
 
-Gateway `__init__.py` files do not re-export, so always import from the specific submodule.
+**Not this:**
+
+```python
+# DON'T import from implementation files directly
+from erk_shared.git.real import RealGit  # Bypasses __init__.py
+```
 
 ### Testing All Four Layers
 
@@ -609,13 +651,13 @@ Commands that need to behave differently on trunk vs feature branches use the br
 - `trunk_branch`: Name of the trunk branch (main or master)
 - `is_on_trunk`: True if current branch is trunk
 
-See `erk_shared/learn/extraction/types.py` for the dataclass definition.
+See `erk_shared/extraction/types.py` for the dataclass definition.
 
 ### Helper Function
 
 The `get_branch_context()` helper detects current branch, trunk branch (prefers 'main', falls back to 'master'), and whether current branch is trunk.
 
-See `erk_shared/learn/extraction/session_discovery.py` for the canonical implementation.
+See `erk_shared/extraction/session_discovery.py` for the canonical implementation.
 
 ### When to Use
 
@@ -640,7 +682,7 @@ Commands typically use branch context to decide behavior:
 - **On trunk**: Show all feature branches, repository-wide queries
 - **On feature branch**: Show items for current feature only, branch-relative queries
 
-See `src/erk/cli/commands/exec/scripts/list_sessions.py` for a real-world usage example.
+See `kit_cli_commands/erk/list_sessions.py` for a real-world usage example.
 
 ### Testing Branch Context
 
@@ -845,9 +887,15 @@ def execute_quick_submit(ctx: ErkContext) -> None:
 
 ### How BranchManager is Created
 
-<!-- Source: packages/erk-shared/src/erk_shared/context/context.py -->
+`ErkContext.branch_manager` property automatically selects the right implementation:
 
-`ErkContext.branch_manager` property automatically selects the right implementation. See the `branch_manager` property in `packages/erk-shared/src/erk_shared/context/context.py` for the complete implementation including DryRun unwrapping logic.
+```python
+@property
+def branch_manager(self) -> BranchManager:
+    if isinstance(self.graphite, GraphiteDisabled):
+        return GitBranchManager(git=self.git, github=self.github)
+    return GraphiteBranchManager(git=self.git, graphite=self.graphite)
+```
 
 ### Adding New Operations to BranchManager
 
@@ -894,47 +942,6 @@ def test_quick_submit_tracks_submission() -> None:
     assert fake_branch_manager.submitted_branches == ["feature-branch"]
 ```
 
-### context.branch_manager Property
-
-<!-- Source: packages/erk-shared/src/erk_shared/context/context.py -->
-
-The `ErkContext.branch_manager` property provides automatic wrapper unwrapping for dry-run mode. See the complete implementation in `packages/erk-shared/src/erk_shared/context/context.py`.
-
-This unwrapping is necessary because:
-
-1. `DryRunGraphite` wraps a real `Graphite` implementation
-2. `isinstance(ctx.graphite, GraphiteDisabled)` would return `False` for `DryRunGraphite`
-3. Without unwrapping, commands in dry-run mode would incorrectly use `GraphiteBranchManager`
-
-## Graceful Degradation Patterns
-
-When operations have optional behavior based on availability of resources, use graceful degradation instead of hard failures.
-
-### Pattern: Branch Lookup Fallback
-
-<!-- Source: src/erk/cli/commands/submit.py -->
-
-The `get_learn_plan_parent_branch()` function (see `src/erk/cli/commands/submit.py`) gracefully handles missing parent plans by returning `None` when no parent is found.
-
-Callers check the return value and fall back to trunk:
-
-```python
-parent_branch = get_learn_plan_parent_branch(ctx, repo_root, issue.body)
-base_branch = parent_branch if parent_branch else trunk_branch
-```
-
-### When to Use Graceful Degradation
-
-- **Resource might not exist**: Parent plan may be deleted, branch may not be recorded
-- **Feature is enhancement, not requirement**: Stacking on parent is nice, stacking on trunk still works
-- **Failure doesn't corrupt state**: Using trunk as base doesn't break anything
-
-### When NOT to Use
-
-- **Failure indicates bug**: Missing required field should raise exception
-- **Degraded behavior is confusing**: User expects A, silently gets B
-- **State corruption possible**: Partial operation would leave invalid state
-
 ## Deferred Actions via Activation Scripts
 
 When actions must execute **after** the user changes directory (e.g., deleting the current worktree), use the `post_cd_commands` pattern to embed shell commands in activation scripts.
@@ -951,23 +958,32 @@ Some operations cannot complete while the shell is inside the target directory:
 Pass shell commands to `render_activation_script()` via the `post_cd_commands` parameter. These commands execute after the `cd` command completes.
 
 ```python
-from erk.cli.activation import render_activation_script
+from erk.core.activation import render_activation_script
 
 def navigate_with_cleanup(target_worktree: Path, cleanup_commands: list[str]) -> str:
     return render_activation_script(
-        worktree_path=target_worktree,
-        target_subpath=None,
+        directory=target_worktree,
         post_cd_commands=cleanup_commands,
-        final_message="echo 'Navigated with cleanup'",
-        comment="# navigate-with-cleanup",
     )
 ```
 
 ### Real-World Example: `--delete-current` Flag
 
-<!-- Source: src/erk/cli/commands/navigation_helpers.py -->
+The `erk up` and `erk down` commands support `--delete-current` to navigate away then delete the current worktree:
 
-The `erk up` and `erk down` commands support `--delete-current` to navigate away then delete the current worktree. See `render_deferred_deletion_commands()` in `src/erk/cli/commands/navigation_helpers.py` for the implementation.
+```python
+# From navigation_helpers.py
+def render_deferred_deletion_commands(
+    worktree_path: Path,
+    branch_name: str,
+    git: Git,
+) -> list[str]:
+    """Generate shell commands to delete worktree and branch after navigation."""
+    return [
+        f"git worktree remove {shlex.quote(str(worktree_path))}",
+        f"git branch -D {shlex.quote(branch_name)}",
+    ]
+```
 
 The activation script structure:
 
@@ -991,44 +1007,6 @@ Use deferred actions via `post_cd_commands` when:
 - Commands are executed in sequence after `cd` succeeds
 - Use `shlex.quote()` for paths to handle special characters safely
 - Commands run in the target directory's context
-
-## Idempotency Patterns
-
-Erk uses two distinct idempotency patterns:
-
-### Passive Idempotency
-
-"If already done, skip silently."
-
-```python
-if ctx.graphite.is_branch_tracked(branch_name):
-    return  # Already tracked, nothing to do
-ctx.graphite.track_branch(branch_name, parent)
-```
-
-**Use when:** The previous operation's side effects are sufficient.
-
-### Active Idempotency
-
-"If already done, re-run safely."
-
-```python
-parent = ctx.branch_manager.get_parent_branch(repo.root, branch_name)
-if parent is not None:  # Already tracked
-    ctx.graphite.sync(repo.root, force=True)
-    ctx.graphite.restack_idempotent(repo.root, no_interactive=True)
-```
-
-**Use when:** Re-running provides value (e.g., sync pulls latest changes, restack updates base).
-
-### Pattern Selection
-
-| Scenario        | Pattern | Reason                       |
-| --------------- | ------- | ---------------------------- |
-| Branch tracking | Passive | Re-tracking has no benefit   |
-| Remote sync     | Active  | New commits may exist        |
-| Restack         | Active  | Parent may have changed      |
-| Squash          | Active  | Additional commits may exist |
 
 ## Design Principles
 

@@ -4,8 +4,6 @@ read_when:
   - "parsing GitHub URLs"
   - "extracting PR or issue numbers from URLs"
   - "understanding github parsing layers"
-last_audited: "2026-02-05 15:05 PT"
-audit_result: clean
 ---
 
 # GitHub URL Parsing Architecture
@@ -26,16 +24,35 @@ This document describes the two-layer architecture for parsing GitHub URLs and e
                     ▼
 ┌─────────────────────────────────────────────┐
 │            Pure Parsing Layer                │
-│   erk_shared.gateway.github.parsing                  │
+│   erk_shared.github.parsing                  │
 │   - Returns int | None                       │
 │   - No side effects                          │
 │   - Reusable across contexts                 │
 └─────────────────────────────────────────────┘
 ```
 
-## Layer 1: Pure Parsing (`erk_shared.gateway.github.parsing`)
+## Layer 1: Pure Parsing (`erk_shared.github.parsing`)
 
-See `packages/erk-shared/src/erk_shared/gateway/github/parsing.py:222-265` for `parse_pr_number_from_url` and `parse_issue_number_from_url`.
+The foundational layer provides pure parsing functions:
+
+```python
+from erk_shared.github.parsing import (
+    parse_pr_number,
+    parse_issue_number,
+    parse_repo_from_url,
+)
+
+# Returns int | None - no exceptions
+pr_number = parse_pr_number("https://github.com/owner/repo/pull/123")
+# Returns: 123
+
+issue_number = parse_issue_number("https://github.com/owner/repo/issues/456")
+# Returns: 456
+
+# Invalid input returns None
+result = parse_pr_number("not-a-url")
+# Returns: None
+```
 
 **Characteristics:**
 
@@ -46,7 +63,22 @@ See `packages/erk-shared/src/erk_shared/gateway/github/parsing.py:222-265` for `
 
 ## Layer 2: CLI Wrappers (`erk.cli.github_parsing`)
 
-See `src/erk/cli/github_parsing.py:21-105` for `parse_issue_identifier` and `parse_pr_identifier`.
+The CLI layer wraps pure functions with user-friendly error handling:
+
+```python
+from erk.cli.github_parsing import (
+    require_pr_number,
+    require_issue_number,
+)
+
+# Raises SystemExit with message on failure
+pr_number = require_pr_number("invalid-url")
+# Exits with: "Error: Could not parse PR number from 'invalid-url'"
+
+# On success, returns the parsed value
+pr_number = require_pr_number("https://github.com/owner/repo/pull/123")
+# Returns: 123
+```
 
 **Characteristics:**
 
@@ -57,43 +89,126 @@ See `src/erk/cli/github_parsing.py:21-105` for `parse_issue_identifier` and `par
 
 ### Extended Identifier Parsing
 
+For commands that need to accept user-friendly identifiers beyond URLs, use the `parse_*_identifier` functions:
+
+```python
+from erk.cli.github_parsing import (
+    parse_issue_identifier,
+    parse_pr_identifier,
+)
+
+# parse_issue_identifier handles three formats:
+issue_num = parse_issue_identifier("123")       # Plain number -> 123
+issue_num = parse_issue_identifier("P456")      # P-prefixed -> 456
+issue_num = parse_issue_identifier("p789")      # Case-insensitive -> 789
+issue_num = parse_issue_identifier("https://github.com/owner/repo/issues/42")  # URL -> 42
+
+# parse_pr_identifier handles two formats:
+pr_num = parse_pr_identifier("123")             # Plain number -> 123
+pr_num = parse_pr_identifier("https://github.com/owner/repo/pull/42")  # URL -> 42
+```
+
 **When to use:**
 
-- `parse_issue_identifier`: Plan-related commands where users may use P-prefixed IDs (P123)
+- `parse_issue_identifier`: Plan-related commands (`erk plan co`, `erk plan view`, etc.) where users may use P-prefixed IDs
 - `parse_pr_identifier`: PR-related commands that accept PR numbers or URLs
+- `require_issue_number`/`require_pr_number`: When you only need URL parsing (no P-prefix support)
 
 ## Canonical Import Locations
 
-- **Pure parsing**: `erk_shared.gateway.github.parsing` (returns `int | None`)
-- **CLI wrappers**: `erk.cli.github_parsing` (returns `int` or exits)
+| Function                 | Import From                 | Returns        |
+| ------------------------ | --------------------------- | -------------- |
+| `parse_pr_number`        | `erk_shared.github.parsing` | `int \| None`  |
+| `parse_issue_number`     | `erk_shared.github.parsing` | `int \| None`  |
+| `parse_repo_from_url`    | `erk_shared.github.parsing` | `str \| None`  |
+| `require_pr_number`      | `erk.cli.github_parsing`    | `int` or exits |
+| `require_issue_number`   | `erk.cli.github_parsing`    | `int` or exits |
+| `parse_issue_identifier` | `erk.cli.github_parsing`    | `int` or exits |
+| `parse_pr_identifier`    | `erk.cli.github_parsing`    | `int` or exits |
 
 ## Usage Guidelines
 
 ### In CLI Commands
 
-Use `parse_*_identifier` functions from `erk.cli.github_parsing` (raises SystemExit on invalid input).
+Use the `require_*` functions from CLI layer:
+
+```python
+# In src/erk/cli/commands/pr.py
+from erk.cli.github_parsing import require_pr_number
+
+@click.command()
+@click.argument("url_or_number")
+def show_pr(url_or_number: str) -> None:
+    pr_number = require_pr_number(url_or_number)
+    # If we get here, pr_number is valid int
+    click.echo(f"PR #{pr_number}")
+```
 
 ### In Libraries and Business Logic
 
-Use pure parsing functions from `erk_shared.gateway.github.parsing` (returns `int | None`).
+Use the pure parsing functions:
+
+```python
+# In src/erk_shared/services/pr_service.py
+from erk_shared.github.parsing import parse_pr_number
+
+def process_pr(url_or_number: str) -> Result:
+    pr_number = parse_pr_number(url_or_number)
+    if pr_number is None:
+        return Result.error("Invalid PR reference")
+    return Result.success(pr_number)
+```
 
 ### In Tests
 
-Use pure functions for predictable testing (no exceptions to catch).
+Use pure functions for predictable testing:
+
+```python
+from erk_shared.github.parsing import parse_pr_number
+
+def test_parse_pr_number_from_url():
+    result = parse_pr_number("https://github.com/owner/repo/pull/42")
+    assert result == 42
+
+def test_parse_pr_number_invalid():
+    result = parse_pr_number("not-a-url")
+    assert result is None
+```
 
 ## Anti-Patterns
 
 ### Don't: Create Local Helper Functions
 
-Use the shared module `erk_shared.gateway.github.parsing` instead of duplicating regex parsing logic.
+```python
+# BAD - don't duplicate parsing logic
+def _extract_pr_number(url: str) -> int | None:
+    match = re.search(r"/pull/(\d+)", url)
+    return int(match.group(1)) if match else None
+```
+
+Use the shared module instead.
 
 ### Don't: Re-export from Other Modules
 
-Import directly from the canonical location (no re-exports via `__all__`).
+```python
+# BAD - don't re-export
+from erk_shared.github.parsing import parse_pr_number
+__all__ = ["parse_pr_number"]  # Re-exporting
+```
+
+Import directly from the canonical location.
 
 ### Don't: Mix Layers
 
-Never use CLI wrappers (which call `SystemExit`) in library code. Use the pure parsing layer.
+```python
+# BAD - using CLI layer in library code
+from erk.cli.github_parsing import require_pr_number
+
+def library_function(url: str) -> int:
+    return require_pr_number(url)  # Will call SystemExit!
+```
+
+Use pure layer in library code.
 
 ## Related Topics
 

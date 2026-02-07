@@ -1,7 +1,5 @@
 ---
 title: CLI Command Organization
-last_audited: "2026-02-03 15:25 PT"
-audit_result: edited
 read_when:
   - "organizing CLI commands"
   - "understanding command structure"
@@ -380,4 +378,7 @@ wt_group.add_command(create_wt)  # Grouped under wt
 
 ## Related Documentation
 
+- [Kit CLI Commands](../kits/cli-commands.md) - Kit-based command patterns
 - [CLI Output Styling](output-styling.md) - Output formatting guidelines
+- [CLI Script Mode](script-mode.md) - Shell integration patterns
+- [Command Agent Delegation](../planning/agent-delegation.md) - When to delegate to agents

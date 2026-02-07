@@ -1,7 +1,5 @@
 ---
 title: Claude CLI Progress Feedback Pattern
-last_audited: "2026-02-03 15:00 PT"
-audit_result: edited
 read_when:
   - "adding progress output to Claude operations"
   - "wrapping Claude CLI with user feedback"
@@ -13,18 +11,35 @@ read_when:
 
 When wrapping Claude CLI operations, use the generator-based event pattern to provide real-time progress feedback to users.
 
-## Core Architecture
+## Core Components
 
-### Event Types
+### ProgressEvent
 
-- **ProgressEvent**: Progress notifications during operations (messages with optional styling)
-- **CompletionEvent**: Wraps the final result of an operation
+A frozen dataclass for progress notifications during operations:
 
-Import from: `erk_shared.gateway.gt.events`
+```python
+from erk_shared.gateway.gt.events import ProgressEvent
 
-### Progress Event Styles
+# Basic progress
+yield ProgressEvent("Reading diff file...")
 
-Available styles: `"info"` (default), `"success"`, `"warning"`, `"error"`
+# Styled progress (success, warning, error)
+yield ProgressEvent("Diff loaded (1,234 chars)", style="success")
+yield ProgressEvent("PR has merge conflicts", style="warning")
+```
+
+**Styles**: `"info"` (default), `"success"`, `"warning"`, `"error"`
+
+### CompletionEvent
+
+A frozen dataclass wrapping the final result:
+
+```python
+from erk_shared.gateway.gt.events import CompletionEvent
+
+# Return result via CompletionEvent
+yield CompletionEvent(MyResult(success=True, data=data))
+```
 
 ## Pattern: Generator-Based Operations
 
@@ -123,14 +138,37 @@ def test_operation_emits_progress(tmp_path: Path) -> None:
 
 ## Example: CommitMessageGenerator
 
-Real example from `src/erk/core/commit_message_generator.py:85-189`. The `generate()` method demonstrates the pattern:
+Real example from `src/erk/core/commit_message_generator.py`:
 
-- Yields progress events for each phase (reading diff, calling Claude, parsing response)
-- Uses styled events for success/error states
-- Returns final result via CompletionEvent
-- Handles errors gracefully with early returns
+```python
+def generate(
+    self, request: CommitMessageRequest
+) -> Generator[ProgressEvent | CompletionEvent[CommitMessageResult]]:
+    yield ProgressEvent("Reading diff file...")
 
-See the source file for complete implementation details.
+    if not request.diff_file.exists():
+        yield CompletionEvent(CommitMessageResult(
+            success=False, error_message="Diff file not found"
+        ))
+        return
+
+    diff_content = request.diff_file.read_text()
+    yield ProgressEvent(f"Diff loaded ({len(diff_content):,} chars)", style="success")
+
+    yield ProgressEvent("Analyzing changes with Claude...")
+    result = self._executor.execute_prompt(prompt, model=self._model)
+
+    if not result.success:
+        yield CompletionEvent(CommitMessageResult(
+            success=False, error_message=result.error
+        ))
+        return
+
+    yield ProgressEvent("PR description generated", style="success")
+    yield CompletionEvent(CommitMessageResult(
+        success=True, title=title, body=body
+    ))
+```
 
 ## When to Use This Pattern
 
@@ -147,11 +185,11 @@ Skip for:
 
 ## Pattern: Typed Claude CLI Events
 
-For consuming Claude CLI streaming output directly, use the typed `ExecutorEvent` union:
+For consuming Claude CLI streaming output directly, use the typed `ClaudeEvent` union:
 
 ```python
-from erk.core.prompt_executor import (
-    ExecutorEvent,
+from erk.core.claude_executor import (
+    ClaudeEvent,
     ErrorEvent,
     PrNumberEvent,
     SpinnerUpdateEvent,
@@ -180,11 +218,11 @@ for event in executor.execute_command_streaming(...):
 - **Self-documenting**: `PrUrlEvent(url=...)` vs stringly-typed events
 - **IDE support**: Autocomplete and refactoring work correctly
 
-**See also**: [Glossary - ExecutorEvent](../glossary.md#executorevent) for complete event type reference.
+**See also**: [Glossary - ClaudeEvent](../glossary.md#claudeevent) for complete event type reference.
 
 ## Related Files
 
 - `packages/erk-shared/src/erk_shared/gateway/gt/events.py` - ProgressEvent/CompletionEvent definitions
-- `src/erk/core/prompt_executor.py` - ExecutorEvent definitions
+- `src/erk/core/claude_executor.py` - ClaudeEvent definitions
 - `packages/erk-shared/src/erk_shared/gateway/gt/operations/` - Example operations
 - `src/erk/cli/commands/pr/submit_cmd.py` - CLI consumption example

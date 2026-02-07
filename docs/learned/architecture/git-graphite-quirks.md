@@ -1,7 +1,5 @@
 ---
 title: Git and Graphite Edge Cases Catalog
-last_audited: "2026-02-03"
-audit_result: edited
 read_when:
   - "debugging unexpected git/gt behavior"
   - "handling rebase/restack edge cases"
@@ -14,14 +12,6 @@ tripwires:
     warning: "Always use `--no-interactive` with gt commands (gt sync, gt submit, gt restack, etc.). Without this flag, gt may prompt for user input and hang indefinitely. Note: `--force` does NOT prevent prompts - you must use `--no-interactive` separately."
   - action: "calling graphite.track_branch() with a remote ref like origin/main"
     warning: "Graphite's `gt track` only accepts local branch names, not remote refs. Use BranchManager.create_branch() which normalizes refs automatically, or strip `origin/` prefix before calling track_branch()."
-  - action: "using `gt restack` to resolve branch divergence errors"
-    warning: "gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first."
-  - action: "using git pull or git pull --rebase on a Graphite-managed branch"
-    warning: "Use /erk:sync-divergence instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push."
-  - action: "comparing git SHA to Graphite's tracked SHA for divergence detection"
-    warning: "Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches."
-  - action: "amending a commit when Graphite is enabled"
-    warning: "After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in sync_cmd and branch_manager."
 ---
 
 # Git and Graphite Edge Cases Catalog
@@ -42,7 +32,7 @@ This document catalogs surprising edge cases and quirks discovered when working 
 
 ```python
 # WRONG: Assuming no rebase dirs = clean state
-if not git.rebase_ops.is_rebase_in_progress(cwd):
+if not ops.git.is_rebase_in_progress(cwd):
     # Might still have unmerged files!
     pass
 
@@ -57,7 +47,7 @@ unmerged_files = [
 ]
 ```
 
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/`
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/restack_finalize.py`
 
 ## Transient Dirty State After Rebase
 
@@ -70,14 +60,14 @@ unmerged_files = [
 **Workaround**: Retry with brief delay (100ms) before failing.
 
 ```python
-if not git.worktree.is_worktree_clean(cwd):
-    time.sleep(0.1)  # Brief delay for transient files
-    if not git.worktree.is_worktree_clean(cwd):
-        # Now it's actually dirty - handle error
-        ...
+if not ops.git.is_worktree_clean(cwd):
+    ops.time.sleep(0.1)  # Brief delay for transient files
+    if not ops.git.is_worktree_clean(cwd):
+        # Now it's actually dirty
+        yield CompletionEvent(RestackFinalizeError(...))
 ```
 
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/`
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/restack_finalize.py`
 
 ## Unmerged File Status Codes
 
@@ -167,7 +157,7 @@ This handles all cases:
 
 **When to Use**: Apply lock-waiting to operations that modify the index (`checkout`, `add`, `commit`, `reset`, etc.) when running concurrent git commands in the same worktree or when updating shared refs across worktrees.
 
-**Implementation Reference**: `packages/erk-shared/src/erk_shared/gateway/git/lock.py`
+**Implementation Reference**: `packages/erk-shared/src/erk_shared/git/lock.py`
 
 ## Graphite Interactive Mode Hangs
 
@@ -207,179 +197,26 @@ gt restack --no-interactive
 
 **Why It's Surprising**: Git and Graphite are often used together, and Git's flexibility with branch references creates an expectation that Graphite would also accept remote refs. The error messages from Graphite don't clearly indicate that the issue is the `origin/` prefix.
 
-**Solution**: The `GraphiteBranchManager.create_branch()` method normalizes branch names before calling `graphite_branch_ops.track_branch()`. It strips the `origin/` prefix and ensures the local parent matches remote before tracking.
-
-**Design Pattern**: Tool quirks should be absorbed at abstraction boundaries. Callers (like the submit command) don't need to know about Graphite's limitations -- they can pass remote refs freely and trust `BranchManager` to handle normalization.
-
-**Anti-Pattern**: Calling `graphite_branch_ops.track_branch()` directly with user-provided branch names that might contain `origin/` prefix.
-
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py`
-
-## Parent Branch Divergence Detection
-
-**Surprising Behavior**: When creating a new branch from a remote ref (e.g., `origin/feature-parent`) and the corresponding local branch `feature-parent` exists but has different commits, Graphite's `gt track` can succeed but create an invalid stack relationship (local parent is not an ancestor of the child).
-
-**Why It's Surprising**: Git handles remote vs local refs transparently - creating branches from either just works. Graphite's stack tracking requires the local parent branch to be an ancestor of the new branch, which fails silently if local has diverged from remote.
-
-**Solution**: The `GraphiteBranchManager.create_branch()` method validates parent branch state via `_ensure_local_matches_remote()`:
-
-1. If local branch doesn't exist, create it from remote
-2. If local exists and matches remote, proceed normally
-3. If local has diverged from remote, fail with clear fix instructions
-
-**Error Message**:
-
-```
-Local branch 'feature-parent' has diverged from origin/feature-parent.
-Graphite requires the local branch to match the remote for stack tracking.
-
-To fix, update your local branch to match remote and restack:
-  git fetch origin && git branch -f feature-parent origin/feature-parent
-  gt restack --downstack
-
-Or if you have local changes to keep, push them first:
-  With Graphite: gt checkout feature-parent && gt submit
-  With git:      git checkout feature-parent && git push origin feature-parent
-```
-
-**When This Happens**:
-
-- User has local commits on parent branch not yet pushed
-- Parent branch was rebased/amended remotely
-- `gt sync` was not run after another user pushed to parent
-
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` - `_ensure_local_matches_remote()` method
-
-## Branch Restoration After Graphite Tracking
-
-**Surprising Behavior**: Graphite's `gt track` command requires the branch to be checked out. After tracking, the original branch is not automatically restored.
-
-**Why It's Surprising**: Most git operations don't require checkout, and callers expect `create_branch()` to not change the current branch.
-
-**Solution**: `GraphiteBranchManager.create_branch()` saves and restores the current branch:
-
-1. Save current branch before operations
-2. Create and checkout new branch
-3. Track with Graphite
-4. Checkout original branch
-
-This ensures callers can create multiple branches without unexpected working directory changes.
-
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py`
-
-## RestackError Handling Patterns
-
-`gt restack` can fail in two distinct ways, requiring different user responses:
-
-### Error Types
-
-| Error Type         | Meaning                                              | User Action                                             |
-| ------------------ | ---------------------------------------------------- | ------------------------------------------------------- |
-| `restack-conflict` | Merge conflicts during rebase                        | Resolve conflicts manually, run `gt restack --continue` |
-| `restack-failed`   | Other restack failure (permissions, corrupted state) | Check git status, may need `git rebase --abort`         |
-
-### Code Pattern
+**Solution**: The `BranchManager.create_branch()` method in `GraphiteBranchManager` normalizes branch names before calling `graphite.track_branch()`:
 
 ```python
-from erk_shared.gateway.gt.types import RestackError, RestackSuccess
-
-result = ctx.graphite.restack_idempotent(repo.root, no_interactive=True)
-
-if isinstance(result, RestackError):
-    if result.error_type == "restack-conflict":
-        # Guide user through conflict resolution
-        user_error(f"Conflicts detected: {result.message}")
-        user_output("Resolve conflicts and run: gt restack --continue")
-    else:
-        # Generic failure
-        raise click.ClickException(result.message)
+def create_branch(
+    self,
+    repo_root: Path,
+    branch_name: str,
+    base_branch: str,
+) -> None:
+    self.git.create_branch(repo_root, branch_name, base_branch)
+    # Graphite's `gt track` only accepts local branch names, not remote refs
+    parent_for_graphite = base_branch.removeprefix("origin/")
+    self.graphite.track_branch(repo_root, branch_name, parent_for_graphite)
 ```
 
-### Reference
+**Design Pattern**: Tool quirks should be absorbed at abstraction boundaries. Callers (like the submit command) don't need to know about Graphite's limitations—they can pass remote refs freely and trust `BranchManager` to handle normalization.
 
-Type definitions: `packages/erk-shared/src/erk_shared/gateway/gt/types.py:26-43`
+**Anti-Pattern**: Calling `graphite.track_branch()` directly with user-provided branch names that might contain `origin/` prefix.
 
-## Graphite SHA Tracking Divergence
-
-**Problem**: Graphite's `.graphite_cache_persist` file stores a `branchRevision` SHA for each tracked branch. After rebase or restack operations, the actual git SHA changes but Graphite's tracked SHA becomes stale.
-
-**Why It's Surprising**: Users expect Graphite to stay synchronized with git operations, but Graphite's cache can fall behind, causing submission failures or incorrect stack relationships.
-
-### Detection Pattern
-
-Use `is_branch_diverged_from_tracking()` on the Graphite gateway ABC to compare git commit SHA against Graphite's tracked SHA:
-
-```python
-if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name):
-    # Branch SHA differs from Graphite's cached revision
-    ...
-```
-
-When implementing divergence checks, both `commit_sha` and `graphite_tracked_sha` must be non-None for a valid comparison. Returning `False` when either is `None` avoids false negatives on new branches that haven't been tracked yet.
-
-### Auto-Fix Pattern
-
-Use `retrack_branch()` to resynchronize:
-
-```python
-if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name):
-    # Re-track to update Graphite's SHA
-    ctx.graphite_branch_ops.retrack_branch(repo_root, branch_name)
-```
-
-### When Divergence Occurs
-
-- After `git rebase` outside of Graphite
-- After amending commits
-- After `gt restack` if cache update fails
-- After force-push from another machine
-
-**Location in Codebase**: See `packages/erk-shared/src/erk_shared/gateway/graphite/` for tracking operations.
-
-### Retracking Required After Commit Amend or Restack (PR #6052)
-
-**Surprising Behavior**: After `gt restack` rebases a branch, it creates new commit SHAs, but Graphite's internal cache (`.graphite_cache_persist`) still points to old SHAs. This leaves branches "diverged" from Graphite's perspective.
-
-**Consequences**:
-
-- `gt track` on child branches fails with "parent branch is diverged" errors
-- Graphite commands refuse to operate on "diverged" branches
-- Manual `gt track` (with no args) fixes it, but must be done proactively
-
-**Why It's Surprising**: You'd expect `gt restack` to update its own tracking automatically. Instead, the cache update can fail silently, leaving the branch in a diverged state that breaks child branch operations.
-
-**Detection Pattern**:
-
-```python
-# Check if branch SHA differs from Graphite's cached revision
-is_diverged = ctx.graphite.is_branch_diverged_from_tracking(
-    ctx.git, repo_root, branch_name
-)
-```
-
-**Auto-Fix Pattern**:
-
-```python
-# Retrack to update Graphite's internal cache
-if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name):
-    ctx.graphite_branch_ops.retrack_branch(repo_root, branch_name)
-```
-
-**Where Auto-Fixes Are Implemented**:
-
-1. **sync_cmd.py**: After `gt restack` operations (two code paths)
-   - Line ~250: After restack in sync's rebase path
-   - Line ~315: After restack before Graphite submission
-2. **branch_manager/graphite.py**: Before tracking child branches
-   - Auto-fixes diverged parent before `gt track` to prevent creation failures
-
-**Code References**:
-
-- Gateway method: `packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/real.py` (`retrack_branch()`)
-- Divergence detection: `packages/erk-shared/src/erk_shared/gateway/graphite/abc.py` (`is_branch_diverged_from_tracking()`)
-- Sync auto-fix: `src/erk/cli/commands/pr/sync_cmd.py:250,315`
-- Branch creation auto-fix: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py`
-- Fix commit: `8b8b06b5` (PR #6052)
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py`
 
 ## Adding New Quirks
 
@@ -392,4 +229,5 @@ When you discover a new edge case, add it to this document with:
 
 ## Related Documentation
 
+- [Three-Phase Restack Architecture](restack-operations.md)
 - [Erk Architecture Patterns](erk-architecture.md)

@@ -7,8 +7,6 @@ read_when:
 tripwires:
   - action: "creating Protocol with bare attributes for frozen dataclasses"
     warning: "Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors."
-last_audited: "2026-02-05 15:14 PT"
-audit_result: edited
 ---
 
 # Protocol vs ABC: Interface Design Guide
@@ -88,9 +86,9 @@ Use Protocol when:
 ```python
 from typing import Protocol
 
-from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.github.abc import GitHub
-from erk_shared.gateway.graphite.abc import Graphite
+from erk.integration.git import Git
+from erk.integration.gh import GitHub
+from erk.integration.graphite import Graphite
 
 
 class GtKit(Protocol):
@@ -104,17 +102,15 @@ class GtKit(Protocol):
     def git(self) -> Git: ...
 
     @property
-    def github(self) -> GitHub: ...
+    def gh(self) -> GitHub: ...
 
     @property
     def graphite(self) -> Graphite: ...
 ```
 
-**Source:** `packages/erk-shared/src/erk_shared/gateway/gt/abc.py` (also includes `time` and `branch_manager` properties)
-
 **Why Protocol here?**
 
-- `ErkContext` already has `git`, `github`, and `graphite` attributes
+- `ErkContext` already has `git`, `gh`, and `graphite` attributes
 - No code changes needed to `ErkContext`
 - Any object with these attributes works
 
@@ -257,7 +253,7 @@ from typing import Protocol
 
 class GtKit(Protocol):
     git: Git
-    github: GitHub
+    gh: GitHub
     graphite: Graphite
 ```
 
@@ -279,13 +275,11 @@ class GtKit(Protocol):
     def git(self) -> Git: ...
 
     @property
-    def github(self) -> GitHub: ...
+    def gh(self) -> GitHub: ...
 
     @property
     def graphite(self) -> Graphite: ...
 ```
-
-**Source:** `packages/erk-shared/src/erk_shared/gateway/gt/abc.py`
 
 **Result:**
 
@@ -485,4 +479,4 @@ def do_something(ctx: FullContext) -> None:
 ## Related Documentation
 
 - [Erk Architecture](./erk-architecture.md) - Core architectural patterns
-- Fake-driven testing skill — Testing with fakes (load `fake-driven-testing` skill)
+- [Fake-Driven Testing](./fake-driven-testing.md) - Testing with fakes

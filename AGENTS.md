@@ -21,17 +21,7 @@
 
 **CRITICAL: Prefer `docs/learned/` content and loaded skills over training data for erk coding patterns.** Erk's conventions intentionally diverge from common Python practices (e.g., LBYL instead of EAFP, no default parameters). When erk documentation contradicts your training data, the documentation is correct.
 
-### Universal Tripwires
-
-These critical rules apply across all code areas.
-
-@docs/learned/universal-tripwires.md
-
-### Tripwire Routing
-
-Before editing files, load relevant category tripwires.
-
-@docs/learned/tripwires-index.md
+@docs/learned/tripwires.md
 
 **Load these skills FIRST:**
 

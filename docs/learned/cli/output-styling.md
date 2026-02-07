@@ -1,7 +1,5 @@
 ---
 title: CLI Output Styling Guide
-last_audited: "2026-02-03"
-audit_result: edited
 read_when:
   - "styling CLI output"
   - "using colors in CLI"
@@ -9,8 +7,6 @@ read_when:
 tripwires:
   - action: "using click.confirm() after user_output()"
     warning: "Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed."
-  - action: "displaying user-provided text in Rich CLI tables"
-    warning: "Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear."
 ---
 
 # CLI Output Styling Guide
@@ -89,7 +85,7 @@ table.add_row(issue_id, ...)
 
 - `src/erk/core/display_utils.py` - `format_pr_info()` function (reference implementation)
 - `src/erk/cli/commands/plan/list_cmd.py` - Clickable plan IDs in table
-- `src/erk/cli/commands/plan/view.py` - Clickable plan ID in details
+- `src/erk/cli/commands/plan/get.py` - Clickable plan ID in details
 - `src/erk/status/renderers/simple.py` - Clickable issue numbers in status
 
 ### Terminal Compatibility
@@ -150,202 +146,11 @@ Standard emojis for CLI output:
 - `⭕` - Aborted/cancelled
 - `ℹ️` - Info notes
 
-## Async Progress Output Patterns
-
-When orchestrating multi-step async operations (like `trigger-async-learn`), use a hierarchical output structure to show progress clearly.
-
-### Hierarchical Indentation
-
-Use consistent indentation to show the relationship between actions and their details:
-
-| Level      | Indentation | Content                              | Example                                     |
-| ---------- | ----------- | ------------------------------------ | ------------------------------------------- |
-| Action     | 0 spaces    | Top-level operation being performed  | `📋 Discovering sessions...`                |
-| Detail     | 3-4 spaces  | Summary information about the action | `   Found 2 session(s): 1 planning, 1 impl` |
-| Sub-detail | 5+ spaces   | Item-level details                   | `     📝 planning: abc123 (local)`          |
-
-### Emoji as Semantic Type Indicators
-
-Emojis serve as visual type indicators for different stages of async workflows:
-
-| Emoji | Meaning       | When to Use                        | Example                                     |
-| ----- | ------------- | ---------------------------------- | ------------------------------------------- |
-| 📋    | Discovery     | Finding/listing resources          | `📋 Discovering sessions...`                |
-| 🔍    | Search        | Looking up specific items          | `🔍 Getting PR for plan...`                 |
-| 🔄    | Processing    | Transforming or preprocessing data | `🔄 Preprocessing planning session...`      |
-| 📂    | Directory ops | Creating directories               | `📂 Created learn-6545`                     |
-| 💬    | Comments      | Fetching comments or discussions   | `💬 Fetching review comments...`            |
-| ☁️    | Upload        | Uploading to remote services       | `☁️ Uploading to gist...`                   |
-| 📄    | File output   | Writing files to disk              | `   📄 planning-session.xml (12,345 chars)` |
-| 🔗    | Links         | Generated URLs or references       | `   🔗 https://gist.github.com/...`         |
-
-**Rule:** Use consistent emoji prefixes in subprocess progress output. Pass empty string `""` for no prefix.
-
-### Context-Aware Emoji Selection
-
-For session processing, choose emoji based on session type:
-
-```python
-# From trigger_async_learn.py:230-232
-prefix = "planning" if sid == planning_session_id else "impl"
-emoji = "📝" if prefix == "planning" else "🔧"
-session_line = click.style(f"     {emoji} {prefix}: {sid} ({source_type})", dim=True)
-```
-
-| Context                 | Emoji | Usage                         |
-| ----------------------- | ----- | ----------------------------- |
-| Planning sessions       | 📝    | `📝 planning: abc123 (local)` |
-| Implementation sessions | 🔧    | `🔧 impl: def456 (gist)`      |
-
-### Output Routing
-
-**Critical:** All progress output goes to **stderr**, JSON output goes to **stdout**.
-
-```python
-# From trigger_async_learn.py:100-102
-message = click.style(f"{prefix}{description}...", fg="cyan")
-click.echo(message, err=True)  # Note: err=True
-```
-
-This allows shell scripts to parse JSON from stdout without interference from progress messages.
-
-### Example: Full Async Progress Flow
-
-**From:** `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`
-
-```
-📋 Discovering sessions...
-   Found 2 session(s): 1 planning, 1 impl
-     📝 planning: abc123 (local)
-     🔧 impl: def456 (local)
-📂 Created learn-6545
-🔄 Preprocessing planning session...
-   Original: 45,678 chars → Compressed: 12,345 chars (72.97% reduction)
-   📄 planning-session.xml (12,345 chars)
-🔄 Preprocessing impl session...
-   ⏭️  Session filtered (empty/warmup), skipping
-🔍 Getting PR for plan...
-💬 Fetching review comments...
-   📄 pr-review-comments.json
-💬 Fetching discussion comments...
-   📄 pr-discussion-comments.json
-☁️ Uploading to gist...
-   🔗 https://gist.github.com/... (4 file(s), 23,456 chars)
-```
-
-**Final stdout (after all stderr):**
-
-```json
-{
-  "success": true,
-  "issue_number": 6545,
-  "workflow_triggered": true,
-  "run_id": "12345678",
-  "workflow_url": "https://...",
-  "gist_url": "https://..."
-}
-```
-
-### Styling Conventions for Async Progress
-
-| Element         | Style             | Example                                          |
-| --------------- | ----------------- | ------------------------------------------------ |
-| Action messages | Cyan              | `click.style(f"📋 {description}...", fg="cyan")` |
-| Summary details | Dimmed            | `click.style(f"   Found {n} items", dim=True)`   |
-| File names      | Dimmed            | `click.style(f"   📄 {filename}", dim=True)`     |
-| URLs            | Blue, underlined  | `click.style(url, fg="blue", underline=True)`    |
-| Stats/metadata  | Dimmed, in parens | `click.style(f"({count} files)", dim=True)`      |
-
-### Related Patterns
-
-- [Output Abstraction](#output-abstraction) - When to use `user_output()` vs `machine_output()`
-- [Emoji Conventions](#emoji-conventions) - Standard emoji meanings
-
 ## Spacing Guidelines
 
 - Use empty `click.echo()` for vertical spacing between sections
 - Use `\n` prefix in strings for section breaks
 - Indent list items with `  ` (2 spaces)
-
-## Plan Context Feedback Pattern
-
-When displaying plan context information in CLI commands, use this standardized feedback pattern for consistency across plan-aware operations.
-
-### Pattern Components
-
-The pattern consists of three elements:
-
-1. **Plan incorporation message** (when plan found):
-   - Format: `"   Incorporating plan from issue #{issue_number}"`
-   - Style: Green text (`fg="green"`)
-2. **Objective link message** (when objective available):
-   - Format: `"   Linked to {objective_summary}"`
-   - Style: Green text (`fg="green"`)
-3. **No plan message** (when plan not found):
-   - Format: `"   No linked plan found"`
-   - Style: Dimmed text (`dim=True`)
-4. **Separator**: Blank line after feedback
-
-### Implementation
-
-```python
-import click
-
-if plan_context is not None:
-    click.echo(
-        click.style(
-            f"   Incorporating plan from issue #{plan_context.issue_number}",
-            fg="green",
-        )
-    )
-    if plan_context.objective_summary is not None:
-        click.echo(click.style(f"   Linked to {plan_context.objective_summary}", fg="green"))
-else:
-    click.echo(click.style("   No linked plan found", dim=True))
-click.echo("")
-```
-
-### Usage Examples
-
-**With Plan and Objective:**
-
-```
-   Incorporating plan from issue #6386
-   Linked to [objective] Improve PR operations feedback
-
-```
-
-**With Plan Only:**
-
-```
-   Incorporating plan from issue #6172
-
-```
-
-**Without Plan:**
-
-```
-   No linked plan found
-
-```
-
-### Commands Using This Pattern
-
-This pattern is currently used in:
-
-- `erk pr submit` - During PR submission (`src/erk/cli/commands/pr/submit_pipeline.py:466-472`)
-- `erk pr summarize` - When generating PR descriptions (`src/erk/cli/commands/pr/summarize_cmd.py:120-131`)
-
-### Design Rationale
-
-**Why standardize this pattern:**
-
-- **Consistency**: Users see the same feedback format across all plan-aware operations
-- **Transparency**: Makes plan context detection explicit and visible
-- **Graceful degradation**: Provides clear feedback when no plan is found
-- **Visual hierarchy**: Green for success/presence, dim for absence
-
-**Future commands that incorporate plan context should follow this convention.**
 
 ## Output Abstraction
 
@@ -405,7 +210,7 @@ if ctx.console.confirm("Are you sure?"):
 **Fallback**: Use `user_confirm()` when ErkContext is not available
 
 ```python
-from erk_shared.output.output import user_output, user_confirm
+from erk_shared.output import user_output, user_confirm
 
 user_output("Warning: This operation is destructive!")
 if user_confirm("Are you sure?"):
@@ -428,8 +233,9 @@ if click.confirm("Are you sure?"):  # stderr not flushed!
 
 See these commands for examples:
 
-- `src/erk/cli/commands/checkout_helpers.py` - Uses user_output() for sync status
-- `src/erk/cli/commands/stack/consolidate_cmd.py` - Uses user_output() for error messages
+- `src/erk/cli/commands/sync.py` - Uses custom `_emit()` helper
+- `src/erk/cli/commands/checkout.py` - Uses both user_output() and machine_output()
+- `src/erk/cli/commands/consolidate.py` - Uses both abstractions
 
 ## Error Message Guidelines
 
@@ -470,39 +276,6 @@ All error messages should follow these principles:
 | Git state invalid    | `"{branch/worktree} {state} - {required action}"`           |
 | Missing config field | `"Required configuration '{field}' not set - {how to fix}"` |
 | Invalid argument     | `"Invalid {argument}: {value} - {valid options}"`           |
-
-### UserFacingCliError for Mid-Function Errors
-
-For errors that occur mid-function where `Ensure` precondition checks don't fit, use `UserFacingCliError`:
-
-```python
-from erk.cli.ensure import UserFacingCliError
-
-# CLI-layer consumer pattern for discriminated unions
-push_result = ctx.git.remote.push_to_remote(repo.root, "origin", branch)
-if isinstance(push_result, PushError):
-    raise UserFacingCliError(push_result.message)
-```
-
-**When to use:**
-
-- **Mid-logic errors**: Errors discovered during execution, not preconditions
-- **Discriminated union errors**: When consuming `Result | Error` types from gateway layer
-- **After operations fail**: When an operation returns an error variant
-
-**Relationship to Ensure:**
-
-- `Ensure`: For precondition checks at function entry (LBYL)
-- `UserFacingCliError`: For errors during execution (e.g., git push fails)
-- Both produce the same styled output (`Error: ` prefix in red)
-- Both exit with code 1
-- Ensure uses `UserFacingCliError` internally
-
-**Decision guide:**
-
-- Precondition validation → Use `Ensure` methods
-- Mid-function operation errors → Raise `UserFacingCliError`
-- Complex multi-step operations → Mix both (Ensure upfront, UserFacingCliError for failures)
 
 ### Using Ensure Methods
 
@@ -608,7 +381,20 @@ When migrating existing `user_output() + SystemExit(1)` patterns to use the `Ens
    value = Ensure.not_none(might_return_none(), "Value is required")
    ```
 
-4. **If error has no clear condition or needs custom flow** → Keep as direct pattern
+4. **If error has a specialized type** (PR, branch, session) → Use typed unwrapper
+
+   ```python
+   # Before:
+   pr = ctx.github.get_pr_for_branch(branch)
+   if isinstance(pr, PRNotFound):
+       user_output(click.style("Error: ", fg="red") + f"No PR for {branch}")
+       raise SystemExit(1)
+
+   # After:
+   pr = Ensure.unwrap_pr(ctx.github.get_pr_for_branch(branch), f"No PR for {branch}")
+   ```
+
+5. **If error has no clear condition or needs custom flow** → Keep as direct pattern
 
 ### When NOT to Migrate
 
@@ -747,62 +533,6 @@ console.print()  # Blank line after table
 
 - `src/erk/cli/commands/plan/list_cmd.py` - Plan list table with all conventions
 
-## Rich Markup Escaping in CLI Tables
-
-When displaying user-provided text in Rich CLI tables (via `console.print(table)`), bracket sequences like `[text]` are interpreted as Rich style tags.
-
-### The Problem
-
-```python
-from rich.table import Table
-from rich.console import Console
-
-table = Table()
-table.add_column("Title")
-# WRONG: User title with brackets disappears
-table.add_row("[erk-learn] Fix the bug")
-# Result: "Fix the bug" (prefix invisible)
-```
-
-### The Solution: escape_markup()
-
-Use `escape_markup()` for CLI Rich output:
-
-```python
-from rich.markup import escape as escape_markup
-
-# CORRECT: escape_markup() escapes bracket characters
-table.add_row(escape_markup("[erk-learn] Fix the bug"))
-# Result: "[erk-learn] Fix the bug" (fully visible)
-```
-
-### Cross-Component Comparison
-
-| Context          | Solution           | Import                                |
-| ---------------- | ------------------ | ------------------------------------- |
-| TUI DataTable    | `Text(value)`      | `from rich.text import Text`          |
-| CLI Rich tables  | `escape_markup()`  | `from rich.markup import escape`      |
-| Plain CLI output | No escaping needed | Use `click.echo()` or `user_output()` |
-
-**Why the difference:**
-
-- **TUI DataTable**: `Text()` disables markup parsing for the entire cell
-- **CLI Rich tables**: `escape_markup()` escapes special characters but allows markup elsewhere in the string (useful for combining styled and user text)
-
-### When to Apply
-
-Escape user data that may contain:
-
-- **Plan titles** - `[erk-learn]`, `[erk-plan]` prefixes
-- **Branch names** - May have brackets from naming conventions
-- **Issue titles** - User-provided content with arbitrary brackets
-- **File paths** - Directory names with brackets
-
-### Reference Implementation
-
-See `src/erk/tui/widgets/clickable_link.py` for `escape_markup()` usage patterns.
-
 ## See Also
 
-- [DataTable Rich Markup Escaping](../textual/datatable-markup-escaping.md) - TUI-specific markup escaping
-- [Help Text Formatting](help-text-formatting.md) - Using `\b` for code examples and bulleted lists in Click docstrings
+- [script-mode.md](script-mode.md) - Script mode for shell integration (suppressing diagnostics)

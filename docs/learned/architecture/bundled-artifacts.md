@@ -4,8 +4,6 @@ read_when:
   - understanding artifact syncing
   - working with managed artifacts
   - debugging erk sync
-last_audited: "2026-02-05 14:17 PT"
-audit_result: edited
 ---
 
 # Bundled Artifacts System
@@ -14,7 +12,7 @@ Erk bundles artifacts that are synced to projects during `erk init` or `erk sync
 
 ## Artifact Management Architecture
 
-Artifact management is unified through the capability system. Each capability declares what artifacts it manages via the `managed_artifacts` property, making the registry the single source of truth.
+Artifact management is now unified through the capability system. Each capability declares what artifacts it manages via the `managed_artifacts` property, making the registry the single source of truth.
 
 ### How It Works
 
@@ -22,9 +20,49 @@ Artifact management is unified through the capability system. Each capability de
 2. **Registry aggregates**: `get_managed_artifacts()` collects all declarations into a single mapping
 3. **Detection queries registry**: `is_capability_managed(name, type)` checks if an artifact is erk-managed
 
-See `src/erk/core/capabilities/registry.py` for `get_managed_artifacts()` and `is_capability_managed()`. See `src/erk/core/capabilities/base.py` for `ManagedArtifactType` (the 8 valid artifact types: skill, command, agent, workflow, action, hook, prompt, review).
+### Registry Functions
 
-For examples of capabilities declaring managed artifacts, see `SkillCapability.managed_artifacts` in `src/erk/core/capabilities/skill_capability.py` and `HooksCapability.managed_artifacts` in `src/erk/capabilities/hooks.py`.
+`src/erk/core/capabilities/registry.py` provides:
+
+| Function                            | Purpose                                         |
+| ----------------------------------- | ----------------------------------------------- |
+| `get_managed_artifacts()`           | Returns `dict[(name, type), capability_name]`   |
+| `is_capability_managed(name, type)` | Check if artifact is declared by any capability |
+
+### Artifact Types
+
+The `ManagedArtifactType` literal defines valid artifact types:
+
+| Type       | Example Artifact                          |
+| ---------- | ----------------------------------------- |
+| `skill`    | `dignified-python`, `fake-driven-testing` |
+| `command`  | Claude commands                           |
+| `agent`    | `devrun`                                  |
+| `workflow` | `erk-impl`, `learn-dispatch`              |
+| `action`   | `setup-claude-code`, `setup-claude-erk`   |
+| `hook`     | `user-prompt-hook`, `exit-plan-mode-hook` |
+| `prompt`   | `.github/prompts/` files                  |
+| `review`   | `.github/reviews/` files                  |
+
+### Example: SkillCapability
+
+```python
+class SkillCapability(Capability):
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        return [ManagedArtifact(name=self.skill_name, artifact_type="skill")]
+```
+
+### Example: HooksCapability
+
+```python
+@property
+def managed_artifacts(self) -> list[ManagedArtifact]:
+    return [
+        ManagedArtifact(name="user-prompt-hook", artifact_type="hook"),
+        ManagedArtifact(name="exit-plan-mode-hook", artifact_type="hook"),
+    ]
+```
 
 ## Capability Installation
 
@@ -39,7 +77,7 @@ For examples of capabilities declaring managed artifacts, see `SkillCapability.m
 
 ### Editable Install (Development)
 
-Files are read directly from repo root via `get_bundled_claude_dir()` and `get_bundled_github_dir()` in `src/erk/artifacts/paths.py`.
+Files are read directly from repo root via `get_bundled_claude_dir()` and `get_bundled_github_dir()` in `src/erk/artifacts/sync.py`.
 
 ### Wheel Install (Production)
 
@@ -52,9 +90,34 @@ Files bundled at `erk/data/`:
 
 Configured in `pyproject.toml` via `force-include`.
 
-## Sync and Health
+## Sync Functions
 
-`src/erk/artifacts/sync.py` provides `sync_artifacts()` (main sync entry point). `src/erk/artifacts/artifact_health.py` provides health checking functions (`find_orphaned_artifacts()`, `find_missing_artifacts()`, `get_artifact_health()`) with four status types: `up-to-date`, `changed-upstream`, `locally-modified`, `not-installed`.
+The `src/erk/artifacts/sync.py` module provides:
+
+| Function                   | Purpose                                 |
+| -------------------------- | --------------------------------------- |
+| `sync_artifacts()`         | Main sync, copies all bundled artifacts |
+| `get_bundled_claude_dir()` | Get path to bundled `.claude/`          |
+| `get_bundled_github_dir()` | Get path to bundled `.github/`          |
+
+## Health Checks
+
+`src/erk/artifacts/artifact_health.py` provides health checking functions:
+
+| Function                    | Purpose                        |
+| --------------------------- | ------------------------------ |
+| `find_orphaned_artifacts()` | Files in project not in bundle |
+| `find_missing_artifacts()`  | Files in bundle not in project |
+| `get_artifact_health()`     | Per-artifact status comparison |
+
+### Artifact Status Types
+
+| Status             | Meaning                          |
+| ------------------ | -------------------------------- |
+| `up-to-date`       | Hash and version match           |
+| `changed-upstream` | Erk version updated the artifact |
+| `locally-modified` | User modified the artifact       |
+| `not-installed`    | Artifact not present locally     |
 
 ## Related Topics
 

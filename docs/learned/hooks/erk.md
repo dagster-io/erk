@@ -1,13 +1,12 @@
 ---
 title: Erk Hooks
-last_audited: "2026-02-03"
-audit_result: edited
 read_when:
   - "working with erk-specific hooks"
   - "understanding context-aware reminders"
   - "modifying project hooks"
   - "creating project-scoped hooks"
-  - "using logged_hook or hook_command decorators"
+  - "testing hooks with @project_scoped decorator"
+  - "using @project_scoped decorator"
   - "creating hooks that only fire in managed projects"
 ---
 
@@ -19,228 +18,324 @@ Project-specific guide for using Claude Code hooks in the erk repository.
 
 ## How Hooks Work in This Project
 
-Hooks are configured in `.claude/settings.json`. Most hook logic lives in `src/erk/cli/commands/exec/scripts/` as Click commands invoked via `erk exec <hook-name>`.
+Hooks are configured in `.claude/settings.json` and their scripts live in `.claude/hooks/`.
 
 **Architecture**:
 
 ```
 .claude/
-├── settings.json                              # Hook configuration
+├── settings.json            # Hook configuration
 └── hooks/
-    └── fake-driven-testing-reminder.sh        # Simple shell reminder
-src/erk/
-├── hooks/
-│   └── decorators.py                          # logged_hook, hook_command, HookContext
-└── cli/commands/exec/scripts/
-    ├── user_prompt_hook.py                    # UserPromptSubmit hook
-    ├── pre_tool_use_hook.py                   # PreToolUse hook for Write|Edit
-    └── exit_plan_mode_hook.py                 # PreToolUse hook for ExitPlanMode
+    └── {category}/
+        └── {hook_name}.py   # Python script with Click command
 ```
 
 **How hooks fire**:
 
 1. Claude Code reads `.claude/settings.json` at startup
 2. Hook fires when lifecycle event + matcher conditions met
-3. Hook command is executed (e.g., `erk exec user-prompt-hook`), output shown to Claude
+3. Hook script is executed, output shown to user
 
 **Related documentation**:
 
-- Hook decorator source: `src/erk/hooks/decorators.py`
-- Hook scripts: `src/erk/cli/commands/exec/scripts/`
+- Technical implementation: See hook scripts in `.claude/hooks/`
 
 ## Current Hooks
 
-The hooks configured in `.claude/settings.json`:
+This repository includes 4 hooks:
 
-### 1. user-prompt-hook
+### 1. devrun-reminder-hook
 
-**Event**: `UserPromptSubmit` | **Matcher**: `*` (all prompts)
+**Matcher**: `*` (all events)
 
-**Invocation**: `ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook`
+**Purpose**: Remind agents to use devrun agent instead of direct Bash for development tools
 
-**Purpose**: Consolidated hook that handles session ID persistence and opt-in coding reminders.
+**Output**:
 
-**Behavior**:
+```
+🔴 CRITICAL: For pytest/ty/ruff/prettier/make/gt → MUST use devrun agent
+(Task tool with subagent_type="devrun"), NOT direct Bash
 
-- Persists session ID to `.erk/scratch/current-session-id`
-- Emits devrun reminder if `devrun` capability is installed
-- Emits tripwires reminder if `tripwires` capability is installed
-- Emits explore-docs reminder if `explore-docs` capability is installed
+This includes uv run variants: uv run pytest, uv run ty, uv run ruff, etc.
 
-Reminders are opt-in via capability marker files in `.erk/capabilities/`.
+WHY: Specialized parsing & cost efficiency
+```
 
-**Location**: `src/erk/cli/commands/exec/scripts/user_prompt_hook.py`
+**Why**: Development tools have complex output that devrun agent parses efficiently, reducing token costs and improving error handling.
 
-### 2. fake-driven-testing-reminder
+**Location**: `.claude/hooks/devrun/`
 
-**Event**: `UserPromptSubmit` | **Matcher**: `*` (all prompts)
+### 2. dignified-python-reminder-hook
 
-**Invocation**: `.claude/hooks/fake-driven-testing-reminder.sh`
+**Matcher**: `*.py` (Python files)
 
-**Purpose**: Simple shell script reminder to load/abide by fake-driven-testing rules.
+**Purpose**: Remind agents to load dignified-python skill before editing Python code
 
-**Location**: `.claude/hooks/fake-driven-testing-reminder.sh`
+**Output**:
 
-### 3. pre-tool-use-hook (dignified-python reminder)
+```
+🔴 CRITICAL: LOAD dignified-python skill NOW before editing Python
 
-**Event**: `PreToolUse` | **Matcher**: `Write|Edit`
+WHY: Ensures LBYL compliance, Python 3.13+ types, ABC interfaces
+NOTE: Checklist rules are EXCERPTS - skill contains complete philosophy & rationale
+```
 
-**Invocation**: `ERK_HOOK_ID=pre-tool-use-hook erk exec pre-tool-use-hook`
+**Why**: Ensures Python code follows project coding standards (LBYL exception handling, modern type syntax, ABC interfaces).
 
-**Purpose**: Emits dignified-python coding standards reminder when editing `.py` files.
+**Location**: `.claude/hooks/dignified-python/`
 
-**Behavior**:
+### 3. fake-driven-testing-reminder-hook
 
-- Reads `tool_input.file_path` from stdin JSON
-- If file is `.py` and `dignified-python` capability is installed, emits reminder
-- Never blocks (always exit code 0)
+**Matcher**: `*.py` (Python files)
 
-**Location**: `src/erk/cli/commands/exec/scripts/pre_tool_use_hook.py`
+**Purpose**: Remind agents to load fake-driven-testing skill before editing tests
+
+**Output**:
+
+```
+🔴 CRITICAL: LOAD fake-driven-testing skill NOW before editing Python
+
+WHY: 5-layer defense-in-depth strategy (see skill for architecture)
+NOTE: Guides test placement, fake usage, integration class architecture patterns
+```
+
+**Why**: Ensures tests follow project testing architecture (fake-driven testing, proper test categorization).
+
+**Location**: `.claude/hooks/fake-driven-testing/`
 
 ### 4. exit-plan-mode-hook
 
-**Event**: `PreToolUse` | **Matcher**: `ExitPlanMode`
+**Matcher**: `ExitPlanMode` (PreToolUse event)
 
-**Invocation**: `ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook`
-
-**Purpose**: Prompt user to save or implement plan before exiting Plan Mode.
+**Purpose**: Prompt user to save or implement plan before exiting Plan Mode
 
 **Behavior**:
 
-- If plan exists for session and no skip marker: Block (exit code 2) and instruct Claude to use AskUserQuestion
-- If implement-now or incremental-plan marker exists: Allow exit (delete marker)
-- If plan-saved marker exists: Block with "session complete" message
-- If no plan: Allow exit
+- If plan exists for session and no skip marker → Block and instruct Claude to use AskUserQuestion
+- If skip marker exists → Delete marker and allow exit
+- If no plan → Allow exit
 
-**Location**: `src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py`
+**Output (when blocking)**:
 
-#### Marker State Machine
+```
+❌ Plan detected but not saved
 
-The exit-plan-mode hook uses marker files in `.erk/scratch/sessions/<session-id>/` for state management:
+Use AskUserQuestion to ask the user:
+- Option A: Save to GitHub
+- Option B: Implement immediately
+```
 
-| Marker                                     | Created By                     | Lifecycle | Effect When Present          |
-| ------------------------------------------ | ------------------------------ | --------- | ---------------------------- |
-| `exit-plan-mode-hook.plan-saved.marker`    | `plan-save-to-issue`           | Reusable  | Block exit, show "complete"  |
-| `exit-plan-mode-hook.implement-now.marker` | Agent (`erk exec marker`)      | One-time  | Allow exit                   |
-| `objective-context.marker`                 | `/erk:objective-next-plan`     | One-time  | Suggests `--objective-issue` |
-| `incremental-plan.marker`                  | `/local:incremental-plan-mode` | One-time  | Allow exit, skip save        |
+**Why**: Prevents losing unsaved plans when exiting Plan Mode. Uses exit code 2 to redirect Claude to ask user preference.
 
-**Lifecycle semantics:**
+**Location**: `.claude/hooks/erk/exit_plan_mode_hook.py`
 
-- **Reusable markers** persist across hook invocations (not deleted when read)
-- **One-time markers** are consumed (deleted) after being processed
+## Project-Scoped Hooks
 
-**Critical**: Never delete `plan-saved` marker when blocking. It represents a state ("plan is saved") not a one-time action. Deleting it would enable duplicate plan creation on retry.
+Hooks can be decorated with `@project_scoped` to silently skip execution when not in a managed project (one with `erk.toml`).
 
-See [Session Deduplication](../planning/session-deduplication.md) for the full deduplication pattern.
+### Why Use Project-Scoped Hooks?
 
-### 5. PostToolUse ruff formatter
-
-**Event**: `PostToolUse` | **Matcher**: `Write|Edit`
-
-**Invocation**: Inline shell command that runs `uv run ruff format` on `.py` files.
-
-**Purpose**: Auto-formats Python files after Write/Edit operations.
-
-## Project-Scoped Hook Pattern
-
-Hooks use `HookContext.is_erk_project` to silently skip execution when not in a managed project (one with a `.erk` directory).
-
-### Why Project Scoping?
-
-In multi-project environments, hooks would fire in ALL repositories. This causes:
+In monorepo or multi-project environments, hooks installed at the user level (`~/.claude/`) would fire in ALL repositories, even those not using erk. This causes:
 
 - Confusing reminders in unrelated projects
 - Performance overhead from unnecessary hook execution
+- Noise in projects that don't need the guidance
 
-### Using HookContext for Project Scoping
-
-The `hook_command` decorator from `erk.hooks.decorators` provides `HookContext` injection:
+### Using the Decorator
 
 ```python
-from erk.hooks.decorators import HookContext, hook_command
+from erk_kits.hooks.decorators import project_scoped
 
-@hook_command(name="my-hook")
-def my_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
-    if not hook_ctx.is_erk_project:
-        return
-    click.echo("Reminder for erk projects only")
+@click.command()
+@project_scoped  # Add AFTER @click.command()
+def my_reminder_hook() -> None:
+    click.echo("🔴 CRITICAL: Your reminder here")
 ```
 
-**HookContext fields**:
+**Behavior**:
 
-| Field            | Type           | Description                               |
-| ---------------- | -------------- | ----------------------------------------- |
-| `session_id`     | `str \| None`  | Claude session ID from stdin JSON         |
-| `repo_root`      | `Path`         | Path to the git repository root           |
-| `scratch_dir`    | `Path \| None` | Session-scoped scratch directory          |
-| `is_erk_project` | `bool`         | True if `repo_root/.erk` directory exists |
+| Scenario                   | Behavior                        |
+| -------------------------- | ------------------------------- |
+| In repo with `erk.toml`    | Hook fires normally             |
+| In repo without `erk.toml` | Hook exits silently (no output) |
+| Not in git repo            | Hook exits silently             |
 
-### Hook Decorators
+### Current Project-Scoped Hooks
 
-Two decorators in `src/erk/hooks/decorators.py`:
+All erk reminder hooks use this decorator:
 
-- **`@logged_hook`**: Captures stdin, stdout/stderr, timing, and exit status. Writes hook execution logs. Optionally injects `HookContext` if function signature accepts `hook_ctx` parameter.
-- **`@hook_command(name=...)`**: Combines `@click.command`, `@click.pass_context`, and `@logged_hook` into a single decorator.
+- `devrun-reminder-hook`
+- `dignified-python-reminder-hook`
+- `fake-driven-testing-reminder-hook`
+- `session-id-injector-hook`
+- `tripwires-reminder-hook`
+- `exit-plan-mode-hook`
+
+### Detection Utility
+
+The `@project_scoped` decorator uses `is_in_managed_project()` internally. You can use this directly for more complex conditional logic:
+
+```python
+from erk_kits.hooks.scope import is_in_managed_project
+
+@click.command()
+def my_hook() -> None:
+    if not is_in_managed_project():
+        # Custom handling for non-managed projects
+        click.echo("ℹ️ Tip: Install erk-kits for full features")
+        return
+
+    # Normal hook logic
+    click.echo("🔴 CRITICAL: Your reminder")
+```
+
+**Function signature**:
+
+```python
+def is_in_managed_project() -> bool:
+    """Check if current directory is in a managed project.
+
+    Returns True if:
+    1. Current directory is inside a git repository
+    2. Repository root contains erk.toml
+
+    Returns False otherwise (fails silently, no exceptions).
+    """
+```
 
 ## Common Tasks
 
 ### Viewing Installed Hooks
 
 ```bash
+# Show hook configuration in Claude
+/hooks  # Run inside Claude Code session
+
 # View hooks in settings.json
 cat .claude/settings.json | grep -A 10 "hooks"
 ```
 
 ### Modifying an Existing Hook
 
-1. **Edit the hook script** in `src/erk/cli/commands/exec/scripts/`:
+1. **Edit the hook script** in `.claude/hooks/{category}/`:
 
    ```bash
-   vim src/erk/cli/commands/exec/scripts/user_prompt_hook.py
+   vim .claude/hooks/devrun/devrun_reminder_hook.py
    ```
 
-2. **Verify**: Run tests for the hook.
+2. **Verify**:
+
+   ```bash
+   # Test hook directly
+   python .claude/hooks/devrun/devrun_reminder_hook.py
+   ```
 
 ### Creating a New Hook
 
 **Quick steps**:
 
-1. **Create hook script** in `src/erk/cli/commands/exec/scripts/`:
+1. **Create hook script** in `.claude/hooks/{category}/`:
 
    ```python
    import click
-   from erk.hooks.decorators import HookContext, hook_command
 
-   @hook_command(name="my-new-hook")
-   def my_new_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
-       if not hook_ctx.is_erk_project:
-           return
-       click.echo("Your reminder here")
+   @click.command()
+   def my_reminder_hook() -> None:
+       click.echo("🔴 CRITICAL: Your reminder here")
    ```
 
-2. **Register in `src/erk/cli/commands/exec/group.py`**: Import and add to exec group.
-
-3. **Register in `.claude/settings.json`**:
+2. **Register in `.claude/settings.json`**:
 
    ```json
    {
      "hooks": {
        "UserPromptSubmit": [
          {
-           "matcher": "*",
-           "hooks": [
-             {
-               "type": "command",
-               "command": "ERK_HOOK_ID=my-new-hook erk exec my-new-hook",
-               "timeout": 30
-             }
-           ]
+           "matcher": "*.txt",
+           "hooks": ["python .claude/hooks/{category}/my_reminder_hook.py"]
          }
        ]
      }
    }
    ```
+
+3. **Test**:
+   ```bash
+   python .claude/hooks/{category}/my_reminder_hook.py
+   ```
+
+### Testing Hooks
+
+**Test hook script independently**:
+
+```bash
+# Run Python script directly
+python .claude/hooks/{category}/{hook_name}.py
+```
+
+**Test hook in Claude Code**:
+
+```bash
+# Enable debug output
+claude --debug
+
+# Trigger hook by creating matching context
+# Example: For *.py matcher, open Python file
+claude "Show me example.py"
+```
+
+**Common test cases**:
+
+- Hook output appears correctly
+- Exit code 0 shows reminder (doesn't block)
+- Exit code 2 blocks operation
+- Timeout doesn't cause hangs
+- Matcher fires on correct files/events
+
+### Testing Project-Scoped Hooks
+
+When testing hooks that use `@project_scoped`, you must mock `is_in_managed_project` to return `True`, otherwise the hook will silently exit before your test logic runs.
+
+**Pattern**:
+
+```python
+from unittest.mock import patch
+from click.testing import CliRunner
+
+def test_my_scoped_hook() -> None:
+    runner = CliRunner()
+
+    with patch("erk_kits.hooks.decorators.is_in_managed_project", return_value=True):
+        result = runner.invoke(my_hook)
+
+    assert result.exit_code == 0
+    assert "expected output" in result.output
+```
+
+**Common mistake** (causes silent test failures):
+
+```python
+# ❌ WRONG - Hook silently exits, test passes but doesn't test anything
+def test_my_hook() -> None:
+    runner = CliRunner()
+    result = runner.invoke(my_hook)
+    assert result.exit_code == 0  # Passes but hook didn't run!
+```
+
+**Testing unmanaged project behavior**:
+
+```python
+def test_hook_silent_in_unmanaged_project() -> None:
+    runner = CliRunner()
+
+    with patch("erk_kits.hooks.decorators.is_in_managed_project", return_value=False):
+        result = runner.invoke(my_hook)
+
+    assert result.exit_code == 0
+    assert result.output == ""  # No output when not in managed project
+```
+
+**Important**: The patch target is always `erk_kits.hooks.decorators.is_in_managed_project`, regardless of where your hook is defined. This is because the decorator imports and uses the function at decoration time.
 
 ## Troubleshooting
 
@@ -251,9 +346,18 @@ cat .claude/settings.json | grep -A 10 "hooks"
 ```bash
 # Verify hook in settings.json
 cat .claude/settings.json | grep -A 10 "hooks"
+
+# Verify hooks directory exists
+ls .claude/hooks/
 ```
 
-**Check 2: Matcher conditions met** - ensure the lifecycle event and matcher pattern match.
+**Check 2: Matcher conditions met**
+
+```bash
+# Example: *.py matcher requires Python files in context
+# Try explicitly referencing matching file
+claude "Read example.py"
+```
 
 **Check 3: Lifecycle event firing**
 
@@ -269,11 +373,65 @@ claude --debug
 - Hook script has errors (test independently)
 - Claude Code settings cache stale (restart Claude)
 
+### Hook Script Errors
+
+**Check 1: Test script independently**
+
+```bash
+# Run hook script directly
+python .claude/hooks/{category}/{hook-name}.py
+
+# Check exit code
+echo $?  # Should be 0 or 2
+```
+
+**Check 2: Check function name**
+
+```python
+# Function name MUST match file name
+# File: devrun_reminder_hook.py
+def devrun_reminder_hook():  # ✅ Matches
+    pass
+
+def reminder_hook():  # ❌ Doesn't match
+    pass
+```
+
+**Check 3: Verify settings.json registration**
+
+```bash
+# Check hook appears in settings
+cat .claude/settings.json | grep -A 5 "{hook-name}"
+```
+
 ### Hook Output Not Showing
 
-**Check 1: Exit code** - Exit 0 shows as reminder, exit 2 blocks operation.
+**Check 1: Exit code**
 
-**Check 2: Output format** - Use `click.echo()`, not `print()`.
+```bash
+# Exit 0 shows as reminder
+# Exit 2 shows as error (blocks operation)
+# Other exit codes logged but may not show
+```
+
+**Check 2: Output format**
+
+```python
+# Use click.echo(), not print()
+import click
+
+@click.command()
+def my_hook() -> None:
+    click.echo("Message here")  # ✅ Correct
+    print("Message here")  # ❌ May not show
+```
+
+**Check 3: Debug mode**
+
+```bash
+# See all hook execution details
+claude --debug
+```
 
 ### Hook Modifications Not Taking Effect
 
@@ -286,6 +444,7 @@ Claude Code caches hook configuration at startup, so changes require a restart t
 ## Additional Resources
 
 - **General Claude Code Hooks Guide**: [hooks.md](hooks.md)
-- **Hook Decorators**: `src/erk/hooks/decorators.py`
-- **Hook Scripts**: `src/erk/cli/commands/exec/scripts/`
+- **Official Claude Code Hooks**: https://code.claude.com/docs/en/hooks
+- **Official Hooks Guide**: https://code.claude.com/docs/en/hooks-guide.md
+- **Hook Scripts**: `.claude/hooks/`
 - **Project Glossary**: `../glossary.md`

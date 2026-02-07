@@ -4,8 +4,6 @@ read_when:
   - "reducing command file size"
   - "using @ reference in commands"
   - "modularizing command content"
-last_audited: "2026-02-03"
-audit_result: edited
 ---
 
 # Command Optimization Patterns
@@ -14,12 +12,13 @@ Patterns for reducing command file size and context consumption through modulari
 
 ## Why Command Size Matters
 
-Since Claude Code 2.1.0, commands and skills are equivalent - both are loaded when invoked. Command text in `.claude/commands/` behaves identically to skills in `.claude/skills/`.
+Command text is loaded **every time** the command is invoked. Unlike skills (loaded once per session), commands consume context on each use.
 
-| Content Type        | When Loaded                           | Optimization Impact                 |
-| ------------------- | ------------------------------------- | ----------------------------------- |
-| Command/skill text  | When invoked (unless cached)          | High - reduce aggressively          |
-| `@` referenced docs | Once per session (cached after first) | Medium - extract reference material |
+| Content Type        | When Loaded      | Optimization Impact                 |
+| ------------------- | ---------------- | ----------------------------------- |
+| Command text        | Every invocation | High - reduce aggressively          |
+| `@` referenced docs | Once per session | Medium - extract reference material |
+| Skills              | Once per session | Low - already optimized             |
 
 ## The @ Reference Pattern
 
@@ -46,7 +45,34 @@ For each phase, follow the guide above.
 | Location          | Example                                 | Notes                  |
 | ----------------- | --------------------------------------- | ---------------------- |
 | `.claude/skills/` | `@.claude/skills/ci-iteration/SKILL.md` | Project-specific skill |
+| Kit docs          | `@docs/erk/execution-guide.md`          | Relative to kit root   |
 | Relative path     | `@../shared/common.md`                  | From command location  |
+
+### Real Example: /fast-ci
+
+**Command** (`.claude/commands/fast-ci.md`):
+
+```markdown
+---
+description: Run fast CI checks iteratively
+---
+
+# /fast-ci
+
+Run fast CI checks iteratively (unit tests + ty).
+
+@.claude/skills/ci-iteration/SKILL.md
+
+## Implementation
+
+Delegate to devrun agent with: "Run pytest tests/ && ty"
+```
+
+**Referenced skill** (`ci-iteration` skill):
+
+- Contains detailed iteration workflow (~246 lines)
+- Loaded once per session
+- Shared with `/all-ci` command
 
 ## When to Extract
 
@@ -67,6 +93,83 @@ For each phase, follow the guide above.
 | Short unique content    | Command-specific instructions | Overhead of separate file        |
 | Frequently changing     | Active development            | Easier to maintain inline        |
 
+## Extraction Workflow
+
+### Step 1: Identify Extractable Content
+
+Look for:
+
+- Sections >500 chars that are reference material
+- Tables (standards, mappings, error codes)
+- Step-by-step instructions that rarely change
+- Content duplicated across commands
+
+### Step 2: Create External Doc
+
+```markdown
+# [Descriptive Title]
+
+[Content extracted from command]
+
+## Section 1
+
+...
+
+## Section 2
+
+...
+```
+
+**Placement:**
+
+- Kit commands: `docs/<kit-name>/<command-name>/`
+
+### Step 3: Replace with Reference
+
+Before:
+
+```markdown
+### Step 4: Execute phases
+
+#### Context Consumption
+
+[800 chars of guidance]
+
+#### Phase Execution Process
+
+[1500 chars of detailed steps]
+
+#### Coding Standards
+
+[700 chars of table]
+```
+
+After:
+
+```markdown
+### Step 4: Execute phases
+
+**MANDATORY**: Load `fake-driven-testing` skill for test guidance.
+
+@docs/erk/plan-implement/execution-guide.md
+
+For each phase:
+
+1. Mark phase as `in_progress`
+2. Implement code AND tests
+3. Mark complete
+```
+
+### Step 4: Build Artifacts
+
+After creating the external doc, run:
+
+```bash
+erk dev kit-build
+```
+
+This syncs the documentation to kit packages.
+
 ## Size Targets
 
 | Artifact Type  | Target Size  | Maximum      |
@@ -75,6 +178,22 @@ For each phase, follow the guide above.
 | Skills (core)  | <3,000 chars | 5,000 chars  |
 | Skills (total) | <8,000 chars | 12,000 chars |
 | External docs  | No limit     | Keep focused |
+
+## Measuring Success
+
+Before optimization:
+
+```bash
+wc -c .claude/commands/my-command.md
+# 13,397 chars
+```
+
+After optimization:
+
+```bash
+wc -c .claude/commands/my-command.md
+# 7,000 chars (-48%)
+```
 
 ## Anti-Patterns
 
@@ -108,6 +227,31 @@ For each phase, follow the guide above.
 
 @docs/execution-workflow.md
 ```
+
+### Forgetting to Build
+
+```bash
+# DON'T: Create doc without building
+
+# DO: Run kit-build after creating docs
+erk dev kit-build
+```
+
+## Case Study: /erk:plan-implement
+
+**Before**: 13,397 chars loaded every invocation
+
+- Step 4: 2,000+ chars of execution details
+- Step 5: Duplicate of Step 4 content
+- Steps 7-8: Could be merged
+
+**After**: ~7,000 chars + 3,700 char external doc
+
+- Extracted execution guide to `@docs/erk/plan-implement/execution-guide.md`
+- Deleted redundant Step 5
+- Merged Steps 7-8
+
+**Result**: 48% reduction in per-invocation context consumption
 
 ## Related Documentation
 

@@ -4,85 +4,208 @@ read_when:
   - "adding a new command to the TUI command palette"
   - "implementing TUI actions with streaming output"
   - "understanding the dual-handler pattern for TUI commands"
-tripwires:
-  - action: "generating TUI commands that depend on optional PlanRowData fields"
-    warning: "Implement three-layer validation: registry predicate, handler guard, app-level helper. Never rely on registry predicate alone."
-last_audited: "2026-02-05"
-audit_result: edited
 ---
 
 # Adding Commands to TUI
 
+Step-by-step guide for adding new commands to the TUI command palette.
+
 ## Architecture: The Dual-Handler Pattern
 
-Commands follow a **dual-handler pattern**:
+Commands in the TUI follow a **dual-handler pattern**:
 
-1. **Registry** (`src/erk/tui/commands/registry.py`) — Defines `CommandDefinition` with metadata and availability predicates
-2. **Handlers** — Implement actual logic in two locations:
-   - `ErkDashApp.execute_palette_command()` in `app.py` — Main list context
-   - `PlanDetailScreen.execute_command()` — Detail modal context
+1. **Registry** (`registry.py`) - Defines command metadata and availability predicates
+2. **Handlers** - Implement the actual command logic in two locations:
+   - `ErkDashApp.execute_palette_command()` - Main list context
+   - `PlanDetailScreen.execute_command()` - Detail modal context
 
-Commands need different behavior depending on invocation context. See the actual source files for current command definitions and handler implementations.
+This pattern exists because commands need different behavior depending on where they're invoked. The main list has direct access to the data provider, while the detail modal has a pre-selected row and an executor.
 
-## Adding a New Command
+## Step 1: Add CommandDefinition to Registry
 
-1. **Add `CommandDefinition`** to `registry.py` with id, name, description, category, shortcut, availability predicate
-2. **Add handler** in `ErkDashApp.execute_palette_command()` for main list context
-3. **Add handler** in `PlanDetailScreen.execute_command()` for detail modal context
-4. **Add registry tests** in `tests/tui/commands/test_registry.py`
+In `src/erk/tui/commands/registry.py`, add a `CommandDefinition`:
 
-## Command Categories
+```python
+CommandDefinition(
+    id="land_pr",  # Unique identifier
+    name="Action: Land PR",  # Display name (Category: Name format)
+    description="Merge PR and clean up worktree",  # Brief description
+    shortcut="l",  # Optional keyboard shortcut (single char) or None
+    is_available=lambda ctx: ctx.row.pr_number is not None and ctx.row.exists_locally,
+)
+```
 
-| Category | Emoji     | Use For                                   |
-| -------- | --------- | ----------------------------------------- |
-| `ACTION` | lightning | Mutative operations (close, submit, land) |
-| `OPEN`   | link      | Browser navigation (open issue, PR, run)  |
-| `COPY`   | clipboard | Clipboard operations (copy commands)      |
+**Command categories** (use in name prefix):
 
-## Three-Layer Null Validation
+- `Action:` - Mutative operations (close, submit, land)
+- `Open:` - Browser navigation (open issue, PR, run)
+- `Copy:` - Clipboard operations (copy commands)
 
-Commands that depend on optional `PlanRowData` fields require three-layer validation:
+**Availability predicates** use `CommandContext.row` (a `PlanRowData` instance). See [plan-row-data.md](plan-row-data.md) for field reference.
 
-### Layer 1: Registry Availability Predicate
+## Step 2: Add Handler in Main List
 
-Controls whether the command appears in the palette. Necessary but not sufficient.
+In `src/erk/tui/app.py`, add handling in `ErkDashApp.execute_palette_command()`:
 
-### Layer 2: Handler Guard Check
+```python
+elif command_id == "land_pr":
+    if row.pr_number is not None:
+        # For simple actions:
+        self._provider.some_action(row.issue_number)
+        self.notify("Action completed")
+        self.action_refresh()
 
-The handler must validate again before using optional fields. Handlers can be invoked through keyboard shortcuts or programmatic paths that bypass the palette.
+        # OR for streaming output (like submit_to_queue):
+        # See Step 2b below
+```
 
-### Layer 3: App-Level Helper (Optional)
+## Step 2b: Streaming Output Pattern
 
-For complex commands, extract validation into a helper that encapsulates all guards and fallback chains.
+For long-running commands that need live output (like `submit_to_queue`, `land_pr`):
 
-**Why three layers?**
+```python
+elif command_id == "land_pr":
+    if row.pr_url:
+        executor = RealCommandExecutor(
+            browser_launch=self._provider.browser.launch,
+            clipboard_copy=self._provider.clipboard.copy,
+            close_plan_fn=self._provider.close_plan,
+            notify_fn=self.notify,
+            refresh_fn=self.action_refresh,
+            submit_to_queue_fn=self._provider.submit_to_queue,
+        )
+        detail_screen = PlanDetailScreen(
+            row,
+            clipboard=self._provider.clipboard,
+            browser=self._provider.browser,
+            executor=executor,
+            repo_root=self._provider.repo_root,
+        )
+        self.push_screen(detail_screen)
+        # Trigger streaming command after screen mounts
+        detail_screen.call_after_refresh(
+            lambda: detail_screen.run_streaming_command(
+                ["erk", "pr", "land", str(row.pr_number)],
+                cwd=self._provider.repo_root,
+                title=f"Landing PR #{row.pr_number}",
+            )
+        )
+```
 
-- Registry predicates can become stale if data changes between palette open and execution
-- Keyboard shortcuts may bypass the palette entirely
-- Python type narrowing doesn't persist across method boundaries
+## Step 3: Add Handler in Detail Modal
 
-## Remote Workflow Commands
+In `PlanDetailScreen.execute_command()`, add handling:
 
-Remote commands dispatch GitHub Actions workflows instead of executing locally. They use streaming subprocess to show dispatch status and workflow URL, but make no local modifications.
+```python
+elif command_id == "land_pr":
+    if row.pr_url and self._repo_root is not None:
+        # Use streaming output for long commands
+        self.run_streaming_command(
+            ["erk", "pr", "land", str(row.pr_number)],
+            cwd=self._repo_root,
+            title=f"Landing PR #{row.pr_number}",
+        )
+        # Don't dismiss - user must press Esc after completion
+```
 
-| Aspect        | Local Streaming        | Remote Workflow                      |
-| ------------- | ---------------------- | ------------------------------------ |
-| Execution     | Runs in subprocess     | Triggers GitHub Actions              |
-| Duration      | Full command time      | Only dispatch time                   |
-| Output        | Command output         | Dispatch confirmation + workflow URL |
-| State changes | May modify local files | No local modifications               |
+## Step 4: Add Registry Tests
+
+In `tests/tui/commands/test_registry.py`, add tests for availability:
+
+```python
+def test_land_pr_available_when_pr_and_local_worktree() -> None:
+    """land_pr should be available when PR exists and worktree is local."""
+    row = make_plan_row(123, "Test", pr_number=456, exists_locally=True)
+    ctx = CommandContext(row=row)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "land_pr" in cmd_ids
+
+
+def test_land_pr_not_available_when_no_pr() -> None:
+    """land_pr should not be available when no PR."""
+    row = make_plan_row(123, "Test", exists_locally=True)
+    ctx = CommandContext(row=row)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "land_pr" not in cmd_ids
+```
+
+## Command Patterns
+
+### Simple Action (Like `close_plan`)
+
+```python
+# Registry
+CommandDefinition(
+    id="close_plan",
+    name="Action: Close Plan",
+    description="Close issue and linked PRs",
+    shortcut=None,  # No shortcut for destructive actions
+    is_available=lambda _: True,
+)
+
+# Handler
+elif command_id == "close_plan":
+    if row.issue_url:
+        closed_prs = executor.close_plan(row.issue_number, row.issue_url)
+        executor.notify(f"Closed plan #{row.issue_number}")
+        executor.refresh_data()
+        self.dismiss()
+```
+
+### Streaming Command (Like `submit_to_queue`)
+
+```python
+# Registry
+CommandDefinition(
+    id="submit_to_queue",
+    name="Action: Submit to Queue",
+    description="Submit plan for remote AI implementation",
+    shortcut="s",
+    is_available=lambda ctx: ctx.row.issue_url is not None,
+)
+
+# Handler - uses run_streaming_command for live output
+elif command_id == "submit_to_queue":
+    if row.issue_url and self._repo_root is not None:
+        self.run_streaming_command(
+            ["erk", "plan", "submit", str(row.issue_number)],
+            cwd=self._repo_root,
+            title=f"Submitting Plan #{row.issue_number}",
+        )
+```
+
+### Copy Command (Like `copy_checkout`)
+
+```python
+# Registry
+CommandDefinition(
+    id="copy_checkout",
+    name="Copy: erk co <worktree>",
+    description="Copy checkout command",
+    shortcut="c",
+    is_available=lambda ctx: ctx.row.exists_locally,
+)
+
+# Handler
+elif command_id == "copy_checkout":
+    cmd = f"erk co {row.worktree_name}"
+    executor.copy_to_clipboard(cmd)
+    executor.notify(f"Copied: {cmd}")
+```
 
 ## Key Files
 
-| File                                        | Purpose                                                  |
-| ------------------------------------------- | -------------------------------------------------------- |
-| `src/erk/tui/commands/registry.py`          | Command definitions and availability predicates          |
-| `src/erk/tui/commands/types.py`             | `CommandDefinition`, `CommandContext`, `CommandCategory` |
-| `src/erk/tui/app.py`                        | Handler implementations                                  |
-| `src/erk/tui/screens/plan_detail_screen.py` | Detail modal handlers                                    |
-| `tests/tui/commands/test_registry.py`       | Registry unit tests                                      |
+| File                                  | Purpose                                                        |
+| ------------------------------------- | -------------------------------------------------------------- |
+| `src/erk/tui/commands/registry.py`    | Command definitions and availability predicates                |
+| `src/erk/tui/commands/types.py`       | `CommandDefinition`, `CommandContext` types                    |
+| `src/erk/tui/app.py`                  | Handler implementations in `ErkDashApp` and `PlanDetailScreen` |
+| `tests/tui/commands/test_registry.py` | Registry unit tests                                            |
 
-## Related Documentation
+## Related Topics
 
-- [Command Palette](command-palette.md) — Command palette implementation
-- [TUI Architecture](architecture.md) — Overall TUI design
+- [plan-row-data.md](plan-row-data.md) - Field reference for availability predicates
+- [streaming-output.md](streaming-output.md) - Streaming output panel details
+- [command-palette.md](command-palette.md) - Command palette implementation

@@ -7,8 +7,6 @@ read_when:
   - "understanding GraphiteDisabled sentinel pattern"
   - "querying both Graphite and GitHub for completeness"
   - "understanding dual-source patterns"
-last_audited: "2026-02-05"
-audit_result: clean
 ---
 
 # Gateway Hierarchy
@@ -43,7 +41,7 @@ Overview of erk's gateway architecture showing the layered abstraction from low-
 
 ## Responsibility Boundaries
 
-### Git Gateway (`erk_shared.gateway.git`)
+### Git Gateway (`erk_shared.git`)
 
 **Responsibility**: Local repository operations
 
