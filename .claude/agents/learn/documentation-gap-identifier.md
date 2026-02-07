@@ -18,6 +18,7 @@ You receive:
 - `session_analysis_paths`: List of paths to session analysis outputs (e.g., `learn-agents/session-*.md`)
 - `diff_analysis_path`: Path to diff analysis output (may be null if no PR exists)
 - `existing_docs_path`: Path to existing docs check output
+- `pr_comments_analysis_path`: Path to PR comment analysis output (may be null if no PR or no comments)
 - `plan_title`: Title of the plan being analyzed
 
 ## Process
@@ -29,6 +30,7 @@ Read the files at each provided path:
 1. All session analysis files (may be multiple if multiple sessions)
 2. Diff analysis file (if provided)
 3. Existing docs check file
+4. PR comments analysis file (if provided)
 
 ### Step 2: Build Unified Candidate List
 
@@ -46,6 +48,13 @@ Extract documentation candidates from all sources:
 
 - Inventory items (new files, functions, CLI commands, gateway methods)
 - Recommended documentation items
+
+**From PR Comment Analyzer output (if present):**
+
+- False positives → document to prevent future confusion
+- Clarification requests → document the reasoning
+- Rejected alternatives → document the decision
+- Edge case questions → document the behavior
 
 **From Existing Docs Checker output:**
 
