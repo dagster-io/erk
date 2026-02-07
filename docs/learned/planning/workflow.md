@@ -4,6 +4,8 @@ read_when:
   - "using .impl/ folders"
   - "understanding plan file structure"
   - "implementing plans"
+last_audited: "2026-02-07 13:59 PT"
+audit_result: edited
 ---
 
 # Planning Workflow
@@ -22,7 +24,7 @@ Erk uses `.impl/` folders to track implementation progress for plans executed lo
 
 - NOT tracked in git (in `.gitignore`)
 - Created by planning commands
-- Contains `plan.md`, `progress.md`, and optional `issue.json`
+- Contains `plan.md`, optional `issue.json`, and optional `local-run-state.json`
 - Never committed to repository
 
 ### Location
@@ -33,20 +35,16 @@ The `.impl/` folder lives at the **worktree root**:
 {worktree_root}/.impl/
 ```
 
-**Path Resolution**:
-
-```python
-impl_dir = repo_root / ".impl"
-```
-
 **Structure**:
 
 ```
 .impl/
-├── plan.md         # Immutable implementation plan
-├── progress.md     # Mutable progress tracking (checkboxes)
-└── issue.json      # Optional GitHub issue reference
+├── plan.md              # Immutable implementation plan
+├── issue.json           # Optional GitHub issue reference
+└── local-run-state.json # Optional local implementation tracking
 ```
+
+See `create_impl_folder()` in `packages/erk-shared/src/erk_shared/impl_folder.py` for the creation logic.
 
 ## Local Implementation Workflow
 
@@ -56,7 +54,7 @@ Create a plan using Claude's ExitPlanMode tool. This stores the plan in session 
 
 ### 2. Choose Your Workflow
 
-When exiting plan mode, you have three options:
+When exiting plan mode, the exit-plan-mode hook presents five options (see `build_blocking_message()` in `src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py`):
 
 #### Option A: Save for Later ("Save the plan")
 
@@ -124,33 +122,29 @@ When a user saves their plan to GitHub (via `/erk:plan-save`), the workflow shou
 └─────────┬───────────┘
           │
           ▼
-┌─────────────────────┐
-│ Exit Plan Mode Hook │
-│ "What would you     │
-│ like to do?"        │
-└─────────┬───────────┘
+┌─────────────────────────────┐
+│ Exit Plan Mode Hook         │
+│ "What would you like to do?"│
+└─────────┬───────────────────┘
           │
-    ┌─────┼─────┬─────────────┐
-    │     │     │             │
-    ▼     ▼     ▼             ▼
-┌───────┐ ┌─────────┐ ┌──────────────┐ ┌──────────┐
-│ Save  │ │Implement│ │ Incremental  │ │View/Edit │
-│ (A)   │ │ (B)     │ │ (C)          │ │          │
-└───┬───┘ └────┬────┘ └──────┬───────┘ └────┬─────┘
-    │          │             │              │
-    ▼          ▼             ▼              │
-┌───────┐ ┌─────────────┐ ┌──────────────┐  │
-│GitHub │ │Save + Setup │ │Create marker │  │
-│issue  │ │+ Implement  │ │Exit plan mode│  │
-│created│ │+ CI + PR    │ │Impl directly │  │
-└───┬───┘ └─────────────┘ └──────────────┘  │
-    │                                       │
-    ▼                                       │
-┌───────┐                                   │
-│ STOP  │  ← Do NOT call ExitPlanMode       │
-│(plan  │                          ┌────────┘
-│mode)  │                          │ (loop back)
-└───────┘                          ▼
+    ┌─────┼──────┬──────────┬──────────────┐
+    │     │      │          │              │
+    ▼     ▼      ▼          ▼              ▼
+┌──────┐┌──────┐┌────────┐┌──────────┐┌──────────┐
+│Save  ││Save +││No save ││Save +    ││View/Edit │
+│(A)   ││Impl ││+ Impl  ││Review   ││          │
+│      ││(B)   ││(C)     ││(D)       ││(E)       │
+└──┬───┘└──┬───┘└───┬────┘└──┬───────┘└────┬─────┘
+   │       │        │        │              │
+   ▼       ▼        ▼        ▼              │
+┌──────┐┌────────┐┌───────┐┌───────────┐   │
+│GitHub││Save +  ││Marker ││Save +     │   │
+│issue ││Setup + ││+ Exit ││Review PR  │   │
+│ STOP ││Impl   ││+ Impl ││ STOP      │   │
+└──────┘└────────┘└───────┘└───────────┘   │
+                                    ┌──────┘
+                                    │ (loop back)
+                                    ▼
 ```
 
 ### Key Principle: Don't Call ExitPlanMode After Saving
@@ -169,39 +163,11 @@ Why? ExitPlanMode shows a plan approval dialog. After saving, this dialog:
 
 ### Safety Net: Hook Blocks ExitPlanMode
 
-If ExitPlanMode is called anyway (e.g., by mistake), the `exit-plan-mode-hook` detects the plan-saved marker and blocks with exit 2:
-
-```python
-if plan_saved_marker.exists():
-    plan_saved_marker.unlink()
-    click.echo("✅ Plan saved to GitHub. Session complete.")
-    sys.exit(2)  # Block to prevent plan approval dialog
-```
+If ExitPlanMode is called anyway (e.g., by mistake), the `exit-plan-mode-hook` detects the plan-saved marker and returns `ExitAction.BLOCK`. Importantly, the marker is **not deleted** so subsequent ExitPlanMode calls continue to block rather than re-prompting. See `determine_exit_action()` in `src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py` for the full decision logic.
 
 This ensures the plan dialog never appears after a successful save.
 
-## Progress Tracking
-
-The `.impl/progress.md` file tracks completion status:
-
-```markdown
----
-completed_steps: 3
-total_steps: 5
----
-
-# Progress Tracking
-
-- [x] 1. First step (completed)
-- [x] 2. Second step (completed)
-- [x] 3. Third step (completed)
-- [ ] 4. Fourth step
-- [ ] 5. Fifth step
-```
-
-The front matter enables progress indicators in `erk status` output.
-
-## 🔴 Line Number References Are DISALLOWED in Implementation Plans
+## Line Number References Are DISALLOWED in Implementation Plans
 
 Line numbers drift as code changes, causing implementation failures. Use durable alternatives instead.
 

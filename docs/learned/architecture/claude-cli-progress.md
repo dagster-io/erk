@@ -5,6 +5,8 @@ read_when:
   - "wrapping Claude CLI with user feedback"
   - "using ProgressEvent or CompletionEvent"
   - "converting blocking operations to streaming progress"
+last_audited: "2026-02-07 13:55 PT"
+audit_result: edited
 ---
 
 # Claude CLI Progress Feedback Pattern
@@ -183,13 +185,13 @@ Skip for:
 - Fast operations (< 1 second)
 - Operations with no meaningful intermediate states
 
-## Pattern: Typed Claude CLI Events
+## Pattern: Typed Executor Events
 
-For consuming Claude CLI streaming output directly, use the typed `ClaudeEvent` union:
+For consuming Claude CLI streaming output directly, use the typed `ExecutorEvent` union from `erk_shared.core.prompt_executor`:
 
 ```python
-from erk.core.claude_executor import (
-    ClaudeEvent,
+from erk_shared.core.prompt_executor import (
+    ExecutorEvent,
     ErrorEvent,
     PrNumberEvent,
     SpinnerUpdateEvent,
@@ -218,11 +220,9 @@ for event in executor.execute_command_streaming(...):
 - **Self-documenting**: `PrUrlEvent(url=...)` vs stringly-typed events
 - **IDE support**: Autocomplete and refactoring work correctly
 
-**See also**: [Glossary - ClaudeEvent](../glossary.md#claudeevent) for complete event type reference.
-
 ## Related Files
 
 - `packages/erk-shared/src/erk_shared/gateway/gt/events.py` - ProgressEvent/CompletionEvent definitions
-- `src/erk/core/claude_executor.py` - ClaudeEvent definitions
+- `packages/erk-shared/src/erk_shared/core/prompt_executor.py` - ExecutorEvent definitions
 - `packages/erk-shared/src/erk_shared/gateway/gt/operations/` - Example operations
-- `src/erk/cli/commands/pr/submit_cmd.py` - CLI consumption example
+- `src/erk/cli/commands/pr/shared.py` - CLI consumption example (`render_progress`)

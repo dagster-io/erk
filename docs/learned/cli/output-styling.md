@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "using click.confirm() after user_output()"
     warning: "Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed."
+last_audited: "2026-02-07 16:35 PT"
+audit_result: edited
 ---
 
 # CLI Output Styling Guide
@@ -85,7 +87,6 @@ table.add_row(issue_id, ...)
 
 - `src/erk/core/display_utils.py` - `format_pr_info()` function (reference implementation)
 - `src/erk/cli/commands/plan/list_cmd.py` - Clickable plan IDs in table
-- `src/erk/cli/commands/plan/get.py` - Clickable plan ID in details
 - `src/erk/status/renderers/simple.py` - Clickable issue numbers in status
 
 ### Terminal Compatibility
@@ -210,7 +211,7 @@ if ctx.console.confirm("Are you sure?"):
 **Fallback**: Use `user_confirm()` when ErkContext is not available
 
 ```python
-from erk_shared.output import user_output, user_confirm
+from erk_shared.output.output import user_confirm, user_output
 
 user_output("Warning: This operation is destructive!")
 if user_confirm("Are you sure?"):
@@ -233,9 +234,9 @@ if click.confirm("Are you sure?"):  # stderr not flushed!
 
 See these commands for examples:
 
-- `src/erk/cli/commands/sync.py` - Uses custom `_emit()` helper
-- `src/erk/cli/commands/checkout.py` - Uses both user_output() and machine_output()
-- `src/erk/cli/commands/consolidate.py` - Uses both abstractions
+- `src/erk/cli/commands/navigation_helpers.py` - Uses both user_output() and machine_output()
+- `src/erk/cli/activation.py` - Uses user_output() with OSC 52 clipboard copy
+- `src/erk/cli/commands/plan/list_cmd.py` - Uses Rich tables with user_output() convention
 
 ## Error Message Guidelines
 
@@ -381,9 +382,11 @@ When migrating existing `user_output() + SystemExit(1)` patterns to use the `Ens
    value = Ensure.not_none(might_return_none(), "Value is required")
    ```
 
-4. **If error has a specialized type** (PR, branch, session) → Use typed unwrapper
+4. **If error has a specialized type** (PR, branch, session) → Use typed unwrapper from `EnsureIdeal`
 
    ```python
+   from erk.cli.ensure_ideal import EnsureIdeal
+
    # Before:
    pr = ctx.github.get_pr_for_branch(branch)
    if isinstance(pr, PRNotFound):
@@ -391,7 +394,7 @@ When migrating existing `user_output() + SystemExit(1)` patterns to use the `Ens
        raise SystemExit(1)
 
    # After:
-   pr = Ensure.unwrap_pr(ctx.github.get_pr_for_branch(branch), f"No PR for {branch}")
+   pr = EnsureIdeal.unwrap_pr(ctx.github.get_pr_for_branch(branch), f"No PR for {branch}")
    ```
 
 5. **If error has no clear condition or needs custom flow** → Keep as direct pattern
