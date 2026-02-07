@@ -93,9 +93,7 @@ Collateral findings appear after the primary audit summary, grouped by severity 
 
 ### Auto-apply vs Interactive
 
-**Auto-apply mode** (`--auto-apply`): Automatically fixes mechanical source code issues (SC, SD) and broken links (BX). Does NOT auto-apply conceptual findings (OS, CF, SF) or contradicting doc fixes (CD). Unapplied findings are listed in output as reminders.
-
-**Interactive mode**: Shows a two-group prompt — primary document actions (unchanged) plus collateral findings actions: "Apply mechanical fixes", "Apply all fixable collateral", or "Skip collateral fixes".
+See Phase 6 in `.claude/commands/local/audit-doc.md` for authoritative auto-apply and interactive mode behavior.
 
 ## Related Documentation
 
