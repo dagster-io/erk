@@ -1,5 +1,7 @@
 ---
 title: Claude Code Agent Command Patterns
+last_audited: "2026-02-07 18:30 PT"
+audit_result: edited
 read_when:
   - "creating Claude Code agent commands"
   - "implementing conversation-context extraction"
@@ -46,7 +48,6 @@ Extract the [identifier] from the most recent match.
 
 1. `**Issue:** https://github.com/.../issues/<number>` (from plan-save output)
 2. `https://github.com/<owner>/<repo>/issues/<number>` (full URL)
-3. `#<number>` with issue context (abbreviated reference)
 
 **Pull Requests:**
 
@@ -55,19 +56,9 @@ Extract the [identifier] from the most recent match.
 3. `Draft PR #<number> created` (from creation confirmation)
 4. `PR #<number>` with contextual mention
 
-### Example: PR Extraction (from `/erk:pr-address-remote`)
+### Example: PR Extraction
 
-```markdown
-## Finding the PR
-
-Search the conversation from bottom to top for these patterns (in priority order):
-
-1. **PR URL**: `https://github.com/<owner>/<repo>/pull/<number>`
-2. **PR creation output**: `PR: https://github.com/.../pull/<number>` or `Draft PR #<number> created`
-3. **PR reference with context**: `PR #<number>` (e.g., "PR #5846", "submitted PR #5846")
-
-Extract the PR number from the most recent match.
-```
+See `.claude/commands/erk/pr-address-remote.md` for a concrete implementation of the PR extraction pattern using all three priority levels listed above.
 
 ### Error Handling
 
@@ -82,19 +73,7 @@ Always include clear error messages:
 
 ## Agent Command vs CLI Command
 
-See [Agent Command vs CLI Command Boundaries](../architecture/command-boundaries.md) for deciding when to use agent commands versus CLI commands.
-
-**Use agent commands when:**
-
-- Natural language analysis or understanding is required
-- Multi-step reasoning based on context
-- The operation needs conversation history
-
-**Use CLI commands when:**
-
-- The operation is deterministic
-- Pure data transformation
-- External tool orchestration (git, gh, gt)
+See [Agent Command vs CLI Command Boundaries](../architecture/command-boundaries.md) for the full decision framework, including hybrid patterns and a decision tree.
 
 ## Related Topics
 

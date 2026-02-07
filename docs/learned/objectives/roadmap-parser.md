@@ -1,10 +1,12 @@
 ---
 title: Roadmap Parser
+last_audited: "2026-02-07 18:30 PT"
+audit_result: edited
 read_when:
   - "understanding how roadmap steps are parsed"
   - "working with objective roadmap check or update commands"
   - "debugging roadmap parsing issues"
-  - "using erk exec objective-roadmap-check or objective-roadmap-update"
+  - "using erk objective check or erk exec update-roadmap-step"
 tripwires:
   - action: "implementing roadmap parsing functionality"
     warning: "The parser is regex-based, not LLM-based. Do not reference LLM inference."
@@ -18,52 +20,27 @@ This document describes how erk parses and mutates objective roadmap tables usin
 
 ## Overview
 
-Erk uses deterministic regex parsing to extract structured data from objective roadmap markdown tables. Two exec commands expose this functionality:
+Erk uses deterministic regex parsing to extract structured data from objective roadmap markdown tables. Two commands expose this functionality:
 
-- **`objective-roadmap-check`** — parse and validate a roadmap, returning structured JSON
-- **`objective-roadmap-update`** — mutate a specific step's status or PR column
+- **`erk objective check`** — parse and validate a roadmap, returning human-readable or structured JSON output
+- **`erk exec update-roadmap-step`** — surgically update a specific step's PR column
 
 Both commands share the parser in `objective_roadmap_shared.py`.
 
 ## Check Command
 
 ```bash
-erk exec objective-roadmap-check <OBJECTIVE_NUMBER>
+erk objective check <OBJECTIVE_REF>
+erk objective check <OBJECTIVE_REF> --json-output
 ```
 
-Fetches the objective issue body from GitHub, parses all roadmap tables, and returns JSON:
+Fetches the objective issue body from GitHub, parses all roadmap tables, runs validation checks, and returns results. Use `--json-output` for structured JSON.
 
-```json
-{
-  "success": true,
-  "issue_number": 6295,
-  "title": "Objective: ...",
-  "phases": [
-    {
-      "number": 1,
-      "name": "Phase Name",
-      "steps": [
-        { "id": "1.1", "description": "...", "status": "done", "pr": "#123" },
-        { "id": "1.2", "description": "...", "status": "pending", "pr": null }
-      ]
-    }
-  ],
-  "summary": {
-    "total_steps": 10,
-    "pending": 3,
-    "done": 6,
-    "in_progress": 1,
-    "blocked": 0,
-    "skipped": 0
-  },
-  "next_step": { "id": "1.2", "description": "...", "phase": "Phase Name" },
-  "validation_errors": []
-}
-```
+For full details on the check command, JSON schema, and validation rules, see [objective-roadmap-check.md](objective-roadmap-check.md).
 
 ### Parsing Rules
 
-1. **Phase headers**: Matches `### Phase N: Name` (with optional `(N PR)` suffix)
+1. **Phase headers**: Matches `### Phase N: Name` (with optional letter suffix and `(N PR)` trailer)
 2. **Table structure**: Expects `| Step | Description | Status | PR |` header with separator
 3. **Row extraction**: Each `| id | desc | status | pr |` row becomes a `RoadmapStep`
 
@@ -78,36 +55,47 @@ The parser emits warnings (not errors) for:
 ## Update Command
 
 ```bash
-erk exec objective-roadmap-update <OBJECTIVE_NUMBER> --step <STEP_ID> [--status <STATUS>] [--pr <PR_REF>]
+erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --pr <PR_REF>
 ```
 
-| Flag       | Required | Example             | Description       |
-| ---------- | -------- | ------------------- | ----------------- |
-| `--step`   | yes      | `2.1`               | Step ID to update |
-| `--status` | no       | `done`, `blocked`   | New status value  |
-| `--pr`     | no       | `#123`, `plan #456` | New PR reference  |
+| Flag     | Required | Example             | Description            |
+| -------- | -------- | ------------------- | ---------------------- |
+| `--step` | yes      | `2.1`               | Step ID to update      |
+| `--pr`   | yes      | `#123`, `plan #456` | New PR reference value |
 
 The command:
 
 1. Fetches the issue body
 2. Regex-finds the target row by step ID
-3. Edits the status and/or PR columns in place
-4. Writes the updated body back via the GitHub API
-5. Re-runs check to validate the result
+3. Replaces the PR cell with the new value
+4. Resets the status cell to `-` so `parse_roadmap`'s inference logic determines the correct status from the PR column
+5. Writes the updated body back via the GitHub API
+
+**Note:** There is no `--status` flag. Status is always inferred from the PR column after update. For full mutation semantics, see [Roadmap Mutation Patterns](roadmap-mutation-patterns.md).
 
 ## Status Inference
 
-The parser infers step status from both columns:
+The parser uses a two-tier status resolution system. For the complete specification, see [Roadmap Status System](roadmap-status-system.md).
 
-| Status Column | PR Column      | Inferred Status |
-| ------------- | -------------- | --------------- |
-| `blocked`     | (any)          | `blocked`       |
-| `skipped`     | (any)          | `skipped`       |
-| (other)       | `#XXXX`        | `done`          |
-| (other)       | `plan #XXXX`   | `in_progress`   |
-| (other)       | (empty or `-`) | `pending`       |
+**Tier 1 — Explicit status values take priority:**
 
-**Status column takes priority** — `blocked` and `skipped` override PR column inference.
+| Status Column               | Result        |
+| --------------------------- | ------------- |
+| `done`                      | `done`        |
+| `in-progress`/`in_progress` | `in_progress` |
+| `pending`                   | `pending`     |
+| `blocked`                   | `blocked`     |
+| `skipped`                   | `skipped`     |
+
+**Tier 2 — PR-based inference (when status column is `-` or empty):**
+
+| PR Column      | Inferred Status |
+| -------------- | --------------- |
+| `#XXXX`        | `done`          |
+| `plan #XXXX`   | `in_progress`   |
+| (empty or `-`) | `pending`       |
+
+**All explicit status values override PR column inference**, not just `blocked` and `skipped`.
 
 ## Step ID Format
 
@@ -119,16 +107,20 @@ The parser accepts both formats but emits a validation warning for letter-format
 
 ## Next Step Discovery
 
-`find_next_step()` returns the first step with `pending` status in phase order. This is used by `objective-next-plan` to determine which step to implement next.
+`find_next_step()` returns the first step with `pending` status in phase order. This is used by `erk objective check --json-output` to populate the `next_step` field, and by `erk objective next-plan` to determine which step to implement next.
 
 ## Implementation Reference
 
 - Shared parser: `src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py`
-- Check command: `src/erk/cli/commands/exec/scripts/objective_roadmap_check.py`
-- Update command: `src/erk/cli/commands/exec/scripts/objective_roadmap_update.py`
+- Check command: `src/erk/cli/commands/objective/check_cmd.py`
+- Update command: `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`
 
 ## Related Documentation
 
+- [Roadmap Parser API Reference](roadmap-parser-api.md) — Code-level API for parser functions and data types
+- [Roadmap Status System](roadmap-status-system.md) — Complete two-tier status resolution specification
+- [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) — Surgical vs full-body update decisions
+- [objective-roadmap-check](objective-roadmap-check.md) — Detailed check command reference
 - [Objectives Index](index.md) — Package overview and key types
 - [Objective Format Reference](../../../.claude/skills/objective/references/format.md) — Templates and examples
 - [Glossary: Objectives System](../glossary.md#objectives-system) — Terminology definitions

@@ -222,7 +222,7 @@ Session ID   Date                 Relative   Summary
 d8f6bb38     Dec 3, 11:35 AM      2h ago     no rexporting due to...
 ```
 
-### /erk:analyze-context
+### /local:analyze-context
 
 Analyze context window usage across sessions.
 

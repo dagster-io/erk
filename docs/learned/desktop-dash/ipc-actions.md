@@ -1,5 +1,7 @@
 ---
 title: erkdesk IPC Action Pattern
+last_audited: "2026-02-07 18:30 PT"
+audit_result: clean
 read_when:
   - "adding new IPC handlers to erkdesk"
   - "implementing streaming or blocking actions"

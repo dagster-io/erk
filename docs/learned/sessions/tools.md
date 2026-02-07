@@ -108,12 +108,12 @@ The `branch_context` field provides information about whether the current branch
 - Session discovery workflows (`/erk:sessions-list`)
 - Branch-aware command behavior
 
-### /erk:analyze-context (Slash Command)
+### /local:analyze-context (Slash Command)
 
 Analyzes context window usage across all sessions in the current worktree.
 
 ```bash
-/erk:analyze-context
+/local:analyze-context
 ```
 
 **Output:**
@@ -169,7 +169,7 @@ find ~/.claude/projects -name "${SESSION_ID}.jsonl" 2>/dev/null
 
 ## Analysis Recipes
 
-Use `erk exec preprocess-session` to convert raw JSONL to readable XML, then analyze. For context-level analysis, use the `/erk:analyze-context` slash command.
+Use `erk exec preprocess-session` to convert raw JSONL to readable XML, then analyze. For context-level analysis, use the `/local:analyze-context` slash command.
 
 For ad-hoc jq analysis on raw JSONL files:
 

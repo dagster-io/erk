@@ -1,6 +1,6 @@
 """Shared parser and data types for objective roadmap operations.
 
-Used by both objective-roadmap-check and objective-roadmap-update commands.
+Used by erk objective check (check_cmd.py) and erk exec update-roadmap-step.
 """
 
 import re

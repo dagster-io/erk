@@ -5,6 +5,8 @@ read_when:
 tripwires:
   - action: "creating WebContentsView or setting bounds"
     warning: "Initialize with zero bounds {x: 0, y: 0, width: 0, height: 0}, wait for renderer to report measurements. Always apply defensive clamping: Math.max(0, Math.floor(value)) to prevent fractional/negative coordinates that cause Electron crashes. Clean up IPC listeners on window close."
+last_audited: "2026-02-07 18:13 PT"
+audit_result: edited
 ---
 
 # WebContentsView Lifecycle
@@ -13,7 +15,7 @@ Proper initialization, bounds management, and cleanup of Electron's `WebContents
 
 ## Initialization Pattern
 
-**File**: `erkdesk/src/main/index.ts:32-34`
+**File**: `erkdesk/src/main/index.ts:40-42`
 
 ```typescript
 // Start invisible until renderer reports bounds.
@@ -29,7 +31,7 @@ webView.webContents.loadURL("about:blank");
 
 ## Bounds Update Pattern
 
-**File**: `erkdesk/src/main/index.ts:37-45`
+**File**: `erkdesk/src/main/index.ts:44-53`
 
 ```typescript
 ipcMain.on("webview:update-bounds", (_event, bounds: WebViewBounds) => {
@@ -53,12 +55,19 @@ See [Defensive Bounds Handling](defensive-bounds-handling.md) for details.
 
 ## Cleanup Pattern
 
-**File**: `erkdesk/src/main/index.ts:70-74`
+**File**: `erkdesk/src/main/index.ts:190-201`
 
 ```typescript
 mainWindow.on("closed", () => {
   ipcMain.removeAllListeners("webview:update-bounds");
   ipcMain.removeAllListeners("webview:load-url");
+  ipcMain.removeHandler("plans:fetch");
+  ipcMain.removeHandler("actions:execute");
+  ipcMain.removeAllListeners("actions:start-streaming");
+  if (activeAction) {
+    activeAction.kill();
+    activeAction = null;
+  }
   webView = null;
 });
 ```
@@ -76,7 +85,7 @@ mainWindow.on("closed", () => {
    ↓
 2. Create WebContentsView with zero bounds
    ↓
-3. Register IPC listeners (update-bounds, load-url)
+3. Register IPC listeners (update-bounds, load-url, plans:fetch, actions:execute, actions:start-streaming)
    ↓
 4. Load renderer (which measures layout and reports bounds)
    ↓
@@ -92,7 +101,7 @@ mainWindow.on("closed", () => {
    ↓
 10. Window close
    ↓
-11. Remove all IPC listeners
+11. Remove all IPC listeners and handlers, kill active processes
    ↓
 12. Set webView = null for garbage collection
 ```
@@ -130,7 +139,7 @@ mainWindow.on("closed", () => {
 
 **Problem**: IPC listeners leak memory across window recreations.
 
-**Fix**: Always call `ipcMain.removeAllListeners()` for each channel.
+**Fix**: Always call `ipcMain.removeAllListeners()` for each `on` channel and `ipcMain.removeHandler()` for each `handle` channel. Kill any active child processes.
 
 ## Related Documentation
 

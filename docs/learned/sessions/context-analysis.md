@@ -4,6 +4,8 @@ read_when:
   - "analyzing context consumption"
   - "debugging context window blowout"
   - "understanding why session ran out of context"
+last_audited: "2026-02-07 18:30 PT"
+audit_result: edited
 ---
 
 # Context Window Analysis
@@ -54,74 +56,15 @@ This makes subagents (devrun, Explore, Plan) highly efficient for:
 - Codebase exploration (Explore consumes reads, returns findings)
 - Complex reasoning (Plan consumes exploration, returns plan)
 
-## Quick Analysis: jq Recipe
+## Quick Analysis
 
-To analyze a session log for context consumption:
+The easiest way to analyze context consumption is the `/local:analyze-context` slash command, which analyzes all sessions in the current worktree and reports token breakdown by category, duplicate file reads, and cache hit rates.
 
-```bash
-# Find your session log
-SESSION_LOG=~/.claude/projects/-Users-<path>/<session-id>.jsonl
+For manual analysis with jq or CLI tools, see [tools.md](tools.md) which has complete recipes for counting tool calls by type, finding large tool results, and debugging session blowouts.
 
-# Sum tool_result content sizes by tool name
-cat "$SESSION_LOG" | jq -s '
-  [.[] | select(.type == "tool_result") |
-   {size: (.message.content[0].text // "" | length)}] |
-  group_by(.size) |
-  map({count: length, total_chars: (map(.size) | add)}) |
-  add
-'
-```
+For session log format and location details, see [layout.md](layout.md).
 
-For detailed breakdown by tool type, look at the preceding assistant message's `tool_use` entries.
-
-## Quick Analysis: /erk:analyze-context
-
-The easiest way to analyze context consumption is the slash command:
-
-```bash
-/erk:analyze-context
-```
-
-This analyzes all sessions in the current worktree and outputs:
-
-- **Summary metrics**: Sessions analyzed, peak context window, cache hit rate
-- **Token breakdown by category**: File reads, assistant responses, tool results, skill expansions, etc.
-- **Duplicate file reads**: Files read multiple times across sessions with wasted token estimates
-
-## Analysis Workflow
-
-### 1. Locate Session Log
-
-Session logs live in `~/.claude/projects/<encoded-path>/`:
-
-- Path encoding: `/` → `-`, `.` → `-`, prepend `-`
-- Example: `/Users/foo/.erk/repos/erk` → `-Users-foo--erk-repos-erk`
-
-See [layout.md](layout.md) for complete format reference.
-
-### 2. Parse Tool Results
-
-```python
-import json
-from collections import defaultdict
-
-def analyze_session(session_file: Path) -> dict[str, int]:
-    """Sum tool result sizes by tool type."""
-    tool_sizes: dict[str, int] = defaultdict(int)
-
-    with open(session_file) as f:
-        for line in f:
-            entry = json.loads(line)
-            if entry.get("type") == "tool_result":
-                content = entry.get("message", {}).get("content", [])
-                size = sum(len(c.get("text", "")) for c in content)
-                # Tool type requires looking at preceding tool_use
-                tool_sizes["total"] += size
-
-    return dict(tool_sizes)
-```
-
-### 3. Identify Top Consumers
+## Identifying Top Consumers
 
 Common patterns and their causes:
 

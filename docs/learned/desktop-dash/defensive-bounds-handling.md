@@ -2,6 +2,8 @@
 title: Defensive Bounds Handling
 read_when:
   - working with WebContentsView bounds, debugging Electron crashes, implementing IPC bounds updates
+last_audited: "2026-02-07 18:13 PT"
+audit_result: edited
 ---
 
 # Defensive Bounds Handling
@@ -26,7 +28,7 @@ Even though the renderer uses `getBoundingClientRect()` (which should return val
 
 ## The Solution
 
-**File**: `erkdesk/src/main/index.ts:37-45`
+**File**: `erkdesk/src/main/index.ts:44-53`
 
 ```typescript
 ipcMain.on("webview:update-bounds", (_event, bounds: WebViewBounds) => {
@@ -102,7 +104,7 @@ webView.setBounds({ x: 0, y: 0, width: 0, height: 0 });
 webView.webContents.loadURL("about:blank");
 ```
 
-**Source**: `erkdesk/src/main/index.ts:32-34`
+**Source**: `erkdesk/src/main/index.ts:40-42`
 
 **Rationale**:
 
