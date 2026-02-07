@@ -40,5 +40,6 @@ def claude_only_skills() -> frozenset[str]:
             "ci-iteration",
             "command-creator",
             "cli-skill-creator",
+            "learn",
         }
     )
