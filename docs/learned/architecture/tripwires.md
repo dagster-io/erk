@@ -202,7 +202,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using execute_interactive() in production code** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. execute_interactive() never returns in production - it replaces the process via os.execvp
 
-
 **CRITICAL: Before using gh api or gh api graphql to fetch or resolve PR review threads** → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. Load `pr-operations` skill first. Use `erk exec get-pr-review-comments` and `erk exec resolve-review-thread` instead. Raw gh api calls miss thread resolution functionality.
 
 **CRITICAL: Before using gh codespace start** → Read [GitHub CLI Limits](github-cli-limits.md) first. gh codespace start does not exist. Use REST API POST /user/codespaces/{name}/start via gh api instead.

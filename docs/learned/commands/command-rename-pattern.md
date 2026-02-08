@@ -1,198 +1,77 @@
 ---
 title: Command Rename Pattern
 read_when:
-  - "renaming a slash command"
-  - "migrating command invocations"
-  - "ensuring complete command name updates"
-last_audited: "2026-02-05 20:38 PT"
+  - renaming a slash command or skill
+  - migrating command invocations across the codebase
+  - performing a terminology shift that affects command names
+tripwires:
+  - action: "renaming any file in .claude/commands/ or .claude/skills/"
+    warning: "Read this doc — renames require a full reference sweep, not just a file move"
+last_audited: "2026-02-08"
 audit_result: clean
 ---
 
 # Command Rename Pattern
 
-This document describes the systematic workflow for renaming slash commands in Claude Code, ensuring all references are updated and no stale invocations remain.
+Renaming a slash command is a **cross-cutting migration**, not a file operation. The command name appears in invocations, body text, other commands, documentation, hook configurations, AGENTS.md, and the docs index. Missing any location creates silent breakage — stale invocations fail without error, and inconsistent terminology confuses agents.
 
-## Workflow
+## Why This Is Hard to Get Right
 
-### 1. Read Old Command
+Slash command names are scattered across many artifact types with no single registry. Unlike code symbols (which produce import errors when renamed), stale command references fail silently — an agent invoking `/erk:old-name` simply gets "command not found" with no pointer to the new name.
 
-Before making any changes, read the old command file to understand:
+The reference locations that are easy to miss:
 
-- Command purpose and behavior
-- Parameter structure
-- External dependencies (skills, docs)
-- Related commands
+| Location                                                  | Why It's Missed                                           |
+| --------------------------------------------------------- | --------------------------------------------------------- |
+| Other command files that invoke or reference this command | Not obvious which commands are related                    |
+| `AGENTS.md` skill listing                                 | Updated separately from commands                          |
+| Hook configurations in `.claude/hooks/`                   | Hooks reference command names for trigger matching        |
+| `docs/learned/` prose mentions                            | Documentation references the old name in explanatory text |
+| `docs/learned/**/index.md` auto-generated entries         | Must run `erk docs sync` to regenerate                    |
 
-```bash
-# Example
-cat .claude/commands/erk-pr-address-remote.md
-```
+## Grep Verification Strategy
 
-### 2. Create New Command
-
-Create the new command file with the updated name:
-
-- Copy content from old command
-- Update the command name in frontmatter and body text
-- Adjust invocation examples to use new name
-- Update any self-referential documentation
+Three grep passes catch different reference styles:
 
 ```bash
-# Example
-cp .claude/commands/erk-pr-address-remote.md .claude/commands/erk-pr-address.md
-# Edit .claude/commands/erk-pr-address.md to update references
+# 1. Slash invocations: /namespace:old-name
+grep -r "/old-command-name" .
+
+# 2. Prose references (without slash): "the old-name command"
+grep -r "old-command-name" docs/ .claude/
+
+# 3. Snake-case variants (implementation may use underscores)
+grep -r "old_command_name" .
+
+# 4. Exclude noise
+# CHANGELOG mentions are historical — don't update
+# .git/ is not your concern
 ```
 
-### 3. Delete Old Command
-
-Remove the old command file after verifying the new one is complete:
-
-```bash
-rm .claude/commands/erk-pr-address-remote.md
-```
-
-### 4. Verify References
-
-Use grep to find all references to the old command name across the codebase:
-
-```bash
-# Check for slash command invocations
-grep -r "/erk:pr-address-remote" .
-
-# Check for command mentions in documentation
-grep -r "erk:pr-address-remote" docs/
-
-# Check for related terminology
-grep -r "pr-address-remote" .
-```
-
-### 5. Update All References
-
-Update found references in three categories:
-
-#### A. Command Invocations
-
-Update all actual uses of the command:
-
-```markdown
-<!-- OLD -->
-
-/erk:pr-address-remote
-
-<!-- NEW -->
-
-/erk:pr-address
-```
-
-#### B. Body Text and Documentation
-
-Update descriptive text that mentions the command:
-
-```markdown
-<!-- OLD -->
-
-The `/erk:pr-address-remote` command triggers...
-
-<!-- NEW -->
-
-The `/erk:pr-address` command triggers...
-```
-
-#### C. External References
-
-Update references in:
-
-- Other command files that reference this command
-- Documentation files in `docs/learned/`
-- README and AGENTS.md files
-- Hook configurations
-
-### 6. Run CI
-
-Verify the rename doesn't break tests or documentation builds:
-
-```bash
-# Run tests
-pytest tests/
-
-# Verify command loads
-erk --help
-
-# Check for broken links in docs
-erk docs sync
-```
-
-## Quality Checklist
-
-Use this checklist to ensure complete migration:
-
-- [ ] Old command file deleted
-- [ ] New command file created with correct name
-- [ ] All slash command invocations updated (`/command-name`)
-- [ ] All command mentions in documentation updated
-- [ ] Cross-references from other commands updated
-- [ ] Hook configurations updated if command is hooked
-- [ ] CLI help text updated if command is exposed
-- [ ] No grep results for old command name (excluding CHANGELOG)
-- [ ] CI passes
-- [ ] Documentation index regenerated (`erk docs sync`)
+After all updates, the final grep for the old name (excluding CHANGELOG and .git/) must return zero results.
 
 ## Anti-Pattern: Mechanical Rename Without Terminology Update
 
-**Problem:** Issue #6410 renamed `/local:todos-clear` to `/local:tasks-clear` but only updated the command invocation, not the terminology throughout the body text and documentation.
+**Historical context:** Issue #6410 renamed `/local:todos-clear` to `/local:tasks-clear` but only updated the filename and invocation. The body text still said "todos" everywhere — "Clear all todos", "Todos might become stale". Issue #6412 fixed the terminology throughout.
 
-**Symptoms:**
+**The lesson:** When a rename represents a **terminology shift** (not just a naming convention fix), the old term must be replaced everywhere — body text, user-facing messages, variable names, glossary entries, and related documentation. A rename that changes `todos` to `tasks` but leaves "todo list" in the description creates conceptual confusion.
 
-- Command file renamed
-- Invocations updated
-- Body text still references "todos" instead of "tasks"
-- User-facing messages inconsistent
-- Conceptual confusion between "todos" and "tasks"
+**Decision test:** Is this rename purely mechanical (fixing a typo, applying kebab-case convention) or does it represent a concept change? If the latter, grep for the old _term_ (not just the old command name) and update all occurrences.
 
-**Correct approach:**
+## Completion Checklist
 
-When renaming a command that represents a terminology shift (like "todos" → "tasks"):
-
-1. Update command name
-2. Update all body text to use new terminology
-3. Update user-facing messages and output
-4. Update related documentation
-5. Update variable names in implementation if applicable
-6. Create a terminology mapping in glossary if needed
-
-**Example from #6412:**
-
-```diff
-- /local:todos-clear - Clear all todos from the current session
-+ /local:tasks-clear - Clear all tasks from the current session
-
-- This command clears the todo list for the current session.
-+ This command clears the task list for the current session.
-
-- When would you use this? Todos might become stale...
-+ When would you use this? Tasks might become stale...
-```
-
-## Grep Verification Patterns
-
-Use these patterns to verify completeness:
-
-```bash
-# Command invocations (with colon)
-grep -r "/old-command-name" .
-
-# Command references (without slash)
-grep -r "old-command-name" docs/
-
-# Kebab and snake variants
-grep -r "old_command_name\|old-command-name" .
-
-# Exclude false positives
-grep -r "old-command-name" . | grep -v CHANGELOG | grep -v ".git/"
-```
+- Old command file deleted
+- New command file created with updated self-references
+- All invocations updated (`/namespace:new-name`)
+- Body text terminology updated (if terminology shift)
+- Cross-references from other commands updated
+- Hook configurations updated if command is hooked
+- AGENTS.md skill listing updated
+- Zero grep results for old name (excluding CHANGELOG)
+- `erk docs sync` run to regenerate index files
+- CI passes
 
 ## Related Documentation
 
-- [Command Development](command-development.md) - Creating new commands
-- [Slash Command Best Practices](slash-command-best-practices.md) - Command design patterns
-- [Documentation Maintenance](../documentation/maintenance.md) - Keeping docs in sync
+- [Step Renumbering Checklist](step-renumbering-checklist.md) — similar cross-cutting update pattern for step numbers within commands
+- [Optimization Patterns](optimization-patterns.md) — command structure patterns relevant during rename

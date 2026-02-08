@@ -45,5 +45,5 @@
 - **[slash-command-llm-turn-optimization.md](slash-command-llm-turn-optimization.md)** — writing a slash command that makes 3+ sequential tool calls to fetch data, optimizing a slash command that feels slow due to many LLM round-trips, deciding whether to bundle API calls into an exec script or keep them in the command
 - **[subprocess-stdin-patterns.md](subprocess-stdin-patterns.md)** — passing content to CLI tools via stdin, using subprocess with input parameter, CLI flags that only work with stdin
 - **[template-variables.md](template-variables.md)** — configuring .env templates, using substitution variables in config.toml, setting environment variables per worktree, updating environment when switching worktrees
-- **[two-phase-validation-model.md](two-phase-validation-model.md)** — implementing commands with multiple confirmations, designing commands that perform destructive mutations, working on erk land or similar multi-step commands
-- **[workflow-commands.md](workflow-commands.md)** — triggering GitHub Actions workflows from CLI, using erk launch, understanding WORKFLOW_COMMAND_MAP
+- **[two-phase-validation-model.md](two-phase-validation-model.md)** — implementing commands with user confirmations, designing commands that perform destructive mutations, adding confirmation prompts to CLI commands, deciding where to place confirmation logic in a command
+- **[workflow-commands.md](workflow-commands.md)** — triggering GitHub Actions workflows from CLI, adding a new workflow to erk launch, understanding local vs remote command duality
