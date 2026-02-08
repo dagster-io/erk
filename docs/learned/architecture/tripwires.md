@@ -188,8 +188,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before updating a roadmap step's PR cell** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. The update-roadmap-step command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty.
 
-**CRITICAL: Before use unquoted heredoc delimiters (<<eof) when the body contains $, \, or backticks** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. Never use unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks — bash silently expands them
-
 **CRITICAL: Before using LiveDisplay without try/finally guard** → Read [LiveDisplay Gateway](live-display-gateway.md) first. LiveDisplay is primarily used in watch loops — guard with try/finally to ensure stop() is called even on KeyboardInterrupt
 
 **CRITICAL: Before using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
