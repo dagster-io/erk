@@ -1,14 +1,16 @@
 ---
-title: Parameter Addition Checklist
+audit_result: edited
+last_audited: '2026-02-08'
 read_when:
-  - adding a parameter to a multi-layer command
-  - working with skills that call erk exec scripts
-  - debugging parameter not found errors
+- adding a parameter to a multi-layer command
+- working with skills that call erk exec scripts
+- debugging parameter not found errors
+title: Parameter Addition Checklist
 tripwires:
-  - action: "adding a parameter to erk exec without updating calling command"
-    warning: "5-step verification required. Parameter additions must thread through skill argument-hint, command invocations, AND exec script. Miss any layer and you get silent failures or discovery problems. See parameter-addition-checklist.md."
-last_audited: "2026-02-08"
-audit_result: clean
+- action: adding a parameter to erk exec without updating calling command
+  warning: 5-step verification required. Parameter additions must thread through skill
+    argument-hint, command invocations, AND exec script. Miss any layer and you get
+    silent failures or discovery problems. See parameter-addition-checklist.md.
 ---
 
 # Parameter Addition Checklist

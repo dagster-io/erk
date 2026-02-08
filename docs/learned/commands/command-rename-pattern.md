@@ -1,26 +1,16 @@
 ---
-title: Command Rename Pattern
-read_when:
-  - renaming a slash command or skill
-  - migrating command invocations across the codebase
-  - performing a terminology shift that affects command names
-tripwires:
-  - action: "renaming any file in .claude/commands/ or .claude/skills/"
-    warning: "Read this doc — renames require a full reference sweep, not just a file move"
-last_audited: "2026-02-08"
 audit_result: clean
-last_audited: "2026-02-08"
+last_audited: '2026-02-08'
 read_when:
-  - renaming a slash command or skill
-  - migrating command invocations across the codebase
-  - performing a terminology shift that affects command names
+- renaming a slash command or skill
+- migrating command invocations across the codebase
+- performing a terminology shift that affects command names
 title: Command Rename Pattern
 tripwires:
-  - action:
-      Read this doc — renames require a full reference sweep, not just a file
-      move
-    trigger: Before renaming any file in .claude/commands/ or .claude/skills/
-    warning: Check the relevant documentation.
+- action: Read this doc — renames require a full reference sweep, not just a file
+    move
+  trigger: Before renaming any file in .claude/commands/ or .claude/skills/
+  warning: Check the relevant documentation.
 ---
 
 # Command Rename Pattern
