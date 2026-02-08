@@ -1,55 +1,43 @@
 ---
-title: SplitPane Implementation
+title: SplitPane Renderer-Native Coordination
 read_when:
-  - working on split-pane layout, debugging bounds reporting, implementing resizable panels in erkdesk
-last_audited: "2026-02-05 09:48 PT"
-audit_result: edited
+  - working on split-pane layout or resizable panels in erkdesk
+  - debugging WebContentsView positioning or bounds mismatches
+  - adding new triggers that affect the right pane's size or position
+tripwires:
+  - every code path that changes the right pane's rendered size must trigger a bounds report to the main process
+  - the right pane div is a positioning placeholder only — it renders no content, the WebContentsView overlays it
+  - cleanup lives in the main process window-close handler, not in the SplitPane component
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
-# SplitPane Implementation
+# SplitPane Renderer-Native Coordination
 
-The `SplitPane` component provides a resizable two-panel layout where:
+## Why This Pattern Exists
 
-- **Left pane** contains React UI (file tree, controls, etc.)
-- **Right pane** is a placeholder for Electron's `WebContentsView` overlay
+Electron's `WebContentsView` is a native OS-level surface — it cannot participate in CSS layout. The erkdesk split-pane solves this by using a **placeholder div** in the React layout whose sole purpose is being measured. The renderer continuously reports that div's bounding rect to the main process, which positions the native view on top of it. This creates the illusion of a single integrated layout while the two surfaces (React DOM and native webview) are actually independent.
 
-**Source**: `erkdesk/src/renderer/components/SplitPane.tsx`
+## Bounds Reporting Triggers
 
-## Key Constants
+The right pane's position must stay synchronized with any layout change. Four independent triggers ensure this — missing any one creates a desync where the native overlay drifts from its placeholder.
 
-- `DIVIDER_WIDTH = 4` — Width of the draggable divider in pixels, critical for bounds calculations
+| Trigger                             | Why it exists                                                          | What would break without it                            |
+| ----------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------ |
+| **Initial mount**                   | WebView starts at zero bounds                                          | WebView invisible until first drag or resize           |
+| **Divider drag** (leftWidth change) | Repositions the boundary between panes                                 | WebView stays at old position after drag               |
+| **Window resize**                   | Viewport changes don't trigger React re-render                         | WebView stays at old position when user resizes window |
+| **ResizeObserver on right pane**    | Catches size changes from sibling elements (e.g., log panel appearing) | WebView covers the log panel or leaves a gap           |
 
-## Bounds Reporting Lifecycle
+<!-- Source: erkdesk/src/renderer/components/SplitPane.tsx, reportBounds and useEffect hooks -->
 
-The component reports WebContentsView bounds to the main process via `window.erkdesk.updateWebViewBounds()` on four triggers:
+The first three triggers are straightforward. The **ResizeObserver** is the subtle one — it catches cases where the right pane's size changes due to layout shifts that don't involve the divider or the window (e.g., a collapsible panel appearing below). Without it, the WebContentsView would remain at its previous size until the next drag or resize event.
 
-1. **Initial mount** — `useEffect` with `[leftWidth, reportBounds]` dependency
-2. **Divider drag** — Setting `leftWidth` state triggers the effect
-3. **Window resize** — Event listener calls `reportBounds()`
-4. **Right pane resize** — `ResizeObserver` detects size changes (e.g., when log panel appears)
+## Why `getBoundingClientRect()` Is the Right Measurement
 
-**Why `getBoundingClientRect()` works**: The right pane div has `flex: 1`, so it expands to fill remaining space. The function returns the actual rendered position and size, which the main process applies to the WebContentsView.
+The placeholder div uses `flex: 1` to fill remaining space. `getBoundingClientRect()` returns the div's actual rendered position and size in viewport coordinates, which is exactly what `WebContentsView.setBounds()` needs. Alternative approaches like computing the position from `leftWidth + DIVIDER_WIDTH` would miss scroll offsets, browser chrome, and any CSS transforms.
 
-## Minimum Width Constraints
-
-- **Left pane**: `minLeftWidth` (default 200px) enforced via `Math.max()` during drag
-- **Right pane**: `minRightWidth` (default 400px) enforced by calculating `maxLeft`:
-  ```
-  maxLeft = containerRect.width - DIVIDER_WIDTH - minRightWidth
-  ```
-
-This prevents the left pane from growing so large that the right pane would be smaller than `minRightWidth`.
-
-## Defensive Bounds Handling
-
-The **main process** applies defensive clamping (see `erkdesk/src/main/index.ts:47-52`):
-
-- `Math.max(0, ...)` — Prevents negative coordinates from browser quirks
-- `Math.floor(...)` — Electron expects integer bounds, not fractional pixels
-
-See [Defensive Bounds Handling](defensive-bounds-handling.md) for details.
-
-## Layout Structure
+## Layout Mental Model
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -61,21 +49,29 @@ See [Defensive Bounds Handling](defensive-bounds-handling.md) for details.
 │  │          │DE│                           ││
 │  │          │R │                           ││
 │  └──────────┴──┴──────────────────────────┘│
-│  ← leftWidth→←4→← flex: 1 (calculated)    →│
+│  ← fixed  →←4→← flex: 1 (measured)       →│
 └─────────────────────────────────────────────┘
 ```
 
-**Key points**:
+The left pane and divider have fixed widths; the right pane absorbs remaining space. Minimum width constraints on both sides prevent the divider from being dragged to an unusable position.
 
-- Left pane has fixed width (`leftWidth` state)
-- Divider has fixed width (`DIVIDER_WIDTH = 4`)
-- Right pane uses `flex: 1` to fill remaining space
+## Cross-Process Responsibility Split
 
-## IPC Cleanup
+| Concern                                         | Where                               | Why there                                                                  |
+| ----------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------- |
+| Logical constraints (min widths, drag clamping) | Renderer (`SplitPane`)              | Only the renderer knows the layout geometry                                |
+| API safety (non-negative integers)              | Main process (IPC handler)          | Trust boundary — main process must never assume renderer data is safe      |
+| IPC cleanup                                     | Main process (window close handler) | Component unmount is unreliable in Electron; main process is authoritative |
 
-The component does **not** handle cleanup — the main process removes all IPC listeners when the window closes. See `erkdesk/src/main/index.ts:190-201` for the cleanup code.
+This split is intentional. See [Defensive Bounds Handling](defensive-bounds-handling.md) for why clamping must happen at the main process trust boundary even though the renderer already enforces constraints.
+
+## Anti-Patterns
+
+**WRONG**: Adding a new UI element that changes the right pane's size without verifying it triggers a bounds report. The ResizeObserver handles most cases, but if you restructure the DOM hierarchy (e.g., move the right pane div outside the flex container), the observer may not fire.
+
+**WRONG**: Computing WebContentsView bounds from component state (`leftWidth + DIVIDER_WIDTH`) instead of measuring the actual DOM. This breaks under scroll offsets, zoom levels, and CSS transforms.
 
 ## Related Documentation
 
+- [Defensive Bounds Handling](defensive-bounds-handling.md) — Why main process clamps bounds at the trust boundary
 - [WebView API](webview-api.md) — IPC channels and preload bridge
-- [Defensive Bounds Handling](defensive-bounds-handling.md) — Why main process clamps bounds
