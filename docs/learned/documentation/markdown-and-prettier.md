@@ -10,7 +10,7 @@ tripwires:
   - action: "adding prettier-ignore to docs/learned/"
     warning: "prettier-ignore is almost never needed in docs. If Prettier is mangling your content, the structure may need rethinking rather than suppression."
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 ---
 
 # Markdown Authoring and Prettier Interactions
