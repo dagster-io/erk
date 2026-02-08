@@ -1,18 +1,18 @@
 ---
-title: Adding Workflow Capabilities
+audit_result: edited
+last_audited: '2026-02-08'
 read_when:
-  - "adding workflow capabilities"
-  - "creating GitHub Actions workflow capabilities"
-  - "understanding workflow capability pattern"
-last_audited: "2026-02-08"
-audit_result: clean
+- adding workflow capabilities
+- creating GitHub Actions workflow capabilities
+- understanding workflow capability pattern
+title: Adding Workflow Capabilities
 tripwires:
-  - action: "implementing workflow capabilities inheritance"
-    warning: "workflow capabilities extend Capability directly, not a template base class"
-  - action: "placing workflow files for bundling"
-    warning: "workflows must exist in bundled artifacts path resolved by get_bundled_github_dir()"
-  - action: "importing artifacts.state in capability modules"
-    warning: "use inline imports for artifacts.state to avoid circular dependencies"
+- action: using this pattern
+  warning: Workflow capabilities extend Capability directly, not a template base class
+- action: using this pattern
+  warning: Workflows must exist in bundled artifacts path resolved by get_bundled_github_dir()
+- action: using this pattern
+  warning: Use inline imports for artifacts.state to avoid circular dependencies
 ---
 
 # Adding Workflow Capabilities

@@ -1,16 +1,17 @@
 ---
 read_when:
-  - "executing LLM prompts from Python code"
-  - "testing code that uses Claude CLI"
-  - "implementing single-shot prompt execution"
-  - "working with PromptExecutor or FakePromptExecutor"
+- executing LLM prompts from Python code
+- testing code that uses Claude CLI
+- implementing single-shot prompt execution
+- working with PromptExecutor or FakePromptExecutor
+title: Prompt Executor Gateway
 tripwires:
-  - action: "choosing between execute_prompt() modes"
-    warning: "execute_prompt() supports both single-shot and streaming modes - choose based on whether you need real-time updates"
-  - action: "testing code that uses PromptExecutor"
-    warning: "FakePromptExecutor tracks all calls via properties - use .prompt_calls, .interactive_calls, .passthrough_calls for assertions"
-  - action: "using execute_interactive() in production code"
-    warning: "execute_interactive() never returns in production - it replaces the process via os.execvp"
+- action: execute_prompt() supports both single-shot and streaming modes
+  warning: choose based on whether you need real-time updates
+- action: FakePromptExecutor tracks all calls via properties
+  warning: use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+- action: execute_interactive() never returns in production
+  warning: it replaces the process via os.execvp
 ---
 
 # Prompt Executor Gateway
