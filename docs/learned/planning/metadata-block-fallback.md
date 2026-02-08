@@ -19,9 +19,9 @@ Plan issues use a two-location storage design with backward-compatible fallback.
 
 Schema v2 plan issues split content across two GitHub API objects for a deliberate reason: **fast querying vs. full content**.
 
-| Location | What it stores | Why |
-|---|---|---|
-| Issue body | `plan-header` metadata block (YAML) | Compact structured data for batch queries — worktree name, dispatch status, timestamps. Never contains plan text. |
+| Location      | What it stores                                                | Why                                                                                                                        |
+| ------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Issue body    | `plan-header` metadata block (YAML)                           | Compact structured data for batch queries — worktree name, dispatch status, timestamps. Never contains plan text.          |
 | First comment | `plan-body` metadata block (plan markdown inside `<details>`) | Full plan content. Separating it from the body means listing/filtering issues doesn't require downloading large plan text. |
 
 <!-- Source: erk_shared/gateway/github/plan_issues.py, create_plan_issue -->
@@ -43,11 +43,11 @@ The replan command (`/erk:replan`, Step 4a) adds an additional layer: if no plan
 
 The fallback exists because the plan storage format evolved through three eras:
 
-| Era | Storage location | Markers | Example |
-|---|---|---|---|
-| **Pre-metadata** | Issue body directly | None (raw markdown) | Earliest issues |
-| **v1 metadata** | First comment | `<!-- erk:plan-content -->` | Transitional format |
-| **v2 metadata** (current) | First comment | `<!-- erk:metadata-block:plan-body -->` with `<details>` | All new issues |
+| Era                       | Storage location    | Markers                                                  | Example             |
+| ------------------------- | ------------------- | -------------------------------------------------------- | ------------------- |
+| **Pre-metadata**          | Issue body directly | None (raw markdown)                                      | Earliest issues     |
+| **v1 metadata**           | First comment       | `<!-- erk:plan-content -->`                              | Transitional format |
+| **v2 metadata** (current) | First comment       | `<!-- erk:metadata-block:plan-body -->` with `<details>` | All new issues      |
 
 Each extraction layer handles one transition, and together they cover the full history.
 
