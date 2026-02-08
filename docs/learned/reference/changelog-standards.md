@@ -23,11 +23,11 @@ CHANGELOG.md follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) wi
 
 The changelog system has three components that must stay coordinated:
 
-| Component | Role | Authority over |
-|-----------|------|---------------|
-| `/local:changelog-update` | Syncs unreleased section with new commits | Update workflow, entry format, marker management |
-| `/local:changelog-release` | Finalizes unreleased into versioned section | Release format, hash stripping, version bumping |
-| Commit categorizer agent | Classifies commits into categories | Category assignment, filtering rules, roll-up detection |
+| Component                  | Role                                        | Authority over                                          |
+| -------------------------- | ------------------------------------------- | ------------------------------------------------------- |
+| `/local:changelog-update`  | Syncs unreleased section with new commits   | Update workflow, entry format, marker management        |
+| `/local:changelog-release` | Finalizes unreleased into versioned section | Release format, hash stripping, version bumping         |
+| Commit categorizer agent   | Classifies commits into categories          | Category assignment, filtering rules, roll-up detection |
 
 <!-- Source: .claude/commands/local/changelog-update.md -->
 <!-- Source: .claude/commands/local/changelog-release.md -->

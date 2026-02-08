@@ -10,7 +10,6 @@ If your current task matches, read the linked document **before writing code**.
 
 - [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
 - [capabilities/](capabilities/)
-- [changelog/](changelog/)
 - [checklists/](checklists/)
 - [ci/](ci/)
 - [claude-code/](claude-code/)
@@ -28,7 +27,6 @@ If your current task matches, read the linked document **before writing code**.
 - [objectives/](objectives/)
 - [planning/](planning/) — Explore when working with plans, .impl/ folders, or agent delegation. Add docs here for planning workflow patterns.
 - [pr-operations/](pr-operations/)
-- [refactoring/](refactoring/)
 - [reference/](reference/) — Explore for API/format specifications. Add docs here for reference material that doesn't fit other categories.
 - [review/](review/)
 - [reviews/](reviews/)
