@@ -71,6 +71,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before implementing a command with user confirmations interleaved between mutations** → Read [Two-Phase Validation Model](two-phase-validation-model.md) first. Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Interleaving confirmations with mutations causes partial state on decline.
 
+**CRITICAL: Before implementing plan-implement command launcher** → Read [Workflow Commands](workflow-commands.md) first. plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError — use erk plan submit instead
+
 **CRITICAL: Before importing from erk_shared.gateway.{service}.abc when creating exec commands** → Read [Exec Script Patterns](exec-script-patterns.md) first. Gateway ABCs use submodule paths: `erk_shared.gateway.{service}.{resource}.abc`
 
 **CRITICAL: Before landing a PR without updating associated learn plan status** → Read [Learn Plan Land Flow](learn-plan-land-flow.md) first. Learn plan PRs trigger special execution pipeline steps that update parent plan metadata and promote tripwires. Ensure check_learn_status, update_learn_plan, promote_tripwires, and close_review_pr steps execute after merge.
@@ -78,6 +80,10 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before making LLM fetch data sequentially when it could be bundled** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Extract 3+ mechanical sequential calls into an exec script. Each tool call costs a full LLM round-trip.
 
 **CRITICAL: Before making session_id a required parameter for a new command** → Read [Session ID Availability and Propagation](session-management.md) first. Check the fail-hard vs degrade decision table below. Most commands should accept session_id as optional.
+
+**CRITICAL: Before modifying PR workflow dispatch behavior** → Read [Workflow Commands](workflow-commands.md) first. PR workflows automatically update plan issue dispatch metadata when the branch follows the P{issue_number} naming pattern
+
+**CRITICAL: Before modifying WORKFLOW_COMMAND_MAP or workflow command mapping** → Read [Workflow Commands](workflow-commands.md) first. WORKFLOW_COMMAND_MAP maps command names to .yml filenames — command names intentionally diverge from filenames (e.g., pr-fix-conflicts → pr-fix-conflicts.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)
 
 **CRITICAL: Before mutating SubmitState fields directly** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state.
 
