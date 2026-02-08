@@ -12,7 +12,7 @@ tripwires:
   - action: "constructing session file paths manually"
     warning: "Use ClaudeInstallation ABC methods, not manual path construction. Storage layout is an implementation detail that may change."
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: edited
 ---
 
 # Session File Lifecycle and Persistence
