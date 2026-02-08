@@ -5,14 +5,14 @@
 
 - **[activation-scripts.md](activation-scripts.md)** — working with worktree environment setup, understanding .erk/activate.sh scripts, configuring post-create commands
 - **[ambiguity-resolution.md](ambiguity-resolution.md)** — implementing CLI commands that accept identifiers with multiple possible matches, designing CLI behavior for ambiguous input, displaying tables of options without interactive selection
-- **[auto-generated-reference-docs.md](auto-generated-reference-docs.md)** — adding or modifying CLI commands, changing erk exec command structure, encountering outdated exec reference docs
+- **[auto-generated-reference-docs.md](auto-generated-reference-docs.md)** — adding or modifying CLI commands, changing erk exec command structure, CI fails with exec reference check error
 - **[batch-exec-commands.md](batch-exec-commands.md)** — implementing batch operations for exec commands, designing JSON stdin/stdout interfaces for erk exec, understanding batch command success semantics
 - **[checkout-helpers.md](checkout-helpers.md)** — writing checkout commands, creating worktrees in checkout commands, implementing branch checkout logic
 - **[ci-aware-commands.md](ci-aware-commands.md)** — implementing commands that behave differently in CI, checking if code is running in GitHub Actions, skipping user-interactive steps in automated environments
 - **[cli-options-validation.md](cli-options-validation.md)** — adding new CLI options or flags, implementing option validation logic, encountering unvalidated user input
 - **[click-patterns.md](click-patterns.md)** — implementing CLI options with complex behavior, creating flags that optionally accept values, designing CLI flags with default behaviors
 - **[code-review-filtering.md](code-review-filtering.md)** — debugging false positives in code review, understanding keyword-only parameter exceptions, working with ABC/Protocol method validation
-- **[codespace-patterns.md](codespace-patterns.md)** — implementing CLI commands that use codespaces, working with resolve_codespace() helper, handling codespace name resolution errors
+- **[codespace-patterns.md](codespace-patterns.md)** — implementing CLI commands that use codespaces, handling codespace name resolution with optional defaults, bypassing GitHub API endpoint bugs
 - **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
 - **[pr-summarize.md](pr-summarize.md)** — generating PR descriptions for existing PRs, updating PR body with plan context, understanding pr summarize vs pr submit

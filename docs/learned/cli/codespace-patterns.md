@@ -1,7 +1,7 @@
 ---
 title: Codespace Patterns
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: edited
 read_when:
   - implementing CLI commands that use codespaces
   - handling codespace name resolution with optional defaults

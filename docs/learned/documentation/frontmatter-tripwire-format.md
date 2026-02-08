@@ -105,9 +105,12 @@ CRITICAL: Before <action-that-triggers-tripwire>
 
 ```yaml
 tripwires:
-  - "CRITICAL: Before creating a gateway without all 5 implementation layers"
-  - "CRITICAL: Before modifying PR footer format validation"
-  - "CRITICAL: Before using EAFP (try/except) for control flow"
+  - action: "critical: before creating a gateway"
+    warning: "CRITICAL: Before creating a gateway without all 5 implementation layers"
+  - action: "critical: before modifying pr footer"
+    warning: "CRITICAL: Before modifying PR footer format validation"
+  - action: "critical: before using eafp (try/except)"
+    warning: "CRITICAL: Before using EAFP (try/except) for control flow"
 ```
 
 **What NOT to do**:
@@ -115,15 +118,18 @@ tripwires:
 ```yaml
 # BAD - Missing "CRITICAL: Before"
 tripwires:
-  - "Don't forget to implement all 5 layers"
+  - action: "don't forget to implement all"
+    warning: "Don't forget to implement all 5 layers"
 
 # BAD - Too vague
 tripwires:
-  - "CRITICAL: Before working with gateways"
+  - action: "performing actions related to this tripwire"
+    warning: "CRITICAL: Before working with gateways"
 
 # BAD - Describes consequence, not action
 tripwires:
-  - "CRITICAL: Before breaking tests"
+  - action: "performing actions related to this tripwire"
+    warning: "CRITICAL: Before breaking tests"
 ```
 
 **How it's used**:
@@ -144,8 +150,10 @@ read_when:
   - "using subprocess wrappers"
   - "handling subprocess errors"
 tripwires:
-  - "CRITICAL: Before using subprocess.run(check=True) directly"
----
+  - action: "performing actions related to this tripwire"
+    warning: "CRITICAL: Before using subprocess.run(check=True) directly"
+  - action: "performing actions related to this tripwire"
+    warning: "--"
 
 # Subprocess Wrappers
 
@@ -215,13 +223,17 @@ All tripwires MUST start with `CRITICAL: Before`:
 ```yaml
 # INVALID
 tripwires:
-  - "Remember to check X"
-  - "CRITICAL: Don't do Y"  # Wrong - should be "Before doing Y"
+  - action: "performing actions related to this tripwire"
+    warning: "Remember to check X"
+  - action: "critical: don't do y\" #"
+    warning: "CRITICAL: Don't do Y\"  # Wrong - should be \"Before doing Y"
 
 # VALID
 tripwires:
-  - "CRITICAL: Before doing X without checking Y"
-  - "CRITICAL: Before modifying Z"
+  - action: "critical: before doing x without"
+    warning: "CRITICAL: Before doing X without checking Y"
+  - action: "performing actions related to this tripwire"
+    warning: "CRITICAL: Before modifying Z"
 ```
 
 ### YAML Syntax Check
@@ -274,9 +286,12 @@ read_when:
   - "creating new gateway"
   - "working with 5-layer pattern"
 tripwires:
-  - "CRITICAL: Before creating gateway without fake implementation"
-  - "CRITICAL: Before skipping DryRun or Printing layers"
----
+  - action: "critical: before creating gateway without"
+    warning: "CRITICAL: Before creating gateway without fake implementation"
+  - action: "critical: before skipping dryrun or"
+    warning: "CRITICAL: Before skipping DryRun or Printing layers"
+  - action: "performing actions related to this tripwire"
+    warning: "--"
 ```
 
 ### Doc with Multiple Tripwires
@@ -287,10 +302,14 @@ read_when:
   - "writing CLI commands"
   - "handling user input validation"
 tripwires:
-  - "CRITICAL: Before using RuntimeError for expected CLI failures"
-  - "CRITICAL: Before adding CLI flags without validation"
-  - "CRITICAL: Before using dict .get() on exec script JSON without TypedDict"
----
+  - action: "critical: before using runtimeerror for"
+    warning: "CRITICAL: Before using RuntimeError for expected CLI failures"
+  - action: "critical: before adding cli flags"
+    warning: "CRITICAL: Before adding CLI flags without validation"
+  - action: "critical: before using dict .get()"
+    warning: "CRITICAL: Before using dict .get() on exec script JSON without TypedDict"
+  - action: "performing actions related to this tripwire"
+    warning: "--"
 ```
 
 ## Troubleshooting
