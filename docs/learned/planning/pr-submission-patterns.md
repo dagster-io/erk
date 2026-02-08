@@ -6,7 +6,7 @@ read_when:
   - "fixing erk pr check validation failures"
   - "understanding the PR number vs issue number distinction"
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 tripwires:
   - action: "using issue number from .impl/issue.json in a checkout footer"
     warning: "Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section."
