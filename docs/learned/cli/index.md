@@ -18,6 +18,7 @@
 - **[pr-summarize.md](pr-summarize.md)** — generating AI commit messages for existing commits, amending commit messages with plan context, understanding pr summarize vs pr submit
 - **[pr-sync-divergence.md](pr-sync-divergence.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, syncing local branch with remote tracking branch
 - **[update-roadmap-step.md](update-roadmap-step.md)** — working with objective roadmap tables, updating step PR references, implementing plan-save workflow
+- **[dependency-injection-patterns.md](dependency-injection-patterns.md)** — writing erk exec scripts, testing exec scripts that use gateways, understanding exec script architecture, migrating exec scripts from subprocess to gateways
 - **[ensure-ideal-pattern.md](ensure-ideal-pattern.md)** — handling discriminated union returns in CLI commands, narrowing types from T | NonIdealState or T | ErrorType, working with PR lookups, branch detection, or API calls that return union types, seeing EnsureIdeal in code and wondering when to use it vs Ensure
 - **[erk-exec-commands.md](erk-exec-commands.md)** — running erk exec subcommands, looking up erk exec syntax
 - **[erkdesk-makefile-targets.md](erkdesk-makefile-targets.md)** — running erkdesk tests locally or in CI, adding new test commands to the Makefile, understanding erkdesk CI integration

@@ -10,7 +10,7 @@ tripwires:
   - action: "using monkeypatch or unittest.mock in hook tests"
     warning: "Use ErkContext.for_test() with CliRunner instead of mocking. See docs/learned/testing/hook-testing.md."
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: edited
 ---
 
 # Hook Testing Patterns

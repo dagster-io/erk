@@ -16,6 +16,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding prettier-ignore to docs/learned/** → Read [Markdown Authoring and Prettier Interactions](markdown-and-prettier.md) first. prettier-ignore is almost never needed in docs. If Prettier is mangling your content, the structure may need rethinking rather than suppression.
 
+**CRITICAL: Before assuming the verbatim copy prohibition only applies to Python** → Read [Language Scope Auditing](language-scope-auditing.md) first. Assuming the verbatim copy prohibition only applies to Python
+
 **CRITICAL: Before bulk deleting documentation files** → Read [Documentation Audit Methodology](audit-methodology.md) first. After bulk deletions, run 'erk docs sync' to fix broken cross-references.
 
 **CRITICAL: Before classifying constants or defaults in prose as duplicative** → Read [Documentation Audit Methodology](audit-methodology.md) first. Constants and defaults in prose are HIGH VALUE, not DUPLICATIVE. They provide scannability that code alone cannot — an agent shouldn't need to grep to learn a default value.
@@ -34,13 +36,15 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before documenting implementation details that are derivable from code** → Read [Documentation Simplification Patterns](simplification-patterns.md) first. Use source pointers instead of duplication. See simplification-patterns.md for the three simplification patterns.
 
-**CRITICAL: Before documenting non-Python code** → Read [Language Scope Auditing](language-scope-auditing.md) first. Assuming the verbatim copy prohibition only applies to Python
-
 **CRITICAL: Before documenting type definitions without verifying they exist** → Read [Documentation Audit Methodology](audit-methodology.md) first. Type references in docs must match actual codebase types — phantom types are the most common audit finding. Verify with grep before committing.
+
+**CRITICAL: Before including TypeScript/Bash code blocks from erkdesk/ without checking the One Code Rule** → Read [Language Scope Auditing](language-scope-auditing.md) first. Including TypeScript/Bash code blocks from erkdesk/ without checking the One Code Rule
 
 **CRITICAL: Before manually wrapping lines or aligning tables in markdown** → Read [Markdown Authoring and Prettier Interactions](markdown-and-prettier.md) first. Never manually format markdown. Prettier rewrites all formatting on save. Write naturally, then run `make prettier` via devrun.
 
 **CRITICAL: Before never expect agents to self-diagnose knowledge gaps** → Read [Passive Context vs. On-Demand Retrieval](passive-context-vs-retrieval.md) first. use passive context or structural triggers
+
+**CRITICAL: Before rationalizing erkdesk source as 'third-party API pattern' because it uses React/Electron** → Read [Language Scope Auditing](language-scope-auditing.md) first. Rationalizing erkdesk source as 'third-party API pattern' because it uses React/Electron
 
 **CRITICAL: Before restructuring or deleting doc content** → Read [Documentation Simplification Patterns](simplification-patterns.md) first. Run 'erk docs sync' after structural changes to regenerate indexes and fix broken cross-references.
 
