@@ -10,7 +10,7 @@ tripwires:
   - action: "preprocessing remote sessions locally"
     warning: "Remote sessions are already preprocessed. Only local sessions (source_type == 'local') go through local preprocessing."
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # Async Learn Local Preprocessing
