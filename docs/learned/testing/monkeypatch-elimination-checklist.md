@@ -29,16 +29,16 @@ The gateway fakes already handle the hard parts (configurable success/failure, m
 
 The first migration step is identifying which gateway replaces each monkeypatch target. This mapping covers the patterns that appear most frequently in erk's test history:
 
-| Monkeypatch Target                | Replacement Gateway                   | Why This Gateway                                        |
-| --------------------------------- | ------------------------------------- | ------------------------------------------------------- |
+| Monkeypatch Target                | Replacement Gateway                   | Why This Gateway                                         |
+| --------------------------------- | ------------------------------------- | -------------------------------------------------------- |
 | `subprocess.run(["gh", ...])`     | GitHub gateway (or sub-gateways)      | All `gh` CLI operations are abstracted behind GitHub ABC |
-| `subprocess.run(["git", ...])`    | Git sub-gateways (`branch`, `remote`) | Git ABC is a pure facade; methods live on sub-gateways  |
-| `subprocess.run(["gt", ...])`     | Graphite gateway                      | Graphite CLI wrapped identically to git                 |
-| `subprocess.run(["pytest", ...])` | CIRunner gateway                      | CI check execution with structured results              |
-| `Path.home()`                     | ClaudeInstallation or ErkInstallation | Path resolution abstracted to avoid filesystem coupling |
-| `time.sleep()` / `time.time()`    | Time gateway                          | Enables instant test execution for retry/wait loops     |
-| `webbrowser.open()`               | Browser gateway                       | Captures URLs opened without launching a browser        |
-| `os.execvp()`                     | AgentLauncher gateway                 | Process replacement abstracted with NoReturn semantics  |
+| `subprocess.run(["git", ...])`    | Git sub-gateways (`branch`, `remote`) | Git ABC is a pure facade; methods live on sub-gateways   |
+| `subprocess.run(["gt", ...])`     | Graphite gateway                      | Graphite CLI wrapped identically to git                  |
+| `subprocess.run(["pytest", ...])` | CIRunner gateway                      | CI check execution with structured results               |
+| `Path.home()`                     | ClaudeInstallation or ErkInstallation | Path resolution abstracted to avoid filesystem coupling  |
+| `time.sleep()` / `time.time()`    | Time gateway                          | Enables instant test execution for retry/wait loops      |
+| `webbrowser.open()`               | Browser gateway                       | Captures URLs opened without launching a browser         |
+| `os.execvp()`                     | AgentLauncher gateway                 | Process replacement abstracted with NoReturn semantics   |
 
 If the operation doesn't map to an existing gateway, create one before migrating tests. See [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) for the 5-file (or 3-file simplified) pattern.
 
@@ -48,7 +48,7 @@ Discover the current gateway list from `packages/erk-shared/src/erk_shared/gatew
 
 ## Migration Decision: Refactor Production Code First
 
-A common mistake is trying to eliminate monkeypatch from tests while leaving production code unchanged. This doesn't work because monkeypatch exists *because* the production code hardcodes its dependencies.
+A common mistake is trying to eliminate monkeypatch from tests while leaving production code unchanged. This doesn't work because monkeypatch exists _because_ the production code hardcodes its dependencies.
 
 **Correct order:**
 
@@ -98,7 +98,7 @@ Monkeypatch usage still exists in ~43 test files across the codebase, concentrat
 - **Legacy unit tests** — migration candidates; these predate the gateway pattern
 - **Health check tests** — use monkeypatch for environment variable manipulation, which has no gateway equivalent
 
-Not all monkeypatch usage needs elimination. The targets are tests that monkeypatch *behavior* (subprocess calls, path resolution, time). Tests that monkeypatch *environment* (env vars, CLI arguments) are lower priority because they don't have gateway equivalents.
+Not all monkeypatch usage needs elimination. The targets are tests that monkeypatch _behavior_ (subprocess calls, path resolution, time). Tests that monkeypatch _environment_ (env vars, CLI arguments) are lower priority because they don't have gateway equivalents.
 
 ## Related Documentation
 
