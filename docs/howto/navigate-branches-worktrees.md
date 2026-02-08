@@ -92,7 +92,7 @@ This allocates a new worktree for your current branch and switches to it. The or
 | Review a PR                         | `erk pr co <number>`                  |
 | Move up the stack                   | `erk up`                              |
 | Move down the stack                 | `erk down`                            |
-| Land PR and navigate up             | `erk pr land --up`                    |
+| Land PR and navigate up             | `erk land --up`                       |
 | Move current branch to new worktree | `erk wt create --from-current-branch` |
 
 ## See Also
