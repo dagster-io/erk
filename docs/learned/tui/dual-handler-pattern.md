@@ -1,153 +1,63 @@
 ---
-title: Dual Handler Pattern for Context-Agnostic Commands
+title: Dual Provider Pattern for Context-Agnostic Commands
 read_when:
-  - "implementing TUI commands that work in multiple contexts"
-  - "working with Textual CommandRegistry"
-  - "designing commands that operate on selected items"
-  - "planning desktop dashboard command handlers"
+  - "implementing a TUI command that works from both list and detail views"
+  - "understanding how MainListCommandProvider and PlanCommandProvider share commands"
+  - "adding command palette support to a new screen"
 tripwires:
-  - action: "implementing separate command handlers for list and detail views"
-    warning: "Use dual handler pattern: single handler operates on 'selected plan' regardless of context. CommandRegistry routes list context and detail context to same handler."
+  - action: "duplicating command definitions for list and detail contexts"
+    warning: "Commands are defined once in the registry. Use a second Provider subclass with its own _get_context() to serve the same commands from a new context."
+  - action: "duplicating execute_palette_command logic between ErkDashApp and PlanDetailScreen"
+    warning: "This duplication is a known trade-off. Both ErkDashApp.execute_palette_command() and PlanDetailScreen.execute_command() implement the same command_id switch because they dispatch to different APIs (provider methods vs executor methods). See the asymmetries section below."
 ---
 
-# Dual Handler Pattern for Context-Agnostic Commands
+# Dual Provider Pattern for Context-Agnostic Commands
 
-The dual handler pattern allows TUI commands to work identically from both list and detail contexts by operating on the concept of "the selected plan" rather than specific UI state.
+The TUI command palette serves the same set of commands from two different UI contexts (main list and plan detail modal) without duplicating command definitions. This is achieved through Textual's `Provider` mechanism: two provider classes share one command registry but resolve `CommandContext` from different sources.
 
-## The Pattern
+## Why Two Providers, Not Two Registries
 
-Instead of implementing separate handlers for "delete from list" and "delete from detail", implement one handler that operates on "delete the selected plan":
+The core design question was: when a user opens the command palette from the detail modal, should it show a different set of commands than from the main list? The answer is no — the same operations (open PR, copy checkout, close plan) apply regardless of context. What differs is only *which plan* the command operates on and *how the command dispatches*.
 
-```python
-# Single handler for both contexts
-@dataclass(frozen=True)
-class DeletePlanHandler:
-    """Delete the currently selected plan."""
+<!-- Source: src/erk/tui/commands/provider.py, MainListCommandProvider -->
+<!-- Source: src/erk/tui/commands/provider.py, PlanCommandProvider -->
 
-    async def handle(self, selected_plan: Plan) -> None:
-        """Delete the given plan.
+`MainListCommandProvider` resolves context from the table's selected row (`_app._get_selected_row()`), while `PlanCommandProvider` resolves context from the detail screen's `_row` field. Both call the same `get_available_commands()` with the resolved `CommandContext`, so command definitions, availability predicates, and display names are defined exactly once.
 
-        Args:
-            selected_plan: The plan to delete (from list selection or detail view)
-        """
-        # Implementation doesn't care which context we came from
-        await self.plan_service.delete(selected_plan.id)
-```
+## The Critical Asymmetries
 
-## How It Works
+Despite sharing command definitions, the two contexts differ in important ways that prevent full unification:
 
-The CommandRegistry dispatches the same handler from different contexts:
+### Context Resolution Fallibility
 
-```python
-class PlanListScreen:
-    """List view of plans."""
+<!-- Source: src/erk/tui/commands/provider.py, MainListCommandProvider._get_context -->
+<!-- Source: src/erk/tui/commands/provider.py, PlanCommandProvider._get_context -->
 
-    def register_commands(self) -> None:
-        """Register commands available in list view."""
-        self.command_registry.register(
-            key="d",
-            handler=DeletePlanHandler(),
-            context=lambda: self.get_selected_plan()  # Selected from list
-        )
+`MainListCommandProvider._get_context()` returns `CommandContext | None` — no row may be selected. `PlanCommandProvider._get_context()` returns `CommandContext` (never None) — the detail screen always has a `_row`. This means `MainListCommandProvider.discover()` must guard against `None` context, while `PlanCommandProvider.discover()` can proceed unconditionally.
 
+### Dispatch Target Divergence
 
-class PlanDetailScreen:
-    """Detail view of a single plan."""
+<!-- Source: src/erk/tui/app.py, ErkDashApp.execute_palette_command -->
+<!-- Source: src/erk/tui/screens/plan_detail_screen.py, PlanDetailScreen.execute_command -->
 
-    def register_commands(self) -> None:
-        """Register commands available in detail view."""
-        self.command_registry.register(
-            key="d",
-            handler=DeletePlanHandler(),
-            context=lambda: self.current_plan  # Currently viewed plan
-        )
-```
+Both providers feed the same `command_id` string into dispatch methods, but the dispatch targets are different:
 
-Both screens use the same handler, but provide different sources for "the selected plan".
+- **Main list**: `MainListCommandProvider` dispatches to `ErkDashApp.execute_palette_command()`, which uses `self._provider` (the `PlanDataProvider`) directly for browser/clipboard/API operations.
+- **Detail modal**: `PlanCommandProvider` dispatches to `PlanDetailScreen.execute_command()`, which uses an injected `CommandExecutor` for the same operations.
 
-## Benefits
+This dispatch duplication is the main cost of the pattern. Both methods contain parallel `command_id` switch statements handling the same IDs. The duplication exists because `ErkDashApp` operates at the app level (accessing `self._provider` and managing screen pushes), while `PlanDetailScreen` operates within a modal (using an executor and able to `self.dismiss()`). Attempts to unify them would require either threading app-level concerns into the modal or modal-level concerns into the app, both of which would violate the screen boundary.
 
-### 1. No Code Duplication
+## When This Pattern Breaks Down
 
-```python
-# ❌ BAD: Separate handlers
-class DeleteFromListHandler: ...
-class DeleteFromDetailHandler: ...
+The dual provider pattern works for operations on "the selected plan." It does not apply to:
 
-# ✅ GOOD: One handler
-class DeletePlanHandler: ...
-```
-
-### 2. Consistent Behavior
-
-The delete operation works identically from list or detail - same confirmation, same error handling, same success message.
-
-### 3. Easier Testing
-
-Test the handler once, regardless of context:
-
-```python
-def test_delete_plan_handler():
-    """Verify delete handler works with any plan."""
-    handler = DeletePlanHandler()
-    await handler.handle(selected_plan=fake_plan)
-    assert fake_plan_service.deleted == [fake_plan.id]
-```
-
-### 4. Clearer Intent
-
-Handler signature makes it obvious: "I operate on a plan, I don't care where it came from."
-
-## CommandRegistry Abstraction
-
-The CommandRegistry handles the context resolution:
-
-```python
-@dataclass(frozen=True)
-class CommandRegistry:
-    """Maps keys to handlers with context resolution."""
-
-    def register(
-        self,
-        key: str,
-        handler: CommandHandler,
-        context: Callable[[], Plan]
-    ) -> None:
-        """Register a command with context provider.
-
-        Args:
-            key: Keyboard shortcut
-            handler: The command handler
-            context: Function that returns the selected plan for this context
-        """
-        ...
-
-    async def dispatch(self, key: str) -> None:
-        """Execute handler for key with resolved context."""
-        handler, context_fn = self._handlers[key]
-        selected_plan = context_fn()  # Resolve context
-        await handler.handle(selected_plan)  # Execute handler
-```
-
-## Implications for Desktop
-
-When implementing the desktop dashboard, this pattern suggests:
-
-- **Single handler implementations** for commands like delete, archive, view details
-- **Context providers** in each view (list widget, detail panel) that resolve "the selected plan"
-- **Command palette** can work identically in any view
-
-For example, the desktop command palette can show the same "Delete Plan" command whether you're in the list view or detail view, and it will operate on the contextually-appropriate plan.
-
-## When NOT to Use This Pattern
-
-This pattern works when commands operate on "the selected thing". It doesn't work for:
-
-- **View-specific commands**: "Sort list by date" only makes sense in list view
-- **Navigation commands**: "Next plan" is list-specific, "Close detail" is detail-specific
-- **Batch operations**: "Delete all completed plans" operates on multiple items, not the selected one
+- **View-specific commands**: Sort, filter, and navigation bindings are screen-level `BINDINGS`, not palette commands
+- **Commands that need app-level orchestration**: Some ACTION commands dispatched from the main list create a `PlanDetailScreen` and push it *then* invoke a streaming command — this two-step push-then-execute sequence only makes sense at the app level
+- **Commands with different semantics per context**: `close_plan` from the detail modal dismisses the modal first, then delegates to the app. From the main list, it runs directly. The command_id is the same but the orchestration differs.
 
 ## Related Documentation
 
-- [Interaction Model](../desktop-dash/interaction-model.md) - Desktop dashboard interaction patterns
-- [Backend Communication](../desktop-dash/backend-communication.md) - How desktop communicates with backend
+- [TUI Command Architecture](action-inventory.md) — Command categories, availability predicates, and the shared registry
+- [Textual CommandPalette Guide](command-palette.md) — System command hiding and display formatting
+- [Adding Commands to TUI](adding-commands.md) — Step-by-step guide including the dual provider touchpoints
+- [TUI Data Contract](data-contract.md) — The `PlanRowData` and `CommandContext` types that providers resolve
