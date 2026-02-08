@@ -1,129 +1,94 @@
 ---
 title: Workflow Reliability Patterns
 read_when:
-  - "designing cleanup operations in workflows"
-  - "choosing between agent vs workflow-native operations"
-  - "implementing multi-layer failure resilience"
-last_audited: "2026-02-05"
-audit_result: edited
+  - deciding whether an operation should be agent-driven or workflow-native
+  - designing multi-layer resilience for critical automated operations
+  - ordering git operations that mix cleanup with reset in CI workflows
+tripwires:
+  - action: "relying on agent instructions as the sole enforcement for a critical operation"
+    warning: "Agent behavior is non-deterministic. Critical operations need a deterministic workflow step as the final safety net."
+  - action: "staging git changes (git add/git rm) without an immediate commit before a git reset --hard"
+    warning: "git reset --hard silently discards staged changes. Commit and push cleanup BEFORE any reset step."
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Workflow Reliability Patterns
 
-Patterns for building reliable automated workflows, with focus on deterministic vs non-deterministic operations.
+Erk's automated workflows blend AI agent behavior (non-deterministic) with scripted CI steps (deterministic). This document captures the cross-cutting principles for deciding which operations belong in which layer, and how to compose layers so critical operations never silently fail.
 
-## Deterministic vs Non-Deterministic Operations
+## The Core Distinction: Deterministic vs Non-Deterministic
 
-### The Core Distinction
+Every operation in an automated workflow falls on a reliability spectrum. The key architectural decision is matching operation criticality to the right reliability tier.
 
-| Type              | Definition                                    | Reliability | Example                           |
-| ----------------- | --------------------------------------------- | ----------- | --------------------------------- |
-| Deterministic     | Same input always produces same output        | High        | Workflow step with explicit logic |
-| Non-deterministic | Output varies based on context/interpretation | Low         | Agent behavior in Claude          |
+| Operation type    | Reliability | Failure mode                               | Use for                                      |
+| ----------------- | ----------- | ------------------------------------------ | -------------------------------------------- |
+| Deterministic     | High        | Only fails if the step itself doesn't run  | Cleanup, state mutations, security-sensitive  |
+| Non-deterministic | Low         | Context limits, misinterpretation, skipped | Creative/generative tasks, contextual choices |
 
-### When to Use Each
+**Why this matters:** Agent instructions feel reliable because they usually work. But "usually" is insufficient for operations that silently corrupt state when skipped. The `.worker-impl/` cleanup saga (below) demonstrates this concretely.
 
-**Use deterministic (workflow-native) for:**
+## Multi-Layer Resilience
 
-- Critical cleanup operations
-- State mutations that must complete
-- Security-sensitive operations
-- Operations that can't be easily retried
+For any operation where silent failure creates downstream problems, implement multiple independent layers. Each layer has distinct failure modes, so a single root cause can't defeat all layers simultaneously.
 
-**Use non-deterministic (agent-dependent) for:**
+### The Reliability Hierarchy
 
-- Creative/generative tasks
-- Tasks requiring contextual interpretation
-- Tasks where partial success is acceptable
-- Operations with built-in retry mechanisms
+| Layer                           | Failure mode                              | Appropriate for              |
+| ------------------------------- | ----------------------------------------- | ---------------------------- |
+| Agent instruction               | Context limits, misinterpretation         | Optimization, not guarantees |
+| Staged git changes (uncommitted) | Silently discarded by `git reset --hard`  | Nothing critical             |
+| Dedicated workflow commit step  | Only fails if step condition is wrong     | Critical operations          |
 
-## Multi-Layer Failure Mode Design
+**Key insight:** Only the dedicated workflow step is truly reliable. Upstream layers reduce the frequency of Layer 3 needing to act, but they cannot replace it. This mirrors the broader [defense-in-depth enforcement](../architecture/defense-in-depth-enforcement.md) pattern.
 
-For critical operations, implement multiple independent layers:
+### Case Study: `.worker-impl/` Cleanup
 
-### Example: `.worker-impl/` Cleanup
+This pattern was learned through production failures. The plan-implement workflow needed to remove `.worker-impl/` after implementation. Three approaches were tried, in order of discovery:
 
-```
-Layer 1: Agent cleanup (non-deterministic)
-    ↓ (might skip due to context limits)
-Layer 2: Workflow staging (fragile)
-    ↓ (might be undone by git reset)
-Layer 3: Dedicated workflow step (deterministic)
-    ↓ (reliable - commits and pushes)
-```
+1. **Agent instruction** in the plan-implement command told Claude to `git rm -rf .worker-impl/`. Failed when agents hit context limits or misinterpreted the instruction.
+2. **Staged deletion** via `git rm` in a workflow step, with commit happening later. Failed silently when a downstream `git reset --hard` discarded the staged changes.
+3. **Dedicated commit-and-push step** that removes, commits, and pushes in one atomic operation. This is the only approach that reliably works.
 
-### Layer Reliability Analysis
+<!-- Source: .github/workflows/plan-implement.yml, Clean up .worker-impl/ after implementation -->
 
-| Layer | Mechanism                              | Failure Mode                      |
-| ----- | -------------------------------------- | --------------------------------- |
-| 1     | Agent instruction in plan-implement    | Context limits, misinterpretation |
-| 2     | `git add` followed by later commit     | Reset discards staged changes     |
-| 3     | Dedicated commit step before any reset | None (if step runs)               |
-
-**Key insight:** Only Layer 3 is truly reliable. Layers 1 and 2 serve as defense-in-depth but cannot be the sole mechanism for critical operations.
+See the "Clean up .worker-impl/ after implementation" step in `.github/workflows/plan-implement.yml` for the production implementation of Layer 3.
 
 ## Decision Framework
 
-When implementing automated cleanup or state changes:
+When adding an automated operation to a workflow:
 
-### Question 1: Is this operation critical?
+| Question                             | If Yes                                              | If No                                |
+| ------------------------------------ | --------------------------------------------------- | ------------------------------------ |
+| Does silent failure corrupt state?   | Must be deterministic (workflow-native)              | Agent-dependent is acceptable        |
+| Can partial failure be detected?     | Agent-dependent with retry may work                  | Must be workflow-native              |
+| Does the operation need judgment?    | Agent-dependent, but add workflow-native fallback    | Prefer workflow-native               |
+| Is this followed by `git reset`?     | Commit and push BEFORE the reset                     | Standard ordering is fine            |
 
-- **Yes**: Must be workflow-native (deterministic)
-- **No**: Can be agent-dependent if convenient
+## The Commit-Before-Reset Rule
 
-### Question 2: Can partial failure be detected?
+`git reset --hard` silently discards all staged-but-uncommitted changes. This is git's intended behavior, but in multi-step workflows it creates a subtle trap: a cleanup step that stages changes looks correct in isolation, but a later reset step silently undoes it.
 
-- **Yes**: Agent-dependent may be acceptable with retry logic
-- **No**: Must be workflow-native with explicit verification
+**The rule:** Any cleanup that uses `git rm` or `git add` must commit and push *before* any step that might run `git reset --hard`.
 
-### Question 3: Does operation require interpretation?
+<!-- Source: .github/workflows/plan-implement.yml, Clean up .worker-impl/ after implementation -->
+<!-- Source: .github/workflows/plan-implement.yml, Trigger CI workflows -->
 
-- **Yes**: Agent-dependent, but add workflow-native fallback
-- **No**: Prefer workflow-native for predictability
+See the step ordering in `.github/workflows/plan-implement.yml`: the cleanup step (commit + push) runs before the "Trigger CI workflows" step (which does `git reset --hard`). This ordering is load-bearing — reversing these steps silently drops the cleanup.
 
-## Pattern: Commit-Before-Reset
+For the detailed anti-pattern with examples, see [plan-implement-workflow-patterns.md](../ci/plan-implement-workflow-patterns.md).
 
-When mixing cleanup with operations that might reset:
+## Verification After Critical Operations
 
-```yaml
-# CORRECT: Commit cleanup before any reset possibility
-- name: Commit cleanup
-  run: |
-    git rm -rf artifacts/
-    git commit -m "Clean up artifacts"
-    git push
+Don't assume a critical operation succeeded. Add an explicit verification step that fails loudly if the expected postcondition doesn't hold. This catches edge cases where the operation ran but didn't achieve its goal (e.g., `git rm` succeeded but the directory was recreated by a subsequent step).
 
-- name: Sync (might reset)
-  run: git fetch && git reset --hard origin/main
+<!-- Source: .github/actions/check-worker-impl/action.yml -->
 
-# INCORRECT: Stage cleanup, reset later undoes it
-- name: Stage cleanup
-  run: git rm -rf artifacts/
-
-- name: Sync (undoes staging)
-  run: git reset --hard origin/main # Staged changes lost!
-```
-
-## Pattern: Verification After Critical Operations
-
-Don't assume operations succeeded. Verify:
-
-```yaml
-- name: Clean up artifacts
-  run: |
-    git rm -rf artifacts/
-    git commit -m "Clean up"
-    git push
-
-- name: Verify cleanup
-  run: |
-    if [ -d artifacts/ ]; then
-      echo "ERROR: Cleanup failed - artifacts still present"
-      exit 1
-    fi
-```
+See `.github/actions/check-worker-impl/action.yml` for an example: the composite action checks whether `.worker-impl/` exists and exposes a `skip` output, allowing downstream steps to react to unexpected state.
 
 ## Related Documentation
 
-- [Composite Action Patterns](../ci/composite-action-patterns.md) - Reusable GitHub Actions setup patterns
-- [GitHub Actions Workflow Patterns](../ci/github-actions-workflow-patterns.md) - Workflow-level patterns
+- [Defense-in-Depth Enforcement](../architecture/defense-in-depth-enforcement.md) — The broader pattern of multi-layer enforcement with reliability hierarchy
+- [Plan Implement Workflow Patterns](../ci/plan-implement-workflow-patterns.md) — Specific cleanup-before-reset patterns in the plan-implement workflow
+- [Worktree Cleanup](worktree-cleanup.md) — When and how `.worker-impl/` is cleaned up
+- [Composite Action Patterns](../ci/composite-action-patterns.md) — Reusable GitHub Actions setup patterns

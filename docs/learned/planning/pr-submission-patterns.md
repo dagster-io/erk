@@ -1,50 +1,90 @@
 ---
 title: PR Submission Patterns
 read_when:
-  - "creating PRs programmatically"
-  - "implementing idempotent PR submission"
-  - "handling retry logic for PR operations"
-last_audited: "2026-02-05"
-audit_result: edited
+  - "creating or updating PRs programmatically in erk"
+  - "debugging why a duplicate PR or issue was created"
+  - "fixing erk pr check validation failures"
+  - "understanding the PR number vs issue number distinction"
+last_audited: "2026-02-08"
+audit_result: regenerated
+tripwires:
+  - action: "using issue number from .impl/issue.json in a checkout footer"
+    warning: "Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section."
+  - action: "creating a PR without first checking if one already exists for the branch"
+    warning: "The submit pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates."
+  - action: "constructing a PR footer manually instead of using build_pr_body_footer()"
+    warning: "The footer format includes checkout commands and closing references with specific patterns. Use the builder function to ensure validation passes."
 ---
 
 # PR Submission Patterns
 
-Patterns for reliable, idempotent PR creation and submission.
+Cross-cutting patterns for reliable, idempotent PR creation in erk. The submit pipeline touches git, GitHub API, Graphite, and the `.impl/` metadata system — mistakes in any layer cascade into validation failures or duplicate artifacts.
 
-## Idempotent PR Submission
+## Idempotency: Why Every PR Operation Must Be Re-Runnable
 
-PR submission operations should be idempotent: running them multiple times produces the same result.
+PR submission frequently retries due to network failures, hook loops, or agent restarts. Without idempotency, each retry creates duplicate PRs or issues. Erk enforces idempotency at two levels:
 
-### Existing PR Detection
+**Branch-level:** The submit pipeline checks GitHub for an existing PR on the current branch before creating one. If found, it updates the existing PR rather than creating a duplicate. This is the single most important idempotency guarantee — without it, every retry during the push-and-create phase would spawn a new PR.
 
-Before creating a PR, check if one already exists for the branch using `gh pr list --head "$BRANCH_NAME"`. Use `--head` flag for reliable branch-based discovery. If found, update the existing PR instead of creating a duplicate.
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr -->
 
-### Session-Scoped Idempotency
+See `push_and_create_pr()` in `src/erk/cli/commands/pr/submit_pipeline.py` — it calls `get_pr_for_branch()` and branches on `PRNotFound` vs existing.
 
-For session-aware operations (like plan-save), track created artifacts by session ID to prevent duplicate issues when retry loops occur.
+**Session-level:** Plan-save operations use scratch-directory marker files keyed by session ID. Before creating a GitHub issue, the command checks if this session already created one. This prevents the specific failure mode where exit-plan-mode hook retries cause duplicate plan issues.
 
-## PR Body Validation (Iterate-Until-Valid)
+<!-- Source: src/erk/cli/commands/exec/scripts/plan_save_to_issue.py, _get_existing_saved_issue -->
 
-When creating or updating PRs in erk, use the iterate-until-valid pattern:
+See `_get_existing_saved_issue()` in `src/erk/cli/commands/exec/scripts/plan_save_to_issue.py`.
 
-1. Add known requirements (title, summary, checkout footer)
-2. Run `erk pr check` to validate
-3. Read error message carefully — messages indicate exactly what's missing
-4. Fix and re-validate until passing
+## The Two-Phase Footer Problem
 
-When validation errors are unclear, grep the codebase for the validator function name (e.g., `has_checkout_footer_for_pr`) to discover the exact regex pattern.
+The PR footer needs the PR number for the checkout command (`erk pr checkout <N>`), but the PR number doesn't exist until after creation. The pipeline solves this with two API calls:
 
-## Checkout Footer
+1. Create PR with `pr_number=0` placeholder in the footer
+2. Immediately update the body with the actual PR number
 
-Use plain text backtick format: `` `erk pr checkout <pr_number>` ``. The `has_checkout_footer_for_pr()` validation expects this format. See [PR Validation Rules](../pr-operations/pr-validation-rules.md) for details.
+This two-phase pattern only applies to the core git+gh flow. The Graphite-first flow delegates PR creation to `gt submit` and retrieves the PR number afterward.
 
-## Closing Reference
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _core_submit_flow -->
 
-Issue closing keywords (`Closes #123`) must be in the **PR body** (not just commit messages) for GitHub auto-close to work. See [Issue-PR Closing Integration](../integrations/issue-pr-closing-integration.md).
+See `_core_submit_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py` for the placeholder-then-update sequence.
+
+## PR Number vs Issue Number: The Most Common Agent Confusion
+
+Agents regularly confuse these two identifiers because both are readily available during submission. The distinction is critical:
+
+| Identifier   | Source                    | Used for                    |
+| ------------ | ------------------------- | --------------------------- |
+| Issue number | `.impl/issue.json`        | `Closes #N` in PR body      |
+| PR number    | `gh pr create` output     | `erk pr checkout N` footer  |
+
+**Why agents get this wrong:** During plan-based workflows, `.impl/issue.json` is immediately accessible and contains a number. The checkout footer also needs a number. The temptation to use the available number for both purposes is strong — but the checkout footer validator matches the *PR* number, not the issue number, and `erk pr checkout` only accepts PR numbers.
+
+**The diagnostic signal:** If `erk pr check` reports "PR body missing checkout footer" but the footer visually appears present, the number is probably wrong. Compare the number in the footer against `gh pr view --json number`.
+
+## Iterate-Until-Valid: Fixing PR Validation Failures
+
+When `erk pr check` reports failures, use this workflow:
+
+1. Read the error message — it names the specific check that failed
+2. Apply the obvious fix
+3. Re-run `erk pr check`
+4. **If the second attempt fails:** stop guessing and grep for the validator function name
+
+The escalation to source investigation after two failures is the key discipline. Erk validators use literal regex matching, not semantic equivalence — "close enough" formats fail silently. For the full investigation methodology, see [Source Investigation Over Trial-and-Error](debugging-patterns.md).
+
+## Closing Reference Preservation on Re-Submit
+
+When re-submitting a PR that already has a closing reference but no local `.impl/` folder (e.g., after worktree recreation), the pipeline extracts the existing reference from the PR body rather than losing it. Without this, re-submitting from a fresh worktree would silently drop the issue linkage, causing the plan issue to remain open after PR merge.
+
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _extract_closing_ref_from_pr -->
+
+See `_extract_closing_ref_from_pr()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
 
 ## Related Documentation
 
-- [Plan Lifecycle](lifecycle.md) - Full plan lifecycle including PR creation
-- [Submit Branch Reuse](submit-branch-reuse.md) - Branch reuse detection in plan submit
-- [Source Code Investigation Pattern](debugging-patterns.md) - Debugging validation failures
+- [Issue-PR Closing Integration](../integrations/issue-pr-closing-integration.md) — Full cross-repo closing reference patterns and issue number discovery
+- [PR Validation Rules](../pr-operations/pr-validation-rules.md) — Complete `erk pr check` validation ruleset and regex patterns
+- [Source Investigation Over Trial-and-Error](debugging-patterns.md) — When to stop guessing and read validator source
+- [Plan Lifecycle](lifecycle.md) — Full plan lifecycle including PR creation phases
+- [Submit Branch Reuse](submit-branch-reuse.md) — Branch reuse detection in plan submit

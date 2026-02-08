@@ -1,147 +1,64 @@
 ---
-title: Metadata Block Fallback
+title: Plan Content Extraction Fallback
 read_when:
-  - "fetching plan content from GitHub issues"
-  - "debugging 'no plan content found' errors"
-  - "working with older erk-plan issues"
-  - "implementing plan content extraction"
+  - "extracting plan content from GitHub issue comments"
+  - "debugging 'no plan content found' errors in replan or plan-implement"
+  - "working with older erk-plan issues that lack metadata blocks"
+tripwires:
+  - action: "assuming plan content is in the issue body"
+    warning: "Schema v2 stores plan content in the FIRST COMMENT, not the issue body. The body contains only the plan-header metadata block. See extract_plan_from_comment() for the extraction logic."
+  - action: "checking only one location when extracting plan content"
+    warning: "Always check both the first comment (plan-body metadata block) and the issue body before reporting 'no plan content found'. The replan command documents this explicitly in Step 4a."
 ---
 
-# Metadata Block Fallback
+# Plan Content Extraction Fallback
 
-When fetching plan content from GitHub issues, use a two-location fallback pattern to handle both current and legacy issue formats.
+Plan issues use a two-location storage design with backward-compatible fallback. Understanding why content lives where it does prevents agents from looking in the wrong place and reporting false "no content" errors.
 
-## The Pattern
+## Why Two Locations Exist
 
-**Primary**: Look for plan content in the **first comment** (issue body metadata block)
+Schema v2 plan issues split content across two GitHub API objects for a deliberate reason: **fast querying vs. full content**.
 
-**Fallback**: Check the **issue body directly**
+| Location | What it stores | Why |
+|---|---|---|
+| Issue body | `plan-header` metadata block (YAML) | Compact structured data for batch queries — worktree name, dispatch status, timestamps. Never contains plan text. |
+| First comment | `plan-body` metadata block (plan markdown inside `<details>`) | Full plan content. Separating it from the body means listing/filtering issues doesn't require downloading large plan text. |
 
-This handles both:
+<!-- Source: erk_shared/gateway/github/plan_issues.py, create_plan_issue -->
 
-- **Current format**: Plan content stored in first comment with metadata block markers
-- **Legacy format**: Plan content embedded directly in issue body (older issues)
+The `create_plan_issue()` function in `erk_shared/gateway/github/plan_issues.py` orchestrates this: it creates the issue with a metadata-only body, then explicitly adds the first comment with the plan content. The comment is not auto-created by GitHub — erk creates it via `add_comment()` and records the `plan_comment_id` back into the issue body for direct lookup.
 
-## Implementation
+## The Fallback Chain
 
-From `.claude/commands/erk/replan.md` Step 4a:
+<!-- Source: erk_shared/gateway/github/metadata/plan_header.py, extract_plan_from_comment -->
 
-```markdown
-Fetch plan content using:
-erk exec get-plan-content <issue-number>
+`extract_plan_from_comment()` in `plan_header.py` implements a two-format fallback within the first comment:
 
-This command:
+1. **New format (primary)**: Look for `<!-- erk:metadata-block:plan-body -->` markers, then extract content from the `<details>` block inside
+2. **Old format (fallback)**: Look for `<!-- erk:plan-content -->` / `<!-- /erk:plan-content -->` markers
 
-1. First tries to extract plan from metadata block in first comment
-2. Falls back to issue body if no metadata block found
-3. Returns extracted plan content
-```
+The replan command (`/erk:replan`, Step 4a) adds an additional layer: if no plan content is found in the first comment at all, check the issue body directly. This handles legacy issues that predate the body/comment split entirely.
 
-The `get-plan-content` exec script handles the fallback internally.
+## Three Eras of Plan Issues
 
-## Why Fallback is Needed
+The fallback exists because the plan storage format evolved through three eras:
 
-### Issue Evolution
+| Era | Storage location | Markers | Example |
+|---|---|---|---|
+| **Pre-metadata** | Issue body directly | None (raw markdown) | Earliest issues |
+| **v1 metadata** | First comment | `<!-- erk:plan-content -->` | Transitional format |
+| **v2 metadata** (current) | First comment | `<!-- erk:metadata-block:plan-body -->` with `<details>` | All new issues |
 
-Erk's issue format has evolved:
+Each extraction layer handles one transition, and together they cover the full history.
 
-**Early format** (pre-metadata blocks):
+## Anti-Patterns
 
-```markdown
-# Issue Title
+**Only checking one location and failing immediately** — The most common agent mistake. An agent fetches the issue body, sees YAML metadata instead of plan content, and reports "no plan found." The plan is in the first comment, not the body.
 
-## Plan
+**Assuming `plan_comment_id` is always set** — Older issues may not have this field in the plan-header. When it's missing, fall back to fetching the first comment via the GitHub API (e.g., `gh issue view --comments`).
 
-Implementation plan content here...
-```
-
-**Current format** (with metadata blocks):
-
-```markdown
-# Issue Title
-
-Summary here...
-
----
-
-<!-- Comment 1 contains: -->
-<!-- erk:metadata-block:plan-body -->
-
-# Plan
-
-Implementation plan content here...
-
-<!-- /erk:metadata-block:plan-body -->
-```
-
-### Legacy Issue Support
-
-Older issues like #6431 still use the legacy format. Without fallback, these issues would be inaccessible to replan workflows.
-
-## Agent Pattern
-
-When implementing plan content extraction:
-
-1. **Always try both locations** before reporting "no plan content found"
-2. **Primary first**: Check metadata block in first comment (faster, more precise)
-3. **Fallback second**: Check issue body (handles legacy issues)
-4. **Error only if both fail**: Report "no plan content found" only after both attempts
-
-**Anti-pattern**: Only checking one location and failing immediately
-
-## Metadata Block Format
-
-The metadata block uses HTML comment markers:
-
-```html
-<!-- erk:metadata-block:plan-body -->
-[plan content here]
-<!-- /erk:metadata-block:plan-body -->
-```
-
-**Location**: First comment on the issue (not the issue body itself)
-
-**Why comments**: GitHub automatically creates first comment when issue is created, providing a stable location separate from the user-editable issue body.
-
-## Error Handling
-
-### Case 1: Both Locations Empty
-
-```
-Error: Issue #<number> has no plan content.
-Check that the issue contains either:
-1. A metadata block in the first comment, or
-2. Plan content in the issue body
-```
-
-### Case 2: Malformed Metadata Block
-
-If metadata block markers exist but are incomplete:
-
-```
-Warning: Metadata block markers found but content extraction failed.
-Falling back to issue body...
-```
-
-### Case 3: Successful Fallback
-
-When fallback succeeds, no warning is needed. The agent proceeds normally with the extracted content.
-
-## Verification
-
-Test both paths:
-
-```bash
-# Modern issue with metadata block
-erk exec get-plan-content 6455
-
-# Legacy issue without metadata block
-erk exec get-plan-content 6431
-```
-
-Both should succeed without errors.
+**Ignoring the `<details>` wrapper** — The plan-body block wraps content in a `<details open>` tag for GitHub rendering. Extracting the raw block body without stripping the `<details>` wrapper will include HTML tags in the plan text.
 
 ## Related Documentation
 
-- [Replan Command](.claude/commands/erk/replan.md) - Full workflow using this pattern
-- [Plan Content Storage](plan-content-storage.md) - Where plan content lives
+- `/erk:replan` command — Step 4a documents the full fallback chain agents should follow
