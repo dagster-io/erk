@@ -1,7 +1,7 @@
 ---
 title: Prettier Formatting for Claude Commands
 last_audited: "2026-02-08"
-audit_result: edited
+audit_result: clean
 tripwires:
   - action: "creating .claude/ markdown commands without formatting"
     warning: "Run 'make prettier' via devrun after editing markdown. CI runs prettier-check as a separate job and will fail on unformatted files."

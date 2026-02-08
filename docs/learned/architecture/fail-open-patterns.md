@@ -1,7 +1,7 @@
 ---
 title: Fail-Open Pattern
 last_audited: "2026-02-07"
-audit_result: edited
+audit_result: clean
 read_when:
   - "implementing cleanup operations"
   - "designing resilient workflows"
