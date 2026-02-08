@@ -17,12 +17,12 @@ tripwires:
 
 The review system needs to work at two different points in the development lifecycle: **before** a PR exists (local mode) and **after** (PR mode). These aren't just different output targets — they have fundamentally different interaction models:
 
-| Concern                | PR Mode                                                                              | Local Mode                                              |
-| ---------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| **Output destination** | GitHub inline comments + summary comment                                             | Terminal stdout                                         |
-| **Deduplication**      | Required — reviews re-run on each push and must not flood with duplicates            | Not needed — each local run is a fresh terminal session |
-| **State management**   | Maintains an activity log across review iterations via marker-based summary comments | Stateless — each run is independent                     |
-| **Diff source**        | `gh pr diff` (GitHub's view of the PR)                                               | `git diff` against a merge-base (local working tree)    |
+| Concern | PR Mode | Local Mode |
+|---|---|---|
+| **Output destination** | GitHub inline comments + summary comment | Terminal stdout |
+| **Deduplication** | Required — reviews re-run on each push and must not flood with duplicates | Not needed — each local run is a fresh terminal session |
+| **State management** | Maintains an activity log across review iterations via marker-based summary comments | Stateless — each run is independent |
+| **Diff source** | `gh pr diff` (GitHub's view of the PR) | `git diff` against a merge-base (local working tree) |
 
 The modes are **mutually exclusive by design**, enforced by LBYL validation at the function boundary. This prevents ambiguous states where the prompt would contain instructions for both GitHub posting and terminal output.
 
