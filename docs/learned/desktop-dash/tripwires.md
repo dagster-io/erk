@@ -16,7 +16,9 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before Render status indicators from backend-provided display strings** → Read [Visual Status Indicators](visual-status-indicators.md) first. Status indicators must derive from raw state fields via pure functions, not pre-rendered strings. See state-derivation-pattern.md.
 
-**CRITICAL: Before adding IPC handler without updating all 4 locations** → Read [erkdesk IPC Action Pattern](ipc-actions.md) first. Every IPC handler requires updates in main/index.ts (handler), main/preload.ts (bridge), types/erkdesk.d.ts (types), and tests. Missing any location compiles fine but fails at runtime.
+**CRITICAL: Before adding a new action outside the ACTIONS array** → Read [erkdesk Action Toolbar](action-toolbar.md) first. All actions must be entries in the ACTIONS array in ActionToolbar.tsx. Don't create standalone action definitions elsewhere.
+
+**CRITICAL: Before adding a new action without a test case** → Read [erkdesk Action Toolbar](action-toolbar.md) first. ActionToolbar.test.tsx tests every action's availability predicate AND generated command. New actions need both.
 
 **CRITICAL: Before adding IPC handlers to the main process** → Read [Main Process Startup](main-process-startup.md) first. Register IPC handlers inside createWindow(), not at module scope — macOS activate re-calls createWindow, causing duplicate listeners
 
@@ -32,7 +34,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding new IPC methods to erkdesk** → Read [Vitest Configuration for erkdesk](vitest-setup.md) first. the window.erkdesk mock in setup.ts must match the ErkdeskAPI interface — adding a new IPC method requires updating both the type definition and the mock or TypeScript will catch the mismatch
 
-**CRITICAL: Before adding new bridge methods** → Read [Preload Bridge Patterns](preload-bridge-patterns.md) first. Every bridge method must appear in four places: main handler, preload exposure, type interface, and window-close cleanup
+**CRITICAL: Before implementing blocking action execution** → Read [erkdesk Action Toolbar](action-toolbar.md) first. Actions use streaming execution via IPC (startStreamingAction). Never await or block the UI thread on action completion. App.tsx owns the streaming lifecycle.
 
 **CRITICAL: Before adding state to child components** → Read [erkdesk App Architecture](app-architecture.md) first. PlanList, ActionToolbar, and LogPanel are fully controlled (stateless). All state lives in App.tsx. Pass props down, callbacks up.
 
