@@ -44,6 +44,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before clamping bounds only in the renderer** → Read [Defensive Bounds Handling](defensive-bounds-handling.md) first. Always clamp at the main process trust boundary, not only in the renderer.
 
+**CRITICAL: Before configuring pnpm workspaces for erkdesk** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. Do NOT add erkdesk as a pnpm workspace member — it is intentionally standalone
+
 **CRITICAL: Before designing notification features** → Read [Desktop Dashboard Interaction Model](interaction-model.md) first. Notification/badge system is planned but NOT implemented. Don't assume infrastructure exists for state-diff detection, OS notifications, or row badges.
 
 **CRITICAL: Before duplicating PlanDataProvider logic in TypeScript** → Read [Backend Communication Pattern Decision](backend-communication.md) first. erkdesk delegates all data fetching to `erk exec dash-data`. The Python side owns data assembly — erkdesk is a thin rendering shell over CLI output.
@@ -76,6 +78,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before mocking ipcRenderer in tests** → Read [Preload Bridge Patterns](preload-bridge-patterns.md) first. Tests mock window.erkdesk, not ipcRenderer — the bridge is the test boundary.
 
+**CRITICAL: Before modifying CI job dependencies for erkdesk** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. Do NOT add erkdesk-tests to the autofix job's needs list in CI
+
 **CRITICAL: Before passing GitHub tokens through IPC or storing them in the renderer** → Read [erkdesk Security Architecture](security.md) first. GitHub tokens must NEVER reach the renderer or main process. All GitHub API calls happen in the Python backend via CLI shelling.
 
 **CRITICAL: Before passing renderer-reported bounds directly to Electron setBounds() without clamping** → Read [Defensive Bounds Handling](defensive-bounds-handling.md) first. Never pass renderer-reported bounds directly to Electron setBounds() without clamping.
@@ -100,6 +104,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before requiring keyboard shortcuts for actions** → Read [Desktop Dashboard Interaction Model](interaction-model.md) first. Erkdesk uses discoverability-first design. Toolbar buttons and (future) context menus are primary. Keyboard shortcuts are secondary convenience, not required paths.
 
+**CRITICAL: Before running pnpm commands for erkdesk** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. Do NOT run pnpm commands from the repo root — always cd into erkdesk/ first
+
 **CRITICAL: Before setting initial bounds for WebContentsView** → Read [Main Process Startup](main-process-startup.md) first. WebContentsView starts at zero bounds — renderer must report bounds before it becomes visible.
 
 **CRITICAL: Before setting initial bounds for WebContentsView in createWindow** → Read [WebView IPC Design Decisions](webview-api.md) first. The WebContentsView starts at zero bounds intentionally; do not set initial bounds in createWindow — see defensive-bounds-handling.md.
@@ -119,3 +125,5 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before using request-response (invoke/handle) for WebView IPC channels** → Read [WebView IPC Design Decisions](webview-api.md) first. WebView IPC channels (bounds, URL) must be fire-and-forget (send/on), never request-response (invoke/handle) — invoke serializes high-frequency updates and causes visible lag.
 
 **CRITICAL: Before using the Electron <webview> tag instead of WebContentsView** → Read [Desktop App Framework Evaluation](framework-evaluation.md) first. <webview> is soft-deprecated. WebContentsView is the recommended successor with better security isolation and performance.
+
+**CRITICAL: Before working with Electron views in erkdesk** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. Do NOT use BrowserView — use WebContentsView (BrowserView is deprecated)

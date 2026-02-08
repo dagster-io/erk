@@ -7,7 +7,7 @@ read_when:
   - debugging erkdesk test failures related to environment or mocking
 tripwires:
   - action: "enabling globals in vitest.config.ts without updating tsconfig.json"
-    warning: "globals and tsconfig types must stay in sync — `globals: true` in vitest.config.ts without `\"vitest/globals\"` in tsconfig.json causes type errors at edit time but tests still pass, creating a confusing split."
+    warning: 'globals and tsconfig types must stay in sync — `globals: true` in vitest.config.ts without `"vitest/globals"` in tsconfig.json causes type errors at edit time but tests still pass, creating a confusing split.'
   - action: "adding new IPC method without updating window.erkdesk mock"
     warning: "The window.erkdesk mock in setup.ts must match the ErkdeskAPI interface — adding a new IPC method requires updating both the type definition and the mock or TypeScript will catch the mismatch."
   - action: "expecting erkdesk tests to run with Python CI targets"
