@@ -1,145 +1,95 @@
 ---
-title: Worktree Cleanup After Implementation
+title: ".worker-impl/ vs .impl/ Cleanup Discipline"
 read_when:
-  - implementing plans with .worker-impl/ folders
-  - understanding when to clean up .worker-impl/
-  - debugging plan implementation workflows
+  - cleaning up .worker-impl/ after plan implementation
+  - debugging leftover .worker-impl/ artifacts in a PR
+  - deciding whether to auto-remove an implementation folder
+tripwires:
+  - action: "automatically removing .impl/ folder"
+    warning: "NEVER auto-delete .impl/. It belongs to the user for plan-vs-implementation review. Only .worker-impl/ is auto-cleaned."
+  - action: "staging .worker-impl/ deletion without an immediate commit"
+    warning: "A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md."
+  - action: "removing .worker-impl/ during implementation (before CI passes)"
+    warning: "The folder is load-bearing during implementation — Claude reads from it (via copy to .impl/). Only remove after implementation succeeds and CI passes."
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
-# Worktree Cleanup After Implementation
+# .worker-impl/ vs .impl/ Cleanup Discipline
 
-Plans implemented via remote agents create a `.worker-impl/` folder in the repository. This folder must be removed after implementation completes and CI passes, to prevent clutter in the main codebase.
+Two folders serve implementation plans, but they have fundamentally different ownership models and lifecycle rules. Confusing them causes either lost user context (.impl/ deleted) or CI failures (.worker-impl/ left behind).
 
-## The .worker-impl/ Folder
+## Why Two Folders Exist
 
-### Purpose
+The split exists because remote (GitHub Actions) and local implementations have different trust models:
 
-When a plan is implemented by a remote agent (not locally via `/erk:plan-implement`):
+| Aspect              | `.impl/`                          | `.worker-impl/`                          |
+| ------------------- | --------------------------------- | ---------------------------------------- |
+| **Created by**      | Local agent or copied from remote | `erk plan submit` (automation)           |
+| **Git status**      | In `.gitignore`, never committed  | Committed to branch, visible in PR       |
+| **Owner**           | Human user                        | Workflow automation                      |
+| **Cleanup**         | Manual only, never auto-deleted   | Automatic after CI passes                |
+| **Review value**    | High — plan vs implementation     | None — plan content lives in GitHub issue |
 
-- The agent creates a `.worker-impl/` folder containing plan metadata
-- This folder tracks implementation state for the remote workflow
-- It contains files like `plan.md`, `issue.json`, and session markers
+<!-- Source: packages/erk-shared/src/erk_shared/worker_impl_folder.py, module docstring -->
+<!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, module docstring -->
 
-### Why It Exists
+The ownership distinction drives everything: `.impl/` is the user's working context (preserved indefinitely), while `.worker-impl/` is a transient coordination artifact (deleted as soon as its job is done). See `worker_impl_folder.py` and `impl_folder.py` for the creation/removal APIs.
 
-The `.worker-impl/` folder serves two purposes during remote implementation:
+## Why .worker-impl/ Must Be Removed
 
-1. **Workflow coordination**: Tracks which plan is being implemented
-2. **Session linkage**: Connects implementation sessions to GitHub issues
+Left-behind `.worker-impl/` folders cause concrete downstream failures:
 
-### Why It Must Be Removed
-
-After implementation completes:
-
-- The `.worker-impl/` folder has no further purpose
-- Keeping it pollutes the repository with workflow artifacts
-- It can confuse future implementations (stale state)
+1. **Prettier CI failures** — `.worker-impl/*.md` files trigger formatter checks on plan content that was never intended for formatting validation
+2. **Stale state confusion** — Future implementations on the same branch may read outdated plan metadata
+3. **PR noise** — Reviewers see transient workflow artifacts in the diff
 
 ## Cleanup Timing
 
-Remove `.worker-impl/` after:
+Remove `.worker-impl/` only after all three conditions are met:
 
-1. ✅ Implementation complete (all phases executed)
-2. ✅ CI passes (tests, linting, type checking)
-3. ✅ Ready to create or update PR
+1. Implementation complete (all plan phases executed)
+2. CI passes (tests, linting, type checking)
+3. Implementation changes committed and pushed
 
-**Before:** Never remove during implementation (breaks workflow state)
+**Never remove during implementation** — the workflow copies `.worker-impl/` to `.impl/` at the start, and Claude reads from `.impl/` throughout. Removing `.worker-impl/` mid-implementation doesn't break Claude's run, but it prevents reruns from refreshing plan content.
 
-## Cleanup Pattern
+## The Multi-Layer Cleanup Architecture
 
-### Automated Cleanup (Preferred)
+Cleanup uses three independent layers because no single layer is reliable on its own. This was learned through production failures — see [reliability-patterns.md](reliability-patterns.md) for the full case study.
 
-The `/erk:plan-implement` command handles cleanup automatically:
+| Layer | Mechanism | Why it can fail |
+| ----- | --------- | --------------- |
+| 1. Agent instruction | `/erk:plan-implement` tells Claude to clean up | Context limits, misinterpretation |
+| 2. Workflow staging | `git rm` without immediate commit | Silently discarded by downstream `git reset --hard` |
+| 3. Dedicated commit step | Atomic remove + commit + push | Only fails if step condition is wrong |
 
-```bash
-# After CI passes
-if [ -d .worker-impl/ ]; then
-  git rm -rf .worker-impl/
-  git commit -m "Remove .worker-impl/ after implementation"
-  git push
-fi
-```
+**Only Layer 3 is deterministic.** Layers 1 and 2 reduce how often Layer 3 needs to act, but cannot replace it.
 
-This runs as part of Step 12 in the plan-implement workflow.
+<!-- Source: .github/workflows/plan-implement.yml, Clean up .worker-impl/ after implementation -->
 
-### Manual Cleanup (If Needed)
+See the "Clean up .worker-impl/ after implementation" step in `.github/workflows/plan-implement.yml` for the production Layer 3 implementation.
 
-If automated cleanup didn't run:
+## Anti-Patterns
 
-```bash
-# Remove the folder
-git rm -rf .worker-impl/
+**Staging without commit before reset** — The most common failure mode. A workflow step runs `git rm -rf .worker-impl/` and stages the change, but a later step runs `git reset --hard` (e.g., to sync with remote), silently discarding the staged deletion. The fix is always: commit and push cleanup atomically before any step that might reset. See [plan-implement-workflow-patterns.md](../ci/plan-implement-workflow-patterns.md) for the detailed pattern.
 
-# Commit the removal
-git commit -m "Remove .worker-impl/ after implementation"
+**Auto-deleting .impl/** — `.impl/` belongs to the user. It preserves the original plan for comparison against implementation, and deleting it removes context the user may need for review or future reference. Never add automation that removes `.impl/`.
 
-# Push to remote
-git push
-```
+**Removing .worker-impl/ before CI passes** — The cleanup step's condition gates on implementation success AND CI success. Removing before CI passes means a failed CI rerun can't access the plan metadata it needs for diagnostics.
 
-## Critical: Never Remove .impl/
+## Diagnosing Leftover .worker-impl/
 
-**IMPORTANT**: The `.impl/` folder is for LOCAL implementations and must NEVER be removed automatically.
+If `.worker-impl/` appears in a PR after implementation:
 
-| Folder          | Purpose                    | Cleanup Timing               |
-| --------------- | -------------------------- | ---------------------------- |
-| `.impl/`        | Local plan implementation  | User reviews, manual cleanup |
-| `.worker-impl/` | Remote plan implementation | Automatic after CI passes    |
+1. **Check workflow run logs** — Did the cleanup step run? Look for "Clean up .worker-impl/" in the step list
+2. **Check step conditions** — The cleanup step requires `implementation_success == 'true'` AND either submit or conflict resolution succeeded
+3. **Check for `git reset --hard`** — A reset after staging but before commit is the most common silent failure
 
-**Why `.impl/` is preserved:**
-
-- User may want to review plan vs actual implementation
-- User may want to modify the plan for future reference
-- Automatic removal would delete user's context
-
-**Why `.worker-impl/` is removed:**
-
-- Created by automated workflow, not user
-- No review value (plan content is in GitHub issue)
-- Serves no purpose after PR is open
-
-## Cleanup Failures
-
-### Symptom: .worker-impl/ Still Present After PR Created
-
-**Likely causes:**
-
-1. CI never passed (cleanup step was skipped)
-2. Cleanup step failed (git rm error)
-3. Manual implementation without running automated cleanup
-
-**Fix:**
-
-```bash
-# Verify CI passed
-gh pr checks
-
-# If CI passed, remove manually
-git rm -rf .worker-impl/
-git commit -m "Remove .worker-impl/ after implementation"
-git push
-```
-
-### Symptom: Multiple Implementation Folders
-
-**Example:**
-
-```
-.impl/          # From local implementation
-.worker-impl/   # From remote implementation
-```
-
-**Fix:**
-
-Remove `.worker-impl/` only (never remove `.impl/`):
-
-```bash
-git rm -rf .worker-impl/
-git commit -m "Remove .worker-impl/ after remote implementation"
-git push
-```
+Recovery is straightforward: `git rm -rf .worker-impl/` followed by commit and push. The key is diagnosing why automated cleanup failed to prevent recurrence.
 
 ## Related Documentation
 
-- [reliability-patterns.md](reliability-patterns.md) — Multi-layer cleanup enforcement
-- `/erk:plan-implement` command — Automated cleanup workflow
+- [reliability-patterns.md](reliability-patterns.md) — Multi-layer cleanup resilience and the commit-before-reset rule
+- [plan-implement-workflow-patterns.md](../ci/plan-implement-workflow-patterns.md) — Step ordering constraints in the plan-implement workflow
+- [lifecycle.md](lifecycle.md) — Full plan lifecycle including Phase 5 cleanup

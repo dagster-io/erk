@@ -1,207 +1,99 @@
 ---
 title: Token Optimization Patterns
-last_audited: "2026-02-04 05:48 PT"
-audit_result: clean
 read_when:
-  - "designing multi-agent workflows"
-  - "handling large data payloads in agent orchestration"
-  - "experiencing context bloat from fetching multiple documents"
-  - "building consolidation or aggregation commands"
-tripwire:
-  trigger: "Before fetching N large documents into parent agent context"
-  action: "Read [Token Optimization Patterns](token-optimization-patterns.md) first. Delegate content fetching to child Explore agents. Parent receives only analysis summaries, not raw content. Achieves O(1) parent context instead of O(n)."
+  - designing multi-agent workflows that process multiple documents
+  - experiencing context bloat from fetching large payloads into parent agent
+  - choosing where to place content fetching in an orchestration pipeline
+  - deciding which model tier to use for delegated work
+tripwires:
+  - action: "fetching N large documents into parent agent context"
+    warning: "Delegate content fetching to child agents. Parent receives only analysis summaries, not raw content. Achieves O(1) parent context instead of O(n). See token-optimization-patterns.md."
+  - action: "using opus/sonnet for mechanical data fetching or formatting tasks"
+    warning: "Use haiku for mechanical work (fetch, parse, format). Reserve expensive models for synthesis and reasoning."
 ---
 
 # Token Optimization Patterns
 
-When orchestrating multiple agents that each need to process large documents, naive approaches can cause O(n) token bloat in the parent context. This document describes the delegation pattern that achieves O(1) parent context usage.
+When orchestrating agents that each process large documents, naive approaches cause O(n) token bloat in the parent context. This document captures two delegation patterns — and the decision framework for choosing between them — that keep parent context usage constant regardless of input count.
 
-## The Problem
+## Core Insight: Content Fetching Is the Token Sink
 
-Consider a workflow that consolidates N plan issues into a single unified plan. A naive implementation might:
+The parent agent's context is the bottleneck. Every token fetched into parent context persists for the entire conversation. The optimization is always the same: move fetching into child agents so the parent only sees summaries.
 
-1. Parent agent fetches all N plan bodies into its context
-2. Parent reads and analyzes all content
-3. Parent generates consolidated plan
+## Pattern 1: Parallel Delegation for N-Document Analysis
 
-**Token cost**: Parent context contains N \* plan_size tokens, even if each plan is 5000+ tokens.
+**When**: Multiple large documents need independent analysis before synthesis (plan consolidation, multi-PR release notes, cross-worktree session aggregation).
 
-For N=7 plans, this could add 35,000+ tokens to the parent context before any analysis begins.
+**How it works**:
 
-## The Solution: Delegated Content Fetching
+1. Parent validates metadata only (labels, state, issue numbers) — never fetches document bodies
+2. Parent launches N child agents **in parallel** (`run_in_background: true`), each responsible for fetching and analyzing its own document
+3. Each child returns a compact analysis summary
+4. Parent synthesizes from summaries only
 
-Instead of fetching content into the parent context, delegate fetching to child agents:
+**Why this matters**: For N=7 plans at ~5000 tokens each, the naive approach puts ~35,000 tokens in parent context. With delegation, parent context grows by N × summary_size (typically ~8,000 total) — an 82% reduction observed in practice.
 
-1. Parent validates plan metadata only (labels, state, issue numbers)
-2. Parent launches N child Explore agents **in parallel**, each with:
-   - Instruction to fetch its own plan content
-   - Specific investigation goals
-   - Plan issue number as parameter
-3. Each child fetches and analyzes its plan independently
-4. Parent receives only the **analysis summary** from each child, not the raw content
+<!-- Source: .claude/commands/erk/replan.md, Steps 3-4 -->
 
-**Token cost**: Parent context contains N \* summary_size tokens, where summary_size << plan_size.
+The `/erk:replan` command demonstrates this pattern. Step 3 explicitly skips content fetching ("Plan content is fetched by each Explore agent in Step 4, not in the main context"), and Step 4 launches parallel Explore agents that each fetch their own plan issue as their first action.
 
-## Implementation Reference
+<!-- Source: .claude/commands/local/replan-learn-plans.md, Step 3 -->
 
-This pattern is demonstrated in `.claude/commands/erk/replan.md` Steps 3-4:
+The `/local:replan-learn-plans` command builds on this by querying all open learn plans and passing the full set to `/erk:replan` for parallel investigation.
 
-### Step 3: Plan Content Fetching (Delegated)
+### Critical: Wait for All Background Agents
 
-```markdown
-### Step 3: Plan Content Fetching (Delegated to Step 4)
+A subtle failure mode: creating the consolidated output before all background agents complete. The parent **must** use `TaskOutput` with `block: true` and adequate timeout before proceeding to synthesis. Incomplete investigation data produces incomplete plans.
 
-Plan content is fetched by each Explore agent in Step 4, not in the main context.
-This avoids dumping large plan bodies into the main conversation.
+## Pattern 2: Single-Agent Delegation for Mechanical Work
 
-Skip to Step 4.
-```
+**When**: A single multi-step fetch-parse-format pipeline can be fully delegated to one cheap agent.
 
-### Step 4: Deep Investigation
+**How it works**:
 
-```markdown
-### Step 4: Deep Investigation
+1. Parent crafts a structured prompt specifying exact output format
+2. Parent launches a single Task agent with `model: "haiku"` (mechanical work doesn't need expensive models)
+3. Child fetches, parses, and formats data
+4. Parent consumes structured result directly
 
-Use the Explore agent (Task tool with subagent_type=Explore) to perform deep investigation of the codebase.
+<!-- Source: .claude/commands/erk/objective-next-plan.md, Step 2 -->
 
-**If CONSOLIDATION_MODE:**
+The `/erk:objective-next-plan` command demonstrates this. Step 2 delegates objective data fetching (issue metadata, roadmap parsing, status mapping, step recommendation) to a haiku-tier general-purpose agent. The parent never makes the 3+ sequential fetches itself — it receives a single structured summary.
 
-Launch parallel Explore agents (one per plan, using `run_in_background: true`), each investigating:
+<!-- Source: docs/learned/reference/objective-summary-format.md -->
 
-- Plan items and their current status
-- Overlap potential with other plans being consolidated
-- File mentions and their current state
-```
+The output contract is specified in `objective-summary-format.md`, which defines the exact sections (OBJECTIVE, STATUS, ROADMAP, PENDING_STEPS, RECOMMENDED) the Task agent must return.
 
-Each Explore agent prompt includes:
+## Decision Framework: Which Pattern to Use
 
-```
-Fetch the plan content from issue #<number> using:
-erk exec get-plan-content <number>
+| Condition | Pattern | Why |
+| --- | --- | --- |
+| N documents, each analyzed independently | Parallel delegation | Parallelism + O(1) parent context |
+| Single multi-step fetch-parse pipeline | Single-agent delegation | Reduces parent turns and token waste |
+| Documents are small (<500 tokens each) | Fetch in parent | Delegation overhead exceeds savings |
+| Parent needs full content for synthesis | Fetch in parent | Summaries lose necessary detail |
+| Sequential dependencies between documents | Sequential delegation | Can't parallelize, but still avoid parent bloat |
+| Child agents need to communicate | Rethink architecture | Agent-to-agent communication isn't supported |
 
-Then investigate:
-1. Which items are fully implemented
-2. Which items overlap with other plans
-3. Current file states
-```
+## Model Selection for Delegated Work
 
-The parent never sees the raw plan content — only the investigation results.
+| Work type | Model | Rationale |
+| --- | --- | --- |
+| Fetch, parse, format (mechanical) | haiku | Sufficient capability, lowest cost |
+| Codebase investigation, analysis | Default (sonnet) | Needs reasoning for status assessment |
+| Plan synthesis, creative decisions | Parent agent | Highest-quality reasoning required |
 
-## When to Apply
-
-Use this pattern when:
-
-1. **Multiple large documents**: Workflow processes N documents, each >1000 tokens
-2. **Independent analysis**: Each document can be analyzed separately before synthesis
-3. **Parallel processing**: Child agents can run concurrently (no sequential dependencies)
-4. **Summary << Content**: Analysis output is much smaller than raw input
-
-**Examples**:
-
-- Consolidating multiple plan issues into one plan
-- Analyzing multiple PRs for release notes
-- Comparing implementations across multiple repos
-- Aggregating session logs from multiple worktrees
+**Anti-pattern**: Using opus or sonnet for data fetching and formatting. The `/erk:objective-next-plan` command explicitly uses haiku for this reason — the work is mechanical and doesn't benefit from more capable models.
 
 ## Anti-Patterns
 
-**Don't use this pattern when**:
+**Fetching "just to inspect"**: Parent fetches a document to decide whether it needs analysis, then delegates the analysis. The inspection itself wastes tokens — delegate the fetch-and-decide as a unit.
 
-1. Documents are small (<500 tokens each) — overhead not worth it
-2. Parent needs full content for synthesis (not just analysis results)
-3. Sequential processing required — can't parallelize child agents
-4. Child agents would need to communicate with each other
+**Summarizing summaries**: Launching a child agent to summarize another child agent's summary. If the first summary is too large, fix the first agent's output contract, don't add layers.
 
-## Results from /erk:replan
-
-Before optimization (Step 3 in parent context):
-
-- **Token usage**: ~45,000 tokens for 7-plan consolidation
-- **Context pressure**: Risk of summarization during synthesis
-
-After optimization (Step 3 delegated to Step 4 children):
-
-- **Token usage**: ~8,000 tokens for 7-plan consolidation
-- **Context pressure**: Parent retains full conversation history
-
-**Reduction**: 82% fewer tokens in parent context
-
-## Related Patterns
-
-- **Background agents**: Use `run_in_background: true` to launch child agents in parallel
-- **TaskOutput tool**: Retrieve results from background agents when ready
-- **Summary contracts**: Define clear output formats for child agents (JSON, bullet lists, etc.)
-
-## Worked Example: objective-next-plan Command
-
-The `objective-next-plan` command demonstrates Task agent delegation for data fetching and formatting.
-
-### Problem
-
-Creating an implementation plan from an objective step requires:
-
-1. Fetching objective metadata (title, description, issue number)
-2. Fetching roadmap table with status column
-3. Parsing and mapping status values (ACTIVE → in_progress, etc.)
-4. Extracting pending steps
-5. Generating next-step recommendation
-
-**Naive approach**: LLM makes 3+ sequential fetches (objective body, roadmap, status parsing), consuming ~4500 tokens.
-
-### Solution
-
-Delegate entire data fetching and formatting to a Task agent:
-
-```python
-# Prompt structure for Task agent
-prompt = f"""
-Fetch objective context for issue #{objective_issue} and format as JSON with:
-
-1. OBJECTIVE - title, issue_number, description
-2. STATUS - ACTIVE, PLANNING, or COMPLETED
-3. ROADMAP - table with step, status, pr, notes columns
-4. PENDING_STEPS - array of incomplete steps
-5. RECOMMENDED - next_step and reason
-
-Map status values:
-- ACTIVE → in_progress
-- PLANNING → pending
-- COMPLETED → done
-
-Output structured JSON only.
-"""
-
-# Launch Task agent with haiku model
-task_agent = Task(
-    subagent_type='general-purpose',
-    model='haiku',  # Mechanical work, use cheap model
-    prompt=prompt
-)
-```
-
-### Token Savings
-
-| Approach                      | Tokens  | Turns   |
-| ----------------------------- | ------- | ------- |
-| Sequential LLM fetches        | ~4500   | 3-4     |
-| Task agent delegation (haiku) | ~2000   | 1       |
-| **Reduction**                 | **55%** | **66%** |
-
-### Model Selection
-
-- **Task agent**: haiku (mechanical data fetching and formatting)
-- **Parent agent**: sonnet (plan synthesis and reasoning)
-
-**Rationale**: Delegate mechanical work to cheap models, reserve expensive models for creative work.
-
-### Output Format
-
-Task agent returns structured JSON matching the schema in [Objective Summary Format](../reference/objective-summary-format.md).
-
-Parent agent consumes JSON directly without additional parsing turns.
+**Skipping the output contract**: Delegating without specifying the return format. The child agent returns verbose, unstructured output that consumes as many parent tokens as the raw content would have.
 
 ## Related Documentation
 
-- [Objective Summary Format](../reference/objective-summary-format.md) - Structured output specification
-- [Replan Command](.claude/commands/erk/replan.md) - Full implementation
-- [Explore Agent](../agents/explore.md) - Investigation capabilities
+- [Objective Summary Format](../reference/objective-summary-format.md) — structured output specification for delegated objective fetching
+- [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) — file-based agent output pattern for large results

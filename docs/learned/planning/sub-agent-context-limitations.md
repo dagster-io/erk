@@ -1,102 +1,60 @@
 ---
 title: Sub-Agent Context Limitations
 read_when:
-  - debugging impl-signal failures, working with CLAUDE_SESSION_ID, delegating to Task tool sub-agents, implementing plan-save workflow
+  - delegating session-dependent commands to Task tool sub-agents
+  - debugging impl-signal or plan-save-to-issue failures with empty session IDs
+  - designing workflows that split work between root agent and sub-agents
+tripwires:
+  - action: "including impl-signal or plan-save-to-issue in a Task tool sub-agent prompt"
+    warning: "Sub-agents cannot access ${CLAUDE_SESSION_ID}. Session-dependent commands must run in the root agent context. See sub-agent-context-limitations.md."
+  - action: "passing ${CLAUDE_SESSION_ID} to a sub-agent via the prompt string"
+    warning: "String substitution of ${CLAUDE_SESSION_ID} happens at the root agent level. By the time the sub-agent runs the bash command, the variable is not in its environment. The root agent must resolve the value and pass it as a literal."
 ---
 
 # Sub-Agent Context Limitations
 
-When the root Claude agent launches sub-agents via the Task tool, certain environment context is **not propagated** to the sub-agent. This creates silent failure modes where commands requiring session-specific context fail without clear errors.
+`${CLAUDE_SESSION_ID}` is a Claude Code runtime variable available only to the **root agent**. Task tool sub-agents run in isolated contexts that do not inherit Claude Code environment variables. This creates a cross-cutting constraint: any `erk exec` command requiring `--session-id` will silently fail when delegated to a sub-agent, because the variable expands to an empty string.
 
-## The Problem: CLAUDE_SESSION_ID Not Propagated
+## Why Sub-Agents Can't Access Session ID
 
-`${CLAUDE_SESSION_ID}` is an environment variable available to the **root agent** but **not to Task tool sub-agents**.
+Claude Code injects `${CLAUDE_SESSION_ID}` as a string substitution at the root agent level — it is not a shell environment variable that propagates to child processes. When a root agent launches a sub-agent via the Task tool, the sub-agent gets a fresh, isolated execution context. There is no mechanism for Claude Code runtime variables to flow across this boundary.
 
-### Example Failure Pattern
-
-Root agent delegates plan implementation to a sub-agent:
-
-```python
-# Root agent launches sub-agent
-task_tool(
-    subagent_type="Plan",
-    prompt="Implement the plan in .impl/plan.md"
-)
-```
-
-Sub-agent tries to signal GitHub:
-
-```bash
-# Inside sub-agent, this fails silently
-erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}"
-```
-
-**Result**: Command outputs error JSON with `"error_type": "session-id-required"`, but the sub-agent may not surface this clearly.
-
-## Why This Happens
-
-**Root agent environment:**
-
-- Has access to `${CLAUDE_SESSION_ID}` via Claude Code runtime
-- Can substitute this variable when running bash commands
-
-**Sub-agent environment:**
-
-- Runs in isolated context via Task tool
-- Does not inherit Claude Code environment variables
-- `${CLAUDE_SESSION_ID}` expands to empty string
+This is a platform-level constraint, not something erk can work around in its own code. The erk commands validate the session ID and return structured errors rather than failing silently, but the fundamental limitation is in how the Task tool isolates sub-agent environments.
 
 ## Commands Affected
 
-Any `erk exec` command that requires `--session-id` will fail in sub-agent context:
+Any `erk exec` command accepting `--session-id` degrades when run from a sub-agent:
 
-| Command                | Requires Session ID | Impact if Missing                                 |
-| ---------------------- | ------------------- | ------------------------------------------------- |
-| `impl-signal started`  | Yes                 | No GitHub comment posted for implementation start |
-| `impl-signal ended`    | Yes                 | No GitHub comment posted for implementation end   |
-| `plan-save-to-issue`   | Yes                 | Plan saved but not associated with session marker |
-| `capture-session-info` | No (reads from env) | Returns empty values                              |
+| Command               | Session ID Role                                        | Impact When Missing                              |
+| --------------------- | ------------------------------------------------------ | ------------------------------------------------ |
+| `impl-signal started` | Links GitHub comment to session, deletes plan file     | No GitHub comment, plan file persists             |
+| `impl-signal ended`   | Links ended event to session                           | No GitHub metadata update                        |
+| `plan-save-to-issue`  | Session-scoped plan lookup, deduplication, snapshotting | Falls back to latest-by-mtime (may pick wrong plan), no deduplication guard |
 
-## Workaround: Root Agent Handles All Signaling
+<!-- Source: src/erk/cli/commands/exec/scripts/impl_signal.py, _signal_started -->
 
-**Solution**: The root agent must execute all `impl-signal` commands before delegating to sub-agents.
+The `impl-signal` command validates session ID upfront and returns a structured error (see diagnostic output below) rather than proceeding with empty state — this is intentional graceful degradation so the `|| true` pattern in `/erk:plan-implement` doesn't mask the failure entirely.
 
-### Correct Pattern
+## The Root-Agent-First Pattern
 
-```python
-# Root agent signals BEFORE delegating
-bash("erk exec impl-signal started --session-id=\"${CLAUDE_SESSION_ID}\"")
+The solution is architectural: **session-dependent commands must always run in the root agent**, not be delegated. The `/erk:plan-implement` command already follows this pattern — it runs `impl-signal started` and `impl-signal ended` directly (Steps 6 and 10) rather than including them in any sub-agent prompt.
 
-# Then delegate implementation to sub-agent
-task_tool(
-    subagent_type="Plan",
-    prompt="Implement the plan in .impl/plan.md"
-)
+This creates a sandwich pattern: root agent handles session-bound bookkeeping (signal start, signal end, upload session), while the actual implementation work in between can safely be delegated.
 
-# Root agent signals AFTER sub-agent completes
-bash("erk exec impl-signal ended --session-id=\"${CLAUDE_SESSION_ID}\"")
+### Anti-Pattern: Delegating Signaling to Sub-Agents
+
+```
+WRONG — sub-agent cannot resolve ${CLAUDE_SESSION_ID}:
+
+Task(prompt="Implement the plan. When done, run:
+  erk exec impl-signal ended --session-id=${CLAUDE_SESSION_ID}")
 ```
 
-### Wrong Pattern
+The string `${CLAUDE_SESSION_ID}` appears literally in the sub-agent's prompt but is not substituted — the sub-agent's bash execution expands it to empty.
 
-```python
-# Root agent delegates immediately
-task_tool(
-    subagent_type="Plan",
-    prompt="""
-    Implement the plan in .impl/plan.md
+## Diagnostic Output
 
-    Remember to run:
-    - erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}"
-    - erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}"
-    """
-)
-# Sub-agent will fail to signal (no session ID available)
-```
-
-## Detecting This Issue
-
-**Symptom**: Command returns JSON with `"success": false` and `"error_type": "session-id-required"`:
+When `impl-signal` receives an empty or missing session ID, it outputs:
 
 ```json
 {
@@ -107,18 +65,16 @@ task_tool(
 }
 ```
 
-**Root Cause**: The command was executed in a context without `CLAUDE_SESSION_ID` (likely a sub-agent).
+If you see `session-id-required` errors, the command was executed outside the root agent context.
 
-## Design Implication
+## Design Rules for New Workflows
 
-When designing workflows that involve sub-agents:
+When adding new `erk exec` commands or slash commands that involve sub-agent delegation:
 
-1. **Identify session-dependent commands** — Any command using `${CLAUDE_SESSION_ID}`
-2. **Execute them in root agent** — Before or after sub-agent delegation
-3. **Document the limitation** — Make it clear which commands cannot be delegated
+1. **Classify each command** as session-dependent or session-independent before designing the workflow
+2. **Keep session-dependent commands in the root agent** — run them before or after sub-agent delegation, never during
+3. **Pass resolved values, not variable references** — if a sub-agent needs a session ID for any reason, the root agent must resolve it to a literal string first
 
-## Related Documentation
+<!-- Source: .claude/commands/erk/plan-implement.md:182-219 -->
 
-- [Plan Implementation Workflow](plan-implementation.md) — How root agent orchestrates signaling around sub-agent work
-- [Session ID Access Patterns](../sessions/session-id-access.md) — When and where session ID is available
-- [Impl Signal Commands](../cli/commands/impl-signal.md) — Commands requiring session context
+The `/erk:plan-implement` command is the canonical example of this pattern — see Steps 6 and 10 for how signaling brackets the implementation work.
