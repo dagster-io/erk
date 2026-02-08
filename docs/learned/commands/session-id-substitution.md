@@ -1,17 +1,18 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- writing slash commands or skills that need session context
-- developing hooks that interact with Claude sessions
-- debugging session ID unavailable or empty string errors
-- deciding where to place session-dependent logic (root agent vs sub-agent)
+  - writing slash commands or skills that need session context
+  - developing hooks that interact with Claude sessions
+  - debugging session ID unavailable or empty string errors
+  - deciding where to place session-dependent logic (root agent vs sub-agent)
 title: Session ID Substitution
 tripwires:
-- action: CLAUDE_SESSION_ID is NOT an environment variable
-  warning: it is a string substitution performed by Claude Code's skill/command loader.
-    Treating it as an env var in hooks or Python code will silently produce an empty
-    string.
+  - action: CLAUDE_SESSION_ID is NOT an environment variable
+    warning:
+      it is a string substitution performed by Claude Code's skill/command loader.
+      Treating it as an env var in hooks or Python code will silently produce an empty
+      string.
 ---
 
 # Session ID Substitution

@@ -1,16 +1,18 @@
 ---
 audit_result: edited
-last_audited: '2026-02-07'
+last_audited: "2026-02-07"
 read_when:
-- implementing cleanup operations
-- designing resilient workflows
-- handling optional or non-critical operations
+  - implementing cleanup operations
+  - designing resilient workflows
+  - handling optional or non-critical operations
 title: Fail-Open Pattern
 tripwires:
-- action: implementing a cleanup operation that modifies metadata based on external
-    API success
-  warning: Use fail-open pattern. If critical step fails, do NOT execute dependent
-    steps that modify persistent state.
+  - action:
+      implementing a cleanup operation that modifies metadata based on external
+      API success
+    warning:
+      Use fail-open pattern. If critical step fails, do NOT execute dependent
+      steps that modify persistent state.
 ---
 
 # Fail-Open Pattern

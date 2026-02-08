@@ -1,18 +1,20 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- writing markdown in docs/learned/ and wondering how Prettier will reformat it
-- choosing between tables, lists, and prose in documentation
-- using prettier-ignore directives in documentation
+  - writing markdown in docs/learned/ and wondering how Prettier will reformat it
+  - choosing between tables, lists, and prose in documentation
+  - using prettier-ignore directives in documentation
 title: Markdown Authoring and Prettier Interactions
 tripwires:
-- action: manually wrapping lines or aligning tables in markdown
-  warning: Never manually format markdown. Prettier rewrites all formatting on save.
-    Write naturally, then run `make prettier` via devrun.
-- action: adding prettier-ignore to docs/learned/
-  warning: prettier-ignore is almost never needed in docs. If Prettier is mangling
-    your content, the structure may need rethinking rather than suppression.
+  - action: manually wrapping lines or aligning tables in markdown
+    warning:
+      Never manually format markdown. Prettier rewrites all formatting on save.
+      Write naturally, then run `make prettier` via devrun.
+  - action: adding prettier-ignore to docs/learned/
+    warning:
+      prettier-ignore is almost never needed in docs. If Prettier is mangling
+      your content, the structure may need rethinking rather than suppression.
 ---
 
 # Markdown Authoring and Prettier Interactions

@@ -1,17 +1,17 @@
 ---
 read_when:
-- adding allowed-tools to a command or agent frontmatter
-- designing a read-only slash command
-- creating commands intended for use within plan mode
-- deciding which tools a restricted command needs
+  - adding allowed-tools to a command or agent frontmatter
+  - designing a read-only slash command
+  - creating commands intended for use within plan mode
+  - deciding which tools a restricted command needs
 title: Tool Restriction Safety Pattern
 tripwires:
-- action: ALWAYS apply the minimal-set principle
-  warning: only allow tools the command actually needs
-- action: using this pattern
-  warning: NEVER omit Task from allowed-tools if the command delegates to subagents
-- action: Commands and agents use DIFFERENT allowed-tools syntax
-  warning: check the format section
+  - action: ALWAYS apply the minimal-set principle
+    warning: only allow tools the command actually needs
+  - action: using this pattern
+    warning: NEVER omit Task from allowed-tools if the command delegates to subagents
+  - action: Commands and agents use DIFFERENT allowed-tools syntax
+    warning: check the format section
 ---
 
 # Tool Restriction Safety Pattern

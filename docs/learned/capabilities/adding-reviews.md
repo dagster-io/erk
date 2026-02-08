@@ -1,20 +1,22 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- adding review capabilities
-- creating code review definitions
-- understanding ReviewCapability pattern
+  - adding review capabilities
+  - creating code review definitions
+  - understanding ReviewCapability pattern
 title: Adding Review Capabilities
 tripwires:
-- action: creating a review capability
-  warning: Review definition MUST exist at .github/reviews/{review_name}.md in erk
-    repo root. At runtime, get_bundled_github_dir() resolves this location (src/erk/artifacts/paths.py).
-    Missing source file causes install failure.
-- action: review capability installation fails
-  warning: ReviewCapability has automatic preflight check for code-reviews-system
-    workflow. Install will fail if .github/workflows/code-reviews.yml doesn't exist
-    in target repo. Install code-reviews-system capability first.
+  - action: creating a review capability
+    warning:
+      Review definition MUST exist at .github/reviews/{review_name}.md in erk
+      repo root. At runtime, get_bundled_github_dir() resolves this location (src/erk/artifacts/paths.py).
+      Missing source file causes install failure.
+  - action: review capability installation fails
+    warning:
+      ReviewCapability has automatic preflight check for code-reviews-system
+      workflow. Install will fail if .github/workflows/code-reviews.yml doesn't exist
+      in target repo. Install code-reviews-system capability first.
 ---
 
 # Adding Review Capabilities

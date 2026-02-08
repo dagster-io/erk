@@ -1,19 +1,19 @@
 ---
 audit_result: clean
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- categorizing changelog entries
-- updating CHANGELOG.md
-- running /local:changelog-update command
-- deciding whether a commit is user-facing
+  - categorizing changelog entries
+  - updating CHANGELOG.md
+  - running /local:changelog-update command
+  - deciding whether a commit is user-facing
 title: Changelog Categorization Rules
 tripwires:
-- action: using this pattern
-  warning: NEVER categorize internal refactors as Major Changes—they must be user-visible
-- action: using this pattern
-  warning: ALWAYS filter .claude/commands/local/* changes (developer-only)
-- action: using this pattern
-  warning: NEVER expose implementation details in changelog entries
+  - action: using this pattern
+    warning: NEVER categorize internal refactors as Major Changes—they must be user-visible
+  - action: using this pattern
+    warning: ALWAYS filter .claude/commands/local/* changes (developer-only)
+  - action: using this pattern
+    warning: NEVER expose implementation details in changelog entries
 ---
 
 # Changelog Categorization Rules
