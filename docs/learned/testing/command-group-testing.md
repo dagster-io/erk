@@ -30,9 +30,9 @@ The only remaining use is `erk init`, where it works because the default action 
 
 Every group with `invoke_without_command=True` requires tests for both invocation paths:
 
-| Path           | Invocation shape               | What to verify                                                           |
-| -------------- | ------------------------------ | ------------------------------------------------------------------------ |
-| **Default**    | `["group-name", "--flag"]`     | Group function runs when `ctx.invoked_subcommand is None`                |
+| Path | Invocation shape | What to verify |
+|------|-----------------|----------------|
+| **Default** | `["group-name", "--flag"]` | Group function runs when `ctx.invoked_subcommand is None` |
 | **Subcommand** | `["group-name", "sub", "arg"]` | Subcommand takes over, group function is skipped or acts as pass-through |
 
 Missing either path is a silent coverage gap — Click handles the routing, so the untested path won't fail loudly until production.
@@ -53,12 +53,12 @@ When this matters: if a group has options that should affect subcommand behavior
 
 Different invocation paths often need different fake dependencies. The group's default path and its subcommands may use entirely different gateways:
 
-| If path uses...         | Provide in `ErkContext.for_test()`                          |
-| ----------------------- | ----------------------------------------------------------- |
-| External tool execution | `prompt_executor=FakePromptExecutor()`                      |
-| GitHub API access       | `github=FakeGitHub()` or `github_issues=FakeGitHubIssues()` |
-| Git operations          | `git=FakeGit(...)`                                          |
-| Filesystem state        | `cwd=tmp_path` with pre-created directory structure         |
+| If path uses... | Provide in `ErkContext.for_test()` |
+|-----------------|-----------------------------------|
+| External tool execution | `prompt_executor=FakePromptExecutor()` |
+| GitHub API access | `github=FakeGitHub()` or `github_issues=FakeGitHubIssues()` |
+| Git operations | `git=FakeGit(...)` |
+| Filesystem state | `cwd=tmp_path` with pre-created directory structure |
 
 Providing the wrong fake for a path produces confusing errors. Check what gateway each path actually calls before writing the test.
 

@@ -19,20 +19,20 @@ This is cross-cutting because the rule affects all Python files, the re-export e
 
 ## The Distinction
 
-| Pattern              | Example                                        | Meaning                       | Allowed?   |
-| -------------------- | ---------------------------------------------- | ----------------------------- | ---------- |
-| Standard import      | `import foo`                                   | Normal usage                  | Yes        |
-| Named import         | `from foo import Bar`                          | Normal usage                  | Yes        |
-| Re-export marker     | `from .internal import Widget as Widget`       | Explicit public API re-export | Yes        |
-| Collision resolution | `from datetime import datetime as dt_datetime` | Two modules export same name  | Yes (rare) |
-| Gratuitous alias     | `import foo as f`                              | Shorthand for convenience     | **No**     |
-| Convention alias     | `import pandas as pd`                          | Common but forbidden in erk   | **No**     |
+| Pattern | Example | Meaning | Allowed? |
+|---------|---------|---------|----------|
+| Standard import | `import foo` | Normal usage | Yes |
+| Named import | `from foo import Bar` | Normal usage | Yes |
+| Re-export marker | `from .internal import Widget as Widget` | Explicit public API re-export | Yes |
+| Collision resolution | `from datetime import datetime as dt_datetime` | Two modules export same name | Yes (rare) |
+| Gratuitous alias | `import foo as f` | Shorthand for convenience | **No** |
+| Convention alias | `import pandas as pd` | Common but forbidden in erk | **No** |
 
 The critical detection challenge: `import X as X` and `import X as Y` differ only in whether the alias matches the original name. A naive "flag everything with `as`" approach produces false positives on re-exports. A regex negative lookahead (`(?!\1\b)`) or AST-based comparison handles this correctly.
 
 ## Why Not Use Ruff/Flake8?
 
-Ruff's `ICN` (import conventions) rules enforce _specific_ alias conventions (e.g., requiring `import pandas as pd`), which is the opposite of erk's goal. No standard linter rule maps to "reject all aliases except identity re-exports." Enforcement currently relies on agent awareness via the dignified-python skill and code review rather than automated tooling.
+Ruff's `ICN` (import conventions) rules enforce *specific* alias conventions (e.g., requiring `import pandas as pd`), which is the opposite of erk's goal. No standard linter rule maps to "reject all aliases except identity re-exports." Enforcement currently relies on agent awareness via the dignified-python skill and code review rather than automated tooling.
 
 ## The One Exception
 
