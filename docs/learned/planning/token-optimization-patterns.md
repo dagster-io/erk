@@ -66,22 +66,22 @@ The output contract is specified in `objective-summary-format.md`, which defines
 
 ## Decision Framework: Which Pattern to Use
 
-| Condition | Pattern | Why |
-| --- | --- | --- |
-| N documents, each analyzed independently | Parallel delegation | Parallelism + O(1) parent context |
-| Single multi-step fetch-parse pipeline | Single-agent delegation | Reduces parent turns and token waste |
-| Documents are small (<500 tokens each) | Fetch in parent | Delegation overhead exceeds savings |
-| Parent needs full content for synthesis | Fetch in parent | Summaries lose necessary detail |
-| Sequential dependencies between documents | Sequential delegation | Can't parallelize, but still avoid parent bloat |
-| Child agents need to communicate | Rethink architecture | Agent-to-agent communication isn't supported |
+| Condition                                 | Pattern                 | Why                                             |
+| ----------------------------------------- | ----------------------- | ----------------------------------------------- |
+| N documents, each analyzed independently  | Parallel delegation     | Parallelism + O(1) parent context               |
+| Single multi-step fetch-parse pipeline    | Single-agent delegation | Reduces parent turns and token waste            |
+| Documents are small (<500 tokens each)    | Fetch in parent         | Delegation overhead exceeds savings             |
+| Parent needs full content for synthesis   | Fetch in parent         | Summaries lose necessary detail                 |
+| Sequential dependencies between documents | Sequential delegation   | Can't parallelize, but still avoid parent bloat |
+| Child agents need to communicate          | Rethink architecture    | Agent-to-agent communication isn't supported    |
 
 ## Model Selection for Delegated Work
 
-| Work type | Model | Rationale |
-| --- | --- | --- |
-| Fetch, parse, format (mechanical) | haiku | Sufficient capability, lowest cost |
-| Codebase investigation, analysis | Default (sonnet) | Needs reasoning for status assessment |
-| Plan synthesis, creative decisions | Parent agent | Highest-quality reasoning required |
+| Work type                          | Model            | Rationale                             |
+| ---------------------------------- | ---------------- | ------------------------------------- |
+| Fetch, parse, format (mechanical)  | haiku            | Sufficient capability, lowest cost    |
+| Codebase investigation, analysis   | Default (sonnet) | Needs reasoning for status assessment |
+| Plan synthesis, creative decisions | Parent agent     | Highest-quality reasoning required    |
 
 **Anti-pattern**: Using opus or sonnet for data fetching and formatting. The `/erk:objective-next-plan` command explicitly uses haiku for this reason — the work is mechanical and doesn't benefit from more capable models.
 
