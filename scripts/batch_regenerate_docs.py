@@ -36,6 +36,11 @@ class DocResult:
     succeeded: bool
     failed_step: str  # "" if succeeded, "regen" or "audit" if failed
     elapsed_seconds: int
+    regen_seconds: int
+    audit_seconds: int
+    lines_before: int
+    lines_after_regen: int
+    lines_after_audit: int
 
 
 def load_state(path: Path) -> dict[str, dict[str, str | int]]:
@@ -77,6 +82,21 @@ needed but keep the same fields
 7. Save the rewritten document to the same path
 
 Do NOT change the document's topic or scope. Regenerate it in-place with higher quality content."""
+
+
+def count_lines(path: str) -> int:
+    """Return the number of lines in a file, or 0 if it doesn't exist."""
+    p = Path(path)
+    if not p.exists():
+        return 0
+    return len(p.read_text().splitlines())
+
+
+def format_line_delta(before: int, after: int) -> str:
+    """Format a line-count change as e.g. '42 -> 35 (-7)' or '42 -> 50 (+8)'."""
+    delta = after - before
+    sign = "+" if delta > 0 else ""
+    return f"{before} -> {after} ({sign}{delta})"
 
 
 def discover_docs() -> list[str]:
@@ -157,6 +177,30 @@ def run_claude(
     return result.returncode
 
 
+def _failed_result(
+    *,
+    doc: str,
+    step: str,
+    start: float,
+    regen_seconds: int,
+    lines_before: int,
+    lines_after_regen: int,
+) -> DocResult:
+    """Build a DocResult for a failed step."""
+    elapsed = int(time.monotonic() - start)
+    return DocResult(
+        path=doc,
+        succeeded=False,
+        failed_step=step,
+        elapsed_seconds=elapsed,
+        regen_seconds=regen_seconds,
+        audit_seconds=0,
+        lines_before=lines_before,
+        lines_after_regen=lines_after_regen,
+        lines_after_audit=lines_after_regen,
+    )
+
+
 def process_doc(
     *,
     doc: str,
@@ -168,12 +212,14 @@ def process_doc(
     """Process a single doc: regenerate then audit. Returns the outcome."""
     sanitized = doc.replace("/", "-")
     start = time.monotonic()
+    lines_before = count_lines(doc)
 
     # Step 1: Regenerate
     regen_prompt = build_regen_prompt(doc_path=doc)
     regen_log = log_dir / f"{sanitized}-regen.log"
 
-    print("  Regenerating...")
+    print(f"  Regenerating ({regen_model})... ", end="", flush=True)
+    regen_start = time.monotonic()
     try:
         regen_exit = run_claude(
             prompt=regen_prompt,
@@ -182,20 +228,30 @@ def process_doc(
             log_path=regen_log,
         )
     except subprocess.TimeoutExpired:
-        elapsed = int(time.monotonic() - start)
-        print(f"  FAILED (regeneration timed out after {timeout}s)")
-        return DocResult(path=doc, succeeded=False, failed_step="regen", elapsed_seconds=elapsed)
+        print(f"TIMEOUT after {timeout}s")
+        return _failed_result(
+            doc=doc, step="regen", start=start,
+            regen_seconds=timeout, lines_before=lines_before, lines_after_regen=lines_before,
+        )
+    regen_secs = int(time.monotonic() - regen_start)
+    lines_after_regen = count_lines(doc)
 
     if regen_exit != 0:
-        elapsed = int(time.monotonic() - start)
-        print(f"  FAILED (regeneration exit code: {regen_exit})")
-        return DocResult(path=doc, succeeded=False, failed_step="regen", elapsed_seconds=elapsed)
+        print(f"FAILED (exit {regen_exit}) [{regen_secs}s]")
+        return _failed_result(
+            doc=doc, step="regen", start=start,
+            regen_seconds=regen_secs, lines_before=lines_before,
+            lines_after_regen=lines_after_regen,
+        )
+
+    print(f"done [{regen_secs}s, lines {format_line_delta(lines_before, lines_after_regen)}]")
 
     # Step 2: Audit
     audit_log = log_dir / f"{sanitized}-audit.log"
     audit_prompt = f"/local:audit-doc {doc} --auto-apply"
 
-    print("  Auditing...")
+    print(f"  Auditing ({audit_model})... ", end="", flush=True)
+    audit_start = time.monotonic()
     try:
         audit_exit = run_claude(
             prompt=audit_prompt,
@@ -204,18 +260,36 @@ def process_doc(
             log_path=audit_log,
         )
     except subprocess.TimeoutExpired:
+        print(f"TIMEOUT after {timeout}s")
         elapsed = int(time.monotonic() - start)
-        print(f"  FAILED (audit timed out after {timeout}s)")
-        return DocResult(path=doc, succeeded=False, failed_step="audit", elapsed_seconds=elapsed)
+        return DocResult(
+            path=doc, succeeded=False, failed_step="audit",
+            elapsed_seconds=elapsed, regen_seconds=regen_secs, audit_seconds=timeout,
+            lines_before=lines_before, lines_after_regen=lines_after_regen,
+            lines_after_audit=count_lines(doc),
+        )
+    audit_secs = int(time.monotonic() - audit_start)
+    lines_after_audit = count_lines(doc)
 
     elapsed = int(time.monotonic() - start)
 
     if audit_exit != 0:
-        print(f"  FAILED (audit exit code: {audit_exit})")
-        return DocResult(path=doc, succeeded=False, failed_step="audit", elapsed_seconds=elapsed)
+        print(f"FAILED (exit {audit_exit}) [{audit_secs}s]")
+        return DocResult(
+            path=doc, succeeded=False, failed_step="audit",
+            elapsed_seconds=elapsed, regen_seconds=regen_secs, audit_seconds=audit_secs,
+            lines_before=lines_before, lines_after_regen=lines_after_regen,
+            lines_after_audit=lines_after_audit,
+        )
 
-    print(f"  OK ({elapsed}s)")
-    return DocResult(path=doc, succeeded=True, failed_step="", elapsed_seconds=elapsed)
+    print(f"done [{audit_secs}s, lines {format_line_delta(lines_after_regen, lines_after_audit)}]")
+    print(f"  Total: {elapsed}s, net lines {format_line_delta(lines_before, lines_after_audit)}")
+    return DocResult(
+        path=doc, succeeded=True, failed_step="",
+        elapsed_seconds=elapsed, regen_seconds=regen_secs, audit_seconds=audit_secs,
+        lines_before=lines_before, lines_after_regen=lines_after_regen,
+        lines_after_audit=lines_after_audit,
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -360,23 +434,41 @@ def main() -> None:
         # Write to summary log
         summary_path = log_dir / "summary.log"
         status = "OK" if result.succeeded else f"FAILED ({result.failed_step})"
+        line_summary = (
+            f"lines {result.lines_before}->{result.lines_after_regen}->{result.lines_after_audit}"
+        )
+        timing = (
+            f"regen {result.regen_seconds}s + audit {result.audit_seconds}s"
+            f" = {result.elapsed_seconds}s"
+        )
         with summary_path.open("a") as f:
-            f.write(f"{result.path} | {status} | {result.elapsed_seconds}s\n")
+            f.write(f"{result.path} | {status} | {timing} | {line_summary}\n")
 
     # Final summary
     total_elapsed = int(time.monotonic() - start_time)
     succeeded = sum(1 for r in results if r.succeeded)
     failed_results = [r for r in results if not r.succeeded]
 
+    total_regen_secs = sum(r.regen_seconds for r in results)
+    total_audit_secs = sum(r.audit_seconds for r in results)
+    total_lines_before = sum(r.lines_before for r in results)
+    total_lines_after = sum(r.lines_after_audit for r in results)
+    net_lines = total_lines_after - total_lines_before
+    net_sign = "+" if net_lines > 0 else ""
+
     print()
     print("==========================================")
     print("Batch Regeneration Complete")
     print("==========================================")
-    print(f"Total docs:  {len(docs)}")
-    print(f"Succeeded:   {succeeded}")
-    print(f"Failed:      {len(failed_results)}")
-    print(f"Elapsed:     {total_elapsed}s")
-    print(f"Logs:        {log_dir}/")
+    print(f"Total docs:    {len(docs)}")
+    print(f"Succeeded:     {succeeded}")
+    print(f"Failed:        {len(failed_results)}")
+    print(f"Wall clock:    {total_elapsed}s")
+    print(f"Regen time:    {total_regen_secs}s total")
+    print(f"Audit time:    {total_audit_secs}s total")
+    print(f"Lines before:  {total_lines_before}")
+    print(f"Lines after:   {total_lines_after} ({net_sign}{net_lines})")
+    print(f"Logs:          {log_dir}/")
     print("==========================================")
 
     if failed_results:
