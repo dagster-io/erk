@@ -64,7 +64,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before editing or deleting .impl/ folder during implementation** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/plan.md is immutable during implementation. Never edit it. Never delete .impl/ folder - it must be preserved for user review. Only .worker-impl/ should be auto-deleted.
 
-
 **CRITICAL: Before expecting status to auto-update after manual PR edits** → Read [Update Roadmap Step Command](commands/update-roadmap-step.md) first. Only the update-roadmap-step command writes computed status. Manual edits require explicitly setting status to '-' to enable inference on next parse.
 
 **CRITICAL: Before filtering session sources without logging which sessions were skipped and why** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering makes debugging impossible. Log to stderr when skipping sessions, include the reason (empty/warmup/filtered).
