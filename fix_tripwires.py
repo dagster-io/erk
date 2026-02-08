@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Fix tripwires format in frontmatter from string list to object list."""
 
+import json
 import re
 import sys
-import json
 from pathlib import Path
 
 
@@ -23,14 +23,14 @@ def fix_tripwires_format(content: str) -> str:
             warning: "Another tripwire"
     """
     # Pattern to match tripwires section with string items
-    pattern = r'(tripwires:\s*\n)((?:\s*-\s*[^\n]+\n?)+)'
+    pattern = r"(tripwires:\s*\n)((?:\s*-\s*[^\n]+\n?)+)"
 
     def replace_tripwires(match):
         header = match.group(1)
         items_section = match.group(2)
 
         # Extract individual tripwire items
-        item_pattern = r'\s*-\s*([^\n]+)'
+        item_pattern = r"\s*-\s*([^\n]+)"
         items = re.findall(item_pattern, items_section)
 
         if not items:
@@ -102,7 +102,7 @@ def fix_tripwires_format(content: str) -> str:
             # Use JSON encoding to properly escape the strings, then convert to YAML format
             action_escaped = json.dumps(action)
             warning_escaped = json.dumps(warning)
-            new_items.append(f'  - action: {action_escaped}\n    warning: {warning_escaped}')
+            new_items.append(f"  - action: {action_escaped}\n    warning: {warning_escaped}")
 
         return header + "\n".join(new_items) + "\n"
 

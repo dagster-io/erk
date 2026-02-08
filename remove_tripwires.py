@@ -7,13 +7,13 @@ from pathlib import Path
 
 def remove_tripwires(content: str) -> str:
     """Remove tripwires section from frontmatter."""
-    lines = content.split('\n')
+    lines = content.split("\n")
     in_frontmatter = False
     in_tripwires = False
     result = []
 
     for line in lines:
-        if line.strip() == '---':
+        if line.strip() == "---":
             if not in_frontmatter:
                 in_frontmatter = True
                 result.append(line)
@@ -22,12 +22,12 @@ def remove_tripwires(content: str) -> str:
                 in_frontmatter = False
                 in_tripwires = False
                 result.append(line)
-        elif in_frontmatter and line.startswith('tripwires:'):
+        elif in_frontmatter and line.startswith("tripwires:"):
             in_tripwires = True
             # Don't add the tripwires: line
         elif in_tripwires:
             # Skip all tripwire content until we hit a non-indented line or end of frontmatter
-            if line.startswith('  ') or line.startswith('\t') or line.strip() == '':
+            if line.startswith("  ") or line.startswith("\t") or line.strip() == "":
                 # Skip this line (it's part of tripwires)
                 continue
             else:
@@ -37,7 +37,7 @@ def remove_tripwires(content: str) -> str:
         else:
             result.append(line)
 
-    return '\n'.join(result)
+    return "\n".join(result)
 
 
 def main():
