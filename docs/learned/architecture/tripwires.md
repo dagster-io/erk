@@ -18,8 +18,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before Detect mode in Phase 0 before any other phases execute** → Read [Phase 0 Detection Pattern](phase-zero-detection-pattern.md) first. Late detection leads to starting wrong mode then discovering the error
 
-**CRITICAL: Before GraphiteBranchManager.create_branch() without explicit checkout** → Read [BranchManager Abstraction](branch-manager-abstraction.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
-
 **CRITICAL: Before Parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
 
 **CRITICAL: Before Rely solely on agent-level enforcement for critical rules** → Read [Defense-in-Depth Enforcement](defense-in-depth-enforcement.md) first. Add skill-level and PR-level enforcement layers. Only workflow/CI enforcement is truly reliable.
@@ -54,13 +52,17 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
 
-**CRITICAL: Before calling ctx.git mutation methods (create_branch, delete_branch, checkout_branch, checkout_detached, create_tracking_branch)** → Read [BranchManager Abstraction](branch-manager-abstraction.md) first. Use ctx.branch_manager instead. Branch mutation methods are in GitBranchOps sub-gateway, accessible only through BranchManager. Query methods (get_current_branch, list_local_branches, etc.) remain on ctx.git.
+**CRITICAL: Before calling create_branch() and assuming you're on the new branch** → Read [BranchManager Abstraction](branch-manager-abstraction.md) first. GraphiteBranchManager.create_branch() restores the original branch after Graphite tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
 
 **CRITICAL: Before calling ctx.git mutation methods (create_branch, delete_branch, checkout_branch, checkout_detached, create_tracking_branch)** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use ctx.branch_manager instead. Branch mutation methods are in GitBranchOps sub-gateway, accessible only through BranchManager. Query methods (get_current_branch, list_local_branches, etc.) remain on ctx.git.
 
-**CRITICAL: Before calling ctx.graphite mutation methods (track_branch, delete_branch, submit_branch)** → Read [BranchManager Abstraction](branch-manager-abstraction.md) first. Use ctx.branch_manager instead. Branch mutation methods are in GraphiteBranchOps sub-gateway, accessible only through BranchManager. Query methods (is_branch_tracked, get_parent_branch, etc.) remain on ctx.graphite.
+**CRITICAL: Before calling ctx.git.branch mutation methods directly (create_branch, delete_branch, checkout_branch, checkout_detached, create_tracking_branch)** → Read [BranchManager Abstraction](branch-manager-abstraction.md) first. Use ctx.branch_manager instead for all user-facing branches. Only use ctx.git.branch directly for ephemeral/placeholder branches that should never be Graphite-tracked. See branch-manager-decision-tree.md.
 
 **CRITICAL: Before calling ctx.graphite mutation methods (track_branch, delete_branch, submit_branch)** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use ctx.branch_manager instead. Branch mutation methods are in GraphiteBranchOps sub-gateway, accessible only through BranchManager. Query methods (is_branch_tracked, get_parent_branch, etc.) remain on ctx.graphite.
+
+**CRITICAL: Before calling ctx.graphite_branch_ops mutation methods directly (track_branch, delete_branch, submit_branch)** → Read [BranchManager Abstraction](branch-manager-abstraction.md) first. Use ctx.branch_manager instead. GraphiteBranchOps is a sub-gateway that BranchManager delegates to internally. Direct calls bypass the dual-mode abstraction.
+
+**CRITICAL: Before calling delete_branch() without passing the force parameter through** → Read [BranchManager Abstraction](branch-manager-abstraction.md) first. The force flag controls -D (force) vs -d (safe) git delete. Dropping it silently changes behavior. Always flow force=force through all layers.
 
 **CRITICAL: Before calling execute_gh_command() instead of execute_gh_command_with_retry() for network-sensitive operations** → Read [GitHub API Retry Mechanism](github-api-retry-mechanism.md) first. Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability.
 
@@ -102,11 +104,15 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before deleting a gateway after consolidating into another** → Read [Gateway Removal Pattern](gateway-removal-pattern.md) first. Follow complete removal checklist: verify no references, delete all 5 layers, clean up ErkContext, update docs, run full test suite.
 
-**CRITICAL: Before designing a new hook or reminder system** → Read [Three-Tier Context Injection Architecture](context-injection-tiers.md) first. Consider the three-tier context architecture. Read docs/learned/architecture/context-injection-tiers.md first.
+**CRITICAL: Before designing a new hook or reminder system** → Read [Context Injection Architecture](context-injection-tiers.md) first. Consider the three-tier context architecture and consolidation patterns. Read docs/learned/architecture/context-injection-tiers.md first.
 
 **CRITICAL: Before designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
 
 **CRITICAL: Before detecting current worktree using path comparisons on cwd** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use git.get_repository_root(cwd) to get the worktree root, then match exactly against known paths. Path comparisons with .exists()/.resolve()/is_relative_to() are fragile.
+
+**CRITICAL: Before duplicating environment setup in remote commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. build_codespace_ssh_command() bootstraps the environment - don't duplicate setup
+
+**CRITICAL: Before executing remote commands without starting codespace** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Always start_codespace() before executing remote commands
 
 **CRITICAL: Before hand-constructing Plan or PlanRowData with only required fields** → Read [Optional Field Propagation](optional-field-propagation.md) first. Always pass through gateway methods or use dataclasses.replace(). Hand-construction drops optional fields (learn_status, learn_plan_issue, etc.).
 
@@ -142,7 +148,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before passing variables to gh api graphql as JSON blob** → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work.
 
-**CRITICAL: Before reading from or writing to ~/.claude/ paths using Path.home() directly** → Read [ClaudeInstallation Gateway](claude-installation-gateway.md) first. Use ClaudeInstallation gateway instead. All ~/.claude/ filesystem operations should go through this gateway for testability and abstraction.
+**CRITICAL: Before reading from or writing to ~/.claude/ paths using Path.home() directly** → Read [ClaudeInstallation Gateway](claude-installation-gateway.md) first. Use ClaudeInstallation gateway instead. All ~/.claude/ filesystem operations must go through this gateway for testability and storage abstraction.
 
 **CRITICAL: Before removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
 
@@ -168,6 +174,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using bare subprocess.run with check=True** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
 
+**CRITICAL: Before using bash heredocs for large agent outputs with special characters** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. Prefer the Write tool over bash heredocs for large agent outputs — heredocs fail silently with special characters
+
 **CRITICAL: Before using gh api or gh api graphql to fetch or resolve PR review threads** → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. Load `pr-operations` skill first. Use `erk exec get-pr-review-comments` and `erk exec resolve-review-thread` instead. Raw gh api calls miss thread resolution functionality.
 
 **CRITICAL: Before using gh codespace start** → Read [GitHub CLI Limits](github-cli-limits.md) first. gh codespace start does not exist. Use REST API POST /user/codespaces/{name}/start via gh api instead.
@@ -190,6 +198,10 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code** → Read [Erk Architecture Patterns](erk-architecture.md) first. Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables.
 
+**CRITICAL: Before using run_ssh_command() for interactive commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Interactive commands need exec_ssh_interactive(), not run_ssh_command()
+
 **CRITICAL: Before using subprocess.run with git command outside of a gateway** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations.
+
+**CRITICAL: Before using unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. Never use unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks — bash silently expands them
 
 **CRITICAL: Before writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has >3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
