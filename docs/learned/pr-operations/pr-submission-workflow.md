@@ -11,7 +11,7 @@ tripwires:
   - action: "using gh pr create directly in Python code"
     warning: "The pipeline uses ctx.github.create_pr() (REST API gateway), not gh pr create. The command-level path uses gh CLI directly because it runs in shell context. See pr-submission-workflow.md."
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 ---
 
 # Git-Only PR Submission Path
@@ -22,10 +22,10 @@ Erk has **two distinct implementations** of git-only PR creation, serving differ
 
 The git-only submission path appears in two places because of a fundamental execution context split:
 
-| Path               | Where it lives                           | Execution context         | Tool access                  |
-| ------------------ | ---------------------------------------- | ------------------------- | ---------------------------- |
-| **Command-level**  | `/erk:git-pr-push` Claude command        | Shell (Claude Code agent) | `git`, `gh`, `erk exec` CLIs |
-| **Pipeline-level** | `_core_submit_flow()` in submit pipeline | Python (erk CLI)          | Gateway ABCs, typed results  |
+| Path | Where it lives | Execution context | Tool access |
+| --- | --- | --- | --- |
+| **Command-level** | `/erk:git-pr-push` Claude command | Shell (Claude Code agent) | `git`, `gh`, `erk exec` CLIs |
+| **Pipeline-level** | `_core_submit_flow()` in submit pipeline | Python (erk CLI) | Gateway ABCs, typed results |
 
 <!-- Source: .claude/commands/erk/git-pr-push.md -->
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _core_submit_flow -->
@@ -40,14 +40,14 @@ The git-only submission path appears in two places because of a fundamental exec
 
 Despite doing "the same thing," the paths diverge in important ways:
 
-| Behavior            | Command-level (git-pr-push)          | Pipeline-level (\_core_submit_flow)          |
-| ------------------- | ------------------------------------ | -------------------------------------------- |
-| PR creation API     | `gh pr create` CLI                   | `ctx.github.create_pr()` REST API            |
-| Commit handling     | Preserves all commits                | Squashes via amend in finalize step          |
-| Divergence handling | Suggests manual fix                  | Auto-rebases if behind, errors if diverged   |
-| Existing PR check   | `gh pr list --head` shell query      | `ctx.github.get_pr_for_branch()` typed union |
-| Footer generation   | `erk exec get-pr-body-footer` script | `build_pr_body_footer()` Python call         |
-| Force push          | Never (suggests manual)              | Only with `-f` flag                          |
+| Behavior | Command-level (git-pr-push) | Pipeline-level (_core_submit_flow) |
+| --- | --- | --- |
+| PR creation API | `gh pr create` CLI | `ctx.github.create_pr()` REST API |
+| Commit handling | Preserves all commits | Squashes via amend in finalize step |
+| Divergence handling | Suggests manual fix | Auto-rebases if behind, errors if diverged |
+| Existing PR check | `gh pr list --head` shell query | `ctx.github.get_pr_for_branch()` typed union |
+| Footer generation | `erk exec get-pr-body-footer` script | `build_pr_body_footer()` Python call |
+| Force push | Never (suggests manual) | Only with `-f` flag |
 
 **Why the REST API difference matters:** The pipeline uses `gh api` (REST) instead of `gh pr create` (GraphQL) to preserve GitHub's GraphQL rate limit quota. The command-level path uses `gh pr create` because it's simpler for shell scripting and remote agents don't run enough operations to hit quotas.
 
