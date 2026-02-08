@@ -1,26 +1,19 @@
 ---
-audit_result: edited
-last_audited: "2026-02-08"
-read_when:
-  - creating or updating PRs programmatically in erk
-  - debugging why a duplicate PR or issue was created
-  - fixing erk pr check validation failures
-  - understanding the PR number vs issue number distinction
 title: PR Submission Patterns
+read_when:
+  - "creating or updating PRs programmatically in erk"
+  - "debugging why a duplicate PR or issue was created"
+  - "fixing erk pr check validation failures"
+  - "understanding the PR number vs issue number distinction"
+last_audited: "2026-02-08"
+audit_result: regenerated
 tripwires:
-  - action: using issue number from .impl/issue.json in a checkout footer
-    warning:
-      Checkout footers require the PR number, not the issue number. The issue
-      is the plan; the PR is the implementation. See the PR Number vs Issue Number section.
-  - action: creating a PR without first checking if one already exists for the branch
-    warning:
-      The submit pipeline is idempotent — it checks for existing PRs before creating.
-      If building PR creation outside the pipeline, replicate this check to prevent
-      duplicates.
-  - action: constructing a PR footer manually instead of using build_pr_body_footer()
-    warning:
-      The footer format includes checkout commands and closing references with
-      specific patterns. Use the builder function to ensure validation passes.
+  - action: "using issue number from .impl/issue.json in a checkout footer"
+    warning: "Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section."
+  - action: "creating a PR without first checking if one already exists for the branch"
+    warning: "The submit pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates."
+  - action: "constructing a PR footer manually instead of using build_pr_body_footer()"
+    warning: "The footer format includes checkout commands and closing references with specific patterns. Use the builder function to ensure validation passes."
 ---
 
 # PR Submission Patterns
@@ -60,12 +53,12 @@ See `_core_submit_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py` for th
 
 Agents regularly confuse these two identifiers because both are readily available during submission. The distinction is critical:
 
-| Identifier   | Source                | Used for                   |
-| ------------ | --------------------- | -------------------------- |
-| Issue number | `.impl/issue.json`    | `Closes #N` in PR body     |
-| PR number    | `gh pr create` output | `erk pr checkout N` footer |
+| Identifier   | Source                    | Used for                    |
+| ------------ | ------------------------- | --------------------------- |
+| Issue number | `.impl/issue.json`        | `Closes #N` in PR body      |
+| PR number    | `gh pr create` output     | `erk pr checkout N` footer  |
 
-**Why agents get this wrong:** During plan-based workflows, `.impl/issue.json` is immediately accessible and contains a number. The checkout footer also needs a number. The temptation to use the available number for both purposes is strong — but the checkout footer validator matches the _PR_ number, not the issue number, and `erk pr checkout` only accepts PR numbers.
+**Why agents get this wrong:** During plan-based workflows, `.impl/issue.json` is immediately accessible and contains a number. The checkout footer also needs a number. The temptation to use the available number for both purposes is strong — but the checkout footer validator matches the *PR* number, not the issue number, and `erk pr checkout` only accepts PR numbers.
 
 **The diagnostic signal:** If `erk pr check` reports "PR body missing checkout footer" but the footer visually appears present, the number is probably wrong. Compare the number in the footer against `gh pr view --json number`.
 
