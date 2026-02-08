@@ -6,8 +6,7 @@ read_when:
   - "understanding collateral finding tiers"
   - "debugging unexpected audit verdicts"
 tripwires:
-  - action: "modifying collateral finding categories or auto-apply behavior in audit-doc"
-    warning: "CRITICAL: Read this doc first to understand the conceptual vs mechanical finding distinction"
+  - "CRITICAL: Before modifying collateral finding categories or auto-apply behavior in audit-doc"
 last_audited: "2026-02-08 11:48 PT"
 audit_result: clean
 ---
