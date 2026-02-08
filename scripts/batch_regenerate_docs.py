@@ -381,7 +381,7 @@ def parse_args() -> argparse.Namespace:
         "--output-suffix",
         default="",
         help="Suffix to insert before .md extension (e.g. '-v2' writes foo-v2.md), "
-             "leaving originals untouched",
+        "leaving originals untouched",
     )
     return parser.parse_args()
 
