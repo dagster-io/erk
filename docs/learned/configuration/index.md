@@ -5,4 +5,3 @@
 
 - **[config-layers.md](config-layers.md)** — understanding the configuration system, deciding where to put a configuration setting, debugging why a config value isn't taking effect, working with LoadedConfig or merge_configs
 - **[issues-repo.md](issues-repo.md)** — configuring plans to be stored in a separate repository, setting up plans.repo in config.toml
-- **[schema-driven-config.md](schema-driven-config.md)** — adding new configuration options to erk, understanding config validation, working with config commands

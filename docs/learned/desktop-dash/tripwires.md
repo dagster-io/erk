@@ -16,7 +16,9 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding IPC handler without updating all 4 locations** → Read [erkdesk IPC Action Pattern](ipc-actions.md) first. Every IPC handler requires updates in 4 files: main/index.ts (handler), main/preload.ts (bridge), types/erkdesk.d.ts (types), tests (mock). Missing any location breaks type safety or tests.
 
-**CRITICAL: Before adding a new action without updating ACTIONS array** → Read [erkdesk Action Toolbar](action-toolbar.md) first. ACTIONS is exported and can be reused in context menus. Add new ActionDef entries to the ACTIONS array, not as separate one-offs.
+**CRITICAL: Before adding a new action outside the ACTIONS array** → Read [erkdesk Action Toolbar](action-toolbar.md) first. All actions must be entries in the ACTIONS array in ActionToolbar.tsx. Don't create standalone action definitions elsewhere.
+
+**CRITICAL: Before adding a new action without a test case** → Read [erkdesk Action Toolbar](action-toolbar.md) first. ActionToolbar.test.tsx tests every action's availability predicate AND generated command. New actions need both.
 
 **CRITICAL: Before breaking the auto-refresh selection preservation logic** → Read [erkdesk App Component Architecture](app-architecture.md) first. Auto-refresh preserves selection by issue_number, not by array index. Always use issue_number to find the new index after refresh.
 
@@ -32,7 +34,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before implementing Electron IPC without context bridge** → Read [erkdesk Security Architecture](security.md) first. NEVER expose Node.js APIs directly to renderer. Use context bridge with preload script. Set contextIsolation: true, nodeIntegration: false.
 
-**CRITICAL: Before implementing blocking action execution** → Read [erkdesk Action Toolbar](action-toolbar.md) first. Actions use streaming execution (startStreamingAction), not blocking. Never await or block the UI thread on action completion.
+**CRITICAL: Before implementing blocking action execution** → Read [erkdesk Action Toolbar](action-toolbar.md) first. Actions use streaming execution via IPC (startStreamingAction). Never await or block the UI thread on action completion. App.tsx owns the streaming lifecycle.
 
 **CRITICAL: Before loading URLs on every render without deduplication** → Read [Erkdesk Auto-Refresh Patterns](erkdesk-auto-refresh-patterns.md) first. Use useRef to track lastLoadedUrl. Compare url !== lastLoadedUrlRef.current before calling loadWebViewURL() to prevent redundant IPC calls.
 
