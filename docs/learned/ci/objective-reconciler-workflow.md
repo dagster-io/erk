@@ -1,133 +1,175 @@
 ---
 title: Objective Reconciler Workflow
 read_when:
-  - "understanding automated objective advancement"
-  - "configuring objective reconciler GitHub Action"
-  - "debugging objective auto-advance issues"
+  - understanding automated objective advancement
+  - configuring objective reconciler GitHub Action
+  - debugging objective reconciliation
+tripwires:
+  - action: "triggering objective reconciliation"
+    warning: "The reconcile command launches Claude interactively—it does NOT perform autonomous batch processing. Review actual workflow implementation before assuming sweep behavior."
 ---
 
 # Objective Reconciler Workflow
 
-This document describes the planned GitHub Actions workflow for automatically advancing objectives.
+Why reconciliation exists: objectives track multi-PR goals with roadmap tables. When a PR lands, the objective's next pending step should get a plan. Manual creation doesn't scale; automatic reconciliation bridges objective roadmaps to plan generation.
 
-## Overview
+## Two Reconciliation Modes
 
-The objective reconciler workflow:
+Erk provides two distinct workflows with different triggering and scope:
 
-1. Runs on manual dispatch (initially)
-2. Analyzes objectives with `auto-advance` label
-3. Creates plans for pending steps
-4. Reports results back to the objective issue
+### Single-Objective Mode
 
-## Workflow Configuration
+**Workflow:** `objective-reconcile.yml`
+**Trigger:** `erk launch objective-reconcile --objective <N>`
 
-### Trigger
+<!-- Source: .github/workflows/objective-reconcile.yml -->
 
-Manual dispatch only (for initial rollout):
+See `.github/workflows/objective-reconcile.yml` for workflow structure. The workflow dispatches with `distinct_id` for run discovery.
 
-```yaml
-on:
-  workflow_dispatch:
-    inputs:
-      dry_run:
-        description: "Preview actions without executing"
-        type: boolean
-        default: false
-      objective:
-        description: "Specific objective number (optional)"
-        type: string
-        required: false
-```
+<!-- Source: src/erk/cli/commands/objective/reconcile_cmd.py, reconcile_objectives -->
 
-### Input Parameters
+See `reconcile_objectives()` in `src/erk/cli/commands/objective/reconcile_cmd.py` for CLI implementation. Despite the plural name, it requires a single objective number and launches Claude interactively with `/erk:objective-next-plan`.
 
-| Parameter   | Type    | Required | Description                         |
-| ----------- | ------- | -------- | ----------------------------------- |
-| `dry_run`   | boolean | No       | Preview mode - no mutations         |
-| `objective` | string  | No       | Target specific objective by number |
+**What actually happens:**
 
-When `objective` is not provided, the workflow processes all objectives with `auto-advance` label.
+1. CLI validates objective exists and has `erk-objective` label
+2. Launches Claude Code in plan mode with full codebase access
+3. Claude executes the `/erk:objective-next-plan` command interactively
+4. Agent creates plan through normal planning workflow
 
-### Secret Requirements
+This is NOT autonomous batch processing—it's **human-in-the-loop plan creation via remote Claude session**.
 
-| Secret              | Purpose                           |
-| ------------------- | --------------------------------- |
-| `ERK_QUEUE_GH_PAT`  | GitHub token for issue operations |
-| `ANTHROPIC_API_KEY` | API key for plan generation       |
+### Sweep Mode (Disabled by Default)
 
-The `ERK_QUEUE_GH_PAT` needs permissions to:
+**Workflow:** `objective-reconciler.yml` (plural)
+**Trigger:** Manual dispatch or scheduled cron (currently commented out)
 
-- Read/write issues
-- Create/update comments
-- Add/remove labels
+<!-- Source: .github/workflows/objective-reconciler.yml -->
+
+See `.github/workflows/objective-reconciler.yml:15-17` for the disabled cron schedule. Uncomment to enable 15-minute reconciliation sweeps.
+
+**Design intent:** Query all objectives with `auto-advance` label, reconcile each in sequence.
+
+**Current state:** The workflow file exists but the `auto-advance` label is not used anywhere in the codebase. Grep finds zero references in `src/erk/` to this label. The sweep mode is infrastructure without implementation.
+
+## Why Reconciliation Launches Claude Interactively
+
+The `/erk:objective-next-plan` command requires context-dependent decisions:
+
+1. **Step selection** — Multiple pending steps may exist; agent asks user which to plan
+2. **Codebase exploration** — Agent needs to grep, read files, understand current architecture
+3. **Plan quality** — Interactive planning produces better plans than templated generation
+
+Autonomous batch reconciliation would require either:
+
+- Pre-selecting the next step (which step? Linear progression ignores dependencies)
+- Skipping exploration (plans lack context about current codebase state)
+- Auto-approving plans (quality drops without review)
+
+The interactive approach trades automation speed for plan quality.
 
 ## Concurrency Control
 
-```yaml
-concurrency:
-  group: objective-reconciler-${{ github.event.inputs.objective || 'all' }}
-  cancel-in-progress: false
-```
+<!-- Source: .github/workflows/objective-reconcile.yml -->
 
-When targeting a specific objective, only one reconciler can run for that objective. When processing all objectives, a global lock prevents concurrent runs.
+Single-objective mode uses `group: reconcile-objective-${{ github.event.inputs.objective }}` to prevent concurrent reconciliation of the same objective. Different objectives can reconcile in parallel.
 
-## Cost Model
+<!-- Source: .github/workflows/objective-reconciler.yml -->
 
-Estimated cost per objective reconciliation:
+Sweep mode uses `group: reconcile-objectives-sweep` with `cancel-in-progress: false` to serialize all sweeps globally. This prevents multiple sweeps from racing to create plans for the same objectives.
 
-| Operation         | Approximate Cost |
-| ----------------- | ---------------- |
-| Issue analysis    | ~$0.001          |
-| Plan generation   | ~$0.002          |
-| **Total per run** | ~$0.003          |
+## Secret Requirements
 
-Costs scale linearly with number of objectives processed.
+Both workflows require:
 
-## Workflow Steps
+| Secret                    | Purpose                              |
+| ------------------------- | ------------------------------------ |
+| `ERK_QUEUE_GH_PAT`        | GitHub token for issue operations    |
+| `ANTHROPIC_API_KEY`       | Claude API access                    |
+| `CLAUDE_CODE_OAUTH_TOKEN` | OAuth token for Claude Code sessions |
 
-1. **Checkout**: Get repository code
-2. **Setup Python**: Install dependencies
-3. **Fetch objectives**: Query for `auto-advance` objectives
-4. **Analyze each objective**:
-   - Determine current step
-   - Check if step has associated plan/PR
-   - Decide next action
-5. **Execute actions** (if not dry-run):
-   - Create plans for pending steps
-   - Update objective comments with status
-6. **Report results**: Output summary
+<!-- Source: .github/workflows/objective-reconciler.yml -->
 
-## Integration Points
+See `.github/workflows/objective-reconciler.yml:41-48` for the setup action that consumes these secrets.
 
-### CLI Command
+## Cost Model Reality
 
-The workflow invokes `erk objective reconcile`:
+The original document estimated ~$0.003 per objective. This is wrong for two reasons:
 
-```bash
-erk objective reconcile \
-  ${DRY_RUN:+--dry-run} \
-  ${OBJECTIVE:+$OBJECTIVE}
-```
+1. **Interactive sessions cost more** — Claude explores the codebase, reads multiple files, plans iteratively. A single reconciliation can consume 50K+ tokens depending on codebase complexity.
 
-### Label Dependencies
+2. **No batching** — Each objective launches a separate Claude session. 10 objectives = 10 sessions = 10× the cost.
 
-| Label           | Meaning                          |
-| --------------- | -------------------------------- |
-| `erk-objective` | Identifies issue as an objective |
-| `auto-advance`  | Enables automatic reconciliation |
-| `erk-plan`      | Applied to generated plan issues |
+Actual cost per reconciliation: **$0.01-0.05** depending on codebase size and plan complexity.
 
-## Future Enhancements
+Sweep mode running every 15 minutes (96 runs/day) with 5 active objectives = 480 sessions/day = **$4.80-24.00/day**. This is why the cron schedule is disabled by default.
 
-Planned improvements for later phases:
+## Label Dependency Gap
 
-- **Scheduled runs**: Cron-based automatic reconciliation
-- **Event triggers**: Reconcile on PR merge
-- **Batch processing**: Parallel objective analysis
-- **Cost controls**: Daily/weekly budget limits
+The workflows reference `auto-advance` label as the selector for sweep mode, but:
+
+- No code creates this label
+- No documentation explains when to apply it
+- No validation prevents applying it to non-objectives
+
+The label exists in workflow YAML but not in the label ontology. This is a **missing implementation piece**, not just documentation.
+
+To enable sweep mode:
+
+1. Define `auto-advance` label in GitHub repo settings
+2. Document criteria for applying the label (all objectives? specific phases?)
+3. Update objective creation workflow to optionally add the label
+4. Test sweep mode with a single auto-advance objective before enabling cron
+
+## Relationship to `erk launch` Command
+
+<!-- Source: src/erk/cli/commands/launch_cmd.py, _trigger_objective_reconcile -->
+
+The `erk launch objective-reconcile` command is a thin wrapper around GitHub's workflow dispatch API. See `_trigger_objective_reconcile()` in `src/erk/cli/commands/launch_cmd.py:160-191` for implementation.
+
+The wrapper:
+
+1. Validates objective exists
+2. Builds workflow inputs (`objective`, `dry_run`)
+3. Triggers workflow via GitHub API
+4. Returns workflow run URL
+
+No local reconciliation logic—purely a remote trigger.
+
+## Dry-Run Mode
+
+Both workflows support `--dry-run` flag, but it's **not implemented in the actual reconcile command**. The flag passes through to the workflow but has no effect because `reconcile_cmd.py` doesn't check for it.
+
+To implement dry-run:
+
+1. Add `--dry-run` flag to `reconcile_objectives()` CLI command
+2. Pass flag to interactive agent config
+3. Modify `/erk:objective-next-plan` to skip `EnterPlanMode` in dry-run
+4. Print "DRY RUN: Would create plan for step X" instead
+
+Currently, `--dry-run` is **documentation-driven fiction**.
+
+## When to Use Which Mode
+
+| Scenario                                         | Use                                              | Why                                               |
+| ------------------------------------------------ | ------------------------------------------------ | ------------------------------------------------- |
+| Manually create plan for specific objective step | `erk launch objective-reconcile --objective <N>` | Human reviews step selection and plan             |
+| Want autonomous reconciliation                   | Don't use either mode                            | Not implemented; interactive sessions don't batch |
+| Testing reconciliation workflow                  | Single-objective mode with `--dry-run`           | No-op currently; would need implementation        |
+
+## Future Enhancement Path
+
+To achieve true autonomous reconciliation:
+
+1. **Step selection policy** — Define algorithm: next pending step, highest priority, unblocked dependencies
+2. **Plan template system** — Generate plans from roadmap step descriptions without full exploration
+3. **Quality gates** — Auto-approve simple plans, flag complex ones for review
+4. **Cost controls** — Daily budget limits, max concurrent reconciliations
+5. **Dry-run implementation** — Actually implement the flag
+
+Until then, reconciliation is **interactive planning with GitHub Actions glue**, not autonomous sweep.
 
 ## Related Documentation
 
-- [Objective Commands](../cli/objective-commands.md) - CLI interface
-- [Plan Lifecycle](../planning/lifecycle.md) - How plans are created
-- [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) - Workflow best practices
+- [Objective Commands](../cli/objective-commands.md) — CLI interface for objective management
+- [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) — Workflow composition patterns

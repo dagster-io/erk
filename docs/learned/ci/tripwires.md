@@ -32,7 +32,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before attempting to use prettier on Python files** → Read [Prettier Formatting for Claude Commands](claude-commands-prettier.md) first. Prettier only formats markdown in erk. Python uses ruff format. See formatter-tools.md for the complete matrix.
 
-**CRITICAL: Before calling create_commit_status() immediately after git push** → Read [GitHub Commit Indexing Timing](github-commit-indexing-timing.md) first. GitHub's commit indexing has a race condition. Commits may not be immediately available for status updates after push. Consider adding retry logic with exponential backoff.
+**CRITICAL: Before calling create_commit_status() immediately after git push** → Read [GitHub Commit Indexing Timing](github-commit-indexing-timing.md) first. GitHub's commit indexing has a race condition. Commits may not be immediately available for status updates after push. Use execute_gh_command_with_retry() wrapper, not direct subprocess calls.
 
 **CRITICAL: Before composing conditions across multiple GitHub Actions workflow steps** → Read [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) first. Verify each `steps.step_id.outputs.key` reference exists and matches actual step IDs.
 
@@ -59,6 +59,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before running prettier programmatically on content containing underscore emphasis** → Read [Formatter Tools](formatter-tools.md) first. Prettier converts `__text__` to `**text**` on first pass, then escapes asterisks on second pass. If programmatically applying prettier, run twice to reach stable output.
 
 **CRITICAL: Before skipping cache keys for downloaded binaries** → Read [Composite Action Patterns](composite-action-patterns.md) first. NEVER skip cache keys for downloaded binaries — cache saves 10-20s per workflow run.
+
+**CRITICAL: Before triggering objective reconciliation** → Read [Objective Reconciler Workflow](objective-reconciler-workflow.md) first. The reconcile command launches Claude interactively—it does NOT perform autonomous batch processing. Review actual workflow implementation before assuming sweep behavior.
 
 **CRITICAL: Before using Edit tool on Python files** → Read [Edit Tool Formatting Behavior](edit-tool-formatting.md) first. Edit tool preserves exact indentation without auto-formatting. Always run 'make format' after editing Python code.
 
