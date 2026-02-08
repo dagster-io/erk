@@ -15,7 +15,7 @@ Usage:
     python scripts/batch_regenerate_docs.py --limit 5                 # first 5 docs
     python scripts/batch_regenerate_docs.py --fresh                   # ignore prior progress
     python scripts/batch_regenerate_docs.py --file docs/learned/x.md  # target a specific file
-    python scripts/batch_regenerate_docs.py --output-suffix -v2       # write to foo-v2.md
+    python scripts/batch_regenerate_docs.py --output-suffix -v2       # A/B testing with foo-v2.md
 """
 
 import argparse
@@ -380,7 +380,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-suffix",
         default="",
-        help="Suffix to insert before .md extension (e.g. '-v2' writes foo-v2.md)",
+        help="Suffix to insert before .md extension (e.g. '-v2' writes foo-v2.md), "
+        "leaving originals untouched",
     )
     return parser.parse_args()
 
