@@ -1,12 +1,12 @@
 ---
 read_when:
-- debugging false positives in code review
-- understanding keyword-only parameter exceptions
-- working with ABC/Protocol method validation
+  - debugging false positives in code review
+  - understanding keyword-only parameter exceptions
+  - working with ABC/Protocol method validation
 title: Code Review Filtering
 tripwires:
-- action: using this pattern
-  warning: Before flagging 5+ parameter violations, verify NO exception applies (ABC/Protocol/Click)
+  - action: using this pattern
+    warning: Before flagging 5+ parameter violations, verify NO exception applies (ABC/Protocol/Click)
 ---
 
 # Code Review Filtering
