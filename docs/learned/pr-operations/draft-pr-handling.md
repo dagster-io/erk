@@ -33,12 +33,12 @@ The CI workflow listens for the `ready_for_review` event type (alongside `opened
 
 Draft PRs in erk follow a lifecycle that spans multiple systems:
 
-| Phase | System | What happens |
-|-------|--------|-------------|
-| **Create** | `erk submit` / `plan-create-review-pr` | PR created with `draft=True` via gateway |
-| **Implement** | GitHub Actions workflow | Agent works on the draft PR branch |
-| **Transition** | `handle-no-changes` / manual | `mark_pr_ready()` called via REST API |
-| **CI runs** | `ci.yml`, `code-reviews.yml` | `ready_for_review` event triggers all jobs |
+| Phase          | System                                 | What happens                               |
+| -------------- | -------------------------------------- | ------------------------------------------ |
+| **Create**     | `erk submit` / `plan-create-review-pr` | PR created with `draft=True` via gateway   |
+| **Implement**  | GitHub Actions workflow                | Agent works on the draft PR branch         |
+| **Transition** | `handle-no-changes` / manual           | `mark_pr_ready()` called via REST API      |
+| **CI runs**    | `ci.yml`, `code-reviews.yml`           | `ready_for_review` event triggers all jobs |
 
 <!-- Source: src/erk/cli/commands/submit.py, _create_branch_and_pr -->
 

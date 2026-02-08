@@ -15,7 +15,7 @@ audit_result: edited
 
 ## Why Embed Plans
 
-When a PR originates from an erk-plan issue, reviewers need the original plan for context — it explains the *intent* behind the code, not just the diff. Embedding the plan directly in the PR body means reviewers don't have to chase cross-references to a separate GitHub issue. A collapsible `<details>` section keeps this context available without overwhelming the PR description.
+When a PR originates from an erk-plan issue, reviewers need the original plan for context — it explains the _intent_ behind the code, not just the diff. Embedding the plan directly in the PR body means reviewers don't have to chase cross-references to a separate GitHub issue. A collapsible `<details>` section keeps this context available without overwhelming the PR description.
 
 ## Data Flow: Plan to PR
 
