@@ -8,7 +8,7 @@ tripwires:
   - action: "adding a new IPC channel in createWindow"
     warning: "Every ipcMain.on() or ipcMain.handle() registration MUST have a matching removal in the mainWindow.on('closed') handler. on() uses removeAllListeners(channel), handle() uses removeHandler(channel). Add both in the same commit."
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # WebContentsView Lifecycle
