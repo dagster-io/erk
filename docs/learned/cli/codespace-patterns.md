@@ -1,11 +1,11 @@
 ---
-audit_result: edited
+title: Codespace Patterns
 last_audited: "2026-02-08"
+audit_result: regenerated
 read_when:
   - implementing CLI commands that use codespaces
   - handling codespace name resolution with optional defaults
   - bypassing GitHub API endpoint bugs
-title: Codespace Patterns
 ---
 
 # Codespace Patterns

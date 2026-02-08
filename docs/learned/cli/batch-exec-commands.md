@@ -17,7 +17,8 @@ tripwires:
     warning: "Use AND semantics: top-level success=true only if ALL items succeed."
   - action: Return non-zero exit codes for batch command failures
     score: 6
-    warning: Always exit 0, encode errors in JSON output with per-item success fields.
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Batch Exec Commands
