@@ -15,25 +15,21 @@
 - **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, designing any workflow that calls EnterPlanMode, understanding why plans lose investigation context
 - **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
 - **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo issue closing syntax
-- **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures after an initial fix attempt fails, Encountering errors where the required format is unclear from the error message alone, Deciding whether to guess at another fix or read the validator source
-- **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving gateways to gateway/ directory, consolidating gateway packages, performing systematic refactoring
-- **[learn-pipeline-workflow.md](learn-pipeline-workflow.md)** — Understanding the complete learn pipeline, Working with async learn workflow, Debugging learn plan execution, Implementing learn plan orchestration
+- **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving a gateway package into the gateway/ directory, extracting a new gateway from existing code, performing large-scale import refactoring across packages
 - **[learn-plan-metadata-fields.md](learn-plan-metadata-fields.md)** — working with learn plan metadata, troubleshooting null learn_status or learn_plan_issue, transforming Plan objects in pipelines, understanding created_from_workflow_run_url field, adding workflow run backlinks to plans
-- **[learn-plan-validation.md](learn-plan-validation.md)** — creating erk-learn plans, preventing learn plan cycles, validating learn workflow
-- **[learn-vs-implementation-plans.md](learn-vs-implementation-plans.md)** — choosing between plan types, creating erk-learn plans, understanding plan workflows
-- **[learn-without-pr-context.md](learn-without-pr-context.md)** — debugging learn workflow failures, implementing plans without creating PRs, understanding workflow variance in learn
+- **[learn-plan-validation.md](learn-plan-validation.md)** — creating or modifying erk-learn plans, working on the learn workflow pipeline, debugging learn-on-learn cycle errors
+- **[learn-vs-implementation-plans.md](learn-vs-implementation-plans.md)** — choosing between plan types, creating erk-learn plans, understanding how learn plans relate to implementation plans, debugging learn plan base branch selection
+- **[learn-without-pr-context.md](learn-without-pr-context.md)** — debugging learn workflow failures where PR data is missing, implementing new learn pipeline steps that consume PR context, understanding why learn output lacks review feedback
 - **[learn-workflow.md](learn-workflow.md)** — using /erk:learn skill, understanding learn status tracking, auto-updating parent plans when learn plans land
 - **[lifecycle.md](lifecycle.md)** — creating a plan, closing a plan, understanding plan states
-- **[metadata-block-fallback.md](metadata-block-fallback.md)** — fetching plan content from GitHub issues, debugging 'no plan content found' errors, working with older erk-plan issues, implementing plan content extraction
+- **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-plan issues that lack metadata blocks
 - **[metadata-field-workflow.md](metadata-field-workflow.md)** — adding a new field to plan-header metadata, extending plan issue schema, coordinating metadata changes across files
 - **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved
 - **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks
 - **[pr-analysis-pattern.md](pr-analysis-pattern.md)** — analyzing PR changes for documentation, building workflows that inspect PRs
-- **[pr-discovery.md](pr-discovery.md)** — implementing erk learn workflow, discovering PRs when branch_name is missing, debugging PR discovery failures, working with session metadata
-- **[pr-review-workflow.md](pr-review-workflow.md)** — Reviewing plans collaboratively before implementation
-- **[pr-submission-patterns.md](pr-submission-patterns.md)** — creating PRs programmatically, implementing idempotent PR submission, handling retry logic for PR operations
-- **[reliability-patterns.md](reliability-patterns.md)** — designing cleanup operations in workflows, choosing between agent vs workflow-native operations, implementing multi-layer failure resilience
+- **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan issue, debugging why get-pr-for-plan returns no-branch-in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field
+- **[pr-review-workflow.md](pr-review-workflow.md)** — creating or managing plan review PRs, addressing feedback on plan content via PR comments, understanding how review PRs relate to implementation PRs, closing or cleaning up plan review PRs
 - **[remote-implementation-idempotency.md](remote-implementation-idempotency.md)** — implementing remote plan execution, debugging branch creation in remote workflows, working with worktree reuse patterns
 - **[scratch-storage.md](scratch-storage.md)** — writing temp files for AI workflows, passing files between processes, understanding scratch directory location
 - **[session-deduplication.md](session-deduplication.md)** — understanding duplicate plan prevention, working with exit-plan-mode hook, debugging duplicate issue creation
