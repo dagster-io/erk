@@ -1,223 +1,78 @@
 ---
 title: Tool Restriction Safety Pattern
 read_when:
-  - implementing slash commands with safety constraints, designing read-only commands, creating commands that work in plan mode
+  - adding allowed-tools to a command or agent frontmatter
+  - designing a read-only slash command
+  - creating commands intended for use within plan mode
+  - deciding which tools a restricted command needs
+tripwires:
+  - ALWAYS apply the minimal-set principle — only allow tools the command actually needs
+  - NEVER omit Task from allowed-tools if the command delegates to subagents
+  - Commands and agents use DIFFERENT allowed-tools syntax — check the format section
 ---
 
 # Tool Restriction Safety Pattern
 
-The `allowed-tools` frontmatter field restricts which tools a command can use, enabling safe read-only operations that work within plan mode or other restricted contexts.
+The `allowed-tools` frontmatter field enforces a tool allowlist on commands and agents, ensuring they cannot perform operations outside their intended scope. This is Claude Code's mechanism for creating safe, read-only commands that work within plan mode.
 
-## Pattern Purpose
+## Why This Exists
 
-**Problem**: Some commands should be safe to use in plan mode (before implementation) or in contexts where code modification would be inappropriate.
+Some commands should be safe to run at any time — during planning, before implementation, or in contexts where code modification would be harmful. Without `allowed-tools`, a command could accidentally write files, execute destructive shell commands, or delegate to agents that do so.
 
-**Solution**: Use `allowed-tools` frontmatter to enforce tool restrictions at the command level.
+The `allowed-tools` field makes safety **structural** rather than relying on prompt instructions like "don't write files." The Claude Code runtime enforces the restriction — any tool call outside the allowed set fails with an error identifying the blocked tool.
 
-## Frontmatter Syntax
+## Syntax Differs Between Commands and Agents
 
-```yaml
----
-description: Command description here
-allowed-tools: AskUserQuestion, Read, Glob, Grep
----
-```
+Commands and agents use different YAML formats for the same feature:
 
-**Effect**: The command can ONLY use the listed tools. Any attempt to use other tools (Write, Edit, Bash with mutations, etc.) will fail.
+- **Commands** (`.claude/commands/`): comma-separated string — `allowed-tools: Read, Glob, Grep`
+- **Agents** (`.claude/agents/`): YAML list with one tool per line
 
-## Use Case: /local:interview
+<!-- Source: .claude/commands/local/interview.md, frontmatter -->
 
-**File**: `.claude/commands/local/interview.md`
+See the frontmatter in `.claude/commands/local/interview.md` for the command format.
 
-**Frontmatter**:
+<!-- Source: .claude/agents/learn/session-analyzer.md, frontmatter -->
 
-```yaml
----
-description: Interview user in-depth to gather requirements for a plan or objective
-allowed-tools: AskUserQuestion, Read, Glob, Grep
----
-```
+See the frontmatter in `.claude/agents/learn/session-analyzer.md` for the agent format.
 
-**Purpose**: Gather requirements through conversation and codebase exploration WITHOUT writing code.
+## When to Use Tool Restrictions
 
-**Why tool restrictions**:
+| Scenario                            | Use `allowed-tools`? | Why                                       |
+| ----------------------------------- | -------------------- | ----------------------------------------- |
+| Information gathering before action | Yes                  | No side effects needed                    |
+| Commands used within plan mode      | Yes                  | Plan mode expects read-only behavior      |
+| Decision-support commands           | Yes                  | Only needs exploration + user interaction |
+| Codebase exploration commands       | Yes                  | Read-only by nature                       |
+| Commands that implement features    | No                   | Needs Write, Edit, Bash                   |
+| Commands that create PRs or commits | No                   | Needs Bash for git/gh                     |
+| Commands that run CI or tests       | No                   | Needs Bash for test runners               |
 
-1. **Plan mode compatibility**: Can be used within plan mode to gather context before planning
-2. **Read-only guarantee**: Cannot accidentally modify files or execute destructive commands
-3. **Clear scope**: Interview agent asks questions and searches code, nothing more
+## The Minimal-Set Principle
 
-### Workflow: Interview → Gather → Plan
+Only allow tools the command absolutely needs. Start with zero tools and add only what's required by the command's logic. This prevents scope creep where a command gains unnecessary write capabilities.
 
-```markdown
-User: "I want to add authentication to the app"
+The common read-only set is `Read`, `Glob`, `Grep`, plus `AskUserQuestion` if the command interacts with the user. Add `Task` only if the command delegates to subagents. Add `Bash` only if the command needs specific shell commands (e.g., `git log` for read-only git queries).
 
-Agent: "Let me interview you about this feature"
+## Inheritance: Commands Restrict Their Subagents
 
-SlashCommand(command="/local:interview authentication feature")
+When a command with `allowed-tools` delegates to a subagent via `Task`, the subagent inherits the command's tool restrictions — even if the agent's own frontmatter lists additional tools. This means:
 
-[Interview agent launches with tool restrictions]
+- A command restricted to `Read, Glob, Grep, Task` can launch agents, but those agents can only use `Read, Glob, Grep`
+- The agent's own `allowed-tools` in its frontmatter is further intersected with the command's restrictions
+- This makes tool restrictions transitive — safety guarantees cascade through the delegation chain
 
-Interview Agent (with only Read, Glob, Grep, AskUserQuestion):
+## Plan Mode Integration
 
-- Searches for existing auth patterns in codebase
-- Asks user: "Do you prefer OAuth, JWT, or session-based auth?"
-- Asks user: "Where should tokens be stored?"
-- Documents requirements from conversation
+Tool-restricted commands are the primary mechanism for doing useful work within plan mode. Because plan mode blocks Write/Edit/Bash by default, only commands that declare a compatible `allowed-tools` set can run without disrupting the planning context.
 
-[Interview completes, returns to main conversation]
+This enables the "interview then plan" workflow: run a read-only command to gather requirements and explore the codebase, then use the gathered context to inform the plan — all without leaving plan mode.
 
-Agent: "Now I'll create a plan incorporating your preferences"
-[Enters plan mode with gathered context]
-```
+<!-- Source: .claude/commands/local/interview.md -->
 
-## Tool Categories
-
-### Read-Only Tools (Safe for Restrictions)
-
-| Tool              | Purpose                  | Why Safe         |
-| ----------------- | ------------------------ | ---------------- |
-| `Read`            | Read files               | No modifications |
-| `Glob`            | Find files by pattern    | No modifications |
-| `Grep`            | Search file contents     | No modifications |
-| `AskUserQuestion` | Ask clarifying questions | No code changes  |
-
-### Write Tools (Typically Excluded)
-
-| Tool    | Purpose                | Why Excluded          |
-| ------- | ---------------------- | --------------------- |
-| `Write` | Create new files       | Modifies filesystem   |
-| `Edit`  | Modify existing files  | Modifies filesystem   |
-| `Bash`  | Execute shell commands | Can modify filesystem |
-| `Task`  | Delegate to sub-agents | Sub-agents may write  |
-
-### Conditional Tools
-
-| Tool   | Purpose       | Usage Guidance                                                   |
-| ------ | ------------- | ---------------------------------------------------------------- |
-| `Bash` | Run commands  | Safe if read-only commands (ls, git status), unsafe if mutations |
-| `Task` | Launch agents | Safe if sub-agents also have tool restrictions                   |
-
-## Design Guidance
-
-### When to Use Tool Restrictions
-
-✅ **Good candidates:**
-
-- Commands that gather information before action
-- Commands used within plan mode
-- Commands that help users make decisions
-- Commands that explore codebase without modifying it
-
-❌ **Poor candidates:**
-
-- Commands that implement features
-- Commands that create PRs or commits
-- Commands that run CI or tests (may need Bash)
-
-### Choosing Allowed Tools
-
-**Minimal set principle**: Only allow tools the command absolutely needs.
-
-**Example reasoning for /local:interview**:
-
-- ✅ `AskUserQuestion` — Core purpose is asking questions
-- ✅ `Read` — May need to show user code snippets
-- ✅ `Glob` — Find files matching patterns (e.g., "show me all auth-related files")
-- ✅ `Grep` — Search for existing patterns
-- ❌ `Write` — Never creates files (interview only)
-- ❌ `Edit` — Never modifies files
-- ❌ `Bash` — No need for shell commands
-
-## Implementation Pattern
-
-**Command file structure with tool restrictions**:
-
-````markdown
----
-description: One-line command description
-allowed-tools: AskUserQuestion, Read, Glob, Grep
----
-
-# /command-name
-
-Brief description of what this command does.
-
-## Safety
-
-This command uses tool restrictions to ensure read-only behavior:
-
-- Can search codebase
-- Can ask user questions
-- Cannot modify files or execute shell commands
-
-## Usage
-
-```bash
-/command-name [optional-args]
-```
-````
-
-## Implementation
-
-[Command logic here]
-
-```
-
-## Enforcement
-
-Tool restrictions are enforced by the Claude Code runtime:
-
-1. Command declares `allowed-tools` in frontmatter
-2. Runtime parses frontmatter before execution
-3. Any tool call outside allowed set fails with error
-4. Error message indicates which tool was blocked
-
-**Error example**:
-```
-
-Error: Tool 'Write' is not allowed by this command.
-Allowed tools: AskUserQuestion, Read, Glob, Grep
-
-````
-
-## Related Patterns
-
-### Agent Delegation with Tool Restrictions
-
-Commands with tool restrictions can delegate to agents, but the agent inherits the restrictions:
-
-```markdown
----
-allowed-tools: Read, Glob, Grep, Task
----
-
-# /restricted-command
-
-Task(
-    subagent_type="search-agent",
-    description="Search codebase",
-    prompt="Find all occurrences of pattern X"
-)
-````
-
-The `search-agent` can ONLY use Read, Glob, Grep (inherited from command), even if the agent's own frontmatter lists more tools.
-
-### Combining with Plan Mode
-
-Tool restrictions make commands safe to use in plan mode:
-
-```markdown
-User: [In plan mode] "Before I finalize this plan, let me interview myself about the requirements"
-
-/local:interview feature-requirements
-
-[Interview completes without exiting plan mode]
-
-User: "Now I'll incorporate those requirements into the plan"
-```
+See `/local:interview` for the canonical example of this pattern.
 
 ## Related Documentation
 
-- [Agent Delegation](../planning/agent-delegation.md) — How /local:interview delegates to an agent
-- [Context Preservation Prompting](../planning/context-preservation-prompting.md) — Using interview to gather context before planning
-- [Plan Mode Workflows](../planning/plan-mode-workflows.md) — Commands that work within plan mode
+- [Agent Delegation](../planning/agent-delegation.md) — delegation patterns including tool restriction inheritance
+- [Context Preservation Prompting](../planning/context-preservation-prompting.md) — gathering context before planning
