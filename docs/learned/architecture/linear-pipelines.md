@@ -7,157 +7,160 @@ read_when:
 tripwires:
   - action: "creating a new complex command with multiple validation steps"
     warning: "Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar."
-last_audited: "2026-02-05 14:22 PT"
+last_audited: "2026-02-07"
 audit_result: edited
 ---
 
 # Linear Pipeline Architecture
 
-Complex workflows benefit from separating validation (check preconditions) from execution (perform operations). The land command demonstrates a two-pipeline pattern with functional composition and immutable state threading.
+Complex workflows that mix read-only validation with destructive operations benefit from explicit separation. The land command demonstrates a two-pipeline architecture that divides precondition checking from mutation execution, bridging them with a shell script serialization boundary.
 
-## Two-Pipeline Pattern
+## Why Two Pipelines
 
-The land command uses two separate pipelines:
+**The core problem**: Command-line tools need to validate preconditions, gather user confirmations, and perform mutations — but mixing these concerns creates fragile error handling and makes testing difficult.
 
-1. **Validation Pipeline** (5 steps) - Check preconditions, gather confirmations, resolve values
-2. **Execution Pipeline** (6 steps) - Perform operations that modify state
+**The solution**: Split the workflow into two independent pipelines with a serialization boundary:
 
-**Benefits**:
+1. **Validation pipeline**: Read-only operations that check preconditions, resolve values, and gather confirmations. Failures are cheap — no state has been modified.
+2. **Execution pipeline**: Mutating operations that assume validation passed. Failures are expensive — rollback may be required.
 
-- Clear separation of read-only checks from mutations
-- Can run validation without side effects
-- Execution steps assume validation passed
-- Each pipeline is independently testable
+**Why this matters**:
+
+- **Fail-fast validation**: All precondition checks happen before any mutations. If landing fails due to unresolved comments or missing PRs, the repository state is unchanged.
+- **Independent testing**: Each pipeline can be tested in isolation. Validation tests don't need to mock destructive operations. Execution tests can assume validation passed.
+- **Clear audit trail**: The serialization boundary makes it obvious where read-only analysis ends and mutations begin.
+
+## The Shell Script Serialization Boundary
+
+<!-- Source: src/erk/cli/commands/land_cmd.py, render_land_execution_script -->
+
+Between validation and execution, the land command generates a shell script. The user must explicitly source this script to proceed with mutations. See `render_land_execution_script()` in `src/erk/cli/commands/land_cmd.py`.
+
+**Why a shell script instead of direct execution?**
+
+1. **Explicit consent**: Sourcing the script is a physical confirmation that validation results are correct. Users can inspect the script before executing.
+2. **Resumability**: The script captures all validated state as CLI arguments. If execution fails midway, the user can edit the script and retry without re-running validation.
+3. **Separation of privilege**: The validation phase runs with user confirmation enabled. The execution phase runs non-interactively (confirmations already gathered) and can be triggered by shell integration without blocking on stdin.
+
+**Trade-off**: The serialization boundary requires state to be expressible as CLI flags. Complex validation state (like PRDetails objects) must be either re-fetched during execution or baked into the script as positional arguments (PR number, branch name). See the "Baked-in vs User-Controllable Flags" pattern below.
 
 ## Pipeline Step Signature
 
-All steps follow the same signature (see `LandStep` type alias in `land_pipeline.py`):
+<!-- Source: src/erk/cli/commands/land_pipeline.py, LandStep type alias -->
+
+All pipeline steps share a uniform signature:
 
 ```python
 LandStep = Callable[[ErkContext, LandState], LandState | LandError]
 ```
 
-**Input**: Takes context and current state
-**Output**: Returns either updated state OR error (short-circuits pipeline)
+**Why this signature?**
 
-This signature enables:
+- **Functional composition**: Steps are pure functions that transform state. No hidden side effects except through ErkContext gateways.
+- **Discriminated union returns**: Each step returns either success (updated state) or error. The runner short-circuits on the first error without catching exceptions or checking status codes.
+- **Immutable state threading**: State is a frozen dataclass. Steps use `dataclasses.replace()` to produce new state, making data flow explicit. See [Land State Threading](land-state-threading.md) for the immutability pattern.
 
-- Functional composition (steps chain together)
-- Type-safe error propagation
-- Consistent testing patterns
+**Anti-pattern**: Don't use exceptions for control flow in pipeline steps. Raising exceptions makes it unclear whether validation failed (expected) or implementation crashed (bug). Return `LandError` for validation failures.
 
-## Validation Pipeline (5 Steps)
+## State Factories and Recomputation
 
-**Purpose**: Check preconditions, resolve targets, gather user confirmations before any mutations.
+<!-- Source: src/erk/cli/commands/land_pipeline.py, make_initial_state and make_execution_state -->
 
-The validation steps are: `resolve_target`, `validate_pr`, `check_learn_status`, `gather_confirmations`, `resolve_objective`. See `_validation_pipeline()` in `src/erk/cli/commands/land_pipeline.py` for the authoritative step list.
+Two factory functions create initial state for each pipeline. See `make_initial_state()` and `make_execution_state()` in `src/erk/cli/commands/land_pipeline.py`.
 
-The runner iterates the steps, threading state through each one and short-circuiting on the first `LandError`. See `run_validation_pipeline()` for the runner implementation.
+**Why separate factories?**
 
-**Key characteristics**:
+The validation pipeline takes CLI arguments directly. The execution pipeline reconstructs state from shell script arguments. They have different invariants:
 
-- Read-only operations (no mutations)
-- Fails fast on first error
-- Returns enriched state with resolved values
+- **Validation state**: `force=False` (user can cancel), `dry_run=True|False` (CLI flag), `repo_root` pre-discovered
+- **Execution state**: `force=True` (user already confirmed by sourcing script), `dry_run=False` (always mutates), `plan_issue_number` re-derived from branch name
 
-## Execution Pipeline (6 Steps)
+**Intentional recomputation**: Some fields are **not** serialized through the shell script and are recomputed fresh during execution:
 
-**Purpose**: Perform operations that modify repository state
+- `repo_root` and `main_repo_root`: Re-discovered via `discover_repo_context(ctx.cwd)` in the execution pipeline
+- `pr_details`: Re-fetched from GitHub if needed by `merge_pr()` step
+- `plan_issue_number`: Re-derived from branch name via `extract_leading_issue_number()`
 
-The execution steps are: `merge_pr`, `update_objective`, `update_learn_plan`, `promote_tripwires`, `close_review_pr`, `cleanup_and_navigate`. See `_execution_pipeline()` in `src/erk/cli/commands/land_pipeline.py` for the authoritative step list.
+**Why not serialize everything?**
 
-The runner uses the same iterate-and-short-circuit pattern as validation. See `run_execution_pipeline()`.
-
-**Key characteristics**:
-
-- Mutating operations (modifies repository state)
-- Assumes validation passed
-- Steps may have dependencies on previous step results
-
-## Shell Script Serialization Bridge
-
-Between validation and execution pipelines, state is serialized to a shell script. The validation pipeline runs in `erk land` (the CLI command), and the execution pipeline runs in `erk exec land-execute` (a separate Click command invoked by the shell script).
-
-**How it works**: After validation passes, `render_land_execution_script()` in `land_cmd.py` generates a shell script that calls `erk exec land-execute` with the validated state encoded as CLI flags. The user sources this script, which invokes the execution pipeline.
-
-**Why serialization?**
-
-- The shell script boundary separates the "approve" step (user sources script) from the "execute" step
-- Shell script captures validated state as flags/arguments to `erk exec land-execute`
-- Enables resumability (script can be re-executed)
-
-**State fields baked into script** (static, determined at script generation time):
-
-- PR number and branch name (passed as positional args)
-- Worktree path, is-current-branch, objective number, use-graphite (baked as flags)
-
-**State fields passed via `"$@"`** (user-controllable):
-
-- `--up`, `--no-pull`, `--no-delete`, `-f` flags
-
-**State fields recomputed on exec**:
-
-- Repository paths (resolved from cwd via `discover_repo_context`)
-- PR details (re-fetched by `merge_pr` if needed)
-- Plan issue number (re-derived from branch name)
-
-## Pipeline Step Lists with Caching
-
-The step-list builder functions use `@cache` for idempotency:
-
-```python
-@cache
-def _validation_pipeline() -> tuple[LandStep, ...]:
-    return (resolve_target, validate_pr, check_learn_status, ...)
-
-@cache
-def _execution_pipeline() -> tuple[LandStep, ...]:
-    return (merge_pr, update_objective, update_learn_plan, ...)
-```
-
-Note: `@cache` is on the step-list builders (`_validation_pipeline`, `_execution_pipeline`), not on the runner functions themselves. The runners (`run_validation_pipeline`, `run_execution_pipeline`) are not cached.
-
-**Caveat**: State objects must be immutable (frozen dataclasses) for the pipeline pattern to work correctly.
-
-## State Factories
-
-Two factory functions create initial state for each pipeline. See `make_initial_state()` and `make_execution_state()` in `src/erk/cli/commands/land_pipeline.py` for their full signatures.
-
-**`make_initial_state()`**: Creates state for the validation pipeline from CLI inputs. Takes ~10 keyword params including `cwd`, `force`, `script`, `pull_flag`, `no_delete`, `up_flag`, `dry_run`, `target_arg`, `repo_root`, `main_repo_root`. Discovery fields (branch, PR details, etc.) start as defaults and are populated by `resolve_target()`.
-
-**`make_execution_state()`**: Creates state for the execution pipeline from exec script arguments. Takes ~11 keyword params. Re-derives `plan_issue_number` from the branch name. Sets `force=True` (execute mode always skips confirmations) and `dry_run=False`.
+1. **Stale data risk**: If the user modifies the branch or edits the PR between validation and execution, using cached data would operate on stale state.
+2. **Script readability**: Shell scripts with serialized JSON blobs are opaque. Baking only the minimal stable state (PR number, branch name) keeps scripts inspectable.
+3. **Flexibility**: The user can manually edit the script to land a different PR or branch without re-running validation.
 
 ## Baked-in vs User-Controllable Flags
 
-The exec script serialization boundary distinguishes two types of state:
+<!-- Source: src/erk/cli/commands/land_cmd.py, render_land_execution_script -->
 
-**Baked-in flags** (determined at script generation time, not changeable by user):
+The shell script serialization boundary distinguishes two classes of state:
 
-- `worktree_path` - resolved worktree location
-- `is_current_branch` - whether landing from that worktree
-- `objective_number` - linked objective issue number
-- `use_graphite` - whether Graphite merge is used
+**Baked-in flags** (determined at validation time, static in the script):
 
-**User-controllable flags** (passed through `"$@"`, can be changed when sourcing script):
+- `--worktree-path`: Resolved worktree location
+- `--is-current-branch`: Whether landing from that worktree
+- `--objective-number`: Linked objective issue number
+- `--use-graphite`: Whether Graphite merge is enabled
 
-- `--up` - navigate upstack (child branch resolved at execution time)
-- `--no-pull` - skip pull after landing
-- `--no-delete` - preserve branch/slot
-- `-f` - force flag (execute mode is already non-interactive)
+**User-controllable flags** (passed via `"$@"`, editable at source time):
 
-**Why this matters**:
+- `--up`: Navigate upstack (child branch resolved at execution time)
+- `--no-pull`: Skip pull after landing
+- `--no-delete`: Preserve branch/slot
+- `-f`: Force flag (documented but redundant — execute mode is already non-interactive)
 
-- Baked-in flags capture validated state that shouldn't change
-- User-controllable flags allow last-minute adjustment
-- Some values (repo paths, PR details) are intentionally recomputed fresh on exec
+**Why this split?**
 
-## Reference Implementation
+- Baked-in flags capture **resolved state** that depends on validation results (e.g., which worktree exists, whether an objective is linked). Users shouldn't change these without re-validating.
+- User-controllable flags are **navigation preferences** that don't affect validation correctness. Users can safely toggle `--no-delete` or `--no-pull` without invalidating preconditions.
 
-**File**: `src/erk/cli/commands/land_pipeline.py`
+**Decision test**: If changing the flag would invalidate a precondition check (e.g., PR state, unresolved comments), bake it in. If changing the flag only affects post-merge behavior (e.g., branch cleanup, navigation), make it user-controllable.
 
-See `LandState` (frozen dataclass, ~21 fields) and `LandError` (frozen dataclass) for the data types. The file contains the pipeline step definitions, runners, and state factories.
+## Pipeline Step Lists with Caching
 
-**Test coverage**: Tests are split across `tests/unit/cli/commands/land/pipeline/` with separate files for `test_resolve_target.py`, `test_validate_pr.py`, `test_merge_pr.py`, `test_run_validation_pipeline.py`, and `test_run_execution_pipeline.py`.
+<!-- Source: src/erk/cli/commands/land_pipeline.py, _validation_pipeline and _execution_pipeline -->
+
+The pipeline step lists are built by `@cache`-decorated functions. See `_validation_pipeline()` and `_execution_pipeline()` in `src/erk/cli/commands/land_pipeline.py`.
+
+**Why cache the step lists?**
+
+- **Identity stability**: Returning the same tuple object from repeated calls ensures that pipeline composition is deterministic. Useful for debugging when comparing pipeline runs.
+- **Idempotency guarantee**: The `@cache` decorator signals that the step list is static and doesn't vary based on runtime state. Attempting to conditionally include steps (e.g., `if use_graphite: include_step`) would fail with a cache hit/miss mismatch, forcing the design toward explicit step logic.
+
+**Common mistake**: Don't cache the runner functions themselves (`run_validation_pipeline`, `run_execution_pipeline`). The runners execute side effects and must run on every call. Only the step list builders are cached.
+
+**Caveat**: State objects must be immutable (frozen dataclasses) for the pipeline pattern to work correctly. Mutable state would allow steps to silently modify earlier results without explicit `dataclasses.replace()` calls, breaking the functional composition model.
+
+## Validation Pipeline Structure
+
+<!-- Source: src/erk/cli/commands/land_pipeline.py, _validation_pipeline and step implementations -->
+
+The validation pipeline runs in `erk land` (the CLI command) and performs read-only operations. See the `_validation_pipeline()` tuple and step implementations in `src/erk/cli/commands/land_pipeline.py`.
+
+**Why this step order?**
+
+1. **`resolve_target`**: Resolve branch/PR/URL argument first. Later steps depend on knowing which PR is being landed.
+2. **`validate_pr`**: Check PR state (OPEN, base=trunk, clean working tree). Fail fast before expensive operations like user prompts.
+3. **`check_learn_status`**: Check if plan has been learned from. Prompt for async learn trigger. This is read-only but may invoke user interaction, so it runs after basic validation passes.
+4. **`gather_confirmations`**: Batch all user confirmations upfront. This centralizes interactive prompts before any mutations.
+5. **`resolve_objective`**: Look up linked objective. This is cheap and doesn't require user interaction, so it runs last.
+
+**Anti-pattern**: Don't add steps that perform mutations (e.g., merging the PR, deleting branches) to the validation pipeline. Validation must remain side-effect-free so it can be re-run or aborted without cleanup.
+
+## Execution Pipeline Structure
+
+<!-- Source: src/erk/cli/commands/land_pipeline.py, _execution_pipeline and step implementations -->
+
+The execution pipeline runs in `erk exec land-execute` (invoked by the shell script) and performs mutations. See the `_execution_pipeline()` tuple and step implementations in `src/erk/cli/commands/land_pipeline.py`.
+
+**Why this step order?**
+
+1. **`merge_pr`**: Merge the PR first. If this fails, no other mutations have happened (branch still exists, objective not updated).
+2. **`update_objective`**: Update linked objective with the merged PR number. Runs before learn plan update because objective update is more critical.
+3. **`update_learn_plan`**: Update parent plan's learn_status if this is a learn plan. This is advisory metadata, so it runs after objective update.
+4. **`promote_tripwires`**: Extract and prompt for tripwire promotion from learn plan. This is non-critical and safe to defer until after PR merge.
+5. **`close_review_pr`**: Close review PR if the plan has one. This is cleanup and runs near the end.
+6. **`cleanup_and_navigate`**: Delete branch, unassign slot, navigate to trunk/child. This is the terminal step and may call `SystemExit` to change directories.
+
+**Why this ordering matters**: Early steps (merge, objective update) are high-value mutations that should complete before lower-priority metadata updates (tripwires, review PR). If execution fails partway through, the most important state (PR merged, objective recorded) will have succeeded.
 
 ## Relationship to Two-Phase Validation Model
 
@@ -167,12 +170,30 @@ The linear pipeline architecture extends the [two-phase validation model](../cli
 - **Phase 2** (Validation pipeline): Validate preconditions, resolve values, gather confirmations
 - **Phase 3** (Execution pipeline): Perform mutations with validated state
 
-The two pipelines compose Phase 2 (validation) and Phase 3 (execution) into clean functional sequences.
+The key difference: Phase 2 and Phase 3 are now explicit pipeline sequences with uniform step signatures, rather than ad-hoc validation checks scattered through a single function.
+
+**Why the pipeline pattern is an evolution**: The two-phase model separates CLI concerns from business logic, but doesn't specify how to structure multi-step business logic. The pipeline pattern fills that gap by imposing functional composition and discriminated union error handling on the business logic layer.
+
+## When to Use This Pattern
+
+**Use the two-pipeline pattern when**:
+
+- Your command has 5+ validation steps that must all pass before any mutations
+- You need to gather user confirmations upfront (batch all prompts before mutations)
+- Validation failures are common and should be cheap (no rollback required)
+- The command modifies shared state (repository, GitHub) and failures are expensive
+
+**Don't use the two-pipeline pattern when**:
+
+- Your command has 1-2 validation steps (inline checks are simpler)
+- Validation and execution are interleaved by design (e.g., interactive TUI with live updates)
+- The command is idempotent and failures are cheap (no need for separation)
+
+**Decision test**: If you find yourself writing rollback logic to undo partial mutations after validation failures, you need the two-pipeline pattern.
 
 ## Related Documentation
 
 - [Land State Threading](land-state-threading.md) - Immutable state management with dataclasses.replace()
 - [CLI-to-Pipeline Boundary](cli-to-pipeline-boundary.md) - Separating CLI concerns from business logic
-- [Learn Plan Land Flow](../cli/learn-plan-land-flow.md) - Learn-plan-specific execution pipeline steps
 - [Two-Phase Validation Model](../cli/two-phase-validation-model.md) - Foundation pattern
-- [Pipeline Transformation Patterns](pipeline-transformation-patterns.md) - Functional pipeline composition
+- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - State | Error return types
