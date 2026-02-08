@@ -73,13 +73,14 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before setting the name field in workflow files** → Read [Workflow Naming Conventions](workflow-naming-conventions.md) first. the workflow's name: field MUST match the CLI command name
 
 **CRITICAL: Before setting up label filtering for push events** → Read [GitHub Actions Label Filtering Reference](github-actions-label-filtering.md) first. always use negation (!contains) for safe defaults on push events without PR context
-
+**CRITICAL: Before skipping cache keys for downloaded binaries** → Read [Composite Action Patterns](composite-action-patterns.md) first. NEVER skip cache keys for downloaded binaries — cache saves 10-20s per workflow run.
 **CRITICAL: Before triggering objective reconciliation** → Read [Objective Reconciler Workflow](objective-reconciler-workflow.md) first. The reconcile command launches Claude interactively—it does NOT perform autonomous batch processing. Review actual workflow implementation before assuming sweep behavior.
 
 **CRITICAL: Before using Edit tool on Python files** → Read [Edit Tool Formatting Behavior](edit-tool-formatting.md) first. Edit tool preserves exact indentation without auto-formatting. Always run 'make format' after editing Python code.
 
 **CRITICAL: Before using Python constants in GitHub Actions workflows** → Read [GitHub Actions Label Filtering Reference](github-actions-label-filtering.md) first. GitHub Actions cannot interpolate Python constants - label strings must be hardcoded in YAML
-
+**CRITICAL: Before using contains() for label checks without negation** → Read [GitHub Actions Label Filtering Reference](github-actions-label-filtering.md) first. Always use negation (!contains) for safe defaults on push events without PR context
+**CRITICAL: Before using curl | bash install script for Claude Code in CI** → Read [Composite Action Patterns](composite-action-patterns.md) first. NEVER use the curl | bash install script for Claude Code in CI — it hangs unpredictably. Use direct GCS download via setup-claude-code action.
 **CRITICAL: Before using echo with multi-line content to GITHUB_OUTPUT** → Read [GitHub Actions Output Patterns](github-actions-output-patterns.md) first. Multi-line content requires heredoc syntax with EOF delimiter. Simple echo only works for single-line values.
 
 **CRITICAL: Before using fnmatch for gitignore-style glob patterns** → Read [Convention-Based Code Reviews](convention-based-reviews.md) first. Use pathspec library instead. fnmatch doesn't support \*\* recursive globs. Example: pathspec.PathSpec.from_lines('gitignore', patterns)
