@@ -1,7 +1,7 @@
 ---
 title: Forge Vite Setup
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 read_when:
   - "debugging Vite build errors in erkdesk"
   - "adding a new Vite build target or renderer window"
