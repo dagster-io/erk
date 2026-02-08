@@ -5,13 +5,6 @@ read_when:
   - "testing code that uses Claude CLI"
   - "implementing single-shot prompt execution"
   - "working with PromptExecutor or FakePromptExecutor"
-tripwires:
-  - action: "choosing wrong execution mode for prompts"
-    warning: "execute_prompt() supports both single-shot and streaming modes - choose based on whether you need real-time updates"
-  - action: "testing PromptExecutor without checking call tracking"
-    warning: "FakePromptExecutor tracks all calls via properties - use .prompt_calls, .interactive_calls, .passthrough_calls for assertions"
-  - action: "expecting execute_interactive() to return"
-    warning: "execute_interactive() never returns in production - it replaces the process via os.execvp"
 ---
 
 # Prompt Executor Gateway
