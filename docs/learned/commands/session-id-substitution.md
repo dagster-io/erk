@@ -6,7 +6,8 @@ read_when:
   - debugging session ID unavailable or empty string errors
   - deciding where to place session-dependent logic (root agent vs sub-agent)
 tripwires:
-  - CLAUDE_SESSION_ID is NOT an environment variable — it is a string substitution performed by Claude Code's skill/command loader. Treating it as an env var in hooks or Python code will silently produce an empty string.
+  - action: "accessing session ID in commands or hooks"
+    warning: "CLAUDE_SESSION_ID is NOT an environment variable — it is a string substitution performed by Claude Code's skill/command loader. Treating it as an env var in hooks or Python code will silently produce an empty string."
 last_audited: "2026-02-08"
 audit_result: clean
 ---
