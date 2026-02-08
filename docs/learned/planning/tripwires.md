@@ -12,8 +12,6 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
-**CRITICAL: Before adding branch_name to plan-header at creation time** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below.
-
 **CRITICAL: Before adding erk-consolidated label to a single-issue replan** → Read [Consolidation Labels](consolidation-labels.md) first. Only multi-plan consolidation gets the erk-consolidated label. Single-issue replans are updates, not consolidations.
 
 **CRITICAL: Before adding new agents to learn workflow** → Read [Learn Workflow](learn-workflow.md) first. Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition.
@@ -29,8 +27,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before calling commands that depend on `.impl/issue.json` metadata** → Read [Plan Lifecycle](lifecycle.md) first. Verify metadata file exists in worktree; if missing, operations silently return empty values.
 
 **CRITICAL: Before capturing subagent output inline when it may exceed 1KB** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Bash tool truncates output at ~10KB with no error. Use Write tool to save agent output to scratch storage, then pass the file path to dependent agents.
-
-**CRITICAL: Before changing branch naming convention (P{issue}- prefix)** → Read [Branch Name Inference](branch-name-inference.md) first. The P{issue}- prefix is a cross-cutting contract used by both branch creation (naming.generate_issue_branch_name) and PR recovery (get_pr_for_plan). Changing the prefix format requires updating both sides.
 
 **CRITICAL: Before closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
 
@@ -56,17 +52,11 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before launching a dependent agent that reads a file written by a prior agent** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Verify the file exists (ls) before launching. Write tool silently fails if the parent directory is missing, and the dependent agent wastes its entire context discovering the file isn't there.
 
-**CRITICAL: Before making a third trial-and-error attempt at a validation fix** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement.
-
 **CRITICAL: Before manually creating an erk-plan issue with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
 
 **CRITICAL: Before modifying learn command to add/remove/reorder agents** → Read [Learn Workflow](learn-workflow.md) first. Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output.
 
 **CRITICAL: Before modifying marker deletion behavior in exit-plan-mode hook** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Reusable markers (plan-saved) must persist; one-time markers (implement-now, objective-context) are consumed. Deleting reusable markers breaks state machines and enables retry loops that create duplicates.
-
-**CRITICAL: Before preprocessing remote sessions locally** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. Remote sessions are already preprocessed. Only local sessions (source_type == 'local') go through local preprocessing.
-
-**CRITICAL: Before prompting an agent to 'include findings in the plan' without structuring them first** → Read [Context Preservation Prompting Patterns](context-preservation-prompting.md) first. Unstructured prompts don't work — agents summarize at too high a level. Use the four-category gathering step instead.
 
 **CRITICAL: Before reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
 
