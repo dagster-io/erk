@@ -6,6 +6,13 @@ read_when:
   - "understanding workflow capability pattern"
 last_audited: "2026-02-08"
 audit_result: edited
+tripwires:
+  - action: "extending template base class for workflow capabilities"
+    warning: "Workflow capabilities extend Capability directly, not a template base class"
+  - action: "placing workflows outside bundled artifacts path"
+    warning: "Workflows must exist in bundled artifacts path resolved by get_bundled_github_dir()"
+  - action: "importing artifacts.state at module level"
+    warning: "Use inline imports for artifacts.state to avoid circular dependencies"
 ---
 
 # Adding Workflow Capabilities
