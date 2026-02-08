@@ -28,8 +28,8 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [erk](erk/tripwires.md)                     | 8         | `erk/` code                                   |
 | [gateway](gateway/tripwires.md)             | 5         | `gateway/` code                               |
 | [hooks](hooks/tripwires.md)                 | 4         | `.claude/hooks/`, hook development            |
-| [integrations](integrations/tripwires.md)   | 11        | `integrations/` code                          |
-| [objectives](objectives/tripwires.md)       | 9         | `objectives/` code                            |
+| [integrations](integrations/tripwires.md)   | 18        | `integrations/` code                          |
+| [objectives](objectives/tripwires.md)       | 20        | `objectives/` code                            |
 | [planning](planning/tripwires.md)           | 26        | `.impl/`, `.worker-impl/`, planning workflows |
 | [pr-operations](pr-operations/tripwires.md) | 1         | `pr-operations/` code                         |
 | [reference](reference/tripwires.md)         | 5         | `reference/` code                             |
