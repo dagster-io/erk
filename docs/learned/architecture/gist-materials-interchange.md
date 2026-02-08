@@ -1,9 +1,10 @@
 ---
-title: Gist Materials Interchange Format
+audit_result: edited
+last_audited: '2026-02-07'
 read_when:
-  - working with learn materials upload/download, debugging gist-based file transfer, implementing new file packing formats
-last_audited: "2026-02-07"
-audit_result: clean
+- working with learn materials upload/download, debugging gist-based file transfer,
+  implementing new file packing formats
+title: Gist Materials Interchange Format
 ---
 
 # Gist Materials Interchange Format

@@ -1,26 +1,18 @@
 ---
-title: Prettier Formatting for Claude Commands
-last_audited: "2026-02-08"
-audit_result: clean
-tripwires:
-  - action: "creating .claude/ markdown commands without formatting"
-    warning: "Run 'make prettier' via devrun after editing markdown. CI runs prettier-check as a separate job and will fail on unformatted files."
-  - action: "attempting to use prettier on Python files"
-    warning: "Prettier only formats markdown in erk. Python uses ruff format. See formatter-tools.md for the complete matrix."
+audit_result: edited
+last_audited: '2026-02-08'
 read_when:
-  - Creating slash commands in .claude/commands/
-  - Modifying existing .claude/ markdown files
-  - Getting Prettier formatting errors in CI
+- Creating slash commands in .claude/commands/
+- Modifying existing .claude/ markdown files
+- Getting Prettier formatting errors in CI
 title: Prettier Formatting for Claude Commands
 tripwires:
-  - action: creating .claude/ markdown commands without formatting
-    warning:
-      Run 'make prettier' via devrun after editing markdown. CI runs prettier-check
-      as a separate job and will fail on unformatted files.
-  - action: attempting to use prettier on Python files
-    warning:
-      Prettier only formats markdown in erk. Python uses ruff format. See formatter-tools.md
-      for the complete matrix.
+- action: creating .claude/ markdown commands without formatting
+  warning: Run 'make prettier' via devrun after editing markdown. CI runs prettier-check
+    as a separate job and will fail on unformatted files.
+- action: attempting to use prettier on Python files
+  warning: Prettier only formats markdown in erk. Python uses ruff format. See formatter-tools.md
+    for the complete matrix.
 ---
 
 # Prettier Formatting for Claude Commands

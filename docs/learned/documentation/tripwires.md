@@ -12,6 +12,7 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+
 **CRITICAL: Before adding a code block longer than a few lines to a learned doc** → Read [Stale Code Blocks Are Silent Bugs](stale-code-blocks-are-silent-bugs.md) first. Check if this falls under the One Code Rule exceptions (data formats, third-party APIs, anti-patterns, I/O examples). If not, use a source pointer.
 
 **CRITICAL: Before adding prettier-ignore to docs/learned/** → Read [Markdown Authoring and Prettier Interactions](markdown-and-prettier.md) first. prettier-ignore is almost never needed in docs. If Prettier is mangling your content, the structure may need rethinking rather than suppression.
@@ -48,6 +49,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before manually wrapping lines or aligning tables in markdown** → Read [Markdown Authoring and Prettier Interactions](markdown-and-prettier.md) first. Never manually format markdown. Prettier rewrites all formatting on save. Write naturally, then run `make prettier` via devrun.
 
+**CRITICAL: Before never expect agents to self-diagnose knowledge gaps** → Read [Passive Context vs. On-Demand Retrieval](passive-context-vs-retrieval.md) first. use passive context or structural triggers
+
 **CRITICAL: Before restructuring or deleting doc content** → Read [Documentation Simplification Patterns](simplification-patterns.md) first. Run 'erk docs sync' after structural changes to regenerate indexes and fix broken cross-references.
 
 **CRITICAL: Before starting a multi-file change without entering plan mode** → Read [Planless vs Planning Workflow Decision Framework](when-to-switch-pattern.md) first. If the change touches 5+ files or has uncertain approach, plan first. See the decision matrix in when-to-switch-pattern.md.
@@ -55,6 +58,14 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before two learned docs claiming canonical authority over the same topic** → Read [Canonical Authority Declarations](canonical-authority-declarations.md) first. Contradicts the purpose. Consolidate into one doc, or differentiate scope explicitly (e.g., 'canonical for hook patterns' vs 'canonical for command patterns').
 
 **CRITICAL: Before using line numbers in source pointers** → Read [Source Pointers](source-pointers.md) first. Prefer name-based identifiers (ClassName.method) over line numbers. Names survive refactoring; line numbers go stale silently.
+
+**CRITICAL: Before using this pattern** → Read [Language Scope Auditing](language-scope-auditing.md) first. Assuming the verbatim copy prohibition only applies to Python
+
+**CRITICAL: Before using this pattern** → Read [Language Scope Auditing](language-scope-auditing.md) first. Including TypeScript/Bash code blocks from erkdesk/ without checking the One Code Rule
+
+**CRITICAL: Before using this pattern** → Read [Language Scope Auditing](language-scope-auditing.md) first. Rationalizing erkdesk source as "third-party API pattern" because it uses React/Electron
+
+**CRITICAL: Before using this pattern** → Read [Passive Context vs. On-Demand Retrieval](passive-context-vs-retrieval.md) first. skills without explicit invocation triggers perform identically to having no documentation
 
 **CRITICAL: Before writing a decision doc with only prose 'use X when...' bullets** → Read [Two-Option Decision Documentation](two-option-template.md) first. Add a decision matrix table. Tables let agents scan trade-offs at a glance without parsing paragraphs. See two-option-template.md.
 

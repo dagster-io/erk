@@ -1,17 +1,19 @@
 ---
 audit_result: edited
-last_audited: "2026-02-08"
+last_audited: '2026-02-08'
 read_when:
-  - writing a learned doc whose topic overlaps with AGENTS.md or another learned doc
-  - consolidating scattered knowledge about the same topic into one document
-  - resolving conflicts between two docs that describe the same pattern differently
+- writing a learned doc whose topic overlaps with AGENTS.md or another learned doc
+- consolidating scattered knowledge about the same topic into one document
+- resolving conflicts between two docs that describe the same pattern differently
+title: Canonical Authority Declarations
 tripwires:
-  - action: "declaring canonical authority in a learned doc"
-    warning: "Authority without substance misleads. Only declare canonical authority if the doc is the comprehensive deep-dive, not a summary. If AGENTS.md has the abbreviated version and this doc has the full treatment, that's the right split."
-  - action: "two learned docs claiming canonical authority over the same topic"
-    warning: "Contradicts the purpose. Consolidate into one doc, or differentiate scope explicitly (e.g., 'canonical for hook patterns' vs 'canonical for command patterns')."
-last_audited: "2026-02-08"
-audit_result: clean
+- action: declaring canonical authority in a learned doc
+  warning: Authority without substance misleads. Only declare canonical authority
+    if the doc is the comprehensive deep-dive, not a summary. If AGENTS.md has the
+    abbreviated version and this doc has the full treatment, that's the right split.
+- action: two learned docs claiming canonical authority over the same topic
+  warning: Contradicts the purpose. Consolidate into one doc, or differentiate scope
+    explicitly (e.g., 'canonical for hook patterns' vs 'canonical for command patterns').
 ---
 
 # Canonical Authority Declarations
