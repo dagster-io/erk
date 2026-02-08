@@ -1,168 +1,116 @@
 ---
-title: Gateway-Specific Patterns
+title: Mixed Exception/Union Pattern (Deprecated)
+last_audited: "2026-02-07 21:45 PT"
+audit_result: edited
 read_when:
-  - "implementing gateway methods with mixed error handling"
-  - "designing operations with main logic and cleanup steps"
-  - "converting methods with cleanup operations to discriminated unions"
+  - "considering mixing discriminated unions with exceptions in gateway methods"
+  - "designing operations with both expected failures and cleanup steps"
+  - "reviewing historical gateway error handling experiments"
 tripwires:
-  - action: "converting a gateway method with cleanup operations to discriminated union"
-    warning: "Main operation should return discriminated union, cleanup operations may remain exception-based if their failure indicates corrupted state. Document this mixed pattern clearly in method docstring."
+  - action: "mixing discriminated unions with exception-based cleanup in a single method"
+    warning: "This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR."
 ---
 
-# Gateway-Specific Patterns
+# Mixed Exception/Union Pattern (Deprecated)
 
-Gateway methods sometimes require mixed exception/union handling when an operation has both a main action (which can fail expectedly) and cleanup steps (which indicate corrupted state if they fail).
+**Status**: This pattern was implemented and then reverted. It is **not currently used** in erk.
 
-## Mixed Exception/Union Handling in Single Methods
+This document explains WHY the mixed exception/union pattern was tried and WHY it was abandoned, to prevent future attempts at the same failed approach.
 
-### The Pattern
+## The Attempted Pattern
 
-When a gateway method combines:
+In January 2026, we experimented with mixing error handling strategies in a single gateway method:
 
-1. **Main operation** - Can fail for expected, recoverable reasons → use discriminated union
-2. **Cleanup operation** - Failure indicates corrupted state → remain exception-based
+- **Main operation** returns discriminated union (`WorktreeRemoved | WorktreeRemoveError`)
+- **Cleanup operation** raises exception (`RuntimeError`)
 
-### Example: remove_worktree
+The hypothesis was that this distinguished between "expected failures" (main operation) and "corrupted state" (cleanup failures).
 
-The `remove_worktree` method demonstrates this pattern:
+## Why It Was Tried
 
-**Main operation** (`git worktree remove`):
+<!-- Source: PR #6347 - Phase 5 Convert remove_worktree to Discriminated Union -->
 
-- Can fail expectedly (worktree doesn't exist, in use, etc.)
-- Returns `WorktreeRemoved | WorktreeRemoveError`
+The `remove_worktree` method had two distinct failure modes:
 
-**Cleanup operation** (`git worktree prune`):
+1. **Expected failures**: Worktree doesn't exist, is in use, permission denied → could be handled gracefully
+2. **Cleanup failures**: `git worktree prune` fails → indicates repository corruption
 
-- Should never fail in normal operation
-- If it fails, indicates corrupted repository state
-- Remains exception-based (raises on failure)
+The discriminated union conversion aimed to make expected failures explicit while keeping cleanup failures exceptional.
 
-**Implementation** (`real.py`):
+See PR #6347 for the full implementation attempt.
 
-```python
-def remove_worktree(self, *, repo_root: Path, path: Path) -> WorktreeRemoved | WorktreeRemoveError:
-    """Remove a worktree. Returns WorktreeRemoved on success, WorktreeRemoveError on failure.
+## Why It Was Reverted
 
-    Note: Cleanup operations like 'git worktree prune' may still raise exceptions
-    if they fail, as this indicates corrupted repository state requiring different handling.
-    """
-    # Main operation - discriminated union
-    result = run_subprocess_with_context(
-        ["git", "worktree", "remove", str(path)],
-        cwd=repo_root,
-        check=False,
-    )
+<!-- Source: PR #6375 - Convert Worktree add/remove back to exceptions -->
 
-    if result.returncode != 0:
-        return WorktreeRemoveError(
-            path=path,
-            message=f"Failed to remove worktree: {result.stderr}",
-        )
+The pattern was reverted after 1 day because:
 
-    # Cleanup operation - exception-based (indicates corruption if fails)
-    run_subprocess_with_context(
-        ["git", "worktree", "prune"],
-        cwd=repo_root,
-        check=True,  # Raises SubprocessError if fails
-    )
+### 1. No Domain-Meaningful Variants
 
-    return WorktreeRemoved(path=path)
-```
+The discriminated union types (`WorktreeRemoved`, `WorktreeRemoveError`) were **structureless message wrappers**:
 
-### When to Apply This Pattern
+- No meaningful variant types (like "in use" vs "permission denied")
+- Just a single `message: str` field
+- Callers couldn't distinguish between error types anyway
+- Added boilerplate without adding capability
 
-Use mixed exception/union handling when:
+**The lesson**: Discriminated unions only add value when they have domain-meaningful variants that callers actually distinguish between. Message-only wrappers are busywork.
 
-1. **Main operation** has expected failure modes:
-   - Resource doesn't exist
-   - Resource is in use
-   - Permission denied
-   - Network timeout
+### 2. Exception Boundaries Already Exist
 
-2. **Cleanup operation** failures are exceptional:
-   - Corrupted repository state
-   - Filesystem corruption
-   - Programming errors (shouldn't happen)
+The CLI commands already catch exceptions at natural boundaries (Click command handlers). Moving the try/except from CLI to gateway didn't eliminate exception handling - it just moved it.
 
-### LBYL Violation Fix
+**The lesson**: Exception-based error handling works fine when exceptions are caught at architectural boundaries (CLI layer). Don't convert to discriminated unions just to avoid exceptions.
 
-Before the discriminated union conversion, `delete_cmd.py:150-168` contained a LBYL violation:
+### 3. Mixed Patterns Are Confusing
 
-```python
-# BEFORE (LBYL violation)
-def _remove_worktree_safe(ops: Operations, repo_root: Path, path: Path) -> None:
-    """Remove worktree, catching errors."""
-    try:
-        ops.git_worktree.remove_worktree(repo_root=repo_root, path=path)
-    except WorktreeRemoveError:
-        pass  # Ignore errors
-```
+Having one method return a union for some errors and raise exceptions for others creates cognitive load:
 
-This wrapper function used try/except for control flow, violating erk's LBYL principle.
+- Callers must remember which errors are in the return type and which are exceptions
+- Mixed docstrings are harder to read
+- No tooling support for "this method returns X | Y but also raises Z"
 
-**After the discriminated union conversion:**
+**The lesson**: Pick one strategy per method. Mixing strategies within a single operation is an anti-pattern.
 
-```python
-# AFTER (LBYL-compliant)
-result = ops.git_worktree.remove_worktree(repo_root=root, path=wt_path)
-if isinstance(result, WorktreeRemoveError):
-    click.echo(f"Warning: Failed to remove worktree: {result.message}", err=True)
-    return 1
-# Type narrowing: result is now WorktreeRemoved
-```
+## The Current Approach
 
-The discriminated union pattern eliminates the need for try/except wrappers - callers check types before acting.
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py, remove_worktree -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py, remove_worktree -->
 
-### Caller Expectations
+Gateway methods use **exceptions for all failures**. See `remove_worktree` in `packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py` — it returns `None` and raises `RuntimeError` on failure. No discriminated union types involved.
 
-Callers of methods with mixed exception/union handling should:
+CLI commands catch these exceptions at their natural boundaries (Click command handlers), converting them to `click.ClickException` for user-facing output. See callers in `src/erk/cli/commands/wt/delete_cmd.py` and `src/erk/cli/commands/navigation_helpers.py`.
 
-1. **Check discriminated union** for expected failures (main operation)
-2. **NOT catch exceptions** for cleanup operations (let them propagate)
+This is simpler, less code, and works well when all callers terminate identically on failure — no caller branches on error content or inspects error structure.
 
-The exception from cleanup indicates a serious problem requiring immediate attention, not something to handle gracefully.
+## When Discriminated Unions DO Work
 
-### Documentation Requirements
+Discriminated unions are valuable when:
 
-When implementing this pattern, the method docstring MUST document:
+1. **Multiple domain-meaningful variants** exist that callers distinguish between
+   - Example: `PRDetails | PRNotFound` — callers check `isinstance(result, PRNotFound)` and inspect `result.branch` or `result.pr_number`
+2. **Type narrowing provides value** at the call site
+   - Example: `if isinstance(result, PRNotFound): handle_missing(result.branch)`
+3. **The variants have different fields** that encode domain information
+   - Not just `message: str` wrappers
 
-1. **Main operation return type** - Which discriminated union types
-2. **Cleanup exceptions** - Which cleanup operations may raise
-3. **Exception meaning** - What exceptions from cleanup indicate
+See `docs/learned/architecture/discriminated-union-error-handling.md` for current discriminated union patterns.
 
-Example docstring:
+## Decision Framework
 
-```python
-def remove_worktree(self, *, repo_root: Path, path: Path) -> WorktreeRemoved | WorktreeRemoveError:
-    """Remove a worktree. Returns WorktreeRemoved on success, WorktreeRemoveError on failure.
+When designing gateway error handling:
 
-    Note: Cleanup operations like 'git worktree prune' may still raise exceptions
-    if they fail, as this indicates corrupted repository state requiring different handling.
-    """
-```
+| Situation                                         | Use                    | Reason                               |
+| ------------------------------------------------- | ---------------------- | ------------------------------------ |
+| Single failure mode with message                  | Exception              | No variants to distinguish           |
+| Multiple failure modes, callers don't distinguish | Exception              | Type system overhead without benefit |
+| Multiple failure modes, callers DO distinguish    | Discriminated union    | Type narrowing adds value            |
+| Cleanup operation in same method                  | Same as main operation | Don't mix strategies                 |
 
-### Reference Implementation
-
-`packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py` - `remove_worktree` method
-
-PR #6346 - Complete conversion of `remove_worktree` to discriminated union with mixed exception handling
-
-### Call Sites
-
-12 call sites (4 production, 8 test) all use the same `isinstance()` pattern:
-
-```python
-result = ops.git_worktree.remove_worktree(repo_root=root, path=wt_path)
-if isinstance(result, WorktreeRemoveError):
-    # Handle expected failure
-    click.echo(f"Warning: {result.message}", err=True)
-# Continue - worktree removed successfully
-```
-
-None of the call sites wrap the operation in try/except because cleanup exceptions should propagate.
+**Never mix exceptions and discriminated unions in a single method signature.** Choose one strategy for all error cases.
 
 ## Related Documentation
 
-- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - Core pattern for success/error unions
+- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - When and how to use discriminated unions
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-place implementation checklist
 - [LBYL Gateway Pattern](lbyl-gateway-pattern.md) - LBYL principles for gateway design
