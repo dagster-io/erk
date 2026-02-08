@@ -62,7 +62,7 @@ def clean_bad_tripwires(content: str) -> str:
                         )
                         result.append(
                             '    warning: "build_codespace_ssh_command() bootstraps the '
-                            'environment - don\'t duplicate setup"'
+                            "environment - don't duplicate setup\""
                         )
                         i += 1
                         continue
