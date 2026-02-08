@@ -7,9 +7,9 @@ read_when:
 tripwires:
   - action: "changing right pane size without triggering bounds report"
     warning: "every code path that changes the right pane's rendered size must trigger a bounds report to the main process"
-  - action: "rendering content in the right pane div"
+  - action: "adding content to the right pane div"
     warning: "the right pane div is a positioning placeholder only — it renders no content, the WebContentsView overlays it"
-  - action: "adding cleanup to SplitPane component"
+  - action: "adding cleanup to SplitPane component instead of main process"
     warning: "cleanup lives in the main process window-close handler, not in the SplitPane component"
 last_audited: "2026-02-08"
 audit_result: clean

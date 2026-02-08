@@ -7,13 +7,13 @@ read_when:
 tripwires:
   - action: "registering IPC handlers at module scope"
     warning: "Register IPC handlers inside createWindow(), not at module scope — macOS activate re-calls createWindow, causing duplicate listeners"
-  - action: "adding new IPC handler without cleanup in mainWindow.on(\"closed\")"
-    warning: "Every new IPC handler needs matching cleanup in mainWindow.on(\"closed\") — use removeAllListeners for ipcMain.on, removeHandler for ipcMain.handle"
-  - action: "spawning subprocess while activeAction is running"
+  - action: "adding IPC handlers without cleanup in mainWindow.on('closed')"
+    warning: "Every new IPC handler needs matching cleanup in mainWindow.on('closed') — use removeAllListeners for ipcMain.on, removeHandler for ipcMain.handle"
+  - action: "spawning streaming process without killing activeAction"
     warning: "Kill activeAction before spawning a new streaming process — concurrent subprocess conflicts cause interleaved output"
   - action: "expecting WebContentsView to be visible immediately"
     warning: "WebContentsView starts at zero bounds — renderer must report bounds before it becomes visible"
-  - action: "mixing execFile and spawn patterns in IPC handlers"
+  - action: "mixing execFile and spawn patterns for IPC"
     warning: "Use execFile for request/response IPC, spawn for streaming IPC — do not mix the patterns"
 last_audited: "2026-02-08"
 audit_result: clean
