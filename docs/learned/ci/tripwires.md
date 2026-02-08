@@ -64,6 +64,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before triggering objective reconciliation** → Read [Objective Reconciler Workflow](objective-reconciler-workflow.md) first. The reconcile command launches Claude interactively—it does NOT perform autonomous batch processing. Review actual workflow implementation before assuming sweep behavior.
 
+**CRITICAL: Before use the curl | bash install script for claude code in ci** → Read [Composite Action Patterns](composite-action-patterns.md) first. NEVER use the curl | bash install script for Claude Code in CI — it hangs unpredictably. Use direct GCS download via setup-claude-code action.
+
 **CRITICAL: Before using Edit tool on Python files** → Read [Edit Tool Formatting Behavior](edit-tool-formatting.md) first. Edit tool preserves exact indentation without auto-formatting. Always run 'make format' after editing Python code.
 
 **CRITICAL: Before using echo with multi-line content to GITHUB_OUTPUT** → Read [GitHub Actions Output Patterns](github-actions-output-patterns.md) first. Multi-line content requires heredoc syntax with EOF delimiter. Simple echo only works for single-line values.

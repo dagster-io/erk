@@ -5,14 +5,7 @@ read_when:
   - "creating GitHub Actions workflow capabilities"
   - "understanding workflow capability pattern"
 last_audited: "2026-02-08"
-audit_result: clean
-tripwires:
-  - action: "creating workflow capability"
-    warning: "Workflow capabilities extend Capability directly, not a template base class"
-  - action: "adding workflow files"
-    warning: "Workflows must exist in bundled artifacts path resolved by get_bundled_github_dir()"
-  - action: "importing artifacts.state in workflow capabilities"
-    warning: "Use inline imports for artifacts.state to avoid circular dependencies"
+audit_result: edited
 ---
 
 # Adding Workflow Capabilities
