@@ -12,11 +12,17 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+**CRITICAL: Before accessing a session by ID without checking existence first** → Read [Session File Lifecycle and Persistence](lifecycle.md) first. Session files are session-scoped — Claude Code may clean them up at any time. Always use LBYL discovery (ClaudeInstallation.find_session_globally) before reading.
+
 **CRITICAL: Before analyzing large sessions** → Read [Session Preprocessing](preprocessing.md) first. Sessions exceeding 20,000 tokens are automatically chunked into multi-part files. Analysis must detect and handle chunking (.part1.jsonl, .part2.jsonl, etc.). Check for part files when base session file is missing.
 
 **CRITICAL: Before assuming a session ID from metadata corresponds to a file on disk** → Read [Session Discovery and Fallback Patterns](discovery-fallback.md) first. Claude Code manages session lifecycle; old sessions may be cleaned up. Always use LBYL discovery before reading.
 
 **CRITICAL: Before checking entry['type'] == 'tool_result' in Claude session JSONL** → Read [Claude Code JSONL Schema Reference](jsonl-schema-reference.md) first. tool_results are content blocks INSIDE user entries, NOT top-level entry types. Check message.content[].type == 'tool_result' within user entries instead. Load session-inspector skill for correct schema.
+
+**CRITICAL: Before constructing session file paths manually** → Read [Session File Lifecycle and Persistence](lifecycle.md) first. Use ClaudeInstallation ABC methods, not manual path construction. Storage layout is an implementation detail that may change.
+
+**CRITICAL: Before failing a workflow because a session file is missing** → Read [Session File Lifecycle and Persistence](lifecycle.md) first. Missing sessions must never cause hard failure. Degrade through the fallback hierarchy: planning → implementation → gist → local scan → skip.
 
 **CRITICAL: Before looking up session files from metadata** → Read [Session Preprocessing](preprocessing.md) first. Session IDs in metadata may not match available local files. Verify session paths exist before preprocessing. Use LBYL checks and provide clear error messages when sessions are missing.
 

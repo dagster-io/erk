@@ -9,6 +9,7 @@
 - **[command-group-testing.md](command-group-testing.md)** — testing Click command groups with invoke_without_command=True, writing tests for commands that serve as both group and default action
 - **[devrun-agent.md](devrun-agent.md)** — using the devrun agent, running CI checks via Task tool, writing prompts for devrun, understanding the parent-agent fix cycle
 - **[erkdesk-component-testing.md](erkdesk-component-testing.md)** — writing tests for erkdesk React components, deciding whether to test at component level or App level, adding keyboard navigation tests for erkdesk, creating test data factories for PlanRow
+- **[exec-script-batch-testing.md](exec-script-batch-testing.md)** — writing tests for batch exec commands, organizing test cases for JSON stdin/stdout commands, adding failure injection to a fake gateway for batch operations
 - **[exec-script-testing.md](exec-script-testing.md)** — testing exec CLI commands, writing integration tests for scripts, debugging 'Context not initialized' errors in tests, debugging flaky tests in parallel execution
 - **[fake-api-migration-pattern.md](fake-api-migration-pattern.md)** — writing tests that use FakePromptExecutor, choosing between the two FakePromptExecutor implementations, encountering old-style output=/should_fail= patterns in test code
 - **[fake-github-testing.md](fake-github-testing.md)** — setting up FakeGitHubIssues in a test, test fails with empty comments from FakeGitHubIssues, choosing between comments and comments_with_urls parameters

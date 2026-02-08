@@ -42,11 +42,17 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before calling gh or git directly from a slash command** → Read [Slash Command to Exec Migration](slash-command-exec-migration.md) first. Use an erk exec script instead. Direct CLI calls bypass gateways, making the logic untestable and unreusable.
 
+**CRITICAL: Before calling sys.exit() in \_\*\_impl() functions** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Separate \_\*\_impl() functions return exit codes or discriminated unions, never call sys.exit()
+
 **CRITICAL: Before choosing between Ensure and EnsureIdeal** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal.
 
 **CRITICAL: Before committing .impl/ folder to git** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/ lives in .gitignore and should never be committed. Only .worker-impl/ (remote execution artifact) gets committed and later removed.
 
+**CRITICAL: Before creating PRs without understanding workflow tradeoffs** → Read [PR Submission Decision Framework](pr-submission.md) first. Before creating PRs, understand the workflow tradeoffs
+
 **CRITICAL: Before creating exec scripts for operations requiring LLM reasoning between steps** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Keep conditional logic in slash commands. Only bundle mechanical API calls where all input params are known upfront.
+
+**CRITICAL: Before creating gateway instances in business logic** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Never create gateway instances in business logic — inject them as parameters
 
 **CRITICAL: Before displaying user-provided text in Rich CLI tables** → Read [CLI Output Styling Guide](output-styling.md) first. Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear.
 
@@ -54,14 +60,17 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before editing or deleting .impl/ folder during implementation** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/plan.md is immutable during implementation. Never edit it. Never delete .impl/ folder - it must be preserved for user review. Only .worker-impl/ should be auto-deleted.
 
-
 **CRITICAL: Before expecting status to auto-update after manual PR edits** → Read [Update Roadmap Step Command](commands/update-roadmap-step.md) first. Only the update-roadmap-step command writes computed status. Manual edits require explicitly setting status to '-' to enable inference on next parse.
 
 **CRITICAL: Before filtering session sources without logging which sessions were skipped and why** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering makes debugging impossible. Log to stderr when skipping sessions, include the reason (empty/warmup/filtered).
 
+**CRITICAL: Before ignoring PR validation rules** → Read [PR Submission Decision Framework](pr-submission.md) first. PR validation rules apply to both workflows
+
 **CRITICAL: Before implementing a command with user confirmations interleaved between mutations** → Read [Two-Phase Validation Model](two-phase-validation-model.md) first. Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Interleaving confirmations with mutations causes partial state on decline.
 
 **CRITICAL: Before importing from erk_shared.gateway.{service}.abc when creating exec commands** → Read [Exec Script Patterns](exec-script-patterns.md) first. Gateway ABCs use submodule paths: `erk_shared.gateway.{service}.{resource}.abc`
+
+**CRITICAL: Before instantiating gateways directly in Click commands** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Click commands retrieve real implementations from context via require\_\* helpers
 
 **CRITICAL: Before landing a PR without updating associated learn plan status** → Read [Learn Plan Land Flow](learn-plan-land-flow.md) first. Learn plan PRs trigger special execution pipeline steps that update parent plan metadata and promote tripwires. Ensure check_learn_status, update_learn_plan, promote_tripwires, and close_review_pr steps execute after merge.
 
