@@ -25,10 +25,10 @@ Erkdesk tests are split into two layers with distinct responsibilities. Understa
 <!-- Source: erkdesk/src/renderer/components/PlanList.test.tsx -->
 <!-- Source: erkdesk/src/renderer/components/ActionToolbar.test.tsx -->
 
-| Layer               | Tests                                               | What it verifies                                                                                                   | Uses waitFor?                                        |
-| ------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| **App integration** | `App.test.tsx`                                      | Async data flow: IPC fetch → state → child props. Keyboard navigation (j/k). Auto-refresh. Streaming. URL loading. | Yes — data arrives asynchronously via `fetchPlans()` |
-| **Component unit**  | `PlanList.test.tsx`, `ActionToolbar.test.tsx`, etc. | Rendering from props. Click callbacks. CSS class application. Button enable/disable logic.                         | No — components receive data synchronously via props |
+| Layer | Tests | What it verifies | Uses waitFor? |
+|-------|-------|-----------------|---------------|
+| **App integration** | `App.test.tsx` | Async data flow: IPC fetch → state → child props. Keyboard navigation (j/k). Auto-refresh. Streaming. URL loading. | Yes — data arrives asynchronously via `fetchPlans()` |
+| **Component unit** | `PlanList.test.tsx`, `ActionToolbar.test.tsx`, etc. | Rendering from props. Click callbacks. CSS class application. Button enable/disable logic. | No — components receive data synchronously via props |
 
 **Why this split matters**: PlanList is a controlled component — it receives `plans`, `selectedIndex`, and `onSelectIndex` as props. It has no `useEffect` that fetches data and no keyboard event listeners. Testing async data flow or keyboard navigation against PlanList directly would require mocking behavior that doesn't exist in that component. The App component owns the data-fetching `useEffect`, the keyboard `addEventListener`, and the IPC bridge calls, so those behaviors must be tested there.
 

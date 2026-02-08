@@ -12,7 +12,7 @@ tripwires:
     warning: "Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below."
     score: 6
 last_audited: "2026-02-08"
-audit_result: edited
+audit_result: regenerated
 ---
 
 # Exec Script Batch Testing
@@ -23,12 +23,12 @@ Batch exec commands have a unique testing challenge: they process multiple items
 
 A batch command can fail in structurally different ways, and each failure shape produces different JSON output. Testing only success cases misses the three other shapes entirely:
 
-| Category             | What it proves                                            | Output shape                    |
-| -------------------- | --------------------------------------------------------- | ------------------------------- |
-| **Success**          | All items processed correctly, AND semantics hold         | `{success: true, results: []}`  |
-| **Partial failure**  | Failed items don't block successful ones, per-item errors | `{success: false, results: []}` |
-| **Input validation** | Malformed input rejected before any side effects          | `{success: false, error_type}`  |
-| **JSON structure**   | Field presence and types match the contract               | Both shapes                     |
+| Category                   | What it proves                                             | Output shape                    |
+| -------------------------- | ---------------------------------------------------------- | ------------------------------- |
+| **Success**                | All items processed correctly, AND semantics hold          | `{success: true, results: []}`  |
+| **Partial failure**        | Failed items don't block successful ones, per-item errors  | `{success: false, results: []}` |
+| **Input validation**       | Malformed input rejected before any side effects           | `{success: false, error_type}`  |
+| **JSON structure**         | Field presence and types match the contract                | Both shapes                     |
 
 The critical distinction is between partial failure (results array present, some items failed) and validation failure (no results array, nothing processed). These are different JSON shapes and callers branch on the presence of `results` — if you only test success, you never verify either failure shape.
 
