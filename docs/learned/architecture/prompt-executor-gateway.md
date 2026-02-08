@@ -6,12 +6,12 @@ read_when:
   - "implementing single-shot prompt execution"
   - "working with PromptExecutor or FakePromptExecutor"
 tripwires:
-  - action: "choosing between single-shot and streaming modes for execute_prompt()"
-    warning: "choose based on whether you need real-time updates"
-  - action: "making assertions about FakePromptExecutor calls"
-    warning: "use .prompt_calls, .interactive_calls, .passthrough_calls properties for assertions"
-  - action: "expecting execute_interactive() to return in production"
-    warning: "execute_interactive() never returns in production - it replaces the process via os.execvp"
+  - action: "execute_prompt() supports both single-shot and streaming modes - choose based on whether you need real-time updates"
+    warning: "Using wrong mode reduces UX quality"
+  - action: "FakePromptExecutor tracks all calls via properties - use .prompt_calls, .interactive_calls, .passthrough_calls for assertions"
+    warning: "Missing assertions make tests brittle"
+  - action: "execute_interactive() never returns in production - it replaces the process via os.execvp"
+    warning: "Code after execute_interactive() won't run in production"
 ---
 
 # Prompt Executor Gateway

@@ -12,17 +12,37 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+**CRITICAL: Before Always start_codespace() before executing remote commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Commands fail if codespace is not running
+
 **CRITICAL: Before Archive value to 'last\_' variant BEFORE clearing** → Read [Archive-on-Clear Metadata Pattern](metadata-archival-pattern.md) first. Order matters — clear-then-archive loses the value silently
 
 **CRITICAL: Before Call plan-update-issue after editing local plan files** → Read [Plan File Sync Pattern](plan-file-sync-pattern.md) first. Sync is NOT automatic — GitHub issue will show stale content without explicit sync
 
 **CRITICAL: Before Detect mode in Phase 0 before any other phases execute** → Read [Phase 0 Detection Pattern](phase-zero-detection-pattern.md) first. Late detection wastes work and creates scattered conditionals across all phases
 
+**CRITICAL: Before FakePromptExecutor tracks all calls via properties - use .prompt_calls, .interactive_calls, .passthrough_calls for assertions** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. Missing assertions make tests brittle
+
+**CRITICAL: Before Interactive commands need exec_ssh_interactive(), not run_ssh_command()** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Using run_ssh_command() for interactive commands causes hangs
+
+**CRITICAL: Before LiveDisplay is primarily used in watch loops — guard with try/finally to ensure stop() is called even on KeyboardInterrupt** → Read [LiveDisplay Gateway](live-display-gateway.md) first. Failing to call stop() leaves terminal in broken state
+
+**CRITICAL: Before Missing -t flag prevents TTY allocation and breaks interactive programs** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. Interactive programs fail without TTY
+
+**CRITICAL: Before Never use unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. bash silently expands them
+
 **CRITICAL: Before Parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
+
+**CRITICAL: Before Prefer the Write tool over bash heredocs for large agent outputs** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. heredocs fail silently with special characters
+
+**CRITICAL: Before RealLiveDisplay writes to stderr by default (matches erk's user_output convention) — stdout is reserved for structured data** → Read [LiveDisplay Gateway](live-display-gateway.md) first. Writing to stdout breaks structured data parsing
 
 **CRITICAL: Before Rely solely on agent-level enforcement for critical rules** → Read [Defense-in-Depth Enforcement](defense-in-depth-enforcement.md) first. Add skill-level and PR-level enforcement layers. Only workflow/CI enforcement is truly reliable.
 
 **CRITICAL: Before Return pre-rendered display strings from backend APIs** → Read [State Derivation Pattern](state-derivation-pattern.md) first. Return raw state fields instead. Derive display state in frontend pure functions for testability and reusability.
+
+**CRITICAL: Before SSH command must be a single string argument, not multiple shell words** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. Multiple arguments break command execution
+
+**CRITICAL: Before Using run_ssh_command() for interactive TUI processes causes apparent hangs** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. Use exec_ssh_interactive() for TUI programs
 
 **CRITICAL: Before accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
 
@@ -49,6 +69,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before assuming GitHub API failures are transient without repository-specific testing** → Read [GitHub API Diagnostics](github-api-diagnostics.md) first. Test with a control repository first. Some GitHub bugs affect specific repos but not others. Follow the 3-step diagnostic methodology.
 
 **CRITICAL: Before assuming cursor position will persist across DataTable.clear() calls** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Save cursor position by row key before clear(), restore after repopulating. See textual/quirks.md for pattern.
+
+**CRITICAL: Before build_codespace_ssh_command() bootstraps the environment - don't duplicate setup** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Duplicating setup causes conflicts and slower execution
 
 **CRITICAL: Before calling GraphiteBranchManager.create_branch() without explicit checkout** → Read [Erk Architecture Patterns](erk-architecture.md) first. GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch.
 
@@ -92,8 +114,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
 
-**CRITICAL: Before choosing between single-shot and streaming modes for execute_prompt()** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. choose based on whether you need real-time updates
-
 **CRITICAL: Before comparing git SHA to Graphite's tracked SHA for divergence detection** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches.
 
 **CRITICAL: Before comparing worktree path to repo_root to detect root worktree** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently.
@@ -116,11 +136,9 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before detecting current worktree using path comparisons on cwd** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use git.get_repository_root(cwd) to get the worktree root, then match exactly against known paths. Path comparisons with .exists()/.resolve()/is_relative_to() are fragile.
 
-**CRITICAL: Before duplicating environment setup in remote commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. build_codespace_ssh_command() bootstraps the environment - don't duplicate setup
+**CRITICAL: Before execute_interactive() never returns in production - it replaces the process via os.execvp** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. Code after execute_interactive() won't run in production
 
-**CRITICAL: Before executing remote commands without starting codespace first** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Always start_codespace() before executing remote commands
-
-**CRITICAL: Before expecting execute_interactive() to return in production** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. execute_interactive() never returns in production - it replaces the process via os.execvp
+**CRITICAL: Before execute_prompt() supports both single-shot and streaming modes - choose based on whether you need real-time updates** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. Using wrong mode reduces UX quality
 
 **CRITICAL: Before expecting status to auto-update after manual PR edits** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. Only the update-roadmap-step command writes computed status. Manual GitHub edits or direct body mutations leave status at its current value — you must explicitly set status to '-' to enable inference on next parse.
 
@@ -137,8 +155,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before importing time module or calling time.sleep() or datetime.now()** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use context.time.sleep() and context.time.now() for testability. Direct time.sleep() makes tests slow and datetime.now() makes tests non-deterministic.
 
 **CRITICAL: Before injecting Time dependency into gateway real.py for lock-waiting or retry logic** → Read [Erk Architecture Patterns](erk-architecture.md) first. Accept optional Time in **init** with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/gateway/git/lock.py for pattern.
-
-**CRITICAL: Before making assertions about FakePromptExecutor calls** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls properties for assertions
 
 **CRITICAL: Before migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
 
@@ -160,15 +176,11 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before passing dry_run boolean flags through business logic function parameters** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands.
 
-**CRITICAL: Before passing multiple shell words to SSH command** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. SSH command must be a single string argument, not multiple shell words
-
 **CRITICAL: Before passing variables to gh api graphql as JSON blob** → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work.
 
 **CRITICAL: Before reading from or writing to ~/.claude/ paths using Path.home() directly** → Read [ClaudeInstallation Gateway](claude-installation-gateway.md) first. Use ClaudeInstallation gateway instead. All ~/.claude/ filesystem operations must go through this gateway for testability and storage abstraction.
 
 **CRITICAL: Before removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
-
-**CRITICAL: Before running interactive programs without TTY allocation** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. Missing -t flag prevents TTY allocation and breaks interactive programs
 
 **CRITICAL: Before running tsc --noEmit from root in multi-config TypeScript project** → Read [TypeScript Multi-Config Project Checking](typescript-multi-config.md) first. tsc --noEmit from root breaks subdirectory configs. Use tsc -p <path> --noEmit for each tsconfig.json separately.
 
@@ -184,8 +196,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before updating a roadmap step's PR cell** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. The update-roadmap-step command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty.
 
-**CRITICAL: Before using LiveDisplay in watch loops without proper cleanup** → Read [LiveDisplay Gateway](live-display-gateway.md) first. guard with try/finally to ensure stop() is called even on KeyboardInterrupt
-
 **CRITICAL: Before using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
 
 **CRITICAL: Before using `--output-format stream-json` with `--print` in Claude CLI** → Read [Claude CLI Integration from Python](claude-cli-integration.md) first. Must also include `--verbose`. Without it, the command fails with 'stream-json requires --verbose'.
@@ -193,8 +203,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before using `gt restack` to resolve branch divergence errors** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first.
 
 **CRITICAL: Before using bare subprocess.run with check=True** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
-
-**CRITICAL: Before using bash heredocs for large agent outputs with special characters** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. Prefer the Write tool over bash heredocs — heredocs fail silently with special characters
 
 **CRITICAL: Before using gh api or gh api graphql to fetch or resolve PR review threads** → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. Load `pr-operations` skill first. Use `erk exec get-pr-review-comments` and `erk exec resolve-review-thread` instead. Raw gh api calls miss thread resolution functionality.
 
@@ -218,14 +226,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code** → Read [Erk Architecture Patterns](erk-architecture.md) first. Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables.
 
-**CRITICAL: Before using run_ssh_command() for interactive TUI processes** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. causes apparent hangs
-
-**CRITICAL: Before using run_ssh_command() for interactive commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Interactive commands need exec_ssh_interactive(), not run_ssh_command()
-
 **CRITICAL: Before using subprocess.run with git command outside of a gateway** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations.
-
-**CRITICAL: Before using unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. bash silently expands them
-
-**CRITICAL: Before writing LiveDisplay output to stdout** → Read [LiveDisplay Gateway](live-display-gateway.md) first. RealLiveDisplay writes to stderr by default (matches erk's user_output convention) — stdout is reserved for structured data
 
 **CRITICAL: Before writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has >3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.

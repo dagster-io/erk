@@ -8,12 +8,12 @@ read_when:
 last_audited: "2026-02-07 21:36 PT"
 audit_result: clean
 tripwires:
-  - action: "using run_ssh_command() for interactive TUI processes"
-    warning: "causes apparent hangs"
-  - action: "passing multiple shell words to SSH command"
-    warning: "SSH command must be a single string argument, not multiple shell words"
-  - action: "running interactive programs without TTY allocation"
-    warning: "Missing -t flag prevents TTY allocation and breaks interactive programs"
+  - action: "Using run_ssh_command() for interactive TUI processes causes apparent hangs"
+    warning: "Use exec_ssh_interactive() for TUI programs"
+  - action: "SSH command must be a single string argument, not multiple shell words"
+    warning: "Multiple arguments break command execution"
+  - action: "Missing -t flag prevents TTY allocation and breaks interactive programs"
+    warning: "Interactive programs fail without TTY"
 ---
 
 # SSH Command Execution Patterns
