@@ -17,7 +17,7 @@ The TUI command palette serves the same set of commands from two different UI co
 
 ## Why Two Providers, Not Two Registries
 
-The core design question was: when a user opens the command palette from the detail modal, should it show a different set of commands than from the main list? The answer is no — the same operations (open PR, copy checkout, close plan) apply regardless of context. What differs is only _which plan_ the command operates on and _how the command dispatches_.
+The core design question was: when a user opens the command palette from the detail modal, should it show a different set of commands than from the main list? The answer is no — the same operations (open PR, copy checkout, close plan) apply regardless of context. What differs is only *which plan* the command operates on and *how the command dispatches*.
 
 <!-- Source: src/erk/tui/commands/provider.py, MainListCommandProvider -->
 <!-- Source: src/erk/tui/commands/provider.py, PlanCommandProvider -->
@@ -52,7 +52,7 @@ This dispatch duplication is the main cost of the pattern. Both methods contain 
 The dual provider pattern works for operations on "the selected plan." It does not apply to:
 
 - **View-specific commands**: Sort, filter, and navigation bindings are screen-level `BINDINGS`, not palette commands
-- **Commands that need app-level orchestration**: Some ACTION commands dispatched from the main list create a `PlanDetailScreen` and push it _then_ invoke a streaming command — this two-step push-then-execute sequence only makes sense at the app level
+- **Commands that need app-level orchestration**: Some ACTION commands dispatched from the main list create a `PlanDetailScreen` and push it *then* invoke a streaming command — this two-step push-then-execute sequence only makes sense at the app level
 - **Commands with different semantics per context**: `close_plan` from the detail modal dismisses the modal first, then delegates to the app. From the main list, it runs directly. The command_id is the same but the orchestration differs.
 
 ## Related Documentation

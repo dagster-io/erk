@@ -10,7 +10,7 @@ tripwires:
   - action: "loading erk-diff-analysis skill more than once per session"
     warning: "Skills persist for the entire session. Check conversation history for 'erk-diff-analysis' before reloading."
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 ---
 
 # Skill-Based Commit Message Generation
@@ -19,7 +19,7 @@ Erk uses the `erk-diff-analysis` skill to generate commit messages from staged d
 
 ## Why Not Just Write Messages Manually?
 
-Agent-written commit messages default to describing _what_ changed ("Update documentation", "Fix bug in gateway"). The skill reframes messages around _why_ and _impact_ — which components are affected, what goal the change serves, and what issue it closes. This isn't about saving keystrokes; it's about producing messages that serve as useful PR descriptions without additional editing.
+Agent-written commit messages default to describing *what* changed ("Update documentation", "Fix bug in gateway"). The skill reframes messages around *why* and *impact* — which components are affected, what goal the change serves, and what issue it closes. This isn't about saving keystrokes; it's about producing messages that serve as useful PR descriptions without additional editing.
 
 The skill also enforces structural consistency: component-level grouping, 3-5 key changes maximum, relative paths from repo root, and automatic `Closes #N` references when issue context exists. These conventions are defined in the skill's prompt template.
 
@@ -29,14 +29,14 @@ See the output format and analysis principles in `.claude/skills/erk-diff-analys
 
 ## When to Use Skill-Based Messages
 
-| Scenario                                        | Use Skill? | Why                                                      |
-| ----------------------------------------------- | ---------- | -------------------------------------------------------- |
-| Multi-file feature implementation               | Always     | Many components to identify and frame strategically      |
-| Documentation batch (multiple new/updated docs) | Always     | File grouping by area prevents "updated docs" vagueness  |
-| Non-trivial bug fix spanning multiple areas     | Always     | Rationale and affected areas matter for reviewers        |
-| Single-line typo fix                            | Optional   | Low value — the diff is self-explanatory                 |
-| Auto-formatting changes                         | Optional   | No strategic framing needed                              |
-| Empty commits, merges, reverts                  | Never      | Git generates these messages; skill would overwrite them |
+| Scenario | Use Skill? | Why |
+| --- | --- | --- |
+| Multi-file feature implementation | Always | Many components to identify and frame strategically |
+| Documentation batch (multiple new/updated docs) | Always | File grouping by area prevents "updated docs" vagueness |
+| Non-trivial bug fix spanning multiple areas | Always | Rationale and affected areas matter for reviewers |
+| Single-line typo fix | Optional | Low value — the diff is self-explanatory |
+| Auto-formatting changes | Optional | No strategic framing needed |
+| Empty commits, merges, reverts | Never | Git generates these messages; skill would overwrite them |
 
 ## Commit-to-PR Body Flow
 
@@ -44,7 +44,7 @@ A key design decision: the commit message's first line becomes the PR title, and
 
 <!-- Source: .claude/commands/erk/git-pr-push.md, Step 7 -->
 
-This means investing in commit message quality pays off twice — you get a good commit _and_ a good PR without writing separate descriptions. The PR submission commands append a checkout footer and issue closing references automatically.
+This means investing in commit message quality pays off twice — you get a good commit *and* a good PR without writing separate descriptions. The PR submission commands append a checkout footer and issue closing references automatically.
 
 For details on how the two PR workflows differ (git-only vs. Graphite), see [PR Submission Decision Framework](../cli/pr-submission.md).
 
