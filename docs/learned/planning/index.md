@@ -15,7 +15,9 @@
 - **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, designing any workflow that calls EnterPlanMode, understanding why plans lose investigation context
 - **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
 - **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo issue closing syntax
+- **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures after an initial fix attempt fails, Encountering errors where the required format is unclear from the error message alone, Deciding whether to guess at another fix or read the validator source
 - **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving a gateway package into the gateway/ directory, extracting a new gateway from existing code, performing large-scale import refactoring across packages
+- **[learn-pipeline-workflow.md](learn-pipeline-workflow.md)** — debugging why learn materials are missing or malformed, understanding data flow from sessions to documentation plan, choosing between local learn and async learn modes, adding a new stage to the learn pipeline
 - **[learn-plan-metadata-fields.md](learn-plan-metadata-fields.md)** — working with learn plan metadata, troubleshooting null learn_status or learn_plan_issue, transforming Plan objects in pipelines, understanding created_from_workflow_run_url field, adding workflow run backlinks to plans
 - **[learn-plan-validation.md](learn-plan-validation.md)** — creating or modifying erk-learn plans, working on the learn workflow pipeline, debugging learn-on-learn cycle errors
 - **[learn-vs-implementation-plans.md](learn-vs-implementation-plans.md)** — choosing between plan types, creating erk-learn plans, understanding how learn plans relate to implementation plans, debugging learn plan base branch selection
@@ -30,6 +32,8 @@
 - **[pr-analysis-pattern.md](pr-analysis-pattern.md)** — analyzing PR changes for documentation, building workflows that inspect PRs
 - **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan issue, debugging why get-pr-for-plan returns no-branch-in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field
 - **[pr-review-workflow.md](pr-review-workflow.md)** — creating or managing plan review PRs, addressing feedback on plan content via PR comments, understanding how review PRs relate to implementation PRs, closing or cleaning up plan review PRs
+- **[pr-submission-patterns.md](pr-submission-patterns.md)** — creating or updating PRs programmatically in erk, debugging why a duplicate PR or issue was created, fixing erk pr check validation failures, understanding the PR number vs issue number distinction
+- **[reliability-patterns.md](reliability-patterns.md)** — deciding whether an operation should be agent-driven or workflow-native, designing multi-layer resilience for critical automated operations, ordering git operations that mix cleanup with reset in CI workflows
 - **[remote-implementation-idempotency.md](remote-implementation-idempotency.md)** — implementing remote plan execution, debugging branch creation in remote workflows, working with worktree reuse patterns
 - **[scratch-storage.md](scratch-storage.md)** — writing temp files for AI workflows, passing files between processes, understanding scratch directory location
 - **[session-deduplication.md](session-deduplication.md)** — understanding duplicate plan prevention, working with exit-plan-mode hook, debugging duplicate issue creation
