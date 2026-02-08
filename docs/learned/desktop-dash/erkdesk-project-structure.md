@@ -6,16 +6,12 @@ read_when:
   - debugging erkdesk build or packaging issues
   - understanding why erkdesk is structured differently from the Python codebase
 tripwires:
-  - action: "adding erkdesk as a pnpm workspace member"
-    warning: "Do NOT add erkdesk as a pnpm workspace member — it is intentionally standalone"
-  - action: "using BrowserView in erkdesk code"
-    warning: "Do NOT use BrowserView — use WebContentsView (BrowserView is deprecated)"
-  - action: "running pnpm commands from the repo root for erkdesk"
-    warning: "Do NOT run pnpm commands from the repo root — always cd into erkdesk/ first"
-  - action: "adding erkdesk-tests to CI autofix job dependencies"
-    warning: "Do NOT add erkdesk-tests to the autofix job's needs list in CI"
+  - Do NOT add erkdesk as a pnpm workspace member — it is intentionally standalone
+  - Do NOT use BrowserView — use WebContentsView (BrowserView is deprecated)
+  - Do NOT run pnpm commands from the repo root — always cd into erkdesk/ first
+  - Do NOT add erkdesk-tests to the autofix job's needs list in CI
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 ---
 
 # Erkdesk Project Structure
