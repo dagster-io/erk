@@ -16,7 +16,9 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before Do NOT add erkdesk as a pnpm workspace member** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. it is intentionally standalone
 
-**CRITICAL: Before Do NOT assume 'Cannot find module' errors mean a missing dependency** → Read [pnpm Hoisting Pattern for Electron](pnpm-hoisting-pattern.md) first. in Electron with pnpm, check .npmrc first
+**CRITICAL: Before adding a new action outside the ACTIONS array** → Read [erkdesk Action Toolbar](action-toolbar.md) first. All actions must be entries in the ACTIONS array in ActionToolbar.tsx. Don't create standalone action definitions elsewhere.
+
+**CRITICAL: Before adding a new action without a test case** → Read [erkdesk Action Toolbar](action-toolbar.md) first. ActionToolbar.test.tsx tests every action's availability predicate AND generated command. New actions need both.
 
 **CRITICAL: Before Do NOT put all three targets in one Vite config** → Read [Forge Vite Setup](forge-vite-setup.md) first. each targets a different JavaScript runtime
 
@@ -32,7 +34,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before Introduce a status color outside the five-color palette** → Read [Visual Status Indicators](visual-status-indicators.md) first. Map to the canonical five colors (green/amber/purple/red/gray) rather than adding new ones. See the color semantics table in this doc.
 
-**CRITICAL: Before Kill activeAction before spawning a new streaming process** → Read [Main Process Startup](main-process-startup.md) first. concurrent subprocess conflicts cause interleaved output
+**CRITICAL: Before implementing blocking action execution** → Read [erkdesk Action Toolbar](action-toolbar.md) first. Actions use streaming execution via IPC (startStreamingAction). Never await or block the UI thread on action completion. App.tsx owns the streaming lifecycle.
 
 **CRITICAL: Before Never expose ipcRenderer directly** → Read [Preload Bridge Patterns](preload-bridge-patterns.md) first. only wrap individual channels as named methods
 
