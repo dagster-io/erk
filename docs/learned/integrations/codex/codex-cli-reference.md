@@ -1,7 +1,7 @@
 ---
 title: Codex CLI Reference for Erk Integration
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 read_when:
   - "implementing Codex backend support in erk"
   - "mapping PermissionMode to Codex sandbox flags"
