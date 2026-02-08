@@ -1,21 +1,24 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- modifying the codespace environment bootstrap sequence
-- debugging why a remote erk command fails before reaching the actual command
-- deciding whether a new remote command needs build_codespace_ssh_command
+  - modifying the codespace environment bootstrap sequence
+  - debugging why a remote erk command fails before reaching the actual command
+  - deciding whether a new remote command needs build_codespace_ssh_command
 title: Codespace Remote Execution Pattern
 tripwires:
-- action: duplicating git pull / uv sync / venv activation in a codespace command
-  warning: Use build_codespace_ssh_command() — bootstrap logic is centralized there.
-    See composable-remote-commands.md for the five-step pattern.
-- action: adding a new step to the bootstrap sequence
-  warning: This affects ALL remote commands. The bootstrap runs on every SSH invocation,
-    so added steps must be idempotent and fast.
-- action: embedding single quotes in a remote erk command argument
-  warning: The bootstrap wraps the entire command in single quotes. Single quotes
-    in arguments will break the shell string.
+  - action: duplicating git pull / uv sync / venv activation in a codespace command
+    warning:
+      Use build_codespace_ssh_command() — bootstrap logic is centralized there.
+      See composable-remote-commands.md for the five-step pattern.
+  - action: adding a new step to the bootstrap sequence
+    warning:
+      This affects ALL remote commands. The bootstrap runs on every SSH invocation,
+      so added steps must be idempotent and fast.
+  - action: embedding single quotes in a remote erk command argument
+    warning:
+      The bootstrap wraps the entire command in single quotes. Single quotes
+      in arguments will break the shell string.
 ---
 
 # Codespace Remote Execution Pattern

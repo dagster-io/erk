@@ -1,9 +1,9 @@
 ---
 audit_result: edited
-last_audited: '2026-02-07'
+last_audited: "2026-02-07"
 read_when:
-- working with learn materials upload/download, debugging gist-based file transfer,
-  implementing new file packing formats
+  - working with learn materials upload/download, debugging gist-based file transfer,
+    implementing new file packing formats
 title: Gist Materials Interchange Format
 ---
 
