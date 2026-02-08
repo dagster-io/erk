@@ -9,11 +9,11 @@ last_audited: "2026-02-07 21:36 PT"
 audit_result: clean
 tripwires:
   - action: "using run_ssh_command() for interactive TUI processes"
-    warning: "causes apparent hangs - use exec_ssh_interactive() instead"
-  - action: "passing multiple shell words as SSH command"
+    warning: "causes apparent hangs - use exec_ssh_interactive() for processes requiring user input"
+  - action: "passing SSH commands to subprocess"
     warning: "SSH command must be a single string argument, not multiple shell words"
-  - action: "omitting -t flag for interactive programs"
-    warning: "Missing -t flag prevents TTY allocation and breaks interactive programs"
+  - action: "omitting -t flag for SSH connections"
+    warning: "missing -t flag prevents TTY allocation and breaks interactive programs"
 ---
 
 # SSH Command Execution Patterns

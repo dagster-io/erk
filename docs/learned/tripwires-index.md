@@ -17,9 +17,9 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [capabilities](capabilities/tripwires.md)   | 9         | Claude Code capabilities, tool use            |
 | [changelog](changelog/tripwires.md)         | 3         | `changelog/` code                             |
 | [checklists](checklists/tripwires.md)       | 1         | `checklists/` code                            |
-| [ci](ci/tripwires.md)                       | 32        | `.github/workflows/`, `.github/actions/`      |
+| [ci](ci/tripwires.md)                       | 35        | `.github/workflows/`, `.github/actions/`      |
 | [claude-code](claude-code/tripwires.md)     | 3         | Claude Code configuration, settings           |
-| [cli](cli/tripwires.md)                     | 39        | `src/erk/cli/`                                |
+| [cli](cli/tripwires.md)                     | 50        | `src/erk/cli/`                                |
 | [commands](commands/tripwires.md)           | 1         | `.claude/commands/`, slash commands           |
 | [configuration](configuration/tripwires.md) | 1         | `configuration/` code                         |
 | [desktop-dash](desktop-dash/tripwires.md)   | 58        | `desktop-dash/` code                          |
