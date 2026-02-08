@@ -13,7 +13,7 @@ tripwires:
   - action: "embedding single quotes in a remote erk command argument"
     warning: "The bootstrap wraps the entire command in single quotes. Single quotes in arguments will break the shell string."
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # Codespace Remote Execution Pattern
