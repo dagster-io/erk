@@ -3,214 +3,73 @@ title: Desktop App Framework Evaluation
 read_when:
   - "choosing a framework for the desktop dashboard"
   - "embedding GitHub pages in an application"
-  - "understanding why Electron was chosen for the desktop dashboard"
+  - "evaluating Electron alternatives for erkdesk"
+  - "understanding why Electron was chosen over Tauri or web-only approaches"
+tripwires:
+  - action: "using an iframe to embed GitHub content in erkdesk"
+    warning: "GitHub sets X-Frame-Options: deny. Iframes respect this header and will be blocked. Only native browser contexts (WebContentsView) bypass it."
+    score: 9
+  - action: "using the Electron <webview> tag instead of WebContentsView"
+    warning: "<webview> is soft-deprecated. WebContentsView is the recommended successor with better security isolation and performance."
+    score: 7
+  - action: "proposing a web-only SPA or Textual-web for the dashboard"
+    warning: "Browser-based approaches cannot embed GitHub pages due to X-Frame-Options. This constraint was the deciding factor — see the framework evaluation."
+    score: 6
 ---
 
 # Desktop App Framework Evaluation
 
-Analysis of five framework approaches for the erk desktop dashboard, focusing on the critical constraint: embedding GitHub pages that set `X-Frame-Options: deny`.
+## The Deciding Constraint: X-Frame-Options
 
-## The Deciding Constraint
+**GitHub sets `X-Frame-Options: deny` on most pages.** This single HTTP header eliminated three of five evaluated approaches, because any approach using standard browser embedding (iframes) cannot render GitHub content inline.
 
-**GitHub sets `X-Frame-Options: deny` on most pages.** This HTTP header instructs browsers to block iframe embedding, preventing GitHub pages from being rendered inside web views.
+The core requirement — showing GitHub PRs/issues alongside a plan list in a unified interface — demands a native browser context that operates outside the web security model. Only desktop app frameworks with native webview APIs can bypass `X-Frame-Options`.
 
-This constraint eliminates most web-based approaches and forces us toward native browser embedding solutions that operate outside the standard web security model.
+## Framework Decision
 
-## Evaluated Approaches
+| Framework                 | X-Frame-Options                | Why eliminated / chosen                                  |
+| ------------------------- | ------------------------------ | -------------------------------------------------------- |
+| **Electron**              | **Bypassed** (WebContentsView) | **CHOSEN.** Mature ecosystem, React/TS, no new languages |
+| Tauri                     | Bypassed (system webview)      | Viable, but adds Rust to a Python-only stack             |
+| Textual-web               | Blocked (iframe)               | Fatal: can't embed GitHub pages                          |
+| Web SPA                   | Blocked (iframe)               | Fatal: can't embed GitHub pages                          |
+| Hybrid TUI + browser tabs | N/A (opens tabs)               | Defeats the purpose — no unified interface               |
 
-### 1. Textual-web (Eliminated)
+**Why Electron over Tauri**: Both solve the X-Frame-Options problem. Electron won because it doesn't introduce a new language. Erk is Python + TypeScript today — Tauri would add Rust as a third language with its own toolchain, dependency management, and learning curve. Tauri's advantages (smaller bundle, lower memory) don't justify that cost for a single-user developer tool.
 
-**Concept:** Run Textual TUI in a WebSocket-connected web frontend.
+**Why not "just open tabs"**: The hybrid approach (TUI + browser) was the lowest-effort option but defeats the core requirement. The value of erkdesk is the unified view — selecting a plan and immediately seeing its PR/issue without context-switching.
 
-**Pros:**
+## Electron Embedding Methods
 
-- Reuse existing TUI code
-- Web-based (no desktop app packaging)
-- Textual already battle-tested
+Within Electron, there are three ways to embed external web content. The choice matters because two of the three fail for GitHub:
 
-**Cons:**
+| Method              | X-Frame-Options         | Status                                 | Process model                              |
+| ------------------- | ----------------------- | -------------------------------------- | ------------------------------------------ |
+| **WebContentsView** | **Bypassed**            | Recommended (successor to BrowserView) | Main process — separate browser context    |
+| `<webview>` tag     | Bypassed                | Soft-deprecated                        | Renderer process — guest page in renderer  |
+| `<iframe>`          | **Respected (blocked)** | Standard web                           | Renderer process — subject to web security |
 
-- **FATAL:** Cannot embed GitHub pages (X-Frame-Options blocks iframe)
-- Would need to open GitHub pages in separate browser tabs (defeats the purpose)
-- WebSocket connection adds complexity
-- No access to OS-level notifications
+**Why WebContentsView wins**: It creates a separate browser context at the main process level, which means `X-Frame-Options` headers are irrelevant — there's no parent frame to deny. The `<webview>` tag also bypasses the restriction but is soft-deprecated with security concerns (guest runs in the renderer process). Standard iframes simply don't work.
 
-**Verdict:** Eliminated due to iframe restriction.
+**The architectural cost**: WebContentsView is a native overlay managed by the main process, not a React component. This means layout coordination requires IPC — the renderer measures where the GitHub pane should be and sends bounds to the main process, which positions the native view. This three-way coordination (SplitPane → IPC → main process) is more complex than a simple iframe `src` prop but is the only approach that works.
 
----
+<!-- Source: erkdesk/src/main/index.ts, WebContentsView creation and webview:update-bounds handler -->
+<!-- Source: erkdesk/src/renderer/components/SplitPane.tsx, reportBounds callback -->
 
-### 2. Electron (CHOSEN)
+See the `WebContentsView` creation in `erkdesk/src/main/index.ts` and the `reportBounds` callback in `SplitPane.tsx` for the overlay coordination pattern.
 
-**Concept:** Desktop app using Electron's `WebContentsView` to embed GitHub pages.
+## When to Reconsider
 
-**Pros:**
+**Tauri becomes worth revisiting if**:
 
-- **SOLVES IFRAME RESTRICTION:** WebContentsView creates a separate browser context that bypasses X-Frame-Options
-- Mature ecosystem (React, TypeScript, npm)
-- Native OS integration (notifications, menu bar, file system)
-- Built-in Chrome DevTools for debugging
-- WebContentsView is the recommended approach (successor to BrowserView)
-- Active development and documentation
+- Rust is added to the stack for another reason (eliminates the "new language" objection)
+- Bundle size becomes a distribution concern (Electron ~200MB vs Tauri ~10MB)
+- Cross-platform webview consistency improves (macOS/Windows/Linux webview differences were a concern)
 
-**Cons:**
-
-- Large bundle size (~200MB with Chromium)
-- Memory footprint (~150MB idle)
-- Electron-specific APIs for main/renderer IPC
-
-**Verdict:** CHOSEN. Only reliable way to embed GitHub pages without iframe restrictions.
-
----
-
-### 3. Tauri (Viable Alternative)
-
-**Concept:** Rust-based alternative to Electron using system WebView.
-
-**Pros:**
-
-- Smaller bundle size (~10MB, no bundled browser)
-- Lower memory footprint (~50MB)
-- Native webview bypasses X-Frame-Options (same as Electron)
-- Rust backend could be more performant
-
-**Cons:**
-
-- **Adds Rust to the stack** (erk is Python-only today)
-- Smaller ecosystem and community compared to Electron
-- System webview differences across macOS/Windows/Linux
-- Additional language/tooling burden for team
-
-**Verdict:** Viable but adds complexity. Electron preferred for ecosystem maturity and no new languages.
-
----
-
-### 4. Full Web App (Eliminated)
-
-**Concept:** Browser-based SPA, no desktop packaging.
-
-**Pros:**
-
-- No app packaging or distribution
-- Fastest development (just React + API)
-- Easy deployment (static hosting)
-
-**Cons:**
-
-- **FATAL:** Cannot embed GitHub pages (X-Frame-Options blocks iframe)
-- Would need to open GitHub pages in separate tabs
-- No OS-level notifications without service workers
-- Can't monitor local Claude sessions directly
-
-**Verdict:** Eliminated due to iframe restriction.
-
----
-
-### 5. Hybrid Terminal + Browser (Eliminated)
-
-**Concept:** Keep existing Textual TUI, add `erk dash open-pr` command to open browser tabs.
-
-**Pros:**
-
-- Minimal new code
-- Reuse all existing TUI infrastructure
-- No app packaging
-
-**Cons:**
-
-- **Defeats the purpose:** Embedded view was the goal
-- Context switching between terminal and browser
-- No unified interface
-- Loses notification integration benefits
-
-**Verdict:** Doesn't meet requirements.
-
-## Electron WebContentsView vs `<webview>` Tag vs iframe
-
-Electron offers three ways to embed web content. Only one is recommended.
-
-### WebContentsView (RECOMMENDED)
-
-**How it works:** Managed at the main process level, overlaid on the window as a separate browser context.
-
-**Pros:**
-
-- **Bypasses X-Frame-Options** (separate browser context)
-- Recommended approach (successor to BrowserView)
-- Better security isolation
-- Better performance
-- Active development
-
-**Cons:**
-
-- Main process coordination required for layout
-- Slightly more complex setup than `<webview>` tag
-
-**Verdict:** Use this.
-
-### `<webview>` Tag (SOFT-DEPRECATED)
-
-**How it works:** Custom HTML element that embeds a guest page in the renderer process.
-
-**Pros:**
-
-- Simple HTML-like API
-- Bypasses X-Frame-Options
-
-**Cons:**
-
-- Soft-deprecated (Electron docs recommend WebContentsView)
-- Security concerns (guest runs in renderer process)
-- Less performant than WebContentsView
-- Uncertain future support
-
-**Verdict:** Avoid. WebContentsView is better.
-
-### iframe (DOES NOT WORK)
-
-**How it works:** Standard HTML iframe element.
-
-**Pros:**
-
-- Standard web API
-- Simple to use
-
-**Cons:**
-
-- **FATAL:** Respects X-Frame-Options (blocked by GitHub)
-- Cannot embed GitHub pages
-- Useless for this use case
-
-**Verdict:** Does not work for GitHub embedding.
-
-## Implementation Architecture
-
-Given the choice of Electron + WebContentsView:
-
-```
-┌─────────────────────────────────────┐
-│     Electron Main Process           │
-│  (Node.js + Electron native APIs)   │
-│                                     │
-│  - Window management                │
-│  - WebContentsView overlay          │
-│  - CLI shelling to Python backend   │
-│  - OS notifications                 │
-└─────────────────────────────────────┘
-           │                    │
-           ↓                    ↓
-  ┌────────────────┐   ┌──────────────────┐
-  │ Renderer       │   │ WebContentsView  │
-  │ (React + TS)   │   │ (GitHub pages)   │
-  │                │   │                  │
-  │ - Plan list    │   │ - Live PR view   │
-  │ - Toolbar      │   │ - Issue view     │
-  │ - Filters      │   │ - Actions runs   │
-  └────────────────┘   └──────────────────┘
-```
-
-**Key Pattern:** WebContentsView is a sibling to the main renderer window, not a child. Main process coordinates layout and positioning.
+**The X-Frame-Options constraint is unlikely to change** — it's a deliberate security decision by GitHub, not a bug.
 
 ## Related Documentation
 
-- [Desktop Dashboard Backend Communication](backend-communication.md) - How Electron talks to Python backend
-- [Desktop Dashboard Interaction Model](interaction-model.md) - How the desktop UI differs from TUI
+- [erkdesk App Architecture](app-architecture.md) — WebView overlay mechanics, state ownership, streaming actions
+- [Backend Communication](backend-communication.md) — Why CLI shelling instead of a persistent server
+- [Forge/Vite Setup](forge-vite-setup.md) — Three-target Vite build configuration
