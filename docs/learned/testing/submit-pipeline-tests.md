@@ -25,18 +25,18 @@ Each pipeline step in `src/erk/cli/commands/pr/submit_pipeline.py` gets a dedica
 
 **Why not test through the runner?** Step isolation requires pre-populated state as if prior steps ran. Testing through the runner means every test for step 6 implicitly depends on steps 1-5 working. When step 2 breaks, every downstream test would fail — noise that hides the real problem.
 
-## The \_make_state Convention
+## The _make_state Convention
 
 Every test file defines its own `_make_state()` helper that constructs `SubmitState` with defaults appropriate for that step's preconditions. This duplication is deliberate, not accidental.
 
 **Why per-file helpers instead of a shared fixture?** Each step expects different fields to be pre-populated:
 
-| Step under test         | Key defaults in \_make_state                                                    |
-| ----------------------- | ------------------------------------------------------------------------------- |
-| `prepare_state`         | Empty strings for branch/trunk (discovery hasn't run yet)                       |
-| `extract_diff`          | `base_branch=None` (to test error path), or `"main"` (happy path)               |
-| `finalize_pr`           | `pr_number=42`, `title="My PR Title"`, `body="My PR body"` (steps 1-6 complete) |
-| `enhance_with_graphite` | `pr_number=42`, `use_graphite=True`, `graphite_url=None` (not yet enhanced)     |
+| Step under test | Key defaults in _make_state |
+|---|---|
+| `prepare_state` | Empty strings for branch/trunk (discovery hasn't run yet) |
+| `extract_diff` | `base_branch=None` (to test error path), or `"main"` (happy path) |
+| `finalize_pr` | `pr_number=42`, `title="My PR Title"`, `body="My PR body"` (steps 1-6 complete) |
+| `enhance_with_graphite` | `pr_number=42`, `use_graphite=True`, `graphite_url=None` (not yet enhanced) |
 
 A shared helper would either need step-specific default profiles (complexity for no gain) or force every test to override many fields (verbose). Per-file helpers encode "what this step assumes is already done" in their defaults.
 
@@ -58,10 +58,10 @@ These tests intentionally allow early steps to fail at expected points (like `no
 
 A subtle distinction in these tests: some steps treat errors as hard failures (returning `SubmitError`), while others treat them as graceful degradation (returning state unchanged). This mirrors the pipeline's design:
 
-| Step                    | Error behavior           | Why                                                                                    |
-| ----------------------- | ------------------------ | -------------------------------------------------------------------------------------- |
-| `_graphite_first_flow`  | `SubmitError` on failure | Graphite-first path is the primary submit mechanism — failure means nothing was pushed |
-| `enhance_with_graphite` | Returns state unchanged  | Enhancement is optional — the PR already exists from step 3, Graphite adds metadata    |
+| Step | Error behavior | Why |
+|---|---|---|
+| `_graphite_first_flow` | `SubmitError` on failure | Graphite-first path is the primary submit mechanism — failure means nothing was pushed |
+| `enhance_with_graphite` | Returns state unchanged | Enhancement is optional — the PR already exists from step 3, Graphite adds metadata |
 
 Tests must verify the correct error behavior for each step. A test asserting `isinstance(result, SubmitError)` for `enhance_with_graphite` errors would be wrong — the step handles them gracefully.
 
@@ -69,7 +69,7 @@ Tests must verify the correct error behavior for each step. A test asserting `is
 
 **Testing internal state mutations instead of the returned state:** Pipeline steps are pure functions of `(ErkContext, SubmitState) -> SubmitState | SubmitError`. Assert on the returned state, not on intermediate gateway call counts — unless you specifically need to verify a side effect occurred (like `fake_github.added_labels` in finalize tests).
 
-**Sharing \_make_state across test files:** Seems DRY but couples unrelated tests. When finalize's preconditions change, you don't want extract_diff tests to break.
+**Sharing _make_state across test files:** Seems DRY but couples unrelated tests. When finalize's preconditions change, you don't want extract_diff tests to break.
 
 ## Related Documentation
 
