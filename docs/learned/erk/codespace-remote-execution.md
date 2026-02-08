@@ -1,96 +1,87 @@
 ---
 title: Codespace Remote Execution Pattern
 read_when:
-  - "implementing remote command execution on codespaces"
-  - "working with streaming command output on codespaces"
-  - "debugging codespace remote execution failures"
-  - "adding new erk commands that run remotely"
+  - modifying the codespace environment bootstrap sequence
+  - debugging why a remote erk command fails before reaching the actual command
+  - deciding whether a new remote command needs build_codespace_ssh_command
+tripwires:
+  - action: "duplicating git pull / uv sync / venv activation in a codespace command"
+    warning: "Use build_codespace_ssh_command() — bootstrap logic is centralized there. See composable-remote-commands.md for the five-step pattern."
+  - action: "adding a new step to the bootstrap sequence"
+    warning: "This affects ALL remote commands. The bootstrap runs on every SSH invocation, so added steps must be idempotent and fast."
+  - action: "embedding single quotes in a remote erk command argument"
+    warning: "The bootstrap wraps the entire command in single quotes. Single quotes in arguments will break the shell string."
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Codespace Remote Execution Pattern
 
-Erk uses a **streaming execution** pattern for running commands remotely on GitHub Codespaces. Commands are wrapped with environment bootstrap logic and run in the foreground, streaming output back to the caller in real-time.
+This document covers the **centralized environment bootstrap** for remote codespace commands — why it exists, how it fails, and when to bypass it. For the five-step composition pattern (resolve → start → build → execute → report), see [Composable Remote Commands](../architecture/composable-remote-commands.md). For choosing between `exec_ssh_interactive()` and `run_ssh_command()`, see [SSH Command Execution](../architecture/ssh-command-execution.md).
 
-## The Pattern
+## Why a Centralized Bootstrap Wrapper
 
-All remoteable commands use `build_codespace_ssh_command()` from `src/erk/core/codespace_run.py`:
+Remote erk commands can't assume the codespace environment is ready. Between SSH connections, the codespace may have stale code, missing dependencies, or a deactivated virtualenv. Rather than making each remote command handle its own setup, erk centralizes the bootstrap in a single function.
 
-```python
-from erk.core.codespace_run import build_codespace_ssh_command
+<!-- Source: src/erk/core/codespace_run.py, build_codespace_ssh_command -->
 
-# Wrap the erk CLI command
-remote_cmd = build_codespace_ssh_command("erk objective next-plan 42")
+See `build_codespace_ssh_command()` in `src/erk/core/codespace_run.py` for the implementation.
 
-# Execute via codespace gateway
-exit_code = codespace_gateway.run_ssh_command(
-    codespace_name="mycodespace",
-    command=remote_cmd
-)
-```
+**The core design decision**: Bootstrap is a cross-cutting concern. If each command inlined its own setup steps, adding a new bootstrap step (e.g., a health check) would require touching every remote command file. Centralization means bootstrap changes propagate automatically.
 
-## What It Does
+## Bootstrap Sequence Design
 
-The wrapper produces a bash command that:
+The wrapper chains four operations with `&&` inside `bash -l -c '...'`:
 
-1. **Bootstraps the environment**: `git pull && uv sync && source .venv/bin/activate`
-2. **Runs the command in foreground**: `{erk_command}` (no backgrounding)
-3. **Streams output**: stdout/stderr appear in real-time on the caller's terminal
-4. **Returns exit code**: The SSH connection stays open until the command completes
+1. **`git pull`** — ensures the remote has latest code, since the codespace may have been idle for hours or days
+2. **`uv sync`** — installs any new/changed dependencies from the (potentially updated) `pyproject.toml`
+3. **`source .venv/bin/activate`** — activates the virtualenv so `erk` resolves to the project's entry point
+4. **The actual erk command** — runs only if all three setup steps succeed
 
-### Example Output
+### Why These Design Choices
 
-Input:
+**Fail-fast chaining (`&&`)**: If `git pull` fails (merge conflict, network issue), the erk command never runs against stale code. This prevents subtly wrong results that are harder to debug than a visible bootstrap failure.
 
-```python
-build_codespace_ssh_command("erk objective next-plan 42")
-```
+**Login shell (`bash -l`)**: Ensures `~/.profile` and `~/.bash_profile` are sourced, which is required for user-local binaries like Claude Code (installed to `~/.claude/local/`). Without `-l`, the `claude` command isn't found.
 
-Output:
+**Sequential ordering**: The steps have strict dependencies — `uv sync` must run after `git pull` (new code may add dependencies), and venv activation must happen after sync.
 
-```bash
-bash -l -c 'git pull && uv sync && source .venv/bin/activate && erk objective next-plan 42'
-```
+**Anti-pattern**: Skipping `git pull` for "speed." A codespace running against stale code produces subtly wrong results that are much harder to debug than a slow startup.
 
-## Streaming Semantics
+## Debugging Bootstrap Failures
 
-**Key property**: The command runs synchronously, blocking until completion.
+The `&&`-chain means the actual error appears in terminal output, but knowing _which_ step failed requires interpreting the output:
 
-This means:
+| Symptom                     | Likely failed step            | Recovery                                              |
+| --------------------------- | ----------------------------- | ----------------------------------------------------- |
+| Merge conflict messages     | `git pull`                    | `erk codespace connect --shell`, resolve manually     |
+| Package resolution errors   | `uv sync`                     | Run `uv sync` interactively to see full error details |
+| "command not found: erk"    | `source .venv/bin/activate`   | Venv may be corrupted — recreate with `uv venv`       |
+| "command not found: claude" | `bash -l` not loading profile | Check `~/.bash_profile` on the codespace              |
 
-- ✅ You get real-time output in your terminal
-- ✅ You get the actual exit code
-- ✅ You can verify success immediately
-- ❌ You must wait for the command to complete
-- ❌ The SSH connection stays open during execution
+**Key strategy**: Use `erk codespace connect --shell` to drop into a bare shell, then run bootstrap steps manually one at a time to isolate the failure.
 
-## Output Handling
+## When to Use vs When to Bypass
 
-All output (stdout and stderr) streams directly to your terminal in real-time. No log files are created on the remote side.
+<!-- Source: src/erk/cli/commands/codespace/connect_cmd.py, connect_codespace -->
 
-## Debugging
+Not all codespace commands use `build_codespace_ssh_command()`. The `connect` command (see `connect_codespace()` in `src/erk/cli/commands/codespace/connect_cmd.py`) builds its own command string because its `--shell` mode skips setup entirely (just `bash -l`). This shell escape hatch exists precisely for debugging when the bootstrap itself is broken.
 
-If a remote command fails:
+**Decision rule**: Use `build_codespace_ssh_command()` for any command running a specific erk CLI remotely. Build the string manually only when the command needs a fundamentally different setup flow (like shell-only mode).
 
-1. **Check the output**: Errors appear directly in your terminal
-2. **Verify exit code**: The command's exit code is returned to the caller
-3. **Verify environment**: Look for `git pull` and `uv sync` errors in the output
-4. **Test locally**: Run the same erk command on your local machine first
+## Design Constraints
 
-## When to Use This Pattern
+**Idempotency requirement**: Every bootstrap step must be safe to run repeatedly. Codespaces may be warm (ran a command 5 minutes ago) or cold (idle for 12 hours). The same bootstrap runs either way.
 
-✅ **Use for**:
+**No partial bootstrap**: You can't skip `git pull` even if you just pushed. The wrapper always runs the full sequence — simplicity over optimization.
 
-- Commands where you need to see output in real-time
-- Commands where exit code verification is important
-- Any command where synchronous execution is acceptable
+**Single-quote escaping limitation**: The erk command is embedded inside single quotes. Commands with single quotes in their arguments will break the shell wrapping. This hasn't been a practical issue because erk CLI arguments don't contain quotes, but it's a structural constraint to be aware of.
 
-❌ **Don't use for**:
-
-- Commands with interactive prompts (use `exec_ssh_interactive()` instead)
-- Commands where you need true fire-and-forget behavior
+**Single-argument SSH constraint**: The entire `bash -l -c '...'` string must be passed as one argument to SSH. See [SSH Command Execution](../architecture/ssh-command-execution.md) for why SSH's argument concatenation breaks multi-argument commands.
 
 ## Related Documentation
 
-- [Codespace Gateway](../gateway/codespace-gateway.md) - Gateway ABC for codespace operations
-- [Composable Remote Commands](../architecture/composable-remote-commands.md) - Template for adding new remote commands
-- [Codespace Patterns](../cli/codespace-patterns.md) - `resolve_codespace()` helper usage
+- [SSH Command Execution](../architecture/ssh-command-execution.md) — exec vs subprocess decision, TTY allocation, SSH argument semantics
+- [Composable Remote Commands](../architecture/composable-remote-commands.md) — five-step pattern for adding new remote commands
+- [Codespace Gateway](../gateway/codespace-gateway.md) — gateway ABC (3-place pattern, no dry-run)
+- [Codespace Patterns](../cli/codespace-patterns.md) — CLI-level resolution, naming, and API workarounds

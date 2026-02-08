@@ -1,206 +1,72 @@
 ---
-title: CodespaceRegistry Gateway
+title: CodespaceRegistry Gateway — Read-Only ABC with Standalone Mutations
 read_when:
-  - "working with GitHub Codespaces"
-  - "implementing codespace registration"
-  - "managing remote execution environments"
+  - "working with GitHub Codespace registration or lookup"
+  - "adding a gateway that separates read-only ABC from mutation functions"
+  - "choosing between ABC methods vs standalone functions for gateway operations"
 tripwires:
   - action: "reading from or writing to ~/.erk/codespaces.toml directly"
     warning: "Use CodespaceRegistry gateway instead. All codespace configuration should go through this gateway for testability."
+  - action: "adding a mutation method to the CodespaceRegistry ABC"
+    warning: "Mutations are standalone functions in real.py, not ABC methods. This is intentional — see the design rationale below."
 ---
 
 # CodespaceRegistry Gateway
 
-Gateway for managing registered GitHub Codespaces used for remote Claude Code execution.
+## Why a Separate Read/Write Split?
 
-## Overview
+Most gateways put all operations on the ABC. CodespaceRegistry deliberately keeps mutations as standalone functions outside the ABC. The reasoning:
 
-**Location:** `packages/erk-shared/src/erk_shared/gateway/codespace_registry/`
+1. **Reads dominate at runtime** — CLI commands, resolution helpers, and remote execution flows all just look up codespaces. The ABC contract reflects this actual usage pattern.
+2. **Mutations are CLI-only setup operations** — registering, unregistering, and setting defaults happen during `erk codespace setup` / `erk codespace remove` / `erk codespace set-default`. They never appear in pipeline or agent code.
+3. **Simpler fakes** — the fake only needs to implement the read interface for ABC conformance. It provides mutation helpers for test setup convenience, but these aren't forced by the ABC contract.
+4. **Immutable real implementation** — `RealCodespaceRegistry` receives fully-loaded data at construction time. Standalone mutation functions save to disk and return a _new_ registry instance, preserving immutability.
 
-**Purpose:** Abstracts codespace registration and lookup operations. Provides read-only interface with standalone mutation functions.
+This pattern is shared with `ErkInstallation` gateway, which similarly separates read-heavy ABC operations from infrequent filesystem mutations.
 
-**Storage:** Configuration is persisted to `~/.erk/codespaces.toml`
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/codespace_registry/abc.py, CodespaceRegistry -->
 
-## Architecture
+See `CodespaceRegistry` ABC in `packages/erk-shared/src/erk_shared/gateway/codespace_registry/abc.py` for the read-only interface.
 
-The gateway follows the standard 3-file pattern:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/codespace_registry/real.py, register_codespace -->
 
-- `abc.py` - Abstract interface with `RegisteredCodespace` type
-- `real.py` - Production implementation using TOML file
-- `fake.py` - In-memory test implementation
+See standalone mutation functions (`register_codespace`, `unregister_codespace`, `set_default_codespace`) in `packages/erk-shared/src/erk_shared/gateway/codespace_registry/real.py`.
 
-## Domain Type
+## Codespace Resolution Pattern
 
-### RegisteredCodespace
+A shared resolution helper (`resolve_codespace`) encapsulates the lookup-by-name-or-default pattern used by both `connect` and `run` commands. This prevents each CLI command from reimplementing the same fallback logic and error messaging.
 
-```python
-@dataclass(frozen=True)
-class RegisteredCodespace:
-    name: str           # Friendly name for the codespace (used as key)
-    gh_name: str        # GitHub codespace name (e.g., "user-codespace-abc123")
-    created_at: datetime  # When the codespace was registered
-```
+<!-- Source: src/erk/cli/commands/codespace/resolve.py, resolve_codespace -->
 
-Frozen dataclass representing a registered GitHub Codespace for remote execution.
-
-## Read-Only Interface (ABC Methods)
-
-The ABC provides read-only methods:
-
-### list_codespaces() -> list[RegisteredCodespace]
-
-List all registered codespaces.
-
-**Returns:** List of registered codespaces, may be empty.
-
-### get(name: str) -> RegisteredCodespace | None
-
-Get a codespace by its friendly name.
-
-**Args:**
-
-- `name`: Friendly name of the codespace
-
-**Returns:** `RegisteredCodespace` if found, `None` otherwise.
-
-### get_default() -> RegisteredCodespace | None
-
-Get the default codespace.
-
-**Returns:** The default codespace if one is set and exists, `None` otherwise.
-
-### get_default_name() -> str | None
-
-Get the name of the default codespace.
-
-**Returns:** The default codespace name if set, `None` otherwise.
-
-## Mutation Functions (Standalone)
-
-Mutation operations are **standalone functions** in `real.py`, not on the ABC:
-
-### register_codespace(name: str, gh_name: str) -> None
-
-Register a new codespace.
-
-**Args:**
-
-- `name`: Friendly name for the codespace
-- `gh_name`: GitHub codespace name
-
-**Raises:** Error if codespace with that name already exists.
-
-### unregister_codespace(name: str) -> None
-
-Remove a codespace registration.
-
-**Args:**
-
-- `name`: Friendly name of the codespace to remove
-
-**Raises:** Error if codespace doesn't exist.
-
-### set_default_codespace(name: str | None) -> None
-
-Set the default codespace.
-
-**Args:**
-
-- `name`: Friendly name of the codespace, or `None` to clear default
-
-**Raises:** Error if name is provided but codespace doesn't exist.
-
-## Why Standalone Mutations?
-
-The CodespaceRegistry pattern uses standalone mutation functions instead of ABC methods because:
-
-1. **Mutations are rare** - registering/unregistering happens infrequently (setup/teardown)
-2. **Reads dominate** - most code just needs to look up registered codespaces
-3. **Simpler fakes** - test fakes don't need mutation tracking properties
-4. **Clear separation** - mutations are clearly CLI-only operations
-
-This pattern is similar to `ErkInstallation` gateway.
-
-## Usage Patterns
-
-### Reading Codespaces
-
-```python
-def select_codespace(ctx: ErkContext, name: str | None) -> RegisteredCodespace:
-    registry = ctx.codespace_registry
-
-    if name:
-        codespace = registry.get(name)
-        if codespace is None:
-            raise ValueError(f"Codespace '{name}' not found")
-        return codespace
-
-    # Use default
-    codespace = registry.get_default()
-    if codespace is None:
-        raise ValueError("No default codespace set")
-
-    return codespace
-```
-
-### Registering Codespaces
-
-```python
-from erk_shared.gateway.codespace_registry.real import register_codespace
-
-def register_command(name: str, gh_name: str) -> None:
-    """CLI command to register a codespace."""
-    register_codespace(name, gh_name)
-    print(f"Registered codespace '{name}' -> {gh_name}")
-```
-
-## Fake Features
-
-`FakeCodespaceRegistry` provides:
-
-- **In-memory codespace storage** - configurable test data
-- **Configurable default** - tests can set/clear default
-- **No filesystem I/O** - tests run without touching `~/.erk/`
+See `resolve_codespace()` in `src/erk/cli/commands/codespace/resolve.py`.
 
 ## Configuration File Format
 
-`~/.erk/codespaces.toml`:
+Storage uses `~/.erk/codespaces.toml`. The path is obtained from `ErkInstallation.get_codespaces_config_path()`, never hardcoded — this keeps filesystem access testable.
 
 ```toml
-# Default codespace name (optional)
-default = "dev"
+schema_version = 1
+default_codespace = "dev"
 
-# Registered codespaces
 [codespaces.dev]
 gh_name = "user-codespace-abc123"
-created_at = "2024-01-15T10:30:00Z"
+created_at = "2024-01-15T10:30:00+00:00"
 
 [codespaces.staging]
 gh_name = "user-codespace-xyz789"
-created_at = "2024-01-20T14:00:00Z"
+created_at = "2024-01-20T14:00:00+00:00"
 ```
 
-## When to Use
+## When to Use Which Gateway
 
-Use `ctx.codespace_registry` when:
-
-- Looking up registered codespaces
-- Getting the default codespace for remote execution
-- Listing available codespaces for selection
-
-Use standalone mutation functions when:
-
-- Implementing CLI registration commands
-- Setting up/tearing down codespace configurations
-
-Don't use for:
-
-- SSH operations (use `Codespace` gateway instead)
-- Detecting active codespaces (not in scope)
+| Need                                             | Gateway                                              | Why                                    |
+| ------------------------------------------------ | ---------------------------------------------------- | -------------------------------------- |
+| Look up registered codespaces by name or default | `CodespaceRegistry` (this gateway)                   | Registration data, read-only           |
+| Register/unregister/set-default codespace        | Standalone functions in `codespace_registry/real.py` | CLI-only mutations                     |
+| Execute SSH commands in a codespace              | `Codespace` gateway                                  | SSH operations are a different concern |
+| Get the config file path                         | `ErkInstallation` gateway                            | Owns all `~/.erk/` path resolution     |
 
 ## Related Topics
 
-- [Codespace Gateway](../architecture/gateway-inventory.md#codespace-gatewaycodespace) - SSH operations
-- [Gateway Inventory](../architecture/gateway-inventory.md) - All available gateways
-- [Codespaces TOML Configuration](../config/codespaces-toml.md) - File format details
-- [ErkInstallation Gateway](../architecture/gateway-inventory.md#erkinstallation-gatewayerk_installation) - Similar pattern
+- [Codespaces TOML Configuration](../config/codespaces-toml.md) — file format details
+- [Gateway Inventory](../architecture/gateway-inventory.md) — all available gateways
