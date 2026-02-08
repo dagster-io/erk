@@ -3,114 +3,60 @@ title: jsdom DOM API Stubs for Vitest
 category: testing
 read_when:
   - writing React component tests with Vitest + jsdom
-  - encountering "scrollIntoView is not a function" errors
-  - setting up Vitest test environment
+  - encountering "X is not a function" errors in jsdom test runs
+  - adding a new browser API stub to the test setup
 tripwires:
   - action: "writing React component tests with Vitest + jsdom"
-    warning: "jsdom doesn't implement Element.prototype.scrollIntoView(). Stub in setup.ts with `Element.prototype.scrollIntoView = vi.fn()` before tests run to avoid TypeError."
+    warning: "jsdom doesn't implement several browser APIs (scrollIntoView, ResizeObserver). Check erkdesk/src/test/setup.ts for existing stubs before adding new ones."
+  - action: "mocking a browser API in an individual test file"
+    warning: "Environment-level API stubs belong in setup.ts (runs before all tests), not in individual test files. Only mock behavior-specific values (like IPC responses) per-test."
 ---
 
 # jsdom DOM API Stubs for Vitest
 
-When testing React components with Vitest + jsdom, jsdom lacks several browser APIs that components commonly use. Attempting to use these missing APIs results in TypeErrors at runtime.
+## Why Stubs Are Needed
 
-## The Problem
+jsdom is a pure JavaScript DOM implementation that intentionally omits layout-related and visual browser APIs. Components that call these APIs during tests throw `TypeError: X is not a function`. This is a jsdom design decision, not a bug — jsdom doesn't perform layout, so scroll/resize APIs have no meaningful implementation.
 
-jsdom is a pure JavaScript DOM implementation that doesn't include all browser APIs. Components that call these APIs during tests will throw errors:
+## The Two-Layer Mock Architecture
 
-```
-TypeError: element.scrollIntoView is not a function
-```
+erkdesk's test setup separates concerns into two layers, and confusing them is the most common mistake:
 
-This is particularly common with:
+| Layer | What it stubs | Where it lives | Why |
+|-------|--------------|----------------|-----|
+| **Environment stubs** | Missing browser APIs (`scrollIntoView`, `ResizeObserver`) | `setup.ts` (runs before all tests) | jsdom gaps — every component needs these |
+| **Behavior mocks** | App-specific interfaces (`window.erkdesk` IPC) | `setup.ts` defaults + per-test overrides | Test-specific return values vary per scenario |
 
-- `Element.prototype.scrollIntoView()` - used for keyboard navigation, focus management
-- `Element.prototype.getBoundingClientRect()` - partially implemented (returns zeros)
-- `window.matchMedia()` - media query matching
-- `ResizeObserver` - element resize detection
+The key insight: environment stubs are **no-op shims** that prevent crashes, while behavior mocks are **configurable fakes** that drive test scenarios. Both live in setup.ts for the defaults, but only behavior mocks should be overridden in individual tests.
 
-## The Solution
+<!-- Source: erkdesk/src/test/setup.ts -->
 
-Stub missing APIs in `setup.ts` before any component tests run. Vitest executes setup files before importing test files, ensuring stubs are in place when components render.
+See `erkdesk/src/test/setup.ts` for all current stubs and the default `window.erkdesk` mock.
 
-### Example: scrollIntoView Stub
+## When to Add a New Stub
 
-```typescript
-// erkdesk/vitest-setup/setup.ts
-import { vi } from "vitest";
+**Add stubs reactively, not proactively.** When a test fails with `TypeError: element.X is not a function`, that's the signal to add a stub to setup.ts. Don't preemptively stub APIs that no component uses — it obscures which APIs the codebase actually depends on.
 
-// Stub missing jsdom APIs
-Element.prototype.scrollIntoView = vi.fn();
-```
+The current stubs (`scrollIntoView`, `ResizeObserver`) were each added in response to a specific component needing them:
 
-### Other Common Stubs
+- `scrollIntoView` — used by `PlanList.tsx` for keyboard navigation
+- `ResizeObserver` — used by `SplitPane.tsx` for resize detection
 
-```typescript
-// Partial getBoundingClientRect (jsdom returns all zeros)
-Element.prototype.getBoundingClientRect = vi.fn(() => ({
-  width: 100,
-  height: 100,
-  top: 0,
-  left: 0,
-  bottom: 100,
-  right: 100,
-  x: 0,
-  y: 0,
-  toJSON: () => {},
-}));
+<!-- Source: erkdesk/vitest.config.ts -->
 
-// matchMedia
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: vi.fn().mockImplementation((query) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
+The setup file path is configured in `erkdesk/vitest.config.ts` via the `setupFiles` array. Vitest executes setup files before importing any test files, which is why environment stubs must live there — they need to be in place before components first render.
 
-// ResizeObserver
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
-```
+## Anti-Patterns
 
-## When to Add Stubs
+**WRONG: Stubbing a browser API in every test file that needs it**
 
-**Add stubs reactively**, not proactively. When a test fails with "X is not a function", add the stub to `setup.ts`. Don't guess which APIs might be needed - let test failures guide you.
+This leads to duplication and ordering bugs. If a component renders during import (e.g., module-level side effects), the stub won't be ready. Setup.ts runs before all imports.
 
-## Configuration
+**WRONG: Adding return values to environment stubs**
 
-Ensure Vitest loads the setup file:
-
-```typescript
-// vitest.config.ts
-export default defineConfig({
-  test: {
-    environment: "jsdom",
-    setupFiles: ["./vitest-setup/setup.ts"], // Load stubs before tests
-  },
-});
-```
-
-## Why Not Mock in Individual Tests?
-
-Global stubs belong in `setup.ts` because:
-
-1. **Single source of truth** - one place to maintain stubs
-2. **Runs before imports** - stubs available when components first render
-3. **Prevents duplication** - every test file would need the same setup
-
-Individual test files should only mock **behavior-specific** values (like IPC responses), not **environment-level** APIs.
+Environment stubs should be no-ops (`vi.fn()`), not realistic implementations. If a test needs `getBoundingClientRect` to return specific dimensions, that's a behavior mock and belongs in the individual test, not in setup.ts where it affects every test.
 
 ## Related
 
-- [Window Mock Patterns for Electron IPC Testing](window-mock-patterns.md) - Mocking `window.erkdesk` for IPC
-- [Vitest Configuration for erkdesk](../desktop-dash/vitest-setup.md) - Complete Vitest setup
+- [Window Mock Patterns for Electron IPC Testing](window-mock-patterns.md) — the behavior mock layer for `window.erkdesk`
+- [Vitest Configuration for erkdesk](../desktop-dash/vitest-setup.md) — complete Vitest setup including environment and plugins
