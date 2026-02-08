@@ -6,143 +6,115 @@ read_when:
   - "understanding the Graphite vs Git mode difference"
   - "debugging branch-related operations"
 tripwires:
-  - action: "calling ctx.git mutation methods (create_branch, delete_branch, checkout_branch, checkout_detached, create_tracking_branch)"
-    warning: "Use ctx.branch_manager instead. Branch mutation methods are in GitBranchOps sub-gateway, accessible only through BranchManager. Query methods (get_current_branch, list_local_branches, etc.) remain on ctx.git."
-  - action: "calling ctx.graphite mutation methods (track_branch, delete_branch, submit_branch)"
-    warning: "Use ctx.branch_manager instead. Branch mutation methods are in GraphiteBranchOps sub-gateway, accessible only through BranchManager. Query methods (is_branch_tracked, get_parent_branch, etc.) remain on ctx.graphite."
-  - action: "GraphiteBranchManager.create_branch() without explicit checkout"
-    warning: "GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch."
-last_audited: "2026-02-05"
+  - action: "calling ctx.git.branch mutation methods directly (create_branch, delete_branch, checkout_branch, checkout_detached, create_tracking_branch)"
+    warning: "Use ctx.branch_manager instead for all user-facing branches. Only use ctx.git.branch directly for ephemeral/placeholder branches that should never be Graphite-tracked. See branch-manager-decision-tree.md."
+  - action: "calling ctx.graphite_branch_ops mutation methods directly (track_branch, delete_branch, submit_branch)"
+    warning: "Use ctx.branch_manager instead. GraphiteBranchOps is a sub-gateway that BranchManager delegates to internally. Direct calls bypass the dual-mode abstraction."
+  - action: "calling create_branch() and assuming you're on the new branch"
+    warning: "GraphiteBranchManager.create_branch() restores the original branch after Graphite tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch."
+  - action: "calling delete_branch() without passing the force parameter through"
+    warning: "The force flag controls -D (force) vs -d (safe) git delete. Dropping it silently changes behavior. Always flow force=force through all layers."
+last_audited: "2026-02-07"
 audit_result: clean
 ---
 
 # BranchManager Abstraction
 
-The `BranchManager` ABC provides a unified interface for branch operations that works transparently with both Graphite-managed and plain Git repositories.
+## Why This Abstraction Exists
 
-## Why BranchManager Exists
+Without BranchManager, every CLI command would need conditional logic: "Am I in a Graphite repo? Then call `gt track`. Otherwise use `git branch`." This scattered dual-mode awareness creates maintenance burden and makes mode-specific behavior hard to reason about.
 
-Erk supports two modes:
+BranchManager centralizes the Graphite-vs-Git decision into two frozen dataclass implementations selected once at context construction time. Commands call `ctx.branch_manager.create_branch()` and get correct behavior for the current repository mode without knowing which mode they're in.
 
-- **Graphite mode**: Uses `gt` commands for stack-aware branch operations
-- **Git mode**: Uses plain `git` commands when Graphite is unavailable
+## The Mutation Boundary
 
-Without an abstraction, every command would need conditional logic:
+BranchManager enforces a critical architectural split between mutations and queries:
 
-```python
-# DON'T DO THIS - scattered conditionals
-if ctx.graphite.is_enabled():
-    ctx.graphite.track_branch(...)
-else:
-    ctx.git.create_branch(...)
-```
+| Operation Type                                                 | Route                | Rationale                                                                                   |
+| -------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------- |
+| **Branch mutations** (create, delete, checkout, submit, track) | `ctx.branch_manager` | Mutations need dual-mode logic: Graphite tracking, metadata cleanup, stack-aware operations |
+| **Branch queries** (current branch, list branches, HEAD SHA)   | `ctx.git.branch`     | Queries are always plain git — Graphite adds nothing to read-only operations                |
+| **Graphite-only queries** (stack info, parent/child, PR cache) | `ctx.branch_manager` | Return `None`/empty in Git mode, rich data in Graphite mode                                 |
 
-`BranchManager` centralizes this logic, providing a consistent API regardless of the underlying implementation.
+This separation prevents mutation logic from leaking into every query operation while making dual-mode operations explicit in the type system.
 
-## When to Use BranchManager
+## Non-Obvious Behavioral Differences
 
-**Use `ctx.branch_manager` for all branch mutations:**
+Both implementations satisfy the same ABC interface, but their behavior diverges in ways that cause agent confusion:
 
-- Creating branches
-- Deleting branches
-- Checking out branches
-- Submitting branches to remote
-- Tracking branches with parents
+| Operation             | GraphiteBranchManager Behavior                                                           | GitBranchManager Behavior               | Why This Trips Up Agents                                                                 |
+| --------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `create_branch()`     | Creates + tracks via `gt track`, **then restores original branch**                       | Creates via git, stays on current       | Both leave you on the **original branch** — explicit `checkout_branch()` required        |
+| `delete_branch()`     | LBYL check on `is_branch_tracked()`, then delegates to `gt delete` or `git branch -d/-D` | Plain `git branch -d/-D`                | Graphite mode handles diverged branches gracefully; git mode respects `-d` safety checks |
+| `submit_branch()`     | Submits **entire stack** via `gt submit`                                                 | Pushes **single branch** via `git push` | Graphite submits multiple PRs; git pushes one ref                                        |
+| `track_branch()`      | Delegates to `GraphiteBranchOps`                                                         | **Silent no-op**                        | Git mode won't error — just does nothing                                                 |
+| `get_branch_stack()`  | Returns ordered list from cache                                                          | Returns `None`                          | Callers must handle `None` for Git-only repos                                            |
+| `get_pr_for_branch()` | Graphite cache first, GitHub API fallback                                                | Always GitHub API                       | `from_fallback` on `PrInfo` tells you which path was taken                               |
 
-**Exception: Ephemeral/Placeholder Branches**
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py, GraphiteBranchManager -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py, GitBranchManager -->
 
-For ephemeral branches that should **never be tracked by Graphite**, use `ctx.git.branch` directly:
+The restore-after-create behavior exists because `gt track` requires the branch to be checked out. GraphiteBranchManager temporarily switches branches to satisfy Graphite's constraint, then restores the original branch to avoid side effects.
 
-```python
-# Placeholder branches bypass BranchManager
-create_result = ctx.git.branch.create_branch(
-    repo.root, placeholder_branch, trunk, force=False
-)
-```
+## The Ephemeral Branch Exception
 
-**Examples of ephemeral branches:**
+Not all branches should go through BranchManager. Placeholder branches (`__erk-slot-XX-br-stub__`) and other ephemeral branches bypass BranchManager because Graphite tracking would pollute stack metadata for branches that:
 
-- `placeholder/slot-*` (pool worktree placeholders)
-- Temporary branches for internal operations
-- Branches that will never be pushed or have PRs
+- Are never pushed to remote
+- Never have PRs
+- Are frequently created/destroyed
+- Exist only to satisfy git's multi-worktree constraint
 
-**See**: [Placeholder Branches](../erk/placeholder-branches.md) and [Branch Manager Decision Tree](branch-manager-decision-tree.md) for complete guidance.
+**Decision framework**: [Branch Manager Decision Tree](branch-manager-decision-tree.md)
 
-**Use `ctx.git` for read-only queries:**
+**Lifecycle details**: [Placeholder Branches](../erk/placeholder-branches.md)
 
-- `get_current_branch()`
-- `list_local_branches()`
-- `get_repository_root()`
-- Commit operations
+## Graphite create_branch() Complexity
 
-## Method Reference
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py, GraphiteBranchManager.create_branch -->
 
-| Method                 | Purpose                              | Graphite                  | Git                  | Error Handling                 |
-| ---------------------- | ------------------------------------ | ------------------------- | -------------------- | ------------------------------ |
-| `create_branch()`      | Create new branch from base          | `gt create`               | `git branch`         | Discriminated union (PR #6348) |
-| `delete_branch()`      | Delete local branch                  | `git branch -D` + cleanup | `git branch -d/-D`   | Exception-based                |
-| `checkout_branch()`    | Switch to branch                     | `git checkout`            | `git checkout`       | Exception-based                |
-| `submit_branch()`      | Push branch to remote                | `gt submit`               | `git push -u origin` | Exception-based                |
-| `track_branch()`       | Register existing branch with parent | `gt track`                | No-op                | Exception-based                |
-| `get_pr_for_branch()`  | Get PR info for branch               | Cache lookup              | GitHub API           | Exception-based                |
-| `get_branch_stack()`   | Get linear stack containing branch   | Returns stack             | Returns None         | Returns None on failure        |
-| `get_parent_branch()`  | Get parent branch name               | Cache lookup              | Returns None         | Returns None on failure        |
-| `get_child_branches()` | Get child branches                   | Cache lookup              | Returns empty list   | Returns empty on failure       |
+`GraphiteBranchManager.create_branch()` is the most complex method in the abstraction because it must:
 
-## Force Flag Flow-Through
+1. Handle remote-ref parents — strip `origin/` prefix, ensure local branch exists and matches remote SHA
+2. Auto-fix diverged parents — if parent is diverged from Graphite's tracking, retrack it before tracking child (prevents tracking failures)
+3. Temporarily checkout the new branch to run `gt track` (Graphite requirement)
+4. Restore the original branch to avoid unexpected working directory changes
 
-When passing flags through to BranchManager methods, ensure they flow through all layers:
+This complexity is why `create_branch()` + `checkout_branch()` is the correct two-step pattern, not an agent mistake.
+
+## Error Handling: Mixed Patterns
+
+BranchManager uses **discriminated unions** for `create_branch()` and `submit_branch()` because the non-ideal outcomes (branch exists, push failed) are normal control flow cases that callers distinguish and handle:
 
 ```python
-# Correct - force flag passed through
-ctx.branch_manager.delete_branch(repo_root, branch, force=force)
-
-# Wrong - force flag dropped
-ctx.branch_manager.delete_branch(repo_root, branch)  # Always uses safe delete
+# Callers branch on the error type and continue
+result = branch_manager.create_branch(repo_root, name, base)
+if isinstance(result, BranchAlreadyExists):
+    # Continue: use existing branch or prompt for new name
+    handle_existing_branch(result.branch_name)
+# Type narrowing: result is now BranchCreated
 ```
 
-The `force` parameter controls `-D` (force delete) vs `-d` (safe delete) behavior in git. Dropping it causes silent behavioral differences from what the user expects.
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py, BranchCreated and BranchAlreadyExists -->
 
-## Implementation Files
+Other methods (`delete_branch()`, `checkout_branch()`) use **exceptions** because their failures are truly exceptional — branch doesn't exist, worktree conflict — and no caller has meaningful recovery logic. All they do is extract the message and terminate.
 
-| Implementation          | Location                                                                |
-| ----------------------- | ----------------------------------------------------------------------- |
-| ABC                     | `packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py`      |
-| Graphite implementation | `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` |
-| Git implementation      | `packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py`      |
-| Fake for testing        | `packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py`     |
+**Deeper pattern**: [Discriminated Union Error Handling](discriminated-union-error-handling.md)
 
-## Checking Graphite Mode
+## Sub-Gateway Architecture
 
-To check whether Graphite is being used (e.g., for display purposes):
+BranchManager doesn't implement branch operations itself — it delegates to sub-gateways:
 
-```python
-if ctx.branch_manager.is_graphite_managed():
-    # Show Graphite-specific UI
-    ...
-```
+- **`GitBranchOps`** — mutation + query operations on git branches (used by both implementations)
+- **`GraphiteBranchOps`** — Graphite-specific mutations (`track_branch`, `delete_branch`, `submit_branch`, `retrack_branch`)
 
-## Discriminated Union Delegation
+`GraphiteBranchManager` composes both sub-gateways plus `Git` and `GitHub`. `GitBranchManager` only needs `Git` and `GitHub`. This composition (not inheritance) keeps the abstraction clean and makes the Graphite-only operations explicit in the type system.
 
-As of PR #6348, `create_branch()` uses discriminated union error handling. BranchManager delegates to the underlying GitBranchOps gateway, which returns a `CreateBranchResult`:
-
-```python
-result = git_ops.create_branch(name=branch_name, start_point=base_branch)
-if result.type == "branch_already_exists":
-    # Handle existing branch
-    ...
-elif result.type == "error":
-    # Handle unexpected error
-    ...
-# Success case
-return result.branch_name
-```
-
-This pattern allows callers to distinguish between "branch already exists" (recoverable) and generic errors (unrecoverable) without exception parsing.
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py, BranchManager ABC -->
 
 ## Related Documentation
 
-- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) - Pattern for implementing gateway ABCs
-- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - When to use discriminated unions vs exceptions
-- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where try/except belongs in gateway implementations
-- [Frozen Dataclass Test Doubles](../testing/frozen-dataclass-test-doubles.md) - Testing pattern for FakeBranchManager
+- [Branch Manager Decision Tree](branch-manager-decision-tree.md) — When to use `ctx.branch_manager` vs `ctx.git.branch`
+- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 5-place implementation pattern for gateway ABCs
+- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — When to use discriminated unions vs exceptions
+- [Frozen Dataclass Test Doubles](../testing/frozen-dataclass-test-doubles.md) — Testing pattern for FakeBranchManager

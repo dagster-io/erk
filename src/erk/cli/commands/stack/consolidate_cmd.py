@@ -456,7 +456,7 @@ def consolidate_stack(
     user_output(_format_removal_progress(removed_paths, unassigned_slots))
 
     # Prune stale worktree metadata after all removals
-    # (explicit call now that remove_worktree no longer auto-prunes)
+    # (remove_worktree auto-prunes, but explicit prune here as a safety net after batch removal)
     ctx.git.worktree.prune_worktrees(repo.root)
 
     user_output(f"\n{click.style('✅ Consolidation complete', fg='green', bold=True)}")

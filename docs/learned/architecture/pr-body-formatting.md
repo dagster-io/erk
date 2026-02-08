@@ -12,159 +12,85 @@ tripwires:
 
 # PR Body Formatting Pattern
 
-This document describes the two-target pattern for PR body formatting, which separates plain-text commit messages from GitHub-enhanced PR descriptions.
+## Why Two Targets Matter
 
-## The Problem
+Git commit messages are **permanent immutable records** in git history, readable via `git log` by anyone with the repository, forever. GitHub PR bodies are **ephemeral GitHub-specific metadata** that only exists in the PR API and web UI.
 
-Git commit messages and GitHub PR bodies serve different audiences:
+When we want GitHub-specific enhancements (HTML tags, badges, collapsible sections), we must ensure they never leak into git history. HTML in commit messages is permanent pollution — it can't be removed without rewriting history.
 
-- **Commit messages**: Plain text, permanent git history, read by `git log`
-- **PR bodies**: Rich HTML/Markdown, temporary PR metadata, read on GitHub web UI
+## The Pattern: Two Variables, Two Destinations
 
-When we want to enhance PR bodies with GitHub-specific features (HTML tags, badges, embedded plans), we must ensure these enhancements never pollute the git commit message.
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, finalize_pr function -->
 
-## The Two-Target Pattern
+Maintain two separate body strings throughout PR submission (see `finalize_pr()` at `src/erk/cli/commands/pr/submit_pipeline.py:603`):
 
-### Pattern Overview
+1. **`pr_body`** — Plain text only, used for `git commit --amend` (line 663)
+2. **`pr_body_for_github`** — Start as clone of `pr_body`, then append HTML/metadata, used for GitHub PR API (line 653)
 
-Maintain **two separate body strings** during PR submission:
+The split happens **before** any GitHub-specific content is added. The plain `pr_body` is cloned into `pr_body_for_github`, then only the GitHub version receives enhancements.
 
-1. **`pr_body`**: Plain text description (goes into git commit message)
-2. **`pr_body_for_github`**: Enhanced description with HTML/metadata (sent to GitHub PR API)
+## Decision Table: When to Use This Pattern
 
-### When to Use
+| Adding to PR                           | Use Two-Target Pattern? | Reason                            |
+| -------------------------------------- | ----------------------- | --------------------------------- |
+| HTML tags (`<details>`, `<img>`, etc.) | ✅ Required             | HTML doesn't belong in git log    |
+| GitHub badges (shields.io URLs)        | ✅ Required             | Image markdown is GitHub-specific |
+| Issue closing keywords                 | ❌ Not needed           | "Closes #123" is valid in both    |
+| Plain text summary                     | ❌ Not needed           | Same content for both targets     |
+| Embedded plan content                  | ✅ Required             | Uses `<details>` HTML wrapper     |
+| PR metadata footer                     | ✅ Required             | GitHub-only metadata section      |
 
-Use this pattern when adding any GitHub-specific enhancement to PR bodies:
+## Implementation Invariants
 
-- HTML tags (`<details>`, `<summary>`, `<img>`, etc.)
-- GitHub-specific markdown (badges, mentions, issue links)
-- Embedded metadata (plans, test results, CI status)
-- Any content that should be visible on GitHub but not in git history
+1. **`pr_body` is created first** — always construct the plain text body before any GitHub enhancements
+2. **Clone, don't mutate** — `pr_body_for_github = pr_body` creates the split point; `pr_body` never changes after this
+3. **Route to correct destination** — commit messages use `pr_body`, GitHub API calls use `pr_body_for_github`
+4. **Never cross-contaminate** — once `pr_body_for_github` has HTML, it never touches git operations
 
-## Implementation Reference
+## Anti-Pattern: Single-Variable Mutation
 
-### Location
-
-`src/erk/cli/commands/pr/submit_pipeline.py:633-636`
-
-### Code Example
+**WRONG** (the bug this pattern prevents):
 
 ```python
-# Start with plain text body
+# Start with plain text
 pr_body = "Summary of changes"
 
-# Embed plan in PR body if available (not in commit message)
-pr_body_for_github = pr_body
-if state.plan_context is not None:
-    pr_body_for_github = pr_body + _build_plan_details_section(state.plan_context)
+# Mistake: mutating the only body variable
+pr_body = pr_body + "\n\n<details>Plan here</details>"
 
-# Build footer and combine
-metadata_section = build_pr_body_footer(
-    pr_number=state.pr_number,
-    issue_number=issue_number,
-    plans_repo=effective_plans_repo,
-)
-final_body = pr_body_for_github + metadata_section
-
-# Update PR metadata (uses enhanced body)
-ctx.github.update_pr_title_and_body(
-    repo_root=state.repo_root,
-    pr_number=state.pr_number,
-    title=pr_title,
-    body=BodyText(content=final_body),
-)
-
-# Later: amend commit message (uses plain body)
-ctx.git.commit.amend(
-    repo_root=state.repo_root,
-    message=f"{pr_title}\n\n{pr_body}",
-)
+# Both destinations now get HTML
+ctx.git.commit.amend_commit(repo_root, f"{title}\n\n{pr_body}")  # ❌ HTML in git log
+ctx.github.update_pr_title_and_body(..., body=BodyText(content=pr_body))  # ✅ OK
 ```
 
-## Key Principles
+Result: HTML permanently embedded in git commit history.
 
-### 1. Start with Plain Text
-
-Always construct the base `pr_body` as plain text first. This becomes the commit message content.
+**CORRECT** (two-variable pattern):
 
 ```python
-pr_body = "Summary of changes"  # Plain text, no HTML
-```
-
-### 2. Clone Before Enhancement
-
-Create a separate variable for GitHub-specific content:
-
-```python
-pr_body_for_github = pr_body  # Start identical
-pr_body_for_github = pr_body_for_github + html_content  # Add GitHub features
-```
-
-### 3. Route to Correct Target
-
-- Commit messages: Use `pr_body` (plain text)
-- GitHub PR API: Use `pr_body_for_github` (enhanced)
-
-### 4. Never Mix
-
-Once you've created `pr_body_for_github`, never use it for commit messages. The separation is absolute.
-
-## Anti-Pattern: Putting HTML in Commit Messages
-
-**WRONG:**
-
-```python
-# BAD: HTML in commit message
-pr_body = "Summary\n\n<details>Plan here</details>"
-ctx.git.commit.amend(message=f"{pr_title}\n\n{pr_body}")
-```
-
-This results in:
-
-```
-Add feature
-
-Summary
-
-<details>Plan here</details>
-```
-
-in `git log`, which is permanent pollution.
-
-**CORRECT:**
-
-```python
-# GOOD: Separate targets
-pr_body = "Summary"
-pr_body_for_github = pr_body + "\n\n<details>Plan here</details>"
-
-ctx.git.commit.amend(message=f"{pr_title}\n\n{pr_body}")
-ctx.github.update_pr_title_and_body(body=BodyText(content=pr_body_for_github))
-```
-
-## Example Use Case: Plan Embedding
-
-Plan embedding is the primary use case for this pattern. See [Plan Embedding in PR](../pr-operations/plan-embedding-in-pr.md) for complete details.
-
-```python
-# Plain body for commit message
+# Start with plain text
 pr_body = "Summary of changes"
 
-# Enhanced body with plan for GitHub
+# Clone for GitHub enhancements
 pr_body_for_github = pr_body
-if state.plan_context is not None:
-    plan_section = _build_plan_details_section(state.plan_context)
-    pr_body_for_github = pr_body + plan_section
+pr_body_for_github = pr_body_for_github + "\n\n<details>Plan here</details>"
+
+# Each destination gets the right version
+ctx.git.commit.amend_commit(repo_root, f"{title}\n\n{pr_body}")  # ✅ Plain text only
+ctx.github.update_pr_title_and_body(..., body=BodyText(content=pr_body_for_github))  # ✅ Enhanced
 ```
 
-The `<details>` block with the plan content appears in the GitHub PR but not in git history.
+## Real-World Usage: Plan Embedding
 
-## Tripwire
+The primary use case is embedding plan content in PRs without polluting git history. See [Plan Embedding in PR](../pr-operations/plan-embedding-in-pr.md) for the full workflow.
 
-**NEVER** put GitHub-specific HTML into git commit messages. Use the two-target pattern to separate plain-text commit content from GitHub-enhanced PR descriptions.
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _build_plan_details_section -->
+
+The `_build_plan_details_section()` function (line 587) wraps plan markdown in a `<details>` tag. This HTML is appended only to `pr_body_for_github` (line 638), never to `pr_body`.
+
+When the commit is amended (line 664), it uses `pr_body` without the plan HTML. When the PR metadata is updated via GitHub API (line 649), it uses `pr_body_for_github` with the collapsible plan section.
 
 ## Related Documentation
 
-- [Plan Embedding in PR](../pr-operations/plan-embedding-in-pr.md) - Primary use case
-- [PR Submit Phases](../pr-operations/pr-submit-phases.md) - Where this pattern is used
-- [Commit Message Format](../erk-dev/commit-message-format.md) - Git commit standards
+- [Plan Embedding in PR](../pr-operations/plan-embedding-in-pr.md) — Primary use case for this pattern
+- [PR Submit Phases](../pr-operations/pr-submit-phases.md) — Where PR body assembly happens in the pipeline

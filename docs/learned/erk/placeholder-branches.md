@@ -1,132 +1,73 @@
 ---
 title: Placeholder Branches
 read_when:
-  - working with worktree pool slots, implementing slot commands, deciding when to use ctx.git.branch vs ctx.branch_manager
-last_audited: "2026-02-05 13:25 PT"
+  - working with worktree pool slots or slot commands
+  - understanding why placeholder branches bypass BranchManager
+  - debugging slot cleanup during erk land
+tripwires:
+  - action: "creating a placeholder branch with ctx.branch_manager.create_branch()"
+    warning: "Placeholder branches must bypass BranchManager. Use ctx.git.branch.create_branch() to avoid Graphite tracking. See branch-manager-decision-tree.md for the full decision framework."
+  - action: "deleting a placeholder branch with ctx.branch_manager.delete_branch()"
+    warning: "Placeholder branch deletion must also bypass BranchManager. Use ctx.git.branch.delete_branch() directly."
+last_audited: "2026-02-08"
 audit_result: edited
 ---
 
 # Placeholder Branches
 
-Placeholder branches are ephemeral branches that serve as temporary occupants for pool worktrees when no real work is assigned. They represent an architectural exception where **Graphite tracking is wrong** and low-level git operations should be used instead.
+Placeholder branches exist to satisfy a git constraint: every worktree must have a branch checked out. When a pool slot has no real work assigned, it needs a branch to occupy it. Placeholder branches fill this role without polluting Graphite's stack metadata.
 
-## What Are Placeholder Branches?
+## Why They Exist
 
-Placeholder branches are named `__erk-slot-XX-br-stub__` (e.g., `__erk-slot-01-br-stub__`, `__erk-slot-02-br-stub__`) and serve a single purpose:
+Git prevents a worktree from existing without a checked-out branch, and it also prevents the same branch from being checked out in multiple worktrees simultaneously. These two constraints together force a design where each pool slot has its own dedicated placeholder branch (`__erk-slot-XX-br-stub__`). Without unique-per-slot placeholders, unassigned slots would conflict with each other.
 
-**Keep pool worktrees in a valid state when no work is assigned.**
+## The Create/Checkout Asymmetry
 
-### Key Characteristics
+The most important cross-cutting pattern in placeholder branch handling is the asymmetry between **creation** and **checkout**:
 
-| Property                | Value                   | Why                                                |
-| ----------------------- | ----------------------- | -------------------------------------------------- |
-| **Lifetime**            | Ephemeral               | Created/destroyed as slots are initialized/removed |
-| **Tracking**            | None (local-only)       | Graphite tracking would pollute stack metadata     |
-| **Branch point**        | Trunk (master)          | Always based on trunk, never on feature branches   |
-| **Worktree constraint** | One worktree per branch | Git prevents checkout in multiple worktrees        |
+| Operation    | API                                    | Why                                                     |
+| ------------ | -------------------------------------- | ------------------------------------------------------- |
+| **Create**   | `ctx.git.branch.create_branch()`       | Must bypass Graphite — placeholders are not real work   |
+| **Checkout** | `ctx.branch_manager.checkout_branch()` | Checkout must respect Graphite mode for all branches    |
+| **Delete**   | `ctx.git.branch.delete_branch()`       | Must bypass Graphite — no tracking metadata to clean up |
 
-## When to Use Low-Level Git API vs BranchManager
+This asymmetry catches people because creation and deletion bypass `branch_manager` while checkout goes through it. The reason: `checkout_branch()` handles Graphite-mode-specific behavior that affects _any_ branch being checked out (not just tracked ones), while `create_branch()` and `delete_branch()` on `branch_manager` would incorrectly add/remove Graphite tracking metadata.
 
-Placeholder branches bypass `ctx.branch_manager` and use `ctx.git.branch` directly:
+<!-- Source: src/erk/cli/commands/slot/unassign_cmd.py, execute_unassign -->
+<!-- Source: src/erk/cli/commands/slot/init_pool_cmd.py, slot_init_pool -->
 
-```python
-# WRONG: Using branch_manager for placeholder branches
-ctx.branch_manager.create_branch(
-    repo.root, placeholder_branch, trunk
-)
-# This would tell Graphite to track the branch (wrong behavior)
+See `execute_unassign()` in `src/erk/cli/commands/slot/unassign_cmd.py` for the create-then-checkout pattern, and `slot_init_pool()` in `src/erk/cli/commands/slot/init_pool_cmd.py` for bulk creation during pool initialization.
 
-# RIGHT: Using low-level git API for placeholder branches
-create_result = ctx.git.branch.create_branch(
-    repo.root, placeholder_branch, trunk, force=False
-)
-# This creates a local branch without Graphite metadata
-```
+## Create-or-Get Pattern
 
-**Source**: See `execute_unassign()` in `unassign_cmd.py` and `slot_init_pool()` in `init_pool_cmd.py`
+Placeholder branches use a lazy creation pattern: check if the branch already exists before creating it. This is necessary because placeholder branches persist across multiple assign/unassign cycles — `slot init-pool` creates them once, and subsequent `slot unassign` operations reuse them rather than recreating. A "create every time" approach would fail when the branch already exists from a prior cycle, since `create_branch()` with `force=False` returns `BranchAlreadyExists`.
 
-## Why Graphite Tracking Is Wrong
+<!-- Source: src/erk/cli/commands/slot/unassign_cmd.py, execute_unassign -->
 
-Placeholder branches should never be tracked by Graphite because:
+See `execute_unassign()` in `src/erk/cli/commands/slot/unassign_cmd.py` for the `if placeholder_branch not in local_branches` guard before `create_branch()`.
 
-1. **They're not real work** — No PRs will be created from placeholder branches
-2. **They pollute stack state** — Graphite would consider them part of the stack hierarchy
-3. **They're disposable** — Created and destroyed frequently as pool slots are reassigned
-4. **They're local-only** — Never pushed to remote, never part of PR workflow
+## Cross-Cutting Touchpoints
 
-## Placeholder Branch Lifecycle
+Placeholder branches are not isolated to slot commands. Several other systems need to recognize and handle them:
 
-### Creation (Pool Initialization)
+- **Submit** detects placeholder branches to determine the base branch for new PRs. When running `erk submit` from a slot on a placeholder branch, the submit logic falls back to trunk as the base branch (since placeholder branches are local-only and have no remote tracking). See `submit_cmd()` in `src/erk/cli/commands/submit.py`.
+- **Worktree list** filters out placeholder branches by default so users only see slots with meaningful work assigned. The `--all` flag overrides this to show empty slots. See `_list_worktrees()` in `src/erk/cli/commands/wt/list_cmd.py`.
+- **Land cleanup** uses `get_placeholder_branch_name()` to checkout a placeholder before deleting the landed feature branch. This happens even for slots with no pool assignment (the `SLOT_UNASSIGNED` cleanup path), handling cases where someone checked out a branch in a slot without using erk's assignment system. See `_cleanup_slot_without_assignment()` in `src/erk/cli/commands/land_cmd.py`.
 
-When initializing pool slots with `erk slot init-pool`:
+<!-- Source: src/erk/cli/commands/submit.py, submit_cmd -->
+<!-- Source: src/erk/cli/commands/wt/list_cmd.py, _list_worktrees -->
+<!-- Source: src/erk/cli/commands/land_cmd.py, _cleanup_slot_without_assignment -->
+<!-- Source: src/erk/cli/commands/slot/common.py, is_placeholder_branch -->
 
-```python
-# 1. Get placeholder branch name
-placeholder_branch = get_placeholder_branch_name(slot_name)
+## Why Not Detached HEAD?
 
-# 2. Create branch from trunk (bypassing BranchManager)
-trunk = ctx.git.branch.detect_trunk_branch(repo.root)
-ctx.git.branch.create_branch(repo.root, placeholder_branch, trunk, force=False)
+An alternative design would use detached HEAD instead of placeholder branches. This was rejected because:
 
-# 3. Create worktree and checkout placeholder branch
-worktree_path.mkdir(parents=True, exist_ok=True)
-ctx.git.worktree.add_worktree(repo.root, worktree_path, branch=placeholder_branch, ref=None, create_branch=False)
-```
-
-### Usage (Slot Unassign)
-
-When unassigning work from a slot:
-
-```python
-# 1. Get or create placeholder branch (if it doesn't exist yet)
-placeholder_branch = get_placeholder_branch_name(slot_name)
-if placeholder_branch not in local_branches:
-    ctx.git.branch.create_branch(repo.root, placeholder_branch, trunk, force=False)
-
-# 2. Checkout placeholder branch in the worktree
-ctx.branch_manager.checkout_branch(worktree_path, placeholder_branch)
-# Note: checkout uses branch_manager, but creation does not
-```
-
-### Cleanup (Slot Removal)
-
-When removing a pool slot:
-
-```python
-# 1. Remove worktree
-ctx.git.worktree.remove_worktree(repo.root, worktree_path, force=True)
-
-# 2. Delete placeholder branch (bypassing BranchManager)
-ctx.git.branch.delete_branch(repo.root, placeholder_branch, force=True)
-```
-
-## Multi-Worktree Constraint
-
-Git prevents the same branch from being checked out in multiple worktrees simultaneously. This is why each pool slot needs its own placeholder branch:
-
-```bash
-# This fails if __erk-slot-01-br-stub__ is already checked out in another worktree:
-git -C .erk/worktrees/erk-slot-02 checkout __erk-slot-01-br-stub__
-# Error: '__erk-slot-01-br-stub__' is already checked out at '.erk/worktrees/erk-slot-01'
-```
-
-Therefore:
-
-- `erk-slot-01` uses `__erk-slot-01-br-stub__`
-- `erk-slot-02` uses `__erk-slot-02-br-stub__`
-- Each slot has a unique placeholder branch
-
-## Decision Tree: When to Bypass BranchManager
-
-```
-Is this a placeholder branch?
-├─ YES → Use ctx.git.branch (skip Graphite tracking)
-│         Examples: __erk-slot-XX-br-stub__, temp branches for pool operations
-└─ NO → Use ctx.branch_manager (Graphite tracking required)
-          Examples: feature branches, plan branches, user-created branches
-```
+1. **Git UI confusion** — detached HEAD triggers warnings in many tools and confuses agents working in the worktree
+2. **Branch-based lookups break** — code that calls `get_current_branch()` returns `None` in detached HEAD, requiring null handling throughout the codebase
+3. **Placeholder branches are cheap** — local-only, no remote operations, negligible overhead
 
 ## Related Documentation
 
-- [Branch Manager Decision Tree](../architecture/branch-manager-decision-tree.md) — Complete decision framework
+- [Branch Manager Decision Tree](../architecture/branch-manager-decision-tree.md) — Complete decision framework for `ctx.branch_manager` vs `ctx.git.branch`
 - [Branch Manager Abstraction](../architecture/branch-manager-abstraction.md) — BranchManager architecture

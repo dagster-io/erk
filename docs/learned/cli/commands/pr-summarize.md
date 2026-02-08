@@ -1,133 +1,122 @@
 ---
 title: erk pr summarize Command
 read_when:
-  - "generating PR descriptions for existing PRs"
-  - "updating PR body with plan context"
+  - "generating AI commit messages for existing commits"
+  - "amending commit messages with plan context"
   - "understanding pr summarize vs pr submit"
 ---
 
 # erk pr summarize Command
 
-Generates a PR description (title and body) for an existing PR by incorporating plan context from linked erk-plan issues.
+Generates an AI-powered commit message and amends the current commit. This is the local-only variant of `erk pr submit` - it updates your commit message without creating or updating a PR.
 
-## Usage
+## Why This Command Exists
+
+**Problem**: You've made a commit but the message is generic or doesn't capture the full context. You want an AI-generated message that incorporates plan context, but you're not ready to push yet.
+
+**Solution**: `pr summarize` analyzes your branch's diff against its parent, generates a commit message (with plan context if available), and amends your current commit.
+
+## Usage Pattern
 
 ```bash
-erk pr summarize [PR_NUMBER]
+# Must have exactly 1 commit ahead of parent
+erk pr summarize
+
+# With debug output
+erk pr summarize --debug
 ```
 
-**Arguments:**
+**Pre-requisite**: Exactly one commit ahead of parent branch. If you have multiple commits, run `gt squash` first.
 
-- `PR_NUMBER` (optional): The PR number to summarize. If omitted, uses the PR for the current branch.
+<!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, _execute_pr_summarize -->
 
-## When to Use
+The command enforces single-commit state at summarize_cmd.py:80-90. This constraint matches Graphite's stack model - one commit per PR.
 
-Use `pr summarize` when you need to:
+## Three-Phase Execution
 
-- **Update an existing PR's description** after changes
-- **Regenerate PR body with plan context** after linking a plan
-- **Fix PR descriptions** that were created without plan context
+The command mirrors `pr submit`'s structure but stops before pushing:
 
-This command is distinct from `erk pr submit` which creates the PR and generates its description as part of submission.
+### Phase 1: Get Diff
 
-## Plan Context Detection
+Extracts the diff between current branch and parent using the shared `execute_diff_extraction` pipeline. Sets `pr_number=0` as a placeholder since no PR exists yet (see summarize_cmd.py:186).
 
-The command automatically detects and incorporates plan context:
+### Phase 2: Generate Commit Message
 
-### With Plan Context
+Uses `CommitMessageGenerator` with identical context priority to `pr submit`:
 
-When a linked erk-plan issue is found:
+1. **Plan context** - From linked erk-plan issue (highest priority)
+2. **Objective context** - From parent objective if plan is linked
+3. **Commit messages** - Not used in summarize (only in submit with multiple commits)
 
-```
-   Incorporating plan from issue #6386
-   Linked to [objective] Improve PR operations feedback
+<!-- Source: src/erk/core/commit_message_generator.py, CommitMessageGenerator._build_context_section -->
 
-[Generated PR description with plan context...]
-```
+The generator places plan content before commit messages in the prompt (commit_message_generator.py:207-227), making it the primary source of truth for WHY the changes exist.
 
-**Styling:**
+### Phase 3: Amend Commit
 
-- Plan message: Green text (`fg="green"`)
-- Objective message: Green text (when available)
-- Blank line separator after feedback
+Combines title and body into a single commit message and amends the current commit via `git.commit.amend_commit()`.
 
-### Without Plan Context
+## Plan Context Integration
 
-When no linked plan is found:
+<!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, plan context feedback (lines 120-131) -->
 
-```
-   No linked plan found
+When a branch follows the `P{issue_number}-{slug}` naming convention, the command automatically fetches plan context from the linked erk-plan issue.
 
-[Generated PR description from commit messages...]
-```
+**Feedback styling:**
 
-**Styling:**
+- Plan found: Green text showing issue number and optional objective
+- No plan: Dimmed text "No linked plan found"
 
-- Message: Dimmed text (`dim=True`)
-- Blank line separator after feedback
+This feedback pattern is standardized across `pr summarize` and `pr submit` - both commands use identical styling when incorporating plan context.
 
-## Context Priority
+## Context Priority Decision
 
-The command uses `CommitMessageGenerator` with identical context priority to `pr submit`:
+<!-- Source: src/erk/core/commit_message_generator.py, _build_context_section -->
 
-1. **Plan context** (from linked erk-plan issue)
-2. **Objective context** (from linked objective issue)
-3. **Commit messages** (fallback when no plan/objective)
+**Why plan context takes priority over commit messages:**
 
-This ensures PR descriptions are consistent regardless of when they were generated.
+When both exist, the plan is placed first in the prompt to Claude (commit_message_generator.py:207-227). This ordering reflects reality: the plan describes the intended outcome, while commit messages describe incremental implementation steps.
 
-## Output Pattern
+For `pr summarize`, commit messages are never included in the request (summarize_cmd.py:140 passes `commit_messages=None`). This is correct - you're amending the single commit, so its current message is being replaced, not incorporated.
 
-```
-Fetching PR details...
-Checking for plan context...
+## Anti-Pattern: Summarizing Multi-Commit Branches
 
-   Incorporating plan from issue #6386
-   Linked to [objective] Improve PR operations feedback
+**WRONG**: Running `pr summarize` with multiple commits ahead of parent
 
-Generating PR description...
+**WHY**: The command can only amend the most recent commit. If you have 3 commits, it would generate a message describing all changes but only amend the last commit, creating a mismatch.
 
-Title: Add plan context feedback to pr summarize command
-Body:
-[Generated description incorporating plan context]
+**CORRECT**: Run `gt squash` first to combine commits, then `pr summarize`.
 
-Updated PR #1234 with new description.
-```
+<!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, lines 86-90 -->
 
-## Relationship to Other Commands
+The enforcement at summarize_cmd.py:86-90 prevents this anti-pattern. It suggests `gt squash` explicitly in the error message.
 
-- `erk pr submit` - Creates PR and generates description (uses same feedback pattern)
-- `erk pr edit` - Manual PR editing (doesn't regenerate description)
-- `erk plan submit` - Creates branch and PR with plan context
+## Relationship to pr submit
 
-## Implementation Details
+| Aspect                   | pr summarize        | pr submit                     |
+| ------------------------ | ------------------- | ----------------------------- |
+| Creates PR               | ❌ No               | ✅ Yes                        |
+| Amends commit            | ✅ Yes              | ✅ Yes (before pushing)       |
+| Accepts multiple commits | ❌ No (enforced)    | ✅ Yes (squashes them)        |
+| Plan context             | ✅ Yes              | ✅ Yes                        |
+| Commit message context   | ❌ No (passes None) | ✅ Yes (includes all commits) |
 
-**Location:** `src/erk/cli/commands/pr/summarize_cmd.py:120-131`
+Both commands use the same `CommitMessageGenerator` and `PlanContextProvider` classes. The difference is what happens after generation:
 
-**Plan Context Feedback Pattern:**
+- `pr summarize` stops after amending
+- `pr submit` continues to push and create/update PR
 
-```python
-if plan_context is not None:
-    click.echo(
-        click.style(
-            f"   Incorporating plan from issue #{plan_context.issue_number}",
-            fg="green",
-        )
-    )
-    if plan_context.objective_summary is not None:
-        click.echo(click.style(f"   Linked to {plan_context.objective_summary}", fg="green"))
-else:
-    click.echo(click.style("   No linked plan found", dim=True))
-click.echo("")
-```
+## When to Use Which Command
 
-**Styling Convention:**
-
-This feedback pattern is standardized across plan-aware PR commands (`pr submit` and `pr summarize`). Future plan-aware commands should follow this convention for consistency.
+| Scenario                                      | Use                                   |
+| --------------------------------------------- | ------------------------------------- |
+| Want AI commit message, not ready to push     | `pr summarize`                        |
+| Ready to create PR on Graphite                | `pr submit`                           |
+| PR already exists, want to update description | `pr submit` (it updates existing PRs) |
+| Just want to fix typo in commit message       | `git commit --amend` (no need for AI) |
 
 ## Related Documentation
 
-- [PR Submit Phases](../../pr-operations/pr-submit-phases.md) - Workflow phases for pr submit
-- [Commit Message Generation](../../pr-operations/commit-message-generation.md) - Context priority ordering
-- [Output Styling](../output-styling.md) - Standardized plan context feedback pattern
-- [Plan Context Integration](../../architecture/plan-context-integration.md) - How PlanContextProvider works
+- [PR Submit Phases](../../pr-operations/pr-submit-phases.md) - Full workflow for PR creation
+- [Commit Message Generation](../../pr-operations/commit-message-generation.md) - How context priority works
+- [Plan Context Integration](../../architecture/plan-context-integration.md) - How PlanContextProvider extracts plan content

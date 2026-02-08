@@ -1,269 +1,114 @@
 ---
 title: Documentation Audit Methodology
-last_audited: "2026-02-04 05:48 PT"
-audit_result: clean
+last_audited: "2026-02-08"
+audit_result: edited
 read_when:
-  - auditing documentation for quality
-  - cleaning up stale or incorrect docs
-  - understanding harmful documentation patterns
+  - auditing documentation for quality or staleness
+  - classifying doc content as duplicative vs high-value
+  - understanding why stale documentation harms agents
 tripwires:
   - action: "documenting type definitions without verifying they exist"
-    warning: "Type references in docs must match actual codebase types. Run type verification before committing."
+    warning: "Type references in docs must match actual codebase types — phantom types are the most common audit finding. Verify with grep before committing."
   - action: "bulk deleting documentation files"
     warning: "After bulk deletions, run 'erk docs sync' to fix broken cross-references."
-  - action: "creating broad exclusion rules in learned-docs classification"
-    warning: "Broad exclusion rules need explicit exceptions. Constants and defaults in prose are HIGH VALUE context, not DUPLICATIVE. Add exception rules with rationale."
+  - action: "classifying constants or defaults in prose as duplicative"
+    warning: "Constants and defaults in prose are HIGH VALUE, not DUPLICATIVE. They provide scannability that code alone cannot — an agent shouldn't need to grep to learn a default value."
 ---
 
 # Documentation Audit Methodology
 
-This document describes the systematic process for auditing learned documentation in `docs/learned/` for quality, correctness, and value. The methodology has been proven through three major audit PRs that cleaned up 20+ documents and removed 553 lines of problematic content.
+Erk's documentation audit system prevents three forms of harm: docs that have drifted from reality, docs that contradict code, and docs that describe things that no longer exist. This document captures the cross-cutting reasoning behind the audit approach — for the executable audit process, see `/local:audit-doc` and `/local:audit-scan`.
 
-## Three-Step Audit Process
+## Why Audit Documentation?
 
-### Step 1: Type Definition Verification
+Stale documentation is worse than no documentation. An agent reading absent docs will investigate the code and find the truth. An agent reading stale docs will confidently act on lies. The audit system exists because documentation in `docs/learned/` is a "token cache" — preserved reasoning that agents trust without re-verifying.
 
-**Goal**: Ensure documented types actually exist in the codebase.
+Three layers work together to maintain doc quality:
 
-**Process**:
+| Layer                              | When it runs                                  | What it catches                                    |
+| ---------------------------------- | --------------------------------------------- | -------------------------------------------------- |
+| `/local:audit-doc`                 | On-demand, deep analysis of one doc           | All harm categories, phantom types, broken paths   |
+| `/local:audit-scan`                | On-demand, heuristic triage of all docs       | Prioritizes which docs need deep audit             |
+| `.github/reviews/audit-pr-docs.md` | Automatically on PRs touching `docs/learned/` | Verbatim code copies, inaccurate claims at PR time |
 
-1. Extract all type references from documentation (class names, dataclass names, enum names)
-2. Search for each type in `src/erk/` and `packages/` directories
-3. Flag types that don't exist in the codebase
-4. Verify field names match actual implementations
+The first two clean up the past; the third prevents new problems.
 
-**Why it matters**: Documenting phantom types misleads users and creates maintenance burden when the non-existent types can't be found.
+## How Documentation Causes Harm
 
-**Example violations** (from PR #6660):
+### Drifted Documentation
 
-- `SessionContext` - documented but never implemented
-- `ObjectiveMetadata.steps` - field doesn't exist in actual ObjectiveMetadata
-- `PlanStatus` - documented as enum but implementation uses string literals
+Documentation that was accurate when written but the code changed underneath it. This is the most common and most insidious category because the doc _looks_ correct — it was correct once.
 
-**Concrete results**: PR #6660 removed 11 phantom type definitions from 10 documents.
+**Why it's harmful**: Agents follow outdated instructions with full confidence. They waste turns trying patterns that no longer work or looking in files that have moved.
 
-### Step 2: Link Validation
+**Common drift vectors**:
 
-**Goal**: Ensure cross-references point to files that exist.
+- File paths after refactoring (a doc says `src/erk/config.py` but the file is now `src/erk/config/core.py`)
+- Line number references after code changes
+- API descriptions after gateway refactoring
 
-**Process**:
+**Response**: Update with source pointers to current implementation, or remove entirely if the section adds no insight beyond what code shows.
 
-1. Extract all markdown links from documentation
-2. Resolve relative paths based on link context
-3. Check if target files exist
-4. Flag broken links
+### Contradictory Documentation
 
-**Why it matters**: Broken links frustrate readers and signal documentation drift.
+Documentation that directly conflicts with actual implementation — describing features that don't exist, showing signatures that don't match, or claiming behavior opposite to what code does.
 
-**Example violations** (from PRs #6660, #6666):
+**Why it's harmful**: When docs and code disagree, agents don't know what to trust. This is strictly worse than absence — it creates active confusion.
 
-- Links to deleted files (e.g., `gitlab-ci-integration.md` after GitLab support was removed)
-- Wrong directory paths (e.g., `review/reviews.md` instead of `ci/convention-based-reviews.md`)
-- Outdated file names after refactoring
+**Most dangerous subtype — phantom types**: Docs that reference classes, dataclasses, or enums that were never implemented (or were removed). An early audit round found 11 phantom type definitions across 10 documents. Agents tried to import these types and failed silently.
 
-**Concrete results**: PRs #6660 and #6666 fixed 40+ broken cross-reference paths.
+**Response**: Remove immediately. Don't attempt to reconcile — if the doc is wrong, delete or rewrite.
 
-### Step 3: Path Verification
+### Outdated Documentation
 
-**Goal**: Ensure documented file paths match actual codebase structure.
+Documentation about features, workflows, or integrations that no longer exist in the codebase.
 
-**Process**:
+**Why it's harmful**: Creates noise when agents search for information. They find docs about removed features and waste turns trying to use them.
 
-1. Extract all file path references from code blocks and inline code
-2. Verify paths exist in the repository
-3. Check line number references against current files
-4. Flag incorrect or outdated paths
+**Response**: Delete entirely. Documentation fossils have negative value.
 
-**Why it matters**: Wrong paths send readers to non-existent files or wrong locations.
+## Why Verification Order Matters
 
-**Example violations**:
+Auditing checks claims from conceptual to mechanical because higher-level inaccuracies invalidate everything beneath them. If a doc's description of how a system works is wrong, there's no point verifying its import paths — the whole section needs rewriting. Phantom types (the most common single finding) sit second because they cause silent failures: agents try to import non-existent classes and get cryptic errors rather than a clear "this doesn't exist."
 
-- `src/erk/config.py` documented when actual file is `src/erk/config/core.py`
-- Line numbers that are off by 10+ lines due to code changes
-- References to files that were moved or renamed
+<!-- Source: .claude/commands/local/audit-doc.md, Phase 4: Verify System Descriptions -->
 
-**Pattern**: If a path appears in inline code or a code block, verify it exists before merge.
+The full verification procedure and priority ordering is defined in `/local:audit-doc` Phase 4 (Verify System Descriptions).
 
-## Harmful Documentation Categories
+## The Classification Decision
 
-Documentation can cause harm in three ways:
+When auditing, every section gets classified. The key judgment call is between DUPLICATIVE and HIGH VALUE:
 
-### Category 1: Drifted Documentation
+| Classification  | Action                      | Signal                                                                          |
+| --------------- | --------------------------- | ------------------------------------------------------------------------------- |
+| **HIGH VALUE**  | Keep                        | Captures _why_, connects multiple files, decision tables, anti-patterns         |
+| **CONTEXTUAL**  | Keep                        | Connects multiple code locations into a narrative code alone can't provide      |
+| **DUPLICATIVE** | Replace with source pointer | Restates what code already communicates (signatures, imports, field lists)      |
+| **INACCURATE**  | Fix or remove               | States something that doesn't match current code                                |
+| **DRIFT RISK**  | Flag                        | Correct today but will silently go stale (specific values, paths, line numbers) |
 
-**Definition**: Documentation that was accurate when written but has become incorrect due to code changes.
+### The Constants Exception
 
-**Characteristics**:
+Constants and default values mentioned in prose are **HIGH VALUE, not DUPLICATIVE** — this is the most common misclassification. When a doc says "the default machine type is `basicLinux32gb`", that provides instant scannability. An agent shouldn't need to grep the codebase to learn a default.
 
-- Describes implementation details that have changed
-- References file paths or line numbers that are now wrong
-- Documents APIs that have been refactored
+**The distinction**:
 
-**Why harmful**: Misleads users with outdated information. They waste time trying code that doesn't work or looking in wrong files.
+- **DUPLICATIVE** = re-expressing what the code already says clearly (field names, parameter types, class hierarchies)
+- **HIGH VALUE** = surfacing defaults, magic values, and constants that require code navigation to find
 
-**Solution**: Remove drifted sections entirely or update with source pointers to current implementation.
+## Anti-Patterns
 
-**Example** (from PR #6666):
+**Auditing without reading source**: Checking docs against other docs just propagates errors. Every claim must be verified against actual code.
 
-```diff
-- The GitContext class (src/erk/git/context.py) provides git operations.
-+ Git operations are provided through the GitGateway ABC (see src/erk/gateway/git_gateway.py).
-```
+**Over-deleting**: Simplification that removes "why" explanations because they're "not code." Conceptual documentation is the whole point of learned docs — only remove content that duplicates what code already communicates.
 
-### Category 2: Contradictory Documentation
+**Deleting without fixing cross-references**: Removing content and leaving broken links to it. Always run `erk docs sync` after bulk deletions to regenerate indexes and fix links.
 
-**Definition**: Documentation that directly conflicts with the actual implementation.
-
-**Characteristics**:
-
-- Documents features that don't exist
-- Shows function signatures that don't match actual code
-- Describes behavior opposite to what code does
-
-**Why harmful**: Actively breaks user trust. When docs say one thing and code does another, users don't know what to believe.
-
-**Solution**: Remove contradictions immediately. Either fix to match reality or delete the section.
-
-**Example** (from PR #6660):
-
-```diff
-- The `--parallel` flag runs operations concurrently across worktrees.
-  (REMOVED - flag was never implemented)
-```
-
-### Category 3: Outdated Documentation
-
-**Definition**: Documentation about features or patterns that no longer exist.
-
-**Characteristics**:
-
-- Documents removed features
-- References deprecated commands or APIs
-- Describes old workflows that have been replaced
-
-**Why harmful**: Confuses users who try to use features that don't exist. Creates noise in search results.
-
-**Solution**: Delete entirely. Don't leave fossils.
-
-**Example** (from PR #6666):
-
-```diff
-- ## GitLab Integration
--
-- The GitLab integration allows erk to work with GitLab repositories...
-  (REMOVED - GitLab support was removed in favor of GitHub-only)
-```
-
-## Source-of-Truth Pattern for Dynamic Content
-
-**Problem**: Some documentation describes content that changes frequently (e.g., list of available commands, configuration options, dataclass fields).
-
-**Anti-pattern**: Manually maintaining these lists in docs. They drift immediately.
-
-**Pattern**: Use source pointers instead of duplication.
-
-### When to Use Source Pointers
-
-Use source pointers (not documentation) for:
-
-1. **Configuration schemas** - Point to Pydantic models
-
-   ```markdown
-   See `InteractiveClaudeConfigSchema` in `src/erk_shared/config/schema.py:31` for available fields.
-   ```
-
-2. **Dataclass fields** - Point to actual definition
-
-   ```markdown
-   See `RoadmapStep` dataclass in `objective_roadmap_shared.py:15-22` for field definitions.
-   ```
-
-3. **Command lists** - Point to CLI registration
-
-   ```markdown
-   See `src/erk/cli/commands/objective/*.py` for available objective commands.
-   ```
-
-4. **Gateway methods** - Point to ABC
-   ```markdown
-   See `GitGateway` ABC in `src/erk/gateway/git_gateway.py` for required methods.
-   ```
-
-### When to Document (Not Point)
-
-Document (don't just point) for:
-
-1. **Why decisions** - Code can't express rationale
-2. **Tradeoffs** - Alternatives that were considered
-3. **Cross-cutting patterns** - How components interact
-4. **Mental models** - Conceptual frameworks for understanding
-5. **Usage patterns** - How to use APIs effectively
-
-**Key distinction**: If the information is **derivable from code** (what fields exist, what parameters a function takes), use a pointer. If it's **insight about the code** (why this design, when to use this pattern), write documentation.
-
-## Audit Metrics (Historical)
-
-These metrics demonstrate the audit methodology's effectiveness:
-
-### PR #6637 (First Audit)
-
-- Files modified: 8 docs
-- Lines removed: 156
-- Issues fixed: Consolidated duplicate learn-pipeline docs, removed outdated session patterns
-
-### PR #6660 (Phantom Types)
-
-- Files modified: 10 docs
-- Phantom types removed: 11
-- Broken paths fixed: 8
-- Lines removed: ~200
-
-### PR #6666 (Doc Simplification)
-
-- Files modified: 10 docs (HIGH/MODERATE priority)
-- Lines removed: 197 (from simplification)
-- Broken paths fixed: 32
-- Content clarified: 10 docs
-
-**Total impact**: 553 lines of problematic documentation removed, 40+ broken references fixed, 20+ documents improved.
-
-## Classification Edge Cases
-
-### Constants and Defaults in Prose
-
-**Classification**: HIGH VALUE, not DUPLICATIVE
-
-**Rationale**: When documentation explains "what value is used by default" or "what constant controls this behavior," it provides scannable context that is hard to extract from code.
-
-**Example**:
-
-```markdown
-The default machine type for codespace creation is `basicLinux32gb`.
-```
-
-This is HIGH VALUE because:
-
-- Requires grep/search to find in code
-- Provides immediate answer to "what's the default?"
-- Serves as an index to the codebase, not a duplicate of it
-
-**Key distinction**: Scannability vs code duplication.
-
-- **DUPLICATIVE**: Re-expressing what the code already says clearly (field names, parameter types, class hierarchies)
-- **HIGH VALUE**: Surfacing defaults and constants that require navigation to find
-
-**Related**: [Learned Docs Review](../review/learned-docs-review.md) - Constants and defaults exception in classification
-
-## Integration with Learned Docs Review
-
-The audit methodology pairs with the automated learned-docs review:
-
-1. **Manual audit** (this methodology) - Systematic cleanup of existing docs
-2. **Automated review** (learned-docs-review.md) - Prevents new problematic docs at PR time
-
-Together they maintain documentation quality: audits clean up the past, reviews prevent future problems.
+**Pointing to volatile code**: Source pointers should target stable interfaces (ABCs, schemas, config models), not implementation details that change frequently.
 
 ## Related Documentation
 
-- [learned-docs-review.md](../review/learned-docs-review.md) - Automated quality checking
-- [simplification-patterns.md](simplification-patterns.md) - Specific patterns for reducing duplication
-- `docs/learned/documentation/tripwires.md` - Tripwires for doc quality
+- [simplification-patterns.md](simplification-patterns.md) — Three proven patterns for reducing doc duplication
+- [source-pointers.md](source-pointers.md) — Format for replacing code blocks with references
+- [stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md) — The deeper case against embedded code
+- [Learned Docs Review](../review/learned-docs-review.md) — Automated PR-time quality checking

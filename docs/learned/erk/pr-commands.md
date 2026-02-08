@@ -1,114 +1,68 @@
 ---
 title: "PR Checkout Footer Validation Pattern"
 read_when:
-  - Adding checkout footers to PR bodies
-  - Implementing PR-related features that involve validation
-  - Debugging `erk pr check` failures
-  - Encountering validation errors related to PR body format
-sources:
-  - "[Impl 5d99bc36]"
+  - generating or modifying PR body footers
+  - debugging `erk pr check` footer validation failures
+tripwires:
+  - action: "constructing a checkout footer string manually"
+    warning: "Use build_pr_body_footer() from the gateway layer. Manual construction risks format drift from the validator regex."
+  - action: "using issue number in checkout footer instead of PR number"
+    warning: "Checkout footer requires the PR number (from gh pr create output), NOT the plan issue number from .impl/issue.json."
 ---
 
 # PR Checkout Footer Validation Pattern
 
-## Overview
+This document covers the cross-package contract between footer generation and validation, and the most common agent mistake when constructing footers. For the full footer format specification, see [PR Footer Format Validation](../architecture/pr-footer-validation.md). For the complete `erk pr check` validation ruleset, see [PR Validation Rules](../pr-operations/pr-validation-rules.md).
 
-The `erk pr check` command validates PR bodies against exact pattern requirements, not semantic equivalents. This document covers the specific validation logic for checkout footers and how to debug validation failures.
+## Why Literal Matching, Not Semantic Equivalence
 
-## The Requirement
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/pr/submit.py, has_checkout_footer_for_pr -->
 
-When a PR body includes a checkout footer, it must use the exact format:
+The checkout footer validator matches `erk pr checkout <number>` as a literal regex pattern. It does **not** understand command semantics — `erk wt from-pr 123` produces the same result but fails validation.
 
-```
-erk pr checkout <number>
-```
+This is deliberate:
 
-### What Fails Validation
+- **Consistency** — Every PR displays the same checkout command format, making footers scannable across dozens of PRs
+- **Parseable** — The literal pattern is trivially greppable by scripts, CI, and future tooling
+- **Canonical command** — `erk pr checkout` is the user-facing command; alternative syntaxes should not appear in PR bodies
 
-These semantically equivalent commands will **fail** validation:
+See `has_checkout_footer_for_pr()` in `packages/erk-shared/src/erk_shared/gateway/pr/submit.py`.
 
-```bash
-# FAILS - uses worktree command
-erk wt from-pr 123
+## The Cross-Package Generator-Validator Split
 
-# FAILS - missing "pr" subcommand
-erk checkout 123
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py, build_pr_body_footer -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/pr/submit.py, has_checkout_footer_for_pr -->
 
-# FAILS - different command structure
-erk worktree checkout-pr 123
-```
+Footer generation and validation live in **different packages** that must agree on format:
 
-Even though `erk wt from-pr <number>` produces the same result as `erk pr checkout <number>`, the validation code requires the specific `erk pr checkout` pattern.
+| Component     | Package                     | Function                       |
+| ------------- | --------------------------- | ------------------------------ |
+| **Generator** | `erk_shared.gateway.github` | `build_pr_body_footer()`       |
+| **Validator** | `erk_shared.gateway.pr`     | `has_checkout_footer_for_pr()` |
 
-## Why This Matters
+**Why this matters:** There is no compile-time or type-level guarantee that these agree. The generator produces a markdown string; the validator applies a regex to it. Changing the generator's output format without updating the validator regex (or vice versa) creates silent failures where `erk pr submit` generates footers that `erk pr check` rejects. The split exists because footer generation is a GitHub concern (PR body construction) while validation is a PR submission concern (pre-flight checks), but it requires manual coordination on any format change.
 
-The validation is implemented via regex pattern matching in `erk_shared.gateway.pr.submit.has_checkout_footer_for_pr()`. The validator:
+For the full three-part contract (generator, parser, validator) and migration strategy, see [PR Footer Format Validation](../architecture/pr-footer-validation.md).
 
-1. Searches the PR body for specific command patterns
-2. Matches against literal text, not semantic meaning
-3. Returns `True` only if the exact pattern is found
+## PR Number vs Issue Number — The Common Agent Mistake
 
-This is not a limitation but a design choice - PR bodies serve as user-facing documentation, and consistency in command format improves readability.
+The most frequent footer validation failure comes from confusing two different numbers:
 
-## Debugging Validation Failures
+| Number           | Source                | Used In                    |
+| ---------------- | --------------------- | -------------------------- |
+| **Issue number** | `.impl/issue.json`    | `Closes #N` reference      |
+| **PR number**    | `gh pr create` output | `erk pr checkout N` footer |
 
-When `erk pr check` fails with a validation error:
+These are never the same number. The issue is created during planning; the PR is created during submission.
 
-1. **Read the error message** - it will indicate which validation failed
-2. **Grep the codebase** for the validation function name (e.g., `has_checkout_footer_for_pr`)
-3. **Read the source code** to understand the exact pattern requirement
-4. **Update the PR body** to match the required pattern
-5. **Re-run validation** to confirm the fix
+**Why agents make this mistake:** During footer construction, `.impl/issue.json` is readily available — the issue was created before implementation started. The PR number only exists after the PR creation API call returns. This temporal gap makes the issue number tempting to reach for. The submit pipeline solves this via a two-phase approach: create the PR with a placeholder footer (`pr_number=0`), then immediately update with the real PR number.
 
-### Example: Investigating Footer Validation
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _core_submit_flow -->
 
-From session 5d99bc36, when `erk pr check` failed:
-
-```bash
-# Step 1: Error message indicated footer validation failed
-$ erk pr check
-Error: PR body missing required checkout footer
-
-# Step 2: Grep for the validation function
-$ grep -r "has_checkout_footer" src/
-src/erk_shared/gateway/pr/submit.py: def has_checkout_footer_for_pr(body: str, pr_number: int) -> bool:
-
-# Step 3: Read the source to find the exact pattern
-# Discovered: Must be exactly "erk pr checkout <number>"
-
-# Step 4: Update PR body with correct format
-$ gh pr edit --body "... footer updated with erk pr checkout 123"
-
-# Step 5: Verify
-$ erk pr check
-✓ All checks passed
-```
-
-## Source Code Reference
-
-The validation logic is implemented in:
-
-- **Location**: `erk_shared.gateway.pr.submit.has_checkout_footer_for_pr()`
-- **Pattern**: Searches for `erk pr checkout <number>` in PR body text
-- **Returns**: Boolean indicating whether the exact pattern was found
-
-## Best Practices
-
-1. **Don't guess at patterns** - read the validation source code when failures occur
-2. **Use exact command format** - `erk pr checkout` not semantic equivalents
-3. **Test validation iteratively** - update, run `erk pr check`, repeat if needed
-4. **Document command patterns** - if creating new validators, document the exact pattern required
+See `_core_submit_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py` for the two-phase creation pattern.
 
 ## Related Documentation
 
-- [PR Body Validation Workflow](../planning/pr-submission-patterns.md) - Iterate-until-valid pattern for PR updates
-- [Source Code Investigation Pattern](../planning/debugging-patterns.md) - General debugging approach for validation failures
-
-## Summary
-
-When adding checkout footers to PR bodies:
-
-- Use exact format: `erk pr checkout <number>`
-- Don't rely on semantic equivalents like `erk wt from-pr <number>`
-- Debug validation failures by reading source code, not trial-and-error
-- The validator checks pattern matching, not functional equivalence
+- [PR Footer Format Validation](../architecture/pr-footer-validation.md) — Full format specification and migration strategy
+- [PR Validation Rules](../pr-operations/pr-validation-rules.md) — Complete validation orchestration and regex patterns
+- [PR Submission Decision Framework](../cli/pr-submission.md) — When to use git-pr-push vs pr-submit

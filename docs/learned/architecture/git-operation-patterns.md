@@ -1,5 +1,7 @@
 ---
 title: Git Operation Patterns
+last_audited: "2026-02-07 20:30 PT"
+audit_result: clean
 read_when:
   - "implementing git operations in gateways"
   - "checking if git branches or refs exist"
@@ -13,131 +15,130 @@ tripwires:
 
 # Git Operation Patterns
 
-## LBYL Pattern: git show-ref --verify
+## The LBYL Principle for Git Operations
 
-For operations that need to check if a branch or ref exists, use `git show-ref --verify` BEFORE the main operation:
+Erk's LBYL-first philosophy extends to git operations: **check existence before acting** rather than catching and parsing error messages. This pattern leverages git's stable exit code contracts instead of brittle string matching.
 
-```python
-def create_branch(self, *, name: str, start_point: str) -> CreateBranchResult:
-    # LBYL: Check if branch already exists
-    check_result = run_subprocess(
-        ["git", "show-ref", "--verify", f"refs/heads/{name}"],
-        cwd=self._cwd,
-        capture_output=True,
-    )
+## Why git show-ref --verify Is the Right Check
 
-    if check_result.returncode == 0:
-        # Branch exists
-        return CreateBranchResult(
-            type="branch_already_exists",
-            branch_name=name,
-        )
+`git show-ref --verify` has a clear, version-stable returncode contract:
 
-    # Branch doesn't exist, proceed with creation
-    create_result = run_subprocess(
-        ["git", "branch", name, start_point],
-        cwd=self._cwd,
-        capture_output=True,
-    )
+- **returncode 0** = ref exists
+- **returncode non-zero** = ref doesn't exist
 
-    if create_result.returncode == 0:
-        return CreateBranchResult(type="success", branch_name=name)
+This is superior to parsing error messages from `git branch` or `git checkout` because:
 
-    # Handle unexpected errors
-    return CreateBranchResult(
-        type="error",
-        message=create_result.stderr.decode(),
-    )
-```
+1. **Immune to localization** — error messages translate, returncodes don't
+2. **Stable across versions** — exit codes are API contracts, messages are UI
+3. **Single purpose** — explicitly designed for existence checks, not operation side effects
+4. **Matches erk's LBYL principle** — check condition first, act second
 
-**Why LBYL here:**
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py, RealGitBranchOps.create_branch, RealGitBranchOps.delete_branch -->
 
-- `git show-ref --verify` has a clear returncode contract: 0 = exists, non-zero = doesn't exist
-- Avoids parsing error messages like "fatal: A branch named 'foo' already exists"
-- More robust across git versions and locales
-- Matches erk's LBYL-first philosophy (see AGENTS.md)
+See `RealGitBranchOps.create_branch()` and `RealGitBranchOps.delete_branch()` in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py` for the production pattern: both methods use `git show-ref --verify` to check existence before proceeding.
 
-## When try/except IS Appropriate
+## Decision Framework: LBYL vs Exception Handling
 
-Use try/except for git operations when:
+| Scenario                                 | Pattern                           | Rationale                                                         |
+| ---------------------------------------- | --------------------------------- | ----------------------------------------------------------------- |
+| Branch/ref existence check               | LBYL with `git show-ref --verify` | Clear returncode contract, no message parsing                     |
+| Atomic operations (merge, rebase, fetch) | try/except in real.py only        | No meaningful pre-check, multiple failure modes, subprocess risks |
+| File existence before git operation      | LBYL with `Path.exists()`         | Follows erk's Pathlib-first + LBYL standards                      |
+| Multiple expected failure modes          | Discriminated unions              | Enable caller branching logic on specific error types             |
 
-1. **Multiple failure modes**: Operation can fail in several ways, each needs different handling
-2. **Atomic operations**: Need to catch unexpected errors (permissions, disk I/O, subprocess failures)
+**Key insight**: LBYL applies when a pre-check is semantically meaningful and actionable. For operations where the check IS the operation (atomic commands like merge), use try/except in real.py only.
+
+## Why Not Parse Error Messages
+
+**WRONG — Error message parsing:**
 
 ```python
-def merge_pr(self, *, pr_number: int, method: str) -> MergePrResult:
-    try:
-        result = run_subprocess(
-            ["gh", "pr", "merge", str(pr_number), f"--{method}"],
-            cwd=self._cwd,
-            capture_output=True,
-        )
-
-        if result.returncode == 0:
-            return MergePrResult(type="success", pr_number=pr_number)
-
-        # Parse returncode patterns, NOT error messages
-        if "merge conflict" in result.stderr.decode().lower():
-            return MergePrResult(type="merge_conflict", pr_number=pr_number)
-
-        if "required status checks" in result.stderr.decode().lower():
-            return MergePrResult(type="checks_failing", pr_number=pr_number)
-
-        return MergePrResult(
-            type="error",
-            message=result.stderr.decode(),
-        )
-
-    except Exception as e:
-        # Catch subprocess/system failures
-        return MergePrResult(type="error", message=str(e))
-```
-
-**Why try/except here:**
-
-- Operation is atomic (no pre-check makes sense)
-- Multiple failure modes require error message inspection
-- Wrapping in try/except catches subprocess and I/O failures
-
-## Anti-Pattern: Error Message Parsing
-
-**Don't do this:**
-
-```python
-def create_branch(self, *, name: str, start_point: str) -> CreateBranchResult:
-    try:
-        result = run_subprocess(["git", "branch", name, start_point], ...)
-    except CalledProcessError as e:
-        # FRAGILE: Error message can change across git versions
-        if "already exists" in e.stderr:
-            return CreateBranchResult(type="branch_already_exists", branch_name=name)
-        raise
+# DON'T DO THIS
+try:
+    result = run_subprocess(["git", "branch", name, start_point], ...)
+except CalledProcessError as e:
+    # FRAGILE: Message can change in new git versions or be localized
+    if "already exists" in e.stderr:
+        return BranchAlreadyExists(...)
+    raise
 ```
 
 **Problems:**
 
-- Error messages can change in new git versions
-- Messages may be localized (different languages)
-- Brittle string matching
-- Violates erk's LBYL principle
+- Git error messages change across versions (2.30 vs 2.40+ have different phrasing)
+- Messages may be localized (`git config core.language`)
+- String matching is brittle to minor wording changes
+- Violates LBYL: you're catching the operation failure instead of checking first
 
-**Better approach:**
+**RIGHT — Pre-check with stable exit codes:**
 
-- Use LBYL with `git show-ref --verify` (as shown above)
-- Or use returncode patterns if error messages are unavoidable
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py, RealGitBranchOps.create_branch -->
 
-## When to Use Each Pattern
+See `RealGitBranchOps.create_branch()` in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py`:
 
-| Scenario                             | Pattern                             | Rationale                                       |
-| ------------------------------------ | ----------------------------------- | ----------------------------------------------- |
-| Branch/ref existence check           | LBYL with `git show-ref --verify`   | Clear returncode contract, no message parsing   |
-| Atomic git operation (merge, rebase) | try/except with returncode checking | No meaningful pre-check, multiple failure modes |
-| File existence before git operation  | LBYL with `Path.exists()`           | Follows erk's Pathlib-first + LBYL standards    |
-| Subprocess failure handling          | try/except in real.py only          | Gateway error boundary pattern                  |
+The implementation uses `git show-ref --verify refs/heads/{branch_name}` before attempting creation. Returncode 0 means "exists, return BranchAlreadyExists". Non-zero returncode proceeds to creation.
+
+## When Exception Handling IS Appropriate
+
+Gateway methods use try/except **only in real.py** to catch subprocess and system-level failures that cannot be pre-checked. This converts unpredictable runtime errors into structured discriminated unions.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py, BranchCreated, BranchAlreadyExists -->
+
+See `BranchCreated` and `BranchAlreadyExists` in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py` for the discriminated union pattern: empty success marker + error type with message field.
+
+**Use try/except in real.py when:**
+
+1. **No meaningful LBYL check exists** — operations like `gh pr merge` can't be pre-validated without actually attempting the merge
+2. **Multiple subprocess-level failure modes** — distinguish between "command not found", "permission denied", "merge conflict"
+3. **Unpredictable system errors** — disk full, network timeout, process killed
+
+**What to catch:**
+
+- `CalledProcessError` from subprocess commands
+- `FileNotFoundError` for missing executables (gh, git)
+- `OSError` for system-level failures (permissions, disk space)
+
+**What NOT to catch:**
+
+- Programming errors (`AttributeError`, `TypeError`) — these should crash
+- Validation failures that caller should check via LBYL
+
+## The Gateway Error Boundary Pattern
+
+Error handling responsibilities differ by implementation file:
+
+| File          | Error Handling Mechanism                                               | Uses try/except? |
+| ------------- | ---------------------------------------------------------------------- | ---------------- |
+| `real.py`     | Catches subprocess/system exceptions, converts to discriminated unions | **Yes**          |
+| `fake.py`     | Returns error discriminants based on constructor params                | No               |
+| `dry_run.py`  | Always returns success discriminants                                   | No               |
+| `abc.py`      | Defines return type signatures only                                    | No               |
+| `printing.py` | Delegates transparently                                                | No               |
+
+**Why this split?** Real implementations interact with unpredictable external systems. Fake implementations simulate pre-configured failure scenarios for tests. The error boundary belongs at the subprocess interface, not in test infrastructure.
+
+See [Gateway Error Boundaries](gateway-error-boundaries.md) for the complete rationale and implementation patterns.
+
+## Relation to Discriminated Unions
+
+The LBYL pattern with `git show-ref` complements discriminated union error handling:
+
+1. **Pre-check detects expected failures** (branch exists, ref doesn't exist)
+2. **Discriminated unions encode these as type-safe return values** (`BranchCreated | BranchAlreadyExists`)
+3. **try/except catches unexpected failures** (subprocess crash, git not installed)
+4. **Callers use isinstance() checks** for type-safe branching logic
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py, RealGitBranchOps.create_branch -->
+
+Example flow in `RealGitBranchOps.create_branch()`:
+
+- LBYL check with `git show-ref` detects "branch exists" → return `BranchAlreadyExists`
+- Creation attempt via subprocess (wrapped in try/except in real.py's caller context)
+- Success → return `BranchCreated`
+- Unexpected failure (process crash) → try/except converts to `RuntimeError`
 
 ## Related Patterns
 
-- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where try/except belongs in gateways
-- [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-file checklist
-- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - Designing failure-aware return types
-- [Subprocess Wrappers](subprocess-wrappers.md) - Subprocess execution patterns
+- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — When to use unions vs exceptions, pattern structure
+- [Gateway Error Boundaries](gateway-error-boundaries.md) — Where try/except belongs in the 5-file gateway pattern
+- [Subprocess Wrappers](subprocess-wrappers.md) — Using `run_subprocess_with_context()` correctly

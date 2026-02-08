@@ -1,9 +1,9 @@
 ---
 title: Makefile Prettier Ignore Path
 read_when:
-  - "modifying Prettier configuration"
   - "creating .prettierignore file"
-  - "working with Makefile format target"
+  - "adding patterns to exclude files from Prettier"
+  - "debugging why .prettierignore has no effect"
 tripwires:
   - score: 4
     action: "Creating or modifying .prettierignore"
@@ -13,61 +13,45 @@ tripwires:
 
 # Makefile Prettier Ignore Path
 
-## The Pattern
+## Why .prettierignore Does Nothing
 
-Erk's Makefile configures Prettier to use `.gitignore` instead of `.prettierignore`:
+<!-- Source: Makefile, prettier and prettier-check targets -->
 
-```makefile
-.PHONY: format-prettier
-format-prettier:
-	prettier --write --ignore-path .gitignore "**/*.{ts,tsx,js,jsx,json,md,yml,yaml}"
-```
+Erk's Makefile passes `--ignore-path .gitignore` to all Prettier invocations. This **overrides Prettier's default .prettierignore support entirely**. Creating or modifying `.prettierignore` has no effect because Prettier never reads it.
 
-## Why --ignore-path .gitignore
+See the `prettier` and `prettier-check` targets in `Makefile`.
 
-This design choice has several benefits:
+## The Design Constraint
 
-1. **DRY (Don't Repeat Yourself)**: Files ignored by git should also be ignored by formatters
-2. **Single source of truth**: One file controls what's ignored across multiple tools
-3. **Simpler maintenance**: No need to sync .gitignore and .prettierignore
-4. **Consistent behavior**: Developers don't see formatting errors in files they can't commit
+This pattern enforces a deliberate constraint: **files in the repository must be formatted**. There is no escape hatch for "committed but unformatted" content.
 
-## What This Means
+The assumption: if a file should be committed, it should be formatted. If it shouldn't be formatted, it shouldn't be committed. This prevents the drift where checked-in files bypass CI formatting checks.
 
-- **`.prettierignore` is unused**: Creating this file has no effect on formatting
-- **Modify `.gitignore` instead**: To ignore files from Prettier, add patterns to .gitignore
-- **Build artifacts auto-ignored**: Since dist/, .venv/, etc. are in .gitignore, Prettier skips them
+## Cross-Tool Consistency
 
-## Common Scenarios
+The `--ignore-path .gitignore` pattern creates automatic synchronization:
 
-### "I want to ignore a directory from Prettier but not git"
+- Build artifacts in `.gitignore` (like `dist/`, `.venv/`, `__pycache__/`) are automatically excluded from Prettier
+- No duplication of ignore patterns across `.gitignore` and `.prettierignore`
+- Agents working on formatting don't need to coordinate changes across multiple ignore files
 
-This is intentionally not supported. The design assumes:
+When `.erk/scratch/` or `.impl/` are added to `.gitignore`, they're immediately excluded from Prettier without a second step.
 
-- If a file should be committed, it should be formatted
-- If a file shouldn't be formatted, it shouldn't be committed
+## Working Around the Constraint
 
-If you have a legitimate use case for this, consider:
-
-1. Is the file actually needed in the repository?
-2. Should it be a generated/build artifact instead?
-3. Could it live outside the repository?
-
-### "I want to format files that are gitignored"
-
-Remove the pattern from .gitignore, or use `prettier` directly without the Makefile target:
+If you need to format a gitignored file (e.g., for local testing or generated documentation), invoke Prettier directly without the Makefile wrapper:
 
 ```bash
-# Format specific gitignored file
-prettier --write path/to/file.md
+prettier --write path/to/gitignored-file.md
 ```
 
-## Related Patterns
+This bypasses the `--ignore-path .gitignore` flag and formats the file using Prettier's default behavior.
 
-- `.gitignore` - Single source of truth for ignored files
-- `Makefile` - All formatting and linting targets
-- [CI Workflow Patterns](../ci/workflow-gating-patterns.md) - How formatting checks run in CI
+## Why Not Support Both?
 
-## Attribution
+Supporting both `.gitignore` and `.prettierignore` would allow "committed but unformatted" files to exist. This creates two problems:
 
-Pattern used since project inception, consolidated during Docker/Codespace removal (PR #6359).
+1. **CI drift**: Formatting checks in CI might pass while local formatting fails (or vice versa) if the ignore files diverge
+2. **Agent confusion**: Future agents would need to decide which file to modify when excluding content from formatting
+
+The single-file design eliminates this decision point. Agents know: modify `.gitignore` to control formatting exclusions.

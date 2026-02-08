@@ -1,159 +1,78 @@
 ---
 title: erkdesk Security Architecture
 read_when:
-  - "implementing Electron context bridge"
-  - "working with erkdesk frontend-backend communication"
-  - "handling GitHub tokens in desktop app"
-  - "setting up Electron security settings"
+  - adding IPC methods or context bridge APIs to erkdesk
+  - handling credentials or tokens in the desktop app
+  - configuring BrowserWindow security settings
+  - reviewing erkdesk for security concerns
 tripwires:
-  - action: "implementing Electron IPC without context bridge"
-    warning: "NEVER expose Node.js APIs directly to renderer. Use context bridge with preload script. Set contextIsolation: true, nodeIntegration: false."
-  - action: "handling GitHub tokens in frontend code"
-    warning: "GitHub tokens must NEVER reach the renderer process. Keep all GitHub API calls in the Python backend layer."
+  - action: "exposing ipcRenderer directly through context bridge"
+    warning: "NEVER expose ipcRenderer as a whole object. Wrap each channel as a named method on window.erkdesk. Direct exposure gives the renderer unrestricted access to all IPC channels."
+  - action: "passing GitHub tokens through IPC or storing them in the renderer"
+    warning: "GitHub tokens must NEVER reach the renderer or main process. All GitHub API calls happen in the Python backend via CLI shelling."
+  - action: "making GitHub API calls from the Electron main process"
+    warning: "Token isolation depends on CLI shelling. If the main process calls GitHub directly, tokens must transit through Electron, breaking the three-layer security model."
 ---
 
 # erkdesk Security Architecture
 
-The erkdesk desktop application uses Electron's security best practices with strict context isolation between the frontend (React) and backend (Python).
+Erkdesk's security model emerges from three architectural decisions reinforcing each other: Electron's context isolation, the CLI shelling backend pattern, and the named-method bridge contract. These are documented separately in [preload bridge patterns](preload-bridge-patterns.md), [backend communication](backend-communication.md), and [framework evaluation](framework-evaluation.md) — this doc explains how they combine into a coherent security posture.
 
-## Core Security Principles
+## The Three-Layer Trust Model
 
-1. **Context Isolation**: Renderer process cannot access Node.js APIs
-2. **No Node Integration**: `nodeIntegration: false` prevents direct Node.js access
-3. **Preload Script**: Only way to expose controlled APIs to renderer
-4. **Token Isolation**: GitHub tokens never leave the Python backend
+Most Electron apps have two layers (main + renderer). Erkdesk's CLI shelling architecture creates a third, and this shapes the entire security model:
 
-## Electron Security Settings
+| Layer                       | Trust Level             | Has Token Access | Talks To                                |
+| --------------------------- | ----------------------- | ---------------- | --------------------------------------- |
+| Renderer (React)            | Untrusted               | No               | Preload bridge only (`window.erkdesk`)  |
+| Main process (Node.js)      | Trusted for IPC routing | No               | Renderer via IPC, Python via subprocess |
+| Python backend (`erk exec`) | Fully trusted           | Yes              | GitHub API, local filesystem            |
 
-All BrowserWindow instances must use these settings:
+**The key insight**: The main process is a _router_, not a _consumer_ of GitHub tokens. It forwards requests to Python via CLI shelling and returns results. Even a compromised main process cannot leak tokens — they never transit through Electron at all.
 
-```javascript
-const mainWindow = new BrowserWindow({
-  webPreferences: {
-    contextIsolation: true, // ✅ REQUIRED: Isolate renderer from Node.js
-    nodeIntegration: false, // ✅ REQUIRED: No direct Node.js access
-    preload: path.join(__dirname, "preload.js"), // Only safe API exposure
-  },
-});
-```
+This is a stronger guarantee than "we don't pass the token" — the architecture _cannot_ pass it because the main process never has it. The guarantee exists as an emergent property of the [CLI shelling decision](backend-communication.md), not because of explicit prevention code.
 
-**FORBIDDEN patterns**:
+**When this would break**: If erkdesk ever made direct GitHub API calls from the main process (e.g., for lower latency), tokens would need to transit through Electron. The [backend communication doc](backend-communication.md) discusses when the CLI shelling model might be reconsidered — any such change would require revisiting this security model.
 
-```javascript
-// ❌ NEVER DO THIS
-nodeIntegration: true;
+## Why Both Electron Security Settings Are Required
 
-// ❌ NEVER DO THIS
-contextIsolation: false;
+Every `BrowserWindow` and `WebContentsView` must use `contextIsolation: true` and `nodeIntegration: false`. Either setting alone is insufficient:
 
-// ❌ NEVER DO THIS
-webPreferences: {
-} // Missing security settings
-```
+- **Without `contextIsolation`**: Renderer code can reach into the preload script's scope to access `ipcRenderer` directly, bypassing the named-method bridge entirely.
+- **Without `nodeIntegration: false`**: Renderer code can `require('electron')` and access Node.js APIs, making the bridge irrelevant.
 
-## Context Bridge Pattern
+<!-- Source: erkdesk/src/main/index.ts, BrowserWindow webPreferences -->
 
-The preload script is the ONLY way to expose APIs to the renderer:
+See the `BrowserWindow` constructor and `WebContentsView` constructor in `erkdesk/src/main/index.ts` — both apply identical security settings.
 
-```javascript
-// preload.js
-const { contextBridge, ipcRenderer } = require("electron");
+## Named-Method Bridge as Security Allowlist
 
-contextBridge.exposeInMainWorld("erkApi", {
-  // Expose only specific, controlled APIs
-  listPlans: () => ipcRenderer.invoke("list-plans"),
-  getProgress: (planId) => ipcRenderer.invoke("get-progress", planId),
-});
-```
+The preload bridge pattern is documented in [preload bridge patterns](preload-bridge-patterns.md) for its development implications. The security dimension is distinct: each bridge method is an **explicit capability grant**. If a new IPC channel is added to the main process, the renderer _cannot_ access it until someone adds a corresponding bridge method. This is an allowlist, not a denylist.
 
-Frontend code can then use:
+The alternative — exposing `ipcRenderer` as a whole object — would give the renderer access to every channel, including channels added in the future. Any XSS vulnerability in the renderer would escalate to arbitrary IPC invocations.
 
-```typescript
-// React component
-const plans = await window.erkApi.listPlans();
-```
+## WebContentsView Isolation
 
-**Key properties**:
+The GitHub content pane uses `WebContentsView`, which creates a separate browser context managed by the main process. The security implications go beyond the [X-Frame-Options bypass](framework-evaluation.md) that motivated its use:
 
-- `window.erkApi` is the ONLY frontend API surface
-- All methods use IPC to communicate with main process
-- Main process forwards to Python backend via HTTP/stdio
+- **Separate context**: The WebContentsView's browsing context is isolated from the React renderer. A compromised GitHub page cannot access the `window.erkdesk` bridge.
+- **No script injection path**: The main process loads URLs into the WebContentsView but never injects scripts. The view is read-only from erkdesk's perspective.
+- **Minimal IPC surface**: The only IPC channels touching the WebContentsView are geometry updates (`webview:update-bounds`) and URL loading (`webview:load-url`). No data flows from the GitHub page back into erkdesk.
 
-## GitHub Token Isolation
+## Security Checklist for New Features
 
-**CRITICAL**: GitHub tokens must NEVER reach the renderer process.
+When adding erkdesk features, verify:
 
-### ✅ Correct Architecture
-
-```
-┌─────────────┐
-│   React     │
-│  Renderer   │  No token access
-└──────┬──────┘
-       │ IPC (no tokens)
-       ▼
-┌─────────────┐
-│  Electron   │
-│   Main      │  No token access
-└──────┬──────┘
-       │ HTTP/stdio
-       ▼
-┌─────────────┐
-│   Python    │
-│  Backend    │  ✅ Token lives here only
-└─────────────┘
-```
-
-All GitHub API calls happen in the Python backend:
-
-- Renderer requests "list PRs" via IPC
-- Main process forwards to Python
-- Python uses GitHub token to call API
-- Python returns data (no token) to main process
-- Main process returns data to renderer
-
-### ❌ FORBIDDEN Patterns
-
-```javascript
-// ❌ NEVER expose token to renderer
-contextBridge.exposeInMainWorld("erkApi", {
-  getToken: () => process.env.GITHUB_TOKEN, // SECURITY VIOLATION
-});
-
-// ❌ NEVER pass token through IPC
-ipcRenderer.invoke("github-api", { token: "...", endpoint: "..." });
-```
-
-## Preload Script Restrictions
-
-Preload scripts run in a special context with limited privileges:
-
-**Allowed**:
-
-- `contextBridge.exposeInMainWorld()` to expose APIs
-- `ipcRenderer.invoke()` to communicate with main process
-- Basic JavaScript/TypeScript logic
-
-**Forbidden**:
-
-- File system access (use IPC to main process)
-- Network requests (use IPC to backend)
-- Process spawning
-- Any privileged Node.js APIs
-
-## Security Checklist
-
-When implementing erkdesk features:
-
-- [ ] All BrowserWindows have `contextIsolation: true`
-- [ ] All BrowserWindows have `nodeIntegration: false`
-- [ ] Only preload script uses `contextBridge`
-- [ ] No GitHub tokens in renderer or main process
-- [ ] All GitHub API calls in Python backend
-- [ ] IPC messages validated in main process
+- BrowserWindow `webPreferences` include both `contextIsolation: true` and `nodeIntegration: false`
+- New IPC methods are exposed as named bridge methods, not raw channel access
+- No GitHub tokens or credentials appear in IPC messages or renderer code
+- All GitHub API calls route through Python backend via CLI subprocess
+- Main process handlers validate IPC payloads before acting (currently minimal — `webview:load-url` validates URL type but `actions:execute` does not validate command/args)
+- Streaming IPC listeners have cleanup methods to prevent accumulation (see [preload bridge patterns](preload-bridge-patterns.md))
 
 ## Related Documentation
 
-- [Backend Communication](backend-communication.md) - How frontend communicates with Python backend
-- [Interaction Model](interaction-model.md) - User interaction patterns
-- [Framework Evaluation](framework-evaluation.md) - Why Electron was chosen
+- [Preload Bridge Patterns](preload-bridge-patterns.md) — Four-place rule and IPC style selection
+- [Backend Communication](backend-communication.md) — Why CLI shelling, and when it might change
+- [Framework Evaluation](framework-evaluation.md) — Why Electron, and WebContentsView vs alternatives
+- [App Architecture](app-architecture.md) — State ownership and streaming action lifecycle

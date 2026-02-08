@@ -8,111 +8,103 @@ read_when:
 tripwires:
   - action: "running tsc --noEmit from root in multi-config TypeScript project"
     warning: "tsc --noEmit from root breaks subdirectory configs. Use tsc -p <path> --noEmit for each tsconfig.json separately."
+last_audited: "2026-02-07 21:48 PT"
+audit_result: clean
 ---
 
 # TypeScript Multi-Config Project Checking
 
-When a project has multiple `tsconfig.json` files in different directories, running `tsc --noEmit` from the root directory does NOT check all configurations. You must check each config separately.
+## The Core Issue
 
-## The Problem
+TypeScript's `tsc` command **only processes one configuration at a time**. When you run `tsc --noEmit` from a directory containing `tsconfig.json`, it checks that config and ignores any nested configs in subdirectories — even if those nested configs extend the root config.
 
-Consider this structure:
+This is TypeScript's deliberate design: each `tsconfig.json` defines a compilation context with distinct compiler options, included files, and type definitions. There is no "check all configs recursively" mode.
 
-```
-erkdesk/
-├── tsconfig.json          # Root config
-├── main/
-│   └── tsconfig.json      # Main process config (extends root)
-└── renderer/
-    └── tsconfig.json      # Renderer process config (extends root)
-```
+## Why Multi-Config Projects Exist
 
-Running `tsc --noEmit` from `erkdesk/` only checks the root config, ignoring `main/` and `renderer/`.
+<!-- Source: erkdesk/tsconfig.json, erkdesk/src/main/tsconfig.json, erkdesk/src/renderer/tsconfig.json -->
 
-## The Solution
+Multi-config setups emerge when different parts of a codebase need incompatible compiler settings. Electron projects are the canonical example:
 
-Check each config explicitly:
+- **Main process** runs in Node.js: needs `module: "commonjs"`, `types: ["node"]`
+- **Renderer process** runs in browser: needs `module: "ESNext"`, `lib: ["DOM"]`, JSX support
+- **Shared root** provides base settings inherited by both contexts
+
+See erkdesk's three-config structure: root `erkdesk/tsconfig.json`, main-specific `erkdesk/src/main/tsconfig.json`, renderer-specific `erkdesk/src/renderer/tsconfig.json`.
+
+Each context has different module resolution, target environments, and available global types. A single `tsc --noEmit` run cannot check both Node.js and browser code simultaneously.
+
+## The Solution Pattern
+
+Check each configuration explicitly with `tsc -p <path> --noEmit`:
 
 ```bash
 # From erkdesk/ directory
-tsc -p . --noEmit              # Check root config
-tsc -p main --noEmit           # Check main process
-tsc -p renderer --noEmit       # Check renderer process
+tsc -p . --noEmit              # Root config (if it includes any files)
+tsc -p src/main --noEmit       # Main process
+tsc -p src/renderer --noEmit   # Renderer process
 ```
 
-## Why This Matters
+The `-p` flag tells TypeScript which `tsconfig.json` to use. Each invocation is an isolated type-checking run with its own compiler options.
 
-Multi-config setups exist when different parts of the project have different TypeScript requirements:
+## Detection Strategy
 
-- **Electron main process**: Node.js environment, different types
-- **Electron renderer process**: Browser environment, React types
-- **Shared code**: Common types and utilities
-
-Each config has different:
-
-- `compilerOptions.target` (ES version)
-- `compilerOptions.lib` (available APIs)
-- `include`/`exclude` patterns
-- Type definitions (`@types/*`)
-
-A single `tsc --noEmit` can't check all these contexts.
-
-## erkdesk Example
-
-The erkdesk project has three TypeScript configs:
+Find all `tsconfig.json` files:
 
 ```bash
-# Check all TypeScript in erkdesk
+find . -name "tsconfig.json"
+```
+
+If you see more than one, you must check each separately. Grep for `"extends"` to understand the inheritance hierarchy, but remember: **extension is for sharing settings, not for aggregating type checks**.
+
+## Anti-Pattern: Relying on Root Check
+
+```bash
+# ❌ WRONG: Only checks root config, misses main/renderer
 cd erkdesk/
-tsc -p . --noEmit          # Root shared code
-tsc -p main --noEmit       # Electron main process
-tsc -p renderer --noEmit   # React renderer
-```
-
-**Common mistake**:
-
-```bash
-# ❌ This only checks root config
 tsc --noEmit
 
-# ✅ Must check each config
-tsc -p . --noEmit && tsc -p main --noEmit && tsc -p renderer --noEmit
+# ✅ CORRECT: Check each config explicitly
+tsc -p . --noEmit && tsc -p src/main --noEmit && tsc -p src/renderer --noEmit
 ```
+
+The first command succeeds even if `src/main/` or `src/renderer/` have type errors. This creates a false sense of type safety and breaks CI reliability.
 
 ## CI Integration
 
-In CI workflows, check all configs:
+In GitHub Actions or other CI, chain all checks:
 
 ```yaml
 - name: TypeScript check
   run: |
     cd erkdesk/
     tsc -p . --noEmit
-    tsc -p main --noEmit
-    tsc -p renderer --noEmit
+    tsc -p src/main --noEmit
+    tsc -p src/renderer --noEmit
 ```
 
-Or use a Makefile target:
+Or use a Makefile target to centralize the command list:
 
 ```makefile
 .PHONY: typecheck
 typecheck:
 	cd erkdesk && tsc -p . --noEmit
-	cd erkdesk && tsc -p main --noEmit
-	cd erkdesk && tsc -p renderer --noEmit
+	cd erkdesk && tsc -p src/main --noEmit
+	cd erkdesk && tsc -p src/renderer --noEmit
 ```
 
-## How to Detect Multi-Config Projects
+The key insight: **there is no TypeScript feature to automate this**. You must maintain the list of configs manually and ensure CI checks all of them.
 
-Look for multiple `tsconfig.json` files:
+## Historical Context
 
-```bash
-find . -name "tsconfig.json"
-```
+Why doesn't TypeScript have a "check all configs" mode? Because TypeScript views each `tsconfig.json` as defining a distinct compilation unit. Multi-config projects are compositions of separate projects, not a single project with multiple facets.
 
-If you see more than one, you need to check each separately.
+TypeScript's project references feature (`"references": [...]`) can express dependencies between configs, but it doesn't eliminate the need to check each one — it just enables incremental builds.
 
-## Related Documentation
+## Related Patterns
 
-- [erkdesk Security](../desktop-dash/security.md) - Why main and renderer need separate configs
-- [CI Tripwires](../ci/tripwires.md) - CI-specific type checking patterns
+- Monorepos with multiple packages: each package has its own `tsconfig.json`, each must be checked separately
+- Build vs. test configs: `tsconfig.json` for source, `tsconfig.test.json` for tests with additional types — both must be checked
+- Strict vs. loose configs during migration: incremental `strictNullChecks` adoption uses multiple configs — each must be checked
+
+The lesson: **TypeScript type checking is per-config, always**. Structure your CI accordingly.

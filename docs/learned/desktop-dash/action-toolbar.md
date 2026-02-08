@@ -3,183 +3,66 @@ title: erkdesk Action Toolbar
 read_when:
   - "adding new actions to the erkdesk toolbar"
   - "modifying action availability predicates"
-  - "understanding action button state logic"
+  - "understanding how toolbar actions connect to IPC streaming"
 tripwires:
-  - action: "adding a new action without updating ACTIONS array"
-    warning: "ACTIONS is exported and can be reused in context menus. Add new ActionDef entries to the ACTIONS array, not as separate one-offs."
+  - action: "adding a new action outside the ACTIONS array"
+    warning: "All actions must be entries in the ACTIONS array in ActionToolbar.tsx. Don't create standalone action definitions elsewhere."
   - action: "implementing blocking action execution"
-    warning: "Actions use streaming execution (startStreamingAction), not blocking. Never await or block the UI thread on action completion."
+    warning: "Actions use streaming execution via IPC (startStreamingAction). Never await or block the UI thread on action completion. App.tsx owns the streaming lifecycle."
+  - action: "adding a new action without a test case"
+    warning: "ActionToolbar.test.tsx tests every action's availability predicate AND generated command. New actions need both."
 ---
 
 # erkdesk Action Toolbar
 
-The `ActionToolbar` component provides a horizontal button bar for common plan operations. It uses an `ActionDef` interface to declaratively define actions with availability predicates and command generation.
+## Why Data-Driven Actions
 
-## ActionDef Interface
+<!-- Source: erkdesk/src/renderer/components/ActionToolbar.tsx, ActionDef interface and ACTIONS array -->
 
-```tsx
-interface ActionDef {
-  id: string;
-  label: string;
-  isAvailable: (plan: PlanRow) => boolean;
-  getCommand: (plan: PlanRow) => { command: string; args: string[] };
-}
-```
+Actions are defined as an `ActionDef` array rather than individual button handlers. This design serves two purposes: (1) the `ACTIONS` array is the single source of truth for what actions exist, their availability logic, and the CLI commands they invoke, and (2) new actions require zero component changes — just a new array entry with `isAvailable` and `getCommand` functions. CSS styling applies automatically to all buttons.
 
-**Pattern**: Each action is a pure function that takes a `PlanRow` and returns availability + command.
+See the `ActionDef` interface and `ACTIONS` array in `erkdesk/src/renderer/components/ActionToolbar.tsx`.
 
-## Available Actions
+## Availability Predicates
 
-The `ACTIONS` array defines 5 actions:
+Each action gates on specific `PlanRow` fields. This table captures which fields matter and why:
 
-### 1. Submit (id: `submit_to_queue`)
+| Action        | Gates On                                  | Why                                      |
+| ------------- | ----------------------------------------- | ---------------------------------------- |
+| Submit        | `issue_url !== null`                      | Needs an issue to submit to the queue    |
+| Land          | `pr_number` + `pr_state=OPEN` + `run_url` | Can only land open PRs with completed CI |
+| Address       | `pr_number !== null`                      | Review comments live on the PR           |
+| Fix Conflicts | `pr_number !== null`                      | Conflicts are a PR-level concern         |
+| Close         | Always available                          | Can close any plan regardless of state   |
 
-**Availability**: Plan has an issue URL
+**Land is the strictest** — it's the only action requiring three conditions. This prevents landing PRs that are already merged/closed or haven't run CI. If `run_url` is null, the PR hasn't had a workflow run yet.
 
-```tsx
-isAvailable: (plan) => plan.issue_url !== null;
-```
+## Cross-Component Streaming Boundary
 
-**Command**: `erk plan submit <issue_number>`
+The toolbar and App.tsx have a deliberate ownership split for action execution:
 
-**Use case**: Submit a plan to the remote implementation queue
+<!-- Source: erkdesk/src/renderer/components/ActionToolbar.tsx, handleClick callback -->
+<!-- Source: erkdesk/src/renderer/App.tsx, handleActionStart and streaming event listeners -->
 
-### 2. Land (id: `land_pr`)
+1. **ActionToolbar** owns: concurrency guard (rejects clicks when `runningActionId !== null`), command generation via `getCommand`, and calling the parent's `onActionStart` callback
+2. **App.tsx** owns: the streaming lifecycle — it calls `window.erkdesk.startStreamingAction()`, listens to `onActionOutput`/`onActionCompleted` IPC events, manages log panel visibility, and clears `runningActionId` on completion
 
-**Availability**: PR exists, is open, and has a workflow run
+This split matters because the toolbar is a pure rendering component — it doesn't know about IPC, log state, or streaming. The `onActionStart` prop is a fire-and-forget callback. App.tsx subscribes to IPC events in a separate `useEffect` and manages all streaming state.
 
-```tsx
-isAvailable: (plan) =>
-  plan.pr_number !== null && plan.pr_state === "OPEN" && plan.run_url !== null;
-```
+**Why not blocking?** If `handleClick` awaited action completion, the entire UI would freeze during long-running erk commands (landing, addressing reviews). Streaming lets the LogPanel show real-time output.
 
-**Command**: `erk exec land-execute --pr-number=<N> --branch=<B> -f`
+## Button State Model
 
-**Use case**: Land a PR that passed CI checks
+Buttons have three visual states, but the logic collapses to two booleans:
 
-### 3. Address (id: `address_remote`)
+- **Disabled**: no plan selected, OR predicate fails, OR _any_ action is running (global lock)
+- **Running**: this specific action is the one currently executing (shows `"Label..."` text)
+- **Active**: plan selected, predicate passes, nothing running
 
-**Availability**: PR exists
-
-```tsx
-isAvailable: (plan) => plan.pr_number !== null;
-```
-
-**Command**: `erk launch pr-address --pr <N>`
-
-**Use case**: Address review comments on a PR
-
-### 4. Fix Conflicts (id: `fix_conflicts_remote`)
-
-**Availability**: PR exists
-
-```tsx
-isAvailable: (plan) => plan.pr_number !== null;
-```
-
-**Command**: `erk launch pr-fix-conflicts --pr <N>`
-
-**Use case**: Resolve merge conflicts in a PR
-
-### 5. Close (id: `close_plan`)
-
-**Availability**: Always available
-
-```tsx
-isAvailable: () => true;
-```
-
-**Command**: `erk exec close-plan <issue_number>`
-
-**Use case**: Close a plan issue (abandon work)
-
-## Availability Predicates Table
-
-| Action        | Requires PR | Requires Issue URL | Extra Conditions      |
-| ------------- | ----------- | ------------------ | --------------------- |
-| Submit        | No          | Yes                | -                     |
-| Land          | Yes         | No                 | PR open + has run_url |
-| Address       | Yes         | No                 | -                     |
-| Fix Conflicts | Yes         | No                 | -                     |
-| Close         | No          | No                 | Always available      |
-
-## Button State Logic
-
-Buttons have three states:
-
-```tsx
-const available = selectedPlan !== null && action.isAvailable(selectedPlan);
-const disabled = !available || runningActionId !== null;
-const isRunning = runningActionId === action.id;
-```
-
-1. **Disabled** (`disabled === true`):
-   - No plan selected, OR
-   - Action not available for this plan, OR
-   - Another action is currently running
-
-2. **Running** (`isRunning === true`):
-   - This specific action is currently executing
-   - Shows "Label..." (e.g., "Submit...")
-   - CSS class `action-toolbar__button--running` (opacity: 0.6, cursor: wait)
-
-3. **Active** (neither disabled nor running):
-   - Plan selected, action available, no running action
-   - Clickable with hover effects
-
-## Streaming Execution Pattern
-
-Actions use streaming execution, NOT blocking:
-
-> **Source**: See [`ActionToolbar.tsx:80-88`](../../../erkdesk/src/renderer/components/ActionToolbar.tsx)
-
-The `handleClick` callback guards against concurrent actions (`runningActionId !== null`) and missing selection, then delegates to `onActionStart` with the action's command and args.
-
-**Key insight**: `onActionStart` triggers IPC streaming, does NOT wait for completion. The parent (App.tsx) listens to `onActionOutput` and `onActionCompleted` events to update log state.
-
-## Exported ACTIONS Array
-
-```tsx
-export { ACTIONS, type ActionDef };
-```
-
-The `ACTIONS` array is exported for reuse in other components (e.g., context menus). When adding a new action, add it to this array—don't create duplicate action definitions elsewhere.
-
-## CSS Styling Reference
-
-### Container (`.action-toolbar`)
-
-- Flexbox horizontal layout with 6px gaps
-- Background: `#2d2d2d` (dark gray)
-- Border-bottom: `#404040`
-- Padding: `6px 10px`
-
-### Button (`.action-toolbar__button`)
-
-- Background: `#3c3c3c`
-- Color: `#d4d4d4` (light gray text)
-- Border: `1px solid #555`
-- Font: Menlo/Consolas monospace, 11px
-- Border-radius: 3px
-
-### Button States
-
-| State    | CSS Class                          | Visual Effect            |
-| -------- | ---------------------------------- | ------------------------ |
-| Hover    | `:hover:not(:disabled)`            | Lighter bg + border      |
-| Disabled | `:disabled`                        | Opacity 0.4, no pointer  |
-| Running  | `.action-toolbar__button--running` | Opacity 0.6, cursor wait |
-
-## Adding a New Action
-
-1. Add entry to `ACTIONS` array with id, label, `isAvailable`, `getCommand`
-2. Implement `isAvailable` predicate based on `PlanRow` fields
-3. Return command + args in `getCommand`
-4. Test availability logic with different plan states
-5. CSS styling is automatic (no changes needed)
+The global lock (disabling all buttons while any action runs) prevents concurrent action execution. This is simpler than per-action locking and prevents race conditions in the IPC streaming layer, which supports only one active stream at a time.
 
 ## Related Documentation
 
-- [App Architecture](app-architecture.md) — How App.tsx coordinates action state
+- [App Architecture](app-architecture.md) — How App.tsx coordinates action state and IPC events
 - [IPC Actions](ipc-actions.md) — IPC handler pattern for streaming execution
 - [erkdesk Tripwires](tripwires.md) — Critical patterns to follow

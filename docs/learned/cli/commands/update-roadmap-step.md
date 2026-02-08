@@ -2,97 +2,127 @@
 title: Update Roadmap Step Command
 read_when:
   - working with objective roadmap tables, updating step PR references, implementing plan-save workflow
+tripwires:
+  - action: "parsing roadmap tables to update PR cells"
+    warning: "Use the update-roadmap-step command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers."
+  - action: "expecting status to auto-update after manual PR edits"
+    warning: "Only the update-roadmap-step command writes computed status. Manual edits require explicitly setting status to '-' to enable inference on next parse."
 ---
 
 # Update Roadmap Step Command
 
-`erk exec update-roadmap-step` updates a single step's PR cell in an objective's roadmap table.
+## Why This Command Exists
 
-## Command Rationale
+The alternative to `erk exec update-roadmap-step` is inline markdown table manipulation: fetch body → parse table → find row by step ID → regex-replace PR cell → update body. That's ~15 lines of fragile ad-hoc code duplicated across every caller (skills, hooks, scripts).
 
-**Why this command exists instead of direct body manipulation:**
+**Why encoding this once wins:**
 
-The alternative approach would be "fetch body → parse markdown table → find step row → surgically edit the PR cell → write entire body back". That's ~15 lines of fragile ad-hoc Python that every caller (skills, hooks, scripts) must duplicate.
+1. **No duplicated table parsing** — regex patterns and step lookup logic live in one place
+2. **Atomic mental model** — "update step 1.3's PR to X" instead of "parse, find, replace, validate"
+3. **Testable edge cases** — step not found, no roadmap, clearing PR all have test coverage
+4. **Format resilience** — roadmap table structure changes propagate once, not to N call sites
 
-Encoding the roadmap update logic once in a tested CLI command provides:
+The command is infrastructure for workflow integration, not an interactive tool.
 
-- No duplicated table-parsing logic across callers
-- Testable edge cases (step not found, no roadmap, clearing PR)
-- Atomic mental model: "update step 1.3's PR to X"
-- Resilient to roadmap format changes (one command updates, not N sites)
+## Status Computation Semantics
 
-## Usage
+When the command updates a PR cell, it **writes both the status and PR cells atomically**:
+
+| PR Value     | Written Status | Why                                   |
+| ------------ | -------------- | ------------------------------------- |
+| `#123`       | `done`         | PR reference indicates landed work    |
+| `plan #6464` | `in-progress`  | Plan prefix indicates active planning |
+| `""` (empty) | `pending`      | Clearing PR resets to initial state   |
+
+This differs from parse-time inference (which only fires when status is `-` or empty). Writing computed status makes the table human-readable in GitHub's UI without requiring a parse pass.
+
+**Critical distinction:** The command computes at write time; the parser infers at read time. See [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md) for the full asymmetry and trade-offs.
+
+## Usage Pattern
 
 ```bash
-erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --pr <PR_REF>
-```
-
-### Examples
-
-```bash
-# Set step to plan phase
+# Link step to plan issue
 erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
 
-# Mark step as completed
+# Mark step as done with landed PR
 erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500"
 
-# Clear PR reference
+# Clear PR reference (resets to pending)
 erk exec update-roadmap-step 6423 --step 1.3 --pr ""
 ```
 
-## Status Inference Semantics
+Output is structured JSON with `success`, `issue_number`, `step_id`, `previous_pr`, `new_pr`, and `url` fields.
 
-When the command updates a step's PR cell, it **resets the status cell to "-"**. This triggers the status inference logic in `parse_roadmap()`:
+## Error Handling Strategy
 
-- `#123` → status: `done`
-- `plan #123` → status: `in_progress`
-- Empty → status: `pending`
+The command follows erk's discriminated union pattern for error returns:
 
-This ensures the status column always reflects the current state based on the PR column.
+| Exit Code | Scenario                 | JSON `error` Field   |
+| --------- | ------------------------ | -------------------- |
+| 0         | Success                  | N/A                  |
+| 1         | Issue doesn't exist      | `issue_not_found`    |
+| 1         | No roadmap table in body | `no_roadmap`         |
+| 1         | Step ID not in roadmap   | `step_not_found`     |
+| 1         | Regex replacement failed | `replacement_failed` |
 
-## Integration with Plan-Save Workflow
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, update_roadmap_step -->
 
-This command is used in Step 3.5 of the plan-save workflow to link a plan issue to its parent objective:
+All error paths exit with code 1 but include typed error fields for programmatic handling. See `update_roadmap_step()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:107-182` for the LBYL guard sequence.
 
-1. Plan issue is created
-2. Objective roadmap is fetched
-3. `update-roadmap-step` sets the step's PR cell to `plan #<issue_number>`
-4. Status is automatically inferred as `in_progress`
+## Plan-Save Integration Point
 
-## Output Format
+The command's primary caller is the plan-save workflow (Step 3.5):
 
-The command outputs JSON:
+1. Agent creates plan issue → gets issue number
+2. Fetch parent objective → extract roadmap
+3. **Call update-roadmap-step** → sets step's PR to `plan #<issue>`
+4. Status automatically written as `in-progress`
 
-```json
-{
-  "success": true,
-  "issue_number": 6423,
-  "step_id": "1.3",
-  "previous_pr": "",
-  "new_pr": "plan #6464",
-  "url": "https://github.com/owner/repo/issues/6423"
-}
-```
-
-## Error Codes
-
-The command returns distinct exit codes for different failure scenarios:
-
-| Code | Scenario                         | JSON Error Type      |
-| ---- | -------------------------------- | -------------------- |
-| 0    | Success - step updated           | N/A                  |
-| 1    | Issue not found                  | `issue_not_found`    |
-| 1    | No roadmap table in issue body   | `no_roadmap`         |
-| 1    | Step ID not found in roadmap     | `step_not_found`     |
-| 1    | Replacement failed (regex error) | `replacement_failed` |
+This integration is why the command returns structured JSON — upstream scripts need the URL and previous state for logging.
 
 ## Implementation Notes
 
-- Shared parsing logic lives in `objective_roadmap_shared.py`
-- Step lookup works across all phases in the roadmap
-- PR cell replacement uses regex pattern matching
-- Status cell is always reset to "-" for inference
+### Table Structure Assumptions
+
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
+
+The regex in `_replace_step_pr_in_body()` expects four-column tables:
+
+```
+| step_id | description | status | pr |
+```
+
+Step lookup works across all phases (the parser flattens phases into a single step list). See `_find_step_pr()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:48-60`.
+
+### Shared Parsing Logic
+
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
+
+Both `update-roadmap-step` and `erk objective check` use `parse_roadmap()` from `objective_roadmap_shared.py`. The shared module defines `RoadmapStep` and `RoadmapPhase` dataclasses — the canonical representation of parsed roadmap state.
+
+## Anti-Pattern: Manual Table Surgery
+
+**DON'T** fetch body, run regex, update body directly:
+
+```python
+# WRONG: Duplicates table structure knowledge
+body = github.get_issue(...).body
+updated = re.sub(r"(\| 1.3 \|.*\|.*\|).*(\|)", r"\1 #123 \2", body)
+github.update_issue_body(...)
+```
+
+**WHY:** This assumes four-column structure, doesn't handle status computation, doesn't validate step exists, and duplicates logic already tested in the command.
+
+**DO** call the command:
+
+```python
+subprocess.run(["erk", "exec", "update-roadmap-step", str(issue), "--step", "1.3", "--pr", "#123"])
+```
+
+The command is designed for programmatic invocation — JSON output is machine-parsable.
 
 ## Related Documentation
 
-- [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md)
+- [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md) — write-time vs parse-time status computation
+- [Roadmap Status System](../../objectives/roadmap-status-system.md) — two-tier status resolution rules
+- [Roadmap Parser](../../objectives/roadmap-parser.md) — parsing and validation logic

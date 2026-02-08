@@ -5,150 +5,201 @@ read_when:
   - "implementing plans from GitHub issues"
   - "working with .impl/ folders"
   - "debugging plan execution failures"
+tripwires:
+  - action: "editing or deleting .impl/ folder during implementation"
+    warning: ".impl/plan.md is immutable during implementation. Never edit it. Never delete .impl/ folder - it must be preserved for user review. Only .worker-impl/ should be auto-deleted."
+  - action: "committing .impl/ folder to git"
+    warning: ".impl/ lives in .gitignore and should never be committed. Only .worker-impl/ (remote execution artifact) gets committed and later removed."
+  - action: "skipping session upload after local implementation"
+    warning: "Local implementations must upload session via capture-session-info + upload-session. This enables async learn workflow. See session upload section below."
 ---
 
 # Plan-Implement Workflow
 
-The `/erk:plan-implement` command orchestrates the complete workflow from plan to PR. Understanding its 4-phase execution pattern helps debug failures and understand timing.
+The `/erk:plan-implement` command orchestrates plan execution from setup through PR submission. Understanding its decision trees and cleanup discipline prevents common failure modes.
 
-## Execution Phases
+## Core Execution Pattern
 
-### Phase 1: Setup (10-30 seconds)
+The command follows a priority-based source resolution pattern that determines where the plan comes from:
 
-**Actions:**
+### Source Resolution Priority
 
-- Fetch plan from GitHub issue or file
-- Create feature branch (stacked or from trunk)
-- Initialize `.impl/` folder with plan content
-- Validate plan structure
+**Priority 1: Explicit argument**
 
-**Key Files Created:**
+- Issue number → Fetch from GitHub, create branch, setup `.impl/`
+- File path → Local plan, create branch from file, no issue tracking
+- Empty → Fall through to Priority 2
 
-- `.impl/plan.md` - The immutable implementation plan
-- `.impl/issue.json` - Issue metadata (if from GitHub)
+**Priority 2: Existing `.impl/` folder**
 
-**Common Failures:**
+- Valid folder → Skip setup, proceed directly to implementation
+- Invalid folder → Fall through to Priority 3
 
-- Issue not found or inaccessible
-- Branch already exists
-- Invalid plan structure
+**Priority 3: Current plan mode session**
 
-### Phase 2: Implementation (varies)
+- Save plan to GitHub issue → Setup from new issue → Implement
 
-**Actions:**
+This priority order prevents destructive operations (saving plans when `.impl/` exists) and enables flexible workflow restart.
 
-- Read plan and load related documentation
-- Execute each phase sequentially
-- Write code and tests together
-- Mark phases complete in TodoWrite
+## `.impl/` vs `.worker-impl/` Distinction
 
-**Timing:** Depends on plan complexity (5 minutes to 2+ hours)
+The system uses two folders with fundamentally different lifecycles:
 
-**Critical Discipline:** `.impl/plan.md` is immutable - NEVER edit during implementation
+| Aspect         | `.impl/`                      | `.worker-impl/`                  |
+| -------------- | ----------------------------- | -------------------------------- |
+| **Context**    | Local + remote (Claude reads) | Remote only (GitHub Actions)     |
+| **Git Status** | In `.gitignore`, never staged | Committed, then auto-deleted     |
+| **Lifecycle**  | Preserved forever for review  | Transient, deleted after CI pass |
+| **Cleanup**    | Manual user action only       | Automatic after validation       |
 
-### Phase 3: CI Verification (2-10 minutes)
+**Why this matters:** Agents commonly violate the preservation contract by deleting `.impl/` during implementation. The `impl-verify` command exists as a guardrail to catch this violation.
 
-**Actions:**
+### Remote Execution Flow
 
-- Run CI checks iteratively (pytest, ty, ruff, prettier)
-- Fix failures and re-run
-- Continue until all checks pass
+In GitHub Actions workflow:
 
-**Hook Integration:** If `.erk/prompt-hooks/post-plan-implement-ci.md` exists, follow its instructions instead of AGENTS.md defaults.
+1. `.worker-impl/` is committed to branch (for git-based transport)
+2. Workflow copies `.worker-impl/` → `.impl/` (Claude's read location)
+3. Claude executes with `.impl/` folder
+4. After CI passes, workflow removes `.worker-impl/` in separate commit
+5. `.impl/` is never committed (stays local-only in workflow runner)
 
-### Phase 4: PR Creation and Cleanup (10-20 seconds)
+<!-- Source: src/erk/cli/commands/exec/scripts/impl_verify.py, impl_verify() -->
 
-**Actions:**
-
-- Create or update PR with `gh pr create --fill`
-- Validate PR rules with `erk pr check`
-- Clean up `.worker-impl/` if present (remote execution artifact)
-
-**Critical Guardrail:** `.impl/` folder is NEVER deleted - preserved for user review
-
-## Cleanup Discipline
-
-### Always Clean Up
-
-`.worker-impl/` - Transient working directory from remote execution:
-
-```bash
-if [ -d .worker-impl/ ]; then
-  git rm -rf .worker-impl/
-  git commit -m "Remove .worker-impl/ after implementation"
-  git push
-fi
-```
-
-### Never Clean Up
-
-`.impl/` - Permanent plan reference preserved for:
-
-- User review of what was planned vs implemented
-- Plan reuse and iteration
-- Session association for learn workflow
-
-## Remote vs Local Execution
-
-| Execution Mode            | .worker-impl/ Present | .impl/ Present | Session Upload                |
-| ------------------------- | --------------------- | -------------- | ----------------------------- |
-| Local agent               | No                    | Yes            | Via `erk exec upload-session` |
-| Plan mode → implement now | No                    | Yes            | Via `erk exec upload-session` |
+The distinction exists because `.worker-impl/` is a git-based transport mechanism while `.impl/` is Claude's working directory.
 
 ## Session Upload for Async Learn
 
-Local implementations upload session to enable `erk learn --async`:
+Local implementations must upload the session to enable `erk learn --async`. This isn't optional — it's what makes the learn workflow work for local PRs.
+
+### Why Session Upload Exists
+
+Without session upload:
+
+- Learn workflow requires manual session file handling
+- No consistent session storage location
+- Async learn can't find the session for locally-implemented PRs
+
+With session upload:
+
+- Session stored in GitHub Gist (linked to issue)
+- Learn workflow finds session via issue metadata
+- Local and remote implementations treated uniformly
+
+### Implementation Pattern
+
+<!-- Source: .claude/commands/erk/plan-implement.md, Step 10b -->
+
+The command uses `capture-session-info` to extract session ID and file path from Claude's project directory, then uploads via `upload-session` with issue linking:
+
+See `capture_session_info()` in `src/erk/cli/commands/exec/scripts/capture_session_info.py` for session discovery logic.
+
+**Critical detail:** Session upload happens **after** implementation completes but **before** `.worker-impl/` cleanup. This ensures the session capture reflects the complete implementation.
+
+## Common Failure Patterns
+
+### File-Based Plans Lack Issue Tracking
+
+When implementing from a markdown file (not a GitHub issue), `impl-init` returns `has_issue_tracking: false`. This means:
+
+- No PR-to-issue linking (`get-closing-text` returns empty)
+- No GitHub comments (impl-signal silently no-ops)
+- PR won't auto-close an issue on merge
+
+This is **by design** — file-based plans are for throwaway experiments, not tracked work.
+
+### Skipped Setup Phase Confusion
+
+When `.impl/` already exists and is valid, the command skips directly to implementation. This causes confusion when:
+
+- User expects fresh plan fetch from GitHub (stale `.impl/plan.md`)
+- Issue was updated but `.impl/` contains old version
+- Branch name doesn't match current issue
+
+**Solution:** Delete `.impl/` folder to force setup phase re-execution.
+
+### Hook Overrides for CI
+
+The post-implementation CI phase checks for `.erk/prompt-hooks/post-plan-implement-ci.md`. If present, it replaces the default AGENTS.md CI instructions. This allows per-project customization of CI validation.
+
+<!-- Source: .claude/commands/erk/plan-implement.md, Step 12 -->
+
+Hook-based CI override exists because different projects need different validation sequences (some skip integration tests, others require specific linters).
+
+## Phase Timing Characteristics
+
+Different phases have vastly different completion times:
+
+| Phase                 | Typical Duration | Blocking Factor                  |
+| --------------------- | ---------------- | -------------------------------- |
+| Setup (issue fetch)   | 2-5 seconds      | GitHub API latency               |
+| Setup (branch create) | <1 second        | Local git operation              |
+| Implementation        | 5 mins - 2 hours | Plan complexity, codebase size   |
+| CI verification       | 2-10 minutes     | Test suite size, iteration count |
+| PR creation           | 5-10 seconds     | GitHub API latency               |
+
+**Why this matters:** When debugging hangs, knowing expected phase duration helps identify where to investigate (network vs code execution vs test infrastructure).
+
+## Cleanup Discipline Anti-Patterns
+
+### Anti-Pattern: Deleting `.impl/` After CI Passes
+
+**WRONG:**
 
 ```bash
-# After Phase 4, before cleanup
-eval "$(erk exec capture-session-info)"
-ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2>/dev/null || echo "")
-
-if [ -n "$SESSION_ID" ] && [ -n "$SESSION_FILE" ] && [ -n "$ISSUE_NUMBER" ]; then
-  erk exec upload-session \
-    --session-file "$SESSION_FILE" \
-    --session-id "$SESSION_ID" \
-    --source local \
-    --issue-number "$ISSUE_NUMBER" || true
-fi
+git rm -rf .impl/
+git commit -m "Clean up after implementation"
 ```
 
-This stores the session in a gist linked to the issue.
+**Why wrong:** `.impl/` is in `.gitignore` (never staged), so this command fails. More importantly, `.impl/` must be preserved for user review of what-was-planned vs what-was-implemented.
 
-## Common Patterns
+**Correct:** Only delete `.worker-impl/` (committed artifact), never `.impl/` (gitignored artifact).
 
-### Skipping to Implementation
+### Anti-Pattern: Committing `.impl/` for "Documentation"
 
-If `.impl/` already exists and is valid, setup phase is skipped:
+**WRONG:**
 
 ```bash
-erk exec impl-init --json
-# {"valid": true, ...}
-# → Skip directly to Phase 2
+git add -f .impl/plan.md  # Force-add ignored file
+git commit -m "Add implementation plan"
 ```
 
-### Stacked Branches
+**Why wrong:** `.impl/` is agent working state, not documentation. Plans live in GitHub issues. Forcing gitignored files into commits creates confusion about source of truth.
 
-When implementing from a feature branch, new branch is stacked:
+**Correct:** Link PR body to plan issue (`**Plan:** #123`). Issue is the documentation.
 
-```bash
-# On feature-a branch
-/erk:plan-implement 123
-# Creates feature-b stacked on feature-a
+## Signal Events and Plan File Lifecycle
+
+The `impl-signal started` command has a side effect that's easy to miss: it deletes the Claude plan file from `~/.claude/plans/`.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/impl_signal.py, _delete_claude_plan_file() -->
+
+This happens because:
+
+1. Plan content has been saved to GitHub issue (permanent storage)
+2. Plan content has been snapshotted to `.erk/scratch/` (backup)
+3. Keeping the file could cause confusion if user tries to re-save
+
+The deletion is **intentional cleanup**, not data loss.
+
+## Stacked Branch Behavior
+
+When implementing from a feature branch (not trunk), the new branch is stacked on the current branch:
+
+```
+main
+  └── feature-a (current)
+        └── feature-b (new plan implementation)
 ```
 
-### File-Based Plans
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py, _is_trunk_branch() -->
 
-Plans from markdown files skip GitHub issue tracking:
+This is determined by trunk detection: branches named "main" or "master" are trunk, everything else is a feature branch. Stacking happens automatically — no configuration needed.
 
-```bash
-/erk:plan-implement ./my-plan.md
-# has_issue_tracking: false
-# No PR linking to issue
-```
+**Implication:** Plan implementation from feature branches creates Graphite-compatible stacks. The branch manager abstraction handles Graphite tracking automatically.
 
 ## Related Documentation
 
-- [Plan Lifecycle](../planning/lifecycle.md) - Plan states and transitions
-- [Session Management](session-management.md) - Session ID availability and uploads
-- [PR Discovery](../planning/pr-discovery.md) - Fallback strategies when branch_name missing
+- [Plan Lifecycle](../planning/lifecycle.md) - Complete plan states and transitions across all phases
+- [Planning Workflow](../planning/workflow.md) - `.impl/` folder structure and file contracts
+- [Branch Manager Abstraction](../architecture/branch-manager-abstraction.md) - How branch creation delegates to Graphite when available

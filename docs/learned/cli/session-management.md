@@ -1,130 +1,82 @@
 ---
-title: Session ID Availability
+title: Session ID Availability and Propagation
 read_when:
-  - "using ${CLAUDE_SESSION_ID} in commands"
-  - "debugging session ID errors"
-  - "implementing session tracking"
-  - "writing slash commands that need session context"
+  - "adding session ID to a new exec script or hook"
+  - "debugging 'session ID required' errors"
+  - "deciding whether a command should require or optionally accept session ID"
+  - "understanding how session ID flows from Claude Code to erk"
+tripwires:
+  - action: "using os.environ to read CLAUDE_SESSION_ID"
+    warning: "CLAUDE_SESSION_ID is NOT an environment variable. It's a Claude Code string substitution in commands/skills, and arrives via stdin JSON in hooks."
+  - action: "using ls -t or mtime to find the current session"
+    warning: "Use the ClaudeInstallation gateway or the session-id-injector-hook's scratch file instead. Mtime-based discovery is racy in parallel sessions."
+  - action: "making session_id a required parameter for a new command"
+    warning: "Check the fail-hard vs degrade decision table below. Most commands should accept session_id as optional."
 ---
 
-# Session ID Availability
+# Session ID Availability and Propagation
 
-The `${CLAUDE_SESSION_ID}` environment variable is available in **some** but not all execution contexts. Understanding when it's available prevents confusing failures.
+Session IDs originate in Claude Code and must traverse multiple boundaries to reach erk code. The propagation mechanism differs by context, and getting it wrong produces confusing "session ID required" errors that only appear in certain execution environments.
 
-## Availability by Context
+## Why This Is Cross-Cutting
 
-| Context                      | ${CLAUDE_SESSION_ID} Available | Notes                                            |
-| ---------------------------- | ------------------------------ | ------------------------------------------------ |
-| Slash commands               | ✅ Yes                         | String substitution by Claude Code               |
-| Skills                       | ✅ Yes                         | String substitution by Claude Code               |
-| Direct agent invocation      | ✅ Yes                         | If agent was spawned by Claude Code              |
-| Exec scripts called directly | ❌ No                          | Running `erk exec foo` from shell has no session |
-| Background processes         | ❌ No                          | Detached from Claude context                     |
-| CI/CD workflows              | ❌ No                          | No interactive Claude session                    |
+Session ID handling touches three distinct systems that must agree on the protocol:
 
-## String Substitution vs Environment Variable
+1. **Claude Code** performs string substitution on `${CLAUDE_SESSION_ID}` in commands/skills
+2. **Hook framework** receives session ID via stdin JSON and injects it into `HookContext`
+3. **Exec scripts** accept `--session-id` as a CLI option, passed explicitly by the agent
 
-**Critical distinction:** `${CLAUDE_SESSION_ID}` is **not** a shell environment variable. It's a Claude Code string substitution that happens **before** the command executes.
+Each system uses a different mechanism, and code that assumes the wrong one silently fails.
 
-### In Slash Commands and Skills
+## Propagation Paths
 
-```bash
-# This works - Claude Code substitutes before execution
-erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}"
+| Origin → Destination              | Mechanism                                                              | Key Detail                                                                    |
+| --------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Claude Code → Slash command/skill | `${CLAUDE_SESSION_ID}` string substitution                             | Not a shell env var — substituted before shell sees it                        |
+| Claude Code → Hook                | stdin JSON `{"session_id": "..."}`                                     | `@hook_command` decorator extracts automatically via `HookContext`            |
+| Hook → Scratch file               | `session_id_injector_hook` writes to `.erk/scratch/current-session-id` | Worktree-scoped persistence for CLI tools that run outside hook context       |
+| Agent → Exec script               | Explicit `--session-id` CLI option                                     | Agent reads session ID from hook reminders (`📌 session: <id>`) and passes it |
+| CI → Exec script                  | `capture-session-info` discovery                                       | Uses `ClaudeInstallation` gateway to find latest session by mtime             |
 
-# Claude Code transforms this to:
-erk exec impl-signal started --session-id="abc-123-def"
-```
+## Fail-Hard vs Graceful Degradation
 
-### In Hook Scripts
+When designing a command that uses session ID, the critical decision is whether missing session ID should be fatal.
 
-Hooks receive session ID via **stdin JSON**, not environment:
+| Fail hard when...                                                         | Degrade gracefully when...                               |
+| ------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Core functionality requires session context (e.g., `impl-signal started`) | Feature enhances but isn't required (markers, telemetry) |
+| Data corruption risk without session scoping                              | Command can produce useful output without session        |
+| User explicitly requested a session-dependent operation                   | Session ID is only used for scratch file scoping         |
 
-```python
-# Hook receives:
-{"session_id": "abc-123-def", "tool_name": "Read", ...}
+<!-- Source: src/erk/cli/commands/exec/scripts/impl_signal.py, _signal_started -->
 
-# Hook interpolates for Claude:
-print(f"erk exec marker create --session-id {data['session_id']}")
-```
+See `_signal_started()` in `impl_signal.py` for the fail-hard pattern — it validates session ID and outputs a structured error JSON before exiting.
 
-The hook outputs a command string that Claude then executes with substitution applied.
+The `|| true` bash pattern (`erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2>/dev/null || true`) is used in commands/skills where session tracking is best-effort. This ensures the command workflow continues even when session ID is unavailable.
 
-## Expected Failures
+## Session Discovery Without Explicit ID
 
-Some erk exec commands **require** session ID but may fail gracefully:
+Two mechanisms exist for finding sessions without an explicit `--session-id`:
 
-```bash
-erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}"
-# Error: Session ID required for impl-signal started.
-```
+1. **Scratch file** (`.erk/scratch/current-session-id`): Written by the session-id-injector hook on each prompt. Fast, worktree-scoped, but only reflects the _last_ session that ran in this worktree.
 
-This is **expected** when:
+2. **ClaudeInstallation gateway**: Enumerates `~/.claude/projects/<encoded-path>/*.jsonl` and picks the most recent by mtime. Used by `capture-session-info` and `find-project-dir` exec scripts.
 
-- Testing commands directly from shell
-- Running in CI without session context
-- Command is called from non-Claude context
+<!-- Source: src/erk/cli/commands/exec/scripts/session_id_injector_hook.py, session_id_injector_hook -->
+<!-- Source: src/erk/cli/commands/exec/scripts/capture_session_info.py, capture_session -->
 
-**Design pattern:** Commands that need session ID should accept it as required argument and fail clearly when missing.
+**Both are racy in parallel sessions.** When multiple Claude sessions target the same worktree, mtime-based discovery may return the wrong session. The explicit `--session-id` parameter is the only reliable mechanism.
 
-## Graceful Degradation Pattern
+## Testing Session-Dependent Code
 
-Commands should handle missing session ID appropriately:
+Tests must never depend on `${CLAUDE_SESSION_ID}` substitution — it only works inside Claude Code. Always pass a literal session ID string (e.g., `--session-id=test-123`) when invoking session-dependent commands in tests.
 
-```python
-def my_command(session_id: str | None) -> None:
-    if session_id is None:
-        # Graceful: Skip session-dependent features
-        console.info("Session ID not available, skipping tracking")
-        return
+<!-- Source: src/erk/hooks/decorators.py, HookContext -->
 
-    # Use session ID for tracking
-    save_marker(session_id=session_id)
-```
-
-**When to use:**
-
-- Features that enhance but aren't required
-- Telemetry and tracking
-- Debug information
-
-**When to fail hard:**
-
-- Core functionality depends on session
-- Data corruption risk without session context
-- User explicitly requested session-dependent operation
-
-## Alternative: Session File Discovery
-
-When session ID isn't available but session file is needed, use file discovery:
-
-```bash
-# Find current session file
-CURRENT_SESSION=$(ls -t ~/.claude/projects/*/session.jsonl | head -1)
-```
-
-**Limitations:**
-
-- May find wrong session in parallel execution
-- Requires filesystem access
-- Race conditions possible
-
-## Testing Without Session ID
-
-In tests, always provide explicit session ID:
-
-```python
-def test_session_dependent_command():
-    result = run_command(
-        ["erk", "exec", "impl-signal", "started", "--session-id=test-123"]
-    )
-    assert result.success
-```
-
-Don't rely on `${CLAUDE_SESSION_ID}` substitution in tests.
+For hook tests, the `HookContext` dataclass accepts `session_id` directly, so fakes can inject any value without needing Claude's stdin JSON protocol.
 
 ## Related Documentation
 
-- [Plan-Implement Workflow](plan-implement.md) - Session upload for async learn
-- [Session Preprocessing](../sessions/preprocessing.md) - Processing session files
-- [Hooks](../hooks/) - Hook stdin protocol
+- [Session ID Substitution](../commands/session-id-substitution.md) — Common mistakes when using `${CLAUDE_SESSION_ID}` in hooks vs commands
+- [Scratch Storage](../planning/scratch-storage.md) — Session-scoped scratch directory layout
+- [Session Preprocessing](../sessions/preprocessing.md) — Processing session JSONL files

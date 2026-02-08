@@ -3,38 +3,40 @@ title: Codespace Machine Types
 read_when:
   - "creating or configuring codespaces"
   - "choosing a machine type for codespace setup"
-  - "working with codespace setup command"
+  - "debugging codespace creation failures"
+tripwires:
+  - action: "using `gh codespace create` to create a codespace"
+    warning: "The machines endpoint returns HTTP 500 for this repo. Use `POST /user/codespaces` REST API directly. See the workaround section below."
 ---
 
 # Codespace Machine Types
 
-GitHub Codespaces machine types available for erk, with their hardware specifications.
+## Why `POST /user/codespaces` Instead of `gh codespace create`
 
-## Available Machine Types
+<!-- Source: src/erk/cli/commands/codespace/setup_cmd.py, setup_codespace -->
 
-| Machine Name        | CPUs | RAM   | Storage | Notes                     |
-| ------------------- | ---- | ----- | ------- | ------------------------- |
-| `basicLinux32gb`    | 2    | 8 GB  | 32 GB   | Cheapest option           |
-| `standardLinux32gb` | 4    | 16 GB | 64 GB   | Standard dev              |
-| `premiumLinux`      | 8    | 32 GB | 64 GB   | Default for erk codespace |
-| `largePremiumLinux` | 16   | 64 GB | 64 GB   | Largest available         |
+GitHub's REST endpoint `GET /repos/{owner}/{repo}/codespaces/machines` returns HTTP 500 for certain repositories, including the erk repository. Since `gh codespace create` calls that endpoint for machine type validation before creating anything, the entire command fails. This is a server-side GitHub bug — the endpoint works for some repos but not others, with no documented pattern for which ones fail.
 
-## Default Machine Type
+The workaround bypasses validation entirely: `erk codespace setup` posts directly to `POST /user/codespaces` with the machine type as a raw string parameter and the repository's database ID. This means invalid machine type names produce a creation-time error rather than a pre-validation error, but in practice the set of valid machine types rarely changes.
 
-The `erk codespace setup` command defaults to `premiumLinux`. This is defined as `DEFAULT_MACHINE_TYPE` in `src/erk/cli/commands/codespace/setup_cmd.py`.
+This is one instance of a broader pattern where `gh` CLI subcommands make implicit API calls that fail. See [GitHub CLI Limits](../architecture/github-cli-limits.md) for the general pattern and other affected commands.
 
-Override with `--machine`:
+## Machine Type Selection
 
-```bash
-erk codespace setup mybox --machine largePremiumLinux
-```
+Claude Code agent sessions are memory-intensive — smaller machine types cause OOM kills during long sessions with large context windows. The default is `premiumLinux` for this reason.
 
-## Machines Endpoint Bug
+| Machine Name        | CPUs | RAM   | Storage | When to use                                  |
+| ------------------- | ---- | ----- | ------- | -------------------------------------------- |
+| `basicLinux32gb`    | 2    | 8 GB  | 32 GB   | Quick validation only, not agent sessions    |
+| `standardLinux32gb` | 4    | 16 GB | 64 GB   | Lightweight tasks without Claude Code        |
+| `premiumLinux`      | 8    | 32 GB | 64 GB   | **Default** — standard agent session machine |
+| `largePremiumLinux` | 16   | 64 GB | 64 GB   | Parallel agent workloads or large monorepos  |
 
-The GitHub REST API endpoint `GET /repos/{owner}/{repo}/codespaces/machines` returns HTTP 500 for `dagster-io/erk`. This is a GitHub server-side bug. The `erk codespace setup` command works around this by using `POST /user/codespaces` directly instead of `gh codespace create` (which calls the broken machines endpoint for validation).
+Override the default via `erk codespace setup --machine <name>`.
 
 ## Related Documentation
 
-- [Codespace Remote Execution](codespace-remote-execution.md) - Streaming command execution pattern
-- [Codespace Gateway](../gateway/codespace-gateway.md) - Gateway ABC for codespace operations
-- [Codespace Patterns](../cli/codespace-patterns.md) - `resolve_codespace()` helper usage
+- [Codespace Remote Execution](codespace-remote-execution.md) — Streaming command execution pattern
+- [Codespace Gateway](../gateway/codespace-gateway.md) — Gateway ABC for codespace operations
+- [Codespace Patterns](../cli/codespace-patterns.md) — `resolve_codespace()` helper usage
+- [GitHub CLI Limits](../architecture/github-cli-limits.md) — Broader pattern of `gh` subcommand failures from implicit API calls

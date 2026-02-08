@@ -12,189 +12,130 @@ tripwires:
 
 # Defense-in-Depth Enforcement
 
-Defense-in-depth enforcement uses multiple independent layers to enforce the same rule. Each layer catches violations the previous layers missed, creating resilient systems even when individual layers fail.
+Defense-in-depth enforcement implements the same rule at multiple independent layers. When one layer fails, downstream layers catch the violation. This creates resilient systems where critical rules are enforced even when individual enforcement mechanisms break.
 
-## The Pattern
+## Why Multiple Layers Matter
 
-For critical rules (those that cause bugs, tech debt, or maintenance burden when violated), implement enforcement at multiple independent layers:
+Single-layer enforcement fails because each layer has distinct failure modes:
 
-```
-Layer 1: Agent-level (guidance in agent prompts)
-    ↓ (might be ignored, missed, or misinterpreted)
-Layer 2: Skill-level (rules in loaded skills)
-    ↓ (might not be loaded, or loaded too late)
-Layer 3: PR-level (automated reviews, CI checks)
-    ↓ (most reliable - runs deterministically on every PR)
-```
+- **Agent instructions** are non-deterministic (misinterpreted, ignored, or missed due to context limits)
+- **Skill guidance** depends on loading timing (may not load, or load after violation occurs)
+- **Manual review** is inconsistent (reviewers miss issues, don't always follow guidelines)
 
-Each layer operates independently. Violations caught at Layer 3 indicate that Layers 1 and 2 failed, but the system still prevents the problem from reaching production.
+Critical rules—those that create bugs, tech debt, or maintenance burden when violated—require deterministic enforcement. Only automated PR checks running on every submission provide this guarantee.
 
-## Example: Verbatim Code Block Prevention
+## The Reliability Hierarchy
 
-The verbatim code block prevention system illustrates defense-in-depth:
+Not all layers are equally reliable. From least to most reliable:
 
-### Layer 1: Agent-Level (code-diff-analyzer agent)
+| Layer               | Reliability | Why It Fails                                                                  |
+| ------------------- | ----------- | ----------------------------------------------------------------------------- |
+| Agent instructions  | Lowest      | Non-deterministic, context-dependent, can be overridden by competing guidance |
+| Loaded skills       | Low         | Timing-dependent, can be loaded after violations already written              |
+| Manual review       | Medium      | Human consistency issues, different reviewers catch different things          |
+| Automated PR checks | Highest     | Deterministic, runs on every PR, provides exact source locations              |
 
-**Location**: `.claude/agents/code-diff-analyzer/AGENT.md`
+**Key insight:** Defense-in-depth means upstream layers reduce burden on downstream layers, but downstream layers must exist for critical rules.
 
-**Mechanism**: Agent analyzing PR diffs detects code blocks in `docs/learned/` and warns about verbatim copies
+<!-- Source: docs/learned/planning/reliability-patterns.md:38-63 -->
 
-**Failure modes**:
-
-- Agent not invoked for the PR
-- Agent misinterprets what constitutes a "verbatim copy"
-- Context limits prevent full diff analysis
-- Agent warnings ignored by implementer
-
-### Layer 2: Skill-Level (learned-docs skill)
-
-**Location**: `.claude/skills/learned-docs/SKILL.md`
-
-**Mechanism**: Skill loaded when writing docs instructs agent to avoid verbatim code, use source pointers instead
-
-**Failure modes**:
-
-- Skill not loaded during documentation session
-- Skill loaded after code blocks already written
-- Agent doesn't recognize the pattern as verbatim
-- Agent prioritizes other guidance over skill rules
-
-### Layer 3: PR-Level (learned-docs review)
-
-**Location**: `.github/reviews/audit-pr-docs.md`
-
-**Mechanism**: Automated review runs on every PR touching `docs/learned/`, posts inline comments for verbatim copies with exact source file and line numbers
-
-**Failure modes**:
-
-- Review disabled or broken
-- False negatives in detection logic
-- Detection logic not yet expanded to all languages (currently Python-only)
-
-**Reliability**: Highest - runs deterministically, always active, provides actionable feedback
-
-### Key Insight: Upstream Layers Can Be Under Development
-
-<!-- Source: docs/learned/planning/reliability-patterns.md:38-61 -->
-
-From [reliability-patterns.md](../planning/reliability-patterns.md:38-61):
-
-> Only Layer 3 is truly reliable. Layers 1 and 2 serve as defense-in-depth but cannot be the sole mechanism for critical operations.
-
-The defense-in-depth pattern allows you to:
-
-1. **Deploy Layer 3 immediately** (automated PR checks)
-2. **Develop Layers 1-2 incrementally** (agent and skill enhancements)
-3. **Measure effectiveness** by tracking which layer catches violations
-
-Upstream layers (1-2) reduce the burden on downstream layers (3) by catching most violations earlier, but downstream layers must always be present for critical rules.
+For deeper discussion of deterministic vs non-deterministic operations, see `reliability-patterns.md` in `docs/learned/planning/`.
 
 ## When to Use Defense-in-Depth
 
-Apply this pattern when:
+Apply this pattern when rule violations create tangible problems:
 
-1. **Rule violations cause real problems**
-   - Technical debt (stale code blocks)
-   - Bugs (missing required fields)
-   - Security issues (exposed credentials)
-   - Breaking changes (API contract violations)
+**Use defense-in-depth for:**
 
-2. **Single-layer enforcement is unreliable**
-   - Agent instructions can be missed or misinterpreted
-   - Skills may not be loaded in time
-   - Manual review is inconsistent
-
-3. **Automated detection is feasible**
-   - Pattern can be detected programmatically
-   - False positive rate is acceptable
-   - Feedback can be actionable
+- Technical debt (stale code blocks, duplicate imports)
+- Bugs (missing required fields, incorrect types)
+- Security issues (exposed credentials, unsafe patterns)
+- Breaking changes (API contract violations)
 
 **Don't use defense-in-depth for:**
 
-- Style preferences (one layer sufficient)
+- Style preferences (one enforcement layer sufficient)
 - Non-critical guidelines (agent instructions only)
 - Patterns with high false positive rates (review fatigue)
 
+The decision test: "If this rule is violated, does it create work for someone later?" If yes, implement multiple layers.
+
 ## Measuring Layer Effectiveness
 
-Track where violations are caught:
+Track where violations are caught to identify weak layers:
 
-| Layer Caught | Interpretation                       |
-| ------------ | ------------------------------------ |
-| Layer 1      | Ideal - caught earliest, lowest cost |
-| Layer 2      | Good - caught before PR submission   |
-| Layer 3      | Acceptable - caught in PR review     |
-| Production   | **Failure** - all layers failed      |
+| Where Caught       | Interpretation                | Action                             |
+| ------------------ | ----------------------------- | ---------------------------------- |
+| Layer 1 (agent)    | Ideal—lowest cost             | None needed                        |
+| Layer 2 (skill)    | Good—caught pre-PR            | None needed                        |
+| Layer 3 (PR check) | Acceptable—safety net working | Consider improving upstream layers |
+| Production         | **Failure**—all layers failed | Add or fix enforcement layers      |
 
 If Layer 3 consistently catches violations, it indicates:
 
-- Layers 1-2 need improvement (better guidance, detection)
-- The rule is unintuitive (consider simplifying)
-- Layer 3 is working as designed (fail-safe)
+1. Upstream layers (1-2) need better detection or clearer guidance
+2. The rule might be unintuitive (consider simplifying)
+3. Layer 3 is correctly functioning as the fail-safe
 
-## Related Patterns
+Don't remove Layer 3 even if upstream layers improve—it's the only truly reliable enforcement.
 
-### Workflow Gating Patterns
+## Example: Verbatim Code Block Prevention
 
-<!-- Source: docs/learned/ci/workflow-gating-patterns.md:18-60 -->
+Erk prevents verbatim code blocks in `docs/learned/` using three enforcement layers:
 
-See [workflow-gating-patterns.md](../ci/workflow-gating-patterns.md) for multi-layer workflow control:
+<!-- Source: .claude/agents/learn/code-diff-analyzer.md:109-117 -->
+<!-- Source: .claude/skills/learned-docs/learned-docs-core.md:49-63 -->
+<!-- Source: .github/reviews/audit-pr-docs.md:50-78 -->
 
-- Trigger filtering (GitHub events)
-- Job conditions (runtime evaluation)
-- Output-based skipping (dynamic gating)
+**Layer 1 - Agent (code-diff-analyzer):** When analyzing PR diffs for documentation needs, detects code blocks and suggests source pointers. See `code-diff-analyzer.md` in `.claude/agents/learn/`.
 
-Same principle: multiple independent layers providing flexible, safe control.
+**Layer 2 - Skill (learned-docs):** When loaded during doc writing, instructs agents to use source pointers instead of verbatim code. See `learned-docs-core.md` in `.claude/skills/learned-docs/`.
 
-### Reliability Patterns
+**Layer 3 - Automated PR Review (audit-pr-docs):** Scans every PR touching `docs/learned/`, posts inline comments for violations with exact source file and line numbers. See `audit-pr-docs.md` in `.github/reviews/`.
 
-<!-- Source: docs/learned/planning/reliability-patterns.md:38-61 -->
+Each layer has distinct failure modes:
 
-See [reliability-patterns.md](../planning/reliability-patterns.md) for deterministic vs non-deterministic operations:
+- Agent may not be invoked for the PR
+- Skill may load after code already written
+- Automated review is deterministic—always runs, always catches violations
 
-- Layer 1 (agent): Non-deterministic, high failure rate
-- Layer 2 (staging): Fragile, can be undone
-- Layer 3 (workflow): Deterministic, reliable
+This structure allows incremental development: deploy Layer 3 immediately (guaranteed enforcement), then develop Layers 1-2 to reduce false positives and improve user experience.
 
-**Critical operations require Layer 3.** Layers 1-2 are defense-in-depth, not primary mechanisms.
-
-## Implementation Checklist
+## Implementation Strategy
 
 When implementing defense-in-depth enforcement:
 
-1. **Identify the critical rule** - What behavior must be prevented?
-2. **Design Layer 3 first** - Automated PR check or CI validation
-3. **Deploy Layer 3 immediately** - Don't wait for upstream layers
-4. **Add upstream layers incrementally** - Agent guidance, skill rules
-5. **Measure effectiveness** - Track where violations are caught
-6. **Iterate on detection** - Reduce false positives, improve feedback
+1. **Design Layer 3 first**—the deterministic automated check. Don't proceed without this.
+2. **Deploy Layer 3 immediately**—before building upstream layers. This establishes the enforcement baseline.
+3. **Add upstream layers incrementally**—agent guidance, skill rules. These reduce burden on Layer 3 but don't replace it.
+4. **Measure effectiveness**—track which layer catches violations. Use data to improve weak layers.
+5. **Never remove Layer 3**—even if upstream layers become highly effective. It's the fail-safe.
 
-## Example: Three-Layer Enforcement in Practice
+## Anti-Pattern: Relying on Upstream Layers Alone
 
-**Rule**: No verbatim code blocks >5 lines in `docs/learned/`
+**WRONG:**
 
-**Layer 1 (Agent)**: code-diff-analyzer agent warns during PR analysis
+```yaml
+# Only agent instructions
+"Remember to use source pointers instead of verbatim code blocks"
+```
 
-- **Catches**: ~30% of violations (when agent is invoked)
-- **Cost**: Low (happens during normal workflow)
-- **Feedback delay**: Immediate (during implementation)
+**Why it fails:** Agent instructions are non-deterministic. Context limits, competing guidance, or misinterpretation cause violations to slip through.
 
-**Layer 2 (Skill)**: learned-docs skill instructs to use source pointers
+**CORRECT:**
 
-- **Catches**: ~50% of remaining violations (when skill loaded)
-- **Cost**: Very low (passive guidance)
-- **Feedback delay**: Immediate (during doc writing)
+Add automated PR review that posts inline comments for every violation. Agent instructions become defense-in-depth, not primary enforcement.
 
-**Layer 3 (PR Review)**: learned-docs automated review posts inline comments
+## Related Patterns
 
-- **Catches**: 100% of violations that reach PR (deterministic detection)
-- **Cost**: Low (automated, scales infinitely)
-- **Feedback delay**: PR submission (minutes after push)
+<!-- Source: docs/learned/ci/workflow-gating-patterns.md:120-174 -->
 
-**Result**: Even if Layers 1-2 both fail (70% miss rate in this example), Layer 3 guarantees the rule is enforced before merge.
+**Workflow gating:** See `workflow-gating-patterns.md` in `docs/learned/ci/` for multi-layer workflow control using trigger filtering, job conditions, and output-based skipping. Same principle: multiple independent layers providing flexible, safe control.
 
-## Related Documentation
+<!-- Source: docs/learned/planning/reliability-patterns.md:15-63 -->
 
-- [reliability-patterns.md](../planning/reliability-patterns.md) - Deterministic vs non-deterministic operations
-- [workflow-gating-patterns.md](../ci/workflow-gating-patterns.md) - Multi-layer workflow control
-- [stale-code-blocks-are-silent-bugs.md](../documentation/stale-code-blocks-are-silent-bugs.md) - Why verbatim code prevention matters
+**Reliability patterns:** See `reliability-patterns.md` in `docs/learned/planning/` for deterministic vs non-deterministic operation classification and the commit-before-reset pattern.
+
+<!-- Source: docs/learned/documentation/stale-code-blocks-are-silent-bugs.md:14-23 -->
+
+**Why verbatim code prevention matters:** See `stale-code-blocks-are-silent-bugs.md` in `docs/learned/documentation/` for the case against embedded code (silent drift, false confidence, no detection).

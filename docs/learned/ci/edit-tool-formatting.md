@@ -2,76 +2,69 @@
 title: Edit Tool Formatting Behavior
 read_when:
   - "using the Edit tool to modify Python code"
-  - "working with multiline strings in Claude Code"
   - "encountering formatting issues after edits"
-  - "running make format after code changes"
+  - "CI failing on formatting checks after using Edit tool"
 tripwires:
-  - action: "using Edit tool on Python files with multiline strings"
-    warning: "Edit tool preserves exact indentation without auto-formatting. Always run 'make format' after editing Python code with multiline strings."
+  - action: "using Edit tool on Python files"
+    warning: "Edit tool preserves exact indentation without auto-formatting. Always run 'make format' after editing Python code."
 ---
 
 # Edit Tool Formatting Behavior
 
-The Claude Code Edit tool preserves exact indentation and does not auto-format code. This creates a specific pattern when working with Python code that contains multiline strings.
-
-## The Pattern
-
-When using the Edit tool to modify Python code:
-
-1. **Edit preserves indentation**: The tool keeps exactly what you write, including spaces and newlines
-2. **Ruff reformats**: Running `make format` (which calls ruff) may reformat multiline strings
-3. **CI catches mismatches**: If you don't run format locally, CI will fail
+The Claude Code Edit tool preserves literal character-for-character content without applying any formatting rules. This creates a systematic mismatch with CI expectations when editing Python code.
 
 ## Why This Matters
 
-Multiline strings in Python are especially sensitive to formatting:
+**Edit is not format-aware.** When you use the Edit tool to modify Python code, the tool writes exactly what you specify — including indentation, whitespace, and line breaks — without consulting ruff's formatting rules.
 
-```python
-# You write this with Edit tool
-message = """
-This is a message
-with multiple lines
-"""
+**CI expects ruff's style.** The CI pipeline runs `make format` (via ruff) to verify that all Python code matches the project's formatting standard. If your local edits don't match ruff's output, CI fails.
 
-# Ruff may reformat to:
-message = """\
-This is a message
-with multiple lines
-"""
-```
+This creates a workflow requirement: you must explicitly run formatting after using Edit, because the tool itself doesn't.
 
-The Edit tool won't automatically apply ruff's style, so CI will show a diff.
+## The Cross-Cutting Pattern
 
-## The Fix
+This behavior affects multiple areas:
 
-**Always run `make format` after editing Python files:**
+1. **Multiline strings** — Ruff has specific rules for docstrings, heredocs, and multiline literals that Edit won't apply
+2. **Indentation normalization** — Ruff enforces consistent spacing that Edit preserves as-written
+3. **Import sorting** — Ruff reorders imports; Edit leaves them as you specify
+4. **Trailing whitespace** — Ruff removes it; Edit preserves it
+
+The common failure mode: an agent uses Edit to modify Python code, the code looks correct, but CI fails with formatting diffs.
+
+## Required Workflow
+
+**After every Edit tool invocation on Python files:**
 
 ```bash
-# After using Edit tool on Python files
 make format
 ```
 
-This ensures your local code matches what CI expects.
+This applies ruff's rules to match what CI expects. Without this step, you're committing pre-formatted code to a post-formatted CI check.
 
-## When to Run Format
+## Decision Heuristic
 
-Run `make format` when you've edited:
+**Always run format** if you edited:
 
-- Python files with multiline strings (docstrings, heredocs, error messages)
-- Python files with complex indentation
-- Any Python file if you're unsure
+- Any `.py` file with the Edit tool
+- Python files with multiline strings (docstrings, error messages)
+- Python files with complex indentation or imports
 
-**Safe to skip** if you only edited:
+**Safe to skip** if you:
 
-- Single-line changes without strings
-- Markdown files (use `make prettier` instead)
-- Configuration files (YAML, TOML, JSON)
+- Only edited non-Python files (`.md`, `.yaml`, `.toml`)
+- Used a different tool that auto-formats (some IDEs)
+- Made single-character changes to simple expressions
 
-## Related Workflows
+When in doubt, run `make format`. It's fast and idempotent.
 
-For a complete decision tree on when to run format vs prettier, see [Formatting Workflow](formatting-workflow.md).
+## Why Not Auto-Format in Edit?
+
+Edit tool's literal preservation is intentional: it gives the agent precise control over output. Auto-formatting would introduce ambiguity about whether the tool modified your content.
+
+The trade-off: agents must explicitly invoke formatting as a separate step, which creates the workflow requirement documented here.
 
 ## Related Documentation
 
-- [Formatting Workflow](formatting-workflow.md) - Decision tree for format vs prettier
+- [Formatting Workflow](formatting-workflow.md) - Complete decision tree for format vs prettier
 - [CI Tripwires](tripwires.md) - All CI-related tripwires

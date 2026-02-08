@@ -1,326 +1,130 @@
 ---
-title: Frontmatter Tripwire Format
-last_audited: "2026-02-03 03:56 PT"
-audit_result: edited
+title: Frontmatter and Tripwire Format
 read_when:
-  - "Creating new documentation in docs/learned/"
-  - "Adding tripwires to existing docs"
-  - "Understanding frontmatter schema"
-  - "Running erk docs sync"
----
-
-# Frontmatter Tripwire Format
-
-## Overview
-
-All documentation files in `docs/learned/` use YAML frontmatter to specify metadata. This metadata enables automated indexing, tripwire generation, and context-aware doc loading.
-
-## YAML Schema
-
-### Complete Structure
-
-```yaml
----
-title: Document Title # Optional: Used in navigation (defaults to filename)
-read_when: # Required: List of conditions triggering doc load
-  - "condition 1"
-  - "condition 2"
-tripwires: # Optional: List of critical action-triggered warnings
-  - "CRITICAL: Before doing X"
-  - "CRITICAL: Before doing Y"
----
-```
-
-### Field Definitions
-
-#### `title` (Optional)
-
-**Type**: String
-
-**Purpose**: Human-readable title for navigation and indexes
-
-**Default**: If omitted, derived from filename (`my-file.md` → "My File")
-
-**When to use**: When filename doesn't make a good title
-
-**Example**:
-
-```yaml
-title: LibCST Systematic Import Refactoring
-```
-
-#### `read_when` (Required)
-
-**Type**: List of strings
-
-**Purpose**: Defines conditions when this document should be loaded into agent context
-
-**Format**: Each item is a condition phrase describing when to read this doc
-
-**Best practices**:
-
-- Use lowercase for consistency
-- Start with present participle verbs ("working with", "implementing", "debugging")
-- Be specific (not "using git" but "resolving git merge conflicts")
-- Include synonyms (e.g., both "gateway" and "ABC" if relevant)
-
-**Examples**:
-
-```yaml
-read_when:
-  - "implementing gateway abstractions"
-  - "working with 5-layer gateway pattern"
-  - "creating ABC interfaces"
-  - "debugging gateway tests"
-```
-
-**How it's used**:
-
-- `erk docs sync` generates index with these conditions
-- Agents grep for keywords to find relevant docs
-- Documentation-first discovery matches task keywords against conditions
-
-#### `tripwires` (Optional)
-
-**Type**: List of strings
-
-**Purpose**: Critical action-triggered warnings that prevent common mistakes
-
-**Format**: Each item MUST start with `CRITICAL: Before` followed by the action
-
-**Schema**:
-
-```
-CRITICAL: Before <action-that-triggers-tripwire>
-```
-
-**Best practices**:
-
-- Always start with `CRITICAL: Before`
-- Describe the **action**, not the consequence
-- Be specific about what triggers the warning
-- Link to detailed doc in the tripwire file (auto-generated)
-
-**Examples**:
-
-```yaml
+  - creating new documentation in docs/learned/
+  - adding tripwires to existing docs
+  - understanding frontmatter schema for agent docs
+  - running erk docs sync
 tripwires:
-  - "CRITICAL: Before creating a gateway without all 5 implementation layers"
-  - "CRITICAL: Before modifying PR footer format validation"
-  - "CRITICAL: Before using EAFP (try/except) for control flow"
-```
+  - action: "writing a tripwire as a plain string instead of {action, warning} dict"
+    warning: "The validator requires structured dicts with action and warning keys. Plain strings fail validation with 'must be an object'."
+  - action: "creating a doc in docs/learned/ without read_when field"
+    warning: "read_when is required. Without it, the doc won't appear in any index and agents will never discover it."
+---
 
-**What NOT to do**:
+# Frontmatter and Tripwire Format
+
+## Why Frontmatter Exists
+
+Every doc in `docs/learned/` needs YAML frontmatter because the sync pipeline (`erk docs sync`) uses it to build three things agents rely on:
+
+1. **Index files** — root and per-category `index.md` files that agents grep to discover relevant docs
+2. **Tripwire files** — per-category `tripwires.md` files aggregating "before you do X, read Y" warnings
+3. **Tripwires index** — master routing table mapping categories to their tripwire files
+
+Without frontmatter, a doc is invisible to automated discovery. Agents would only find it through manual grep of individual files.
+
+## Schema
+
+<!-- Source: src/erk/agent_docs/models.py, AgentDocFrontmatter -->
+<!-- Source: src/erk/agent_docs/operations.py, validate_agent_doc_frontmatter -->
+
+The canonical schema is defined in `AgentDocFrontmatter` in `src/erk/agent_docs/models.py` and enforced by `validate_agent_doc_frontmatter()` in `src/erk/agent_docs/operations.py`.
+
+| Field          | Required | Type                              | Notes                                                                  |
+| -------------- | -------- | --------------------------------- | ---------------------------------------------------------------------- |
+| `title`        | Yes      | string                            | Used in navigation and indexes                                         |
+| `read_when`    | Yes      | list of strings                   | Must be non-empty. Each item is a condition phrase for agent discovery |
+| `tripwires`    | No       | list of `{action, warning}` dicts | Both keys required per item                                            |
+| `last_audited` | No       | string                            | Free-form date string                                                  |
+| `audit_result` | No       | `"clean"` or `"edited"`           | Literal type check                                                     |
+
+## The Two-Field Tripwire Format
+
+Tripwires use a structured `{action, warning}` format, **not** plain strings:
 
 ```yaml
-# BAD - Missing "CRITICAL: Before"
+# CORRECT — structured format
 tripwires:
-  - "Don't forget to implement all 5 layers"
+  - action: "calling subprocess.run(check=True) directly"
+    warning: "Use erk's subprocess wrappers instead for consistent error handling."
 
-# BAD - Too vague
+# WRONG — plain string (fails validation with 'must be an object')
 tripwires:
-  - "CRITICAL: Before working with gateways"
-
-# BAD - Describes consequence, not action
-tripwires:
-  - "CRITICAL: Before breaking tests"
+  - "CRITICAL: Before calling subprocess.run(check=True) directly"
 ```
 
-**How it's used**:
+### Why Two Fields Instead of One String?
 
-- `erk docs sync` extracts tripwires into category tripwire files
-- Tripwires appear in `docs/learned/<category>/tripwires.md` (auto-generated)
-- Agents check tripwires before taking matching actions
+An earlier format used flat strings like `"CRITICAL: Before doing X"`. This had problems:
 
-## Generation Process
+- **No separation of trigger from guidance** — agents could detect what to avoid but not why or what to do instead
+- **Generated output was action-only** — category tripwire files could only say "don't do X" with no actionable alternative
+- **Inconsistent prefix** — `"CRITICAL: Before"` was convention, not enforced, leading to format drift
 
-### Step 1: Write Frontmatter
+The structured format separates the **trigger** (`action`) from the **guidance** (`warning`).
 
-Create new doc with proper frontmatter:
+<!-- Source: src/erk/agent_docs/operations.py, generate_category_tripwires_doc -->
 
-```markdown
----
-read_when:
-  - "using subprocess wrappers"
-  - "handling subprocess errors"
-tripwires:
-  - "CRITICAL: Before using subprocess.run(check=True) directly"
----
+During sync, these render into category tripwire files as: **CRITICAL: Before {action}** → Read [{doc title}]({doc path}) first. {warning}
 
-# Subprocess Wrappers
+The "CRITICAL: Before" prefix is added automatically — don't include it in the `action` field.
 
-Content goes here...
-```
+### Writing Good Tripwires
 
-### Step 2: Run `erk docs sync`
+**action field** — use a gerund phrase describing the specific action an agent might take:
 
-```bash
-erk docs sync
-```
+| Pattern                                    | Quality           | Why                                                 |
+| ------------------------------------------ | ----------------- | --------------------------------------------------- |
+| `"adding a new method to Git ABC"`         | Good              | Specific, matches agent intent at decision point    |
+| `"working with gateways"`                  | Bad — too vague   | Matches too broadly, causes alert fatigue           |
+| `"breaking tests"`                         | Bad — consequence | Agents can't self-check "am I about to break tests" |
+| `"Don't forget to implement all 5 layers"` | Bad — imperative  | Not an action pattern agents can match against      |
 
-This command:
+**warning field** — explain what to do instead, not just what's wrong. Agents need actionable guidance, not just prohibitions.
 
-1. **Scans all docs/learned/ markdown files**
-2. **Extracts frontmatter** from each file
-3. **Generates index files**:
-   - `docs/learned/index.md` - Master index with all docs
-   - `docs/learned/<category>/index.md` - Category-specific indexes
-4. **Generates tripwire files**:
-   - `docs/learned/<category>/tripwires.md` - Aggregated tripwires per category
-   - `docs/learned/tripwires-index.md` - Master tripwire index
+## Writing Effective read_when Conditions
 
-### Step 3: Verify Generated Files
+`read_when` conditions are how agents discover docs — they grep index files for keywords matching their current task.
 
-Check that tripwires appear correctly:
+Design conditions for **keyword overlap with agent task descriptions**:
 
-```bash
-# View category tripwires
-cat docs/learned/architecture/tripwires.md
+- Start with present participles: "implementing", "debugging", "working with"
+- Include synonym coverage: both "gateway" and "ABC" if both terms apply
+- Be specific enough to avoid false matches: "resolving git merge conflicts" not "using git"
 
-# View master tripwire index
-cat docs/learned/tripwires-index.md
-```
+Overly broad conditions waste agent context window by loading irrelevant docs. Overly narrow conditions prevent future discovery.
 
-### Step 4: Commit All Changes
+## The Sync Pipeline
 
-```bash
-git add docs/learned/
-git commit -m "Add new doc with tripwires"
-```
+<!-- Source: src/erk/agent_docs/operations.py, sync_agent_docs -->
 
-**Important**: Always commit both source docs AND generated files.
+`erk docs sync` performs a multi-step pipeline:
 
-## Validation
+1. Discovers all non-generated `.md` files in `docs/learned/` (skips `index.md`, `tripwires-index.md`, and auto-generated `tripwires.md`)
+2. Validates frontmatter — invalid docs are skipped with a warning
+3. Generates root `index.md` and per-category `index.md` (categories need 2+ docs for their own index)
+4. Collects tripwires from valid docs, groups by category directory
+5. Generates per-category `tripwires.md` and the master `tripwires-index.md`
+6. Formats all output through prettier (run twice for idempotency — see `_format_with_prettier()` in `operations.py` for why the double-pass is necessary)
 
-### Required Frontmatter Check
-
-All docs MUST have `read_when` field:
-
-```yaml
-# INVALID - Missing read_when
----
-title: My Doc
----
-# VALID - Has read_when
----
-read_when:
-  - "working with feature X"
----
-```
-
-### Tripwire Format Check
-
-All tripwires MUST start with `CRITICAL: Before`:
-
-```yaml
-# INVALID
-tripwires:
-  - "Remember to check X"
-  - "CRITICAL: Don't do Y"  # Wrong - should be "Before doing Y"
-
-# VALID
-tripwires:
-  - "CRITICAL: Before doing X without checking Y"
-  - "CRITICAL: Before modifying Z"
-```
-
-### YAML Syntax Check
-
-Frontmatter must be valid YAML:
-
-```yaml
-# INVALID - Unquoted colon in string
-read_when:
-  - working with: gateway patterns
-
-# VALID - Quoted strings
-read_when:
-  - "working with: gateway patterns"
-```
+**Always commit both source docs AND generated files.** Generated files are checked in because agents load them directly — they're not rebuilt at runtime.
 
 ## Category Assignment
 
-Docs are automatically categorized based on directory:
+<!-- Source: src/erk/agent_docs/operations.py, _get_category_from_path -->
 
-| Directory                    | Category        | Tripwire File               |
-| ---------------------------- | --------------- | --------------------------- |
-| `docs/learned/architecture/` | architecture    | `architecture/tripwires.md` |
-| `docs/learned/cli/`          | cli             | `cli/tripwires.md`          |
-| `docs/learned/testing/`      | testing         | `testing/tripwires.md`      |
-| `docs/learned/planning/`     | planning        | `planning/tripwires.md`     |
-| (any other category)         | (category name) | `<category>/tripwires.md`   |
+Category is derived purely from directory path: `docs/learned/architecture/foo.md` → category `architecture`. Root-level docs go into "uncategorized" in the tripwires index.
 
-**New categories**: Create directory, add docs with frontmatter, run `erk docs sync`.
+To create a new category: create the directory, add docs with valid frontmatter, run `erk docs sync`. Optionally add entries to `CATEGORY_DESCRIPTIONS` and `CATEGORY_ROUTING_HINTS` in `operations.py` for richer index and tripwire-index display.
 
-## Examples
+## Common Mistakes
 
-### Minimal Doc (read_when only)
-
-```yaml
----
-read_when:
-  - "understanding project glossary"
-  - "looking up erk terminology"
----
-```
-
-### Complete Doc (all fields)
-
-```yaml
----
-title: Gateway ABC Implementation Checklist
-read_when:
-  - "implementing gateway abstractions"
-  - "creating new gateway"
-  - "working with 5-layer pattern"
-tripwires:
-  - "CRITICAL: Before creating gateway without fake implementation"
-  - "CRITICAL: Before skipping DryRun or Printing layers"
----
-```
-
-### Doc with Multiple Tripwires
-
-```yaml
----
-read_when:
-  - "writing CLI commands"
-  - "handling user input validation"
-tripwires:
-  - "CRITICAL: Before using RuntimeError for expected CLI failures"
-  - "CRITICAL: Before adding CLI flags without validation"
-  - "CRITICAL: Before using dict .get() on exec script JSON without TypedDict"
----
-```
-
-## Troubleshooting
-
-### Tripwires Not Appearing in Generated Files
-
-**Cause**: Tripwire doesn't start with `CRITICAL: Before`
-
-**Fix**: Update frontmatter format, re-run `erk docs sync`
-
-### "Invalid YAML" Error
-
-**Cause**: Syntax error in frontmatter (unquoted colons, wrong indentation)
-
-**Fix**: Validate YAML with online parser, fix syntax
-
-### Doc Not in Index
-
-**Cause**: Missing `read_when` field
-
-**Fix**: Add `read_when` field with at least one condition
-
-### Tripwire in Wrong Category File
-
-**Cause**: Doc is in wrong directory for its content
-
-**Fix**: Move doc to correct category directory, re-run `erk docs sync`
-
-## Related Documentation
-
-- [Documentation Hub](guide.md) - Complete documentation navigation guide
-- [Claude MD Best Practices](claude-md-best-practices.md) - Frontmatter for CLAUDE.md files
-- [Tripwires Index](../tripwires-index.md) - Complete list of all tripwires
+| Symptom                                            | Cause                                            | Fix                                                     |
+| -------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------- |
+| Tripwire missing from generated files              | Plain string instead of `{action, warning}` dict | Restructure as `{action: "...", warning: "..."}`        |
+| Doc missing from index                             | No `read_when` field or empty list               | Add at least one condition                              |
+| Validation error: `tripwires[N] must be an object` | Tripwire item is a string                        | Convert to structured dict format                       |
+| "Invalid YAML" parse error                         | Unquoted colons or special characters            | Quote strings: `"working with: patterns"`               |
+| Prettier cycling between sync and CI               | Single-pass formatting                           | Already fixed — `_format_with_prettier` runs two passes |
+| Doc shows in wrong category tripwires              | Doc is in wrong directory for its content        | Move to correct category directory, re-sync             |

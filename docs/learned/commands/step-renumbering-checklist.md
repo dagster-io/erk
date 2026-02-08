@@ -1,152 +1,68 @@
 ---
-title: Step Renumbering Checklist
+title: Step Renumbering in Slash Commands
 read_when:
-  - "merging or removing steps in slash commands"
-  - "refactoring command workflows"
-  - "encountering broken step references in commands"
-  - "reviewing command documentation for consistency"
+  - "merging, removing, or reordering steps in slash commands"
+  - "refactoring command workflows that use numbered steps"
+  - "encountering broken step references after editing a command"
 tripwire:
   trigger: "Before merging or removing steps in slash commands"
-  action: "Read [Step Renumbering Checklist](step-renumbering-checklist.md) first. Update ALL step numbers (headers, forward refs, backward refs) and verify conditional jumps still target correct destinations. Search for `Step \\d+[a-z]?` pattern to find all references."
+  action: "Read [Step Renumbering in Slash Commands](step-renumbering-checklist.md) first. Search for `Step \\d+[a-z]?` in the file to find ALL references — headers, forward refs, backward refs, conditional jumps — and update them as a unit."
 ---
 
-# Step Renumbering Checklist
+# Step Renumbering in Slash Commands
 
-When merging, removing, or reordering steps in slash commands, all step numbers and cross-references must be updated. Missing updates cause broken workflows and confusing documentation.
+Erk slash commands (`.claude/commands/`) use numbered steps as their primary control flow mechanism. Step numbers appear in four distinct roles — headers, forward references, backward references, and conditional jumps — creating a web of cross-references that must be updated atomically when steps change.
 
-## The Problem
+## Why This Is Cross-Cutting
 
-Slash commands use numbered steps (Step 1, Step 2, Step 3a, etc.) extensively. These steps are referenced:
+Step references span not just the command file itself but also external documentation. The `token-optimization-patterns.md` doc references specific `/erk:replan` step numbers. Skill files reference command steps. When a step number shifts, the blast radius extends beyond the modified file.
 
-1. **In step headers**: `### Step 4: Validate Input`
-2. **In cross-references**: "See Step 4b for validation logic"
-3. **In conditional jumps**: "If validation fails, skip to Step 7"
-4. **In explanatory text**: "Step 3 ensures that..."
+As of writing, 24 command files contain a combined 239 step references. The larger commands (`/erk:replan` at 17, `/erk:plan-implement` at 21, `/erk:pr-address` at 13) have dense cross-reference networks where a single step removal can invalidate dozens of references.
 
-When a step is removed or merged, all subsequent step numbers shift, but cross-references don't update automatically.
+## The Four Reference Types
 
-## Checklist
+Step numbers serve four distinct roles, and each role has different failure modes when numbers shift:
 
-When modifying command steps, follow this checklist:
+| Reference Type       | Example                               | Failure When Stale                            |
+| -------------------- | ------------------------------------- | --------------------------------------------- |
+| **Header**           | `### Step 4: Validate`                | Duplicate or gap in sequence                  |
+| **Forward ref**      | "Skip to Step 7"                      | Agent jumps to wrong step or nonexistent step |
+| **Backward ref**     | "Using plans from Step 3"             | Agent looks at wrong context                  |
+| **Conditional jump** | "If validation fails, skip to Step 7" | Control flow silently corrupted               |
 
-### 1. Identify All Affected Steps
+Forward references and conditional jumps are the most dangerous because they redirect agent execution. A stale backward reference misleads; a stale forward reference causes the agent to execute the wrong step entirely.
 
-- [ ] List all steps being removed, merged, or reordered
-- [ ] Identify the new numbering for all subsequent steps
-- [ ] Create a mapping: old step number → new step number
+## The Atomic Update Rule
 
-### 2. Update Step Headers
+**All four reference types must be updated as a single pass.** The common mistake is updating headers first, then searching for cross-references separately — which leads to partial updates when the search is incomplete.
 
-- [ ] Renumber all step headers after the modification point
-- [ ] Update sub-step letters if needed (4a, 4b, 4c → 3a, 3b, 3c)
-- [ ] Verify no duplicate step numbers exist
+Instead:
 
-### 3. Update Forward References
+1. **Build a mapping first**: old number → new number for every affected step
+2. **Search once** for the pattern `Step \d+[a-z]?` across the entire file
+3. **Apply the mapping** to every match, regardless of reference type
+4. **Check external docs**: grep `docs/learned/` and `.claude/skills/` for references to the command's step numbers
 
-Search for references to steps that come **later** in the command:
+## Sub-Step Renumbering
 
-- [ ] "See Step X" references pointing to renamed steps
-- [ ] "Skip to Step X" conditional jumps
-- [ ] "Return to Step X" loop instructions
-- [ ] Examples mentioning specific step numbers
+Steps use a letter suffix system (Step 4a, 4b, 4c) for sub-steps. When the parent step number changes, all sub-steps must follow. When a sub-step is removed, remaining sub-steps do NOT renumber — this prevents a cascade through their own cross-references.
 
-### 4. Update Backward References
+## Historical Example: /erk:replan Step 3 Merge
 
-Search for references to steps that come **earlier** in the command:
+<!-- Source: .claude/commands/erk/replan.md, Step 3 -->
 
-- [ ] "As done in Step X" references
-- [ ] "After Step X completes" sequencing notes
-- [ ] "Step X ensures that..." explanatory text
-- [ ] "Building on Step X" continuation notes
+When `/erk:replan` merged Step 3 (Plan Content Fetching) into Step 4 (Deep Investigation) for token optimization, the step wasn't removed — it was converted into a delegation marker ("Skip to Step 4"). This preserved the numbering of Steps 5-7 and all their sub-steps (4a-4f), limiting the blast radius to only forward/backward references mentioning Step 3 specifically.
 
-### 5. Update Related Documentation
+**Key insight**: Converting a step to a pass-through ("delegated to Step X") is less disruptive than deleting it, because downstream step numbers don't shift. This is a deliberate trade-off: a vestigial step marker costs a few tokens but avoids a cascade of renumbering across the file and external documentation.
 
-- [ ] Command README if it lists step summaries
-- [ ] Related documentation linking to specific steps
-- [ ] Skill files that reference command steps
+## Anti-Patterns
 
-### 6. Verify Consistency
+**Updating headers but not cross-references**: The most common failure. Agent renumbers `### Step N` headers but misses "See Step N" in body text two pages away. Always use regex search, never rely on memory.
 
-- [ ] Read through entire command start to finish
-- [ ] Verify all step references point to existing steps
-- [ ] Check that conditional jumps make logical sense
-- [ ] Ensure no orphaned references to deleted steps
+**Renumbering sub-steps when parent changes**: If Step 4 becomes Step 3, then 4a→3a, 4b→3b. But if Step 4b is deleted, do NOT renumber 4c→4b — the cross-reference cascade isn't worth it for sub-steps.
 
-## Example: /erk:replan Step 3 Removal
-
-When Step 3 (Plan Content Fetching) was merged into Step 4 (Deep Investigation) in `/erk:replan`:
-
-### Changes Required
-
-**Step headers updated:**
-
-- Old Step 4 → New Step 4 (absorbed Step 3 content)
-- Old Step 4a → Still Step 4a (sub-step under new Step 4)
-- Old Step 5 → New Step 5
-- Old Step 6 → New Step 6
-- Old Step 7 → New Step 7
-
-**Forward references updated:**
-
-- Step 2 previously said "Skip to Step 3" → Updated to "Skip to Step 4"
-- Step 3 said "Delegates to Step 4" → Content merged, reference removed
-
-**Backward references updated:**
-
-- Step 5 said "Using plans from Step 3" → Updated to "Using plans from Step 4"
-
-**No updates needed:**
-
-- Steps 5, 6, 7 kept their numbers (only Step 3 was removed, not Step 4)
-- Sub-steps 4a-4f references remained valid
-
-## Common Mistakes
-
-### 1. Updating Headers but Not Cross-References
-
-**Symptom**: Step headers are correct, but text says "See Step 5" when Step 5 no longer exists.
-
-**Fix**: Search entire file for step number patterns: `Step \d+[a-z]?`
-
-### 2. Forgetting Sub-Step References
-
-**Symptom**: Main step numbers updated, but "See Step 4b" now points to wrong sub-step.
-
-**Fix**: Search for both `Step X` and `Step Xa` patterns.
-
-### 3. Partial Updates
-
-**Symptom**: Some references updated, others missed.
-
-**Fix**: Use systematic search for all occurrences, don't rely on memory.
-
-### 4. Broken Conditional Logic
-
-**Symptom**: "If X, skip to Step 7" now skips to wrong step due to renumbering.
-
-**Fix**: Trace each conditional path to ensure destination is still correct.
-
-## Tools
-
-### Search Pattern
-
-Use regex to find all step references:
-
-```bash
-grep -n "Step [0-9][a-z]*" command.md
-```
-
-This finds both "Step 4" and "Step 4b" style references.
-
-### Diff Review
-
-Before committing, review the diff to ensure:
-
-1. All step header changes are intentional
-2. All cross-reference changes match header changes
-3. No step numbers appear in unexpected places
+**Forgetting external documentation**: `docs/learned/planning/token-optimization-patterns.md` directly references `/erk:replan` step numbers. Any renumbering in the command file must check downstream docs.
 
 ## Related Documentation
 
-- [Command Development](command-development.md) - General command authoring guidelines
-- [Token Optimization Patterns](../planning/token-optimization-patterns.md) - Example of step merge rationale
+- [Token Optimization Patterns](../planning/token-optimization-patterns.md) - Documents the rationale behind the `/erk:replan` Step 3 merge and references its step numbers

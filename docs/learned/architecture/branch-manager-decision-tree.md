@@ -1,17 +1,23 @@
 ---
 title: Branch Manager Decision Tree
 read_when:
-  - deciding between ctx.branch_manager and ctx.git.branch, creating branches in erk code, implementing branch operations
+  - deciding between ctx.branch_manager and ctx.git.branch for branch creation
+  - implementing branch operations in erk code
+  - working with placeholder branches or worktree pool slots
 tripwires:
   - action: "creating branches in erk code"
     warning: "Use the decision tree to determine whether to use ctx.branch_manager (with Graphite tracking) or ctx.git.branch (low-level git). Placeholder/ephemeral branches bypass branch_manager."
-last_audited: "2026-02-05 14:15 PT"
+last_audited: "2026-02-07 16:00 PT"
 audit_result: edited
 ---
 
 # Branch Manager Decision Tree
 
-When creating or managing branches in erk, choosing between `ctx.branch_manager` and `ctx.git.branch` depends on whether the branch should be tracked by Graphite.
+## The Core Question
+
+When creating branches in erk, choosing between `ctx.branch_manager` and `ctx.git.branch` comes down to one question: **Should this branch be tracked by Graphite?**
+
+User-facing branches that will become PRs need Graphite tracking for stack metadata. Internal operational branches (placeholder branches for pool slots, temporary scaffolding) should bypass tracking to avoid polluting stack state.
 
 ## Decision Tree
 
@@ -39,56 +45,60 @@ Are you creating a branch?
 
 **When**: The branch is ephemeral, local-only, or should never be part of a stack.
 
-See `init_pool_cmd.py` and `unassign_cmd.py` in `src/erk/cli/commands/slot/` for working examples of `ctx.git.branch.create_branch()`.
+**Why**: Bypassing BranchManager prevents Graphite from tracking branches that are frequently created/destroyed and never pushed. Placeholder branches (`__erk-slot-01-br-stub__`) exist only to satisfy git's multi-worktree constraint (a branch cannot be checked out in multiple worktrees). They are never part of PR workflows.
+
+<!-- Source: src/erk/cli/commands/slot/common.py, get_placeholder_branch_name -->
+
+See `get_placeholder_branch_name()` in `src/erk/cli/commands/slot/common.py` for the placeholder naming convention, and `execute_unassign()` in `src/erk/cli/commands/slot/unassign_cmd.py` for the create-or-get pattern before checking out placeholder branches.
 
 ### Examples
 
-1. **Placeholder branches** (pool worktrees)
-   - `__erk-slot-01-br-stub__`, `__erk-slot-02-br-stub__`, etc.
-   - Created via `get_placeholder_branch_name()` in `src/erk/cli/commands/slot/common.py`
-   - Never pushed, never part of PR workflow
+1. **Placeholder branches** (pool worktrees) — never pushed, never PRs, unique per slot
+2. **Temporary operational branches** — internal scaffolding cleaned up after use
 
-2. **Temporary operational branches**
-   - Internal branches used for erk operations
-   - Cleaned up after use
-   - Not visible to user
+<!-- Source: src/erk/cli/commands/slot/init_pool_cmd.py, slot_init_pool -->
+<!-- Source: src/erk/cli/commands/slot/unassign_cmd.py, execute_unassign -->
+
+The `slot init-pool` command in `src/erk/cli/commands/slot/init_pool_cmd.py` creates placeholder branches via `ctx.git.branch.create_branch()`. The `slot unassign` command in `src/erk/cli/commands/slot/unassign_cmd.py` creates-or-gets placeholder branches before checking them out.
 
 ## Use ctx.branch_manager (Graphite-Tracked Branches)
 
 **When**: The branch will become part of a stack, pushed to remote, or used for a PR.
 
-See `setup_impl_from_issue.py` in `src/erk/cli/commands/exec/scripts/` for a working example of `ctx.branch_manager.create_branch()` followed by `checkout_branch()`.
+**Why**: BranchManager abstracts over Graphite vs plain Git modes. In Graphite mode, it delegates to `GraphiteBranchOps` to run `gt track`. In Git mode, it creates plain branches without metadata. Commands use `ctx.branch_manager` so they work in both modes without conditional logic.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py, setup_impl_from_issue -->
+
+See `setup_impl_from_issue()` in `src/erk/cli/commands/exec/scripts/setup_impl_from_issue.py` for the pattern: `branch_manager.create_branch()` followed by `branch_manager.checkout_branch()` to set up a plan implementation branch.
 
 ### Examples
 
-1. **Plan implementation branches**
-   - Created by `setup-impl-from-issue` for plan work
-   - Will have PRs created from them
-   - Part of stack workflow
+1. **Plan implementation branches** — created by `setup-impl-from-issue`, will have PRs
+2. **User-created feature branches** — `gt create feature/new-thing`, managed by Graphite
+3. **Stacked branches** — depend on other branches, require Graphite metadata for upstack/downstack operations
 
-2. **User-created feature branches**
-   - `gt create feature/new-thing`
-   - Managed by Graphite's stack tracking
-   - Pushed to remote for collaboration
+## Multi-Worktree Constraint
 
-3. **Stacked branches**
-   - Branches that depend on other branches
-   - Require Graphite metadata for upstack/downstack operations
-
-## Multi-Worktree Implications
-
-Both APIs respect git's multi-worktree constraint:
-
-**Rule**: A branch cannot be checked out in multiple worktrees simultaneously.
+Both APIs respect git's multi-worktree constraint: **a branch cannot be checked out in multiple worktrees simultaneously**.
 
 This is why placeholder branches are unique per slot:
 
 - `erk-slot-01` → `__erk-slot-01-br-stub__`
 - `erk-slot-02` → `__erk-slot-02-br-stub__`
 
-### Checkout After Create
+Each slot gets its own placeholder so unassigned slots can coexist without checkout conflicts.
 
-**CRITICAL**: `ctx.branch_manager.create_branch()` **restores the original branch** after creating and tracking the new branch (in Graphite mode). If you need to be on the new branch after creation, explicitly call `ctx.branch_manager.checkout_branch()`.
+## Critical Gotcha: Checkout After Create
+
+`ctx.branch_manager.create_branch()` **restores the original branch** after creating and tracking the new branch (in Graphite mode). If you need to be on the new branch after creation, explicitly call `ctx.branch_manager.checkout_branch()`.
+
+**Why this behavior**: `gt track` requires the branch to be checked out. `GraphiteBranchManager.create_branch()` saves the current branch, checks out the new branch to run `gt track`, then restores the original branch to avoid side effects on the caller's working directory.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py, GraphiteBranchManager.create_branch -->
+
+See `GraphiteBranchManager.create_branch()` in `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` for the full save/checkout/track/restore logic, and [Branch Manager Abstraction](branch-manager-abstraction.md) for deeper architectural context.
+
+### Anti-Pattern
 
 ```python
 # WRONG: Assumes you're on the new branch after create
@@ -101,8 +111,6 @@ ctx.branch_manager.checkout_branch(repo_root, branch_name)
 # Now you're on the new branch
 ```
 
-**Source**: See [Branch Manager Abstraction](branch-manager-abstraction.md) tripwire.
-
 ## Summary Table
 
 | Operation             | Placeholder Branches                   | Feature Branches                       |
@@ -113,6 +121,8 @@ ctx.branch_manager.checkout_branch(repo_root, branch_name)
 | **Graphite tracking** | No                                     | Yes                                    |
 | **Pushed to remote**  | No                                     | Yes                                    |
 | **Used in PRs**       | No                                     | Yes                                    |
+
+**Note**: Both placeholder and feature branches use `ctx.branch_manager.checkout_branch()` because checkout must respect Graphite mode for all branches (even if the branch itself isn't tracked).
 
 ## Related Documentation
 

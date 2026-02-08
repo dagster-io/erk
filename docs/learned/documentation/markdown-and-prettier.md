@@ -1,230 +1,80 @@
 ---
-title: Markdown and Prettier
+title: Markdown Authoring and Prettier Interactions
 read_when:
-  - writing or editing markdown documentation
-  - understanding prettier's markdown formatting rules
-  - resolving prettier violations in documentation
+  - writing markdown in docs/learned/ and wondering how Prettier will reformat it
+  - choosing between tables, lists, and prose in documentation
+  - using prettier-ignore directives in documentation
+tripwires:
+  - action: "manually wrapping lines or aligning tables in markdown"
+    warning: "Never manually format markdown. Prettier rewrites all formatting on save. Write naturally, then run `make prettier` via devrun."
+  - action: "adding prettier-ignore to docs/learned/"
+    warning: "prettier-ignore is almost never needed in docs. If Prettier is mangling your content, the structure may need rethinking rather than suppression."
+last_audited: "2026-02-08"
+audit_result: clean
 ---
 
-# Markdown and Prettier
+# Markdown Authoring and Prettier Interactions
 
-Prettier formats markdown files in `docs/learned/` according to opinionated rules. Understanding these rules prevents formatting violations and ensures consistent documentation style.
+## Why This Doc Exists
 
-## Prettier's Markdown Rules
+Prettier enforces deterministic formatting on all committed markdown. This is well-documented in CI docs. What's _not_ obvious is how Prettier's behavior should influence the way agents **author** documentation in `docs/learned/`. Certain markdown patterns interact poorly with Prettier's reformatter, and understanding these interactions prevents wasted edit cycles.
 
-### Line Length: 80 Characters (Soft Limit)
+For the operational workflow (how to run Prettier, CI integration, devrun delegation), see [Markdown Formatting in CI Workflows](../ci/markdown-formatting.md).
 
-Prettier wraps prose at approximately 80 characters:
+## Write for the Reformatter, Not Against It
 
-```markdown
-This is a very long line that exceeds 80 characters and will be wrapped by prettier into multiple lines automatically.
-```
+Prettier will rewrite every line of prose to fit within 80 characters. This has consequences for how agents should write:
 
-Becomes:
+**Don't manually wrap lines.** Write prose as continuous text. Prettier will insert its own line breaks at semantic boundaries. Manual wrapping creates awkward mid-sentence breaks after Prettier re-wraps around them.
 
-```markdown
-This is a very long line that exceeds 80 characters and will be wrapped by
-prettier into multiple lines automatically.
-```
+**Don't align table columns.** Prettier normalizes all table alignment. Any manual padding is wasted effort — and creates noisy diffs when Prettier reformats.
 
-**Exceptions:**
+**Don't count characters.** Prettier's wrapping algorithm considers inline code spans, links, and emphasis markers when calculating line length. Manual character counting cannot replicate this logic.
 
-- URLs are never wrapped
-- Code blocks are never wrapped
-- Tables are not wrapped (but cells may wrap internally)
+## Formatting Patterns That Survive Prettier
 
-### List Formatting
+| Pattern          | Prettier Behavior                | Authoring Guidance                             |
+| ---------------- | -------------------------------- | ---------------------------------------------- |
+| Prose paragraphs | Rewrapped at ~80 chars           | Write as single long lines                     |
+| Bullet lists     | Normalized indentation/spacing   | Use 2-space indent for nesting                 |
+| Tables           | Column alignment enforced        | Don't bother aligning — Prettier will          |
+| Code blocks      | Content preserved verbatim       | Safe zone — Prettier won't touch internals     |
+| YAML frontmatter | Left completely untouched        | Also a safe zone                               |
+| URLs in prose    | Never wrapped mid-URL            | Long URLs won't cause line-length issues       |
+| Headings         | Blank line enforced before/after | Always include blank lines to avoid diff noise |
 
-**Bullet lists:**
+## When Prettier Fights Your Intent
 
-```markdown
-- First item
-- Second item
-  - Nested item
-  - Another nested item
-- Third item
-```
+Occasionally Prettier's reformatting changes the semantic meaning of documentation. The most common case is **tables with precise alignment** that convey structure visually. In these rare cases, `<!-- prettier-ignore -->` before the block suppresses reformatting.
 
-**Numbered lists:**
+**The bar for prettier-ignore is high.** In practice, it's almost never needed in `docs/learned/`. If Prettier is mangling your content, the first question should be "is there a better way to structure this?" — not "how do I suppress Prettier?"
 
-```markdown
-1. First item
-2. Second item
-3. Third item
-```
+Legitimate uses: ASCII diagrams, carefully formatted comparison tables where column alignment carries meaning, markdown that embeds non-standard syntax.
 
-Prettier normalizes list indentation and spacing.
+## Anti-Patterns
 
-### Table Formatting
+### Manual Line Wrapping
 
-Prettier aligns table columns:
+Counting characters and inserting line breaks. Prettier will re-wrap anyway, often creating worse breaks than if the prose had been written as a single continuous line.
 
-**Before:**
+### Edit-Tool Formatting Fixes
 
-```markdown
-| Column 1 | Column 2               | Column 3 |
-| -------- | ---------------------- | -------- |
-| Short    | Very long content here | X        |
-```
+After a prettier-check CI failure, using Edit to adjust line breaks or spacing. This is a losing game — run `make prettier` via devrun instead. See the devrun delegation pattern in [Markdown Formatting in CI Workflows](../ci/markdown-formatting.md).
 
-**After:**
+### Over-Using prettier-ignore
 
-```markdown
-| Column 1 | Column 2               | Column 3 |
-| -------- | ---------------------- | -------- |
-| Short    | Very long content here | X        |
-```
+Suppressing Prettier because the output "looks wrong." Prettier's formatting is the project standard. If it reformats something unexpectedly, either the markdown structure needs adjustment or the content belongs in a code block (which Prettier won't touch).
 
-### Code Block Formatting
+## Configuration Context
 
-Prettier preserves code block content but normalizes fences:
+Erk uses Prettier's defaults (no `.prettierrc`) with one configuration choice: `--ignore-path .gitignore` instead of `.prettierignore`. This means gitignored files are automatically excluded from formatting. The `.prettierignore` file that exists in the repo is not used by the Makefile targets.
 
-````markdown
-```python
-def example():
-    return "unchanged"
-```
-````
+<!-- Source: Makefile, prettier and prettier-check targets -->
 
-````
-
-**Fence normalization:**
-
-- Always uses triple backticks (not indentation)
-- Language identifier is preserved
-- Content indentation is unchanged
-
-### Heading Spacing
-
-Prettier enforces spacing around headings:
-
-```markdown
-## Heading
-
-Content starts here.
-
-## Another Heading
-
-More content.
-````
-
-**Rules:**
-
-- One blank line before headings
-- One blank line after headings
-- No blank line before first heading after frontmatter
-
-### YAML Frontmatter
-
-Prettier does NOT format YAML frontmatter:
-
-```yaml
----
-title: Example
-read_when:
-  - "condition 1"
-  - "condition 2"
----
-```
-
-The frontmatter remains unchanged (indentation, quotes, spacing preserved).
-
-## Common Prettier Violations
-
-### Over-Length Lines
-
-**Problem:** Prose lines exceed ~80 characters
-
-**Fix:** Let prettier wrap automatically, or break manually at logical points
-
-### Unaligned Tables
-
-**Problem:** Table columns are misaligned
-
-**Fix:** Run `prettier --write <file>` to auto-align
-
-### Missing Blank Lines
-
-**Problem:** No blank line before/after heading
-
-**Fix:** Add blank lines around headings
-
-## Running Prettier
-
-### Format Single File
-
-```bash
-prettier --write docs/learned/path/to/file.md
-```
-
-### Format All Markdown
-
-```bash
-prettier --write "docs/learned/**/*.md"
-```
-
-### Check Without Formatting
-
-```bash
-prettier --check "docs/learned/**/*.md"
-```
-
-### CI Validation
-
-The `make fast-ci` command includes prettier checks:
-
-```bash
-make fast-ci
-```
-
-This fails if any markdown files have formatting violations.
-
-## Editor Integration
-
-### VS Code
-
-Install the Prettier extension:
-
-```
-ext install esbenp.prettier-vscode
-```
-
-Enable format on save in `.vscode/settings.json`:
-
-```json
-{
-  "editor.formatOnSave": true,
-  "[markdown]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
-}
-```
-
-### Other Editors
-
-See https://prettier.io/docs/en/editors.html for editor-specific setup.
-
-## Prettier Configuration
-
-Erk uses default prettier settings (no custom `.prettierrc`):
-
-- Print width: 80
-- Tab width: 2
-- Prose wrap: always
-
-## When to Ignore Prettier
-
-Use `<!-- prettier-ignore -->` for special formatting:
-
-```markdown
-<!-- prettier-ignore -->
-| Compact | Table | Here |
-|---------|-------|------|
-| A       | B     | C    |
-```
-
-**Use sparingly**: Only when default formatting breaks semantics.
+See the `prettier` and `prettier-check` targets in the Makefile for the exact invocation. For the full story on why `.prettierignore` is bypassed, see [Makefile Prettier Ignore Path](../ci/makefile-prettier-ignore-path.md).
 
 ## Related Documentation
 
-- [stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md) — Why source pointers are better than code blocks
+- [Markdown Formatting in CI Workflows](../ci/markdown-formatting.md) — operational workflow, devrun delegation, CI integration
+- [Prettier Formatting for Claude Commands](../ci/claude-commands-prettier.md) — `.claude/commands/` specific patterns
+- [Stale Code Blocks Are Silent Bugs](stale-code-blocks-are-silent-bugs.md) — why source pointers beat code blocks (Prettier-safe by design)
