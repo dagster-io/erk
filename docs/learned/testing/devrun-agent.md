@@ -42,11 +42,11 @@ The parent agent owns the entire fix cycle. Devrun is invoked repeatedly as a st
 
 Devrun's read-only constraint is enforced at three levels, creating defense in depth:
 
-| Level | Mechanism | What it prevents |
-|-------|-----------|-----------------|
-| **Agent definition** | `tools: Read, Bash, Grep, Glob, Task` — no Write or Edit | Direct file modification via Claude tools |
-| **Agent instructions** | Explicit FORBIDDEN Bash patterns list | File modification via Bash workarounds (sed -i, tee, etc.) |
-| **Per-prompt hook** | UserPromptSubmit reminder on every turn | Parent agent running pytest/ty/ruff directly instead of delegating |
+| Level                  | Mechanism                                                | What it prevents                                                   |
+| ---------------------- | -------------------------------------------------------- | ------------------------------------------------------------------ |
+| **Agent definition**   | `tools: Read, Bash, Grep, Glob, Task` — no Write or Edit | Direct file modification via Claude tools                          |
+| **Agent instructions** | Explicit FORBIDDEN Bash patterns list                    | File modification via Bash workarounds (sed -i, tee, etc.)         |
+| **Per-prompt hook**    | UserPromptSubmit reminder on every turn                  | Parent agent running pytest/ty/ruff directly instead of delegating |
 
 <!-- Source: .claude/agents/devrun.md -->
 
