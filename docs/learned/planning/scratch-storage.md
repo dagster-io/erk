@@ -92,7 +92,7 @@ scratch_dir / "pr-body.txt"
 Plans created in Claude Code are saved to scratch storage for session-scoped lookup:
 
 ```
-.erk/scratch/sessions/{session-id}/plan-*.md
+.erk/scratch/sessions/{session-id}/plan.md
 ```
 
 This enables parallel sessions to find their own plans without mtime-based conflicts.

@@ -4,6 +4,8 @@ read_when:
   - "writing command availability predicates"
   - "understanding what data is available for TUI commands"
   - "checking which PlanRowData fields are nullable"
+last_audited: "2026-02-07 18:35 PT"
+audit_result: edited
 ---
 
 # PlanRowData Field Reference
@@ -20,26 +22,28 @@ Quick reference of `PlanRowData` fields for writing command availability predica
 
 ### Issue Info
 
-| Field          | Type          | Description                   | Nullable?                     |
-| -------------- | ------------- | ----------------------------- | ----------------------------- |
-| `issue_number` | `int`         | GitHub issue number           | Never                         |
-| `issue_url`    | `str \| None` | Full URL to GitHub issue      | Yes                           |
-| `title`        | `str`         | Plan title (may be truncated) | Never (empty string possible) |
-| `full_title`   | `str`         | Complete untruncated title    | Never (empty string possible) |
+| Field          | Type          | Description                    | Nullable?                     |
+| -------------- | ------------- | ------------------------------ | ----------------------------- |
+| `issue_number` | `int`         | GitHub issue number            | Never                         |
+| `issue_url`    | `str \| None` | Full URL to GitHub issue       | Yes                           |
+| `title`        | `str`         | Plan title (may be truncated)  | Never (empty string possible) |
+| `full_title`   | `str`         | Complete untruncated title     | Never (empty string possible) |
+| `issue_body`   | `str`         | Raw issue body text (markdown) | Never (empty string possible) |
 
 ### PR Info
 
-| Field                    | Type          | Description                            | Nullable?                   |
-| ------------------------ | ------------- | -------------------------------------- | --------------------------- |
-| `pr_number`              | `int \| None` | PR number if linked                    | Yes                         |
-| `pr_url`                 | `str \| None` | URL to PR (GitHub or Graphite)         | Yes                         |
-| `pr_display`             | `str`         | Formatted PR cell (e.g., "#123 👀")    | Never (empty/dash possible) |
-| `pr_title`               | `str \| None` | PR title if different from issue       | Yes                         |
-| `pr_state`               | `str \| None` | PR state: "OPEN", "MERGED", "CLOSED"   | Yes                         |
-| `checks_display`         | `str`         | Formatted checks cell (e.g., "✓", "✗") | Never (dash possible)       |
-| `resolved_comment_count` | `int`         | Count of resolved PR review comments   | Never (0 if no PR)          |
-| `total_comment_count`    | `int`         | Total count of PR review comments      | Never (0 if no PR)          |
-| `comments_display`       | `str`         | Formatted comments (e.g., "3/5", "-")  | Never (dash if no PR)       |
+| Field                    | Type          | Description                                | Nullable?                   |
+| ------------------------ | ------------- | ------------------------------------------ | --------------------------- |
+| `pr_number`              | `int \| None` | PR number if linked                        | Yes                         |
+| `pr_url`                 | `str \| None` | URL to PR (GitHub or Graphite)             | Yes                         |
+| `pr_display`             | `str`         | Formatted PR cell (e.g., "#123 👀")        | Never (empty/dash possible) |
+| `pr_title`               | `str \| None` | PR title if different from issue           | Yes                         |
+| `pr_state`               | `str \| None` | PR state: "OPEN", "MERGED", "CLOSED"       | Yes                         |
+| `pr_head_branch`         | `str \| None` | Head branch from PR metadata (for landing) | Yes                         |
+| `checks_display`         | `str`         | Formatted checks cell (e.g., "✓", "✗")     | Never (dash possible)       |
+| `resolved_comment_count` | `int`         | Count of resolved PR review comments       | Never (0 if no PR)          |
+| `total_comment_count`    | `int`         | Total count of PR review comments          | Never (0 if no PR)          |
+| `comments_display`       | `str`         | Formatted comments (e.g., "3/5", "-")      | Never (dash if no PR)       |
 
 ### Worktree Info
 
@@ -74,6 +78,25 @@ Quick reference of `PlanRowData` fields for writing command availability predica
 | Field         | Type                               | Description                                  | Nullable?                    |
 | ------------- | ---------------------------------- | -------------------------------------------- | ---------------------------- |
 | `log_entries` | `tuple[tuple[str, str, str], ...]` | List of (event_name, timestamp, comment_url) | Never (empty tuple possible) |
+
+### Learn Info
+
+| Field                     | Type           | Description                                         | Nullable?             |
+| ------------------------- | -------------- | --------------------------------------------------- | --------------------- |
+| `learn_status`            | `str \| None`  | Raw learn status value from plan header             | Yes                   |
+| `learn_plan_issue`        | `int \| None`  | Plan issue number (for completed_with_plan status)  | Yes                   |
+| `learn_plan_issue_closed` | `bool \| None` | Whether the learn plan issue is closed              | Yes                   |
+| `learn_plan_pr`           | `int \| None`  | PR number (for plan_completed status)               | Yes                   |
+| `learn_run_url`           | `str \| None`  | URL to GitHub Actions workflow run (pending status) | Yes                   |
+| `learn_display`           | `str`          | Formatted display string (e.g., "- not started")    | Never (dash possible) |
+| `learn_display_icon`      | `str`          | Icon-only display for table (e.g., "-", "⟳", "∅")   | Never (dash possible) |
+
+### Objective Info
+
+| Field               | Type          | Description                                          | Nullable?             |
+| ------------------- | ------------- | ---------------------------------------------------- | --------------------- |
+| `objective_issue`   | `int \| None` | Objective issue number (linking plans to objectives) | Yes                   |
+| `objective_display` | `str`         | Formatted display string (e.g., "#123" or "-")       | Never (dash possible) |
 
 ## Common Availability Patterns
 
@@ -121,24 +144,26 @@ is_available=lambda _: True
 
 Many pieces of data have both a raw value and a display value:
 
-| Raw Field                                      | Display Field              | Purpose                 |
-| ---------------------------------------------- | -------------------------- | ----------------------- |
-| `issue_number`                                 | (used directly in display) | Issue number            |
-| `pr_number`                                    | `pr_display`               | PR with state indicator |
-| `resolved_comment_count`/`total_comment_count` | `comments_display`         | Comment counts (X/Y)    |
-| `run_id`                                       | `run_id_display`           | Run ID formatted        |
-| `run_status`/`run_conclusion`                  | `run_state_display`        | Human-readable state    |
-| `title`                                        | (is already display)       | Truncated title         |
-| `full_title`                                   | (is raw)                   | Full title for modals   |
+| Raw Field                                      | Display Field                        | Purpose                 |
+| ---------------------------------------------- | ------------------------------------ | ----------------------- |
+| `issue_number`                                 | (used directly in display)           | Issue number            |
+| `pr_number`                                    | `pr_display`                         | PR with state indicator |
+| `resolved_comment_count`/`total_comment_count` | `comments_display`                   | Comment counts (X/Y)    |
+| `run_id`                                       | `run_id_display`                     | Run ID formatted        |
+| `run_status`/`run_conclusion`                  | `run_state_display`                  | Human-readable state    |
+| `title`                                        | (is already display)                 | Truncated title         |
+| `full_title`                                   | (is raw)                             | Full title for modals   |
+| `learn_status`                                 | `learn_display`/`learn_display_icon` | Learn workflow state    |
+| `objective_issue`                              | `objective_display`                  | Objective link          |
 
 **Rule:** Use raw fields in predicates (for `None` checks), display fields for rendering.
 
 ## Testing with make_plan_row()
 
-The test helper `make_plan_row()` in `tests/fakes/plan_data_provider.py` creates `PlanRowData` instances with sensible defaults. Override only the fields you need:
+The test helper `make_plan_row()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py` creates `PlanRowData` instances with sensible defaults. Override only the fields you need:
 
 ```python
-from tests.fakes.plan_data_provider import make_plan_row
+from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
 # Minimal row
 row = make_plan_row(123, "Test Plan")

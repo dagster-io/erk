@@ -5,6 +5,8 @@ read_when:
 tripwires:
   - action: "creating WebContentsView or setting bounds"
     warning: "Initialize with zero bounds {x: 0, y: 0, width: 0, height: 0}, wait for renderer to report measurements. Always apply defensive clamping: Math.max(0, Math.floor(value)) to prevent fractional/negative coordinates that cause Electron crashes. Clean up IPC listeners on window close."
+last_audited: "2026-02-07 18:13 PT"
+audit_result: edited
 ---
 
 # WebContentsView Lifecycle
@@ -13,61 +15,23 @@ Proper initialization, bounds management, and cleanup of Electron's `WebContents
 
 ## Initialization Pattern
 
-**File**: `erkdesk/src/main/index.ts:32-34`
+The WebContentsView starts with zero bounds (`{x: 0, y: 0, width: 0, height: 0}`) and loads `about:blank`. See `erkdesk/src/main/index.ts:40-42`.
 
-```typescript
-// Start invisible until renderer reports bounds.
-webView.setBounds({ x: 0, y: 0, width: 0, height: 0 });
-webView.webContents.loadURL("about:blank");
-```
-
-**Why zero bounds**:
-
-- The WebContentsView has no valid position until the renderer measures the split layout
-- Zero bounds make it invisible (not displayed)
-- Prevents flash of incorrectly-positioned content during startup
+**Why zero bounds**: The view has no valid position until the renderer measures the split layout. Zero bounds make it invisible, preventing a flash of incorrectly-positioned content during startup.
 
 ## Bounds Update Pattern
 
-**File**: `erkdesk/src/main/index.ts:37-45`
+The `webview:update-bounds` IPC handler applies defensive clamping — `Math.max(0, Math.floor(value))` — to all coordinate values before calling `setBounds()`. See `erkdesk/src/main/index.ts:44-53`.
 
-```typescript
-ipcMain.on("webview:update-bounds", (_event, bounds: WebViewBounds) => {
-  if (!webView) return;
-  webView.setBounds({
-    x: Math.max(0, Math.floor(bounds.x)),
-    y: Math.max(0, Math.floor(bounds.y)),
-    width: Math.max(0, Math.floor(bounds.width)),
-    height: Math.max(0, Math.floor(bounds.height)),
-  });
-});
-```
-
-**Defensive clamping**:
-
-- `Math.floor()` — Convert fractional pixels to integers
-- `Math.max(0, ...)` — Prevent negative coordinates
-- **Rationale**: Electron crashes silently on fractional or negative bounds
+**Why clamping is critical**: Electron crashes silently on fractional or negative bounds. `Math.floor()` converts fractional pixels to integers; `Math.max(0, ...)` prevents negative coordinates.
 
 See [Defensive Bounds Handling](defensive-bounds-handling.md) for details.
 
 ## Cleanup Pattern
 
-**File**: `erkdesk/src/main/index.ts:70-74`
+The `mainWindow.on("closed")` handler removes all IPC listeners and handlers, kills any active child processes, and nulls the `webView` reference. See `erkdesk/src/main/index.ts:190-201`.
 
-```typescript
-mainWindow.on("closed", () => {
-  ipcMain.removeAllListeners("webview:update-bounds");
-  ipcMain.removeAllListeners("webview:load-url");
-  webView = null;
-});
-```
-
-**Why cleanup is critical**:
-
-- IPC listeners persist after window close unless explicitly removed
-- Memory leaks if listeners accumulate across window recreations
-- Setting `webView = null` allows garbage collection
+**Why cleanup is critical**: IPC listeners persist after window close unless explicitly removed, causing memory leaks across window recreations. Nulling `webView` allows garbage collection.
 
 ## Complete Lifecycle
 
@@ -76,7 +40,7 @@ mainWindow.on("closed", () => {
    ↓
 2. Create WebContentsView with zero bounds
    ↓
-3. Register IPC listeners (update-bounds, load-url)
+3. Register IPC listeners (update-bounds, load-url, plans:fetch, actions:execute, actions:start-streaming)
    ↓
 4. Load renderer (which measures layout and reports bounds)
    ↓
@@ -92,7 +56,7 @@ mainWindow.on("closed", () => {
    ↓
 10. Window close
    ↓
-11. Remove all IPC listeners
+11. Remove all IPC listeners and handlers, kill active processes
    ↓
 12. Set webView = null for garbage collection
 ```
@@ -130,7 +94,7 @@ mainWindow.on("closed", () => {
 
 **Problem**: IPC listeners leak memory across window recreations.
 
-**Fix**: Always call `ipcMain.removeAllListeners()` for each channel.
+**Fix**: Always call `ipcMain.removeAllListeners()` for each `on` channel and `ipcMain.removeHandler()` for each `handle` channel. Kill any active child processes.
 
 ## Related Documentation
 

@@ -50,10 +50,10 @@ All commands invoked via `erk exec <command>`:
 
 ### Slash Commands
 
-| Command                | Purpose                                      |
-| ---------------------- | -------------------------------------------- |
-| `/erk:sessions-list`   | Display formatted session list table         |
-| `/erk:analyze-context` | Analyze context window usage across sessions |
+| Command                  | Purpose                                      |
+| ------------------------ | -------------------------------------------- |
+| `/erk:sessions-list`     | Display formatted session list table         |
+| `/local:analyze-context` | Analyze context window usage across sessions |
 
 ## Core Capabilities
 
@@ -211,7 +211,7 @@ file_path = write_scratch_file(content, session_id=session_id, suffix=".xml")
 
 ### Debug Context Blowout
 
-1. Run `/erk:analyze-context`
+1. Run `/local:analyze-context`
 2. Check token breakdown by category
 3. Look for duplicate reads or large tool results
 

@@ -2,14 +2,14 @@
 description: Analyze context window usage for all sessions in the current worktree
 ---
 
-# /erk:analyze-context
+# /local:analyze-context
 
 Analyzes context window usage across all sessions in the current worktree, showing token breakdown by category.
 
 ## Usage
 
 ```bash
-/erk:analyze-context
+/local:analyze-context
 ```
 
 ## Output

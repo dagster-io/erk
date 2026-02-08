@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "implementing a command with multiple user confirmations"
     warning: "Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Inline confirmations cause partial state on decline."
+last_audited: "2026-02-07 18:25 PT"
+audit_result: edited
 ---
 
 # Two-Phase Validation Model
@@ -94,22 +96,15 @@ The land command implements an extended two-phase model with separate validation
 
 **Purpose**: Check preconditions, resolve values, no mutations
 
-```python
-def run_validation_pipeline(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    """Phase 1: Validation - check ALL preconditions before mutations."""
-    for step in [
-        resolve_target,              # Resolve PR number, fetch details
-        validate_checks,             # Check PR status, CI passing
-        check_no_conflicts,          # Check for merge conflicts
-        check_no_uncommitted_changes,# Check working tree clean
-        check_branch_up_to_date,     # Check branch synced with remote
-    ]:
-        result = step(ctx, state)
-        if isinstance(result, LandError):
-            return result  # Short-circuit on first error
-        state = result  # Thread state to next step
-    return state
-```
+Steps (see `_validation_pipeline()` in `land_pipeline.py`):
+
+1. `resolve_target` -- resolve PR number, fetch details, type-narrow via `EnsureIdeal.unwrap_pr()`
+2. `validate_pr` -- check PR state is OPEN, base is trunk, unresolved comments
+3. `check_learn_status` -- check learn plan status and prompt if needed
+4. `gather_confirmations` -- batch all cleanup confirmations upfront via `_gather_cleanup_confirmation()`
+5. `resolve_objective` -- look up linked objective for the branch
+
+Each step has signature `(ErkContext, LandState) -> LandState | LandError`. The runner short-circuits on the first `LandError`.
 
 **Key characteristics**:
 
@@ -122,23 +117,16 @@ def run_validation_pipeline(ctx: ErkContext, state: LandState) -> LandState | La
 
 **Purpose**: Perform mutations with validated state
 
-```python
-def run_execution_pipeline(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    """Phase 2: Execution - perform mutations with pre-validated state."""
-    for step in [
-        merge_pr_step,       # Merge PR to target branch
-        check_learn_status,  # Check learn plan status (if applicable)
-        update_learn_plan,   # Update learn plan issue (if applicable)
-        promote_tripwires,   # Promote tripwires to category files
-        close_review_pr,     # Close review PR (if exists)
-        cleanup_branches,    # Delete merged branches
-    ]:
-        result = step(ctx, state)
-        if isinstance(result, LandError):
-            return result  # Short-circuit on first error
-        state = result  # Thread state to next step
-    return state
-```
+Steps (see `_execution_pipeline()` in `land_pipeline.py`):
+
+1. `merge_pr` -- merge PR via Graphite or GitHub API
+2. `update_objective` -- update linked objective if present
+3. `update_learn_plan` -- update parent plan's learn_status if this is a learn plan
+4. `promote_tripwires` -- extract and promote tripwire candidates from learn plans
+5. `close_review_pr` -- close review PR if plan has one
+6. `cleanup_and_navigate` -- dispatch cleanup by type, navigate to trunk or child branch
+
+Same step signature and short-circuit behavior as the validation pipeline.
 
 **Key characteristics**:
 
@@ -165,7 +153,7 @@ See [Land State Threading](../architecture/land-state-threading.md) for immutabl
 
 ### Reference Implementation
 
-**File**: `src/erk/cli/commands/workflows/land_pipeline.py` (706 lines, 20 functions)
+**File**: `src/erk/cli/commands/land_pipeline.py` (706 lines, 20 functions)
 
 **Cross-references**:
 
