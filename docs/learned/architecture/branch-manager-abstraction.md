@@ -46,16 +46,18 @@ This is the key architectural decision. Understanding which operations belong wh
 
 ## Behavioral Differences Between Modes
 
-The two implementations diverge in non-obvious ways. This table captures the differences that trip up agents:
+The two implementations diverge in non-obvious ways. For full implementation details, see `GraphiteBranchManager` in `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` and `GitBranchManager` in `packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py`.
 
-| Operation | GraphiteBranchManager | GitBranchManager | Gotcha |
-|---|---|---|---|
-| `create_branch()` | Creates via git, then temporarily checks out to run `gt track`, then **restores original branch** | Creates via git, stays on current branch | Both leave you on the original branch, but for different reasons |
-| `delete_branch()` | LBYL: checks `is_branch_tracked()` first. Tracked branches use `gt delete` (re-parents children, cleans metadata). Untracked branches fall back to plain git | Always plain `git branch -d/-D` | Graphite version handles diverged SHAs gracefully via `gt delete` |
-| `submit_branch()` | `gt submit --force --quiet` (submits entire stack) | `git push -u --force origin <branch>` (pushes single branch) | Graphite submits the **whole stack**, not just one branch |
-| `track_branch()` | Delegates to `GraphiteBranchOps.track_branch()` | No-op | Silent no-op in Git mode — won't error, just does nothing |
-| `get_branch_stack()` | Returns ordered branch list from Graphite cache | Returns `None` | Callers must handle `None` for Git-only repos |
-| `get_pr_for_branch()` | Checks Graphite cache first (fast, local), falls back to GitHub API. Sets `from_fallback` flag | Always GitHub API | The `from_fallback` field on `PrInfo` tells you which path was taken |
+This table captures the differences that trip up agents:
+
+| Operation              | GraphiteBranchManager                          | GitBranchManager                  | Gotcha                                                                     |
+| ---------------------- | ---------------------------------------------- | --------------------------------- | -------------------------------------------------------------------------- |
+| `create_branch()`      | Creates + tracks via `gt track`, then restores | Creates via git, stays on current | Both leave you on the **original branch** — call `checkout_branch()` after |
+| `delete_branch()`      | LBYL on `is_branch_tracked()`, then `gt delete`| Plain `git branch -d/-D`          | Always flow `force=force` through all layers                               |
+| `submit_branch()`      | Submits entire stack                           | Pushes single branch              | Graphite submits the **whole stack**, not just one branch                  |
+| `track_branch()`       | Delegates to `GraphiteBranchOps`               | No-op                             | Silent no-op in Git mode — won't error, just does nothing                  |
+| `get_branch_stack()`   | Returns ordered list from cache                | Returns `None`                    | Callers must handle `None` for Git-only repos                              |
+| `get_pr_for_branch()`  | Graphite cache first, GitHub API fallback      | Always GitHub API                 | `from_fallback` on `PrInfo` tells you which path was taken                 |
 
 ## The Ephemeral Branch Exception
 
