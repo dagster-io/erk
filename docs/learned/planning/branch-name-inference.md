@@ -1,7 +1,7 @@
 ---
 title: Branch Name Inference
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 tripwires:
   - action: "changing branch naming convention (P{issue}- prefix)"
     warning: "The P{issue}- prefix is a cross-cutting contract used by both branch creation (naming.generate_issue_branch_name) and PR recovery (get_pr_for_plan). Changing the prefix format requires updating both sides."
