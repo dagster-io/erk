@@ -3,7 +3,7 @@
 
 # Desktop Dash Documentation
 
-- **[action-toolbar.md](action-toolbar.md)** — adding new actions to the erkdesk toolbar, modifying action availability predicates, understanding action button state logic
+- **[action-toolbar.md](action-toolbar.md)** — adding new actions to the erkdesk toolbar, modifying action availability predicates, understanding how toolbar actions connect to IPC streaming
 - **[app-architecture.md](app-architecture.md)** — modifying the erkdesk App component, understanding erkdesk state management, implementing new features in the erkdesk dashboard
 - **[backend-communication.md](backend-communication.md)** — connecting Electron to a Python backend, choosing between HTTP server and CLI shelling for IPC, implementing the desktop dashboard backend
 - **[defensive-bounds-handling.md](defensive-bounds-handling.md)** — working with WebContentsView bounds, debugging Electron crashes, implementing IPC bounds updates
