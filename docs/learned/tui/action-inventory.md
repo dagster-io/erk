@@ -33,11 +33,11 @@ Commands don't check "can I run?" at execution time — they declare upfront wha
 
 Categories are not just cosmetic labels — they correlate strongly with execution characteristics:
 
-| Category | Execution Pattern       | Latency    | Side Effects                   |
-| -------- | ----------------------- | ---------- | ------------------------------ |
+| Category | Execution Pattern                       | Latency    | Side Effects                               |
+| -------- | --------------------------------------- | ---------- | ------------------------------------------ |
 | ACTION   | In-process HTTP or subprocess streaming | 500ms–600s | Mutates GitHub state or triggers workflows |
-| OPEN     | Browser launch          | Instant    | None (navigates browser)       |
-| COPY     | Clipboard write         | Instant    | None (copies to clipboard)     |
+| OPEN     | Browser launch                          | Instant    | None (navigates browser)                   |
+| COPY     | Clipboard write                         | Instant    | None (copies to clipboard)                 |
 
 The key insight is within ACTION: some actions (close, submit) are fast in-process HTTP calls to the GitHub API, while others (land, fix-conflicts, address) are long-running subprocess commands with streaming output. The distinction matters because streaming commands need the `repo_root` capability marker and the full cross-thread UI update pipeline described in [streaming-output.md](streaming-output.md).
 
@@ -47,12 +47,12 @@ The key insight is within ACTION: some actions (close, submit) are fast in-proce
 
 Commands fall into four availability tiers:
 
-| Tier | Predicate | Commands | Rationale |
-| ---- | --------- | -------- | --------- |
-| Always available | `lambda _: True` | close_plan, copy_prepare, copy_prepare_activate, copy_submit | Only need `issue_number`, which is always present |
-| Needs issue URL | `issue_url is not None` | submit_to_queue, copy_replan | Requires the issue to exist on GitHub (not just locally) |
-| Needs PR | `pr_number is not None` | fix_conflicts_remote, address_remote, open_pr, copy_checkout, copy_pr_checkout | PR must be linked to the plan |
-| Compound condition | Multiple fields non-null | land_pr (needs PR + OPEN state + run URL) | Landing requires all CI infrastructure to be present |
+| Tier               | Predicate                | Commands                                                                       | Rationale                                                |
+| ------------------ | ------------------------ | ------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| Always available   | `lambda _: True`         | close_plan, copy_prepare, copy_prepare_activate, copy_submit                   | Only need `issue_number`, which is always present        |
+| Needs issue URL    | `issue_url is not None`  | submit_to_queue, copy_replan                                                   | Requires the issue to exist on GitHub (not just locally) |
+| Needs PR           | `pr_number is not None`  | fix_conflicts_remote, address_remote, open_pr, copy_checkout, copy_pr_checkout | PR must be linked to the plan                            |
+| Compound condition | Multiple fields non-null | land_pr (needs PR + OPEN state + run URL)                                      | Landing requires all CI infrastructure to be present     |
 
 **Anti-pattern**: Writing `is_available=lambda ctx: True` for a command that uses `ctx.row.pr_number`. The predicate will allow execution when `pr_number` is None, causing a runtime error. This is why the [three-layer null validation](adding-commands.md) pattern exists — the predicate is necessary but not sufficient.
 

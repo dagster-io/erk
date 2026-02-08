@@ -22,10 +22,10 @@ This matters in erk because the erkdesk auto-refresh pattern uses `setInterval` 
 
 ## The Critical Decision: Sync vs Async Advancement
 
-| Method | Microtask flushing | Use when |
-|---|---|---|
-| `vi.advanceTimersByTime()` | None — blocks microtask queue | Timer callbacks are purely synchronous (no Promises, no `await`, no `.then()`) |
-| `vi.advanceTimersByTimeAsync()` | Flushes microtasks between timer ticks | Timer callbacks trigger any async work (API calls, state updates, IPC) |
+| Method                          | Microtask flushing                     | Use when                                                                       |
+| ------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------ |
+| `vi.advanceTimersByTime()`      | None — blocks microtask queue          | Timer callbacks are purely synchronous (no Promises, no `await`, no `.then()`) |
+| `vi.advanceTimersByTimeAsync()` | Flushes microtasks between timer ticks | Timer callbacks trigger any async work (API calls, state updates, IPC)         |
 
 **Default to the async variant.** The synchronous variant is only safe when you can guarantee the entire callback chain is synchronous — which is rare in React components. Using the wrong variant doesn't throw an error; it silently skips Promise continuations.
 
