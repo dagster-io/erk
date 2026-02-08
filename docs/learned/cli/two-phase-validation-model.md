@@ -9,7 +9,7 @@ tripwires:
   - action: "implementing a command with user confirmations interleaved between mutations"
     warning: "Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Interleaving confirmations with mutations causes partial state on decline."
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # Two-Phase Validation Model
