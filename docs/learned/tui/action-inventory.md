@@ -1,71 +1,74 @@
 ---
-title: TUI Action Command Inventory
+title: TUI Command Architecture
 read_when:
-  - "adding actions to the dashboard"
-  - "understanding TUI command execution patterns"
-  - "replicating TUI functionality in another frontend"
-last_audited: "2026-02-05"
+  - "adding a new command to the TUI or desktop dashboard"
+  - "understanding how command availability is determined"
+  - "choosing which execution pattern a new command should use"
+tripwires:
+  - action: "adding a command without an availability predicate"
+    warning: "Every command needs an is_available predicate based on PlanRowData field presence. Commands without predicates appear when they can't execute."
+  - action: "adding an ACTION command that executes instantly"
+    warning: "ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories."
+last_audited: "2026-02-08"
 audit_result: edited
 ---
 
-# TUI Action Command Inventory
+# TUI Command Architecture
 
-Complete inventory of all TUI commands. See `src/erk/tui/commands/registry.py` for the canonical command definitions with availability predicates and execution patterns.
+The TUI command system uses a data-driven registry pattern where commands declare their own availability based on `PlanRowData` field presence. This decouples command definitions from UI rendering, enabling the same registry to serve multiple frontends (TUI command palette, desktop toolbar).
 
-## Command Categories
+## Why Data-Driven Availability
 
-| Category | Count | Purpose                                         |
-| -------- | ----- | ----------------------------------------------- |
-| ACTION   | 5     | Mutative operations (close, submit, land, etc.) |
-| OPEN     | 3     | Browser navigation                              |
-| COPY     | 6     | Clipboard operations                            |
+<!-- Source: src/erk/tui/commands/registry.py, get_all_commands -->
 
-**Total:** 14 commands
+Commands don't check "can I run?" at execution time — they declare upfront what data they need via `is_available` predicates. This design was chosen because:
 
-## ACTION Commands (5)
+1. **Multiple consumers need the same logic.** The TUI command palette (`MainListCommandProvider`, `PlanCommandProvider`) and the desktop dashboard toolbar both need to know which actions are valid for a given row. Centralizing predicates in the registry avoids duplicating availability logic across frontends.
 
-| Command              | Display                                        | Shortcut | Availability              | Execution         |
-| -------------------- | ---------------------------------------------- | -------- | ------------------------- | ----------------- |
-| close_plan           | `erk plan close <issue_number>`                | —        | Always                    | In-process HTTP   |
-| submit_to_queue      | `erk plan submit <issue_number>`               | `s`      | Has issue URL             | In-process HTTP   |
-| land_pr              | `erk land <pr_number>`                         | —        | Open PR with workflow run | Subprocess (600s) |
-| fix_conflicts_remote | `erk launch pr-fix-conflicts --pr <pr_number>` | `5`      | Has PR                    | Subprocess (600s) |
-| address_remote       | `erk launch pr-address --pr <pr_number>`       | —        | Has PR                    | Subprocess (600s) |
+2. **Availability depends on `PlanRowData` nullability.** Each `PlanRowData` field is nullable for a reason (no PR yet, no workflow run, etc.). The predicates express which combination of non-null fields a command requires. This makes the availability contract explicit and testable.
 
-## OPEN Commands (3)
+3. **Commands that are always available use `lambda _: True`** — these are plan-level operations (close, prepare, submit) that only need the issue number, which is always present.
 
-| Command    | Shortcut | Availability  | Action          |
-| ---------- | -------- | ------------- | --------------- |
-| open_issue | `i`      | Has issue URL | Open in browser |
-| open_pr    | `p`      | Has PR URL    | Open in browser |
-| open_run   | `r`      | Has run URL   | Open in browser |
+## Category-to-Execution Pattern Mapping
 
-## COPY Commands (6)
+Categories are not just cosmetic labels — they correlate strongly with execution characteristics:
 
-| Command               | Display                                            | Shortcut | Availability  |
-| --------------------- | -------------------------------------------------- | -------- | ------------- |
-| copy_checkout         | `erk br co <branch>` or `erk pr co <pr_number>`    | `c`      | Has branch    |
-| copy_pr_checkout      | `source "$(erk pr checkout <pr> --script)" && ...` | `e`      | Has PR        |
-| copy_prepare          | `erk prepare <issue_number>`                       | `1`      | Always        |
-| copy_prepare_activate | `source "$(erk prepare <issue> --script)" && ...`  | `4`      | Always        |
-| copy_submit           | `erk plan submit <issue_number>`                   | `3`      | Always        |
-| copy_replan           | `erk plan replan <issue_number>`                   | `6`      | Has issue URL |
+| Category | Execution Pattern                       | Latency    | Side Effects                               |
+| -------- | --------------------------------------- | ---------- | ------------------------------------------ |
+| ACTION   | In-process HTTP or subprocess streaming | 500ms–600s | Mutates GitHub state or triggers workflows |
+| OPEN     | Browser launch                          | Instant    | None (navigates browser)                   |
+| COPY     | Clipboard write                         | Instant    | None (copies to clipboard)                 |
 
-## Execution Patterns
+The key insight is within ACTION: some actions (close, submit) are fast in-process HTTP calls to the GitHub API, while others (land, fix-conflicts, address) are long-running subprocess commands with streaming output. The distinction matters because streaming commands need the `repo_root` capability marker and the full cross-thread UI update pipeline described in [streaming-output.md](streaming-output.md).
 
-Three execution patterns across all commands:
+## Availability Predicate Patterns
 
-- **In-process HTTP** (2 commands): Fast operations completing in <500ms
-- **Subprocess Streaming** (3 commands): Long-running operations up to 600s with real-time output
-- **Browser/Clipboard** (9 commands): Instant operations
+<!-- Source: src/erk/tui/commands/registry.py, get_all_commands -->
 
-## Command Context
+Commands fall into four availability tiers:
 
-All commands receive a `CommandContext` with the selected `PlanRowData` row and `PlanDataProvider` interface. See `src/erk/tui/commands/types.py` for the type definition.
+| Tier               | Predicate                | Commands                                                                       | Rationale                                                |
+| ------------------ | ------------------------ | ------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| Always available   | `lambda _: True`         | close_plan, copy_prepare, copy_prepare_activate, copy_submit                   | Only need `issue_number`, which is always present        |
+| Needs issue URL    | `issue_url is not None`  | submit_to_queue, copy_replan                                                   | Requires the issue to exist on GitHub (not just locally) |
+| Needs PR           | `pr_number is not None`  | fix_conflicts_remote, address_remote, open_pr, copy_checkout, copy_pr_checkout | PR must be linked to the plan                            |
+| Compound condition | Multiple fields non-null | land_pr (needs PR + OPEN state + run URL)                                      | Landing requires all CI infrastructure to be present     |
+
+**Anti-pattern**: Writing `is_available=lambda ctx: True` for a command that uses `ctx.row.pr_number`. The predicate will allow execution when `pr_number` is None, causing a runtime error. This is why the [three-layer null validation](adding-commands.md) pattern exists — the predicate is necessary but not sufficient.
+
+## Cross-Frontend Command Reuse
+
+The registry serves as a shared contract between the TUI and desktop dashboard:
+
+- **TUI**: `MainListCommandProvider` and `PlanCommandProvider` iterate `get_available_commands()`, formatting each as a `DiscoveryHit` or `Hit` for Textual's command palette.
+- **Desktop dashboard**: The toolbar reads the same availability logic to enable/disable buttons. See [interaction-model.md](../desktop-dash/interaction-model.md) for how desktop diverges from TUI conventions.
+
+This shared registry means adding a command to the TUI automatically makes it available for the desktop dashboard to adopt — the availability logic doesn't need to be re-implemented.
 
 ## Related Documentation
 
-- [TUI Data Contract Reference](data-contract.md) - PlanRowData fields that commands operate on
-- [TUI Command Execution](command-execution.md) - Implementation details of execution patterns
-- [TUI Streaming Output](streaming-output.md) - Cross-thread UI updates for streaming commands
-- [Desktop Dashboard Interaction Model](../desktop-dash/interaction-model.md) - How commands translate to desktop UI
+- [Adding Commands to TUI](adding-commands.md) — Step-by-step process and three-layer null validation
+- [Command Execution Strategies](command-execution.md) — Streaming vs executor patterns, stdin deadlock prevention
+- [TUI Streaming Output](streaming-output.md) — Cross-thread UI updates for long-running commands
+- [TUI Data Contract](data-contract.md) — PlanRowData fields that predicates evaluate
+- [Desktop Dashboard Interaction Model](../desktop-dash/interaction-model.md) — How the same commands map to desktop GUI

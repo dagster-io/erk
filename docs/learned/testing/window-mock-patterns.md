@@ -1,181 +1,103 @@
 ---
-title: Window Mock Patterns for Electron IPC Testing
+title: Vitest Mock Reset Discipline for Shared Global Mocks
 category: testing
 read_when:
   - testing erkdesk components that use window.erkdesk IPC bridge
   - encountering mock contamination between tests
   - tests passing individually but failing in CI
+  - writing beforeEach blocks that configure Vitest mocks
 tripwires:
-  - action: "testing components that use window.erkdesk IPC bridge"
-    warning: "Mock window.erkdesk in setup.ts, but always call mockReset() in beforeEach before setting mockResolvedValue(). Forgetting this causes mock value contamination - tests pass individually but fail in CI."
-  - action: "setting mock return values in test beforeEach"
-    warning: "Order matters: call mockReset() FIRST (clears previous test's values), THEN mockResolvedValue(). Reverse order has no effect."
+  - action: "setting mock return values in test beforeEach without calling mockReset() first"
+    warning: "Always call mockReset() BEFORE mockResolvedValue(). Without reset, previous test's mock values persist — causing tests to pass individually but fail in CI due to cross-test contamination."
+  - action: "resetting mocks in afterEach instead of beforeEach"
+    warning: "Use beforeEach for mock resets, not afterEach. If a test throws before afterEach runs, the mock remains contaminated for the next test."
 ---
 
-# Window Mock Patterns for Electron IPC Testing
+# Vitest Mock Reset Discipline for Shared Global Mocks
 
-Erkdesk components communicate with the Electron main process via the `window.erkdesk` IPC bridge. Testing these components requires global window mocks with careful reset discipline to prevent contamination between tests.
+## The CI Contamination Problem
 
-## The Problem
+When a global mock (like `window.erkdesk` in erkdesk's test setup) is shared across tests, Vitest mock state leaks between tests unless explicitly cleared. This produces a dangerous failure mode:
 
-Tests that don't properly reset mocks exhibit a dangerous failure pattern:
+- Tests pass when run individually during development
+- Tests fail when run sequentially in CI because mock values from test A persist into test B
 
-- ✅ Tests pass when run individually (`pnpm test -- PlanList.test.tsx`)
-- ❌ Tests fail when run sequentially in CI (mock values from test A persist into test B)
+This is especially insidious because the developer never sees the failure locally — it only manifests in CI where test execution order differs.
 
-This is a **silent failure** - the test suite appears healthy during development but fails unpredictably in CI.
+## Why This Happens
 
-## The Root Cause
+Vitest's `mockResolvedValue()` is additive, not replacing. Calling it a second time doesn't clear the previous value — it queues a new one. Without an explicit `mockReset()`, mock state accumulates across tests in the same file and across files sharing a global mock.
 
-Vitest mocks are stateful. When you call `mockResolvedValue()` on a mock, that value persists until explicitly cleared. Without reset discipline:
+## The Two-Step Reset Pattern
+
+<!-- Source: erkdesk/src/renderer/App.test.tsx -->
+
+Every `beforeEach` that configures a shared mock must follow a strict two-step sequence:
+
+1. **`mockReset()`** — clears all previous mock configuration (return values, implementations, call history)
+2. **`mockResolvedValue()` / `mockImplementation()`** — sets this test's specific behavior
+
+See the `beforeEach` block in `App.test.tsx` for the canonical example — it resets every `window.erkdesk` method individually before each test.
+
+### Anti-Patterns
+
+**WRONG: Missing reset**
 
 ```typescript
-// Test A
+// BUG: Previous test's mockResolvedValue still queued
 beforeEach(() => {
-  vi.mocked(window.erkdesk.invoke).mockResolvedValue({ plans: [planA] });
-});
-
-// Test B runs next in CI
-beforeEach(() => {
-  // BUG: planA is still in the mock! Test B sees planA instead of planB
-  vi.mocked(window.erkdesk.invoke).mockResolvedValue({ plans: [planB] });
-});
-```
-
-The second `mockResolvedValue()` call doesn't clear the first - it adds to the queue. Test B receives stale data.
-
-## The Solution: mockReset() Discipline
-
-**Always call `mockReset()` before setting test-specific mock values.**
-
-### Pattern: Global Mock Setup
-
-Define the mock once in `setup.ts`:
-
-```typescript
-// erkdesk/vitest-setup/setup.ts
-import { vi } from "vitest";
-
-declare global {
-  interface Window {
-    erkdesk: {
-      invoke: (channel: string, ...args: unknown[]) => Promise<unknown>;
-    };
-  }
-}
-
-// Create global mock (runs once before all tests)
-window.erkdesk = {
-  invoke: vi.fn(),
-};
-```
-
-### Pattern: Test-Specific Reset + Value
-
-**Every test file** that uses `window.erkdesk.invoke` must follow this pattern:
-
-```typescript
-import { vi } from 'vitest'
-
-describe('PlanList', () => {
-  beforeEach(() => {
-    // Step 1: RESET (clears previous test's values)
-    vi.mocked(window.erkdesk.invoke).mockReset()
-
-    // Step 2: SET (this test's values)
-    vi.mocked(window.erkdesk.invoke).mockResolvedValue({
-      plans: [/* test data */],
-    })
-  })
-
-  it('renders plans', async () => {
-    render(<PlanList />)
-    await waitFor(() => {
-      expect(screen.getByText('Plan Title')).toBeInTheDocument()
-    })
-  })
-})
-```
-
-### ❌ Broken Pattern (No Reset)
-
-```typescript
-beforeEach(() => {
-  // BUG: Missing mockReset() - previous test's values persist
-  vi.mocked(window.erkdesk.invoke).mockResolvedValue({ plans: [planB] });
+  vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+    success: true,
+    plans: [],
+  });
 });
 ```
 
-**Symptom**: Tests pass individually, fail in CI with unexpected data.
+Symptom: Tests pass alone, fail in CI with unexpected data from a previous test.
 
-### ❌ Broken Pattern (Wrong Order)
+**WRONG: Reset after set**
 
 ```typescript
+// BUG: mockReset() wipes the value you just configured
 beforeEach(() => {
-  // BUG: Reset AFTER setting value has no effect
-  vi.mocked(window.erkdesk.invoke).mockResolvedValue({ plans: [planB] });
-  vi.mocked(window.erkdesk.invoke).mockReset(); // Too late! Values already cleared
+  vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+    success: true,
+    plans: [],
+  });
+  vi.mocked(window.erkdesk.fetchPlans).mockReset(); // Oops — now returns undefined
 });
 ```
 
-**Symptom**: Tests fail with "received undefined" errors.
+Symptom: Tests fail with undefined/null errors.
 
-## Order Matters
+## Why beforeEach, Not afterEach
 
-The correct sequence is:
+Resetting in `afterEach` is fragile: if a test throws an unhandled error, `afterEach` may not run (depending on the test runner configuration), leaving the mock contaminated for the next test. Resetting in `beforeEach` guarantees clean state regardless of how the previous test exited.
 
-1. **mockReset()** - clear previous test's mock configuration
-2. **mockResolvedValue()** - set this test's return value
+## The Two-Layer Mock Architecture
 
-Reversing the order clears the value you just set.
+<!-- Source: erkdesk/src/test/setup.ts -->
+<!-- Source: erkdesk/src/types/erkdesk.d.ts, ErkdeskAPI -->
 
-## Why Not afterEach?
+erkdesk's IPC mocks operate at two layers:
 
-Resetting in `afterEach` is risky - if a test throws an error before `afterEach` runs, the mock remains contaminated. **Always reset in `beforeEach`** to guarantee clean state at the start of each test.
+| Layer                  | Purpose                                                    | Where                          | Staleness protection                                                |
+| ---------------------- | ---------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------- |
+| **Global defaults**    | Safe fallback values so components render without crashing | `setup.ts`                     | Typed against `ErkdeskAPI` — adding a new method forces mock update |
+| **Per-test overrides** | Scenario-specific return values                            | `beforeEach` in each test file | `mockReset()` clears the previous test's configuration first        |
 
-## Channel-Specific Mocking
+The global mock in `setup.ts` is typed against the `ErkdeskAPI` interface, so the TypeScript compiler enforces that the mock stays in sync with the real IPC bridge — a new method on the interface produces a compile error until the mock is updated.
 
-If your component calls multiple IPC channels, use `mockImplementation` with a switch:
+The key insight: global defaults exist to prevent crashes when a test doesn't configure a specific method. Per-test `mockReset()` + `mockResolvedValue()` overrides the defaults with scenario-specific behavior. Without the reset step, you get the previous test's overrides instead of the global defaults.
 
-```typescript
-beforeEach(() => {
-  vi.mocked(window.erkdesk.invoke).mockReset();
-  vi.mocked(window.erkdesk.invoke).mockImplementation(
-    async (channel: string) => {
-      switch (channel) {
-        case "get-plans":
-          return {
-            plans: [
-              /* data */
-            ],
-          };
-        case "get-status":
-          return { status: "ok" };
-        default:
-          throw new Error(`Unmocked channel: ${channel}`);
-      }
-    },
-  );
-});
-```
+## When to Reset Specific Methods vs All Methods
 
-The `default` case catches accidental calls to unmocked channels during test development.
+<!-- Source: erkdesk/src/renderer/App.test.tsx -->
+<!-- Source: erkdesk/src/renderer/components/SplitPane.test.tsx -->
 
-## Verification Pattern
-
-To assert that a component called the IPC bridge correctly:
-
-```typescript
-it('fetches plans on mount', async () => {
-  render(<PlanList />)
-
-  await waitFor(() => {
-    expect(window.erkdesk.invoke).toHaveBeenCalledWith('get-plans')
-  })
-})
-```
+`App.test.tsx` resets every `window.erkdesk` method because App calls most of them. `SplitPane.test.tsx` resets only `updateWebViewBounds` because that's the only method SplitPane uses directly. The principle: reset every method your test's component calls, no more. Resetting methods your component doesn't use adds noise without preventing bugs.
 
 ## Related
 
-- [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) - Stubbing missing DOM APIs
-- [Erkdesk Component Testing Patterns](erkdesk-component-testing.md) - Async state testing with waitFor()
+- [Erkdesk Component Test Architecture](erkdesk-component-testing.md) — two-layer test split (App integration vs component unit) and IPC mock architecture overview
+- [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) — the environment stub layer (scrollIntoView, ResizeObserver) that complements the behavior mock layer

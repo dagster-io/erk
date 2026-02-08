@@ -3,132 +3,87 @@ title: Frozen Dataclass Test Doubles
 read_when:
   - "implementing a fake for an ABC interface"
   - "adding mutation tracking to a test double"
-  - "understanding the frozen dataclass with mutable internals pattern"
+  - "choosing between frozen dataclass fakes and __init__-based fakes"
   - "writing tests that assert on method call parameters"
-last_audited: "2026-02-05"
+tripwires:
+  - action: "exposing a mutation tracking list directly as a property without copying"
+    warning: "Return list(self._tracked_list) from properties, not self._tracked_list. Direct exposure lets test code accidentally mutate the tracking state."
+  - action: "tracking only the primary argument in a mutation tuple, omitting flags or options"
+    warning: "Track ALL call parameters in tuples (e.g., (branch, force) not just branch). Lost context leads to undertested behavior."
+  - action: "creating a fake that uses __init__ when frozen dataclass would work"
+    warning: "FakeBranchManager uses frozen dataclass because its state is simple and declarative. FakeGitHub uses __init__ because it has 30+ constructor params. Choose based on complexity."
+last_audited: "2026-02-08"
 audit_result: edited
 ---
 
 # Frozen Dataclass Test Doubles
 
-This pattern combines frozen dataclasses (immutability guarantees) with mutable internal lists (test observability) to create effective test doubles.
+Erk's gateway fakes use two distinct patterns for mutation tracking: frozen dataclasses with mutable internals (for simpler fakes) and `__init__`-based classes (for complex fakes). Both patterns serve the same purpose — recording method calls so tests can assert on what happened — but the choice between them has architectural consequences.
 
-## The Pattern
+## Why Two Patterns Exist
 
-```python
-@dataclass(frozen=True)
-class FakeBranchManager(BranchManager):
-    # Test data - provided at construction
-    pr_info: dict[str, PrInfo] = field(default_factory=dict)
+The codebase uses frozen dataclass fakes and `__init__`-based fakes for different situations. The split isn't arbitrary — it reflects a complexity threshold.
 
-    # Mutation tracking - mutable despite frozen
-    _deleted_branches: list[tuple[str, bool]] = field(default_factory=list)
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py, FakeBranchManager -->
 
-    def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
-        # Append to internal list - mutates despite frozen dataclass
-        self._deleted_branches.append((branch, force))
+`FakeBranchManager` uses `@dataclass(frozen=True)` because it has a manageable number of fields (around 15), all with `field(default_factory=...)` defaults. The frozen constraint provides a useful guarantee: field references can't be reassigned after construction, so a mutation tracking list can't be accidentally replaced.
 
-    @property
-    def deleted_branches(self) -> list[tuple[str, bool]]:
-        # Return a copy to prevent external mutation
-        return list(self._deleted_branches)
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py, FakeGitHub -->
 
-## Why This Works
+`FakeGitHub` uses a plain `__init__` because it has 30+ constructor parameters covering PRs, workflows, issues, reviews, diffs, labels, gists, and commit statuses. Making this frozen would gain little — the class is already too complex for the frozen constraint to meaningfully protect against misuse. The `__init__` approach also allows mutation tracking lists to be initialized imperatively alongside the pre-configured state.
 
-The dataclass is frozen (immutable), but:
+| Criterion                     | Frozen Dataclass                           | `__init__`-based                      |
+| ----------------------------- | ------------------------------------------ | ------------------------------------- |
+| Constructor complexity        | < ~15 fields                               | 15+ fields                            |
+| State initialization          | Declarative (`field(default_factory=...)`) | Imperative (assignment in `__init__`) |
+| Field reassignment protection | Yes (`FrozenInstanceError`)                | No                                    |
+| Erk examples                  | `FakeBranchManager`                        | `FakeGitHub`, `FakeGitBranchOps`      |
 
-- The **reference** to the list is frozen (can't reassign `_deleted_branches`)
-- The **list contents** are mutable (can append/remove items)
-- This is intentional Python semantics, not a bug
+## The Mutable-Internals Trick
 
-## Benefits
+Frozen dataclasses prevent field _reassignment_, but they don't prevent mutation of the _contents_ of mutable fields. A `list` field in a frozen dataclass can still be appended to — only the reference to the list is frozen, not the list itself. This is standard Python reference semantics, not a hack.
 
-**1. Immutability Contract**
+This means frozen fakes can track mutations by appending to internal lists while still preventing accidental field replacement. A test can't do `fake._deleted_branches = []` (raises `FrozenInstanceError`), but the fake's own methods can do `self._deleted_branches.append(...)`.
 
-The frozen dataclass prevents accidental field reassignment:
+## The Copy-on-Read Property Pattern
 
-```python
-fake = FakeBranchManager()
-fake._deleted_branches = []  # Raises FrozenInstanceError
-```
+Both fake variants expose mutation tracking via properties that return **copies** of internal lists. This prevents test code from accidentally modifying the tracking state through the returned reference.
 
-**2. Test Observability**
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py, FakeBranchManager.deleted_branches -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py, FakeGitBranchOps.deleted_branches -->
 
-Methods can record their calls for assertions:
+See `FakeBranchManager.deleted_branches` and `FakeGitBranchOps.deleted_branches` for the canonical pattern — both return `list(self._internal_list)`.
+
+**Anti-pattern — direct exposure:**
 
 ```python
-fake = FakeBranchManager()
-fake.delete_branch(repo_root, "feature", force=True)
-
-# Assert the method was called with expected parameters
-assert ("feature", True) in fake.deleted_branches
-```
-
-**3. Parameter Tracking**
-
-Track full call context, not just what was called:
-
-```python
-# Old - loses force flag information
-_deleted_branches: list[str]
-
-# New - preserves all call context
-_deleted_branches: list[tuple[str, bool]]
-```
-
-## Property Pattern for Safe Access
-
-Always expose mutation lists via properties that return copies:
-
-```python
+# WRONG: Returns the actual tracking list, not a copy
 @property
-def deleted_branches(self) -> list[tuple[str, bool]]:
-    """Get list of deleted branches for test assertions."""
-    return list(self._deleted_branches)  # Return a copy
+def deleted_branches(self) -> list[str]:
+    return self._deleted_branches  # Test code can .clear() this!
 ```
 
-This prevents test code from accidentally modifying the tracking list.
+## Track All Parameters, Not Just Primary Keys
 
-## Common Tuple Structures
+Mutation tuples should capture the full call context — every parameter that affects behavior. Tracking only the primary argument (e.g., branch name) discards information that tests need to verify.
 
-Different operations need different information tracked:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py, FakeBranchManager -->
 
-| Operation       | Tuple Structure              | Example                         |
-| --------------- | ---------------------------- | ------------------------------- |
-| Branch creation | `(branch_name, base_branch)` | `("feature", "main")`           |
-| Branch deletion | `(branch_name, force)`       | `("feature", True)`             |
-| Branch tracking | `(branch_name, parent)`      | `("feature", "main")`           |
-| Tracking branch | `(branch, remote_ref)`       | `("feature", "origin/feature")` |
+`FakeBranchManager` demonstrates this consistently: `_deleted_branches` tracks `(branch, force)`, `_created_branches` tracks `(branch_name, base_branch)`, `_created_tracking_branches` tracks `(branch, remote_ref)`. The `force` flag on deletion and the `base_branch` on creation are both behaviors that callers care about testing.
 
-## Test Assertions
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py, FakeGitHub -->
 
-```python
-def test_delete_branch_tracks_force_flag() -> None:
-    fake = FakeBranchManager()
+`FakeGitHub` takes this further with `_created_prs` tracking 5-tuples of `(branch, title, body, base, draft)` and `_created_commit_statuses` tracking 5-tuples of `(repo, sha, state, context, description)`.
 
-    fake.delete_branch(Path("/repo"), "branch-1", force=False)
-    fake.delete_branch(Path("/repo"), "branch-2", force=True)
+## Linked Mutation Tracking Across Fakes
 
-    assert fake.deleted_branches == [
-        ("branch-1", False),
-        ("branch-2", True),
-    ]
-```
+When a higher-level fake (like `FakeBranchManager`) delegates to a lower-level fake (like `FakeGitBranchOps`), mutations need to be visible through both interfaces. Without linking, tests that check `FakeGit.deleted_branches` won't see deletions that went through `BranchManager`.
 
-## When to Use This Pattern
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py, FakeGitBranchOps.link_mutation_tracking -->
 
-- Implementing fakes for ABC interfaces
-- Any test double that needs to track method calls
-- When you need to assert both "what was called" and "how it was called"
-
-## Reference Implementations
-
-- `FakeBranchManager`: `packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py`
-- `FakeGitHub`: `packages/erk-shared/src/erk_shared/gateway/github/fake.py`
-- `FakeGitBranchOps`: `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py`
+`FakeGitBranchOps.link_mutation_tracking()` solves this by replacing its internal tracking lists with references to the parent fake's lists. After linking, mutations through either path are recorded in the same lists. This is why `FakeGitBranchOps` uses `__init__` instead of frozen dataclass — the linking method needs to reassign `self._created_branches` and other fields, which `frozen=True` would prevent.
 
 ## Related Documentation
 
-- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) - Full fake implementation checklist
-- [BranchManager Abstraction](../architecture/branch-manager-abstraction.md) - The abstraction this pattern supports
+- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 5-file pattern that fakes implement, including the fake mutation tracking checklist
+- [BranchManager Abstraction](../architecture/branch-manager-abstraction.md) — the dual-mode abstraction that motivates the frozen dataclass fake variant
