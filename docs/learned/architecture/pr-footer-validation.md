@@ -1,6 +1,10 @@
 ---
-audit_result: edited
+title: PR Footer Format Validation
 last_audited: "2026-02-08"
+audit_result: clean
+tripwires:
+  - action: "modifying PR footer format"
+    warning: "Update generator, parser, AND validator in sync. Add support for new format BEFORE deprecating old format. Never break parsing of existing PRs."
 read_when:
   - working with PR metadata footer format
   - modifying PR footer generation or parsing

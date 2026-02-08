@@ -1,6 +1,10 @@
 ---
-audit_result: edited
+title: Gateway Removal Pattern
 last_audited: "2026-02-07"
+audit_result: clean
+tripwires:
+  - action: "deleting a gateway after consolidating into another"
+    warning: "Follow complete removal checklist: verify no references, delete all 5 layers, clean up compositions, update docs, run full test suite."
 read_when:
   - Consolidating two gateways into one
   - Removing deprecated gateway implementations

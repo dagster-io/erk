@@ -18,7 +18,7 @@ tripwires:
   - action: Return non-zero exit codes for batch command failures
     score: 6
 last_audited: "2026-02-08"
-audit_result: edited
+audit_result: clean
 ---
 
 # Batch Exec Commands

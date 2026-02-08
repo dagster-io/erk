@@ -1,6 +1,12 @@
 ---
-audit_result: edited
+title: Re-Export Pattern
 last_audited: "2026-02-08"
+audit_result: clean
+tripwires:
+  - action: "adding re-exports to gateway implementation modules"
+    warning: "Only re-export types that genuinely improve public API. Add # noqa: F401 - re-exported for <reason> comment."
+  - action: "suppressing F401 (unused import) warnings"
+    warning: "Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import."
 read_when:
   - Creating public API surface from internal gateway modules
   - Simplifying import paths for commonly used types
