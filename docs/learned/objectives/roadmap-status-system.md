@@ -36,11 +36,11 @@ Both `in-progress` (hyphenated, human-friendly in markdown) and `in_progress` (u
 
 When the Status column is `-` or empty (or any unrecognized value), the parser falls through to infer status from the PR column:
 
-| PR Column Value | Inferred Status | Reasoning                                  |
-| --------------- | --------------- | ------------------------------------------ |
-| `#123`          | done            | A merged PR means work is complete         |
-| `plan #456`     | in_progress     | A plan issue means work is underway        |
-| `-` or empty    | pending         | No PR reference means work hasn't started  |
+| PR Column Value | Inferred Status | Reasoning                                 |
+| --------------- | --------------- | ----------------------------------------- |
+| `#123`          | done            | A merged PR means work is complete        |
+| `plan #456`     | in_progress     | A plan issue means work is underway       |
+| `-` or empty    | pending         | No PR reference means work hasn't started |
 
 <!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
 
@@ -48,14 +48,14 @@ See the status resolution logic in `parse_roadmap()` in `src/erk/cli/commands/ex
 
 ## Resolution Examples
 
-| Status Column | PR Column  | Final Status | Why                                            |
-| ------------- | ---------- | ------------ | ---------------------------------------------- |
-| `done`        | `-`        | done         | Explicit — no inference needed                 |
-| `-`           | `#123`     | done         | Tier 2 inference from PR                       |
-| `blocked`     | `#123`     | blocked      | Explicit overrides PR (step blocked despite PR)|
-| `-`           | `plan #45` | in_progress  | Tier 2 inference from plan reference           |
-| `pending`     | `#123`     | pending      | Explicit overrides PR (intentional hold)       |
-| `-`           | `-`        | pending      | Both empty — default                           |
+| Status Column | PR Column  | Final Status | Why                                             |
+| ------------- | ---------- | ------------ | ----------------------------------------------- |
+| `done`        | `-`        | done         | Explicit — no inference needed                  |
+| `-`           | `#123`     | done         | Tier 2 inference from PR                        |
+| `blocked`     | `#123`     | blocked      | Explicit overrides PR (step blocked despite PR) |
+| `-`           | `plan #45` | in_progress  | Tier 2 inference from plan reference            |
+| `pending`     | `#123`     | pending      | Explicit overrides PR (intentional hold)        |
+| `-`           | `-`        | pending      | Both empty — default                            |
 
 ## The Write/Read Asymmetry
 
@@ -75,13 +75,13 @@ The `erk objective check` command validates status/PR consistency after parsing.
 
 ## When to Use Each Tier
 
-| Situation                              | Approach                        | Why                                                |
-| -------------------------------------- | ------------------------------- | -------------------------------------------------- |
-| Normal workflow (plan-save, PR lands)  | Use `update-roadmap-step`       | Writes both cells atomically, always consistent    |
-| Step blocked by external dependency    | Set Status to `blocked` manually| No PR column value can express "blocked"           |
-| Step no longer needed                  | Set Status to `skipped` manually| No PR column value can express "skipped"           |
-| Intentional hold despite existing PR   | Set Status to `pending` manually| Overrides the PR inference deliberately            |
-| Quick fix via GitHub UI                | Update both cells, or set Status to `-` | Avoids the stale-status trap               |
+| Situation                             | Approach                                | Why                                             |
+| ------------------------------------- | --------------------------------------- | ----------------------------------------------- |
+| Normal workflow (plan-save, PR lands) | Use `update-roadmap-step`               | Writes both cells atomically, always consistent |
+| Step blocked by external dependency   | Set Status to `blocked` manually        | No PR column value can express "blocked"        |
+| Step no longer needed                 | Set Status to `skipped` manually        | No PR column value can express "skipped"        |
+| Intentional hold despite existing PR  | Set Status to `pending` manually        | Overrides the PR inference deliberately         |
+| Quick fix via GitHub UI               | Update both cells, or set Status to `-` | Avoids the stale-status trap                    |
 
 ## Related Documentation
 

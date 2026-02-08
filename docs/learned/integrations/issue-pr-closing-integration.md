@@ -24,11 +24,11 @@ This document covers the cross-cutting pattern of how erk ensures that closing r
 
 The submit pipeline resolves issue numbers from three sources with a strict priority hierarchy. The cross-cutting concern is that these sources live in different systems (filesystem, git, GitHub API) and must be validated against each other.
 
-| Source | When used | Why it exists |
-|---|---|---|
-| `.impl/issue.json` | Authoritative when present | Created by `erk prepare` or `erk plan submit` — explicit plan linkage |
-| Branch name (`P{N}-slug`) | Fallback when no `.impl/` | Supports manually-created worktrees from plan branches |
-| Existing PR footer | Last resort on re-submit | Preserves references after worktree recreation |
+| Source                    | When used                  | Why it exists                                                         |
+| ------------------------- | -------------------------- | --------------------------------------------------------------------- |
+| `.impl/issue.json`        | Authoritative when present | Created by `erk prepare` or `erk plan submit` — explicit plan linkage |
+| Branch name (`P{N}-slug`) | Fallback when no `.impl/`  | Supports manually-created worktrees from plan branches                |
+| Existing PR footer        | Last resort on re-submit   | Preserves references after worktree recreation                        |
 
 <!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, validate_issue_linkage -->
 
@@ -61,9 +61,9 @@ This pattern only applies to the core submit flow (`_core_submit_flow`). The Gra
 
 Plans can live in a separate repository (configured via `plans_repo` in erk config). This changes the closing reference format because GitHub requires fully-qualified references for cross-repo issue closing:
 
-| Scenario | Reference format | Why |
-|---|---|---|
-| Same-repo plans | `Closes #123` | GitHub resolves `#N` within the same repo |
+| Scenario         | Reference format        | Why                                               |
+| ---------------- | ----------------------- | ------------------------------------------------- |
+| Same-repo plans  | `Closes #123`           | GitHub resolves `#N` within the same repo         |
 | Cross-repo plans | `Closes owner/repo#123` | GitHub needs the full repo path to find the issue |
 
 <!-- Source: src/erk/cli/commands/exec/scripts/get_closing_text.py, get_closing_text -->

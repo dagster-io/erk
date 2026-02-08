@@ -26,12 +26,12 @@ These aren't edge cases — they're the norm. A plan that says "add a new gatewa
 
 ## When to Inventory
 
-| Situation | Why |
-|---|---|
+| Situation                                              | Why                                                                                                    |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | Before creating a consolidation plan from multiple PRs | Each PR may have touched files the others didn't — the union is larger than any individual PR suggests |
-| Before estimating remaining work on a partial plan | Completed work may have introduced files not in the original plan |
-| Before closing a plan issue as "complete" | The only reliable completion check is comparing actual files against planned items |
-| Before scoping a replan | Understanding what already shipped prevents duplicate work items |
+| Before estimating remaining work on a partial plan     | Completed work may have introduced files not in the original plan                                      |
+| Before closing a plan issue as "complete"              | The only reliable completion check is comparing actual files against planned items                     |
+| Before scoping a replan                                | Understanding what already shipped prevents duplicate work items                                       |
 
 ## The Comparison Step
 

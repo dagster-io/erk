@@ -24,8 +24,8 @@ The `RoadmapStep` dataclass has exactly four fields (`id`, `description`, `statu
 The current table format (this is a data format example, permitted under the One Code Rule):
 
 ```markdown
-| Step | Description | Status | PR |
-|------|-------------|--------|----|
+| Step | Description | Status | PR   |
+| ---- | ----------- | ------ | ---- |
 | 1.1  | Add auth    | done   | #123 |
 ```
 
@@ -42,14 +42,14 @@ The original plan added three columns: **Type** (task/milestone/research), **Iss
 
 If the 7-column format (or any format extension) is revisited, these are the cross-cutting touchpoints:
 
-| Component | What changes | Why |
-|-----------|-------------|-----|
-| `RoadmapStep` dataclass | New fields needed | All consumers type-check against this |
-| `parse_roadmap()` | Header detection + row parsing | Must handle both old and new formats |
-| `_replace_step_pr_in_body()` | Regex for row matching | Currently assumes exactly 4 pipe-delimited cells |
-| `serialize_phases()` | Output format selection | Must decide when to emit extended columns |
-| `objective check` validation | New semantic checks | e.g., dependency cycle detection, valid step_type values |
-| Objective issue templates | Updated table headers | New objectives should use the extended format |
+| Component                    | What changes                   | Why                                                      |
+| ---------------------------- | ------------------------------ | -------------------------------------------------------- |
+| `RoadmapStep` dataclass      | New fields needed              | All consumers type-check against this                    |
+| `parse_roadmap()`            | Header detection + row parsing | Must handle both old and new formats                     |
+| `_replace_step_pr_in_body()` | Regex for row matching         | Currently assumes exactly 4 pipe-delimited cells         |
+| `serialize_phases()`         | Output format selection        | Must decide when to emit extended columns                |
+| `objective check` validation | New semantic checks            | e.g., dependency cycle detection, valid step_type values |
+| Objective issue templates    | Updated table headers          | New objectives should use the extended format            |
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
 

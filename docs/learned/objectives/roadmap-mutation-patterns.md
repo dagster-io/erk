@@ -25,18 +25,18 @@ The roadmap table is a 4-column markdown table stored in a GitHub issue body. Tw
 
 - **Full-body rewrites** (PR landed): Landing a PR may trigger structural changes — marking a step done, collapsing completed phases, reordering, or adding narrative text. A single-cell regex replacement can't express these layout-level changes.
 
-The split isn't about capability (the full-body approach *could* do single-cell updates). It's about **blast radius** — a targeted regex replacement can't accidentally destroy unrelated content, while a full rewrite can.
+The split isn't about capability (the full-body approach _could_ do single-cell updates). It's about **blast radius** — a targeted regex replacement can't accidentally destroy unrelated content, while a full rewrite can.
 
 ## Decision Table
 
-| Workflow Event              | Pattern    | Why                                                          |
-| --------------------------- | ---------- | ------------------------------------------------------------ |
-| Plan saved to GitHub        | Surgical   | Only the PR cell of one step changes                         |
-| PR created from plan        | Surgical   | Only the PR cell of one step changes                         |
-| PR landed via `erk land`    | Full-body  | May need to restructure phases, update descriptions          |
-| Fixing a stale status value | Surgical   | Minimal blast radius for a quick correction                  |
-| Restructuring roadmap       | Full-body  | Need full control over layout, ordering, and section content |
-| Batch status updates        | Full-body  | Multiple steps changing simultaneously                       |
+| Workflow Event              | Pattern   | Why                                                          |
+| --------------------------- | --------- | ------------------------------------------------------------ |
+| Plan saved to GitHub        | Surgical  | Only the PR cell of one step changes                         |
+| PR created from plan        | Surgical  | Only the PR cell of one step changes                         |
+| PR landed via `erk land`    | Full-body | May need to restructure phases, update descriptions          |
+| Fixing a stale status value | Surgical  | Minimal blast radius for a quick correction                  |
+| Restructuring roadmap       | Full-body | Need full control over layout, ordering, and section content |
+| Batch status updates        | Full-body | Multiple steps changing simultaneously                       |
 
 ## Surgical Update: `update-roadmap-step`
 
@@ -59,9 +59,10 @@ The full-body update is orchestrated by a Claude command (not a Python script). 
 3. Rewrites the entire objective body with updated roadmap
 4. Posts both the comment and updated body
 
-**Why agent-driven instead of a script:** Landing a PR requires *judgment* — the step description might need updating if the PR title differs, completed phases might need collapsing, and the "Current Focus" section needs to shift to the next pending step. These decisions don't reduce to mechanical regex.
+**Why agent-driven instead of a script:** Landing a PR requires _judgment_ — the step description might need updating if the PR title differs, completed phases might need collapsing, and the "Current Focus" section needs to shift to the next pending step. These decisions don't reduce to mechanical regex.
 
 **Race condition risk:** The entire issue body is fetched, modified, and written back. Any edits made between fetch and write are lost. This is acceptable because:
+
 - PR landing is an infrequent event (not concurrent with other mutations)
 - The alternative — surgical edits for each sub-change — would require multiple API calls with the same race window each time
 - The action comment provides an audit trail if anything goes wrong
@@ -76,11 +77,11 @@ The full-body workflow uses a **bundled context fetch** (`erk exec objective-upd
 
 Both patterns are triggered by upstream workflow commands, not invoked directly by users:
 
-| Upstream Command  | Triggers                             | Via                                                           |
-| ----------------- | ------------------------------------ | ------------------------------------------------------------- |
-| `erk plan save`   | Surgical update to link plan         | Skill calls `update-roadmap-step` with plan reference         |
-| `erk pr submit`   | Surgical update to link PR           | Skill calls `update-roadmap-step` with PR reference           |
-| `erk land`        | Full-body update after merge         | Helpers in `objective_helpers.py` detect objective, prompt user |
+| Upstream Command | Triggers                     | Via                                                             |
+| ---------------- | ---------------------------- | --------------------------------------------------------------- |
+| `erk plan save`  | Surgical update to link plan | Skill calls `update-roadmap-step` with plan reference           |
+| `erk pr submit`  | Surgical update to link PR   | Skill calls `update-roadmap-step` with PR reference             |
+| `erk land`       | Full-body update after merge | Helpers in `objective_helpers.py` detect objective, prompt user |
 
 <!-- Source: src/erk/cli/commands/objective_helpers.py, prompt_objective_update -->
 

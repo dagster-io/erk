@@ -18,23 +18,25 @@ tripwires:
 Roadmap validation is deliberately split across two layers because they serve different purposes and have different failure modes:
 
 <!-- Source: objective_roadmap_shared.py, parse_roadmap -->
+
 **Structural validation** (in `parse_roadmap()`) answers: "Can we extract data from this markdown?" It runs during every roadmap operation — parsing, updating, checking — and returns warnings alongside whatever data it could extract. Parsing is lenient: it continues past malformed phases and collects errors rather than aborting.
 
 <!-- Source: check_cmd.py, validate_objective -->
+
 **Semantic validation** (in `validate_objective()`) answers: "Is this roadmap internally consistent?" It only runs during `erk objective check` and produces pass/fail check results. It depends on structural parsing succeeding first — if no phases parse, semantic checks are skipped and the command returns early.
 
 This separation matters because the update command needs structural parsing but not semantic validation. A step PR update shouldn't fail because phase numbering is out of order in an unrelated phase.
 
 ## Structural vs Semantic: Decision Table
 
-| Question | Level | Why |
-|---|---|---|
-| Can we find phase headers? | Structural | Without phases, no data can be extracted |
-| Does the table have the right columns? | Structural | Column structure determines if rows can be parsed |
-| Are step IDs in preferred format? | Structural (warning) | Doesn't block parsing, just flags for humans |
-| Does a "done" step have a PR reference? | Semantic | Requires cross-field reasoning about data integrity |
-| Are status and PR columns consistent? | Semantic | Requires understanding the status inference rules |
-| Is phase numbering sequential? | Semantic | Requires comparing across phases |
+| Question                                | Level                | Why                                                 |
+| --------------------------------------- | -------------------- | --------------------------------------------------- |
+| Can we find phase headers?              | Structural           | Without phases, no data can be extracted            |
+| Does the table have the right columns?  | Structural           | Column structure determines if rows can be parsed   |
+| Are step IDs in preferred format?       | Structural (warning) | Doesn't block parsing, just flags for humans        |
+| Does a "done" step have a PR reference? | Semantic             | Requires cross-field reasoning about data integrity |
+| Are status and PR columns consistent?   | Semantic             | Requires understanding the status inference rules   |
+| Is phase numbering sequential?          | Semantic             | Requires comparing across phases                    |
 
 ## The Consistency Invariants
 
@@ -49,6 +51,7 @@ The semantic checks in `validate_objective()` enforce invariants that connect th
 These invariants interact with the status inference system documented in [Roadmap Status System](roadmap-status-system.md). The update command avoids violating invariant #1 by resetting the status cell to `-` when changing the PR cell, letting inference derive the correct status.
 
 <!-- Source: update_roadmap_step.py, _replace_step_pr_in_body -->
+
 See `_replace_step_pr_in_body()` in `update_roadmap_step.py` for the status-reset-on-update logic.
 
 ## Anti-Patterns
@@ -68,12 +71,15 @@ This is why `validate_objective()` returns `ObjectiveValidationError` (couldn't 
 ## Implementation Reference
 
 <!-- Source: objective_roadmap_shared.py, parse_roadmap -->
+
 - Structural validation: `parse_roadmap()` in `objective_roadmap_shared.py`
 
 <!-- Source: check_cmd.py, validate_objective -->
+
 - Semantic validation: `validate_objective()` in `check_cmd.py`
 
 <!-- Source: update_roadmap_step.py, update_roadmap_step -->
+
 - Update-time validation: `update_roadmap_step()` in `update_roadmap_step.py`
 
 ## Related Documentation

@@ -59,30 +59,30 @@ Codex uses Rust's `#[serde(flatten)]` on item details. This means type-specific 
 
 ### Top-Level Events
 
-| Event Type       | When Emitted                   | Key Fields                                                 |
-| ---------------- | ------------------------------ | ---------------------------------------------------------- |
-| `thread.started` | Always first event             | `thread_id` (string, UUID) — only source of session ID    |
-| `turn.started`   | User prompt sent to model      | (empty object)                                             |
-| `turn.completed` | Turn finished successfully     | `usage.{input_tokens, cached_input_tokens, output_tokens}` |
-| `turn.failed`    | Turn ended with error          | `error.message`                                            |
-| `item.started`   | New item begun                 | `item.id`, `item.{type-specific fields}`                   |
-| `item.updated`   | Item status update             | `item.id`, `item.{type-specific fields}`                   |
-| `item.completed` | Item reached terminal state    | `item.id`, `item.{type-specific fields}`                   |
-| `error`          | Unrecoverable stream error     | `message`                                                  |
+| Event Type       | When Emitted                | Key Fields                                                 |
+| ---------------- | --------------------------- | ---------------------------------------------------------- |
+| `thread.started` | Always first event          | `thread_id` (string, UUID) — only source of session ID     |
+| `turn.started`   | User prompt sent to model   | (empty object)                                             |
+| `turn.completed` | Turn finished successfully  | `usage.{input_tokens, cached_input_tokens, output_tokens}` |
+| `turn.failed`    | Turn ended with error       | `error.message`                                            |
+| `item.started`   | New item begun              | `item.id`, `item.{type-specific fields}`                   |
+| `item.updated`   | Item status update          | `item.id`, `item.{type-specific fields}`                   |
+| `item.completed` | Item reached terminal state | `item.id`, `item.{type-specific fields}`                   |
+| `error`          | Unrecoverable stream error  | `message`                                                  |
 
 ### Item Types (Second-Level)
 
-| Item Type           | Purpose                    | Key Fields                                                  |
-| ------------------- | -------------------------- | ----------------------------------------------------------- |
-| `agent_message`     | Agent text response        | `text`                                                      |
-| `reasoning`         | Agent reasoning summary    | `text`                                                      |
-| `command_execution` | Shell command execution    | `command`, `aggregated_output`, `exit_code`, `status`       |
-| `file_change`       | File modifications         | `changes[].{path, kind}`, `status`                          |
-| `mcp_tool_call`     | MCP tool invocation        | `server`, `tool`, `arguments`, `result`, `error`, `status`  |
-| `collab_tool_call`  | Multi-agent collaboration  | `tool`, `sender_thread_id`, `receiver_thread_ids`, `status` |
-| `web_search`        | Web search request         | `id`, `query`, `action`                                     |
-| `todo_list`         | Agent's to-do list         | `items[].{text, completed}`                                 |
-| `error`             | Non-fatal error            | `message`                                                   |
+| Item Type           | Purpose                   | Key Fields                                                  |
+| ------------------- | ------------------------- | ----------------------------------------------------------- |
+| `agent_message`     | Agent text response       | `text`                                                      |
+| `reasoning`         | Agent reasoning summary   | `text`                                                      |
+| `command_execution` | Shell command execution   | `command`, `aggregated_output`, `exit_code`, `status`       |
+| `file_change`       | File modifications        | `changes[].{path, kind}`, `status`                          |
+| `mcp_tool_call`     | MCP tool invocation       | `server`, `tool`, `arguments`, `result`, `error`, `status`  |
+| `collab_tool_call`  | Multi-agent collaboration | `tool`, `sender_thread_id`, `receiver_thread_ids`, `status` |
+| `web_search`        | Web search request        | `id`, `query`, `action`                                     |
+| `todo_list`         | Agent's to-do list        | `items[].{text, completed}`                                 |
+| `error`             | Non-fatal error           | `message`                                                   |
 
 ### Status Enums
 
@@ -100,14 +100,14 @@ Valid values for `status` fields across item types:
 
 These differences explain why a `CodexPromptExecutor` needs entirely separate parsing logic:
 
-| Aspect                | Claude stream-json                            | Codex --json                                  | Implication                                                                     |
-| --------------------- | --------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------- |
-| Top-level type values | `assistant`, `user`, `result`                 | `thread.started`, `turn.*`, `item.*`, `error` | Completely different dispatch trees                                             |
-| Message nesting       | `message.content[]` array with typed blocks   | Flat item fields via `#[serde(flatten)]`       | Content extraction logic is incompatible                                        |
-| Tool use reporting    | `tool_use` blocks in `assistant` messages     | `command_execution` and `file_change` items   | Claude bundles tool use and text; Codex separates them as distinct items        |
-| Tool results          | `tool_result` blocks in `user` messages       | Folded into `item.completed` fields           | Claude reports results in a separate event; Codex merges them into the item     |
-| Session ID            | `session_id` at top level of every event      | `thread_id` in `thread.started` only          | Must capture thread_id from first event and carry it forward                    |
-| Completion signal     | `type: "result"` with `num_turns`, `is_error` | `turn.completed` with `usage`                 | No equivalent to Claude's `num_turns=0` hook-blocking detection                 |
+| Aspect                | Claude stream-json                            | Codex --json                                  | Implication                                                                      |
+| --------------------- | --------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
+| Top-level type values | `assistant`, `user`, `result`                 | `thread.started`, `turn.*`, `item.*`, `error` | Completely different dispatch trees                                              |
+| Message nesting       | `message.content[]` array with typed blocks   | Flat item fields via `#[serde(flatten)]`      | Content extraction logic is incompatible                                         |
+| Tool use reporting    | `tool_use` blocks in `assistant` messages     | `command_execution` and `file_change` items   | Claude bundles tool use and text; Codex separates them as distinct items         |
+| Tool results          | `tool_result` blocks in `user` messages       | Folded into `item.completed` fields           | Claude reports results in a separate event; Codex merges them into the item      |
+| Session ID            | `session_id` at top level of every event      | `thread_id` in `thread.started` only          | Must capture thread_id from first event and carry it forward                     |
+| Completion signal     | `type: "result"` with `num_turns`, `is_error` | `turn.completed` with `usage`                 | No equivalent to Claude's `num_turns=0` hook-blocking detection                  |
 | Error reporting       | Non-zero exit code + stderr                   | `turn.failed` or `error` events               | Codex reports errors in-band; Claude requires checking both exit code and stderr |
 
 ### The `num_turns` Gap
@@ -120,22 +120,22 @@ Claude's `type: "result"` event includes `num_turns`, which erk uses to detect h
 
 No `CodexPromptExecutor` exists yet. This table captures the intended mapping from Codex events to erk's `ExecutorEvent` union (see `ExecutorEvent` in `packages/erk-shared/src/erk_shared/core/prompt_executor.py`).
 
-| Codex Event                            | Erk ExecutorEvent    | Rationale                                                     |
-| -------------------------------------- | -------------------- | ------------------------------------------------------------- |
-| `item.completed` + `agent_message`     | `TextEvent`          | Direct mapping — extract `text` field                         |
-| `item.started` + `command_execution`   | `SpinnerUpdateEvent` | Shows in-progress command name while executing                |
-| `item.completed` + `command_execution` | `ToolEvent`          | Summarize command + output + exit code                        |
-| `item.completed` + `file_change`       | `ToolEvent`          | Summarize file changes                                        |
-| `item.started` + `mcp_tool_call`       | `SpinnerUpdateEvent` | Shows tool name during invocation                             |
-| `item.completed` + `mcp_tool_call`     | `ToolEvent`          | Summarize tool result or error                                |
-| `turn.failed`                          | `ErrorEvent`         | Extract `error.message`                                       |
-| `error`                                | `ErrorEvent`         | Extract `message`                                             |
-| PR URLs in `agent_message` text        | `PrUrlEvent` etc.    | Reuse existing text-based PR metadata extraction              |
-| `thread.started`                       | (capture only)       | Store `thread_id` for logging; don't emit to event consumers  |
-| `turn.started`                         | (ignored)            | No useful information for erk's event consumers               |
-| `turn.completed`                       | (ignored)            | Usage tracking only — may want to log tokens                  |
-| `item.started/updated` + `todo_list`   | `SpinnerUpdateEvent` | Optional — could show agent progress                          |
-| `item.completed` + `reasoning`         | (ignored)            | No erk consumer for reasoning summaries yet                   |
+| Codex Event                            | Erk ExecutorEvent    | Rationale                                                    |
+| -------------------------------------- | -------------------- | ------------------------------------------------------------ |
+| `item.completed` + `agent_message`     | `TextEvent`          | Direct mapping — extract `text` field                        |
+| `item.started` + `command_execution`   | `SpinnerUpdateEvent` | Shows in-progress command name while executing               |
+| `item.completed` + `command_execution` | `ToolEvent`          | Summarize command + output + exit code                       |
+| `item.completed` + `file_change`       | `ToolEvent`          | Summarize file changes                                       |
+| `item.started` + `mcp_tool_call`       | `SpinnerUpdateEvent` | Shows tool name during invocation                            |
+| `item.completed` + `mcp_tool_call`     | `ToolEvent`          | Summarize tool result or error                               |
+| `turn.failed`                          | `ErrorEvent`         | Extract `error.message`                                      |
+| `error`                                | `ErrorEvent`         | Extract `message`                                            |
+| PR URLs in `agent_message` text        | `PrUrlEvent` etc.    | Reuse existing text-based PR metadata extraction             |
+| `thread.started`                       | (capture only)       | Store `thread_id` for logging; don't emit to event consumers |
+| `turn.started`                         | (ignored)            | No useful information for erk's event consumers              |
+| `turn.completed`                       | (ignored)            | Usage tracking only — may want to log tokens                 |
+| `item.started/updated` + `todo_list`   | `SpinnerUpdateEvent` | Optional — could show agent progress                         |
+| `item.completed` + `reasoning`         | (ignored)            | No erk consumer for reasoning summaries yet                  |
 
 **Open design question:** How to detect hook blocking without `num_turns`. `NoTurnsEvent` and `NoOutputEvent` depend on Claude's `type: "result"` event, which has no Codex equivalent.
 

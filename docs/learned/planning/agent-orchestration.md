@@ -44,12 +44,12 @@ Key structural properties:
 
 Not all agents need the same model. The learn workflow demonstrates a deliberate model escalation pattern based on task type:
 
-| Task Type | Model | Rationale |
-|---|---|---|
-| Mechanical extraction (diff inventory, doc search, session mining, comment classification) | sonnet | Pattern matching and structured output; no creative judgment needed |
-| Rule-based synthesis (deduplication, classification, scoring) | sonnet | Applying explicit criteria to structured input; adversarial verification |
-| Creative authoring (plan narrative, draft content starters) | opus | Quality-critical prose that must be coherent and actionable |
-| Structured extraction (tripwire JSON from plan prose) | sonnet | Pulling structured data from natural language; mechanical |
+| Task Type                                                                                  | Model  | Rationale                                                                |
+| ------------------------------------------------------------------------------------------ | ------ | ------------------------------------------------------------------------ |
+| Mechanical extraction (diff inventory, doc search, session mining, comment classification) | sonnet | Pattern matching and structured output; no creative judgment needed      |
+| Rule-based synthesis (deduplication, classification, scoring)                              | sonnet | Applying explicit criteria to structured input; adversarial verification |
+| Creative authoring (plan narrative, draft content starters)                                | opus   | Quality-critical prose that must be coherent and actionable              |
+| Structured extraction (tripwire JSON from plan prose)                                      | sonnet | Pulling structured data from natural language; mechanical                |
 
 <!-- Source: .claude/commands/erk/learn.md, model comments on each agent launch -->
 
@@ -59,23 +59,23 @@ The model choice is set by the orchestrating command, not by the agent definitio
 
 ## When to Use 2-Tier Orchestration
 
-| Condition | 2-Tier? | Why |
-|---|---|---|
-| Multiple independent data sources | Yes | Parallel extraction saves wall-clock time |
-| Final output requires combining all sources | Yes | Sequential synthesis ensures completeness |
-| Analysis agents are expensive (10KB+ output each) | Yes | Parallelism reduces total wait time significantly |
-| Single data source, linear pipeline | No | No fan-out means no parallelism benefit |
-| Fast analysis, expensive synthesis | No | The parallel tier saves negligible time |
-| Each step's output is the next step's only input | No | This is just a sequential pipeline; tiers add unnecessary complexity |
+| Condition                                         | 2-Tier? | Why                                                                  |
+| ------------------------------------------------- | ------- | -------------------------------------------------------------------- |
+| Multiple independent data sources                 | Yes     | Parallel extraction saves wall-clock time                            |
+| Final output requires combining all sources       | Yes     | Sequential synthesis ensures completeness                            |
+| Analysis agents are expensive (10KB+ output each) | Yes     | Parallelism reduces total wait time significantly                    |
+| Single data source, linear pipeline               | No      | No fan-out means no parallelism benefit                              |
+| Fast analysis, expensive synthesis                | No      | The parallel tier saves negligible time                              |
+| Each step's output is the next step's only input  | No      | This is just a sequential pipeline; tiers add unnecessary complexity |
 
 ## Anti-Patterns
 
-| Pattern | Why It Fails |
-|---|---|
-| Launching a synthesis agent before all parallel agents complete | Synthesis receives partial input, produces plausible-but-incomplete output. See [agent-orchestration-safety.md](agent-orchestration-safety.md) for the synchronization requirement. |
-| Passing agent output inline instead of through scratch files | Bash tool truncates at ~10KB. Analysis agents routinely produce 10-30KB. Truncation is silent. See [agent-orchestration-safety.md](agent-orchestration-safety.md). |
-| Adding a new parallel agent that secretly depends on another parallel agent's output | Breaks the independence invariant. If agent B needs agent A's output, agent B belongs in the sequential tier. |
-| Skipping the verification step between tiers | Write tool can silently fail. A missing file means the synthesis agent wastes its entire context discovering the problem. |
+| Pattern                                                                              | Why It Fails                                                                                                                                                                        |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Launching a synthesis agent before all parallel agents complete                      | Synthesis receives partial input, produces plausible-but-incomplete output. See [agent-orchestration-safety.md](agent-orchestration-safety.md) for the synchronization requirement. |
+| Passing agent output inline instead of through scratch files                         | Bash tool truncates at ~10KB. Analysis agents routinely produce 10-30KB. Truncation is silent. See [agent-orchestration-safety.md](agent-orchestration-safety.md).                  |
+| Adding a new parallel agent that secretly depends on another parallel agent's output | Breaks the independence invariant. If agent B needs agent A's output, agent B belongs in the sequential tier.                                                                       |
+| Skipping the verification step between tiers                                         | Write tool can silently fail. A missing file means the synthesis agent wastes its entire context discovering the problem.                                                           |
 
 ## Adding a New Agent to the Learn Pipeline
 

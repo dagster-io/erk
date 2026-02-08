@@ -35,12 +35,12 @@ This split exists because portable skills get installed to whichever agent direc
 
 Skills are classified into two registries in `codex_portable.py`. See `codex_portable_skills()` and `claude_only_skills()` for the current lists. The classification criteria:
 
-| Criterion | Portable | Claude-Only |
-| --- | --- | --- |
-| Hooks (PreToolUse/PostToolUse) | None — all instructions self-contained in SKILL.md | May depend on hook-injected context |
-| Tool dependencies | Standard set (Read, Write, Edit, Bash, Grep, Glob) | Claude-specific (TodoWrite, EnterPlanMode, AskUserQuestion) |
-| System prompt overrides | None | May use them |
-| Session log access | None | May inspect `~/.claude/projects/` |
+| Criterion                      | Portable                                           | Claude-Only                                                 |
+| ------------------------------ | -------------------------------------------------- | ----------------------------------------------------------- |
+| Hooks (PreToolUse/PostToolUse) | None — all instructions self-contained in SKILL.md | May depend on hook-injected context                         |
+| Tool dependencies              | Standard set (Read, Write, Edit, Bash, Grep, Glob) | Claude-specific (TodoWrite, EnterPlanMode, AskUserQuestion) |
+| System prompt overrides        | None                                               | May use them                                                |
+| Session log access             | None                                               | May inspect `~/.claude/projects/`                           |
 
 **Why this matters**: Installing a skill that calls `TodoWrite` into a non-Claude project causes runtime failures. The registry prevents `erk artifact sync` from copying incompatible skills.
 

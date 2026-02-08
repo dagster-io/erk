@@ -21,28 +21,31 @@ The cycle risk is real because the learn pipeline is automated: after a PR lands
 
 Cycle prevention is enforced at multiple points because learn plans flow through several different code paths. Each enforcement point serves a different workflow entry:
 
-| Enforcement Point | What It Checks | Why There |
-|---|---|---|
-| `/erk:learn` skill (Step 1) | Target issue labels include `erk-learn` → reject | Primary entry: agent-driven learn invocation |
-| `erk land` pre-flight | Issue has `erk-learn` label → skip learn prompt | Prevents "did you learn from this?" prompt for learn plans themselves |
-| `is_issue_learn_plan()` in submit | Label check helper | Shared utility for branch/submit workflows |
+| Enforcement Point                 | What It Checks                                   | Why There                                                             |
+| --------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------- |
+| `/erk:learn` skill (Step 1)       | Target issue labels include `erk-learn` → reject | Primary entry: agent-driven learn invocation                          |
+| `erk land` pre-flight             | Issue has `erk-learn` label → skip learn prompt  | Prevents "did you learn from this?" prompt for learn plans themselves |
+| `is_issue_learn_plan()` in submit | Label check helper                               | Shared utility for branch/submit workflows                            |
 
 <!-- Source: .claude/commands/erk/learn.md:38-53 -->
+
 The `/erk:learn` skill performs the authoritative check in its Step 1 by fetching the issue via `erk exec get-issue-body` and inspecting the `labels` array. If `erk-learn` is present, the skill halts with a cycle prevention error.
 
 <!-- Source: src/erk/cli/commands/land_cmd.py, _check_learn_before_land -->
+
 The land command's learn check skips entirely for issues bearing the `erk-learn` label, since learn plans are not themselves subject to the "did you learn?" prompt.
 
 ## The Two-Label System
 
 Understanding why this validation matters requires understanding the label-based workflow stages:
 
-| Label | Role | Direction |
-|---|---|---|
-| `erk-plan` | Implementation plan | Looks **forward** — code changes to make |
-| `erk-learn` | Documentation plan | Looks **backward** — insights to extract from completed work |
+| Label       | Role                | Direction                                                    |
+| ----------- | ------------------- | ------------------------------------------------------------ |
+| `erk-plan`  | Implementation plan | Looks **forward** — code changes to make                     |
+| `erk-learn` | Documentation plan  | Looks **backward** — insights to extract from completed work |
 
 <!-- Source: src/erk/cli/constants.py, ERK_PLAN_LABEL and ERK_LEARN_LABEL -->
+
 Both labels are defined as constants and used throughout the CLI for label checks, issue creation, and filtering.
 
 The flow is strictly one-directional: `erk-plan` → implement → land PR → `erk-learn` → extract docs → done. Learn plans are terminal nodes in this pipeline, never sources for further learn plans.

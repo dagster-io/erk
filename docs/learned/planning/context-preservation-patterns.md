@@ -38,10 +38,12 @@ Generic references force the implementing agent to search the entire codebase fo
 
 ```markdown
 <!-- WRONG: sparse -->
+
 1. Update gateway documentation
 2. Fix the session preprocessing docs
 
 <!-- RIGHT: specific -->
+
 1. Update `docs/learned/architecture/gateway-inventory.md`
 2. Fix `docs/learned/sessions/preprocessing.md`
 ```
@@ -54,10 +56,12 @@ Without evidence, the implementing agent must re-search for constants, function 
 
 ```markdown
 <!-- WRONG: sparse -->
+
 1. Document the token limit for session preprocessing
 2. Update model references from Haiku to Sonnet
 
 <!-- RIGHT: specific -->
+
 1. Document token limit: `SINGLE_FILE_TOKEN_LIMIT = 20_000` at
    `src/erk/claude/session_preprocessor.py:23`
 2. Fix model reference at line 67 of `prompt-executor-gateway.md`:
@@ -72,10 +76,12 @@ Vague verification ("documentation is complete") is unfalsifiable. The implement
 
 ```markdown
 <!-- WRONG: sparse -->
+
 1. Update documentation
    - Verification: Documentation is complete
 
 <!-- RIGHT: specific -->
+
 1. Update `docs/learned/sessions/preprocessing.md`
    - Verification: Document includes `SINGLE_FILE_TOKEN_LIMIT` constant
      with value (20K), explains multi-part file pattern
@@ -90,10 +96,12 @@ Guessed names are the most insidious form of sparsity — they look specific but
 
 ```markdown
 <!-- WRONG: guessed -->
+
 1. Document the session parsing function
 2. Add entry for the command executor class
 
 <!-- RIGHT: verified -->
+
 1. Document `parse_session_file_path()` at
    `src/erk/claude/session_preprocessor.py:78-92`
 2. Add entry for `CommandExecutor` at `src/erk/gateway/abc.py:105-142`
@@ -107,10 +115,12 @@ The difference between "the session parsing function" and `parse_session_file_pa
 
 ```markdown
 <!-- WRONG: sparse -->
+
 1. Update gateway inventory
 2. Fix import paths
 
 <!-- RIGHT: specific -->
+
 1. Add entries to `gateway-inventory.md` after line 105:
    - `CommandExecutor` (ABC at `src/erk/gateway/abc.py:105`)
    - `PlanDataProvider` (ABC at `src/erk/gateway/abc.py:142`)

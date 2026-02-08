@@ -56,8 +56,8 @@ PreToolUse hooks use Claude Code's exit code protocol to control tool execution:
 | Exit Code | Effect                                                   | When to use                                  |
 | --------- | -------------------------------------------------------- | -------------------------------------------- |
 | 0         | Proceed with tool execution; stdout is a system reminder | Informational hooks (coding standard nudges) |
-| 2         | Block tool execution; stdout shown as error              | Safety gates (genuinely unsafe actions)       |
-| Other     | Non-blocking error, logged but tool proceeds             | Should not occur in well-tested hooks         |
+| 2         | Block tool execution; stdout shown as error              | Safety gates (genuinely unsafe actions)      |
+| Other     | Non-blocking error, logged but tool proceeds             | Should not occur in well-tested hooks        |
 
 **Key design decision:** Erk's coding-standard hooks (dignified-python, fake-driven-testing) always exit 0. They are reminders, not gates. Blocking a Write because the agent _might_ violate a coding standard would be hostile — the reminder is sufficient, and the agent retains autonomy.
 

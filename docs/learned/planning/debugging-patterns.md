@@ -25,14 +25,14 @@ When an erk validation error is unclear about its exact requirements, reading th
 
 ## Decision Table: Investigate vs Retry
 
-| Signal | Action |
-| --- | --- |
-| Error message specifies the exact fix (e.g., "Missing required field 'title'") | Apply the fix directly — no investigation needed |
-| Error message names what's wrong but not the required format | Grep for the validator function, read the regex/logic |
-| First reasonable fix attempt fails | Try one more obvious variation |
-| Second attempt also fails | **Stop guessing. Read the source.** |
-| Error involves regex, pattern matching, or format validation | Investigate source immediately — don't guess at regex patterns |
-| Validation is new or undocumented | Investigate source immediately |
+| Signal                                                                         | Action                                                         |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| Error message specifies the exact fix (e.g., "Missing required field 'title'") | Apply the fix directly — no investigation needed               |
+| Error message names what's wrong but not the required format                   | Grep for the validator function, read the regex/logic          |
+| First reasonable fix attempt fails                                             | Try one more obvious variation                                 |
+| Second attempt also fails                                                      | **Stop guessing. Read the source.**                            |
+| Error involves regex, pattern matching, or format validation                   | Investigate source immediately — don't guess at regex patterns |
+| Validation is new or undocumented                                              | Investigate source immediately                                 |
 
 ## The Investigation Workflow
 

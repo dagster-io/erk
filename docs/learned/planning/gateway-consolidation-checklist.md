@@ -31,12 +31,12 @@ There are currently 27 gateway packages in this directory. Some use the full 5-f
 
 The single most important insight from past consolidation work: **move all files before updating any imports**.
 
-| Phase | What | Why |
-|-------|------|-----|
-| 1. Move files | `git mv` all sources to new locations | Preserves git history; creates a codebase that won't compile but has correct file layout |
-| 2. Update imports | LibCST batch transformation | All old→new path mappings are known; systematic replacement prevents missed call sites |
-| 3. Lint fix | `ruff check --fix` across affected directories | Import sorting violations (I001) are inevitable after bulk moves; fix once at the end |
-| 4. Test | Full test suite | Catches any missed import sites or broken circular dependencies |
+| Phase             | What                                           | Why                                                                                      |
+| ----------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 1. Move files     | `git mv` all sources to new locations          | Preserves git history; creates a codebase that won't compile but has correct file layout |
+| 2. Update imports | LibCST batch transformation                    | All old→new path mappings are known; systematic replacement prevents missed call sites   |
+| 3. Lint fix       | `ruff check --fix` across affected directories | Import sorting violations (I001) are inevitable after bulk moves; fix once at the end    |
+| 4. Test           | Full test suite                                | Catches any missed import sites or broken circular dependencies                          |
 
 **Anti-pattern: interleaving moves and import updates.** Moving gateway A, fixing its imports, then moving gateway B creates intermediate broken states where gateway A's imports reference the new location but gateway B's cross-references still point to the old one. Batch all moves first, then batch all import updates.
 
@@ -58,10 +58,10 @@ Per erk's no-re-exports convention, `__init__.py` files must be empty of executa
 
 ## Batch vs Single-Gateway Consolidation
 
-| Approach | When to use | Trade-off |
-|----------|------------|-----------|
-| **Single gateway** | Gateway has few import sites (<10) | Simpler PR, easier review, but overhead per gateway is high |
-| **Batch (multiple gateways)** | Consolidating 3+ related gateways | One LibCST pass handles all remappings; one lint fix; one test run. But PR is larger and harder to review |
+| Approach                      | When to use                        | Trade-off                                                                                                 |
+| ----------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Single gateway**            | Gateway has few import sites (<10) | Simpler PR, easier review, but overhead per gateway is high                                               |
+| **Batch (multiple gateways)** | Consolidating 3+ related gateways  | One LibCST pass handles all remappings; one lint fix; one test run. But PR is larger and harder to review |
 
 For batch operations, LibCST is nearly mandatory — manual import updates across dozens of files are error-prone and slow.
 

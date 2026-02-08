@@ -51,12 +51,12 @@ Without the 6a checkpoint, consolidation produces plans where overlap decisions 
 
 ## Downstream Economics
 
-| Aspect | Sparse plan | Comprehensive plan |
-|---|---|---|
-| Implementation prep | Re-discover everything (10-30K tokens) | Execute immediately |
-| Risk of divergence | High — different agent, new search results | Low — evidence constrains choices |
-| Verification | Subjective ("looks done") | Objective (grep for specific values) |
-| Consolidation attribution | Lost | Preserved per source plan |
+| Aspect                    | Sparse plan                                | Comprehensive plan                   |
+| ------------------------- | ------------------------------------------ | ------------------------------------ |
+| Implementation prep       | Re-discover everything (10-30K tokens)     | Execute immediately                  |
+| Risk of divergence        | High — different agent, new search results | Low — evidence constrains choices    |
+| Verification              | Subjective ("looks done")                  | Objective (grep for specific values) |
+| Consolidation attribution | Lost                                       | Preserved per source plan            |
 
 ## Applying to New Workflows
 

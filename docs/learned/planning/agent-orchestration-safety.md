@@ -55,12 +55,12 @@ The dependency graph determines where the three-step handoff pattern applies —
 
 ## Anti-Patterns
 
-| Pattern | Why It Fails |
-|---|---|
-| Passing large agent output as a string in the `prompt` parameter of the next Task call | Bash tool truncation applies; also bloats the dependent agent's prompt |
-| Using bash heredoc (`cat <<EOF > file`) instead of Write tool | Special characters in markdown (backticks, dollar signs) cause silent corruption |
-| Verifying files inside the dependent agent instead of at the orchestration layer | Wastes the agent's entire context budget on discovering missing input |
-| Assuming `mkdir -p` ran successfully without checking | Directory creation can fail silently in sandboxed environments |
+| Pattern                                                                                | Why It Fails                                                                     |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Passing large agent output as a string in the `prompt` parameter of the next Task call | Bash tool truncation applies; also bloats the dependent agent's prompt           |
+| Using bash heredoc (`cat <<EOF > file`) instead of Write tool                          | Special characters in markdown (backticks, dollar signs) cause silent corruption |
+| Verifying files inside the dependent agent instead of at the orchestration layer       | Wastes the agent's entire context budget on discovering missing input            |
+| Assuming `mkdir -p` ran successfully without checking                                  | Directory creation can fail silently in sandboxed environments                   |
 
 ## Related Documentation
 

@@ -41,13 +41,13 @@ This split exists because preprocessing is I/O-heavy (reading large JSONL files,
 
 ## Two Modes: Local vs Async
 
-| Aspect | Local (`/erk:learn`) | Async (`erk exec trigger-async-learn`) |
-| --- | --- | --- |
-| **Stages run** | All 7 on developer machine | 1-5 local, 6-7 in GitHub Actions |
-| **Use case** | Quick iteration, debugging | Background processing after landing |
-| **Blocking** | Yes — holds terminal | No — returns immediately after trigger |
-| **Git context** | Full (branch, worktree) | None in CI (relies on gist metadata) |
-| **API quota** | Developer's | GitHub-managed |
+| Aspect          | Local (`/erk:learn`)       | Async (`erk exec trigger-async-learn`) |
+| --------------- | -------------------------- | -------------------------------------- |
+| **Stages run**  | All 7 on developer machine | 1-5 local, 6-7 in GitHub Actions       |
+| **Use case**    | Quick iteration, debugging | Background processing after landing    |
+| **Blocking**    | Yes — holds terminal       | No — returns immediately after trigger |
+| **Git context** | Full (branch, worktree)    | None in CI (relies on gist metadata)   |
+| **API quota**   | Developer's                | GitHub-managed                         |
 
 The async path was designed for the `erk land` flow, where learn runs automatically after a PR merges without blocking the developer.
 
@@ -124,15 +124,15 @@ Human reviews the learn plan issue, optionally edits it, and submits for impleme
 
 ## Failure Modes
 
-| Stage | Failure | Behavior |
-| --- | --- | --- |
-| 1 (Discovery) | No sessions found | Warning, continues with empty list; local fallback scans recent sessions |
-| 2 (Preprocessing) | Empty/warmup session | Silently filtered out |
-| 2 (Preprocessing) | Malformed JSONL | Logged, file skipped |
-| 3 (PR Comments) | No PR exists | Skipped entirely (lenient) |
-| 4 (Gist Upload) | API failure | **Pipeline fails** — gist is required for async path |
-| 5 (Workflow Trigger) | Workflow not found | Fails with error about missing `learn.yml` |
-| 6 (Agent Execution) | Agent crashes | CI job fails, no retry |
+| Stage                | Failure              | Behavior                                                                 |
+| -------------------- | -------------------- | ------------------------------------------------------------------------ |
+| 1 (Discovery)        | No sessions found    | Warning, continues with empty list; local fallback scans recent sessions |
+| 2 (Preprocessing)    | Empty/warmup session | Silently filtered out                                                    |
+| 2 (Preprocessing)    | Malformed JSONL      | Logged, file skipped                                                     |
+| 3 (PR Comments)      | No PR exists         | Skipped entirely (lenient)                                               |
+| 4 (Gist Upload)      | API failure          | **Pipeline fails** — gist is required for async path                     |
+| 5 (Workflow Trigger) | Workflow not found   | Fails with error about missing `learn.yml`                               |
+| 6 (Agent Execution)  | Agent crashes        | CI job fails, no retry                                                   |
 
 The key design choice: stages 1-3 are lenient (degrade gracefully), while stage 4 is strict (fails the pipeline). This is because sessions alone contain sufficient material for insight extraction, but without the gist there's no way to deliver materials to CI.
 

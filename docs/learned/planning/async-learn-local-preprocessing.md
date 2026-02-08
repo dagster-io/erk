@@ -27,10 +27,10 @@ Moving preprocessing to the developer's local machine eliminates this overhead. 
 
 The `trigger-async-learn` command imports functions directly from sibling exec scripts rather than invoking them as subprocesses. This is a deliberate architectural choice:
 
-| Approach | Trade-off |
-| --- | --- |
-| Subprocess (`erk exec get-learn-sessions`) | Clean isolation but adds process startup overhead per step, requires JSON parsing between steps, and loses type safety |
-| Direct import (`from .get_learn_sessions import _discover_sessions`) | Shared process, immediate dict access, type-checked — but couples the scripts at import time |
+| Approach                                                             | Trade-off                                                                                                              |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Subprocess (`erk exec get-learn-sessions`)                           | Clean isolation but adds process startup overhead per step, requires JSON parsing between steps, and loses type safety |
+| Direct import (`from .get_learn_sessions import _discover_sessions`) | Shared process, immediate dict access, type-checked — but couples the scripts at import time                           |
 
 The direct-call approach won because `trigger-async-learn` orchestrates 6 tightly-coupled steps in sequence where each step's output feeds the next. The overhead of 6 subprocess roundtrips with JSON serialization/deserialization was measurable.
 

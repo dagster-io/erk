@@ -26,20 +26,20 @@ This separation exists because structural parsing is shared across consumers —
 
 ## Two-Layer Validation Architecture
 
-| Layer      | Responsibility | Consumers | When it runs |
-| ---------- | -------------- | --------- | ------------ |
+| Layer      | Responsibility                                         | Consumers      | When it runs                 |
+| ---------- | ------------------------------------------------------ | -------------- | ---------------------------- |
 | Structural | Phase headers exist, tables parse, rows have 4 columns | check + update | Every `parse_roadmap()` call |
-| Semantic   | Label present, status/PR consistency, phase ordering | check only | `erk objective check` |
+| Semantic   | Label present, status/PR consistency, phase ordering   | check only     | `erk objective check`        |
 
 ## Why Each Semantic Check Exists
 
-| Check | Why it matters |
-| ----- | -------------- |
-| `erk-objective` label | Prevents running check on plan issues or random issues that happen to contain markdown tables |
-| Roadmap parses | Early exit — no point running semantic checks on unparseable content |
+| Check                 | Why it matters                                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `erk-objective` label | Prevents running check on plan issues or random issues that happen to contain markdown tables                       |
+| Roadmap parses        | Early exit — no point running semantic checks on unparseable content                                                |
 | Status/PR consistency | Catches stale status after manual table edits (someone adds a PR reference but forgets to update the Status column) |
-| No orphaned done | Catches typos where someone marks a step done but forgets to add the PR number |
-| Sequential phases | Catches copy-paste errors (duplicate phase numbers, out-of-order phases) |
+| No orphaned done      | Catches typos where someone marks a step done but forgets to add the PR number                                      |
+| Sequential phases     | Catches copy-paste errors (duplicate phase numbers, out-of-order phases)                                            |
 
 The status/PR consistency check is particularly important because the [two-tier status system](roadmap-status-system.md) allows both explicit and inferred status. When a human manually edits a table, they can create contradictions that the parser silently accepts — for example, a step with PR `#123` but explicit status `pending`. The parser respects the explicit status (by design), but the check command flags the contradiction.
 

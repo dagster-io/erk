@@ -23,11 +23,11 @@ This was discovered during the replan workflow (Steps 6a-6b in `/erk:replan`). I
 
 Every effective system reminder satisfies all three properties:
 
-| Property       | Test                                              | Failure mode when missing                          |
-| -------------- | ------------------------------------------------- | -------------------------------------------------- |
-| **Concise**    | 2-3 sentences max, or 4-5 bullet points           | Agent skims wall of text, misses requirements      |
-| **Specific**   | References exact steps, file types, or actions     | Agent interprets generically, does the wrong thing |
-| **Verifiable** | Agent can self-check whether the requirement is met | Agent believes it complied when it didn't           |
+| Property       | Test                                                | Failure mode when missing                          |
+| -------------- | --------------------------------------------------- | -------------------------------------------------- |
+| **Concise**    | 2-3 sentences max, or 4-5 bullet points             | Agent skims wall of text, misses requirements      |
+| **Specific**   | References exact steps, file types, or actions      | Agent interprets generically, does the wrong thing |
+| **Verifiable** | Agent can self-check whether the requirement is met | Agent believes it complied when it didn't          |
 
 **Priority ordering matters.** Conciseness is the gatekeeper: a concise but vague reminder still nudges behavior; a specific but long reminder gets skimmed before the specifics are reached; a verifiable but verbose reminder never reaches the verification step. When you can't achieve all three, sacrifice verifiability first, then specificity — never conciseness.
 
@@ -83,22 +83,22 @@ Same brevity, but the four required items create a checklist the agent can verif
 
 Multi-step workflows benefit from reminders at _transitions_, not during steps:
 
-| Position               | Purpose                                | Why this moment                                       |
-| ---------------------- | -------------------------------------- | ----------------------------------------------------- |
-| Before investigation   | Prime the agent to preserve findings   | Sets intent before the work begins                    |
-| Before Plan Mode entry | Verify context was gathered (Step 6a)  | Last moment before findings must be structured        |
-| After plan creation    | Verify plan has specifics              | Catches sparse plans before they reach an implementer |
+| Position               | Purpose                               | Why this moment                                       |
+| ---------------------- | ------------------------------------- | ----------------------------------------------------- |
+| Before investigation   | Prime the agent to preserve findings  | Sets intent before the work begins                    |
+| Before Plan Mode entry | Verify context was gathered (Step 6a) | Last moment before findings must be structured        |
+| After plan creation    | Verify plan has specifics             | Catches sparse plans before they reach an implementer |
 
 **Key insight:** Reminders _before_ an action set intent. Reminders _after_ an action verify outcome. Both are needed for high-stakes transitions, but never more than one reminder per checkpoint — multiple reminders at the same point compete for attention and dilute each other.
 
 ## Formatting Guidelines
 
-| Guideline                           | Rationale                                                                                   |
-| ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| Guideline                           | Rationale                                                                                    |
+| ----------------------------------- | -------------------------------------------------------------------------------------------- |
 | Lead with a label/title             | "Context Gathering Checkpoint:" signals what the reminder is about before the agent reads it |
 | Use numbered lists for requirements | Agents track numbered items more reliably than prose lists                                   |
-| Include one concrete example inline | "File paths (docs/learned/foo.md:45)" prevents abstract interpretation                     |
-| End with a verification question    | "Can you answer X from your context?" forces self-assessment                                |
+| Include one concrete example inline | "File paths (docs/learned/foo.md:45)" prevents abstract interpretation                       |
+| End with a verification question    | "Can you answer X from your context?" forces self-assessment                                 |
 | One reminder per checkpoint         | Multiple reminders at the same point compete for attention                                   |
 
 ## Related Documentation

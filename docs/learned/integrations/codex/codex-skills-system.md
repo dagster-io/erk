@@ -34,10 +34,10 @@ Both systems use `SKILL.md` as the entry point, but they diverge on three axes t
 
 ```yaml
 ---
-name: my-skill-name          # max 64 chars, required
-description: What this skill does and when to use it  # max 1024 chars, required
+name: my-skill-name # max 64 chars, required
+description: What this skill does and when to use it # max 1024 chars, required
 metadata:
-  short-description: Brief one-liner  # optional
+  short-description: Brief one-liner # optional
 ---
 ```
 
@@ -45,14 +45,14 @@ The markdown body below contains agent instructions, loaded only on invocation.
 
 ## Claude vs Codex Skills Decision Table
 
-| Aspect               | Claude Code                                | Codex                                                | Erk Implication                                                          |
-| -------------------- | ------------------------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------ |
-| Required frontmatter | None                                       | `name` and `description`                             | All erk skills carry frontmatter to stay Codex-compatible                |
-| Loading behavior     | All skills in context at startup           | Progressive: metadata at startup, body on invocation | Codex is more token-efficient for large skill sets                       |
-| Invocation           | `@` references, auto-loaded, hook triggers | `$skill-name` mention, implicit matching             | Slash commands need translation (see below)                              |
-| Script support       | No                                         | Yes (`scripts/` directory)                           | Could replace some hook-based behavior                                   |
-| Hooks                | PreToolUse, PostToolUse, etc.              | Not available                                        | Safety-net hooks must be baked into skill body or AGENTS.md              |
-| Scope levels         | 2 (repo, user)                             | 4 (repo, user, system, admin)                        | Erk only targets repo scope currently                                    |
+| Aspect               | Claude Code                                | Codex                                                | Erk Implication                                             |
+| -------------------- | ------------------------------------------ | ---------------------------------------------------- | ----------------------------------------------------------- |
+| Required frontmatter | None                                       | `name` and `description`                             | All erk skills carry frontmatter to stay Codex-compatible   |
+| Loading behavior     | All skills in context at startup           | Progressive: metadata at startup, body on invocation | Codex is more token-efficient for large skill sets          |
+| Invocation           | `@` references, auto-loaded, hook triggers | `$skill-name` mention, implicit matching             | Slash commands need translation (see below)                 |
+| Script support       | No                                         | Yes (`scripts/` directory)                           | Could replace some hook-based behavior                      |
+| Hooks                | PreToolUse, PostToolUse, etc.              | Not available                                        | Safety-net hooks must be baked into skill body or AGENTS.md |
+| Scope levels         | 2 (repo, user)                             | 4 (repo, user, system, admin)                        | Erk only targets repo scope currently                       |
 
 ## Dual-Target Architecture: Why Format Compatibility Enables a Fallback
 
@@ -70,10 +70,10 @@ See `get_bundled_codex_dir()` in `src/erk/artifacts/paths.py` for install-mode-a
 
 Claude uses `/erk:plan-implement` to invoke commands. Codex has no slash command system, creating a translation problem for headless automation.
 
-| Approach         | Mechanism                                     | Trade-off                                                                                |
-| ---------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `$skill-name`   | Prompt containing `$erk-plan-implement`       | Relies on Codex's description matching; requires skill installed in `.codex/skills/`     |
-| Prompt injection | Read SKILL.md content and embed in prompt text | More robust but bypasses Codex's progressive disclosure and skill discovery               |
+| Approach         | Mechanism                                      | Trade-off                                                                            |
+| ---------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `$skill-name`    | Prompt containing `$erk-plan-implement`        | Relies on Codex's description matching; requires skill installed in `.codex/skills/` |
+| Prompt injection | Read SKILL.md content and embed in prompt text | More robust but bypasses Codex's progressive disclosure and skill discovery          |
 
 **Open question:** The reliability of `$skill-name` invocation in `codex exec` (headless) mode needs testing. The TUI has a `/skills` menu for explicit invocation, but `codex exec` relies on description matching which may be brittle.
 

@@ -58,11 +58,11 @@ The prefix is the stable part of the contract. The slug and timestamp segments a
 
 Common failure scenarios and their fixes:
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| "plan-header has no branch_name field" | On wrong branch (e.g., `master`) | Switch to the plan's feature branch |
+| Symptom                                | Cause                                                | Fix                                                                     |
+| -------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------- |
+| "plan-header has no branch_name field" | On wrong branch (e.g., `master`)                     | Switch to the plan's feature branch                                     |
 | "plan-header has no branch_name field" | Branch uses non-standard name (e.g., `feature/1234`) | Rename branch to `P{issue}-...` or manually update plan-header metadata |
-| "No PR found for branch" | Branch exists but no PR was created | Push branch and create PR first |
+| "No PR found for branch"               | Branch exists but no PR was created                  | Push branch and create PR first                                         |
 
 ## Relationship to Fail-Open Pattern
 

@@ -24,12 +24,12 @@ The codespace gateway uses a **3-place pattern** (ABC, real, fake) instead of th
 
 The standard gateway has 5 implementations (abc, real, fake, dry_run, printing). The 3-place variant drops dry-run and printing. The deciding question: **can you give the user a meaningful preview of the operation?**
 
-| Characteristic                     | 5-place (standard)                     | 3-place (codespace, agent_launcher)            |
-| ---------------------------------- | -------------------------------------- | ---------------------------------------------- |
-| Operations are previewable         | Yes — can show "would create branch X" | No — process replacement or remote execution   |
-| Dry-run adds value                 | Yes — read-only operations still work  | No — no local equivalent to "pretend to SSH"   |
-| Methods return values              | Yes — callers branch on results        | Mixed — `NoReturn` methods replace the process |
-| Side effects are local             | Yes — filesystem, git                  | No — remote machine state, process table       |
+| Characteristic             | 5-place (standard)                     | 3-place (codespace, agent_launcher)            |
+| -------------------------- | -------------------------------------- | ---------------------------------------------- |
+| Operations are previewable | Yes — can show "would create branch X" | No — process replacement or remote execution   |
+| Dry-run adds value         | Yes — read-only operations still work  | No — no local equivalent to "pretend to SSH"   |
+| Methods return values      | Yes — callers branch on results        | Mixed — `NoReturn` methods replace the process |
+| Side effects are local     | Yes — filesystem, git                  | No — remote machine state, process table       |
 
 **Why fakes suffice without dry-run**: Dry-run exists to let users preview mutations before committing. When the operation is all-or-nothing remote execution (`os.execvp`, SSH), there's nothing meaningful to preview. The fake serves the testing role that dry-run would otherwise fill for local operations.
 
@@ -43,10 +43,10 @@ See the `Codespace` ABC in `packages/erk-shared/src/erk_shared/gateway/codespace
 
 The gateway exposes two SSH paths that differ in a single flag (`-t` for TTY allocation), but choosing wrong produces hard-to-diagnose failures:
 
-| Method                   | Mechanism      | Returns?           | Use when                                          |
-| ------------------------ | -------------- | ------------------ | ------------------------------------------------- |
-| `exec_ssh_interactive()` | `os.execvp()`  | Never (`NoReturn`) | TUI, interactive sessions, anything needing a TTY |
-| `run_ssh_command()`      | `subprocess.run()` | Exit code (`int`)  | Automated commands where you need the result  |
+| Method                   | Mechanism          | Returns?           | Use when                                          |
+| ------------------------ | ------------------ | ------------------ | ------------------------------------------------- |
+| `exec_ssh_interactive()` | `os.execvp()`      | Never (`NoReturn`) | TUI, interactive sessions, anything needing a TTY |
+| `run_ssh_command()`      | `subprocess.run()` | Exit code (`int`)  | Automated commands where you need the result      |
 
 **The `-t` flag trap**: `exec_ssh_interactive()` passes `-t` to allocate a pseudo-terminal (required for interactive TUI rendering). `run_ssh_command()` deliberately omits it. Adding `-t` to non-interactive commands causes output buffering issues; omitting it from interactive commands causes terminal rendering failures. Neither failure produces an obvious error message — both manifest as garbled output or hangs.
 

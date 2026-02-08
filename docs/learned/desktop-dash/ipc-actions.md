@@ -32,12 +32,12 @@ erkdesk's Electron IPC layer has two core design decisions that span multiple fi
 
 Electron's renderer is single-threaded. A blocking `ipcMain.handle` call that takes 5 seconds freezes the entire UI — no scrolling, keyboard input, or visual feedback. This forces a split:
 
-| Criteria            | Blocking                          | Streaming                                  |
-| ------------------- | --------------------------------- | ------------------------------------------ |
-| Duration            | <1 second                         | >1 second                                  |
-| Electron API        | `ipcMain.handle` + `execFile`     | `ipcMain.on` + `spawn`                     |
-| Return model        | Promise resolves with full result | Events stream incrementally                |
-| UI during execution | Frozen                            | Responsive with live output                |
+| Criteria            | Blocking                          | Streaming                   |
+| ------------------- | --------------------------------- | --------------------------- |
+| Duration            | <1 second                         | >1 second                   |
+| Electron API        | `ipcMain.handle` + `execFile`     | `ipcMain.on` + `spawn`      |
+| Return model        | Promise resolves with full result | Events stream incrementally |
+| UI during execution | Frozen                            | Responsive with live output |
 
 **Error contract**: Blocking actions always resolve (never reject) with `success: false` on failure. This gives the renderer a consistent result shape without try/catch branching in every caller.
 

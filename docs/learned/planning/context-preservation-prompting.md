@@ -60,12 +60,12 @@ Showing both a sparse plan step and a comprehensive one in the command prompt ca
 
 ## Adapting to New Workflows
 
-| Workflow type | How to apply the pattern |
-|---|---|
-| Replan (single plan) | Full two-phase pattern with all four gathering categories |
-| Consolidation (multiple plans) | Two-phase pattern plus overlap analysis, merge decisions, and attribution tracking per source plan |
-| Fresh plan (no prior plan) | Two-phase pattern with categories 2 and 4 (discoveries and evidence); categories 1 and 3 don't apply |
-| Interview-first plan | Three phases: interview → gather → plan (see below) |
+| Workflow type                  | How to apply the pattern                                                                             |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Replan (single plan)           | Full two-phase pattern with all four gathering categories                                            |
+| Consolidation (multiple plans) | Two-phase pattern plus overlap analysis, merge decisions, and attribution tracking per source plan   |
+| Fresh plan (no prior plan)     | Two-phase pattern with categories 2 and 4 (discoveries and evidence); categories 1 and 3 don't apply |
+| Interview-first plan           | Three phases: interview → gather → plan (see below)                                                  |
 
 ### Interview Then Gather Then Plan
 
@@ -81,12 +81,12 @@ The key insight is that interview output alone is insufficient — it captures r
 
 ## Anti-Patterns
 
-| Anti-pattern | Why it fails | Correct approach |
-|---|---|---|
-| Single "investigate and plan" instruction | Agent shortcuts gathering, enters Plan Mode with unstructured findings | Separate gather step before EnterPlanMode |
-| "Include findings in the plan" without structuring | Agent summarizes at too high a level | Specify four categories to collect |
-| Gathering step without CRITICAL tag | Agent skips it as optional | Mark gathering requirements as CRITICAL |
-| Only gathering file paths (no evidence) | Implementing agent must re-verify everything | Gather all four categories including actual names and values |
+| Anti-pattern                                       | Why it fails                                                           | Correct approach                                             |
+| -------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Single "investigate and plan" instruction          | Agent shortcuts gathering, enters Plan Mode with unstructured findings | Separate gather step before EnterPlanMode                    |
+| "Include findings in the plan" without structuring | Agent summarizes at too high a level                                   | Specify four categories to collect                           |
+| Gathering step without CRITICAL tag                | Agent skips it as optional                                             | Mark gathering requirements as CRITICAL                      |
+| Only gathering file paths (no evidence)            | Implementing agent must re-verify everything                           | Gather all four categories including actual names and values |
 
 ---
 

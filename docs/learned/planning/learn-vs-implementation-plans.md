@@ -24,11 +24,11 @@ Erk has two plan types that share the same issue infrastructure (`erk-plan` labe
 
 **Ask: "Is the primary output code or documentation?"**
 
-| Signal | Plan Type | Label(s) | Typical Output |
-| --- | --- | --- | --- |
-| Adding features, fixing bugs, refactoring | Implementation | `erk-plan` | Source code, tests, config |
-| Extracting insights from completed work | Learn | `erk-plan` + `erk-learn` | Docs in `docs/learned/` |
-| Consolidating learnings from multiple PRs | Learn | `erk-plan` + `erk-learn` | Docs, tripwires, checklists |
+| Signal                                    | Plan Type      | Label(s)                 | Typical Output              |
+| ----------------------------------------- | -------------- | ------------------------ | --------------------------- |
+| Adding features, fixing bugs, refactoring | Implementation | `erk-plan`               | Source code, tests, config  |
+| Extracting insights from completed work   | Learn          | `erk-plan` + `erk-learn` | Docs in `docs/learned/`     |
+| Consolidating learnings from multiple PRs | Learn          | `erk-plan` + `erk-learn` | Docs, tripwires, checklists |
 
 ## Why Two Types Exist
 
@@ -37,7 +37,7 @@ Implementation plans produce code changes. But the insights gained during implem
 Learn plans exist to capture those insights as documentation. They are intentionally separate from implementation plans because:
 
 1. **Different base branches** — Learn plans stack on the parent implementation branch so documentation ships alongside the code it describes. Implementation plans branch from trunk.
-2. **Different triggering** — Learn plans are created *after* implementation (manually via `/erk:learn` or automatically via async workflow), not before.
+2. **Different triggering** — Learn plans are created _after_ implementation (manually via `/erk:learn` or automatically via async workflow), not before.
 3. **Cycle prevention** — A learn plan cannot generate another learn plan. The `/erk:learn` command validates this upfront by checking for the `erk-learn` label.
 
 ## The `learned_from_issue` Link
@@ -84,14 +84,14 @@ The parent implementation plan tracks its learn status through a progression of 
 
 See `LearnStatusValue` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` for the valid status values and their docstring.
 
-| Status | Meaning | Set by |
-| --- | --- | --- |
-| `null` / `not_started` | No learn workflow has run | Default |
-| `pending` | Learn workflow in progress | Async learn workflow |
-| `completed_no_plan` | Learn ran, no docs needed | `/erk:learn` (validation found nothing actionable) |
-| `completed_with_plan` | Learn ran, plan issue created | `/erk:learn` (saved plan issue) |
-| `pending_review` | Documentation PR created directly | Direct doc PR workflow |
-| `plan_completed` | Learn plan implemented and landed | `erk land` (when learn plan PR merges) |
+| Status                 | Meaning                           | Set by                                             |
+| ---------------------- | --------------------------------- | -------------------------------------------------- |
+| `null` / `not_started` | No learn workflow has run         | Default                                            |
+| `pending`              | Learn workflow in progress        | Async learn workflow                               |
+| `completed_no_plan`    | Learn ran, no docs needed         | `/erk:learn` (validation found nothing actionable) |
+| `completed_with_plan`  | Learn ran, plan issue created     | `/erk:learn` (saved plan issue)                    |
+| `pending_review`       | Documentation PR created directly | Direct doc PR workflow                             |
+| `plan_completed`       | Learn plan implemented and landed | `erk land` (when learn plan PR merges)             |
 
 **Landing guard**: `erk land` checks `learn_status` before merging an implementation plan's PR. If status is `null`/`not_started` and sessions exist, it warns the user and offers to trigger async learn. Learn plans themselves are skipped in this check — they don't need to be "learned from."
 

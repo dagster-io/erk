@@ -26,13 +26,13 @@ The goal: every reminder appears **exactly once**, at the **most specific tier**
 
 ## Tier Selection Decision Table
 
-| Reminder characteristic | Correct tier | Why |
-|---|---|---|
-| Applies to every task regardless of tool | Tier 1 (Ambient / AGENTS.md) | Always in context, no action-specific trigger exists |
-| Cross-cutting session routing (e.g., "use devrun") | Tier 2 (UserPromptSubmit) | Needs per-turn reinforcement, not tool-specific |
-| Dynamic state injection (session IDs, branch names) | Tier 2 (UserPromptSubmit) | Value changes per-session, needs dynamic computation |
-| Applies only when editing certain file types | Tier 3 (PreToolUse) | Can inspect `file_path` in tool params, fires only when relevant |
-| Applies only to a specific tool (Bash, Write) | Tier 3 (PreToolUse) | Matcher targets the exact tool, zero cost when tool isn't used |
+| Reminder characteristic                             | Correct tier                 | Why                                                              |
+| --------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------- |
+| Applies to every task regardless of tool            | Tier 1 (Ambient / AGENTS.md) | Always in context, no action-specific trigger exists             |
+| Cross-cutting session routing (e.g., "use devrun")  | Tier 2 (UserPromptSubmit)    | Needs per-turn reinforcement, not tool-specific                  |
+| Dynamic state injection (session IDs, branch names) | Tier 2 (UserPromptSubmit)    | Value changes per-session, needs dynamic computation             |
+| Applies only when editing certain file types        | Tier 3 (PreToolUse)          | Can inspect `file_path` in tool params, fires only when relevant |
+| Applies only to a specific tool (Bash, Write)       | Tier 3 (PreToolUse)          | Matcher targets the exact tool, zero cost when tool isn't used   |
 
 **Default to the most specific tier.** The temptation is to put everything in UserPromptSubmit "just in case" — but Tier 3 achieves equal compliance at a fraction of the token cost because it fires only when the action is imminent.
 

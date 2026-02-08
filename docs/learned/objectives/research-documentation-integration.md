@@ -21,15 +21,15 @@ Objectives span multiple plans and sessions, accumulating cross-cutting knowledg
 
 Not every objective produces documentation. The test is whether the objective revealed **reusable cross-cutting knowledge** — insights spanning multiple code locations that would help future agents on unrelated tasks.
 
-| Discovery type | Document? | Why |
-|---|---|---|
-| Architectural pattern spanning multiple files | Yes | Cross-cutting insight that can't live in any single code comment |
-| Tripwire from a mistake that cost significant time | Yes | Prevents future agents from repeating the lesson |
-| Integration pattern between two systems | Yes | Connects knowledge agents can't derive from reading one file |
-| Bug fix specific to this objective | No | Single-artifact knowledge — belongs in a code comment |
-| Temporary workaround planned for removal | No | Will go stale the moment the workaround is removed |
-| Pattern not yet proven in a merged PR | No | Speculative — wait until the implementation lands |
-| Knowledge already covered by existing docs | No | Duplication creates contradictions when one copy drifts |
+| Discovery type                                     | Document? | Why                                                              |
+| -------------------------------------------------- | --------- | ---------------------------------------------------------------- |
+| Architectural pattern spanning multiple files      | Yes       | Cross-cutting insight that can't live in any single code comment |
+| Tripwire from a mistake that cost significant time | Yes       | Prevents future agents from repeating the lesson                 |
+| Integration pattern between two systems            | Yes       | Connects knowledge agents can't derive from reading one file     |
+| Bug fix specific to this objective                 | No        | Single-artifact knowledge — belongs in a code comment            |
+| Temporary workaround planned for removal           | No        | Will go stale the moment the workaround is removed               |
+| Pattern not yet proven in a merged PR              | No        | Speculative — wait until the implementation lands                |
+| Knowledge already covered by existing docs         | No        | Duplication creates contradictions when one copy drifts          |
 
 ## Two Capture Paths
 
@@ -49,12 +49,12 @@ The learn workflow creates a separate plan issue for documentation that goes thr
 
 ### Choosing Between Paths
 
-| Situation | Path | Reasoning |
-|---|---|---|
-| You hit a painful tripwire mid-objective | Manual | Capture immediately so parallel sessions benefit |
-| You discovered a subtle integration pattern | Manual | Cross-cutting patterns need deliberate authoring, not automated extraction |
-| PR just merged, want to capture session insights | Learn workflow | Automated extraction catches things you missed during implementation |
-| Objective complete, want comprehensive review | Learn workflow | Multi-agent analysis pipeline finds gaps better than manual review |
+| Situation                                        | Path           | Reasoning                                                                  |
+| ------------------------------------------------ | -------------- | -------------------------------------------------------------------------- |
+| You hit a painful tripwire mid-objective         | Manual         | Capture immediately so parallel sessions benefit                           |
+| You discovered a subtle integration pattern      | Manual         | Cross-cutting patterns need deliberate authoring, not automated extraction |
+| PR just merged, want to capture session insights | Learn workflow | Automated extraction catches things you missed during implementation       |
+| Objective complete, want comprehensive review    | Learn workflow | Multi-agent analysis pipeline finds gaps better than manual review         |
 
 ## Anti-Patterns
 

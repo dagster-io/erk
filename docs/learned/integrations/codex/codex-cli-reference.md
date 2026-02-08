@@ -30,10 +30,10 @@ This document focuses on **integration decisions** — the flag gaps, behavioral
 
 Codex has two modes that map to erk's two launch patterns:
 
-| Codex Mode              | Erk Abstraction                               | Key Behavioral Difference                                  |
-| ----------------------- | --------------------------------------------- | ---------------------------------------------------------- |
-| **TUI** (`codex`)       | `AgentLauncher.launch_interactive()` via execvp | Supports `--ask-for-approval` with 4 approval levels      |
-| **Exec** (`codex exec`) | `PromptExecutor.execute_command_streaming()`   | Hardcodes approval to Never — no confirmation prompts ever |
+| Codex Mode              | Erk Abstraction                                 | Key Behavioral Difference                                  |
+| ----------------------- | ----------------------------------------------- | ---------------------------------------------------------- |
+| **TUI** (`codex`)       | `AgentLauncher.launch_interactive()` via execvp | Supports `--ask-for-approval` with 4 approval levels       |
+| **Exec** (`codex exec`) | `PromptExecutor.execute_command_streaming()`    | Hardcodes approval to Never — no confirmation prompts ever |
 
 **Why this matters:** The same `PermissionMode.edits` produces different Codex flags depending on mode. Exec uses `--full-auto`, but TUI uses `--sandbox workspace-write -a on-request`. This forces any future `permission_mode_to_codex()` to take a `mode: Literal["exec", "tui"]` parameter — unlike `permission_mode_to_claude()` which is mode-independent.
 
@@ -72,17 +72,17 @@ See `_PERMISSION_MODE_TO_CLAUDE` and `permission_mode_to_claude()` in `packages/
 
 These gaps shape the design of erk's Codex integration. Each gap represents a decision point for porting.
 
-| Claude Feature                         | Codex Status                 | Design Impact                                                               |
-| -------------------------------------- | ---------------------------- | --------------------------------------------------------------------------- |
-| `--system-prompt`                      | Not available                | Prompt construction becomes backend-aware — must prepend to user prompt     |
-| `--allowedTools`                       | Not available                | No tool restriction — Codex agents access all tools unconditionally         |
+| Claude Feature                         | Codex Status                 | Design Impact                                                                                |
+| -------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------- |
+| `--system-prompt`                      | Not available                | Prompt construction becomes backend-aware — must prepend to user prompt                      |
+| `--allowedTools`                       | Not available                | No tool restriction — Codex agents access all tools unconditionally                          |
 | `--output-format stream-json`          | `--json` (boolean)           | Completely different JSONL event format (see [codex-jsonl-format.md](codex-jsonl-format.md)) |
-| `--output-format text`                 | `--output-last-message FILE` | Codex writes to file instead of stdout — must read file after execution     |
-| `--no-session-persistence`             | Not available                | Codex always persists to `~/.codex/threads/`; no way to disable            |
-| `--max-turns`                          | Not available                | Must implement timeout/kill at the subprocess level                        |
-| `--verbose`                            | Not available                | No verbose mode for debugging                                              |
-| `--allow-dangerously-skip-permissions` | Not available                | Codex uses explicit sandbox levels instead of layered permission escalation |
-| `cwd` (subprocess kwarg)              | `--cd DIR` flag              | Working directory must be a CLI flag, not a subprocess parameter            |
+| `--output-format text`                 | `--output-last-message FILE` | Codex writes to file instead of stdout — must read file after execution                      |
+| `--no-session-persistence`             | Not available                | Codex always persists to `~/.codex/threads/`; no way to disable                              |
+| `--max-turns`                          | Not available                | Must implement timeout/kill at the subprocess level                                          |
+| `--verbose`                            | Not available                | No verbose mode for debugging                                                                |
+| `--allow-dangerously-skip-permissions` | Not available                | Codex uses explicit sandbox levels instead of layered permission escalation                  |
+| `cwd` (subprocess kwarg)               | `--cd DIR` flag              | Working directory must be a CLI flag, not a subprocess parameter                             |
 
 **The `--system-prompt` gap is the most impactful.** The `PromptExecutor.execute_prompt()` ABC takes a `system_prompt` parameter that Claude implements via `--system-prompt` to replace the default system prompt for automation tasks. Codex has no equivalent — system instructions must be prepended to the user prompt, making the prompt construction layer backend-aware.
 
