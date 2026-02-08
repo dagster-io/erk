@@ -5,8 +5,7 @@ read_when:
   - "deciding between command groups vs separate commands for local/remote workflows"
   - "understanding why erk uses separate commands instead of unified groups"
 tripwires:
-  - action: "using invoke_without_command=True to unify local/remote variants"
-    warning: "this pattern was abandoned - READ: Why this pattern was abandoned section"
+  - "BEFORE: Using invoke_without_command=True to unify local/remote variants → READ: Why this pattern was abandoned"
 ---
 
 # Local/Remote Command Group Pattern (Deprecated)
