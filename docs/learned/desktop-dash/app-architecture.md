@@ -1,138 +1,84 @@
 ---
-title: erkdesk App Component Architecture
+title: erkdesk App Architecture
 read_when:
-  - "modifying the erkdesk App component"
-  - "understanding erkdesk state management"
-  - "implementing new features in the erkdesk dashboard"
+  - "modifying App.tsx state or effects"
+  - "understanding the WebView overlay approach"
+  - "adding new state or auto-refresh behavior to erkdesk"
 tripwires:
   - action: "storing derived state in useState"
-    warning: "App.tsx follows state lifting: only store plan data, selectedIndex, loading, error, and log state. Derived values like selectedPlan are computed inline."
-  - action: "breaking the auto-refresh selection preservation logic"
-    warning: "Auto-refresh preserves selection by issue_number, not by array index. Always use issue_number to find the new index after refresh."
+    warning: "selectedPlan is computed inline from plans[selectedIndex], not stored in state. Never cache derived values — compute them on render."
+  - action: "preserving selection by array index across refresh"
+    warning: "Auto-refresh reorders plans. Selection must be preserved by issue_number, not by index. See the setInterval effect in App.tsx."
+  - action: "loading URLs without deduplication"
+    warning: "lastLoadedUrlRef prevents redundant IPC calls. Always check if the URL actually changed before calling loadWebViewURL."
+  - action: "adding state to child components"
+    warning: "PlanList, ActionToolbar, and LogPanel are fully controlled (stateless). All state lives in App.tsx. Pass props down, callbacks up."
 ---
 
-# erkdesk App Component Architecture
+# erkdesk App Architecture
 
-The `App.tsx` component is the root of the erkdesk Electron renderer. It owns all application state and lifts it to child components following a controlled component pattern.
+## Why the State Lives in App.tsx
 
-## State Ownership
+erkdesk follows a strict state-lifting pattern: App.tsx owns all application state, and child components (PlanList, ActionToolbar, LogPanel) are fully controlled. This isn't just React convention — it's required by two cross-cutting concerns:
 
-App.tsx owns 7 pieces of state:
+1. **Auto-refresh must coordinate selection and plan data atomically.** If PlanList owned its own selection state, the refresh effect in App.tsx couldn't safely remap selection to the new plan array.
+2. **Streaming actions span multiple components.** The toolbar initiates actions, App.tsx manages the IPC lifecycle, and LogPanel displays output. No single child component has enough context to own this flow.
 
-### Core Plan State
+<!-- Source: erkdesk/src/renderer/App.tsx, state declarations and child JSX -->
 
-| State           | Type        | Purpose                                            |
-| --------------- | ----------- | -------------------------------------------------- | --------------------------------- |
-| `plans`         | `PlanRow[]` | Full list of erk plans from `erk dash-data --json` |
-| `selectedIndex` | `number`    | Currently selected row index (-1 if none)          |
-| `loading`       | `boolean`   | Initial fetch in progress                          |
-| `error`         | `string     | null`                                              | Error message from fetch failures |
+See the state declarations and JSX return in `App.tsx` for the full ownership picture.
 
-### Log Panel State
+## Auto-Refresh Selection Preservation
 
-| State             | Type        | Purpose                 |
-| ----------------- | ----------- | ----------------------- | -------------------------------- | ---------------------- |
-| `logLines`        | `LogLine[]` | Streaming action output |
-| `logStatus`       | `"running"  | "success"               | "error"`                         | Final status of action |
-| `logVisible`      | `boolean`   | Log panel visibility    |
-| `runningActionId` | `string     | null`                   | ID of currently executing action |
+The 15-second auto-refresh re-fetches plan data from `erk exec dash-data`. The non-obvious problem: plans can reorder between fetches (e.g., a PR state change moves a plan up or down). If selection were tracked by array index, the user would suddenly be looking at a different plan after refresh.
 
-**Ref state**: `lastLoadedUrlRef` tracks the last URL loaded in WebView to prevent redundant loads.
+**The solution**: Before applying new plan data, the refresh effect looks up the `issue_number` of the currently selected plan, then finds that issue_number's new index in the refreshed array. If the plan no longer exists, it falls back to index 0.
 
-## State Lifting Pattern
+<!-- Source: erkdesk/src/renderer/App.tsx, setInterval effect -->
 
-App.tsx passes state down to controlled components:
+See the `setInterval` effect in `App.tsx` for the implementation. The key detail is that `setSelectedIndex` is called _inside_ the `setPlans` updater — this ensures the index remapping sees the new plan array, not the stale one.
 
-```tsx
-<PlanList
-  plans={plans}
-  selectedIndex={selectedIndex}
-  onSelectIndex={setSelectedIndex}
-  loading={loading}
-  error={error}
-/>
+## WebView Overlay Architecture
 
-<ActionToolbar
-  selectedPlan={selectedPlan}
-  runningActionId={runningActionId}
-  onActionStart={handleActionStart}
-/>
+The right pane doesn't render GitHub content inside React. Instead, it uses a native Electron `WebContentsView` that overlays a placeholder `<div>`. This is a deliberate architectural choice with several consequences:
 
-<LogPanel
-  lines={logLines}
-  status={logStatus}
-  visible={logVisible}
-  onDismiss={handleLogDismiss}
-/>
-```
+1. **SplitPane reports bounds, not content.** The right pane `<div>` is empty — SplitPane measures its bounding rect via `ResizeObserver` and sends it to the main process via `updateWebViewBounds` IPC. The main process positions the `WebContentsView` to match.
 
-**Key insight**: Child components are stateless and controlled. They receive props and call callbacks to mutate parent state.
+2. **URL loading goes through IPC, not React.** When selection changes, App.tsx sends the URL via `loadWebViewURL` IPC rather than setting a `src` prop. The `lastLoadedUrlRef` deduplicates this — without it, every re-render would trigger a redundant IPC call and page reload.
 
-## Auto-Refresh with Selection Preservation
+3. **pr_url takes priority over issue_url.** When both exist, App.tsx prefers the PR URL because PRs are more actionable (reviews, checks, merge status). This is a UX decision, not a technical constraint.
 
-Every 15 seconds (`REFRESH_INTERVAL_MS`), App.tsx re-fetches plan data and preserves selection by `issue_number`:
+<!-- Source: erkdesk/src/renderer/App.tsx, URL loading effect -->
+<!-- Source: erkdesk/src/renderer/components/SplitPane.tsx, reportBounds callback and ResizeObserver -->
+<!-- Source: erkdesk/src/main/index.ts, webview:update-bounds handler -->
 
-> **Source**: See [`App.tsx:42-61`](../../../erkdesk/src/renderer/App.tsx)
-
-The effect sets up a `setInterval` that fetches plans every `REFRESH_INTERVAL_MS` (15s). On each refresh, it preserves selection by finding the previously-selected `issue_number` in the new plan array, falling back to index 0 if the plan is gone.
-
-**Why this works**:
-
-- Plans can be reordered (e.g., by PR state changes)
-- Issue number is stable across refreshes
-- Falls back to index 0 if previously selected plan is gone
-
-**Tripwire**: Don't preserve selection by index — the selected plan might move to a different index after refresh.
+The three-way coordination between these files makes the overlay work: SplitPane reports geometry, App.tsx decides what URL to show, and main/index.ts positions the native view.
 
 ## Keyboard Navigation
 
-App.tsx implements j/k and arrow key navigation:
+App.tsx implements vim-style j/k navigation (plus arrow keys). The handler is a `useCallback` that depends on `plans.length` for bounds clamping. Two details worth knowing:
 
-> **Source**: See [`App.tsx:63-81`](../../../erkdesk/src/renderer/App.tsx)
+- The handler is registered as a global `keydown` listener on `document`, not on a specific element. This means keyboard nav works regardless of focus.
+- Bounds clamping uses `Math.min`/`Math.max` to prevent negative indices or overflow. The early return on `plans.length === 0` prevents navigation when no data is loaded.
 
-A `useCallback` handler listens for `j`/`ArrowDown` (increment) and `k`/`ArrowUp` (decrement) keys, clamping with `Math.min`/`Math.max` to prevent out-of-range indices. A `useEffect` registers and cleans up the `keydown` listener.
+## Streaming Action Lifecycle
 
-**Pattern**: Bounds checking with `Math.min` and `Math.max` prevents out-of-range indices.
+Action execution spans three components with a clear ownership boundary:
 
-## URL Loading Strategy
+| Responsibility                               | Owner         |
+| -------------------------------------------- | ------------- |
+| Command generation and concurrency guard     | ActionToolbar |
+| IPC streaming lifecycle and state management | App.tsx       |
+| Output display and auto-scroll               | LogPanel      |
 
-When selection changes, App.tsx loads the corresponding URL in the WebView:
+The critical insight: IPC event listeners (`onActionOutput`, `onActionCompleted`) are registered once on mount in a separate `useEffect`, not inside `handleActionStart`. This prevents listener accumulation — if listeners were registered per-action, each action would add another set without removing the old ones.
 
-> **Source**: See [`App.tsx:83-91`](../../../erkdesk/src/renderer/App.tsx)
+<!-- Source: erkdesk/src/renderer/App.tsx, handleActionStart callback and streaming useEffect -->
 
-The effect bounds-checks `selectedIndex`, resolves the URL (`pr_url` preferred over `issue_url`), and loads it via IPC only if the URL has changed (deduplication via `lastLoadedUrlRef`).
-
-**Priority**: `pr_url` is preferred over `issue_url` (PRs are more actionable than issues).
-
-**Deduplication**: `lastLoadedUrlRef` prevents redundant IPC calls when URL hasn't changed.
-
-## Streaming Action Execution
-
-App.tsx coordinates streaming actions through IPC event listeners:
-
-> **Source**: See [`App.tsx:93-127`](../../../erkdesk/src/renderer/App.tsx)
-
-`handleActionStart` resets log state, shows the log panel, sets the running action ID, and starts streaming via IPC. A separate `useEffect` registers `onActionOutput` (appends to `logLines`) and `onActionCompleted` (updates status, clears running action) listeners, with cleanup via `removeActionListeners()`.
-
-**Pattern**: Event listeners are registered once on mount and cleaned up on unmount.
-
-**State updates**: Action output appends to `logLines`, completion updates `logStatus` and clears `runningActionId`.
-
-## Component Hierarchy
-
-```
-App
-├── ActionToolbar (controlled)
-│   └── Actions buttons with availability predicates
-├── SplitPane
-│   └── PlanList (controlled)
-│       └── List of plans with selection
-└── LogPanel (controlled)
-    └── Streaming output drawer
-```
+See `handleActionStart` and the streaming `useEffect` in `App.tsx`. The cleanup function calls `removeActionListeners()` which removes all listeners for both IPC channels.
 
 ## Related Documentation
 
-- [Action Toolbar](action-toolbar.md) — Action availability predicates and styling
-- [IPC Actions](ipc-actions.md) — IPC handler pattern and event flow
+- [Action Toolbar](action-toolbar.md) — Action definitions, availability predicates, and the data-driven pattern
+- [IPC Actions](ipc-actions.md) — Four-location IPC checklist, streaming vs blocking patterns
 - [erkdesk Tripwires](tripwires.md) — Critical patterns to follow
