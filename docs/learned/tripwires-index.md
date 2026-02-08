@@ -22,13 +22,12 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [cli](cli/tripwires.md)                     | 53        | `src/erk/cli/`                                |
 | [commands](commands/tripwires.md)           | 6         | `.claude/commands/`, slash commands           |
 | [config](config/tripwires.md)               | 2         | `config/` code                                |
-| [configuration](configuration/tripwires.md) | 1         | `configuration/` code                         |
-| [desktop-dash](desktop-dash/tripwires.md)   | 58        | `desktop-dash/` code                          |
-| [documentation](documentation/tripwires.md) | 25        | `documentation/` code                         |
-| [erk](erk/tripwires.md)                     | 1         | `erk/` code                                   |
+| [desktop-dash](desktop-dash/tripwires.md)   | 24        | `desktop-dash/` code                          |
+| [documentation](documentation/tripwires.md) | 11        | `documentation/` code                         |
+| [erk](erk/tripwires.md)                     | 5         | `erk/` code                                   |
 | [gateway](gateway/tripwires.md)             | 2         | `gateway/` code                               |
-| [hooks](hooks/tripwires.md)                 | 2         | `.claude/hooks/`, hook development            |
-| [integrations](integrations/tripwires.md)   | 9         | `integrations/` code                          |
+| [hooks](hooks/tripwires.md)                 | 4         | `.claude/hooks/`, hook development            |
+| [integrations](integrations/tripwires.md)   | 3         | `integrations/` code                          |
 | [objectives](objectives/tripwires.md)       | 9         | `objectives/` code                            |
 | [planning](planning/tripwires.md)           | 26        | `.impl/`, `.worker-impl/`, planning workflows |
 | [pr-operations](pr-operations/tripwires.md) | 1         | `pr-operations/` code                         |
