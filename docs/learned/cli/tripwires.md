@@ -26,7 +26,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding a parameter to erk exec without updating calling command** → Read [Parameter Addition Checklist](parameter-addition-checklist.md) first. 5-step verification required. Parameter additions must thread through skill argument-hint, command invocations, AND exec script. Miss any layer and you get silent failures or discovery problems. See parameter-addition-checklist.md.
 
-**CRITICAL: Before adding bulleted lists to CLI command help text** → Read [Click Help Text Formatting](help-text-formatting.md) first. Place  before bulleted/numbered lists to prevent Click from merging items into single line.
+**CRITICAL: Before adding bulleted lists to CLI command help text** → Read [Click Help Text Formatting](help-text-formatting.md) first. Place \b before bulleted/numbered lists to prevent Click from merging items into single line.
 
 **CRITICAL: Before adding discovery logic outside prepare_state()** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. All discovery (branch name, issue number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated.
 
@@ -55,7 +55,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before displaying user-provided text in Rich CLI tables without escaping** → Read [Objective Commands](objective-commands.md) first. Use `escape_markup(value)` for user data in Rich tables. Brackets like `[text]` are interpreted as style tags and will disappear.
 
 **CRITICAL: Before editing or deleting .impl/ folder during implementation** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/plan.md is immutable during implementation. Never edit it. Never delete .impl/ folder - it must be preserved for user review. Only .worker-impl/ should be auto-deleted.
-
 
 **CRITICAL: Before expecting status to auto-update after manual PR edits** → Read [Update Roadmap Step Command](commands/update-roadmap-step.md) first. Only the update-roadmap-step command writes computed status. Manual edits require explicitly setting status to '-' to enable inference on next parse.
 
@@ -115,6 +114,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using os.environ to read CLAUDE_SESSION_ID** → Read [Session ID Availability and Propagation](session-management.md) first. CLAUDE_SESSION_ID is NOT an environment variable. It's a Claude Code string substitution in commands/skills, and arrives via stdin JSON in hooks.
 
-**CRITICAL: Before writing Examples sections in CLI docstrings without ** → Read [Click Help Text Formatting](help-text-formatting.md) first. Place  on its own line after 'Examples:' heading. Without it, Click rewraps text and breaks formatting.
+**CRITICAL: Before writing Examples sections in CLI docstrings without \b** → Read [Click Help Text Formatting](help-text-formatting.md) first. Place \b on its own line after 'Examples:' heading. Without it, Click rewraps text and breaks formatting.
 
 **CRITICAL: Before writing PR/issue body generation in exec scripts** → Read [Exec Command Patterns](exec-command-patterns.md) first. Use `_build_pr_body` and `_build_issue_comment` patterns from handle_no_changes.py for consistency and testability.
