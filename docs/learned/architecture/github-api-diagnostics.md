@@ -1,6 +1,6 @@
 ---
 title: GitHub API Diagnostics
-last_audited: "2026-02-04 05:48 PT"
+last_audited: "2026-02-07"
 audit_result: clean
 read_when:
   - debugging GitHub API failures
@@ -13,146 +13,137 @@ tripwires:
 
 # GitHub API Diagnostics
 
-This document describes the diagnostic methodology for investigating repository-specific GitHub API failures.
+When GitHub API calls fail, the root cause isn't always what it seems. This document explains why repository-specific bugs exist, how to diagnose them, and what makes them different from transient failures.
 
-## Problem
+## The Insight: Repository-Specific Bugs Are Real
 
-GitHub API failures can be:
+GitHub's API can fail for **one repository** while working perfectly for others. This isn't network issues or rate limiting—it's bugs in GitHub's backend that only trigger under specific repository conditions (size, age, configuration, or unknown internal state).
 
-1. **Transient** - Network issues, rate limiting, temporary service degradation
-2. **Credential-related** - Invalid token, insufficient permissions
-3. **Repository-specific** - Bugs in GitHub's backend that affect some repositories but not others
-
-The third category is the hardest to diagnose because the API works fine in general, just not for your specific repository.
+**Why this matters**: The failure appears consistent (not transient), credentials work fine, and the GitHub status page shows no incidents. Without testing against a control repository, you'll waste time debugging your own code or retrying the same API call.
 
 ## Three-Step Diagnostic Methodology
 
-### Step 1: Reproduce with Direct API Call
+### Step 1: Isolate from Erk Code
 
-Use `gh api` to isolate the failure from erk's code:
+Use `gh api` directly to prove the failure is in GitHub's API, not erk's implementation:
 
 ```bash
 # Example: Codespace machines endpoint
 gh api "/repos/OWNER/REPO/codespaces/machines" --jq '.machines'
 ```
 
-**Expected outcomes:**
+**Decision tree**:
 
-- ✅ Success → The issue is in erk's code, not GitHub's API
+- ✅ Success → Bug is in erk's code (proceed with standard debugging)
 - ❌ HTTP 500/400 → Potential repository-specific GitHub bug (proceed to Step 2)
-- ❌ HTTP 401/403 → Credential or permission issue (fix auth first)
+- ❌ HTTP 401/403 → Credential/permission issue (fix auth first)
 - ❌ HTTP 404 → Endpoint doesn't exist or repository name is wrong
 
-### Step 2: Test with Control Repository
+### Step 2: Test Control Repository
 
-Create a minimal test repository and try the same API call:
+Create or use a minimal test repository and run the identical API call:
 
 ```bash
-# Create a test repo (or use an existing small repo)
+# Create test repo (or reuse existing small repo)
 gh repo create test-repo-api-debug --private --confirm
 
-# Try the same API call against the test repo
+# Try identical API call against test repo
 gh api "/repos/YOUR_USERNAME/test-repo-api-debug/codespaces/machines" --jq '.machines'
 ```
 
-**Expected outcomes:**
+**Decision tree**:
 
 - ✅ Success on test repo + ❌ Failure on original repo → **Repository-specific bug confirmed**
-- ❌ Failure on both → General API issue (check GitHub status, rate limits)
+- ❌ Failure on both → General API issue (check GitHub status, rate limits, auth)
 
 ### Step 3: Find REST API Workaround
 
-If the bug is repository-specific and GitHub CLI doesn't work, check for alternative REST API endpoints:
+Repository-specific bugs often affect **high-level convenience commands** (like `gh codespace create`) while **lower-level REST endpoints** still work. This is because convenience commands may use different API paths or aggregate multiple calls.
 
-1. **Search GitHub REST API docs** for alternative endpoints
-2. **Try direct POST/GET** instead of specialized CLI commands
-3. **Check if the operation can be split** into multiple API calls
+**Search strategy**:
 
-**Example: Codespace machines endpoint bug** (PR #6663)
+1. Check GitHub REST API docs for alternative endpoints that accomplish the same operation
+2. Try direct POST/GET with explicit parameters instead of convenience wrappers
+3. Check if the operation can be decomposed into multiple API calls
 
-```bash
-# BROKEN: gh codespace create fails with HTTP 500
-gh codespace create --repo OWNER/REPO --machine basicLinux32gb
+## Why High-Level Commands Fail While REST Works
 
-# WORKAROUND: Use REST API direct POST with repository ID
-REPO_ID=$(gh api repos/OWNER/REPO --jq .id)
-gh api user/codespaces -X POST \
-  -f ref=main \
-  -f repository_id="$REPO_ID" \
-  -f machine="basicLinux32gb"
-```
+**The pattern**: GitHub CLI convenience commands (like `gh codespace create`) often:
 
-**Key insight**: Repository-specific bugs often affect high-level convenience commands (like `gh codespace create`) but not lower-level REST endpoints (like `POST /user/codespaces`).
+1. Fetch metadata from one endpoint (e.g., list available machines)
+2. Use that metadata to make the actual operation call
 
-## Case Study: GitHub Machines Endpoint HTTP 500
+When **Step 1 is broken** (e.g., machines endpoint returns HTTP 500), the entire convenience command fails—even though the **actual creation endpoint works fine**.
 
-**Context**: PR #6663 fixed `erk codespace setup` failures caused by GitHub's machines endpoint returning HTTP 500 for specific repositories.
+**Workaround pattern**: Skip the broken metadata fetch and provide the required parameters directly to the operation endpoint.
 
-### Diagnostic Process
+<!-- Source: src/erk/cli/commands/codespace/setup_cmd.py, setup_codespace() and _get_repo_id() -->
 
-1. **Step 1**: Reproduced with `gh api repos/OWNER/REPO/codespaces/machines` → HTTP 500
-2. **Step 2**: Created test repository → Same call returned HTTP 200 with machine list
-3. **Step 3**: Found workaround using `POST /user/codespaces` with `repository_id` parameter
+**Example from erk codebase**: See `setup_codespace()` in `src/erk/cli/commands/codespace/setup_cmd.py`, which uses `POST /user/codespaces` with `repository_id` parameter instead of `gh codespace create` (which fails because the machines endpoint is broken for certain repositories).
 
-### Root Cause
+## Repository-Specific Bug Catalog
 
-GitHub's `/repos/{owner}/{repo}/codespaces/machines` endpoint has a bug affecting certain repositories (likely related to repository size, age, or configuration). The bug does not affect all repositories.
+### Machines Endpoint HTTP 500
 
-### Solution Pattern
+**Symptoms**:
 
-1. **Add repository ID helper** - `_get_repo_id()` function to fetch repository ID
-2. **Replace convenience command** - Use direct REST API POST instead of `gh codespace create`
-3. **Document the workaround** - Add to github-cli-limits.md for future reference
+- `gh codespace create` fails with HTTP 500
+- `GET /repos/{owner}/{repo}/codespaces/machines` returns HTTP 500
+- Same call works fine on test repositories
 
-**Code reference**: `src/erk/cli/commands/codespace/setup_cmd.py`
+**Workaround**: Use `POST /user/codespaces` with `repository_id` parameter instead of repository name.
+
+**Why it works**: The creation endpoint doesn't depend on the broken machines endpoint—you provide the machine type directly.
+
+### Large PR Diff Failures
+
+**Symptoms**:
+
+- `gh pr diff` returns HTTP 406 for PRs with >300 files
+- Works fine on small PRs
+
+**Workaround**: Use `GET /repos/{owner}/{repo}/pulls/{number}/files` with `--paginate` flag.
+
+**Why it works**: The REST API supports pagination, splitting large responses into manageable chunks.
+
+**Reference**: [GitHub CLI Limits](github-cli-limits.md)
+
+### Large Repository GraphQL Timeouts
+
+**Symptoms**:
+
+- GraphQL queries timeout for repositories with >10k issues/PRs
+- Same query structure works on smaller repositories
+
+**Workaround**: Use REST API with pagination instead of GraphQL.
+
+**Why it works**: REST API endpoints are optimized for large result sets with cursor-based pagination.
 
 ## When to Use This Methodology
 
-Use this diagnostic approach when:
+Use the three-step diagnostic when **all of these are true**:
 
-- ✅ GitHub API call fails in your repository
-- ✅ The failure is consistent (not transient)
+- ✅ GitHub API call fails consistently (not intermittent)
 - ✅ Credentials and permissions are correct
-- ✅ The GitHub status page shows no incidents
-- ✅ The same code works in other projects/repositories
+- ✅ GitHub status page shows no incidents
+- ✅ The same code/command works in other repositories
 
-## Common Repository-Specific Issues
+**Do NOT use this methodology for**:
 
-### 1. Machines Endpoint HTTP 500
+- Transient network failures (retry instead)
+- Auth/permission errors (fix credentials)
+- Known API limits (use documented workarounds)
 
-**Symptom**: `gh codespace create` fails with HTTP 500 when fetching machine types
-
-**Workaround**: Use `POST /user/codespaces` with `repository_id` instead of repo name
-
-**Reference**: PR #6663, github-cli-limits.md
-
-### 2. Large Repository GraphQL Timeouts
-
-**Symptom**: GraphQL queries timeout for repositories with >10k issues/PRs
-
-**Workaround**: Use REST API with pagination instead of GraphQL
-
-**Reference**: github-api-rate-limits.md
-
-### 3. Large PR Diff Failures
-
-**Symptom**: `gh pr diff` returns HTTP 406 for PRs with >300 files
-
-**Workaround**: Use REST API `/repos/{owner}/{repo}/pulls/{number}/files` with pagination
-
-**Reference**: github-cli-limits.md
-
-## Related Documentation
-
-- [GitHub CLI Limits](github-cli-limits.md) - Known gh command limitations and workarounds
-- [GitHub API Rate Limits](github-api-rate-limits.md) - GraphQL vs REST rate limiting
-- [Codespace Patterns](../cli/codespace-patterns.md) - Codespace setup implementation
-
-## Prevention
+## Prevention: Test with Multiple Repositories
 
 When implementing new GitHub API integrations:
 
-1. **Test with multiple repositories** - Don't assume success in one repo means success in all
-2. **Prefer REST over GraphQL** - REST has better rate limits and fewer bugs
-3. **Implement fallbacks** - If a high-level command fails, try lower-level alternatives
-4. **Document workarounds** - Add to github-cli-limits.md when bugs are discovered
+1. **Test with diverse repositories** - Small repos, large repos, old repos, repos with unusual configurations
+2. **Prefer REST over convenience commands** - REST APIs have better rate limits, pagination support, and fewer abstraction layers where bugs can hide
+3. **Implement fallbacks early** - Don't wait for production failures to discover the need for workarounds
+4. **Document discovered bugs** - Add to [GitHub CLI Limits](github-cli-limits.md) when repository-specific bugs are confirmed
+
+## Related Documentation
+
+- [GitHub CLI Limits](github-cli-limits.md) - Known gh command limitations and REST API workarounds
+- [Codespace Patterns](../cli/codespace-patterns.md) - Codespace implementation patterns in erk
