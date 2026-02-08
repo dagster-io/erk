@@ -23,11 +23,11 @@ This review agent enforces a key design decision: **which source files require t
 
 The central insight is that erk's architecture _intentionally_ creates files that carry no testable logic. These fall into Layers 0-2 of the test architecture:
 
-| Architecture Layer | File Type | Why No Tests Needed |
-|----|----|----|
-| Layer 0 — Wiring | `__init__.py`, `conftest.py`, `__main__.py` | Pure infrastructure, no logic |
-| Layer 1 — Thin CLI | Click-decorated functions that only delegate | Testing these would test Click, not erk |
-| Layer 2 — Type definitions | `TypeVar`, `Protocol`, type aliases, ABCs with only abstract methods | No runtime behavior to verify |
+| Architecture Layer         | File Type                                                            | Why No Tests Needed                     |
+| -------------------------- | -------------------------------------------------------------------- | --------------------------------------- |
+| Layer 0 — Wiring           | `__init__.py`, `conftest.py`, `__main__.py`                          | Pure infrastructure, no logic           |
+| Layer 1 — Thin CLI         | Click-decorated functions that only delegate                         | Testing these would test Click, not erk |
+| Layer 2 — Type definitions | `TypeVar`, `Protocol`, type aliases, ABCs with only abstract methods | No runtime behavior to verify           |
 
 Everything at Layer 3 (business logic) and Layer 4 (operations/orchestration) requires tests — the agent flags files in these layers that lack corresponding test files.
 
