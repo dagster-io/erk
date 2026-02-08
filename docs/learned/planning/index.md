@@ -4,18 +4,14 @@
 # Planning Documentation
 
 - **[agent-delegation.md](agent-delegation.md)** — delegating to agents from commands, implementing command-agent pattern, workflow orchestration
-- **[agent-orchestration-safety.md](agent-orchestration-safety.md)** — launching subagents that produce large outputs, using Write tool before launching dependent agents, designing agent-to-agent data handoff
-- **[agent-orchestration.md](agent-orchestration.md)** — implementing multi-tier agent workflows, understanding erk learn parallel analysis pattern, designing agent dependency graphs, working with Tier 1/Tier 2 agent patterns
-- **[async-learn-local-preprocessing.md](async-learn-local-preprocessing.md)** — working with async learn workflow, debugging trigger-async-learn command, understanding local vs remote session preprocessing
-- **[branch-name-inference.md](branch-name-inference.md)** — Working with plan metadata (plan-header block), Debugging missing branch_name in plan issues, Implementing PR lookup from plan issues
-- **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort for a plan or PR, auditing what changed in a PR before review, creating a consolidation plan from multiple PRs
-- **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, running /local:replan-learn-plans
-- **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing replan workflow, creating consolidated plans, understanding sparse plan prevention
-- **[context-preservation-patterns.md](context-preservation-patterns.md)** — writing implementation plans, creating consolidated plans, avoiding sparse plan content
-- **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, implementing replan workflows, designing consolidation prompts
+- **[agent-orchestration-safety.md](agent-orchestration-safety.md)** — passing data between agents via files or inline output, designing multi-agent workflows with parallel and sequential tiers, orchestrating subagents that produce markdown, XML, or other large outputs
+- **[agent-orchestration.md](agent-orchestration.md)** — designing agent workflows with parallel and sequential tiers, choosing between parallel and sequential agent execution, adding or modifying agents in the learn pipeline, deciding which model tier to assign an agent
+- **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort or remaining work for a plan or PR, closing a plan issue as complete, creating a consolidation plan from multiple PRs
+- **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, modifying /local:replan-learn-plans or /erk:replan consolidation behavior
+- **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing or modifying replan workflow steps, debugging why a replanned issue produced a sparse plan, adding new plan-creation workflows that use EnterPlanMode
+- **[context-preservation-patterns.md](context-preservation-patterns.md)** — writing implementation plans (any workflow), reviewing plan content before saving to GitHub, creating consolidated plans from multiple sources, debugging why an implementing agent had to re-investigate
 - **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
 - **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo issue closing syntax
-- **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures, Encountering errors with unclear root causes, Deciding whether to guess at fixes or investigate source, Working with error messages that reference specific functions
 - **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving gateways to gateway/ directory, consolidating gateway packages, performing systematic refactoring
 - **[learn-pipeline-workflow.md](learn-pipeline-workflow.md)** — Understanding the complete learn pipeline, Working with async learn workflow, Debugging learn plan execution, Implementing learn plan orchestration
 - **[learn-plan-metadata-fields.md](learn-plan-metadata-fields.md)** — working with learn plan metadata, troubleshooting null learn_status or learn_plan_issue, transforming Plan objects in pipelines, understanding created_from_workflow_run_url field, adding workflow run backlinks to plans
