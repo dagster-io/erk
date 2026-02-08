@@ -1,16 +1,19 @@
 ---
-title: Workflow Reliability Patterns
+audit_result: edited
+last_audited: '2026-02-08'
 read_when:
-  - deciding whether an operation should be agent-driven or workflow-native
-  - designing multi-layer resilience for critical automated operations
-  - ordering git operations that mix cleanup with reset in CI workflows
+- deciding whether an operation should be agent-driven or workflow-native
+- designing multi-layer resilience for critical automated operations
+- ordering git operations that mix cleanup with reset in CI workflows
+title: Workflow Reliability Patterns
 tripwires:
-  - action: "relying on agent instructions as the sole enforcement for a critical operation"
-    warning: "Agent behavior is non-deterministic. Critical operations need a deterministic workflow step as the final safety net."
-  - action: "staging git changes (git add/git rm) without an immediate commit before a git reset --hard"
-    warning: "git reset --hard silently discards staged changes. Commit and push cleanup BEFORE any reset step."
-last_audited: "2026-02-08"
-audit_result: clean
+- action: relying on agent instructions as the sole enforcement for a critical operation
+  warning: Agent behavior is non-deterministic. Critical operations need a deterministic
+    workflow step as the final safety net.
+- action: staging git changes (git add/git rm) without an immediate commit before
+    a git reset --hard
+  warning: git reset --hard silently discards staged changes. Commit and push cleanup
+    BEFORE any reset step.
 ---
 
 # Workflow Reliability Patterns
