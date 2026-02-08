@@ -1,39 +1,27 @@
 ---
-audit_result: edited
-last_audited: "2026-02-08"
-read_when:
-  - adding new IPC handlers to erkdesk
-  - choosing between streaming and blocking execution
-  - debugging IPC event flow or memory leaks
 title: erkdesk IPC Action Pattern
+last_audited: "2026-02-08"
+audit_result: clean
+read_when:
+  - "adding new IPC handlers to erkdesk"
+  - "choosing between streaming and blocking execution"
+  - "debugging IPC event flow or memory leaks"
 tripwires:
-  - action: adding IPC handler without updating all 4 locations
+  - action: "adding IPC handler without updating all 4 locations"
+    warning: "Every IPC handler requires updates in main/index.ts (handler), main/preload.ts (bridge), types/erkdesk.d.ts (types), and tests. Missing any location compiles fine but fails at runtime."
     score: 6
-    warning:
-      Every IPC handler requires updates in main/index.ts (handler), main/preload.ts
-      (bridge), types/erkdesk.d.ts (types), and tests. Missing any location compiles
-      fine but fails at runtime.
-  - action: forgetting to remove IPC handlers on window close
+  - action: "forgetting to remove IPC handlers on window close"
+    warning: "The mainWindow 'closed' handler must remove every registered handler and kill any active subprocess. Without this, macOS window re-activation double-registers handlers."
     score: 6
-    warning:
-      The mainWindow 'closed' handler must remove every registered handler and
-      kill any active subprocess. Without this, macOS window re-activation double-registers
-      handlers.
-  - action: forgetting to remove event listeners on renderer unmount
+  - action: "forgetting to remove event listeners on renderer unmount"
+    warning: "Call removeActionListeners() in useEffect cleanup. React strict mode double-mounts in development, stacking listeners and causing double-fires."
     score: 5
-    warning:
-      Call removeActionListeners() in useEffect cleanup. React strict mode double-mounts
-      in development, stacking listeners and causing double-fires.
-  - action: using ipcMain.handle for streaming or ipcMain.on for blocking
+  - action: "using ipcMain.handle for streaming or ipcMain.on for blocking"
+    warning: "handle for streaming = Promise that never resolves. on for blocking = renderer gets no result. Match the Electron API to the communication pattern."
     score: 5
-    warning:
-      handle for streaming = Promise that never resolves. on for blocking = renderer
-      gets no result. Match the Electron API to the communication pattern.
-  - action: using blocking execution for long-running actions
+  - action: "using blocking execution for long-running actions"
+    warning: "Use streaming for actions >1s. Blocking execution freezes the entire Electron renderer (single-threaded) — no scrolling, no input, no feedback."
     score: 4
-    warning:
-      Use streaming for actions >1s. Blocking execution freezes the entire Electron
-      renderer (single-threaded) — no scrolling, no input, no feedback.
 ---
 
 # erkdesk IPC Action Pattern

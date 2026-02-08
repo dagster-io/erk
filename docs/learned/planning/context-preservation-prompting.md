@@ -1,22 +1,16 @@
 ---
-audit_result: edited
-last_audited: "2026-02-08"
-read_when:
-  - writing slash commands that create plans
-  - designing any workflow that calls EnterPlanMode
-  - understanding why plans lose investigation context
 title: Context Preservation Prompting Patterns
+last_audited: "2026-02-08"
+audit_result: clean
+read_when:
+  - "writing slash commands that create plans"
+  - "designing any workflow that calls EnterPlanMode"
+  - "understanding why plans lose investigation context"
 tripwires:
-  - action: creating a new plan-generating command without a pre-plan gathering step
-    warning:
-      Without explicit context materialization before EnterPlanMode, agents produce
-      sparse plans. Apply the two-phase pattern from this document.
-  - action:
-      prompting an agent to 'include findings in the plan' without structuring
-      them first
-    warning:
-      Unstructured prompts don't work — agents summarize at too high a level.
-      Use the four-category gathering step instead.
+  - action: "creating a new plan-generating command without a pre-plan gathering step"
+    warning: "Without explicit context materialization before EnterPlanMode, agents produce sparse plans. Apply the two-phase pattern from this document."
+  - action: "prompting an agent to 'include findings in the plan' without structuring them first"
+    warning: "Unstructured prompts don't work — agents summarize at too high a level. Use the four-category gathering step instead."
 ---
 
 # Context Preservation Prompting Patterns
