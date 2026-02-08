@@ -7,11 +7,11 @@ read_when:
 last_audited: "2026-02-08"
 audit_result: clean
 tripwires:
-  - action: "extending a template base class for workflow capabilities"
+  - action: "extending a base class for workflow capabilities"
     warning: "Workflow capabilities extend Capability directly, not a template base class"
-  - action: "placing workflows outside bundled artifacts path"
+  - action: "placing workflow files in incorrect bundled artifacts location"
     warning: "Workflows must exist in bundled artifacts path resolved by get_bundled_github_dir()"
-  - action: "importing artifacts.state at module level"
+  - action: "adding top-level imports for artifacts.state in workflow capabilities"
     warning: "Use inline imports for artifacts.state to avoid circular dependencies"
 ---
 

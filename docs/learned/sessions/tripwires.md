@@ -12,6 +12,8 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+**CRITICAL: Before accessing a session by ID without checking existence first** → Read [Session File Lifecycle and Persistence](lifecycle.md) first. Session files are session-scoped — Claude Code may clean them up at any time. Always use LBYL discovery (ClaudeInstallation.find_session_globally) before reading.
+
 **CRITICAL: Before analyzing large sessions** → Read [Session Preprocessing](preprocessing.md) first. Sessions exceeding 20,000 tokens are automatically chunked into multi-part files. Analysis must detect and handle chunking (.part1.jsonl, .part2.jsonl, etc.). Check for part files when base session file is missing.
 
 **CRITICAL: Before assuming a session ID from metadata corresponds to a file on disk** → Read [Session Discovery and Fallback Patterns](discovery-fallback.md) first. Claude Code manages session lifecycle; old sessions may be cleaned up. Always use LBYL discovery before reading.

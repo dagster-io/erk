@@ -13,7 +13,7 @@ tripwires:
   - action: "putting PlanDataProvider ABC in src/erk/tui/"
     warning: "The ABC lives in erk-shared so desktop-dash and other external consumers can depend on it without importing the full TUI package."
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # TUI Data Contract
