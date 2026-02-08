@@ -3,14 +3,9 @@ read_when:
   - working with WebContentsView bounds in erkdesk
   - debugging Electron crashes related to setBounds
   - adding new IPC handlers that pass coordinates to Electron APIs
-title: Defensive Bounds Handling
 tripwires:
-  - action: using this pattern
-    warning:
-      never pass renderer-reported bounds directly to Electron setBounds() without
-      clamping
-  - action: using this pattern
-    warning: always clamp at the main process trust boundary, not only in the renderer
+  - never pass renderer-reported bounds directly to Electron setBounds() without clamping
+  - always clamp at the main process trust boundary, not only in the renderer
 ---
 
 # Defensive Bounds Handling
