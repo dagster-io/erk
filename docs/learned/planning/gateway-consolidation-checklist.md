@@ -1,208 +1,87 @@
 ---
 title: Gateway Consolidation Checklist
-last_audited: "2026-02-03"
+last_audited: "2026-02-08"
 audit_result: edited
 read_when:
-  - "moving gateways to gateway/ directory"
-  - "consolidating gateway packages"
-  - "performing systematic refactoring"
+  - "moving a gateway package into the gateway/ directory"
+  - "extracting a new gateway from existing code"
+  - "performing large-scale import refactoring across packages"
+tripwires:
+  - action: "moving gateway files without git mv"
+    warning: "Always use git mv to preserve file history. Plain mv + git add loses blame history, making future archaeology harder."
+  - action: "updating imports one file at a time during gateway consolidation"
+    warning: "Use LibCST for systematic import updates. Manual editing misses call sites and creates partial migration states. See docs/learned/refactoring/libcst-systematic-imports.md."
+  - action: "renaming gateway files during a move without checking for non-standard naming"
+    warning: "Source files that don't follow standard naming (e.g., executor.py instead of abc.py) must be renamed to abc.py/real.py/fake.py during the move. The gateway directory convention requires standard file names."
 ---
 
 # Gateway Consolidation Checklist
 
-Systematic checklist for consolidating gateway packages into the `gateway/` directory structure.
+## Context
 
-## Overview
+All gateway packages live under `packages/erk-shared/src/erk_shared/gateway/`. This was not always the case — gateways were originally scattered across domain-specific directories (e.g., TUI commands, CLI utilities). Consolidation into a single `gateway/` tree was done because:
 
-Gateway consolidation moves gateway packages from scattered locations into a unified `packages/erk-shared/src/erk_shared/gateway/` directory. This improves discoverability and maintains consistent structure.
+1. **Discoverability** — agents searching for "where is the X gateway?" need one place to look, not a codebase-wide search
+2. **Consistency enforcement** — the 5-file pattern (abc/real/fake/dry_run/printing) is easier to verify when all gateways are siblings
+3. **Import predictability** — `erk_shared.gateway.<name>.abc` is a mechanical derivation from the gateway name, eliminating guesswork
 
-## Consolidation Steps
+There are currently 27 gateway packages in this directory. Some use the full 5-file pattern, others use a simplified 3-file pattern (no dry_run/printing). Complex domains (Git, GitHub, Graphite) use nested sub-gateways.
 
-### 1. Identify Gateway Package
+## Operation Ordering: Why It Matters
 
-Confirm the package follows the standard gateway pattern:
+The single most important insight from past consolidation work: **move all files before updating any imports**.
 
-- Has `abc.py` with abstract interface
-- Has `real.py` with production implementation
-- Has `fake.py` with test implementation
-- May have `dry_run.py` and/or `printing.py` wrappers
-- Has `__init__.py` with submodule docstring
+| Phase | What | Why |
+|-------|------|-----|
+| 1. Move files | `git mv` all sources to new locations | Preserves git history; creates a codebase that won't compile but has correct file layout |
+| 2. Update imports | LibCST batch transformation | All old→new path mappings are known; systematic replacement prevents missed call sites |
+| 3. Lint fix | `ruff check --fix` across affected directories | Import sorting violations (I001) are inevitable after bulk moves; fix once at the end |
+| 4. Test | Full test suite | Catches any missed import sites or broken circular dependencies |
 
-### 2. Create Target Directory
+**Anti-pattern: interleaving moves and import updates.** Moving gateway A, fixing its imports, then moving gateway B creates intermediate broken states where gateway A's imports reference the new location but gateway B's cross-references still point to the old one. Batch all moves first, then batch all import updates.
 
-```bash
-mkdir -p packages/erk-shared/src/erk_shared/gateway/<gateway-name>/
-```
+## Non-Obvious Pitfalls
 
-**Naming:** Use snake_case for directory name (e.g., `command_executor`, `branch_manager`).
+### File Naming Normalization
 
-### 3. Move Files
+Scattered gateways often have domain-specific file names (e.g., `executor.py` for the ABC, `real_executor.py` for the real implementation). During the move, these must be renamed to the standard `abc.py`/`real.py`/`fake.py` convention. This is a rename-during-move — `git mv old_path/executor.py new_path/abc.py` handles both operations atomically.
 
-Use `git mv` to preserve history:
+### Circular Imports After Consolidation
 
-```bash
-# Example: moving CommandExecutor
-git mv packages/erk-shared/src/erk_shared/tui/commands/executor.py \
-       packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py
+Moving gateways into sibling directories can surface circular imports that were previously hidden by package boundaries. The symptom is `ImportError: cannot import name 'X' from partially initialized module`.
 
-git mv packages/erk-shared/src/erk_shared/tui/commands/real_executor.py \
-       packages/erk-shared/src/erk_shared/gateway/command_executor/real.py
+The root cause is usually a gateway ABC that imports types from another gateway. The fix is a `TYPE_CHECKING` guard — these imports are only needed for type annotations, not runtime behavior. This is one of the few places where erk uses `TYPE_CHECKING` (normally erk avoids it because LBYL patterns need runtime types).
 
-git mv packages/erk-shared/src/erk_shared/tui/commands/fake_executor.py \
-       packages/erk-shared/src/erk_shared/gateway/command_executor/fake.py
-```
+### Empty `__init__.py` with Docstring
 
-**Important:** If files don't match standard naming (e.g., `executor.py` instead of `abc.py`), rename during the move.
+Per erk's no-re-exports convention, `__init__.py` files must be empty of executable code. But they should include a docstring listing the submodules and their key symbols. This acts as a human-readable index without creating import shortcuts that hide the canonical import path.
 
-### 4. Update Imports in Moved Files
+## Batch vs Single-Gateway Consolidation
 
-Update relative imports within the gateway package:
+| Approach | When to use | Trade-off |
+|----------|------------|-----------|
+| **Single gateway** | Gateway has few import sites (<10) | Simpler PR, easier review, but overhead per gateway is high |
+| **Batch (multiple gateways)** | Consolidating 3+ related gateways | One LibCST pass handles all remappings; one lint fix; one test run. But PR is larger and harder to review |
 
-**Before:**
+For batch operations, LibCST is nearly mandatory — manual import updates across dozens of files are error-prone and slow.
 
-```python
-from erk_shared.tui.commands.executor import CommandExecutor
-```
+<!-- Source: docs/learned/refactoring/libcst-systematic-imports.md -->
 
-**After:**
+See [LibCST Systematic Imports](../refactoring/libcst-systematic-imports.md) for the transformer pattern and step-by-step workflow.
 
-```python
-from erk_shared.gateway.command_executor.abc import CommandExecutor
-```
+## Post-Move Checklist
 
-### 5. Create **init**.py
+After moving files and updating imports, these steps are easy to forget:
 
-Add `__init__.py` with a docstring pointing to submodules (per erk's no-re-exports convention):
+1. **Update gateway inventory** — add the new entry to the gateway inventory doc
+2. **Update any doc referencing old paths** — grep `docs/learned/` for the old import path
+3. **Verify the `__init__.py`** exists in the new directory — missing it produces `ModuleNotFoundError` that looks like a bad import rather than a missing file
 
-```python
-"""Command execution interface for TUI operations.
+<!-- Source: docs/learned/architecture/gateway-inventory.md -->
+<!-- Source: docs/learned/architecture/gateway-abc-implementation.md -->
 
-Import from submodules:
-- abc: CommandExecutor
-- real: RealCommandExecutor
-- fake: FakeCommandExecutor
-"""
-```
+## Related Documentation
 
-### 6. Update All Import Sites
-
-Find all files that import the gateway:
-
-```bash
-grep -r "from erk_shared.tui.commands.executor" packages/ src/
-```
-
-Update systematically using LibCST or manual editing:
-
-**Before:**
-
-```python
-from erk_shared.tui.commands.executor import CommandExecutor
-from erk_shared.tui.commands.real_executor import RealCommandExecutor
-```
-
-**After:**
-
-```python
-from erk_shared.gateway.command_executor.abc import CommandExecutor
-from erk_shared.gateway.command_executor.real import RealCommandExecutor
-```
-
-See [LibCST Systematic Imports](../refactoring/libcst-systematic-imports.md) for automated refactoring.
-
-### 7. Run Linter
-
-Fix any import sorting or formatting issues:
-
-```bash
-ruff check --fix packages/erk-shared/src/erk_shared/gateway/<gateway-name>/
-ruff check --fix packages/ src/  # Fix all import sites
-```
-
-### 8. Run Tests
-
-Verify tests still pass:
-
-```bash
-pytest tests/unit/ -k <gateway-name>
-pytest tests/integration/ -k <gateway-name>
-```
-
-### 9. Update Documentation
-
-- Add entry to `docs/learned/architecture/gateway-inventory.md`
-- Update any existing gateway-specific documentation with new paths
-- Update `docs/learned/architecture/index.md` if needed
-
-### 10. Create Pull Request
-
-Commit with descriptive message:
-
-```bash
-git add .
-git commit -m "Move <GatewayName> gateway to gateway/ directory
-
-Consolidates <GatewayName> into unified gateway structure:
-- Moved from packages/erk-shared/src/erk_shared/<old-path>/
-- Updated imports across codebase
-- Added __init__.py with submodule docstring"
-
-git push
-gh pr create --fill
-```
-
-## Common Issues
-
-### Import Sorting Violations
-
-**Symptom:** Ruff reports I001 violations after moving files.
-
-**Fix:** Run `ruff check --fix` on affected files.
-
-### Circular Import Errors
-
-**Symptom:** `ImportError: cannot import name 'X' from partially initialized module`
-
-**Cause:** Gateway ABC imports types from moved modules.
-
-**Fix:** Use `TYPE_CHECKING` guard:
-
-```python
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from erk_shared.gateway.other_gateway import OtherType
-```
-
-### Test Failures from Stale Imports
-
-**Symptom:** Tests fail with `ModuleNotFoundError`
-
-**Cause:** Test files still use old import paths.
-
-**Fix:** Update test imports to match new paths.
-
-### Missing **init**.py
-
-**Symptom:** `ModuleNotFoundError: No module named 'erk_shared.gateway.X'`
-
-**Cause:** Forgot to create `__init__.py` in new directory.
-
-**Fix:** Create `__init__.py` with submodule docstring.
-
-## Batch Operations
-
-For consolidating multiple gateways in one PR:
-
-1. Move all gateways first (preserve history)
-2. Update imports for all gateways together (use LibCST)
-3. Run ruff fix once at the end
-4. Run full test suite
-
-This reduces the number of intermediate broken states.
-
-## Related Topics
-
-- [Gateway Inventory](../architecture/gateway-inventory.md) - Current gateway catalog
-- [LibCST Systematic Imports](../refactoring/libcst-systematic-imports.md) - Automated refactoring
-- [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) - Gateway structure
+- [Gateway Inventory](../architecture/gateway-inventory.md) — current catalog of all gateway packages
+- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 5-place implementation pattern that consolidated gateways must follow
+- [LibCST Systematic Imports](../refactoring/libcst-systematic-imports.md) — automated import refactoring for batch moves

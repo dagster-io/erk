@@ -1,154 +1,67 @@
 ---
 title: Roadmap Format Versioning
 read_when:
-  - working on roadmap parser changes
-  - understanding backward compatibility for roadmap tables
-  - migrating from 4-column to 7-column format
+  - extending the roadmap table format with new columns
+  - planning backward-compatible parser changes to roadmap tables
+  - understanding why the roadmap uses a simple 4-column format
+tripwires:
+  - action: "adding columns to the roadmap table format"
+    warning: "The 7-column extension was planned but never implemented. Read this doc to understand the migration strategy before adding columns."
+  - action: "adding step_type, issue, or depends_on fields to RoadmapStep"
+    warning: "These fields were planned but never built. The parser, serializer, and all callers would need coordinated changes."
 ---
 
 # Roadmap Format Versioning
 
-The roadmap parser supports dual-format backward compatibility to allow gradual migration from the legacy 4-column table format to the extended 7-column format.
+This document captures the design thinking around extending the roadmap table format and why the current 4-column format has persisted unchanged.
 
-## Format Evolution
+## Current State: 4-Column Format Only
 
-### Legacy Format (4 columns)
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, RoadmapStep -->
 
-**Table header**:
+The `RoadmapStep` dataclass has exactly four fields (`id`, `description`, `status`, `pr`). The parser in `parse_roadmap()` only handles 4-column tables. Despite earlier planning for a 7-column extension (adding Type, Issue, Depends On), **this extension was never implemented** — no code for 7-column parsing, no additional fields on the dataclass, no dual-format detection.
+
+The current table format (this is a data format example, permitted under the One Code Rule):
 
 ```markdown
 | Step | Description | Status | PR |
+|------|-------------|--------|----|
+| 1.1  | Add auth    | done   | #123 |
 ```
 
-**Columns**:
+## Planned 7-Column Extension (Never Built)
 
-1. **Step**: Step ID (e.g., "1.1", "2.3")
-2. **Description**: What the step does
-3. **Status**: One of: pending, done, in_progress, blocked, skipped
-4. **PR**: PR reference ("#123") or plan reference ("plan #456")
+The original plan added three columns: **Type** (task/milestone/research), **Issue** (GitHub issue reference), and **Depends On** (step ID dependencies). The migration strategy was:
 
-**Example**:
+- **Header-based format detection**: The parser would check the table header to decide which format to parse — no version metadata or config needed. This keeps format detection co-located with the data itself.
+- **Defaults for missing columns**: When parsing 4-column tables into a 7-column data structure, missing fields would get defaults (`step_type="task"`, `issue=None`, `depends_on=None`).
+- **Per-phase format mixing**: Different phases within the same objective could use different column counts, enabling gradual migration.
+- **Smart serialization**: Output 4-column format unless any step has non-default extended values, minimizing unnecessary format changes.
 
-```markdown
-| Step | Description         | Status      | PR       |
-| ---- | ------------------- | ----------- | -------- |
-| 1.1  | Add user auth       | done        | #123     |
-| 1.2  | Add password reset  | in_progress | plan #45 |
-| 1.3  | Add OAuth providers | pending     | -        |
-```
+## Why This Matters for Future Extension
 
-### Extended Format (7 columns, planned)
+If the 7-column format (or any format extension) is revisited, these are the cross-cutting touchpoints:
 
-**Table header**:
+| Component | What changes | Why |
+|-----------|-------------|-----|
+| `RoadmapStep` dataclass | New fields needed | All consumers type-check against this |
+| `parse_roadmap()` | Header detection + row parsing | Must handle both old and new formats |
+| `_replace_step_pr_in_body()` | Regex for row matching | Currently assumes exactly 4 pipe-delimited cells |
+| `serialize_phases()` | Output format selection | Must decide when to emit extended columns |
+| `objective check` validation | New semantic checks | e.g., dependency cycle detection, valid step_type values |
+| Objective issue templates | Updated table headers | New objectives should use the extended format |
 
-```markdown
-| Step | Description | Status | PR | Type | Issue | Depends On |
-```
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
 
-**Additional columns**: 5. **Type**: Step type — "task" (default), "milestone", "research" 6. **Issue**: GitHub issue reference (e.g., "#456") for tracking work 7. **Depends On**: Comma-separated list of step IDs this step depends on (e.g., "1.1,2.3")
+The regex-based row replacement in `_replace_step_pr_in_body()` is particularly fragile to column count changes — it hard-codes a 4-cell pattern match. Any format extension must update this regex or replace it with a more flexible approach.
 
-**Example**:
+## Status Inference: A Design Quirk Worth Preserving
 
-```markdown
-| Step | Description         | Status      | PR       | Type      | Issue | Depends On |
-| ---- | ------------------- | ----------- | -------- | --------- | ----- | ---------- |
-| 1.1  | Add user auth       | done        | #123     | task      | #120  | -          |
-| 1.2  | Add password reset  | in_progress | plan #45 | task      | #125  | 1.1        |
-| 1.3  | Add OAuth providers | pending     | -        | milestone | #130  | 1.1,1.2    |
-```
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
 
-## Dual-Format Parser Strategy
-
-**Parser behavior**: "Try new, fall back to old"
-
-```python
-def parse_roadmap_table(phase_body: str) -> list[RoadmapStep]:
-    """Parse roadmap table with backward compatibility.
-
-    Tries 7-column format first, falls back to 4-column if header doesn't match.
-    """
-    # Check for 7-column header
-    seven_col_header = re.search(
-        r'| Step | Description | Status | PR | Type | Issue | Depends On |',
-        phase_body
-    )
-
-    if seven_col_header:
-        return parse_seven_column_table(phase_body)
-    else:
-        # Fall back to legacy 4-column parser
-        return parse_four_column_table(phase_body)
-```
-
-**Key insight**: The header line determines which parser to use. No version field or metadata needed.
-
-## Default Value Assignment
-
-When parsing 4-column tables, missing fields get default values for compatibility with 7-column data structures:
-
-| Field      | Default Value | Rationale                             |
-| ---------- | ------------- | ------------------------------------- |
-| step_type  | "task"        | Most steps are tasks                  |
-| issue      | `None`        | Legacy roadmaps didn't track issues   |
-| depends_on | `None`        | No dependency info in 4-column format |
-
-**Example transformation**:
-
-**4-column input**:
-
-```markdown
-| 1.1 | Add auth | done | #123 |
-```
-
-**Parsed RoadmapStep**:
-
-```python
-RoadmapStep(
-    id="1.1",
-    description="Add auth",
-    status="done",
-    pr="#123",
-    step_type="task",        # DEFAULT
-    issue=None,              # DEFAULT
-    depends_on=None          # DEFAULT
-)
-```
-
-## Migration Path
-
-### For Existing Objectives
-
-**No action required**. The parser will continue to read 4-column tables correctly.
-
-### For New Objectives
-
-**Opt-in to 7-column format** by using the extended header:
-
-```markdown
-| Step | Description | Status | PR | Type | Issue | Depends On |
-```
-
-### Gradual Migration
-
-Objectives can be migrated one at a time:
-
-1. Update table header to 7-column format
-2. Fill in Type column (use "task" for most steps)
-3. Add Issue references if tracking work separately
-4. Add Depends On references for dependency tracking
-
-The parser handles both formats in the same objective body — different phases can use different formats.
-
-## Serialization
-
-When serializing roadmap data back to markdown:
-
-- **If all steps use defaults** (step_type="task", issue=None, depends_on=None): Output 4-column format
-- **If any step has non-default values**: Output 7-column format for entire phase
-
-This minimizes migration disruption — old roadmaps stay in old format unless explicitly extended.
+The parser has a dual-path status resolution: explicit status values in the Status column take priority, but if the Status column contains `-` (legacy format), status is inferred from the PR column (`#NNN` = done, `plan #NNN` = in_progress, empty = pending). This backward compatibility exists because early roadmaps used `-` in the Status column and relied entirely on PR-based inference. Any format extension must preserve this fallback to avoid breaking existing objectives.
 
 ## Related Documentation
 
-- [roadmap-parser-api.md](roadmap-parser-api.md) - RoadmapStep dataclass definition
-- [roadmap-validation.md](roadmap-validation.md) - Validation checks 6-7 for 7-column format
+- [roadmap-parser-api.md](roadmap-parser-api.md) — Data types and function reference
+- [roadmap-validation.md](roadmap-validation.md) — Validation rules for roadmap content

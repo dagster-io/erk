@@ -1,79 +1,92 @@
 ---
-title: Bundled Artifacts (.codex/ Directory)
+title: Bundled Artifact Portability
 read_when:
-  - understanding what gets bundled with erk releases
-  - working with .codex/ directory structure
-  - evaluating agent portability
+  - classifying a new skill as portable vs Claude-only
+  - adding or modifying force-include entries in pyproject.toml
+  - debugging why editable installs resolve to unexpected artifact paths
+  - understanding the artifact sync and health detection systems
 tripwires:
-  - action: "adding skills to .codex/ without verifying they work outside Claude Code"
-    warning: "Codex portability: Verify skills don't use Claude-only features (hooks, system prompts, TodoWrite). See bundled-artifacts.md for portable vs Claude-only classification."
-  - action: "modifying skills in .codex/ that are also in .claude/"
-    warning: "TOML duplicate key constraint: A skill can only be defined once. Either in .codex/ (portable) OR .claude/ (Claude-only), never both. See single-canonical-destination pattern in toml-handling.md."
-last_audited: "2026-02-05 09:52 PT"
-audit_result: edited
+  - action: "adding a skill to codex_portable_skills() without verifying it works outside Claude Code"
+    warning: "Portable skills must not use hooks, TodoWrite, EnterPlanMode, AskUserQuestion, or session log paths. Check against the portability classification table before adding."
+  - action: "adding a force-include entry in pyproject.toml without updating codex_portable.py"
+    warning: "The portability registry and pyproject.toml force-include must stay in sync. A skill mapped to erk/data/codex/ must appear in codex_portable_skills()."
+  - action: "creating a .codex/ directory in the erk repo"
+    warning: "There is no .codex/ directory in the erk repo. All skills live in .claude/skills/ regardless of portability. The build and sync systems handle remapping."
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
-# Bundled Artifacts (.codex/ Directory)
+# Bundled Artifact Portability
 
-> **Status**: Speculative architecture. The `.codex/` directory does not exist yet. This doc describes the planned portability strategy for multi-agent support.
+Erk bundles `.claude/` and `.github/` artifacts into the wheel so `erk artifact sync` can install them into external projects. A subset of these artifacts are "portable" — they work with any AI coding agent, not just Claude Code. This document explains the portability classification, the dual-path bundling architecture, and why certain design choices were made.
 
-## Portability Classification Criteria
+## Why Two Bundle Targets?
 
-When `.codex/` is implemented, skills will be classified as portable or Claude-only:
+<!-- Source: pyproject.toml:60-87 -->
 
-### Portable Skills
+The `force-include` section in `pyproject.toml` maps source artifacts to two different wheel locations: `erk/data/claude/` for Claude-only artifacts, and `erk/data/codex/` for portable skills.
 
-Skills that use only standard features available across agents:
+This split exists because portable skills get installed to whichever agent directory the target project uses (`.claude/`, `.codex/`, etc.), while Claude-only artifacts always go to `.claude/`. Without separate bundle targets, the sync system couldn't distinguish which artifacts to copy where.
 
-- No hooks (all instructions in SKILL.md)
-- No Claude-specific tools (TodoWrite, EnterPlanMode, AskUserQuestion)
-- No system prompt overrides
-- Work with standard tool set (Read, Write, Edit, Bash, Grep, Glob)
+## Portability Classification
 
-### Claude-Only Skills
+<!-- Source: src/erk/core/capabilities/codex_portable.py, codex_portable_skills -->
+<!-- Source: src/erk/core/capabilities/codex_portable.py, claude_only_skills -->
 
-Skills that depend on Claude Code exclusive features:
+Skills are classified into two registries in `codex_portable.py`. See `codex_portable_skills()` and `claude_only_skills()` for the current lists. The classification criteria:
 
-- **Hooks**: PreToolUse/PostToolUse hooks for context injection
-- **Extended tools**: Claude-specific tools not in OpenCode/Codex spec
+| Criterion | Portable | Claude-Only |
+| --- | --- | --- |
+| Hooks (PreToolUse/PostToolUse) | None — all instructions self-contained in SKILL.md | May depend on hook-injected context |
+| Tool dependencies | Standard set (Read, Write, Edit, Bash, Grep, Glob) | Claude-specific (TodoWrite, EnterPlanMode, AskUserQuestion) |
+| System prompt overrides | None | May use them |
+| Session log access | None | May inspect `~/.claude/projects/` |
 
-## TOML Duplicate Key Constraint
+**Why this matters**: Installing a skill that calls `TodoWrite` into a non-Claude project causes runtime failures. The registry prevents `erk artifact sync` from copying incompatible skills.
 
-**Critical rule**: A skill can only exist in ONE location.
+## Single Canonical Location Rule
 
-TOML doesn't allow duplicate keys. If a skill is defined in both `.codex/` and `.claude/`, config parsing fails:
+Each skill must exist in exactly one portability category. This is enforced at two levels:
 
-```toml
-# This is invalid TOML
-[skills.my-skill]
-source = ".codex/skills/my-skill"
+1. **Registry level**: A skill appears in either `codex_portable_skills()` or `claude_only_skills()`, never both
+2. **Build level**: Each `force-include` entry maps to exactly one destination (`erk/data/claude/` or `erk/data/codex/`)
 
-[skills.my-skill]  # ERROR: duplicate key
-source = ".claude/skills/my-skill"
-```
+Violating this creates confusing sync behavior where the same skill could be installed from two different sources with potentially different content.
 
-**Pattern**: Single canonical destination:
+## The Editable Install Subtlety
 
-- **Portable skills** → `.codex/` only (gets copied to agent-specific dir on init)
-- **Claude-only skills** → `.claude/` only (never copied)
+<!-- Source: src/erk/artifacts/paths.py, get_bundled_codex_dir -->
+<!-- Source: src/erk/artifacts/paths.py, _is_editable_install -->
 
-**Never both.**
+The path resolution in `paths.py` uses a dual-path strategy because editable installs (development) and wheel installs (distribution) have fundamentally different directory layouts. The detection heuristic checks whether `site-packages` appears in the resolved package path.
 
-## Migration Strategy
+**The non-obvious design decision**: In editable mode, `get_bundled_codex_dir()` returns the `.claude/` directory — not a `.codex/` directory — because `.claude/` and `.codex/` use identical file formats (YAML frontmatter with name and description). The sync step handles the target directory mapping at install time. This avoids maintaining a separate `.codex/` directory in the repo that would just mirror `.claude/skills/`.
+
+## Staleness Detection: Two Signals
+
+<!-- Source: src/erk/artifacts/artifact_health.py, _determine_status -->
+
+The artifact health system uses version + content hash comparison (stored in `.erk/state.toml`) to classify each artifact into one of four states: `up-to-date`, `changed-upstream`, `locally-modified`, and `not-installed`.
+
+The two-signal approach exists to distinguish two different scenarios that a single signal would conflate:
+
+- **Hash changed, same version** → user edited the artifact locally (`locally-modified`) → sync should warn, not overwrite
+- **Hash changed, different version** → new erk release changed the artifact (`changed-upstream`) → sync should update
+
+This distinction is why `_determine_status()` checks both signals rather than just comparing hashes. Without the version signal, the system couldn't tell whether the user or an erk upgrade caused the content difference.
+
+## Adding a New Portable Skill
 
 When making a skill portable:
 
-1. **Remove Claude-only dependencies** — Remove hook references, replace Claude-specific tools with standard equivalents
-2. **Test without hooks** — Verify skill works with hooks disabled
-3. **Move to `.codex/`** — `git mv .claude/skills/my-skill .codex/skills/my-skill`
-4. **Document portability** — Add `portability: portable` to frontmatter
+1. **Verify no Claude-only dependencies** — confirm the skill doesn't reference hooks, Claude-specific tools, or session log paths
+2. **Add to `codex_portable_skills()`** in `codex_portable.py`
+3. **Add force-include entry** mapping `.claude/skills/{name}` to `erk/data/codex/skills/{name}` in `pyproject.toml`
+4. **Keep source in `.claude/skills/`** — the skill's source of truth stays in `.claude/`; the build system handles remapping
 
-## Current State
-
-All skills are currently in `.claude/skills/`. See that directory for the current skill inventory. The `.codex/` directory will be created when multi-agent portability work begins.
+**Anti-pattern**: Moving the skill source directory to a `.codex/` folder in the repo. There is no `.codex/` directory in the erk repo. All skills live in `.claude/skills/` regardless of portability; the distinction only matters at build and sync time.
 
 ## Related Documentation
 
-- [multi-agent-portability.md](multi-agent-portability.md) - Agent comparison and session abstraction
-- `docs/learned/reference/toml-handling.md` - TOML duplicate key pattern
-- `docs/learned/commands/command-portability.md` - Command-level portability patterns
+- [multi-agent-portability.md](multi-agent-portability.md) — Agent comparison and portability research
+- [toml-handling.md](../reference/toml-handling.md) — TOML library choice and patterns

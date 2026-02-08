@@ -1,92 +1,83 @@
 ---
-title: Roadmap Validation Rules
+title: Roadmap Validation Architecture
 read_when:
-  - "debugging roadmap validation errors"
-  - "understanding what the roadmap parser validates"
-  - "adding new validation rules to the roadmap parser"
+  - "debugging roadmap validation errors or check failures"
+  - "adding new validation rules to objective check or update commands"
+  - "understanding why validation is split across parser and check command"
 tripwires:
-  - action: "modifying roadmap validation without updating this document"
-    warning: "Keep this document in sync with validation logic in objective_roadmap_shared.py and objective_roadmap_update.py."
+  - action: "modifying roadmap validation without understanding the two-level architecture"
+    warning: "Validation is split between parse_roadmap() (structural) and validate_objective() (semantic). Read this doc to understand which level your change belongs in."
+  - action: "adding a new validation check"
+    warning: "Structural checks go in parse_roadmap() and return warnings alongside data. Semantic checks go in validate_objective() and produce pass/fail results. Don't mix levels."
 ---
 
-# Roadmap Validation Rules
+# Roadmap Validation Architecture
 
-The roadmap parser and update command validate roadmap content at two levels: structural validation (during parsing) and semantic validation (during updates).
+## Why Two Levels?
 
-## Structural Validation (Parser)
+Roadmap validation is deliberately split across two layers because they serve different purposes and have different failure modes:
 
-Performed by `parse_roadmap()` in `objective_roadmap_shared.py`:
+<!-- Source: objective_roadmap_shared.py, parse_roadmap -->
+**Structural validation** (in `parse_roadmap()`) answers: "Can we extract data from this markdown?" It runs during every roadmap operation — parsing, updating, checking — and returns warnings alongside whatever data it could extract. Parsing is lenient: it continues past malformed phases and collects errors rather than aborting.
 
-| Rule                | Severity | Description                                                              |
-| ------------------- | -------- | ------------------------------------------------------------------------ | ---- | ----------- | ------ | --- | --------------------------- |
-| Phase header format | Warning  | Must match `### Phase N: Name` pattern                                   |
-| Table structure     | Warning  | Must have `                                                              | Step | Description | Status | PR  | ` header with separator row |
-| Row format          | Warning  | Each row must match `                                                    | id   | desc        | status | pr  | ` pattern                   |
-| Step ID format      | Warning  | Letter-format IDs (e.g., `1A.1`) emit a warning; plain numbers preferred |
+<!-- Source: check_cmd.py, validate_objective -->
+**Semantic validation** (in `validate_objective()`) answers: "Is this roadmap internally consistent?" It only runs during `erk objective check` and produces pass/fail check results. It depends on structural parsing succeeding first — if no phases parse, semantic checks are skipped and the command returns early.
 
-Validation warnings are collected and returned alongside parsed data — parsing continues even with warnings.
+This separation matters because the update command needs structural parsing but not semantic validation. A step PR update shouldn't fail because phase numbering is out of order in an unrelated phase.
 
-## Semantic Validation (Check Command)
+## Structural vs Semantic: Decision Table
 
-Performed by `objective check` command in `check_cmd.py:166-197`:
+| Question | Level | Why |
+|---|---|---|
+| Can we find phase headers? | Structural | Without phases, no data can be extracted |
+| Does the table have the right columns? | Structural | Column structure determines if rows can be parsed |
+| Are step IDs in preferred format? | Structural (warning) | Doesn't block parsing, just flags for humans |
+| Does a "done" step have a PR reference? | Semantic | Requires cross-field reasoning about data integrity |
+| Are status and PR columns consistent? | Semantic | Requires understanding the status inference rules |
+| Is phase numbering sequential? | Semantic | Requires comparing across phases |
 
-| Check # | Rule                                         | Source Lines | Description                                                                 |
-| ------- | -------------------------------------------- | ------------ | --------------------------------------------------------------------------- |
-| 1       | Has erk-objective label                      | 87–92        | Issue must have `erk-objective` label                                       |
-| 2       | Roadmap parseable                            | 95–109       | Issue body must contain valid roadmap with at least one phase               |
-| 3       | Status/PR consistency                        | 111–141      | Steps with PR `#NNN` should have status `done`, plan `#NNN` → `in_progress` |
-| 4       | No orphaned done statuses                    | 143–153      | Steps with status `done` must have a PR reference                           |
-| 5       | Phase numbering sequential                   | 155–162      | Phases must be in order (1, 2, 3 or 1A, 1B, 2A, etc.)                       |
-| 6       | Depends On references valid (planned, 7-col) | Not impl     | All step IDs in depends_on field must exist in roadmap                      |
-| 7       | Step type safety validation (planned, 7-col) | Not impl     | step_type must be one of: "task", "milestone", "research"                   |
+## The Consistency Invariants
 
-**Checks 6-7** are planned for the 7-column roadmap format extension and will be implemented when that format is added.
+The semantic checks in `validate_objective()` enforce invariants that connect the status system to the PR column:
 
-## Update Command Validation
+1. **PR implies status**: A step with PR `#NNN` should resolve to `done`; `plan #NNN` should resolve to `in_progress`. If explicit status contradicts the PR column, the check fails.
 
-Performed by `objective_roadmap_update.py`:
+2. **Status implies PR**: A step with status `done` must have a PR reference. "Done" without evidence of what was done is an orphaned status.
 
-| Rule                       | Lines   | Check                                                   |
-| -------------------------- | ------- | ------------------------------------------------------- |
-| At least one flag required | 142–145 | `--status` or `--pr` must be provided                   |
-| Issue exists               | 159     | `isinstance(issue, IssueNotFound)` check                |
-| Roadmap parseable          | 172     | `if not phases:` — at least one phase must exist        |
-| Step ID found              | 186     | `if updated_body is None:` — step must exist in roadmap |
-| Post-update validation     | 195–210 | Re-parses after update to verify consistency            |
+3. **Phase ordering**: Phases must be sequentially numbered. This catches copy-paste errors in roadmap editing (e.g., two `Phase 2` sections).
 
-## Error Categories
+These invariants interact with the status inference system documented in [Roadmap Status System](roadmap-status-system.md). The update command avoids violating invariant #1 by resetting the status cell to `-` when changing the PR cell, letting inference derive the correct status.
 
-| Category       | Example                    | Handling                                                                                                    |
-| -------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Missing issue  | Issue #999 not found       | Error response, exit 1                                                                                      |
-| Empty roadmap  | No phases parsed from body | Error response, exit 1                                                                                      |
-| Step not found | Step 9.9 doesn't exist     | Error response, exit 1                                                                                      |
-| Stale status   | "blocked" after PR added   | Prevented by status reset (see [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md)) |
+<!-- Source: update_roadmap_step.py, _replace_step_pr_in_body -->
+See `_replace_step_pr_in_body()` in `update_roadmap_step.py` for the status-reset-on-update logic.
 
-## LBYL Pattern
+## Anti-Patterns
 
-All validation uses LBYL — conditions are checked before operations:
+**Adding semantic validation to `parse_roadmap()`** — WRONG. The parser should extract data and report structural warnings, not enforce business rules. Semantic checks in the parser would block the update command from operating on partially-valid roadmaps.
 
-```python
-# Check issue exists before accessing fields
-if isinstance(issue, IssueNotFound):
-    return error_response(...)
+**Skipping re-inference after PR cell updates** — WRONG. The update command writes a computed display status for human readability, but the parser will re-infer status on next read. If these diverge, the check command catches it. This is why the update command resets status to `-` rather than trying to set an explicit status value.
 
-# Check phases exist before iterating
-if not phases:
-    return error_response(...)
+**Treating parser warnings as errors** — WRONG. The parser returns `(phases, warnings)` as a tuple. Warnings don't prevent data extraction. Callers that abort on warnings (instead of just the empty-phases case) are unnecessarily strict.
 
-# Check update succeeded before re-validating
-if updated_body is None:
-    return error_response(...)
-```
+## Error Handling Pattern
 
-## Source Locations
+Both validation layers use a cascading LBYL pattern: each check gates the next, so later checks can assume earlier preconditions hold. The check command checks issue existence → label → roadmap parsability → consistency rules, returning early at each failure point. The update command follows the same cascade: issue exists → roadmap parses → step found → replacement succeeds.
 
-- Parser validation: `src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py:70-84`
-- Update validation: `src/erk/cli/commands/exec/scripts/objective_roadmap_update.py:142-182`
+This is why `validate_objective()` returns `ObjectiveValidationError` (couldn't even start) vs `ObjectiveValidationSuccess` (ran checks, some may have failed) — the discriminated union separates "validation couldn't run" from "validation ran and found problems."
+
+## Implementation Reference
+
+<!-- Source: objective_roadmap_shared.py, parse_roadmap -->
+- Structural validation: `parse_roadmap()` in `objective_roadmap_shared.py`
+
+<!-- Source: check_cmd.py, validate_objective -->
+- Semantic validation: `validate_objective()` in `check_cmd.py`
+
+<!-- Source: update_roadmap_step.py, update_roadmap_step -->
+- Update-time validation: `update_roadmap_step()` in `update_roadmap_step.py`
 
 ## Related Documentation
 
-- [Roadmap Parser](roadmap-parser.md) — Parser usage and inference rules
-- [Roadmap Parser API Reference](roadmap-parser-api.md) — Function signatures and types
+- [Roadmap Parser](roadmap-parser.md) — Parser usage, status inference, and command reference
+- [Roadmap Status System](roadmap-status-system.md) — Two-tier status resolution specification
+- [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) — Why updates reset status to `-`

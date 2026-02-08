@@ -3,103 +3,87 @@ title: Roadmap Status System
 read_when:
   - "understanding how objective roadmap status is determined"
   - "working with roadmap step status values"
-  - "implementing objective roadmap parsing logic"
+  - "debugging unexpected status in an objective roadmap"
 tripwires:
   - action: "inferring status from PR column when explicit status is set"
     warning: "Explicit status values (done, in-progress, pending, blocked, skipped) always take priority over PR-based inference. Only '-' or empty values trigger PR-based inference."
   - action: "treating status as a single-source value"
     warning: "Status resolution uses a two-tier system: explicit values first, then PR-based inference. Always check both the Status and PR columns."
+  - action: "expecting status to auto-update when PR column is edited manually"
+    warning: "Only the update-roadmap-step command writes computed status. Manual PR edits leave status unchanged — set status to '-' to re-enable inference."
 ---
 
 # Roadmap Status System
 
-Objective roadmap tables use a **two-tier status resolution system** that combines explicit status values with PR-based inference to determine each step's current status.
+Objective roadmap tables use a **two-tier status resolution system** where explicit status values take absolute priority, and PR-based inference only activates as a fallback. This design exists because roadmap tables serve two audiences simultaneously: the parser (which needs deterministic status) and humans reading raw markdown on GitHub (who need the table to make sense without running code).
 
-## Two-Tier Resolution System
+## Why Two Tiers?
 
-### Tier 1: Explicit Status Values (Highest Priority)
+The obvious design would be single-source: either always use the Status column or always infer from PR. Neither works alone:
 
-When the Status column contains one of these explicit values, it takes priority over any PR-based inference:
+- **Status-only** forces every workflow step (plan-save, PR landing, manual updates) to explicitly write status — easy to forget, leading to stale values
+- **PR-inference-only** can't represent `blocked` or `skipped` states, since those have no PR column equivalent
 
-| Status Value                 | Result      | Meaning                                |
-| ---------------------------- | ----------- | -------------------------------------- |
-| `done`                       | done        | Step is complete                       |
-| `in-progress`, `in_progress` | in_progress | Step is actively being worked on       |
-| `pending`                    | pending     | Step is waiting to be started          |
-| `blocked`                    | blocked     | Step cannot proceed (dependency issue) |
-| `skipped`                    | skipped     | Step will not be implemented           |
+The two-tier design lets normal workflow rely on PR inference (Tier 2) while reserving explicit status (Tier 1) for edge cases that PR state can't express.
 
-**Key insight:** Both `in-progress` (hyphenated) and `in_progress` (underscore) are accepted and normalized to `in_progress` internally.
+## Tier 1: Explicit Status Values
 
-### Tier 2: PR-Based Inference (for `-` or empty)
+When the Status column contains a recognized value, it takes absolute priority regardless of the PR column. The recognized values are: `done`, `in-progress`, `in_progress`, `pending`, `blocked`, `skipped`.
 
-When the Status column is `-` or empty, the parser infers status from the PR column:
+Both `in-progress` (hyphenated, human-friendly in markdown) and `in_progress` (underscore, Python-friendly) are accepted and normalized to `in_progress` internally. This matters because the `update-roadmap-step` command writes `in-progress` for readability, but all downstream code uses `in_progress`.
 
-| PR Column Value | Inferred Status | Logic                             |
-| --------------- | --------------- | --------------------------------- |
-| `#123`          | done            | PR exists → work is complete      |
-| `plan #456`     | in_progress     | Plan exists → work is in progress |
-| `-` or empty    | pending         | No PR → work hasn't started       |
+## Tier 2: PR-Based Inference
 
-## Priority Ordering
+When the Status column is `-` or empty (or any unrecognized value), the parser falls through to infer status from the PR column:
 
-The resolution logic prioritizes explicit values over inference:
+| PR Column Value | Inferred Status | Reasoning                                  |
+| --------------- | --------------- | ------------------------------------------ |
+| `#123`          | done            | A merged PR means work is complete         |
+| `plan #456`     | in_progress     | A plan issue means work is underway        |
+| `-` or empty    | pending         | No PR reference means work hasn't started  |
 
-```python
-# Tier 1: Explicit status values take priority
-if status_col in ("done", "blocked", "skipped"):
-    status = status_col
-elif status_col in ("in-progress", "in_progress"):
-    status = "in_progress"
-elif status_col == "pending":
-    status = "pending"
-# Tier 2: Fall back to PR-column inference
-elif pr_col and pr_col != "-" and pr_col.startswith("#"):
-    status = "done"
-elif pr_col and pr_col.startswith("plan #"):
-    status = "in_progress"
-else:
-    status = "pending"
-```
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
 
-This means:
+See the status resolution logic in `parse_roadmap()` in `src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py`.
 
-1. **Explicit beats inference:** If Status is `blocked`, it stays `blocked` even if PR is `#123`
-2. **Dash enables inference:** Status `-` with PR `#123` infers `done`
-3. **Empty defaults to pending:** Both columns `-` or empty → `pending`
+## Resolution Examples
 
-## Example Resolutions
+| Status Column | PR Column  | Final Status | Why                                            |
+| ------------- | ---------- | ------------ | ---------------------------------------------- |
+| `done`        | `-`        | done         | Explicit — no inference needed                 |
+| `-`           | `#123`     | done         | Tier 2 inference from PR                       |
+| `blocked`     | `#123`     | blocked      | Explicit overrides PR (step blocked despite PR)|
+| `-`           | `plan #45` | in_progress  | Tier 2 inference from plan reference           |
+| `pending`     | `#123`     | pending      | Explicit overrides PR (intentional hold)       |
+| `-`           | `-`        | pending      | Both empty — default                           |
 
-| Status Column | PR Column  | Final Status | Reasoning                          |
-| ------------- | ---------- | ------------ | ---------------------------------- |
-| `done`        | `-`        | done         | Explicit value takes priority      |
-| `-`           | `#123`     | done         | Inference from PR                  |
-| `blocked`     | `#123`     | blocked      | Explicit overrides PR              |
-| `-`           | `plan #45` | in_progress  | Inference from plan PR             |
-| `pending`     | `#123`     | pending      | Explicit overrides PR (manual set) |
-| `-`           | `-`        | pending      | Default when both empty            |
+## The Write/Read Asymmetry
+
+The most important cross-cutting insight: **mutation writes both cells, but parsing only infers from one**. This asymmetry is intentional.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
+
+The `update-roadmap-step` command computes display status from the PR value and writes both the Status and PR cells atomically. It does this so the table is always human-readable on GitHub without requiring a parse pass. But `parse_roadmap()` only falls through to PR inference when the Status cell is `-` or empty.
+
+This creates a subtle trap: if you update the PR cell **without using the command** (e.g., manual GitHub edit or direct body mutation), the Status cell retains its old value and the parser will respect that stale explicit value. To re-enable inference after manual edits, set the Status cell to `-`.
+
+## Validation Catches Inconsistencies
+
+<!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective -->
+
+The `erk objective check` command validates status/PR consistency after parsing. It flags cases where explicit status contradicts the PR column — for example, a step with PR `#123` but status `in_progress`. These inconsistencies are valid (the explicit status wins by design), but the validator surfaces them as warnings because they usually indicate a forgotten status update rather than an intentional override.
 
 ## When to Use Each Tier
 
-### Use Explicit Status (Tier 1) When:
-
-- Marking a step as `blocked` due to external dependencies
-- Marking a step as `skipped` because it's no longer needed
-- Manually overriding status for special cases (e.g., `pending` even though PR exists)
-
-### Use Inference (Tier 2) When:
-
-- Normal workflow: PR created → status becomes `done`
-- Plan saved → status becomes `in_progress`
-- Most common case: let the PR column drive status
-
-## Implementation Reference
-
-- **Parser logic:** `src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py:102-115`
-- **Fix commit:** `4090e6df` (PR #6552)
-- **Mutation commands:** `objective-roadmap-update`, `update-roadmap-step`
+| Situation                              | Approach                        | Why                                                |
+| -------------------------------------- | ------------------------------- | -------------------------------------------------- |
+| Normal workflow (plan-save, PR lands)  | Use `update-roadmap-step`       | Writes both cells atomically, always consistent    |
+| Step blocked by external dependency    | Set Status to `blocked` manually| No PR column value can express "blocked"           |
+| Step no longer needed                  | Set Status to `skipped` manually| No PR column value can express "skipped"           |
+| Intentional hold despite existing PR   | Set Status to `pending` manually| Overrides the PR inference deliberately            |
+| Quick fix via GitHub UI                | Update both cells, or set Status to `-` | Avoids the stale-status trap               |
 
 ## Related Documentation
 
-- [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md) — How mutation commands interact with the two-tier system
-- [Roadmap Parser](roadmap-parser.md) — Full parsing rules and validation
+- [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md) — Details on the write-side behavior and the command vs direct mutation decision
+- [Roadmap Parser](roadmap-parser.md) — Full parsing rules, table format, and validation

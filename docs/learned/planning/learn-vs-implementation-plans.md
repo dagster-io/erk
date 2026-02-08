@@ -3,253 +3,107 @@ title: Learn Plans vs. Implementation Plans
 read_when:
   - "choosing between plan types"
   - "creating erk-learn plans"
-  - "understanding plan workflows"
-last_audited: "2026-02-05 18:56 PT"
+  - "understanding how learn plans relate to implementation plans"
+  - "debugging learn plan base branch selection"
+tripwires:
+  - action: "creating a learn plan without setting learned_from_issue"
+    warning: "Learn plans MUST set learned_from_issue to their parent implementation plan's issue number. Without it, base branch auto-detection fails and the learn plan lands on trunk instead of stacking on the parent."
+  - action: "running /erk:learn on an issue that already has the erk-learn label"
+    warning: "Learn plans cannot generate additional learn plans — this creates documentation cycles. The learn command validates this upfront and rejects learn-on-learn."
+  - action: "manually setting the base branch for a learn plan submission"
+    warning: "Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote."
+last_audited: "2026-02-08"
 audit_result: edited
 ---
 
 # Learn Plans vs. Implementation Plans
 
-Reference guide for understanding and selecting between learn and implementation plan types.
+Erk has two plan types that share the same issue infrastructure (`erk-plan` label, plan-header metadata, same lifecycle phases) but serve fundamentally different purposes. Understanding when to use each — and how they connect — prevents workflow mistakes and ensures documentation is created alongside the code it documents.
 
-## Table of Contents
+## Decision Table
 
-- [Quick Comparison](#quick-comparison)
-- [Implementation Plans](#implementation-plans)
-- [Learn Plans](#learn-plans)
-- [When to Use Each Type](#when-to-use-each-type)
+**Ask: "Is the primary output code or documentation?"**
 
----
+| Signal | Plan Type | Label(s) | Typical Output |
+| --- | --- | --- | --- |
+| Adding features, fixing bugs, refactoring | Implementation | `erk-plan` | Source code, tests, config |
+| Extracting insights from completed work | Learn | `erk-plan` + `erk-learn` | Docs in `docs/learned/` |
+| Consolidating learnings from multiple PRs | Learn | `erk-plan` + `erk-learn` | Docs, tripwires, checklists |
 
-## Quick Comparison
+## Why Two Types Exist
 
-| Aspect            | Implementation Plan               | Learn Plan                                |
-| ----------------- | --------------------------------- | ----------------------------------------- |
-| **Label**         | `erk-plan`                        | `erk-plan` + `erk-learn`                  |
-| **Purpose**       | Implement code changes            | Extract learnings and write docs          |
-| **Base Branch**   | Trunk (main/master)               | Parent implementation PR branch           |
-| **Output**        | Code, tests, implementation       | Documentation in `docs/learned/`          |
-| **Context**       | Feature requirements, codebase    | Session logs from planning/implementation |
-| **Trigger**       | User request, objective planning  | After PR lands, async or manual           |
-| **Workflow**      | `erk plan submit`, GitHub Actions | `/erk:learn`, async learn workflow        |
-| **Branch Naming** | `P{issue}-{title}-{timestamp}`    | Same pattern (stacked on parent)          |
-| **PR Type**       | Feature PR                        | Documentation PR                          |
+Implementation plans produce code changes. But the insights gained during implementation — patterns discovered, anti-patterns avoided, architectural decisions made — are valuable to future agents and would be lost without a structured extraction step.
 
----
+Learn plans exist to capture those insights as documentation. They are intentionally separate from implementation plans because:
 
-## Implementation Plans
+1. **Different base branches** — Learn plans stack on the parent implementation branch so documentation ships alongside the code it describes. Implementation plans branch from trunk.
+2. **Different triggering** — Learn plans are created *after* implementation (manually via `/erk:learn` or automatically via async workflow), not before.
+3. **Cycle prevention** — A learn plan cannot generate another learn plan. The `/erk:learn` command validates this upfront by checking for the `erk-learn` label.
 
-### Purpose
+## The `learned_from_issue` Link
 
-Implement code changes to add features, fix bugs, or refactor:
+The key structural difference between the two plan types is a single plan-header field: `learned_from_issue`. This field exists only on learn plans and points back to the parent implementation plan's issue number.
 
-- Write source code
-- Write tests
-- Update configuration
-- Integrate with existing systems
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py, LEARNED_FROM_ISSUE -->
 
-### Labels
+See the `LEARNED_FROM_ISSUE` constant and `PlanHeaderFieldName` type in `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`.
 
-**Required:** `erk-plan`
+This field drives three behaviors:
 
-### Base Branch
+1. **Base branch auto-detection** — During `erk plan submit`, the submit command reads `learned_from_issue`, fetches the parent issue, extracts its `branch_name`, and uses that as the base branch. This creates a stacked branch hierarchy: trunk → implementation branch → learn plan branch.
 
-**Trunk:** Implementation PRs branch off main/master (or current branch for stacking)
+2. **Learn status tracking** — When a learn plan's PR lands, `erk land` reads `learned_from_issue` to find the parent and updates the parent's `learn_status` to `plan_completed` with the learn plan's PR number.
 
-### Typical Output
+3. **Cycle detection** — `/erk:learn` checks for `erk-learn` label before proceeding, preventing learn-on-learn chains.
 
-- **Source code:** `src/erk/**/*.py`
-- **Tests:** `tests/**/*.py`
-- **Config:** `.erk/`, `pyproject.toml`
-- **CLI commands:** `.claude/commands/**/*.md` (if adding commands)
+<!-- Source: src/erk/cli/commands/submit.py, get_learn_plan_parent_branch -->
 
-### Creation
+See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py` for the base branch resolution logic with its fallback to trunk.
 
-1. **User request:** "Implement feature X"
-2. **Plan mode:** Agent enters plan mode, creates plan
-3. **Save:** `/erk:plan-save` creates GitHub issue with `erk-plan` label
-4. **Submit:** `erk plan submit <issue>` creates branch, PR, and dispatches workflow
+<!-- Source: src/erk/cli/commands/land_cmd.py, _update_parent_learn_status_if_learn_plan -->
 
-### Example
+See `_update_parent_learn_status_if_learn_plan()` in `src/erk/cli/commands/land_cmd.py` for the landing-time parent update.
 
-**Issue #6167:** Add Context Preservation to Replan Workflow
+## Branch Stacking Model
 
-**Changes:**
-
-- `.claude/commands/erk/replan.md` (add Steps 6a-6b)
-- `.claude/commands/local/replan-learn-plans.md` (reinforce pattern)
-
-**Branch:** `P6167-add-context-pre-01-20-1430`
-
-**PR:** Merges to `main`
-
----
-
-## Learn Plans
-
-### Purpose
-
-Extract learnings from implementation and document for future agents:
-
-- Analyze session logs (planning + implementation)
-- Identify patterns, anti-patterns, tripwires
-- Create/update documentation in `docs/learned/`
-- Synthesize insights from multiple PRs
-
-### Labels
-
-**Required:** `erk-plan` + `erk-learn`
-
-### Base Branch
-
-**Parent implementation branch:** Learn plan stacks on the implementation PR branch
-
-**Why:** Documentation should be created alongside the code it documents
-
-### Typical Output
-
-- **Documentation:** `docs/learned/**/*.md`
-- **Checklists:** `docs/learned/checklists/*.md`
-- **Architecture docs:** `docs/learned/architecture/*.md`
-- **Tripwires:** Updates to existing docs with new tripwires
-
-### Creation
-
-#### Manual (User-Initiated)
-
-```bash
-/erk:learn <issue-number-or-url>
+```
+trunk (main/master)
+    └── P123-feature-branch (implementation plan)
+            └── P456-docs-for-feature (learn plan, stacked via learned_from_issue)
 ```
 
-**Process:**
+**Why stack instead of branching from trunk?** Documentation should be reviewed alongside the code it describes. Stacking ensures the learn plan's PR diff only shows documentation changes, not a confusing mix of code and docs from different base points.
 
-1. Fetch plan/PR for issue
-2. Analyze session logs (planning + implementation)
-3. Identify documentation needs
-4. Create learn plan
-5. Save with `--plan-type=learn` flag
+**Fallback behavior**: If the parent branch lookup fails (parent issue not found, no `branch_name` set, or parent branch missing from remote), learn plan submission falls back to trunk with a warning. This prevents blocking documentation work when the parent state is incomplete.
 
-#### Async (Automated)
+## Learn Status Lifecycle
 
-After PR lands:
+The parent implementation plan tracks its learn status through a progression of states:
 
-1. GitHub Action dispatches learn workflow
-2. Agent analyzes sessions
-3. Creates learn plan issue (with `erk-learn` label)
-4. Learn plan can be submitted for async implementation
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py, LearnStatusValue -->
 
-### Example
+See `LearnStatusValue` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` for the valid status values and their docstring.
 
-**Issue #6172:** [erk-learn] Add Context Preservation Prompting to Replan Workflow
+| Status | Meaning | Set by |
+| --- | --- | --- |
+| `null` / `not_started` | No learn workflow has run | Default |
+| `pending` | Learn workflow in progress | Async learn workflow |
+| `completed_no_plan` | Learn ran, no docs needed | `/erk:learn` (validation found nothing actionable) |
+| `completed_with_plan` | Learn ran, plan issue created | `/erk:learn` (saved plan issue) |
+| `pending_review` | Documentation PR created directly | Direct doc PR workflow |
+| `plan_completed` | Learn plan implemented and landed | `erk land` (when learn plan PR merges) |
 
-**Parent:** Issue #6167 (implementation of Steps 6a-6b)
+**Landing guard**: `erk land` checks `learn_status` before merging an implementation plan's PR. If status is `null`/`not_started` and sessions exist, it warns the user and offers to trigger async learn. Learn plans themselves are skipped in this check — they don't need to be "learned from."
 
-**Changes:**
+## Anti-Patterns
 
-- `docs/learned/planning/context-preservation-in-replan.md` (new)
-- `docs/learned/planning/context-preservation-patterns.md` (new)
-- `docs/learned/planning/lifecycle.md` (updated)
-- `docs/learned/sessions/lifecycle.md` (new)
+**Creating a learn plan manually without `--learned-from-issue`**: The `learned_from_issue` field is what distinguishes a learn plan from an implementation plan in the plan-header. Without it, base branch detection defaults to trunk, status tracking breaks, and the TUI can't show the link between plans.
 
-**Branch:** `P6172-erk-learn-add-context-pre-01-27-0820` (stacked on #6167 branch)
+**Running `/erk:learn` on a learn plan issue**: Creates a documentation cycle. The learn command rejects this with a clear error.
 
-**PR:** Merges to `main` (after parent PR merges)
-
----
-
-## When to Use Each Type
-
-### Use Implementation Plan When:
-
-- ✅ Implementing a new feature
-- ✅ Fixing a bug in source code
-- ✅ Refactoring existing code
-- ✅ Adding CLI commands or capabilities
-- ✅ Updating tests or CI workflows
-- ✅ Making configuration changes
-
-**Command:** `/erk:plan-save` (no `--plan-type` flag)
-
-### Use Learn Plan When:
-
-- ✅ Documenting insights from completed work
-- ✅ Extracting patterns from session logs
-- ✅ Creating tripwire candidates
-- ✅ Writing architecture documentation
-- ✅ Consolidating learnings from multiple PRs
-- ✅ Adding "how to" guides for agents
-
-**Command:** `/erk:plan-save --plan-type=learn`
-
-### Key Decision Factor
-
-**Question:** "Is the primary output code or documentation?"
-
-- **Code:** Use implementation plan
-- **Documentation:** Use learn plan
-
----
-
-## Workflow Integration
-
-### Implementation → Learn Cycle
-
-1. **Implementation plan created** (issue #100)
-2. **Implementation PR lands** (PR #101)
-3. **Learn workflow triggered** (automatic or manual)
-4. **Learn plan created** (issue #102, labeled `erk-learn`)
-5. **Learn plan links to parent** (`learned_from_issue: 100`)
-6. **Learn PR branches off parent** (stacked on #101 branch)
-7. **Learn PR lands** (documentation committed)
-
-### Objective Workflow
-
-Both plan types can be associated with objectives:
-
-**Implementation plan:**
-
-- Tied to objective step
-- Implements feature from objective
-- Link: `objective_issue` in plan-header
-
-**Learn plan:**
-
-- Documents work from objective-related implementation
-- Inherits objective link from parent
-- Link: `objective_issue` in plan-header (same as parent)
-
----
-
-## Plan-Header Differences
-
-Both plan types use the same `plan-header` metadata block schema (see `PlanHeaderSchema` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`). The metadata is embedded in the issue body as an HTML comment block (`<!-- erk:metadata-block:plan-header -->`), not bare YAML.
-
-**Key fields shared by both types:** `created_at`, `created_by`, `branch_name`, `objective_issue`
-
-**Learn-plan-specific field:** `learned_from_issue` -- links the learn plan back to its parent implementation plan issue number. This field is what distinguishes a learn plan header from an implementation plan header.
-
-Note: `pr_number` is NOT a plan-header field. PR numbers are tracked separately through the GitHub PR system and linked via branch names.
-
----
-
-## Base Branch Selection
-
-### Implementation Plans
-
-**Default:** Trunk (main or master), or the current branch if it exists on remote.
-
-### Learn Plans
-
-**Default:** Parent implementation branch (auto-detected from `learned_from_issue` in plan header).
-
-**How it works:** `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py` extracts `learned_from_issue` from the learn plan's issue body, fetches the parent issue, and returns its `branch_name`. The submit command then stacks the learn plan branch on top of the parent branch.
-
-**Fallback:** If parent lookup fails (parent issue not found, no branch_name set, or parent branch not on remote), falls back to trunk.
-
----
+**Overriding `--base` on learn plan submission without reason**: The auto-detected parent branch is almost always correct. Override only when the parent branch has been deleted from the remote.
 
 ## Related Documentation
 
-- [Plan Lifecycle](lifecycle.md) - Full plan workflow from creation to merge
-- [Learn Command](../../../.claude/commands/erk/learn.md) - Learn workflow details
-- [Plan Submission](../cli/pr-submission.md) - Branch creation and PR workflows
+- [Plan Lifecycle](lifecycle.md) — Full plan workflow from creation to merge, including learn plan base branch selection details
+- [Learn Command](../../../.claude/commands/erk/learn.md) — The `/erk:learn` pipeline that creates learn plans

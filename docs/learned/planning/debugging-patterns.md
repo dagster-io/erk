@@ -1,229 +1,69 @@
 ---
-title: "Source Code Investigation Pattern for Debugging"
-last_audited: "2026-02-03"
-audit_result: edited
+title: "Source Investigation Over Trial-and-Error"
+last_audited: "2026-02-08"
+audit_result: regenerated
 read_when:
-  - Debugging validation failures
-  - Encountering errors with unclear root causes
-  - Deciding whether to guess at fixes or investigate source
-  - Working with error messages that reference specific functions
+  - Debugging validation failures after an initial fix attempt fails
+  - Encountering errors where the required format is unclear from the error message alone
+  - Deciding whether to guess at another fix or read the validator source
+tripwires:
+  - action: "making a third trial-and-error attempt at a validation fix"
+    warning: "After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement."
+  - action: "grepping only for the error message text"
+    warning: "Also grep for function names extracted from the error (e.g., 'checkout_footer' from 'Missing checkout footer'). Validator function names are more stable search targets than error message strings."
 sources:
   - "[Impl 5d99bc36]"
 ---
 
-# Source Code Investigation Pattern for Debugging
+# Source Investigation Over Trial-and-Error
 
-## Overview
+## The Core Insight
 
-When debugging validation failures or errors with unclear requirements, reading source code is often faster and more reliable than trial-and-error. This document covers the pattern for investigating error root causes through source code.
+When an erk validation error is unclear about its exact requirements, reading the validator source code is faster and more reliable than iterating through guesses. This is a cross-cutting debugging strategy — it applies to PR validation, plan validation, config validation, and any other erk subsystem that enforces format rules.
 
-## The Pattern
+**Why this matters for agents specifically:** Agents are biased toward action — trying another fix is faster than investigating. But erk validators often enforce literal patterns (regex matches, exact string formats) where semantic equivalents fail silently. An agent can waste many turns guessing at variations when a single grep-and-read cycle would reveal the exact requirement.
 
-```bash
-# 1. Get error message
-$ erk pr check
-Error: Missing required checkout footer for PR #123
+## Decision Table: Investigate vs Retry
 
-# 2. Extract key terms from error
-# "checkout footer" -> search terms: "checkout_footer", "has_checkout", "footer"
+| Signal | Action |
+| --- | --- |
+| Error message specifies the exact fix (e.g., "Missing required field 'title'") | Apply the fix directly — no investigation needed |
+| Error message names what's wrong but not the required format | Grep for the validator function, read the regex/logic |
+| First reasonable fix attempt fails | Try one more obvious variation |
+| Second attempt also fails | **Stop guessing. Read the source.** |
+| Error involves regex, pattern matching, or format validation | Investigate source immediately — don't guess at regex patterns |
+| Validation is new or undocumented | Investigate source immediately |
 
-# 3. Grep codebase for validation function
-$ grep -r "checkout_footer" packages/ src/
-packages/erk-shared/src/erk_shared/gateway/pr/submit.py: def has_checkout_footer_for_pr(...)
+## The Investigation Workflow
 
-# 4. Read the validation source
-$ cat packages/erk-shared/src/erk_shared/gateway/pr/submit.py
-# Find has_checkout_footer_for_pr() function
-# Discover pattern requirement: r"erk pr checkout \d+"
+1. **Extract search terms from the error message.** Convert the human-readable error into likely function/variable names. "Missing checkout footer" → `checkout_footer`, `has_checkout`, `footer`.
 
-# 5. Apply fix based on source understanding
-$ gh pr edit --body "...
+2. **Grep for the validator, not the error string.** Function names are more stable search targets. Erk validators follow naming conventions: `validate_*`, `check_*`, `has_*`, `is_valid_*`.
 
----
-erk pr checkout 123"
+3. **Read the validator and its caller.** The validator reveals the exact requirement; the caller reveals the context (what inputs it receives, what error it raises). Understanding both prevents fixing the symptom while missing the cause.
 
-# 6. Verify fix
-$ erk pr check
-✓ All checks passed
-```
+4. **Apply the fix and verify in one step.** Source understanding should yield a correct fix on the first attempt.
 
-## When to Use This Pattern
+## Why Erk Validators Reward Investigation
 
-### Use source investigation when:
+Erk validation functions frequently use literal regex matching rather than semantic equivalence. This is a deliberate design choice for consistency and parseability across the codebase, but it means that "close enough" fixes fail.
 
-1. **Error message is unclear** about exact requirements
-   - Example: "Invalid format" without showing what format is expected
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/pr/submit.py, has_checkout_footer_for_pr -->
 
-2. **Multiple attempts fail** despite reasonable fixes
-   - Example: Trying "erk checkout", "erk wt from-pr", both fail
-
-3. **Pattern requirements seem non-obvious**
-   - Example: "Must include checkout footer" but unclear what format is valid
-
-4. **Validation involves regex or complex parsing**
-   - Example: Errors mentioning "pattern match failed"
-
-5. **Documentation doesn't exist or is incomplete**
-   - Example: New validation rule not yet documented
-
-### Don't use source investigation when:
-
-1. **Error message is crystal clear** about the fix
-   - Example: "Missing required field 'title'" → just add title field
-
-2. **Pattern is obvious** from context
-   - Example: "Email must be valid format" → use standard email format
-
-3. **One attempt succeeds** - no need to investigate further
-
-## Why This Approach Works
-
-### Speed Comparison
-
-**Trial-and-error approach** (from session 5d99bc36):
-
-- Attempt 1: `erk checkout 123` → fails (2 min)
-- Attempt 2: `erk wt from-pr 123` → fails (2 min)
-- Attempt 3: `erk pr checkout 123` → works (2 min)
-- **Total: 6 minutes**
-
-**Source investigation approach**:
-
-- Grep for function (10 sec)
-- Read source code (1 min)
-- Apply correct fix (30 sec)
-- **Total: ~2 minutes**
-
-### Accuracy
-
-- **Trial-and-error**: May still guess wrong pattern
-- **Source investigation**: Guarantees correct pattern understanding
-
-## Real-World Example
-
-### Problem: PR Validation Failing
-
-From session 5d99bc36, debugging checkout footer validation:
-
-```bash
-# Initial error
-$ erk pr check
-Error: Missing required checkout footer for PR #123
-```
-
-### Investigation Process
-
-```bash
-# Step 1: Grep for validation function
-$ grep -r "has_checkout_footer" packages/ src/
-packages/erk-shared/src/erk_shared/gateway/pr/submit.py: def has_checkout_footer_for_pr(body: str, pr_number: int) -> bool:
-
-# Step 2: Read the source
-$ cat packages/erk-shared/src/erk_shared/gateway/pr/submit.py
-```
-
-Source code revealed:
-
-```python
-def has_checkout_footer_for_pr(body: str, pr_number: int) -> bool:
-    """Check if PR body contains checkout footer for this PR."""
-    return bool(re.search(rf"erk pr checkout {pr_number}\b", body))
-```
-
-**Key insight**: Must be exactly `erk pr checkout <number>`, not semantic equivalents.
-
-### Fix Application
-
-```bash
-# Update PR body with exact pattern
-$ gh pr edit --body "## Summary
-Fix authentication bug
-
-## Test Plan
-- [x] Manual testing
-
----
-erk pr checkout 123"
-
-# Verify immediately
-$ erk pr check
-✓ All checks passed
-```
-
-**Result**: First attempt succeeds because pattern was understood correctly from source.
-
-## Common Investigation Targets
-
-### Validation Functions
-
-Pattern: Functions named `validate_*`, `check_*`, `has_*`, `is_valid_*`
-
-```bash
-# Search patterns
-grep -r "def validate_" src/
-grep -r "def check_" src/
-grep -r "def has_.*footer" src/
-```
-
-### Regex Patterns
-
-Pattern: Look for `re.match()`, `re.search()`, `re.compile()` calls
-
-```python
-# What to look for in source
-pattern = r"exact regex pattern here"
-if re.search(pattern, input_text):
-    # Validation passes
-```
-
-The regex pattern tells you exactly what format is required.
-
-### Error Message Origins
-
-Pattern: Grep for the exact error message text
-
-```bash
-# If error is "Missing required checkout footer"
-grep -r "Missing required checkout footer" src/
-# Find where error is raised, read surrounding validation logic
-```
-
-## Best Practices
-
-1. **Start with error message** - extract key terms for grepping
-2. **Grep broadly first** - use short search terms to find candidates
-3. **Read surrounding context** - don't just read the function, read its usage
-4. **Understand the why** - regex patterns reveal intent, not just requirements
-5. **Document for next time** - if investigation was needed, the pattern may be non-obvious
+**Example:** The checkout footer validator matches `erk pr checkout <number>` as a literal regex. Running `erk wt from-pr 123` produces the same result but fails validation. An agent that tries command variations will fail repeatedly; an agent that reads `has_checkout_footer_for_pr()` in `packages/erk-shared/src/erk_shared/gateway/pr/submit.py` discovers the exact pattern in seconds. For full details on this specific validator, see [PR Checkout Footer Validation](../erk/pr-commands.md) and [PR Validation Rules](../pr-operations/pr-validation-rules.md).
 
 ## Integration with Iterate-Until-Valid
 
-Source investigation complements the iterate-until-valid pattern:
+This pattern complements the iterate-until-valid workflow documented in [PR Submission Patterns](pr-submission-patterns.md). The two strategies combine:
 
-1. **First validation failure**: Try obvious fix
-2. **Second validation failure**: Investigate source
-3. **Third attempt**: Apply fix based on source understanding
-4. **Success**: Pattern is now understood and documented
+1. **First validation failure** → Try the obvious fix
+2. **Second failure** → Investigate source, then fix with full understanding
+3. **Success** → Pattern is now understood
 
-Don't wait until 5-6 failures to investigate source. After 2 failed attempts, invest time in understanding the requirement correctly.
+The anti-pattern is waiting until 5-6 failures before investigating. The two-attempt threshold exists because the first attempt tests whether the fix is obvious; the second tests whether a reasonable variation works. After that, further guessing has diminishing returns while source investigation has near-guaranteed payoff.
 
 ## Related Documentation
 
-- [PR Body Validation Workflow](pr-submission-patterns.md) - Iterate-until-valid pattern
-- [PR Checkout Footer Validation](../erk/pr-commands.md) - Specific validation example
-
-## Summary
-
-When debugging validation failures:
-
-1. **Extract key terms** from error message
-2. **Grep codebase** for validation functions
-3. **Read source code** to understand exact requirements
-4. **Apply fix** based on source understanding
-5. **Verify immediately** to confirm fix is correct
-
-**Time investment**: 2 minutes of source investigation saves 10+ minutes of trial-and-error.
-
-**Accuracy**: Guarantees correct understanding vs. guessing at patterns.
-
-**When to use**: After 1-2 failed attempts, or when error message is unclear about requirements.
+- [PR Submission Patterns](pr-submission-patterns.md) — Iterate-until-valid workflow
+- [PR Checkout Footer Validation](../erk/pr-commands.md) — Specific checkout footer validation details
+- [PR Validation Rules](../pr-operations/pr-validation-rules.md) — Complete `erk pr check` validation ruleset

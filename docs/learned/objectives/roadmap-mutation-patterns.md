@@ -2,216 +2,100 @@
 title: Roadmap Mutation Patterns
 read_when:
   - "deciding between surgical vs full-body roadmap updates"
-  - "implementing roadmap mutation logic"
-  - "understanding when to use update-roadmap-step vs objective-update-with-landed-pr"
+  - "choosing how to update an objective roadmap after a workflow event"
+  - "understanding race condition risks in roadmap table mutations"
 tripwires:
   - action: "using full-body update for single-cell changes"
     warning: "Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-roadmap-step) to preserve other cells and avoid race conditions."
   - action: "using surgical update for complete table rewrites"
     warning: "Surgical updates only change one cell. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr)."
-last_audited: "2026-02-05 09:55 PT"
-audit_result: clean
+  - action: "directly mutating issue body markdown without using either command"
+    warning: "Direct body mutation skips status computation. The surgical command writes computed status atomically; bypassing it leaves status stale. See roadmap-mutation-semantics.md."
 ---
 
 # Roadmap Mutation Patterns
 
-Erk provides two patterns for mutating objective roadmap tables: **surgical updates** (single-cell changes) and **full-body updates** (complete table rewrites). Choosing the right pattern prevents race conditions and preserves data integrity.
+Erk has two distinct strategies for mutating objective roadmap tables, each optimized for different workflow events. Choosing the wrong one creates race conditions or data loss. This document explains **when to use which** and **why the split exists**.
 
-## Pattern Comparison
+## Why Two Patterns?
 
-| Pattern   | Command                           | Scope          | Use Case                         |
-| --------- | --------------------------------- | -------------- | -------------------------------- |
-| Surgical  | `update-roadmap-step`             | Single PR cell | Linking plan to step after save  |
-| Full-body | `objective-update-with-landed-pr` | Entire table   | Rewriting roadmap after PR lands |
+The roadmap table is a 4-column markdown table stored in a GitHub issue body. Two fundamentally different mutation shapes arise from different workflow events:
 
-## Surgical Update Pattern
+- **Single-cell updates** (plan saved, PR created): Only the PR column of one step changes. The rest of the table — descriptions, other steps, layout — should be untouched. Fetching, parsing, and rewriting the entire table for a single cell change would risk overwriting concurrent edits by other agents or humans.
 
-**Command**: `erk exec update-roadmap-step <issue-number> --step <step-id> --pr <pr-ref>`
+- **Full-body rewrites** (PR landed): Landing a PR may trigger structural changes — marking a step done, collapsing completed phases, reordering, or adding narrative text. A single-cell regex replacement can't express these layout-level changes.
 
-**What it does**:
+The split isn't about capability (the full-body approach *could* do single-cell updates). It's about **blast radius** — a targeted regex replacement can't accidentally destroy unrelated content, while a full rewrite can.
 
-- Finds the step row by step ID (e.g., `1.3`, `2.1`)
-- Replaces only the PR cell (4th column)
-- Resets status cell to `-` for inference
-- Preserves all other cells (description, other steps)
+## Decision Table
 
-**Example**:
+| Workflow Event              | Pattern    | Why                                                          |
+| --------------------------- | ---------- | ------------------------------------------------------------ |
+| Plan saved to GitHub        | Surgical   | Only the PR cell of one step changes                         |
+| PR created from plan        | Surgical   | Only the PR cell of one step changes                         |
+| PR landed via `erk land`    | Full-body  | May need to restructure phases, update descriptions          |
+| Fixing a stale status value | Surgical   | Minimal blast radius for a quick correction                  |
+| Restructuring roadmap       | Full-body  | Need full control over layout, ordering, and section content |
+| Batch status updates        | Full-body  | Multiple steps changing simultaneously                       |
 
-```bash
-erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
-```
+## Surgical Update: `update-roadmap-step`
 
-**Result** (before → after):
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
 
-```diff
-| Step | Description | Status | PR |
-- | 1.3 | Add feature | pending | - |
-+ | 1.3 | Add feature | - | plan #6464 |
-```
+The surgical command finds a step row by ID using regex and replaces **only** the status and PR cells in a single operation. See `_replace_step_pr_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`.
 
-Status inference kicks in: `-` + `plan #6464` → `in_progress`
+**Why it writes both status and PR cells:** The command could leave status as `-` and let parse-time inference determine it later. Instead, it computes a display status (`done`, `in-progress`, `pending`) from the PR value and writes it directly. This makes the table human-readable in GitHub's UI without requiring a parse pass. For the full rationale, see [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md).
 
-### When to Use Surgical Updates
+**Race condition safety:** Because the regex only touches one row's last two cells, concurrent edits to other steps or descriptions are preserved. This is the key advantage over full-body rewrites for single-step changes.
 
-1. **Plan-save workflow**: After `erk plan save`, link the saved plan to its roadmap step
-2. **PR creation workflow**: After `erk pr submit`, link the created PR to its step
-3. **Single step updates**: Any scenario where only one step's PR reference changes
+## Full-Body Update: `objective-update-with-landed-pr`
 
-**Advantages**:
+<!-- Source: .claude/commands/erk/objective-update-with-landed-pr.md:1-50 -->
 
-- Atomic operation (no race conditions)
-- Preserves manual edits to other cells
-- Simple mental model: "set step X's PR to Y"
+The full-body update is orchestrated by a Claude command (not a Python script). It fetches context via `objective-update-context`, then delegates to a subagent that:
 
-### Implementation (update_roadmap_step.py:48-87)
+1. Analyzes which roadmap steps the landed PR completed
+2. Composes an action comment documenting the change
+3. Rewrites the entire objective body with updated roadmap
+4. Posts both the comment and updated body
 
-The surgical update uses regex to find and replace the PR cell:
+**Why agent-driven instead of a script:** Landing a PR requires *judgment* — the step description might need updating if the PR title differs, completed phases might need collapsing, and the "Current Focus" section needs to shift to the next pending step. These decisions don't reduce to mechanical regex.
 
-> **Source**: See [`update_roadmap_step.py:63-91`](../../../src/erk/cli/commands/exec/scripts/update_roadmap_step.py)
+**Race condition risk:** The entire issue body is fetched, modified, and written back. Any edits made between fetch and write are lost. This is acceptable because:
+- PR landing is an infrequent event (not concurrent with other mutations)
+- The alternative — surgical edits for each sub-change — would require multiple API calls with the same race window each time
+- The action comment provides an audit trail if anything goes wrong
 
-The surgical update uses regex to find the step row by ID, then replaces the PR cell (4th column) and resets the status cell (3rd column) to `-` for inference.
+## The Context-Fetching Pattern
 
-**LBYL pattern**: Check if step exists before attempting replacement:
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_update_context.py, objective_update_context -->
 
-```python
-if not match:
-    return StepNotFound(step_id=step_id)
-```
+The full-body workflow uses a **bundled context fetch** (`erk exec objective-update-context`) to retrieve the objective issue, plan issue, and PR details in a single CLI call. This exists because the subagent needs all three to compose the update, and fetching them in separate LLM turns would waste tokens and add latency. See `objective_update_context()` in `src/erk/cli/commands/exec/scripts/objective_update_context.py`.
 
-## Full-Body Update Pattern
+## Integration Points
 
-**Command**: `erk exec objective-update-with-landed-pr <issue-number> --landed-pr <pr-number>`
+Both patterns are triggered by upstream workflow commands, not invoked directly by users:
 
-**What it does**:
+| Upstream Command  | Triggers                             | Via                                                           |
+| ----------------- | ------------------------------------ | ------------------------------------------------------------- |
+| `erk plan save`   | Surgical update to link plan         | Skill calls `update-roadmap-step` with plan reference         |
+| `erk pr submit`   | Surgical update to link PR           | Skill calls `update-roadmap-step` with PR reference           |
+| `erk land`        | Full-body update after merge         | Helpers in `objective_helpers.py` detect objective, prompt user |
 
-- Fetches current roadmap
-- Finds the step linked to the landed PR
-- Marks that step as `done` with PR reference
-- Rewrites the **entire roadmap table** with new markdown
-- May reorder, add, or remove steps (full control)
+<!-- Source: src/erk/cli/commands/objective_helpers.py, prompt_objective_update -->
 
-**Example**:
+See `prompt_objective_update()` in `src/erk/cli/commands/objective_helpers.py` for how `erk land` discovers the linked objective and offers to run the full-body update.
 
-```bash
-erk exec objective-update-with-landed-pr 6423 --landed-pr 6500
-```
+## Anti-Patterns
 
-**Result**: Complete table rewrite, not just one cell. The landed PR's step is marked done, layout may change (e.g., collapsing completed phases).
+**WRONG: Calling `update-roadmap-step` after landing a PR.** The surgical command only updates PR and status cells. After landing, you often need to update descriptions, restructure phases, or add completion notes. Use the full-body workflow.
 
-### When to Use Full-Body Updates
+**WRONG: Using full-body rewrite to link a plan to a step.** The full-body approach fetches, parses, and regenerates the entire body — unnecessary for a single cell change and risks overwriting concurrent edits. Use the surgical command.
 
-1. **PR landing workflow**: After `erk land`, update roadmap to reflect landed work
-2. **Roadmap restructuring**: When reordering phases or adding/removing steps
-3. **Status audits**: When reviewing and batch-updating multiple step statuses
-4. **Layout changes**: When collapsing completed sections or adding new phases
-
-**Advantages**:
-
-- Full control over table layout
-- Can make multiple changes atomically
-- Can add narrative sections between phases
-
-**Disadvantages**:
-
-- Higher risk of race conditions (entire table is rewritten)
-- Overwrites any manual edits made since last fetch
-- Requires parsing and regenerating full markdown
-
-### Implementation (objective_update_with_landed_pr.py)
-
-The full-body update:
-
-1. Parses current roadmap with `parse_roadmap()`
-2. Finds the step with matching PR number
-3. Updates that step's status to `done`
-4. Regenerates the entire table markdown
-5. Replaces the roadmap section in the issue body
-
-**LBYL pattern**: Validate before mutation:
-
-```python
-# Check issue exists
-if isinstance(issue, IssueNotFound):
-    click.echo(f"Issue #{issue_number} not found")
-    sys.exit(1)
-
-# Check roadmap parsed successfully
-phases, errors = parse_roadmap(issue.body)
-if not phases:
-    click.echo("No roadmap found")
-    sys.exit(1)
-
-# Check step with landed PR exists
-step = _find_step_by_pr(phases, landed_pr_number)
-if not step:
-    click.echo(f"No step found with PR #{landed_pr_number}")
-    sys.exit(1)
-```
-
-## When to Choose
-
-| Scenario                        | Pattern   | Why                                         |
-| ------------------------------- | --------- | ------------------------------------------- |
-| Linking plan after save         | Surgical  | Only PR cell changes, rest is unchanged     |
-| Linking PR after creation       | Surgical  | Only PR cell changes, rest is unchanged     |
-| Marking step done after landing | Full-body | May want to reorder, collapse, or add steps |
-| Fixing stale status values      | Surgical  | Quick fix, don't want to rewrite everything |
-| Restructuring roadmap           | Full-body | Need full control over layout               |
-| Batch status updates            | Full-body | Multiple steps changing at once             |
-
-## LBYL Defensive Coding Examples
-
-Both patterns follow erk's LBYL (Look Before You Leap) principle:
-
-### Check Before Parsing
-
-```python
-# Don't assume issue exists
-issue_result = github.get_issue(issue_number)
-if isinstance(issue_result, IssueNotFound):
-    return IssueNotFound(issue_number=issue_number)
-
-# Don't assume roadmap parses successfully
-phases, errors = parse_roadmap(issue_result.body)
-if not phases:
-    return RoadmapNotFound()
-```
-
-### Check Before Accessing Fields
-
-```python
-# Don't assume step exists in phases
-step = None
-for phase in phases:
-    for s in phase.steps:
-        if s.id == step_id:
-            step = s
-            break
-
-if step is None:
-    return StepNotFound(step_id=step_id)
-```
-
-### Check Status Before Inference
-
-```python
-# Two-tier status resolution (explicit beats inference)
-if status_col in ("done", "blocked", "skipped"):
-    status = status_col  # Explicit value
-elif status_col in ("in-progress", "in_progress"):
-    status = "in_progress"
-elif status_col == "pending":
-    status = "pending"
-# Only infer if status is "-" or empty
-elif pr_col and pr_col.startswith("#"):
-    status = "done"
-else:
-    status = "pending"
-```
+**WRONG: Directly editing the issue body markdown without using either command.** Direct mutation skips status computation entirely. If you set the PR cell to `#123` but leave status at `pending`, the table is inconsistent until the next parse. See [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md) for the write-vs-read asymmetry.
 
 ## Related Documentation
 
-- [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md) — How status inference interacts with mutations
-- [Roadmap Status System](roadmap-status-system.md) — Two-tier status resolution
-- [Update Roadmap Step Command](../cli/commands/update-roadmap-step.md) — Surgical update details
-- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — LBYL error patterns
+- [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md) — Write-time status computation vs parse-time inference
+- [Roadmap Status System](roadmap-status-system.md) — Two-tier status resolution rules
+- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — LBYL error patterns used by both commands

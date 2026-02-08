@@ -1,9 +1,9 @@
 ---
 title: Learn Plan Validation
 read_when:
-  - "creating erk-learn plans"
-  - "preventing learn plan cycles"
-  - "validating learn workflow"
+  - "creating or modifying erk-learn plans"
+  - "working on the learn workflow pipeline"
+  - "debugging learn-on-learn cycle errors"
 tripwires:
   - action: "creating erk-learn plan for an issue that already has erk-learn label"
     warning: "Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention)."
@@ -11,132 +11,44 @@ tripwires:
 
 # Learn Plan Validation
 
-Validation rules for `erk learn` workflow to prevent invalid configurations and cycles.
-
 ## Core Rule: No Learn-on-Learn
 
-**A learn plan MUST target an issue with `erk-plan` label, NOT `erk-learn` label.**
+Learn plans exist to extract insights from **implementation work** (erk-plan issues). A learn plan must never target another learn plan — this would create documentation cycles where plans endlessly analyze each other instead of analyzing real code changes.
 
-This prevents cycles where:
+The cycle risk is real because the learn pipeline is automated: after a PR lands, the system can automatically create a learn plan. If learn plans could target other learn plans, the pipeline would generate infinite chains (learn A analyzes learn B which analyzes learn A).
 
-- Issue A (erk-learn) analyzes Issue B (erk-learn)
-- Issue B analyzes Issue A
-- Or longer cycles: A → B → C → A
+## Where Validation Lives
 
-## Validation Points
+Cycle prevention is enforced at multiple points because learn plans flow through several different code paths. Each enforcement point serves a different workflow entry:
 
-### 1. Issue Label Validation
+| Enforcement Point | What It Checks | Why There |
+|---|---|---|
+| `/erk:learn` skill (Step 1) | Target issue labels include `erk-learn` → reject | Primary entry: agent-driven learn invocation |
+| `erk land` pre-flight | Issue has `erk-learn` label → skip learn prompt | Prevents "did you learn from this?" prompt for learn plans themselves |
+| `is_issue_learn_plan()` in submit | Label check helper | Shared utility for branch/submit workflows |
 
-When creating a learn plan (via `erk learn <issue>` or automatic trigger):
+<!-- Source: .claude/commands/erk/learn.md:38-53 -->
+The `/erk:learn` skill performs the authoritative check in its Step 1 by fetching the issue via `erk exec get-issue-body` and inspecting the `labels` array. If `erk-learn` is present, the skill halts with a cycle prevention error.
 
-**Check:** Target issue has `erk-plan` label
-**Error:** If target has `erk-learn` label, reject with error:
+<!-- Source: src/erk/cli/commands/land_cmd.py, _check_learn_before_land -->
+The land command's learn check skips entirely for issues bearing the `erk-learn` label, since learn plans are not themselves subject to the "did you learn?" prompt.
 
-```
-Error: Cannot create learn plan for issue #123
-Reason: Target issue has 'erk-learn' label (should have 'erk-plan')
-Learn plans analyze implementation plans, not other learn plans.
-```
+## The Two-Label System
 
-### 2. Implementation Origin Validation
+Understanding why this validation matters requires understanding the label-based workflow stages:
 
-When creating a learn plan for a PR:
+| Label | Role | Direction |
+|---|---|---|
+| `erk-plan` | Implementation plan | Looks **forward** — code changes to make |
+| `erk-learn` | Documentation plan | Looks **backward** — insights to extract from completed work |
 
-**Check:** PR is linked to an issue with `erk-plan` label
-**Error:** If linked issue has `erk-learn` label, reject:
+<!-- Source: src/erk/cli/constants.py, ERK_PLAN_LABEL and ERK_LEARN_LABEL -->
+Both labels are defined as constants and used throughout the CLI for label checks, issue creation, and filtering.
 
-```
-Error: PR #456 is linked to issue #123 with 'erk-learn' label
-Learn plans must target issues with 'erk-plan' label
-```
+The flow is strictly one-directional: `erk-plan` → implement → land PR → `erk-learn` → extract docs → done. Learn plans are terminal nodes in this pipeline, never sources for further learn plans.
 
-### 3. Manual Override (Advanced)
+## Anti-Patterns
 
-For special cases (meta-analysis of learn workflow itself):
+**Creating a learn plan that targets another learn plan.** Even if the goal is "meta-analysis of the learn workflow itself," the correct approach is to create an `erk-plan` issue for improving the learn workflow's code, not an `erk-learn` issue analyzing another `erk-learn` issue.
 
-**Flag:** `--allow-learn-on-learn` (hidden flag)
-**Use case:** Analyzing the learn workflow mechanism itself
-**Warning:** Creates a meta-learn plan that won't be automatically processed
-
-## Learn Workflow Stages
-
-Understanding the labels helps prevent confusion:
-
-| Label       | Stage               | Purpose                                           |
-| ----------- | ------------------- | ------------------------------------------------- |
-| `erk-plan`  | Implementation plan | Work to be done (code changes)                    |
-| `erk-learn` | Documentation plan  | Documentation to be written (from completed work) |
-
-**Flow:**
-
-1. Create `erk-plan` issue → Implement code → Land PR → Mark plan as complete
-2. Create `erk-learn` issue → Extract insights from session → Write docs → Mark learn complete
-
-Learn plans look **backward** at completed work, not **forward** at future work.
-
-## Implementation Location
-
-Validation logic is in:
-
-```
-packages/erk/src/erk/learn/validation.py
-```
-
-**Function:** `validate_learn_target(issue_number: int, github: GitHub) -> ValidationResult`
-
-**Called by:**
-
-- `erk learn <issue>` command
-- Automatic learn plan creation after PR land
-- Learn plan queue processor
-
-## Error Messages
-
-### Cycle Prevention Error
-
-```
-Cannot create learn plan for issue #123: Target has 'erk-learn' label
-
-Learn plans analyze implementation work (erk-plan issues), not other
-learn plans (erk-learn issues).
-
-If you need to document the learn workflow itself, use:
-  erk learn --allow-learn-on-learn 123
-```
-
-### Missing Plan Label
-
-```
-Cannot create learn plan for issue #123: No 'erk-plan' label found
-
-Learn plans require a completed implementation plan to analyze.
-
-If issue #123 is closed and had an associated erk-plan issue, use that
-issue number instead.
-```
-
-## Testing Validation
-
-Unit tests should cover:
-
-1. **Valid case:** Target has `erk-plan` label → success
-2. **Invalid case:** Target has `erk-learn` label → error
-3. **No label case:** Target has neither label → error
-4. **Override case:** `--allow-learn-on-learn` flag → success with warning
-
-Integration test:
-
-```bash
-# Should succeed
-erk learn 123  # where #123 has erk-plan label
-
-# Should fail
-erk learn 456  # where #456 has erk-learn label
-# Error: Cannot create learn plan for issue #456 (has 'erk-learn' label)
-```
-
-## Related Topics
-
-- [Learn Workflow](../architecture/learn-workflow.md) - Complete learn process
-- [Learn Origin Tracking](../architecture/learn-origin-tracking.md) - Linking plans to sessions
-- [Parallel Agent Pattern](../architecture/parallel-agent-pattern.md) - Learn orchestration
+**Skipping the label check when adding new learn entry points.** Any new code path that creates or triggers learn plans must check for the `erk-learn` label on the target issue. The validation is intentionally distributed across entry points rather than centralized, so new entry points need their own check.
