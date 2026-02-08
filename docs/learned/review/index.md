@@ -3,6 +3,6 @@
 
 # Review Documentation
 
-- **[inline-comment-deduplication.md](inline-comment-deduplication.md)** — working with PR inline review comments, understanding how duplicate comments are prevented, modifying review prompt assembly
-- **[learned-docs-review.md](learned-docs-review.md)** — working with learned documentation, understanding documentation quality checks, debugging verbatim code violations
-- **[prompt-assembly.md](prompt-assembly.md)** — modifying review prompt generation, understanding the PR review vs local review modes, working with src/erk/review/prompt_assembly.py
+- **[inline-comment-deduplication.md](inline-comment-deduplication.md)** — modifying how PR review comments are posted or fetched, debugging duplicate review comments on a PR, changing the review prompt template's deduplication instructions
+- **[learned-docs-review.md](learned-docs-review.md)** — understanding how documentation quality is enforced at PR time, debugging why a PR received verbatim code comments, adding or modifying the audit-pr-docs review
+- **[prompt-assembly.md](prompt-assembly.md)** — modifying review prompt generation or templates, adding a new review mode to the review system, understanding why PR mode and local mode are structured differently
