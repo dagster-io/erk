@@ -98,10 +98,9 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
 
-
 **CRITICAL: Before choosing between execute_prompt() modes** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. execute_prompt() supports both single-shot and streaming modes - choose based on whether you need real-time updates
+
 **CRITICAL: Before choosing output stream for LiveDisplay** → Read [LiveDisplay Gateway](live-display-gateway.md) first. RealLiveDisplay writes to stderr by default (matches erk's user_output convention) — stdout is reserved for structured data
-**CRITICAL: Before choosing wrong execution mode for prompts** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. execute_prompt() supports both single-shot and streaming modes - choose based on whether you need real-time updates
 
 **CRITICAL: Before comparing git SHA to Graphite's tracked SHA for divergence detection** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches.
 
@@ -125,11 +124,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before detecting current worktree using path comparisons on cwd** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use git.get_repository_root(cwd) to get the worktree root, then match exactly against known paths. Path comparisons with .exists()/.resolve()/is_relative_to() are fragile.
 
-
-**CRITICAL: Before duplicating environment setup in remote commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. build_codespace_ssh_command() bootstraps the environment - don't duplicate setup
 **CRITICAL: Before executing remote commands on codespaces** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. always start_codespace() before executing commands to ensure the environment is ready
-**CRITICAL: Before executing remote commands without starting codespace** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Always start_codespace() before executing remote commands
-**CRITICAL: Before expecting execute_interactive() to return** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. execute_interactive() never returns in production - it replaces the process via os.execvp
 
 **CRITICAL: Before expecting status to auto-update after manual PR edits** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. Only the update-roadmap-step command writes computed status. Manual GitHub edits or direct body mutations leave status at its current value — you must explicitly set status to '-' to enable inference on next parse.
 
@@ -167,9 +162,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before mutating pipeline state directly instead of using dataclasses.replace()** → Read [State Threading Pattern](state-threading-pattern.md) first. Pipeline state must be frozen. Use dataclasses.replace() to create new state at each step.
 
-
 **CRITICAL: Before omitting -t flag for SSH connections** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. missing -t flag prevents TTY allocation and breaks interactive programs
-**CRITICAL: Before omitting -t flag for interactive programs** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. Missing -t flag prevents TTY allocation and breaks interactive programs
+
 **CRITICAL: Before passing SSH commands to subprocess** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. SSH command must be a single string argument, not multiple shell words
 
 **CRITICAL: Before passing array or object variables to gh api graphql with -F and json.dumps()** → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Arrays and objects require special gh syntax: arrays use -f key[]=value1 -f key[]=value2, objects use -f key[subkey]=value. Using -F key=[...] or -F key={...} passes them as literal strings, not typed values.
@@ -188,7 +182,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
 
-**CRITICAL: Before testing PromptExecutor without checking call tracking** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. FakePromptExecutor tracks all calls via properties - use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
 **CRITICAL: Before testing code that uses PromptExecutor** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. FakePromptExecutor tracks all calls via properties - use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
 
 **CRITICAL: Before threading state through pipeline steps with mutable dataclasses** → Read [Land State Threading Pattern](land-state-threading.md) first. Use frozen dataclasses (@dataclass(frozen=True)) for pipeline state. Update fields with dataclasses.replace() to create new instances. Immutability enables caching, testability, and replay.
@@ -201,9 +194,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using LiveDisplay in watch loops or long-running operations** → Read [LiveDisplay Gateway](live-display-gateway.md) first. guard with try/finally to ensure stop() is called even on KeyboardInterrupt
 
-
-**CRITICAL: Before using LiveDisplay without try/finally guard** → Read [LiveDisplay Gateway](live-display-gateway.md) first. LiveDisplay is primarily used in watch loops — guard with try/finally to ensure stop() is called even on KeyboardInterrupt
-
 **CRITICAL: Before using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
 
 **CRITICAL: Before using `--output-format stream-json` with `--print` in Claude CLI** → Read [Claude CLI Integration from Python](claude-cli-integration.md) first. Must also include `--verbose`. Without it, the command fails with 'stream-json requires --verbose'.
@@ -212,7 +202,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using bare subprocess.run with check=True** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
 
-**CRITICAL: Before using bash heredocs for large agent outputs** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. heredocs fail silently with special characters — prefer the Write tool
 **CRITICAL: Before using execute_interactive() in production code** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. execute_interactive() never returns in production - it replaces the process via os.execvp
 
 
@@ -238,12 +227,10 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code** → Read [Erk Architecture Patterns](erk-architecture.md) first. Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables.
 
-
 **CRITICAL: Before using run_ssh_command() for interactive TUI processes** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. causes apparent hangs - use exec_ssh_interactive() for processes requiring user input
-**CRITICAL: Before using run_ssh_command() for interactive TUI processes** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. causes apparent hangs - use exec_ssh_interactive() instead
-**CRITICAL: Before using run_ssh_command() for interactive commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Interactive commands need exec_ssh_interactive(), not run_ssh_command()
+
 **CRITICAL: Before using subprocess.run with git command outside of a gateway** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations.
-**CRITICAL: Before using unquoted heredoc delimiters (<<EOF) with content containing $, \, or backticks** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. bash silently expands them — use quoted delimiters (<<'EOF')
+
 **CRITICAL: Before using unquoted heredoc delimiters when the body contains $, \, or backticks** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. bash silently expands them. Always use quoted delimiters (<<'EOF') to pass content literally
 
 **CRITICAL: Before writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has >3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
