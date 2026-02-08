@@ -92,7 +92,7 @@
 - **[state-threading-pattern.md](state-threading-pattern.md)** — designing linear pipelines with immutable state, understanding SubmitState or pipeline architecture, implementing multi-step workflows with frozen dataclasses
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
 - **[symlink-validation-pattern.md](symlink-validation-pattern.md)** — Validating @ references in markdown files, Validating import paths in configuration, Any path validation where source files may be symlinks
-- **[task-context-isolation.md](task-context-isolation.md)** — fetching large JSON responses from APIs, parsing PR review comments, analyzing GitHub issues or PRs, need to reduce context window usage, returning structured data from a Task
+- **[task-context-isolation.md](task-context-isolation.md)** — fetching large JSON responses from APIs, parsing PR review comments or GitHub issues, analyzing verbose API responses that pollute context, need to reduce context window usage, returning structured data from subagents, choosing between context: fork vs manual Task delegation
 - **[type-safety-patterns.md](type-safety-patterns.md)** — designing flexible collection types, working with union types in Python, handling mixed-type lists
 - **[typescript-multi-config.md](typescript-multi-config.md)** — setting up TypeScript type checking for multi-config projects, encountering TypeScript errors in subdirectories with separate configs, working with erkdesk TypeScript configuration, running tsc --noEmit from project root
 - **[workflow-capability-pattern.md](workflow-capability-pattern.md)** — creating GitHub workflow capabilities, adding CI review workflows

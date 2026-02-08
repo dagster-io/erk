@@ -5,10 +5,10 @@ read_when:
   - "working with TUI real-time updates"
   - "showing progress indicators"
 tripwires:
-  - action: "LiveDisplay is primarily used in watch loops — guard with try/finally to ensure stop() is called even on KeyboardInterrupt"
-    warning: "Failing to call stop() leaves terminal in broken state"
-  - action: "RealLiveDisplay writes to stderr by default (matches erk's user_output convention) — stdout is reserved for structured data"
-    warning: "Writing to stdout breaks structured data parsing"
+  - action: "using LiveDisplay without try/finally guard"
+    warning: "LiveDisplay is primarily used in watch loops — guard with try/finally to ensure stop() is called even on KeyboardInterrupt"
+  - action: "writing to stdout from LiveDisplay"
+    warning: "RealLiveDisplay writes to stderr by default (matches erk's user_output convention) — stdout is reserved for structured data"
 ---
 
 # LiveDisplay Gateway
