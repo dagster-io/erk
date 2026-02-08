@@ -22,6 +22,10 @@ Identify documentation that: (1) describes systems, workflows, or concepts inacc
 
 ## Instructions
 
+### Prerequisites
+
+Load the `learned-docs` skill for content quality standards. The skill's core rules doc defines what counts as duplicative, high-value, and verbatim content.
+
 ### Phase 1: Resolve and Read Document
 
 Parse `$ARGUMENTS` to:
@@ -123,63 +127,20 @@ These checks leverage the code understanding already built in Phase 3. If the pr
 
 For each section of the document, classify it into one of these value categories:
 
-| Category        | Description                                                                                                                                  | Action                                                          |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                                                        | Replace with "Read `path`" reference                            |
-| **STALE**       | Was once accurate but code has changed (broken imports, renamed functions, moved files)                                                      | Remove code block; replace with code reference                  |
-| **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                                                                              | Flag as high-maintenance; consider code reference instead       |
-| **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                                                       | Keep                                                            |
-| **CONTEXTUAL**  | Connects multiple code locations into a coherent narrative the code alone can't provide                                                      | Keep                                                            |
-| **EXAMPLES**    | Code examples that are essentially identical to what exists in source/tests                                                                  | Remove code block; replace with reference to actual test/source |
-| **CONTRADICTS** | States something that is factually wrong per the current codebase (wrong function names, incorrect behavior descriptions, outdated patterns) | Flag as high-priority fix; correct or delete                    |
+| Category        | Description                                                                                                     | Action                                                          |
+| --------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                           | Replace with "Read `path`" reference                            |
+| **INACCURATE**  | States something that doesn't match current code (wrong names, broken imports, incorrect behavior, moved files) | Fix to match reality; correct or replace with code reference    |
+| **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                                                 | Flag as high-maintenance; consider code reference instead       |
+| **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                          | Keep                                                            |
+| **CONTEXTUAL**  | Connects multiple code locations into a coherent narrative the code alone can't provide                         | Keep                                                            |
+| **EXAMPLES**    | Code examples that are essentially identical to what exists in source/tests                                     | Remove code block; replace with reference to actual test/source |
 
-**Specific things to flag as contradictory:**
+Apply the content quality standards from the `learned-docs` skill's core rules doc to classify each section. Specifically:
 
-**System/Concept Descriptions (highest priority):**
-
-- Descriptions of how a system works that don't match actual implementation
-- Workflow explanations where steps are missing, reordered, or no longer exist
-- Component behavior descriptions that don't match what the code actually does
-- Architectural pattern descriptions that don't reflect current codebase structure
-- "When X happens, Y occurs" statements that aren't true in the code
-
-**Mechanical Accuracy (supporting checks):**
-
-- Import paths that don't resolve to actual modules
-- Function/class names that don't exist in the codebase
-- Return type claims that don't match actual function signatures
-- Exception type claims (e.g., "raises RuntimeError") that the function doesn't raise
-
-**Distinguishing STALE from CONTRADICTS:**
-
-- **CONTRADICTS**: The claim was never true, or states something opposite to code behavior
-  - Example: "This function returns a list" when it returns a dict
-
-- **STALE**: The claim was once true but code has evolved
-  - Example: Import path changed from `erk.core.foo` to `erk_shared.foo`
-  - Example: Function was renamed from `old_name()` to `new_name()`
-
-STALE content should be updated; CONTRADICTS content needs deeper review to understand the discrepancy.
-
-**Code blocks are high-drift-risk by default.** When a code block reproduces actual source code (implementation patterns, usage examples, function signatures), it will inevitably drift from reality. The default action is to **remove the code block and replace it with a prose reference** to the actual source location (e.g., "See `ClassName.method()` in `path/to/file.py`"). Only keep inline code blocks when they demonstrate an **anti-pattern** (wrong way vs right way) or illustrate a concept that doesn't exist as a single function in the codebase.
-
-**Specific things to flag as duplicative:**
-
-- Import paths (agents can find these via grep)
-- Function signatures (agents can read the source)
-- Basic "what it does" descriptions that match docstrings
-- Code examples that duplicate source or test code
-- File path listings that could be found via glob
-- **Exception**: Constants, default values, and configuration strings mentioned in prose context are NOT duplicative — they make docs scannable and should be classified as HIGH VALUE or CONTEXTUAL
-
-**Specific things to flag as high-value:**
-
-- Decision tables ("when to use X vs Y")
-- Anti-patterns / "don't do this" warnings
-- Cross-cutting patterns that span multiple files
-- Historical context / "why not the obvious approach"
-- Tripwires that prevent common mistakes
-- Constants and default values mentioned in prose context (e.g., "defaults to `premiumLinux`") — these make docs scannable without requiring a code read
+- **Code blocks**: High-drift-risk by default. Apply the skill's "One Code Rule" and four exceptions to determine keep/remove.
+- **Duplicative vs high-value**: Apply the skill's "What Belongs vs What Doesn't" criteria. Exception: constants and default values in prose context are NOT duplicative — they make docs scannable.
+- **High-value signals**: Decision tables, anti-patterns, cross-cutting patterns, historical context, and tripwires (per the skill's content rules).
 
 ### Phase 4.5: Code Block Triage
 
@@ -192,13 +153,7 @@ For every fenced code block in the document, classify it:
 | **VERBATIM**     | **Remove** | Reproduces actual source code (implementation, signatures, usage)       |
 | **TEMPLATE**     | Maybe      | Shows a pattern for new code — keep only if the pattern isn't in source |
 
-**Default action for VERBATIM blocks:** Replace with a prose reference like:
-
-> See the bounds update handler in `path/to/file.py:44-53` — brief description of what it does and why it matters.
-
-The prose reference should capture the _insight_ (why the code matters) without reproducing the code itself.
-
-**This classification feeds the verdict:** Any doc with VERBATIM blocks that haven't been removed should receive at minimum a `SIMPLIFY` verdict, even if the code blocks are currently accurate.
+For VERBATIM blocks, apply the replacement format from the `learned-docs` skill's core rules: replace with a prose reference capturing the insight, plus a source pointer. Any doc with unreplaced VERBATIM blocks should receive at minimum a `SIMPLIFY` verdict.
 
 ### Phase 5: Generate Report
 
@@ -207,7 +162,7 @@ Complete the full internal analysis from Phase 4, but output only a brief summar
 **Output format (always):**
 
 ```
-Audit: <doc-path> | Verdict: <VERDICT> | Duplicative: X% | Stale: X% | High-value: Y% | Contradictions: <count>
+Audit: <doc-path> | Verdict: <VERDICT> | Duplicative: X% | Inaccurate: X% | High-value: Y%
 ```
 
 Add a verification summary line:
@@ -262,7 +217,7 @@ Use AskUserQuestion to offer two groups of options:
 **Primary document actions:**
 
 - **"Apply recommended rewrite"** — rewrite the doc to remove duplicative content (only offer if verdict is SIMPLIFY or REPLACE WITH CODE REFS)
-- **"Apply accuracy fixes"** — fix stale imports, correct renamed symbols (only offer if verification found STALE/BROKEN claims but doc is otherwise valuable)
+- **"Apply accuracy fixes"** — fix inaccurate claims, broken imports, renamed symbols (only offer if verification found INACCURATE/BROKEN claims but doc is otherwise valuable)
 - **"Mark as audited (clean)"** — stamp frontmatter with audit date and `clean` result (use when verdict is KEEP)
 - **"Mark as audited (with rewrite)"** — apply the rewrite AND stamp frontmatter (only offer if verdict is SIMPLIFY or REPLACE WITH CODE REFS)
 - **"No action"** — just noting findings
@@ -318,7 +273,7 @@ Output summary of what was fixed, skipped, and recommended.
 
 1. **Adversarial framing**: Be skeptical of documentation value by default. The burden of proof is on the doc to justify its existence vs just reading code.
 
-2. **Percentage-based scoring**: Show what % of the doc is duplicative or contradictory for quick signal. A doc that's 80% duplicative is a strong candidate for simplification. Any contradictory content is treated as at least as severe as duplicative content in verdict calculations.
+2. **Percentage-based scoring**: Show what % of the doc is duplicative or inaccurate for quick signal. A doc that's 80% duplicative is a strong candidate for simplification. Inaccurate content is treated as at least as severe as duplicative content in verdict calculations.
 
 3. **Section-level granularity**: Don't just give a doc-level verdict. Show which sections add value and which don't, so the user can surgically edit.
 

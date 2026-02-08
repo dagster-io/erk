@@ -17,17 +17,11 @@ Create a documentation plan from Claude Code sessions associated with a plan imp
 
 ## Purpose
 
-**Audience**: All documentation produced by this command is for AI agents, not human users.
-
-These docs are "token caches" - preserved reasoning and research so future agents don't have to recompute it. When you research something, discover a pattern, or figure out how something works, that knowledge should be captured so the next agent doesn't burn tokens rediscovering it.
-
-**Document reality**: Capture the world as it is, not as we wish it to be. "This is non-ideal but here's the current state" is valuable documentation. Tech debt, workarounds, quirks - document them. Future agents need to know how things actually work.
-
-**Bias toward capturing**: When uncertain whether something is worth documenting, include it. Over-documentation is better than losing insights.
-
-**Reject dismissiveness**: If you find yourself thinking "this doesn't need documentation," pause. That instinct is often wrong. New features, patterns, and capabilities almost always benefit from documentation, even when the code is "clear."
+All documentation produced by this command follows the content quality standards in the `learned-docs` skill. Load that skill for the full rules on audience (AI agents), the cornerstone principle (cross-cutting insight), and what belongs in learned docs vs code comments.
 
 ## Agent Instructions
+
+**Prerequisite:** Load the `learned-docs` skill for content quality standards before proceeding.
 
 Tell the user:
 
