@@ -30,13 +30,13 @@ The current system uses one workflow (`code-reviews.yml`) that discovers all `*.
 
 Creating a new review touches up to five places. Understanding why each exists prevents partial implementations.
 
-| Place | What goes here | Why it's separate |
-|-------|---------------|-------------------|
-| `.github/reviews/<name>.md` | Review spec (frontmatter + step-by-step instructions) | Convention-based discovery reads this directory |
-| Review spec frontmatter | `paths`, `marker`, `model`, `allowed_tools` | Controls when the review triggers and what tools the agent can use |
-| Review spec body | Numbered steps the agent executes | Each review has unique analysis logic |
-| `docs/learned/reviews/<name>.md` | Cross-cutting insights about this review | Only if the review has non-obvious behavior worth documenting |
-| `docs/learned/reviews/index.md` | Auto-generated via `erk docs sync` | Frontmatter `read_when` drives the index entry |
+| Place                            | What goes here                                        | Why it's separate                                                  |
+| -------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------ |
+| `.github/reviews/<name>.md`      | Review spec (frontmatter + step-by-step instructions) | Convention-based discovery reads this directory                    |
+| Review spec frontmatter          | `paths`, `marker`, `model`, `allowed_tools`           | Controls when the review triggers and what tools the agent can use |
+| Review spec body                 | Numbered steps the agent executes                     | Each review has unique analysis logic                              |
+| `docs/learned/reviews/<name>.md` | Cross-cutting insights about this review              | Only if the review has non-obvious behavior worth documenting      |
+| `docs/learned/reviews/index.md`  | Auto-generated via `erk docs sync`                    | Frontmatter `read_when` drives the index entry                     |
 
 **The first three are mandatory. The last two are only needed if the review has cross-cutting insights** that don't fit in the spec itself (most reviews don't need a separate learned doc).
 
@@ -48,11 +48,11 @@ This is the most important decision. Creating overlapping reviews wastes CI time
 
 See `docs/learned/ci/review-types-taxonomy.md` for the full three-dimensional decision framework (quality dimension, file scope, tools). The quick test:
 
-| Signal | Action |
-|--------|--------|
-| Same quality dimension + same files + same tools | Extend existing review |
-| New quality dimension OR new file scope OR different tools | Create new review |
-| Same dimension but different performance profiles (fast vs slow) | Create new review |
+| Signal                                                           | Action                 |
+| ---------------------------------------------------------------- | ---------------------- |
+| Same quality dimension + same files + same tools                 | Extend existing review |
+| New quality dimension OR new file scope OR different tools       | Create new review      |
+| Same dimension but different performance profiles (fast vs slow) | Create new review      |
 
 ## Writing the Review Spec
 
@@ -98,6 +98,7 @@ Reviews with explicit classification taxonomies produce better results than revi
 **WRONG**: "Analyze each file and flag issues"
 
 **RIGHT**: Explicit categories with actions:
+
 - Category A (thin CLI wrapper): Skip — only Click decorators
 - Category B (new source with logic): Flag — needs test coverage
 - Category C (type-only file): Skip — no runtime behavior
