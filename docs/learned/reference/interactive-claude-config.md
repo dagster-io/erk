@@ -1,6 +1,6 @@
 ---
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 title: Interactive Agent Configuration
 read_when:
   - "implementing erk commands that launch Claude or Codex interactively"
@@ -34,12 +34,12 @@ tripwires:
 
 Erk uses a **generic** `PermissionMode` that maps to **backend-specific** modes. This exists because erk supports multiple agent backends (Claude, Codex), each with different CLI flag vocabularies. New code should always use `PermissionMode`, never `ClaudePermissionMode` directly.
 
-| Generic (`PermissionMode`) | Claude mapping        | Semantic meaning              |
-| -------------------------- | --------------------- | ----------------------------- |
-| `"safe"`                   | `"default"`           | Prompt for every permission   |
-| `"edits"`                  | `"acceptEdits"`       | Auto-accept file edits        |
-| `"plan"`                   | `"plan"`              | Exploration and planning only |
-| `"dangerous"`              | `"bypassPermissions"` | Bypass all permissions        |
+| Generic (`PermissionMode`) | Claude mapping        | Semantic meaning                     |
+| -------------------------- | --------------------- | ------------------------------------ |
+| `"safe"`                   | `"default"`           | Prompt for every permission          |
+| `"edits"`                  | `"acceptEdits"`       | Auto-accept file edits               |
+| `"plan"`                   | `"plan"`              | Exploration and planning only        |
+| `"dangerous"`              | `"bypassPermissions"` | Bypass all permissions               |
 
 See `PermissionMode` and `permission_mode_to_claude()` in `packages/erk-shared/src/erk_shared/context/types.py` for the mapping implementation.
 
@@ -54,7 +54,7 @@ The most common mistake when working with this config is confusing `dangerous` a
 | Auto-skips prompts | Yes — all prompts suppressed     | No — prompts appear normally           |
 | Use case           | CI/CD, automation, unattended    | Interactive dev — user opts in later   |
 
-**Why two flags exist:** Automation needs unconditional permission bypass (prompts would hang). Interactive use needs the _option_ to bypass without _forcing_ it — the user might want prompts for some sessions but not others.
+**Why two flags exist:** Automation needs unconditional permission bypass (prompts would hang). Interactive use needs the *option* to bypass without *forcing* it — the user might want prompts for some sessions but not others.
 
 ## The None-Preservation Override Pattern
 
@@ -62,12 +62,12 @@ The most common mistake when working with this config is confusing `dangerous` a
 
 `with_overrides()` uses `None` as a sentinel meaning "keep the config file value." This is the critical design decision: **any non-None value is an active override**, including `False`.
 
-| Override value passed | Effect                                   |
-| --------------------- | ---------------------------------------- |
-| `None`                | Config file value preserved              |
-| `"plan"`              | Forces plan mode regardless of config    |
-| `True`                | Forces enabled regardless of config      |
-| `False`               | **Forces disabled** regardless of config |
+| Override value passed | Effect                                       |
+| --------------------- | -------------------------------------------- |
+| `None`                | Config file value preserved                  |
+| `"plan"`              | Forces plan mode regardless of config        |
+| `True`                | Forces enabled regardless of config          |
+| `False`               | **Forces disabled** regardless of config     |
 
 ### The Boolean Flag Trap
 
