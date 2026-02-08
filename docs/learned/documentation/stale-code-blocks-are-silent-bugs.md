@@ -59,7 +59,7 @@ See [source-pointers.md](source-pointers.md) for complete format specification.
 
 ## Detection: PR-Time Review Automation
 
-The `.github/reviews/learned-docs.md` review runs on every PR touching `docs/learned/`:
+The `.github/reviews/audit-pr-docs.md` review runs on every PR touching `docs/learned/`:
 
 - **Scans `+` diff lines** for code blocks longer than 5 lines
 - **Detects verbatim copies** by matching against source files
@@ -68,9 +68,9 @@ The `.github/reviews/learned-docs.md` review runs on every PR touching `docs/lea
 
 When you receive a learned-docs review comment, it means you've included verbatim source that should be converted to a source pointer.
 
-<!-- Source: .github/reviews/learned-docs.md:20-69 -->
+<!-- Source: .github/reviews/audit-pr-docs.md:20-69 -->
 
-See the automated detection logic in `.github/reviews/learned-docs.md:20-69` (Step 2-4: extract code blocks, check for matches, classify as verbatim).
+See the automated detection logic in `.github/reviews/audit-pr-docs.md:20-69` (Step 2-4: extract code blocks, check for matches, classify as verbatim).
 
 ## When Short Code Blocks Are Okay
 
@@ -102,4 +102,4 @@ This is an intentional trade-off: fail loudly (stale pointers) instead of silent
 ## Related Documentation
 
 - [source-pointers.md](source-pointers.md) - Complete source pointer format specification
-- `.github/reviews/learned-docs.md` - Automated PR-time detection of verbatim copies
+- `.github/reviews/audit-pr-docs.md` - Automated PR-time detection of verbatim copies

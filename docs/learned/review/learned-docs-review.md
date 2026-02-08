@@ -28,7 +28,7 @@ The review runs automatically on PRs that modify `docs/learned/**/*.md` files an
 
 When agents copy implementation code into docs (e.g., showing how a gateway works by pasting its actual source), that documentation silently becomes stale when the source changes. PR #2681 demonstrated this concretely: an agent copied incorrect scratch directory paths from documentation because the docs hadn't been updated when the implementation changed.
 
-**Solution**: The learned-docs review catches this at PR time rather than after merge.
+**Solution**: The audit-pr-docs review catches this at PR time rather than after merge.
 
 ## How It Works
 
@@ -65,9 +65,9 @@ Only verbatim copies are flagged.
 
 ## Review Spec Details
 
-**File**: `.github/reviews/learned-docs.md`
+**File**: `.github/reviews/audit-pr-docs.md`
 
-**Frontmatter**: See `.github/reviews/learned-docs.md:1-9` for the complete review specification.
+**Frontmatter**: See `.github/reviews/audit-pr-docs.md:1-9` for the complete review specification.
 
 **Key configuration**:
 
@@ -80,7 +80,7 @@ Only verbatim copies are flagged.
 When a violation is detected, the review posts:
 
 ```
-**Learned Docs**: Verbatim source code copy detected.
+**Audit PR Docs**: Verbatim source code copy detected.
 
 Source: `<source_file_path>:<start_line>-<end_line>`
 
@@ -111,7 +111,7 @@ This is sufficient for the review's purpose and avoids over-engineering.
 
 ## Integration Points
 
-The learned-docs review integrates with three existing erk systems:
+The audit-pr-docs review integrates with three existing erk systems:
 
 1. **Convention-based review system** ([convention-based-reviews.md](../ci/convention-based-reviews.md)) - Uses standard frontmatter and discovery
 2. **learned-docs skill** - Provides rationale for why verbatim code is problematic
@@ -119,7 +119,7 @@ The learned-docs review integrates with three existing erk systems:
 
 ## Related Documentation
 
-- `.github/reviews/learned-docs.md` - The review specification
+- `.github/reviews/audit-pr-docs.md` - The review specification
 - `.claude/skills/learned-docs/SKILL.md` - Rationale for avoiding verbatim code
 - `docs/learned/ci/convention-based-reviews.md` - How reviews fit in the broader system
 - `docs/learned/review/inline-comment-deduplication.md` - Deduplication via markers

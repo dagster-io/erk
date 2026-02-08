@@ -114,14 +114,14 @@ If you answered "Yes" to questions 1-3, use a source pointer.
 
 ## Automated Detection
 
-The learned-docs review (`.github/reviews/learned-docs.md`) automatically detects verbatim source copies in PRs:
+The audit-pr-docs review (`.github/reviews/audit-pr-docs.md`) automatically detects verbatim source copies in PRs:
 
 - Scans `docs/learned/**/*.md` files
 - Matches code blocks against source files in `src/erk/` and `packages/`
 - Posts inline comments identifying the source file and relevant identifiers
 - Suggests source pointer format as replacement
 
-When you receive a learned-docs review comment, it means you should replace the code block with a source pointer.
+When you receive a audit-pr-docs review comment, it means you should replace the code block with a source pointer.
 
 ## Examples in the Wild
 

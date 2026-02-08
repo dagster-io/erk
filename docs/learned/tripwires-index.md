@@ -29,7 +29,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [planning](planning/tripwires.md)           | 26        | `.impl/`, `.worker-impl/`, planning workflows |
 | [pr-operations](pr-operations/tripwires.md) | 1         | `pr-operations/` code                         |
 | [reference](reference/tripwires.md)         | 5         | `reference/` code                             |
-| [review](review/tripwires.md)               | 4         | `review/` code                                |
+| [review](review/tripwires.md)               | 3         | `review/` code                                |
 | [reviews](reviews/tripwires.md)             | 2         | `reviews/` code                               |
 | [sessions](sessions/tripwires.md)           | 7         | `~/.claude/projects/`, session analysis       |
 | [testing](testing/tripwires.md)             | 18        | `tests/`                                      |

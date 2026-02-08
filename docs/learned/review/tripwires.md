@@ -16,6 +16,4 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding code blocks longer than 5 lines to docs/learned/ files** → Read [Learned Docs Review](learned-docs-review.md) first. Verbatim source code will go stale. Use source pointers or short illustrative snippets instead. See learned-docs skill for guidance.
 
-**CRITICAL: Before duplicating implementation details into docs/learned/ files** → Read [Doc Audit Review](doc-audit-review.md) first. Documentation that duplicates what code already expresses will drift. Use source pointers instead. See doc-audit review for classification guidance.
-
 **CRITICAL: Before posting inline review comments without deduplication** → Read [Inline Comment Deduplication](inline-comment-deduplication.md) first. Always deduplicate before posting. Use (path, line, body_prefix) key with 80-char prefix and 2-line proximity tolerance.

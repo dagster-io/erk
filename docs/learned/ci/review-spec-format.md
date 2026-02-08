@@ -115,7 +115,7 @@ Reviews define clear classification rules for what to flag vs skip.
 
 ### Inline Comment Format
 
-Reviews use a consistent inline comment structure: `**[Review Name]**: [Brief violation description]`, followed by details, context, and a suggested fix. See the Step 5 sections of each review spec in `.github/reviews/` for the exact templates (e.g., `.github/reviews/learned-docs.md` Step 5, `.github/reviews/test-coverage.md` Step 5).
+Reviews use a consistent inline comment structure: `**[Review Name]**: [Brief violation description]`, followed by details, context, and a suggested fix. See the Step 5 sections of each review spec in `.github/reviews/` for the exact templates (e.g., `.github/reviews/audit-pr-docs.md` Step 5, `.github/reviews/test-coverage.md` Step 5).
 
 ### Summary Comment Format
 
@@ -194,12 +194,11 @@ Instead of AST parsing:
 
 | Review                  | File                           | Steps | Categories | Activity Log |
 | ----------------------- | ------------------------------ | ----- | ---------- | ------------ |
-| Learned Docs Review     | `learned-docs.md`              | 6     | 4          | Yes          |
+| Audit PR Docs           | `audit-pr-docs.md`             | 5     | 4          | Yes          |
 | Test Coverage Review    | `test-coverage.md`             | 6     | 6          | Yes          |
 | Tripwires Review        | `tripwires.md`                 | 5     | Varies     | Yes          |
 | Dignified Python        | `dignified-python.md`          | 5     | Varies     | Yes          |
 | Dignified Code Simplify | `dignified-code-simplifier.md` | 3     | N/A        | Yes          |
-| Doc Audit               | `doc-audit.md`                 | 5     | 6          | Yes          |
 
 ## Related Documentation
 
