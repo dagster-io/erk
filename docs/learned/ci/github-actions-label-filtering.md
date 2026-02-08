@@ -1,140 +1,141 @@
 ---
 title: GitHub Actions Label Filtering Reference
 read_when:
-  - understanding the .*.name syntax for label checks
   - debugging why label-based CI gating isn't working
   - implementing label-based workflow conditions
+  - confused about .*.name syntax vs array filtering
+tripwires:
+  - action: "interpolating Python constants in YAML workflows"
+    warning: "GitHub Actions cannot interpolate Python constants - label strings must be hardcoded in YAML"
+  - action: "using contains() for label checks without negation"
+    warning: "Always use negation (!contains) for safe defaults on push events without PR context"
 ---
 
 # GitHub Actions Label Filtering Reference
 
-Quick reference for the GitHub Actions label filtering pattern, explaining the syntax, semantics, and synchronization requirements.
+## Why Label Filtering Is Non-Obvious
 
-## Core Pattern
+GitHub Actions label checks are counterintuitive because:
+
+1. **The syntax hides array operations** — `.*.name` is property extraction, not dot notation
+2. **Event context matters** — `pull_request.labels` is available only on PR events, not push events
+3. **Negation determines safe defaults** — `!contains()` ensures push events run CI, `contains()` would skip them
+
+This document explains the WHY behind the pattern, not the syntax itself.
+
+## The Safe Default Problem
+
+**Problem:** CI must handle both PR events (with label context) and push events (no PR context).
+
+**Wrong approach:** Use `contains()` to check for exclusion labels:
 
 ```yaml
+# WRONG - breaks push events
+if: contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+```
+
+| Event Type    | labels.\*.name value | Result  | Job runs? | Issue                       |
+| ------------- | -------------------- | ------- | --------- | --------------------------- |
+| PR with label | `["erk-plan-..."]`   | `true`  | Yes       | Intended: label present     |
+| PR no label   | `[]`                 | `false` | No        | **WRONG: should run CI**    |
+| Push event    | `[]` (null context)  | `false` | No        | **WRONG: breaks branch CI** |
+
+**Correct approach:** Use negation (`!contains()`) to invert the logic:
+
+```yaml
+# CORRECT - safe defaults
 if: !contains(github.event.pull_request.labels.*.name , 'erk-plan-review')
 ```
 
-### Syntax Breakdown
+| Event Type    | labels.\*.name value | Result  | Job runs? | Behavior                   |
+| ------------- | -------------------- | ------- | --------- | -------------------------- |
+| PR with label | `["erk-plan-..."]`   | `false` | No        | Intended: skip plan review |
+| PR no label   | `[]`                 | `true`  | Yes       | Intended: run normal CI    |
+| Push event    | `[]` (null context)  | `true`  | Yes       | Safe: run CI when unsure   |
 
-| Component                   | Meaning                                      | Example Value                                        |
-| --------------------------- | -------------------------------------------- | ---------------------------------------------------- |
-| `github.event.pull_request` | The pull request object in the event context | `{ "number": 123, "title": "...", "labels": [...] }` |
-| `.labels`                   | Array of label objects                       | `[{ "name": "bug", "color": "..." }, ...]`           |
-| `.*.name`                   | Extract `name` field from each label object  | `["bug", "enhancement"]`                             |
-| `contains(array, value)`    | Check if array contains value                | `contains(["bug"], "bug")` → `true`                  |
-| `!contains(...)`            | Negation - true if value NOT in array        | `!contains(["bug"], "enhancement")` → `true`         |
+**The insight:** Negation makes "run CI" the default, ensuring push events aren't silently skipped.
 
-### Why `.*.name` Syntax
+## The Synchronization Trap
 
-The `.*` is GitHub Actions' array property extraction syntax:
+**Problem:** GitHub Actions workflows are YAML, label definitions are Python constants. There's no way to interpolate Python values into YAML.
 
-- **Input:** Array of objects with a `name` property
-- **Output:** Array of just the `name` values
-- **Alternative notation:** Some documentation calls this "filter" or "map" operation
+<!-- Source: src/erk/cli/constants.py, PLAN_REVIEW_LABEL -->
 
-```yaml
-# labels array structure
-[
-  { "name": "bug", "color": "d73a4a" },
-  { "name": "enhancement", "color": "a2eeef" }
-]
+See `PLAN_REVIEW_LABEL` in `src/erk/cli/constants.py` for the Python constant.
 
-# labels.*.name result
-["bug", "enhancement"]
+<!-- Source: .github/workflows/ci.yml, check-submission job if condition -->
+<!-- Source: .github/workflows/code-reviews.yml, discover job if condition -->
+
+See job-level `if` conditions in `.github/workflows/ci.yml` and `.github/workflows/code-reviews.yml` for hardcoded label strings.
+
+**Why this matters:**
+
+- Renaming a label in Python doesn't update YAML workflows
+- YAML label strings must be manually synchronized with Python constants
+- No CI check can detect the mismatch (different languages)
+
+**When renaming labels:** See `docs/learned/ci/label-rename-checklist.md` for the full synchronization procedure.
+
+## The .\*.name Syntax
+
+**What it is:** GitHub Actions' array property extraction operator. Given an array of objects, `.*.property` extracts that property from each object into a new array.
+
+**Why it's confusing:** It looks like a glob pattern but it's actually array manipulation.
+
+Input structure:
+
+```json
+{
+  "labels": [
+    { "name": "bug", "color": "d73a4a" },
+    { "name": "erk-plan-review", "color": "5319e7" }
+  ]
+}
 ```
 
-## Why Negation Matters
+Operation result:
 
-Using negation (`!contains`) is critical for safe defaults:
+- `labels` → `[{name: "bug", ...}, {name: "erk-plan-review", ...}]`
+- `labels.*.name` → `["bug", "erk-plan-review"]`
+- `contains(["bug", "erk-plan-review"], "erk-plan-review")` → `true`
 
-| Event Type       | `labels.*.name` value  | `contains()` result | `!contains()` result | Job runs?          |
-| ---------------- | ---------------------- | ------------------- | -------------------- | ------------------ |
-| PR with label    | `["erk-plan-review"]`  | `true`              | `false`              | No (intended)      |
-| PR without label | `[]`                   | `false`             | `true`               | Yes (intended)     |
-| Push event       | `[]` (null PR context) | `false`             | `true`               | Yes (safe default) |
+The `.*` is GitHub's syntax, not standard JSON path notation.
 
-**Without negation** (`contains()` only):
+## Defense-in-Depth Pattern
 
-- Push events would skip CI (empty array → `false` → job skipped)
-- This breaks CI on direct branch pushes
+**Problem:** Job-level `if` conditions can't access PR labels on push events (no `pull_request` context).
 
-**With negation** (`!contains()`):
+**Solution:** Two-layer checks:
 
-- Push events run CI (empty array → `true` → job runs)
-- Safe default: when in doubt, run CI
+1. **Job level** — Fast path for PR events with label context
+2. **Step level** — API query for push events to fetch labels via gh CLI
 
-## Authoritative Label Definitions
+<!-- Source: .github/workflows/ci.yml, autofix job lines 148-228 -->
 
-Label names used in CI workflows should match Python constants defined in `src/erk/cli/constants.py`:
+See the `autofix` job in `.github/workflows/ci.yml` for the complete pattern:
 
-```python
-PLAN_REVIEW_LABEL = "erk-plan-review"
-```
+- Job-level `if` uses `github.event.pull_request.labels.*.name` (fast, PR events only)
+- "Check erk-plan-review label" step uses `gh api` to query labels (slower, works on push events)
 
-However, GitHub Actions workflows **cannot interpolate Python constants**. The YAML files must contain hardcoded string literals:
+**Why both layers:**
 
-```yaml
-# CORRECT - hardcoded label string
-if: !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+- Job-level check skips the entire job for labeled PRs (saves CI minutes)
+- Step-level check handles push events where job-level check can't access labels
+- Double-checking prevents label bypass via direct branch pushes
 
-# WRONG - cannot interpolate Python constant
-if: !contains(github.event.pull_request.labels.*.name, ${{ PLAN_REVIEW_LABEL }})
-```
+## When to Use This Pattern
 
-This creates a **synchronization requirement**: when label names change, both the Python constant AND all YAML workflow files must be updated.
-
-## Synchronization Checklist
-
-When renaming a label used in CI automation, follow the comprehensive checklist:
-
-See [CI Label Rename Checklist](label-rename-checklist.md) for complete update procedures.
-
-## Common Patterns
-
-### Exclude labeled PRs
-
-```yaml
-if: !contains(github.event.pull_request.labels.*.name , 'erk-plan-review')
-```
-
-Use this to skip jobs for specific PR types.
-
-### Combine with draft check
-
-```yaml
-if: |
-  github.event.pull_request.draft != true &&
-  !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
-```
-
-Ensure job only runs for ready, code-containing PRs.
-
-### Defense-in-depth (job + step level)
-
-```yaml
-jobs:
-  autofix:
-    # Fast path - skip for pull_request events with label
-    if: |
-      (github.event_name != 'pull_request' ||
-       !contains(github.event.pull_request.labels.*.name, 'erk-plan-review'))
-    steps:
-      # Required path - check labels for push events via API
-      - name: Check erk-plan-review label
-        run: |
-          labels=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER --jq '[.labels[].name] | join(",")')
-          if echo "$labels" | grep -q "erk-plan-review"; then
-            echo "has_label=true" >> $GITHUB_OUTPUT
-          fi
-```
-
-See [GitHub Actions Label Queries](github-actions-label-queries.md) for the complete push event pattern.
+| Scenario                             | Use Label Filtering? | Notes                                           |
+| ------------------------------------ | -------------------- | ----------------------------------------------- |
+| Skip CI for plan review PRs          | Yes                  | Standard usage (ci.yml, code-reviews.yml)       |
+| Skip autofix for submission-only PRs | Yes                  | Autofix job uses both job and step-level checks |
+| Conditional workflow dispatch        | No                   | Use workflow inputs instead                     |
+| Matrix job filtering                 | No                   | Filter in discover job, not each matrix element |
+| Filtering within a composite action  | No                   | Composite actions can't access event context    |
 
 ## Related Documentation
 
-- [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) - Complete workflow gating strategy
+- [Workflow Gating Patterns](workflow-gating-patterns.md) - Complete workflow gating strategy
 - [GitHub Actions Label Queries](github-actions-label-queries.md) - Push event label checks via API
 - [CI Label Rename Checklist](label-rename-checklist.md) - Synchronization procedures
 

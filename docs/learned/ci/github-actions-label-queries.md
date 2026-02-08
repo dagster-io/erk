@@ -13,105 +13,86 @@ tripwires:
 
 # GitHub Actions Label Queries
 
-## Problem: Push Event Label Asymmetry
+## The Asymmetry Problem
 
-GitHub Actions workflows triggered by push events **cannot** access PR labels via `github.event.pull_request.labels` because the `pull_request` context is not available for push events.
+GitHub Actions workflows face a fundamental asymmetry in how PR labels are accessed:
 
-This creates an asymmetry in CI gating patterns:
+**pull_request events**: The `github.event.pull_request` context is populated, so labels are available via `github.event.pull_request.labels.*.name` at job evaluation time (before any steps run).
 
-- **pull_request events**: Can use job-level label checks via `github.event.pull_request.labels.*.name`
-- **push events**: Must use step-level API queries to fetch labels
+**push events**: The `github.event.pull_request` context does **not exist**. There is no PR context at job evaluation time, even if the push is to a branch with an open PR.
 
-## Solution: Step-Level API Query Pattern
+This asymmetry is architectural, not a bug. Push events are branch operations; GitHub Actions doesn't implicitly resolve "what PR is this branch associated with?" until you ask via the API.
 
-For workflows that run on both pull_request and push events, use a defense-in-depth approach:
+## Why This Matters for CI Gating
 
-1. **Job-level condition**: Check labels for pull_request events (fast path, prevents job from running at all)
-2. **Step-level API query**: Check labels for push events (required for push event support)
+Label-based gating (like "skip autofix on plan review PRs") must work for both event types:
 
-### Implementation Pattern
+- Users can trigger CI via **pull_request events** (opening/updating PR in GitHub UI)
+- Users can trigger CI via **push events** (git push from local terminal)
 
-From `.github/workflows/ci.yml` (autofix job):
+If your workflow only handles pull_request events, local pushes will bypass your gating logic.
+
+## Defense-in-Depth Pattern
+
+The solution is two-layered label checking:
+
+**Layer 1: Job-level condition** (pull_request events only)
+
+- Fast path: GitHub evaluates the condition before allocating a runner
+- Prevents job execution entirely if label check fails
+- Cannot work for push events (no PR context available)
+
+**Layer 2: Step-level API query** (all events)
+
+- Required path for push events: Query GitHub API to discover PR and fetch labels
+- Safety net for pull_request events: Redundant check, but provides defense-in-depth
+- Runs after checkout, so it sees current repository state
+
+<!-- Source: .github/workflows/ci.yml, autofix job -->
+
+See the `autofix` job in `.github/workflows/ci.yml` for the canonical implementation. Key steps:
+
+1. **Discover PR step**: For pull_request events, use `github.event.pull_request.number`. For push events, query `gh api repos/.../pulls` to find open PRs for the current branch.
+
+2. **Check label step**: Query `gh api repos/.../pulls/{pr_number}` to fetch labels array, then grep for the target label.
+
+3. **Consolidate conditions step**: Combine all skip conditions (has_pr, is_fork, has_plan_review_label, has_impl_folder) into a single boolean output.
+
+4. **Gate all subsequent steps**: Check `steps.should-autofix.outputs.run == 'true'` instead of repeating complex conditions.
+
+## Why Not Job-Level Only?
+
+**Q: Why not skip job-level conditions and use only step-level API queries?**
+
+A: Job-level conditions are evaluated before runner allocation. If a pull_request event has the `erk-plan-review` label, the job-level condition prevents GitHub from even starting a runner, saving CI minutes and reducing queue pressure.
+
+Step-level queries require a runner to be allocated, checkout to complete, and API calls to execute. This wastes resources for cases that could be rejected earlier.
+
+The defense-in-depth pattern uses the fast path when available (job-level for pull_request) and falls back to the required path when necessary (step-level for push).
+
+## API Query Pattern
+
+For push events, PR discovery is a two-step process:
+
+1. **Find PR number**: `gh api repos/{repo}/pulls --jq ".[] | select(.head.ref == \"{branch}\" and .state == \"open\") | .number"`
+2. **Fetch labels**: `gh api repos/{repo}/pulls/{pr_number} --jq '[.labels[].name] | join(",")'`
+
+Use `gh api` instead of `gh pr view` because the latter requires being in a repository checkout with the PR branch, while `gh api` works from any checkout state.
+
+## Anti-Pattern: Job-Level Push Event Checks
+
+**WRONG:**
 
 ```yaml
 autofix:
   if: |
-    always() &&
-    github.ref_name != 'master' &&
-    (github.event_name == 'pull_request' || github.event_name == 'push') &&
-    (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')) &&
-    (needs.format.result == 'failure' || ...)
-  runs-on: ubuntu-latest
-  steps:
-    - name: Discover PR
-      id: discover-pr
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        if [ "${{ github.event_name }}" = "pull_request" ]; then
-          echo "has_pr=true" >> $GITHUB_OUTPUT
-          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
-        else
-          # For push events, discover PR number via gh pr list
-          pr_number=$(gh pr list --head "${{ github.ref_name }}" --state open --json number --jq '.[0].number')
-          if [ -n "$pr_number" ]; then
-            echo "has_pr=true" >> $GITHUB_OUTPUT
-            echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
-          else
-            echo "has_pr=false" >> $GITHUB_OUTPUT
-          fi
-        fi
-
-    - name: Check erk-plan-review label
-      id: check-label
-      if: steps.discover-pr.outputs.has_pr == 'true' && steps.pr.outputs.is_fork != 'true'
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        labels=$(gh api repos/${{ github.repository }}/pulls/${{ steps.discover-pr.outputs.pr_number }} --jq '[.labels[].name] | join(",")')
-        if echo "$labels" | grep -q "erk-plan-review"; then
-          echo "PR has erk-plan-review label, skipping autofix"
-          echo "has_plan_review_label=true" >> $GITHUB_OUTPUT
-        else
-          echo "has_plan_review_label=false" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Determine if autofix should run
-      id: should-autofix
-      run: |
-        if [[ "${{ steps.discover-pr.outputs.has_pr }}" == "true" && \
-              "${{ steps.pr.outputs.is_fork }}" != "true" && \
-              "${{ steps.check-label.outputs.has_plan_review_label }}" != "true" && \
-              "${{ steps.check.outputs.has_impl_folder }}" != "true" ]]; then
-          echo "run=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "run=false" >> "$GITHUB_OUTPUT"
-        fi
-
-    - uses: actions/setup-python@v5
-      if: steps.should-autofix.outputs.run == 'true'
-      # ... rest of autofix steps
+    github.event_name == 'push' &&
+    !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
 ```
 
-## Skip Condition Consolidation
+This condition will always evaluate to true for push events because `github.event.pull_request` is null. The `contains()` function returns false when the array is empty/null, so the negation becomes true.
 
-The `should-autofix` step consolidates all skip conditions into a single boolean output:
-
-- **has_pr**: Must have an open PR for the branch
-- **is_fork**: Skip fork PRs for security
-- **has_plan_review_label**: Skip PRs with erk-plan-review label (manual review only)
-- **has_impl_folder**: Skip PRs with .impl/ folder (agent-generated code)
-
-All subsequent steps check `steps.should-autofix.outputs.run == 'true'` instead of repeating the complex condition.
-
-## Defense-in-Depth Rationale
-
-Why keep both job-level and step-level checks?
-
-- **Job-level condition** (pull_request events only): Prevents job from running at all, saving CI minutes
-- **Step-level API query** (all events): Required for push events, also serves as safety net for pull_request events
-
-This pattern ensures label-based gating works correctly regardless of trigger event while minimizing unnecessary CI execution.
+The job will run even when the PR has the label, bypassing your gating logic.
 
 ## Related Patterns
 
