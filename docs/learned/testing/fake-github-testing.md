@@ -36,9 +36,9 @@ fake_gh = FakeGitHubIssues(
 
 ## Decision Rule: Match Parameter to Getter
 
-| Code under test calls...         | Configure this parameter | With this type                  |
-| -------------------------------- | ------------------------ | ------------------------------- |
-| `get_issue_comments()`           | `comments`               | `dict[int, list[str]]`          |
+| Code under test calls...         | Configure this parameter | With this type              |
+| -------------------------------- | ------------------------ | --------------------------- |
+| `get_issue_comments()`           | `comments`               | `dict[int, list[str]]`      |
 | `get_issue_comments_with_urls()` | `comments_with_urls`     | `dict[int, list[IssueComment]]` |
 | `get_comment_by_id()`            | `comments_with_urls`     | `dict[int, list[IssueComment]]` |
 

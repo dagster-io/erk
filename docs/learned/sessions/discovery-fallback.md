@@ -21,10 +21,10 @@ tripwires:
 
 Erk has two distinct session discovery commands that serve different purposes. Choosing the wrong one wastes tokens or misses available sessions.
 
-| Command                               | Purpose                                             | Output                                        | When to use                                                |
-| ------------------------------------- | --------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------- |
-| `erk exec list-sessions`              | Enumerate all sessions for the current project      | JSON with branch context and session metadata | General session browsing, selecting sessions interactively |
-| `erk exec get-learn-sessions <issue>` | Find sessions associated with a specific plan issue | JSON with categorized session IDs and paths   | Learn workflows, plan-specific analysis                    |
+| Command | Purpose | Output | When to use |
+| --- | --- | --- | --- |
+| `erk exec list-sessions` | Enumerate all sessions for the current project | JSON with branch context and session metadata | General session browsing, selecting sessions interactively |
+| `erk exec get-learn-sessions <issue>` | Find sessions associated with a specific plan issue | JSON with categorized session IDs and paths | Learn workflows, plan-specific analysis |
 
 ### Why two commands?
 
@@ -68,14 +68,14 @@ The `erk exec list-sessions` command returns a JSON object. Key structure:
 
 When a learn workflow needs session data, the ideal source (planning session) is often unavailable because it was created in a different Claude Code session. The discovery system degrades through multiple levels rather than failing.
 
-| Priority | Source                    | How discovered                                              | Why it might be missing                                             |
-| -------- | ------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------- |
-| 1        | Planning session          | `created_from_session` in plan-header                       | Created in a prior Claude Code session, since cleaned up            |
-| 2        | Implementation session    | `last_local_impl_session` in plan-header + issue comments   | Same reason — different session lifecycle                           |
-| 3        | Remote session (gist)     | `last_session_gist_url` in plan-header                      | Gist may have been deleted; requires download step                  |
-| 4        | Remote session (artifact) | `last_remote_impl_run_id` in plan-header                    | Legacy path; GitHub Actions artifacts expire after 90 days          |
-| 5        | Local fallback scan       | `find_local_sessions_for_project()` scans project directory | No metadata link to plan, but recent sessions may still be relevant |
-| 6        | Skip analysis             | Always available                                            | Produces no session insights, but workflow continues                |
+| Priority | Source | How discovered | Why it might be missing |
+| --- | --- | --- | --- |
+| 1 | Planning session | `created_from_session` in plan-header | Created in a prior Claude Code session, since cleaned up |
+| 2 | Implementation session | `last_local_impl_session` in plan-header + issue comments | Same reason — different session lifecycle |
+| 3 | Remote session (gist) | `last_session_gist_url` in plan-header | Gist may have been deleted; requires download step |
+| 4 | Remote session (artifact) | `last_remote_impl_run_id` in plan-header | Legacy path; GitHub Actions artifacts expire after 90 days |
+| 5 | Local fallback scan | `find_local_sessions_for_project()` scans project directory | No metadata link to plan, but recent sessions may still be relevant |
+| 6 | Skip analysis | Always available | Produces no session insights, but workflow continues |
 
 <!-- Source: src/erk/cli/commands/exec/scripts/get_learn_sessions.py, _discover_sessions -->
 
