@@ -1,41 +1,42 @@
 ---
 title: Session Discovery and Fallback Patterns
 read_when:
-  - "implementing session analysis workflows"
-  - "handling missing session files"
-  - "enumerating available sessions"
-last_audited: "2026-02-05 13:56 PT"
-audit_result: edited
+  - "implementing session analysis or learn workflows"
+  - "handling missing or unavailable session files"
+  - "choosing between session discovery commands"
 tripwires:
   - action: "using get-session-metadata or get-session-for-issue exec commands"
-    warning: "These commands do not exist. Use 'erk exec list-sessions' with --limit, --min-size, and --session-id flags only."
+    warning: "These commands do not exist. Use 'erk exec list-sessions' for general enumeration or 'erk exec get-learn-sessions' for plan-specific discovery."
+  - action: "assuming a session ID from metadata corresponds to a file on disk"
+    warning: "Claude Code manages session lifecycle; old sessions may be cleaned up. Always use LBYL discovery before reading."
 ---
 
 # Session Discovery and Fallback Patterns
 
-How to enumerate sessions and implement fallback strategies for missing sessions.
-
 ## Core Principle
 
-**Always discover what's available before assuming availability.**
+**Always discover what's available before assuming availability.** Session files are session-scoped — Claude Code may clean them up at any time, so a session ID from GitHub metadata may not correspond to a file on disk. Discovery commands exist specifically to bridge this gap.
 
-Don't assume session files exist. Use `erk exec list-sessions` to enumerate available sessions, then select from the results.
+## Two Discovery Paths
 
-## Session Enumeration
+Erk has two distinct session discovery commands that serve different purposes. Choosing the wrong one wastes tokens or misses available sessions.
 
-The `erk exec list-sessions` command is the primary discovery tool.
+| Command                               | Purpose                                             | Output                                        | When to use                                                |
+| ------------------------------------- | --------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------- |
+| `erk exec list-sessions`              | Enumerate all sessions for the current project      | JSON with branch context and session metadata | General session browsing, selecting sessions interactively |
+| `erk exec get-learn-sessions <issue>` | Find sessions associated with a specific plan issue | JSON with categorized session IDs and paths   | Learn workflows, plan-specific analysis                    |
 
-### Available Options
+### Why two commands?
 
-| Flag           | Type   | Default | Description                                 |
-| -------------- | ------ | ------- | ------------------------------------------- |
-| `--limit`      | int    | 10      | Maximum number of sessions to list          |
-| `--min-size`   | int    | 0       | Minimum session size in bytes               |
-| `--session-id` | string | None    | Current session ID (for marking as current) |
+`list-sessions` knows nothing about plans — it scans the local Claude Code project directory and returns what's there. `get-learn-sessions` starts from a plan issue, extracts session IDs from GitHub metadata (plan-header fields and issue comments), then checks which ones are actually readable on disk. It also discovers remote sessions (gist-based or legacy artifact-based) that `list-sessions` would never find.
 
-### Output Schema
+<!-- Source: packages/erk-shared/src/erk_shared/sessions/discovery.py, find_sessions_for_plan -->
 
-The command returns a JSON object with this structure:
+See `find_sessions_for_plan()` in `packages/erk-shared/src/erk_shared/sessions/discovery.py` for how plan-specific discovery extracts session IDs from multiple metadata sources (plan-header fields, impl-started/impl-ended comments, learn-invoked comments).
+
+## Output Schema (list-sessions)
+
+The `erk exec list-sessions` command returns a JSON object. Key structure:
 
 ```json
 {
@@ -59,32 +60,36 @@ The command returns a JSON object with this structure:
       "session_path": "/path/to/session.jsonl"
     }
   ],
-  "project_dir": "claude-code-project",
   "filtered_count": 3
 }
 ```
 
-Key fields per session: `session_id`, `mtime_display`, `mtime_relative`, `mtime_unix`, `size_bytes`, `summary`, `is_current`, `branch`, `session_path`.
+## Fallback Hierarchy for Learn Workflows
 
-## Fallback Hierarchy
+When a learn workflow needs session data, the ideal source (planning session) is often unavailable because it was created in a different Claude Code session. The discovery system degrades through multiple levels rather than failing.
 
-When the ideal session is unavailable, degrade through this hierarchy:
+| Priority | Source                    | How discovered                                              | Why it might be missing                                             |
+| -------- | ------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------- |
+| 1        | Planning session          | `created_from_session` in plan-header                       | Created in a prior Claude Code session, since cleaned up            |
+| 2        | Implementation session    | `last_local_impl_session` in plan-header + issue comments   | Same reason — different session lifecycle                           |
+| 3        | Remote session (gist)     | `last_session_gist_url` in plan-header                      | Gist may have been deleted; requires download step                  |
+| 4        | Remote session (artifact) | `last_remote_impl_run_id` in plan-header                    | Legacy path; GitHub Actions artifacts expire after 90 days          |
+| 5        | Local fallback scan       | `find_local_sessions_for_project()` scans project directory | No metadata link to plan, but recent sessions may still be relevant |
+| 6        | Skip analysis             | Always available                                            | Produces no session insights, but workflow continues                |
 
-| Priority | Source                      | Availability | Quality |
-| -------- | --------------------------- | ------------ | ------- |
-| 1        | Planning session (target)   | Low          | Highest |
-| 2        | Implementation session      | Medium       | High    |
-| 3        | Recent worktree sessions    | High         | Medium  |
-| 4        | Scratch storage sessions    | Medium       | High    |
-| 5        | No sessions (skip analysis) | Always       | N/A     |
+<!-- Source: src/erk/cli/commands/exec/scripts/get_learn_sessions.py, _discover_sessions -->
 
-**Principle:** Prioritize by quality, but accept lower quality over failure.
+The fallback logic is implemented in `_discover_sessions()` in `src/erk/cli/commands/exec/scripts/get_learn_sessions.py`. The critical design decision: local fallback scanning only triggers when **no** GitHub-tracked sessions are readable on disk, preventing noisy irrelevant sessions from diluting plan-specific results.
 
-For detailed fallback patterns (check-before-access, graceful degradation, scratch storage lookup, never-fail-entirely), see [Session Lifecycle - Fallback Patterns](lifecycle.md#fallback-patterns).
+### Anti-pattern: Hard failure on missing session
 
----
+Never `exit 1` or raise when a session file is unavailable. The entire fallback hierarchy exists because session availability is inherently unreliable. Log a warning and degrade to the next level.
+
+### Anti-pattern: Skipping discovery and reading session files directly
+
+Don't construct session paths manually (e.g., `~/.claude/projects/.../sessions/{id}.jsonl`). The `ClaudeInstallation` ABC provides `find_session_globally()` for existence checks — use it. Direct path construction bypasses the abstraction and breaks if Claude Code changes its storage layout.
 
 ## Related Documentation
 
-- [Session Lifecycle](lifecycle.md) - Session file persistence, availability patterns, and fallback code examples
-- [Session Preprocessing](preprocessing.md) - Token limits and multi-part file handling
+- [Session Lifecycle](lifecycle.md) — Session file persistence, availability patterns, and LBYL principles
+- [Session Preprocessing](preprocessing.md) — Token limits and multi-part file handling

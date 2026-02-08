@@ -3,102 +3,93 @@ title: Exec Script Batch Testing
 read_when:
   - writing tests for batch exec commands
   - organizing test cases for JSON stdin/stdout commands
-  - implementing fake gateway failure injection for batch operations
+  - adding failure injection to a fake gateway for batch operations
 tripwires:
   - action: "Test only success cases for batch commands"
-    warning: "Cover: all success, partial failure, validation errors, and JSON structure. See test organization categories."
+    warning: "Cover all four categories: success, partial failure, validation errors, and JSON structure. Missing any category leaves a critical gap."
     score: 7
-last_audited: "2026-02-05"
+  - action: "Use stateful failure injection (_should_fail_next flags) in fake gateways"
+    warning: "Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below."
+    score: 6
+last_audited: "2026-02-08"
 audit_result: edited
 ---
 
 # Exec Script Batch Testing
 
-Batch exec commands require comprehensive test coverage across four categories: success cases, partial failures, validation errors, and JSON structure verification. This document outlines the test organization pattern and FakeGateway failure injection techniques.
+Batch exec commands have a unique testing challenge: they process multiple items in one invocation, so a single happy-path test leaves most failure modes uncovered. This document captures the four-category test organization and the set-based failure injection pattern that makes partial failure testing declarative.
 
-## Test Organization Categories
+## Why Four Categories
 
-Organize batch command tests into these four groups. See the reference implementation at `tests/unit/cli/commands/exec/scripts/test_resolve_review_threads.py` for a working example.
+A batch command can fail in structurally different ways, and each failure shape produces different JSON output. Testing only success cases misses the three other shapes entirely:
 
-### 1. Success Cases
+| Category             | What it proves                                            | Output shape                    |
+| -------------------- | --------------------------------------------------------- | ------------------------------- |
+| **Success**          | All items processed correctly, AND semantics hold         | `{success: true, results: []}`  |
+| **Partial failure**  | Failed items don't block successful ones, per-item errors | `{success: false, results: []}` |
+| **Input validation** | Malformed input rejected before any side effects          | `{success: false, error_type}`  |
+| **JSON structure**   | Field presence and types match the contract               | Both shapes                     |
 
-Test scenarios where all items in the batch succeed.
+The critical distinction is between partial failure (results array present, some items failed) and validation failure (no results array, nothing processed). These are different JSON shapes and callers branch on the presence of `results` — if you only test success, you never verify either failure shape.
 
-**What to cover:**
+### Success cases to cover
 
-- Empty batch (no items)
-- Single item batch
-- Multiple items batch (typical: 2-3 items)
-- Items with optional fields present/absent (e.g., explicit null comment vs omitted comment)
+- Empty batch — proves the command handles zero items gracefully
+- Single item — the degenerate case, catches off-by-one errors
+- Multiple items (2-3) — proves iteration works
+- Optional fields present/absent — e.g., explicit `null` vs omitted field, catches coercion bugs
 
-### 2. Partial Failure
+### Partial failure: the side-effect check
 
-Test scenarios where some items succeed and some fail.
+The most important assertion in partial failure tests: **verify that successful items were still processed** even though others failed. Check the fake gateway's mutation tracking properties to confirm side effects occurred for successful items and did not occur for failed items.
 
-**What to cover:**
+### Input validation: the atomicity check
 
-- One item fails, rest succeed
-- All items fail
-- Mixed success/failure patterns
+The most important assertion: **verify zero side effects when validation fails**. After sending malformed input, assert that the fake gateway's mutation tracking is empty. This proves the two-phase (validate-then-process) contract holds.
 
-Top-level `success` field uses AND semantics: false if any item failed. Each individual result carries its own `success`, `error_type`, and `message` fields on failure.
+## Set-Based Failure Injection
 
-### 3. Input Validation
+To test partial failures, fake gateways accept a set of identifiers that should fail. The fake checks membership at call time and returns a failure result for matching identifiers.
 
-Test scenarios where input is rejected before processing.
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py, FakeGitHub.__init__ resolve_thread_failures parameter -->
 
-**What to cover:**
+See the `resolve_thread_failures` parameter on `FakeGitHub.__init__()` in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`. The same pattern appears for other failure modes across fakes (e.g., `tracking_branch_failures` on `FakeGitBranchOps`).
 
-- Non-array JSON input (object instead of array)
-- Non-object items in array (string instead of dict)
-- Missing required fields (e.g., `thread_id`)
-- Type mismatches (integer instead of string)
-- Invalid JSON (parse failure)
+### Why set-based over stateful
 
-Validation errors return a top-level error response with `success: false`, `error_type`, and `message`. No `results` array is present in validation error responses.
+Set-based injection is **declarative**: the test declares _which_ identifiers fail, not _when_ they fail. This matters because batch processing order is an implementation detail — if the command reorders items internally, set-based tests still work.
 
-**Critical check:** Ensure no items were processed when validation fails (no side effects).
-
-### 4. JSON Structure Verification
-
-Test that output conforms to the expected schema for both success and error cases. Verify field presence, types, and nested structure correctness.
-
-## FakeGateway Failure Injection Pattern
-
-To test partial failures, inject failures into fake gateways via a failure set parameter.
-
-### Pattern: Constructor-Injected Failure Set
-
-`FakeGitHub` accepts a `resolve_thread_failures` parameter (type `set[str] | None`) in its constructor. When `resolve_review_thread()` is called with a thread ID in this set, it returns `False` to simulate failure. See the implementation in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`.
-
-Usage in tests:
+**Anti-pattern: Stateful injection**
 
 ```python
-# Configure fake to fail on specific thread IDs
-fake_github = FakeGitHub(resolve_thread_failures={"PRRT_2"})
+# WRONG: Order-dependent, breaks if processing order changes
+fake.fail_next_call()  # Which call? Depends on iteration order
+fake._should_fail_next = True  # Unclear which item triggers this
 ```
 
-### Why Set-Based Injection
+Stateful flags couple tests to processing order, create ambiguity about which item fails, and require careful reset between test cases. Set-based injection has none of these problems — you declare the failure set once in the constructor and the fake handles the rest.
 
-**Advantages:**
+### Extending the pattern to new batch commands
 
-- **Explicit**: Clear which items should fail
-- **Flexible**: Can test any failure pattern (first, last, middle, scattered)
-- **Type-safe**: Compile-time checking for thread ID typos
-- **Testable**: Easy to verify the fake itself
+When adding failure injection for a new operation:
 
-**Alternative (anti-pattern): Stateful injection**
+1. Add a constructor parameter to the fake: `{operation}_failures: set[str] | None`
+2. Store it as `self._{operation}_failures`
+3. In the method, check `if identifier in self._{operation}_failures: return failure_result`
+4. The parameter type should match the identifier type used in the batch input (usually `str`)
 
-Do not use stateful approaches like `_should_fail_next` flags. These are order-dependent, brittle, and unclear about which item will fail. Set-based injection makes the failure configuration declarative and independent of processing order.
+This follows the existing convention — `FakeGitHub` uses `resolve_thread_failures: set[str]`, `FakeGitBranchOps` uses `tracking_branch_failures: dict[str, str]` (dict when failure needs an error message, set when a boolean is sufficient).
 
 ## Test File Organization
 
-Batch command tests use plain functions (not test classes) organized with section comment headers. This follows the project convention of preferring `def test_*()` over `class Test*`. See the actual structure in `tests/unit/cli/commands/exec/scripts/test_resolve_review_threads.py`.
+<!-- Source: tests/unit/cli/commands/exec/scripts/test_resolve_review_threads.py -->
 
-Tests use `CliRunner.invoke()` with `ErkContext.for_test()` for dependency injection -- never `monkeypatch` or `run_batch_command()` helpers. The fake gateway tracks mutations via read-only properties (e.g., `fake_github.resolved_thread_ids`, `fake_github.thread_replies`) for test assertions.
+Batch tests use section comment headers (`# === Success Cases ===`) to visually group the four categories within a single file. See `test_resolve_review_threads.py` for the reference structure.
+
+Tests invoke commands through `CliRunner.invoke()` with `ErkContext.for_test()` for dependency injection. Never use `monkeypatch` or custom test helpers — the fake gateway + `ErkContext.for_test()` pattern provides all the control you need. Assert side effects via the fake's read-only tracking properties (e.g., `resolved_thread_ids`, `thread_replies`).
 
 ## Related Documentation
 
-- [batch-exec-commands.md](../cli/batch-exec-commands.md) - Batch command design contract
-- [testing.md](testing.md) - General testing patterns for erk
-- [exec-script-schema-patterns.md](../cli/exec-script-schema-patterns.md) - TypedDict vs dataclass for batch results
+- [batch-exec-commands.md](../cli/batch-exec-commands.md) — Batch command design contract (five-step contract, success semantics, two response shapes)
+- [testing.md](testing.md) — General erk testing patterns
+- [exec-script-schema-patterns.md](../cli/exec-script-schema-patterns.md) — TypedDict vs dataclass decisions for batch I/O
