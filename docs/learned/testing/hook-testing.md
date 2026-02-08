@@ -38,12 +38,12 @@ The pure/integration split is used consistently across all five hook implementat
 
 The critical insight is that stdin JSON extraction functions must handle every level of the nested structure defensively (LBYL). The edge case matrix:
 
-| Input condition                                        | Expected behavior | Why it matters                                     |
-| ------------------------------------------------------ | ----------------- | -------------------------------------------------- |
-| Empty string / whitespace                              | Return None       | Hooks receive empty stdin in edge cases            |
-| Valid JSON, missing expected key                       | Return None       | `tool_input` may not be present for all tool types |
-| Key exists but wrong type (string where dict expected) | Return None       | Claude's tool_input shape varies by tool           |
-| Key exists but empty string                            | Return None       | Empty file_path is semantically absent             |
+| Input condition | Expected behavior | Why it matters |
+|---|---|---|
+| Empty string / whitespace | Return None | Hooks receive empty stdin in edge cases |
+| Valid JSON, missing expected key | Return None | `tool_input` may not be present for all tool types |
+| Key exists but wrong type (string where dict expected) | Return None | Claude's tool_input shape varies by tool |
+| Key exists but empty string | Return None | Empty file_path is semantically absent |
 
 **Detection functions** (e.g., file extension checks) must test the similar-but-wrong case — `.pyi` is not `.py`, even though both are Python-related. This catches suffix-matching bugs.
 
@@ -53,13 +53,13 @@ The critical insight is that stdin JSON extraction functions must handle every l
 
 Every hook integration test suite should cover these five scenarios. They map to the silent-failure paths in the `@hook_command` decorator's orchestration:
 
-| Scenario                | Setup                                              | Expected               | Why                                        |
-| ----------------------- | -------------------------------------------------- | ---------------------- | ------------------------------------------ |
-| **Positive**            | All conditions met                                 | Output present, exit 0 | Validates the happy path works end-to-end  |
-| **Wrong trigger**       | Condition not met (e.g., .js file for Python hook) | Empty output, exit 0   | Hook must be selective                     |
-| **Missing capability**  | No state.toml or capability not installed          | Silent, exit 0         | Hooks must degrade gracefully              |
-| **Outside erk project** | No `.erk/` directory in tmp_path                   | Silent, exit 0         | Hooks fire in all projects via Claude Code |
-| **Missing stdin data**  | Required key absent from stdin JSON                | Silent, exit 0         | Partial stdin is a real production case    |
+| Scenario | Setup | Expected | Why |
+|---|---|---|---|
+| **Positive** | All conditions met | Output present, exit 0 | Validates the happy path works end-to-end |
+| **Wrong trigger** | Condition not met (e.g., .js file for Python hook) | Empty output, exit 0 | Hook must be selective |
+| **Missing capability** | No state.toml or capability not installed | Silent, exit 0 | Hooks must degrade gracefully |
+| **Outside erk project** | No `.erk/` directory in tmp_path | Silent, exit 0 | Hooks fire in all projects via Claude Code |
+| **Missing stdin data** | Required key absent from stdin JSON | Silent, exit 0 | Partial stdin is a real production case |
 
 <!-- Source: src/erk/hooks/decorators.py, HookContext -->
 

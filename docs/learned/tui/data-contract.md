@@ -35,12 +35,12 @@ This duality means every new piece of displayable data requires two fields: a ra
 
 The data types and their provider ABC live in different packages:
 
-| Artifact                                | Location                                             | Why                               |
-| --------------------------------------- | ---------------------------------------------------- | --------------------------------- |
-| `PlanRowData`, `PlanFilters`            | `src/erk/tui/data/types.py`                          | TUI-specific display types        |
-| `PlanDataProvider` ABC                  | `packages/erk-shared/.../plan_data_provider/abc.py`  | Shared interface for any consumer |
-| `RealPlanDataProvider`                  | `packages/erk-shared/.../plan_data_provider/real.py` | Production implementation         |
-| `FakePlanDataProvider`, `make_plan_row` | `packages/erk-shared/.../plan_data_provider/fake.py` | Test doubles                      |
+| Artifact | Location | Why |
+|---|---|---|
+| `PlanRowData`, `PlanFilters` | `src/erk/tui/data/types.py` | TUI-specific display types |
+| `PlanDataProvider` ABC | `packages/erk-shared/.../plan_data_provider/abc.py` | Shared interface for any consumer |
+| `RealPlanDataProvider` | `packages/erk-shared/.../plan_data_provider/real.py` | Production implementation |
+| `FakePlanDataProvider`, `make_plan_row` | `packages/erk-shared/.../plan_data_provider/fake.py` | Test doubles |
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py, PlanDataProvider -->
 
@@ -64,11 +64,11 @@ The key assembly step is `_build_row_data()`, which merges data from four source
 
 The `erk exec dash-data` command serializes `PlanRowData` to JSON for the desktop dashboard. `dataclasses.asdict()` handles most fields, but three types need manual conversion:
 
-| Type                                | Problem                                                                                              | Fix                                                    |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `datetime` fields                   | `asdict()` preserves `datetime` objects, which aren't JSON-serializable                              | Convert to ISO 8601 strings via `.isoformat()`         |
-| `tuple[tuple[...]]` (`log_entries`) | JSON has no tuple type; `asdict()` converts to nested lists but nested tuples need explicit handling | Convert to list of lists                               |
-| Display strings with emoji          | Emoji in `*_display` fields may cause encoding or rendering issues in some frontends                 | Frontend-specific; the contract doesn't normalize them |
+| Type | Problem | Fix |
+|---|---|---|
+| `datetime` fields | `asdict()` preserves `datetime` objects, which aren't JSON-serializable | Convert to ISO 8601 strings via `.isoformat()` |
+| `tuple[tuple[...]]` (`log_entries`) | JSON has no tuple type; `asdict()` converts to nested lists but nested tuples need explicit handling | Convert to list of lists |
+| Display strings with emoji | Emoji in `*_display` fields may cause encoding or rendering issues in some frontends | Frontend-specific; the contract doesn't normalize them |
 
 The production serialization lives in `_serialize_plan_row()` in `dash_data.py`. Any new `PlanRowData` field with a non-primitive type will need a corresponding serialization handler there.
 

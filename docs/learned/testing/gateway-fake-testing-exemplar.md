@@ -29,10 +29,10 @@ See `test_fake_git_remote_ops.py` in `tests/unit/fakes/` for the canonical exemp
 
 Every fake method that returns a discriminated union needs three test categories:
 
-| Category              | What it verifies                                 | Why it matters                                             |
-| --------------------- | ------------------------------------------------ | ---------------------------------------------------------- |
-| **Default success**   | No-arg construction returns success variant      | Proves fakes are zero-configuration for happy paths        |
-| **Error injection**   | Constructor-configured error is returned         | Proves failure paths work without modifying fake internals |
+| Category | What it verifies | Why it matters |
+|---|---|---|
+| **Default success** | No-arg construction returns success variant | Proves fakes are zero-configuration for happy paths |
+| **Error injection** | Constructor-configured error is returned | Proves failure paths work without modifying fake internals |
 | **Mutation tracking** | Operations record calls via read-only properties | Proves test assertions can verify what operations occurred |
 
 Organize tests by operation (one test class per ABC method), not by category. Each class covers all three categories for its operation.
@@ -41,10 +41,10 @@ Organize tests by operation (one test class per ABC method), not by category. Ea
 
 The most subtle design choice in fake implementation is whether mutation tracking should occur when an error is configured. This is not arbitrary — it follows the real operation's semantics:
 
-| Operation        | Tracks on error? | Rationale                                                                                                        |
-| ---------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `push_to_remote` | No               | A rejected push didn't actually push anything — tracking it would misrepresent what happened                     |
-| `pull_rebase`    | Yes              | The rebase was attempted (and may have partially applied) — the attempt itself is meaningful for test assertions |
+| Operation | Tracks on error? | Rationale |
+|---|---|---|
+| `push_to_remote` | No | A rejected push didn't actually push anything — tracking it would misrepresent what happened |
+| `pull_rebase` | Yes | The rebase was attempted (and may have partially applied) — the attempt itself is meaningful for test assertions |
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py, FakeGitRemoteOps.push_to_remote -->
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py, FakeGitRemoteOps.pull_rebase -->

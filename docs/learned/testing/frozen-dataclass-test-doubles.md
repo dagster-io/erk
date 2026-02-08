@@ -32,16 +32,16 @@ The codebase uses frozen dataclass fakes and `__init__`-based fakes for differen
 
 `FakeGitHub` uses a plain `__init__` because it has 30+ constructor parameters covering PRs, workflows, issues, reviews, diffs, labels, gists, and commit statuses. Making this frozen would gain little — the class is already too complex for the frozen constraint to meaningfully protect against misuse. The `__init__` approach also allows mutation tracking lists to be initialized imperatively alongside the pre-configured state.
 
-| Criterion                     | Frozen Dataclass                           | `__init__`-based                      |
-| ----------------------------- | ------------------------------------------ | ------------------------------------- |
-| Constructor complexity        | < ~15 fields                               | 15+ fields                            |
-| State initialization          | Declarative (`field(default_factory=...)`) | Imperative (assignment in `__init__`) |
-| Field reassignment protection | Yes (`FrozenInstanceError`)                | No                                    |
-| Erk examples                  | `FakeBranchManager`                        | `FakeGitHub`, `FakeGitBranchOps`      |
+| Criterion | Frozen Dataclass | `__init__`-based |
+| --- | --- | --- |
+| Constructor complexity | < ~15 fields | 15+ fields |
+| State initialization | Declarative (`field(default_factory=...)`) | Imperative (assignment in `__init__`) |
+| Field reassignment protection | Yes (`FrozenInstanceError`) | No |
+| Erk examples | `FakeBranchManager` | `FakeGitHub`, `FakeGitBranchOps` |
 
 ## The Mutable-Internals Trick
 
-Frozen dataclasses prevent field _reassignment_, but they don't prevent mutation of the _contents_ of mutable fields. A `list` field in a frozen dataclass can still be appended to — only the reference to the list is frozen, not the list itself. This is standard Python reference semantics, not a hack.
+Frozen dataclasses prevent field *reassignment*, but they don't prevent mutation of the *contents* of mutable fields. A `list` field in a frozen dataclass can still be appended to — only the reference to the list is frozen, not the list itself. This is standard Python reference semantics, not a hack.
 
 This means frozen fakes can track mutations by appending to internal lists while still preventing accidental field replacement. A test can't do `fake._deleted_branches = []` (raises `FrozenInstanceError`), but the fake's own methods can do `self._deleted_branches.append(...)`.
 
