@@ -1,7 +1,7 @@
 ---
 title: "Source Investigation Over Trial-and-Error"
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 read_when:
   - Debugging validation failures after an initial fix attempt fails
   - Encountering errors where the required format is unclear from the error message alone
