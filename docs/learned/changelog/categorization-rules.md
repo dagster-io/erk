@@ -1,5 +1,12 @@
 ---
 audit_result: clean
+tripwires:
+  - action: "categorizing internal refactors as Major Changes"
+    warning: "NEVER categorize internal refactors as Major Changes—they must be user-visible"
+  - action: "including .claude/commands/local/* changes in changelog"
+    warning: "ALWAYS filter .claude/commands/local/* changes (developer-only)"
+  - action: "exposing implementation details in changelog entries"
+    warning: "NEVER expose implementation details in changelog entries"
 ---
 
 # Changelog Categorization Rules
