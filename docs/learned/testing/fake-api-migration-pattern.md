@@ -31,12 +31,12 @@ After the consolidation, two distinct fakes exist, serving different use cases:
 <!-- Source: tests/fakes/prompt_executor.py, FakePromptExecutor -->
 <!-- Source: packages/erk-shared/src/erk_shared/core/fakes.py, FakePromptExecutor -->
 
-| Aspect | `tests/fakes/` | `erk_shared/core/fakes` |
-| --- | --- | --- |
-| **Design** | Scenario-based: `simulated_*` params configure a single predetermined scenario | Queue-based: `prompt_results` and `streaming_events` lists consumed in order |
-| **Sequential calls** | Returns same output every time — doesn't support multiple different responses | Supports sequential responses via `prompt_results` queue with index tracking |
-| **Call tracking** | Tracks via internal lists with `.copy()` properties | Tracks via public `NamedTuple` lists (e.g., `PromptCall`, `InteractiveCall`) |
-| **Best for** | CLI command tests that need rich scenario simulation (PR creation, hook blocking, process errors) | Lower-level tests or erk-shared consumers that need simple prompt result sequences |
+| Aspect               | `tests/fakes/`                                                                                    | `erk_shared/core/fakes`                                                            |
+| -------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| **Design**           | Scenario-based: `simulated_*` params configure a single predetermined scenario                    | Queue-based: `prompt_results` and `streaming_events` lists consumed in order       |
+| **Sequential calls** | Returns same output every time — doesn't support multiple different responses                     | Supports sequential responses via `prompt_results` queue with index tracking       |
+| **Call tracking**    | Tracks via internal lists with `.copy()` properties                                               | Tracks via public `NamedTuple` lists (e.g., `PromptCall`, `InteractiveCall`)       |
+| **Best for**         | CLI command tests that need rich scenario simulation (PR creation, hook blocking, process errors) | Lower-level tests or erk-shared consumers that need simple prompt result sequences |
 
 See `FakePromptExecutor.__init__()` in each file for the full parameter list. The `tests/fakes/` version uses `simulated_*` prefix naming; the `erk_shared/core/fakes` version uses plain descriptive names (`prompt_results`, `streaming_events`, `passthrough_exit_code`).
 
@@ -44,13 +44,13 @@ See `FakePromptExecutor.__init__()` in each file for the full parameter list. Th
 
 This table maps the deleted gateway parameters to their current equivalents. The old parameters no longer exist anywhere in the codebase — encountering them means the test needs updating.
 
-| Deleted Gateway Parameter | Current Equivalent (`tests/fakes/`) | Notes |
-| --- | --- | --- |
-| `output="text"` | `simulated_prompt_output="text"` | |
-| `should_fail=True` | `command_should_fail=True` | For command execution failures |
-| `error="message"` | `simulated_prompt_error="message"` | For prompt execution failures |
-| `transient_failures=2` | No equivalent | Retry logic moved to `RealPromptExecutor` in gateway layer |
-| `outputs=[...]` | No equivalent in `tests/fakes/` | Use `erk_shared/core/fakes` with `prompt_results=[...]` for sequential responses |
+| Deleted Gateway Parameter | Current Equivalent (`tests/fakes/`) | Notes                                                                            |
+| ------------------------- | ----------------------------------- | -------------------------------------------------------------------------------- |
+| `output="text"`           | `simulated_prompt_output="text"`    |                                                                                  |
+| `should_fail=True`        | `command_should_fail=True`          | For command execution failures                                                   |
+| `error="message"`         | `simulated_prompt_error="message"`  | For prompt execution failures                                                    |
+| `transient_failures=2`    | No equivalent                       | Retry logic moved to `RealPromptExecutor` in gateway layer                       |
+| `outputs=[...]`           | No equivalent in `tests/fakes/`     | Use `erk_shared/core/fakes` with `prompt_results=[...]` for sequential responses |
 
 Capabilities added in consolidation with no gateway predecessor:
 
@@ -61,12 +61,12 @@ Capabilities added in consolidation with no gateway predecessor:
 
 ## Which Fake to Choose
 
-| Your test needs... | Use |
-| --- | --- |
-| Simulate a specific execution scenario (PR creation, hook block, process error) | `tests/fakes/prompt_executor.FakePromptExecutor` |
-| Return different results from sequential `execute_prompt()` calls | `erk_shared/core/fakes.FakePromptExecutor` with `prompt_results=[...]` |
-| Inject specific `ExecutorEvent` objects into streaming | `erk_shared/core/fakes.FakePromptExecutor` with `streaming_events=[...]` |
-| Test a CLI command end-to-end with metadata extraction | `tests/fakes/prompt_executor.FakePromptExecutor` |
+| Your test needs...                                                              | Use                                                                      |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Simulate a specific execution scenario (PR creation, hook block, process error) | `tests/fakes/prompt_executor.FakePromptExecutor`                         |
+| Return different results from sequential `execute_prompt()` calls               | `erk_shared/core/fakes.FakePromptExecutor` with `prompt_results=[...]`   |
+| Inject specific `ExecutorEvent` objects into streaming                          | `erk_shared/core/fakes.FakePromptExecutor` with `streaming_events=[...]` |
+| Test a CLI command end-to-end with metadata extraction                          | `tests/fakes/prompt_executor.FakePromptExecutor`                         |
 
 ## Anti-Pattern: Failure Mode Confusion
 

@@ -35,9 +35,9 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [refactoring](refactoring/tripwires.md)     | 3         | `refactoring/` code                           |
 | [reference](reference/tripwires.md)         | 12        | `reference/` code                             |
 | [review](review/tripwires.md)               | 3         | `review/` code                                |
-| [reviews](reviews/tripwires.md)             | 3         | `reviews/` code                               |
+| [reviews](reviews/tripwires.md)             | 4         | `reviews/` code                               |
 | [sessions](sessions/tripwires.md)           | 7         | `~/.claude/projects/`, session analysis       |
-| [testing](testing/tripwires.md)             | 18        | `tests/`                                      |
+| [testing](testing/tripwires.md)             | 27        | `tests/`                                      |
 | [textual](textual/tripwires.md)             | 1         | Textual framework code                        |
 | [tui](tui/tripwires.md)                     | 11        | `src/erk/tui/`                                |
 | [uncategorized](uncategorized/tripwires.md) | 14        | `uncategorized/` code                         |

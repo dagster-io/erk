@@ -12,15 +12,13 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
-**CRITICAL: Before Test only success cases for batch commands** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Cover all four categories: success, partial failure, validation errors, and JSON structure. Missing any category leaves a critical gap.
-
-**CRITICAL: Before Use stateful failure injection (\_should_fail_next flags) in fake gateways** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below.
-
 **CRITICAL: Before accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
 
 **CRITICAL: Before adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
 
-**CRITICAL: Before adding monkeypatch or @patch to a test** → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
+**CRITICAL: Before allowing `import X as Y` because it's a common convention (e.g., `import pandas as pd`)** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits ALL gratuitous import aliases. The only exception is resolving genuine name collisions between two modules.
+
+**CRITICAL: Before asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
 
 **CRITICAL: Before allowing `import X as Y` because it's a common convention (e.g., `import pandas as pd`)** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits ALL gratuitous import aliases. The only exception is resolving genuine name collisions between two modules.
 
@@ -28,7 +26,11 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
 
-**CRITICAL: Before creating a fake that uses **init** when frozen dataclass would work** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. FakeBranchManager uses frozen dataclass because its state is simple and declarative. FakeGitHub uses **init** because it has 30+ constructor params. Choose based on complexity.
+**CRITICAL: Before creating inline PlanRow test data with all fields** → Read [Erkdesk Component Test Architecture](erkdesk-component-testing.md) first. Use the makePlan() factory with Partial<PlanRow> overrides. PlanRow has 18+ fields; inline objects go stale when the type changes. See any test file for the pattern.
+
+**CRITICAL: Before flagging `import X as X` or `from .mod import Y as Y` as a violation** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. The `X as X` form is an explicit re-export marker, not an alias. Only flag when the alias differs from the original name.
+
+**CRITICAL: Before forgetting shouldAdvanceTime option when manually advancing** → Read [Vitest Fake Timers with Promises](vitest-fake-timers-with-promises.md) first. Use vi.useFakeTimers({ shouldAdvanceTime: true }) to enable manual timer control with advanceTimersByTimeAsync().
 
 **CRITICAL: Before creating inline PlanRow test data with all fields** → Read [Erkdesk Component Test Architecture](erkdesk-component-testing.md) first. Use the makePlan() factory with Partial<PlanRow> overrides. PlanRow has 18+ fields; inline objects go stale when the type changes. See any test file for the pattern.
 
@@ -44,23 +46,17 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before importing FakePromptExecutor from erk_shared.gateway.prompt_executor.fake** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. This module was deleted in the consolidation. Import from tests.fakes.prompt_executor or erk_shared.core.fakes instead.
 
-**CRITICAL: Before mocking a browser API in an individual test file** → Read [jsdom DOM API Stubs for Vitest](vitest-jsdom-stubs.md) first. Environment-level API stubs belong in setup.ts (runs before all tests), not in individual test files. Only mock behavior-specific values (like IPC responses) per-test.
-
 **CRITICAL: Before modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.
 
 **CRITICAL: Before passing group-level options when invoking a subcommand in tests** → Read [Command Group Testing](command-group-testing.md) first. Click does NOT propagate group-level options to subcommands by default. Options placed before the subcommand name in the args list are silently ignored.
 
 **CRITICAL: Before passing string values to comments_with_urls parameter of FakeGitHubIssues** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. comments_with_urls requires IssueComment objects, not strings. Strings cause silent empty-list returns. Match the parameter to the ABC getter method your code calls.
 
-**CRITICAL: Before resetting mocks in afterEach instead of beforeEach** → Read [Vitest Mock Reset Discipline for Shared Global Mocks](window-mock-patterns.md) first. Use beforeEach for mock resets, not afterEach. If a test throws before afterEach runs, the mock remains contaminated for the next test.
-
 **CRITICAL: Before running pytest, ty, ruff, prettier, make, or gt directly via Bash** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Use Task(subagent_type='devrun') instead. A UserPromptSubmit hook enforces this on every turn.
 
-**CRITICAL: Before setting mock return values in test beforeEach without calling mockReset() first** → Read [Vitest Mock Reset Discipline for Shared Global Mocks](window-mock-patterns.md) first. Always call mockReset() BEFORE mockResolvedValue(). Without reset, previous test's mock values persist — causing tests to pass individually but fail in CI due to cross-test contamination.
+**CRITICAL: Before setting mock return values in test beforeEach** → Read [Window Mock Patterns for Electron IPC Testing](window-mock-patterns.md) first. Order matters: call mockReset() FIRST (clears previous test's values), THEN mockResolvedValue(). Reverse order has no effect.
 
 **CRITICAL: Before testing IPC calls in a component test for a prop-driven component** → Read [Erkdesk Component Test Architecture](erkdesk-component-testing.md) first. PlanList and ActionToolbar receive data via props — they don't call window.erkdesk directly. IPC verification belongs in App.test.tsx where the actual fetch-state-props flow lives.
-
-**CRITICAL: Before testing a pipeline step by running the full pipeline** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Test steps in isolation by calling the step function directly. Only test_run_pipeline.py exercises the runner. Step tests pre-populate state as if prior steps succeeded.
 
 **CRITICAL: Before testing code that reads from Path.home() or ~/.claude/ or ~/.erk/** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Tests that run in parallel must use monkeypatch to isolate from real filesystem state. Functions like extract_slugs_from_session() cause flakiness when they read from the user's home directory.
 
@@ -71,6 +67,10 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before tracking mutations before checking error configuration in a fake method** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics.
 
 **CRITICAL: Before tracking only the primary argument in a mutation tuple, omitting flags or options** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. Track ALL call parameters in tuples (e.g., (branch, force) not just branch). Lost context leads to undertested behavior.
+
+**CRITICAL: Before testing keyboard navigation in a component test** → Read [Erkdesk Component Test Architecture](erkdesk-component-testing.md) first. Keyboard handlers (j/k) are registered on document in App, not on individual components. Test keyboard navigation in App.test.tsx, not component tests.
+
+**CRITICAL: Before testing only the subcommand path of a group with invoke_without_command=True** → Read [Command Group Testing](command-group-testing.md) first. Groups with default behavior need tests for BOTH paths: direct invocation (no subcommand) and explicit subcommand invocation. Missing either path is a coverage gap.
 
 **CRITICAL: Before using Path.home() directly in production code** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
 
