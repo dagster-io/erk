@@ -2,18 +2,18 @@
 audit_result: clean
 last_audited: 2026-02-07 21:36 PT
 read_when:
-- implementing remote command execution via SSH
-- working with codespace connections
-- debugging remote setup commands
-- choosing between subprocess and exec for SSH
+  - implementing remote command execution via SSH
+  - working with codespace connections
+  - debugging remote setup commands
+  - choosing between subprocess and exec for SSH
 title: SSH Command Execution Patterns
 tripwires:
-- action: using this pattern
-  warning: Using run_ssh_command() for interactive TUI processes causes apparent hangs
-- action: using this pattern
-  warning: SSH command must be a single string argument, not multiple shell words
-- action: using this pattern
-  warning: Missing -t flag prevents TTY allocation and breaks interactive programs
+  - action: using this pattern
+    warning: Using run_ssh_command() for interactive TUI processes causes apparent hangs
+  - action: using this pattern
+    warning: SSH command must be a single string argument, not multiple shell words
+  - action: using this pattern
+    warning: Missing -t flag prevents TTY allocation and breaks interactive programs
 ---
 
 # SSH Command Execution Patterns

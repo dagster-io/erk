@@ -1,28 +1,32 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- implementing Codex backend support in erk
-- mapping PermissionMode to Codex sandbox flags
-- building a CodexPromptExecutor or Codex-aware AgentLauncher
-- understanding Claude CLI features that have no Codex equivalent
+  - implementing Codex backend support in erk
+  - mapping PermissionMode to Codex sandbox flags
+  - building a CodexPromptExecutor or Codex-aware AgentLauncher
+  - understanding Claude CLI features that have no Codex equivalent
 title: Codex CLI Reference for Erk Integration
 tripwires:
-- action: using --ask-for-approval with codex exec
-  warning: codex exec hardcodes approval to Never. Only the TUI supports --ask-for-approval.
-    This means exec and TUI need different flag sets for the same PermissionMode.
-- action: using --system-prompt or --allowedTools with codex
-  warning: Codex has no --system-prompt or --allowedTools. Prepend system prompt to
-    user prompt. Tool restriction is not available — this affects execute_prompt()
-    porting.
-- action: using --output-format with codex
-  warning: Codex has no --output-format. Use --json (boolean flag) for JSONL. Without
-    --json, output goes to terminal. This affects execute_command_streaming() porting.
-- action: using --print or --verbose with codex
-  warning: codex exec is always headless (no --print needed). No --verbose flag exists.
-- action: passing cwd as subprocess kwarg for codex
-  warning: Unlike Claude (which uses subprocess cwd=), Codex requires an explicit
-    --cd flag. Forgetting this means the agent runs in the wrong directory.
+  - action: using --ask-for-approval with codex exec
+    warning:
+      codex exec hardcodes approval to Never. Only the TUI supports --ask-for-approval.
+      This means exec and TUI need different flag sets for the same PermissionMode.
+  - action: using --system-prompt or --allowedTools with codex
+    warning:
+      Codex has no --system-prompt or --allowedTools. Prepend system prompt to
+      user prompt. Tool restriction is not available — this affects execute_prompt()
+      porting.
+  - action: using --output-format with codex
+    warning:
+      Codex has no --output-format. Use --json (boolean flag) for JSONL. Without
+      --json, output goes to terminal. This affects execute_command_streaming() porting.
+  - action: using --print or --verbose with codex
+    warning: codex exec is always headless (no --print needed). No --verbose flag exists.
+  - action: passing cwd as subprocess kwarg for codex
+    warning:
+      Unlike Claude (which uses subprocess cwd=), Codex requires an explicit
+      --cd flag. Forgetting this means the agent runs in the wrong directory.
 ---
 
 # Codex CLI Reference for Erk Integration

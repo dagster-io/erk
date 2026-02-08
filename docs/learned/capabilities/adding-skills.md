@@ -1,18 +1,20 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- adding skill capabilities
-- creating new skills for external projects
-- understanding SkillCapability pattern
+  - adding skill capabilities
+  - creating new skills for external projects
+  - understanding SkillCapability pattern
 title: Adding Skill Capabilities
 tripwires:
-- action: creating a skill capability
-  warning: Bundled content directory must exist or install() silently creates empty
-    skill directory. See silent failure modes below.
-- action: skill not appearing in erk init capability list
-  warning: MUST import class AND add instance to registry.py _all_capabilities() tuple.
-    Import alone is not sufficient.
+  - action: creating a skill capability
+    warning:
+      Bundled content directory must exist or install() silently creates empty
+      skill directory. See silent failure modes below.
+  - action: skill not appearing in erk init capability list
+    warning:
+      MUST import class AND add instance to registry.py _all_capabilities() tuple.
+      Import alone is not sufficient.
 ---
 
 # Adding Skill Capabilities

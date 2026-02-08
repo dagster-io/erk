@@ -1,15 +1,16 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- working with erk objective commands
-- implementing objective check or close functionality
-- understanding objective validation patterns
+  - working with erk objective commands
+  - implementing objective check or close functionality
+  - understanding objective validation patterns
 title: Objective Commands
 tripwires:
-- action: displaying user-provided text in Rich CLI tables without escaping
-  warning: Use `escape_markup(value)` for user data in Rich tables. Brackets like
-    `[text]` are interpreted as style tags and will disappear.
+  - action: displaying user-provided text in Rich CLI tables without escaping
+    warning:
+      Use `escape_markup(value)` for user data in Rich tables. Brackets like
+      `[text]` are interpreted as style tags and will disappear.
 ---
 
 # Objective Commands
