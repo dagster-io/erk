@@ -11,7 +11,7 @@ tripwires:
   - action: "choosing between Ensure and EnsureIdeal"
     warning: "Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal."
 last_audited: "2026-02-08"
-audit_result: edited
+audit_result: regenerated
 ---
 
 # EnsureIdeal Pattern for Type Narrowing
