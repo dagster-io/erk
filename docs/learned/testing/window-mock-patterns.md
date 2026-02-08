@@ -46,7 +46,10 @@ See the `beforeEach` block in `App.test.tsx` for the canonical example — it re
 ```typescript
 // BUG: Previous test's mockResolvedValue still queued
 beforeEach(() => {
-  vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({ success: true, plans: [] });
+  vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+    success: true,
+    plans: [],
+  });
 });
 ```
 
@@ -57,7 +60,10 @@ Symptom: Tests pass alone, fail in CI with unexpected data from a previous test.
 ```typescript
 // BUG: mockReset() wipes the value you just configured
 beforeEach(() => {
-  vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({ success: true, plans: [] });
+  vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
+    success: true,
+    plans: [],
+  });
   vi.mocked(window.erkdesk.fetchPlans).mockReset(); // Oops — now returns undefined
 });
 ```
@@ -75,10 +81,10 @@ Resetting in `afterEach` is fragile: if a test throws an unhandled error, `after
 
 erkdesk's IPC mocks operate at two layers:
 
-| Layer | Purpose | Where | Staleness protection |
-|-------|---------|-------|---------------------|
-| **Global defaults** | Safe fallback values so components render without crashing | `setup.ts` | Typed against `ErkdeskAPI` — adding a new method forces mock update |
-| **Per-test overrides** | Scenario-specific return values | `beforeEach` in each test file | `mockReset()` clears the previous test's configuration first |
+| Layer                  | Purpose                                                    | Where                          | Staleness protection                                                |
+| ---------------------- | ---------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------- |
+| **Global defaults**    | Safe fallback values so components render without crashing | `setup.ts`                     | Typed against `ErkdeskAPI` — adding a new method forces mock update |
+| **Per-test overrides** | Scenario-specific return values                            | `beforeEach` in each test file | `mockReset()` clears the previous test's configuration first        |
 
 The global mock in `setup.ts` is typed against the `ErkdeskAPI` interface, so the TypeScript compiler enforces that the mock stays in sync with the real IPC bridge — a new method on the interface produces a compile error until the mock is updated.
 

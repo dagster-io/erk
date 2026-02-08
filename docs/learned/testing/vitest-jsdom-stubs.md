@@ -22,10 +22,10 @@ jsdom is a pure JavaScript DOM implementation that intentionally omits layout-re
 
 erkdesk's test setup separates concerns into two layers, and confusing them is the most common mistake:
 
-| Layer | What it stubs | Where it lives | Why |
-|-------|--------------|----------------|-----|
-| **Environment stubs** | Missing browser APIs (`scrollIntoView`, `ResizeObserver`) | `setup.ts` (runs before all tests) | jsdom gaps — every component needs these |
-| **Behavior mocks** | App-specific interfaces (`window.erkdesk` IPC) | `setup.ts` defaults + per-test overrides | Test-specific return values vary per scenario |
+| Layer                 | What it stubs                                             | Where it lives                           | Why                                           |
+| --------------------- | --------------------------------------------------------- | ---------------------------------------- | --------------------------------------------- |
+| **Environment stubs** | Missing browser APIs (`scrollIntoView`, `ResizeObserver`) | `setup.ts` (runs before all tests)       | jsdom gaps — every component needs these      |
+| **Behavior mocks**    | App-specific interfaces (`window.erkdesk` IPC)            | `setup.ts` defaults + per-test overrides | Test-specific return values vary per scenario |
 
 The key insight: environment stubs are **no-op shims** that prevent crashes, while behavior mocks are **configurable fakes** that drive test scenarios. Both live in setup.ts for the defaults, but only behavior mocks should be overridden in individual tests.
 
