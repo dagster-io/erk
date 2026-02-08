@@ -7,12 +7,12 @@ read_when:
   - writing Claude Code commands that produce multi-line text via bash
 title: Heredoc Quoting and Escaping in Agent-Generated Bash
 tripwires:
-  - action:
-      Never use unquoted heredoc delimiters (<<EOF) when the body contains $,
-      \, or backticks
-    warning: bash silently expands them
-  - action: Prefer the Write tool over bash heredocs for large agent outputs
-    warning: heredocs fail silently with special characters
+  - action: "use unquoted heredoc delimiters (<<eof) when the body contains $, \\, or backticks"
+    warning: "Never use unquoted heredoc delimiters (<<EOF) when the body contains $, \\, or backticks \u2014 bash silently expands them"
+  - action: "preferring the write tool over bash heredocs for large agent outputs"
+    warning: "Prefer the Write tool over bash heredocs for large agent outputs \u2014 heredocs fail silently with special characters"
+last_audited: "2026-02-07 19:35 PT"
+audit_result: clean
 ---
 
 # Heredoc Quoting and Escaping in Agent-Generated Bash

@@ -170,6 +170,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before passing variables to gh api graphql as JSON blob** → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work.
 
+**CRITICAL: Before preferring the write tool over bash heredocs for large agent outputs** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. Prefer the Write tool over bash heredocs for large agent outputs — heredocs fail silently with special characters
+
 **CRITICAL: Before reading from or writing to ~/.claude/ paths using Path.home() directly** → Read [ClaudeInstallation Gateway](claude-installation-gateway.md) first. Use ClaudeInstallation gateway instead. All ~/.claude/ filesystem operations must go through this gateway for testability and storage abstraction.
 
 **CRITICAL: Before removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
@@ -187,6 +189,10 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before try/except in fake.py or dry_run.py** → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
 
 **CRITICAL: Before updating a roadmap step's PR cell** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. The update-roadmap-step command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty.
+
+**CRITICAL: Before use unquoted heredoc delimiters (<<eof) when the body contains $, \, or backticks** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. Never use unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks — bash silently expands them
+
+**CRITICAL: Before using LiveDisplay without try/finally guard** → Read [LiveDisplay Gateway](live-display-gateway.md) first. LiveDisplay is primarily used in watch loops — guard with try/finally to ensure stop() is called even on KeyboardInterrupt
 
 **CRITICAL: Before using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
 

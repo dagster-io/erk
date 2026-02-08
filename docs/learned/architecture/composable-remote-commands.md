@@ -1,16 +1,8 @@
 ---
 read_when:
-  - adding a new remote command to run on codespaces
-  - implementing erk codespace run subcommands
-  - working with streaming remote execution
-title: Composable Remote Commands Pattern
-tripwires:
-  - action: using this pattern
-    warning: Interactive commands need exec_ssh_interactive(), not run_ssh_command()
-  - action: using this pattern
-    warning: Always start_codespace() before executing remote commands
-  - action: build_codespace_ssh_command() bootstraps the environment
-    warning: don't duplicate setup
+  - "adding a new remote command to run on codespaces"
+  - "implementing erk codespace run subcommands"
+  - "working with streaming remote execution"
 ---
 
 # Composable Remote Commands Pattern
