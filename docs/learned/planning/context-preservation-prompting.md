@@ -1,7 +1,7 @@
 ---
 title: Context Preservation Prompting Patterns
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 read_when:
   - "writing slash commands that create plans"
   - "designing any workflow that calls EnterPlanMode"
