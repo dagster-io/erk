@@ -33,8 +33,7 @@ New file, ~100-120 lines. The single source of truth for content quality standar
 ## Audience and Purpose
 - Docs are for AI agents, not humans ("token caches")
 - Document reality, not aspiration
-- Bias toward capturing
-- Reject dismissiveness
+- Bias toward capturing concepts — when uncertain whether a cross-cutting insight is worth documenting, include it. But don't use this as license to document single-artifact knowledge that belongs in code comments or docstrings
 
 ## Content Rules
 - Explain why, not what (CORRECT/WRONG examples)
@@ -72,7 +71,7 @@ New file, ~100-120 lines. The single source of truth for content quality standar
 ### 4. MODIFY `.claude/commands/erk/learn.md`
 
 - **ADD** prerequisite at top of Agent Instructions: "Load the `learned-docs` skill for content quality standards"
-- **REPLACE** "Purpose" section (lines 18-28) with a brief 2-3 line summary referencing the skill for full philosophy
+- **REPLACE** "Purpose" section (lines 18-28) with a brief 2-3 line summary referencing the skill for content quality standards. Drop "bias toward capturing" and "reject dismissiveness" — replaced by the skill's narrower "bias toward capturing concepts"
 - **KEEP** all 11 procedural steps, agent dependency graph, tips
 
 ## Order of Operations
@@ -87,6 +86,6 @@ New file, ~100-120 lines. The single source of truth for content quality standar
 1. Run `make fast-ci` — catches YAML, markdown formatting, broken links
 2. Grep for key phrases to confirm single-source:
    - "token caches" → only in `learned-docs-core.md` (learn.md has brief mention)
-   - "bias toward capturing" → only in `learned-docs-core.md`
+   - "bias toward capturing concepts" → only in `learned-docs-core.md`
    - "Never reproduce source code" → only in `learned-docs-core.md`
 3. Read each modified file end-to-end to confirm coherence
