@@ -127,19 +127,17 @@ These checks leverage the code understanding already built in Phase 3. If the pr
 
 For each section of the document, classify it into one of these value categories:
 
-| Category        | Description                                                                                                                                  | Action                                                          |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                                                        | Replace with "Read `path`" reference                            |
-| **STALE**       | Was once accurate but code has changed (broken imports, renamed functions, moved files)                                                      | Remove code block; replace with code reference                  |
-| **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                                                                              | Flag as high-maintenance; consider code reference instead       |
-| **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                                                       | Keep                                                            |
-| **CONTEXTUAL**  | Connects multiple code locations into a coherent narrative the code alone can't provide                                                      | Keep                                                            |
-| **EXAMPLES**    | Code examples that are essentially identical to what exists in source/tests                                                                  | Remove code block; replace with reference to actual test/source |
-| **CONTRADICTS** | States something that is factually wrong per the current codebase (wrong function names, incorrect behavior descriptions, outdated patterns) | Flag as high-priority fix; correct or delete                    |
+| Category        | Description                                                                                                     | Action                                                          |
+| --------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                           | Replace with "Read `path`" reference                            |
+| **INACCURATE**  | States something that doesn't match current code (wrong names, broken imports, incorrect behavior, moved files) | Fix to match reality; correct or replace with code reference    |
+| **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                                                 | Flag as high-maintenance; consider code reference instead       |
+| **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                          | Keep                                                            |
+| **CONTEXTUAL**  | Connects multiple code locations into a coherent narrative the code alone can't provide                         | Keep                                                            |
+| **EXAMPLES**    | Code examples that are essentially identical to what exists in source/tests                                     | Remove code block; replace with reference to actual test/source |
 
 Apply the content quality standards from the `learned-docs` skill's core rules doc to classify each section. Specifically:
 
-- **CONTRADICTS vs STALE**: CONTRADICTS means the claim was never true or states the opposite of code behavior. STALE means it was once true but code evolved. STALE content should be updated; CONTRADICTS needs deeper review.
 - **Code blocks**: High-drift-risk by default. Apply the skill's "One Code Rule" and four exceptions to determine keep/remove.
 - **Duplicative vs high-value**: Apply the skill's "What Belongs vs What Doesn't" criteria. Exception: constants and default values in prose context are NOT duplicative — they make docs scannable.
 - **High-value signals**: Decision tables, anti-patterns, cross-cutting patterns, historical context, and tripwires (per the skill's content rules).
@@ -164,7 +162,7 @@ Complete the full internal analysis from Phase 4, but output only a brief summar
 **Output format (always):**
 
 ```
-Audit: <doc-path> | Verdict: <VERDICT> | Duplicative: X% | Stale: X% | High-value: Y% | Contradictions: <count>
+Audit: <doc-path> | Verdict: <VERDICT> | Duplicative: X% | Inaccurate: X% | High-value: Y%
 ```
 
 Add a verification summary line:
@@ -219,7 +217,7 @@ Use AskUserQuestion to offer two groups of options:
 **Primary document actions:**
 
 - **"Apply recommended rewrite"** — rewrite the doc to remove duplicative content (only offer if verdict is SIMPLIFY or REPLACE WITH CODE REFS)
-- **"Apply accuracy fixes"** — fix stale imports, correct renamed symbols (only offer if verification found STALE/BROKEN claims but doc is otherwise valuable)
+- **"Apply accuracy fixes"** — fix inaccurate claims, broken imports, renamed symbols (only offer if verification found INACCURATE/BROKEN claims but doc is otherwise valuable)
 - **"Mark as audited (clean)"** — stamp frontmatter with audit date and `clean` result (use when verdict is KEEP)
 - **"Mark as audited (with rewrite)"** — apply the rewrite AND stamp frontmatter (only offer if verdict is SIMPLIFY or REPLACE WITH CODE REFS)
 - **"No action"** — just noting findings
@@ -275,7 +273,7 @@ Output summary of what was fixed, skipped, and recommended.
 
 1. **Adversarial framing**: Be skeptical of documentation value by default. The burden of proof is on the doc to justify its existence vs just reading code.
 
-2. **Percentage-based scoring**: Show what % of the doc is duplicative or contradictory for quick signal. A doc that's 80% duplicative is a strong candidate for simplification. Any contradictory content is treated as at least as severe as duplicative content in verdict calculations.
+2. **Percentage-based scoring**: Show what % of the doc is duplicative or inaccurate for quick signal. A doc that's 80% duplicative is a strong candidate for simplification. Inaccurate content is treated as at least as severe as duplicative content in verdict calculations.
 
 3. **Section-level granularity**: Don't just give a doc-level verdict. Show which sections add value and which don't, so the user can surgically edit.
 
