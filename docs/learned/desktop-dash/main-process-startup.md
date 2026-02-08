@@ -11,7 +11,7 @@ tripwires:
   - WebContentsView starts at zero bounds — renderer must report bounds before it becomes visible
   - Use execFile for request/response IPC, spawn for streaming IPC — do not mix the patterns
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # Main Process Startup

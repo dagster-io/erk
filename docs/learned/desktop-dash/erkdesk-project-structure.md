@@ -11,7 +11,7 @@ tripwires:
   - Do NOT run pnpm commands from the repo root — always cd into erkdesk/ first
   - Do NOT add erkdesk-tests to the autofix job's needs list in CI
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # Erkdesk Project Structure
