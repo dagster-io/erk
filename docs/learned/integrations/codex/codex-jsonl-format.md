@@ -1,5 +1,6 @@
 ---
 title: Codex CLI JSONL Output Format
+content_type: reference-cache
 read_when:
   - "parsing codex exec --json output"
   - "implementing a CodexPromptExecutor"
@@ -14,7 +15,7 @@ tripwires:
     warning: "Codex uses Rust #[serde(flatten)] — item type-specific fields appear as siblings of id and type within the item object, not in a nested sub-object."
   - action: "reusing ClaudePromptExecutor parsing logic for Codex"
     warning: "The two formats share almost nothing structurally. A CodexPromptExecutor needs its own parser — don't parameterize the existing Claude parser."
-last_audited: "2026-02-08 13:05 PT"
+last_audited: "2026-02-08 13:55 PT"
 audit_result: clean
 ---
 
@@ -96,6 +97,48 @@ Valid values for `status` fields across item types:
 - **CollabAgentStatus**: `pending_init`, `running`, `completed`, `errored`, `shutdown`, `not_found`
 - **CollabTool**: `spawn_agent`, `send_input`, `wait`, `close_agent`
 
+## Representative JSON Examples
+
+Top-level events are simple objects. `thread.started` carries the session identifier:
+
+```json
+{
+  "type": "thread.started",
+  "thread_id": "67e55044-10b1-426f-9247-bb680e5fe0c8"
+}
+```
+
+`turn.completed` carries token usage:
+
+```json
+{
+  "type": "turn.completed",
+  "usage": {
+    "input_tokens": 1200,
+    "cached_input_tokens": 200,
+    "output_tokens": 345
+  }
+}
+```
+
+Item events show the two-level type discrimination. A `command_execution` progresses from `item.started` (with `status: "in_progress"`, `exit_code: null`) to `item.completed` (with `status: "completed"`, populated `exit_code` and `aggregated_output`):
+
+```json
+{
+  "type": "item.completed",
+  "item": {
+    "id": "item_0",
+    "type": "command_execution",
+    "command": "bash -lc 'echo hi'",
+    "aggregated_output": "hi\n",
+    "exit_code": 0,
+    "status": "completed"
+  }
+}
+```
+
+Other item types follow the same envelope pattern. The `item.type` field changes (e.g., `agent_message`, `file_change`, `mcp_tool_call`, `todo_list`) and the sibling fields vary per the Item Types table above. Error variants use `turn.failed` with `error.message` or top-level `{ "type": "error", "message": "..." }`.
+
 ## Structural Differences from Claude
 
 These differences explain why a `CodexPromptExecutor` needs entirely separate parsing logic:
@@ -114,7 +157,7 @@ These differences explain why a `CodexPromptExecutor` needs entirely separate pa
 
 Claude's `type: "result"` event includes `num_turns`, which erk uses to detect hook blocking (emitted as `NoTurnsEvent`). Codex has no equivalent field. A future `CodexPromptExecutor` would need a different strategy for hook-blocking detection — for example, checking whether any `item.*` events appeared between `turn.started` and `turn.completed`. Without this, `NoTurnsEvent` and `NoOutputEvent` diagnostics cannot be ported directly.
 
-## ExecutorEvent Mapping Design
+## Planned Event-to-ExecutorEvent Mapping
 
 <!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, ExecutorEvent -->
 

@@ -8,11 +8,11 @@ read_when:
 tripwires:
   - action: "adding erkdesk as a pnpm workspace member"
     warning: "Do NOT add erkdesk as a pnpm workspace member — it is intentionally standalone"
-  - action: "using BrowserView in erkdesk code"
+  - action: "using BrowserView in erkdesk"
     warning: "Do NOT use BrowserView — use WebContentsView (BrowserView is deprecated)"
-  - action: "running pnpm commands from the repo root for erkdesk"
+  - action: "running pnpm commands from the repo root"
     warning: "Do NOT run pnpm commands from the repo root — always cd into erkdesk/ first"
-  - action: "adding erkdesk-tests to CI autofix job dependencies"
+  - action: "adding erkdesk-tests to the autofix job's needs list in CI"
     warning: "Do NOT add erkdesk-tests to the autofix job's needs list in CI"
 last_audited: "2026-02-08"
 audit_result: clean

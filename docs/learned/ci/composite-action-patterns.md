@@ -11,13 +11,26 @@ tripwires:
     warning: "NEVER duplicate secret validation across workflows — use erk-remote-setup's consolidated validation."
   - action: "skipping cache keys for downloaded binaries"
     warning: "NEVER skip cache keys for downloaded binaries — cache saves 10-20s per workflow run."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 13:55 PT"
 audit_result: clean
+content_type: reference_cache
 ---
 
 # Composite Action Patterns
 
 GitHub Actions composite actions encapsulate reusable setup steps. Erk uses them to avoid duplicating 7-step setup sequences across remote AI workflows.
+
+## Available Composite Actions
+
+| Action              | Purpose                                     | Inputs                                                    |
+| ------------------- | ------------------------------------------- | --------------------------------------------------------- |
+| `erk-remote-setup`  | Full remote workflow environment setup      | `erk-pat`, `anthropic-api-key`, `claude-code-oauth-token` |
+| `setup-claude-code` | Install Claude Code CLI with caching        | None                                                      |
+| `setup-python-uv`   | Install Python and uv, sync dependencies    | `python-version` (default: "3.12")                        |
+| `setup-graphite`    | Install Graphite CLI for stack management   | None                                                      |
+| `setup-claude-erk`  | Install erk tools (assumes uv/claude exist) | None                                                      |
+| `setup-prettier`    | Install Node.js and Prettier                | None                                                      |
+| `check-worker-impl` | Check if `.worker-impl/` folder exists      | None (outputs: `skip`)                                    |
 
 ## Why Composite Actions Over Repeated Steps
 
@@ -36,6 +49,16 @@ See the complete 7-step sequence in `.github/actions/erk-remote-setup/action.yml
 Standard GitHub Actions workflow errors are opaque: "Secret not found" doesn't tell you which secret or which step failed.
 
 **Pattern**: Validate all required secrets in the first composite action step with explicit error titles.
+
+```yaml
+- name: Validate secrets
+  shell: bash
+  run: |
+    if [ -z "${{ inputs.api-key }}" ]; then
+      echo "::error title=Missing Secret::API_KEY not configured"
+      exit 1
+    fi
+```
 
 <!-- Source: .github/actions/erk-remote-setup/action.yml, Validate secrets step -->
 
@@ -78,6 +101,22 @@ GitHub Actions cache saves 10-20 seconds per workflow run by avoiding repeated d
 
 **Key structure**: `tool-name-${{ runner.os }}-${{ runner.arch }}-v1`
 
+```yaml
+- name: Cache binary
+  id: cache
+  uses: actions/cache@v4
+  with:
+    path: ~/.local/bin/my-tool
+    key: my-tool-${{ runner.os }}-${{ runner.arch }}-v1
+
+- name: Download (on cache miss)
+  if: steps.cache.outputs.cache-hit != 'true'
+  shell: bash
+  run: |
+    curl -fsSL https://example.com/binary -o ~/.local/bin/my-tool
+    chmod +x ~/.local/bin/my-tool
+```
+
 The cache key includes:
 
 - **Runner OS**: `linux` vs `darwin` (though erk only uses linux runners)
@@ -95,6 +134,18 @@ The cache key includes:
 Erk's remote workflows create `.worker-impl/` folders during AI implementation. CI should skip these branches until implementation completes.
 
 **Pattern**: Composite action with conditional output.
+
+```yaml
+- name: Check condition
+  id: check
+  shell: bash
+  run: |
+    if [ -d ".worker-impl" ]; then
+      echo "skip=true" >> $GITHUB_OUTPUT
+    else
+      echo "skip=false" >> $GITHUB_OUTPUT
+    fi
+```
 
 <!-- Source: .github/actions/check-worker-impl/action.yml, Check for worker implementation folder step -->
 
@@ -126,6 +177,54 @@ Erk runs in two installation modes depending on repository structure:
 
 This pattern handles both erk's own CI (which has erk-shared) and external projects that depend on erk (which don't).
 
+## Creating New Composite Actions
+
+### Structure
+
+```
+.github/actions/my-action/
+└── action.yml
+```
+
+### Template
+
+```yaml
+name: "Action Name"
+description: "Brief description"
+
+inputs:
+  required-input:
+    description: "What this input does"
+    required: true
+  optional-input:
+    description: "Optional parameter"
+    required: false
+    default: "default-value"
+
+outputs:
+  my-output:
+    description: "What this output contains"
+    value: ${{ steps.step-id.outputs.value }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Step name
+      shell: bash
+      run: |
+        echo "Running step..."
+```
+
+### Decision Checklist
+
+Before creating a new composite action:
+
+1. **Is this setup used in 3+ workflows?** → If no, inline the steps
+2. **Will this setup change together?** → If no, keep separate (e.g., Python vs Claude Code)
+3. **Can this fail independently?** → If yes, separate action for better error messages
+
+Composite actions add indirection. Only extract when the DRY benefits outweigh the debugging cost.
+
 ## Composite Action Anti-Patterns
 
 ### DON'T: Return Computed Values via Outputs
@@ -151,16 +250,6 @@ GitHub Actions doesn't validate composite action dependencies. Undocumented depe
 If two actions both need Python, **don't** run setup-python twice. Create a setup-python-uv action that other actions depend on.
 
 Duplication wastes CI minutes and creates version skew when one action updates Python version but another doesn't.
-
-## Creating New Actions: Decision Checklist
-
-Before creating a new composite action:
-
-1. **Is this setup used in 3+ workflows?** → If no, inline the steps
-2. **Will this setup change together?** → If no, keep separate (e.g., Python vs Claude Code)
-3. **Can this fail independently?** → If yes, separate action for better error messages
-
-Composite actions add indirection. Only extract when the DRY benefits outweigh the debugging cost.
 
 ## Related Documentation
 

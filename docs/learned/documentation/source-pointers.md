@@ -1,54 +1,65 @@
 ---
 title: Source Pointers
 read_when:
-  - writing or updating documentation with code references
+  - writing or updating documentation with code examples
   - deciding whether to include a code block in docs
-  - addressing verbatim code violations from audit-pr-docs review
-tripwires:
-  - action: "copying source code into a docs/learned/ markdown file"
-    warning: "Use a source pointer instead. See source-pointers.md for the two-part format (HTML comment + prose reference)."
-  - action: "using line numbers in source pointers"
-    warning: "Prefer name-based identifiers (ClassName.method) over line numbers. Names survive refactoring; line numbers go stale silently."
-last_audited: "2026-02-08"
-audit_result: edited
+  - addressing verbatim code violations in PRs
+last_audited: "2026-02-05"
+audit_result: clean
 ---
 
 # Source Pointers
 
-Source pointers are the canonical format for referencing code from `docs/learned/` files. They exist because verbatim code blocks silently go stale — a copied function signature looks authoritative even after the real signature changed three PRs ago. Source pointers replace this silent failure with a loud one: a stale file path or symbol name is immediately obvious when an agent tries to navigate to it.
+When documenting implementation patterns in `docs/learned/`, prefer source pointers over verbatim code copies. Code blocks longer than 5 lines that duplicate source will go stale when the implementation changes.
 
-For the deeper rationale behind this trade-off, see [stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md).
+## When to Use Source Pointers
 
-## The Two-Part Format
+Use source pointers for code blocks that:
 
-Every source pointer has two parts that serve different audiences: an HTML comment for tooling and a prose reference for agents.
+1. **Copy implementation details** from `src/erk/` or `packages/`
+2. **Are longer than 5 lines** of actual code (not counting blank lines/comments)
+3. **Will go stale** if the source changes
 
-**Part 1 — HTML comment** (machine-readable, enables automated staleness detection):
+Short illustrative snippets (≤5 lines) are fine to include verbatim.
+
+## Format: Two-Part Pattern
+
+### Part 1: HTML Comment with Source File
+
+Add an HTML comment before the prose reference:
 
 ```markdown
 <!-- Source: path/to/file.py, ClassName.method_name -->
 ```
 
-**Part 2 — Prose reference** (tells agents what to grep for):
+**Examples:**
+
+```markdown
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/fake.py, FakeGit.add -->
+<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, cast() pattern -->
+```
+
+### Part 2: Prose Reference with Method Name
+
+Reference the specific class or method in prose:
 
 ```markdown
 See `ClassName.method_name()` in `path/to/file.py`.
 ```
 
-Both parts are required. The HTML comment is what `audit-pr-docs` scans for during PR review. The prose reference is what agents actually read when navigating to source. Omitting either part defeats half the system.
+**Examples:**
 
-## Identifier Style Decision
+```markdown
+See `FakeGit.add()` in `packages/erk-shared/src/erk_shared/gateway/git/fake.py`.
 
-| Style          | Format                      | Use when                                           | Staleness behavior                                                      |
-| -------------- | --------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------- |
-| **Name-based** | `file.py, ClassName.method` | Python source with stable symbols                  | Low risk — names survive refactoring, grep still finds them             |
-| **Line-range** | `file.py:20-69`             | Markdown, YAML, config files without named symbols | Medium risk — any edit shifts line numbers, but the mismatch is obvious |
+See the `cast()` pattern in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`.
+```
 
-**Default to name-based.** Line-range is the fallback for files that lack greppable symbol names (markdown sections, YAML blocks, config stanzas). Even a stale line-range is better than a stale code block — the line-range fails visibly when the range doesn't match the expected content.
+Agents should grep for the class/function name to find the exact location in the file.
 
-## When to Use Source Pointers vs Code Blocks
+## Category System: What to Keep vs Remove
 
-Source pointers replace all code blocks _except_ the four cases where the One Code Rule grants an exception. The decision is mechanical:
+### Category A: Remove (Verbatim Copies)
 
 | Content type                                              | Action               | Reasoning                                                                      |
 | --------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------ |
@@ -59,33 +70,67 @@ Source pointers replace all code blocks _except_ the four cases where the One Co
 | CLI commands with expected output                         | Keep as code block   | I/O examples are self-contained and stable                                     |
 | Third-party reference tables (API endpoints, syntax refs) | Keep as code block   | Token cache of expensive-to-fetch external docs (include `## Sources` section) |
 
-**Partial excerpts are not an exception.** Copying "just the interesting lines" from a source file creates the same staleness problem as copying the whole function. If the code is erk source, use a pointer regardless of length.
+**Why remove erk source code?** These will go stale. When the source changes, the docs become misleading.
 
-## Pointer Target Selection
+### Category B: Keep (Illustrative Examples)
 
-**Point to the most stable identifier available.** This is the single most important decision when writing a source pointer, because it determines how quickly the pointer goes stale.
+**Keep these as-is:**
 
-Stability hierarchy (most stable → least stable):
+- Short snippets (≤5 lines) showing key insights
+- External library patterns (not erk source code)
+- Config file examples (YAML, TOML, JSON)
+- CLI command examples with output
+- Made-up examples with fake names (`MyWidget`, `ExampleGateway`)
 
-1. **ABC definitions** — abstract interfaces change rarely and concrete implementations must conform to them
-2. **Schema/config classes** — Pydantic models, frozen dataclasses define the shape of data
-3. **Public method names** — refactoring usually preserves these even when internals change
-4. **Line numbers** — any edit to the file shifts them
+**Why**: These are teaching aids, not documentation of specific implementation.
 
-**Anti-pattern**: Pointing to a concrete gateway implementation that changes weekly. Point to the ABC method definition instead — it captures the contract, and any implementation must conform to it. This is why `simplification-patterns.md` lists ABCs as the top priority for pointer targets.
+### Category C: Transform (Partial Copies)
 
-**Anti-pattern**: Pointing to a function's body when its class or module docstring captures the same concept. Prefer the highest-level stable symbol that communicates the insight.
+**Rewrite as source pointers plus context:**
 
-## Automated Enforcement
+- Partial method implementations showing only key lines
+- Code blocks that excerpt the "interesting part" of a longer source
+- Examples that combine multiple sources
 
-<!-- Source: .github/reviews/audit-pr-docs.md -->
+**Why**: Even partial copies can become misleading. Better to point to the source and highlight what's important in prose.
 
-The `audit-pr-docs` review automatically runs on every PR touching `docs/learned/`. It audits the full document (not just changed lines), classifies code blocks as VERBATIM or permitted, and posts inline comments with the exact source path and suggested pointer format. When you receive one of these comments, convert the code block to a source pointer using the two-part format above.
+## Decision Checklist
 
-This enforcement connects to the broader audit system: `/local:audit-doc` performs deep single-document analysis, `/local:audit-scan` triages which docs need audit, and `audit-pr-docs` prevents new problems at PR time. See [audit-methodology.md](audit-methodology.md) for the full classification framework.
+Before adding a code block to `docs/learned/`:
 
-## Related Documentation
+1. **Is it longer than 5 lines?** → Yes = Consider a pointer
+2. **Does it copy from erk source?** → Yes = Strongly prefer pointer
+3. **Will it go stale?** → Yes = Use pointer
+4. **Is it showing a pattern, not implementation?** → Yes = Keep the code block
 
-- [stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md) — The deeper case for why pointers beat embedded code
-- [simplification-patterns.md](simplification-patterns.md) — Pattern 1 (Static → Dynamic) uses source pointers as its fix
-- [audit-methodology.md](audit-methodology.md) — How audits classify VERBATIM blocks for replacement
+If you answered "Yes" to questions 1-3, use a source pointer.
+
+## Maintenance Trade-offs
+
+**Source pointers reference file paths and identifiers**, not line numbers. This avoids staleness:
+
+- **File paths** rarely change; when they do, grep finds the new location
+- **Class/function names** are stable identifiers that survive refactoring better than line numbers
+- **Stale code blocks** are insidious (code still runs, just outdated patterns)
+- No tooling can detect when copied code diverges from current implementation
+
+## Automated Detection
+
+The audit-pr-docs review (`.github/reviews/audit-pr-docs.md`) automatically detects verbatim source copies in PRs:
+
+- Scans `docs/learned/**/*.md` files
+- Matches code blocks against source files in `src/erk/` and `packages/`
+- Posts inline comments identifying the source file and relevant identifiers
+- Suggests source pointer format as replacement
+
+When you receive a audit-pr-docs review comment, it means you should replace the code block with a source pointer.
+
+## Examples in the Wild
+
+See existing usage in:
+
+- `docs/learned/testing/testing.md` - Multiple source pointers to gateway fakes
+- `docs/learned/architecture/erk-architecture.md` - Pointers to planning and objective code
+- `docs/learned/cli/exec-script-schema-patterns.md` - Pointers to TypedDict definitions
+
+These files demonstrate the pattern after addressing verbatim code violations.

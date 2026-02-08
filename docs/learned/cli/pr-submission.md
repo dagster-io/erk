@@ -9,7 +9,7 @@ audit_result: clean
 tripwires:
   - action: "creating PRs without understanding workflow tradeoffs"
     warning: "Before creating PRs, understand the workflow tradeoffs"
-  - action: "bypassing PR validation rules in either workflow"
+  - action: "bypassing PR validation rules"
     warning: "PR validation rules apply to both workflows"
 ---
 

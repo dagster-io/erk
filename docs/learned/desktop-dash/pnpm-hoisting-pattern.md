@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "removing erkdesk/.npmrc or changing node-linker away from hoisted"
     warning: "Do NOT remove erkdesk/.npmrc or change node-linker away from hoisted — Electron cannot resolve pnpm's symlinked node_modules layout"
-  - action: "assuming 'Cannot find module' errors mean missing dependency in Electron"
+  - action: "assuming 'Cannot find module' errors mean a missing dependency"
     warning: "Do NOT assume 'Cannot find module' errors mean a missing dependency — in Electron with pnpm, check .npmrc first"
 last_audited: "2026-02-08"
 audit_result: clean

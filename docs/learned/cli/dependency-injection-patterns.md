@@ -10,9 +10,9 @@ audit_result: clean
 tripwires:
   - action: "creating gateway instances in business logic"
     warning: "Never create gateway instances in business logic — inject them as parameters"
-  - action: "calling sys.exit() in _*_impl() functions"
+  - action: "calling sys.exit() from _*_impl() functions"
     warning: "Separate _*_impl() functions return exit codes or discriminated unions, never call sys.exit()"
-  - action: "creating gateway instances directly in Click commands"
+  - action: "hardcoding gateway implementations in Click commands"
     warning: "Click commands retrieve real implementations from context via require_* helpers"
 ---
 

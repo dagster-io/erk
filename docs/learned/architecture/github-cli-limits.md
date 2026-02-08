@@ -1,7 +1,8 @@
 ---
 title: GitHub CLI Limits
-last_audited: "2026-02-07 20:50 PT"
-audit_result: clean
+content_type: reference-cache
+last_audited: "2026-02-08 13:55 PT"
+audit_result: edited
 read_when:
   - "using gh pr diff in production code"
   - "working with large pull requests (300+ files)"
@@ -26,6 +27,31 @@ The GitHub CLI wraps both REST and GraphQL APIs with command-line convenience. T
 
 This is a **test-vs-production tripwire**: small PRs work perfectly in development, large refactors fail silently in CI or production tooling.
 
+### Failure Example
+
+```bash
+gh pr diff 123 --name-only
+# Error: HTTP 406: Not Acceptable (https://api.github.com/...)
+```
+
+### The Solution: REST API with Pagination
+
+Use the GitHub REST API `/repos/{owner}/{repo}/pulls/{pr}/files` endpoint, which supports pagination:
+
+```bash
+gh api \
+  --paginate \
+  --jq '.[].filename' \
+  "repos/{owner}/{repo}/pulls/${PR_NUMBER}/files"
+```
+
+### gh pr diff vs gh api Comparison
+
+| Method                             | Pagination         | Size Limit | Failure Mode   |
+| ---------------------------------- | ------------------ | ---------- | -------------- |
+| `gh pr diff --name-only`           | No                 | ~300 files | HTTP 406 error |
+| `gh api repos/.../pulls/.../files` | Yes (`--paginate`) | No limit   | None           |
+
 ### Decision: When to Use REST API Over gh pr Commands
 
 | Use Case                     | Method                                                    | Reason                                            |
@@ -49,17 +75,26 @@ The GitHub CLI documentation implies `gh codespace start` exists. It does not. T
 
 This is a **documentation-vs-implementation gap**: reasonable to expect based on `gh codespace stop`, but never implemented.
 
+### Failure Example
+
+```bash
+gh codespace start mycodespace
+# Error: unknown command "start" for "gh codespace"
+```
+
 ### Workaround: Use REST API Directly
 
 ```bash
-gh api --method POST "user/codespaces/${CODESPACE_NAME}/start"
+gh api \
+  --method POST \
+  "user/codespaces/${CODESPACE_NAME}/start"
 ```
 
-The operation is **asynchronous** — the API call returns immediately while the codespace continues starting. Callers must poll codespace state or implement retry logic with timeouts.
+This returns JSON with the codespace state. The operation is **asynchronous** — the API call returns immediately while the codespace continues starting. Callers must poll codespace state or implement retry logic with timeouts.
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/codespace/real.py, RealCodespace.start -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/codespace/real.py, RealCodespace.start_codespace -->
 
-See `RealCodespace.start()` in `packages/erk-shared/src/erk_shared/gateway/codespace/real.py` for the production implementation using `gh api --method POST`.
+See `RealCodespace.start_codespace()` in `packages/erk-shared/src/erk_shared/gateway/codespace/real.py` for the production implementation using `gh api --method POST`.
 
 ## GH-API-AUDIT Convention
 
@@ -76,7 +111,17 @@ subprocess.run(["gh", "pr", "view", pr_number])
 - `GraphQL` — operation may be better served by GraphQL
 - Operation description — brief explanation
 
-**Purpose**: Identifies 66+ locations in the gateway code where we're using gh CLI abstractions that hide quota usage, lack features (like pagination), or impose size limits. The audit trail enables systematic migration when we encounter gh CLI limitations.
+### Examples from Codebase
+
+```python
+# GH-API-AUDIT: REST - Get PR number from branch
+result = subprocess.run(["gh", "pr", "view", "--json", "number"])
+
+# GH-API-AUDIT: GraphQL - Fetch issue comments
+result = subprocess.run(["gh", "issue", "view", issue_number, "--json", "comments"])
+```
+
+**Purpose**: Identifies 60+ locations in the gateway code where we're using gh CLI abstractions that hide quota usage, lack features (like pagination), or impose size limits. The audit trail enables systematic migration when we encounter gh CLI limitations.
 
 ## Related Limitations
 
@@ -95,3 +140,4 @@ The `/repos/{owner}/{repo}/codespaces/machines` endpoint returns HTTP 500 for ce
 - [GitHub API Diagnostics](github-api-diagnostics.md) — Repository-specific diagnostic methodology for GitHub API failures
 - [Universal Tripwires](../universal-tripwires.md) — Lists the gh pr diff tripwire for pre-coding awareness
 - [Gateway ABC Implementation](gateway-abc-implementation.md) — How GitHubGateway abstracts CLI limitations with pagination-aware methods
+- [Codespace Patterns](../cli/codespace-patterns.md) — Codespace setup patterns
