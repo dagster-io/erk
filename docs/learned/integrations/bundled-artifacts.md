@@ -13,7 +13,7 @@ tripwires:
   - action: "creating a .codex/ directory in the erk repo"
     warning: "There is no .codex/ directory in the erk repo. All skills live in .claude/skills/ regardless of portability. The build and sync systems handle remapping."
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 ---
 
 # Bundled Artifact Portability
