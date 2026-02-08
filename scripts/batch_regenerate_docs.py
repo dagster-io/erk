@@ -9,11 +9,12 @@ Automatically resumable: completed docs are tracked in logs/batch-regen-state.js
 Re-running the script skips previously succeeded docs and retries failed ones.
 
 Usage:
-    python scripts/batch_regenerate_docs.py                           # sequential, opus model
-    python scripts/batch_regenerate_docs.py --model sonnet            # use sonnet
+    python scripts/batch_regenerate_docs.py                           # sonnet regen, opus audit
+    python scripts/batch_regenerate_docs.py --regen-model opus        # opus for both steps
     python scripts/batch_regenerate_docs.py --dry-run                 # list docs only
     python scripts/batch_regenerate_docs.py --limit 5                 # first 5 docs
     python scripts/batch_regenerate_docs.py --fresh                   # ignore prior progress
+    python scripts/batch_regenerate_docs.py --file docs/learned/x.md  # target a specific file
 """
 
 import argparse
@@ -159,7 +160,8 @@ def run_claude(
 def process_doc(
     *,
     doc: str,
-    model: str,
+    regen_model: str,
+    audit_model: str,
     timeout: int,
     log_dir: Path,
 ) -> DocResult:
@@ -175,7 +177,7 @@ def process_doc(
     try:
         regen_exit = run_claude(
             prompt=regen_prompt,
-            model=model,
+            model=regen_model,
             timeout=timeout,
             log_path=regen_log,
         )
@@ -197,7 +199,7 @@ def process_doc(
     try:
         audit_exit = run_claude(
             prompt=audit_prompt,
-            model=model,
+            model=audit_model,
             timeout=timeout,
             log_path=audit_log,
         )
@@ -222,9 +224,14 @@ def parse_args() -> argparse.Namespace:
         description="Batch regenerate and audit recently created docs.",
     )
     parser.add_argument(
-        "--model",
+        "--regen-model",
+        default="sonnet",
+        help="Claude model for regeneration step (default: sonnet)",
+    )
+    parser.add_argument(
+        "--audit-model",
         default="opus",
-        help="Claude model to use (default: opus)",
+        help="Claude model for audit step (default: opus)",
     )
     parser.add_argument(
         "--dry-run",
@@ -248,6 +255,12 @@ def parse_args() -> argparse.Namespace:
         default=300,
         help="Timeout in seconds per claude invocation (default: 300)",
     )
+    parser.add_argument(
+        "--file",
+        action="append",
+        dest="files",
+        help="Target specific file(s) instead of git log discovery (repeatable, ignores state)",
+    )
     return parser.parse_args()
 
 
@@ -255,23 +268,36 @@ def main() -> None:
     """Entry point."""
     args = parse_args()
 
-    # Discover docs
-    print("Discovering docs created in the last 2 weeks...")
-    all_docs = discover_docs()
-    print(f"Found {len(all_docs)} docs (after filtering deleted/renamed)")
+    # Determine doc list: explicit files or git log discovery
+    if args.files:
+        missing = [f for f in args.files if not Path(f).exists()]
+        if missing:
+            for f in missing:
+                print(f"Error: file not found: {f}", file=sys.stderr)
+            sys.exit(1)
+        all_docs = args.files
+        print(f"Targeting {len(all_docs)} specified file(s)")
+        # --file mode ignores state (always processes)
+        state: dict[str, dict[str, str | int]] = {}
+        skipped: list[str] = []
+        docs = list(all_docs)
+    else:
+        print("Discovering docs created in the last 2 weeks...")
+        all_docs = discover_docs()
+        print(f"Found {len(all_docs)} docs (after filtering deleted/renamed)")
 
-    # Handle --fresh: clear state file
-    if args.fresh and STATE_FILE.exists():
-        STATE_FILE.unlink()
-        print("Cleared state file (--fresh)")
+        # Handle --fresh: clear state file
+        if args.fresh and STATE_FILE.exists():
+            STATE_FILE.unlink()
+            print("Cleared state file (--fresh)")
 
-    # Load state and filter out already-succeeded docs
-    state = load_state(STATE_FILE)
-    skipped = [d for d in all_docs if state.get(d, {}).get("status") == "succeeded"]
-    docs = [d for d in all_docs if state.get(d, {}).get("status") != "succeeded"]
+        # Load state and filter out already-succeeded docs
+        state = load_state(STATE_FILE)
+        skipped = [d for d in all_docs if state.get(d, {}).get("status") == "succeeded"]
+        docs = [d for d in all_docs if state.get(d, {}).get("status") != "succeeded"]
 
-    if skipped:
-        print(f"Skipping {len(skipped)} already-succeeded docs, {len(docs)} remaining")
+        if skipped:
+            print(f"Skipping {len(skipped)} already-succeeded docs, {len(docs)} remaining")
 
     # Handle --limit
     if args.limit > 0 and args.limit < len(docs):
@@ -313,7 +339,8 @@ def main() -> None:
         print(f"[{i}/{len(docs)}] Processing: {doc}")
         result = process_doc(
             doc=doc,
-            model=args.model,
+            regen_model=args.regen_model,
+            audit_model=args.audit_model,
             timeout=args.timeout,
             log_dir=log_dir,
         )
