@@ -1,117 +1,58 @@
 ---
-title: Roadmap Parser API Reference
+title: Roadmap Shared Parser Architecture
 read_when:
-  - "calling parse_roadmap(), compute_summary(), serialize_phases(), or find_next_step()"
-  - "working with RoadmapStep or RoadmapPhase dataclasses"
-  - "building new features on top of the roadmap parser"
+  - "adding a new consumer of objective_roadmap_shared.py"
+  - "extending the roadmap data model with new fields"
+  - "understanding why the shared parser exists separately from its consumers"
 tripwires:
   - action: "creating a new roadmap data type without using frozen dataclass"
     warning: "RoadmapStep and RoadmapPhase are frozen dataclasses. New roadmap types must follow this pattern."
+  - action: "accessing step_id on a RoadmapStep"
+    warning: "The field is named 'id', not 'step_id'. This is a common mistake — check the actual dataclass definition."
+  - action: "importing parse_roadmap into a new consumer"
+    warning: "The shared module lives in exec/scripts/ for historical reasons but is consumed by both exec scripts and CLI commands. If adding a third consumer, consider whether the module should move to a shared location."
+last_audited: "2026-02-08 10:24 PT"
+audit_result: edited
 ---
 
-# Roadmap Parser API Reference
+# Roadmap Shared Parser Architecture
 
-Code-level API reference for `objective_roadmap_shared.py` — the shared parser used by both `objective-roadmap-check` and `objective-roadmap-update`.
+The roadmap parser is a shared module consumed by two commands with fundamentally different usage patterns. This document explains **why** the shared module exists, how its consumers differ, and the non-obvious design choices in the data model.
 
-## Data Types
+## Why a Shared Module?
 
-### RoadmapStep
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py -->
 
-```python
-@dataclass(frozen=True)
-class RoadmapStep:
-    id: str               # e.g., "1.1", "2.3" (note: field name is "id" not "step_id")
-    description: str      # Step description text
-    status: str           # "pending", "done", "in_progress", "blocked", "skipped"
-    pr: str | None        # PR reference (e.g., "#123", "plan #456") or None
-```
+The `objective_roadmap_shared.py` module exists because two commands need the same parsing logic but use different subsets of it. Both `check_cmd.py` (erk objective check) and `update_roadmap_step.py` consume the shared parser, but differ in scope: `check_cmd` uses all 4 functions and both data types for full validation workflow, while `update_roadmap_step` only imports `parse_roadmap` for validation before surgical regex edits.
 
-**Important**: The field name is `id` (not `step_id`). See `objective_roadmap_shared.py:14` for actual implementation.
+<!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
 
-### RoadmapStep (7-column format, planned)
+The key insight: `update_roadmap_step` calls `parse_roadmap` for **validation**, not for mutation. It confirms the target step ID exists in the parsed output, then performs a separate regex replacement on the raw markdown. The parsed data is thrown away. This means the parser's job is to be a source of truth about table structure, not a round-trip serializer.
 
-The parser is being extended to support a 7-column table format with additional metadata:
+## Non-Obvious Data Model Choices
 
-```python
-@dataclass(frozen=True)
-class RoadmapStep:
-    id: str                     # Step ID (e.g., "1.1")
-    description: str            # What the step does
-    status: str                 # "pending", "done", "in_progress", "blocked", "skipped"
-    pr: str | None              # PR reference or None
-    step_type: str              # "task" (default), "milestone", "research"
-    issue: str | None           # GitHub issue reference (e.g., "#456") or None
-    depends_on: str | None      # Dependency on other step IDs (e.g., "1.1,2.3") or None
-```
+### Field naming: `id` not `step_id`
 
-**Table header for 7-column format**:
+The `RoadmapStep.id` field is named `id`, not `step_id`. Every consumer accesses `step.id` (e.g., `step.id` in check_cmd's consistency checks). This catches people who expect the field name to mirror the table column header "Step".
 
-```markdown
-| Step | Description | Status | PR | Type | Issue | Depends On |
-```
+### Phase suffix for sub-phases
 
-**Backward compatibility**: The parser will try 7-column format first, then fall back to legacy 4-column format if the table doesn't match.
+`RoadmapPhase` has a `suffix` field (empty string or a letter like `"A"`, `"B"`) to support sub-phase numbering (`Phase 1A`, `Phase 1B`). This is used by `check_cmd.py` for sequential ordering validation — phases are sorted by `(number, suffix)` tuple comparison, which gives correct ordering for both `1, 2, 3` and `1A, 1B, 2` patterns.
 
-### RoadmapPhase
+### Parser returns warnings, not errors
 
-```python
-@dataclass(frozen=True)
-class RoadmapPhase:
-    number: int           # Phase number (1, 2, 3, ...)
-    name: str             # Phase name from header
-    steps: list[RoadmapStep]
-```
+`parse_roadmap` returns `(phases, validation_errors)` where validation_errors are warning strings, not exceptions. The parser extracts whatever it can and reports problems alongside results. This matters because a partially-parsed roadmap is more useful than a crashed parse — `check_cmd` displays both the parsed phases and the warnings.
 
-## Functions
+## Module Location Anomaly
 
-### parse_roadmap
+The shared module lives in `src/erk/cli/commands/exec/scripts/` — the exec scripts directory — even though `check_cmd.py` in `src/erk/cli/commands/objective/` imports from it. This is a historical artifact: the parser was originally created for exec scripts and gained a second consumer later. The cross-package import works but is architecturally unusual. If a third consumer appears, consider promoting the module to a more neutral location.
 
-```python
-def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]
-```
+## Relationship to Sibling Docs
 
-Parses an objective issue body into structured phases and steps.
+This document covers the **structural architecture** of the shared parser. For specific behavioral rules:
 
-- **Input**: Raw markdown body of an objective issue
-- **Returns**: `(phases, warnings)` — list of phases and list of validation warning strings
-- **Parsing**: Regex-based, not LLM-based
-  - Phase headers: `### Phase N: Name` pattern
-  - Table rows: `| step_id | description | status | pr |` pattern
-  - Status inference from status + PR columns (see [Roadmap Parser](roadmap-parser.md))
-
-### compute_summary
-
-```python
-def compute_summary(phases: list[RoadmapPhase]) -> dict[str, int]
-```
-
-Counts steps by status across all phases.
-
-- **Returns**: `{"total_steps": N, "pending": N, "done": N, "in_progress": N, "blocked": N, "skipped": N}`
-
-### serialize_phases
-
-```python
-def serialize_phases(phases: list[RoadmapPhase]) -> list[dict[str, object]]
-```
-
-Converts phases to JSON-serializable dicts for CLI output.
-
-### find_next_step
-
-```python
-def find_next_step(phases: list[RoadmapPhase]) -> dict[str, str] | None
-```
-
-Finds the first step with `"pending"` status, traversing phases in order.
-
-- **Returns**: `{"id": "1.2", "description": "...", "phase": "Phase Name"}` or `None` if no pending steps
-
-## Source Location
-
-`src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py` (205 lines)
-
-## Related Documentation
-
-- [Roadmap Parser](roadmap-parser.md) — Usage guide and CLI syntax
-- [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md) — How updates interact with inference
+- **Status inference logic** → [Roadmap Status System](roadmap-status-system.md)
+- **Mutation-time vs parse-time semantics** → [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md)
+- **Surgical vs full-body update decisions** → [Roadmap Mutation Patterns](roadmap-mutation-patterns.md)
+- **CLI usage and parsing rules** → [Roadmap Parser](roadmap-parser.md)
