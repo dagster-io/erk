@@ -5,10 +5,8 @@ read_when:
   - diagnosing why an agent isn't using available documentation
   - adding a new tier of context injection
 tripwires:
-  - action: "designing knowledge delivery mechanisms for agents"
-    warning: "never expect agents to self-diagnose knowledge gaps — use passive context or structural triggers"
-  - action: "creating skills without clear invocation patterns"
-    warning: "skills without explicit invocation triggers perform identically to having no documentation"
+  - never expect agents to self-diagnose knowledge gaps — use passive context or structural triggers
+  - skills without explicit invocation triggers perform identically to having no documentation
 ---
 
 # Passive Context vs. On-Demand Retrieval
