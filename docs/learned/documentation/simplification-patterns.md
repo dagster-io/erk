@@ -3,301 +3,86 @@ title: Documentation Simplification Patterns
 read_when:
   - auditing or cleaning up documentation
   - removing duplication from docs
-  - understanding what makes docs maintainable
+  - deciding how to simplify an oversized or redundant doc
+  - replacing code blocks with source pointers
 tripwires:
   - action: "documenting implementation details that are derivable from code"
-    warning: "Use source pointers instead of duplication. See simplification-patterns.md for patterns on replacing static docs with dynamic references."
-last_audited: "2026-02-05"
+    warning: "Use source pointers instead of duplication. See simplification-patterns.md for the three simplification patterns."
+  - action: "restructuring or deleting doc content"
+    warning: "Run 'erk docs sync' after structural changes to regenerate indexes and fix broken cross-references."
+last_audited: "2026-02-08"
 audit_result: edited
 ---
 
 # Documentation Simplification Patterns
 
-This document captures three proven patterns for simplifying documentation, derived from audit PRs #6637, #6660, and #6666 which removed 553 lines of problematic content.
+Three patterns for reducing documentation maintenance burden, each targeting a different root cause of doc decay.
+
+## Pattern Decision Table
+
+| Symptom                                                                      | Pattern             | Core Action                                                         |
+| ---------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------- |
+| Doc lists fields, methods, config options, or enum values that exist in code | Static → Dynamic    | Replace enumeration with source pointer                             |
+| Same conceptual knowledge appears in 2+ docs                                 | Duplication Removal | Choose canonical location, replace others with cross-references     |
+| Doc covers multiple distinct topics or exceeds ~100 lines                    | Scope Reduction     | Extract peripheral details into focused docs, keep cross-references |
 
 ## Pattern 1: Static → Dynamic Replacement
 
-**Problem**: Documentation duplicates information that already exists in code.
+**Root cause**: Documentation enumerates things that code already defines — config fields, dataclass members, gateway methods, enum values.
 
-**Solution**: Replace static duplication with dynamic source pointers.
+**Why this decays**: Every code change silently invalidates the doc. No tooling detects the drift until an agent trusts the doc and uses an outdated field name or missing option.
 
-### Example 1: Configuration Fields
+**Fix**: Replace the enumeration with a source pointer to the authoritative definition. Point to the stable interface where the items are defined, not to an implementation that may change.
 
-**Before** (static duplication):
+**Pointer target priority** (most stable first):
 
-```markdown
-## Configuration Options
+1. ABC classes and abstract methods
+2. Schema/config model definitions (Pydantic, dataclasses)
+3. Enum definitions
+4. Concrete implementations (avoid unless no abstraction exists)
 
-The config system supports these fields:
+<!-- Source: packages/erk-shared/src/erk_shared/config/schema.py, GlobalConfigSchema -->
 
-- `erk_root`: Root directory for erk data
-- `use_graphite`: Enable Graphite integration
-- `github_planning`: Enable GitHub issues integration
-- `interactive_claude.verbose`: Show verbose output
-- `interactive_claude.permission_mode`: Permission mode
-- `interactive_claude.dangerous`: Skip permission prompts
-```
+For example, listing config fields should become a pointer to `GlobalConfigSchema` in the config schema module rather than enumerating each field. Similarly, gateway method lists should point to the relevant ABC files under the gateway package.
 
-**After** (dynamic pointer):
-
-````markdown
-## Configuration Options
-
-See `GlobalConfigSchema` and `InteractiveClaudeConfigSchema` in `packages/erk-shared/src/erk_shared/config/schema.py:31-89` for all available fields and descriptions.
-
-For field-level documentation, run:
-
-```bash
-erk config keys
-```
-````
-
-**Why it's better**:
-
-- Code is source of truth (no drift)
-- Users get current fields via CLI
-- Documentation focuses on concepts, not data
-
-**Savings**: 6 lines of static docs → 1 line pointer + CLI command
-
-### Example 2: Dataclass Fields
-
-**Before** (static duplication):
-
-```markdown
-The RoadmapStep dataclass contains:
-
-- `step_id: str` - Step identifier (e.g., "1.1")
-- `description: str` - What the step does
-- `status: str` - One of: pending, done, in_progress, blocked, skipped
-- `pr: str | None` - PR reference or None
-```
-
-**After** (dynamic pointer):
-
-```markdown
-See `RoadmapStep` dataclass in `objective_roadmap_shared.py:10-17` for field definitions.
-```
-
-**Why it's better**:
-
-- Field names can't drift (pointing to actual code)
-- Type annotations are authoritative
-- Less surface area to maintain
-
-**Savings**: 5 lines of duplication → 1 line pointer
-
-### Example 3: Gateway Methods
-
-**Before** (static duplication):
-
-```markdown
-The GitGateway provides these methods:
-
-- `get_current_branch(cwd) -> str | None` - Returns current branch name
-- `get_remote_url(repo_root, remote) -> str` - Returns remote URL
-- `has_uncommitted_changes(cwd) -> bool` - Checks if working tree has changes
-- `list_branches(cwd) -> list[str]` - Lists local branches
-```
-
-**After** (dynamic pointer):
-
-```markdown
-See git gateway sub-ABCs in `packages/erk-shared/src/erk_shared/gateway/git/` (e.g., `branch_ops/abc.py`, `status_ops/abc.py`) for available methods.
-```
-
-**Why it's better**:
-
-- Method signatures can't go stale
-- Users see actual implementation
-- Less documentation to update when methods change
-
-**Savings**: 4+ lines per gateway → 1 line pointer
+See [source-pointers.md](source-pointers.md) for the exact pointer format.
 
 ## Pattern 2: Duplication Removal
 
-**Problem**: Same information appears in multiple docs, creating synchronization burden.
+**Root cause**: The same conceptual knowledge gets written independently in multiple docs because authors don't find the existing doc before writing.
 
-**Solution**: Choose single canonical location, remove duplicates, add cross-references.
+**Why this decays**: When reality changes, some copies get updated and others don't. Agents find the stale copy and act on contradictory information — strictly worse than the information being absent entirely.
 
-### Example 1: Learn Pipeline Architecture
+**Fix**: Choose one canonical location for the knowledge. Replace all other occurrences with a single-line cross-reference. The canonical location should be the doc where the topic is the _primary_ subject, not a supporting detail.
 
-**Before** (duplicated in 3 docs):
+**Deduplication checklist**:
 
-- `docs/learned/planning/learn-workflow.md`: 40 lines describing learn pipeline
-- (second doc): 35 lines describing same pipeline
-- (third doc): 30 lines describing same pipeline
-
-**After** (single canonical doc):
-
-- `docs/learned/planning/learn-pipeline-workflow.md`: 60 lines (consolidated)
-- Other docs: 1-line pointer to canonical doc
-
-**Why it's better**:
-
-- Updates happen in one place
-- No risk of contradictory information
-- Clear single source of truth
-
-**Savings**: 105 lines across 3 docs → 60 lines in 1 doc + 2 pointers = 43 lines saved
-
-### Example 2: Roadmap Validation Checks
-
-**Before** (duplicated):
-
-- `docs/learned/objectives/roadmap-parser.md`: Lists all 5 validation checks
-- `docs/learned/objectives/roadmap-validation.md`: Lists same 5 checks
-- `docs/learned/cli/objective-commands.md`: Mentions validation checks
-
-**After** (consolidated):
-
-- `docs/learned/objectives/roadmap-validation.md`: Canonical list of all checks
-- Other docs: Pointer to roadmap-validation.md
-
-**Why it's better**:
-
-- Adding new validation check requires updating one doc
-- No risk of docs listing different check counts
-- Clear ownership of validation documentation
-
-**Savings**: 20+ lines of duplication → 2-3 pointers
+1. Grep `docs/learned/` for the duplicated concept before writing new content
+2. If found, add a cross-reference to the existing doc instead of re-explaining
+3. If multiple copies already exist, consolidate into the most topically appropriate doc
+4. Replace all other occurrences with one-line pointers to the canonical doc
 
 ## Pattern 3: Scope Reduction
 
-**Problem**: Documentation tries to cover too much, becoming unwieldy.
+**Root cause**: A document accumulates coverage of adjacent topics over time, becoming a mini-encyclopedia rather than a focused reference.
 
-**Solution**: Narrow scope to essential information, move peripheral details to specialized docs.
+**Why this decays**: Broad docs are expensive to maintain (changes to any covered topic require updating the omnibus doc) and expensive to read (agents searching for one topic load five unrelated sections, wasting context tokens).
 
-### Example 1: Gateway Documentation
+**Fix**: Identify the doc's core topic. Extract peripheral sections into their own focused docs (or confirm they already exist elsewhere). Replace extracted content with cross-references.
 
-**Before** (overly broad):
-
-```markdown
-# Gateway Pattern
-
-[30 lines explaining ABC pattern]
-[40 lines showing all 8 gateway implementations]
-[25 lines describing testing approach]
-[20 lines on when to create new gateways]
-[15 lines on subprocess wrappers]
-```
-
-**After** (focused):
-
-```markdown
-# Gateway Pattern
-
-[30 lines explaining ABC pattern]
-[10 lines linking to gateway-abc-implementation.md for checklist]
-[10 lines linking to subprocess-wrappers.md for wrapper details]
-
-See `src/erk/gateway/*.py` for implementations.
-```
-
-**Why it's better**:
-
-- Core concept explained, details delegated
-- Readers find what they need faster
-- Specialized docs can go deeper
-
-**Savings**: 130 lines → 50 lines focused + specialized docs
-
-### Example 2: Session Documentation
-
-**Before** (overly broad):
-
-```markdown
-# Session Discovery
-
-[50 lines on session file format]
-[40 lines on parallel session coordination]
-[30 lines on session upload workflow]
-[20 lines on session analysis]
-```
-
-**After** (focused):
-
-```markdown
-# Session Discovery
-
-[25 lines on how Claude Code stores sessions]
-[10 lines on discovery algorithm]
-
-Related workflows:
-
-- Session analysis: See session-inspector skill
-- Parallel sessions: See parallel-session-awareness.md
-```
-
-**Why it's better**:
-
-- Discovery doc focuses on discovery only
-- Related topics have their own docs
-- Users don't wade through unrelated content
-
-**Savings**: 140 lines → 35 lines + cross-references
-
-## Metrics from Audit PRs
-
-These patterns were proven effective across three major cleanup PRs:
-
-| PR    | Files Modified | Pattern Applied     | Lines Removed | Broken Paths Fixed |
-| ----- | -------------- | ------------------- | ------------- | ------------------ |
-| #6637 | 8 docs         | Duplication removal | 156           | 12                 |
-| #6660 | 10 docs        | Static → dynamic    | 200           | 8                  |
-| #6666 | 10 docs        | Scope reduction     | 197           | 32                 |
-| Total | 20 docs        | All three patterns  | **553 lines** | **52 paths**       |
-
-**Average**: ~28 lines removed per doc, 2.6 broken paths fixed per doc.
-
-## When to Apply Each Pattern
-
-### Use Static → Dynamic when:
-
-- Documentation lists fields, methods, or config options
-- Source code is the source of truth
-- Information changes when code changes
-
-### Use Duplication Removal when:
-
-- Same content appears in 2+ docs
-- Information is conceptual (not code-derived)
-- Clear canonical location exists or can be created
-
-### Use Scope Reduction when:
-
-- Documentation covers multiple distinct topics
-- Doc length exceeds 100 lines
-- Readers struggle to find specific information
+**Scope test**: If a doc needs multiple headings at the "topic" level rather than the "subtopic" level, it's probably covering too much. Each doc should have one clear purpose that its title communicates.
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Removing Too Much
+**Over-simplifying**: Deleting "why" explanations because they aren't code-derived. Conceptual reasoning is the entire purpose of learned docs — only remove content that restates what code already communicates. See [audit-methodology.md](audit-methodology.md) for the classification distinction between HIGH VALUE and DUPLICATIVE.
 
-**Problem**: Over-applying simplification removes valuable context.
+**Pointing to volatile code**: Source pointers to implementation files that change frequently create a different maintenance problem. Always prefer pointing to ABCs, schemas, and config models — these stable interfaces survive refactoring.
 
-**Example**: Deleting "why" explanations because they're "not code"
-
-**Fix**: Keep conceptual documentation, remove only duplication/derivable content.
-
-### Anti-Pattern 2: Breaking Without Fixing
-
-**Problem**: Deleting content without updating cross-references.
-
-**Example**: Removing a section and leaving broken links to it.
-
-**Fix**: Run `erk docs sync` after deletions to regenerate index and fix links.
-
-### Anti-Pattern 3: Pointing to Unstable Code
-
-**Problem**: Using source pointers to code that changes frequently.
-
-**Example**: Pointing to implementation details instead of stable ABCs.
-
-**Fix**: Point to ABCs, interfaces, and schemas (stable) not implementations (volatile).
+**Simplifying without fixing references**: Removing or restructuring content breaks links from other docs, the index, and tripwires files. Always run `erk docs sync` after structural changes to regenerate cross-references.
 
 ## Related Documentation
 
-- [audit-methodology.md](audit-methodology.md) - Complete audit process
-- [learned-docs-review.md](../review/learned-docs-review.md) - Automated quality checking
-- [documentation tripwires](tripwires.md) - Critical documentation rules
+- [audit-methodology.md](audit-methodology.md) — Audit process and classification framework
+- [source-pointers.md](source-pointers.md) — Format for replacing code blocks with references
+- [stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md) — The deeper case against embedded code
+- [tripwires.md](tripwires.md) — Documentation category tripwires

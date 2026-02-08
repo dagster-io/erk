@@ -1,52 +1,46 @@
 ---
 title: Language Scope Auditing
 read_when:
-  - writing documentation that includes code examples
-  - reviewing learned-docs for verbatim code violations
-  - understanding what code blocks are forbidden in docs/learned/
-last_audited: "2026-02-07 18:40 PT"
-audit_result: edited
+  - writing documentation that includes non-Python code examples
+  - documenting erkdesk or desktop-dash patterns in docs/learned/
+  - reviewing learned-docs for verbatim code across languages
+last_audited: "2026-02-08"
+audit_result: regenerated
+tripwires:
+  - Including TypeScript/Bash code blocks from erkdesk/ without checking the One Code Rule
+  - Assuming the verbatim copy prohibition only applies to Python
+  - Rationalizing erkdesk source as "third-party API pattern" because it uses React/Electron
 ---
 
 # Language Scope Auditing
 
-The verbatim copy prohibition in learned-docs applies to **all languages**, not just Python. Any code block longer than 5 lines that copies from source files in `src/erk/`, `packages/`, or `erkdesk/` should be replaced with a source pointer.
+## Why This Matters
 
-For the rationale behind this rule, see [stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md). For the replacement format, see [source-pointers.md](source-pointers.md).
+The One Code Rule is language-agnostic: no reproduced source code regardless of language. However, agents have a strong Python bias when self-policing — they instinctively flag `class Foo:` or `def bar(` as potential violations but let TypeScript interfaces and React component definitions pass unchallenged.
 
-## Detection Patterns by Language
+This is a practical problem because `erkdesk/` contains substantial TypeScript source, and `docs/learned/desktop-dash/` documents patterns from that code. The same staleness dynamics apply: a copied React component or Electron preload bridge goes stale just as silently as a copied Python class.
 
-When reviewing `docs/learned/` for verbatim copies, flag code blocks (5+ lines) matching these patterns:
-
-| Language   | Patterns to Flag                                                                |
-| ---------- | ------------------------------------------------------------------------------- |
-| Python     | `class Foo:`, `def bar(`, `from erk`, `@dataclass`, method/function bodies      |
-| TypeScript | `interface Foo {`, `type Foo =`, `export function`, React component definitions |
-| Bash       | Function definitions, multi-line script excerpts                                |
-| Any        | Constructor implementations, fake/mock class bodies, test helper functions      |
-
-**Fix for all**: Replace with a source pointer, or extract the key insight into 5 lines or fewer.
-
-## Automation Gap
+## The Blind Spot: Non-Python Code Blocks
 
 <!-- Source: .github/reviews/audit-pr-docs.md, Step 2-4 -->
 
-The `.github/reviews/audit-pr-docs.md` review automates detection for **Python only** (class/function extraction, source matching against `src/erk/` and `packages/erk-shared/src/`).
+The audit tooling (`.github/reviews/audit-pr-docs.md` review + `/local:audit-doc`) is methodologically language-agnostic — it extracts code references and matches against source files regardless of language. But effectiveness varies in practice:
 
-**Not yet automated**: TypeScript, Bash, and other languages require manual review.
+| Language   | Source Location | Audit Effectiveness | Why                                                           |
+| ---------- | --------------- | ------------------- | ------------------------------------------------------------- |
+| Python     | `src/erk/`      | High                | Primary codebase language; agents and tooling well-calibrated |
+| TypeScript | `erkdesk/`      | Lower               | Agents less likely to flag; fewer TypeScript auditing habits  |
+| Bash       | Scripts, hooks  | Lowest              | Often inline/ad-hoc; harder to match against specific sources |
 
-### Manual Audit Process
+The four exceptions from the One Code Rule still apply across all languages: data formats, third-party API patterns (React hooks, Electron IPC), anti-patterns marked WRONG, and I/O examples.
 
-For non-Python code blocks:
+## Anti-Pattern: Language-Based Exception Creep
 
-1. **Extract language tag** from fenced code block
-2. **Identify definitions** (interface, type, class, function)
-3. **Search source** for matching definition names
-4. **Compare content** (3+ consecutive matching lines = verbatim copy)
-5. **Replace** with source pointer if verbatim copy detected
+Agents sometimes rationalize keeping TypeScript code blocks by treating them as "third-party API patterns" when they're actually verbatim copies of erk source that happens to use React or Electron APIs.
+
+**The test**: Does the code block copy from a file in `erkdesk/`? If yes, it's erk source — not a third-party pattern — regardless of what frameworks it uses. A React component defined in `erkdesk/src/renderer/components/` is erk source, not a React teaching example.
 
 ## Related Documentation
 
-- [stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md) - Why verbatim code is problematic
-- [source-pointers.md](source-pointers.md) - How to replace verbatim code with pointers
-- `.github/reviews/audit-pr-docs.md` - Automated detection for Python code
+- [stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md) — Rationale for the prohibition
+- [source-pointers.md](source-pointers.md) — Replacement format for verbatim code

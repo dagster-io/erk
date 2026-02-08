@@ -3,103 +3,71 @@ title: Stale Code Blocks Are Silent Bugs
 read_when:
   - documenting implementation patterns with code examples
   - deciding whether to include verbatim code in docs
-  - understanding documentation maintenance trade-offs
+  - reviewing docs that contain embedded source code
+  - understanding why erk enforces source pointers over code blocks
+tripwires:
+  - action: "copying erk source code into a docs/learned/ markdown file"
+    warning: "Verbatim source in docs silently goes stale. Use a source pointer instead — see source-pointers.md."
+  - action: "adding a code block longer than a few lines to a learned doc"
+    warning: "Check if this falls under the One Code Rule exceptions (data formats, third-party APIs, anti-patterns, I/O examples). If not, use a source pointer."
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Stale Code Blocks Are Silent Bugs
 
-When documenting implementation patterns in `docs/learned/`, verbatim code blocks are a silent source of technical debt. They drift from the source code silently, misleading readers with outdated patterns that appear authoritative.
+This document explains _why_ erk treats embedded source code in `docs/learned/` as a defect — not a style issue. It captures the reasoning behind the One Code Rule and the enforcement system that makes it practical. For the replacement format, see [source-pointers.md](source-pointers.md). For audit classification details, see [audit-methodology.md](audit-methodology.md).
 
-## The Problem: Silent Drift
+## The Asymmetry That Makes Stale Docs Worse Than No Docs
 
-Verbatim code blocks copied from source files go stale when the implementation changes:
+Code in source files lives inside feedback loops: tests fail, type checkers flag mismatches, linters catch drift, and runtime errors surface problems. Code blocks in markdown have **zero feedback loops**. When the source changes, the doc copy stays frozen, and nothing flags the divergence.
 
-- **No compile-time feedback** when the source changes
-- **No runtime errors** when the docs diverge
-- **No obvious symptoms** to readers that the code is outdated
-- **False confidence** from seeing concrete code examples
+This asymmetry is the crux of the problem. An agent with _no_ documentation will read the source and discover the current pattern. An agent with _stale_ documentation will copy the outdated pattern from the doc, fully confident it's correct because it appeared in an authoritative context. The doc's authority turns from asset to liability the moment its content drifts.
 
-Stale code is worse than no code—it teaches the wrong patterns while appearing canonical.
+An early audit round found 11 phantom type definitions across 10 documents — classes, dataclasses, and enums that docs referenced but that had been removed from the codebase. Agents importing these phantom types got cryptic failures rather than a clear "this doesn't exist." That discovery motivated the shift from optional best-practice to enforced policy.
 
-## Why Stale Line Numbers Are Better
+## Fail-Loud vs Fail-Silent: The Core Design Choice
 
-Source pointers (file path with line range) intentionally go stale when the source changes. This is a feature, not a bug:
+The source pointer system exists to convert a silent failure into a loud one:
 
-| Failure Mode      | Detection                                 | Fix Effort                                    | Risk Level                            |
-| ----------------- | ----------------------------------------- | --------------------------------------------- | ------------------------------------- |
-| Stale code block  | None (silent)                             | High (requires comparing with current source) | **Critical** (teaches wrong patterns) |
-| Stale line number | Obvious (line range doesn't match method) | Low (jump to file, update range)              | **Low** (reader knows to verify)      |
+| Failure mode         | Detection                                   | Agent impact                                         |
+| -------------------- | ------------------------------------------- | ---------------------------------------------------- |
+| Stale code block     | None — appears correct                      | Agent copies wrong pattern with full confidence      |
+| Stale source pointer | Obvious — symbol or file path doesn't match | Agent reads actual source, discovers current pattern |
 
-Stale line numbers fail loudly. Stale code blocks fail silently.
+A source pointer that drifts is a minor inconvenience — the agent navigates to the file and finds the right symbol nearby. A code block that drifts is an active hazard — the agent implements the wrong pattern and believes it's canonical.
 
-## The Solution: Source Pointer Pattern
+This is also why name-based pointers (`ClassName.method_name`) are preferred over line-range pointers: symbol names survive refactoring, while line numbers shift on any edit. The pointer format trades a small readability cost for a large reliability gain.
 
-Replace verbatim code blocks longer than 5 lines with a two-part reference:
+## When Code Blocks Are Appropriate
 
-### Part 1: HTML Comment with Line Range
+Not all code blocks carry this risk. The One Code Rule (defined in `learned-docs-core.md`) grants four exceptions where the content either doesn't exist in erk source or the block's value depends on its exact form:
 
-```markdown
-<!-- Source: path/to/file.py:START-END -->
-```
+1. **Data formats** — JSON/YAML/TOML shape examples (structure, not processing logic)
+2. **Third-party API patterns** — Click, pytest, Rich (teaching external APIs that aren't in erk source)
+3. **Anti-patterns marked WRONG** — the wrongness is the point; these are intentionally incorrect
+4. **I/O examples** — CLI commands with expected output (self-contained, stable)
 
-### Part 2: Prose Reference with Context
+The decision test is mechanical: "Could an agent get this by reading erk source?" If yes, use a pointer regardless of how short the excerpt is. Partial excerpts ("just the interesting lines") create the same staleness problem as copying the whole function.
 
-```markdown
-See `ClassName.method_name()` in `path/to/file.py:START-END`.
-```
+## The Three-Part Enforcement Loop
 
-**Why this works:**
+This isn't a style guideline — it's an enforced system with three interlocking pieces:
 
-1. **Readers get the exact location** to find current implementation
-2. **Stale line numbers are obvious** when they don't match the method
-3. **Prose provides context** about what's important to notice
-4. **Tooling can validate** that file paths and line ranges exist
+| Component                                                  | Role                                                                    | When it acts                                                |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Content quality standards (`learned-docs-core.md`)         | Define the One Code Rule and its exceptions                             | At authoring time — agents consult before writing           |
+| Source pointers ([source-pointers.md](source-pointers.md)) | Provide the replacement format with machine-greppable HTML comments     | At authoring time — agents use format when replacing blocks |
+| PR review automation (`.github/reviews/audit-pr-docs.md`)  | Enforce the rule by classifying code blocks and posting inline comments | At PR time — catches violations before merge                |
 
-See [source-pointers.md](source-pointers.md) for complete format specification.
+<!-- Source: .github/reviews/audit-pr-docs.md -->
 
-## Detection: PR-Time Review Automation
+The `audit-pr-docs` review audits the **full document** (not just changed lines) on every PR touching `docs/learned/`. It classifies each code block as VERBATIM, ANTI-PATTERN, CONCEPTUAL, or TEMPLATE, and posts inline comments for verbatim blocks with the exact source location and suggested pointer replacement. This "audit on touch" design means stale code blocks surface when docs are being actively worked on — the cheapest time to fix them.
 
-The `.github/reviews/audit-pr-docs.md` review runs on every PR touching `docs/learned/`:
-
-- **Scans `+` diff lines** for code blocks longer than 5 lines
-- **Detects verbatim copies** by matching against source files
-- **Posts inline comments** with exact source path and line numbers
-- **Suggests source pointer format** as replacement
-
-When you receive a learned-docs review comment, it means you've included verbatim source that should be converted to a source pointer.
-
-<!-- Source: .github/reviews/audit-pr-docs.md:20-69 -->
-
-See the automated detection logic in `.github/reviews/audit-pr-docs.md:20-69` (Step 2-4: extract code blocks, check for matches, classify as verbatim).
-
-## When Short Code Blocks Are Okay
-
-Keep verbatim code blocks (≤5 lines) when:
-
-- **Showing external library patterns** (not erk source)
-- **Illustrating a general concept** with made-up names
-- **Providing CLI command examples** with output
-- **Demonstrating config file syntax** (YAML, TOML, JSON)
-
-The 5-line threshold balances illustration value against staleness risk.
-
-## Maintenance Trade-offs
-
-**Accepting stale pointers:**
-
-- Line numbers change when source code evolves
-- Readers must verify the pointer still matches the method
-- Tooling can validate file paths exist (future enhancement)
-
-**Rejecting stale code:**
-
-- Outdated patterns teach wrong implementation habits
-- No automated way to detect divergence
-- Misleads readers with false confidence
-
-This is an intentional trade-off: fail loudly (stale pointers) instead of silently (stale code).
+Together the three pieces form a closed loop: standards define what's wrong, pointers define the fix, and automation catches violations before they merge. Any agent writing or reviewing documentation needs to understand all three.
 
 ## Related Documentation
 
-- [source-pointers.md](source-pointers.md) - Complete source pointer format specification
-- `.github/reviews/audit-pr-docs.md` - Automated PR-time detection of verbatim copies
+- [source-pointers.md](source-pointers.md) — Replacement format specification (two-part HTML comment + prose reference)
+- [audit-methodology.md](audit-methodology.md) — How audits classify content and the constants exception
+- [simplification-patterns.md](simplification-patterns.md) — Pattern 1 (Static → Dynamic) applies this principle to enumerated lists
