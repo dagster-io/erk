@@ -1,7 +1,7 @@
 ---
 title: PermissionMode Abstraction
 last_audited: "2026-02-08"
-audit_result: edited
+audit_result: clean
 tripwires:
   - action: "modifying PermissionMode enum or permission mode mappings"
     warning: "permission_mode_to_claude() (and future permission_mode_to_codex()) must stay in sync. Update both when changing mappings."
