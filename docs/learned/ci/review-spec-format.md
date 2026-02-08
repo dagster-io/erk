@@ -2,206 +2,157 @@
 title: Review Spec Format
 read_when:
   - creating a new code review
-  - understanding review spec structure
-  - debugging review behavior
-last_audited: "2026-02-05 17:40 PT"
-audit_result: edited
+  - understanding why review specs follow certain patterns
+  - debugging review behavior or structure
+last_audited: "2026-02-08 13:45 PT"
+audit_result: regenerated
 ---
 
 # Review Spec Format
 
-Review specification files in `.github/reviews/` follow a consistent structure beyond the YAML frontmatter. This document captures the body patterns that have emerged across erk's review suite.
+Review specifications in `.github/reviews/` follow conventions that evolved to balance agent comprehension, maintenance burden, and historical debugging needs.
 
-## Overview
+## Why Structured Algorithm Steps
 
-A review spec consists of:
+Review specs use numbered steps (`## Step 1: [Action]`, `## Step 2: [Next Action]`) instead of prose instructions because:
 
-1. **YAML frontmatter** - Configuration (documented in [convention-based-reviews.md](convention-based-reviews.md))
-2. **Algorithm steps** - Step-by-step instructions for the review agent
-3. **Classification taxonomy** - What to flag vs skip
-4. **Comment templates** - Formats for inline and summary comments
-5. **Activity log** - Historical tracking of review runs
+1. **Sequential execution clarity** — Agents process steps in order without confusion about dependency order
+2. **Clear checkpoints** — Each step produces discrete output that the next step consumes
+3. **Debugging specificity** — When a review misbehaves, activity logs can reference "Step 3 failed" instead of ambiguous prose
+4. **Failure isolation** — If Step 2 fails, the agent doesn't attempt Steps 3-6 with partial data
 
-## Algorithm Structure
+The alternative (prose instructions like "gather context, then analyze, then comment") fails because agents struggle with implicit ordering and error recovery.
 
-Reviews typically follow a **5-6 step algorithm pattern**:
+<!-- Source: .github/reviews/audit-pr-docs.md, Step 1-6 pattern -->
+<!-- Source: .github/reviews/test-coverage.md, Step 1-6 pattern -->
+<!-- Source: .github/reviews/tripwires.md, Step 1-5 pattern -->
 
-### Pattern
+See the actual review files in `.github/reviews/` for implemented step structures.
+
+## Why Classification Taxonomies
+
+Reviews define explicit classification rules ("Category A: FLAG IT", "Category B: Skip") rather than general guidance because:
+
+1. **Deterministic behavior** — Same code produces same classification across runs
+2. **False positive control** — Explicit skip rules prevent flagging known-acceptable patterns
+3. **Activity log consistency** — Classifications map directly to log entries ("2 verbatim blocks detected")
+
+### Example: The 5-Line Threshold
+
+The learned docs review skips code blocks ≤5 lines because:
+
+- Short snippets (≤5 lines) are teaching aids, not implementation copies
+- Verbatim detection heuristics have high false positive rates below 6 lines
+- Activity logs would be dominated by noise ("flagged 40 short snippets")
+
+This threshold isn't about staleness risk (even 3-line snippets go stale). It's about signal-to-noise ratio in review output.
+
+<!-- Source: docs/learned/documentation/source-pointers.md, 5-line threshold -->
+
+See `docs/learned/documentation/source-pointers.md` for the decision checklist behind this threshold.
+
+## Why Activity Logs Exist
+
+Activity logs track review behavior across PR iterations for debugging recurring issues:
+
+**Problem being solved**: Review agent behavior changes between runs due to:
+
+- Code changes in the PR (new commits)
+- Changes to the review spec itself
+- Model behavior drift
+
+**Why 10 entries?** Balance between:
+
+- Sufficient history to identify patterns ("flagged this 3 times, then stopped")
+- GitHub comment size limits (100KB hard limit)
+- Visual scan burden (humans debugging reviews need to read these)
+
+**What logs capture**:
+
+- Aggregate counts ("2 verbatim blocks detected")
+- Specific violations ("src/erk/foo.py in docs/learned/bar.md")
+- Clean runs ("All docs clean, no verbatim copies detected")
+
+<!-- Source: .github/reviews/audit-pr-docs.md, activity log section -->
+<!-- Source: .github/reviews/test-coverage.md, activity log section -->
+
+See existing review specs for implemented log formats.
+
+## Why Heuristics Over Precision
+
+Reviews use pattern matching and line-by-line comparison instead of AST parsing because:
+
+1. **Execution speed** — No import overhead, runs in <30s on large PRs
+2. **Incomplete code robustness** — Handles partial code blocks and pseudo-code
+3. **Formatting tolerance** — Matches despite whitespace/comment differences
+4. **Good enough threshold** — False negatives are acceptable (human reviews catch them), false positives are not
+
+<!-- Source: .github/reviews/audit-pr-docs.md, verbatim detection heuristic -->
+
+The learned docs review demonstrates this: it looks for `from erk` patterns and `class Foo`/`def bar` names rather than importing modules and inspecting ASTs.
+
+## Why Comment Templates Are Rigid
+
+Inline comment format is highly structured:
 
 ```markdown
-## Step 1: [Gather Context]
+**[Review Name]**: [Brief violation description]
 
-Run commands to get PR diff, changed files, etc.
+[Context/details]
 
-## Step 2: [Extract/Classify]
-
-Process the gathered data into categories or buckets
-
-## Step 3: [Detection/Analysis]
-
-Apply heuristics or rules to detect violations
-
-## Step 4: [Classification]
-
-Decide what to flag vs what to skip
-
-## Step 5: [Post Comments]
-
-Post inline comments on flagged items
-
-## Step 6: [Summary]
-
-Post summary comment with aggregate results
+Suggested fix: [Specific action]
 ```
 
-### Examples Across Reviews
+**Not for human politeness** — for agent parsing. Other erk tools may:
 
-**Learned Docs Review** (6 steps):
+- Parse review comments to generate reports
+- Detect duplicate violations across reviews
+- Track resolution status
 
-1. Get PR diff and identify changed doc files
-2. Extract code blocks from changed/added lines
-3. Check each code block for verbatim source matches
-4. Classify each code block
-5. Post inline comments
-6. Summary comment format
+Future tooling depends on consistent structure. See `docs/learned/review/inline-comment-deduplication.md` for marker-based deduplication patterns.
 
-**Test Coverage Review** (6 steps):
+## Common Pitfalls When Creating Reviews
 
-1. Categorize PR files
-2. Early exit (if no source changes)
-3. Check test coverage for each source file
-4. Analyze test balance
-5. Post inline comments
-6. Summary comment with table
+### Anti-Pattern: Vague Step Descriptions
 
-**Tripwires Review** (5 steps):
+**WRONG**: `## Step 1: Setup`
 
-1. Load tripwire index (category-specific tripwire files)
-2. Match tripwires to diff
-3. Load docs for matched tripwires (lazy loading)
-4. Post inline comments
-5. Summary comment
+**RIGHT**: `## Step 1: Get PR Diff and Identify Changed Doc Files`
 
-## Classification Taxonomy
+Agents need action verbs and objects, not abstract phases.
 
-Reviews define clear classification rules for what to flag vs skip.
+### Anti-Pattern: Embedding Classification Logic in Steps
 
-### Pattern
+**WRONG**:
 
 ```markdown
-## Step N: Classify Each [Item]
+## Step 3: Analyze Files
 
-- **Category A**: Description → **FLAG IT**
-- **Category B**: Description → Skip
-- **Category C**: Description → Skip
+Read each file and decide if it needs tests...
 ```
 
-### Examples
+**RIGHT**: Separate classification into its own step with explicit taxonomy:
 
-**Learned Docs** (4 categories):
+```markdown
+## Step 3: Classify Each File
 
-- Verbatim copy → FLAG
-- Pattern/template → Skip
-- CLI/command example → Skip
-- Short snippet (≤5 lines) → Skip
+- **Thin CLI wrapper**: Only Click decorators → Skip
+- **Type-only file**: Only TypeVar/Protocol → Skip
+- **New source file with logic**: → FLAG IT
+```
 
-**Test Coverage** (6 buckets + untestable detection):
+This makes activity logs meaningful ("3 thin CLI wrappers skipped, 1 source file flagged").
 
-- source_added → Check for tests
-- source_modified (significant) → Check for tests
-- Legitimately untestable → Skip
+### Anti-Pattern: Assuming Tool Availability
 
-## Comment Templates
+Review specs must declare tool constraints in frontmatter (`allowed_tools`). Don't assume `Write` or `Bash(*)` access. Most reviews only need `Read(*)` and `Bash(gh:*)`.
 
-### Inline Comment Format
+<!-- Source: docs/learned/ci/convention-based-reviews.md, tool constraints section -->
 
-Reviews use a consistent inline comment structure: `**[Review Name]**: [Brief violation description]`, followed by details, context, and a suggested fix. See the Step 5 sections of each review spec in `.github/reviews/` for the exact templates (e.g., `.github/reviews/audit-pr-docs.md` Step 5, `.github/reviews/test-coverage.md` Step 5).
-
-### Summary Comment Format
-
-Most reviews include three parts: (1) a review name header, (2) a table with aggregate results per file/category, and (3) an activity log with the last 10 entries. See the Step 6 sections of each review spec in `.github/reviews/` for the exact formats.
-
-## Activity Log Pattern
-
-Multiple reviews use an activity log to track behavior over time.
-
-### Pattern Rules
-
-1. **Prepend new entries** at the top
-2. **Keep last 10 entries** maximum
-3. **Include timestamp** and brief description
-4. **Provide context** for debugging review behavior across PR iterations
-
-### Example Entry Formats
-
-**Learned Docs**:
-
-- "Found 2 verbatim blocks (src/erk/gateway/git/git.py in docs/learned/testing/testing.md)"
-- "All docs clean, no verbatim copies detected"
-- "1 verbatim block detected in docs/learned/architecture/subprocess-wrappers.md"
-
-**Test Coverage**:
-
-- "2 source files added, 1 untested (src/erk/foo.py)"
-- "All source additions have tests"
-- "Net test reduction: 3 deleted, 1 added"
-
-### Retention Limit
-
-**Why 10 entries?** Balances history (debugging recurring issues) with comment size (GitHub comment length limits).
-
-## Step Descriptions
-
-Each step should have:
-
-1. **Clear heading**: `## Step N: [Action Verb + Object]`
-2. **Commands to run**: Specific bash/tool commands
-3. **Expected output**: What the step should produce
-4. **Decision logic**: How to process the results
-
-### Good Examples
-
-✅ `## Step 1: Get PR Diff and Identify Changed Doc Files`
-✅ `## Step 3: Check Each Code Block for Verbatim Source Matches`
-✅ `## Step 2: Categorize PR Files`
-
-### Avoid
-
-❌ `## Step 1: Setup` (too vague)
-❌ `## Do the analysis` (no step number)
-❌ `## Check files` (which files? for what?)
-
-## Heuristics Over Precision
-
-Review agents use **heuristic-based detection** rather than precise parsing for speed and robustness.
-
-### Example: Learned Docs Review
-
-Instead of AST parsing:
-
-- Import checks: Look for `from erk` patterns
-- Name extraction: Regex for `class Foo`, `def bar`
-- Line matching: Simple line-by-line comparison
-
-**Why heuristics?**
-
-- Fast execution (no import overhead)
-- Handles incomplete code blocks
-- Tolerates formatting differences
-- Good enough for review purposes
-
-## Review Examples
-
-| Review                  | File                           | Steps | Categories | Activity Log |
-| ----------------------- | ------------------------------ | ----- | ---------- | ------------ |
-| Audit PR Docs           | `audit-pr-docs.md`             | 5     | 4          | Yes          |
-| Test Coverage Review    | `test-coverage.md`             | 6     | 6          | Yes          |
-| Tripwires Review        | `tripwires.md`                 | 5     | Varies     | Yes          |
-| Dignified Python        | `dignified-python.md`          | 5     | Varies     | Yes          |
-| Dignified Code Simplify | `dignified-code-simplifier.md` | 3     | N/A        | Yes          |
+See `docs/learned/ci/convention-based-reviews.md` for the tool permission model.
 
 ## Related Documentation
 
-- [Convention-Based Reviews](convention-based-reviews.md) - Frontmatter schema and workflow
-- [Inline Comment Deduplication](../review/inline-comment-deduplication.md) - Marker-based deduplication
-- [Learned Docs Review](../review/learned-docs-review.md) - Example review with 6-step algorithm
+- [Convention-Based Reviews](convention-based-reviews.md) — Frontmatter schema and discovery workflow
+- [Source Pointers](../documentation/source-pointers.md) — Why the learned docs review exists
+- [Inline Comment Deduplication](../review/inline-comment-deduplication.md) — Marker-based comment tracking
