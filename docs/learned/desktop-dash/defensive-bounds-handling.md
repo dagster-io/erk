@@ -1,79 +1,48 @@
 ---
 title: Defensive Bounds Handling
 read_when:
-  - working with WebContentsView bounds, debugging Electron crashes, implementing IPC bounds updates
-last_audited: "2026-02-07 18:13 PT"
-audit_result: edited
+  - working with WebContentsView bounds in erkdesk
+  - debugging Electron crashes related to setBounds
+  - adding new IPC handlers that pass coordinates to Electron APIs
+tripwires:
+  - action: "passing renderer-reported bounds to Electron setBounds()"
+    warning: "never pass renderer-reported bounds directly to Electron setBounds() without clamping"
+  - action: "implementing bounds validation in erkdesk"
+    warning: "always clamp at the main process trust boundary, not only in the renderer"
 ---
 
 # Defensive Bounds Handling
 
-The erkdesk main process applies defensive clamping and rounding to WebContentsView bounds before calling `setBounds()`. This prevents silent Electron crashes caused by fractional or negative coordinates.
+Electron's `WebContentsView.setBounds()` silently crashes on fractional or negative values. The erkdesk architecture handles this through a **defense-in-depth split**: the renderer enforces logical constraints, and the main process enforces API-level safety at the trust boundary.
 
-## The Problem
+## Why This Exists
 
-Electron's `WebContentsView.setBounds()` expects integer values for `x`, `y`, `width`, and `height`. Passing fractional or negative values can cause:
+`getBoundingClientRect()` can return fractional pixels (CSS transforms, zoom levels) and, in rare browser quirks, negative coordinates. Passing these directly to `setBounds()` causes silent Electron crashes — no error message, just termination. The failure mode varies by platform.
 
-1. **Silent crashes** — Electron may terminate without error messages
-2. **Rendering glitches** — WebContentsView appears in wrong position or doesn't render
-3. **Unpredictable behavior** — Varies by platform (macOS vs Windows vs Linux)
+## Defense-in-Depth: Two Layers, Two Responsibilities
 
-### Source of Invalid Bounds
+| Layer                          | Responsibility      | Enforces                              |
+| ------------------------------ | ------------------- | ------------------------------------- |
+| **Renderer** (SplitPane)       | Logical correctness | Min widths, divider position clamping |
+| **Main process** (IPC handler) | API safety          | Non-negative integers for all bounds  |
 
-Even though the renderer uses `getBoundingClientRect()` (which should return valid values), edge cases can produce problematic coordinates:
+**Why not just validate in the renderer?** The main process is the trust boundary — it directly calls Electron APIs and must never assume renderer data is well-formed. Additional sources of bounds may be added in the future, and the main process must be robust against all of them.
 
-- **Fractional pixels** — CSS transforms or zoom levels can yield `rect.x = 400.5`
-- **Negative coordinates** — Rare browser quirks or off-screen elements
-- **Race conditions** — Window resize events where measurements are mid-transition
+<!-- Source: erkdesk/src/main/index.ts, ipcMain.on("webview:update-bounds") -->
 
-## The Solution
-
-The `webview:update-bounds` IPC handler applies `Math.max(0, Math.floor(value))` to every coordinate before calling `setBounds()`. See `erkdesk/src/main/index.ts:44-53` for the implementation.
-
-### Pattern Breakdown
-
-The two-step clamping — `Math.max(0, Math.floor(bounds.x))` — works as follows:
-
-1. `Math.floor()` truncates fractional pixels to integers (e.g., `400.7` → `400`)
-2. `Math.max(0, ...)` clamps negative values to zero (e.g., `-5` → `0`)
-
-This ensures Electron always receives non-negative integer bounds.
-
-## Why Not Validate in Renderer?
-
-**Q**: Why not clamp bounds in the SplitPane component before sending to IPC?
-
-**A**: Defense-in-depth. The main process is the authoritative layer that directly calls Electron APIs, so it must be robust against all possible inputs:
-
-- **Trust boundary** — Main process should never assume renderer sends perfect data
-- **Multiple renderers** — Future versions might have multiple windows/sources of bounds
-- **Electron quirks** — Platform-specific Electron behavior may change
-
-### Renderer's Responsibility
-
-The SplitPane component ensures **logical correctness** by clamping the divider position between minimum left and right widths. See `SplitPane.tsx` for the constraint logic.
-
-### Main Process's Responsibility
-
-The main process ensures **API safety** by applying `Math.max(0, Math.floor())` to all bounds values before passing to Electron.
+See the `webview:update-bounds` handler in `erkdesk/src/main/index.ts` for the clamping implementation. The renderer-side constraint logic is in `SplitPane.tsx`'s drag handler.
 
 ## Zero-Bounds Initialization
 
-On startup, the WebContentsView is initialized with zero bounds (`{x: 0, y: 0, width: 0, height: 0}`) and loads `about:blank`. See `erkdesk/src/main/index.ts:40-42`.
+The WebContentsView starts at zero bounds with `about:blank` because no valid position exists until the renderer measures the split layout. This prevents a flash of incorrectly-positioned content — the view is effectively invisible until the first bounds report arrives via IPC.
 
-**Rationale**: The WebContentsView has no valid position until the renderer measures the split layout. Zero bounds make it invisible, avoiding a flash of incorrectly-positioned content during startup. Once the renderer reports real bounds via IPC, the view becomes visible.
+## Anti-Patterns
 
-## Related Crashes Prevented
+**WRONG**: Passing `getBoundingClientRect()` values directly through IPC to `setBounds()` without clamping. Even though the values are "usually" integers, edge cases (zoom, CSS transforms, mid-resize race conditions) will produce fractional values that crash Electron silently.
 
-This pattern prevents crashes from:
-
-1. **Fractional coordinates** — `setBounds({ x: 400.5, ... })` → Electron crash
-2. **Negative coordinates** — `setBounds({ x: -10, ... })` → Electron crash
-3. **Negative dimensions** — `setBounds({ width: -200, ... })` → Electron crash
-
-The defensive pattern catches all three cases.
+**WRONG**: Clamping only in the renderer. The main process must independently ensure safety because it's the trust boundary for Electron API calls.
 
 ## Related Documentation
 
 - [WebView API](webview-api.md) — IPC channels and bounds update flow
-- [SplitPane Implementation](split-pane-implementation.md) — How renderer calculates bounds
+- [SplitPane Implementation](split-pane-implementation.md) — Renderer-side layout and bounds reporting lifecycle

@@ -2,145 +2,74 @@
 title: Workflow Commands
 read_when:
   - "triggering GitHub Actions workflows from CLI"
-  - "using erk launch"
-  - "understanding WORKFLOW_COMMAND_MAP"
+  - "adding a new workflow to erk launch"
+  - "understanding local vs remote command duality"
+tripwires:
+  - action: "modifying WORKFLOW_COMMAND_MAP or workflow command mapping"
+    warning: "WORKFLOW_COMMAND_MAP maps command names to .yml filenames — command names intentionally diverge from filenames (e.g., pr-fix-conflicts → pr-fix-conflicts.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)"
+  - action: "implementing plan-implement command launcher"
+    warning: "plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError — use erk plan submit instead"
+  - action: "modifying PR workflow dispatch behavior"
+    warning: "PR workflows automatically update plan issue dispatch metadata when the branch follows the P{issue_number} naming pattern"
+last_audited: "2026-02-08 05:59 PT"
+audit_result: clean
 ---
 
 # Workflow Commands
 
-The `erk launch` command provides a unified interface for triggering GitHub Actions workflows that run Claude-powered operations remotely.
+## Design Decisions
 
-## Available Workflows
+### Why a Unified Launcher
 
-| Subcommand            | Workflow File             | Description                                   |
-| --------------------- | ------------------------- | --------------------------------------------- |
-| `pr-fix-conflicts`    | `pr-fix-conflicts.yml`    | Rebase PR with AI-powered conflict resolution |
-| `pr-address`          | `pr-address.yml`          | Address PR review comments remotely           |
-| `objective-reconcile` | `objective-reconcile.yml` | Reconcile auto-advance objectives             |
-| `learn`               | `learn.yml`               | Extract documentation from plan session       |
+`erk launch` consolidates all GitHub Actions workflow triggers behind a single command instead of scattering them across subcommand groups (e.g., `erk pr fix-conflicts-remote`, `erk workflow launch`). This was a deliberate migration away from the old pattern where each remote operation had its own command in the relevant noun group.
 
-## Command Syntax
+The trade-off: the launcher uses a flat option namespace shared across all workflows (`--pr`, `--issue`, `--objective`, `--model`, `--no-squash`, `--dry-run`), with per-workflow validation enforcing which options are required. This avoids Click subcommand proliferation but means invalid option combinations are caught at runtime, not by the CLI framework.
 
-```bash
-erk launch <workflow-name> [options]
-```
+### Local vs Remote Duality
 
-### Options by Workflow
+Two operations have both local and remote variants — `pr fix-conflicts` and `pr address`. The local commands live under `erk pr` and invoke Claude CLI directly (requiring `--dangerous` flag). The remote commands are accessed via `erk launch` and trigger GitHub Actions workflows instead.
 
-| Workflow              | Required Options                  | Optional Options                 |
-| --------------------- | --------------------------------- | -------------------------------- |
-| `pr-fix-conflicts`    | None (infers from current branch) | `--pr`, `--no-squash`, `--model` |
-| `pr-address`          | `--pr`                            | `--model`                        |
-| `objective-reconcile` | `--objective`                     | `--dry-run`                      |
-| `learn`               | `--issue`                         | None                             |
+<!-- Source: src/erk/cli/commands/pr/fix_conflicts_cmd.py, fix_conflicts -->
+<!-- Source: src/erk/cli/commands/pr/address_cmd.py, address -->
 
-## Usage Examples
+The local variants reference the remote alternatives in their help text, creating discoverability in both directions. See `fix_conflicts()` in `src/erk/cli/commands/pr/fix_conflicts_cmd.py` and `address()` in `src/erk/cli/commands/pr/address_cmd.py`.
 
-### Fix Conflicts on PR
+### Why plan-implement Is Blocked
 
-```bash
-# Fix conflicts on current branch's PR
-erk launch pr-fix-conflicts
+`plan-implement` exists in `WORKFLOW_COMMAND_MAP` but `erk launch plan-implement` always raises `UsageError` directing users to `erk plan submit`. The plan-implement workflow requires branch creation, PR setup, and metadata initialization that `erk plan submit` handles as a coordinated sequence. Triggering the workflow directly would skip these prerequisites and produce orphaned workflow runs.
 
-# Fix conflicts on specific PR
-erk launch pr-fix-conflicts --pr 123
+## Adding a New Workflow
 
-# Skip commit squashing
-erk launch pr-fix-conflicts --pr 123 --no-squash
+When adding a workflow to `erk launch`:
 
-# Use specific Claude model
-erk launch pr-fix-conflicts --model claude-sonnet-4-5
-```
+1. Add the command-name → filename mapping to `WORKFLOW_COMMAND_MAP` in `src/erk/cli/constants.py`
+2. Create a `_trigger_<name>()` handler function in `src/erk/cli/commands/launch_cmd.py`
+3. Add a dispatch branch in the `launch()` Click command body
+4. Add any new Click options to the shared option set on the `launch` command
 
-### Address PR Review Comments
+<!-- Source: src/erk/cli/constants.py, WORKFLOW_COMMAND_MAP -->
+<!-- Source: src/erk/cli/commands/launch_cmd.py, launch -->
 
-```bash
-# Address comments on specific PR
-erk launch pr-address --pr 456
+The handler functions follow a consistent pattern: validate inputs → fetch context from GitHub → build `inputs: dict[str, str]` → call `ctx.github.trigger_workflow()`. See `_trigger_pr_fix_conflicts()` and `_trigger_pr_address()` in `src/erk/cli/commands/launch_cmd.py` for the canonical examples.
 
-# With specific model
-erk launch pr-address --pr 456 --model claude-opus-4
-```
+## Plan Dispatch Metadata Side Effect
 
-### Reconcile Objectives
+PR-related workflows (`pr-fix-conflicts`, `pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch name follows the `P{issue_number}-*` pattern. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan issue body.
 
-```bash
-# Reconcile specific objective
-erk launch objective-reconcile --objective 789
+<!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, maybe_update_plan_dispatch_metadata -->
 
-# Preview mode (no mutations)
-erk launch objective-reconcile --objective 789 --dry-run
-```
+This is a cross-cutting concern — the launch command doesn't know about plans, but the metadata helper silently links workflow runs to their originating plan issues. The function uses multiple LBYL early returns (no matching branch pattern, no node ID available, no plan-header metadata block) to gracefully skip non-plan branches.
 
-### Trigger Learn Workflow
+## Anti-Patterns
 
-```bash
-# Extract docs from plan issue session
-erk launch learn --issue 123
-```
+**DON'T trigger plan-implement via `erk launch`** — always use `erk plan submit`, which handles the full branch + PR + metadata setup sequence.
 
-## Architecture
+**DON'T add workflow-specific subcommands under noun groups** — use `erk launch <name>` for all remote workflow triggers. The old pattern (`erk pr fix-conflicts-remote`) was migrated away from intentionally.
 
-### WORKFLOW_COMMAND_MAP
-
-The mapping from command names to workflow files is defined in `src/erk/cli/constants.py`:
-
-```python
-WORKFLOW_COMMAND_MAP: dict[str, str] = {
-    "plan-implement": "erk-impl.yml",
-    "pr-fix-conflicts": "erk-rebase.yml",
-    "pr-address": "pr-address.yml",
-    "objective-reconcile": "objective-reconcile.yml",
-    "learn": "learn-dispatch.yml",
-}
-```
-
-### Workflow Input Building
-
-Each workflow has a dedicated handler function that:
-
-1. Validates required options
-2. Fetches PR/issue context from GitHub
-3. Builds workflow-specific inputs dict
-4. Triggers the workflow via GitHub API
-
-## Prerequisites
-
-- GitHub CLI (`gh`) must be authenticated
-- Required GitHub Actions secrets must be configured:
-  - `ERK_QUEUE_GH_PAT`
-  - `ANTHROPIC_API_KEY`
-  - `CLAUDE_CODE_OAUTH_TOKEN`
-
-## Migration from Old Commands
-
-The `erk launch` command replaces the previous pattern of separate remote commands:
-
-| Old Command                   | New Command                           |
-| ----------------------------- | ------------------------------------- |
-| `erk pr fix-conflicts-remote` | `erk launch pr-fix-conflicts`         |
-| `erk pr address-remote`       | `erk launch pr-address --pr <number>` |
-| `erk workflow launch`         | `erk launch`                          |
-
-## Error Handling
-
-The command validates:
-
-- GitHub authentication status
-- Workflow name validity
-- Required options for each workflow
-- PR/issue existence and state (for PR workflows)
-
-Example error messages:
-
-```
-Error: Unknown workflow 'invalid'. Available workflows: learn, objective-reconcile, plan-implement, pr-address, pr-fix-conflicts
-Error: --pr is required for pr-address workflow
-Error: Cannot rebase MERGED PR - only OPEN PRs can be rebased
-```
+**DON'T hardcode workflow filenames in handler functions** — always resolve through `WORKFLOW_COMMAND_MAP` via `_get_workflow_file()`, even inside the handler that "knows" its own workflow name. This keeps the mapping authoritative.
 
 ## Related Documentation
 
-- [Remote Workflow Template](../erk/remote-workflow-template.md) - Workflow YAML patterns
-- [GitHub Actions Workflow Patterns](../ci/github-actions-workflow-patterns.md) - CI best practices
-- [Command Organization](command-organization.md) - CLI structure decisions
+- [Remote Workflow Template](../erk/remote-workflow-template.md) — Workflow YAML patterns for the Actions side
+- [GitHub Actions Workflow Patterns](../ci/github-actions-workflow-patterns.md) — CI best practices
+- [Command Organization](command-organization.md) — CLI structure decisions including verb placement

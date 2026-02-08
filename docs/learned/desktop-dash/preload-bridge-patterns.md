@@ -1,79 +1,100 @@
 ---
 title: Preload Bridge Patterns
 read_when:
-  - "exposing Node.js APIs to Electron renderer"
-  - "implementing IPC communication in erkdesk"
-  - "understanding context bridge security"
-  - "adding new erkdesk capabilities"
-last_audited: "2026-02-03"
-audit_result: edited
+  - adding new IPC methods to erkdesk
+  - debugging communication between renderer and main process
+  - writing tests that mock the erkdesk bridge API
+  - understanding Electron security boundaries in erkdesk
+last_audited: "2026-02-08"
+audit_result: clean
+tripwires:
+  - action: "exposing IPC to the renderer in erkdesk"
+    warning: "Never expose ipcRenderer directly — only wrap individual channels as named methods"
+  - action: "adding new bridge methods"
+    warning: "Every bridge method must appear in four places: main handler, preload exposure, type interface, and window-close cleanup"
+  - action: "writing tests for erkdesk IPC"
+    warning: "Tests mock window.erkdesk, not ipcRenderer — the bridge is the test boundary"
+  - action: "implementing streaming IPC in erkdesk"
+    warning: "Streaming IPC requires a trio of bridge methods: start, listen, and cleanup — forgetting cleanup causes memory leaks"
 ---
 
 # Preload Bridge Patterns
 
-The preload script is the **only** safe way to expose Node.js APIs to the Electron renderer process.
+The preload bridge is the cross-cutting seam that connects erkdesk's three process layers: main (trusted Node.js), preload (security boundary), and renderer (sandboxed React). Every IPC feature must be threaded through all three, and mistakes in any layer break the others silently.
 
-## The Security Model
+## Why Context Isolation Matters
 
-- **Constraint**: Renderer has `contextIsolation: true` and `nodeIntegration: false`
-- **Result**: Renderer can't access Node.js directly
-- **Solution**: Preload script uses `contextBridge` to inject specific APIs into `window.erkdesk`
-- **Boundary**: Only explicitly exposed APIs are available to the renderer
+Electron's `contextIsolation: true` + `nodeIntegration: false` means the renderer cannot access Node.js APIs at all. The preload script is the **only** way to bridge this gap, using `contextBridge.exposeInMainWorld()` to inject a controlled API surface onto `window.erkdesk`.
 
-## Current Implementation
+The alternative — exposing `ipcRenderer` directly — is a security vulnerability because it gives the renderer unrestricted access to every IPC channel, including any added in the future. The named-method pattern ensures each capability is explicitly granted.
 
-**Preload**: `erkdesk/src/main/preload.ts`
-**Types**: `erkdesk/src/types/erkdesk.d.ts` (full `ErkdeskAPI` interface)
+## Three IPC Styles
 
-The preload exposes 8 IPC bridge methods on `window.erkdesk`:
+Erkdesk uses three distinct IPC patterns. Choosing wrong causes subtle bugs (hanging promises or lost events).
 
-- `updateWebViewBounds()`, `loadWebViewURL()` — WebView management
-- `fetchPlans()`, `executeAction()` — Request/response IPC
-- `startStreamingAction()`, `onActionOutput()`, `onActionCompleted()`, `removeActionListeners()` — Streaming IPC
+| Pattern              | Electron API                                | Use When                                          | Bridge Method Style                   |
+| -------------------- | ------------------------------------------- | ------------------------------------------------- | ------------------------------------- |
+| **Fire-and-forget**  | `ipcRenderer.send()` / `ipcMain.on()`       | One-way notifications (bounds updates, URL loads) | Void return                           |
+| **Request-response** | `ipcRenderer.invoke()` / `ipcMain.handle()` | Need a result back (fetch data, execute action)   | Returns Promise                       |
+| **Streaming**        | `send()` to start + `on()` for events       | Long-running processes with incremental output    | Separate start/listen/cleanup methods |
 
-## Security Anti-Pattern: Never Expose ipcRenderer Directly
+**Key insight**: Streaming requires a **trio** of bridge methods — one to start, one (or more) to listen, and one to clean up listeners. Forgetting the cleanup method causes memory leaks because `ipcRenderer.on()` listeners accumulate across React re-renders.
+
+<!-- Source: erkdesk/src/main/preload.ts, removeActionListeners -->
+
+See `removeActionListeners()` in `erkdesk/src/main/preload.ts` for the renderer-side listener cleanup pattern.
+
+## The Four-Place Rule
+
+Adding a new IPC method requires synchronized changes in four places. Missing any one produces confusing errors — TypeScript may not catch mismatches across the process boundary since main and renderer are separate compilation targets.
+
+1. **Main process handler** — register with `ipcMain.handle()` or `ipcMain.on()`
+2. **Preload exposure** — wrap the channel in a named method on `window.erkdesk`
+3. **Type interface** — add the method signature to `ErkdeskAPI`
+4. **Window-close cleanup** — deregister in the `mainWindow.on("closed")` handler
+
+<!-- Source: erkdesk/src/main/index.ts, ipcMain handlers -->
+<!-- Source: erkdesk/src/main/preload.ts, contextBridge.exposeInMainWorld -->
+<!-- Source: erkdesk/src/types/erkdesk.d.ts, ErkdeskAPI interface -->
+
+See the IPC handler registrations in `erkdesk/src/main/index.ts`, the bridge exposure in `erkdesk/src/main/preload.ts`, and the `ErkdeskAPI` interface in `erkdesk/src/types/erkdesk.d.ts`.
+
+### Two Kinds of Cleanup
+
+Erkdesk has cleanup responsibilities on **both sides** of the process boundary, and confusing them causes different bugs:
+
+| Cleanup Side         | Where                                         | Deregisters                                           | Failure Mode                                              |
+| -------------------- | --------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------- |
+| **Main process**     | `mainWindow.on("closed")` in `index.ts`       | IPC handlers (`removeHandler` / `removeAllListeners`) | Handler-already-registered errors on window recreation    |
+| **Renderer process** | Bridge method (e.g., `removeActionListeners`) | `ipcRenderer.on()` callbacks                          | Memory leaks from accumulated listeners across re-renders |
+
+<!-- Source: erkdesk/src/main/index.ts, mainWindow.on("closed") -->
+
+The main-side cleanup in the `"closed"` handler must use the correct deregistration API: `ipcMain.removeHandler()` for `handle()`-registered channels, `ipcMain.removeAllListeners()` for `on()`-registered channels. Using the wrong one is a silent no-op.
+
+## Testing the Bridge Boundary
+
+Tests mock `window.erkdesk`, not the underlying `ipcRenderer`. This is deliberate — the bridge API is the contract that renderer components depend on, and testing against it validates the actual interface boundary rather than implementation details.
+
+<!-- Source: erkdesk/src/test/setup.ts, mockErkdesk -->
+
+See the `mockErkdesk` object in `erkdesk/src/test/setup.ts` for the global mock setup. Individual tests use `vi.mocked(window.erkdesk.methodName)` to configure per-test behavior.
+
+**Why not mock ipcRenderer?** Because renderer code never imports `ipcRenderer` — it only accesses `window.erkdesk`. Mocking ipcRenderer would test an internal detail the renderer doesn't use, making tests fragile to preload refactoring.
+
+## Anti-Pattern: Exposing ipcRenderer Directly
 
 ```typescript
 // WRONG - Security vulnerability!
 contextBridge.exposeInMainWorld("erkdesk", {
-  ipcRenderer: ipcRenderer, // Exposes entire IPC surface
+  ipcRenderer: ipcRenderer,
 });
 ```
 
-**Problem**: Renderer gains unrestricted access to ALL IPC channels. Only expose specific, validated methods.
-
-## Adding a New IPC Method
-
-### Checklist
-
-1. **Add IPC handler** in main process (`erkdesk/src/main/index.ts`):
-
-   ```typescript
-   ipcMain.handle("my-channel", async (event, args) => { ... });
-   ```
-
-2. **Expose method** in preload (`erkdesk/src/main/preload.ts`):
-
-   ```typescript
-   myMethod: (args) => ipcRenderer.invoke("my-channel", args),
-   ```
-
-3. **Add TypeScript types** in `erkdesk/src/types/erkdesk.d.ts`:
-   - Add method to `ErkdeskAPI` interface
-   - Add any new parameter/return types
-
-4. **Call from renderer** via `window.erkdesk.myMethod(args)`
-
-## Security Boundary Mental Model
-
-- **Above**: Main process (full Node.js access, trusted code)
-- **At**: Preload script (validates and sanitizes all communication)
-- **Below**: Renderer process (sandboxed, treat as untrusted)
-
-**Principle**: Validate all inputs from renderer before acting.
+This grants the renderer unrestricted access to ALL IPC channels — current and future. Any XSS vulnerability in the renderer would escalate to full Node.js access.
 
 ## Related Documentation
 
-- [Main Process Startup](main-process-startup.md) - Where IPC handlers are registered
-- [Erkdesk Project Structure](erkdesk-project-structure.md) - Overall architecture
-- [Forge Vite Setup](forge-vite-setup.md) - How preload script is built
+- [Main Process Startup](main-process-startup.md) — where IPC handlers are registered
+- [Erkdesk Project Structure](erkdesk-project-structure.md) — overall architecture
+- [Forge Vite Setup](forge-vite-setup.md) — how preload script is built

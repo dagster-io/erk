@@ -1,83 +1,49 @@
 ---
-title: WebView API
+title: WebView IPC Design Decisions
 read_when:
-  - working with WebContentsView in erkdesk, implementing split-pane layout, debugging bounds updates or URL loading
-last_audited: "2026-02-05 20:38 PT"
-audit_result: edited
+  - adding or modifying WebContentsView IPC channels in erkdesk
+  - deciding whether a new IPC channel should be fire-and-forget or request-response
+  - debugging why the WebContentsView lags behind the divider during drag
+tripwires:
+  - action: "adding WebView IPC channels in erkdesk"
+    warning: "WebView IPC channels (bounds, URL) must be fire-and-forget (send/on), never request-response (invoke/handle) — invoke serializes high-frequency updates and causes visible lag"
+  - action: "setting initial bounds for WebContentsView"
+    warning: "the WebContentsView starts at zero bounds intentionally; do not set initial bounds in createWindow — see defensive-bounds-handling.md"
+last_audited: "2026-02-08"
+audit_result: clean
 ---
 
-# WebView API
+# WebView IPC Design Decisions
 
-The erkdesk desktop application uses Electron's `WebContentsView` to embed web content. The renderer communicates with the main process via IPC channels to control the webview's bounds and loaded URL.
+The erkdesk WebContentsView channels (`webview:update-bounds`, `webview:load-url`) deliberately use fire-and-forget IPC while all other erkdesk channels use request-response or streaming. This doc explains why, and provides the mental model for choosing which style when adding new channels.
 
-## TypeScript Interface
+## Why Fire-and-Forget for WebView Channels
 
-The `ErkdeskAPI` interface and related types are defined in `erkdesk/src/types/erkdesk.d.ts`. The API is exposed to the renderer as `window.erkdesk` and includes WebView control methods (`updateWebViewBounds`, `loadWebViewURL`), plan fetching (`fetchPlans`), and action execution (`executeAction`, `startStreamingAction`, and related streaming listeners).
+Three properties distinguish WebView channels from erkdesk's action/plan channels:
 
-## IPC Channels
+1. **No result needed** — the renderer is pushing measurements, not requesting state. There is no meaningful response for "here are the current bounds."
+2. **High frequency** — bounds updates fire on every drag event, resize event, and ResizeObserver callback. Round-trip latency from `invoke` would cause visible lag (see anti-pattern below).
+3. **Main process is authoritative** — the renderer reports raw `getBoundingClientRect()` values, but the main process applies defensive clamping before calling `setBounds()`. There is no "response" because the renderer's input and the main process's final values intentionally differ.
 
-### `webview:update-bounds`
+The general principle: use fire-and-forget for any channel where the renderer is **pushing telemetry** (mouse positions, scroll offsets, focus changes, bounds) rather than **requesting data**.
 
-**Purpose**: Update the position and size of the WebContentsView based on renderer measurements.
+<!-- Source: erkdesk/src/main/preload.ts, contextBridge.exposeInMainWorld -->
 
-**Direction**: Renderer -> Main process
+See the bridge methods in `erkdesk/src/main/preload.ts` — the WebView methods return `void` while the action/plan methods return `Promise`, making the IPC style visible at the type level.
 
-**Payload**: `WebViewBounds` object with `x`, `y`, `width`, `height` properties.
+## Choosing IPC Style for New Channels
 
-**Handler**: See `ipcMain.on("webview:update-bounds", ...)` in `erkdesk/src/main/index.ts`.
+For the general three-style decision framework (fire-and-forget, request-response, streaming), see [Preload Bridge Patterns](preload-bridge-patterns.md). The WebView-specific decision comes down to one question: **does the renderer need a response?**
 
-Bounds are defensively clamped to `Math.max(0, ...)` and floored to prevent fractional/negative coordinates. See [Defensive Bounds Handling](defensive-bounds-handling.md) for rationale.
+If the renderer is reporting state to the main process and doesn't care about the outcome, use fire-and-forget. If the renderer is requesting data or needs to know whether an operation succeeded, use request-response or streaming. The main process transforming renderer input (as with bounds clamping) is a strong signal for fire-and-forget — a response would imply the renderer should adjust, but in this architecture the renderer just keeps reporting and the main process handles safety independently.
 
-### `webview:load-url`
+## Anti-Pattern: Request-Response for Bounds
 
-**Purpose**: Load a URL in the WebContentsView.
-
-**Direction**: Renderer -> Main process
-
-**Payload**: String URL (validated as non-empty string).
-
-**Handler**: See `ipcMain.on("webview:load-url", ...)` in `erkdesk/src/main/index.ts`.
-
-## Preload Bridge
-
-The preload script in `erkdesk/src/main/preload.ts` exposes the `erkdesk` API to the renderer via `contextBridge.exposeInMainWorld()`. The WebView methods use `ipcRenderer.send()` (fire-and-forget), while plan/action methods use `ipcRenderer.invoke()` (request-response).
-
-## Fire-and-Forget Pattern
-
-**Why `send()` instead of `invoke()`:**
-
-Both `updateWebViewBounds()` and `loadWebViewURL()` use **fire-and-forget** IPC (`ipcRenderer.send()`), not request-response IPC (`ipcRenderer.invoke()`).
-
-**Rationale**:
-
-1. **No return value needed** -- The renderer doesn't need confirmation that bounds were updated or URL was loaded.
-2. **Frequent updates** -- Bounds updates happen on every drag/resize event. Round-trip latency would cause lag.
-3. **Main process is authoritative** -- The renderer reports what it measured, but the main process decides the final bounds (via defensive clamping).
-
-**Contrast**:
-
-- `send()` = "Here's some data, do something with it" (no response expected)
-- `invoke()` = "Here's a request, I need the result" (waits for response)
-
-For WebContentsView bounds updates, `send()` is correct -- the renderer is reporting measurements, not requesting state.
-
-## Usage in SplitPane Component
-
-The `SplitPane` component in `erkdesk/src/renderer/components/SplitPane.tsx` uses the API to report bounds on:
-
-1. **Initial mount and leftWidth changes** -- via a `useEffect` that calls `reportBounds()`
-2. **Window resize** -- via a `resize` event listener
-3. **Right pane size changes** -- via a `ResizeObserver` on the right pane element
-
-The `reportBounds` callback reads the right pane's `getBoundingClientRect()` and passes the `x`, `y`, `width`, `height` directly to `window.erkdesk.updateWebViewBounds()`.
-
-See [SplitPane Implementation](split-pane-implementation.md) for complete lifecycle documentation.
-
-## IPC Cleanup
-
-When the main window closes, all IPC listeners and handlers are removed to prevent memory leaks. See the `mainWindow.on("closed", ...)` handler in `erkdesk/src/main/index.ts`, which removes listeners for all registered channels and nulls the `webView` reference.
+**WRONG**: Using `invoke`/`handle` for bounds updates. The renderer would `await` each bounds report, blocking subsequent reports until the main process responds. During a fast drag, this serializes what should be parallel fire-and-forget messages, causing the WebContentsView to visibly lag behind the divider. This is the canonical example of why high-frequency telemetry channels must never use request-response IPC.
 
 ## Related Documentation
 
-- [SplitPane Implementation](split-pane-implementation.md) -- How SplitPane uses this API
-- [Defensive Bounds Handling](defensive-bounds-handling.md) -- Why bounds are clamped and floored
+- [Defensive Bounds Handling](defensive-bounds-handling.md) — zero-bounds initialization and why the main process clamps bounds at the trust boundary
+- [SplitPane Renderer-Native Coordination](split-pane-implementation.md) — what triggers bounds reports and how the placeholder div pattern works
+- [Preload Bridge Patterns](preload-bridge-patterns.md) — the three IPC styles and four-place rule
+- [erkdesk IPC Action Pattern](ipc-actions.md) — the request-response and streaming patterns used by non-WebView channels

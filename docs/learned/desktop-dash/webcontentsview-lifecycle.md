@@ -1,103 +1,82 @@
 ---
 title: WebContentsView Lifecycle
 read_when:
-  - working with WebContentsView in erkdesk, implementing split-pane with embedded webview, setting up IPC for bounds updates
+  - adding or modifying WebContentsView usage in erkdesk
+  - debugging WebContentsView visibility or positioning issues
+  - adding new IPC channels in erkdesk's main process
 tripwires:
-  - action: "creating WebContentsView or setting bounds"
-    warning: "Initialize with zero bounds {x: 0, y: 0, width: 0, height: 0}, wait for renderer to report measurements. Always apply defensive clamping: Math.max(0, Math.floor(value)) to prevent fractional/negative coordinates that cause Electron crashes. Clean up IPC listeners on window close."
-last_audited: "2026-02-07 18:13 PT"
-audit_result: edited
+  - action: "adding a new IPC channel in createWindow"
+    warning: "Every ipcMain.on() or ipcMain.handle() registration MUST have a matching removal in the mainWindow.on('closed') handler. on() uses removeAllListeners(channel), handle() uses removeHandler(channel). Add both in the same commit."
+last_audited: "2026-02-08"
+audit_result: clean
 ---
 
 # WebContentsView Lifecycle
 
-Proper initialization, bounds management, and cleanup of Electron's `WebContentsView` is critical to prevent crashes and memory leaks.
+Electron's `WebContentsView` is a native OS surface that cannot participate in CSS layout. This creates a three-phase lifecycle that spans three files and two processes — the cross-cutting coordination between them is the main thing an agent can't derive from reading any single file.
 
-## Initialization Pattern
+## Why Three Phases
 
-The WebContentsView starts with zero bounds (`{x: 0, y: 0, width: 0, height: 0}`) and loads `about:blank`. See `erkdesk/src/main/index.ts:40-42`.
+Three constraints force this lifecycle:
 
-**Why zero bounds**: The view has no valid position until the renderer measures the split layout. Zero bounds make it invisible, preventing a flash of incorrectly-positioned content during startup.
+1. **No valid position at creation time** — the renderer hasn't loaded, so there's nothing to measure
+2. **Positions must cross a process boundary** — only the renderer knows DOM layout, but only the main process can call `setBounds()`
+3. **Cleanup must live in the main process** — React unmount is unreliable in Electron (see below)
 
-## Bounds Update Pattern
+The result: invisible initialization → renderer-driven positioning → main-process-owned cleanup.
 
-The `webview:update-bounds` IPC handler applies defensive clamping — `Math.max(0, Math.floor(value))` — to all coordinate values before calling `setBounds()`. See `erkdesk/src/main/index.ts:44-53`.
+## The Three-File Coordination
 
-**Why clamping is critical**: Electron crashes silently on fractional or negative bounds. `Math.floor()` converts fractional pixels to integers; `Math.max(0, ...)` prevents negative coordinates.
+Each phase involves a different file, and the handoffs between them are the non-obvious part:
 
-See [Defensive Bounds Handling](defensive-bounds-handling.md) for details.
+| Phase               | File                                            | Role                                                                  |
+| ------------------- | ----------------------------------------------- | --------------------------------------------------------------------- |
+| 1. Create invisible | `erkdesk/src/main/index.ts`                     | Zero bounds + `about:blank` — prevents flash of mispositioned content |
+| 2. Report bounds    | `erkdesk/src/renderer/components/SplitPane.tsx` | Measures placeholder div, sends rect via IPC                          |
+| 2. Bridge IPC       | `erkdesk/src/main/preload.ts`                   | Exposes `updateWebViewBounds()` through context bridge                |
+| 2. Apply bounds     | `erkdesk/src/main/index.ts`                     | Clamps values and calls `setBounds()` — view becomes visible          |
+| 3. Cleanup          | `erkdesk/src/main/index.ts`                     | Removes all IPC listeners, kills processes, nulls references          |
 
-## Cleanup Pattern
+Phase 2 repeats continuously — every drag, resize, or layout change triggers a new bounds report. See [SplitPane Implementation](split-pane-implementation.md) for the four triggers. See [Defensive Bounds Handling](defensive-bounds-handling.md) for why clamping happens at the main process trust boundary.
 
-The `mainWindow.on("closed")` handler removes all IPC listeners and handlers, kills any active child processes, and nulls the `webView` reference. See `erkdesk/src/main/index.ts:190-201`.
+## Why Cleanup Lives in the Main Process
 
-**Why cleanup is critical**: IPC listeners persist after window close unless explicitly removed, causing memory leaks across window recreations. Nulling `webView` allows garbage collection.
+On macOS, closing the last window doesn't quit the app. The `activate` event calls `createWindow()` again, re-registering all IPC handlers. If the previous window's handlers weren't cleaned up in the `closed` event, the new window's registrations stack on top of leaked ones — causing duplicate handler errors for `handle()` channels and doubled event processing for `on()` channels.
 
-## Complete Lifecycle
+<!-- Source: erkdesk/src/main/index.ts, mainWindow.on("closed") handler and app.on("activate") -->
 
-```
-1. Window creation
-   ↓
-2. Create WebContentsView with zero bounds
-   ↓
-3. Register IPC listeners (update-bounds, load-url, plans:fetch, actions:execute, actions:start-streaming)
-   ↓
-4. Load renderer (which measures layout and reports bounds)
-   ↓
-5. Renderer sends first bounds via IPC
-   ↓
-6. Main process applies defensive clamping and sets bounds
-   ↓
-7. WebContentsView becomes visible at correct position
-   ↓
-8. [User interaction: resize, drag divider]
-   ↓
-9. Renderer reports new bounds → main process updates
-   ↓
-10. Window close
-   ↓
-11. Remove all IPC listeners and handlers, kill active processes
-   ↓
-12. Set webView = null for garbage collection
-```
+React's `useEffect` cleanup runs on component unmount, but Electron's window close doesn't guarantee React component lifecycle completes. The main process `closed` handler is the only reliable teardown point.
 
-## Common Mistakes
+## IPC Cleanup Symmetry Rule
 
-### Mistake 1: Forgetting Defensive Clamping
+Every IPC registration in `createWindow` must have a matching removal in the `closed` handler. The removal API differs by registration type:
 
-```typescript
-// WRONG: Trusting renderer bounds directly
-webView.setBounds(bounds); // Can crash if bounds contain fractional values
-```
+| Registration       | Removal                               | Why different                              |
+| ------------------ | ------------------------------------- | ------------------------------------------ |
+| `ipcMain.on()`     | `ipcMain.removeAllListeners(channel)` | Event-based, can have multiple listeners   |
+| `ipcMain.handle()` | `ipcMain.removeHandler(channel)`      | Request-response, only one handler allowed |
 
-**Fix**: Always apply `Math.max(0, Math.floor(value))`.
+<!-- Source: erkdesk/src/main/index.ts, createWindow IPC registrations and closed handler -->
 
-### Mistake 2: Not Initializing with Zero Bounds
+**When adding a new IPC channel**: add both the registration and the cleanup in the same commit. Grep the `closed` handler to verify symmetry before submitting.
+
+## Anti-Patterns
 
 ```typescript
 // WRONG: Setting arbitrary initial bounds
 webView.setBounds({ x: 100, y: 100, width: 600, height: 800 });
+// These are guesses — window may be any size, causing off-screen content
 ```
 
-**Problem**: These values are guesses. If the window is smaller, the WebContentsView appears off-screen.
-
-**Fix**: Initialize with zero bounds and wait for renderer to report measurements.
-
-### Mistake 3: Forgetting IPC Cleanup
-
 ```typescript
-// WRONG: Not cleaning up on window close
+// WRONG: Incomplete cleanup — only nulling the reference
 mainWindow.on("closed", () => {
-  webView = null; // Listeners still attached!
+  webView = null; // IPC listeners still attached — leaked into next createWindow() call!
 });
 ```
 
-**Problem**: IPC listeners leak memory across window recreations.
-
-**Fix**: Always call `ipcMain.removeAllListeners()` for each `on` channel and `ipcMain.removeHandler()` for each `handle` channel. Kill any active child processes.
-
 ## Related Documentation
 
-- [WebView API](webview-api.md) — IPC channels and preload bridge
-- [SplitPane Implementation](split-pane-implementation.md) — How renderer reports bounds
-- [Defensive Bounds Handling](defensive-bounds-handling.md) — Why clamping is necessary
+- [Defensive Bounds Handling](defensive-bounds-handling.md) — Why clamping happens at the main process trust boundary
+- [SplitPane Implementation](split-pane-implementation.md) — Renderer-side measurement triggers and layout coordination
+- [WebView API](webview-api.md) — IPC channel catalog and preload bridge

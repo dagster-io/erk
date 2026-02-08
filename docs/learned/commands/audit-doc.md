@@ -1,101 +1,66 @@
 ---
-title: /local:audit-doc Command
-last_audited: "2026-02-03 03:56 PT"
-audit_result: edited
+title: Audit-Doc Design Decisions
+read_when:
+  - "understanding why audit-doc works the way it does"
+  - "modifying the /local:audit-doc command"
+  - "understanding collateral finding tiers"
+  - "debugging unexpected audit verdicts"
 tripwires:
-  - action: "creating or modifying docs/learned/ markdown files without checking quality"
-    warning: "Run /local:audit-doc to verify frontmatter, structure, and completeness before committing."
-read_when:
-  - "Running the /local:audit-doc command"
-  - "Understanding documentation quality standards"
-  - "Auditing docs/learned/ files for compliance"
+  - action: "modifying collateral finding categories or auto-apply behavior in audit-doc"
+    warning: "CRITICAL: Read this doc first to understand the conceptual vs mechanical finding distinction"
+last_audited: "2026-02-08 11:48 PT"
+audit_result: clean
 ---
 
-# /local:audit-doc Command
+# Audit-Doc Design Decisions
 
-## Overview
+<!-- Source: .claude/commands/local/audit-doc.md -->
 
-The `/local:audit-doc` command audits a `docs/learned/` markdown file against erk's documentation standards. The command itself is defined in `.claude/commands/local/audit-doc.md`.
+This document captures cross-cutting design decisions behind the `/local:audit-doc` command that aren't obvious from reading the command source alone. For the command definition itself, see `.claude/commands/local/audit-doc.md`.
 
-## Usage
+## Why Two Tiers of Collateral Findings
 
-```bash
-/local:audit-doc docs/learned/architecture/my-pattern.md
-/local:audit-doc architecture/my-pattern.md   # relative to docs/learned/
-```
+The collateral finding system splits into **conceptual** (OS, CF, SF) and **mechanical** (SC, SD, BX, CD) tiers because they require fundamentally different remediation strategies.
 
-## Typical Issues Found
+**Conceptual findings are discovery-only** — they are never auto-fixed, even in `--auto-apply` mode. The reason: a conceptual problem (e.g., a doc describing a system that was replaced) means the entire doc's premise is wrong. Fixing individual claims would create a Frankenstein document that's partially updated but still misleading. The correct action is always a full audit pass on the affected file.
 
-Based on real audit experience, common issues include:
+**Mechanical findings can be auto-fixed** because they're localized: a stale comment, a broken link, a wrong return type in a docstring. The surrounding context remains valid; only the specific detail needs correction.
 
-### Missing read_when Triggers
+This distinction matters for `--auto-apply` in CI: mechanical fixes are safe to batch-apply, but conceptual findings must produce audit recommendations (not inline edits) to avoid silent corruption.
 
-**Problem:** Frontmatter has no `read_when` field, making the doc hard to discover.
+## Verdict Threshold Design
 
-**Fix:** Add specific triggers:
+The verdict system uses percentage-based thresholds (not absolute counts) to account for documents of varying length. A 3-section doc with 1 duplicative section looks very different from a 20-section doc with 1 duplicative section.
 
-```yaml
----
-read_when:
-  - "implementing gateway abstractions"
-  - "working with 5-layer gateway pattern"
----
-```
+Key threshold decisions:
 
-### Weak Tripwires
+| Verdict                | Threshold                            | Why                                 |
+| ---------------------- | ------------------------------------ | ----------------------------------- |
+| KEEP                   | ≥50% high-value                      | Majority of content earns its place |
+| SIMPLIFY               | ≥30% duplicative but has high-value  | Worth preserving after trimming     |
+| REPLACE WITH CODE REFS | ≥60% duplicative, minimal high-value | More noise than signal              |
+| CONSIDER DELETING      | ≥80% duplicative, no high-value      | Almost entirely redundant with code |
 
-**Problem:** Tripwire doesn't use structured format or is too vague.
+**INACCURATE is treated as at least as severe as DUPLICATIVE** in all threshold calculations. This prevents a doc with many inaccurate sections from receiving a lenient verdict just because it's not "duplicative" per se.
 
-**Fix:** Make tripwires action-triggered and specific. See [Frontmatter Tripwire Format](../documentation/frontmatter-tripwire-format.md) for the required schema.
+## The "Missing Code Examples" Trap
 
-### Missing Code Examples
+A common audit instinct is to flag docs for "missing code examples" and recommend adding them. This directly contradicts the One Code Rule from the content quality standards. The correct recommendation is almost always a source pointer, not a new code block.
 
-**Problem:** Pattern described in text but no code example.
+The only exceptions where audit-doc should recommend adding code: data format examples, third-party API patterns, anti-patterns marked WRONG, and I/O examples (CLI commands with expected output).
 
-**Fix:** Add concrete before/after examples from the codebase.
+## CI Auto-Detection
 
-### Broken Cross-References
+The command auto-enables `--auto-apply` when `$CI` or `$GITHUB_ACTIONS` is set. This exists because the batch regeneration workflow (`scripts/batch_regenerate_docs.py`) runs audit-doc in a non-interactive context where prompting would hang the pipeline.
 
-**Problem:** Links to files that don't exist or are in wrong category.
+In CI mode, `CONSIDER DELETING` verdicts are stamped as clean (not auto-deleted) because deletion is a destructive action that requires human judgment about whether the content should be preserved elsewhere.
 
-**Fix:** Verify all links with `Read` tool before committing.
+## Adversarial Framing
 
-## Collateral Findings
-
-The Read Referenced Source Code phase of the audit command collects collateral findings — issues in _other_ files discovered while reading source code for the primary audit. See the Read Referenced Source Code and Verify System Descriptions phases in `.claude/commands/local/audit-doc.md` for full collection logic.
-
-### Two Tiers
-
-**Conceptual (highest danger — actively misleads agents):**
-
-| Category           | Abbrev | Found In   | Description                                         |
-| ------------------ | ------ | ---------- | --------------------------------------------------- |
-| `OBSOLETE_SYSTEM`  | OS     | Other docs | Doc describes a system that was replaced or removed |
-| `CONCEPTUAL_DRIFT` | CF     | Other docs | Doc uses terms whose meaning has changed            |
-| `STALE_FLOW`       | SF     | Other docs | Multi-step flow where steps have changed            |
-
-Conceptual findings are **discovery-only**. They are never auto-fixed — the agent outputs a recommendation to run a separate `/local:audit-doc` on the affected file. These are too significant for inline correction because they require a full audit pass to fix correctly.
-
-**Mechanical (lower danger — wrong details in otherwise-correct context):**
-
-| Category            | Abbrev | Found In     | Description                                    |
-| ------------------- | ------ | ------------ | ---------------------------------------------- |
-| `STALE_COMMENT`     | SC     | Source files | Comment doesn't match code behavior            |
-| `STALE_DOCSTRING`   | SD     | Source files | Docstring doesn't match signatures/behavior    |
-| `BROKEN_CROSS_REF`  | BX     | Other docs   | Link points to renamed/deleted file            |
-| `CONTRADICTING_DOC` | CD     | Other docs   | Cross-referenced doc claims conflict with code |
-
-Mechanical findings can be auto-fixed directly.
-
-### Report Format
-
-Collateral findings appear after the primary audit summary, grouped by severity (conceptual first, then mechanical). Each entry shows the abbreviated category tag, file path, and a one-line description with suggested action. See the Generate Report phase in `.claude/commands/local/audit-doc.md` for the exact output format.
-
-### Auto-apply vs Interactive
-
-See the Determine Action phase in `.claude/commands/local/audit-doc.md` for authoritative auto-apply and interactive mode behavior.
+The audit is intentionally adversarial: the burden of proof is on the document to justify its existence over just reading code. This framing prevents the natural tendency to rate documentation as "good enough" — most docs accumulate duplicative content over time as the code they describe evolves, and a generous audit misses that drift.
 
 ## Related Documentation
 
-- [Frontmatter Tripwire Format](../documentation/frontmatter-tripwire-format.md) - YAML schema for tripwires
-- [Documentation Methodology](../documentation/) - Complete documentation guide
+- [Content Quality Standards](.claude/skills/learned-docs/learned-docs-core.md) — the rules audit-doc enforces
+- [Source Pointers](../documentation/source-pointers.md) — format for replacing verbatim code with references
+- [Frontmatter Tripwire Format](../documentation/frontmatter-tripwire-format.md) — YAML schema for tripwires

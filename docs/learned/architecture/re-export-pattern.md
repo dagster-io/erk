@@ -1,7 +1,7 @@
 ---
 title: Re-Export Pattern
 last_audited: "2026-02-08"
-audit_result: edited
+audit_result: clean
 tripwires:
   - action: "adding re-exports to gateway implementation modules"
     warning: "Only re-export types that genuinely improve public API. Add # noqa: F401 - re-exported for <reason> comment."

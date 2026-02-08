@@ -1,142 +1,45 @@
 ---
-title: pnpm Hoisting Pattern
+title: pnpm Hoisting Pattern for Electron
 read_when:
-  - "setting up new Electron projects with pnpm"
-  - "encountering cryptic Electron module resolution errors"
-  - "debugging 'Cannot find module' errors in Electron"
-  - "configuring pnpm for Electron compatibility"
-tripwire:
-  trigger: "Before creating Electron project with pnpm"
-  action: "Read [pnpm Hoisting Pattern](pnpm-hoisting-pattern.md) first. REQUIRED: Add .npmrc with `node-linker = hoisted`. Without this, Electron crashes with cryptic module resolution errors. This one-line config prevents ~30min debugging sessions."
+  - setting up a new Electron project with pnpm
+  - debugging 'Cannot find module' errors in Electron
+  - configuring pnpm for Electron Forge compatibility
+tripwires:
+  - action: "modifying erkdesk/.npmrc or changing node-linker setting"
+    warning: "Do NOT remove erkdesk/.npmrc or change node-linker away from hoisted — Electron cannot resolve pnpm's symlinked node_modules layout"
+  - action: "debugging 'Cannot find module' errors in Electron with pnpm"
+    warning: "Do NOT assume 'Cannot find module' errors mean a missing dependency — in Electron with pnpm, check .npmrc first"
+last_audited: "2026-02-08"
+audit_result: clean
 ---
 
-# pnpm Hoisting Pattern
+# pnpm Hoisting Pattern for Electron
 
-Electron applications using pnpm **require** `.npmrc` with `node-linker = hoisted`. Without this one-line configuration, Electron crashes with cryptic module resolution errors.
+## Why Hoisting Is Non-Negotiable
 
-## The Configuration
+pnpm's default dependency strategy uses a content-addressable store with symlinks into `node_modules/.pnpm/`. Electron's module resolver follows symlinks but resolves paths relative to the **symlink target** (inside `.pnpm/`), not the symlink location. This means peer and transitive dependencies become invisible — Electron resolves `require()` calls from inside the `.pnpm` store where sibling packages don't exist in the expected structure.
 
-**File**: `erkdesk/.npmrc`
+The `node-linker = hoisted` setting tells pnpm to use a traditional flat `node_modules` layout (physical copies, no symlinks), which Electron's resolver handles correctly.
 
-```
-node-linker = hoisted
-```
+<!-- Source: erkdesk/.npmrc -->
 
-**Location**: Root of Electron project directory (not repository root)
+See `erkdesk/.npmrc` for the configuration. It belongs in the Electron project root, not the repository root.
 
-## Why This is Required
+## Why This Is a Tripwire
 
-### pnpm Default Behavior
+The failure mode is deceptive:
 
-By default, pnpm uses **symlinks** for dependency management:
+- Errors say `Cannot find module 'X'` but the module **is** installed (visible in `node_modules/.pnpm/`)
+- Different modules fail depending on load order, making it look like a dependency version issue
+- Nothing in the error message mentions symlinks or resolution paths
 
-```
-node_modules/
-├── .pnpm/                    # Actual packages stored here
-│   └── electron@28.0.0/
-│       └── node_modules/
-│           └── electron/
-└── electron -> .pnpm/electron@28.0.0/node_modules/electron
-```
+Without prior knowledge, this leads to chasing phantom dependency issues rather than recognizing a fundamental pnpm/Electron incompatibility. This is a known issue acknowledged by pnpm maintainers — it can't be fixed without changing Electron's module resolution assumptions.
 
-Dependencies are **symlinked** from the `.pnpm` store to `node_modules`.
+## Trade-offs Accepted
 
-### Electron Module Resolution
-
-Electron's module resolution:
-
-1. Follows symlinks during require() calls
-2. Resolves paths relative to the **symlink target**, not the symlink itself
-3. Expects node_modules to use traditional flat or nested structure
-
-**Result**: When Electron follows symlinks into `.pnpm` store, it can't resolve peer dependencies or transitive dependencies correctly.
-
-### The Symptom
-
-Without hoisting, Electron crashes with errors like:
-
-```
-Error: Cannot find module 'some-peer-dependency'
-    at Module._resolveFilename (node:internal/modules/cjs/loader:1075:15)
-```
-
-These errors are **cryptic** because:
-
-- The module IS installed (visible in `node_modules/.pnpm/`)
-- The error doesn't mention symlinks or resolution issues
-- The error appears randomly for different modules depending on load order
-
-## What Hoisting Does
-
-With `node-linker = hoisted`, pnpm uses **traditional flat layout**:
-
-```
-node_modules/
-├── electron/              # Actual package, not symlink
-├── some-dependency/       # Actual package, not symlink
-└── peer-dependency/       # Actual package, not symlink
-```
-
-**All packages** are physically present in `node_modules`, not symlinked from `.pnpm` store.
-
-**Result**: Electron's module resolution works correctly because there are no symlinks to follow.
-
-## Tripwire
-
-**Missing this configuration causes ~30 minute debugging sessions.**
-
-The symptoms are:
-
-1. Electron starts but crashes immediately
-2. Error messages are cryptic and unhelpful
-3. Modules appear to be installed (visible in node_modules)
-4. Only some modules fail, making it seem like a dependency issue
-
-**Discovery**: Eventually you search "electron pnpm symlink error" and find this is a known compatibility issue.
-
-**Prevention**: Always include `.npmrc` with `node-linker = hoisted` in Electron projects using pnpm.
-
-## Trade-offs
-
-### Benefits
-
-- Electron compatibility (required)
-- Simpler node_modules structure (easier to inspect)
-- Familiar layout for developers coming from npm/yarn
-
-### Costs
-
-- Larger node_modules directory (no symlink deduplication)
-- Slower installs (physical copies instead of symlinks)
-- Loses pnpm's default strict dependency graph enforcement
-
-**Verdict**: The trade-off is non-negotiable — Electron requires hoisting to function.
-
-## Verification
-
-After configuring `.npmrc`, verify the node_modules structure:
-
-```bash
-cd erkdesk
-pnpm install
-ls -la node_modules/electron
-```
-
-**Expected**: `node_modules/electron` is a **directory**, not a symlink.
-
-If it's a symlink (`lrwxrwxrwx`), the `.npmrc` configuration didn't take effect.
-
-## Related Issues
-
-This is a known Electron + pnpm issue documented in:
-
-- Electron Forge GitHub issues
-- pnpm GitHub discussions
-- Stack Overflow threads
-
-The pnpm maintainers acknowledge this incompatibility but can't fix it without breaking Electron's module resolution assumptions.
+Hoisting sacrifices pnpm's strict dependency graph enforcement and symlink deduplication (larger `node_modules`, slower installs). This is acceptable because Electron **cannot function** without it — there is no alternative configuration that preserves both pnpm's symlink strategy and Electron compatibility.
 
 ## Related Documentation
 
-- [Erkdesk Project Structure](erkdesk-project-structure.md) - Overall project setup
-- [Forge Vite Setup](forge-vite-setup.md) - Build configuration
+- [Erkdesk Project Structure](erkdesk-project-structure.md) — overall project setup
+- [Forge Vite Setup](forge-vite-setup.md) — build configuration

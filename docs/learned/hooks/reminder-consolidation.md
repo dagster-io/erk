@@ -1,152 +1,114 @@
 ---
 title: Reminder Consolidation Pattern
 read_when:
-  - "adding a new coding standards reminder"
-  - "deciding between UserPromptSubmit and PreToolUse hooks for reminders"
-  - "debugging duplicate reminder output"
+  - "adding a new coding standards reminder to any hook, skill, or AGENTS.md section"
+  - "debugging why a reminder appears multiple times in agent context"
+  - "deciding which tier (ambient, per-prompt, just-in-time) a new reminder belongs in"
+  - "removing or reducing reminder duplication across tiers"
 tripwires:
   - action: "adding new coding standards reminders"
-    warning: "Check if reminder is already injected via PreToolUse hook before adding to UserPromptSubmit. Duplicate reminders increase noise and waste tokens. Read reminder-consolidation.md first."
+    warning: "Grep for the reminder text across AGENTS.md, hooks, and skills first — it may already exist at another tier. Duplicate reminders waste tokens and teach agents to ignore them. Read reminder-consolidation.md first."
 ---
 
 # Reminder Consolidation Pattern
 
-When injecting coding standards reminders, choose the most specific hook tier to avoid duplication and minimize token waste.
+This document covers **how to decide where a reminder belongs** and **how to eliminate duplication** across erk's three-tier context injection system. For the tier architecture itself (what each tier is, when it fires, token costs), see [Context Injection Architecture](../architecture/context-injection-tiers.md).
 
-## Problem: Reminder Duplication
+## Why Consolidation Matters
 
-Without careful design, the same reminder can be delivered multiple times in a single conversation:
+The same coding standard delivered at multiple tiers creates three compounding problems:
 
-- **Session-wide** (UserPromptSubmit) - Every user message
-- **Action-specific** (PreToolUse) - Before each relevant tool call
-- **Per-prompt** (Skill load) - Every time a skill is invoked
+1. **Token waste** — Identical content repeated per-turn or per-tool-call accumulates across a session
+2. **Signal dilution** — Agents learn to skim repeated text, reducing compliance on the parts that actually matter
+3. **Maintenance drift** — Updates must be synchronized across multiple locations, and stale copies silently diverge from the canonical version
 
-This creates noise, wastes tokens, and reduces signal-to-noise ratio for the agent.
+The goal: every reminder appears **exactly once**, at the **most specific tier** that achieves the desired compliance.
 
-## Decision Framework
+## Tier Selection Decision Table
 
-### UserPromptSubmit Hook
+| Reminder characteristic                             | Correct tier                 | Why                                                              |
+| --------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------- |
+| Applies to every task regardless of tool            | Tier 1 (Ambient / AGENTS.md) | Always in context, no action-specific trigger exists             |
+| Cross-cutting session routing (e.g., "use devrun")  | Tier 2 (UserPromptSubmit)    | Needs per-turn reinforcement, not tool-specific                  |
+| Dynamic state injection (session IDs, branch names) | Tier 2 (UserPromptSubmit)    | Value changes per-session, needs dynamic computation             |
+| Applies only when editing certain file types        | Tier 3 (PreToolUse)          | Can inspect `file_path` in tool params, fires only when relevant |
+| Applies only to a specific tool (Bash, Write)       | Tier 3 (PreToolUse)          | Matcher targets the exact tool, zero cost when tool isn't used   |
 
-**When to use:** Cross-cutting reminders that apply to ANY action in the session
+**Default to the most specific tier.** The temptation is to put everything in UserPromptSubmit "just in case" — but Tier 3 achieves equal compliance at a fraction of the token cost because it fires only when the action is imminent.
 
-**Examples:**
+## The Ambient + JIT Pattern
 
-- Session-specific routing (e.g., "Use devrun agent for pytest/ty/ruff")
-- Session ID availability
-- Universal tripwires that don't fit a specific tool
+The most common correct multi-tier pattern is **compressed awareness at Tier 1** combined with **pointed nudge at Tier 3**. These are not duplicates — they serve different cognitive purposes:
 
-**Advantages:**
+- **Ambient (AGENTS.md)** provides the "why" context that makes standards legible throughout the session. Without it, agents encounter JIT reminders with no framework for understanding them.
+- **Just-in-time (PreToolUse)** provides the "remember right now" nudge at the exact moment the agent is about to take the relevant action. Without it, ambient rules fade from attention.
 
-- Delivered once at session start
-- Always visible in context
+### Case Study: dignified-python (PR #6278)
 
-**Disadvantages:**
+Before consolidation, dignified-python core rules were delivered three times per Python edit:
 
-- Always present, even when not relevant
-- Higher token cost for long sessions
+1. **Ambient** — AGENTS.md "Python Standards" quick reference
+2. **Per-prompt** — UserPromptSubmit hook reminded agent to load the skill
+3. **Skill load** — Skill file repeated core rules in its preamble
 
-### PreToolUse Hook
+After consolidation, Tier 2 and the skill preamble repetition were removed. Only two tiers remain, each delivering **different content**:
 
-**When to use:** Reminders that only apply when a specific tool is about to be used
+1. **Ambient** — AGENTS.md retains the compressed quick reference (background awareness)
+2. **Just-in-time** — PreToolUse hook emits a one-line pointed reminder only when Write/Edit targets a `.py` file
 
-**Examples:**
+<!-- Source: src/erk/cli/commands/exec/scripts/pre_tool_use_hook.py, build_pretool_dignified_python_reminder -->
 
-- dignified-python rules when editing `.py` files
-- Test placement rules when editing test files
-- File-specific conventions
+See `build_pretool_dignified_python_reminder()` in `src/erk/cli/commands/exec/scripts/pre_tool_use_hook.py` for how the JIT reminder is deliberately compressed to a single sentence, distinct from the ambient quick reference.
 
-**Advantages:**
+## Capability Gating Enables Gradual Rollout
 
-- Just-in-time delivery (only when relevant)
-- Lower token cost (only fires when tool matches)
-- Better signal-to-noise (pointed reminder at moment of action)
+Reminders are opt-in per project via the `[reminders] installed` list in `.erk/state.toml`. Both UserPromptSubmit and PreToolUse hooks check this before emitting anything.
 
-**Disadvantages:**
+<!-- Source: src/erk/core/capabilities/detection.py, is_reminder_installed -->
 
-- Not visible in context until tool is invoked
-- Requires hook implementation and capability detection
+See `is_reminder_installed()` in `src/erk/core/capabilities/detection.py` for the detection logic.
 
-## Case Study: dignified-python Consolidation
-
-PR #6278 consolidated dignified-python reminders from 3 tiers to 2 tiers:
-
-### Before (3-tier delivery)
-
-1. **Ambient** - AGENTS.md included quick reference rules
-2. **Session-wide** - UserPromptSubmit reminded to load skill
-3. **Per-prompt** - Each skill invocation repeated core rules
-
-**Problem:** Core rules appeared 3 times, wasting tokens and creating noise.
-
-### After (2-tier delivery)
-
-1. **Ambient** - AGENTS.md still includes quick reference rules for context
-2. **Action-specific** - PreToolUse hook injects core rules when editing `.py` files
-
-**Result:**
-
-- Removed session-wide UserPromptSubmit reminder (line 160 in AGENTS.md)
-- Removed per-prompt core rules repetition from skill file
-- Skill file now focuses on extended guidance and examples
-- Core rules injected exactly when needed (editing Python code)
-
-**Token savings:** ~200 tokens per edit action (core rules only delivered once, not three times)
-
-## Capability-Gated Design
-
-The PreToolUse hook checks for capability markers before injecting reminders:
-
-```python
-# Check if capability exists
-if not capability_file.exists():
-    return None  # Don't inject reminder
-
-# Capability exists - inject reminder
-return reminder_content
-```
-
-**Capability markers:** `.erk/capabilities/` directory contains marker files that enable/disable features.
-
-**Example:** `.erk/capabilities/dignified-python-pretooluse` enables Python editing reminders.
-
-**Benefits:**
-
-- Gradual rollout (projects opt-in)
-- Easy disable (delete marker file)
-- Testable (create/remove marker in tests)
+This gating directly serves consolidation: adding a new reminder to a hook doesn't force it on every project. You can roll out gradually, observe compliance in one project, and remove broader-tier duplicates only after confirming the more specific tier achieves equivalent compliance.
 
 ## Prevention Checklist
 
 Before adding a new coding standards reminder:
 
-- [ ] Is this reminder already in AGENTS.md ambient context?
-- [ ] Is this reminder already in a UserPromptSubmit hook?
-- [ ] Is this reminder already in a PreToolUse hook?
-- [ ] Does this reminder apply to a specific tool action (Edit, Write)?
-- [ ] If action-specific, can I use PreToolUse instead of UserPromptSubmit?
-- [ ] If using PreToolUse, does the capability marker exist?
-- [ ] Have I verified no duplication by testing the full reminder flow?
-
-## Consolidation Guidelines
-
-When consolidating existing reminders:
-
-1. **Identify duplicates** - Grep for reminder content across hooks, skills, and AGENTS.md
-2. **Choose the most specific tier** - Prefer PreToolUse > UserPromptSubmit > Ambient
-3. **Remove from broader tiers** - Delete from session-wide if action-specific works
-4. **Test the flow** - Verify reminder appears exactly once at the right moment
-5. **Document the decision** - Update this doc or add a tripwire
+1. **Grep for duplicates** — Search AGENTS.md, all hook scripts in `src/erk/cli/commands/exec/scripts/`, and skill files for the reminder's core content
+2. **Check existing tiers** — Is this knowledge already delivered at Tier 1 (ambient), Tier 2 (per-prompt), or Tier 3 (JIT)?
+3. **Choose the most specific tier** — Can the reminder be scoped to a specific tool or file type? If so, Tier 3 is almost always correct.
+4. **Verify no overlap** — If keeping content at multiple tiers, confirm each tier delivers **different content** serving **different purposes** (the Ambient + JIT pattern above)
+5. **Gate on capability** — Add the reminder name to the `is_reminder_installed()` checks so projects can opt in/out
+6. **Test the full flow** — Trigger the relevant action in a session and verify the reminder appears exactly once at the right moment
 
 ## When NOT to Consolidate
 
 Keep reminders at multiple tiers when:
 
-- **Ambient + Action-specific** - Quick reference (AGENTS.md) + detailed rules (PreToolUse) serve different purposes
-- **Different content** - Session-wide routing ("use devrun") vs action-specific rules ("LBYL only")
-- **Different audiences** - Some reminders for planning, others for implementation
+- **Different content at each tier** — Compressed awareness (ambient) vs pointed nudge (JIT) serve different cognitive purposes. The dignified-python pattern above is the canonical example.
+- **Different scopes** — A session-wide routing reminder ("use devrun for pytest") and an action-specific reminder ("LBYL when editing Python") address different concerns even though they're both about "coding standards."
+- **Different audiences** — Planning-phase reminders vs implementation-phase reminders may both reference the same standard but guide different agent behaviors.
+
+## Anti-Patterns
+
+**Consolidating down to zero ambient context.** If you remove a standard from AGENTS.md entirely and rely solely on JIT hooks, the agent has no awareness of the standard until the moment it's about to violate it. The ambient tier provides the conceptual framework that makes JIT reminders actionable rather than confusing.
+
+**Putting file-type-specific rules in UserPromptSubmit.** The PreToolUse hook can inspect `file_path` in tool params and fire only when relevant. Putting "LBYL when editing Python" in UserPromptSubmit means every non-Python turn pays the token cost for no benefit. Tier 3 achieves equal compliance because the reminder arrives at the moment of action.
+
+**Skipping the grep before adding a reminder.** The single most common source of duplication is adding a reminder without checking whether it already exists at another tier. The reminder's wording may differ slightly, but if the core instruction is the same, it's a duplicate.
+
+## Consolidation Process
+
+When reducing existing duplication:
+
+1. **Audit** — Grep for the reminder text across all tiers to find every instance
+2. **Classify** — For each instance, determine whether it provides unique value at that tier or is pure repetition
+3. **Remove repetitions** — Delete instances that duplicate content already delivered at a more specific tier
+4. **Preserve ambient awareness** — Keep compressed references in AGENTS.md unless the standard is truly niche
+5. **Verify** — Run a session, trigger the relevant action, and confirm the reminder appears once at the right moment
 
 ## Related Documentation
 
-- [PreToolUse Hook Implementation](pretooluse-implementation.md) - Technical pattern for action-specific hooks
-- [Context Injection Tiers](../architecture/context-injection-tiers.md) - Full architecture of 3-tier context system
-- [Hooks Overview](hooks.md) - Complete guide to erk's hook system
+- [Context Injection Architecture](../architecture/context-injection-tiers.md) — The three-tier system this pattern operates within
+- [PreToolUse Hook Design Patterns](pretooluse-implementation.md) — How to build JIT hooks with pure functions and capability gating
+- [Hooks Guide](hooks.md) — Hook lifecycle, matchers, and configuration

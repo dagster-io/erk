@@ -1,126 +1,89 @@
 ---
-title: Local/Remote Command Group Pattern
+title: Local/Remote Command Group Pattern (Deprecated)
 read_when:
-  - "creating commands with local and remote variants"
-  - "using invoke_without_command=True pattern"
-  - "migrating separate commands to a unified group"
+  - "considering invoke_without_command=True for Click command groups"
+  - "deciding between command groups vs separate commands for local/remote workflows"
+  - "understanding why erk uses separate commands instead of unified groups"
+tripwires:
+  - action: "using invoke_without_command=True to unify local/remote variants"
+    warning: "this pattern was abandoned - READ: Why this pattern was abandoned section"
 ---
 
-# Local/Remote Command Group Pattern
+# Local/Remote Command Group Pattern (Deprecated)
 
-> **Historical Note**: This Click-based pattern has been superseded by the `erk launch` command for remote workflows. New remote workflows should use `erk launch <workflow-name>` rather than the local/remote command group pattern. See [Workflow Commands](workflow-commands.md) for current patterns.
+**Historical pattern for unified local/remote command execution in Click. No longer used in erk.**
 
-This document describes the pattern for commands that have both local and remote execution variants, unified under a single command group.
+## Why This Pattern Was Abandoned
 
-## Overview
+Click's `invoke_without_command=True` allows a group to execute when called directly (local) while offering subcommands (remote). This seems elegant but created operational friction:
 
-Some erk commands can be executed either:
+**The fundamental problem:** Local and remote execution have different preconditions, options, and error modes. Unifying them under one command name obscured these differences.
 
-- **Locally**: Using Claude CLI on the developer's machine
-- **Remotely**: Via GitHub Actions workflow
+### Concrete Issues
 
-Rather than maintaining separate commands (`erk pr address` and `erk launch pr-address`), we use a command group pattern where:
+1. **Help text ambiguity** — Users running `erk pr address --help` saw both local and remote documentation mixed together, making it unclear which flags applied to which mode
 
-- The base command runs the local variant
-- A `remote` subcommand triggers the GitHub Actions workflow
+2. **Option validation complexity** — The group function needed conditional logic to validate options based on whether a subcommand was invoked (`ctx.invoked_subcommand is None`), spreading validation across multiple functions
 
-## The Pattern
+3. **Discoverability** — Remote execution via `erk pr address remote` was non-obvious compared to the explicit `erk launch pr-address` pattern
 
-### Command Group with Default Behavior
+4. **Maintenance burden** — Each new local/remote pair required implementing the group pattern, subcommand registration, and context checking
 
-```python
-@click.group("address", cls=ErkCommandGroup, invoke_without_command=True)
-@click.option("--dangerous", is_flag=True, help="Acknowledge Claude invocation")
-@click.pass_context
-def address_group(ctx: click.Context, *, dangerous: bool) -> None:
-    """Address PR review comments with AI-powered resolution.
+## Current Architecture: Separate Commands + Unified Launch
 
-    When run without a subcommand, addresses PR review comments on the
-    current branch using Claude.
+<!-- Source: src/erk/cli/commands/pr/address_cmd.py, address() -->
+<!-- Source: src/erk/cli/commands/pr/fix_conflicts_cmd.py, fix_conflicts() -->
+<!-- Source: src/erk/cli/commands/launch_cmd.py, launch() -->
 
-    Use 'erk launch pr-address --pr <pr_number>' to trigger remote addressing via
-    GitHub Actions workflow.
-    """
-    if ctx.invoked_subcommand is None:
-        # Run local address when no subcommand given
-        erk_ctx: ErkContext = ctx.obj
-        _run_local_address(erk_ctx, dangerous=dangerous)
+Erk now uses **separate commands** for clearer separation of concerns:
 
+- **Local execution:** Simple `@click.command()` functions (e.g., `erk pr address`)
+- **Remote execution:** Unified `erk launch <workflow-name>` command that dispatches to GitHub Actions
 
-@address_group.command("remote")
-@click.argument("pr_number", type=int, required=True)
-@click.pass_obj
-def address_remote(ctx: ErkContext, pr_number: int) -> None:
-    """Trigger remote PR review comment addressing."""
-    # Trigger GitHub Actions workflow
-    ...
-```
+See `address()` in `src/erk/cli/commands/pr/address_cmd.py` for the local command structure, and `launch()` in `src/erk/cli/commands/launch_cmd.py` for remote workflow triggering.
 
-### Key Elements
+### Benefits of Separation
 
-1. **`invoke_without_command=True`**: Allows the group itself to execute when no subcommand is given
-2. **`ctx.invoked_subcommand is None`**: Check if user called the group directly vs a subcommand
-3. **`cls=ErkCommandGroup`**: Uses erk's custom group class for consistent help formatting
-4. **Local in group function, remote as subcommand**: The common case (local) is the default
+**Clarity:** Each command has focused documentation and options specific to its execution mode
 
-## ErkCommandGroup Helper
+**Validation:** Each command validates its own preconditions without conditional context checking
 
-`ErkCommandGroup` is a custom Click group class that:
+**Discoverability:** `erk launch --help` shows all available remote workflows in one place
 
-- Organizes commands into logical sections in help output
-- Provides consistent formatting across erk CLI
-- Supports command grouping in help text
+**Simplicity:** No group ceremony — just commands that do one thing
 
-Import from:
+## The One Remaining Use: `erk init`
 
-```python
-from erk.cli.help_formatter import ErkCommandGroup
-```
+<!-- Source: src/erk/cli/commands/init/__init__.py, init_group() -->
 
-## Usage Examples
+The only current use of `invoke_without_command=True` is `erk init`, which runs full initialization by default but offers `erk init capability` subcommands for managing optional features.
 
-```bash
-# Local execution (slash command)
-/erk:pr-address
+This works because:
 
-# Remote execution (via erk launch)
-erk launch pr-address --pr 123
+- **Shared context:** Both the group and subcommands operate on erk initialization
+- **Progressive disclosure:** The default action (full init) is the 99% case; subcommands are for advanced users
+- **Consistent options:** Flags like `--force` apply to the same initialization logic
 
-# Help
-erk launch --help
-```
+See `init_group()` in `src/erk/cli/commands/init/__init__.py` for implementation.
 
-## Migration Checklist
+## Decision Framework
 
-When unifying separate local/remote commands into a group:
+Use `invoke_without_command=True` when:
 
-1. **Identify the existing commands**
-   - e.g., `erk pr address` (local) and `erk launch pr-address` (remote)
+- The group's default action and its subcommands share **the same domain and preconditions**
+- You want **progressive disclosure** (simple default + advanced subcommands)
+- Options on the group apply to **both** the default action and subcommands
 
-2. **Create the unified group**
-   - Use `@click.group("name", cls=ErkCommandGroup, invoke_without_command=True)`
-   - Put local logic in the group function (default behavior)
-   - Add remote as a subcommand
+Avoid it when:
 
-3. **Update test invocations**
-   - Change `["pr", "address-remote", "123"]` to `["launch", "pr-address", "--pr", "123"]`
-   - Keep local tests unchanged (they invoke the same command path)
+- Default action and subcommands have **different preconditions** (e.g., local vs remote)
+- Execution modes diverge in **error handling or validation**
+- You're creating **parallel workflows** rather than progressive disclosure
 
-4. **Update documentation**
-   - Help text should explain both variants
-   - Examples should show both usage patterns
+## Related Patterns
 
-5. **Remove the old separate command**
-   - Delete the standalone remote command file
-   - Update any imports/registrations
+**For local/remote workflows:** See [Workflow Commands](workflow-commands.md) for the current `erk launch` architecture
 
-## Reference Implementations
+**For command organization:** See [Command Organization](command-organization.md) for when to use groups vs top-level commands
 
-- `src/erk/cli/commands/pr/address_cmd.py` - PR comment addressing
-- `src/erk/cli/commands/pr/fix_conflicts_cmd.py` - Conflict resolution
-- `src/erk/cli/commands/init/__init__.py` - Project initialization
-
-## Related Documentation
-
-- [CLI Development](index.md) - CLI patterns overview
-- [Command Group Testing](../testing/command-group-testing.md) - Testing grouped commands
+**For Click help formatting:** See `ErkCommandGroup` in `src/erk/cli/help_formatter.py` for custom help organization (separate from `invoke_without_command` pattern)

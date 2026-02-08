@@ -1,147 +1,81 @@
 ---
 title: Codespaces TOML Configuration
 read_when:
-  - "working with codespace configuration"
-  - "understanding ~/.erk/codespaces.toml format"
-  - "troubleshooting codespace registration"
+  - "modifying codespace configuration or TOML schema"
+  - "debugging codespace registration or lookup failures"
+  - "adding fields to codespaces.toml"
+tripwires:
+  - action: "reading from or writing to ~/.erk/codespaces.toml directly"
+    warning: "Use CodespaceRegistry gateway instead. All codespace config access should go through the gateway for testability."
+  - action: "using the field name 'default' in codespaces.toml"
+    warning: "The actual field name is 'default_codespace', not 'default'. Check RealCodespaceRegistry in real.py for the schema."
 ---
 
 # Codespaces TOML Configuration
 
-Configuration file format for registered GitHub Codespaces used for remote Claude Code execution.
+## Purpose
 
-## File Location
+`~/.erk/codespaces.toml` is a **name-mapping file** — it maps friendly names to GitHub Codespace identifiers. It does not create, delete, or manage codespace lifecycle (that's `gh codespace create/delete`). Erk only uses it to resolve which remote environment to target for execution.
 
-`~/.erk/codespaces.toml`
+## File Format
 
-## Format
+The TOML schema is defined in `RealCodespaceRegistry` and its helper functions.
 
-```toml
-# Optional: Default codespace name
-default = "dev"
-
-# Registered codespaces
-[codespaces.<name>]
-gh_name = "<github-codespace-name>"
-created_at = "<iso8601-timestamp>"
-```
-
-## Fields
-
-### default (optional)
-
-The friendly name of the default codespace. If set, this codespace will be used when no explicit codespace is specified.
-
-**Type:** String
-**Example:** `"dev"`
-
-### codespaces.<name>
-
-Each registered codespace is stored as a TOML table. The `<name>` is the friendly name used for lookup.
-
-#### gh_name (required)
-
-The GitHub Codespace name returned by `gh codespace list`.
-
-**Type:** String
-**Format:** Usually `<user>-<repo>-<random>`
-**Example:** `"schrockn-myproject-abc123xyz"`
-
-#### created_at (required)
-
-ISO 8601 timestamp of when the codespace was registered.
-
-**Type:** String
-**Format:** ISO 8601 with timezone
-**Example:** `"2024-01-15T10:30:00Z"`
-
-## Example Configuration
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/codespace_registry/real.py, _save_toml_data -->
 
 ```toml
-# Set 'dev' as the default codespace
-default = "dev"
+schema_version = 1
+default_codespace = "dev"
 
-# Development codespace
 [codespaces.dev]
-gh_name = "schrockn-erk-abc123"
+gh_name = "user-codespace-abc123"
 created_at = "2024-01-15T10:30:00Z"
-
-# Staging environment codespace
-[codespaces.staging]
-gh_name = "schrockn-erk-staging-xyz789"
-created_at = "2024-01-20T14:00:00Z"
-
-# Production testing codespace
-[codespaces.prod-test]
-gh_name = "schrockn-erk-prod-def456"
-created_at = "2024-01-25T09:15:00Z"
 ```
 
-## Usage
+Key details:
 
-### Registering a Codespace
+- **`schema_version`** (required): Always `1`. Set by `SCHEMA_VERSION` constant in `real.py`.
+- **`default_codespace`** (optional): Friendly name of the default codespace. Omitted (not set to empty string) when no default exists.
+- **`[codespaces.<name>]`**: Each entry requires `gh_name` (GitHub identifier from `gh codespace list`) and `created_at` (ISO 8601 timestamp of registration time).
 
-```bash
-# Register a new codespace
-erk codespace register dev "schrockn-erk-abc123"
+## Design Decisions
 
-# Set it as the default
-erk codespace set-default dev
-```
+### Why a Separate File from config.toml
 
-### Looking Up Codespaces
+Codespace registration is a distinct concern from global erk configuration. The `ErkInstallation` gateway provides `get_codespaces_config_path()` to resolve the file location, keeping the path derivation centralized while the schema ownership lives in `CodespaceRegistry`.
 
-```bash
-# List all registered codespaces
-erk codespace list
+### Read-Only ABC, Standalone Mutations
 
-# Get details of a specific codespace
-erk codespace get dev
+The `CodespaceRegistry` ABC is read-only. Mutation functions (`register_codespace`, `unregister_codespace`, `set_default_codespace`) are standalone functions in `real.py` that save to disk and return a **new** registry instance. This works because:
 
-# Get the default codespace
-erk codespace get-default
-```
+1. Reads dominate — most code only looks up codespaces
+2. Mutations are rare CLI-only operations (setup/teardown)
+3. Fakes stay simpler without needing to implement mutation tracking on the ABC
 
-## Management
+See `RealCodespaceRegistry` in `packages/erk-shared/src/erk_shared/gateway/codespace_registry/real.py` for the full implementation.
 
-The file is automatically created when the first codespace is registered. Codespaces can be managed through:
+### Dual TOML Libraries
 
-1. **CLI commands** - `erk codespace` commands (preferred)
-2. **Direct editing** - Manual TOML file editing (not recommended)
+The implementation uses `tomllib` (stdlib, read-only) for loading and `tomlkit` (third-party, format-preserving) for saving. This ensures user comments and formatting survive round-trips through mutation operations.
 
-### Removing a Codespace
+## Anti-Patterns
 
-```bash
-erk codespace unregister dev
-```
+**WRONG: Accessing the file path directly**
 
-### Clearing the Default
+The config path comes from `ErkInstallation.get_codespaces_config_path()`, not by constructing `Path.home() / ".erk" / "codespaces.toml"`. Hardcoding `Path.home()` breaks test isolation.
 
-```bash
-erk codespace set-default --clear
-```
+**WRONG: Adding the `default` field**
 
-## Validation
+The field is `default_codespace`, not `default`. The existing doc and the sister `codespace-registry.md` gateway doc historically used `default`, but the actual implementation has always used `default_codespace`.
 
-The CodespaceRegistry gateway validates:
+## Relationship to Other Gateways
 
-- **TOML syntax** - File must be valid TOML
-- **Required fields** - Each codespace must have `gh_name` and `created_at`
-- **Default exists** - If `default` is set, that codespace must exist
-- **Unique names** - Codespace names must be unique
-
-## Relationship to GitHub
-
-**Important:** This file stores the **mapping** between friendly names and GitHub codespace names. It does NOT:
-
-- Create codespaces (use `gh codespace create`)
-- Delete codespaces (use `gh codespace delete`)
-- Manage codespace lifecycle
-
-It only tracks which codespaces erk should use for remote execution.
+| Gateway             | Responsibility                              |
+| ------------------- | ------------------------------------------- |
+| `CodespaceRegistry` | Name-to-identifier mapping (this file)      |
+| `Codespace`         | SSH operations against a resolved codespace |
+| `ErkInstallation`   | Provides the config file path               |
 
 ## Related Topics
 
-- [CodespaceRegistry Gateway](../gateway/codespace-registry.md) - Programmatic access
-- [Codespace Gateway](../architecture/gateway-inventory.md#codespace-gatewaycodespace) - SSH operations
-- [Remote Execution](../erk/remote-execution.md) - Using codespaces for implementation
+- [CodespaceRegistry Gateway](../gateway/codespace-registry.md) — programmatic access patterns

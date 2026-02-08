@@ -1,309 +1,92 @@
 ---
-title: Electron Backend Communication Patterns
+title: Backend Communication Pattern Decision
 read_when:
-  - "connecting Electron to a Python backend"
-  - "choosing between HTTP server and CLI shelling for IPC"
-  - "implementing the desktop dashboard backend"
-last_audited: "2026-02-05 15:25 PT"
-audit_result: clean
+  - "choosing how erkdesk communicates with the Python backend"
+  - "evaluating whether to add a persistent backend server"
+  - "understanding why erkdesk shells out to CLI commands"
+tripwires:
+  - action: "adding a persistent server process for erkdesk"
+    warning: "CLI shelling was chosen deliberately. Python startup (~200ms) is noise compared to GitHub API latency (~1.5-2s). Don't optimize the wrong bottleneck."
+    score: 5
+  - action: "duplicating PlanDataProvider logic in TypeScript"
+    warning: "erkdesk delegates all data fetching to `erk exec dash-data`. The Python side owns data assembly — erkdesk is a thin rendering shell over CLI output."
+    score: 6
 ---
 
-# Electron Backend Communication Patterns
+# Backend Communication Pattern Decision
 
-Analysis of three backend communication patterns for connecting Electron to the Python erk backend, with recommendations based on the current TUI data flow.
+erkdesk communicates with the Python backend exclusively through CLI subprocess calls. This was a deliberate architectural choice over two alternatives.
 
-## Current TUI Data Flow
+## Three Patterns Evaluated
 
-Understanding how the TUI works today informs the desktop dashboard architecture.
+| Pattern                   | Mechanism                          | Startup Cost               | Lifecycle Complexity                                        |
+| ------------------------- | ---------------------------------- | -------------------------- | ----------------------------------------------------------- |
+| FastAPI local server      | HTTP on localhost                  | ~500ms (uvicorn + FastAPI) | High — port conflicts, health monitoring, daemon management |
+| **CLI shelling (chosen)** | `execFile`/`spawn` per command     | ~200ms (Python import)     | None — stateless, each call independent                     |
+| stdio JSON-RPC            | Long-lived process on stdin/stdout | Zero (process stays alive) | Medium — crash recovery, health checks, protocol framing    |
 
-### Data Fetching (In-Process)
+## Why CLI Shelling Won
 
-The TUI fetches plan data in-process using the `PlanDataProvider`:
+**The latency analysis sealed the decision.** Python startup (~200ms) is dominated by GitHub API latency (~1.5-2s) on every data fetch. Eliminating startup cost saves ~10% of total request time — not worth the lifecycle complexity of a persistent server.
 
-```
-Textual TUI → PlanDataProvider → PlanListService → GitHub API
-                                                  → Local filesystem
-                                                  → Git worktrees
-```
+Additional factors:
 
-**Characteristics:**
+- **Consistency with TUI**: The Textual TUI already uses `PlanDataProvider` in-process and delegates long-running actions to `erk` subprocesses. erkdesk shells out for _everything_ (including data fetches), which is simpler but slightly different.
+- **Debuggability**: Every erkdesk action maps to a terminal command. Running `erk exec dash-data` manually reproduces exactly what the UI does.
+- **No server lifecycle**: No port conflicts, no daemon management, no "is the server running?" failure mode.
 
-- Synchronous Python calls
-- Direct access to erk's Python codebase
-- No network boundary
-- Fetches complete data (~50ms for 20 plans)
+## The Two Execution Modes
 
-### Action Execution (Mixed)
+erkdesk uses two Node.js subprocess APIs, chosen by action duration:
 
-Actions follow two patterns:
+| Duration  | Node.js API  | IPC Pattern                             | Use Case                                             |
+| --------- | ------------ | --------------------------------------- | ---------------------------------------------------- |
+| <1 second | `execFile()` | Request-response (`ipcMain.handle`)     | Data fetching (`erk exec dash-data`)                 |
+| >1 second | `spawn()`    | Fire-and-forget + events (`ipcMain.on`) | Actions (`erk plan submit`, `erk launch pr-address`) |
 
-**In-Process (Fast Actions):**
+The split exists because `execFile` buffers all output and returns it at once (simple but blocks the UI), while `spawn` streams chunks as they arrive (complex but keeps the UI responsive).
 
-- `close_plan` - HTTP calls to GitHub API
-- `submit_to_queue` - HTTP calls to GitHub API
+<!-- Source: erkdesk/src/main/index.ts, plans:fetch handler and actions:start-streaming handler -->
 
-**Subprocess (Long-Running Actions):**
+See the `plans:fetch` handler (blocking) and `actions:start-streaming` handler (streaming) in `erkdesk/src/main/index.ts` for the two patterns side by side.
 
-- `land_pr` - Spawns `erk land <pr>` subprocess
-- `fix_conflicts_remote` - Spawns `erk launch pr-fix-conflicts --pr <pr>`
-- `address_remote` - Spawns `erk launch pr-address --pr <pr>`
+## Cross-Boundary Data Contract
 
-**Why the split?** Fast actions run in-process to avoid subprocess overhead (~200ms Python startup). Long-running actions run as subprocesses to:
+The Python and TypeScript sides share a data contract through JSON serialization:
 
-1. Stream output line-by-line
-2. Run with 600s timeout
-3. Isolate failures
+1. **Python side**: `dash_data.py` serializes `PlanRowData` (36-field frozen dataclass) to JSON, handling datetime→ISO 8601 and tuple→list conversions.
+2. **TypeScript side**: `erkdesk.d.ts` defines `PlanRow` as a subset (~20 fields) of the Python type, keeping only what the UI renders.
 
-## Evaluated Backend Communication Patterns
+<!-- Source: src/erk/cli/commands/exec/scripts/dash_data.py, _serialize_plan_row -->
+<!-- Source: erkdesk/src/types/erkdesk.d.ts, PlanRow interface -->
 
-### 1. FastAPI Local Server (Considered, Rejected)
+The TypeScript `PlanRow` is intentionally a subset — it omits fields like `issue_body`, `log_entries`, and `learn_status` that only the TUI uses. This keeps the renderer lightweight.
 
-**Concept:** Run a local HTTP server (`uvicorn`) that serves JSON data and accepts action requests.
+## TUI vs erkdesk: Action Execution Divergence
 
-**Architecture:**
+Both UIs display the same plan data, but execute actions differently:
 
-```
-Electron → HTTP (localhost:5000) → FastAPI → PlanDataProvider
-```
+| Aspect                       | TUI (Textual)                                   | erkdesk (Electron)                                   |
+| ---------------------------- | ----------------------------------------------- | ---------------------------------------------------- |
+| Data fetching                | In-process via `PlanDataProvider.fetch_plans()` | Subprocess: `erk exec dash-data`                     |
+| Fast actions (close, submit) | In-process via `PlanDataProvider` methods       | Subprocess: `erk exec close-plan`, `erk plan submit` |
+| Long-running actions         | Subprocess with streaming                       | Subprocess with streaming                            |
+| Action dispatch              | Command palette + keybindings                   | ActionToolbar button bar                             |
 
-**Pros:**
+The key difference: the TUI calls Python methods directly for fast actions (avoiding ~200ms subprocess overhead), while erkdesk _always_ shells out since it has no in-process Python. This means erkdesk actions feel slightly slower for quick operations but the architecture is simpler.
 
-- Standard HTTP/JSON interface
-- Easy to develop and debug (curl, Postman)
-- Built-in async support
-- OpenAPI docs
+## When to Reconsider This Decision
 
-**Cons:**
+The stdio JSON-RPC upgrade path remains viable if:
 
-- **Lifecycle complexity:** Server must be managed (start, stop, port conflicts)
-- **Port conflicts:** Need to discover free port or handle collisions
-- **Overhead:** HTTP stack adds latency for every request (~10-50ms)
-- **Startup time:** uvicorn + FastAPI initialization (~500ms)
-- **Over-engineered:** We don't need HTTP's features (caching, proxying, auth)
+- **Data fetching frequency increases** beyond the current 15-second auto-refresh cycle, making cumulative startup cost noticeable
+- **In-process state** becomes necessary (e.g., caching GitHub responses, connection pooling)
+- **Bidirectional streaming** is needed (e.g., the backend pushing real-time updates to the UI)
 
-**When to consider:** If we need to support multiple clients or web browser access.
-
-**Verdict:** Overkill for a single local desktop app.
-
----
-
-### 2. CLI Shelling (RECOMMENDED for MVP)
-
-**Concept:** Spawn CLI commands from Electron and parse JSON output.
-
-**Architecture:**
-
-```
-Electron Main Process → spawn("erk dash-data --json")
-                      → spawn("erk exec land <pr>")  [streaming]
-                      → spawn("erk plan close <issue>")
-```
-
-**Pros:**
-
-- **Simple:** No server lifecycle management
-- **Consistent with TUI:** Same pattern TUI uses for actions
-- **Stateless:** Each request is independent
-- **Easy debugging:** Commands work from terminal
-- **Streaming support:** Natural for long-running commands
-
-**Cons:**
-
-- **Python startup cost:** ~200ms per command (mostly import time)
-- **No connection pooling:** Each request pays startup cost
-- **JSON parsing:** Need to ensure stable JSON output format
-
-**Startup Cost Analysis:**
-
-```bash
-# Time to import and print JSON (simulates dash-data)
-time python -c "import json; print(json.dumps({'test': 'data'}))"
-# Result: ~180-220ms
-
-# Time for actual dash-data command
-time erk dash-data --json
-# Result: ~1.5-2s (GitHub API calls dominate)
-```
-
-**Key Insight:** Python startup (~200ms) is noise compared to GitHub API latency (~1.5-2s). Not worth optimizing away for MVP.
-
-**Verdict:** Start here. Simple, reliable, and good enough.
-
----
-
-### 3. stdio JSON-RPC (Future Upgrade)
-
-**Concept:** Long-running Python process communicating via stdin/stdout JSON-RPC.
-
-**Architecture:**
-
-```
-Electron Main Process → spawn("erk dash-server")
-                      → stdin/stdout JSON-RPC messages
-                      ← stream responses
-```
-
-**Example Message:**
-
-```json
-// Request (stdin)
-{"jsonrpc": "2.0", "id": 1, "method": "fetch_plans", "params": {"state": "open"}}
-
-// Response (stdout)
-{"jsonrpc": "2.0", "id": 1, "result": [{"issue_number": 123, ...}]}
-```
-
-**Pros:**
-
-- **No startup cost:** Process stays alive
-- **Stateful:** Can maintain caches, connections
-- **Bidirectional streaming:** Natural for long-running actions
-- **No port conflicts:** Uses stdio only
-
-**Cons:**
-
-- **More complex:** JSON-RPC protocol implementation
-- **Process management:** Must monitor health, restart on crashes
-- **Debugging harder:** Can't run individual commands manually
-- **Over-engineered for MVP:** Optimization without evidence
-
-**When to consider:** If Python startup cost becomes a bottleneck (unlikely given GitHub API dominates latency).
-
-**Verdict:** Defer until profiling shows it's needed.
-
-## Recommendation: Start with CLI Shelling
-
-### Implementation Plan
-
-#### Phase 1: Data Fetching
-
-Add a new CLI command that serializes `PlanRowData` to JSON:
-
-```bash
-erk dash-data --json
-```
-
-Output:
-
-```json
-{
-  "plans": [
-    {
-      "issue_number": 123,
-      "title": "Add dark mode",
-      "pr_number": 456,
-      "pr_url": "https://github.com/owner/repo/pull/456",
-      "last_local_impl_at": "2026-01-30T14:23:00Z",
-      ...
-    }
-  ]
-}
-```
-
-**Electron Side:**
-
-```typescript
-import { exec } from "child_process";
-import { promisify } from "util";
-
-const execAsync = promisify(exec);
-
-async function fetchPlans(): Promise<PlanRowData[]> {
-  const { stdout } = await execAsync("erk dash-data --json");
-  const data = JSON.parse(stdout);
-  return data.plans;
-}
-```
-
-#### Phase 2: Fast Actions
-
-Execute via CLI, parse JSON response:
-
-```bash
-erk plan close 123 --json
-# Output: {"success": true, "closed_prs": [456]}
-
-erk plan submit 123 --json
-# Output: {"success": true, "queued": true}
-```
-
-#### Phase 3: Streaming Actions
-
-Execute via CLI, stream stdout line-by-line:
-
-```typescript
-import { spawn } from "child_process";
-
-function executeLand(prNumber: number, onOutput: (line: string) => void) {
-  const proc = spawn("erk", ["land", prNumber.toString()]);
-
-  proc.stdout.on("data", (data) => {
-    const lines = data.toString().split("\n");
-    lines.forEach((line) => onOutput(line));
-  });
-
-  return proc; // Caller can monitor exit code
-}
-```
-
-### Upgrade Path to stdio JSON-RPC
-
-If profiling shows Python startup is a bottleneck:
-
-1. Add `erk dash-server` command that runs a long-lived JSON-RPC server on stdin/stdout
-2. Update Electron to spawn once and reuse the process
-3. Keep CLI commands working for backward compatibility and debugging
-
-This upgrade is transparent to the Electron renderer (same data shape, just faster).
-
-## Command Interface Specification
-
-### Data Command
-
-```bash
-erk dash-data --json [--state open|closed|all] [--limit N]
-```
-
-Returns:
-
-```json
-{
-  "plans": [PlanRowData...],
-  "fetched_at": "2026-01-30T14:23:00Z"
-}
-```
-
-### Action Commands
-
-All return JSON with `success` boolean and optional result data:
-
-```bash
-erk plan close <issue> --json
-erk plan submit <issue> --json
-erk land <pr> [--streaming]  # Streams stdout if --streaming
-erk launch pr-fix-conflicts --pr <pr> [--streaming]
-erk launch pr-address --pr <pr> [--streaming]
-```
-
-## Error Handling
-
-CLI commands exit with non-zero codes on failure. Electron must check exit codes:
-
-```typescript
-try {
-  const { stdout, stderr } = await execAsync("erk dash-data --json");
-  return JSON.parse(stdout);
-} catch (error) {
-  if (error.code !== 0) {
-    // Command failed, check stderr for error message
-    console.error("erk command failed:", error.stderr);
-  }
-  throw error;
-}
-```
+The upgrade would be transparent to the renderer — same `PlanRow` data shape, just delivered through a persistent process instead of per-command subprocesses.
 
 ## Related Documentation
 
-- [TUI Data Contract Reference](../tui/data-contract.md) - PlanRowData fields returned by `erk dash-data`
-- [TUI Action Command Inventory](../tui/action-inventory.md) - Action execution patterns
-- [Desktop Dashboard Framework Evaluation](framework-evaluation.md) - Why Electron was chosen
+- [erkdesk App Architecture](app-architecture.md) — State management and streaming action lifecycle
+- [IPC Actions](ipc-actions.md) — Four-location checklist and handler patterns
+- [Action Toolbar](action-toolbar.md) — Action definitions and availability predicates
