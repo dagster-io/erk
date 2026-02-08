@@ -4,11 +4,6 @@ read_when:
   - "implementing live-updating terminal displays"
   - "working with TUI real-time updates"
   - "showing progress indicators"
-tripwires:
-  - action: "using LiveDisplay in watch loops or long-running operations"
-    warning: "guard with try/finally to ensure stop() is called even on KeyboardInterrupt"
-  - action: "choosing output stream for LiveDisplay"
-    warning: "RealLiveDisplay writes to stderr by default (matches erk's user_output convention) — stdout is reserved for structured data"
 ---
 
 # LiveDisplay Gateway
