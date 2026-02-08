@@ -7,11 +7,10 @@ read_when:
   - debugging parameter not found errors
 title: Parameter Addition Checklist
 tripwires:
-  - action: adding a parameter to erk exec without updating calling command
-    warning:
-      5-step verification required. Parameter additions must thread through skill
-      argument-hint, command invocations, AND exec script. Miss any layer and you get
-      silent failures or discovery problems. See parameter-addition-checklist.md.
+  - action: "adding a parameter to erk exec without updating calling command"
+    warning: "5-step verification required. Parameter additions must thread through skill argument-hint, command invocations, AND exec script. Miss any layer and you get silent failures or discovery problems. See parameter-addition-checklist.md."
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Parameter Addition Checklist
