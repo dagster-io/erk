@@ -6,11 +6,13 @@ read_when:
   - understanding frontmatter schema for agent docs
   - running erk docs sync
 tripwires:
-  - action: "writing a tripwire as a plain string instead of {action, warning} dict"
-    warning: "The validator requires structured dicts with action and warning keys. Plain strings fail validation with 'must be an object'."
-  - action: "creating a doc in docs/learned/ without read_when field"
-    warning: "read_when is required. Without it, the doc won't appear in any index and agents will never discover it."
----
+  - action: "critical: before creating a gateway"
+    warning: "CRITICAL: Before creating a gateway without all 5 implementation layers"
+  - action: "critical: before modifying pr footer"
+    warning: "CRITICAL: Before modifying PR footer format validation"
+  - action: "critical: before using eafp (try/except)"
+    warning: "CRITICAL: Before using EAFP (try/except) for control flow"
+```
 
 # Frontmatter and Tripwire Format
 
@@ -46,12 +48,18 @@ Tripwires use a structured `{action, warning}` format, **not** plain strings:
 ```yaml
 # CORRECT — structured format
 tripwires:
-  - action: "calling subprocess.run(check=True) directly"
-    warning: "Use erk's subprocess wrappers instead for consistent error handling."
+  - action: "don't forget to implement all"
+    warning: "Don't forget to implement all 5 layers"
 
 # WRONG — plain string (fails validation with 'must be an object')
 tripwires:
-  - "CRITICAL: Before calling subprocess.run(check=True) directly"
+  - action: "performing actions related to this tripwire"
+    warning: "CRITICAL: Before working with gateways"
+
+# BAD - Describes consequence, not action
+tripwires:
+  - action: "performing actions related to this tripwire"
+    warning: "CRITICAL: Before breaking tests"
 ```
 
 ### Why Two Fields Instead of One String?
@@ -66,7 +74,16 @@ The structured format separates the **trigger** (`action`) from the **guidance**
 
 <!-- Source: src/erk/agent_docs/operations.py, generate_category_tripwires_doc -->
 
-During sync, these render into category tripwire files as: **CRITICAL: Before {action}** → Read [{doc title}]({doc path}) first. {warning}
+```markdown
+---
+read_when:
+  - "using subprocess wrappers"
+  - "handling subprocess errors"
+tripwires:
+  - action: "performing actions related to this tripwire"
+    warning: "CRITICAL: Before using subprocess.run(check=True) directly"
+  - action: "performing actions related to this tripwire"
+    warning: "--"
 
 The "CRITICAL: Before" prefix is added automatically — don't include it in the `action` field.
 
@@ -108,7 +125,55 @@ Overly broad conditions waste agent context window by loading irrelevant docs. O
 5. Generates per-category `tripwires.md` and the master `tripwires-index.md`
 6. Formats all output through prettier (run twice for idempotency — see `_format_with_prettier()` in `operations.py` for why the double-pass is necessary)
 
-**Always commit both source docs AND generated files.** Generated files are checked in because agents load them directly — they're not rebuilt at runtime.
+### Required Frontmatter Check
+
+All docs MUST have `read_when` field:
+
+```yaml
+# INVALID - Missing read_when
+---
+title: My Doc
+---
+# VALID - Has read_when
+---
+read_when:
+  - "working with feature X"
+---
+```
+
+### Tripwire Format Check
+
+All tripwires MUST start with `CRITICAL: Before`:
+
+```yaml
+# INVALID
+tripwires:
+  - action: "performing actions related to this tripwire"
+    warning: "Remember to check X"
+  - action: "critical: don't do y\" #"
+    warning: "CRITICAL: Don't do Y\"  # Wrong - should be \"Before doing Y"
+
+# VALID
+tripwires:
+  - action: "critical: before doing x without"
+    warning: "CRITICAL: Before doing X without checking Y"
+  - action: "performing actions related to this tripwire"
+    warning: "CRITICAL: Before modifying Z"
+```
+
+### YAML Syntax Check
+
+Frontmatter must be valid YAML:
+
+```yaml
+# INVALID - Unquoted colon in string
+read_when:
+  - working with: gateway patterns
+
+# VALID - Quoted strings
+read_when:
+  - "working with: gateway patterns"
+```
 
 ## Category Assignment
 
@@ -120,11 +185,80 @@ To create a new category: create the directory, add docs with valid frontmatter,
 
 ## Common Mistakes
 
-| Symptom                                            | Cause                                            | Fix                                                     |
-| -------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------- |
-| Tripwire missing from generated files              | Plain string instead of `{action, warning}` dict | Restructure as `{action: "...", warning: "..."}`        |
-| Doc missing from index                             | No `read_when` field or empty list               | Add at least one condition                              |
-| Validation error: `tripwires[N] must be an object` | Tripwire item is a string                        | Convert to structured dict format                       |
-| "Invalid YAML" parse error                         | Unquoted colons or special characters            | Quote strings: `"working with: patterns"`               |
-| Prettier cycling between sync and CI               | Single-pass formatting                           | Already fixed — `_format_with_prettier` runs two passes |
-| Doc shows in wrong category tripwires              | Doc is in wrong directory for its content        | Move to correct category directory, re-sync             |
+### Minimal Doc (read_when only)
+
+```yaml
+---
+read_when:
+  - "understanding project glossary"
+  - "looking up erk terminology"
+---
+```
+
+### Complete Doc (all fields)
+
+```yaml
+---
+title: Gateway ABC Implementation Checklist
+read_when:
+  - "implementing gateway abstractions"
+  - "creating new gateway"
+  - "working with 5-layer pattern"
+tripwires:
+  - action: "critical: before creating gateway without"
+    warning: "CRITICAL: Before creating gateway without fake implementation"
+  - action: "critical: before skipping dryrun or"
+    warning: "CRITICAL: Before skipping DryRun or Printing layers"
+  - action: "performing actions related to this tripwire"
+    warning: "--"
+```
+
+### Doc with Multiple Tripwires
+
+```yaml
+---
+read_when:
+  - "writing CLI commands"
+  - "handling user input validation"
+tripwires:
+  - action: "critical: before using runtimeerror for"
+    warning: "CRITICAL: Before using RuntimeError for expected CLI failures"
+  - action: "critical: before adding cli flags"
+    warning: "CRITICAL: Before adding CLI flags without validation"
+  - action: "critical: before using dict .get()"
+    warning: "CRITICAL: Before using dict .get() on exec script JSON without TypedDict"
+  - action: "performing actions related to this tripwire"
+    warning: "--"
+```
+
+## Troubleshooting
+
+### Tripwires Not Appearing in Generated Files
+
+**Cause**: Tripwire doesn't start with `CRITICAL: Before`
+
+**Fix**: Update frontmatter format, re-run `erk docs sync`
+
+### "Invalid YAML" Error
+
+**Cause**: Syntax error in frontmatter (unquoted colons, wrong indentation)
+
+**Fix**: Validate YAML with online parser, fix syntax
+
+### Doc Not in Index
+
+**Cause**: Missing `read_when` field
+
+**Fix**: Add `read_when` field with at least one condition
+
+### Tripwire in Wrong Category File
+
+**Cause**: Doc is in wrong directory for its content
+
+**Fix**: Move doc to correct category directory, re-run `erk docs sync`
+
+## Related Documentation
+
+- [Documentation Hub](guide.md) - Complete documentation navigation guide
+- [Claude MD Best Practices](claude-md-best-practices.md) - Frontmatter for CLAUDE.md files
+- [Tripwires Index](../tripwires-index.md) - Complete list of all tripwires
