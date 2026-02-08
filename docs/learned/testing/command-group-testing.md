@@ -1,147 +1,69 @@
 ---
 title: Command Group Testing
 read_when:
-  - "testing Click command groups"
-  - "migrating tests for grouped commands"
-  - "testing invoke_without_command patterns"
+  - "testing Click command groups with invoke_without_command=True"
+  - "writing tests for commands that serve as both group and default action"
+tripwires:
+  - action: "testing only the subcommand path of a group with invoke_without_command=True"
+    warning: "Groups with default behavior need tests for BOTH paths: direct invocation (no subcommand) and explicit subcommand invocation. Missing either path is a coverage gap."
+  - action: "passing group-level options when invoking a subcommand in tests"
+    warning: "Click does NOT propagate group-level options to subcommands by default. Options placed before the subcommand name in the args list are silently ignored."
 ---
 
 # Command Group Testing
 
-This document covers testing patterns for Click command groups, especially those using `invoke_without_command=True`.
+Testing patterns for Click command groups that use `invoke_without_command=True`, where the group itself executes behavior when no subcommand is given.
 
-## Test Invocation Changes
+## Why This Needs Special Attention
 
-When commands are unified into groups, test invocations must change:
+`invoke_without_command=True` creates a dual-path command: the group runs its own logic when invoked directly, but delegates to a subcommand when one is specified. This means a single command registration creates **two distinct execution paths** that must be tested independently. Agents naturally test the more common path and forget the other.
 
-### Before (Separate Commands)
+## Historical Context
 
-```python
-# Old: separate remote command
-result = runner.invoke(cli, ["pr", "address-remote", "123"], obj=ctx)
-```
+Erk originally used `invoke_without_command=True` to unify local/remote command variants (e.g., `erk pr address` for local, `erk pr address remote` for remote). This pattern was abandoned because local and remote execution have fundamentally different preconditions, options, and error modes. See [Local/Remote Command Group Pattern (Deprecated)](../cli/local-remote-command-groups.md) for the full rationale.
 
-### After (Grouped Commands)
+<!-- Source: src/erk/cli/commands/init/__init__.py, init_group() -->
 
-```python
-# New: remote as subcommand
-result = runner.invoke(cli, ["pr", "address", "remote", "123"], obj=ctx)
-```
+The only remaining use is `erk init`, where it works because the default action (full initialization) and subcommands (`erk init capability add/remove/list`) share the same domain and preconditions. See `init_group()` in `src/erk/cli/commands/init/__init__.py` for the implementation, and `tests/unit/cli/commands/init/capability/` for test examples.
 
-## Testing Both Variants
+## Two-Path Test Coverage
 
-For command groups with default behavior, test both invocation paths:
+Every group with `invoke_without_command=True` requires tests for both invocation paths:
 
-```python
-class TestAddressGroup:
-    """Tests for erk pr address command group."""
+| Path | Invocation shape | What to verify |
+|------|-----------------|----------------|
+| **Default** | `["group-name", "--flag"]` | Group function runs when `ctx.invoked_subcommand is None` |
+| **Subcommand** | `["group-name", "sub", "arg"]` | Subcommand takes over, group function is skipped or acts as pass-through |
 
-    def test_local_variant_default(self, tmp_path: Path) -> None:
-        """Test invoking group directly runs local variant."""
-        runner = CliRunner()
-        ctx = ErkContext.for_test(cwd=tmp_path)
+Missing either path is a silent coverage gap — Click handles the routing, so the untested path won't fail loudly until production.
 
-        # Invoke group without subcommand
-        result = runner.invoke(
-            cli,
-            ["pr", "address", "--dangerous"],
-            obj=ctx,
-        )
-        # Verify local behavior executed
-        ...
+## Click Option Propagation Gotcha
 
-    def test_remote_variant_explicit(self, tmp_path: Path) -> None:
-        """Test invoking remote subcommand explicitly."""
-        runner = CliRunner()
-        ctx = ErkContext.for_test(cwd=tmp_path)
-
-        # Invoke with remote subcommand
-        result = runner.invoke(
-            cli,
-            ["pr", "address", "remote", "123"],
-            obj=ctx,
-        )
-        # Verify remote behavior executed
-        ...
-```
-
-## Bulk Migration with sed
-
-When migrating many tests after command unification:
-
-```bash
-# Replace old invocation pattern with new
-find tests/ -name "*.py" -exec sed -i \
-  's/"address-remote", "/"address", "remote", "/g' {} \;
-```
-
-## Testing Default vs Subcommand Behavior
-
-Groups with `invoke_without_command=True` need explicit testing of both paths:
+Group-level options (`@click.option` on the group function) do **not** propagate to subcommands by default. This is a Click design choice that causes subtle test failures:
 
 ```python
-def test_group_default_behavior(tmp_path: Path) -> None:
-    """Verify default behavior when no subcommand given."""
-    runner = CliRunner()
-
-    # Missing required flag should fail
-    result = runner.invoke(cli, ["pr", "address"], obj=ctx)
-    assert result.exit_code != 0
-    assert "--dangerous" in result.output
-
-    # With required flag, runs local
-    result = runner.invoke(cli, ["pr", "address", "--dangerous"], obj=ctx)
-    assert result.exit_code == 0
-
-
-def test_group_subcommand_behavior(tmp_path: Path) -> None:
-    """Verify subcommand takes precedence."""
-    runner = CliRunner()
-
-    # Remote subcommand ignores group options
-    result = runner.invoke(cli, ["pr", "address", "remote", "123"], obj=ctx)
-    assert result.exit_code == 0
+# WRONG: --force is defined on the group, not the subcommand
+# Click silently ignores it when a subcommand is specified
+runner.invoke(cli, ["init", "--force", "capability", "add", "foo"], obj=ctx)
 ```
 
-## Common Pitfalls
+When this matters: if a group has options that should affect subcommand behavior, the group function must store them in `ctx.ensure_object(dict)` or pass them via `ctx.obj`, and the subcommand must read them from context. This is additional wiring that needs its own test coverage.
 
-### Forgetting to Update Test Invocations
+## Context Dependencies Differ by Path
 
-After unifying commands, tests using the old path will fail:
+Different invocation paths often need different fake dependencies. The group's default path and its subcommands may use entirely different gateways:
 
-```python
-# FAILS after migration
-result = runner.invoke(cli, ["pr", "address-remote", "123"], obj=ctx)
-# Error: No such command 'address-remote'
-```
+| If path uses... | Provide in `ErkContext.for_test()` |
+|-----------------|-----------------------------------|
+| External tool execution | `prompt_executor=FakePromptExecutor()` |
+| GitHub API access | `github=FakeGitHub()` or `github_issues=FakeGitHubIssues()` |
+| Git operations | `git=FakeGit(...)` |
+| Filesystem state | `cwd=tmp_path` with pre-created directory structure |
 
-### Testing Group Options on Subcommand
-
-Group-level options don't propagate to subcommands by default:
-
-```python
-# Group option --dangerous doesn't apply to remote subcommand
-result = runner.invoke(
-    cli,
-    ["pr", "address", "--dangerous", "remote", "123"],  # --dangerous ignored
-    obj=ctx,
-)
-```
-
-### Missing Context for Grouped Commands
-
-Grouped commands may need different context setup:
-
-```python
-# Local variant needs prompt executor
-ctx = ErkContext.for_test(cwd=tmp_path, prompt_executor=FakePromptExecutor())
-
-# Remote variant needs GitHub access
-ctx = ErkContext.for_test(cwd=tmp_path, github=FakeGitHub())
-```
+Providing the wrong fake for a path produces confusing errors. Check what gateway each path actually calls before writing the test.
 
 ## Related Documentation
 
-- [Local/Remote Command Groups](../cli/local-remote-command-groups.md) - Implementation pattern
-- [Exec Script Testing](exec-script-testing.md) - General exec testing patterns
-- [CLI Testing Patterns](cli-testing.md) - Broader CLI testing guidance
+- [Local/Remote Command Groups (Deprecated)](../cli/local-remote-command-groups.md) — Why the unified local/remote pattern was abandoned, and the decision framework for when `invoke_without_command=True` is appropriate
+- [CLI Testing Patterns](cli-testing.md) — General `ErkContext.for_test()` patterns for CLI tests
+- [Exec Script Testing](exec-script-testing.md) — Testing patterns for exec scripts

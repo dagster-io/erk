@@ -1,317 +1,90 @@
 ---
-title: Erkdesk Component Testing Patterns
+title: Erkdesk Component Test Architecture
 category: testing
 read_when:
   - writing tests for erkdesk React components
-  - testing keyboard navigation in erkdesk
-  - testing async state updates in React components
+  - deciding whether to test at component level or App level
+  - adding keyboard navigation tests for erkdesk
+  - creating test data factories for PlanRow
+tripwires:
+  - action: "testing keyboard navigation in a component test"
+    warning: "Keyboard handlers (j/k) are registered on document in App, not on individual components. Test keyboard navigation in App.test.tsx, not component tests."
+  - action: "testing IPC calls in a component test for a prop-driven component"
+    warning: "PlanList and ActionToolbar receive data via props — they don't call window.erkdesk directly. IPC verification belongs in App.test.tsx where the actual fetch-state-props flow lives."
+  - action: "creating inline PlanRow test data with all fields"
+    warning: "Use the makePlan() factory with Partial<PlanRow> overrides. PlanRow has 18+ fields; inline objects go stale when the type changes. See any test file for the pattern."
 ---
 
-# Erkdesk Component Testing Patterns
+# Erkdesk Component Test Architecture
 
-This document covers common testing patterns specific to erkdesk components, with examples from PlanList and SplitPane tests.
+Erkdesk tests are split into two layers with distinct responsibilities. Understanding why the split exists prevents writing tests in the wrong place.
 
-## Test File Structure
+## The Two-Layer Split
 
-```typescript
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { vi } from "vitest";
-import { PlanList } from "./PlanList";
+<!-- Source: erkdesk/src/renderer/App.test.tsx -->
+<!-- Source: erkdesk/src/renderer/components/PlanList.test.tsx -->
+<!-- Source: erkdesk/src/renderer/components/ActionToolbar.test.tsx -->
 
-describe("PlanList", () => {
-  beforeEach(() => {
-    // Reset mocks before each test
-    vi.mocked(window.erkdesk.invoke).mockReset();
-    vi.mocked(window.erkdesk.invoke).mockResolvedValue({
-      plans: [
-        /* test data */
-      ],
-    });
-  });
+| Layer | Tests | What it verifies | Uses waitFor? |
+|-------|-------|-----------------|---------------|
+| **App integration** | `App.test.tsx` | Async data flow: IPC fetch → state → child props. Keyboard navigation (j/k). Auto-refresh. Streaming. URL loading. | Yes — data arrives asynchronously via `fetchPlans()` |
+| **Component unit** | `PlanList.test.tsx`, `ActionToolbar.test.tsx`, etc. | Rendering from props. Click callbacks. CSS class application. Button enable/disable logic. | No — components receive data synchronously via props |
 
-  it("test description", async () => {
-    // Test implementation
-  });
-});
-```
+**Why this split matters**: PlanList is a controlled component — it receives `plans`, `selectedIndex`, and `onSelectIndex` as props. It has no `useEffect` that fetches data and no keyboard event listeners. Testing async data flow or keyboard navigation against PlanList directly would require mocking behavior that doesn't exist in that component. The App component owns the data-fetching `useEffect`, the keyboard `addEventListener`, and the IPC bridge calls, so those behaviors must be tested there.
 
-**Key points:**
+**Anti-pattern**: Writing `await waitFor(...)` in a PlanList test. If you need `waitFor`, you're testing behavior that lives in App, not PlanList.
 
-- Import from `@testing-library/react` (render, screen, waitFor)
-- Import `userEvent` for keyboard/mouse interactions
-- Reset `window.erkdesk.invoke` mock in `beforeEach`
-- Use `async` functions for tests with `waitFor()` or user interactions
+## The makePlan Factory Pattern
 
-## Pattern: Async State Testing
+<!-- Source: erkdesk/src/renderer/components/PlanList.test.tsx, makePlan -->
+<!-- Source: erkdesk/src/renderer/components/ActionToolbar.test.tsx, makePlan -->
+<!-- Source: erkdesk/src/renderer/App.test.tsx, makePlan -->
 
-React components fetch data in `useEffect`, which runs asynchronously after render. Assertions must wait for state updates.
+`PlanRow` has 18+ fields. Every test file that needs plan data defines a local `makePlan(overrides: Partial<PlanRow>)` factory that provides sensible defaults and lets each test override only the fields relevant to its assertion.
 
-### ❌ Broken: Immediate Assertion
+This factory is duplicated in each test file rather than shared because:
 
-```typescript
-it('renders plans', () => {
-  render(<PlanList />)
-  // BUG: Component hasn't loaded data yet!
-  expect(screen.getByText('Plan Title')).toBeInTheDocument() // Fails
-})
-```
+- **Test files are self-contained** — no shared test utilities to maintain or import
+- **Defaults differ by context** — `ActionToolbar.test.tsx` defaults `pr_number` to 42 and `exists_locally` to true (toolbar needs an actionable plan), while `PlanList.test.tsx` defaults to null/false (list just renders whatever it gets)
+- **The `PlanRow` type enforces completeness** — when a field is added to `PlanRow` in `erkdesk.d.ts`, all `makePlan` factories fail to compile, forcing all test files to be updated
 
-### ✅ Correct: waitFor()
+**Anti-pattern**: Creating a shared `makeTestPlan()` in a utils file. The per-file duplication is intentional — it keeps test defaults close to the tests that rely on them.
 
-```typescript
-it('renders plans', async () => {
-  render(<PlanList />)
+## IPC Mock Architecture
 
-  // Wait for useEffect to complete and state to update
-  await waitFor(() => {
-    expect(screen.getByText('Plan Title')).toBeInTheDocument()
-  })
-})
-```
+<!-- Source: erkdesk/src/test/setup.ts -->
+<!-- Source: erkdesk/src/types/erkdesk.d.ts, ErkdeskAPI -->
 
-**When to use `waitFor()`:**
+The IPC mock has two layers that serve different purposes:
 
-- Component fetches data in `useEffect`
-- Component updates state asynchronously
-- Waiting for DOM changes after user interaction
+1. **Global mock** (`setup.ts`): Creates a `mockErkdesk` object typed to `ErkdeskAPI` with safe defaults (empty plans, successful results). This ensures components can render without crashing even if a test forgets to configure mocks.
 
-**When NOT needed:**
+2. **Per-test reset** (`beforeEach`): Each test file calls `mockReset()` on the specific methods it cares about, then sets test-specific return values.
 
-- Component receives data via props (synchronous render)
-- Testing static UI without state changes
+The global mock is typed against the `ErkdeskAPI` interface, so adding a new IPC method to the interface forces the mock to be updated — compile-time enforcement that the mock stays in sync with the real API.
 
-## Pattern: Keyboard Navigation
+For mock reset discipline (order of operations, CI contamination pitfalls), see [Window Mock Patterns](window-mock-patterns.md).
 
-Erkdesk uses keyboard shortcuts for navigation. Test with `userEvent.keyboard()`.
+## Auto-Refresh Testing
 
-### Example: j/k Navigation
+<!-- Source: erkdesk/src/renderer/App.test.tsx -->
 
-```typescript
-it('navigates down with j key', async () => {
-  const user = userEvent.setup()
+Auto-refresh tests use `vi.useFakeTimers({ shouldAdvanceTime: true })` with `vi.advanceTimersByTimeAsync()` to simulate the refresh interval. Two cross-cutting insights:
 
-  vi.mocked(window.erkdesk.invoke).mockResolvedValue({
-    plans: [
-      { id: '1', title: 'Plan 1' },
-      { id: '2', title: 'Plan 2' },
-    ],
-  })
+- **Selection preservation**: After refresh, the selected plan is restored by `issue_number`, not by array index. Tests verify this by returning plans in a different order after the refresh timer fires.
+- **Error resilience**: If a refresh fetch fails, the existing plan data is preserved (no error state shown). This is intentional — a transient network error shouldn't wipe the user's view.
 
-  render(<PlanList />)
+For fake timer patterns and the `shouldAdvanceTime` requirement, see [Vitest Fake Timers with Promises](vitest-fake-timers-with-promises.md).
 
-  await waitFor(() => {
-    expect(screen.getByText('Plan 1')).toBeInTheDocument()
-  })
+## Streaming Listener Lifecycle
 
-  // Press 'j' to move down
-  await user.keyboard('j')
+<!-- Source: erkdesk/src/renderer/App.test.tsx -->
 
-  // Verify selection moved to second item
-  expect(screen.getByText('Plan 2')).toHaveClass('selected')
-})
-```
-
-### Example: Arrow Key Navigation
-
-```typescript
-it('navigates with arrow keys', async () => {
-  const user = userEvent.setup()
-  render(<PlanList />)
-
-  await waitFor(() => {
-    expect(screen.getByText('Plan 1')).toBeInTheDocument()
-  })
-
-  await user.keyboard('{ArrowDown}')  // Special key syntax
-  expect(screen.getByText('Plan 2')).toHaveClass('selected')
-
-  await user.keyboard('{ArrowUp}')
-  expect(screen.getByText('Plan 1')).toHaveClass('selected')
-})
-```
-
-**userEvent keyboard syntax:**
-
-- Regular keys: `'j'`, `'k'`, `'a'`
-- Special keys: `'{ArrowDown}'`, `'{Enter}'`, `'{Escape}'`
-- Modifiers: `'{Shift>}a{/Shift}'`, `'{Control>}c{/Control}'`
-
-## Pattern: CSS Class Assertions
-
-Erkdesk components use CSS classes for visual states (selected, focused, disabled).
-
-```typescript
-it('applies selected class to current item', async () => {
-  render(<PlanList />)
-
-  await waitFor(() => {
-    expect(screen.getByText('Plan 1')).toHaveClass('selected')
-  })
-})
-
-it('removes selected class from previous item', async () => {
-  const user = userEvent.setup()
-  render(<PlanList />)
-
-  const plan1 = screen.getByText('Plan 1')
-  const plan2 = screen.getByText('Plan 2')
-
-  expect(plan1).toHaveClass('selected')
-  expect(plan2).not.toHaveClass('selected')
-
-  await user.keyboard('j')
-
-  expect(plan1).not.toHaveClass('selected')
-  expect(plan2).toHaveClass('selected')
-})
-```
-
-**Matchers:**
-
-- `.toHaveClass('selected')` - element has the class
-- `.not.toHaveClass('selected')` - element doesn't have the class
-
-## Pattern: Callback Verification
-
-Components receive callbacks as props (e.g., `onSelect`, `onClick`). Verify they're called with correct arguments.
-
-```typescript
-it('calls onSelect when item clicked', async () => {
-  const user = userEvent.setup()
-  const onSelect = vi.fn()
-
-  render(<PlanList onSelect={onSelect} />)
-
-  await waitFor(() => {
-    expect(screen.getByText('Plan 1')).toBeInTheDocument()
-  })
-
-  await user.click(screen.getByText('Plan 1'))
-
-  expect(onSelect).toHaveBeenCalledWith('1')  // Called with plan ID
-  expect(onSelect).toHaveBeenCalledTimes(1)   // Called exactly once
-})
-```
-
-**Callback matchers:**
-
-- `.toHaveBeenCalled()` - callback invoked at least once
-- `.toHaveBeenCalledWith(arg1, arg2)` - callback received specific arguments
-- `.toHaveBeenCalledTimes(n)` - callback invoked exactly n times
-
-## Pattern: IPC Bridge Verification
-
-Verify components call the Electron IPC bridge correctly.
-
-```typescript
-it('fetches plans on mount', async () => {
-  render(<PlanList />)
-
-  await waitFor(() => {
-    expect(window.erkdesk.invoke).toHaveBeenCalledWith('get-plans')
-  })
-})
-
-it('refreshes plans when refresh button clicked', async () => {
-  const user = userEvent.setup()
-  render(<PlanList />)
-
-  // Wait for initial load
-  await waitFor(() => {
-    expect(window.erkdesk.invoke).toHaveBeenCalledTimes(1)
-  })
-
-  // Click refresh button
-  await user.click(screen.getByRole('button', { name: 'Refresh' }))
-
-  // Verify second call
-  await waitFor(() => {
-    expect(window.erkdesk.invoke).toHaveBeenCalledTimes(2)
-  })
-})
-```
-
-## Pattern: Test Data Setup
-
-Create focused test data for each scenario. Don't share data between tests.
-
-```typescript
-describe('PlanList filtering', () => {
-  it('shows open plans', async () => {
-    vi.mocked(window.erkdesk.invoke).mockResolvedValue({
-      plans: [
-        { id: '1', title: 'Open Plan', status: 'open' },
-      ],
-    })
-
-    render(<PlanList filter="open" />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Open Plan')).toBeInTheDocument()
-    })
-  })
-
-  it('shows closed plans', async () => {
-    vi.mocked(window.erkdesk.invoke).mockResolvedValue({
-      plans: [
-        { id: '2', title: 'Closed Plan', status: 'closed' },
-      ],
-    })
-
-    render(<PlanList filter="closed" />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Closed Plan')).toBeInTheDocument()
-    })
-  })
-})
-```
-
-Each test creates minimal data for its scenario. This makes tests:
-
-- **Focused** - only relevant data present
-- **Independent** - changing one test doesn't break others
-- **Readable** - clear what data matters for the assertion
-
-## Common Queries
-
-### Finding Elements
-
-```typescript
-// By text content
-screen.getByText("Plan Title");
-
-// By role + accessible name
-screen.getByRole("button", { name: "Submit" });
-screen.getByRole("heading", { name: "Plans" });
-
-// By test ID (use sparingly)
-screen.getByTestId("plan-list");
-```
-
-**Prefer semantic queries:**
-
-1. `getByRole()` - best for accessibility
-2. `getByLabelText()` - for form inputs
-3. `getByText()` - for text content
-4. `getByTestId()` - last resort
-
-### Query Variants
-
-```typescript
-// getBy* - throws if not found (use for assertions)
-screen.getByText("Plan Title");
-
-// queryBy* - returns null if not found (use for "should not exist")
-expect(screen.queryByText("Plan Title")).not.toBeInTheDocument();
-
-// findBy* - async, waits for element (use for async rendering)
-await screen.findByText("Plan Title");
-```
+App registers `onActionOutput` and `onActionCompleted` listeners on mount and calls `removeActionListeners` on unmount. Tests verify both sides of this lifecycle by checking that listeners are registered after render and cleaned up after `unmount()`. This prevents memory leaks and stale callbacks when the component is re-mounted.
 
 ## Related
 
-- [Window Mock Patterns](window-mock-patterns.md) - IPC bridge mocking discipline
-- [Vitest Configuration](../desktop-dash/vitest-setup.md) - Test environment setup
-- [jsdom DOM API Stubs](vitest-jsdom-stubs.md) - Required jsdom stubs
+- [Window Mock Patterns](window-mock-patterns.md) — IPC mock reset discipline and CI contamination prevention
+- [Vitest Configuration](../desktop-dash/vitest-setup.md) — Three-file coordination (vitest.config.ts, tsconfig.json, setup.ts)
+- [jsdom DOM API Stubs](vitest-jsdom-stubs.md) — scrollIntoView, ResizeObserver, and other missing jsdom APIs
+- [Vitest Fake Timers with Promises](vitest-fake-timers-with-promises.md) — shouldAdvanceTime and async timer patterns
