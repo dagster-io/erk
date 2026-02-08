@@ -13,7 +13,7 @@ tripwires:
   - action: "adding a new workflow_dispatch workflow without run-name"
     warning: "Every erk workflow must use run-name with distinct_id for trigger_workflow discovery. Pattern: run-name: '<context>:${{ inputs.distinct_id }}'"
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # GitHub Actions API Interaction Patterns
