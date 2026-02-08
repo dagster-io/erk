@@ -23,20 +23,20 @@ audit_result: edited
 
 See `pr_check()` in `src/erk/cli/commands/pr/check_cmd.py` for the orchestration logic. The command runs three checks in sequence:
 
-| Check                   | What it validates                                                | Why it exists                                                               |
-| ----------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Branch/issue agreement  | Branch name `P{N}-...` matches `.impl/issue.json` issue number   | Catches stale `.impl/` from a previous plan left behind after branch rename |
-| Issue closing reference | PR body contains `Closes #N` (or cross-repo variant)             | GitHub auto-closes the plan issue when the PR merges                        |
-| Checkout footer         | PR body contains `erk pr checkout <pr_number>` with exact number | Lets reviewers check out the PR into a fresh worktree                       |
+| Check | What it validates | Why it exists |
+| --- | --- | --- |
+| Branch/issue agreement | Branch name `P{N}-...` matches `.impl/issue.json` issue number | Catches stale `.impl/` from a previous plan left behind after branch rename |
+| Issue closing reference | PR body contains `Closes #N` (or cross-repo variant) | GitHub auto-closes the plan issue when the PR merges |
+| Checkout footer | PR body contains `erk pr checkout <pr_number>` with exact number | Lets reviewers check out the PR into a fresh worktree |
 
 ## The PR Number vs Issue Number Trap
 
 This is the single most common validation failure for agents, and it stems from a data source confusion:
 
-| Data source                | Contains              | Use for                          |
-| -------------------------- | --------------------- | -------------------------------- |
-| `.impl/issue.json`         | Plan **issue** number | `Closes #N` reference in PR body |
-| `create_pr()` return value | **PR** number         | `erk pr checkout N` footer       |
+| Data source | Contains | Use for |
+| --- | --- | --- |
+| `.impl/issue.json` | Plan **issue** number | `Closes #N` reference in PR body |
+| `create_pr()` return value | **PR** number | `erk pr checkout N` footer |
 
 **Why agents get confused:** During the submit workflow, `.impl/issue.json` is readily available and contains a number. The checkout footer needs a number. Agents grab the accessible one — but it's the wrong one. The PR number doesn't exist until `create_pr()` returns.
 

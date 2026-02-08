@@ -98,7 +98,7 @@ Chunking splits at entry boundaries (never mid-entry). Each chunk is independent
 
 <!-- Source: packages/erk-shared/src/erk_shared/learn/extraction/session_source.py, SessionSource -->
 
-Sessions originate from two sources (local `~/.claude/projects/` and remote GitHub Actions), but are always processed locally as files on disk. The `SessionSource` ABC tracks _origin_ (for attribution), not _location_. Remote sessions are downloaded before preprocessing, at which point they become local files — the source abstraction remembers they came from remote for proper filtering and deduplication.
+Sessions originate from two sources (local `~/.claude/projects/` and remote GitHub Actions), but are always processed locally as files on disk. The `SessionSource` ABC tracks *origin* (for attribution), not *location*. Remote sessions are downloaded before preprocessing, at which point they become local files — the source abstraction remembers they came from remote for proper filtering and deduplication.
 
 ## Related Documentation
 
