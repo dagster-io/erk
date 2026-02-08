@@ -1,7 +1,7 @@
 ---
 title: Learn Pipeline Workflow
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 read_when:
   - debugging why learn materials are missing or malformed
   - understanding data flow from sessions to documentation plan
