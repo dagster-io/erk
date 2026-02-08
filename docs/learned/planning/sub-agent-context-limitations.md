@@ -25,10 +25,10 @@ This is a platform-level constraint, not something erk can work around in its ow
 
 Any `erk exec` command accepting `--session-id` degrades when run from a sub-agent:
 
-| Command               | Session ID Role                                        | Impact When Missing                              |
-| --------------------- | ------------------------------------------------------ | ------------------------------------------------ |
-| `impl-signal started` | Links GitHub comment to session, deletes plan file     | No GitHub comment, plan file persists             |
-| `impl-signal ended`   | Links ended event to session                           | No GitHub metadata update                        |
+| Command               | Session ID Role                                         | Impact When Missing                                                         |
+| --------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `impl-signal started` | Links GitHub comment to session, deletes plan file      | No GitHub comment, plan file persists                                       |
+| `impl-signal ended`   | Links ended event to session                            | No GitHub metadata update                                                   |
 | `plan-save-to-issue`  | Session-scoped plan lookup, deduplication, snapshotting | Falls back to latest-by-mtime (may pick wrong plan), no deduplication guard |
 
 <!-- Source: src/erk/cli/commands/exec/scripts/impl_signal.py, _signal_started -->
