@@ -35,10 +35,10 @@ See `build_pr_body_footer()` in `packages/erk-shared/src/erk_shared/gateway/gith
 
 The single most common agent mistake is using the issue number from `.impl/issue.json` instead of the PR number in the checkout command. These are different GitHub entities:
 
-| Source                     | Use for checkout footer?    | Why                                             |
-| -------------------------- | --------------------------- | ----------------------------------------------- |
-| `create_pr()` return value | Yes — this is the PR number | `erk pr checkout` requires a PR number          |
-| `.impl/issue.json`         | Never                       | Issue number != PR number; validation will fail |
+| Source | Use for checkout footer? | Why |
+| --- | --- | --- |
+| `create_pr()` return value | Yes — this is the PR number | `erk pr checkout` requires a PR number |
+| `.impl/issue.json` | Never | Issue number != PR number; validation will fail |
 
 ```python
 # WRONG: Using issue number
@@ -52,11 +52,11 @@ footer = f"gh pr checkout {pr_number}"
 
 PR bodies have a header/content/footer structure, each with distinct purposes:
 
-| Section | Delimiter            | Purpose                                                |
-| ------- | -------------------- | ------------------------------------------------------ |
-| Header  | Start of body        | Metadata lines (`**Plan:**`, `**Remotely executed:**`) |
-| Content | After header         | PR description and implementation details              |
-| Footer  | After last `\n---\n` | Closing reference + checkout command                   |
+| Section | Delimiter | Purpose |
+| --- | --- | --- |
+| Header | Start of body | Metadata lines (`**Plan:**`, `**Remotely executed:**`) |
+| Content | After header | PR description and implementation details |
+| Footer | After last `\n---\n` | Closing reference + checkout command |
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py, extract_footer_from_body -->
 
