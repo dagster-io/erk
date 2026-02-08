@@ -12,7 +12,7 @@ tripwires:
   - action: "documenting non-Python code"
     warning: "Assuming the verbatim copy prohibition only applies to Python"
   - action: "justifying code inclusion"
-    warning: "Rationalizing erkdesk source as \"third-party API pattern\" because it uses React/Electron"
+    warning: 'Rationalizing erkdesk source as "third-party API pattern" because it uses React/Electron'
 ---
 
 # Language Scope Auditing
