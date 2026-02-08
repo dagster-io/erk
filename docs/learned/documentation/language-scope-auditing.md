@@ -29,9 +29,9 @@ When reviewing `docs/learned/` for verbatim copies, flag code blocks (5+ lines) 
 
 ## Automation Gap
 
-<!-- Source: .github/reviews/learned-docs.md, Step 2-4 -->
+<!-- Source: .github/reviews/audit-pr-docs.md, Step 2-4 -->
 
-The `.github/reviews/learned-docs.md` review automates detection for **Python only** (class/function extraction, source matching against `src/erk/` and `packages/erk-shared/src/`).
+The `.github/reviews/audit-pr-docs.md` review automates detection for **Python only** (class/function extraction, source matching against `src/erk/` and `packages/erk-shared/src/`).
 
 **Not yet automated**: TypeScript, Bash, and other languages require manual review.
 
@@ -49,4 +49,4 @@ For non-Python code blocks:
 
 - [stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md) - Why verbatim code is problematic
 - [source-pointers.md](source-pointers.md) - How to replace verbatim code with pointers
-- `.github/reviews/learned-docs.md` - Automated detection for Python code
+- `.github/reviews/audit-pr-docs.md` - Automated detection for Python code

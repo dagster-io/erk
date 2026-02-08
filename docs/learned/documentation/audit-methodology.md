@@ -11,7 +11,7 @@ tripwires:
     warning: "Type references in docs must match actual codebase types. Run type verification before committing."
   - action: "bulk deleting documentation files"
     warning: "After bulk deletions, run 'erk docs sync' to fix broken cross-references."
-  - action: "creating broad exclusion rules in doc-audit classification"
+  - action: "creating broad exclusion rules in learned-docs classification"
     warning: "Broad exclusion rules need explicit exceptions. Constants and defaults in prose are HIGH VALUE context, not DUPLICATIVE. Add exception rules with rationale."
 ---
 
@@ -251,20 +251,19 @@ This is HIGH VALUE because:
 - **DUPLICATIVE**: Re-expressing what the code already says clearly (field names, parameter types, class hierarchies)
 - **HIGH VALUE**: Surfacing defaults and constants that require navigation to find
 
-**Related**: [Doc Audit Review](../review/doc-audit-review.md) - Constants and defaults exception section
+**Related**: [Learned Docs Review](../review/learned-docs-review.md) - Constants and defaults exception in classification
 
-## Integration with Doc Audit Review
+## Integration with Learned Docs Review
 
-The audit methodology pairs with the automated doc-audit review:
+The audit methodology pairs with the automated learned-docs review:
 
 1. **Manual audit** (this methodology) - Systematic cleanup of existing docs
-2. **Automated review** (doc-audit-review.md) - Prevents new problematic docs at PR time
+2. **Automated review** (learned-docs-review.md) - Prevents new problematic docs at PR time
 
 Together they maintain documentation quality: audits clean up the past, reviews prevent future problems.
 
 ## Related Documentation
 
-- [doc-audit-review.md](../review/doc-audit-review.md) - Automated quality checking
+- [learned-docs-review.md](../review/learned-docs-review.md) - Automated quality checking
 - [simplification-patterns.md](simplification-patterns.md) - Specific patterns for reducing duplication
-- [learned-docs-review.md](../review/learned-docs-review.md) - Verbatim code detection
 - `docs/learned/documentation/tripwires.md` - Tripwires for doc quality

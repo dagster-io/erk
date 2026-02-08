@@ -276,9 +276,8 @@ on:
 
 **Examples:**
 
-- `review-doc-audit` - Documentation audit review
+- `review-learned-docs` - Learned docs review (verbatim code, duplication, accuracy)
 - `review-test-coverage` - Test coverage review
-- `review-learned-docs` - Learned docs verbatim code detection
 
 ## Common Patterns
 
@@ -339,9 +338,8 @@ on:
 
 ### Existing Reviews (as of 2025-01)
 
-1. **doc-audit** - Documentation duplication and value checking
-2. **learned-docs** - Verbatim code detection in learned docs
-3. (More reviews documented in reviews/index.md)
+1. **learned-docs** - Documentation quality review (verbatim code, duplication, accuracy)
+2. (More reviews documented in reviews/index.md)
 
 ### Avoiding Overlap
 
@@ -356,8 +354,7 @@ Before creating a new review, check if existing reviews already cover:
 ## Related Documentation
 
 - [Review Types Taxonomy](../ci/review-types-taxonomy.md) - Decision framework for choosing review types
-- [Doc Audit Review](doc-audit-review.md) - Example documentation review
-- [Learned Docs Review](learned-docs-review.md) - Example code duplication review
+- [Learned Docs Review](learned-docs-review.md) - Example documentation quality review
 - [Reviews Index](index.md) - Complete list of all reviews
 
 ## Code References

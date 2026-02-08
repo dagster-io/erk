@@ -39,7 +39,7 @@ Parse `$ARGUMENTS` to:
    - If starts with `/`: Use as absolute path
    - Otherwise: Treat as relative to `docs/learned/`
 
-Store whether `--auto-apply` mode is active for use in Phase 6.
+Store whether `--auto-apply` mode is active for use in the Determine Action phase.
 
 Read the document fully and extract frontmatter (`title`, `read_when`, `tripwires`).
 
@@ -74,7 +74,7 @@ For each referenced source file:
 
 Collateral finding format: `{category, file, location, claim, reality, suggested_fix}` where category is one of: `STALE_COMMENT` (SC), `STALE_DOCSTRING` (SD), `BROKEN_CROSS_REF` (BX), `CONTRADICTING_DOC` (CD), `OBSOLETE_SYSTEM` (OS), `CONCEPTUAL_DRIFT` (CF), `STALE_FLOW` (SF).
 
-### Phase 3.5: Verify System Descriptions
+### Phase 4: Verify System Descriptions
 
 **Primary task:** For each section that describes how a system, workflow, or component works, verify the description matches reality.
 
@@ -107,7 +107,7 @@ Collateral finding format: `{category, file, location, claim, reality, suggested
 - Check if return type or exception type matches
 - Mark as VERIFIED, MISMATCH, or CANNOT_VERIFY
 
-Record verification results for use in Phase 4 and Phase 5.
+Record verification results for use in the Adversarial Analysis and Generate Report phases.
 
 **Cross-reference collateral findings:** When following links to other `docs/learned/` files during verification, watch for issues in those referenced documents:
 
@@ -117,13 +117,13 @@ Record verification results for use in Phase 4 and Phase 5.
 - Does it use terms/concepts whose meaning has changed in the codebase? → record as `CONCEPTUAL_DRIFT` (CF)
 - Does it describe a multi-step flow (numbered steps, flowcharts, sequence descriptions) where the actual steps in code have changed? → record as `STALE_FLOW` (SF)
 
-These checks leverage the code understanding already built in Phase 3. If the primary doc references "the plan sync workflow" and the cross-referenced doc describes a 5-step workflow but the code now has 3 steps, that's a `STALE_FLOW`.
+These checks leverage the code understanding already built in the Read Referenced Source Code phase. If the primary doc references "the plan sync workflow" and the cross-referenced doc describes a 5-step workflow but the code now has 3 steps, that's a `STALE_FLOW`.
 
 **Mechanical issues:** Broken cross-references (`BX`) — links that point to renamed/deleted files. Contradicting specific claims (`CD`) — cross-referenced doc states facts that conflict with code.
 
 **Scope limit:** Don't recursively audit referenced docs. If a referenced doc has systemic problems (e.g., describes an entirely obsolete system), note one `OBSOLETE_SYSTEM` finding recommending a separate audit rather than listing every wrong detail.
 
-### Phase 4: Adversarial Analysis
+### Phase 5: Adversarial Analysis
 
 For each section of the document, classify it into one of these value categories:
 
@@ -142,7 +142,7 @@ Apply the content quality standards from the `learned-docs` skill's core rules d
 - **Duplicative vs high-value**: Apply the skill's "What Belongs vs What Doesn't" criteria. Exception: constants and default values in prose context are NOT duplicative — they make docs scannable.
 - **High-value signals**: Decision tables, anti-patterns, cross-cutting patterns, historical context, and tripwires (per the skill's content rules).
 
-### Phase 4.5: Code Block Triage
+### Phase 6: Code Block Triage
 
 For every fenced code block in the document, classify it:
 
@@ -155,9 +155,18 @@ For every fenced code block in the document, classify it:
 
 For VERBATIM blocks, apply the replacement format from the `learned-docs` skill's core rules: replace with a prose reference capturing the insight, plus a source pointer. Any doc with unreplaced VERBATIM blocks should receive at minimum a `SIMPLIFY` verdict.
 
-### Phase 5: Generate Report
+### Phase 7: Generate Report
 
-Complete the full internal analysis from Phase 4, but output only a brief summary regardless of mode. Never output the full value breakdown table, duplicative content detail sections, or recommended rewrite text.
+Complete the full internal analysis from the Adversarial Analysis phase, but output only a brief summary regardless of mode. Never output the full value breakdown table, duplicative content detail sections, or recommended rewrite text.
+
+**Verdict thresholds** (based on section classification percentages):
+
+- **KEEP**: ≥50% HIGH VALUE or CONTEXTUAL
+- **SIMPLIFY**: ≥30% DUPLICATIVE/INACCURATE/DRIFT RISK but has high-value sections worth preserving
+- **REPLACE WITH CODE REFS**: ≥60% DUPLICATIVE/INACCURATE/DRIFT RISK, minimal high-value content
+- **CONSIDER DELETING**: ≥80% DUPLICATIVE/INACCURATE/DRIFT RISK, no meaningful high-value content
+
+INACCURATE is treated as at least as severe as DUPLICATIVE in all threshold calculations.
 
 **Output format (always):**
 
@@ -175,9 +184,9 @@ Follow with 2-3 sentences describing the planned changes. For example:
 
 > Sections "Import Paths" and "Function Signatures" are duplicative of `src/erk/gateway/git.py` and should be replaced with code references. The "Anti-patterns" section contradicts the current implementation of `resolve_path()` which now uses pathlib.
 
-Keep the full internal analysis available for Phase 7 actions — just don't dump it as text output.
+Keep the full internal analysis available for the Execute Actions phase — just don't dump it as text output.
 
-**Collateral findings report:** If any collateral findings were recorded in Phase 3 or Phase 3.5, append them after the primary audit summary. Conceptual findings appear first (higher severity). Example output (illustrative file paths):
+**Collateral findings report:** If any collateral findings were recorded in the Read Referenced Source Code or Verify System Descriptions phases, append them after the primary audit summary. Conceptual findings appear first (higher severity). Example output (illustrative file paths):
 
 ```
 Collateral findings: <count> issues in <count> other files
@@ -197,16 +206,16 @@ Collateral findings: <count> issues in <count> other files
 
 If no collateral findings were recorded, omit this section entirely.
 
-### Phase 6: Determine Action
+### Phase 8: Determine Action
 
 **If `--auto-apply` mode is active:**
 
 Automatically select the action based on the verdict without prompting:
 
-- **KEEP** verdict → Proceed to Phase 7 with "Mark as audited (clean)"
-- **NEEDS_UPDATE** verdict → Proceed to Phase 7 with "Apply accuracy fixes + stamp". Accuracy fixes MUST include removing VERBATIM code blocks identified in Phase 4.5 and replacing them with prose references.
-- **SIMPLIFY / REPLACE WITH CODE REFS** verdict → Proceed to Phase 7 with "Mark as audited (with rewrite)" (apply rewrite + stamp)
-- **CONSIDER DELETING** verdict → Proceed to Phase 7 with "Mark as audited (clean)" (stamp only, don't auto-delete)
+- **KEEP** verdict → Proceed to Execute Actions with "Mark as audited (clean)"
+- **NEEDS_UPDATE** verdict → Proceed to Execute Actions with "Apply accuracy fixes + stamp". Accuracy fixes MUST include removing VERBATIM code blocks identified in the Code Block Triage phase and replacing them with prose references.
+- **SIMPLIFY / REPLACE WITH CODE REFS** verdict → Proceed to Execute Actions with "Mark as audited (with rewrite)" (apply rewrite + stamp)
+- **CONSIDER DELETING** verdict → Proceed to Execute Actions with "Mark as audited (clean)" (stamp only, don't auto-delete)
 
 **Collateral auto-apply:** If collateral findings exist, automatically fix mechanical source code issues (`STALE_COMMENT`, `STALE_DOCSTRING`) and broken links (`BROKEN_CROSS_REF`). Do NOT auto-apply conceptual findings (`OS`, `CF`, `SF`) or contradicting doc fixes (`CD`) — these require judgment. List unapplied findings in output as reminders.
 
@@ -228,7 +237,7 @@ Use AskUserQuestion to offer two groups of options:
 - **"Apply all fixable collateral"** — mechanical fixes + contradicting doc fixes (conceptual findings always produce audit recommendations, not inline fixes)
 - **"Skip collateral fixes"** — leave all collateral findings as-is
 
-### Phase 7: Execute Actions
+### Phase 9: Execute Actions
 
 Based on the user's choice:
 
@@ -248,7 +257,7 @@ audit_result: clean | edited
 
 If the document already has `last_audited` / `audit_result` fields, overwrite them with the new values. Use the **current date and time in Pacific time, down to the minute**. Format: `YYYY-MM-DD HH:MM PT` (24-hour format, e.g., "2026-02-05 14:30 PT").
 
-### Phase 7b: Execute Collateral Fixes
+### Phase 10: Execute Collateral Fixes
 
 If collateral fixes were selected (either via auto-apply or interactive choice):
 

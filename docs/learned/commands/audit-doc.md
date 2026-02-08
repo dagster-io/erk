@@ -62,7 +62,7 @@ read_when:
 
 ## Collateral Findings
 
-Phase 3 of the audit command collects collateral findings — issues in _other_ files discovered while reading source code for the primary audit. See Phase 3 and Phase 3.5 in `.claude/commands/local/audit-doc.md` for full collection logic.
+The Read Referenced Source Code phase of the audit command collects collateral findings — issues in _other_ files discovered while reading source code for the primary audit. See the Read Referenced Source Code and Verify System Descriptions phases in `.claude/commands/local/audit-doc.md` for full collection logic.
 
 ### Two Tiers
 
@@ -89,11 +89,11 @@ Mechanical findings can be auto-fixed directly.
 
 ### Report Format
 
-Collateral findings appear after the primary audit summary, grouped by severity (conceptual first, then mechanical). Each entry shows the abbreviated category tag, file path, and a one-line description with suggested action. See Phase 5 in `.claude/commands/local/audit-doc.md` for the exact output format.
+Collateral findings appear after the primary audit summary, grouped by severity (conceptual first, then mechanical). Each entry shows the abbreviated category tag, file path, and a one-line description with suggested action. See the Generate Report phase in `.claude/commands/local/audit-doc.md` for the exact output format.
 
 ### Auto-apply vs Interactive
 
-See Phase 6 in `.claude/commands/local/audit-doc.md` for authoritative auto-apply and interactive mode behavior.
+See the Determine Action phase in `.claude/commands/local/audit-doc.md` for authoritative auto-apply and interactive mode behavior.
 
 ## Related Documentation
 

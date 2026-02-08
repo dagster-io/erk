@@ -33,7 +33,7 @@ Reviews differ along three dimensions:
 | ------------- | ---------------------------------------- | ------------------------------- |
 | Code Quality  | Style, linting, formatting, conventions  | ruff-check, prettier            |
 | Test Coverage | Test execution, coverage metrics, fails  | pytest-unit, pytest-integration |
-| Documentation | Doc quality, completeness, accuracy      | doc-audit, learned-docs         |
+| Documentation | Doc quality, completeness, accuracy      | learned-docs                    |
 | Security      | Vulnerabilities, secrets, permissions    | bandit, secret-scan             |
 | Integration   | Cross-system checks, PR format, metadata | pr-format, changelog            |
 
@@ -111,15 +111,15 @@ Reviews differ along three dimensions:
 
 ### Example 3: Doc Duplication vs Doc Completeness
 
-**Scenario**: Project has doc-audit (duplication), want to add doc-completeness (coverage).
+**Scenario**: Project has learned-docs (verbatim code, duplication, accuracy), want to add doc-completeness (coverage).
 
 **Analysis:**
 
 - Same quality dimension (documentation)
 - Same scope (docs/learned/\*.md)
-- Different aspects (duplication vs completeness)
+- Different aspects (quality vs completeness)
 
-**Decision**: **Extend doc-audit review**
+**Decision**: **Extend learned-docs review**
 
 **Rationale**: Both check documentation quality on the same files. Combining avoids duplicate file scans.
 
@@ -153,7 +153,7 @@ Reviews differ along three dimensions:
 
 ❌ **Bad**: One review checks doc structure, another checks doc links, both scan docs/\*_/_.md
 
-✅ **Good**: One doc-audit review checks structure, links, and quality together
+✅ **Good**: One learned-docs review checks structure, links, and quality together
 
 ### Anti-Pattern 3: Quality Dimension Split Without Justification
 
@@ -185,12 +185,12 @@ Extend an existing review when:
 
 ### Complementary Reviews (Good)
 
-| Review A       | Review B              | Why Complementary                            |
-| -------------- | --------------------- | -------------------------------------------- |
-| ruff-check     | pytest-unit           | Different dimensions (style vs tests)        |
-| doc-audit      | learned-docs-verbatim | Different aspects (duplication vs code sync) |
-| python-quality | markdown-format       | Different scopes (_.py vs _.md)              |
-| pr-format      | changelog-check       | Different triggers (every PR vs release)     |
+| Review A       | Review B        | Why Complementary                        |
+| -------------- | --------------- | ---------------------------------------- |
+| ruff-check     | pytest-unit     | Different dimensions (style vs tests)    |
+| learned-docs   | pytest-unit     | Different dimensions (docs vs tests)     |
+| python-quality | markdown-format | Different scopes (_.py vs _.md)          |
+| pr-format      | changelog-check | Different triggers (every PR vs release) |
 
 ### Overlapping Reviews (Bad)
 
@@ -205,7 +205,7 @@ Extend an existing review when:
 
 Name reviews after their primary quality dimension and scope:
 
-- `<dimension>-<scope>` - e.g., `doc-audit`, `test-unit`, `security-scan`
+- `<dimension>-<scope>` - e.g., `learned-docs`, `test-unit`, `security-scan`
 - `<tool>-<scope>` - e.g., `ruff-check`, `prettier-format`, `pytest-unit`
 
 **Avoid:**
@@ -248,8 +248,7 @@ on:
 ## Related Documentation
 
 - [Review Development Guide](../reviews/development.md) - Step-by-step guide for creating reviews
-- [Doc Audit Review](../reviews/doc-audit-review.md) - Example documentation review
-- [Learned Docs Review](../reviews/learned-docs-review.md) - Example code duplication review
+- [Audit PR Docs Review](../review/learned-docs-review.md) - Example documentation quality review
 - [Reviews Index](../reviews/index.md) - Complete list of all reviews
 
 ## Code References

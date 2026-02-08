@@ -299,5 +299,5 @@ These patterns were proven effective across three major cleanup PRs:
 ## Related Documentation
 
 - [audit-methodology.md](audit-methodology.md) - Complete audit process
-- [doc-audit-review.md](../review/doc-audit-review.md) - Automated quality checking
+- [learned-docs-review.md](../review/learned-docs-review.md) - Automated quality checking
 - [documentation tripwires](tripwires.md) - Critical documentation rules

@@ -61,7 +61,7 @@ The verbatim code block prevention system illustrates defense-in-depth:
 
 ### Layer 3: PR-Level (learned-docs review)
 
-**Location**: `.github/reviews/learned-docs.md`
+**Location**: `.github/reviews/audit-pr-docs.md`
 
 **Mechanism**: Automated review runs on every PR touching `docs/learned/`, posts inline comments for verbatim copies with exact source file and line numbers
 
