@@ -39,13 +39,12 @@ Reviews define explicit classification rules ("Category A: FLAG IT", "Category B
 
 ### Example: The 5-Line Threshold
 
-The learned docs review skips code blocks ≤5 lines because:
+The learned docs review skips code blocks ≤5 lines for two complementary reasons:
 
-- Short snippets (≤5 lines) are teaching aids, not implementation copies
-- Verbatim detection heuristics have high false positive rates below 6 lines
-- Activity logs would be dominated by noise ("flagged 40 short snippets")
+- **General principle** (from `source-pointers.md`): Short snippets (≤5 lines) are teaching aids, not implementation copies — staleness risk is lower for illustrative examples than verbatim source
+- **Practical detection**: Verbatim detection heuristics have high false positive rates below 6 lines, and activity logs would be dominated by noise ("flagged 40 short snippets")
 
-This threshold isn't about staleness risk (even 3-line snippets go stale). It's about signal-to-noise ratio in review output.
+Note: staleness risk still exists for short snippets copied from erk source. The 5-line threshold is a review heuristic, not a guarantee of safety.
 
 <!-- Source: docs/learned/documentation/source-pointers.md, 5-line threshold -->
 

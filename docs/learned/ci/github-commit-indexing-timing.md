@@ -63,7 +63,7 @@ This was the state after PR #6100 — a refactor from bash to Python that accide
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub.create_commit_status -->
 
-See `RealGitHub.create_commit_status()` in `packages/erk-shared/src/erk_shared/gateway/github/real.py:2113-2146`.
+See `RealGitHub.create_commit_status()` in `packages/erk-shared/src/erk_shared/gateway/github/real.py`.
 
 **Current implementation:** Calls `run_subprocess_with_context()` directly — NO retry logic.
 

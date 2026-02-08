@@ -72,14 +72,14 @@ See the `check-submission` job in `.github/workflows/ci.yml` - it outputs `skip`
 
 See `.github/workflows/plan-implement.yml` for canonical patterns:
 
-- **Line 78**: Simple single-line output for trunk branch detection
-- **Line 156**: Single-line output for git SHA capture
-- **Line 169**: Exit code capture with conditional boolean output
-- **Line 188**: Session info capture using `eval` with environment variable export pattern
+- **Trunk branch detection step**: Simple single-line output via echo
+- **Git SHA capture step**: Single-line output for commit references
+- **Exit code capture step**: Conditional boolean output from process results
+- **Session info capture step**: `eval` with environment variable export pattern
 
 See `.github/workflows/pr-fix-conflicts.yml` for heredoc pattern:
 
-- **Lines 112-114**: Multi-line rebase output capture using heredoc syntax
+- **Rebase output capture step**: Multi-line output using heredoc syntax
 
 These examples show the decision boundary: git SHAs and booleans use simple echo; command output that may span multiple lines uses heredoc.
 

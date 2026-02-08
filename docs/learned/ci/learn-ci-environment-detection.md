@@ -27,7 +27,7 @@ This bifurcation exists because:
 The `/erk:learn` command instructs Claude to run this bash check:
 
 ```bash
-[ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ] && echo "CI_MODE" || echo "INTERACTIVE"
+([ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]) && echo "CI_MODE" || echo "INTERACTIVE"
 ```
 
 **Why not use `in_github_actions()`?** Slash commands emit bash that Claude executes. They cannot call Python functions directly. The detection logic must be expressed as shell conditionals in the command text.

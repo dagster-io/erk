@@ -102,7 +102,7 @@ The original document estimated ~$0.003 per objective. This is wrong for two rea
 
 Actual cost per reconciliation: **$0.01-0.05** depending on codebase size and plan complexity.
 
-Sweep mode running every 15 minutes with 5 active objectives = **$7-35/day**. This is why the cron schedule is disabled by default.
+Sweep mode running every 15 minutes (96 runs/day) with 5 active objectives = 480 sessions/day = **$4.80-24.00/day**. This is why the cron schedule is disabled by default.
 
 ## Label Dependency Gap
 

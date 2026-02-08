@@ -73,7 +73,7 @@ GitHub Actions has three similar-sounding properties with different semantics:
 
 <!-- Source: .github/workflows/ci.yml, autofix job -->
 
-See `.github/workflows/ci.yml:151-162` for `needs.<job>.result` usage (job-level) vs `.github/workflows/ci.yml:217` for `steps.<step>.outputs.*` usage (step-level within the same job).
+See the `autofix` job in `.github/workflows/ci.yml` for `needs.<job>.result` usage (job-level) and the `check-submission` job for `steps.<step>.outputs.*` usage (step-level within the same job).
 
 ## Validation Discipline for Erk Workflows
 
