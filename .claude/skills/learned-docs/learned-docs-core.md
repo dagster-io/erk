@@ -52,13 +52,18 @@ Documenting what NOT to do — and why — is high-value. Future agents will be 
 ### Four Exceptions
 
 1. **Data formats** — JSON/YAML/TOML structure examples showing shape, not processing code
-2. **Third-party API patterns** — Click commands, pytest fixtures, Rich tables (teaching external APIs)
+2. **Third-party API knowledge** — Click commands, pytest fixtures, Rich tables (teaching external APIs), API endpoint tables, DSL syntax references, expression catalogs, AND discovered/undocumented API behavior and quirks learned through usage. Include a `## Sources` section with URLs or usage context.
 3. **Anti-patterns** — Code explicitly marked WRONG or DON'T DO THIS (the point is the wrongness)
 4. **Input/output examples** — CLI commands with expected output, shell one-liners
 
 ### The Decision Test
 
 When in doubt: "Could an agent get this by reading the source?" If yes, use a source pointer instead.
+
+For third-party APIs, two additional tests:
+
+- "Is re-acquiring this expensive?" — fetching, parsing, and distilling external docs costs significant tokens. That's a reference cache worth preserving.
+- "Is re-acquiring this impossible?" — undocumented behavior, quirks, and workarounds discovered through usage can't be found in any official docs. That's discovered knowledge and is the highest-value content.
 
 For source pointer format, see `docs/learned/documentation/source-pointers.md`.
 
@@ -72,13 +77,14 @@ For source pointer format, see `docs/learned/documentation/source-pointers.md`.
 - Historical context and architectural decisions
 - Tripwires that prevent common mistakes
 - External API quirks and workarounds
+- Third-party reference material (stable API tables, DSL syntax, discovered quirks) with a `## Sources` section
 
 ### Doesn't Belong in Learned Docs
 
 - Import paths (agents can grep)
 - Function signatures (agents can read source)
 - Docstring paraphrases
-- File listings with counts (go stale)
+- Erk file listings with counts (go stale)
 - Code that duplicates source (use source pointers)
 - Single-artifact knowledge (use code comments or docstrings)
 

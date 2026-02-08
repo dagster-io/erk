@@ -32,7 +32,7 @@ For each doc file identified in Step 2, apply audit-doc's analysis phases:
 - **Extract Code References**: file paths, imports, function/class names
 - **Read Referenced Source Code**: actual source, docstrings, type signatures
 - **Verify System Descriptions**: confirm descriptions match reality
-- **Adversarial Analysis**: classify each section as DUPLICATIVE, INACCURATE, DRIFT RISK, HIGH VALUE, CONTEXTUAL, or EXAMPLES
+- **Adversarial Analysis**: classify each section as DUPLICATIVE, INACCURATE, DRIFT RISK, HIGH VALUE, CONTEXTUAL, REFERENCE CACHE, or EXAMPLES
 - **Code Block Triage**: classify each code block as VERBATIM, ANTI-PATTERN, CONCEPTUAL, or TEMPLATE
 
 Then compute the verdict using audit-doc's Generate Report thresholds (KEEP, SIMPLIFY, REPLACE WITH CODE REFS, CONSIDER DELETING).
@@ -44,7 +44,7 @@ These classifications produce PR comments:
 - **DUPLICATIVE** sections → inline comment (Step 4)
 - **DRIFT RISK** sections → inline comment (Step 4)
 
-All other classifications (ANTI-PATTERN, CONCEPTUAL, TEMPLATE, HIGH VALUE, CONTEXTUAL, EXAMPLES) are noted in the summary but do not produce inline PR comments.
+All other classifications (ANTI-PATTERN, CONCEPTUAL, TEMPLATE, REFERENCE TABLE, HIGH VALUE, CONTEXTUAL, REFERENCE CACHE, EXAMPLES) are noted in the summary but do not produce inline PR comments.
 
 ## Step 4: Post Inline Comments
 
