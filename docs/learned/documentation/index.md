@@ -4,7 +4,6 @@
 # Documentation Documentation
 
 - **[audit-methodology.md](audit-methodology.md)** — auditing documentation for quality or staleness, classifying doc content as duplicative vs high-value, understanding why stale documentation harms agents
-- **[canonical-authority-declarations.md](canonical-authority-declarations.md)** — writing a learned doc whose topic overlaps with AGENTS.md or another learned doc, consolidating scattered knowledge about the same topic into one document, resolving conflicts between two docs that describe the same pattern differently
 - **[divio-documentation-system.md](divio-documentation-system.md)** — structuring documentation, deciding what type of doc to write, creating tutorials, how-to guides, or reference material, understanding why docs feel disorganized
 - **[frontmatter-tripwire-format.md](frontmatter-tripwire-format.md)** — creating new documentation in docs/learned/, adding tripwires to existing docs, understanding frontmatter schema for agent docs, running erk docs sync
 - **[language-scope-auditing.md](language-scope-auditing.md)** — writing documentation that includes non-Python code examples, documenting erkdesk or desktop-dash patterns in docs/learned/, reviewing learned-docs for verbatim code across languages
