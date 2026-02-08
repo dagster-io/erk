@@ -5,8 +5,10 @@ read_when:
   - debugging Electron crashes related to setBounds
   - adding new IPC handlers that pass coordinates to Electron APIs
 tripwires:
-  - never pass renderer-reported bounds directly to Electron setBounds() without clamping
-  - always clamp at the main process trust boundary, not only in the renderer
+  - action: "passing renderer-reported bounds to Electron setBounds()"
+    warning: "never pass renderer-reported bounds directly to Electron setBounds() without clamping"
+  - action: "implementing bounds validation in erkdesk"
+    warning: "always clamp at the main process trust boundary, not only in the renderer"
 ---
 
 # Defensive Bounds Handling
