@@ -5,188 +5,210 @@ read_when:
   - "testing code that uses Claude CLI"
   - "implementing single-shot prompt execution"
   - "working with PromptExecutor or FakePromptExecutor"
+tripwires:
+  - "execute_prompt() supports both single-shot and streaming modes - choose based on whether you need real-time updates"
+  - "FakePromptExecutor tracks all calls via properties - use .prompt_calls, .interactive_calls, .passthrough_calls for assertions"
+  - "execute_interactive() never returns in production - it replaces the process via os.execvp"
 ---
 
 # Prompt Executor Gateway
 
-A minimal 3-file gateway abstraction for executing single-shot prompts via Claude CLI. Designed for kit CLI commands that need to generate content via AI.
+The `PromptExecutor` abstraction enables executing Claude CLI commands from Python without subprocess mocking. It provides three execution modes (streaming, single-shot, passthrough) and comprehensive fake support for testing.
 
-## Package Location
+## Why Three Execution Modes?
 
-```
-packages/erk-shared/src/erk_shared/gateway/prompt_executor/
-├── __init__.py
-├── abc.py      # Abstract interface + PromptResult type
-├── real.py     # Production implementation with retry logic
-└── fake.py     # Test implementation with configurable behavior
-```
+The abstraction supports fundamentally different integration patterns:
 
-## Why a Simplified Gateway?
+| Mode                           | Returns                   | Output                           | Use Case                                                                |
+| ------------------------------ | ------------------------- | -------------------------------- | ----------------------------------------------------------------------- |
+| `execute_command_streaming()`  | `Iterator[ExecutorEvent]` | Yields typed events in real-time | Real-time progress displays, extracting PR metadata during execution    |
+| `execute_prompt()`             | `PromptResult`            | Captures output string           | Simple prompt-and-response, commit message generation, title extraction |
+| `execute_prompt_passthrough()` | `int` (exit code)         | Streams to terminal              | Code review, user-facing output where Claude's formatting matters       |
+| `execute_interactive()`        | Never returns             | Replaces process                 | Launching Claude for interactive sessions (erk prepare, erk edit)       |
 
-Unlike the full `PromptExecutor` in erk core (which supports streaming and interactive commands), `PromptExecutor` is deliberately minimal:
+**Design rationale**: Single abstraction with mode selection beats four separate abstractions. Callers choose the mode that matches their integration needs. The fake implements all modes, so tests can verify mode selection without subprocess overhead.
 
-- **Single-shot only**: No streaming, no interactive commands
-- **3-file structure**: ABC, real, fake (no dry-run wrapper needed)
-- **Fast to understand**: Entire interface fits in ~50 lines
+## Streaming vs Single-Shot Trade-offs
 
-This simplicity makes it ideal for objective workflows that just need to send a prompt and get a response.
+**Streaming** (`execute_command_streaming`):
 
-## Interface
+- Yields `ExecutorEvent` objects as they occur
+- Enables real-time UI updates (spinners, progress bars)
+- Can extract PR metadata mid-execution
+- Must handle event stream complexity
 
-### PromptResult
+**Single-shot** (`execute_prompt`):
 
-Result of executing a single prompt:
+- Returns final output as string
+- Simpler API for fire-and-forget prompts
+- Cannot show progress during execution
+- Best for batch operations, background tasks
 
-| Field     | Type          | Description                              |
-| --------- | ------------- | ---------------------------------------- |
-| `success` | `bool`        | Whether the prompt completed             |
-| `output`  | `str`         | Output text (empty string on failure)    |
-| `error`   | `str \| None` | Error message if failed, None on success |
+Choose streaming when the user is waiting and needs feedback. Choose single-shot when the result matters more than the process.
 
-### PromptExecutor ABC
+## Model Selection Philosophy
 
-```python
-class PromptExecutor(ABC):
-    @abstractmethod
-    def execute_prompt(
-        self,
-        prompt: str,
-        *,
-        model: str,
-        cwd: Path | None = None,
-    ) -> PromptResult:
-        """Execute a single prompt and return the result.
+**The caller specifies the model**. PromptExecutor does not pick models because different use cases prioritize different trade-offs:
 
-        Model selection varies by subsystem and use case. Callers should
-        explicitly specify the model based on task complexity and latency needs.
-        """
-        ...
-```
+- Commit message generation: `model="haiku"` (fast, cheap, good enough)
+- Code review synthesis: `model="sonnet"` (accuracy matters)
+- Interactive planning: `model="opus"` (complex reasoning needed)
 
-## Production Implementation
+This forces explicit decisions at call sites instead of hiding them in the abstraction.
 
-`RealPromptExecutor` uses subprocess to call Claude CLI:
+## Fake Implementation Patterns
 
-```python
-executor = RealPromptExecutor(time=RealTime())
-result = executor.execute_prompt(
-    "Generate a commit message for this diff",
-    model="sonnet",  # Model selection based on task complexity
-    cwd=repo_root,
-)
-if result.success:
-    print(result.output)
-```
+<!-- Source: tests/fakes/prompt_executor.py, FakePromptExecutor -->
 
-### Retry Logic
-
-`RealPromptExecutor` retries on transient empty-output failures:
-
-- Success with non-empty output → return immediately
-- Success with empty output → retry with exponential backoff
-- Actual failure → return failure
-
-Retry delays: `[0.5, 1.0]` seconds (~1.5s max, 2 retries)
-
-### CLI Flags Used
-
-```bash
-claude --print --no-session-persistence --model <model> --dangerously-skip-permissions
-```
-
-- `--print`: Single-shot mode (no conversation)
-- `--no-session-persistence`: Don't save session
-- `--dangerously-skip-permissions`: Skip permission prompts (agent context)
-
-## Test Implementation
-
-`FakePromptExecutor` supports multiple test scenarios via constructor injection:
-
-### Basic Usage
-
-```python
-executor = FakePromptExecutor(output='["1. First step", "2. Second step"]')
-result = executor.execute_prompt("Extract steps", model="haiku")
-assert result.success
-assert result.output == '["1. First step", "2. Second step"]'
-```
+The fake uses **constructor injection** to configure all behaviors. No setters, no mutation after construction. See `FakePromptExecutor.__init__()` in `tests/fakes/prompt_executor.py`.
 
 ### Simulating Failures
 
+The fake distinguishes between failure types because callers handle them differently:
+
+**Process errors** (Claude CLI not found, permission denied):
+
 ```python
-executor = FakePromptExecutor(should_fail=True, error="API rate limit exceeded")
-result = executor.execute_prompt("test")
-assert not result.success
-assert result.error == "API rate limit exceeded"
+FakePromptExecutor(simulated_process_error="Permission denied")
+# Yields ProcessErrorEvent - simulates Popen failure
 ```
 
-### Sequential Responses
-
-For workflows making multiple LLM calls:
+**No output** (Claude ran but produced nothing):
 
 ```python
-executor = FakePromptExecutor(outputs=["First response", "Second response"])
-result1 = executor.execute_prompt("first call")
-assert result1.output == "First response"
-result2 = executor.execute_prompt("second call")
-assert result2.output == "Second response"
-# Additional calls return the last output
-result3 = executor.execute_prompt("third call")
-assert result3.output == "Second response"
+FakePromptExecutor(simulated_no_output=True)
+# Yields NoOutputEvent - simulates empty stdout
 ```
 
-### Transient Failures (Retry Testing)
-
-Simulates empty-output responses that trigger retry logic:
+**Hook blocking** (command completed without turns):
 
 ```python
-executor = FakePromptExecutor(output="Success!", transient_failures=2)
-# First two calls return success with empty output
-result1 = executor.execute_prompt("test")
-assert result1.success and result1.output == ""
-result2 = executor.execute_prompt("test")
-assert result2.success and result2.output == ""
-# Third call returns actual output
-result3 = executor.execute_prompt("test")
-assert result3.success and result3.output == "Success!"
+FakePromptExecutor(simulated_zero_turns=True)
+# Yields NoTurnsEvent - simulates hook rejection
 ```
 
-### Inspecting Calls
+**Command failure** (non-zero exit code):
 
 ```python
-executor = FakePromptExecutor(output="test")
-executor.execute_prompt("my prompt", model="sonnet")
+FakePromptExecutor(command_should_fail=True)
+# Yields ErrorEvent - simulates Claude execution failure
+```
+
+**Why distinguish?** Each failure mode triggers different error messages and recovery logic. The fake enables testing all branches without subprocess manipulation.
+
+### Precedence Rules
+
+When multiple failure modes are configured, the fake applies precedence:
+
+1. `simulated_process_error` (Popen never succeeds)
+2. `simulated_no_output` (process ran, no stdout)
+3. `simulated_zero_turns` (process ran, hook blocked)
+4. `command_should_fail` (process ran, exited non-zero)
+
+<!-- Source: tests/unit/fakes/test_fake_prompt_executor.py -->
+
+See `test_fake_prompt_executor_process_error_takes_precedence()` in `tests/unit/fakes/test_fake_prompt_executor.py` for precedence verification.
+
+### Call Tracking
+
+The fake records all calls for assertion:
+
+```python
+executor = FakePromptExecutor()
+executor.execute_prompt("Generate title", model="haiku", dangerous=True)
 
 assert len(executor.prompt_calls) == 1
-assert executor.prompt_calls[0].prompt == "my prompt"
-assert executor.prompt_calls[0].model == "sonnet"
+assert executor.prompt_calls[0] == ("Generate title", None, True)
+#                                    prompt           system_prompt  dangerous
 ```
 
-## Constructor Parameters
+**All tracking properties return copies** to prevent test pollution. Modifying `executor.prompt_calls` does not affect the fake's internal state.
 
-| Parameter            | Type          | Default | Description                              |
-| -------------------- | ------------- | ------- | ---------------------------------------- |
-| `output`             | `str`         | `"[]"`  | Output for successful calls              |
-| `outputs`            | `list[str]`   | `None`  | Sequence of outputs for successive calls |
-| `error`              | `str \| None` | `None`  | Error message for failures               |
-| `should_fail`        | `bool`        | `False` | Whether to return failure                |
-| `transient_failures` | `int`         | `0`     | Empty responses before success           |
+## Interactive Execution Asymmetry
 
-## Time Dependency
+`execute_interactive()` has fundamentally different behavior in real vs fake:
 
-`RealPromptExecutor` requires a `Time` dependency for testable sleep operations:
+**Production** (`ClaudePromptExecutor`):
+
+- Calls `os.execvp()` to replace current process
+- Never returns
+- Terminates the Python interpreter
+
+**Fake** (`FakePromptExecutor`):
+
+- Records the call
+- Returns normally
+- Allows tests to continue and make assertions
+
+This asymmetry is intentional. Tests verify that interactive execution was _requested_ with correct parameters, not that the process was actually replaced.
+
+## TTY Redirection Logic
+
+<!-- Source: src/erk/core/prompt_executor.py, ClaudePromptExecutor.execute_interactive -->
+
+`execute_interactive()` conditionally redirects stdin/stdout/stderr to `/dev/tty` only when they are not already TTYs. See `ClaudePromptExecutor.execute_interactive()` in `src/erk/core/prompt_executor.py`.
+
+**Why conditional?** When erk runs as a subprocess with captured stdout (shell integration), Claude needs terminal access. But when stdout is already a TTY (normal terminal), redirection breaks tools like Bun that expect specific TTY capabilities.
+
+**The Console dependency** (`self._console.is_stdout_tty()`) enables testing this logic without actual file descriptors.
+
+## PromptResult vs CommandResult
+
+Two result types because two integration patterns:
+
+**PromptResult** (from `execute_prompt()`):
+
+- Success/failure boolean
+- Output string
+- Error message on failure
+- Minimal - just the essentials for single-shot prompts
+
+**CommandResult** (from `execute_command()`):
+
+- Everything from PromptResult
+- Plus PR metadata (URL, number, title)
+- Plus issue linkage
+- Plus execution duration
+- Plus filtered messages list
+
+`execute_command()` is implemented as a wrapper around `execute_command_streaming()` that collects events and builds `CommandResult`. This avoids duplicating the streaming logic.
+
+## Type Discrimination in Events
+
+<!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, ExecutorEvent -->
+
+`ExecutorEvent` is a discriminated union of event types. See the event type definitions in `packages/erk-shared/src/erk_shared/core/prompt_executor.py`.
+
+Consumers use pattern matching to dispatch:
 
 ```python
-from erk_shared.gateway.time.real import RealTime
-from erk_shared.gateway.time.fake import FakeTime
-
-# Production
-executor = RealPromptExecutor(time=RealTime())
-
-# Testing (instant "sleep")
-executor = RealPromptExecutor(time=FakeTime())
+for event in executor.execute_command_streaming(...):
+    match event:
+        case TextEvent(content=text):
+            print(text)
+        case PrUrlEvent(url=url):
+            save_pr_url(url)
+        case ErrorEvent(message=msg):
+            log_error(msg)
 ```
+
+**Why not inheritance with polymorphic dispatch?** Pattern matching makes the event types explicit at call sites. Readers see all handled cases. Frozen dataclasses prevent mutation bugs.
+
+## Shared ABC, Divergent Implementations
+
+<!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, PromptExecutor -->
+<!-- Source: src/erk/core/prompt_executor.py, ClaudePromptExecutor -->
+<!-- Source: packages/erk-shared/src/erk_shared/core/fakes.py, FakePromptExecutor (erk-shared) -->
+<!-- Source: tests/fakes/prompt_executor.py, FakePromptExecutor (erk) -->
+
+The ABC lives in `erk-shared` (packages/erk-shared/src/erk_shared/core/prompt_executor.py). The real implementation lives in `erk` core (src/erk/core/prompt_executor.py). There are **two** fake implementations:
+
+1. **erk-shared fake** (`packages/erk-shared/src/erk_shared/core/fakes.py`): Minimal fake for erk-kits and external consumers
+2. **erk fake** (`tests/fakes/prompt_executor.py`): Full-featured fake with comprehensive error simulation
+
+**Why two fakes?** The erk-shared fake has no erk dependencies and can be used by packages that import the ABC but not the real implementation. The erk fake includes erk-specific testing features like hook blocking simulation.
 
 ## Related Documentation
 
 - [Gateway ABC Implementation](gateway-abc-implementation.md) - Full 5-file gateway pattern
+- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - Event type design rationale
