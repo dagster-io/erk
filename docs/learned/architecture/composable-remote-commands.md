@@ -5,12 +5,12 @@ read_when:
   - "implementing erk codespace run subcommands"
   - "working with streaming remote execution"
 tripwires:
-  - action: "using run_ssh_command() for interactive commands"
-    warning: "Interactive commands need exec_ssh_interactive(), not run_ssh_command()"
-  - action: "executing remote commands without starting codespace"
-    warning: "Always start_codespace() before executing remote commands"
-  - action: "duplicating environment setup in remote commands"
-    warning: "build_codespace_ssh_command() bootstraps the environment - don't duplicate setup"
+  - action: "implementing interactive remote commands"
+    warning: "use exec_ssh_interactive(), not run_ssh_command() which cannot handle user input"
+  - action: "executing remote commands on codespaces"
+    warning: "always start_codespace() before executing commands to ensure the environment is ready"
+  - action: "implementing custom environment setup for remote commands"
+    warning: "build_codespace_ssh_command() already bootstraps the environment - don't duplicate setup"
 ---
 
 # Composable Remote Commands Pattern
