@@ -20,10 +20,10 @@ Finding the PR associated with a plan issue is a cross-cutting concern that span
 
 Plan metadata accumulates progressively through the lifecycle. The `branch_name` field — the simplest path to PR discovery — doesn't exist until Phase 2 (submission). Commands that run before submission, or that process older plans with incomplete metadata, need an alternative path.
 
-| Available Data  | Strategy               | Used By                                               |
-| --------------- | ---------------------- | ----------------------------------------------------- |
-| `branch_name`   | Branch → PR lookup     | `get-pr-for-plan`, `trigger-async-learn`, land, submit |
-| `issue_number`  | Issue timeline → PR    | `get-issue-timeline-prs`, `plan checkout`, `plan close` |
+| Available Data | Strategy            | Used By                                                 |
+| -------------- | ------------------- | ------------------------------------------------------- |
+| `branch_name`  | Branch → PR lookup  | `get-pr-for-plan`, `trigger-async-learn`, land, submit  |
+| `issue_number` | Issue timeline → PR | `get-issue-timeline-prs`, `plan checkout`, `plan close` |
 
 ## Strategy 1: Branch-Based Lookup (Primary)
 
