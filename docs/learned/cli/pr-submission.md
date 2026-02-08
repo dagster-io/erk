@@ -7,8 +7,10 @@ read_when:
 last_audited: "2026-02-08"
 audit_result: clean
 tripwires:
-  - "Before creating PRs, understand the workflow tradeoffs"
-  - "PR validation rules apply to both workflows"
+  - action: "submitting PRs"
+    warning: "Before creating PRs, understand the workflow tradeoffs"
+  - action: "implementing PR submission commands"
+    warning: "PR validation rules apply to both workflows"
 ---
 
 # PR Submission Decision Framework
