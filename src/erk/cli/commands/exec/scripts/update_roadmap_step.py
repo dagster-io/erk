@@ -10,10 +10,10 @@ Why this command exists (instead of using update-issue-body directly):
     semantics:
 
     1. Find the row by step ID across all phases
-    2. Replace the PR cell with the new value
-    3. Reset the status cell to "-" so parse_roadmap's inference logic
-       determines the correct status from the PR column (e.g., "#123" → done,
-       "plan #123" → in_progress, empty → pending)
+    2. Compute display status from the PR value (e.g., "#123" → done,
+       "plan #123" → in-progress, empty → pending)
+    3. Write both the status and PR cells atomically so the table is
+       always human-readable without requiring a parse pass
 
     Encoding this once in a tested CLI command means:
     - No duplicated table-parsing logic across callers

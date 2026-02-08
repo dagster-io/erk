@@ -3,91 +3,136 @@ title: Parameter Threading Pattern
 read_when:
   - adding parameters to multi-layer commands (skill → command → exec)
   - working with slash commands that call erk exec
-  - understanding parameter flow through command layers
+  - debugging "No such option" errors in commands
 tripwires:
   - action: "adding a parameter to an erk exec script without updating the calling slash command"
     warning: "3-layer parameter threading: When adding a parameter, update all three layers: skill SKILL.md argument-hint, slash command .md, and erk exec script. Verify all invocations thread the parameter through."
-last_audited: "2026-02-05"
-audit_result: edited
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Parameter Threading Pattern
 
-Many erk commands have a 3-layer architecture where parameters must be threaded through multiple invocation layers:
+## Why This Pattern Exists
 
-1. **Skill layer** (`.claude/skills/*/SKILL.md`) - Defines available parameters in `argument-hint` frontmatter
-2. **Command layer** (`.claude/commands/*.md`) - Calls erk exec scripts with parameters
-3. **Exec script layer** (`src/erk/cli/commands/exec/scripts/*.py`) - Implements the logic with Click options
+Many erk commands follow a 3-layer indirection:
 
-When adding a parameter, all three layers must be updated consistently.
+1. **Skill layer** (`.claude/skills/*/SKILL.md`) — defines user-facing parameters in frontmatter
+2. **Command layer** (`.claude/commands/*.md`) — calls erk exec with parameters from `$ARGUMENTS`
+3. **Exec script layer** (`src/erk/cli/commands/exec/scripts/*.py`) — Click options implement the logic
 
-## Canonical Example: `--pr <number>`
+This separation enables Claude Code's skill system (layer 1-2) to invoke Python implementations (layer 3) while maintaining clear boundaries between AI prompt engineering and executable code.
 
-The `--pr` parameter in pr-feedback-classifier demonstrates the pattern. See `.claude/skills/pr-feedback-classifier/SKILL.md` for the complete example showing all three layers.
+**The cost**: Parameters must be explicitly threaded through all three layers. There's no automatic binding. If you add `--pr` to the exec script but forget to pass it in the command, the parameter exists but is never used.
 
-**Layer 1 (argument-hint)**: A single-line string in SKILL.md frontmatter:
+## The Three-Layer Contract
+
+<!-- Source: .claude/skills/pr-feedback-classifier/SKILL.md, argument-hint frontmatter -->
+<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_review_comments.py, Click options -->
+<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_discussion_comments.py, Click options -->
+
+See `pr-feedback-classifier` skill for the canonical reference implementation.
+
+### Layer 1: Skill Frontmatter (Discovery)
+
+The `argument-hint` field in `SKILL.md` frontmatter documents available parameters:
 
 ```yaml
 argument-hint: "[--pr <number>] [--include-resolved]"
 ```
 
-**Layer 2 (command body)**: The skill body conditionally threads `--pr` from `$ARGUMENTS` to `erk exec` invocations.
+**Purpose**: Tells Claude Code what parameters exist. This appears in command palette and skill documentation. Users discover features here.
 
-**Layer 3 (exec script)**: Click options on the Python command accept and use the parameter via `@click.pass_context` with `@click.option("--pr", type=int, default=None)`.
+**Format**: Square brackets = optional, angle brackets = value required.
 
-## Verification Checklist
+### Layer 2: Command Invocations (Routing)
 
-For the step-by-step checklist when adding parameters, see [parameter-addition-checklist.md](../cli/parameter-addition-checklist.md).
+Command bodies conditionally extract parameters from `$ARGUMENTS` and pass them to `erk exec`:
 
-## Common Mistakes
+```bash
+# If --include-resolved in $ARGUMENTS:
+erk exec get-pr-review-comments [--pr <number>] --include-resolved
+# Otherwise:
+erk exec get-pr-review-comments [--pr <number>]
+```
 
-### Mistake 1: Updating skill but not exec script
+**Purpose**: Routes user-provided arguments from the Claude Code skill system to the Python implementation. This is where the binding happens — or fails to happen if you forget.
 
-**Symptom**: Command invocations pass `--my-param` but exec script doesn't accept it.
+### Layer 3: Exec Script Click Options (Implementation)
+
+Python scripts accept parameters via Click decorators:
+
+```python
+@click.option("--pr", type=int, default=None, help="PR number (defaults to current branch's PR)")
+@click.option("--include-resolved", is_flag=True, help="Include resolved threads")
+```
+
+**Purpose**: Actual implementation that uses the parameter values.
+
+## Common Failure Modes
+
+### Silent Omission: Updating Exec Without Updating Command
+
+**Symptom**: Parameter exists in Click options but is never passed by the command.
+
+**Result**: No error — the parameter silently defaults to `None` or `False`. Feature works locally when testing the exec script directly, but fails when invoked through the skill.
+
+**Why this is insidious**: Tests pass, manual invocation works, but users can't access the feature through the intended interface.
+
+**Example**: Adding `--pr` to `get_pr_review_comments.py` but not updating `.claude/skills/pr-feedback-classifier/SKILL.md` to pass it through. Users invoke `/pr-feedback-classifier --pr 123` but the script never receives the `--pr` argument.
+
+### Loud Failure: Updating Command Without Updating Exec
+
+**Symptom**: Command passes `--my-param` but exec script doesn't accept it.
 
 **Error**: `Error: No such option: --my-param`
 
-**Fix**: Add Click option to exec script.
+**Why this happens**: The command layer blindly passes through what it receives from `$ARGUMENTS`. If the exec script doesn't accept the parameter, Click rejects it.
 
-### Mistake 2: Updating exec script but not skill invocations
+**Fix is obvious**: Add the Click option. This failure mode is preferable to silent omission because it fails fast.
 
-**Symptom**: Exec script accepts parameter but skill never passes it.
+### Documentation Skew: Forgetting argument-hint
 
-**Result**: Parameter is available but never used, silently ignored.
+**Symptom**: Parameter works end-to-end but isn't documented in skill frontmatter.
 
-**Fix**: Update command invocations to thread the parameter through.
+**Result**: Users don't discover the feature. It exists but is invisible in command palette and skill documentation.
 
-### Mistake 3: Forgetting to document in argument-hint
+**Why this matters**: `argument-hint` is the user-facing API contract. If it's not there, the feature doesn't exist from the user's perspective.
 
-**Symptom**: Parameter works but users don't know it exists.
+### Name Mismatch: Inconsistent Parameter Names Across Layers
 
-**Result**: Users don't discover the feature.
+**Symptom**: Skill documents `--pr-number`, command passes `--pr-num`, exec script expects `--pr`.
 
-**Fix**: Add to `argument-hint` frontmatter.
+**Error**: Parameter not recognized at some layer.
 
-### Mistake 4: Inconsistent parameter names
+**Fix**: Use identical names everywhere. The parameter name is part of the contract.
 
-**Symptom**: Skill uses `--pr-number`, exec script uses `--pr`.
+## Decision Framework: When to Use Parameter Threading
 
-**Error**: Parameter not recognized.
+**Use when**:
+- Slash command invokes `erk exec` scripts
+- Skill needs to accept user-provided arguments
+- Parameter must flow from Claude Code UI → bash command → Python implementation
 
-**Fix**: Use identical parameter names across all layers.
+**Don't use when**:
+- Parameter is internal to a single Python function (use function parameters)
+- Direct Python imports (use function calls, not subprocess)
+- Command doesn't have multiple layers (just use Click options directly)
 
-## When Parameter Threading Applies
+## Verification Strategy
 
-**Use parameter threading when**:
+The checklist approach (see `docs/learned/cli/parameter-addition-checklist.md`) is essential because grep alone misses silent omissions. You must verify:
 
-- Slash command calls `erk exec` scripts
-- Skill invokes commands with user-provided arguments
-- Parameter needs to flow from user input to implementation
+1. **Frontmatter documents it**: `grep -A5 "argument-hint" .claude/skills/{skill-name}/SKILL.md`
+2. **Command invocations thread it**: `grep "erk exec {script-name}" .claude/` and verify each invocation
+3. **Exec script accepts it**: Check Click options in `src/erk/cli/commands/exec/scripts/{script-name}.py`
+4. **All invocation sites updated**: `grep -r "erk exec {script-name}"` across both `.claude/` and `src/`
 
-**Don't use parameter threading when**:
-
-- Parameter is internal to a single script
-- Command doesn't have multiple layers
-- Direct Python function calls (use function parameters instead)
+Step 4 is where most failures occur. A grep finds the exec script and the primary command, but misses secondary invocation sites.
 
 ## Related Documentation
 
-- `.claude/skills/pr-feedback-classifier/SKILL.md` - Canonical example
-- [parameter-addition-checklist.md](../cli/parameter-addition-checklist.md) - Detailed step-by-step checklist
+- [Parameter Addition Checklist](../cli/parameter-addition-checklist.md) — Step-by-step verification procedure
+- `.claude/skills/pr-feedback-classifier/SKILL.md` — Canonical reference implementation with `--pr` and `--include-resolved`
+- `src/erk/cli/commands/exec/scripts/get_pr_review_comments.py` — Click option implementation
+- `src/erk/cli/commands/exec/scripts/get_pr_discussion_comments.py` — Parallel implementation showing pattern consistency

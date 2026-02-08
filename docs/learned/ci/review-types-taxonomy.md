@@ -1,6 +1,6 @@
 ---
 title: Review Types Taxonomy
-last_audited: "2026-02-04 05:48 PT"
+last_audited: "2026-02-08 16:45 PT"
 audit_result: clean
 read_when:
   - creating a new review workflow
@@ -13,186 +13,213 @@ tripwires:
 
 # Review Types Taxonomy
 
-This document provides a decision framework for choosing review types and determining whether to create a new review or extend an existing one.
+When adding a new quality check to CI, the core question is: **extend an existing review or create a new one?** This document provides the decision framework.
 
-## Core Principle
+## Why This Matters
 
-**Reviews should have distinct, complementary scopes.** Overlapping reviews waste CI resources and create confusion about which review is responsible for which checks.
+Overlapping reviews create three problems:
 
-## Review Dimensions
+1. **CI waste** — multiple reviews scanning the same files, running the same tool invocations
+2. **Confusing status checks** — unclear which review owns which failure
+3. **Maintenance burden** — changes to scope require updating multiple workflows
 
-Reviews differ along three dimensions:
+The goal: **distinct, complementary scopes** where each review has a clear single responsibility.
 
-1. **Quality Dimension** - What aspect of code quality does it check?
-2. **Scope** - What files/changes does it examine?
-3. **Tools** - What tools or checks does it use?
+<!-- Source: .github/workflows/code-reviews.yml, discover job -->
 
-### Quality Dimensions
+## The Three-Dimensional Framework
 
-| Dimension     | Checks                                   | Example Reviews                 |
-| ------------- | ---------------------------------------- | ------------------------------- |
-| Code Quality  | Style, linting, formatting, conventions  | ruff-check, prettier            |
-| Test Coverage | Test execution, coverage metrics, fails  | pytest-unit, pytest-integration |
-| Documentation | Doc quality, completeness, accuracy      | learned-docs                    |
-| Security      | Vulnerabilities, secrets, permissions    | bandit, secret-scan             |
-| Integration   | Cross-system checks, PR format, metadata | pr-format, changelog            |
+Reviews differ along three orthogonal dimensions. Use these to identify overlaps:
+
+### 1. Quality Dimension (What aspect)
+
+| Dimension     | Checks                                   |
+| ------------- | ---------------------------------------- |
+| Code Quality  | Style, linting, formatting, conventions  |
+| Test Coverage | Test execution, coverage metrics, fails  |
+| Documentation | Doc quality, completeness, accuracy      |
+| Security      | Vulnerabilities, secrets, permissions    |
+| Integration   | Cross-system checks, PR format, metadata |
+
+**Key insight:** Reviews checking different quality dimensions can run on the same files without overlap (e.g., `ruff-check` for style and `pytest-unit` for tests both run on `src/**/*.py`).
+
+### 2. Scope (What files)
+
+- File patterns (`src/**/*.py` vs `docs/**/*.md`)
+- Event triggers (every PR vs release-only)
+- Change types (additions only vs all modifications)
+
+**Key insight:** Identical file patterns don't always mean overlap if quality dimensions differ.
+
+### 3. Tools (What runs)
+
+- Same tool invocation = likely overlap (both running `ruff check`)
+- Different tools = likely complementary (ruff vs pytest)
+- Same tool, different flags = evaluate carefully (pytest with different markers)
+
+**Key insight:** Duplicate tool invocations are the strongest signal of overlap.
 
 ## Decision Tree
 
 ### Question 1: Does an existing review check this quality dimension?
 
-**YES** → Go to Question 2
+**NO** → Strong signal to create a new review (proceed to Question 3 for confirmation)
 
-**NO** → Consider creating a new review (proceed to Question 3)
+**YES** → Proceed to Question 2
 
 ### Question 2: Can the existing review be extended?
 
-**Ask:**
+Check all three:
 
-- Does the existing review already run on the same files?
-- Would the new check fit naturally with the existing checks?
-- Would the combined review still have a clear, single responsibility?
+1. **Same files?** Does the existing review already run on these paths?
+2. **Natural fit?** Would combining checks feel coherent or forced?
+3. **Clear responsibility?** Would the combined review still have a single, understandable purpose?
 
-**If YES** → **Extend the existing review**
+**All YES** → **Extend the existing review**
 
-- Add new checks to the existing workflow
-- Update review documentation
-- Verify marker behavior handles new check failures
+**Any NO** → Proceed to Question 3
 
-**If NO** → Proceed to Question 3
+### Question 3: Is the new review complementary?
 
-### Question 3: Is the new review complementary to existing reviews?
+**Complementary** means:
 
-**Complementary reviews** have:
+- Different quality dimensions (style vs tests)
+- OR different file scopes (`.py` vs `.md`)
+- OR different tools (ruff vs pytest)
+- OR different performance profiles (fast lints vs slow integration tests)
 
-- **Different scopes** - Check different files or triggers
-- **Different quality dimensions** - Address different aspects of quality
-- **Different tools** - Use distinct tool chains
+**Overlapping** means:
 
-**Overlapping reviews** have:
-
-- **Same scope** - Run on same files/triggers
-- **Similar checks** - Address same quality dimension
-- **Redundant tools** - Use same or equivalent tools
+- Same quality dimension AND same scope AND similar tools
+- Duplicate tool invocations on same files
+- Unclear which review owns which failures
 
 **If COMPLEMENTARY** → **Create new review**
 
 **If OVERLAPPING** → **Extend existing review instead**
 
-## Examples
+## Anti-Patterns (What Not to Do)
+
+### Anti-Pattern 1: Duplicate Tool Invocations
+
+❌ **BAD**: Two reviews both run `ruff check src/**/*.py`
+
+✅ **GOOD**: One review runs all ruff checks together (lint + format)
+
+**Why wrong:** Scans the same files twice, doubles CI time, no benefit
+
+### Anti-Pattern 2: Quality Dimension Split Without Justification
+
+❌ **BAD**: Separate reviews for "ruff lint" and "ruff format" both triggered on every PR
+
+✅ **GOOD**: One python-quality review runs both
+
+**Why wrong:** Same dimension, same files, same tool — splitting creates artificial boundaries
+
+**Exception:** If one check is fast and one is slow, separation for performance isolation is justified.
+
+### Anti-Pattern 3: Unclear Ownership
+
+❌ **BAD**: One review checks doc structure, another checks doc links, both scan `docs/**/*.md`
+
+✅ **GOOD**: One learned-docs review checks structure, links, and quality together
+
+**Why wrong:** When a doc fails, which review is responsible? Overlap creates confusion.
+
+## Decision Examples (Learn from History)
 
 ### Example 1: Code Quality vs Test Coverage
 
-**Scenario**: Want to add test coverage checks to a project that already has ruff linting.
+**Scenario:** Project has ruff linting, want to add test coverage checks.
 
 **Analysis:**
 
-- Different quality dimensions (style vs tests)
+- Different quality dimensions (style vs test execution)
 - Different tools (ruff vs pytest)
-- Different scopes (source code vs test execution)
+- Different scopes (static analysis vs runtime)
 
-**Decision**: **Create separate reviews** (ruff-check, pytest-coverage)
+**Decision:** **Create separate reviews** (ruff-check, pytest-unit)
 
-**Rationale**: These are complementary checks that can run independently and fail independently.
+**Rationale:** These are independent concerns that can fail independently. A style violation doesn't imply test failures.
 
-### Example 2: Linting Python vs Linting Markdown
+### Example 2: Unit Tests vs Integration Tests
 
-**Scenario**: Project has ruff for Python, want to add prettier for Markdown.
-
-**Analysis:**
-
-- Same quality dimension (code quality/formatting)
-- Different tools (ruff vs prettier)
-- Different scopes (_.py vs _.md)
-
-**Decision**: **Create separate reviews** (python-quality, markdown-format)
-
-**Rationale**: Different file types and tools justify separation, even though both are "formatting."
-
-### Example 3: Doc Duplication vs Doc Completeness
-
-**Scenario**: Project has learned-docs (verbatim code, duplication, accuracy), want to add doc-completeness (coverage).
-
-**Analysis:**
-
-- Same quality dimension (documentation)
-- Same scope (docs/learned/\*.md)
-- Different aspects (quality vs completeness)
-
-**Decision**: **Extend learned-docs review**
-
-**Rationale**: Both check documentation quality on the same files. Combining avoids duplicate file scans.
-
-### Example 4: Unit Tests vs Integration Tests
-
-**Scenario**: Project has pytest-unit, want to add integration test checks.
+**Scenario:** Project has pytest-unit, want to add integration test checks.
 
 **Analysis:**
 
 - Same quality dimension (test coverage)
-- Different scopes (unit vs integration)
-- Same tool (pytest) but different markers/options
+- Same tool (pytest)
+- Different performance profiles (fast vs slow)
+- Different markers (`-m unit` vs `-m integration`)
 
-**Decision**: **Create separate reviews** (pytest-unit, pytest-integration)
+**Decision:** **Create separate reviews** (pytest-unit, pytest-integration)
 
-**Rationale**: Different test scopes often have different performance profiles and failure modes. Separation allows:
+**Rationale:** Performance isolation matters. Unit tests run on every PR (< 30s), integration tests run selectively (> 2 min). Independent failure modes justify separation.
 
-- Running unit tests on every PR (fast)
-- Running integration tests only on specific triggers (slow)
-- Independent failure reporting
+<!-- Source: .github/reviews/test-coverage.md, early exit conditions -->
 
-## Scope Overlaps to Avoid
+### Example 3: Doc Duplication vs Doc Completeness
 
-### Anti-Pattern 1: Duplicate Tool Invocations
+**Scenario:** Project has learned-docs review (verbatim code, duplication, accuracy), want to add doc-completeness (coverage metrics).
 
-❌ **Bad**: Two reviews both run ruff on src/\*_/_.py
+**Analysis:**
 
-✅ **Good**: One review runs all ruff checks (lint + format)
+- Same quality dimension (documentation)
+- Same scope (`docs/learned/**/*.md`)
+- Different aspects but related (quality vs completeness)
 
-### Anti-Pattern 2: Same Files, Similar Checks
+**Decision:** **Extend learned-docs review**
 
-❌ **Bad**: One review checks doc structure, another checks doc links, both scan docs/\*_/_.md
+**Rationale:** Both check documentation quality on the same files. Combining avoids duplicate file scans and keeps all doc quality checks in one place.
 
-✅ **Good**: One learned-docs review checks structure, links, and quality together
+<!-- Source: .github/reviews/audit-pr-docs.md, full file audit pattern -->
 
-### Anti-Pattern 3: Quality Dimension Split Without Justification
+### Example 4: Python Linting vs Markdown Formatting
 
-❌ **Bad**: Separate reviews for "ruff lint" and "ruff format" that both run on every PR
+**Scenario:** Project has ruff for Python, want to add prettier for Markdown.
 
-✅ **Good**: One python-quality review that runs both ruff lint and ruff format
+**Analysis:**
 
-## When to Create a New Review
+- Same quality dimension (formatting)
+- Different tools (ruff vs prettier)
+- Different scopes (`**/*.py` vs `**/*.md`)
 
-Create a new review when:
+**Decision:** **Create separate reviews** (python-quality, markdown-format)
 
-1. ✅ **New quality dimension** - No existing review checks this aspect (e.g., first security review)
-2. ✅ **New file scope** - Review targets files not covered by existing reviews (e.g., .github/workflows/\*.yml)
-3. ✅ **Performance isolation** - Check is slow and should run independently (e.g., integration tests)
-4. ✅ **Different triggers** - Check needs different event triggers than existing reviews (e.g., release-only checks)
-5. ✅ **Independent failure modes** - Failure doesn't correlate with other review failures
+**Rationale:** Different file types and tools justify separation even within the same quality dimension.
 
-## When to Extend an Existing Review
+## When to Create vs Extend (Quick Reference)
 
-Extend an existing review when:
+### Create New Review When:
 
-1. ✅ **Same quality dimension** - Check addresses same aspect of quality
-2. ✅ **Same file scope** - Check examines same files/paths
-3. ✅ **Related tools** - Check uses same or compatible tool chain
-4. ✅ **Correlated failures** - If one check fails, the other often fails too
-5. ✅ **Shared setup** - Checks require same environment or dependencies
+1. ✅ **New quality dimension** — First security review, first doc quality check
+2. ✅ **New file scope** — First check targeting `.github/workflows/*.yml`
+3. ✅ **Performance isolation** — Slow integration tests separate from fast unit tests
+4. ✅ **Different triggers** — Release-only checks separate from PR checks
+5. ✅ **Independent failure modes** — Failures don't correlate with other reviews
 
-## Complementary vs Overlapping
+### Extend Existing Review When:
 
-### Complementary Reviews (Good)
+1. ✅ **Same quality dimension** — Adding another style check to existing style review
+2. ✅ **Same file scope** — Check examines files already covered
+3. ✅ **Related tools** — Same tool, different flags (e.g., `ruff` with different rules)
+4. ✅ **Correlated failures** — If one check fails, the other often fails too
+5. ✅ **Shared setup** — Checks require same environment or dependencies
 
-| Review A       | Review B        | Why Complementary                        |
-| -------------- | --------------- | ---------------------------------------- |
-| ruff-check     | pytest-unit     | Different dimensions (style vs tests)    |
-| learned-docs   | pytest-unit     | Different dimensions (docs vs tests)     |
-| python-quality | markdown-format | Different scopes (_.py vs _.md)          |
-| pr-format      | changelog-check | Different triggers (every PR vs release) |
+## Complementary vs Overlapping (Concrete Patterns)
 
-### Overlapping Reviews (Bad)
+### Complementary (Good — these can coexist)
+
+| Review A       | Review B        | Why Complementary                               |
+| -------------- | --------------- | ----------------------------------------------- |
+| ruff-check     | pytest-unit     | Different dimensions (style vs tests)           |
+| learned-docs   | pytest-unit     | Different dimensions (docs vs tests)            |
+| python-quality | markdown-format | Different scopes (`.py` vs `.md`)               |
+| pr-format      | changelog-check | Different triggers (every PR vs release)        |
+| pytest-unit    | pytest-integration | Performance isolation (fast vs slow)         |
+
+### Overlapping (Bad — merge these)
 
 | Review A       | Review B           | Why Overlapping                               |
 | -------------- | ------------------ | --------------------------------------------- |
@@ -201,57 +228,103 @@ Extend an existing review when:
 | test-unit-fast | test-unit-slow     | Artificial split, no real distinction         |
 | python-style   | python-conventions | Unclear boundary, likely redundant            |
 
-## Review Naming Conventions
+## Naming Conventions
 
 Name reviews after their primary quality dimension and scope:
 
-- `<dimension>-<scope>` - e.g., `learned-docs`, `test-unit`, `security-scan`
-- `<tool>-<scope>` - e.g., `ruff-check`, `prettier-format`, `pytest-unit`
+**Good patterns:**
+
+- `<dimension>-<scope>` → `learned-docs`, `test-unit`, `security-scan`
+- `<tool>-<scope>` → `ruff-check`, `prettier-format`, `pytest-integration`
 
 **Avoid:**
 
-- ❌ Ambiguous names like `quality-check` (what quality dimension?)
-- ❌ Tool-only names like `ruff` (what does it check?)
-- ❌ Scope-only names like `python` (what aspect of Python?)
+- ❌ `quality-check` — which quality dimension?
+- ❌ `ruff` — what does it check?
+- ❌ `python` — what aspect of Python?
 
-## CI Resource Optimization
+**Why naming matters:** Clear names make scope boundaries obvious and prevent accidental overlap.
 
-### Review Triggers
+## Performance Optimization Patterns
 
-Configure reviews to run only when needed:
+### Pattern 1: Path-Based Triggers
+
+Configure reviews to skip when irrelevant files change:
 
 ```yaml
 on:
   pull_request:
     paths:
-      - "src/**/*.py" # Only run on Python changes
+      - "src/**/*.py"  # Only run on Python changes
 ```
 
-**Pattern**: Narrow triggers to avoid unnecessary CI runs.
+**When to use:** Reviews with clear file type boundaries (Python-only, docs-only).
 
-### Review Performance
+**Why it works:** GitHub Actions skips the job entirely if paths don't match, saving CI time.
 
-**Fast reviews** (< 30s) can run on every PR:
+<!-- Source: .github/workflows/code-reviews.yml, paths filtering -->
+
+### Pattern 2: Performance Tiering
+
+**Fast reviews** (< 30s) run on every PR:
 
 - Linting (ruff, prettier)
 - Format checks
-- Type checking (mypy)
+- Type checking
 
-**Slow reviews** (> 1 min) should run selectively:
+**Slow reviews** (> 1 min) run selectively:
 
-- Integration tests
-- Coverage reports
-- Large-scale analysis
+- Integration tests (manual trigger or specific labels)
+- Coverage reports (weekly or release-only)
+- Large-scale analysis (pre-merge only)
 
-**Pattern**: Use conditional triggers or manual workflow dispatch for slow reviews.
+**Why it works:** Developers get fast feedback from lints, slow checks don't block iteration.
+
+### Pattern 3: Early Exit for Empty Diffs
+
+Reviews should detect when there's nothing relevant to check:
+
+```python
+if len(source_added) == 0 and len(source_modified) == 0:
+    # Skip review with brief summary
+    exit(0)
+```
+
+**When to use:** Reviews that only care about certain change types (e.g., test coverage only matters if source changed).
+
+**Why it works:** Avoids posting empty or meaningless review comments.
+
+<!-- Source: .github/reviews/test-coverage.md, Step 2 early exit -->
+
+## Review Configuration Format
+
+All reviews live in `.github/reviews/*.md` and share this frontmatter structure:
+
+```yaml
+---
+name: Review Display Name
+paths:
+  - "glob/pattern/**/*.ext"
+marker: "<!-- unique-marker -->"
+model: claude-haiku-4-5
+timeout_minutes: 30
+allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+enabled: true
+---
+```
+
+**Key fields:**
+
+- `paths` — triggers review only when these files change
+- `marker` — HTML comment for PR comment identification/updates
+- `model` — usually Haiku for cost efficiency
+- `allowed_tools` — security boundary for Claude Code remote sessions
+
+<!-- Source: .github/workflows/code-reviews.yml, matrix strategy -->
 
 ## Related Documentation
 
-- [Review Development Guide](../reviews/development.md) - Step-by-step guide for creating reviews
-- [Audit PR Docs Review](../review/learned-docs-review.md) - Example documentation quality review
-- [Reviews Index](../reviews/index.md) - Complete list of all reviews
-
-## Code References
-
-- Workflow files: `.github/workflows/code-reviews.yml`
-- PR check integration: `src/erk/cli/commands/pr/check_cmd.py`
+- `.github/reviews/audit-pr-docs.md` — Example documentation quality review
+- `.github/reviews/dignified-python.md` — Example code quality review
+- `.github/reviews/test-coverage.md` — Example coverage review with early exit
+- `docs/learned/ci/review-spec-format.md` — Complete review specification reference

@@ -5,201 +5,125 @@ read_when:
   - syncing local plan changes to GitHub issues
   - working with plan feedback workflows
 tripwires:
-  - action: "Call plan-update-from-feedback after editing local plan files"
+  - action: "Call plan-update-issue after editing local plan files"
     warning: "Sync is NOT automatic — GitHub issue will show stale content without explicit sync"
     score: 4
-last_audited: "2026-02-05 15:12 PT"
+last_audited: "2026-02-08"
 audit_result: edited
 ---
 
 # Plan File Sync Pattern
 
-Local plan file edits must be explicitly synced back to GitHub issues. This pattern ensures that plan changes made in response to review feedback are propagated to the GitHub issue where reviewers can see them.
+Plan review PRs maintain plan content in two locations: a markdown file in the PR branch for version control, and a GitHub issue comment for structured review. These locations don't sync automatically — changes to the local file require an explicit sync command to propagate to the issue.
 
-## The Problem
+## Why Two Locations Don't Sync Automatically
 
-Plan review PRs work with local markdown files (e.g., `PLAN-REVIEW-6252.md`). When addressing feedback, agents edit these files locally. However:
+Automatic sync (e.g., on every file save or commit) would create three problems:
 
-- **GitHub issue shows original plan**: The issue body still contains the old plan content
-- **Reviewers see stale content**: Without sync, reviewers don't see the updated plan
-- **Manual sync required**: Sync is NOT automatic — you must explicitly call the sync command
+1. **Race conditions**: Multiple edits in rapid succession would trigger overlapping API calls
+2. **Partial updates**: Reviewers would see incomplete thoughts mid-edit
+3. **Silent failures**: Network errors or API limits would corrupt state without agent awareness
 
-## The Solution: Explicit Sync Command
+Explicit sync gives agents **atomicity** (complete the edit, then sync) and **error handling** (detect and respond to sync failures).
 
-After editing the local plan file, call `plan-update-issue` to sync changes back to the GitHub issue:
+## The Dual Storage Model
 
-```bash
-erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
-```
+| Location       | Content                      | Purpose                  | Updated By        |
+| -------------- | ---------------------------- | ------------------------ | ----------------- |
+| **PR branch**  | `PLAN-REVIEW-{issue}.md`     | Version control history  | Git commit + push |
+| **Issue body** | Comment with plan-body block | Reviewers see latest     | Sync command      |
+| **Metadata**   | `plan_comment_id` field      | Tracks which comment     | Issue creation    |
 
-This updates the plan-body comment on the GitHub issue with the new content from the local file.
+The metadata field `plan_comment_id` in the issue's plan-header block stores the comment ID that contains the plan content. This allows the sync command to target the correct comment without searching.
 
-## Workflow Integration
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py, extract_plan_header_comment_id -->
+<!-- Source: src/erk/cli/commands/exec/scripts/plan_update_from_feedback.py, _update_plan_from_feedback_impl -->
 
-This pattern is part of the **Plan Review Mode** in `/erk:pr-address`. After editing the plan, Phase 3 syncs the changes:
+See `extract_plan_header_comment_id()` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py` and `_update_plan_from_feedback_impl()` in `src/erk/cli/commands/exec/scripts/plan_update_from_feedback.py`.
 
-### Step 1: Edit Local Plan File
+## The Three-Step Workflow
 
-Make changes to the local plan file (e.g., `PLAN-REVIEW-6252.md`) in response to review feedback.
+After editing a plan file in response to review feedback:
 
-### Step 2: Commit Changes
+1. **Commit changes** — `git add PLAN-REVIEW-{issue}.md && git commit && git push`
+2. **Sync to issue** — `erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md`
+3. **Resolve threads** — Mark review comments as addressed
 
-```bash
-git add PLAN-REVIEW-{issue}.md
-git commit -m "Address feedback: ..."
-git push
-```
+Step 2 is the critical sync. Without it, the PR updates but the issue comment remains stale.
 
-### Step 3: Sync Plan to GitHub Issue
+<!-- Source: .claude/commands/erk/pr-address.md, Plan Review Phase 4 -->
 
-```bash
-erk exec plan-update-issue --issue-number {issue} --plan-path PLAN-REVIEW-{issue}.md
-```
+See Plan Review Phase 4 in `.claude/commands/erk/pr-address.md` for the complete workflow integration.
 
-**Source:** `.claude/commands/erk/pr-address.md` (Plan Review Mode section)
+## Validation Chain
 
-This three-step sequence ensures both the PR and the issue are updated.
+The sync command performs LBYL validation before updating:
 
-## Implementation Details
+| Check                  | Error Type              | Why It Matters                                  |
+| ---------------------- | ----------------------- | ----------------------------------------------- |
+| Issue exists           | `issue_not_found`       | Can't sync to nonexistent issue                 |
+| Has `erk-plan` label   | `missing_erk_plan_label` | Prevents syncing to wrong issue type            |
+| Metadata has comment ID | `no_plan_comment_id`    | Can't target update without knowing which comment |
+| Comment exists on issue | `comment_not_found`     | Tracked comment may have been deleted           |
 
-### plan-update-issue Command
+Each validation raises a distinct error so agents can diagnose the failure without guessing.
 
-The sync command (`plan_update_from_feedback.py`) performs these operations:
+## When to Sync vs When to Skip
 
-1. **Validate issue exists**: Check that the issue number is valid
-2. **Validate erk-plan label**: Ensure the issue is a plan issue
-3. **Extract plan_comment_id**: Get the comment ID from plan-header metadata
-4. **Find matching comment**: Locate the comment on the issue
-5. **Format content**: Wrap the plan content in plan-body markers
-6. **Update comment**: Replace the old comment with new content
+### Sync when:
 
-**Source:** `src/erk/cli/commands/exec/scripts/plan_update_from_feedback.py`
+- Addressing review feedback (changes reviewers need to see)
+- Regenerating sections based on codebase changes
+- Adding missing details or clarifications
+- Before resolving review threads (reviewers verify changes before thread closure)
 
-### Metadata Preservation: plan-body Markers
+### Skip when:
 
-The sync command preserves metadata by wrapping content in `plan-body` markers:
+- Mid-edit (still drafting, not ready for reviewer visibility)
+- Experimenting with ideas (will revert before finalizing)
+- Working with file-based plans (no GitHub issue backing)
+- Read-only operations (just reading the plan)
 
-```markdown
-<!-- plan-body -->
-
-# Plan: Title
-
-## Implementation Steps
-
-...
-
-<!-- /plan-body -->
-```
-
-This allows the issue to contain both plan content and metadata without conflicts.
-
-### Error Cases
-
-The sync command validates several conditions and raises errors if:
-
-- **Issue not found**: The issue number doesn't exist
-- **Missing erk-plan label**: The issue isn't a plan issue
-- **Missing plan_comment_id**: The issue metadata doesn't track a plan comment
-- **Comment not found**: The tracked comment ID doesn't exist on the issue
-
-These validations ensure the sync only happens when the issue is in a valid state.
-
-## Why Sync is Not Automatic
-
-Sync is explicit rather than automatic because:
-
-1. **Control**: Agents decide when to sync (after completing edits, not mid-edit)
-2. **Atomicity**: Sync happens as a single operation, not piecemeal
-3. **Visibility**: Explicit sync makes the operation visible in command flow
-4. **Error handling**: Agents can handle sync failures without silent corruption
-
-Automatic sync (e.g., on every file save) would create race conditions and partial updates.
-
-## When to Sync
-
-Sync the plan file in these scenarios:
-
-- **After addressing review feedback**: Made changes based on reviewer comments
-- **After regenerating sections**: Updated plan based on codebase changes
-- **After clarification**: Added missing details or context
-- **Before resolving threads**: Reviewers need to see changes before threads can be resolved
-
-## When NOT to Sync
-
-Skip syncing in these scenarios:
-
-- **Mid-edit**: Still making changes, not ready for reviewers to see
-- **Temporary edits**: Experimenting with ideas, will revert
-- **Local-only plans**: Plan file not backed by a GitHub issue (file-based plans)
-- **Read-only operations**: Just reading the plan, not modifying it
-
-## Consumer Pattern
-
-The typical consumer pattern for plan file sync:
-
-```python
-# 1. Edit the plan file
-edit_plan_file(plan_path, changes)
-
-# 2. Commit changes
-git_commit(f"Address feedback: {summary}")
-
-# 3. Sync to GitHub issue
-result = plan_update_from_feedback(issue_number, plan_path)
-if not result.success:
-    # Handle sync failure
-    ...
-```
-
-This ensures changes are persisted locally before syncing remotely.
-
-## Testing Considerations
-
-Tests should verify:
-
-1. **Sync updates comment**: The comment body reflects the new plan content
-2. **Markers preserved**: plan-body markers are correctly formatted
-3. **Metadata unchanged**: plan-header metadata is not affected by sync
-4. **Error handling**: Invalid states (missing comment ID, comment not found) raise errors
-
-## Related Patterns
-
-### Metadata Block Patterns
-
-Plan file sync operates within the metadata block system:
-
-- **plan-header**: Contains metadata (plan_comment_id)
-- **plan-body markers**: Wrap the actual plan content
-- **Comment updates**: Preserve markers during sync
-
-### Two-Phase Commit
-
-The edit → commit → sync workflow is a two-phase commit:
-
-1. **Phase 1 (local)**: Edit file, commit to git
-2. **Phase 2 (remote)**: Sync to GitHub issue
-
-Both phases must complete for the update to be visible to reviewers.
+The decision point: **Will reviewers need to see this change to understand your response?**
 
 ## Comparison with Code PRs
 
-Plan file sync differs from code PR workflows:
+Plan PRs diverge from code PRs in one critical way:
 
-| Aspect              | Code PRs       | Plan PRs                         |
-| ------------------- | -------------- | -------------------------------- |
-| **Files modified**  | Source code    | Markdown plan files              |
-| **Sync mechanism**  | Git push       | Git push + explicit sync command |
-| **Review location** | PR diff        | GitHub issue + PR diff           |
-| **Sync target**     | GitHub PR only | GitHub PR + issue comment        |
+| Aspect         | Code PRs                     | Plan PRs                                 |
+| -------------- | ---------------------------- | ---------------------------------------- |
+| **Targets**    | PR branch only               | PR branch + issue comment                |
+| **Sync**       | Git push (one target)        | Git push + sync command (two targets)    |
+| **Review UI**  | PR diff                      | PR diff + issue comment (structured)     |
+| **Why split?** | N/A                          | Issue provides canonical plan for querying |
 
-The extra sync step is necessary because plan content lives in both the PR (for version control) and the issue (for structured review).
+The issue comment serves as the **canonical plan reference** for plan submission workflows — agents query the issue to get plan content, not the PR branch.
+
+## Related Patterns
+
+### Phase Zero Detection
+
+Plan Review Mode in `/erk:pr-address` is triggered by detecting the `erk-plan-review` label on the PR. This label is auto-applied by `erk exec plan-create-review-pr`.
+
+See [Phase Zero Detection Pattern](phase-zero-detection-pattern.md) for label-based workflow routing.
+
+### Metadata Block System
+
+Plan content is wrapped in `plan-body` markers (HTML comments) to separate it from surrounding metadata:
+
+```markdown
+<!-- plan-body -->
+# Plan: Title
+...
+<!-- /plan-body -->
+```
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py, format_plan_content_comment -->
+
+This allows the issue to contain both plan content and dispatch/session metadata without conflict. See `format_plan_content_comment()` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`.
 
 ## Related Documentation
 
-- [PR-Based Plan Review Workflow](../planning/pr-review-workflow.md) - Complete plan review process
-- Plan header metadata in issue body contains `plan_comment_id` field for sync targeting
-- [PR Address Workflows](../erk/pr-address-workflows.md) - Plan review mode integration
-
-## Attribution
-
-Pattern implemented in plan review PR feedback workflow (PR #6237 implementation).
+- [PR-Based Plan Review Workflow](../planning/pr-review-workflow.md) — Complete plan review process
+- [PR Address Workflows](../erk/pr-address-workflows.md) — Plan review mode vs code review mode
+- [Phase Zero Detection Pattern](phase-zero-detection-pattern.md) — Label-based workflow routing

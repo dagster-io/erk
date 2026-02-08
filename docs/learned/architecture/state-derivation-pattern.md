@@ -8,307 +8,187 @@ tripwires:
   - action: "Return pre-rendered display strings from backend APIs"
     warning: "Return raw state fields instead. Derive display state in frontend pure functions for testability and reusability."
     score: 8
-last_audited: "2026-02-05 15:20 PT"
+last_audited: "2026-02-08"
 audit_result: clean
 ---
 
 # State Derivation Pattern
 
-The state derivation pattern separates raw backend state from display rendering: backends provide raw fields, frontends derive display state through pure functions. This enables exhaustive testing, UI flexibility, and clear separation of concerns.
+## Why This Pattern Exists
 
-## Pattern Overview
+Backends that return pre-rendered display strings ("PR #456 (merged)", "✓ Passed") create untestable, inflexible frontends. Display logic can't be tested without mocking the entire backend, and UI changes require backend deployments.
+
+**The pattern**: Backends provide raw state fields. Frontends derive display state through pure functions.
+
+This enables exhaustive testing (every state combination), UI flexibility (change colors/text without backend changes), and clear separation of concerns (backend owns data, frontend owns presentation).
+
+## The Core Tradeoff
+
+**Pre-rendered strings**: Easy to implement, impossible to test, couples display to backend
+**State derivation**: Requires frontend logic, fully testable, decouples display from backend
+
+Choose state derivation when display logic has multiple variants or changes frequently.
+
+## Pattern Structure
 
 ```
-Backend (raw state)  →  Pure Function  →  Display State
-   ↓                        ↓                  ↓
+Backend (raw fields)  →  Pure Function  →  Display State
+     ↓                       ↓                   ↓
 pr_state: "closed"    derivePrStatus()    {color: "green",
-pr_merged: true       (pure logic)         text: "Merged",
-                                           tooltip: "PR #456"}
+pr_merged: true       (pure logic)         text: "Merged"}
 ```
+
+The pure function is the key: no I/O, no side effects, just state transformation. This makes it fully testable.
+
+## Decision: When to Use This Pattern
+
+Use state derivation when:
+
+1. **Display logic varies by context** - Tables show icons, tooltips show text, exports show full descriptions
+2. **State combinations are finite** - Can enumerate all cases (3 pr_state values × 2 pr_merged values = 6 cases)
+3. **Display requirements change frequently** - Color schemes, wording, formatting change more often than backend data model
+4. **Backend has no display context** - Frontend knows user preferences, viewport size, accessibility settings
+
+Skip state derivation when:
+
+1. **Backend performs complex aggregation** - "3 out of 5 subtasks complete" requires backend logic
+2. **Derivation requires external context** - Current user permissions, feature flags from backend
+3. **Display is inherently backend concern** - Localized timestamps, currency formatting based on user's stored locale
 
 ## Anti-Pattern: Pre-Rendered Display Strings
 
-**Wrong approach**: Backend returns display strings
+**WRONG**: Backend returns display strings
 
 ```typescript
-// Backend returns
 {
   issue_number: 123,
   pr_display: "PR #456 (merged)",     // ❌ Pre-rendered
-  status_icon: "✓",                   // ❌ Pre-rendered
-  checks_display: "Passed"            // ❌ Pre-rendered
+  status_icon: "✓"                    // ❌ Pre-rendered
 }
 ```
 
-**Problems:**
+Problems:
+- Can't test display logic without mocking backend
+- Different UI contexts need different formats (can't reuse)
+- Can't change styling without backend deployment
+- String parsing required to extract semantic meaning
 
-1. **Not testable**: Can't test display logic without mocking backend
-2. **Not reusable**: Different UI contexts need different formats
-3. **Not flexible**: Can't change styling, colors, or tooltips without backend changes
-4. **Fragile**: String parsing required to extract semantic meaning
-
-## Correct Pattern: Raw State → Pure Derivation
-
-**Right approach**: Backend returns raw state fields
+**CORRECT**: Backend returns raw state, frontend derives display
 
 ```typescript
 // Backend returns
-{
-  issue_number: 123,
-  pr_state: "closed",      // ✓ Raw field
-  pr_merged: true,         // ✓ Raw field
-  pr_number: 456           // ✓ Raw field
-}
+{ pr_state: "closed", pr_merged: true, pr_number: 456 }
 
-// Frontend derives display state
-function derivePrStatus(row: PlanRow): StatusInfo {
-  if (row.pr_state === "closed" && row.pr_merged === true) {
-    return {
-      color: "green",
-      text: "Merged",
-      tooltip: `PR #${row.pr_number} merged`
-    };
+// Frontend derives (pure function)
+function derivePrStatus(state, merged, number) {
+  if (state === "closed" && merged) {
+    return { color: "green", text: "Merged", tooltip: `PR #${number} merged` };
   }
   // ... other cases
 }
 ```
 
-**Benefits:**
+Benefits:
+- Test the pure function exhaustively (no mocking)
+- Reuse across table cells, tooltips, exports
+- Change colors/text without backend deployment
+- Type-safe (compile-time checking for missing fields)
 
-1. **Fully testable**: Pure function tests without component mocking
-2. **Reusable**: Same derivation works across table rows, tooltips, exports
-3. **Flexible**: Change colors, text, tooltips without backend changes
-4. **Type-safe**: Compile-time checking for missing fields
+## Testing Strategy
 
-## Example: erkdesk Status Indicators
-
-### Raw Backend Fields
-
-```typescript
-interface PlanRow {
-  // PR status fields
-  pr_state: "open" | "closed" | null;
-  pr_merged: boolean | null;
-  pr_number: number | null;
-
-  // Checks status fields
-  run_status: string | null; // "completed", "in_progress", etc.
-  run_conclusion: string | null; // "success", "failure", etc.
-
-  // Comments status fields
-  resolved_comment_count: number | null;
-  total_comment_count: number | null;
-}
-```
-
-### Pure Derivation Function
+Pure derivation functions enable exhaustive state testing:
 
 ```typescript
-type StatusInfo = {
-  color: "green" | "amber" | "purple" | "red" | "gray";
-  text: string;
-  tooltip: string;
-};
+test("merged PR shows green", () => {
+  expect(derivePrStatus("closed", true, 456))
+    .toEqual({ color: "green", text: "Merged", tooltip: "PR #456 merged" });
+});
 
-function derivePrStatus(row: PlanRow): StatusInfo {
-  if (row.pr_state === null) {
-    return { color: "gray", text: "No PR", tooltip: "No PR created yet" };
-  }
-
-  if (row.pr_state === "closed") {
-    if (row.pr_merged === true) {
-      return {
-        color: "green",
-        text: "Merged",
-        tooltip: `PR #${row.pr_number} merged`,
-      };
-    }
-    return {
-      color: "red",
-      text: "Closed",
-      tooltip: `PR #${row.pr_number} closed without merge`,
-    };
-  }
-
-  if (row.pr_state === "open") {
-    return {
-      color: "purple",
-      text: "Open",
-      tooltip: `PR #${row.pr_number} is open`,
-    };
-  }
-
-  return { color: "gray", text: "Unknown", tooltip: "Unknown PR state" };
-}
-```
-
-### Exhaustive Testing
-
-Pure functions enable testing every state combination:
-
-```typescript
-describe("derivePrStatus", () => {
-  test("returns green for merged PR", () => {
-    const status = derivePrStatus({
-      pr_state: "closed",
-      pr_merged: true,
-      pr_number: 456,
-    });
-    expect(status.color).toBe("green");
-    expect(status.text).toBe("Merged");
-  });
-
-  test("returns red for closed unmerged PR", () => {
-    const status = derivePrStatus({
-      pr_state: "closed",
-      pr_merged: false,
-      pr_number: 456,
-    });
-    expect(status.color).toBe("red");
-    expect(status.text).toBe("Closed");
-  });
-
-  test("returns purple for open PR", () => {
-    const status = derivePrStatus({
-      pr_state: "open",
-      pr_merged: null,
-      pr_number: 456,
-    });
-    expect(status.color).toBe("purple");
-  });
-
-  test("returns gray for no PR", () => {
-    const status = derivePrStatus({
-      pr_state: null,
-      pr_merged: null,
-      pr_number: null,
-    });
-    expect(status.color).toBe("gray");
-  });
+test("closed unmerged PR shows red", () => {
+  expect(derivePrStatus("closed", false, 456))
+    .toEqual({ color: "red", text: "Closed", tooltip: "PR #456 closed without merge" });
 });
 ```
 
-**Result**: 278 tests covering all state combinations in erkdesk status indicators.
+Result: Test every combination of raw state fields. No component mocking, no backend mocking, just input/output pairs.
 
-## When to Use This Pattern
+## Erk Usage
 
-Use state derivation when:
+<!-- Source: src/erk/tui/data/types.py, PlanRowData -->
 
-1. **Display logic has multiple variants**
-   - Different colors, icons, or text based on state
-   - Multiple UI contexts (tables, tooltips, cards)
+Erk's TUI currently uses pre-rendered display strings (`pr_display`, `checks_display`, `comments_display`) for the plan table. See `PlanRowData` in `src/erk/tui/data/types.py`.
 
-2. **State combinations are finite**
-   - Enumerate all cases (3 pr_state × 2 pr_merged = 6 cases)
-   - Test every combination exhaustively
+A planned feature (branch `P6564-erk-plan-visual-status-in-02-01-1138`) migrates to state derivation with visual status indicators. The implementation demonstrates this pattern:
 
-3. **Display requirements change frequently**
-   - Color schemes, tooltip format, text wording
-   - Backend shouldn't deploy for display tweaks
+- Backend provides raw fields: `pr_state`, `pr_merged`, `run_status`, `run_conclusion`
+- Frontend pure functions: `derivePrStatus()`, `deriveChecksStatus()`, `deriveCommentsStatus()`
+- Result: 278 tests covering all state combinations
 
-4. **Multiple teams maintain code**
-   - Backend team owns data contract
-   - Frontend team owns display logic
-   - Clear boundary prevents coupling
+See [visual-status-indicators.md](../desktop-dash/visual-status-indicators.md) for the planned implementation details.
 
-## When NOT to Use This Pattern
+## Migration Strategy
 
-Skip state derivation when:
+Transitioning from pre-rendered to raw fields without downtime:
 
-1. **Backend performs complex aggregation**
-   - Example: "3 out of 5 subtasks complete"
-   - Aggregation logic belongs in backend
+1. **Add raw fields** alongside existing pre-rendered fields (backend change)
+2. **Deploy backend** with both field types
+3. **Update frontend** to use derivation, fallback to old fields if raw fields missing
+4. **Deploy frontend** (handles both old and new backend)
+5. **Remove pre-rendered fields** from backend after confirming frontend migration
+6. **Remove fallback logic** from frontend
 
-2. **State is inherently a display concern**
-   - Example: "formatted_timestamp": "2024-01-15 10:30 PST"
-   - This is formatting, not semantic state
-
-3. **Derivation requires external context**
-   - Example: Current user's permissions
-   - Backend already has this context
+This allows zero-downtime rollout. The key is deploying the backend first (additive change), then the frontend (can handle both), then cleanup.
 
 ## Pattern Variations
 
 ### Multi-Field Derivation
 
-Combine multiple raw fields:
+Combine multiple derivation functions for overall status:
 
 ```typescript
-function deriveOverallStatus(row: PlanRow): StatusInfo {
-  const prStatus = derivePrStatus(row);
-  const checksStatus = deriveChecksStatus(row);
+function deriveOverallStatus(row) {
+  const prGreen = derivePrStatus(row).color === "green";
+  const checksGreen = deriveChecksStatus(row).color === "green";
 
-  if (prStatus.color === "green" && checksStatus.color === "green") {
-    return {
-      color: "green",
-      text: "All Good",
-      tooltip: "PR merged, checks passed",
-    };
+  if (prGreen && checksGreen) {
+    return { color: "green", text: "All Good" };
   }
-  // ... other combinations
+  // ... priority order for combined status
 }
 ```
 
 ### Conditional Field Presence
 
-Handle optional fields gracefully:
+Handle optional fields (nullability is part of the state space):
 
 ```typescript
-function deriveCommentsStatus(row: PlanRow): StatusInfo {
-  if (row.total_comment_count === null || row.total_comment_count === 0) {
-    return { color: "gray", text: "No comments", tooltip: "" };
+function deriveCommentsStatus(resolvedCount, totalCount) {
+  if (totalCount === null || totalCount === 0) {
+    return { color: "gray", text: "No comments" };
   }
 
-  const resolved = row.resolved_comment_count ?? 0;
-  const total = row.total_comment_count;
-
-  if (resolved === total) {
-    return {
-      color: "green",
-      text: "All resolved",
-      tooltip: `${total}/${total} resolved`,
-    };
+  if ((resolvedCount ?? 0) === totalCount) {
+    return { color: "green", text: "All resolved" };
   }
 
-  return {
-    color: "amber",
-    text: "Unresolved",
-    tooltip: `${resolved}/${total} resolved`,
-  };
+  return { color: "amber", text: `${resolvedCount ?? 0}/${totalCount}` };
 }
 ```
 
+The derivation function explicitly handles the null cases as part of the state space.
+
 ## Related Patterns
 
-### Backend for Frontend (BFF)
+**Backend for Frontend (BFF)**: State derivation pairs well with BFF. The BFF layer enriches raw database fields with joined/calculated fields (still raw state), then the frontend derives display state.
 
-State derivation is often paired with BFF pattern:
+**Command Query Separation**: State derivation enforces CQS. Commands mutate (create PR, merge PR). Queries return raw state. Display derivation is a pure query with no side effects.
 
-- **Backend service**: Returns raw database fields
-- **BFF layer**: Enriches with additional raw fields (join data, calculated fields)
-- **Frontend**: Derives display state from enriched raw fields
+## Historical Context
 
-### Command Query Separation
+Erk initially used pre-rendered display strings because they were easier to implement. Testing friction (couldn't test display logic without full backend setup) and inflexibility (every color change required backend deployment) drove the pattern shift.
 
-State derivation enforces CQS:
-
-- **Commands**: Backend mutations (create PR, merge PR)
-- **Queries**: Backend returns raw state
-- **Display**: Frontend derivation (no side effects)
-
-## Migration Strategy
-
-Transitioning from pre-rendered to raw fields:
-
-1. **Add raw fields** alongside existing pre-rendered fields
-2. **Deploy backend** with both field types
-3. **Update frontend** to use derivation functions, fallback to old fields if raw fields missing
-4. **Deploy frontend** (handles both old and new backend)
-5. **Remove pre-rendered fields** from backend after confirming frontend migration
-6. **Remove fallback logic** from frontend
-
-This allows zero-downtime rollout with backward compatibility.
+The planned erkdesk visual status indicators feature is the first systematic application of state derivation in erk.
 
 ## Related Documentation
 
-- [visual-status-indicators.md](../desktop-dash/visual-status-indicators.md) — erkdesk implementation example with 278 tests
+- [visual-status-indicators.md](../desktop-dash/visual-status-indicators.md) — Planned erkdesk implementation with 278 tests

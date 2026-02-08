@@ -6,69 +6,139 @@ read_when:
   - debugging parameter not found errors
 tripwires:
   - action: "adding a parameter to erk exec without updating calling command"
-    warning: "3-layer parameter threading required. Update skill argument-hint, command invocations, AND exec script. See parameter-addition-checklist.md for complete steps."
-last_audited: "2026-02-05"
-audit_result: edited
+    warning: "5-step verification required. Parameter additions must thread through skill argument-hint, command invocations, AND exec script. Miss any layer and you get silent failures or discovery problems. See parameter-addition-checklist.md."
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Parameter Addition Checklist
 
-When adding a parameter to a multi-layer command (skill → command → exec script), follow this 5-step checklist to ensure the parameter is threaded through all layers correctly.
+## Why This Checklist Exists
 
-## Checklist
+The 3-layer indirection pattern (skill → command → exec script) creates **mechanical synchronization requirements** that can't be automated. Parameters must be manually threaded through each layer, and missing any step causes one of two failure modes:
+
+1. **Silent omission** — parameter exists but is never passed (most dangerous)
+2. **Loud failure** — parameter passed but not accepted (fails fast, easier to debug)
+
+The checklist approach catches both failure modes. Grep alone only catches loud failures.
+
+## The 5-Step Verification Protocol
+
+This is a **verification protocol**, not implementation guidance. For WHY parameters require threading and the failure modes that occur when you skip steps, see [Parameter Threading Pattern](../architecture/parameter-threading-pattern.md).
 
 ### Step 1: Update argument-hint in Skill Frontmatter
 
-**File**: `.claude/skills/{skill-name}/SKILL.md`
+**Why**: Discovery layer. If not documented here, users can't find the parameter in Claude Code's UI.
 
-Add parameter documentation to `argument-hint` field. This tells Claude Code what parameters are available.
+<!-- Source: .claude/skills/pr-feedback-classifier/SKILL.md, argument-hint frontmatter -->
 
-See `.claude/skills/pr-feedback-classifier/SKILL.md` for the canonical reference format.
+Add parameter to `argument-hint` field using format: `[--flag]` for optionals, `--flag <value>` for required values.
+
+**Verification**: `grep -A3 "argument-hint" .claude/skills/{skill-name}/SKILL.md`
 
 ### Step 2: Document in Arguments Section (if exists)
 
-**File**: `.claude/skills/{skill-name}/SKILL.md` or `.claude/commands/{command-name}.md`
+**Why**: Human-readable explanation supplements machine-readable frontmatter.
 
-If the command has an "Arguments" section in the body, add parameter documentation there too.
+If the skill or command has an "Arguments" section in the markdown body, document parameter behavior there (e.g., "defaults to current branch's PR").
+
+**Skip if**: No existing Arguments section. Don't create one just for this.
 
 ### Step 3: Update erk exec Invocations in Command
 
-**File**: `.claude/skills/{skill-name}/SKILL.md` or `.claude/commands/{command-name}.md`
+**Why**: Routing layer. This is where `$ARGUMENTS` from Claude Code gets translated into actual command-line flags for the exec script.
 
-Find all `erk exec` calls and add parameter threading. Check `$ARGUMENTS` and conditionally pass the parameter through.
+<!-- Source: .claude/skills/pr-feedback-classifier/SKILL.md, erk exec invocation patterns -->
+
+Find all `erk exec {script-name}` calls in the command/skill body. Add parameter threading logic:
+
+```bash
+# Example: conditional flag threading
+# If --my-flag in $ARGUMENTS:
+erk exec my-script [--pr <number>] --my-flag
+# Otherwise:
+erk exec my-script [--pr <number>]
+```
+
+**Verification**: `grep "erk exec {script-name}" .claude/skills/{skill-name}/SKILL.md`
+
+**Common mistake**: Updating the skill but forgetting to pass the parameter in the actual `erk exec` invocation. This causes silent omission — the exec script never receives the parameter but doesn't error either.
 
 ### Step 4: Add Click Option to Exec Script
 
-**File**: `src/erk/cli/commands/exec/scripts/{script_name}.py`
+**Why**: Implementation layer. The Python function must accept the parameter.
 
-Add `@click.option` decorator. Use identical parameter names across all layers (e.g., `--pr` everywhere, not `--pr-number` in one place and `--pr` in another).
+<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_review_comments.py, @click.option decorators -->
+<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_discussion_comments.py, @click.option decorators -->
 
-### Step 5: Verify All Invocations
+See Click option patterns in `get_pr_review_comments.py` and `get_pr_discussion_comments.py`.
 
-Search for all places that invoke this command/script and verify parameter threading:
+**Naming constraint**: Use **identical parameter names** across all layers. `--pr` in argument-hint = `--pr` in bash command = `--pr` in Click option. Mismatches cause loud failures.
+
+**Verification**: Check `@click.option` decorators near the function definition.
+
+### Step 5: Verify All Invocation Sites
+
+**Why**: Secondary invocation sites (other commands that call the same exec script) must also thread the new parameter.
+
+Grep across **both** `.claude/` and `src/` to find all invocations:
 
 ```bash
 grep -r "erk exec {script-name}" .claude/
 grep -r "erk exec {script-name}" src/
 ```
 
-## Canonical Example
+For each match, verify the new parameter is threaded through (or intentionally omitted if that invocation doesn't need it).
 
-The `--pr` parameter in `pr-feedback-classifier` (PR #6634) threads through all 5 layers:
+**This step catches silent omissions**. If you skip this, the primary command works but secondary code paths fail silently.
 
-1. **Skill**: `.claude/skills/pr-feedback-classifier/SKILL.md` — `argument-hint` field
-2. **Exec scripts**: `src/erk/cli/commands/exec/scripts/get_pr_review_comments.py` and `get_pr_discussion_comments.py` — `@click.option("--pr", ...)`
+## Canonical Reference Implementation
 
-## Common Mistakes
+<!-- Source: .claude/skills/pr-feedback-classifier/SKILL.md, full skill implementation -->
+<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_review_comments.py, complete parameter threading -->
+<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_discussion_comments.py, parallel implementation -->
 
-| Mistake                          | Symptom                                                         | Fix                                                               |
-| -------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Forgetting Step 5 (verification) | Parameter works in one code path but not another                | Search for all invocations and update each one                    |
-| Inconsistent parameter names     | `Error: No such option: --pr-number` when script expects `--pr` | Use identical names in argument-hint, commands, and Click options |
-| Not documenting in argument-hint | Users don't know the parameter exists                           | Always update argument-hint frontmatter                           |
-| Forgetting Click option          | `Error: No such option: --my-param`                             | Add `@click.option` to exec script                                |
+The `--pr` parameter in `pr-feedback-classifier` skill (PR #6634) demonstrates correct threading:
+
+1. **argument-hint**: `[--pr <number>]` documents optional parameter
+2. **Skill body**: "Arguments" section explains default behavior
+3. **erk exec calls**: Both `get-pr-review-comments` and `get-pr-discussion-comments` thread `[--pr <number>]`
+4. **Click options**: Both scripts accept `@click.option("--pr", type=int, default=None, ...)`
+5. **Verification**: No other invocation sites exist (grep confirms)
+
+See the three source files for complete implementation patterns.
+
+## Common Mistakes and Their Symptoms
+
+| Mistake                          | Symptom                                                         | Detection Method                       |
+| -------------------------------- | --------------------------------------------------------------- | -------------------------------------- |
+| Skip Step 5 (verification)       | Parameter works in primary path but not secondary invocations  | Grep all invocation sites              |
+| Inconsistent names across layers | `Error: No such option: --pr-number` when script expects `--pr` | Check all layers use identical names   |
+| Skip Step 1 (argument-hint)      | Users can't discover feature in Claude Code UI                  | Check frontmatter documents parameter  |
+| Skip Step 3 (command threading)  | Exec script never receives parameter (silent default behavior)  | Grep command for `erk exec` invocation |
+| Skip Step 4 (Click option)       | `Error: No such option: --my-param`                             | Fails fast, obvious to fix             |
+
+**Silent omission vs loud failure**: Steps 3-4 omissions create different failure modes. Missing Click option (Step 4) fails loudly. Missing command threading (Step 3) fails silently — the worst kind.
+
+## When This Checklist Applies
+
+**Use when**:
+
+- Adding parameter to command that uses skill → command → exec pattern
+- Parameter must be user-accessible through Claude Code UI
+- Working with multi-layer indirection (not direct Python calls)
+
+**Don't use when**:
+
+- Parameter is internal to single Python function (use function parameters directly)
+- Direct Python imports with function calls (no subprocess boundary)
+- Single-layer commands without exec scripts
+
+For single-layer commands, just add the Click option. This checklist is specifically for the 3-layer pattern.
 
 ## Related Documentation
 
-- [Parameter Threading Pattern](../architecture/parameter-threading-pattern.md) — Detailed threading pattern explanation
-- `.claude/skills/pr-feedback-classifier/SKILL.md` — Reference implementation
+- [Parameter Threading Pattern](../architecture/parameter-threading-pattern.md) — WHY threading is required, failure mode analysis, decision framework
+- `.claude/skills/pr-feedback-classifier/SKILL.md` — Canonical reference showing all 5 steps implemented correctly
+- `src/erk/cli/commands/exec/scripts/get_pr_review_comments.py` — Click option implementation patterns
+- `src/erk/cli/commands/exec/scripts/get_pr_discussion_comments.py` — Parallel implementation demonstrating consistency

@@ -1,6 +1,6 @@
 ---
 title: Roadmap Mutation Semantics
-last_audited: "2026-02-07 18:35 PT"
+last_audited: "2026-02-08 00:30 PT"
 audit_result: edited
 read_when:
   - "modifying objective roadmap update logic"
@@ -8,97 +8,97 @@ read_when:
   - "working with update-roadmap-step command"
 tripwires:
   - action: "updating a roadmap step's PR cell"
-    warning: "The update-roadmap-step command computes the display status from the PR value (e.g., '#123' → 'done', 'plan #123' → 'in-progress', empty → 'pending') and writes it directly into the status cell. It does NOT reset status to '-'."
-  - action: "inferring status from PR column when status is explicitly set"
-    warning: "Explicit status values (done, in-progress, pending, blocked, skipped) always override PR-based inference in parse_roadmap(). Only '-' or empty allows inference."
+    warning: "The update-roadmap-step command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty."
+  - action: "expecting status to auto-update after manual PR edits"
+    warning: "Only the update-roadmap-step command writes computed status. Manual GitHub edits or direct body mutations leave status at its current value — you must explicitly set status to '-' to enable inference on next parse."
 ---
 
 # Roadmap Mutation Semantics
 
-The `update-roadmap-step` command updates PR cells in objective roadmap tables with computed status values. Understanding the interaction between the Status and PR columns is essential for correct roadmap mutations.
+This document explains how status values interact with PR column updates when mutating objective roadmap tables. Understanding the distinction between **mutation-time computation** (command writes status) and **parse-time inference** (parser reads status) is critical for correct roadmap updates.
 
-## Two-Tier Status Resolution (Parser)
+## The Key Distinction: Write vs Read
 
-The roadmap parser (`parse_roadmap()` in `objective_roadmap_shared.py`, lines 102-115) uses a two-tier system to determine step status:
+Roadmap status resolution happens in **two different contexts** with different semantics:
 
-**Tier 1: Explicit Status Values (highest priority)**
+1. **Mutation context** (`update-roadmap-step` command): Computes status from PR value and **writes both cells atomically**
+2. **Parse context** (`parse_roadmap()` function): Reads status cell and **infers only if status is `-` or empty**
 
-When the Status column contains explicit values, they override PR-based inference:
+This split means the command produces human-readable tables (status always reflects PR state), while the parser handles legacy or manually-edited tables (where status might be stale or explicit).
 
-| Status Column Value            | Result Status | Notes                                   |
-| ------------------------------ | ------------- | --------------------------------------- |
-| `done`                         | `done`        | Explicit override                       |
-| `in-progress` or `in_progress` | `in_progress` | Explicit override (both forms accepted) |
-| `pending`                      | `pending`     | Explicit override                       |
-| `blocked`                      | `blocked`     | Explicit override                       |
-| `skipped`                      | `skipped`     | Explicit override                       |
+## Mutation: The update-roadmap-step Command
 
-**Tier 2: PR-Based Inference (for `-` or empty values)**
+### What It Does
 
-When the Status column is `-` or empty, status is inferred from the PR column:
+When you run `erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"`, the command:
 
-| PR Column Value | Inferred Status |
-| --------------- | --------------- |
-| `#123`          | `done`          |
-| `plan #456`     | `in_progress`   |
-| `-` or empty    | `pending`       |
+1. Computes display status from the PR value
+2. Writes **both** the status and PR cells in a single atomic update
 
-> **Source**: See [`objective_roadmap_shared.py:102-115`](../../../src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py)
+| PR Value Provided | Written Status Cell | Written PR Cell |
+| ----------------- | ------------------- | --------------- |
+| `#123`            | `done`              | `#123`          |
+| `plan #456`       | `in-progress`       | `plan #456`     |
+| `""` (empty)      | `pending`           | `-`             |
 
-## update-roadmap-step Command
+### Why Both Cells Are Written
 
-**Purpose:** Atomically update a step's PR cell with computed status.
+The command could have written PR and left status as `-` (relying on parse-time inference), but that creates a worse user experience:
 
-**Usage:**
+- **GitHub viewers** see the raw markdown table — status would show `-` until the next parse
+- **Manual edits** would require understanding the inference rules
+- **Audit trail** becomes unclear (did someone forget to update status, or is inference intended?)
 
-```bash
-erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
-erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500"
-erk exec update-roadmap-step 6423 --step 1.3 --pr ""
-```
+By writing computed status directly, the table is always human-readable.
 
-**Behavior:** When the command updates a step's PR cell, it also computes and writes the display status directly into the status cell based on the PR value:
+### Implementation Detail
 
-| PR Value     | Written Status | Written PR Cell |
-| ------------ | -------------- | --------------- |
-| `#123`       | `done`         | `#123`          |
-| `plan #456`  | `in-progress`  | `plan #456`     |
-| empty string | `pending`      | `-`             |
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
 
-This means the status cell always reflects the current state. The parser's Tier 2 inference is relevant when reading roadmaps that were edited manually (where status might be `-`), but the CLI command writes explicit status values.
+See `_replace_step_pr_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:63-97`. The function uses regex to find the target row and replaces both status and PR cells in a single operation.
 
-**Capabilities:**
+The computation logic (lines 84-90) maps PR values to status strings before building the replacement row.
 
-- Updates the PR cell for a specific step
-- Computes display status from PR value and writes it into the status cell
-- Simpler mental model: "set step X's PR to Y"
-- Designed for plan-save workflow integration
+## Parse: Status Inference at Read Time
+
+The parser (`parse_roadmap()`) uses a two-tier status resolution system: explicit status values take priority, with PR-based inference only when status is `-` or empty. For the complete specification, see [Roadmap Status System](../objectives/roadmap-status-system.md).
+
+The key point for mutation semantics: inference only fires when the status cell is `-` or empty. If a cell already has an explicit value (even a stale one), the parser preserves it.
+
+### Why This Matters for Mutations
+
+If you update PR via direct body mutation (not using the command), status won't auto-update:
+
+| Action                                          | Result Status | Why                                                  |
+| ----------------------------------------------- | ------------- | ---------------------------------------------------- |
+| update-roadmap-step sets PR to `#123`           | `done`        | Command writes computed status                       |
+| Manual GitHub edit: change PR cell to `#123`    | (unchanged)   | Status cell not touched, parser reads explicit value |
+| Script sets PR but leaves status at `in-progress` | `in_progress` | Parser sees explicit value, doesn't infer            |
+
+To enable inference after manual/script edits, you must explicitly set status to `-`.
+
+## Decision Table: Command vs Direct Mutation
+
+| Context                                   | Use Command                      | Direct Body Mutation                     |
+| ----------------------------------------- | -------------------------------- | ---------------------------------------- |
+| Normal workflow (plan-save, PR landing)   | ✅ Atomic PR + status update      | ❌ Would leave status stale               |
+| Batch updates across multiple steps      | ✅ One call per step              | ⚠️ Possible, but must compute status     |
+| Setting explicit status (blocked/skipped) | ❌ Command doesn't support this  | ✅ Write status column directly           |
+| Quick fix in GitHub UI                    | N/A                              | ⚠️ Must update both cells or set status to `-` |
+
+The command is designed for **normal workflow integration** (skills, hooks, scripts). For special cases like marking steps as `blocked`, direct body mutation is still required.
 
 ## LBYL Pattern in Update Command
 
-The update command uses LBYL throughout:
+The command follows erk's LBYL discipline throughout, using discriminated union checks before each operation. See the `update_roadmap_step()` function in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:107-182` for the full pattern. For the general approach, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
 
-```python
-# Check result type before accessing fields
-if isinstance(issue, IssueNotFound):
-    # Handle missing issue
+## Cross-Document Knowledge
 
-# Check parse result before using
-if not phases:
-    # Handle empty roadmap
-```
+This document explains **mutation semantics** (what changes when you update PR). For related concerns:
 
-## PR Cell Mutation Pattern
+- **Parsing rules and validation** → [Roadmap Parser](../objectives/roadmap-parser.md)
+- **Two-tier status resolution details** → [Roadmap Status System](../objectives/roadmap-status-system.md)
+- **Command usage and exit codes** → [Update Roadmap Step Command](../cli/commands/update-roadmap-step.md)
+- **Batch vs surgical update decisions** → [Roadmap Mutation Patterns](../objectives/roadmap-mutation-patterns.md)
 
-The command uses a regex pattern to match table rows by step ID and replace the status and PR cells. See `update_roadmap_step.py:75-78` for the regex. All four cells (step_id, description, status, PR) are captured; only status and PR are replaced.
-
-## Reference Implementation
-
-- Step mutation: `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:63-97`
-- Two-tier status resolution: `src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py:102-115`
-
-## Related Documentation
-
-- [Update Roadmap Step Command](../cli/commands/update-roadmap-step.md) — Step-level PR updates
-- [Roadmap Parser](../objectives/roadmap-parser.md) — Parsing rules and CLI usage
-- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — The isinstance() checking pattern
+The key insight unique to this document: **mutation writes both cells, parsing infers from one**. This asymmetry is intentional and solves the human-readability vs backward-compatibility trade-off.

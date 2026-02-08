@@ -22,92 +22,99 @@ audit_result: clean
 
 ## Why This Abstraction Exists
 
-Erk supports both Graphite-managed and plain Git repositories. Without BranchManager, every CLI command that touches branches would need conditional logic to decide whether to call `gt` or `git`. BranchManager centralizes that decision into two frozen dataclass implementations — `GraphiteBranchManager` and `GitBranchManager` — selected once at context construction time.
+Without BranchManager, every CLI command would need conditional logic: "Am I in a Graphite repo? Then call `gt track`. Otherwise use `git branch`." This scattered dual-mode awareness creates maintenance burden and makes mode-specific behavior hard to reason about.
 
-```python
-# DON'T DO THIS — scattered conditionals in every command
-if ctx.graphite.is_enabled():
-    ctx.graphite.track_branch(...)
-else:
-    ctx.git.branch.create_branch(...)
-```
+BranchManager centralizes the Graphite-vs-Git decision into two frozen dataclass implementations selected once at context construction time. Commands call `ctx.branch_manager.create_branch()` and get correct behavior for the current repository mode without knowing which mode they're in.
 
-The abstraction enforces a **mutation boundary**: all branch mutations (create, delete, checkout, submit, track) go through `ctx.branch_manager`, while read-only queries (current branch, branch list, commit info) stay on `ctx.git.branch`.
+## The Mutation Boundary
 
-## Mutation vs Query Split
+BranchManager enforces a critical architectural split between mutations and queries:
 
-This is the key architectural decision. Understanding which operations belong where prevents misuse:
-
-| Operation Type | Access Via | Why |
+| Operation Type | Route | Rationale |
 |---|---|---|
-| **Branch mutations** (create, delete, checkout, submit, track) | `ctx.branch_manager` | Mutations need dual-mode logic (Graphite tracking, metadata cleanup, stack awareness) |
-| **Branch queries** (current branch, list branches, get HEAD SHA) | `ctx.git.branch` | Queries are always plain git — Graphite adds nothing |
-| **Graphite-specific queries** (stack info, parent/child, PR cache) | `ctx.branch_manager` | Queries that return `None`/empty in Git mode, rich data in Graphite mode |
+| **Branch mutations** (create, delete, checkout, submit, track) | `ctx.branch_manager` | Mutations need dual-mode logic: Graphite tracking, metadata cleanup, stack-aware operations |
+| **Branch queries** (current branch, list branches, HEAD SHA) | `ctx.git.branch` | Queries are always plain git — Graphite adds nothing to read-only operations |
+| **Graphite-only queries** (stack info, parent/child, PR cache) | `ctx.branch_manager` | Return `None`/empty in Git mode, rich data in Graphite mode |
 
-## Behavioral Differences Between Modes
+This separation prevents mutation logic from leaking into every query operation while making dual-mode operations explicit in the type system.
 
-The two implementations diverge in non-obvious ways. For full implementation details, see `GraphiteBranchManager` in `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` and `GitBranchManager` in `packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py`.
+## Non-Obvious Behavioral Differences
 
-This table captures the differences that trip up agents:
+Both implementations satisfy the same ABC interface, but their behavior diverges in ways that cause agent confusion:
 
-| Operation              | GraphiteBranchManager                          | GitBranchManager                  | Gotcha                                                                     |
-| ---------------------- | ---------------------------------------------- | --------------------------------- | -------------------------------------------------------------------------- |
-| `create_branch()`      | Creates + tracks via `gt track`, then restores | Creates via git, stays on current | Both leave you on the **original branch** — call `checkout_branch()` after |
-| `delete_branch()`      | LBYL on `is_branch_tracked()`, then `gt delete`| Plain `git branch -d/-D`          | Always flow `force=force` through all layers                               |
-| `submit_branch()`      | Submits entire stack                           | Pushes single branch              | Graphite submits the **whole stack**, not just one branch                  |
-| `track_branch()`       | Delegates to `GraphiteBranchOps`               | No-op                             | Silent no-op in Git mode — won't error, just does nothing                  |
-| `get_branch_stack()`   | Returns ordered list from cache                | Returns `None`                    | Callers must handle `None` for Git-only repos                              |
-| `get_pr_for_branch()`  | Graphite cache first, GitHub API fallback      | Always GitHub API                 | `from_fallback` on `PrInfo` tells you which path was taken                 |
+| Operation | GraphiteBranchManager Behavior | GitBranchManager Behavior | Why This Trips Up Agents |
+|---|---|---|---|
+| `create_branch()` | Creates + tracks via `gt track`, **then restores original branch** | Creates via git, stays on current | Both leave you on the **original branch** — explicit `checkout_branch()` required |
+| `delete_branch()` | LBYL check on `is_branch_tracked()`, then delegates to `gt delete` or `git branch -d/-D` | Plain `git branch -d/-D` | Graphite mode handles diverged branches gracefully; git mode respects `-d` safety checks |
+| `submit_branch()` | Submits **entire stack** via `gt submit` | Pushes **single branch** via `git push` | Graphite submits multiple PRs; git pushes one ref |
+| `track_branch()` | Delegates to `GraphiteBranchOps` | **Silent no-op** | Git mode won't error — just does nothing |
+| `get_branch_stack()` | Returns ordered list from cache | Returns `None` | Callers must handle `None` for Git-only repos |
+| `get_pr_for_branch()` | Graphite cache first, GitHub API fallback | Always GitHub API | `from_fallback` on `PrInfo` tells you which path was taken |
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py, GraphiteBranchManager -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py, GitBranchManager -->
+
+The restore-after-create behavior exists because `gt track` requires the branch to be checked out. GraphiteBranchManager temporarily switches branches to satisfy Graphite's constraint, then restores the original branch to avoid side effects.
 
 ## The Ephemeral Branch Exception
 
-Not all branches should go through BranchManager. Placeholder branches (`__erk-slot-XX-br-stub__`) and other ephemeral branches bypass it because Graphite tracking would pollute stack metadata for branches that are never pushed, never have PRs, and are frequently created/destroyed.
+Not all branches should go through BranchManager. Placeholder branches (`__erk-slot-XX-br-stub__`) and other ephemeral branches bypass BranchManager because Graphite tracking would pollute stack metadata for branches that:
 
-**See**: [Branch Manager Decision Tree](branch-manager-decision-tree.md) for the full decision framework and [Placeholder Branches](../erk/placeholder-branches.md) for the lifecycle.
+- Are never pushed to remote
+- Never have PRs
+- Are frequently created/destroyed
+- Exist only to satisfy git's multi-worktree constraint
+
+**Decision framework**: [Branch Manager Decision Tree](branch-manager-decision-tree.md)
+
+**Lifecycle details**: [Placeholder Branches](../erk/placeholder-branches.md)
 
 ## Graphite create_branch() Complexity
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py, GraphiteBranchManager.create_branch -->
 
-`GraphiteBranchManager.create_branch()` is the most complex method because `gt track` requires the branch to be checked out. The method:
+`GraphiteBranchManager.create_branch()` is the most complex method in the abstraction because it must:
 
-1. Saves the current branch
-2. Creates the branch via git
-3. Checks out the new branch temporarily
-4. Handles remote-ref parents (strips `origin/` prefix, ensures local branch matches remote)
-5. Auto-fixes diverged parents via `retrack_branch()` before tracking children
-6. Runs `gt track` to register with Graphite
-7. Restores the original branch
+1. Handle remote-ref parents — strip `origin/` prefix, ensure local branch exists and matches remote SHA
+2. Auto-fix diverged parents — if parent is diverged from Graphite's tracking, retrack it before tracking child (prevents tracking failures)
+3. Temporarily checkout the new branch to run `gt track` (Graphite requirement)
+4. Restore the original branch to avoid unexpected working directory changes
 
-This restore-after-track behavior is why agents must explicitly call `checkout_branch()` after `create_branch()` — you are **not** left on the new branch.
-
-See `GraphiteBranchManager.create_branch()` in `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py`.
+This complexity is why `create_branch()` + `checkout_branch()` is the correct two-step pattern, not an agent mistake.
 
 ## Error Handling: Mixed Patterns
 
-BranchManager uses **discriminated unions** for `create_branch()` and `submit_branch()` — operations where the non-ideal outcome (branch exists, push failed) is a normal control flow case that callers need to distinguish.
+BranchManager uses **discriminated unions** for `create_branch()` and `submit_branch()` because the non-ideal outcomes (branch exists, push failed) are normal control flow cases that callers distinguish and handle:
 
-Other methods (`delete_branch()`, `checkout_branch()`) use **exceptions** because their failures are truly exceptional (branch doesn't exist, worktree conflict).
+```python
+# Callers branch on the error type and continue
+result = branch_manager.create_branch(repo_root, name, base)
+if isinstance(result, BranchAlreadyExists):
+    # Continue: use existing branch or prompt for new name
+    handle_existing_branch(result.branch_name)
+# Type narrowing: result is now BranchCreated
+```
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py, BranchCreated and BranchAlreadyExists -->
 
-See `BranchCreated` and `BranchAlreadyExists` in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py` for the discriminated union types, and [Discriminated Union Error Handling](discriminated-union-error-handling.md) for the broader pattern.
+Other methods (`delete_branch()`, `checkout_branch()`) use **exceptions** because their failures are truly exceptional — branch doesn't exist, worktree conflict — and no caller has meaningful recovery logic. All they do is extract the message and terminate.
+
+**Deeper pattern**: [Discriminated Union Error Handling](discriminated-union-error-handling.md)
 
 ## Sub-Gateway Architecture
 
-BranchManager sits atop two sub-gateways that provide the actual branch mutation operations:
+BranchManager doesn't implement branch operations itself — it delegates to sub-gateways:
 
 - **`GitBranchOps`** — mutation + query operations on git branches (used by both implementations)
 - **`GraphiteBranchOps`** — Graphite-specific mutations (`track_branch`, `delete_branch`, `submit_branch`, `retrack_branch`)
 
-`GraphiteBranchManager` composes both sub-gateways plus `Git` and `GitHub`. `GitBranchManager` only needs `Git` and `GitHub`. This composition means BranchManager doesn't subclass the sub-gateways — it delegates to them, keeping the abstraction clean.
+`GraphiteBranchManager` composes both sub-gateways plus `Git` and `GitHub`. `GitBranchManager` only needs `Git` and `GitHub`. This composition (not inheritance) keeps the abstraction clean and makes the Graphite-only operations explicit in the type system.
 
-See `BranchManager` ABC in `packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py` for the full interface.
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py, BranchManager ABC -->
 
 ## Related Documentation
 
 - [Branch Manager Decision Tree](branch-manager-decision-tree.md) — When to use `ctx.branch_manager` vs `ctx.git.branch`
-- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — Pattern for implementing gateway ABCs
+- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 5-place implementation pattern for gateway ABCs
 - [Discriminated Union Error Handling](discriminated-union-error-handling.md) — When to use discriminated unions vs exceptions
-- [Gateway Error Boundaries](gateway-error-boundaries.md) — Where try/except belongs in gateway implementations
 - [Frozen Dataclass Test Doubles](../testing/frozen-dataclass-test-doubles.md) — Testing pattern for FakeBranchManager

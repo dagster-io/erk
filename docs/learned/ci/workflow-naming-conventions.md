@@ -1,76 +1,88 @@
 ---
 title: Workflow Naming Conventions
 read_when:
-  - "creating new GitHub Actions workflows"
-  - "understanding WORKFLOW_COMMAND_MAP"
-  - "working with erk launch command"
+  - "creating new GitHub Actions workflows launchable via erk launch"
+  - "understanding the relationship between CLI names and workflow files"
+tripwires:
+  - "The CLI command name MUST match the workflow filename (without .yml)"
+  - "The workflow's name: field MUST match the CLI command name"
+  - "Update WORKFLOW_COMMAND_MAP when adding launchable workflows"
 ---
 
 # Workflow Naming Conventions
 
-The `erk launch` command provides a unified CLI interface for triggering GitHub Actions workflows. The mapping between CLI command names and workflow filenames follows a consistent naming convention.
+## Why Direct Name Mapping
 
-## WORKFLOW_COMMAND_MAP
+<!-- Source: src/erk/cli/commands/launch_cmd.py, _get_workflow_file -->
 
-The canonical mapping is defined in `src/erk/cli/constants.py`:
+The `erk launch` command uses **identity mapping** between CLI names and workflow files: the command name IS the filename (minus `.yml`). This eliminates indirection and makes the system self-documenting.
 
-```python
-WORKFLOW_COMMAND_MAP: dict[str, str] = {
-    "plan-implement": "plan-implement.yml",
-    "pr-fix-conflicts": "pr-fix-conflicts.yml",
-    "pr-address": "pr-address.yml",
-    "objective-reconcile": "objective-reconcile.yml",
-    "learn": "learn.yml",
-}
-```
+**Design rationale**: Early versions had arbitrary mappings (`erk workflow launch rebase` → `erk-rebase.yml`). This created two names for one thing. The current system enforces a single canonical name used everywhere.
 
-## Naming Convention
+## The Three-Way Name Consistency Rule
 
-**Pattern**: CLI command name matches workflow filename (without `.yml` extension)
+When a workflow is launchable via `erk launch`, three identifiers MUST match:
 
-**Examples**:
+1. **CLI command name**: `erk launch pr-fix-conflicts`
+2. **Workflow filename**: `.github/workflows/pr-fix-conflicts.yml`
+3. **Workflow YAML `name:` field**: `name: pr-fix-conflicts`
 
-- `erk launch pr-fix-conflicts` → `.github/workflows/pr-fix-conflicts.yml`
-- `erk launch learn` → `.github/workflows/learn.yml`
-- `erk launch objective-reconcile` → `.github/workflows/objective-reconcile.yml`
+**Why the `name:` field matters**: GitHub Actions uses this field for display in the UI and for workflow reference. Keeping it consistent with the CLI name ensures users see the same identifier everywhere.
 
-## Historical Context
+**Anti-pattern**: Using descriptive `name:` fields like `name: "PR Conflict Resolution"` breaks discoverability. When users see "pr-fix-conflicts" in the CLI, they expect to find a workflow with that exact name in GitHub's UI.
 
-Prior to PR #6087, the command was `erk workflow launch` and some workflow files had different names:
+## Adding New Launchable Workflows
 
-- `pr-fix-conflicts.yml` was called `erk-rebase.yml`
-- `learn.yml` was called `learn-dispatch.yml`
+<!-- Source: src/erk/cli/constants.py, WORKFLOW_COMMAND_MAP -->
 
-The current convention eliminates this indirection - the CLI name directly maps to the filename.
+**Two-place update pattern**:
 
-## Adding New Workflows
+1. Create workflow file with matching name: `.github/workflows/<command-name>.yml`
+2. Add entry to `WORKFLOW_COMMAND_MAP` in `src/erk/cli/constants.py`
 
-When creating a new workflow that should be launchable via `erk launch`:
+The map exists for **validation only** — it defines which workflows are launchable. The map doesn't perform translation; it just checks membership.
 
-1. **Create workflow file**: `.github/workflows/<command-name>.yml`
-2. **Update WORKFLOW_COMMAND_MAP**: Add entry in `src/erk/cli/constants.py`
-3. **Set workflow name field**: The `name:` field in the YAML should match the command name (for discoverability)
-
-Example:
+**Example workflow file header**:
 
 ```yaml
-# .github/workflows/my-new-workflow.yml
 name: my-new-workflow
+run-name: "my-new-workflow:${{ inputs.distinct_id }}"
+
 on:
   workflow_dispatch:
     inputs:
       # ... inputs ...
 ```
 
+**Example constant update**:
+
 ```python
-# src/erk/cli/constants.py
 WORKFLOW_COMMAND_MAP: dict[str, str] = {
     # ... existing entries ...
-    "my-new-workflow": "my-new-workflow.yml",
+    "my-new-workflow": "my-new-workflow.yml",  # Identity mapping
 }
 ```
 
-## Related Documentation
+## Historical Context
 
-- [Workflow Commands](../cli/workflow-commands.md) - Usage guide for `erk launch`
-- [Remote Workflow Template](../erk/remote-workflow-template.md) - Workflow YAML patterns
+**Before PR #6087**:
+
+- Command was `erk workflow launch` (now `erk launch`)
+- Workflow files had different names than CLI commands:
+  - `erk-rebase.yml` (now `pr-fix-conflicts.yml`)
+  - `learn-dispatch.yml` (now `learn.yml`)
+
+These renames eliminated the translation layer. The map still exists but now only serves as an allowlist.
+
+## Decision: Why Not Auto-Discovery?
+
+**Question**: Why maintain `WORKFLOW_COMMAND_MAP` at all? Why not discover workflow files automatically?
+
+**Answer**: Explicit allowlist prevents accidental exposure of internal workflows. Not all workflows in `.github/workflows/` should be launchable via CLI (e.g., CI workflows, scheduled jobs, autofix workflows). The map defines the public API.
+
+## See Also
+
+<!-- Source: src/erk/cli/commands/launch_cmd.py, launch command -->
+
+- The `erk launch` command implementation shows workflow-specific parameter handling
+- Each launchable workflow has a dedicated trigger function (`_trigger_pr_fix_conflicts`, `_trigger_learn`, etc.)

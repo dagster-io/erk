@@ -1,7 +1,7 @@
 ---
 title: Fail-Open Pattern
-last_audited: "2026-02-03 03:56 PT"
-audit_result: edited
+last_audited: "2026-02-07"
+audit_result: regenerated
 read_when:
   - "implementing cleanup operations"
   - "designing resilient workflows"
@@ -13,33 +13,16 @@ tripwires:
 
 # Fail-Open Pattern
 
-The fail-open pattern allows non-critical operations to fail without blocking the main workflow, while preserving correctness through careful dependency analysis.
+The fail-open pattern allows non-critical operations to fail without blocking the main workflow. The key insight: **asymmetric error handling preserves metadata consistency** by only updating persistent state after critical operations succeed.
 
-## Pattern Definition
+## Why Fail-Open Exists
 
-**Fail-open:** A system that continues operating when a non-critical component fails, logging warnings instead of propagating exceptions.
+Erk workflows frequently involve external APIs (GitHub, git) that can fail due to rate limits, network errors, or resource state. When auxiliary operations fail, we face a choice:
 
-**Key characteristics:**
+- **Fail-closed**: Abort the entire workflow, forcing users to retry
+- **Fail-open**: Log warnings and continue, letting the main operation succeed
 
-1. **Critical vs non-critical distinction** - Identify which steps MUST succeed vs which are optional
-2. **Asymmetric failure handling** - Critical failures return early, non-critical failures log warnings
-3. **Metadata consistency** - Only update persistent state after critical operations succeed
-4. **Graceful degradation** - Main workflow completes successfully even if optional steps fail
-
-## When to Use
-
-Use fail-open pattern when:
-
-- **Non-critical operations** - Step is optional or cosmetic (logging, notifications, cleanup)
-- **External dependencies** - Failure is outside your control (API rate limits, network errors)
-- **Resilience required** - Main workflow must succeed even if auxiliary operations fail
-- **Idempotent cleanup** - Operation can be retried later without harm
-
-**Do NOT use fail-open when:**
-
-- Operation is critical to correctness
-- Failure indicates data corruption or invariant violation
-- Silent failure would confuse users or hide bugs
+Fail-open optimizes for user experience (don't block on cosmetic failures) while maintaining correctness through careful dependency analysis.
 
 ## Pattern vs Alternatives
 
@@ -49,349 +32,213 @@ Use fail-open pattern when:
 | **Fail-closed** | Raise exception, abort | Critical operations, data integrity requirements             |
 | **Fail-fast**   | Validate early, abort  | Precondition checking, input validation before any mutations |
 
-## Canonical Example: cleanup_review_pr()
+**The decision test**: If this step fails, does continuing create data inconsistency or confuse users? If no, fail-open. If yes, fail-closed.
 
-The `cleanup_review_pr()` function in `src/erk/cli/commands/review_pr_cleanup.py` demonstrates the fail-open pattern:
+## Core Implementation Pattern
 
-**Context:** When a plan is closed or landed, the associated review PR should be closed and metadata should be cleared. But closing the review PR is not critical to the main operation (closing the plan).
+### Step Classification
 
-**Implementation:**
+Categorize each step in your workflow:
 
-```python
-def cleanup_review_pr(
-    ctx: ErkContext,
-    *,
-    repo_root: Path,
-    issue_number: int,
-    reason: str,
-) -> int | None:
-    """Close a plan's review PR and clear its metadata.
+1. **Cosmetic** - Nice-to-have (comments, notifications). Fail: log warning, continue.
+2. **Critical** - Must succeed for correctness (API mutations, state changes). Fail: log warning, return early.
+3. **Dependent** - Only valid after critical step succeeds (metadata updates). Execute only if critical succeeded.
 
-    This function is fail-open: if any step fails, the main operation
-    (plan close or land) still succeeds.
-    """
-    # LBYL checks (early return if no review PR exists)
-    if not ctx.issues.issue_exists(repo_root, issue_number):
-        return None
+### Asymmetric Handling for Metadata Consistency
 
-    issue = ctx.issues.get_issue(repo_root, issue_number)
-    block = find_metadata_block(issue.body, "plan-header")
-    if block is None or block.data.get("review_pr") is None:
-        return None
+The key insight: **metadata should only reflect successfully completed critical operations**.
 
-    review_pr = block.data["review_pr"]
-
-    # Step 1: Add comment (COSMETIC - fail-open)
-    try:
-        ctx.issues.add_comment(repo_root, review_pr, comment_body)
-    except RuntimeError:
-        user_output(f"Warning: Could not add comment to review PR #{review_pr}")
-        # Continue anyway - comment is cosmetic
-
-    # Step 2: Close PR (CRITICAL - fail-open with early return)
-    try:
-        ctx.github.close_pr(repo_root, review_pr)
-    except RuntimeError:
-        user_output(f"Warning: Could not close review PR #{review_pr}")
-        # CRITICAL: Do NOT clear metadata if close fails
-        return None
-
-    # Step 3: Clear metadata (DEPENDENT - only after close succeeds)
-    try:
-        updated_body = clear_plan_header_review_pr(issue.body)
-        ctx.issues.update_issue_body(repo_root, issue_number, updated_body)
-    except (ValueError, RuntimeError):
-        user_output(f"Warning: Could not clear review PR metadata for issue #{issue_number}")
-        # Metadata update failed, but PR is closed - acceptable
-
-    user_output(f"Closed review PR #{review_pr}")
-    return review_pr
-```
-
-**Failure handling breakdown:**
-
-| Step           | Type      | Failure Behavior         | Rationale                                             |
-| -------------- | --------- | ------------------------ | ----------------------------------------------------- |
-| Add comment    | Cosmetic  | Log warning, continue    | Comment is nice-to-have, not required                 |
-| Close PR       | Critical  | Log warning, return None | Metadata should only be cleared if PR actually closed |
-| Clear metadata | Dependent | Log warning, continue    | PR is closed, metadata inconsistency is tolerable     |
-
-**Key insight:** Metadata consistency is preserved by asymmetric handling:
-
-- If PR close **fails** → Metadata NOT cleared (review_pr remains, can retry later)
-- If PR close **succeeds** → Metadata cleared (even if update fails, PR is already closed)
-
-## Implementation Pattern
-
-### Step 1: Identify Critical Steps
-
-**Critical step:** A step whose failure means the entire operation should abort or return a sentinel value.
-
-**Questions to ask:**
-
-1. Does this step modify external state (API, database, filesystem)?
-2. Is the operation reversible if it fails?
-3. Would continuing after failure cause data inconsistency?
-
-**Example:** In `cleanup_review_pr()`, closing the PR is critical because:
-
-- It modifies GitHub state (PR is closed)
-- Metadata should only be cleared if PR is actually closed
-- Continuing after close failure would create inconsistency (metadata says "no review PR" but PR is still open)
-
-### Step 2: Implement Asymmetric Error Handling
-
-**Pattern:**
+**WRONG** — metadata inconsistency:
 
 ```python
-# Non-critical step - log warning, continue
+# Close PR (might fail)
 try:
-    optional_operation()
-except Exception:
-    user_output("Warning: Optional operation failed")
-    # Continue to next step
+    ctx.github.close_pr(repo_root, pr_number)
+except RuntimeError:
+    user_output("Warning: Could not close PR")
+    # WRONG: Continue anyway
 
-# Critical step - log warning, return early
-try:
-    critical_operation()
-except Exception:
-    user_output("Warning: Critical operation failed")
-    return None  # Do NOT continue to dependent steps
-
-# Dependent step - only executes if critical step succeeded
-dependent_operation()
+# Clear metadata (always executes)
+clear_pr_metadata(issue_number)  # ← Metadata says "no PR" but PR is still open!
 ```
 
-### Step 3: Document Fail-Open Semantics
-
-Add a docstring explaining:
-
-1. **Fail-open behavior** - "This function is fail-open: failures are logged as warnings, not exceptions"
-2. **Critical vs non-critical** - Which steps must succeed vs which are optional
-3. **Return value** - What does `None` mean? What does non-None mean?
-
-**Example:**
+**CORRECT** — asymmetric early return:
 
 ```python
-def cleanup_review_pr(...) -> int | None:
-    """Close a plan's review PR and clear its metadata.
+# Close PR (critical step)
+try:
+    ctx.github.close_pr(repo_root, pr_number)
+except RuntimeError:
+    user_output("Warning: Could not close PR")
+    return None  # ← Do NOT execute dependent metadata update
 
-    This function is fail-open: if any step fails, the main operation
-    (plan close or land) still succeeds. Warnings are logged but exceptions
-    are not propagated.
-
-    Returns:
-        The review PR number if closed, None otherwise
-    """
+# Clear metadata (dependent step - only executes if we reach this line)
+clear_pr_metadata(issue_number)
 ```
 
-### Step 4: Add Tripwire to Prevent Misuse
+If the metadata update itself fails after a successful PR close, that's tolerable—the PR is already closed, the inconsistency is minor.
 
-If this is a general pattern in your codebase, add a tripwire to docs/learned/architecture/tripwires.md:
+## Canonical Example
 
-```yaml
-- action: "implementing a cleanup operation that modifies metadata based on external API success"
-  warning: "Use fail-open pattern. If critical step fails, do NOT execute dependent steps that modify persistent state."
-```
+<!-- Source: src/erk/cli/commands/review_pr_cleanup.py, cleanup_review_pr -->
+
+See `cleanup_review_pr()` in `src/erk/cli/commands/review_pr_cleanup.py`.
+
+**Context**: When closing or landing a plan, we optionally close its review PR. The review PR is non-critical to the main operation, but metadata consistency matters.
+
+**Three-step pattern**:
+
+1. Add comment explaining closure (cosmetic) — catch, log, continue
+2. Close the PR (critical) — catch, log, **return None** to prevent metadata update
+3. Clear `review_pr` field (dependent) — only executes if step 2 succeeded
+
+**Why this works**: If the PR close fails, `review_pr` remains in metadata, allowing retry later. If the PR close succeeds but metadata update fails, the inconsistency is tolerable—the PR is already closed.
+
+## Implementation Checklist
+
+1. **Identify critical steps** — which operations must succeed?
+   - Does it modify external state (API, database, filesystem)?
+   - Would continuing after failure cause data inconsistency?
+   - Is the operation reversible if it fails?
+
+2. **Structure error handling asymmetrically**:
+   ```python
+   # Non-critical: catch, log, continue
+   try:
+       optional_operation()
+   except Exception:
+       user_output("Warning: Optional operation failed")
+       # Fall through to next step
+
+   # Critical: catch, log, return
+   try:
+       critical_operation()
+   except Exception:
+       user_output("Warning: Critical operation failed")
+       return None  # ← Prevent dependent steps
+
+   # Dependent: only executes if critical succeeded
+   update_metadata()
+   ```
+
+3. **Document fail-open behavior** — docstring should state:
+   - "This function is fail-open: failures are logged as warnings, not exceptions"
+   - Which steps are critical vs optional
+   - What the return value indicates (e.g., `None` = critical step failed)
+
+4. **Use return values, not boolean flags** — return `None` on critical failure, actual result on success. Avoid `success: bool` flags that require checking.
+
+## Defense-in-Depth: Two-Layer Pattern
+
+For complex workflows involving multiple failure modes, combine fail-open with **root cause recovery**.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_direct -->
+
+**Example**: The `trigger-async-learn` command needs PR review comments. See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py` starting at line 212.
+
+**Two layers**:
+
+1. **Layer 1: Lenient handler** — returns `None` on ANY failure (missing data, API errors, not found). No exceptions, no error messages. Pure gateway logic.
+
+2. **Layer 2: Root cause recovery** — caller inspects `None` and decides what to do:
+   ```python
+   pr_info = _get_pr_for_plan_direct(...)
+
+   if pr_info is None:
+       click.echo("No PR found for plan, skipping review comments", err=True)
+       review_comments = None  # Continue without PR data
+   else:
+       pr_number = pr_info["pr_number"]
+       review_comments = fetch_review_comments(repo_root, pr_number)
+
+   # Workflow continues with or without review comments
+   ```
+
+**Why two layers**:
+
+- **Lenient handler isolates failure modes** — all lookup failures return `None` consistently
+- **Root cause recovery provides context** — caller explains WHY there's no PR info
+- **Graceful degradation** — workflow succeeds without optional data
+- **Future-proof** — if we add recovery logic later, only Layer 1 changes
+
+### When to Use Two-Layer Pattern
+
+Use two layers when:
+
+- Multiple failure modes exist (missing data vs API error vs not found)
+- Caller needs to explain failures differently based on context
+- Same operation is critical in one context, optional in another
+
+**Example**: PR lookup for the same plan issue:
+
+| Context            | Critical?  | Failure Handling        | Rationale                             |
+| ------------------ | ---------- | ----------------------- | ------------------------------------- |
+| User CLI command   | Yes        | Error exit              | User needs immediate feedback         |
+| Async background   | No         | Log warning, continue   | Review comments are optional for learn |
+| Pre-flight check   | Yes        | Abort early             | Prevent invalid workflow trigger      |
+
+The same gateway function (`_get_pr_for_plan_direct`) returns `None` in all cases. The **caller** decides whether `None` is acceptable.
+
+## Real-World Usage
+
+### erk plan close
+
+- Close plan issue (critical, fail-closed)
+- Cleanup review PR (optional, fail-open) ← `cleanup_review_pr()`
+- Update metadata (critical, fail-closed)
+
+If review PR cleanup fails, plan close still succeeds. Users can manually close the review PR later.
+
+### erk land
+
+- Merge PR (critical, fail-closed)
+- Delete worktree (critical, fail-closed)
+- Cleanup review PR (optional, fail-open) ← `cleanup_review_pr()`
+
+If review PR cleanup fails, land still succeeds. The PR is merged and worktree is deleted—mission accomplished.
+
+Both commands call the same fail-open `cleanup_review_pr()` function, demonstrating reuse of the pattern.
+
+## Benefits
+
+1. **Resilience** — main workflows succeed even when auxiliary operations fail
+2. **User experience** — users aren't blocked by cosmetic failures (rate limits, transient errors)
+3. **Debuggability** — warnings indicate what failed without hiding the issue
+4. **Idempotency** — failed operations can be retried later (cleanup review PR, add comment)
+5. **Metadata consistency** — asymmetric handling prevents corrupted state
 
 ## When to Use Fail-Closed Instead
 
 Use fail-closed (raise exception) when:
 
-**Data integrity is critical:**
+**Data integrity is critical**:
+- Financial transactions (debit/credit must both succeed or both fail)
+- Account creation (user needs immediate feedback on validation failures)
+- Database constraints (foreign key violations should abort)
 
-```python
-def transfer_money(from_account: int, to_account: int, amount: float) -> None:
-    """Transfer money between accounts.
+**Silent failure would confuse users**:
+- User explicitly requested the operation
+- Operation creates irreversible state
+- Failure indicates a bug, not transient error
 
-    Fail-closed: any failure aborts the entire operation.
-    """
-    # CRITICAL: Must succeed or abort
-    debit(from_account, amount)  # Raises on failure
-    credit(to_account, amount)    # Raises on failure
-```
-
-**User needs to know about failure:**
-
-```python
-def create_user(email: str, password: str) -> User:
-    """Create a new user account.
-
-    Fail-closed: user needs immediate feedback if creation fails.
-    """
-    user = User(email=email)
-    user.set_password(password)  # Raises on weak password
-    save_to_database(user)        # Raises on constraint violation
-    return user
-```
+**Correctness requires all steps**:
+- Multi-step atomic operations (git commit + push)
+- Configuration validation (invalid config should abort startup)
 
 ## When to Use Fail-Fast Instead
 
 Use fail-fast (validate before mutations) when:
 
-**Preconditions can be checked upfront:**
+**Preconditions can be checked upfront**:
+- Validate `--up` flag requires child branches BEFORE merging PR
+- Check file exists BEFORE processing it
+- Verify network connectivity BEFORE starting long operation
 
-```python
-def land_pr(ctx: ErkContext, *, up: bool = False) -> None:
-    """Land current branch's PR.
+**Partial execution is worse than no execution**:
+- Don't delete half the worktrees if cleanup fails midway
+- Don't modify half the metadata blocks if parsing fails
 
-    Fail-fast: validate --up preconditions BEFORE merging PR.
-    """
-    # FAIL-FAST: Validate --up preconditions before any mutations
-    if up:
-        child_branches = ctx.graphite.get_child_branches(current_branch)
-        if not child_branches:
-            raise ValueError("--up requires child branches to navigate upstack")
-
-    # Now safe to proceed with mutations (PR merge, worktree delete)
-    merge_pr(ctx, pr_number)
-    delete_worktree(ctx, worktree_path)
-
-    # Navigate upstack if requested
-    if up:
-        checkout_branch(ctx, child_branches[0])
-```
-
-**Key difference:** Fail-fast validates BEFORE any state changes, preventing partial mutations.
-
-## Real-World Usage in Erk
-
-### erk plan close
-
-**Workflow:**
-
-1. Close plan issue (CRITICAL)
-2. Cleanup review PR (OPTIONAL - fail-open)
-3. Update metadata (CRITICAL)
-
-**Implementation:**
-
-```python
-def close_plan_issue(issue_number: int) -> None:
-    # Step 1: Close the plan issue (CRITICAL - fail-closed)
-    ctx.issues.close_issue(repo_root, issue_number)
-
-    # Step 2: Cleanup review PR (OPTIONAL - fail-open)
-    cleanup_review_pr(ctx, repo_root=repo_root, issue_number=issue_number, reason="plan closed")
-    # If this fails, plan close still succeeds
-
-    # Step 3: Update metadata (CRITICAL - fail-closed)
-    update_plan_metadata(issue_number, status="closed")
-```
-
-### erk land
-
-**Workflow:**
-
-1. Merge PR (CRITICAL)
-2. Delete worktree (CRITICAL)
-3. Cleanup review PR (OPTIONAL - fail-open)
-
-**Implementation:**
-
-```python
-def land_pr(ctx: ErkContext) -> None:
-    # Step 1: Merge PR (CRITICAL - fail-closed)
-    merge_result = ctx.github.merge_pr(repo_root, pr_number)
-
-    # Step 2: Delete worktree (CRITICAL - fail-closed)
-    delete_worktree(ctx, worktree_path)
-
-    # Step 3: Cleanup review PR (OPTIONAL - fail-open)
-    cleanup_review_pr(ctx, repo_root=repo_root, issue_number=issue_number, reason="PR landed")
-    # If this fails, land still succeeds
-```
-
-**Key insight:** Both commands call `cleanup_review_pr()` with fail-open semantics, allowing the main operation to succeed even if cleanup fails.
-
-## Benefits
-
-1. **Resilience** - Main workflows succeed even when auxiliary operations fail
-2. **User experience** - Users aren't blocked by non-critical failures
-3. **Debuggability** - Warnings indicate what failed without hiding the issue
-4. **Idempotency** - Failed cleanup operations can be retried later
-5. **Metadata consistency** - Careful dependency ordering prevents state corruption
-
-## Defense-in-Depth Example: trigger-async-learn
-
-The `trigger-async-learn` command demonstrates a **two-layer defense-in-depth** approach combining fail-open with root cause recovery:
-
-### The Problem
-
-When triggering async learn for a plan, we need the associated PR number to fetch review comments. But:
-
-1. **branch_name might be missing** - If impl-signal never ran or failed
-2. **PR lookup might fail** - Network error, branch doesn't have a PR yet
-3. **Review comments are optional** - Learn can succeed without them
-
-### Two-Layer Solution
-
-**Layer 1: Lenient Handler** (`_get_pr_for_plan_direct`)
-
-See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py:212-257`.
-
-```python
-# Signature and return type (see source for full implementation):
-def _get_pr_for_plan_direct(
-    *, github_issues, github, repo_root: Path, issue_number: int,
-) -> dict[str, object] | None:
-    # Returns None on ANY failure: missing issue, metadata, branch, or PR
-```
-
-**Key characteristics:**
-
-- Returns `None` on ANY failure (missing data, API errors, not found)
-- No exceptions raised
-- No error messages printed
-- Caller decides how to handle None
-
-**Layer 2: Root Cause Recovery**
-
-The caller (trigger-async-learn main function) handles the None case gracefully:
-
-```python
-def trigger_async_learn_main(issue_number: int) -> None:
-    # Try to get PR information (fail-open)
-    pr_info = _get_pr_for_plan_direct(
-        github_issues=ctx.issues,
-        github=ctx.github,
-        repo_root=repo_root,
-        issue_number=issue_number,
-    )
-
-    if pr_info is None:
-        # No PR found - that's OK, just skip review comments
-        click.echo("No PR found for plan, skipping review comments", err=True)
-        review_comments = None
-    else:
-        # PR found - fetch review comments
-        pr_number = pr_info["pr_number"]
-        review_comments = fetch_review_comments(repo_root, pr_number)
-
-    # Continue with learn workflow (with or without review comments)
-    upload_materials(sessions, review_comments)
-    trigger_workflow(...)
-```
-
-### Defense-in-Depth Benefits
-
-1. **Lenient handler isolates failure modes** - All PR lookup failures return None consistently
-2. **Root cause recovery provides context** - Caller knows WHY there's no PR info
-3. **Graceful degradation** - Learn succeeds without review comments
-4. **Future-proof** - If we add branch_name inference later (like get_pr_for_plan.py), only Layer 1 changes
-
-### Comparison with get_pr_for_plan.py
-
-The `get_pr_for_plan.py` script has **recovery logic** for missing branch_name (pattern matching against current branch). But `trigger-async-learn` intentionally does NOT:
-
-| Aspect               | get_pr_for_plan.py                   | trigger-async-learn                     |
-| -------------------- | ------------------------------------ | --------------------------------------- |
-| **Context**          | User is ON the branch right now      | Running from GitHub Actions (no branch) |
-| **branch_name=None** | Try to infer from current git branch | Return None (no recovery)               |
-| **No PR found**      | Error - user needs to know           | OK - review comments are optional       |
-| **Failure mode**     | Fail-closed (error exit)             | Fail-open (continue without PR)         |
-
-This demonstrates that fail-open vs fail-closed is **context-dependent** - the same operation (PR lookup) can be critical in one context and optional in another.
+**Key difference**: Fail-fast validates BEFORE any state changes. Fail-open catches failures DURING execution and decides whether to continue.
 
 ## Related Documentation
 

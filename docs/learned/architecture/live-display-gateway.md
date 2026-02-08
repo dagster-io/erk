@@ -4,86 +4,109 @@ read_when:
   - "implementing live-updating terminal displays"
   - "working with TUI real-time updates"
   - "showing progress indicators"
+tripwires:
+  - "LiveDisplay is primarily used in watch loops — guard with try/finally to ensure stop() is called even on KeyboardInterrupt"
+  - "RealLiveDisplay writes to stderr by default (matches erk's user_output convention) — stdout is reserved for structured data"
 ---
 
 # LiveDisplay Gateway
 
-Gateway abstraction for live-updating terminal displays. Provides interface for showing real-time progress and status updates in the TUI.
+## Why This Gateway Exists
 
-## Overview
+Rich's `Live` display requires careful lifecycle management (start → update loop → stop) and creates test challenges: you can't assert on live-updating terminal output without capturing it. The gateway solves this by:
 
-**Location:** `packages/erk-shared/src/erk_shared/gateway/live_display/`
+1. **Encapsulating lifecycle complexity**: Forces start/stop pairing through interface contract
+2. **Test capture**: `FakeLiveDisplay` records all updates for assertions without terminal I/O
+3. **stderr convention**: Aligns with erk's stdout/stderr split (user output on stderr, structured data on stdout)
 
-**Purpose:** Abstracts Rich's `Live` display functionality for testability and clean separation from business logic.
+## Cross-Cutting Pattern: Watch Loop Architecture
 
-**Key Design:** Simple 3-method interface (start, update, stop) that wraps Rich's live rendering.
+<!-- Source: src/erk/cli/commands/plan/list_cmd.py, _run_watch_loop -->
 
-## Architecture
+The canonical usage pattern appears in `_run_watch_loop()` at `src/erk/cli/commands/plan/list_cmd.py:578-629`. This demonstrates the ONLY correct way to use LiveDisplay:
 
-The gateway follows the standard 3-file pattern:
+1. **Start once** before entering the loop
+2. **Update repeatedly** inside the loop (every tick)
+3. **Stop in finally block** to guarantee cleanup on KeyboardInterrupt
 
-- `abc.py` - Abstract interface
-- `real.py` - Production implementation using Rich Live
-- `fake.py` - In-memory test implementation with message capture
+The finally block is critical: watch loops intentionally run until Ctrl+C, so stop() MUST execute in the finally clause to restore normal terminal mode.
 
-## Interface
+## Anti-Pattern: Missing finally Block
 
-### start() -> None
-
-Start live display mode. Begins capturing terminal updates.
-
-### update(renderable: RenderableType) -> None
-
-Update the display with new content.
-
-**Args:**
-
-- `renderable`: Any Rich renderable object (Text, Table, Panel, etc.)
-
-### stop() -> None
-
-Stop live display mode. Returns terminal to normal output.
-
-## Usage Pattern
-
+**WRONG**:
 ```python
-def run_with_progress(ctx: ErkContext) -> None:
-    display = ctx.live_display
-
-    display.start()
-    try:
-        for step in steps:
-            # Update display with current progress
-            display.update(create_progress_table(step))
-            perform_work(step)
-    finally:
-        display.stop()
+display.start()
+while True:
+    display.update(content)
+    time.sleep(1.0)
+display.stop()  # Never reached when user hits Ctrl+C
 ```
 
-## Fake Features
+The stop() call never executes when KeyboardInterrupt fires. Terminal remains in live mode, breaking subsequent output.
 
-`FakeLiveDisplay` provides:
+**CORRECT**:
+```python
+display.start()
+try:
+    while True:
+        display.update(content)
+        time.sleep(1.0)
+except KeyboardInterrupt:
+    pass
+finally:
+    display.stop()  # Always executes
+```
 
-- **Display call tracking** - Records start/stop calls
-- **Message capture** - Captures all `update()` calls for test assertions
-- **No actual rendering** - Tests run without terminal output
+## Decision: Why stderr Instead of stdout
 
-## When to Use
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/live_display/real.py, RealLiveDisplay.__init__ -->
 
-Use `ctx.live_display` when:
+`RealLiveDisplay.__init__()` hardcodes `stderr=True` in the Console constructor (line 13). This matches erk's convention:
 
-- Showing live progress during long operations
-- Updating status displays in real-time
-- Implementing TUI components with dynamic content
+- **stdout**: Machine-readable output (JSON, CSV, issue numbers for shell piping)
+- **stderr**: Human-readable output (tables, progress indicators, error messages)
 
-Don't use for:
+Live displays are inherently human-readable (Rich tables, spinners, progress bars), so they must write to stderr. Writing to stdout would corrupt structured data that downstream tools pipe from erk commands.
 
-- Static output (use `Console` or `print()` instead)
-- Single updates (not worth the start/stop overhead)
-- Non-interactive commands (waste of rendering resources)
+## Fake Capabilities: What Tests Can Assert
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/live_display/fake.py, FakeLiveDisplay -->
+
+`FakeLiveDisplay` provides two properties for test assertions:
+
+- **`updates`**: List of all renderables passed to `update()`, in order
+- **`is_active`**: Boolean tracking start/stop lifecycle state
+
+The fake enables tests to verify:
+- **Update frequency**: "Did we update the display after each step?"
+- **Update content**: "Does the display show correct progress/status?"
+- **Lifecycle correctness**: "Did we start before updating and stop at the end?"
+
+Critically, the fake records the **actual renderable objects** (Rich Table, Panel, etc.), not strings. Tests can introspect Rich object properties (e.g., table rows, panel title) for precise assertions.
+
+## When to Use vs Console Gateway
+
+**Use LiveDisplay when**:
+- Output updates repeatedly (watch loops, progress bars)
+- User should see a single "slot" being rewritten, not scrolling output
+
+**Use Console when**:
+- Output is static (one-time table, message)
+- Each call adds a new line (scrolling output)
+
+The performance boundary: Starting/stopping LiveDisplay for a single update is wasteful overhead. If you only call update() once, just use Console.print() instead.
+
+## Implementation Files
+
+Standard 3-file gateway pattern:
+- `packages/erk-shared/src/erk_shared/gateway/live_display/abc.py`
+- `packages/erk-shared/src/erk_shared/gateway/live_display/real.py`
+- `packages/erk-shared/src/erk_shared/gateway/live_display/fake.py`
+
+No types.py or factory.py — the interface is simple enough to not warrant them.
 
 ## Related Topics
 
-- [Gateway Inventory](gateway-inventory.md) - All available gateways
-- [Console Gateway](gateway-inventory.md#console-consoleconsole) - For static output
-- [Textual Framework](../textual/) - For full TUI applications
+- [Gateway Inventory](gateway-inventory.md) — Discovering all available gateways
+- [Console Gateway](gateway-inventory.md) — For static output
+- [Textual Framework](../textual/) — For full TUI applications

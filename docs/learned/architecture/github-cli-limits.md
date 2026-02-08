@@ -1,6 +1,6 @@
 ---
 title: GitHub CLI Limits
-last_audited: "2026-02-05 16:16 PT"
+last_audited: "2026-02-07 20:50 PT"
 audit_result: clean
 read_when:
   - "using gh pr diff in production code"
@@ -18,112 +18,79 @@ tripwires:
 
 # GitHub CLI Limits
 
-The GitHub CLI has undocumented size limits that cause failures on large PRs. This document covers the limitations and workarounds.
+The GitHub CLI wraps both REST and GraphQL APIs with command-line convenience. This abstraction occasionally conceals critical limitations — size thresholds, missing commands, and API quotas — that only surface under production load.
 
-## The Problem
+## Why gh pr diff Fails on Large PRs
 
-`gh pr diff --name-only` fails on PRs with 300+ files:
+`gh pr diff` fetches the entire diff in a single unbounded API request. GitHub's API rejects oversized diffs with HTTP 406, typically around 300+ changed files. The gh CLI provides no pagination option for this command.
 
-```bash
-gh pr diff 123 --name-only
-# Error: HTTP 406: Not Acceptable (https://api.github.com/...)
-```
+This is a **test-vs-production tripwire**: small PRs work perfectly in development, large refactors fail silently in CI or production tooling.
 
-This happens because `gh pr diff` requests the entire diff in a single API call without pagination support. GitHub's API rejects requests for diffs that are too large.
+### Decision: When to Use REST API Over gh pr Commands
 
-## The Solution: REST API with Pagination
+| Use Case | Method | Reason |
+|----------|--------|--------|
+| Get changed files (any size) | `gh api repos/{owner}/{repo}/pulls/{pr}/files --paginate` | REST API supports pagination, gh pr diff does not |
+| Small PR diff (<100 files) | `gh pr diff {pr}` | Simpler command for common case |
+| Large PR diff (300+ files) | `gh api` with REST | gh pr diff will HTTP 406 |
 
-Use the GitHub REST API `/repos/{owner}/{repo}/pulls/{pr}/files` endpoint, which supports pagination:
+The REST API approach is **always safe** — it works for all PR sizes. The gh pr diff convenience command is **conditionally safe** — fast path for small PRs, broken path for large ones.
 
-```bash
-gh api \
-  --paginate \
-  --jq '.[].filename' \
-  "repos/{owner}/{repo}/pulls/${PR_NUMBER}/files"
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub.get_pr_changed_files -->
+<!-- Source: src/erk/cli/commands/exec/scripts/discover_reviews.py, discover_reviews command -->
 
-### Key Differences
+See `RealGitHub.get_pr_changed_files()` in `packages/erk-shared/src/erk_shared/gateway/github/real.py` for the production implementation using REST API with `--paginate`. The `discover_reviews` command in `src/erk/cli/commands/exec/scripts/discover_reviews.py` consumes this gateway method, demonstrating the pattern in a production exec script.
 
-| Method                             | Pagination         | Size Limit | Failure Mode   |
-| ---------------------------------- | ------------------ | ---------- | -------------- |
-| `gh pr diff --name-only`           | No                 | ~300 files | HTTP 406 error |
-| `gh api repos/.../pulls/.../files` | Yes (`--paginate`) | No limit   | None           |
-
-## Implementation Pattern
-
-See `src/erk/cli/commands/exec/scripts/discover_reviews.py` for the production implementation, which uses `github.get_pr_changed_files()` with automatic pagination.
-
-## Why This Matters
-
-PR #6119 fixed a bug where `erk exec discover-reviews` failed on large PRs. The original implementation used `gh pr diff`, which worked fine on small PRs but broke silently on large ones.
-
-This is a production tripwire: code that works in testing (small PRs) fails in production (large refactors).
+**Decision context**: PR #6119 fixed this after `erk exec discover-reviews` failed on large PRs. The original implementation worked in all manual testing (small PRs) but broke on the first large refactor.
 
 ## gh codespace start Does Not Exist
 
-The GitHub CLI does not provide a `gh codespace start` command. Attempting to use it fails:
+The GitHub CLI documentation implies `gh codespace start` exists. It does not. The command fails with "unknown command 'start'".
+
+This is a **documentation-vs-implementation gap**: reasonable to expect based on `gh codespace stop`, but never implemented.
+
+### Workaround: Use REST API Directly
 
 ```bash
-gh codespace start mycodespace
-# Error: unknown command "start" for "gh codespace"
+gh api --method POST "user/codespaces/${CODESPACE_NAME}/start"
 ```
 
-### The Solution: REST API
+The operation is **asynchronous** — the API call returns immediately while the codespace continues starting. Callers must poll codespace state or implement retry logic with timeouts.
 
-Use the REST API endpoint `/user/codespaces/{name}/start` via `gh api`:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/codespace/real.py, RealCodespace.start -->
 
-```bash
-gh api \
-  --method POST \
-  "user/codespaces/${CODESPACE_NAME}/start"
-```
+See `RealCodespace.start()` in `packages/erk-shared/src/erk_shared/gateway/codespace/real.py` for the production implementation using `gh api --method POST`.
 
-This returns JSON with the codespace state. The operation is asynchronous - the codespace may still be starting when the API call returns.
+## GH-API-AUDIT Convention
 
-### Implementation Pattern
-
-See `packages/erk-shared/src/erk_shared/gateway/codespace/real.py` for the production implementation using `gh api --method POST user/codespaces/{name}/start`.
-
-## GH-API-AUDIT Annotation Convention
-
-To track GitHub CLI commands that should be audited for potential REST/GraphQL API replacements, use the `GH-API-AUDIT` annotation:
+The codebase uses `GH-API-AUDIT` annotations to track gh CLI commands that could be replaced with direct REST or GraphQL API calls:
 
 ```python
 # GH-API-AUDIT: [REST/GraphQL] - [operation description]
 subprocess.run(["gh", "pr", "view", pr_number])
 ```
 
-### Format
+**Format**:
+- `REST` — operation has a known REST API endpoint
+- `GraphQL` — operation may be better served by GraphQL
+- Operation description — brief explanation
 
-- **`REST`**: Operation has a known REST API endpoint
-- **`GraphQL`**: Operation may be better served by GraphQL
-- **Operation description**: Brief explanation of what the command does
+**Purpose**: Identifies 66+ locations in the gateway code where we're using gh CLI abstractions that hide quota usage, lack features (like pagination), or impose size limits. The audit trail enables systematic migration when we encounter gh CLI limitations.
 
-### Examples from Codebase
+## Related Limitations
 
-```python
-# GH-API-AUDIT: REST - Get PR number from branch
-result = subprocess.run(["gh", "pr", "view", "--json", "number"])
+### GitHub Machines Endpoint HTTP 500 Bug
 
-# GH-API-AUDIT: GraphQL - Fetch issue comments
-result = subprocess.run(["gh", "issue", "view", issue_number, "--json", "comments"])
-```
+The `/repos/{owner}/{repo}/codespaces/machines` endpoint returns HTTP 500 for certain repositories (not all repos). The workaround uses `POST /user/codespaces` with `repository_id` instead of fetching available machine types first.
 
-### Purpose
+**Default machine type**: `premiumLinux` (hardcoded because the machines endpoint is unreliable)
 
-This convention identifies 66+ locations in the gateway code where we're using `gh` CLI commands that could potentially be replaced with direct REST or GraphQL API calls for better performance, error handling, or functionality.
+**Full diagnostic methodology**: See [GitHub API Diagnostics](github-api-diagnostics.md) for repository-specific diagnostic patterns.
 
-## GitHub Machines Endpoint HTTP 500 Bug
+<!-- Source: src/erk/cli/commands/codespace/setup_cmd.py, default machine type selection -->
 
-The machines endpoint (`/repos/{owner}/{repo}/codespaces/machines`) returns HTTP 500 for certain repositories. The workaround uses `POST /user/codespaces` with `repository_id` instead.
+## Cross-References
 
-**Full diagnostic methodology and workaround**: See [GitHub API Diagnostics](github-api-diagnostics.md).
-**Implementation**: See `src/erk/cli/commands/codespace/setup_cmd.py`.
-**Default machine type**: `premiumLinux`
-
-## Related Documentation
-
-- [GitHub API Diagnostics](github-api-diagnostics.md) - Repository-specific diagnostic methodology
-- [Universal Tripwires](../universal-tripwires.md) - Lists the gh pr diff tripwire
-- [Gateway ABC Implementation](gateway-abc-implementation.md) - How GitHubGateway abstracts this
-- [Codespace Patterns](../cli/codespace-patterns.md) - Codespace setup patterns
+- [GitHub API Diagnostics](github-api-diagnostics.md) — Repository-specific diagnostic methodology for GitHub API failures
+- [Universal Tripwires](../universal-tripwires.md) — Lists the gh pr diff tripwire for pre-coding awareness
+- [Gateway ABC Implementation](gateway-abc-implementation.md) — How GitHubGateway abstracts CLI limitations with pagination-aware methods

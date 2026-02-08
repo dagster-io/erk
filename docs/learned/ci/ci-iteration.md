@@ -7,355 +7,203 @@ read_when:
 tripwires:
   - action: "asking devrun agent to fix errors"
     warning: "devrun is READ-ONLY. Never prompt with 'fix errors' or 'make tests pass'. Use pattern: 'Run command and report results', then parent agent fixes based on output."
-last_audited: "2026-02-05 15:20 PT"
+last_audited: "2026-02-08 15:45 PT"
 audit_result: clean
 ---
 
 # CI Iteration Pattern with devrun Agent
 
-Proper delegation pattern for running CI commands via the devrun agent.
+## Why devrun Exists
 
-## Table of Contents
+The devrun agent enforces a critical architectural separation: **command execution is read-only, file modification is deliberate**. This prevents agents from "fixing" code without understanding failures, which leads to copy-paste solutions and masks root causes.
 
-- [Core Pattern: Run-Report-Fix-Verify](#core-pattern-run-report-fix-verify)
-- [devrun Agent Restrictions](#devrun-agent-restrictions)
-- [Forbidden Prompts](#forbidden-prompts)
-- [Required Prompt Pattern](#required-prompt-pattern)
-- [Example: Prettier Formatting](#example-prettier-formatting)
-- [Example: Test Failures](#example-test-failures)
+Without this separation, agents fall into the auto-fix trap:
+1. Run tests, see failures
+2. Apply superficial fix (suppress warning, catch exception broadly)
+3. Tests pass, but the underlying issue remains
 
----
+devrun forces the Run-Report-Fix-Verify cycle where the parent agent must understand failures before fixing them.
 
-## Core Pattern: Run-Report-Fix-Verify
+## The Core Cycle: Run-Report-Fix-Verify
 
-The CI iteration pattern has four phases:
+<!-- Source: .claude/agents/devrun.md, workflow section -->
 
-### 1. Run (via devrun)
+All CI iteration follows this four-phase pattern:
 
-Delegate command execution to devrun agent:
+1. **Run** (devrun): Execute command, no file access
+2. **Report** (devrun): Parse output, return structured results
+3. **Fix** (parent): Analyze failures, modify code
+4. **Verify** (devrun): Re-run command, confirm resolution
 
+The cycle repeats until all checks pass or the parent agent determines manual intervention is needed.
+
+### Why This Matters
+
+The parent agent **must analyze** before fixing. This prevents:
+
+- Suppressing warnings instead of addressing causes
+- Adding broad exception handlers instead of fixing bugs
+- Formatting code without understanding why formatting failed
+- Re-running commands hoping for different results
+
+## devrun's Hard Constraints
+
+<!-- Source: .claude/agents/devrun.md, tools section and FORBIDDEN patterns -->
+
+devrun has **no Edit or Write tools** in its tool set. This is enforced by the SDK, not by prompt engineering.
+
+### Allowed Operations
+
+- Execute commands via Bash: `pytest`, `ty`, `ruff`, `prettier`, `make`, `gt`
+- Read files to understand failures (Read, Grep, Glob)
+- Write to `/tmp/*` and `.erk/scratch/*` only
+
+### Forbidden Bash Patterns
+
+Even though devrun has Bash access, it cannot circumvent the read-only constraint:
+
+```bash
+# All forbidden in devrun Bash calls
+sed -i file.py           # in-place editing
+awk -i inplace file.py   # in-place awk
+> file.py                # output redirection
+cat > file.py            # write via cat
+cat << EOF > file.py     # heredoc to file
+cp source.py dest.py     # copying project files
 ```
-Use devrun agent to run: pytest tests/
-```
 
-### 2. Report (devrun returns)
+These patterns are blocked by the agent's instructions, not by the tool system.
 
-devrun reports command output without modifying files:
+## Prompt Patterns: Forbidden vs Required
 
-```
-Test failures:
-- test_foo.py::test_bar - AssertionError: expected 5, got 3
-- test_baz.py::test_qux - TypeError: missing argument 'name'
-```
+### ❌ Forbidden Prompts
 
-### 3. Fix (parent agent)
-
-Parent agent (you) analyzes output and fixes code:
-
-```
-Fixing test_bar: Update calculation in foo.py line 45
-Fixing test_qux: Add 'name' parameter to function call
-```
-
-### 4. Verify (via devrun)
-
-Run devrun again to confirm fixes:
-
-```
-Use devrun agent to verify: pytest tests/
-```
-
-**Key principle:** devrun never modifies files. Parent agent always fixes.
-
----
-
-## devrun Agent Restrictions
-
-### What devrun Can Do
-
-- **Run commands:** pytest, ty, ruff, prettier, make, gt
-- **Parse output:** Extract errors, warnings, test failures
-- **Report results:** Return structured output to parent agent
-
-### What devrun Cannot Do
-
-- **Modify files:** No writing, editing, or creating files
-- **Fix errors:** No auto-correction of lint issues or test failures
-- **Make decisions:** No choosing which fix to apply
-
-### Why READ-ONLY?
-
-devrun is optimized for:
-
-- **Fast execution:** No context loading for file editing
-- **Reliable reporting:** Consistent command output parsing
-- **Separation of concerns:** Testing vs. fixing are separate operations
-
----
-
-## Forbidden Prompts
-
-These prompts violate devrun's READ-ONLY contract:
-
-### ❌ "Fix any errors that arise"
+These prompts violate the read-only contract:
 
 ```
 Use devrun agent to run pytest and fix any errors that arise.
-```
-
-**Problem:** Implies devrun should modify files to fix errors.
-
-### ❌ "Make the tests pass"
-
-```
 Use devrun agent to make the tests pass.
-```
-
-**Problem:** Requires modifying code, which devrun cannot do.
-
-### ❌ "Fix lint issues"
-
-```
 Use devrun agent to run ruff and fix lint issues.
+Use devrun agent to auto-format the code.
 ```
 
-**Problem:** Fixing requires file edits.
+**Why forbidden**: All imply devrun should modify files ("fix", "make pass", "auto-format").
 
-### ❌ "Auto-format the code"
+### ✅ Required Patterns
 
-```
-Use devrun agent to auto-format with prettier.
-```
-
-**Problem:** Formatting modifies files (though this is read-only operation for prettier --check).
-
----
-
-## Required Prompt Pattern
-
-Use these prompt patterns that respect devrun's READ-ONLY nature:
-
-### ✅ "Run and report results"
+These prompts respect the read-only boundary:
 
 ```
 Use devrun agent to run pytest tests/ and report results.
-```
-
-**Correct:** Just execute command, return output.
-
-### ✅ "Execute and parse output"
-
-```
 Use devrun agent to execute `ty check` and parse output for type errors.
-```
-
-**Correct:** Run command, extract errors, report to parent.
-
-### ✅ "Run checks and list failures"
-
-```
 Use devrun agent to run `make fast-ci` and list all failures.
-```
-
-**Correct:** Execute, collect failures, return list.
-
-### ✅ "Verify changes"
-
-```
 After fixing errors, use devrun agent to verify with: pytest tests/
 ```
 
-**Correct:** Re-run after parent agent fixes.
+**Why correct**: Explicitly request execution and reporting, not modification.
 
----
+## The Prettier Special Case
 
-## Example: Prettier Formatting
+<!-- Source: .claude/commands/local/fast-ci.md, prettier section -->
 
-### Scenario
+The `make prettier` target runs `prettier --write`, which modifies files. But devrun can still execute it because devrun doesn't directly modify files—it executes commands that happen to modify files.
 
-Markdown files need formatting after edits.
+**Distinction:**
 
-### ❌ Wrong Approach
+- **Forbidden**: devrun using Edit/Write tools (doesn't have them)
+- **Allowed**: devrun executing `make prettier` which calls `prettier --write`
 
-```
-Use devrun agent to format all markdown files with prettier.
-```
-
-**Problem:** Implies devrun should run `prettier --write` (modifies files).
-
-### ✅ Correct Approach
-
-#### Step 1: Parent Agent Formats
-
-```
-I'll format the markdown files first.
-
-Use devrun agent to run: make prettier
-```
-
-`make prettier` target runs `prettier --write` on markdown files.
-
-#### Step 2: devrun Executes
-
-devrun runs `make prettier`, files are formatted, reports success.
-
-#### Step 3: Parent Agent Verifies
-
-```
-Use devrun agent to verify formatting: prettier --check docs/**/*.md
-```
-
-devrun runs check-only mode, reports if formatting is correct.
-
-### Key Insight
-
-`make prettier` is a **write operation**, but it's invoked by devrun as a command.
-
-devrun doesn't directly modify files; it runs the `make` command which modifies files.
-
-This is acceptable because:
-
-- devrun is still just executing commands
-- The command itself (make/prettier) does the modification
-- devrun remains a command executor, not a file editor
-
----
-
-## Example: Test Failures
-
-### Scenario
-
-Tests are failing after implementation.
-
-### ❌ Wrong Approach
-
-```
-Use devrun agent to run pytest and fix any failures.
-```
-
-**Problem:** Asks devrun to fix (modify code).
-
-### ✅ Correct Approach
-
-#### Step 1: Run Tests (via devrun)
-
-```
-Use devrun agent to run: pytest tests/unit/
-```
-
-#### Step 2: devrun Reports
-
-```
-2 failed:
-- test_parse_session_file_path: AssertionError (line 45)
-- test_get_session_metadata: KeyError 'session_id' (line 78)
-```
-
-#### Step 3: Parent Agent Analyzes
-
-```
-Analyzing failures:
-1. test_parse_session_file_path expects return type SessionFilePath,
-   but function returns dict. Fix: Update return statement.
-2. test_get_session_metadata expects 'session_id' key,
-   but metadata uses 'id'. Fix: Change key name.
-```
-
-#### Step 4: Parent Agent Fixes
-
-```
-Fixing parse_session_file_path in src/erk/session.py:
-- Line 45: return SessionFilePath(session_id=..., part_number=...)
-
-Fixing get_session_metadata in src/erk/session.py:
-- Line 67: metadata['session_id'] (was: metadata['id'])
-```
-
-#### Step 5: Verify (via devrun)
-
-```
-Use devrun agent to verify: pytest tests/unit/
-```
-
-#### Step 6: devrun Confirms
-
-```
-All tests passed.
-```
-
----
-
-## Reference: ci-iteration Skill
-
-The `ci-iteration` skill encodes this pattern for reuse.
-
-**Location:** `.claude/skills/ci-iteration/`
-
-**When to load:** Before running CI commands in iterative workflows
-
-**What it provides:**
-
-- Run-Report-Fix-Verify pattern
-- devrun prompt templates
-- Forbidden vs. allowed patterns
-
----
+The parent agent remains responsible for deciding when to format. devrun just executes the command.
 
 ## Integration with Slash Commands
 
-### `/local:fast-ci`
+<!-- Source: .claude/commands/local/fast-ci.md, .claude/commands/local/py-fast-ci.md, .claude/commands/local/all-ci.md -->
 
-Uses devrun agent to run unit tests iteratively:
+Three slash commands encode different CI iteration strategies:
 
-```bash
-/local:fast-ci
+| Command            | Scope                  | Use When                               |
+| ------------------ | ---------------------- | -------------------------------------- |
+| `/local:fast-ci`   | Unit tests only        | Rapid development feedback             |
+| `/local:py-fast-ci` | Python checks only     | Iterating on Python, skip markdown     |
+| `/local:all-ci`    | Full suite + integration | Pre-submit validation                  |
+
+All three commands:
+1. Load the `ci-iteration` skill for iteration logic
+2. Use devrun exclusively for all `pytest/ty/ruff/prettier/make/gt` commands
+3. Track progress with TodoWrite
+4. Report final status (SUCCESS or STUCK)
+
+### Fail-Fast Phases
+
+`/local:fast-ci` and `/local:py-fast-ci` use two-phase execution:
+
+**Phase 1**: Run `make lint ty` (or `make lint format ty` for py-fast-ci). Stop immediately if either fails.
+
+**Phase 2**: Only after phase 1 passes, run remaining checks.
+
+**Why**: Linting and type errors are fast to detect and cheap to fix. Catch them before waiting for test execution.
+
+## Decision Table: When to Use devrun
+
+| Scenario                               | Use devrun? | Rationale                               |
+| -------------------------------------- | ----------- | --------------------------------------- |
+| Running pytest to find failures        | ✅ Yes       | Read-only command execution             |
+| Fixing test failures                   | ❌ No        | Parent agent fixes with Edit/Write      |
+| Executing `make fast-ci`               | ✅ Yes       | Compound command execution              |
+| Analyzing type errors from ty output   | ✅ Yes       | Parse and report                        |
+| Adding type annotations to fix errors  | ❌ No        | Parent agent modifies files             |
+| Running `prettier --check`             | ✅ Yes       | Read-only check                         |
+| Running `prettier --write` via make    | ✅ Yes       | Command invokes write, not agent        |
+| Deciding which files need formatting   | ❌ No        | Parent agent analyzes devrun report     |
+
+## Common Anti-Patterns
+
+### Anti-Pattern: Asking devrun to Iterate
+
+```
+Use devrun agent to run tests and keep fixing until they pass.
 ```
 
-**Pattern:**
+**Problem**: devrun cannot "keep fixing" because it has no Edit tools.
 
-1. devrun runs `pytest tests/unit/`
-2. devrun reports failures
-3. Parent agent fixes failures
-4. devrun re-runs tests
-5. Loop until all pass
+**Correct**: Parent agent owns the iteration loop. devrun executes one command per invocation.
 
-### `/local:py-fast-ci`
+### Anti-Pattern: Batching Fixes
 
-Python-only variant:
-
-```bash
-/local:py-fast-ci
+```
+Use devrun to run all CI checks, then I'll fix everything at once.
 ```
 
-**Pattern:** Same as fast-ci, plus lint/format checks with devrun.
+**Problem**: Compound failures have dependencies. Fixing lint errors might resolve type errors.
 
-### `/local:all-ci`
+**Correct**: Fix one category, verify, then proceed. The iteration cycle is the unit of work.
 
-Full CI including integration tests:
+### Anti-Pattern: Trusting Auto-Fixes Blindly
 
-```bash
-/local:all-ci
+```
+Use devrun to run `ruff check --fix` and we're done.
 ```
 
-**Pattern:** Iterates through unit, integration, lint, format, type checks via devrun.
+**Problem**: Auto-fixes can introduce new issues or mask underlying problems.
 
----
+**Correct**: Parent agent reviews ruff's changes after auto-fix, understands what changed and why.
 
-## Summary: Delegation Contract
+## Why Not Just Run Commands Directly?
 
-| Responsibility | devrun Agent             | Parent Agent           |
-| -------------- | ------------------------ | ---------------------- |
-| Run commands   | ✅ Execute pytest/ty/etc | ❌ No direct execution |
-| Parse output   | ✅ Extract errors        | ✅ Analyze errors      |
-| Report results | ✅ Return structured     | ❌ No reporting        |
-| Modify files   | ❌ READ-ONLY             | ✅ Edit/Write files    |
-| Fix errors     | ❌ No fixing             | ✅ Fix based on output |
-| Verify fixes   | ✅ Re-run commands       | ❌ No verification     |
+**Historical context**: Before devrun, agents would run `pytest` via Bash in the main conversation. This polluted the main context window with test output (thousands of tokens) and created temptation to "just fix it quickly" without analysis.
 
----
+devrun provides:
 
-## Related Documentation
+1. **Context isolation**: Test output stays in the devrun context, summary returns to parent
+2. **Tool restrictions**: Impossible to accidentally modify files during execution
+3. **Consistent parsing**: devrun knows pytest/ty/ruff output formats, extracts structured errors
+4. **Parallel safety**: Multiple devrun agents can run commands without conflicting file access
 
-- [Markdown Formatting in CI](markdown-formatting.md) - Prettier workflow for markdown files
-- [Plan Implement CI Customization](plan-implement-customization.md) - Post-implementation CI hooks
-- [devrun Agent](../../.claude/agents/devrun.md) - Agent specification
+## Related Artifacts
+
+- `.claude/agents/devrun.md` — Agent specification with tool restrictions
+- `.claude/skills/ci-iteration/SKILL.md` — Iteration workflow and progress tracking
+- `.claude/commands/local/fast-ci.md` — Fast CI command implementation
+- `.claude/commands/local/py-fast-ci.md` — Python-only CI command
+- `.claude/commands/local/all-ci.md` — Full CI suite command
+- `Makefile` — CI target definitions (fast-ci, py-fast-ci, all-ci)

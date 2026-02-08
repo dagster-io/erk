@@ -5,121 +5,83 @@ read_when:
   - "dealing with divergent branches after Graphite operations"
   - "understanding expected vs unexpected branch divergence"
   - "working with Graphite PR submission workflow"
+tripwire:
+  trigger: "After `gt submit`, git push fails with 'fetch first'"
+  action: "Read [Commit Squash Divergence](commit-squash-divergence.md). This is EXPECTED behavior from history rewriting. Force push with `git push --force-with-lease` after verifying no incoming commits."
 ---
 
 # Commit Squash Divergence
 
-After `gt submit` squashes commits, the local branch diverges from the remote — this is **expected behavior**, not an error. Understanding this prevents incorrect responses to the resulting `git push` failure.
+After `gt submit` squashes commits, `git push` fails with "fetch first" — this is **expected behavior**, not an error to fix. Understanding why prevents incorrect responses that undo the squash.
 
-## What Happens
+## Why Divergence is Expected After Squashing
 
-### Before `gt submit`
+History-rewriting operations (rebase, squash, amend) create new commit objects with different SHA-1 hashes. The remote still has the old commit objects. Git sees these as divergent histories, not as "same changes in different form."
 
-```
-Local:  A - B - C - D
-Remote: A - B - C - D
-```
+**The key insight**: Squashing creates *intentional* divergence. The remote hasn't changed (no collaboration happened) — your local branch changed. The failure is git's safety mechanism against unintentional overwrites, not a signal that something went wrong.
 
-Branch is in sync with remote.
+## The Critical Mistake: Pulling After Squashing
 
-### After `gt submit`
+When git says "fetch first," the intuitive response is to pull. **This is wrong for squash workflows**.
 
-```
-Local:  A - B - C - D'  (D' = squashed commit)
-Remote: A - B - C - D   (original commits)
-```
+Pulling merges the remote's pre-squash commits with your local squashed commit, creating a merge commit that includes both versions. The result:
+- All commits appear twice in history (once as originals, once in squashed form)
+- PR shows duplicate changes
+- The squash operation is effectively undone
 
-**Divergence created**:
+**Why this happens**: `git pull` is `git fetch` + `git merge`. The merge creates a new commit with both parents: your squashed commit and the remote's pre-squash commits. Git doesn't understand that these represent the same logical changes.
 
-- Local has D' (new squashed commit)
-- Remote has D (original pre-squash commit)
-- Histories have diverged at commit C
+## Correct Response: Force Push
 
-### Attempting `git push`
+After verifying no incoming commits exist, force push replaces the remote history:
 
 ```bash
-git push
-# To github.com:owner/repo.git
-#  ! [rejected]        my-branch -> my-branch (fetch first)
-# error: failed to push some refs to 'github.com:owner/repo.git'
-# hint: Updates were rejected because the remote contains work that you do
-# hint: not have locally. This is usually caused by another repository pushing
-# hint: to the same ref. You may want to first integrate the remote changes
-# hint: (e.g., 'git pull ...') before pushing again.
-```
-
-**This is NOT an error** — it's expected divergence from squashing.
-
-## Why Divergence is Expected
-
-`gt submit` rewrites history by squashing multiple commits into one. This creates a new commit (D') that replaces the original commits (D). The remote still has the original history.
-
-**Key insight**: The divergence is **intentional**, not a conflict. Local and remote don't have conflicting changes — they have the same changes in different commit structures.
-
-## Correct Response
-
-Use force push:
-
-```bash
+git log HEAD..origin/my-branch  # Should show only your pre-squash commits
 git push --force-with-lease
 ```
 
-**Why force push is safe**:
-
+**Why `--force-with-lease` is safe here**:
 1. You created the divergence via `gt submit`
-2. No incoming commits from others: `git log HEAD..origin/branch` is empty
-3. Remote commits are superseded by local squashed commit
+2. The "incoming commits" are your own pre-squash commits (already incorporated in the squashed version)
+3. No collaboration has occurred on the branch since you last fetched
 
-See [Git Force Push Decision Tree](git-force-push-decision-tree.md) for the full decision framework.
+See [Git Force Push Decision Tree](git-force-push-decision-tree.md) for the general decision framework and safety checks.
 
-## Verification
+## Workflow Gap: Missing Guidance
 
-Before force pushing, verify no unreviewed incoming commits:
-
-```bash
-git log HEAD..origin/my-branch
-```
-
-**Expected output**: The original pre-squash commits (now superseded)
-
-**If output shows unexpected commits**: Someone else pushed to the branch — pull and review before force pushing.
-
-## Common Mistake: Pulling Instead of Force Pushing
-
-**Wrong response**:
-
-```bash
-git pull  # Creates merge commit, undoing the squash
-```
-
-**Result**:
-
-- Merge commit combines squashed commit (D') with original commits (D)
-- Now you have BOTH the original and squashed commits in history
-- PR shows duplicate changes
-- Squash operation effectively undone
-
-**Right response**:
-
-```bash
-git push --force-with-lease  # Replaces remote history with squashed version
-```
-
-## Automated Workflow
-
-The Graphite workflow could provide clearer guidance:
+The confusion arises because `gt submit` doesn't explicitly state that divergence is expected:
 
 ```bash
 gt submit
-# Output should include:
-# Squashed 3 commits into 1.
-# Branch will diverge from remote (expected).
-# Run: git push --force-with-lease
+# Squashes and rebases, then exits silently
+
+git push
+# Error: Updates were rejected (fetch first)
 ```
 
-This explicit instruction prevents confusion and incorrect responses.
+An agent seeing "fetch first" after squashing may not recognize this as expected. The error message suggests pulling, which is the wrong action.
+
+**Better workflow**: `gt submit` could detect that the branch is published and suggest the next action:
+
+```
+✓ Squashed 3 commits into 1
+⚠ Branch will diverge from remote (expected after squashing)
+→ Run: git push --force-with-lease
+```
+
+This explicit guidance prevents the pull-after-squash mistake.
+
+## Decision Rule
+
+After any history-rewriting operation (rebase, squash, amend):
+
+1. **Expected**: `git push` fails with "fetch first"
+2. **Check incoming commits**: `git log HEAD..origin/branch` should show only your own pre-rewrite commits
+3. **If confirmed**: Force push to replace remote history
+4. **If unexpected commits appear**: Someone else pushed — pull and investigate before force pushing
+
+The distinction: Expected incoming commits (your own pre-rewrite work) vs unexpected incoming commits (collaboration you haven't seen).
 
 ## Related Documentation
 
-- [Git Force Push Decision Tree](git-force-push-decision-tree.md) - General framework for force push decisions
-- [Graphite Workflow](../workflows/graphite.md) - Full Graphite stack management
+- [Git Force Push Decision Tree](git-force-push-decision-tree.md) - General framework for force push decisions with detailed command examples

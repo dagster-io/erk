@@ -10,62 +10,123 @@ tripwires:
     warning: "Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method."
   - action: "choosing between Ensure and EnsureIdeal"
     warning: "Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal."
-last_audited: "2026-02-05"
-audit_result: edited
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # EnsureIdeal Pattern for Type Narrowing
 
-The `EnsureIdeal` class provides type-safe narrowing for discriminated union returns from gateway operations. It complements `Ensure` (invariant checks) by handling expected failure cases from I/O operations.
+`EnsureIdeal` provides CLI-level type narrowing for gateway operations that return discriminated unions. It's a specialized tool for the validation phase of CLI commands, converting `T | ErrorType` into `T` or terminating with styled error output.
 
-For the full method catalog and type signatures, see `EnsureIdeal` in `src/erk/cli/ensure_ideal.py`.
+## Why Two Classes?
 
-## Semantic Distinction
+The separation between `Ensure` and `EnsureIdeal` reflects two distinct validation concerns:
 
-| Class         | Purpose                       | Use Case                                             | Example                                                          |
-| ------------- | ----------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
-| `Ensure`      | Invariant/precondition checks | Asserting program invariants, validating arguments   | `Ensure.invariant(len(args) == 1, "Expected 1 argument")`        |
-| `EnsureIdeal` | Type narrowing from unions    | Handling operations that return `T \| NonIdealState` | `pr = EnsureIdeal.unwrap_pr(github.get_pr(...), "PR not found")` |
+| Class         | Validates                    | Source of Values              | Failure Meaning                |
+| ------------- | ---------------------------- | ----------------------------- | ------------------------------ |
+| `Ensure`      | Invariants and preconditions | Arguments, config, local state | Programming error or user input error |
+| `EnsureIdeal` | Gateway operation results    | I/O operations, API calls     | Expected external failure      |
 
-**Key Difference**: `Ensure` checks conditions that should never be false in correct code. `EnsureIdeal` handles expected failure cases from external operations (API calls, git commands, file reads).
+**Decision rule**: If the value originates from a gateway method returning `T | ErrorType`, use `EnsureIdeal`. If it's an argument check, config validation, or state assertion, use `Ensure`.
 
-## Decision Tree
+### Why This Matters
 
+`Ensure.invariant(not isinstance(result, PRNotFound), "...")` mixes type checking with error handling, bypassing the type narrowing that Python's `isinstance()` provides. `EnsureIdeal` methods explicitly handle the error type and return the narrowed success type, giving you both error handling AND type safety.
+
+## The Two PR Methods Explained
+
+<!-- Source: src/erk/cli/ensure_ideal.py, EnsureIdeal.pr, EnsureIdeal.unwrap_pr -->
+
+`EnsureIdeal` has two PR-narrowing methods because erk has two different "PR not found" representations:
+
+### `unwrap_pr(result, message)` — For Low-Level Gateway Calls
+
+Use with gateway methods returning `PRDetails | PRNotFound`:
+
+```python
+# PRNotFound is a sentinel WITHOUT a message field
+pr = EnsureIdeal.unwrap_pr(
+    ctx.github.get_pr_for_branch(repo_root, branch),
+    f"No pull request found for branch '{branch}'"  # You supply the message
+)
 ```
-Is this value from an operation that can fail?
-├─ NO → Use Ensure.invariant() or Ensure.truthy()
-│        (e.g., validating CLI arguments, checking config values)
-│
-└─ YES → Does it return T | ErrorType?
-         ├─ YES → Use EnsureIdeal
-         │        (e.g., github.get_pr(), git.branch(), api.fetch())
-         │
-         └─ NO → Use try/except (for exceptions)
-                  or handle inline (for bool returns)
+
+**Why no message?** `PRNotFound` is a minimal sentinel used by the low-level gateway ABC. It knows the PR wasn't found, but not *why* — that context lives in the caller.
+
+See `PRNotFound` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`.
+
+### `pr(result)` — For GitHubChecks Methods
+
+Use with `GitHubChecks` methods returning `PRDetails | NoPRForBranch | PRNotFoundError`:
+
+```python
+# NoPRForBranch implements NonIdealState protocol with .message
+pr = EnsureIdeal.pr(
+    GitHubChecks.pr_for_branch(ctx.github, repo_root, branch)
+    # No message parameter — error type provides it
+)
 ```
 
-## Why Two PR Methods?
+**Why built-in message?** `GitHubChecks` wraps the low-level gateway and returns richer error types that implement `NonIdealState`, which includes a `message` property.
 
-`EnsureIdeal` has both `pr()` and `unwrap_pr()` because the codebase has two different "PR not found" types:
+See `GitHubChecks.pr_for_branch()` in `packages/erk-shared/src/erk_shared/gateway/github/checks.py`.
 
-- **`PRNotFound`** (in `erk_shared.gateway.github.types`): A sentinel dataclass without a `message` property. Used by low-level gateway methods like `github.get_pr()` and `github.get_pr_for_branch()`. Requires the caller to supply an error message, so use `EnsureIdeal.unwrap_pr(result, "custom message")`.
+### Usage Frequency
 
-- **`NoPRForBranch` / `PRNotFoundError`** (in `erk_shared.non_ideal_state`): Implement the `NonIdealState` protocol with built-in `message` properties. Used by `GitHubChecks` methods (in `erk_shared.gateway.github.checks`). Use `EnsureIdeal.pr(result)` -- no custom message needed.
+In practice, `unwrap_pr()` appears far more often because CLI commands work directly with the GitHub gateway ABC, not the `GitHubChecks` wrapper. The `pr()` method exists for specialized contexts where the NonIdealState types are already in play.
 
-In practice, `unwrap_pr()` is the most commonly used variant. See usage in `src/erk/cli/commands/land_cmd.py` and `src/erk/cli/commands/land_pipeline.py`.
+## When to Add New EnsureIdeal Methods
 
-## When to Add New Methods
+Add a new narrowing method when ALL of these conditions hold:
 
-Add a new `EnsureIdeal` method when:
+1. **Gateway returns a discriminated union** — not an exception, not a boolean
+2. **Multiple CLI commands use this union** — if only one caller exists, inline the narrowing
+3. **Error type has a `message` field or implements `NonIdealState`** — otherwise the pattern doesn't fit
 
-1. A gateway operation returns a new discriminated union type
-2. The error type implements `NonIdealState` OR has a `message` field
-3. The union is used in multiple CLI commands (reusable pattern)
+### What Not to Add
 
-Follow the existing method pattern in `src/erk/cli/ensure_ideal.py` -- each method checks `isinstance()`, outputs a styled error, and raises `SystemExit(1)`.
+Don't add EnsureIdeal methods for:
+
+- **One-off unions** used by a single command — inline the narrowing
+- **Exception-based errors** — those bypass type narrowing entirely
+- **Boolean returns** — use `Ensure.truthy()` or inline checks
+- **Error types without messages** — either add `unwrap_*` pattern (like PR) or refactor the error type
+
+## Relationship to Two-Phase Validation
+
+`EnsureIdeal` is a Phase 1 (validation) tool. It terminates on failure, so it must run *before* any mutations occur.
+
+**WRONG** — Mutation before narrowing:
+
+```python
+ctx.git.merge_pr(pr_number)  # Mutation!
+pr = EnsureIdeal.unwrap_pr(ctx.github.get_pr(...), "...")  # May terminate!
+```
+
+**CORRECT** — Narrow types first, mutate after:
+
+```python
+pr = EnsureIdeal.unwrap_pr(ctx.github.get_pr(...), "...")  # Narrowing first
+# ... other validations ...
+ctx.git.merge_pr(pr.number)  # Safe: pr is guaranteed valid
+```
+
+## Implementation Pattern
+
+<!-- Source: src/erk/cli/ensure_ideal.py, EnsureIdeal class structure -->
+
+All `EnsureIdeal` methods follow the same 3-step pattern:
+
+1. **Type check**: `isinstance(result, ErrorType)`
+2. **Styled output**: `user_output(click.style("Error: ", fg="red") + message)`
+3. **Exit**: `raise SystemExit(1)`
+
+See the method implementations in `src/erk/cli/ensure_ideal.py`.
+
+Why `SystemExit`? It exits immediately without stack traces, which is appropriate for expected failures like "PR not found". These aren't bugs — they're operational conditions that should present cleanly to users.
 
 ## Related Documentation
 
-- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) - Pattern for defining discriminated union types
-- [Two-Phase Validation Model](two-phase-validation-model.md) - CLI validation architecture
-- [CLI Error Handling](../testing/cli-error-handling.md) - Ensure class for invariant checks
+- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — When to use unions vs exceptions
+- [Two-Phase Validation Model](two-phase-validation-model.md) — Where EnsureIdeal fits in command structure
+- [CLI Error Handling](../testing/cli-error-handling.md) — The Ensure class for invariant checks

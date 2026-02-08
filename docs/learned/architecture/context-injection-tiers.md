@@ -1,97 +1,173 @@
 ---
-title: Three-Tier Context Injection Architecture
+title: Context Injection Architecture
 read_when:
   - "designing a new hook or reminder system"
-  - "understanding how dignified-python reminders work"
+  - "understanding how coding standard reminders work"
   - "deciding where to inject context for agent compliance"
+  - "choosing between ambient, per-prompt, and just-in-time injection"
 tripwires:
   - action: "designing a new hook or reminder system"
-    warning: "Consider the three-tier context architecture. Read docs/learned/architecture/context-injection-tiers.md first."
+    warning: "Consider the three-tier context architecture and consolidation patterns. Read docs/learned/architecture/context-injection-tiers.md first."
 ---
 
-# Three-Tier Context Injection Architecture
+# Context Injection Architecture
 
-Erk uses three tiers of context injection to ensure agents follow coding standards. Each tier serves a different purpose and fires at a different point in the agent lifecycle.
+Erk uses a three-tier system to inject coding standards and reminders into agent context. Each tier differs in **timing** (when it fires), **token cost** (how often it's paid), and **specificity** (how targeted the reminder is).
 
-## The Three Tiers
+## Why Three Tiers?
 
-### Tier 1: Ambient (AGENTS.md / CLAUDE.md)
+**The central trade-off:** Ambient context achieves near-100% compliance but costs tokens for the entire session. Just-in-time injection is cheaper but only fires when relevant. Skills achieve ~53% compliance because agents must remember to load them.
 
-**When**: Loaded at session start, always present in context.
+The three-tier architecture addresses this by combining broad coverage (Tier 1) with targeted precision (Tier 3), eliminating the need for agents to remember on-demand loading.
 
-**Mechanism**: `@docs/learned/...` references in AGENTS.md that Claude reads automatically.
+## Decision Matrix
 
-**Characteristics**:
+Choose the tier based on your reminder's characteristics:
 
-- Always available — 100% compliance for agents that read it
-- Token cost is paid upfront for the entire session
-- Best for critical rules that apply to all tasks
-- Cannot be conditional on task type
+| Factor                       | Tier 1: Ambient   | Tier 2: Per-Prompt  | Tier 3: Just-in-Time |
+| ---------------------------- | ----------------- | ------------------- | -------------------- |
+| **When it fires**            | Session start     | Every user message  | Before specific tool |
+| **Token cost**               | High (once)       | Medium (per turn)   | Low (when triggered) |
+| **Compliance rate**          | ~100% (if read)   | Medium              | High                 |
+| **Specificity**              | Broad             | Broad               | Narrow               |
+| **Can inspect tool params**  | No                | No                  | Yes                  |
+| **Can block tool execution** | No                | No                  | Yes                  |
 
-**Example**: The "Python Standards (Ambient Quick Reference)" section in AGENTS.md provides compressed coding rules visible in every session.
+**Use case heuristic:**
 
-### Tier 2: Per-Prompt (UserPromptSubmit hooks)
+- **Universal rule affecting all tasks** → Tier 1
+- **Session-wide routing or cross-cutting reminder** → Tier 2
+- **Action-specific guard or tool-specific rule** → Tier 3
 
-**When**: Fires before each user prompt is processed.
+## Tier 1: Ambient (AGENTS.md)
 
-**Mechanism**: UserPromptSubmit hook outputs appear as system reminders.
+**Mechanism:** References in `AGENTS.md` like `@docs/learned/tripwires-index.md` are loaded at session start and remain in context.
 
-**Characteristics**:
+**Strengths:**
 
-- Fires on every turn, reinforcing rules
+- Always available — no agent action required
+- Highest compliance rate (near-100% for rules agents read)
+- No repeated token cost
+
+**Weaknesses:**
+
+- Token cost paid upfront and maintained throughout session
+- Cannot be conditional on specific actions
+- Cannot inspect tool parameters or block execution
+
+**When to use:**
+
+- Critical rules that apply to every task (e.g., LBYL, no default parameters)
+- Universal tripwires (e.g., "never pip install, use uv")
+- Quick-reference coding standards
+
+**Example in erk:** The "Python Standards (Ambient Quick Reference)" section in `AGENTS.md` provides compressed coding rules visible throughout the session.
+
+## Tier 2: Per-Prompt (UserPromptSubmit hooks)
+
+**Mechanism:** UserPromptSubmit hooks fire before each user message. Hook stdout becomes a system reminder.
+
+<!-- Source: .claude/settings.json, UserPromptSubmit section -->
+
+See the `UserPromptSubmit` section in `.claude/settings.json` for configuration.
+
+**Strengths:**
+
+- Reinforces reminders on every turn
 - Can include dynamic content (session IDs, current state)
-- Moderate token cost (repeated each turn)
-- Good for reminders that need regular reinforcement
+- Fires reliably without agent awareness
 
-**Example**: The `user-prompt-hook` emits session ID and devrun routing reminders on every prompt.
+**Weaknesses:**
 
-### Tier 3: Just-in-Time (PreToolUse hooks)
+- Repeated token cost on every user message
+- Always fires, even when not relevant
+- Cannot inspect tool parameters
 
-**When**: Fires immediately before a specific tool executes.
+**When to use:**
 
-**Mechanism**: PreToolUse hook checks tool input and emits targeted reminder.
+- Session-wide routing ("use devrun agent for pytest/ty/ruff")
+- Dynamic state injection (session IDs, current branch)
+- Cross-cutting reminders that don't fit a specific tool
 
-**Characteristics**:
+**When NOT to use:** Tool-specific reminders that only apply when editing certain file types (use Tier 3 instead to avoid token waste).
+
+<!-- Source: src/erk/cli/commands/exec/scripts/user_prompt_hook.py -->
+
+**Example in erk:** The `user-prompt-hook` script (see `src/erk/cli/commands/exec/scripts/user_prompt_hook.py`) emits session ID and devrun routing reminders on every prompt.
+
+## Tier 3: Just-in-Time (PreToolUse hooks)
+
+**Mechanism:** PreToolUse hooks fire immediately before a specific tool executes. The hook receives tool parameters via stdin JSON and can inspect them.
+
+<!-- Source: .claude/settings.json, PreToolUse section -->
+
+See the `PreToolUse` section in `.claude/settings.json` for configuration.
+
+**Strengths:**
 
 - Most targeted — fires only when the specific action is about to happen
 - Lowest token cost (only when relevant)
 - Highest signal-to-noise ratio
 - Can inspect tool parameters (file paths, command content)
+- Can block execution (exit code 2)
 
-**Example**: The `pre-tool-use-hook` checks if a Write/Edit target is a `.py` file and emits a dignified-python reminder only for Python edits.
+**Weaknesses:**
 
-## Decision Matrix
+- Not visible in context until the tool is invoked
+- Requires hook implementation and capability detection
+- More complex to test
 
-| Factor                 | Ambient        | Per-Prompt    | Just-in-Time   |
-| ---------------------- | -------------- | ------------- | -------------- |
-| Token cost             | High (once)    | Medium (each) | Low (targeted) |
-| Compliance rate        | High (if read) | Medium        | High           |
-| Specificity            | Broad          | Broad         | Narrow         |
-| Can inspect tool input | No             | No            | Yes            |
-| Can block tool         | No             | No            | Yes (exit 2)   |
+**When to use:**
 
-## When to Use Each Tier
+- File-type-specific coding standards (Python rules when editing `.py` files)
+- Command validation (check Bash commands before execution)
+- Tool parameter modification (add safety flags)
 
-- **New universal rule** → Tier 1 (Ambient) — add to AGENTS.md
-- **Session-wide reminder** → Tier 2 (Per-Prompt) — UserPromptSubmit hook
-- **Action-specific guard** → Tier 3 (Just-in-Time) — PreToolUse hook
+<!-- Source: src/erk/cli/commands/exec/scripts/pre_tool_use_hook.py -->
 
-## Integration Example: dignified-python
+**Example in erk:** The `pre-tool-use-hook` script (see `src/erk/cli/commands/exec/scripts/pre_tool_use_hook.py`) checks if a Write/Edit target is a `.py` file and emits dignified-python core rules only for Python edits.
 
-The dignified-python coding standards use a 2-tier delivery:
+## Consolidation Pattern: Avoid Duplication
 
-1. **Ambient**: AGENTS.md "Python Standards" section provides compressed rules always in context
-2. **Just-in-Time**: PreToolUse hook on `Write|Edit` detects `.py` files and emits core rules reminder
+**Problem:** The same reminder delivered at multiple tiers wastes tokens and creates noise.
 
-This layered approach means an agent writing Python code has quick-reference rules always available (Tier 1) and receives detailed core rules at the exact moment of editing (Tier 3).
+**Solution:** Choose the **most specific tier** that achieves the desired compliance.
 
-**Historical note:** Prior to PR #6278, dignified-python used all three tiers, including a Per-Prompt (Tier 2) UserPromptSubmit reminder. This was removed to reduce token waste and noise - the Ambient + Just-in-Time combination provides sufficient coverage without duplication. See [Reminder Consolidation](../hooks/reminder-consolidation.md) for the consolidation pattern.
+**dignified-python case study:**
 
-## Compliance Observations
+Prior to PR #6278, dignified-python used all three tiers:
 
-From Vercel's AGENTS.md research: passive ambient context achieves near-100% compliance for rules agents read. Skill-based injection (on-demand loading) achieves ~53% compliance because agents must remember to load the skill. The three-tier architecture addresses this gap by ensuring critical rules are always present (Tier 1) while reserving detailed guidance for on-demand loading.
+1. Ambient (AGENTS.md quick reference)
+2. Per-Prompt (UserPromptSubmit reminder to load skill)
+3. Per-Prompt (skill load repeated core rules)
+
+This resulted in ~200 tokens of duplicated rules on every Python edit.
+
+**After consolidation:**
+
+1. Ambient (AGENTS.md quick reference) — retained for context
+2. Just-in-Time (PreToolUse on Write|Edit for `.py` files) — core rules only when editing
+
+**Result:** Core rules injected exactly once, at the moment of action, without session-wide duplication.
+
+For the full consolidation pattern, see [Reminder Consolidation](../hooks/reminder-consolidation.md).
+
+## Compliance Data
+
+**Source:** Vercel's AGENTS.md research shows passive ambient context achieves near-100% compliance for rules agents actually read. Skill-based injection (on-demand loading) achieves ~53% compliance because agents must remember to load the skill.
+
+**Design implication:** Critical rules belong in Tier 1 (ambient) or Tier 3 (just-in-time). Tier 2 (per-prompt) is best reserved for session-wide routing and dynamic state, not for rules that could be action-specific.
+
+## Implementation Notes
+
+**Capability-gated reminders:** PreToolUse hooks can check for capability marker files before injecting reminders. This enables gradual rollout and easy disablement.
+
+**Example:** The `.erk/capabilities/dignified-python-pretooluse` marker enables Python editing reminders. If the marker doesn't exist, the hook exits silently without injecting content.
+
+**Matchers:** PreToolUse hooks use regex patterns to target specific tools. `"matcher": "Write|Edit"` fires before both Write and Edit tool calls.
 
 ## Related Topics
 
 - [Hooks Guide](../hooks/hooks.md) — Hook lifecycle and configuration
-- [PreToolUse Implementation](../hooks/pretooluse-implementation.md) — Tier 3 implementation details
+- [PreToolUse Implementation](../hooks/pretooluse-implementation.md) — Technical implementation details
+- [Reminder Consolidation](../hooks/reminder-consolidation.md) — Pattern for avoiding duplication

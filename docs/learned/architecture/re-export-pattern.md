@@ -1,7 +1,7 @@
 ---
 title: Re-Export Pattern
-last_audited: "2026-02-03 03:56 PT"
-audit_result: edited
+last_audited: "2026-02-08"
+audit_result: regenerated
 tripwires:
   - action: "adding re-exports to gateway implementation modules"
     warning: "Only re-export types that genuinely improve public API. Add # noqa: F401 - re-exported for <reason> comment."
@@ -15,122 +15,112 @@ read_when:
 
 # Re-Export Pattern
 
-## Overview
+## Why Re-Exports Exist
 
-The re-export pattern allows gateway implementation modules to expose ABC types and related classes from `erk-shared`, creating a cleaner import path for consumers while maintaining a single canonical definition.
+Erk splits code across two packages (`erk` and `erk-shared`) but doesn't want consumers to care about this internal boundary. Re-exports hide the package split by making types available through shorter, more intuitive import paths.
 
-## Pattern Definition
+**The trade-off:** Public API convenience vs. additional maintenance surface. Every re-export creates two import paths to the same symbol, which must be managed during refactoring.
 
-A **re-export** is an import that exists solely to make a symbol available through the current module, not for use within the module itself.
+## The Core Tension
 
-See `src/erk/core/prompt_executor.py:22-32` for a real example where `CommandResult` is re-exported with `# noqa: F401` comments explaining the purpose of each re-export.
+Re-exports appear "unused" to linters because the importing module never references them—it only makes them available to other modules. This creates a choice:
 
-Consumers can then import from the shorter path:
+1. **Disable F401 globally** → Hides genuine unused imports, defeats the linter's purpose
+2. **Suppress F401 per-import** → Documents intent, distinguishes real re-exports from forgotten imports
 
-```python
-# Before (verbose, exposes internal structure)
-from erk_shared.core.prompt_executor import CommandResult
+Erk chooses option 2. Every re-export must carry a `# noqa: F401` comment explaining its purpose.
 
-# After (clean, hides package boundaries)
-from erk.core.prompt_executor import CommandResult
-```
+## When to Re-Export
 
-## When to Use Re-Exports
+| Situation | Re-Export? | Rationale |
+|-----------|------------|-----------|
+| Type is part of module's public interface | ✅ Yes | Shorter path benefits external consumers |
+| Package boundary abstraction (erk vs erk-shared) | ✅ Yes | Hides internal organization |
+| Type only used internally by current module | ❌ No | No external benefit, just complexity |
+| Avoiding circular imports | ❌ No | Use `TYPE_CHECKING` guards instead |
+| Collecting utilities in one place | ❌ No | Creates unclear ownership |
 
-**Use re-exports when:**
+## Implementation Pattern
 
-1. **Public API surface** - The type is part of the module's public interface
-2. **Convenience for consumers** - Shorter import path improves ergonomics
-3. **Package boundary abstraction** - Hide split between `erk` and `erk-shared`
+<!-- Source: src/erk/core/prompt_executor.py, CommandResult re-export -->
 
-**Do NOT use re-exports for:**
-
-1. **Types only used internally** - If only the current module needs it, don't re-export
-2. **Avoiding circular imports** - Use `TYPE_CHECKING` guards instead
-3. **Collecting "utility" imports** - Don't create `utils.py` that re-exports everything
-
-## The `# noqa: F401` Comment
-
-### Why It's Needed
-
-Ruff's F401 rule flags unused imports:
+See the `CommandResult` re-export at `src/erk/core/prompt_executor.py:24-25`. The pattern:
 
 ```python
-from erk_shared.core.prompt_executor import CommandResult  # F401: imported but unused
+from erk_shared.core.prompt_executor import (
+    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
+)
 ```
 
-The import appears unused because the current module doesn't reference `CommandResult` - it only re-exports it for others.
+**Critical elements:**
 
-### Required Format
+1. `# noqa: F401` suppresses the "imported but unused" warning
+2. `re-exported for <consumer>` documents the reason (not just "re-exported")
+3. Per-import comment, not file-level or global config
 
-```python
-CommandResult,  # noqa: F401 - re-exported for <consumer-description>
-```
+The comment answers: "Why does this import exist if nothing here uses it?" Future maintainers need this context to avoid deleting it during cleanup.
 
-**Format rules:**
+## Linter Configuration Philosophy
 
-- Comment MUST include `# noqa: F401` to suppress the warning
-- Comment SHOULD include reason: `re-exported for <consumer>`
-- Reason helps future developers understand the re-export's purpose
-
-### Real-World Example
-
-See `src/erk/core/prompt_executor.py:22-23` for a real example where `CommandResult` is re-exported with `# noqa: F401 - re-exported for erk.cli.output`.
-
-This tells readers:
-
-1. `CommandResult` is intentionally imported but not used here
-2. It's re-exported for `erk.cli.output` module's convenience
-3. Don't delete this import during cleanup - it's serving a purpose
-
-## Ruff Configuration
-
-The `# noqa: F401` comment is per-import. Do NOT disable F401 globally in `pyproject.toml` - that would hide genuine unused imports.
-
-**Correct approach:**
+**WRONG:** Disable F401 globally in `pyproject.toml`
 
 ```toml
-# pyproject.toml - keep F401 enabled
 [tool.ruff.lint]
-select = ["F"]  # Include F401 checks
+ignore = ["F401"]  # DON'T DO THIS
 ```
 
-Then suppress on a per-import basis with `# noqa: F401` comments.
+This hides genuine unused imports. You lose the linter's value.
 
-## Migration Pattern
+**CORRECT:** Keep F401 enabled globally, suppress locally
 
-When consolidating gateways (e.g., PromptExecutor merging):
+See `pyproject.toml:96-99` where F401 is included in the `select` list. Individual re-exports then use `# noqa: F401` comments.
 
-1. **Keep re-exports** during migration for backward compatibility
-2. **Update all consumers** to use canonical import path
-3. **Remove re-exports** once all consumers migrated
-4. **Verify with ruff** - no F401 warnings should remain
+## Migration Strategy
 
-**Exception:** If the re-export genuinely improves the public API (shorter path, cleaner interface), keep it permanently with proper `# noqa: F401` comment.
+When consolidating gateways or refactoring package boundaries:
 
-## Common Pitfalls
+1. **Keep re-exports during migration** for backward compatibility
+2. **Update consumers to canonical path** (automated with grep/sed or LibCST)
+3. **Remove re-exports after migration** once all consumers updated
+4. **Exception:** Keep if the shorter path genuinely improves the public API
 
-**Re-exporting everything "just in case"**
+The re-export's purpose changes from "migration bridge" to "public API design choice."
 
-- **Problem:** Creates bloated public API with unclear ownership
-- **Fix:** Only re-export what consumers actually need
+## Common Anti-Patterns
 
-**Missing `# noqa: F401` comment**
+### Re-exporting "just in case"
 
-- **Problem:** Ruff flags as error, blocks CI
-- **Fix:** Add `# noqa: F401 - re-exported for <reason>` to every re-export
+**Problem:** Bloated public API with unclear ownership. Consumers don't know which import path is canonical.
 
-**Using re-exports as `__all__` alternative**
+**Fix:** Only re-export what current consumers actually need. Grep for usage before adding.
 
-- **Problem:** Python's `__all__` is the correct mechanism for defining public API
-- **Fix:** Use `__all__ = ["Foo", "Bar"]` instead of re-exporting for wildcard imports
+### Missing `# noqa` comment
 
-**Re-exporting to avoid fixing circular imports**
+**Problem:** CI fails with F401 errors. Developer doesn't understand why the import exists.
 
-- **Problem:** Masks architectural problem, makes dependency graph unclear
-- **Fix:** Use `TYPE_CHECKING` guards and forward references
+**Fix:** Every re-export needs `# noqa: F401 - re-exported for <specific consumer>`.
+
+### Using re-exports instead of `__all__`
+
+**Problem:** Python's `__all__` is the standard mechanism for defining what `from module import *` exposes.
+
+**Fix:** Use `__all__ = ["Foo", "Bar"]` for wildcard import control. Use re-exports for shortening import paths.
+
+### Re-exporting to hide circular imports
+
+**Problem:** Masks architectural problem. Dependency graph becomes unclear because imports don't reflect actual dependencies.
+
+**Fix:** Use `TYPE_CHECKING` guards and forward references (`"ClassName"` string literals) to break cycles at type-checking time.
+
+## Historical Context
+
+Erk currently has minimal re-exports (only `CommandResult` in the codebase). This document exists because gateway consolidation work frequently creates re-export opportunities, and the team has learned:
+
+1. **Most re-exports are temporary** — They support migration, then get removed
+2. **Per-import `# noqa` is non-negotiable** — File-level or global suppression has caused too many genuine unused imports to slip through
+3. **Document the consumer** — "`re-exported for X`" makes the purpose searchable and auditable
 
 ## Related Documentation
 
-- [Gateway ABC Implementation](gateway-abc-implementation.md) - Where re-exports commonly appear
-- [Gateway Removal Pattern](gateway-removal-pattern.md) - Cleaning up re-exports during consolidation
+- [Gateway ABC Implementation](gateway-abc-implementation.md) — Where re-exports commonly appear during gateway consolidation
+- [Gateway Removal Pattern](gateway-removal-pattern.md) — Cleaning up re-exports after migration completes

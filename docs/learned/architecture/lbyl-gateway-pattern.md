@@ -3,130 +3,100 @@ title: LBYL Gateway Pattern
 read_when:
   - "implementing existence checks before gateway operations"
   - "adding LBYL validation to CLI commands"
-  - "understanding issue_exists() and similar methods"
+  - "understanding why gateways have separate existence methods"
+tripwires:
+  - action: "calling get_X() and handling IssueNotFound sentinel inline"
+    warning: "Check with X_exists() first for cleaner error messages and LBYL compliance."
+  - action: "implementing idempotent operations that fail on missing resources"
+    warning: "Use LBYL existence check to return early, making the operation truly idempotent."
 ---
 
 # LBYL Gateway Pattern
 
-Look Before You Leap (LBYL) is a defensive programming pattern where you check preconditions before performing operations. For gateway methods, this means checking resource existence before fetching or mutating.
+Gateway ABCs provide separate existence-check methods (`issue_exists()`, `label_exists()`, etc.) alongside their fetch methods (`get_issue()`, `get_label()`, etc.). This enables Look Before You Leap validation at CLI boundaries.
 
-## The Problem
+## Why Separate Existence Methods
 
-Gateway `get_X()` methods may return sentinels (e.g., `PRNotFound`) or raise exceptions when resources don't exist. Without existence checks, callers must handle these cases inline, leading to:
+Gateway `get_X()` methods may return sentinels (e.g., `IssueNotFound`) or fail when resources don't exist. Without upfront existence checks, CLI commands face a choice:
 
-- Cryptic error messages ("Unexpected response format")
-- Complex control flow with sentinel checks
-- Repeated validation logic across callers
+1. **Handle sentinels inline** — Leads to complex control flow and cryptic error messages
+2. **Catch exceptions** — Violates LBYL, creates misleading stack traces in agent sessions
+3. **Check existence first** — Clean, explicit validation with user-friendly errors
 
-## The Solution: Existence Methods
+The third option is erk's standard. Existence methods make LBYL practical by providing a lightweight check that avoids fetching the full resource.
 
-Add lightweight existence-check methods to gateway ABCs:
+## The Cross-Cutting Pattern
 
-```python
-class GitHubIssues(ABC):
-    @abstractmethod
-    def issue_exists(self, repo_root: Path, number: int) -> bool:
-        """Check if an issue exists (read-only)."""
-        ...
+All gateway ABCs follow the same structure:
 
-    @abstractmethod
-    def get_issue(self, repo_root: Path, number: int) -> IssueInfo:
-        """Fetch issue details. Raises if not found."""
-        ...
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py -->
 
-## Implementation Pattern
+See `GitHubIssues.issue_exists()` and `GitHubIssues.get_issue()` in the ABC for the canonical pair. The existence method returns `bool`, the fetch method returns the data type or a sentinel.
 
-### Real Gateway
+## Implementation Across Gateway Layers
 
-Implement a lightweight check that avoids fetching the full resource:
+The 5-layer gateway architecture implements existence checks differently at each layer:
 
-```python
-# real.py
-def issue_exists(self, repo_root: Path, number: int) -> bool:
-    cmd = ["gh", "issue", "view", str(number), "--json", "number"]
-    result = subprocess.run(cmd, cwd=repo_root, capture_output=True)
-    return result.returncode == 0
-```
+### Real Gateway: Lightweight API Calls
 
-### Fake Gateway
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/issues/real.py, RealGitHubIssues.issue_exists -->
 
-Return based on test data:
+Real gateways use minimal API calls to check existence without fetching full resource data. For GitHub issues, this means checking the exit code of a REST API call rather than parsing the full issue JSON.
 
-```python
-# fake.py
-def issue_exists(self, repo_root: Path, number: int) -> bool:
-    return any(issue.number == number for issue in self._issues)
-```
+**Why not reuse `get_issue()`?** Performance. Existence checks happen in validation paths where we may not need the data. Fetching 10KB of issue JSON to answer a yes/no question wastes time and rate limits.
 
-### Dry-Run and Printing Gateways
+### Fake Gateway: Data Structure Lookup
 
-Delegate to wrapped (existence checks are read-only):
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py, FakeGitHubIssues.issue_exists -->
 
-```python
-# dry_run.py / printing.py
-def issue_exists(self, repo_root: Path, number: int) -> bool:
-    return self._wrapped.issue_exists(repo_root, number)
-```
+Fake gateways check constructor-provided test data. See `FakeGitHubIssues.issue_exists()` for the pattern — it searches the pre-configured `_issues` dict.
 
-## Usage in CLI Commands
+### Dry-Run Gateway: Delegate to Wrapped
 
-The LBYL pattern enables clear, early validation:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py, DryRunGitHubIssues.issue_exists -->
 
-```python
-from erk.cli.ensure import Ensure
+Dry-run and printing gateways delegate existence checks to their wrapped implementations. Existence checks are read-only operations, so they execute even in dry-run mode. See `DryRunGitHubIssues.issue_exists()` — it calls `self._wrapped.issue_exists()` directly.
 
-def my_command(ctx: ErkContext, issue_number: int) -> None:
-    # LBYL: Check existence before operating
-    if not ctx.github.issues.issue_exists(repo.root, issue_number):
-        user_output(f"Error: Issue #{issue_number} not found")
-        raise SystemExit(1)
+**Why delegate instead of no-op?** Dry-run mode validates workflows without mutating state. If a command would fail due to a missing resource, dry-run should surface that error before the user runs it for real.
 
-    # Safe to fetch - we know it exists
-    issue = ctx.github.issues.get_issue(repo.root, issue_number)
+## CLI Usage Pattern
 
-    # Additional validation
-    if "erk-objective" not in issue.labels:
-        user_output(f"Error: Issue #{issue_number} is not an erk-objective")
-        raise SystemExit(1)
-```
+<!-- Source: src/erk/cli/commands/objective/reconcile_cmd.py, reconcile_objectives -->
 
-## When to Use LBYL
+CLI commands follow this pattern:
 
-**Use LBYL when:**
+1. Check existence with `issue_exists()` or equivalent
+2. If missing, output user-friendly error and exit
+3. Fetch resource with `get_issue()` or equivalent
+4. Validate additional properties (labels, state, etc.)
 
-- Resource existence is the first validation step
-- Error messages should be user-friendly
-- You need to check multiple conditions on the resource
-- The existence check is cheap relative to full fetch
+See `reconcile_objectives()` in `src/erk/cli/commands/objective/reconcile_cmd.py` for the complete pattern. The existence check happens before fetch, enabling a clear "Issue not found" message instead of handling the `IssueNotFound` sentinel.
 
-**Skip LBYL when:**
+**Anti-pattern:** Calling `get_issue()` and checking for `IssueNotFound` inline. This works but produces worse error messages and violates LBYL.
 
-- You need the resource data anyway (just handle NotFound inline)
-- The operation is _already_ idempotent (e.g., `git fetch` always succeeds)
-- Performance is critical and you want to avoid extra API calls
+**Anti-pattern:** Wrapping `get_issue()` in try/except. This creates misleading stack traces and violates erk's no-EAFP rule.
 
-**Use LBYL to _implement_ idempotency when:**
+## When to Use LBYL Existence Checks
 
-- The operation would fail on missing resources (e.g., `git branch -D` fails if branch doesn't exist)
-- You want to make it idempotent by checking first and returning early if missing
-- Example: `delete_branch()` checks if branch exists, returns early if not, proceeds with deletion if yes
+| Scenario | Use LBYL? | Reasoning |
+|----------|-----------|-----------|
+| Resource existence is first validation step | ✅ Yes | Enables user-friendly "not found" errors before deeper validation |
+| Need resource data anyway | ⚠️ Optional | Can skip existence check and handle sentinel inline (but LBYL is cleaner) |
+| Making operation idempotent | ✅ Yes | Check existence, return early if missing, proceed if present |
+| Performance-critical hot path | ❌ No | Double API calls (exists + fetch) add latency |
+| Operation already idempotent | ❌ No | Operations like `git fetch` don't fail on missing resources |
 
-**Decision tree:**
+## Implementing Idempotency with LBYL
 
-1. Does the operation fail if resource is missing? **NO** → Skip LBYL (already idempotent)
-2. Does the operation fail if resource is missing? **YES** → Should it be idempotent?
-   - **YES** → Use LBYL to check existence and return early
-   - **NO** → Let it fail (error is appropriate)
+Some operations fail when resources don't exist. LBYL existence checks make them idempotent:
 
-## Existing Implementations
+**Problem:** `git branch -D feature` fails if `feature` doesn't exist
+**Solution:** Check `branch_exists()` first, return early if missing, delete if present
 
-| Gateway      | Method         | Location                                            |
-| ------------ | -------------- | --------------------------------------------------- |
-| GitHubIssues | `issue_exists` | `packages/erk-shared/src/erk_shared/github/issues/` |
+This pattern appears in gateway methods marked "idempotent" in their docstrings. The idempotency comes from the LBYL check, not the underlying tool.
 
-## Related Documentation
+## Related Patterns
 
-- [Gateway ABC Implementation](gateway-abc-implementation.md) - Full gateway pattern
-- [Erk Architecture Patterns](erk-architecture.md) - LBYL philosophy
-- [Objective Commands](../cli/objective-commands.md) - Example usage
+- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 5-layer implementation pattern
+- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — Sentinel types like `IssueNotFound`
+- [Erk Architecture Patterns](erk-architecture.md) — LBYL philosophy across the codebase

@@ -13,148 +13,181 @@ tripwires:
 
 # Gateway Error Boundaries
 
-## The 5-File Gateway Pattern
+## The Core Principle
 
-The gateway ABC implementation pattern (see [Gateway ABC Implementation](gateway-abc-implementation.md)) uses 5 files with distinct error handling responsibilities:
+In erk's 5-file gateway pattern, **only real.py catches exceptions**. The other four files (abc.py, fake.py, dry_run.py, printing.py) never use try/except — they express failure through different mechanisms.
 
-1. **`abc.py`** - Defines return type (discriminated union for operations that can fail)
-2. **`real.py`** - Catches errors and converts to discriminated union
-3. **`fake.py`** - Returns error discriminant based on constructor params (NO try/except)
-4. **`dry_run.py`** - Returns success discriminant (NO try/except)
-5. **`printing.py`** - Logs and delegates (NO try/except)
+This separation exists because error boundaries serve different purposes:
+- **Real implementations** defend against actual system failures (subprocess crashes, missing files, network timeouts)
+- **Fake implementations** simulate failure modes for testing via constructor configuration
+- **Dry-run implementations** model the success path for validation workflows
+- **Printing implementations** delegate transparently without intercepting errors
 
-## Error Boundary Responsibilities
+## Why This Matters
 
-### real.py: The Error Boundary
+### The Temptation to Add try/except Everywhere
 
-**Purpose**: Catch subprocess and system errors, convert to discriminated union
+When implementing a gateway method that can fail, it's tempting to add try/except blocks to all five files. This feels symmetric — "if real.py catches exceptions, shouldn't fake.py and dry_run.py do the same?"
+
+**No.** The symmetry is in the *return type* (discriminated unions), not the error handling mechanism.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/command_executor/fake.py, FakeCommandExecutor.__init__ -->
+
+Fakes like `FakeCommandExecutor` (in `packages/erk-shared/src/erk_shared/gateway/command_executor/fake.py`) configure error behavior through constructor params, not try/except. Tests pass in pre-configured discriminants via params like `merge_should_succeed: bool` or `gist_create_error: str | None`.
+
+### Real.py: Subprocess and System Boundaries
+
+Real implementations wrap subprocess calls and file system operations — both sources of runtime exceptions. try/except converts these into discriminated union error types.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub.update_pr_base_branch -->
+
+See `RealGitHub.update_pr_base_branch()` in `packages/erk-shared/src/erk_shared/gateway/github/real.py` for the pattern: subprocess commands wrapped in try/except to gracefully handle gh CLI availability issues.
+
+**Why catch exceptions here?**
+1. Subprocess failures are unpredictable (process crashes, command not found, permission denied)
+2. Callers need structured error information (type, message, context) to make branching decisions
+3. LBYL philosophy: check for failure modes and convert to explicit discriminants
+
+**What gets caught?**
+- Subprocess execution failures (`CalledProcessError`, `FileNotFoundError`)
+- System-level errors (disk full, permission denied, network timeouts)
+- External command availability (gh not installed, not authenticated)
+
+**What doesn't get caught?**
+- Programming errors (AttributeError, TypeError) — these should crash, not be masked as "operation failed"
+- Validation errors that should be caught upstream by caller preconditions
+
+### Fake.py: Constructor-Configured Simulation
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py, FakeGitHub.__init__ -->
+
+Fake implementations like `FakeGitHub` (in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`) use constructor params to control error scenarios. Check the `__init__` signature: `merge_should_succeed: bool = True`, `gist_create_error: str | None = None`, `pr_diff_error: str | None = None`.
+
+Tests instantiate fakes with pre-configured failure modes:
 
 ```python
-class RealGitBranchOps(GitBranchOps):
-    def create_branch(self, *, name: str, start_point: str) -> CreateBranchResult:
-        try:
-            result = run_subprocess(
-                ["git", "branch", name, start_point],
-                cwd=self._cwd,
-                capture_output=True,
-            )
-            if result.returncode != 0:
-                return CreateBranchResult(
-                    type="branch_already_exists",
-                    branch_name=name,
-                )
-            return CreateBranchResult(type="success", branch_name=name)
-        except Exception as e:
-            # Convert unexpected errors to discriminated union
-            return CreateBranchResult(type="error", message=str(e))
+# Test setup (from test code, not copied from source)
+fake = FakeGitHub(
+    merge_should_succeed=False,
+    gist_create_error="Rate limited"
+)
+
+# Method implementation returns discriminant based on constructor param
+result = fake.merge_pr(repo_root, pr_number, ...)
+# Returns MergeError without try/except
 ```
 
-**Key patterns:**
+**Why no try/except in fakes?**
+1. No subprocess calls = no runtime exceptions to catch
+2. Error scenarios are predetermined by test setup, not discovered at runtime
+3. Simpler implementation: direct conditional returns based on params
+4. Tests are fast and deterministic (no subprocess overhead)
 
-- Uses `try/except` to catch subprocess and system errors
-- Checks return codes to distinguish expected failure modes
-- Returns appropriate discriminant for each failure case
-- Converts unexpected exceptions to generic error discriminant
+## Implementation Responsibilities by File
 
-### fake.py: Constructor-Driven Error Simulation
+| File         | Error Mechanism                                | Uses try/except? |
+| ------------ | ---------------------------------------------- | ---------------- |
+| `abc.py`     | Defines discriminated union return types       | No               |
+| `real.py`    | Catches subprocess/system exceptions           | **Yes**          |
+| `fake.py`    | Returns discriminants based on constructor     | No               |
+| `dry_run.py` | Always returns success discriminant            | No               |
+| `printing.py` | Delegates to wrapped implementation (pass-through) | No               |
 
-**Purpose**: Return error discriminants based on constructor params, NO exception handling
+### abc.py: Type Definitions
 
-```python
-@dataclass(frozen=True)
-class FakeGitBranchOps(GitBranchOps):
-    create_branch_error: CreateBranchResult | None = None
+Defines the method signature with discriminated union return type. No implementation, just the contract.
 
-    def create_branch(self, *, name: str, start_point: str) -> CreateBranchResult:
-        if self.create_branch_error is not None:
-            return self.create_branch_error
-        return CreateBranchResult(type="success", branch_name=name)
-```
+### real.py: The Exception Boundary
 
-**Key patterns:**
+The only file with try/except blocks. Catches exceptions from subprocess calls and system operations, converts to discriminated union error types.
 
-- **NO try/except blocks** - fakes don't catch exceptions
-- Error behavior configured via constructor params
-- Returns discriminants directly based on params
-- Enables test-driven error scenarios without subprocess overhead
+**Pattern:**
+1. Wrap subprocess/system call in try/except
+2. Check return codes or response data for expected failure modes
+3. Return appropriate discriminant (success or specific error type)
+4. Catch unexpected exceptions and return generic error discriminant
+
+### fake.py: Constructor-Driven
+
+Methods check constructor params and return discriminants directly. No exception handling because there are no subprocess calls.
+
+**Pattern:**
+1. Check relevant constructor param (e.g., `if self._merge_should_succeed:`)
+2. Return success or error discriminant based on param
+3. Track operation in internal state for test assertions
 
 ### dry_run.py: Success Path Only
 
-**Purpose**: Log and return success discriminant, NO error handling
+Always returns success discriminants. Used for validation workflows where you want to check the command sequence without executing operations.
+
+**Pattern:**
+1. Log what would have been done
+2. Return success discriminant
+3. No error handling (failure scenarios aren't modeled in dry-run)
+
+### printing.py: Transparent Wrapper
+
+Logs the operation, delegates to wrapped implementation, returns whatever the wrapped implementation returns. No error handling — errors flow through from the wrapped gateway.
+
+**Pattern:**
+1. Log operation parameters
+2. Delegate to `self._impl.method(...)`
+3. Return the result (success or error discriminant)
+
+## Anti-Patterns
+
+### ❌ WRONG: try/except in Fake
 
 ```python
-@dataclass(frozen=True)
-class DryRunGitBranchOps(GitBranchOps):
-    logger: DryRunLogger
-
-    def create_branch(self, *, name: str, start_point: str) -> CreateBranchResult:
-        self.logger.log(f"Would create branch: {name} from {start_point}")
-        return CreateBranchResult(type="success", branch_name=name)
+# DON'T DO THIS
+class FakeGitHub(GitHub):
+    def merge_pr(...) -> MergeResult | MergeError:
+        try:
+            # Fakes don't make subprocess calls, so this is pointless
+            if not self._merge_should_succeed:
+                return MergeError(message="Merge failed")
+            return MergeResult()
+        except Exception as e:
+            # What exception would be caught here? None.
+            return MergeError(message=str(e))
 ```
 
-**Key patterns:**
+**Why wrong:** Fakes have no code that raises exceptions. The try/except adds ceremony without value.
 
-- **NO try/except blocks** - dry-run always succeeds
-- Always returns success discriminant
-- Logs what would have been done
-- Useful for validating command sequences without side effects
-
-### printing.py: Delegator Only
-
-**Purpose**: Log operations and delegate to wrapped implementation, NO error handling
+### ❌ WRONG: try/except in Dry Run
 
 ```python
-@dataclass(frozen=True)
-class PrintingGitBranchOps(GitBranchOps):
-    impl: GitBranchOps
-    logger: Logger
-
-    def create_branch(self, *, name: str, start_point: str) -> CreateBranchResult:
-        self.logger.info(f"Creating branch: {name} from {start_point}")
-        return self.impl.create_branch(name=name, start_point=start_point)
+# DON'T DO THIS
+class DryRunGitHub(GitHub):
+    def merge_pr(...) -> MergeResult | MergeError:
+        try:
+            self._logger.log(f"Would merge PR #{pr_number}")
+            return MergeResult()
+        except Exception as e:
+            # Dry run always succeeds, so this never executes
+            return MergeError(message=str(e))
 ```
 
-**Key patterns:**
+**Why wrong:** Dry-run models the success path. If an exception occurs, it's a programming error that should crash, not be caught.
 
-- **NO try/except blocks** - just delegates
-- Logs operations for debugging/audit trail
-- Returns whatever the wrapped implementation returns
-- Transparent wrapper pattern
-
-## When try/except IS Appropriate in Gateways
-
-The real implementation uses `try/except` in two scenarios:
-
-1. **Multiple failure modes**: When an operation can fail in several ways (e.g., branch already exists vs. invalid start point vs. permission error)
-2. **Atomic operations**: When you need to catch unexpected errors and convert them to discriminated union error discriminants
-
-## When try/except is NOT Appropriate in Gateways
-
-- **Fake implementations**: Use constructor params to simulate errors
-- **Dry-run implementations**: Always return success, never fail
-- **Printing implementations**: Just delegate, don't intercept errors
-
-## Testing Error Scenarios
-
-Use fake constructor params to simulate errors in tests:
+### ❌ WRONG: Catching Exceptions to Return None/False
 
 ```python
-def test_create_branch_already_exists():
-    fake = FakeGitBranchOps(
-        create_branch_error=CreateBranchResult(
-            type="branch_already_exists",
-            branch_name="feature",
-        )
-    )
-    result = fake.create_branch(name="feature", start_point="main")
-    assert result.type == "branch_already_exists"
+# DON'T DO THIS
+class RealGitHub(GitHub):
+    def get_pr_diff(self, pr_number: int) -> str | None:
+        try:
+            result = run_subprocess([...])
+            return result.stdout
+        except Exception:
+            return None  # Masks the actual error
 ```
 
-This avoids subprocess overhead and makes tests fast and deterministic.
+**Why wrong:** Callers can't distinguish "no diff found" from "gh CLI not installed" from "network timeout". Use discriminated unions to preserve error context.
 
 ## Related Patterns
 
-- [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-file checklist
-- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - "Does the caller continue?" framing
-- [Subprocess Wrappers](subprocess-wrappers.md) - Subprocess execution patterns
-- [Fake-Driven Testing](../testing/fake-driven-testing.md) - 5-layer test architecture
+- [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-file checklist covering abc.py, real.py, fake.py, dry_run.py, printing.py
+- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - Return type design for operations that can fail
+- [Subprocess Wrappers](subprocess-wrappers.md) - Subprocess execution patterns used in real.py
+- [Fake-Driven Testing](../testing/fake-driven-testing.md) - How fakes enable fast, deterministic tests

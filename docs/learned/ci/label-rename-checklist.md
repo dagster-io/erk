@@ -8,137 +8,108 @@ tripwires:
   - action: "Renaming a GitHub label used in CI automation"
     warning: "Labels are referenced in multiple places: (1) Job-level if: conditions in all workflow files, (2) Step name descriptions and comments, (3) Documentation examples showing the label check. Missing any location will cause CI behavior to diverge from intent. Use the CI Label Rename Checklist to ensure comprehensive updates."
     score: 6
-last_audited: "2026-02-05"
+last_audited: "2026-02-08"
 audit_result: clean
 ---
 
 # CI Label Rename Checklist
 
-## Problem
+## Why Label Renames Are Dangerous
 
-When renaming a GitHub label that's used in CI automation, the change must be synchronized across multiple locations that cannot automatically detect the rename. Missing any location creates silent failures where CI behavior diverges from intent without throwing errors.
+GitHub Actions label checks use **string literals in YAML that cannot be validated statically**. Unlike code references that fail at compile time, label mismatches fail silently:
 
-## Why This Matters
+- Boolean expressions evaluate to `false` when label names don't match
+- No errors are thrown at workflow parse time or runtime
+- PRs with the label run CI when they should skip (or vice versa)
+- No obvious indicators point to the mismatch
 
-GitHub Actions label checks are boolean expressions that evaluate to true/false. When a label name doesn't match, the expression silently evaluates to false—no errors are thrown. This creates a silent failure mode where:
+The problem: **labels connect Python constants, YAML workflow conditions, and prose documentation across three different file formats with zero static validation**.
 
-- PRs with the label aren't skipped as intended
-- CI runs when it shouldn't (wasting resources)
-- CI doesn't run when it should (missing test coverage)
-- No obvious indicators point to the label mismatch
+## The Coordination Challenge
 
-## The Challenge
+<!-- Source: src/erk/cli/constants.py, PLAN_REVIEW_LABEL -->
 
-Unlike code references that can be caught by static analysis, label string literals in YAML workflow files:
+Label definitions start in Python constants (see `PLAN_REVIEW_LABEL` in `src/erk/cli/constants.py`) but cannot be interpolated into GitHub Actions YAML. The disconnect between definition and use creates drift:
 
-- Cannot be interpolated from Python constants
-- Are not validated at workflow parse time
-- Have no type checking or linting
-- Only fail silently at runtime through incorrect boolean evaluation
+1. **Python layer**: Constants define canonical label names
+2. **YAML layer**: Workflows check label strings directly in `if:` conditions and `grep` commands
+3. **Documentation layer**: Docs reference label names in examples and explanations
 
-## Comprehensive Checklist
+Changing a label requires manually hunting down every reference in all three layers. Miss one location and CI behavior silently diverges.
 
-When renaming a label used in CI automation, update **all** of these locations:
+## Comprehensive Search Strategy
 
-### 1. Source of Truth: Python Constants
-
-**File:** `src/erk/cli/constants.py`
-
-Verify the Python constant is updated. This is the authoritative definition:
-
-```python
-PLAN_REVIEW_LABEL = "erk-plan-review"  # Correct
-```
-
-### 2. GitHub Actions Workflows
-
-**Pattern to search:** Grep for the old label name in `.github/workflows/`
+When renaming a label, **grep is the only validation**:
 
 ```bash
-grep -r "old-label-name" .github/workflows/
+# Find all references to old label name
+grep -r "old-label-name" src/erk/cli/constants.py .github/workflows/ docs/learned/ .claude/
 ```
 
-**Locations within workflows:**
+### Layer 1: Python Constants
 
-#### Job-level conditions
+<!-- Source: src/erk/cli/constants.py -->
 
-```yaml
-if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
-```
+Update the constant definition in `src/erk/cli/constants.py`. This is the source of truth but cannot enforce consistency elsewhere.
 
-Update all `if:` conditions that check for the label.
+### Layer 2: GitHub Actions Workflows
 
-#### Step-level label checks
+<!-- Source: .github/workflows/ci.yml, .github/workflows/code-reviews.yml -->
 
-```yaml
-- name: Check erk-plan-review label
-  run: |
-    if echo "$labels" | grep -q "erk-plan-review"; then
-      echo "has_plan_review_label=true" >> $GITHUB_OUTPUT
-    fi
-```
+Search `.github/workflows/*.yml` for:
 
-Update:
+**Job-level conditions** — Boolean expressions that skip entire jobs:
+- Pattern: `!contains(github.event.pull_request.labels.*.name, 'label-name')`
+- Found in: Job `if:` fields at top level
 
-- Step names that mention the label
-- grep patterns checking for the label
-- Comments explaining what the label does
+**Step-level grep checks** — Shell commands that query label via API:
+- Pattern: `grep -q "label-name"`
+- Found in: Multi-line `run:` blocks that call `gh api`
 
-### 3. Documentation Updates
+**Step names and comments** — Human-readable descriptions:
+- Pattern: Step names like "Check label-name label"
+- Pattern: Comments explaining "PR has label-name label"
 
-**Pattern to search:** Grep for the old label name across docs
+All three must be updated. The workflow will parse successfully with stale label names—it just won't match anymore.
+
+### Layer 3: Documentation
+
+Search `docs/learned/` and `.claude/` for:
+
+- **CI pattern docs** showing label check examples (see `docs/learned/ci/github-actions-label-queries.md`, `docs/learned/ci/workflow-gating-patterns.md`)
+- **Command docs** explaining label detection logic (see `.claude/commands/erk/pr-address.md`)
+- **Workflow guides** describing when labels are applied (see `docs/learned/erk/pr-address-workflows.md`)
+
+These docs become misleading if they show old label names in examples.
+
+## Verification Protocol
+
+After updates, confirm zero results:
 
 ```bash
-grep -r "old-label-name" docs/
+grep -r "old-label-name" src/erk/cli/constants.py .github/workflows/ docs/learned/ .claude/
 ```
 
-**Documentation categories to check:**
+If any matches remain, those are missed locations.
 
-#### CI Documentation
+**Live test**: Create a PR, add the renamed label, verify CI behavior matches intent (skip or run as expected). Check workflow logs to confirm boolean expressions evaluate correctly.
 
-- `docs/learned/ci/workflow-gating-patterns.md` - Examples showing label checks
-- `docs/learned/ci/github-actions-label-queries.md` - Label query implementation patterns
-- `docs/learned/ci/github-actions-label-filtering.md` - Label filtering reference (if it exists)
+## Why This Can't Be Automated
 
-#### Command Documentation
+The root cause is **GitHub Actions' lack of variable interpolation from external sources**. Workflow YAML cannot import Python constants. This creates an unbridgeable gap:
 
-- `.claude/commands/erk/pr-address.md` - Phase 0 detection logic
-- Any other commands that check for the label
+- Python defines the canonical name
+- YAML must hardcode it as a string literal
+- No tooling can validate the two stay synchronized
 
-#### Workflow Documentation
+The only validation is grep + manual review. Future improvement: Add a CI check that parses workflow YAML, extracts label strings, and validates them against Python constants. This would catch drift automatically.
 
-- `docs/learned/erk/pr-address-workflows.md` - Plan review mode documentation
-- Any docs explaining when the label is applied
+## Historical Context
 
-### 4. Verification Steps
-
-After updating all locations:
-
-#### Grep for the old name
-
-```bash
-# Should return NO results
-grep -r "old-label-name" .github/ docs/ .claude/
-```
-
-If any results remain, those are locations you missed.
-
-#### Test with a PR
-
-1. Create a test PR
-2. Add the renamed label
-3. Verify CI behavior matches expectations (skipped/run as intended)
-4. Check workflow logs to confirm label checks evaluate correctly
+This checklist was created after PR #6400 fixed a `plan-review` → `erk-plan-review` mismatch that caused CI to run on PRs that should have been skipped. The label was renamed in the constant but not updated in workflow files, creating silent divergence.
 
 ## Related Documentation
 
-- [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) - How label checks work in CI
-- [GitHub Actions Label Queries](github-actions-label-queries.md) - Step-level API query pattern for push events
-
-## Prevention Strategy
-
-**Future improvement:** Consider adding a CI check that validates workflow label strings against Python constant definitions. This could catch drift automatically.
-
-## Attribution
-
-Checklist created from patterns observed in PR #6400 (fixing `plan-review` → `erk-plan-review` mismatch).
+- [GitHub Actions Label Queries](github-actions-label-queries.md) — Step-level API query pattern
+- [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) — How label checks gate CI
+- [Phase Zero Detection Pattern](../architecture/phase-zero-detection-pattern.md) — Uses label checks for plan review mode

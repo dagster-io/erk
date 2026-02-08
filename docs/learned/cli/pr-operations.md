@@ -7,344 +7,77 @@ read_when:
 tripwires:
   - action: "running gh pr create"
     warning: "Query for existing PRs first via `gh pr list --head <branch> --state all`. Prevents duplicate PR creation and workflow breaks."
-last_audited: "2026-02-05 15:25 PT"
+last_audited: "2026-02-08"
 audit_result: clean
 ---
 
 # PR Operations: Duplicate Prevention and Detection
 
-Critical patterns for preventing duplicate PR creation and detecting existing PRs.
+## Why This Matters
 
-## Table of Contents
+Duplicate PRs break workflows in subtle ways. Multiple PRs for the same branch fragment review comments, trigger redundant CI runs, and create ambiguity about which PR is "real". The fix is simple but critical: **always query before creating**.
 
-- [Problem: Duplicate PRs](#problem-duplicate-prs)
-- [Solution: Query Before Create](#solution-query-before-create)
-- [Detection Patterns](#detection-patterns)
-- [Automated Workflows](#automated-workflows)
-- [Recovery from Duplicates](#recovery-from-duplicates)
+## The Core Pattern
 
----
-
-## Problem: Duplicate PRs
-
-### What Are Duplicate PRs?
-
-Multiple PRs created for the same branch:
-
-```
-PR #1234: Feature X (branch: feature-x-01-15-1430)
-PR #1235: Feature X (branch: feature-x-01-15-1430)  # Duplicate
-```
-
-### Why Duplicates Occur
-
-1. **Retry Logic:** Command fails, user retries, creates second PR
-2. **Race Conditions:** Concurrent workflow runs both create PRs
-3. **Missing Detection:** Script doesn't check if PR already exists
-
-### Problems Caused
-
-- **Workflow confusion:** Which PR is the "real" one?
-- **Review fragmentation:** Comments split across PRs
-- **CI waste:** Both PRs trigger CI workflows
-- **GitHub API errors:** Some operations fail with duplicates
-
----
-
-## Solution: Query Before Create
-
-### Pattern: Check, Then Create
-
-Always check for existing PRs before creating a new one:
+Before creating a PR, query by branch name including ALL states:
 
 ```bash
-BRANCH_NAME="feature-x-01-15-1430"
-
-# 1. Check for existing PR
-EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --state all --json number -q '.[0].number')
-
-if [ -n "$EXISTING_PR" ]; then
-  echo "PR already exists: #$EXISTING_PR"
-  gh pr view "$EXISTING_PR"
-  exit 0
-fi
-
-# 2. Only create if none exists
-gh pr create --title "Feature X" --body "..." --draft
-```
-
-### Why `--state all`?
-
-The `--state all` flag includes:
-
-- **Open PRs** (most common case)
-- **Closed PRs** (intentionally closed, don't recreate)
-- **Merged PRs** (already landed, definitely don't recreate)
-
-Without `--state all`, you only check open PRs and might miss closed/merged ones.
-
-### Why Query by Branch, Not Search?
-
-```bash
-# ✅ CORRECT: Query by branch (fast, precise)
 gh pr list --head "$BRANCH_NAME" --state all
-
-# ❌ WRONG: Search PR body (slow, unreliable)
-gh pr list --search "Feature X in:title"
 ```
 
-**Branch-based query advantages:**
+**Why `--state all`?** Without it, you only check open PRs. A closed or merged PR means "don't recreate this" — the user explicitly closed it or already landed it.
 
-- **Precise:** Exact match on branch name
-- **Fast:** Indexed by GitHub
-- **Reliable:** Branch names don't change
+## Decision: Branch Query vs Title Search
 
----
+<!-- Source: .claude/commands/erk/git-pr-push.md, Step 6.5 -->
 
-## Detection Patterns
+Branch-based queries are precise and fast because GitHub indexes them. Title-based searches (`--search "Feature X in:title"`) are slow and unreliable — titles change, contain typos, and match unrelated PRs.
 
-### Pattern 1: Detect by Branch Name
+See the implementation pattern in `/erk:git-pr-push` (`.claude/commands/erk/git-pr-push.md`, Step 6.5).
+
+## Gateway Layer: REST API vs gh CLI
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub.get_pr_for_branch -->
+
+Erk's gateway layer uses the REST API directly via `gh api` for PR queries:
 
 ```bash
-# Get PR number for a specific branch
-get_pr_for_branch() {
-  local branch_name=$1
-  gh pr list \
-    --head "$branch_name" \
-    --state all \
-    --json number \
-    -q '.[0].number'
-}
-
-BRANCH_NAME="P6172-add-context-pre-01-27-0820"
-PR_NUMBER=$(get_pr_for_branch "$BRANCH_NAME")
-
-if [ -n "$PR_NUMBER" ]; then
-  echo "Found PR #$PR_NUMBER for branch $BRANCH_NAME"
-fi
+gh api "/repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=all"
 ```
 
-### Pattern 2: Detect by Issue Number
+**Why REST instead of `gh pr list`?** The gateway preserves GraphQL quota for operations that don't have REST equivalents (review threads, timeline events). See `RealGitHub.get_pr_for_branch()` in `packages/erk-shared/src/erk_shared/gateway/github/real.py`.
 
-Use branch naming convention (erk branches start with `P{issue_number}-`):
+The command layer uses `gh pr list` because simplicity matters more than quota optimization in one-off user commands.
 
-```bash
-# Get PR for an issue (by branch naming pattern)
-get_pr_for_issue() {
-  local issue_number=$1
+## The Branch Name Must Match
 
-  # Find branches matching P{issue}-*
-  gh pr list \
-    --search "head:P${issue_number}-" \
-    --state all \
-    --json number,headRefName \
-    -q '.[0].number'
-}
+<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_for_plan.py, lines 88-99 -->
 
-ISSUE_NUMBER=6172
-PR_NUMBER=$(get_pr_for_issue "$ISSUE_NUMBER")
-```
+GitHub's PR query matches the **exact branch name** including owner prefix (`owner:branch`). If your branch naming changes (e.g., different timestamp suffixes for the same feature), each branch can have its own PR. This is intentional — erk branches are immutable once created.
 
-### Pattern 3: Check PR State
+The `erk exec get-pr-for-plan` script (see `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py`) demonstrates fallback logic when `branch_name` is missing from plan metadata: it infers the branch from the current git context if it matches the plan's issue number prefix (`P{issue_number}-`).
 
-Determine if PR is open, closed, or merged:
+## Integration: Plan Metadata and PR Discovery
 
-```bash
-get_pr_state() {
-  local pr_number=$1
-  gh pr view "$pr_number" --json state -q '.state'
-}
+Erk stores `branch_name` in plan-header metadata when a plan is submitted. This creates a durable link: issue → branch → PR. The full discovery strategy (including fallbacks when metadata is missing) is documented in `docs/learned/planning/pr-discovery.md`.
 
-PR_STATE=$(get_pr_state 1234)
+**Why store branch_name?** PR discovery is deterministic when you have the branch name. Without it, you resort to heuristics (searching commit messages, checking issue timelines) that may find the wrong PR or no PR at all.
 
-case "$PR_STATE" in
-  OPEN)
-    echo "PR is open, can update"
-    ;;
-  CLOSED)
-    echo "PR was closed (not merged), do not recreate"
-    ;;
-  MERGED)
-    echo "PR was merged, do not recreate"
-    ;;
-esac
-```
+## Update vs Create Decision Tree
 
----
+When implementing PR submission:
 
-## Automated Workflows
+1. Query for existing PR by branch (`gh pr list --head $BRANCH --state all`)
+2. **If result is non-empty:**
+   - PR exists (open, closed, or merged)
+   - **Do not create** — either update the existing PR or exit with reference to it
+3. **If result is empty:**
+   - No PR exists for this branch
+   - Safe to create with `gh pr create`
 
-### Reference: `/erk:git-pr-push`
-
-The `/erk:git-pr-push` command handles duplicate prevention automatically:
-
-**Location:** `.claude/commands/erk/git-pr-push.md`
-
-**Pattern used:**
-
-1. Check for existing PR by branch name
-2. If PR exists:
-   - Update PR body with new content
-   - Skip creation
-3. If no PR exists:
-   - Create new draft PR
-   - Set body with metadata
-
-**Key snippet from command:**
-
-```bash
-# Check if PR already exists for this branch
-EXISTING_PR=$(gh pr list --head "$CURRENT_BRANCH" --state all --json number -q '.[0].number')
-
-if [ -n "$EXISTING_PR" ]; then
-  echo "PR already exists: #$EXISTING_PR"
-  echo "Updating PR body..."
-  gh pr edit "$EXISTING_PR" --body "$PR_BODY"
-else
-  echo "Creating new PR..."
-  gh pr create --title "$TITLE" --body "$PR_BODY" --draft
-fi
-```
-
-### Workflow Best Practices
-
-When implementing PR creation workflows:
-
-1. **Always query first:** Never call `gh pr create` without checking
-2. **Use `--state all`:** Don't miss closed/merged PRs
-3. **Query by branch:** Most reliable detection method
-4. **Handle all states:** Open, closed, merged have different meanings
-5. **Update if exists:** Don't error, update the existing PR
-
----
-
-## Recovery from Duplicates
-
-### If Duplicates Already Exist
-
-1. **Identify the "real" PR:**
-   - Most recent PR
-   - PR with most comments/reviews
-   - PR referenced in issue comments
-2. **Close duplicates:**
-   ```bash
-   gh pr close 1235 --comment "Duplicate of #1234"
-   ```
-3. **Update references:**
-   - Update issue comments to point to correct PR
-   - Update plan metadata if stored
-
-### Preventing Future Duplicates
-
-Add detection to all PR creation code paths:
-
-```bash
-# Template for safe PR creation
-create_pr_safely() {
-  local branch_name=$1
-  local title=$2
-  local body=$3
-
-  # Check for existing PR
-  local existing_pr=$(gh pr list --head "$branch_name" --state all --json number -q '.[0].number')
-
-  if [ -n "$existing_pr" ]; then
-    echo "PR already exists: #$existing_pr"
-    return 0
-  fi
-
-  # Create new PR
-  gh pr create --title "$title" --body "$body" --draft
-}
-```
-
----
-
-## Command Reference
-
-### Essential PR Detection Commands
-
-#### List PRs for a Branch
-
-```bash
-gh pr list --head <branch-name> --state all
-```
-
-**Returns:** All PRs (open, closed, merged) for the branch
-
-#### Get PR Number
-
-```bash
-gh pr list --head <branch-name> --state all --json number -q '.[0].number'
-```
-
-**Returns:** PR number as plain text (empty if none)
-
-#### Check PR Exists
-
-```bash
-if gh pr view <branch-name> &>/dev/null; then
-  echo "PR exists"
-else
-  echo "No PR found"
-fi
-```
-
-**Note:** `gh pr view <branch>` works with branch names, not just PR numbers
-
-#### Get PR State
-
-```bash
-gh pr view <number-or-branch> --json state -q '.state'
-```
-
-**Returns:** `OPEN`, `CLOSED`, or `MERGED`
-
-#### Check PR is Open
-
-```bash
-STATE=$(gh pr view <number> --json state -q '.state')
-
-if [ "$STATE" = "OPEN" ]; then
-  echo "PR is open"
-fi
-```
-
----
-
-## Integration with Erk Commands
-
-### `erk exec get-pr-for-plan`
-
-Uses this pattern internally:
-
-```bash
-erk exec get-pr-for-plan <issue_number>
-```
-
-**Implementation:**
-
-1. Get `branch_name` from plan-header metadata
-2. Query `gh pr list --head <branch_name> --state all`
-3. Return PR number or sentinel value
-
-**Sentinel values:**
-
-- `no-branch-in-plan` - Plan not submitted (no branch created)
-- Empty string - Branch exists but no PR found
-
-### `erk plan submit`
-
-Creates branch and PR, uses duplicate detection:
-
-1. Check if branch already exists (reuse pattern)
-2. Check if PR already exists for branch
-3. Create PR only if none exists
-
----
+**Anti-pattern:** Catching `gh pr create` errors and retrying. The error happens after you've already created a duplicate. Query first, not after.
 
 ## Related Documentation
 
-- [Plan Lifecycle](../planning/lifecycle.md) - Phase 2 PR creation during plan submission
-- [PR Submission Workflow](pr-submission.md) - Full git-only PR submission pattern
-- [Git-PR-Push Command](../../../.claude/commands/erk/git-pr-push.md) - Reference implementation
+- `docs/learned/planning/pr-discovery.md` — Fallback strategies when branch_name is missing
+- `docs/learned/architecture/github-cli-limits.md` — REST API alternatives for large PR operations

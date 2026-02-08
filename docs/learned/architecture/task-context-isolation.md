@@ -2,250 +2,193 @@
 title: Task Context Isolation Pattern
 read_when:
   - "fetching large JSON responses from APIs"
-  - "parsing PR review comments"
-  - "analyzing GitHub issues or PRs"
+  - "parsing PR review comments or GitHub issues"
+  - "analyzing verbose API responses that pollute context"
   - "need to reduce context window usage"
-  - "returning structured data from a Task"
-last_audited: "2026-02-05"
+  - "returning structured data from subagents"
+  - "choosing between context: fork vs manual Task delegation"
+last_audited: "2026-02-08"
 audit_result: clean
 ---
 
 # Task Context Isolation Pattern
 
-Use the Task tool to fetch and process large data (API responses, PR comments, issue bodies) in an isolated context, returning only a compact summary to the parent agent. This pattern provides ~65-70% context reduction while preserving actionable data.
+## The Problem
 
-## Problem
+Large API responses stay in the main conversation context indefinitely, wasting tokens on data the parent agent doesn't need. A PR review comment fetch can consume 2,500-3,000 tokens of raw JSON when the parent only needs thread IDs and action summaries (~750 tokens).
 
-Large JSON responses from APIs pollute the main conversation context:
+This pattern achieves 65-70% context reduction by processing verbose data in isolated subagent contexts.
 
-- PR review comments can be 2,500-3,000 tokens of raw JSON
-- The parent agent only needs summary + thread IDs to act
-- Raw JSON stays in context indefinitely, wasting tokens
+## The Insight
 
-## Preferred Approach: `context: fork`
+**Subagent contexts are disposable.** When a Task completes, its context (including all the verbose API responses) disappears. Only the Task's final output enters the parent conversation.
 
-For reusable classification/fetch patterns, use `context: fork` in skill frontmatter instead of manual Task delegation. See [Context Fork Feature](../claude-code/context-fork-feature.md).
+This creates an isolation boundary: fetch and process in the subagent, return only compact summaries to the parent.
 
-```yaml
----
-name: pr-feedback-classifier
-context: fork
----
-```
+## Decision: context: fork vs Manual Task
 
-This runs the skill in an isolated subagent automatically. Benefits:
+| Aspect | `context: fork` | Manual Task |
+|--------|-----------------|-------------|
+| Use when | Reusable fetch/classify patterns | One-off operations with dynamic prompts |
+| Declaration | Frontmatter in skill/command file | Inline Task() call in command |
+| Reusability | Skill invocable anywhere | Single-use per command |
+| Prompt content | Static (in skill file) | Dynamic (built at runtime) |
+| Maintenance | Centralized updates | Duplicated across commands |
+| Conversation context | None (fork isolates) | None (Task isolates) |
 
-- **Declarative**: No inline Task prompts in commands
-- **Reusable**: Skill can be invoked from multiple commands
-- **Maintainable**: Classification logic centralized in one place
+**Prefer `context: fork`** for fetch-and-classify patterns you'll use repeatedly. See `docs/learned/claude-code/context-fork-feature.md` for frontmatter details.
 
-Manual Task delegation (documented below) is still useful when:
+**Use manual Task** when prompt content depends on runtime values from the parent conversation.
 
-- Dynamic prompt content is needed
-- One-off operations not worth creating a skill
-- Need to pass conversation context to the task
+## Pattern Components
 
-## Legacy Solution: Prose + Structured JSON
+### 1. Fetch Phase (Subagent)
 
-The Task returns both human-readable prose AND parseable JSON in a single response:
+The subagent has full tool access. It runs bash commands, fetches API data, reads files — all the verbose operations that would pollute parent context.
 
-````
-## Summary
-PR #5944: 1 actionable item (missing integration tests), 12 informational comments skipped.
+### 2. Classification Phase (Subagent)
 
-## Actionable Items
-| # | Thread ID | Path | Line | Issue |
-|---|-----------|------|------|-------|
-| 1 | PRRT_kwDOPxC3hc5q73Ne | abc.py | 8 | Missing integration tests |
+The subagent applies classification logic. For PR comments: actionable vs informational. For issues: by complexity. The parent doesn't see this reasoning, only the results.
 
-## Structured Data
-```json
-{
-  "pr_number": 5944,
-  "pr_title": "BeadsGateway ABC with list_issues Method",
-  "actionable_threads": [
-    {"thread_id": "PRRT_kwDOPxC3hc5q73Ne", "path": "abc.py", "line": 8, "action": "Add integration tests"}
-  ],
-  "discussion_actions": [],
-  "informational_count": 12
-}
-````
+### 3. Output Phase (Subagent)
 
-```
+The subagent returns two formats in one response:
 
-The parent agent:
+- **Prose summary** — Human-readable for display to user
+- **Structured JSON** — Machine-parseable for parent to act on
 
-1. Displays the prose summary to the user
-2. Parses the JSON block for actionable data (thread IDs, comment IDs)
-3. Acts on the data without ever seeing the raw API response
+Both appear in the subagent's final message. The parent reads both from the Task result.
 
-## Token Savings
+### 4. Action Phase (Parent)
 
-| Approach | Tokens | Description |
-|----------|--------|-------------|
-| Direct fetch | ~2,500-3,000 | Raw JSON stays in main context |
-| Task pattern | ~750-900 | Only summary + structured data returned |
-| **Savings** | **65-70%** | Context reduction |
+The parent extracts the JSON (regex match on ` ```json ... ``` ` code blocks), parses it, and acts on the structured data without ever seeing the raw API response.
+
+## Implementation Pointers
+
+<!-- Source: .claude/skills/pr-feedback-classifier/SKILL.md, output format -->
+
+See `pr-feedback-classifier` skill in `.claude/skills/pr-feedback-classifier/SKILL.md` for the canonical `context: fork` implementation. Note the output format structure — both prose table and JSON in one response.
+
+<!-- Source: .claude/commands/erk/pr-address.md, Phase 1 classification -->
+<!-- Source: .claude/commands/erk/pr-preview-address.md, Phase 1 classification -->
+
+See `/erk:pr-address` and `/erk:pr-preview-address` commands for invocation patterns. Both invoke the skill, parse JSON from the result, and use thread IDs from the JSON to act.
+
+<!-- Source: .claude/commands/erk/learn.md, Agent 1-4 parallel launch -->
+
+See `/erk:learn` command for manual Task delegation. Note how it builds dynamic prompts with runtime values (session IDs, PR numbers) that couldn't be static in a skill file.
+
+## Token Savings Measured
+
+| Approach | Tokens | Why |
+|----------|--------|-----|
+| Direct fetch in parent | ~2,500-3,000 | Raw JSON persists in context |
+| Task isolation | ~750-900 | Only summary + structured data returned |
+| **Reduction** | **65-70%** | Raw JSON never enters parent context |
+
+These measurements come from PR review comment fetches (20-30 comment threads). Larger responses see higher savings.
 
 ## When to Use
 
-- **PR review comments**: Fetch, classify, and return actionable thread IDs
-- **GitHub issue analysis**: Parse issue body, extract structured data
-- **Large API responses**: Any API that returns verbose JSON
-- **Preview commands**: When you only need a summary, not action capability
+Use this pattern when:
+
+- **API responses are verbose** — GitHub API returns full objects with metadata you don't need
+- **Parent needs structured data, not raw JSON** — Thread IDs, comment IDs, classification labels
+- **Context window is constrained** — You're doing multiple operations and need to preserve space
+- **Classification logic is complex** — Subagent can reason through classification without bloating parent context
 
 ## When NOT to Use
 
-- **Saving raw data to files**: If you need the raw JSON for a gist, fetch directly
-- **Single small responses**: Overhead not worth it for <500 token responses
-- **Need full context**: If parent needs to reason about raw data details
+Skip this pattern when:
 
-## Implementation
+- **Response is small** (<500 tokens) — Isolation overhead not worth it
+- **Need to save raw data** — If you're writing raw JSON to gist files, fetch in parent
+- **Parent needs to reason about details** — If classification might be wrong and parent needs to verify, keep data in parent context
 
-### Basic Pattern (Prose Only)
+## Anti-Pattern: Leaking Context Through Prose
 
-For preview commands that just display results:
+WRONG:
+```markdown
+## Summary
+Found 3 actionable threads:
 
+Thread PRRT_abc at foo.py:42 says: "This needs to use LBYL pattern instead of EAFP. The current approach with try/except creates misleading error traces because..."
+
+[... 2000 more tokens of quoted comment text ...]
 ```
 
-Task(
-subagent_type: "general-purpose",
-model: "haiku", # Mechanical classification
-description: "Fetch PR feedback preview",
-prompt: |
-Fetch PR review comments and classify them.
+This defeats the isolation. The subagent copied the verbose comment text into the prose summary, which the parent sees.
 
-    ## Steps
-    1. Run: `erk exec get-pr-review-comments`
-    2. Classify: actionable vs informational
+RIGHT:
+```markdown
+## Summary
+3 actionable threads, 12 informational skipped.
 
-    ## Output Format
-    ### Summary
-    [Human-readable paragraph]
+| # | Location | Issue | Complexity |
+|---|----------|-------|------------|
+| 1 | foo.py:42 | Use LBYL pattern | local |
+| 2 | bar.py:15 | Add type annotation | local |
 
-    ### Items Table
-    | # | Location | Issue | Proposed Action |
-    ...
-
-)
-
+See JSON below for thread IDs.
 ```
 
-### Advanced Pattern (Prose + JSON)
+The prose is compact. Full context lives in the JSON's `original_comment` field (first 200 chars for debugging), but parent doesn't need to parse it.
 
-For commands that need to act on the data:
+## Model Selection for Subagents
 
+| Task Type | Model | Why |
+|-----------|-------|-----|
+| Mechanical classification | haiku | Deterministic rules, no creativity needed |
+| Context-aware classification | sonnet | Understands reviewer intent, nuance |
+| Complex reasoning | opus | Multi-factor decisions, architectural understanding |
+
+<!-- Source: .claude/commands/erk/learn.md, model choices for parallel agents -->
+
+See `/erk:learn` command for examples: session-analyzer uses sonnet (patterns require reasoning), diff-analyzer uses sonnet (architectural significance), plan-synthesizer uses opus (creative authoring).
+
+## Output Format: The Double-Delivery Pattern
+
+Why return both prose AND JSON in one response?
+
+1. **Prose displays to user** — They see what was found without parsing JSON
+2. **JSON enables parent action** — Parent extracts structured data for API calls
+3. **Single message** — No need for two Task invocations
+
+The parent shows the prose to the user, then silently parses the JSON to get thread IDs for resolution.
+
+## Error Handling in Isolation
+
+Errors should appear in BOTH formats:
+
+**Prose:**
+```
+Error: No PR found for branch feature-xyz
 ```
 
-Task(
-subagent_type: "general-purpose",
-model: "sonnet", # Need reasoning for classification
-description: "Fetch PR review feedback",
-prompt: |
-Fetch and classify PR review feedback.
-
-    ## Steps
-    1. Fetch comments with erk exec commands
-    2. Classify each comment
-    3. Group into batches by complexity
-
-    ## Output Format
-
-    ### Summary
-    [Prose paragraph]
-
-    ### Actionable Items
-    [Table with thread IDs visible]
-
-    ### Structured Data
-    ```json
-    {
-      "actionable_threads": [
-        {"thread_id": "...", "path": "...", "action": "..."}
-      ],
-      ...
-    }
-    ```
-
-)
-
-````
-
-### Parent Agent Parsing
-
-After receiving Task output, parse the JSON block:
-
-```python
-# Pseudo-code for parent agent logic
-import json
-import re
-
-# Extract JSON from markdown code block
-json_match = re.search(r'```json\s*(\{.*?\})\s*```', task_output, re.DOTALL)
-if json_match:
-    data = json.loads(json_match.group(1))
-    for thread in data["actionable_threads"]:
-        # Act on each thread using thread_id
-        resolve_thread(thread["thread_id"])
-````
-
-## Examples in Codebase
-
-### `/erk:pr-preview-address` and `/erk:pr-address`
-
-These commands now use the `context: fork` approach via the `pr-feedback-classifier` skill. See [Context Fork Feature](../claude-code/context-fork-feature.md).
-
-### `/erk:learn`
-
-Task analyzes PR comments for documentation opportunities. Returns insights table, not raw comment data. This still uses manual Task delegation because it requires dynamic prompt content based on the specific PR being analyzed.
-
-## Model Selection
-
-| Task Type                    | Model  | Rationale                       |
-| ---------------------------- | ------ | ------------------------------- |
-| Mechanical classification    | haiku  | Pattern matching, no creativity |
-| Context-aware classification | sonnet | Needs to understand intent      |
-| Complex reasoning            | opus   | Multi-factor decisions          |
-
-Prefer haiku when the classification rules are explicit and deterministic.
-
-## Best Practices
-
-### Prompt Design
-
-1. **Explicit output format**: Show exact structure expected
-2. **Classification criteria**: Define actionable vs informational clearly
-3. **Thread ID visibility**: Always include IDs in both table and JSON
-
-### JSON Structure
-
-Keep the JSON minimal - only include what the parent needs to act:
-
+**JSON:**
 ```json
 {
-  "actionable_threads": [
-    {"thread_id": "...", "path": "...", "line": N, "action": "..."}
-  ],
-  "discussion_actions": [
-    {"comment_id": N, "action": "..."}
-  ],
-  "informational_count": N
-}
-```
-
-### Error Handling
-
-Include error states in the JSON:
-
-```json
-{
-  "error": "No PR found for branch",
+  "success": false,
+  "error": "No PR found for branch feature-xyz",
   "actionable_threads": [],
-  "discussion_actions": []
+  "batches": []
 }
 ```
+
+The parent checks `success` field first. If false, display error and exit. This prevents the parent from trying to parse empty arrays.
+
+## Historical Context
+
+This pattern emerged from early PR addressing commands that fetched comments directly in the parent conversation. After 3-4 addressing sessions, the context window filled with stale PR comment JSON from earlier fetches.
+
+The first isolation attempt used a Task that returned only prose. This worked for preview commands but broke action commands — the parent needed thread IDs from the prose via regex, which was brittle.
+
+The double-delivery pattern (prose + JSON) solved both problems: human-readable display and machine-parseable data in one output.
+
+The `context: fork` feature (Claude Code 2.1.0+) replaced manual Task delegation for reusable patterns. `pr-feedback-classifier` became a skill instead of inline Task prompts duplicated across commands.
 
 ## Related Documentation
 
-- [Parallel Agent Orchestration](parallel-agent-pattern.md) - Running multiple Tasks concurrently
-- [GitHub API Rate Limits](github-api-rate-limits.md) - API considerations when fetching PR data
+- [Context Fork Feature](../claude-code/context-fork-feature.md) — Declarative isolation via skill frontmatter
+- [Skill Composition Patterns](../claude-code/skill-composition-patterns.md) — When to use skills vs commands
+- [PR Operations](../pr-operations/pr-operations.md) — Commands that use this pattern

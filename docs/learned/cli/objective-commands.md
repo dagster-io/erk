@@ -4,8 +4,8 @@ read_when:
   - "working with erk objective commands"
   - "implementing objective check or close functionality"
   - "understanding objective validation patterns"
-last_audited: "2026-02-05"
-audit_result: edited
+last_audited: "2026-02-08"
+audit_result: regenerated
 tripwires:
   - action: "displaying user-provided text in Rich CLI tables without escaping"
     warning: "Use `escape_markup(value)` for user data in Rich tables. Brackets like `[text]` are interpreted as style tags and will disappear."
@@ -13,95 +13,122 @@ tripwires:
 
 # Objective Commands
 
-The `erk objective` command group manages erk objectives - high-level goals that track multiple related plans.
+## Why Reconcile and Next-Plan Are Nearly Identical
 
-## Command Overview
+<!-- Source: src/erk/cli/commands/objective/reconcile_cmd.py, reconcile_objectives -->
+<!-- Source: src/erk/cli/commands/objective/next_plan_cmd.py, next_plan -->
 
-| Command                   | Alias | Description                                      |
-| ------------------------- | ----- | ------------------------------------------------ |
-| `erk objective check`     | `ch`  | Validate an objective's format and roadmap       |
-| `erk objective close`     | `c`   | Close an objective GitHub issue                  |
-| `erk objective list`      | `ls`  | List open objectives                             |
-| `erk objective next-plan` | `np`  | Launch Claude to create plan from objective step |
-| `erk objective reconcile` | `rec` | Validate and launch Claude for objective step    |
+The `erk objective reconcile` and `erk objective next-plan` commands perform the same task — launching Claude to create an implementation plan from an objective step — but differ in their validation discipline:
 
-All commands are registered via `register_with_aliases()` in `src/erk/cli/commands/objective/__init__.py`.
+**reconcile** enforces LBYL validation before launching Claude. It checks that the objective exists and has the `erk-objective` label, failing fast if validation fails. This prevents cryptic errors from launching Claude with invalid input.
 
-## Next-Plan Command
+**next-plan** skips validation and immediately launches Claude. This is useful when you trust the input or want to handle errors interactively within Claude rather than at the CLI boundary.
 
-The `erk objective next-plan` command launches Claude in plan mode to create an implementation plan from an objective step.
+Both commands force plan mode by calling `ia_config.with_overrides(permission_mode_override="plan")` regardless of the user's config file setting. This ensures the agent explores and plans rather than immediately executing.
 
-### Key Behavior
+## Permission Mode Override Pattern
 
-1. **Resolves config**: Loads `InteractiveAgentConfig` from `[interactive-agent]` in `~/.erk/config.toml`
-2. **Forces plan mode**: Calls `ia_config.with_overrides(permission_mode_override="plan")` to ensure plan mode regardless of config
-3. **Launches Claude**: Calls `ctx.agent_launcher.launch_interactive()` with the `/erk:objective-next-plan` slash command
-4. **Supports `--dangerous` flag**: Passes `--allow-dangerously-skip-permissions` to Claude when set
+<!-- Source: packages/erk-shared/src/erk_shared/context/types.py, InteractiveAgentConfig.with_overrides -->
 
-See `next_plan_cmd.py` for implementation, `InteractiveAgentConfig.with_overrides()` in `erk_shared/context/types.py` for the override pattern.
+The `with_overrides()` method on `InteractiveAgentConfig` allows selective override of config values:
 
-### Permission Override Pattern
+- Pass a value (e.g., `"plan"`) to force that mode
+- Pass `None` to preserve the config file value
 
-The `with_overrides()` method on `InteractiveAgentConfig` conditionally overrides config values:
+This pattern appears in both `reconcile` and `next-plan` commands. Both force `permission_mode_override="plan"` but differ in handling the `--dangerous` flag:
 
-- Setting to a value (like `"plan"`) forces that mode
-- Setting to `None` preserves the config file value
+- **reconcile** always passes `allow_dangerous_override=None`, preserving the config file value
+- **next-plan** conditionally overrides based on the `--dangerous` flag, allowing users to opt into skipping permission prompts
 
-This pattern is reused by both `next-plan` and `reconcile` commands.
+## Why next-plan Takes Optional Argument, reconcile Takes Required
 
-### Related Slash Command
+<!-- Source: src/erk/cli/commands/objective/next_plan_cmd.py, next_plan -->
+<!-- Source: src/erk/cli/commands/objective/reconcile_cmd.py, reconcile_objectives -->
 
-After launching, Claude executes `/erk:objective-next-plan` (file: `.claude/commands/erk/objective-next-plan.md`), which:
+The `next-plan` command accepts an optional `ISSUE_REF` string argument. This flexibility allows the slash command `/erk:objective-next-plan` to prompt for the issue interactively if needed.
 
-1. Fetches the objective issue
-2. Analyzes the roadmap
-3. Guides the user through planning an implementation for a step
-4. Saves the plan to a GitHub issue
+The `reconcile` command requires an integer `OBJECTIVE` argument because it performs upfront validation that needs the issue number immediately. The validation (checking `issue_exists()` and verifying the `erk-objective` label) happens before launching Claude, so the issue number can't be deferred.
 
-## Reconcile Command
+## Validation Check Design
 
-The `erk objective reconcile` command validates an objective and launches Claude to create a plan for its next step. It is functionally similar to `next-plan` but adds LBYL validation.
+<!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective -->
 
-### Key Differences from Next-Plan
+The `validate_objective()` function returns a discriminated union — either `ObjectiveValidationSuccess` or `ObjectiveValidationError`. This allows callers to distinguish between "couldn't validate" (network error, issue not found) and "validation completed but found problems" (orphaned statuses, inconsistent numbering).
 
-- **Required argument**: Takes a required `OBJECTIVE` integer (issue number), not optional
-- **LBYL validation**: Checks `issue_exists()` and verifies `erk-objective` label before launching
-- **No `--dangerous` flag**: Always launches with default permissions
+The success case includes `passed: bool` to indicate whether checks passed, plus detailed `checks: list[tuple[bool, str]]` for each validation rule. This structure supports both human-readable output (CLI) and structured JSON output (programmatic use with `--json-output`).
 
-### Validation (LBYL Pattern)
+**Why both a passed field AND a checks list**: The `passed` field is the overall result (false if any check failed). The `checks` list provides granular detail about which specific rules failed and why. JSON consumers can filter or reprocess the list; human output can show a summary.
 
-The command performs Look Before You Leap validation before launching Claude:
+## Status/PR Consistency Rules
 
-1. **Check existence**: `ctx.github.issues.issue_exists(repo.root, objective)` before fetching
-2. **Check labels**: Verify `erk-objective` label exists on the issue
-3. **Fail early**: Exit with clear error message if validation fails
+<!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective -->
 
-This pattern prevents cryptic errors from launching Claude with an invalid objective. See `reconcile_cmd.py` for implementation.
+The validation enforces semantic coupling between step status and PR reference:
 
-## Check Command
+- Steps with `pr: "#123"` (PR reference) should have `status: "done"` (or `"skipped"`)
+- Steps with `pr: "plan #123"` (plan reference) should have `status: "in_progress"` (or `"skipped"`)
+- Steps with `status: "done"` must have a PR reference (no orphaned done statuses)
 
-The `erk objective check` command validates an objective's format and roadmap consistency without launching Claude.
+**Why this matters**: The objective roadmap is the coordination document for multi-PR work. If statuses and PR references drift, future agents can't trust the roadmap to understand what's actually complete. The validation catches drift early, before it becomes a source of confusion.
 
-### Validation Checks
+## Phase Numbering Validation
 
-1. Issue has `erk-objective` label
-2. Roadmap parses successfully
-3. Status/PR consistency (done steps should have PR references)
-4. No orphaned done statuses
-5. Phase numbering is sequential
+<!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective -->
 
-Supports `--json-output` for structured output. See `check_cmd.py` and the `validate_objective()` function for implementation.
+Phases are validated for sequential ordering by `(number, suffix)` tuples. This allows sub-phases like `1A, 1B, 1C` followed by `2` without triggering an error, but catches cases like `[1, 3, 2]` or `[1A, 1C, 1B]`.
 
-## Close Command
+**Why tuples instead of string comparison**: String comparison would treat `"10"` as less than `"2"` (lexicographic ordering). Tuple comparison handles numeric ordering correctly: `(1, "A") < (1, "B") < (2, "")`.
 
-The `erk objective close` command closes an objective GitHub issue after validation (must have `erk-objective` label, must be open). Prompts for confirmation unless `--force` is provided. See `close_cmd.py` for implementation.
+## Rich Markup Escaping in Tables
 
-## Rich Markup Escaping
+<!-- Source: src/erk/cli/commands/objective/list_cmd.py, list_objectives -->
 
-When displaying user-provided titles in Rich tables, bracket sequences like `[text]` are interpreted as Rich style tags. Always escape user data with `escape_markup()` from `rich.markup`. See [CLI Output Styling Guide](output-styling.md#rich-markup-escaping-in-cli-tables) for complete details.
+User-provided objective titles may contain brackets like `[foo]`, which Rich interprets as style tags. The `list_objectives` command currently **does not escape** user data, which means titles with brackets will render incorrectly (the bracketed text disappears).
+
+The correct pattern is:
+
+```python
+from rich.markup import escape as escape_markup
+
+table.add_row(
+    f"[link={issue.url}]#{issue.number}[/link]",
+    escape_markup(issue.title),  # ← Escape user data
+    format_relative_time(issue.created_at.isoformat()),
+    issue.url,
+)
+```
+
+**Why this is a tripwire**: It's a silent bug. The code doesn't crash; the output just looks wrong. And it's intermittent — only affects titles with brackets, which are rare enough to escape notice during development.
+
+See [CLI Output Styling Guide](output-styling.md#rich-markup-escaping-in-cli-tables) for the full escaping pattern.
+
+## Close Command Confirmation Pattern
+
+<!-- Source: src/erk/cli/commands/objective/close_cmd.py, close_objective -->
+
+The `close` command prompts for confirmation unless `--force` is provided. The confirmation pattern uses `ctx.console.confirm()` with `default=True`, meaning the user can press Enter to proceed.
+
+**Why default to true**: Closing an objective is usually intentional and reversible (GitHub issues can be reopened). Defaulting to "yes" reduces friction while still providing a safety check for accidental invocations.
+
+## Command Aliases
+
+<!-- Source: src/erk/cli/commands/objective/__init__.py -->
+
+All objective commands use the `register_with_aliases()` pattern, which registers both the full command name and a short alias:
+
+| Command        | Alias | Why This Alias                                    |
+| -------------- | ----- | ------------------------------------------------- |
+| `check`        | `ch`  | Prefix of "check", avoids collision with "close"  |
+| `close`        | `c`   | First letter, unambiguous (check uses "ch")       |
+| `list`         | `ls`  | Unix convention (ls for list)                     |
+| `next-plan`    | `np`  | First letters of both words                       |
+| `reconcile`    | `rec` | Prefix, unambiguous (r alone would be ambiguous)  |
+
+**Why aliases matter**: Objective commands are used in rapid iteration workflows. Typing `erk objective np` is faster than `erk objective next-plan`, reducing friction without sacrificing discoverability (the full name remains canonical).
 
 ## Related Documentation
 
-- [CLI Output Styling Guide](output-styling.md) - Table formatting and Rich escaping
-- [LBYL Gateway Pattern](../architecture/lbyl-gateway-pattern.md) - Existence checking pattern
-- [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) - `issue_exists()` method
+- [CLI Output Styling Guide](output-styling.md) - Rich table formatting and markup escaping
+- [LBYL Gateway Pattern](../architecture/lbyl-gateway-pattern.md) - Look-before-you-leap validation discipline
+- [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) - Gateway interface patterns including `issue_exists()`
+- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) - Result type patterns used by `validate_objective()`

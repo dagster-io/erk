@@ -4,158 +4,113 @@ read_when:
   - "adding a new remote command to run on codespaces"
   - "implementing erk codespace run subcommands"
   - "working with streaming remote execution"
+tripwires:
+  - "Interactive commands need exec_ssh_interactive(), not run_ssh_command()"
+  - "Always start_codespace() before executing remote commands"
+  - "build_codespace_ssh_command() bootstraps the environment - don't duplicate setup"
 ---
 
 # Composable Remote Commands Pattern
 
-Erk provides a composable pattern for adding new commands that run remotely on GitHub Codespaces. Each remote command follows the same structure and uses shared utilities.
+Remote commands in erk follow a five-step pattern that separates concerns: codespace lookup, startup, command preparation, execution, and result handling. This composability emerges from breaking the execution boundary into discrete helpers rather than monolithic SSH invocations.
 
-## The Template
+## Why This Pattern Exists
 
-Here's the complete template for a new remote command:
+**The composability insight**: Remote execution isn't a single operation, it's five independent decisions that can be composed. Codespace lookup logic doesn't need to know about SSH. SSH command building doesn't need to know about codespace registry lookup. Exit code handling doesn't need to know how the command was executed.
 
-```python
-"""Run <your-command> remotely on a codespace."""
+This separation matters because:
 
-import click
+1. **Testability through fakes**: Each boundary (`resolve_codespace()`, `build_codespace_ssh_command()`, `ctx.codespace.exec_ssh_interactive()`) can be tested independently
+2. **Reusability without duplication**: New remote commands compose existing helpers rather than reimplementing SSH boilerplate
+3. **Change isolation**: Modifying environment bootstrap (e.g., adding `uv sync`) requires one change in `build_codespace_ssh_command()`, not N changes across commands
 
-from erk.cli.commands.codespace.resolve import resolve_codespace
-from erk.core.codespace_run import build_codespace_ssh_command
-from erk.core.context import ErkContext
+## The Five-Step Composition
 
+<!-- Source: src/erk/cli/commands/codespace/run/objective/next_plan_cmd.py, run_next_plan function -->
 
-@click.command("<command-name>")
-@click.argument("your_arg")
-@click.option("--codespace", "-c", "name", default=None, help="Codespace name.")
-@click.pass_obj
-def run_your_command(ctx: ErkContext, your_arg: str, name: str | None) -> None:
-    """Run <your-command> remotely on a codespace.
-
-    YOUR_ARG is a description of the argument.
-
-    Starts the codespace if stopped, then executes 'erk <your-command>'
-    via SSH, streaming output to the terminal.
-    """
-    # 1. Resolve codespace by name or default
-    codespace = resolve_codespace(ctx.codespace_registry, name)
-
-    # 2. Start the codespace if stopped
-    click.echo(f"Starting codespace '{codespace.name}'...", err=True)
-    ctx.codespace.start_codespace(codespace.gh_name)
-
-    # 3. Build the remote command
-    remote_cmd = build_codespace_ssh_command(f"erk <your-command> {your_arg}")
-
-    # 4. Execute remotely
-    click.echo(f"Running 'erk <your-command> {your_arg}' on '{codespace.name}'...", err=True)
-    exit_code = ctx.codespace.run_ssh_command(codespace.gh_name, remote_cmd)
-
-    # 5. Report results
-    if exit_code == 0:
-        click.echo("Command completed successfully.", err=True)
-    else:
-        click.echo(f"Error: SSH command exited with code {exit_code}.", err=True)
-        raise SystemExit(exit_code)
-```
-
-## Step-by-Step Breakdown
+Every remote command follows this structure. See `run_next_plan()` in `src/erk/cli/commands/codespace/run/objective/next_plan_cmd.py` for the canonical implementation.
 
 ### 1. Resolve Codespace
 
-```python
-codespace = resolve_codespace(ctx.codespace_registry, name)
-```
+<!-- Source: src/erk/cli/commands/codespace/resolve.py, resolve_codespace function -->
 
-The `resolve_codespace()` helper handles:
+`resolve_codespace(ctx.codespace_registry, name)` handles name-to-registered-codespace lookup, including default fallback and error messaging. See `resolve_codespace()` in `src/erk/cli/commands/codespace/resolve.py`.
 
-- Looking up codespace by name if provided
-- Falling back to default codespace if no name given
-- Displaying helpful error messages if not found
-- See [Codespace Patterns](../cli/codespace-patterns.md) for details
+**Why separate this**: Codespace lookup has complex error cases (no default set, default not found, named codespace not found). Centralizing this logic prevents inconsistent error messages across commands.
 
 ### 2. Start Codespace
 
-```python
-ctx.codespace.start_codespace(codespace.gh_name)
-```
+`ctx.codespace.start_codespace(codespace.gh_name)` ensures the codespace is running before SSH connection. No-op if already running.
 
-Ensures the codespace is running before SSH connection. No-op if already running.
+**Why separate this**: Starting is idempotent and may take time (showing startup messages). Commands shouldn't need to implement "check if running, start if not" logic.
 
 ### 3. Build Remote Command
 
-```python
-remote_cmd = build_codespace_ssh_command(f"erk <your-command> {your_arg}")
+<!-- Source: src/erk/core/codespace_run.py, build_codespace_ssh_command function -->
+
+`build_codespace_ssh_command(erk_cli_command)` wraps the erk command with environment bootstrap. See `build_codespace_ssh_command()` in `src/erk/core/codespace_run.py`.
+
+**Current bootstrap sequence** (as of 2026-02-07):
+```bash
+bash -l -c 'git pull && uv sync && source .venv/bin/activate && <erk_command>'
 ```
 
-Wraps the erk CLI command with environment bootstrap (git pull, uv sync, venv activation) and foreground execution. See [Codespace Remote Execution](../erk/codespace-remote-execution.md) for details.
+**Why separate this**: Environment setup evolves (we added `uv sync`, might add health checks later). If this was inline in every command, updating the bootstrap would require changing 10+ files.
+
+**Anti-pattern**: Duplicating the git/uv/venv setup in individual commands. The bootstrap sequence is a cross-cutting concern.
 
 ### 4. Execute Remotely
 
-```python
-exit_code = ctx.codespace.run_ssh_command(codespace.gh_name, remote_cmd)
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/codespace/abc.py, Codespace class -->
 
-Runs the SSH command in the foreground, streaming output to the terminal. The command blocks until completion.
+Two execution methods on `ctx.codespace` (see `Codespace` ABC in `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py`):
+
+- `exec_ssh_interactive(gh_name, remote_cmd)` - **Replaces current process** with SSH session (uses `os.execvp`, never returns). For interactive commands like `erk objective next-plan`.
+- `run_ssh_command(gh_name, remote_cmd)` - **Blocks and returns exit code**. For non-interactive commands that stream output but don't need user input.
+
+**Decision table**:
+
+| Command Needs User Input? | Execution Method           | Returns? |
+|---------------------------|----------------------------|----------|
+| Yes (TUI, prompts)        | `exec_ssh_interactive()`   | No (replaces process) |
+| No (streaming output)     | `run_ssh_command()`        | Yes (exit code) |
+
+**Why two methods**: Interactive commands need true terminal passthrough (SSH must control the full TTY). Non-interactive commands need exit code propagation for CI/automation.
 
 ### 5. Report Results
 
-```python
-if exit_code == 0:
-    click.echo("Command completed successfully.", err=True)
-else:
-    click.echo(f"Error: SSH command exited with code {exit_code}.", err=True)
-    raise SystemExit(exit_code)
-```
+Exit code handling logic depends on execution method:
 
-Exit code reflects the actual erk command's success or failure.
+- `exec_ssh_interactive()`: No exit code handling needed (process replaced)
+- `run_ssh_command()`: Check exit code, echo status message, propagate failure with `raise SystemExit(exit_code)`
 
-## Example: erk codespace run objective next-plan
-
-Real implementation at `src/erk/cli/commands/codespace/run/objective/next_plan_cmd.py`:
-
-```python
-@click.command("next-plan")
-@click.argument("issue_ref")
-@click.option("--codespace", "-c", "name", default=None, help="Codespace name.")
-@click.pass_obj
-def run_next_plan(ctx: ErkContext, issue_ref: str, name: str | None) -> None:
-    """Run objective next-plan remotely on a codespace.
-
-    ISSUE_REF is an objective issue number or GitHub URL.
-    """
-    codespace = resolve_codespace(ctx.codespace_registry, name)
-
-    click.echo(f"Starting codespace '{codespace.name}'...", err=True)
-    ctx.codespace.start_codespace(codespace.gh_name)
-
-    remote_cmd = build_codespace_ssh_command(f"erk objective next-plan {issue_ref}")
-    click.echo(f"Running 'erk objective next-plan {issue_ref}' on '{codespace.name}'...", err=True)
-    exit_code = ctx.codespace.run_ssh_command(codespace.gh_name, remote_cmd)
-
-    if exit_code == 0:
-        click.echo("Command completed successfully.", err=True)
-    else:
-        click.echo(f"Error: SSH command exited with code {exit_code}.", err=True)
-        raise SystemExit(exit_code)
-```
+**Why separate this**: Exit code interpretation is command-specific (some commands might treat non-zero as warning, not error). The execution layer shouldn't make this decision.
 
 ## Adding a New Remote Command
 
-1. **Create the command file** under `src/erk/cli/commands/codespace/run/`
-2. **Copy the template** and fill in your command name and arguments
-3. **Register the command** in the appropriate Click group
-4. **Test locally first** - ensure `erk <your-command>` works before making it remote
-5. **Test remote execution** - verify output streams to your terminal
+**Before coding**: Ensure `erk <your-command>` works locally and non-interactively. Remote execution won't magically fix local issues.
 
-## Limitations
+**Step-by-step**:
 
-- **No interactive commands**: Commands must run non-interactively
-- **Blocks until completion**: The SSH connection stays open for the entire command duration
+1. Create command file under `src/erk/cli/commands/codespace/run/`
+2. Import the three helpers:
+   - `from erk.cli.commands.codespace.resolve import resolve_codespace`
+   - `from erk.core.codespace_run import build_codespace_ssh_command`
+   - `from erk.core.context import ErkContext`
+3. Compose the five steps (lookup, start, build, execute, report)
+4. Add `--codespace` / `-c` option for explicit codespace selection
+5. Register in the appropriate Click group
 
-For commands that need interactivity, use `ctx.codespace.exec_ssh_interactive()` instead.
+## Current Limitations
+
+**Interactive command restriction**: The actual implementation uses `exec_ssh_interactive()` for most commands because they're designed for human interaction. The document's claim about `run_ssh_command()` being used for remote execution was incorrect - it's defined in the ABC but the real commands use the interactive variant.
+
+**No async execution**: Remote commands block until completion. There's no "start in background" mode.
+
+**No progress streaming**: Output streams to terminal, but commands can't report structured progress (e.g., "3 of 10 steps complete").
 
 ## Related Documentation
 
-- [Codespace Remote Execution](../erk/codespace-remote-execution.md) - Streaming execution pattern details
-- [Codespace Gateway](../gateway/codespace-gateway.md) - Gateway ABC for codespace operations
-- [Codespace Patterns](../cli/codespace-patterns.md) - `resolve_codespace()` helper usage
+- `docs/learned/erk/codespace-remote-execution.md` - Deeper dive on SSH execution patterns
+- `docs/learned/gateway/codespace-gateway.md` - Gateway ABC for codespace operations
+- `docs/learned/cli/codespace-patterns.md` - CLI-level codespace interaction patterns
