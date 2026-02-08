@@ -166,6 +166,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before passing variables to gh api graphql as JSON blob** → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work.
 
+**CRITICAL: Before preferring the write tool over bash heredocs for large agent outputs** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. Prefer the Write tool over bash heredocs for large agent outputs — heredocs fail silently with special characters
+
 **CRITICAL: Before reading from or writing to ~/.claude/ paths using Path.home() directly** → Read [ClaudeInstallation Gateway](claude-installation-gateway.md) first. Use ClaudeInstallation gateway instead. All ~/.claude/ filesystem operations must go through this gateway for testability and storage abstraction.
 
 **CRITICAL: Before removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
@@ -196,8 +198,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using bare subprocess.run with check=True** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
 
-**CRITICAL: Before using bash heredocs for large agent outputs** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. heredocs fail silently with special characters — prefer the Write tool
-
 **CRITICAL: Before using gh api or gh api graphql to fetch or resolve PR review threads** → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. Load `pr-operations` skill first. Use `erk exec get-pr-review-comments` and `erk exec resolve-review-thread` instead. Raw gh api calls miss thread resolution functionality.
 
 **CRITICAL: Before using gh codespace start** → Read [GitHub CLI Limits](github-cli-limits.md) first. gh codespace start does not exist. Use REST API POST /user/codespaces/{name}/start via gh api instead.
@@ -226,7 +226,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using subprocess.run with git command outside of a gateway** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations.
 
-**CRITICAL: Before using unquoted heredoc delimiters (<<EOF) with content containing $, \, or backticks** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. bash silently expands them — use quoted delimiters (<<'EOF')
+**CRITICAL: Before using unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. Never use unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks — bash silently expands them
 
 **CRITICAL: Before writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has >3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
 

@@ -178,8 +178,10 @@ read_when:
   - "condition that triggers reading this doc"
   - "another condition"
 tripwires:
-  - "action pattern that should load this doc"
----
+  - action: "action pattern that should load"
+    warning: "action pattern that should load this doc"
+  - action: "performing actions related to this tripwire"
+    warning: "--"
 ```
 
 **Indexing**: The `erk docs sync` command auto-generates `docs/learned/index.md` from these frontmatter blocks.

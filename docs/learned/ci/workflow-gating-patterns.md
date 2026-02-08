@@ -8,99 +8,76 @@ tripwires:
   - action: "Use !contains() pattern for label-based gating"
     warning: "Negation is critical — contains() without ! skips all push events"
     score: 5
-last_audited: "2026-02-05 20:38 PT"
+last_audited: "2026-02-08"
 audit_result: edited
 ---
 
 # GitHub Actions Workflow Gating Patterns
 
-Erk uses multiple layers of workflow gating to control when CI runs. This guide covers the patterns used in `.github/workflows/ci.yml` and `.github/workflows/code-reviews.yml`.
+GitHub Actions offers multiple mechanisms for controlling workflow execution. Choosing the right layer for each gate determines both safety and cost efficiency.
 
-## Overview: Multiple Layers of Workflow Gating
+## Why Multiple Gating Layers Exist
 
-Erk's CI uses a compositional gating strategy with three layers:
+GitHub Actions evaluates conditions at different points in the workflow lifecycle:
 
-1. **Trigger filtering**: `on:` section filters which events start the workflow
-2. **Job conditions**: `if:` clauses on jobs determine whether they execute
-3. **Output-based skipping**: Jobs check outputs to decide whether to run downstream work
+<!-- Source: .github/workflows/ci.yml, on: triggers, job if: conditions, step if: conditions -->
 
-Each layer serves a different purpose and they work together to create flexible, safe workflow control.
+1. **Trigger filtering** (`on:` section) — GitHub decides whether to queue the workflow at all
+2. **Job conditions** (`if:` at job level) — GitHub decides whether to allocate a runner before any steps execute
+3. **Step conditions** (`if:` at step level) — Runs after runner allocation and checkout
 
-## Label-Based Gating Pattern
+Each layer exists for a reason: triggers prevent unnecessary workflow runs, job conditions prevent unnecessary runner allocation, and step conditions enable dynamic decisions based on checkout state or earlier step results.
 
-### The Core Pattern
+## The Negation Pattern for Label Checks
 
-```yaml
-if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
-```
+<!-- Source: .github/workflows/ci.yml, check-submission job -->
+<!-- Source: .github/workflows/code-reviews.yml, discover job -->
 
-This pattern appears in the `check-submission` and `autofix` jobs in `.github/workflows/ci.yml`, and the `discover` job in `.github/workflows/code-reviews.yml`.
+### Why !contains() Instead of contains()
 
-### Why Negation is Critical
+The pattern `!contains(github.event.pull_request.labels.*.name, 'erk-plan-review')` appears throughout `.github/workflows/ci.yml` and `.github/workflows/code-reviews.yml`. The negation is **not optional**.
 
-The `!contains()` pattern uses **negation** to exclude labeled PRs. This design is critical because of how GitHub Actions handles push events:
+**The problem**: Push events have no `github.event.pull_request` context, so `labels.*.name` evaluates to an empty array. The function `contains([], 'label')` returns `false`.
 
-- **Pull request events**: `github.event.pull_request.labels` is an array of label objects
-- **Push events**: `github.event.pull_request` is `null`, so `labels.*.name` evaluates to an empty array
-- **contains() with empty array**: Always returns `false`
+**Why negation fixes it**:
 
-**WRONG (skips all push events):**
+- PR with label → `contains()` returns `true` → negation makes condition `false` → job skips (intended)
+- PR without label → `contains()` returns `false` → negation makes condition `true` → job runs (intended)
+- Push event (empty array) → `contains()` returns `false` → negation makes condition `true` → job runs (safe default)
+
+Without negation, push events would skip the job entirely because the condition evaluates to `false`. CI would never run on direct branch pushes.
+
+### Anti-Pattern
+
+**WRONG:**
 
 ```yaml
 if: contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
 ```
 
-This evaluates to `false` for push events (empty array), so the job is skipped.
+This skips the job for push events (the empty array case), preventing CI from running on local git pushes. Master branch protection would be defeated.
 
-**CORRECT (runs for push events):**
+## Combining Draft and Label Checks
 
-```yaml
-if: !contains(github.event.pull_request.labels.*.name , 'erk-plan-review')
-```
+<!-- Source: .github/workflows/ci.yml, lines 20, 34, 45, 56, 67, 84, 95, 115, 127 -->
 
-This evaluates to `true` for push events (empty array doesn't contain 'plan-review'), so the job runs.
+The pattern `github.event.pull_request.draft != true && !contains(...)` appears on every gated job. Both checks are necessary because they gate different states:
 
-### Safe Defaults
+**Draft check**: Excludes PRs explicitly marked work-in-progress
+**Label check**: Excludes PRs containing plan content rather than code
 
-The negation pattern creates a safe default behavior:
+A PR can be:
 
-- **PR with 'erk-plan-review' label**: Job is skipped (intended)
-- **PR without 'erk-plan-review' label**: Job runs (intended)
-- **Push event (no PR context)**: Job runs (safe default - don't skip CI on direct pushes)
+- Draft + labeled (WIP plan review) → both checks exclude
+- Non-draft + labeled (ready plan review) → label check excludes
+- Draft + not labeled (WIP code) → draft check excludes
+- Non-draft + not labeled (ready code) → both checks pass, job runs
 
-This ensures that CI always runs on direct pushes to branches, which is important for protecting the main branch.
+## The ready_for_review Trigger
 
-## Draft PR Exclusion Pattern
+<!-- Source: .github/workflows/ci.yml, lines 5-6 -->
 
-### The Pattern
-
-```yaml
-if: github.event.pull_request.draft != true
-```
-
-This pattern appears in all job conditions that also check labels. It excludes draft PRs from running CI.
-
-### Why Check Both Draft and Labels
-
-Draft and label checks serve different purposes:
-
-- **Draft check**: Excludes PRs that are explicitly marked as work-in-progress
-- **Label check**: Excludes PRs that contain plan content rather than code
-
-Both checks are needed because:
-
-1. A PR can be both draft and labeled (e.g., a draft plan review)
-2. A PR can be non-draft but labeled (e.g., a ready plan review)
-3. A PR can be draft but not labeled (e.g., a work-in-progress code change)
-
-The combined condition ensures CI only runs on PRs that are both:
-
-- Ready for review (not draft)
-- Contain code changes (not labeled 'erk-plan-review')
-
-## ready_for_review Trigger Complement
-
-### The Pattern
+The trigger list includes `ready_for_review` to complement the draft exclusion:
 
 ```yaml
 on:
@@ -108,132 +85,101 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
 ```
 
-The `ready_for_review` trigger complements the draft exclusion by ensuring CI runs when a draft PR is marked ready:
+Without this trigger, marking a draft PR as ready wouldn't start CI until the next commit. The workflow would remain in a "waiting for CI" state despite being ready for review.
 
-- **opened**: PR created as ready (draft check passes)
-- **synchronize**: PR updated with new commits (draft check evaluates current state)
-- **reopened**: PR reopened after being closed
-- **ready_for_review**: Draft PR marked ready (draft check now passes)
+## When Job-Level Conditions Aren't Enough
 
-Without `ready_for_review`, CI wouldn't run when a draft PR transitions to ready until the next push.
+<!-- Source: .github/workflows/ci.yml, autofix job steps 166-228 -->
 
-## Compositional Gating: How Layers Interact
+The autofix job demonstrates why some checks must happen at step-level despite job-level gating:
 
-### Layer 1: Trigger Filtering
+**For push events**, `github.event.pull_request` doesn't exist at job evaluation time. Job-level label checks are impossible. The workflow must:
 
-```yaml
-on:
-  push:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-  workflow_dispatch:
-```
+1. Allocate a runner (job-level condition passes for push events)
+2. Query GitHub API to find associated PR
+3. Fetch labels via API
+4. Gate subsequent steps based on result
 
-**Purpose**: Control which events start the workflow at all.
+This asymmetry exists because push events are branch operations. GitHub doesn't implicitly resolve "what PR uses this branch?" until you ask via the API.
 
-**Effect**: The workflow runs for PR events (with specified types), all push events, and manual dispatch. Other events (e.g., pull_request.closed) don't trigger the workflow.
+See the autofix job in `.github/workflows/ci.yml` for the multi-step implementation: discover PR (via `github.event.pull_request.number` for PR events or `gh api` for push events), check for label, consolidate all conditions into a single boolean output, gate all subsequent steps on that output.
 
-### Layer 2: Job Conditions
+For the deep dive on why this asymmetry exists and the defense-in-depth solution, see [GitHub Actions Label Queries](github-actions-label-queries.md).
 
-```yaml
-jobs:
-  check-submission:
-    if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
-```
+## Output-Based Gating
 
-**Purpose**: Decide whether individual jobs execute within the triggered workflow.
+<!-- Source: .github/workflows/ci.yml, check-submission job outputs, format job conditions -->
 
-**Effect**: The job is skipped if the PR is a draft or has the 'erk-plan-review' label. Other jobs in the workflow can still run.
+A different pattern: one job's results control whether downstream jobs execute.
 
-### Layer 3: Output-Based Skipping
+The `check-submission` job declares outputs:
 
 ```yaml
-jobs:
-  check-submission:
-    outputs:
-      skip: ${{ steps.check.outputs.skip }}
-
-  format:
-    needs: check-submission
-    if: needs.check-submission.outputs.skip == 'false'
+outputs:
+  skip: ${{ steps.check.outputs.skip }}
 ```
 
-**Purpose**: Let one job's results control whether downstream jobs execute.
+Downstream jobs reference this output:
 
-**Effect**: The check-submission job determines if the PR has a `.worker-impl/` folder. If not, downstream jobs are skipped. See [Plan Implement Customization](plan-implement-customization.md) for details.
+```yaml
+format:
+  needs: check-submission
+  if: needs.check-submission.outputs.skip == 'false'
+```
 
-### Why Three Layers?
+**Why this exists**: The `.worker-impl/` folder detection can't happen until after checkout, so it can't be a job-level condition based on event context. The check-submission job performs checkout, checks for the folder, and publishes a decision that later jobs consume.
 
-Each layer solves a different problem:
-
-1. **Triggers**: "Should this event start CI at all?" (e.g., don't run on PR close)
-2. **Job conditions**: "Is this PR in a state where this job makes sense?" (e.g., don't run code checks on plan-only PRs)
-3. **Output checks**: "Did earlier checks determine this work is unnecessary?" (e.g., no code changes to test)
-
-The layers compose: a job only runs if all three conditions are satisfied.
+This pattern separates "should this workflow run?" (event-based, job-level) from "should this job run?" (state-based, after checkout). For full context on why `.worker-impl/` folders are special, see [Plan Implement Customization](plan-implement-customization.md).
 
 ## Autofix Safety Pattern
 
-The autofix job in `.github/workflows/ci.yml` uses **both** event type and label checks to ensure safe execution:
+<!-- Source: .github/workflows/ci.yml, autofix job condition lines 151-162 -->
+
+The autofix job combines event type checks with label/draft checks:
 
 ```yaml
-autofix:
-  if: |
-    always() &&
-    github.ref_name != 'master' &&
-    github.ref_name != 'main' &&
-    (github.event_name == 'pull_request' || github.event_name == 'push') &&
-    (github.event_name != 'pull_request' || github.event.pull_request.draft != true) &&
-    (github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')) &&
-    (needs.format.result == 'failure' ||
-     needs.lint.result == 'failure' ||
-     needs.prettier.result == 'failure' ||
-     needs.docs-check.result == 'failure' ||
-     needs.ty.result == 'failure')
+if: |
+  always() &&
+  github.ref_name != 'master' &&
+  github.ref_name != 'main' &&
+  (github.event_name == 'pull_request' || github.event_name == 'push') &&
+  (github.event_name != 'pull_request' || github.event.pull_request.draft != true) &&
+  (github.event_name != 'pull_request' || !contains(..., 'erk-plan-review')) &&
+  (needs.format.result == 'failure' || ...)
 ```
 
-This pattern ensures autofix:
+**Why event type guards**: The label/draft checks reference `github.event.pull_request`, which only exists for `pull_request` events. Without the guard `github.event_name != 'pull_request' ||`, the checks would fail for push events.
 
-- Runs even if earlier jobs failed (`always()`)
-- Never runs on main branches (prevents accidental commits)
-- Only runs for PR or push events (not for other event types)
-- Respects draft and label exclusions (same safety as other jobs)
-- Only runs if at least one format/lint job failed (no unnecessary commits)
+The guard pattern `(event != X || check_that_only_works_for_X)` creates safe evaluation: if the event type doesn't match, the guard short-circuits to `true` without evaluating the check.
 
-The event type check prevents autofix from running in contexts where `github.event.pull_request` would be null, which would break the label check.
+**Why `always()`**: Autofix must evaluate its condition even when upstream jobs fail (that's the point — fix the failures). Without `always()`, a failed format job would prevent autofix from even considering whether to run.
 
-## Step-Level Label Query Pattern
+## Decision Table: Which Layer to Use
 
-For push events, the job-level label check via `github.event.pull_request.labels` is unavailable because the `pull_request` context doesn't exist. This creates an asymmetry:
+| What you're checking                            | Use this layer                | Why                                                   |
+| ----------------------------------------------- | ----------------------------- | ----------------------------------------------------- |
+| Event type (PR opened, push, workflow_dispatch) | Trigger filtering (`on:`)     | No point queuing workflow for irrelevant events       |
+| PR draft state                                  | Job-level `if:`               | Fast path — no runner allocation for drafts           |
+| PR labels (pull_request events)                 | Job-level `if:`               | Fast path — no runner allocation for plan reviews     |
+| PR labels (push events)                         | Step-level API query          | Required path — PR context doesn't exist at job level |
+| File existence after checkout                   | Step-level check → job output | Can't know until checkout completes                   |
+| Upstream job failure                            | Downstream job `if:`          | Use `needs.job.result` or job outputs                 |
 
-- **pull_request events**: Can use job-level label checks (fast path, prevents job execution)
-- **push events**: Must use step-level API queries to fetch labels
+## Why Both Job-Level and Step-Level Label Checks
 
-The defense-in-depth approach combines both. The autofix job in `.github/workflows/ci.yml` implements this with a multi-step sequence: discover the PR (using `github.event.pull_request.number` for PR events or the GitHub API for push events), check for the `erk-plan-review` label via API, and gate all subsequent steps on the result. See the autofix job steps in `ci.yml` for the full implementation.
+**Q: Why not use only step-level API queries for all events?**
 
-**Why both layers:**
+A: Cost and queue pressure. Job-level conditions prevent runner allocation. If a pull_request event has the `erk-plan-review` label, the job-level condition rejects it before GitHub allocates a runner, saving CI minutes and reducing queue contention.
 
-- Job-level condition prevents unnecessary job execution for pull_request events (cost optimization)
-- Step-level API query ensures push events can also check labels (correctness requirement)
+Step-level queries require: runner allocation, checkout, API calls. This burns resources for cases that could be rejected immediately.
 
-See [GitHub Actions Label Queries](github-actions-label-queries.md) for detailed explanation and skip condition consolidation patterns.
-
-## Decision Table: When to Use Each Pattern
-
-| Scenario                    | Pattern                                                       | Example                                       |
-| --------------------------- | ------------------------------------------------------------- | --------------------------------------------- |
-| Exclude labeled PRs         | `!contains(github.event.pull_request.labels.*.name, 'label')` | Skip CI for erk-plan-review PRs               |
-| Exclude draft PRs           | `github.event.pull_request.draft != true`                     | Don't run CI until PR is ready                |
-| Both draft and label        | Combine both conditions with `&&`                             | Skip CI for draft plan reviews                |
-| Allow workflow but skip job | Job-level `if:` condition                                     | Skip code checks but run metadata checks      |
-| Skip based on job output    | `needs.job.outputs.var == 'value'`                            | Skip tests if no code changes                 |
-| Safety for push commits     | Check event type before accessing PR fields                   | Prevent autofix from running in wrong context |
+The defense-in-depth approach uses the fast path when available (job-level for pull_request) and the required path when necessary (step-level for push).
 
 ## Related Documentation
 
-- [Plan Implement Customization](plan-implement-customization.md) - Output-based skipping pattern
-- [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) - General workflow design
-- [Convention-Based Reviews](convention-based-reviews.md) - How label checks affect code reviews
+- [GitHub Actions Label Queries](github-actions-label-queries.md) — Deep dive on the push event asymmetry
+- [Plan Implement Customization](plan-implement-customization.md) — Why `.worker-impl/` detection uses output-based gating
+- [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) — General workflow design patterns
 
 ## Attribution
 

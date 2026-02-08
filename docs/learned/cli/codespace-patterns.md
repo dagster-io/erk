@@ -1,124 +1,111 @@
 ---
 title: Codespace Patterns
-last_audited: "2026-02-04 05:48 PT"
+last_audited: "2026-02-08"
 audit_result: edited
 read_when:
-  - "implementing CLI commands that use codespaces"
-  - "working with resolve_codespace() helper"
-  - "handling codespace name resolution errors"
+  - implementing CLI commands that use codespaces
+  - handling codespace name resolution with optional defaults
+  - bypassing GitHub API endpoint bugs
 ---
 
 # Codespace Patterns
 
-Common patterns for working with codespaces in erk CLI commands.
+Cross-cutting patterns for codespace CLI commands in erk.
 
-## resolve_codespace() Helper
+## Resolution Pattern: Named vs Default
 
-**Source**: `src/erk/cli/commands/codespace/resolve.py`
+<!-- Source: src/erk/cli/commands/codespace/resolve.py, resolve_codespace() -->
 
-Resolves a codespace by name or falls back to the default. Takes a `CodespaceRegistry` and optional name, returns `RegisteredCodespace` or exits with a helpful error.
+The `resolve_codespace()` helper provides **three-way error messaging** that distinguishes between:
 
-## Error Handling
+1. **Named lookup failure** — user requested a specific codespace that doesn't exist
+2. **Default lookup failure** — a default is configured but the codespace was deleted
+3. **No default set** — user didn't specify a name and no default exists
 
-The helper provides three distinct error messages:
+**Why three cases matter**: Users need different recovery paths. Missing named codespace → check spelling. Deleted default → old registration needs cleanup. No default → first-time setup flow.
 
-### 1. Named codespace not found
+See `resolve_codespace()` in `src/erk/cli/commands/codespace/resolve.py` for the implementation.
 
-```
-Error: No codespace named 'mycodespace' not found.
+### Anti-Pattern: Generic "Not Found" Error
 
-Use 'erk codespace setup' to create one.
-```
-
-Exits with code 1.
-
-### 2. Default codespace not found
+**WRONG:**
 
 ```
-Error: Default codespace 'old-codespace' not found.
-
-Use 'erk codespace setup' to create one.
+Error: Codespace not found
 ```
 
-This happens when a default was set but the codespace was deleted.
+This forces users to guess whether they typed the name wrong, the registry is stale, or they haven't set up any codespaces yet.
 
-### 3. No default set
+**CORRECT:** Match the error to the specific resolution path (named lookup vs default lookup vs no default).
 
-```
-Error: No default codespace set.
+## Field Separation: name vs gh_name
 
-Use 'erk codespace setup' to create one.
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/codespace_registry/abc.py, RegisteredCodespace -->
 
-## Usage in Commands
+The `RegisteredCodespace` type has two name fields:
 
-### Pattern: Optional --codespace flag
+- `name` — friendly identifier chosen by user (e.g., "my-codespace")
+- `gh_name` — GitHub-assigned identifier (e.g., "user-codespace-abc123")
+
+**Why the split**: GitHub generates opaque names for codespaces. Users need memorable names for CLI operations. The registry maps friendly names to GitHub names.
+
+**Usage rule**: Always use `gh_name` for GitHub API calls (`gh codespace ssh -c {gh_name}`). Use `name` for user-facing output and registry lookups.
+
+See `RegisteredCodespace` dataclass in `packages/erk-shared/src/erk_shared/gateway/codespace_registry/abc.py`.
+
+## REST API Creation Workaround
+
+<!-- Source: src/erk/cli/commands/codespace/setup_cmd.py, setup_codespace() -->
+
+The `erk codespace setup` command creates codespaces via `POST /user/codespaces` with `repository_id` instead of using `gh codespace create`.
+
+**Why bypass gh CLI**: The `gh codespace create` command internally calls the `/repositories/{repo}/codespaces/machines` endpoint, which returns HTTP 500 for certain repositories (GitHub API bug). The REST API accepts `repository_id` as an alternative parameter, skipping the broken endpoint entirely.
+
+**Implementation**: Fetch repo ID via `gh api repos/{owner}/{repo} --jq .id`, then POST to `/user/codespaces` with `repository_id` in the payload.
+
+See `setup_codespace()` in `src/erk/cli/commands/codespace/setup_cmd.py` for the full flow.
+
+**Related**: [GitHub CLI Limits](../architecture/github-cli-limits.md) — Documents the machines endpoint bug in detail.
+
+## Optional Codespace Flag Pattern
+
+Commands that operate on codespaces typically accept an optional `--codespace` flag with fallback to default:
 
 ```python
-@click.command("connect")
 @click.option("--codespace", "-c", "name", default=None, help="Codespace name.")
-@click.pass_obj
-def connect(ctx: ErkContext, name: str | None) -> None:
-    """Connect to a codespace.
-
-    If --codespace is not provided, uses the default codespace.
-    """
+def my_command(ctx: ErkContext, name: str | None) -> None:
     codespace = resolve_codespace(ctx.codespace_registry, name)
-
-    # Use codespace.gh_name for gh CLI commands
-    # Use codespace.name for display to user
-    click.echo(f"Connecting to '{codespace.name}'...")
+    # Use codespace.gh_name for API calls, codespace.name for display
 ```
 
-### Pattern: Required codespace name
+**Why optional with default**: Most users have a single codespace and don't want to type the name repeatedly. Power users with multiple codespaces can override with `--codespace`.
 
-If you want to require an explicit name instead of allowing default:
+**Anti-pattern**: Required codespace argument forces users to type the name even when they only have one registered.
 
-```python
-@click.command("remove")
-@click.argument("name")
-@click.pass_obj
-def remove(ctx: ErkContext, name: str) -> None:
-    """Remove a codespace from the registry.
+See usage in `src/erk/cli/commands/codespace/connect_cmd.py` and `src/erk/cli/commands/codespace/remove_cmd.py`.
 
-    NAME is the codespace name (not GitHub name).
-    """
-    codespace = resolve_codespace(ctx.codespace_registry, name)
-    # ...
+## SSH Interactive Execution
+
+<!-- Source: src/erk/cli/commands/codespace/connect_cmd.py, connect_codespace() -->
+
+The `connect` command uses `exec_ssh_interactive()` to replace the erk process with an SSH session.
+
+**Why exec, not subprocess**: The SSH session needs to take over stdin/stdout for interactive TUI usage (Claude Code's interactive mode). Using `subprocess.run()` would create a nested TTY environment with broken signal handling.
+
+**Remote command construction**: The entire remote command string must be a single SSH argument. SSH concatenates multiple arguments with spaces, which breaks shell quoting.
+
+```bash
+# CORRECT: Single argument with bash -l -c
+ssh codespace "bash -l -c 'git pull && claude'"
+
+# WRONG: Multiple arguments lose grouping
+ssh codespace bash -l -c 'git pull && claude'  # SSH runs: bash -l -c git pull && claude
 ```
 
-## RegisteredCodespace Usage
-
-Use `gh_name` for all GitHub CLI operations, and `name` for user-facing messages. Read the dataclass in source for current fields.
-
-## Codespace Setup Command Flow
-
-The `erk codespace setup` command creates a new codespace via REST API, bypassing the broken machines endpoint.
-
-### REST API Creation Flow
-
-The setup command fetches the repository ID via `gh api repos/{owner}/{repo} --jq .id`, then creates the codespace via `POST /user/codespaces` with `repository_id`. This bypasses the broken machines endpoint (HTTP 500 for certain repositories).
-
-**Implementation**: See `src/erk/cli/commands/codespace/setup_cmd.py`.
-
-### Default Machine Type
-
-```python
-DEFAULT_MACHINE_TYPE = "premiumLinux"
-```
-
-Used when no machine type is explicitly specified.
-
-**Why this works**: The `POST /user/codespaces` endpoint accepts `repository_id` as an alternative to repository name, bypassing the broken machines endpoint entirely.
-
-**Code reference**: `src/erk/cli/commands/codespace/setup_cmd.py`
-
-**Related**: [GitHub CLI Limits](../architecture/github-cli-limits.md) - Machines endpoint HTTP 500 bug details
+See `connect_codespace()` in `src/erk/cli/commands/codespace/connect_cmd.py`.
 
 ## Related Documentation
 
-- [GitHub CLI Limits](../architecture/github-cli-limits.md) - Machines endpoint HTTP 500 bug and workaround
-- [GitHub API Diagnostics](../architecture/github-api-diagnostics.md) - Repository-specific API diagnostic methodology
-- [Composable Remote Commands](../architecture/composable-remote-commands.md) - Template for remote commands using resolve_codespace()
-- [Codespace Gateway](../gateway/codespace-gateway.md) - Gateway operations using gh_name
-- [Codespace Remote Execution](../erk/codespace-remote-execution.md) - Fire-and-forget pattern
+- [GitHub CLI Limits](../architecture/github-cli-limits.md) — Machines endpoint HTTP 500 bug and workaround
+- [GitHub API Diagnostics](../architecture/github-api-diagnostics.md) — Repository-specific API diagnostic methodology
+- [Composable Remote Commands](../architecture/composable-remote-commands.md) — Template for remote commands using resolve_codespace()
