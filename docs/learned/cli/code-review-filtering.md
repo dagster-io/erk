@@ -4,6 +4,9 @@ read_when:
   - "debugging false positives in code review"
   - "understanding keyword-only parameter exceptions"
   - "working with ABC/Protocol method validation"
+tripwires:
+  - action: "flagging 5+ parameter violations in code review"
+    warning: "before flagging violations, verify NO exception applies (ABC/Protocol/Click)"
 ---
 
 # Code Review Filtering

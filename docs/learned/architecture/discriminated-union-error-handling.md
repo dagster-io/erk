@@ -1,7 +1,7 @@
 ---
 title: Discriminated Union Error Handling
 last_audited: "2026-02-07"
-audit_result: edited
+audit_result: clean
 read_when:
   - "designing return types for operations that may fail"
   - "implementing T | ErrorType patterns"
