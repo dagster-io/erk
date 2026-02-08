@@ -1,20 +1,16 @@
 ---
-audit_result: edited
-last_audited: "2026-02-08"
+title: Async Learn Local Preprocessing
 read_when:
   - modifying trigger-async-learn orchestration
   - debugging why learn materials are missing or malformed in CI
   - understanding the local-to-gist-to-codespace data flow
-title: Async Learn Local Preprocessing
 tripwires:
-  - action: adding subprocess calls to trigger-async-learn
-    warning:
-      This command uses direct Python function calls, not subprocess invocations.
-      This is intentional — see the direct-call architecture section below.
-  - action: preprocessing remote sessions locally
-    warning:
-      Remote sessions are already preprocessed. Only local sessions (source_type
-      == 'local') go through local preprocessing.
+  - action: "adding subprocess calls to trigger-async-learn"
+    warning: "This command uses direct Python function calls, not subprocess invocations. This is intentional — see the direct-call architecture section below."
+  - action: "preprocessing remote sessions locally"
+    warning: "Remote sessions are already preprocessed. Only local sessions (source_type == 'local') go through local preprocessing."
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Async Learn Local Preprocessing
