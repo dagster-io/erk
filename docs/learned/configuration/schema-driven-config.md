@@ -1,16 +1,17 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- adding new configuration options to erk
-- modifying config CLI commands (get, set, list, keys)
-- understanding why config commands don't need manual field lists
+  - adding new configuration options to erk
+  - modifying config CLI commands (get, set, list, keys)
+  - understanding why config commands don't need manual field lists
 title: Schema-Driven Config System
 tripwires:
-- action: adding a new config option without defining it in a Pydantic schema
-  warning: All config keys must be defined in schema.py with proper ConfigLevel. The
-    schema is the single source of truth — CLI commands discover fields via Pydantic
-    introspection, so manual lists are unnecessary and will diverge.
+  - action: adding a new config option without defining it in a Pydantic schema
+    warning:
+      All config keys must be defined in schema.py with proper ConfigLevel. The
+      schema is the single source of truth — CLI commands discover fields via Pydantic
+      introspection, so manual lists are unnecessary and will diverge.
 ---
 
 # Schema-Driven Config System

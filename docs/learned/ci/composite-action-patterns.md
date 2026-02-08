@@ -1,18 +1,18 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- creating reusable GitHub Actions setup steps
-- using erk-remote-setup composite action
-- understanding GitHub Actions composite patterns
+  - creating reusable GitHub Actions setup steps
+  - using erk-remote-setup composite action
+  - understanding GitHub Actions composite patterns
 title: Composite Action Patterns
 tripwires:
-- action: NEVER use the curl | bash install script for Claude Code in CI
-  warning: it hangs unpredictably. Use direct GCS download via setup-claude-code action.
-- action: NEVER duplicate secret validation across workflows
-  warning: use erk-remote-setup's consolidated validation.
-- action: NEVER skip cache keys for downloaded binaries
-  warning: cache saves 10-20s per workflow run.
+  - action: NEVER use the curl | bash install script for Claude Code in CI
+    warning: it hangs unpredictably. Use direct GCS download via setup-claude-code action.
+  - action: NEVER duplicate secret validation across workflows
+    warning: use erk-remote-setup's consolidated validation.
+  - action: NEVER skip cache keys for downloaded binaries
+    warning: cache saves 10-20s per workflow run.
 ---
 
 # Composite Action Patterns

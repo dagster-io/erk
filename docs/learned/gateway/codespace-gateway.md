@@ -1,21 +1,23 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- adding a new codespace SSH operation to the gateway
-- deciding whether a new gateway needs dry-run and printing implementations
-- testing code that uses os.execvp or NoReturn methods
-- choosing between exec_ssh_interactive and run_ssh_command
+  - adding a new codespace SSH operation to the gateway
+  - deciding whether a new gateway needs dry-run and printing implementations
+  - testing code that uses os.execvp or NoReturn methods
+  - choosing between exec_ssh_interactive and run_ssh_command
 title: Codespace Gateway Pattern
 tripwires:
-- action: implementing codespace gateway
-  warning: Use 3-place pattern (abc, real, fake) without dry-run or print implementations.
-- action: adding dry-run or printing implementation for codespace gateway
-  warning: Codespace operations are all-or-nothing remote execution. Dry-run and printing
-    don't apply.
-- action: adding -t flag to run_ssh_command or omitting it from exec_ssh_interactive
-  warning: The -t flag controls TTY allocation. Interactive needs it (rendering);
-    non-interactive breaks with it (buffering). See the two execution modes section.
+  - action: implementing codespace gateway
+    warning: Use 3-place pattern (abc, real, fake) without dry-run or print implementations.
+  - action: adding dry-run or printing implementation for codespace gateway
+    warning:
+      Codespace operations are all-or-nothing remote execution. Dry-run and printing
+      don't apply.
+  - action: adding -t flag to run_ssh_command or omitting it from exec_ssh_interactive
+    warning:
+      The -t flag controls TTY allocation. Interactive needs it (rendering);
+      non-interactive breaks with it (buffering). See the two execution modes section.
 ---
 
 # Codespace Gateway Pattern

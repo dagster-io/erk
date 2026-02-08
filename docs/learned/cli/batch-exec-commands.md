@@ -1,22 +1,23 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- implementing batch operations for exec commands
-- designing JSON stdin/stdout interfaces for erk exec
-- understanding batch command success semantics
+  - implementing batch operations for exec commands
+  - designing JSON stdin/stdout interfaces for erk exec
+  - understanding batch command success semantics
 title: Batch Exec Commands
 tripwires:
-- action: Design batch commands that process items despite validation failures
-  score: 8
-  warning: Validate ALL items upfront before processing ANY items. Stop on first validation
-    error.
-- action: Use OR semantics for batch success (success=true if any item succeeds)
-  score: 7
-  warning: 'Use AND semantics: top-level success=true only if ALL items succeed.'
-- action: Return non-zero exit codes for batch command failures
-  score: 6
-  warning: Always exit 0, encode errors in JSON output with per-item success fields.
+  - action: Design batch commands that process items despite validation failures
+    score: 8
+    warning:
+      Validate ALL items upfront before processing ANY items. Stop on first validation
+      error.
+  - action: Use OR semantics for batch success (success=true if any item succeeds)
+    score: 7
+    warning: "Use AND semantics: top-level success=true only if ALL items succeed."
+  - action: Return non-zero exit codes for batch command failures
+    score: 6
+    warning: Always exit 0, encode errors in JSON output with per-item success fields.
 ---
 
 # Batch Exec Commands
