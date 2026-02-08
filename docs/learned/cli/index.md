@@ -15,7 +15,7 @@
 - **[codespace-patterns.md](codespace-patterns.md)** — implementing CLI commands that use codespaces, handling codespace name resolution with optional defaults, bypassing GitHub API endpoint bugs
 - **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
-- **[pr-summarize.md](pr-summarize.md)** — generating PR descriptions for existing PRs, updating PR body with plan context, understanding pr summarize vs pr submit
+- **[pr-summarize.md](pr-summarize.md)** — generating AI commit messages for existing commits, amending commit messages with plan context, understanding pr summarize vs pr submit
 - **[pr-sync-divergence.md](pr-sync-divergence.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, syncing local branch with remote tracking branch
 - **[update-roadmap-step.md](update-roadmap-step.md)** — working with objective roadmap tables, updating step PR references, implementing plan-save workflow
 - **[dependency-injection-patterns.md](dependency-injection-patterns.md)** — writing erk exec scripts, testing exec scripts that use gateways, understanding exec script architecture, migrating exec scripts from subprocess to gateways
@@ -25,11 +25,11 @@
 - **[error-handling-antipatterns.md](error-handling-antipatterns.md)** — handling expected CLI failures, deciding between RuntimeError and UserFacingCliError, converting exception-based error handling to UserFacingCliError
 - **[exec-command-patterns.md](exec-command-patterns.md)** — writing exec scripts with PR/issue output, building diagnostic messages, standardizing exec command output
 - **[exec-script-discovery.md](exec-script-discovery.md)** — using erk exec commands, unsure what flags an exec command accepts
-- **[exec-script-patterns.md](exec-script-patterns.md)** — Creating new exec CLI commands
+- **[exec-script-patterns.md](exec-script-patterns.md)** — Creating new exec CLI commands, Understanding why exec commands use context injection instead of Path.cwd(), Deciding where to import gateway ABCs from
 - **[exec-script-schema-patterns.md](exec-script-schema-patterns.md)** — writing an exec script that produces JSON consumed by another script, debugging silent filtering failures in exec script pipelines, adding new fields to exec script JSON output
 - **[fast-path-pattern.md](fast-path-pattern.md)** — implementing CLI commands that can skip expensive operations, adding fast path optimization to existing commands, understanding when to invoke Claude vs complete locally
 - **[help-text-formatting.md](help-text-formatting.md)** — Writing CLI command docstrings, Adding Examples sections to Click commands, Formatting bulleted lists in help text
-- **[learn-plan-land-flow.md](learn-plan-land-flow.md)** — landing PRs associated with learn plans, understanding learn plan status transitions, working with tripwire documentation promotion
+- **[learn-plan-land-flow.md](learn-plan-land-flow.md)** — landing PRs associated with learn plans, understanding how learn plan metadata updates parent issues, working with tripwire promotion during land operations
 - **[local-commands.md](local-commands.md)** — designing local commands, understanding local command taxonomy, creating audit or assessment commands
 - **[local-remote-command-groups.md](local-remote-command-groups.md)** — creating commands with local and remote variants, using invoke_without_command=True pattern, migrating separate commands to a unified group
 - **[objective-commands.md](objective-commands.md)** — working with erk objective commands, implementing objective check or close functionality, understanding objective validation patterns
