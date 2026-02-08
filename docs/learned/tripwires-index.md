@@ -22,8 +22,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [cli](cli/tripwires.md)                     | 53        | `src/erk/cli/`                                |
 | [commands](commands/tripwires.md)           | 6         | `.claude/commands/`, slash commands           |
 | [config](config/tripwires.md)               | 2         | `config/` code                                |
-| [configuration](configuration/tripwires.md) | 1         | `configuration/` code                         |
-| [desktop-dash](desktop-dash/tripwires.md)   | 17        | `desktop-dash/` code                          |
+| [desktop-dash](desktop-dash/tripwires.md)   | 23        | `desktop-dash/` code                          |
 | [documentation](documentation/tripwires.md) | 4         | `documentation/` code                         |
 | [gateway](gateway/tripwires.md)             | 2         | `gateway/` code                               |
 | [hooks](hooks/tripwires.md)                 | 2         | `.claude/hooks/`, hook development            |
