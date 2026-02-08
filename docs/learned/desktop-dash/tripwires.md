@@ -20,13 +20,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before Tests mock window.erkdesk, not ipcRenderer** → Read [Preload Bridge Patterns](preload-bridge-patterns.md) first. the bridge is the test boundary
 
-**CRITICAL: Before adding CI job dependencies** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. Do NOT add erkdesk-tests to the autofix job's needs list in CI
-
 **CRITICAL: Before adding IPC handler without updating all 4 locations** → Read [erkdesk IPC Action Pattern](ipc-actions.md) first. Every IPC handler requires updates in main/index.ts (handler), main/preload.ts (bridge), types/erkdesk.d.ts (types), and tests. Missing any location compiles fine but fails at runtime.
-
-**CRITICAL: Before adding IPC handlers** → Read [Main Process Startup](main-process-startup.md) first. Every new IPC handler needs matching cleanup in mainWindow.on("closed") — use removeAllListeners for ipcMain.on, removeHandler for ipcMain.handle
-
-**CRITICAL: Before adding IPC methods** → Read [Vitest Configuration for erkdesk](vitest-setup.md) first. the window.erkdesk mock in setup.ts must match the ErkdeskAPI interface — adding a new IPC method requires updating both the type definition and the mock or TypeScript will catch the mismatch
 
 **CRITICAL: Before adding a new IPC channel in createWindow** → Read [WebContentsView Lifecycle](webcontentsview-lifecycle.md) first. Every ipcMain.on() or ipcMain.handle() registration MUST have a matching removal in the mainWindow.on('closed') handler. on() uses removeAllListeners(channel), handle() uses removeHandler(channel). Add both in the same commit.
 
@@ -36,29 +30,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding a persistent server process for erkdesk** → Read [Backend Communication Pattern Decision](backend-communication.md) first. CLI shelling was chosen deliberately. Python startup (~200ms) is noise compared to GitHub API latency (~1.5-2s). Don't optimize the wrong bottleneck.
 
-**CRITICAL: Before adding cleanup for split pane** → Read [SplitPane Renderer-Native Coordination](split-pane-implementation.md) first. cleanup lives in the main process window-close handler, not in the SplitPane component
-
-**CRITICAL: Before adding erkdesk to pnpm workspace** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. Do NOT add erkdesk as a pnpm workspace member — it is intentionally standalone
-
 **CRITICAL: Before adding state to child components** → Read [erkdesk App Architecture](app-architecture.md) first. PlanList, ActionToolbar, and LogPanel are fully controlled (stateless). All state lives in App.tsx. Pass props down, callbacks up.
-
-**CRITICAL: Before changing right pane size** → Read [SplitPane Renderer-Native Coordination](split-pane-implementation.md) first. every code path that changes the right pane's rendered size must trigger a bounds report to the main process
-
-**CRITICAL: Before choosing subprocess method for IPC** → Read [Main Process Startup](main-process-startup.md) first. Use execFile for request/response IPC, spawn for streaming IPC — do not mix the patterns
-
-**CRITICAL: Before configuring pnpm for Electron** → Read [pnpm Hoisting Pattern for Electron](pnpm-hoisting-pattern.md) first. Do NOT remove erkdesk/.npmrc or change node-linker away from hoisted — Electron cannot resolve pnpm's symlinked node_modules layout
-
-**CRITICAL: Before configuring preload Vite build** → Read [Forge Vite Setup](forge-vite-setup.md) first. Do NOT remove external electron from the preload config — bundling electron causes runtime failures
-
-**CRITICAL: Before configuring renderer Vite build** → Read [Forge Vite Setup](forge-vite-setup.md) first. Do NOT add Node.js builtins or electron to the renderer Vite config — renderer is a browser environment
-
-**CRITICAL: Before configuring vitest globals** → Read [Vitest Configuration for erkdesk](vitest-setup.md) first. globals and tsconfig types must stay in sync — `globals: true` in vitest.config.ts without `"vitest/globals"` in tsconfig.json causes type errors at edit time but tests still pass, creating a confusing split
-
-**CRITICAL: Before creating Vite configs** → Read [Forge Vite Setup](forge-vite-setup.md) first. Do NOT put all three targets in one Vite config — each targets a different JavaScript runtime
-
-**CRITICAL: Before debugging module resolution in Electron** → Read [pnpm Hoisting Pattern for Electron](pnpm-hoisting-pattern.md) first. Do NOT assume 'Cannot find module' errors mean a missing dependency — in Electron with pnpm, check .npmrc first
-
-**CRITICAL: Before designing WebView IPC channels** → Read [WebView IPC Design Decisions](webview-api.md) first. WebView IPC channels (bounds, URL) must be fire-and-forget (send/on), never request-response (invoke/handle) — invoke serializes high-frequency updates and causes visible lag
 
 **CRITICAL: Before designing notification features** → Read [Desktop Dashboard Interaction Model](interaction-model.md) first. Notification/badge system is planned but NOT implemented. Don't assume infrastructure exists for state-diff detection, OS notifications, or row badges.
 
@@ -73,8 +45,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before forgetting to return cleanup function from useEffect intervals** → Read [Erkdesk Auto-Refresh Patterns](erkdesk-auto-refresh-patterns.md) first. Always return () => clearInterval(intervalId) from useEffect to prevent multiple intervals running simultaneously.
 
 **CRITICAL: Before implementing blocking action execution** → Read [erkdesk Action Toolbar](action-toolbar.md) first. Actions use streaming execution via IPC (startStreamingAction). Never await or block the UI thread on action completion. App.tsx owns the streaming lifecycle.
-
-**CRITICAL: Before implementing right pane rendering** → Read [SplitPane Renderer-Native Coordination](split-pane-implementation.md) first. the right pane div is a positioning placeholder only — it renders no content, the WebContentsView overlays it
 
 **CRITICAL: Before loading URLs on every render without deduplication** → Read [Erkdesk Auto-Refresh Patterns](erkdesk-auto-refresh-patterns.md) first. Use useRef to track lastLoadedUrl. Compare against ref before calling loadWebViewURL() — IPC calls are expensive and cause visible webview flicker.
 
@@ -99,16 +69,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before replacing good data with error states during refresh** → Read [Erkdesk Auto-Refresh Patterns](erkdesk-auto-refresh-patterns.md) first. Return early from refresh on error. Keep showing last good data instead of flashing an error state that auto-resolves on next successful refresh.
 
 **CRITICAL: Before requiring keyboard shortcuts for actions** → Read [Desktop Dashboard Interaction Model](interaction-model.md) first. Erkdesk uses discoverability-first design. Toolbar buttons and (future) context menus are primary. Keyboard shortcuts are secondary convenience, not required paths.
-
-**CRITICAL: Before running erkdesk tests** → Read [Vitest Configuration for erkdesk](vitest-setup.md) first. erkdesk tests run separately from the Python suite — `make fast-ci` and `make all-ci` do NOT include them; use `make erkdesk-test`
-
-**CRITICAL: Before running pnpm commands** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. Do NOT run pnpm commands from the repo root — always cd into erkdesk/ first
-
-**CRITICAL: Before setting WebContentsView bounds** → Read [WebView IPC Design Decisions](webview-api.md) first. the WebContentsView starts at zero bounds intentionally; do not set initial bounds in createWindow — see defensive-bounds-handling.md
-
-**CRITICAL: Before setting up WebContentsView** → Read [Main Process Startup](main-process-startup.md) first. WebContentsView starts at zero bounds — renderer must report bounds before it becomes visible
-
-**CRITICAL: Before spawning subprocess for IPC** → Read [Main Process Startup](main-process-startup.md) first. Kill activeAction before spawning a new streaming process — concurrent subprocess conflicts cause interleaved output
 
 **CRITICAL: Before storing derived state in useState** → Read [erkdesk App Architecture](app-architecture.md) first. selectedPlan is computed inline from plans[selectedIndex], not stored in state. Never cache derived values — compute them on render.
 

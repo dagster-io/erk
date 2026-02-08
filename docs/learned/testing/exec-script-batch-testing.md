@@ -12,7 +12,7 @@ tripwires:
     warning: "Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below."
     score: 6
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: edited
 ---
 
 # Exec Script Batch Testing

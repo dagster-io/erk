@@ -8,11 +8,11 @@ read_when:
 last_audited: "2026-02-08"
 audit_result: clean
 tripwires:
-  - action: "creating gateway instances in exec scripts"
+  - action: "creating gateway instances in business logic"
     warning: "Never create gateway instances in business logic — inject them as parameters"
-  - action: "implementing exec script business logic"
+  - action: "calling sys.exit() in _*_impl() functions"
     warning: "Separate _*_impl() functions return exit codes or discriminated unions, never call sys.exit()"
-  - action: "implementing Click commands"
+  - action: "instantiating gateways directly in Click commands"
     warning: "Click commands retrieve real implementations from context via require_* helpers"
 ---
 
