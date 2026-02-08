@@ -32,7 +32,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before attempting to use prettier on Python files** → Read [Prettier Formatting for Claude Commands](claude-commands-prettier.md) first. Prettier only formats markdown in erk. Python uses ruff format. See formatter-tools.md for the complete matrix.
 
-**CRITICAL: Before calling create_commit_status() immediately after git push** → Read [GitHub Commit Indexing Timing](github-commit-indexing-timing.md) first. GitHub's commit indexing has a race condition. Commits may not be immediately available for status updates after push. Consider adding retry logic with exponential backoff.
+**CRITICAL: Before calling create_commit_status() immediately after git push** → Read [GitHub Commit Indexing Timing](github-commit-indexing-timing.md) first. GitHub's commit indexing has a race condition. Commits may not be immediately available for status updates after push. Use execute_gh_command_with_retry() wrapper, not direct subprocess calls.
 
 **CRITICAL: Before composing conditions across multiple GitHub Actions workflow steps** → Read [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) first. Verify each `steps.step_id.outputs.key` reference exists and matches actual step IDs.
 

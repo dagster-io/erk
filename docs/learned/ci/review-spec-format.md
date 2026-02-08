@@ -5,7 +5,7 @@ read_when:
   - understanding why review specs follow certain patterns
   - debugging review behavior or structure
 last_audited: "2026-02-08 13:45 PT"
-audit_result: regenerated
+audit_result: edited
 ---
 
 # Review Spec Format
