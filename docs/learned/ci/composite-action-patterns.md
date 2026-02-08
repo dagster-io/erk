@@ -6,11 +6,11 @@ read_when:
   - understanding GitHub Actions composite patterns
 tripwires:
   - action: "installing Claude Code in CI"
-    warning: "NEVER use the curl | bash install script for Claude Code in CI — it hangs unpredictably. Use direct GCS download via setup-claude-code action."
-  - action: "adding secret validation"
-    warning: "NEVER duplicate secret validation across workflows — use erk-remote-setup's consolidated validation."
-  - action: "caching downloaded binaries"
-    warning: "NEVER skip cache keys for downloaded binaries — cache saves 10-20s per workflow run."
+    warning: "NEVER use the curl | bash install script - it hangs unpredictably. Use direct GCS download via setup-claude-code action."
+  - action: "validating secrets in GitHub workflows"
+    warning: "NEVER duplicate secret validation across workflows - use erk-remote-setup's consolidated validation."
+  - action: "configuring caching for downloaded binaries"
+    warning: "NEVER skip cache keys for downloaded binaries - cache saves 10-20s per workflow run."
 last_audited: "2026-02-08"
 audit_result: clean
 ---
