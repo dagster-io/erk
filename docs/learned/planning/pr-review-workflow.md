@@ -30,11 +30,11 @@ The review workflow is split across three exec scripts, each handling one phase 
 <!-- Source: src/erk/cli/commands/exec/scripts/plan_create_review_branch.py, plan_create_review_branch -->
 <!-- Source: src/erk/cli/commands/exec/scripts/plan_create_review_pr.py, plan_create_review_pr -->
 
-| Phase   | Script                      | What It Does                                                 | Key Side Effect                       |
-| ------- | --------------------------- | ------------------------------------------------------------ | ------------------------------------- |
-| Extract | `plan-submit-for-review`    | Validates issue and extracts plan content                    | None (read-only)                      |
-| Branch  | `plan-create-review-branch` | Creates timestamped branch from origin/master with plan file | Git branch + push                     |
-| PR      | `plan-create-review-pr`     | Creates draft PR and updates plan-header metadata            | PR created + `review_pr` metadata set |
+| Phase | Script | What It Does | Key Side Effect |
+| ----- | ------ | ------------ | --------------- |
+| Extract | `plan-submit-for-review` | Validates issue and extracts plan content | None (read-only) |
+| Branch | `plan-create-review-branch` | Creates timestamped branch from origin/master with plan file | Git branch + push |
+| PR | `plan-create-review-pr` | Creates draft PR and updates plan-header metadata | PR created + `review_pr` metadata set |
 
 The extract phase is the oldest script and predates the branch+PR split. In current usage, `/erk:plan-review` skips it and calls the branch and PR scripts directly, since they perform their own validation internally.
 
@@ -58,10 +58,10 @@ See `clear_plan_header_review_pr()` in `plan_header.py` for the archive-on-clear
 
 Plan content exists in two locations during review:
 
-| Location                              | Updated by                           | Purpose                           |
-| ------------------------------------- | ------------------------------------ | --------------------------------- |
-| `PLAN-REVIEW-{issue}.md` in PR branch | Git commit + push                    | Inline review UI                  |
-| Issue comment (plan-body block)       | `erk exec plan-update-from-feedback` | Canonical plan for implementation |
+| Location | Updated by | Purpose |
+| -------- | ---------- | ------- |
+| `PLAN-REVIEW-{issue}.md` in PR branch | Git commit + push | Inline review UI |
+| Issue comment (plan-body block) | `erk exec plan-update-from-feedback` | Canonical plan for implementation |
 
 Changes to the local file do NOT automatically propagate to the issue. Agents must explicitly sync after incorporating feedback. Without sync, the implementation pipeline reads stale plan content from the issue while reviewers see updated content in the PR.
 
@@ -77,11 +77,11 @@ This means a plan can have both an active review PR and an active implementation
 
 Review PRs are cleaned up (closed without merging + branch deleted + metadata archived) through three paths:
 
-| Trigger                 | Command                                    | Behavior                                           |
-| ----------------------- | ------------------------------------------ | -------------------------------------------------- |
-| Explicit completion     | `erk exec plan-review-complete`            | Full cleanup with metadata archival                |
-| Plan landed (PR merged) | `cleanup_review_pr()` via `erk land`       | Fail-open — landing succeeds even if cleanup fails |
-| Plan closed             | `cleanup_review_pr()` via `erk plan close` | Fail-open — closing succeeds even if cleanup fails |
+| Trigger | Command | Behavior |
+| ------- | ------- | -------- |
+| Explicit completion | `erk exec plan-review-complete` | Full cleanup with metadata archival |
+| Plan landed (PR merged) | `cleanup_review_pr()` via `erk land` | Fail-open — landing succeeds even if cleanup fails |
+| Plan closed | `cleanup_review_pr()` via `erk plan close` | Fail-open — closing succeeds even if cleanup fails |
 
 <!-- Source: src/erk/cli/commands/review_pr_cleanup.py, cleanup_review_pr -->
 <!-- Source: src/erk/cli/commands/exec/scripts/plan_review_complete.py, _plan_review_complete_impl -->
