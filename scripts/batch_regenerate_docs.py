@@ -15,7 +15,7 @@ Usage:
     python scripts/batch_regenerate_docs.py --limit 5                 # first 5 docs
     python scripts/batch_regenerate_docs.py --fresh                   # ignore prior progress
     python scripts/batch_regenerate_docs.py --file docs/learned/x.md  # target a specific file
-    python scripts/batch_regenerate_docs.py --output-suffix -v2       # write to foo-v2.md
+    python scripts/batch_regenerate_docs.py --output-suffix -v2  # foo-v2.md (A/B compare)
 """
 
 import argparse
@@ -77,13 +77,15 @@ You are regenerating a learned doc to meet current content quality standards.
 5. Completely rewrite the document following the quality standards:
    - Only cross-cutting insights (not single-artifact knowledge)
    - Explain WHY, not WHAT — the code already shows the what
-   - One Code Rule: no reproduced source code except: data formats, third-party API patterns, \
-anti-patterns marked WRONG, and I/O examples
+   - One Code Rule: no reproduced source code except: data formats, third-party API knowledge \
+(patterns, reference tables, discovered quirks), anti-patterns marked WRONG, and I/O examples
    - Use source pointers (see docs/learned/documentation/source-pointers.md for format) instead \
 of code blocks
    - Keep: decision tables, anti-patterns with explanations, cross-cutting patterns, historical \
 context, tripwires
-   - Remove: import paths, function signatures, docstring paraphrases, file listings
+   - Preserve third-party reference tables and discovered API quirks — these are expensive or \
+impossible to re-acquire
+   - Remove: import paths, function signatures, docstring paraphrases, erk file listings
 6. Preserve the frontmatter structure (title, read_when, tripwires) — improve their quality if \
 needed but keep the same fields
 7. Save the rewritten document to: {output_path}
@@ -380,8 +382,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-suffix",
         default="",
-        help="Suffix to insert before .md extension (e.g. '-v2' writes foo-v2.md), "
-        "leaving originals untouched",
+        help="Suffix before .md (e.g. '-v2' writes foo-v2.md), leaving originals untouched",
     )
     return parser.parse_args()
 
