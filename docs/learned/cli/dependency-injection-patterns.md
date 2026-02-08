@@ -6,13 +6,13 @@ read_when:
   - "understanding exec script architecture"
   - "migrating exec scripts from subprocess to gateways"
 last_audited: "2026-02-08"
-audit_result: edited
+audit_result: clean
 tripwires:
   - action: "creating gateway instances in business logic"
-    warning: "Never create gateway instances in business logic — inject them as parameters"
-  - action: "calling sys.exit() from implementation functions"
-    warning: "Separate _*_impl() functions return exit codes or discriminated unions, never call sys.exit()"
-  - action: "hardcoding dependencies in Click commands"
+    warning: "never create gateway instances in business logic - inject them as parameters"
+  - action: "implementing _*_impl() functions"
+    warning: "separate _*_impl() functions return exit codes or discriminated unions, never call sys.exit()"
+  - action: "implementing Click commands"
     warning: "Click commands retrieve real implementations from context via require_* helpers"
 ---
 
