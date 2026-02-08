@@ -1,94 +1,101 @@
 ---
 title: Composite Action Patterns
 read_when:
-  - "creating reusable GitHub Actions setup steps"
-  - "using erk-remote-setup composite action"
-  - "understanding GitHub Actions composite patterns"
-last_audited: "2026-02-05"
-audit_result: edited
+  - creating reusable GitHub Actions setup steps
+  - using erk-remote-setup composite action
+  - understanding GitHub Actions composite patterns
+tripwires:
+  - "NEVER use the curl | bash install script for Claude Code in CI — it hangs unpredictably. Use direct GCS download via setup-claude-code action."
+  - "NEVER duplicate secret validation across workflows — use erk-remote-setup's consolidated validation."
+  - "NEVER skip cache keys for downloaded binaries — cache saves 10-20s per workflow run."
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Composite Action Patterns
 
-This document describes the composite actions in `.github/actions/` and patterns for creating reusable workflow setup components.
+GitHub Actions composite actions encapsulate reusable setup steps. Erk uses them to avoid duplicating 7-step setup sequences across remote AI workflows.
 
-## Available Composite Actions
+## Why Composite Actions Over Repeated Steps
 
-| Action              | Purpose                                     | Inputs                                                    |
-| ------------------- | ------------------------------------------- | --------------------------------------------------------- |
-| `erk-remote-setup`  | Full remote workflow environment setup      | `erk-pat`, `anthropic-api-key`, `claude-code-oauth-token` |
-| `setup-claude-code` | Install Claude Code CLI with caching        | None                                                      |
-| `setup-python-uv`   | Install Python and uv, sync dependencies    | `python-version` (default: "3.12")                        |
-| `setup-graphite`    | Install Graphite CLI for stack management   | None                                                      |
-| `setup-claude-erk`  | Install erk tools (assumes uv/claude exist) | None                                                      |
-| `setup-prettier`    | Install Node.js and Prettier                | None                                                      |
-| `check-worker-impl` | Check if `.worker-impl/` folder exists      | None (outputs: `skip`)                                    |
+**Problem**: Before erk-remote-setup, every remote workflow (plan-implement, pr-address, learn) duplicated the same 7 setup steps. Changes required editing 6+ workflow files.
 
-## Primary Action: erk-remote-setup
+**Solution**: Composite actions extract common setup into `.github/actions/*/action.yml`. Workflows call the composite action with secrets, getting consistent setup everywhere.
 
-The `erk-remote-setup` action is the consolidated setup for all remote AI workflows. It combines multiple setup steps into a single reusable action.
+**Trade-off**: Composite actions can't access repository secrets directly — workflows must pass secrets as inputs. This is GitHub's security model: secrets live at workflow scope, not action scope.
 
-### Usage
+<!-- Source: .github/actions/erk-remote-setup/action.yml, steps 1-7 -->
 
-```yaml
-- uses: ./.github/actions/erk-remote-setup
-  with:
-    erk-pat: ${{ secrets.ERK_QUEUE_GH_PAT }}
-    anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-    claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-```
+See the complete 7-step sequence in `.github/actions/erk-remote-setup/action.yml`.
 
-### What It Does
+## Secret Validation Pattern: Fail Fast with Context
 
-1. **Validates secrets** - Fails early with clear error messages if secrets are missing
-2. **Sets up uv** - Python package management with Python 3.13
-3. **Sets up Claude Code** - Native binary installation with caching
-4. **Installs prettier** - For markdown formatting
-5. **Installs erk** - As editable install with erk-shared
-6. **Validates Claude credentials** - Runs `erk exec validate-claude-credentials`
-7. **Configures git identity** - Sets bot user for commits
+Standard GitHub Actions workflow errors are opaque: "Secret not found" doesn't tell you which secret or which step failed.
 
-### Why Use It
+**Pattern**: Validate all required secrets in the first composite action step with explicit error titles.
 
-- **DRY principle**: Avoids duplicating 7 setup steps across multiple workflows
-- **Consistent configuration**: All remote workflows use identical setup
-- **Easier maintenance**: Changes to setup propagate to all workflows
+<!-- Source: .github/actions/erk-remote-setup/action.yml, Validate secrets step -->
 
-## Specialized Actions
+Benefits:
 
-### setup-claude-code
+- **Fails within 5 seconds** instead of after 2 minutes of setup
+- **Clear error titles** in GitHub UI (visible without expanding logs)
+- **Named secrets** make it obvious which credential is missing
 
-Installs Claude Code CLI using direct binary download (not the install script).
+This pattern is cheap (bash string check) and saves 2+ minutes when credentials are misconfigured.
 
-**Why direct download?**
+## Claude Code Installation: Why Not curl | bash
 
-The standard `curl | bash` install script frequently hangs in CI. Known issues:
+The standard Claude Code install method (`curl -fsSL https://claude.ai/install.sh | bash`) hangs in CI environments, sometimes for hours before timeout.
 
-- Subprocess hangs indefinitely
-- Lock files persist after timeout
-- No built-in retry mechanism
+**Root causes** (from GitHub issue triage):
 
-The action downloads from GCS directly, bypassing these issues.
+1. Install script spawns subprocesses that hang indefinitely
+2. Lock files at `~/.local/state/claude/locks/` persist after timeout
+3. No built-in timeout or retry in install script
 
-**Features:**
+**Solution**: Download the binary directly from GCS, bypassing the install script entirely.
 
-- Caches binary to avoid repeated downloads
-- Cleans stale lock files before installation
-- Detects platform (x64/arm64) automatically
+<!-- Source: .github/actions/setup-claude-code/action.yml, WHY DIRECT DOWNLOAD comment -->
 
-### setup-python-uv
+The action:
 
-Standard Python setup with uv package manager.
+1. Fetches stable version from `https://storage.googleapis.com/.../stable`
+2. Downloads platform-specific binary (linux-x64 or linux-arm64)
+3. Cleans stale lock files before installation
+4. Caches binary with runner OS/arch key
 
-```yaml
-- uses: ./.github/actions/setup-python-uv
-  with:
-    python-version: "3.13"
-```
+This approach is proven by the community (alonw0/cc-versions) and eliminates the most common CI hang in erk workflows.
 
-### check-worker-impl
+**Why native binary**: Anthropic is releasing features that require the native binary installation (not npm package). Future-proofing by using the GCS distribution now.
 
-Checks for `.worker-impl/` folder presence to skip CI during AI implementation.
+## Caching Pattern: Binary Downloads
+
+GitHub Actions cache saves 10-20 seconds per workflow run by avoiding repeated downloads.
+
+**Key structure**: `tool-name-${{ runner.os }}-${{ runner.arch }}-v1`
+
+The cache key includes:
+
+- **Runner OS**: `linux` vs `darwin` (though erk only uses linux runners)
+- **Runner arch**: `x64` vs `arm64` (GitHub provides both)
+- **Version suffix**: `-v1` for cache busting when the binary changes
+
+<!-- Source: .github/actions/setup-claude-code/action.yml, Cache Claude Code binary step -->
+
+**Cache miss behavior**: Download only when `steps.cache.outputs.cache-hit != 'true'`. This conditional prevents redundant downloads when cache hits.
+
+**Why not version in key**: Claude Code's "stable" version changes frequently. Using a static `-v1` suffix means the cache stays warm across version bumps. When a breaking change requires cache invalidation, bump the suffix to `-v2`.
+
+## Worker Implementation Check: CI Skip Pattern
+
+Erk's remote workflows create `.worker-impl/` folders during AI implementation. CI should skip these branches until implementation completes.
+
+**Pattern**: Composite action with conditional output.
+
+<!-- Source: .github/actions/check-worker-impl/action.yml, Check for worker implementation folder step -->
+
+Workflow usage:
 
 ```yaml
 - uses: ./.github/actions/check-worker-impl
@@ -99,102 +106,61 @@ Checks for `.worker-impl/` folder presence to skip CI during AI implementation.
   run: pytest
 ```
 
-**Output:** `skip` - "true" if folder exists, "false" otherwise
+**Why this works**: The output is a string (`"true"` or `"false"`), not a boolean. GitHub Actions requires string comparison for step outputs.
 
-## Creating New Composite Actions
+**Why not a single workflow-level condition**: Some steps (git operations, metadata collection) should run even when `.worker-impl/` exists. The granular `if:` conditions let workflows choose which steps to skip.
 
-### Structure
+## Conditional Erk Installation: Package vs Tool Mode
 
-```
-.github/actions/my-action/
-└── action.yml
-```
+Erk runs in two installation modes depending on repository structure:
 
-### Template
+- **Package mode**: `packages/erk-shared/` exists → editable install with shared packages
+- **Tool mode**: No shared packages → sync dev dependencies to `.venv/`
 
-```yaml
-name: "Action Name"
-description: "Brief description"
+<!-- Source: .github/actions/erk-remote-setup/action.yml, Install erk step -->
 
-inputs:
-  required-input:
-    description: "What this input does"
-    required: true
-  optional-input:
-    description: "Optional parameter"
-    required: false
-    default: "default-value"
+**Why the branch**: Package mode uses `uv tool install -e` to make erk globally available. Tool mode uses `uv sync` and adds `.venv/bin` to PATH. The shared package scenario requires editable installs to pick up local changes.
 
-outputs:
-  my-output:
-    description: "What this output contains"
-    value: ${{ steps.step-id.outputs.value }}
+This pattern handles both erk's own CI (which has erk-shared) and external projects that depend on erk (which don't).
 
-runs:
-  using: "composite"
-  steps:
-    - name: Step name
-      shell: bash
-      run: |
-        echo "Running step..."
-```
+## Composite Action Anti-Patterns
 
-### Best Practices
+### DON'T: Return Computed Values via Outputs
 
-1. **Validate inputs early** - Fail fast with clear error messages
-2. **Use caching** - Cache downloaded binaries/packages when possible
-3. **Set shell explicitly** - Always specify `shell: bash` for run steps
-4. **Document why** - Add comments explaining non-obvious choices
-5. **Keep focused** - Each action should do one thing well
+Composite actions **can't** run conditional logic that agents need. They return strings, not structured data.
 
-## Patterns
+**WRONG**: Action that parses workflow state and returns "should_skip" or "safe_to_deploy"
+**CORRECT**: Action that returns raw data (folder exists, file hash) — let workflow decide what to do
 
-### Secret Validation Pattern
+Agents can't introspect composite action internals during implementation. If the decision logic lives in the action, agents can't reason about it when debugging workflow behavior.
 
-```yaml
-- name: Validate secrets
-  shell: bash
-  run: |
-    if [ -z "${{ inputs.api-key }}" ]; then
-      echo "::error title=Missing Secret::API_KEY not configured"
-      exit 1
-    fi
-```
+### DON'T: Chain Composite Actions with Implicit Dependencies
 
-### Caching Pattern
+If action B depends on action A's PATH modifications, **document the dependency explicitly** in action B's description.
 
-```yaml
-- name: Cache binary
-  id: cache
-  uses: actions/cache@v4
-  with:
-    path: ~/.local/bin/my-tool
-    key: my-tool-${{ runner.os }}-${{ runner.arch }}-v1
+**WRONG**: setup-claude-erk silently assumes claude binary exists in PATH
+**CORRECT**: setup-claude-erk description says "assumes uv/claude exist" and erk-remote-setup calls actions in required order
 
-- name: Download (on cache miss)
-  if: steps.cache.outputs.cache-hit != 'true'
-  shell: bash
-  run: |
-    curl -fsSL https://example.com/binary -o ~/.local/bin/my-tool
-    chmod +x ~/.local/bin/my-tool
-```
+GitHub Actions doesn't validate composite action dependencies. Undocumented dependencies cause silent failures when actions are reused in new contexts.
 
-### Conditional Output Pattern
+### DON'T: Duplicate Setup Across Actions
 
-```yaml
-- name: Check condition
-  id: check
-  shell: bash
-  run: |
-    if [ -d ".worker-impl" ]; then
-      echo "skip=true" >> $GITHUB_OUTPUT
-    else
-      echo "skip=false" >> $GITHUB_OUTPUT
-    fi
-```
+If two actions both need Python, **don't** run setup-python twice. Create a setup-python-uv action that other actions depend on.
+
+Duplication wastes CI minutes and creates version skew when one action updates Python version but another doesn't.
+
+## Creating New Actions: Decision Checklist
+
+Before creating a new composite action:
+
+1. **Is this setup used in 3+ workflows?** → If no, inline the steps
+2. **Will this setup change together?** → If no, keep separate (e.g., Python vs Claude Code)
+3. **Can this fail independently?** → If yes, separate action for better error messages
+
+Composite actions add indirection. Only extract when the DRY benefits outweigh the debugging cost.
 
 ## Related Documentation
 
-- [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) - Workflow-level patterns
-- [Workflow Commands](../cli/workflow-commands.md) - CLI interface to trigger workflows
-- [Remote Workflow Template](../erk/remote-workflow-template.md) - Complete workflow examples
+- [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) — Workflow-level patterns
+- [Containerless CI](containerless-ci.md) — Why erk uses direct installs instead of containers
+- [Plan Implement Customization](plan-implement-customization.md) — How workflows consume these actions
