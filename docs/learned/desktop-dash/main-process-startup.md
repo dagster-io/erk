@@ -5,11 +5,16 @@ read_when:
   - "debugging window recreation or listener leak issues on macOS"
   - "choosing between execFile and spawn for a new IPC handler"
 tripwires:
-  - Register IPC handlers inside createWindow(), not at module scope — macOS activate re-calls createWindow, causing duplicate listeners
-  - Every new IPC handler needs matching cleanup in mainWindow.on("closed") — use removeAllListeners for ipcMain.on, removeHandler for ipcMain.handle
-  - Kill activeAction before spawning a new streaming process — concurrent subprocess conflicts cause interleaved output
-  - WebContentsView starts at zero bounds — renderer must report bounds before it becomes visible
-  - Use execFile for request/response IPC, spawn for streaming IPC — do not mix the patterns
+  - action: "registering IPC handlers"
+    warning: "Register IPC handlers inside createWindow(), not at module scope — macOS activate re-calls createWindow, causing duplicate listeners"
+  - action: "adding IPC handlers"
+    warning: "Every new IPC handler needs matching cleanup in mainWindow.on(\"closed\") — use removeAllListeners for ipcMain.on, removeHandler for ipcMain.handle"
+  - action: "spawning subprocess for IPC"
+    warning: "Kill activeAction before spawning a new streaming process — concurrent subprocess conflicts cause interleaved output"
+  - action: "setting up WebContentsView"
+    warning: "WebContentsView starts at zero bounds — renderer must report bounds before it becomes visible"
+  - action: "choosing subprocess method for IPC"
+    warning: "Use execFile for request/response IPC, spawn for streaming IPC — do not mix the patterns"
 last_audited: "2026-02-08"
 audit_result: clean
 ---
