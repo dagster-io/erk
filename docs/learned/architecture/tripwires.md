@@ -88,7 +88,11 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before checking isinstance(ctx.graphite, GraphiteDisabled) inline in command code** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use BranchManager abstraction instead. Add a method to BranchManager ABC that handles both Graphite and Git paths. This centralizes the branching logic and enables testing with FakeBranchManager.
 
+**CRITICAL: Before choosing between Write tool and bash heredocs for large agent outputs** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. heredocs fail silently with special characters — prefer the Write tool
+
 **CRITICAL: Before choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
+
+**CRITICAL: Before choosing between exec_ssh_interactive() and run_ssh_command() for interactive commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Interactive commands need exec_ssh_interactive(), not run_ssh_command()
 
 **CRITICAL: Before comparing git SHA to Graphite's tracked SHA for divergence detection** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches.
 
