@@ -1,11 +1,7 @@
 ---
-audit_result: edited
-last_audited: "2026-02-08"
-read_when:
-  - Writing CLI command docstrings
-  - Adding Examples sections to Click commands
-  - Formatting bulleted lists in help text
 title: Click Help Text Formatting
+last_audited: "2026-02-08"
+audit_result: regenerated
 tripwires:
   - action: "writing Examples sections in CLI docstrings without \b"
     warning:
