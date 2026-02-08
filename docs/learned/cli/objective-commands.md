@@ -5,7 +5,7 @@ read_when:
   - "implementing objective check or close functionality"
   - "understanding objective validation patterns"
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 tripwires:
   - action: "displaying user-provided text in Rich CLI tables without escaping"
     warning: "Use `escape_markup(value)` for user data in Rich tables. Brackets like `[text]` are interpreted as style tags and will disappear."

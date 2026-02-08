@@ -5,12 +5,10 @@ read_when:
   - "understanding PR submission workflows"
   - "deciding whether to use Graphite or plain git"
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 tripwires:
-  - action: "creating PRs without understanding workflow tradeoffs"
-    warning: "Before creating PRs, understand the workflow tradeoffs"
-  - action: "ignoring PR validation rules"
-    warning: "PR validation rules apply to both workflows"
+  - "Before creating PRs, understand the workflow tradeoffs"
+  - "PR validation rules apply to both workflows"
 ---
 
 # PR Submission Decision Framework
