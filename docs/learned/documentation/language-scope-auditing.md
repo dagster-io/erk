@@ -7,12 +7,12 @@ read_when:
 last_audited: "2026-02-08"
 audit_result: clean
 tripwires:
-  - action: "including code blocks from erkdesk"
+  - action: "including TypeScript/Bash code blocks from erkdesk/ without checking the One Code Rule"
     warning: "Including TypeScript/Bash code blocks from erkdesk/ without checking the One Code Rule"
-  - action: "documenting non-Python code"
+  - action: "assuming the verbatim copy prohibition only applies to Python"
     warning: "Assuming the verbatim copy prohibition only applies to Python"
-  - action: "justifying code inclusion"
-    warning: "Rationalizing erkdesk source as \"third-party API pattern\" because it uses React/Electron"
+  - action: "rationalizing erkdesk source as 'third-party API pattern' because it uses React/Electron"
+    warning: "Rationalizing erkdesk source as 'third-party API pattern' because it uses React/Electron"
 ---
 
 # Language Scope Auditing

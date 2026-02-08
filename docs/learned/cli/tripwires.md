@@ -48,8 +48,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before creating exec scripts for operations requiring LLM reasoning between steps** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Keep conditional logic in slash commands. Only bundle mechanical API calls where all input params are known upfront.
 
-**CRITICAL: Before creating gateway instances in exec scripts** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Never create gateway instances in business logic — inject them as parameters
-
 **CRITICAL: Before displaying user-provided text in Rich CLI tables** → Read [CLI Output Styling Guide](output-styling.md) first. Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear.
 
 **CRITICAL: Before displaying user-provided text in Rich CLI tables without escaping** → Read [Objective Commands](objective-commands.md) first. Use `escape_markup(value)` for user data in Rich tables. Brackets like `[text]` are interpreted as style tags and will disappear.
@@ -61,13 +59,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before filtering session sources without logging which sessions were skipped and why** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering makes debugging impossible. Log to stderr when skipping sessions, include the reason (empty/warmup/filtered).
 
-**CRITICAL: Before implementing Click commands** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Click commands retrieve real implementations from context via require\_\* helpers
-
-**CRITICAL: Before implementing PR submission commands** → Read [PR Submission Decision Framework](pr-submission.md) first. PR validation rules apply to both workflows
-
 **CRITICAL: Before implementing a command with user confirmations interleaved between mutations** → Read [Two-Phase Validation Model](two-phase-validation-model.md) first. Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Interleaving confirmations with mutations causes partial state on decline.
-
-**CRITICAL: Before implementing exec script business logic** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Separate \_\*\_impl() functions return exit codes or discriminated unions, never call sys.exit()
 
 **CRITICAL: Before importing from erk_shared.gateway.{service}.abc when creating exec commands** → Read [Exec Script Patterns](exec-script-patterns.md) first. Gateway ABCs use submodule paths: `erk_shared.gateway.{service}.{resource}.abc`
 
@@ -90,8 +82,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before running gh pr create** → Read [PR Operations: Duplicate Prevention and Detection](pr-operations.md) first. Query for existing PRs first via `gh pr list --head <branch> --state all`. Prevents duplicate PR creation and workflow breaks.
 
 **CRITICAL: Before skipping session upload after local implementation** → Read [Plan-Implement Workflow](plan-implement.md) first. Local implementations must upload session via capture-session-info + upload-session. This enables async learn workflow. See session upload section below.
-
-**CRITICAL: Before submitting PRs** → Read [PR Submission Decision Framework](pr-submission.md) first. Before creating PRs, understand the workflow tradeoffs
 
 **CRITICAL: Before using EnsureIdeal for discriminated union narrowing** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method.
 
