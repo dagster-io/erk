@@ -22,10 +22,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before creating a skill capability** → Read [Adding Skill Capabilities](adding-skills.md) first. Bundled content directory must exist or install() silently creates empty skill directory. See silent failure modes below.
 
-**CRITICAL: Before creating workflow capability** → Read [Adding Workflow Capabilities](adding-workflows.md) first. Workflow capabilities extend Capability directly, not a template base class
-
-**CRITICAL: Before importing artifacts.state in workflow capabilities** → Read [Adding Workflow Capabilities](adding-workflows.md) first. Use inline imports for artifacts.state to avoid circular dependencies
-
 **CRITICAL: Before review capability installation fails** → Read [Adding Review Capabilities](adding-reviews.md) first. ReviewCapability has automatic preflight check for code-reviews-system workflow. Install will fail if .github/workflows/code-reviews.yml doesn't exist in target repo. Install code-reviews-system capability first.
 
 **CRITICAL: Before skill not appearing in erk init capability list** → Read [Adding Skill Capabilities](adding-skills.md) first. MUST import class AND add instance to registry.py \_all_capabilities() tuple. Import alone is not sufficient.
