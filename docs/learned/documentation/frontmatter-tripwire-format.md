@@ -146,14 +146,16 @@ Create new doc with proper frontmatter:
 
 ```markdown
 ---
+
 read_when:
-  - "using subprocess wrappers"
-  - "handling subprocess errors"
-tripwires:
-  - action: "performing actions related to this tripwire"
-    warning: "CRITICAL: Before using subprocess.run(check=True) directly"
-  - action: "performing actions related to this tripwire"
-    warning: "--"
+
+- "using subprocess wrappers"
+- "handling subprocess errors"
+  tripwires:
+- action: "performing actions related to this tripwire"
+  warning: "CRITICAL: Before using subprocess.run(check=True) directly"
+- action: "performing actions related to this tripwire"
+  warning: "--"
 
 # Subprocess Wrappers
 
