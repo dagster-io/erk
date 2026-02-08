@@ -16,6 +16,7 @@ Usage:
     python scripts/batch_regenerate_docs.py --fresh                   # ignore prior progress
     python scripts/batch_regenerate_docs.py --file docs/learned/x.md  # target a specific file
     python scripts/batch_regenerate_docs.py --output-suffix -v2       # write to foo-v2.md
+                                                                      # (A/B compare)
 """
 
 import argparse
