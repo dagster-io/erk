@@ -1,7 +1,7 @@
 ---
 title: LibCST Systematic Import Refactoring
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 read_when:
   - "refactoring imports across many files"
   - "renaming modules or packages"
@@ -21,13 +21,13 @@ tripwires:
 
 LibCST parses Python source into a concrete syntax tree that preserves formatting and comments, making it ideal for mechanical import refactoring. The key question is whether the transformation is worth the tooling overhead.
 
-| Situation                                                       | Approach                     | Why                                                                           |
-| --------------------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------- |
-| 1-3 files need import changes                                   | Manual Edit tool             | Faster than writing a transformer; review is trivial                          |
-| 4-9 files, simple rename                                        | Edit tool with `replace_all` | Still mechanical but not enough files to justify a script                     |
-| 10+ files, import path change                                   | `libcst-refactor` agent      | Systematic replacement prevents missed call sites                             |
-| ABC consolidation (type renames + import moves + field renames) | `libcst-refactor` agent      | Multiple transformation types across 40+ files; manual editing is error-prone |
-| Non-Python files (YAML, markdown, configs)                      | Grep + manual or sed         | LibCST only handles Python                                                    |
+| Situation | Approach | Why |
+| --- | --- | --- |
+| 1-3 files need import changes | Manual Edit tool | Faster than writing a transformer; review is trivial |
+| 4-9 files, simple rename | Edit tool with `replace_all` | Still mechanical but not enough files to justify a script |
+| 10+ files, import path change | `libcst-refactor` agent | Systematic replacement prevents missed call sites |
+| ABC consolidation (type renames + import moves + field renames) | `libcst-refactor` agent | Multiple transformation types across 40+ files; manual editing is error-prone |
+| Non-Python files (YAML, markdown, configs) | Grep + manual or sed | LibCST only handles Python |
 
 **The crossover point is ~10 files.** Below that, the time to write and test a transformer exceeds the time to make manual edits. Above that, manual editing becomes the riskier option because missed call sites cause runtime `ImportError`s that may not surface until a specific code path executes.
 

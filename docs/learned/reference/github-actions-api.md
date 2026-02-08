@@ -13,7 +13,7 @@ tripwires:
   - action: "adding a new workflow_dispatch workflow without run-name"
     warning: "Every erk workflow must use run-name with distinct_id for trigger_workflow discovery. Pattern: run-name: '<context>:${{ inputs.distinct_id }}'"
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 ---
 
 # GitHub Actions API Interaction Patterns
@@ -53,12 +53,12 @@ See `RealGitHub.trigger_workflow()` in `packages/erk-shared/src/erk_shared/gatew
 
 The GitHub gateway uses two API surfaces for workflow queries. The choice is driven by query cardinality:
 
-| Scenario                         | API                              | Why                                     |
-| -------------------------------- | -------------------------------- | --------------------------------------- |
-| Single run by ID                 | REST (`actions/runs/{id}`)       | Direct lookup, includes `node_id` field |
-| List runs for workflow           | REST via `gh run list`           | Paginated, supports `--user` filter     |
-| Batch query N runs by node ID    | GraphQL `nodes(ids: [...])`      | O(1) API call vs O(N) REST calls        |
-| Run status for multiple branches | REST (fetch all, filter locally) | GraphQL schema lacks branch filtering   |
+| Scenario | API | Why |
+|---|---|---|
+| Single run by ID | REST (`actions/runs/{id}`) | Direct lookup, includes `node_id` field |
+| List runs for workflow | REST via `gh run list` | Paginated, supports `--user` filter |
+| Batch query N runs by node ID | GraphQL `nodes(ids: [...])` | O(1) API call vs O(N) REST calls |
+| Run status for multiple branches | REST (fetch all, filter locally) | GraphQL schema lacks branch filtering |
 
 The GraphQL batch pattern is critical for the `erk plan list` command, which shows workflow status for many plans simultaneously. Without batching, displaying 20 plans would require 20 individual REST calls.
 
@@ -86,15 +86,15 @@ See `RealGitHub.get_workflow_runs_by_branches()` in `packages/erk-shared/src/erk
 
 The `WorkflowRun` type has fields that vary in availability depending on which API fetched the data. This is a cross-cutting concern that affects any code consuming workflow run data.
 
-| Field           | REST API                                  | GraphQL nodes()                                           |
-| --------------- | ----------------------------------------- | --------------------------------------------------------- |
-| `run_id`        | Available                                 | Available (as `databaseId`)                               |
-| `status`        | Available                                 | Available (via `checkSuite.status`, requires mapping)     |
-| `conclusion`    | Available                                 | Available (via `checkSuite.conclusion`, requires mapping) |
-| `branch`        | Available                                 | **Not available** — sentinel raises `AttributeError`      |
-| `display_title` | Available                                 | **Not available** — sentinel raises `AttributeError`      |
-| `head_sha`      | Available                                 | Available (via `checkSuite.commit.oid`)                   |
-| `node_id`       | Available (REST `actions/runs/{id}` only) | Available (as `id`)                                       |
+| Field | REST API | GraphQL nodes() |
+|---|---|---|
+| `run_id` | Available | Available (as `databaseId`) |
+| `status` | Available | Available (via `checkSuite.status`, requires mapping) |
+| `conclusion` | Available | Available (via `checkSuite.conclusion`, requires mapping) |
+| `branch` | Available | **Not available** — sentinel raises `AttributeError` |
+| `display_title` | Available | **Not available** — sentinel raises `AttributeError` |
+| `head_sha` | Available | Available (via `checkSuite.commit.oid`) |
+| `node_id` | Available (REST `actions/runs/{id}` only) | Available (as `id`) |
 
 The sentinel pattern (`_NotAvailable`) ensures accessing unavailable fields fails loudly rather than returning None silently. Code consuming `WorkflowRun` objects must know which API path produced them.
 

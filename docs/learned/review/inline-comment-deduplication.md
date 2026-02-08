@@ -29,10 +29,10 @@ The trade-off is that dedup quality depends on the AI agent correctly following 
 
 Two parameters control the dedup sensitivity, chosen to balance false positives (suppressing distinct comments) against false negatives (posting duplicates):
 
-| Parameter              | Value    | Why this value                                                                                                                                 |
-| ---------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Parameter | Value | Why this value |
+|---|---|---|
 | **Body prefix length** | 80 chars | Short enough to tolerate minor rephrasing between iterations; long enough that distinct comments with the same opening phrase aren't collapsed |
-| **Line proximity**     | ±2 lines | Accounts for small diff shifts between pushes without matching unrelated comments on nearby lines                                              |
+| **Line proximity** | ±2 lines | Accounts for small diff shifts between pushes without matching unrelated comments on nearby lines |
 
 **Anti-pattern — exact line matching**: Using exact line numbers causes false negatives on every push that shifts code, since the same violation moves by a few lines. The 2-line window handles the common case of small surrounding edits.
 

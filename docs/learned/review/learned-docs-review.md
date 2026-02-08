@@ -17,13 +17,13 @@ The `audit-pr-docs` review is the PR-time enforcement layer of erk's documentati
 
 A linter could catch `from erk` imports in code blocks, but the classification problem is harder than pattern matching. The review must distinguish between:
 
-| Classification    | Example                                      | Action         |
-| ----------------- | -------------------------------------------- | -------------- |
-| **VERBATIM**      | Copied gateway method with real class names  | Flag           |
-| **ANTI-PATTERN**  | Code marked WRONG showing what not to do     | Skip (allowed) |
-| **CONCEPTUAL**    | Made-up names (`MyGateway`, `ExampleWidget`) | Skip (allowed) |
-| **TEMPLATE**      | Third-party API usage (Click, pytest, Rich)  | Skip (allowed) |
-| **Short snippet** | ≤5 lines showing a key insight               | Skip (allowed) |
+| Classification     | Example                                                | Action         |
+| ------------------ | ------------------------------------------------------ | -------------- |
+| **VERBATIM**       | Copied gateway method with real class names             | Flag           |
+| **ANTI-PATTERN**   | Code marked WRONG showing what not to do                | Skip (allowed) |
+| **CONCEPTUAL**     | Made-up names (`MyGateway`, `ExampleWidget`)            | Skip (allowed) |
+| **TEMPLATE**       | Third-party API usage (Click, pytest, Rich)             | Skip (allowed) |
+| **Short snippet**  | ≤5 lines showing a key insight                          | Skip (allowed) |
 
 This classification requires judgment about intent and context — whether a block teaches an external API, demonstrates an anti-pattern, or copies real implementation code. An AI review agent handles the ambiguous middle ground that regex-based linting cannot.
 
