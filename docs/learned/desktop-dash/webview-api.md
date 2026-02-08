@@ -5,12 +5,12 @@ read_when:
   - deciding whether a new IPC channel should be fire-and-forget or request-response
   - debugging why the WebContentsView lags behind the divider during drag
 tripwires:
-  - action: "adding WebView IPC channels in erkdesk"
-    warning: "WebView IPC channels (bounds, URL) must be fire-and-forget (send/on), never request-response (invoke/handle) — invoke serializes high-frequency updates and causes visible lag"
-  - action: "setting initial bounds for WebContentsView"
-    warning: "the WebContentsView starts at zero bounds intentionally; do not set initial bounds in createWindow — see defensive-bounds-handling.md"
+  - action: "using request-response (invoke/handle) for WebView IPC channels"
+    warning: "WebView IPC channels (bounds, URL) must be fire-and-forget (send/on), never request-response (invoke/handle) — invoke serializes high-frequency updates and causes visible lag."
+  - action: "setting initial bounds for WebContentsView in createWindow"
+    warning: "The WebContentsView starts at zero bounds intentionally; do not set initial bounds in createWindow — see defensive-bounds-handling.md."
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: edited
 ---
 
 # WebView IPC Design Decisions

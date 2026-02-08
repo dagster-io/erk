@@ -10,7 +10,7 @@ tripwires:
   - action: "two learned docs claiming canonical authority over the same topic"
     warning: "Contradicts the purpose. Consolidate into one doc, or differentiate scope explicitly (e.g., 'canonical for hook patterns' vs 'canonical for command patterns')."
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: edited
 ---
 
 # Canonical Authority Declarations

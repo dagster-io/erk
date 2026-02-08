@@ -5,12 +5,12 @@ read_when:
   - debugging 'Cannot find module' errors in Electron
   - configuring pnpm for Electron Forge compatibility
 tripwires:
-  - action: "modifying erkdesk/.npmrc or changing node-linker setting"
-    warning: "Do NOT remove erkdesk/.npmrc or change node-linker away from hoisted — Electron cannot resolve pnpm's symlinked node_modules layout"
-  - action: "debugging 'Cannot find module' errors in Electron with pnpm"
-    warning: "Do NOT assume 'Cannot find module' errors mean a missing dependency — in Electron with pnpm, check .npmrc first"
+  - action: "removing erkdesk/.npmrc or changing node-linker away from hoisted"
+    warning: "Do NOT remove erkdesk/.npmrc or change node-linker away from hoisted — Electron cannot resolve pnpm's symlinked node_modules layout."
+  - action: "assuming 'Cannot find module' errors mean a missing dependency"
+    warning: "Do NOT assume 'Cannot find module' errors mean a missing dependency — in Electron with pnpm, check .npmrc first."
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: edited
 ---
 
 # pnpm Hoisting Pattern for Electron

@@ -5,14 +5,14 @@ read_when:
   - debugging WebContentsView positioning or bounds mismatches
   - adding new triggers that affect the right pane's size or position
 tripwires:
-  - action: "modifying right pane size or layout in erkdesk"
-    warning: "every code path that changes the right pane's rendered size must trigger a bounds report to the main process"
-  - action: "working with the right pane div in SplitPane"
-    warning: "the right pane div is a positioning placeholder only — it renders no content, the WebContentsView overlays it"
-  - action: "implementing cleanup for SplitPane component"
-    warning: "cleanup lives in the main process window-close handler, not in the SplitPane component"
+  - action: "changing the right pane's rendered size without triggering bounds report"
+    warning: "Every code path that changes the right pane's rendered size must trigger a bounds report to the main process."
+  - action: "rendering content in the right pane div"
+    warning: "The right pane div is a positioning placeholder only — it renders no content, the WebContentsView overlays it."
+  - action: "adding cleanup to the SplitPane component"
+    warning: "Cleanup lives in the main process window-close handler, not in the SplitPane component."
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: edited
 ---
 
 # SplitPane Renderer-Native Coordination
