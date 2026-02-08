@@ -1,19 +1,21 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- adding reminder capabilities
-- creating new capability types
-- debugging capability registration
-- understanding why capabilities don't appear in hooks
+  - adding reminder capabilities
+  - creating new capability types
+  - debugging capability registration
+  - understanding why capabilities don't appear in hooks
 title: Adding New Capabilities
 tripwires:
-- action: capability not appearing in hooks or CLI
-  warning: Class MUST be imported AND instantiated in registry.py _all_capabilities()
-    tuple. Missing registration causes silent failures—class exists but is never discovered.
-- action: creating a new capability type with custom installation logic
-  warning: Don't subclass Capability directly unless needed. Use SkillCapability or
-    ReminderCapability for 90% of cases—they handle state management automatically.
+  - action: capability not appearing in hooks or CLI
+    warning:
+      Class MUST be imported AND instantiated in registry.py _all_capabilities()
+      tuple. Missing registration causes silent failures—class exists but is never discovered.
+  - action: creating a new capability type with custom installation logic
+    warning:
+      Don't subclass Capability directly unless needed. Use SkillCapability or
+      ReminderCapability for 90% of cases—they handle state management automatically.
 ---
 
 # Adding New Capabilities

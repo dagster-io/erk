@@ -1,21 +1,23 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- writing erk exec scripts
-- testing exec scripts that use gateways
-- understanding exec script architecture
-- migrating exec scripts from subprocess to gateways
+  - writing erk exec scripts
+  - testing exec scripts that use gateways
+  - understanding exec script architecture
+  - migrating exec scripts from subprocess to gateways
 title: Dependency Injection in Exec Scripts
 tripwires:
-- action: Never create gateway instances in business logic
-  warning: inject them as parameters
-- action: using this pattern
-  warning: Separate _*_impl() functions return exit codes or discriminated unions,
-    never call sys.exit()
-- action: using this pattern
-  warning: Click commands retrieve real implementations from context via require_*
-    helpers
+  - action: Never create gateway instances in business logic
+    warning: inject them as parameters
+  - action: using this pattern
+    warning:
+      Separate _*_impl() functions return exit codes or discriminated unions,
+      never call sys.exit()
+  - action: using this pattern
+    warning:
+      Click commands retrieve real implementations from context via require_*
+      helpers
 ---
 
 # Dependency Injection in Exec Scripts

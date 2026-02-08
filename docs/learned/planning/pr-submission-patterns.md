@@ -1,23 +1,26 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- creating or updating PRs programmatically in erk
-- debugging why a duplicate PR or issue was created
-- fixing erk pr check validation failures
-- understanding the PR number vs issue number distinction
+  - creating or updating PRs programmatically in erk
+  - debugging why a duplicate PR or issue was created
+  - fixing erk pr check validation failures
+  - understanding the PR number vs issue number distinction
 title: PR Submission Patterns
 tripwires:
-- action: using issue number from .impl/issue.json in a checkout footer
-  warning: Checkout footers require the PR number, not the issue number. The issue
-    is the plan; the PR is the implementation. See the PR Number vs Issue Number section.
-- action: creating a PR without first checking if one already exists for the branch
-  warning: The submit pipeline is idempotent — it checks for existing PRs before creating.
-    If building PR creation outside the pipeline, replicate this check to prevent
-    duplicates.
-- action: constructing a PR footer manually instead of using build_pr_body_footer()
-  warning: The footer format includes checkout commands and closing references with
-    specific patterns. Use the builder function to ensure validation passes.
+  - action: using issue number from .impl/issue.json in a checkout footer
+    warning:
+      Checkout footers require the PR number, not the issue number. The issue
+      is the plan; the PR is the implementation. See the PR Number vs Issue Number section.
+  - action: creating a PR without first checking if one already exists for the branch
+    warning:
+      The submit pipeline is idempotent — it checks for existing PRs before creating.
+      If building PR creation outside the pipeline, replicate this check to prevent
+      duplicates.
+  - action: constructing a PR footer manually instead of using build_pr_body_footer()
+    warning:
+      The footer format includes checkout commands and closing references with
+      specific patterns. Use the builder function to ensure validation passes.
 ---
 
 # PR Submission Patterns

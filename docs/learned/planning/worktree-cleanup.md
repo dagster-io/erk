@@ -1,21 +1,24 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- cleaning up .worker-impl/ after plan implementation
-- debugging leftover .worker-impl/ artifacts in a PR
-- deciding whether to auto-remove an implementation folder
+  - cleaning up .worker-impl/ after plan implementation
+  - debugging leftover .worker-impl/ artifacts in a PR
+  - deciding whether to auto-remove an implementation folder
 title: .worker-impl/ vs .impl/ Cleanup Discipline
 tripwires:
-- action: automatically removing .impl/ folder
-  warning: NEVER auto-delete .impl/. It belongs to the user for plan-vs-implementation
-    review. Only .worker-impl/ is auto-cleaned.
-- action: staging .worker-impl/ deletion without an immediate commit
-  warning: A downstream `git reset --hard` will silently discard staged-only deletions.
-    Always commit+push cleanup atomically. See reliability-patterns.md.
-- action: removing .worker-impl/ during implementation (before CI passes)
-  warning: The folder is load-bearing during implementation — Claude reads from it
-    (via copy to .impl/). Only remove after implementation succeeds and CI passes.
+  - action: automatically removing .impl/ folder
+    warning:
+      NEVER auto-delete .impl/. It belongs to the user for plan-vs-implementation
+      review. Only .worker-impl/ is auto-cleaned.
+  - action: staging .worker-impl/ deletion without an immediate commit
+    warning:
+      A downstream `git reset --hard` will silently discard staged-only deletions.
+      Always commit+push cleanup atomically. See reliability-patterns.md.
+  - action: removing .worker-impl/ during implementation (before CI passes)
+    warning:
+      The folder is load-bearing during implementation — Claude reads from it
+      (via copy to .impl/). Only remove after implementation succeeds and CI passes.
 ---
 
 # .worker-impl/ vs .impl/ Cleanup Discipline

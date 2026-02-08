@@ -1,19 +1,22 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- Working with interactive agent permissions
-- Implementing Codex or Claude backend integration
-- Modifying permission mode configuration
+  - Working with interactive agent permissions
+  - Implementing Codex or Claude backend integration
+  - Modifying permission mode configuration
 title: PermissionMode Abstraction
 tripwires:
-- action: modifying PermissionMode enum or permission mode mappings
-  warning: permission_mode_to_claude() (and future permission_mode_to_codex()) must
-    stay in sync. Update both when changing mappings.
-- action: changing permission_mode_to_claude() (or future permission_mode_to_codex())
-    implementations
-  warning: Verify both Claude and Codex backend implementations maintain identical
-    enum-to-mode mappings.
+  - action: modifying PermissionMode enum or permission mode mappings
+    warning:
+      permission_mode_to_claude() (and future permission_mode_to_codex()) must
+      stay in sync. Update both when changing mappings.
+  - action:
+      changing permission_mode_to_claude() (or future permission_mode_to_codex())
+      implementations
+    warning:
+      Verify both Claude and Codex backend implementations maintain identical
+      enum-to-mode mappings.
 ---
 
 # PermissionMode Abstraction

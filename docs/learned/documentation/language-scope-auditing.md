@@ -1,20 +1,22 @@
 ---
 audit_result: edited
-last_audited: '2026-02-08'
+last_audited: "2026-02-08"
 read_when:
-- writing documentation that includes non-Python code examples
-- documenting erkdesk or desktop-dash patterns in docs/learned/
-- reviewing learned-docs for verbatim code across languages
+  - writing documentation that includes non-Python code examples
+  - documenting erkdesk or desktop-dash patterns in docs/learned/
+  - reviewing learned-docs for verbatim code across languages
 title: Language Scope Auditing
 tripwires:
-- action: using this pattern
-  warning: Including TypeScript/Bash code blocks from erkdesk/ without checking the
-    One Code Rule
-- action: using this pattern
-  warning: Assuming the verbatim copy prohibition only applies to Python
-- action: using this pattern
-  warning: Rationalizing erkdesk source as "third-party API pattern" because it uses
-    React/Electron
+  - action: using this pattern
+    warning:
+      Including TypeScript/Bash code blocks from erkdesk/ without checking the
+      One Code Rule
+  - action: using this pattern
+    warning: Assuming the verbatim copy prohibition only applies to Python
+  - action: using this pattern
+    warning:
+      Rationalizing erkdesk source as "third-party API pattern" because it uses
+      React/Electron
 ---
 
 # Language Scope Auditing

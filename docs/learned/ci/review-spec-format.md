@@ -2,9 +2,9 @@
 audit_result: edited
 last_audited: 2026-02-08 13:45 PT
 read_when:
-- creating a new code review
-- understanding why review specs follow certain patterns
-- debugging review behavior or structure
+  - creating a new code review
+  - understanding why review specs follow certain patterns
+  - debugging review behavior or structure
 title: Review Spec Format
 ---
 
