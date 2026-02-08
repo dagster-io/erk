@@ -76,14 +76,16 @@ The structured format separates the **trigger** (`action`) from the **guidance**
 
 ```markdown
 ---
+
 read_when:
-  - "using subprocess wrappers"
-  - "handling subprocess errors"
-tripwires:
-  - action: "performing actions related to this tripwire"
-    warning: "CRITICAL: Before using subprocess.run(check=True) directly"
-  - action: "performing actions related to this tripwire"
-    warning: "--"
+
+- "using subprocess wrappers"
+- "handling subprocess errors"
+  tripwires:
+- action: "performing actions related to this tripwire"
+  warning: "CRITICAL: Before using subprocess.run(check=True) directly"
+- action: "performing actions related to this tripwire"
+  warning: "--"
 
 The "CRITICAL: Before" prefix is added automatically — don't include it in the `action` field.
 
