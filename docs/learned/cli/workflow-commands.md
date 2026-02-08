@@ -1,18 +1,25 @@
 ---
-title: Workflow Commands
-read_when:
-  - "triggering GitHub Actions workflows from CLI"
-  - "adding a new workflow to erk launch"
-  - "understanding local vs remote command duality"
-tripwires:
-  - action: "modifying WORKFLOW_COMMAND_MAP or workflow command mapping"
-    warning: "WORKFLOW_COMMAND_MAP maps command names to .yml filenames — command names intentionally diverge from filenames (e.g., pr-fix-conflicts → pr-fix-conflicts.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)"
-  - action: "implementing plan-implement command launcher"
-    warning: "plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError — use erk plan submit instead"
-  - action: "modifying PR workflow dispatch behavior"
-    warning: "PR workflows automatically update plan issue dispatch metadata when the branch follows the P{issue_number} naming pattern"
-last_audited: "2026-02-08 05:59 PT"
 audit_result: clean
+last_audited: 2026-02-08 05:59 PT
+read_when:
+  - triggering GitHub Actions workflows from CLI
+  - adding a new workflow to erk launch
+  - understanding local vs remote command duality
+title: Workflow Commands
+tripwires:
+  - action: WORKFLOW_COMMAND_MAP maps command names to .yml filenames
+    warning:
+      command names intentionally diverge from filenames (e.g., pr-fix-conflicts
+      → pr-fix-conflicts.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME
+      constant)
+  - action:
+      plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement
+      always raises UsageError
+    warning: use erk plan submit instead
+  - action: using this pattern
+    warning:
+      PR workflows automatically update plan issue dispatch metadata when the
+      branch follows the P{issue_number} naming pattern
 ---
 
 # Workflow Commands

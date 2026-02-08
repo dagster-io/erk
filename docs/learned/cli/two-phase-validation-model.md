@@ -1,15 +1,18 @@
 ---
-title: Two-Phase Validation Model
-read_when:
-  - "implementing commands with user confirmations"
-  - "designing commands that perform destructive mutations"
-  - "adding confirmation prompts to CLI commands"
-  - "deciding where to place confirmation logic in a command"
-tripwires:
-  - action: "implementing a command with user confirmations interleaved between mutations"
-    warning: "Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Interleaving confirmations with mutations causes partial state on decline."
+audit_result: edited
 last_audited: "2026-02-08"
-audit_result: clean
+read_when:
+  - implementing commands with user confirmations
+  - designing commands that perform destructive mutations
+  - adding confirmation prompts to CLI commands
+  - deciding where to place confirmation logic in a command
+title: Two-Phase Validation Model
+tripwires:
+  - action: implementing a command with user confirmations interleaved between mutations
+    warning:
+      "Use two-phase model: gather ALL confirmations first (Phase 1), then perform
+      mutations (Phase 2). Interleaving confirmations with mutations causes partial
+      state on decline."
 ---
 
 # Two-Phase Validation Model

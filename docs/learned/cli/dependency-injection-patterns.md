@@ -1,19 +1,23 @@
 ---
-title: Dependency Injection in Exec Scripts
-read_when:
-  - "writing erk exec scripts"
-  - "testing exec scripts that use gateways"
-  - "understanding exec script architecture"
-  - "migrating exec scripts from subprocess to gateways"
+audit_result: edited
 last_audited: "2026-02-08"
-audit_result: clean
+read_when:
+  - writing erk exec scripts
+  - testing exec scripts that use gateways
+  - understanding exec script architecture
+  - migrating exec scripts from subprocess to gateways
+title: Dependency Injection in Exec Scripts
 tripwires:
-  - action: "creating gateway instances in business logic"
-    warning: "never create gateway instances in business logic - inject them as parameters"
-  - action: "implementing _*_impl() functions"
-    warning: "separate _*_impl() functions return exit codes or discriminated unions, never call sys.exit()"
-  - action: "implementing Click commands"
-    warning: "Click commands retrieve real implementations from context via require_* helpers"
+  - action: Never create gateway instances in business logic
+    warning: inject them as parameters
+  - action: using this pattern
+    warning:
+      Separate _*_impl() functions return exit codes or discriminated unions,
+      never call sys.exit()
+  - action: using this pattern
+    warning:
+      Click commands retrieve real implementations from context via require_*
+      helpers
 ---
 
 # Dependency Injection in Exec Scripts

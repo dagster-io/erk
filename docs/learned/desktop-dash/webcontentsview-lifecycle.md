@@ -1,14 +1,17 @@
 ---
-title: WebContentsView Lifecycle
+audit_result: edited
+last_audited: "2026-02-08"
 read_when:
   - adding or modifying WebContentsView usage in erkdesk
   - debugging WebContentsView visibility or positioning issues
   - adding new IPC channels in erkdesk's main process
+title: WebContentsView Lifecycle
 tripwires:
-  - action: "adding a new IPC channel in createWindow"
-    warning: "Every ipcMain.on() or ipcMain.handle() registration MUST have a matching removal in the mainWindow.on('closed') handler. on() uses removeAllListeners(channel), handle() uses removeHandler(channel). Add both in the same commit."
-last_audited: "2026-02-08"
-audit_result: clean
+  - action: adding a new IPC channel in createWindow
+    warning:
+      Every ipcMain.on() or ipcMain.handle() registration MUST have a matching
+      removal in the mainWindow.on('closed') handler. on() uses removeAllListeners(channel),
+      handle() uses removeHandler(channel). Add both in the same commit.
 ---
 
 # WebContentsView Lifecycle

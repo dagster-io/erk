@@ -1,18 +1,22 @@
 ---
-title: SplitPane Renderer-Native Coordination
+audit_result: edited
+last_audited: "2026-02-08"
 read_when:
   - working on split-pane layout or resizable panels in erkdesk
   - debugging WebContentsView positioning or bounds mismatches
   - adding new triggers that affect the right pane's size or position
+title: SplitPane Renderer-Native Coordination
 tripwires:
-  - action: "modifying right pane size or layout in erkdesk"
-    warning: "every code path that changes the right pane's rendered size must trigger a bounds report to the main process"
-  - action: "working with the right pane div in SplitPane"
-    warning: "the right pane div is a positioning placeholder only — it renders no content, the WebContentsView overlays it"
-  - action: "implementing cleanup for SplitPane component"
-    warning: "cleanup lives in the main process window-close handler, not in the SplitPane component"
-last_audited: "2026-02-08"
-audit_result: clean
+  - action: using this pattern
+    warning:
+      every code path that changes the right pane's rendered size must trigger
+      a bounds report to the main process
+  - action: the right pane div is a positioning placeholder only
+    warning: it renders no content, the WebContentsView overlays it
+  - action: using this pattern
+    warning:
+      cleanup lives in the main process window-close handler, not in the SplitPane
+      component
 ---
 
 # SplitPane Renderer-Native Coordination

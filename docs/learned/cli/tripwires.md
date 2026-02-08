@@ -14,11 +14,15 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before Design batch commands that process items despite validation failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Validate ALL items upfront before processing ANY items. Stop on first validation error.
 
+**CRITICAL: Before Never create gateway instances in business logic** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. inject them as parameters
+
 **CRITICAL: Before Return non-zero exit codes for batch command failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Always exit 0, encode errors in JSON output with per-item success fields.
 
 **CRITICAL: Before Use OR semantics for batch success (success=true if any item succeeds)** → Read [Batch Exec Commands](batch-exec-commands.md) first. Use AND semantics: top-level success=true only if ALL items succeed.
 
 **CRITICAL: Before Using RuntimeError for expected CLI failures** → Read [CLI Error Handling Anti-Patterns](error-handling-antipatterns.md) first. RuntimeError signals a programmer error (bug in the code), NOT expected user-facing failures. Use UserFacingCliError for expected conditions (missing files, invalid input, precondition violations) that should exit cleanly with an actionable message.
+
+**CRITICAL: Before WORKFLOW_COMMAND_MAP maps command names to .yml filenames** → Read [Workflow Commands](workflow-commands.md) first. command names intentionally diverge from filenames (e.g., pr-fix-conflicts → pr-fix-conflicts.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)
 
 **CRITICAL: Before adding a new exec script that produces JSON consumed by another exec script** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Define shared TypedDict in packages/erk-shared/ for type-safe schema. Both producer and consumer import from the same schema definition.
 
@@ -44,11 +48,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before committing .impl/ folder to git** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/ lives in .gitignore and should never be committed. Only .worker-impl/ (remote execution artifact) gets committed and later removed.
 
-**CRITICAL: Before creating PRs without understanding workflow differences** → Read [PR Submission Decision Framework](pr-submission.md) first. before creating PRs, understand the workflow tradeoffs between git-pr-push and pr-submit
-
 **CRITICAL: Before creating exec scripts for operations requiring LLM reasoning between steps** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Keep conditional logic in slash commands. Only bundle mechanical API calls where all input params are known upfront.
-
-**CRITICAL: Before creating gateway instances in business logic** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. never create gateway instances in business logic - inject them as parameters
 
 **CRITICAL: Before displaying user-provided text in Rich CLI tables** → Read [CLI Output Styling Guide](output-styling.md) first. Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear.
 
@@ -61,17 +61,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before filtering session sources without logging which sessions were skipped and why** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering makes debugging impossible. Log to stderr when skipping sessions, include the reason (empty/warmup/filtered).
 
-**CRITICAL: Before flagging 5+ parameter violations in code review** → Read [Code Review Filtering](code-review-filtering.md) first. before flagging violations, verify NO exception applies (ABC/Protocol/Click)
-
-**CRITICAL: Before implementing Click commands** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Click commands retrieve real implementations from context via require\_\* helpers
-
-**CRITICAL: Before implementing PR creation workflows** → Read [PR Submission Decision Framework](pr-submission.md) first. PR validation rules apply to both workflows
-
-**CRITICAL: Before implementing \_\*\_impl() functions** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. separate \_\*\_impl() functions return exit codes or discriminated unions, never call sys.exit()
-
 **CRITICAL: Before implementing a command with user confirmations interleaved between mutations** → Read [Two-Phase Validation Model](two-phase-validation-model.md) first. Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Interleaving confirmations with mutations causes partial state on decline.
-
-**CRITICAL: Before implementing plan-implement command launcher** → Read [Workflow Commands](workflow-commands.md) first. plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError — use erk plan submit instead
 
 **CRITICAL: Before importing from erk_shared.gateway.{service}.abc when creating exec commands** → Read [Exec Script Patterns](exec-script-patterns.md) first. Gateway ABCs use submodule paths: `erk_shared.gateway.{service}.{resource}.abc`
 
@@ -81,13 +71,11 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before making session_id a required parameter for a new command** → Read [Session ID Availability and Propagation](session-management.md) first. Check the fail-hard vs degrade decision table below. Most commands should accept session_id as optional.
 
-**CRITICAL: Before modifying PR workflow dispatch behavior** → Read [Workflow Commands](workflow-commands.md) first. PR workflows automatically update plan issue dispatch metadata when the branch follows the P{issue_number} naming pattern
-
-**CRITICAL: Before modifying WORKFLOW_COMMAND_MAP or workflow command mapping** → Read [Workflow Commands](workflow-commands.md) first. WORKFLOW_COMMAND_MAP maps command names to .yml filenames — command names intentionally diverge from filenames (e.g., pr-fix-conflicts → pr-fix-conflicts.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)
-
 **CRITICAL: Before mutating SubmitState fields directly** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state.
 
 **CRITICAL: Before parsing roadmap tables to update PR cells** → Read [Update Roadmap Step Command](commands/update-roadmap-step.md) first. Use the update-roadmap-step command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers.
+
+**CRITICAL: Before plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError** → Read [Workflow Commands](workflow-commands.md) first. use erk plan submit instead
 
 **CRITICAL: Before putting checkout-specific helpers in navigation_helpers.py** → Read [Checkout Helpers Module](checkout-helpers.md) first. `src/erk/cli/commands/navigation_helpers.py` imports from `wt.create_cmd`, which creates a cycle if navigation_helpers tries to import from `wt` subpackage. Keep checkout-specific helpers in separate `checkout_helpers.py` module instead.
 
@@ -109,11 +97,23 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using erk exec commands in scripts** → Read [erk exec Commands](erk-exec-commands.md) first. Some erk exec subcommands don't support `--format json`. Always check with `erk exec <command> -h` first.
 
-**CRITICAL: Before using invoke_without_command=True to unify local/remote variants** → Read [Local/Remote Command Group Pattern (Deprecated)](local-remote-command-groups.md) first. this pattern was abandoned - READ: Why this pattern was abandoned section
-
 **CRITICAL: Before using ls -t or mtime to find the current session** → Read [Session ID Availability and Propagation](session-management.md) first. Use the ClaudeInstallation gateway or the session-id-injector-hook's scratch file instead. Mtime-based discovery is racy in parallel sessions.
 
 **CRITICAL: Before using os.environ to read CLAUDE_SESSION_ID** → Read [Session ID Availability and Propagation](session-management.md) first. CLAUDE_SESSION_ID is NOT an environment variable. It's a Claude Code string substitution in commands/skills, and arrives via stdin JSON in hooks.
+
+**CRITICAL: Before using this pattern** → Read [Code Review Filtering](code-review-filtering.md) first. Before flagging 5+ parameter violations, verify NO exception applies (ABC/Protocol/Click)
+
+**CRITICAL: Before using this pattern** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Separate \_\*\_impl() functions return exit codes or discriminated unions, never call sys.exit()
+
+**CRITICAL: Before using this pattern** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Click commands retrieve real implementations from context via require\_\* helpers
+
+**CRITICAL: Before using this pattern** → Read [Local/Remote Command Group Pattern (Deprecated)](local-remote-command-groups.md) first. BEFORE: Using invoke_without_command=True to unify local/remote variants → READ: Why this pattern was abandoned
+
+**CRITICAL: Before using this pattern** → Read [PR Submission Decision Framework](pr-submission.md) first. Before creating PRs, understand the workflow tradeoffs
+
+**CRITICAL: Before using this pattern** → Read [PR Submission Decision Framework](pr-submission.md) first. PR validation rules apply to both workflows
+
+**CRITICAL: Before using this pattern** → Read [Workflow Commands](workflow-commands.md) first. PR workflows automatically update plan issue dispatch metadata when the branch follows the P{issue_number} naming pattern
 
 **CRITICAL: Before writing Examples sections in CLI docstrings without ** → Read [Click Help Text Formatting](help-text-formatting.md) first. Place  on its own line after 'Examples:' heading. Without it, Click rewraps text and breaks formatting.
 

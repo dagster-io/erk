@@ -1,45 +1,64 @@
 ---
 title: PR Creation Decision Logic
 read_when:
-  - "creating a PR programmatically"
-  - "detecting if a PR already exists for a branch"
-  - "implementing PR creation in exec scripts"
+  - "creating a PR programmatically in any workflow"
+  - "deciding whether to create vs update an existing PR"
+  - "implementing a new exec script or pipeline step that touches PRs"
+tripwires:
+  - action: "calling create_pr without first checking get_pr_for_branch"
+    warning: "Always LBYL-check for an existing PR before creating. Duplicate PRs cause confusion and orphaned state. See pr-creation-patterns.md."
+  - action: "using raw gh pr view or gh pr create in Python code"
+    warning: "Use the typed GitHub gateway (get_pr_for_branch, create_pr) instead of shelling out. The gateway returns PRDetails | PRNotFound for LBYL handling."
 ---
 
 # PR Creation Decision Logic
 
-When workflows create PRs programmatically, they must handle the case where a PR already exists for the current branch. Creating a duplicate PR causes confusion and orphaned PRs.
+Every workflow that creates PRs programmatically must handle an existing PR for the same branch. Creating a duplicate causes orphaned PRs and confused reviewers. This document captures the cross-cutting check-before-create pattern and the three strategies callers choose after the check.
 
-## Existing PR Detection Pattern
+## The Core Pattern: LBYL via Discriminated Union
 
-Before creating a new PR, check if one already exists:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/abc.py, GitHub.get_pr_for_branch -->
 
-```bash
-gh pr view --json number --jq '.number' 2>/dev/null
-```
+All PR creation sites use `GitHub.get_pr_for_branch()`, which returns `PRDetails | PRNotFound` — a discriminated union that forces callers to handle both cases. This is the LBYL mechanism: check before you create, using `isinstance` to branch on the result.
 
-- **Exit 0 with number**: PR exists — update it instead of creating a new one
-- **Non-zero exit**: No PR exists — safe to create
+**Why not exceptions?** Erk uses LBYL everywhere. A missing PR is an expected condition, not an error. Using `isinstance` checks keeps the control flow explicit and avoids try/except for non-exceptional situations.
 
-This is the "Step 6.5" pattern from the learn workflow: always check before creating.
+## Three Strategies After Detection
 
-## Decision Flow
+Different workflows need different behavior when a PR already exists:
 
-1. Check if current branch has an open PR
-2. If PR exists: update title/body with `gh pr edit`
-3. If no PR: create with `gh pr create`
+| Strategy       | When PR exists                 | When no PR          | Used by                     |
+| -------------- | ------------------------------ | ------------------- | --------------------------- |
+| **Reject**     | Raise error, refuse to proceed | Create new PR       | Plan review PR creation     |
+| **Update**     | Edit title/body of existing PR | Create new PR       | Submit pipeline (core flow) |
+| **Query-only** | Use existing PR's details      | Return error result | PR sync, PR check, landing  |
 
-## Reusable Pattern
+### Why "Reject" for plan review PRs
 
-This check-before-create pattern applies to any workflow that creates PRs:
+<!-- Source: src/erk/cli/commands/exec/scripts/plan_create_review_pr.py, _create_review_pr_impl -->
 
-- Learn workflow creating documentation PRs
-- Plan-implement creating feature PRs
-- Review workflow creating review PRs
+Plan review PRs are structurally unique — one per plan issue, with specific title prefixes and labels. Creating a second would indicate a workflow bug (the branch was reused or the previous review wasn't cleaned up). Rejecting with `pr_already_exists` surfaces the real problem instead of silently creating a duplicate.
 
-The pattern prevents duplicate PRs that clutter the repository and confuse reviewers.
+### Why "Update" for the submit pipeline
+
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _core_submit_flow -->
+
+The submit pipeline's purpose is to get the branch's PR into a good state — whether that means creating one or enriching an existing one. When a PR exists, it preserves the PR number, adds missing footer metadata, and continues through the remaining pipeline phases (diff extraction, AI description, finalization). This is the most common path because agents often re-run `erk pr submit` on the same branch.
+
+## Stacked PR Constraint
+
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _core_submit_flow -->
+
+When creating a PR in the core (non-Graphite) flow, the pipeline checks whether the parent branch has a PR. If the branch is part of a Graphite stack but the parent has no PR, creation is blocked with guidance to use `gt submit -s` instead. This prevents creating a child PR with an invalid base branch, which GitHub would target against trunk instead of the parent.
+
+## Anti-Patterns
+
+**Using `gh pr view` exit codes in Python**: The current codebase never shells out to `gh pr view` to detect existing PRs. The typed gateway provides compile-time safety via the union return type. Shelling out loses type information and introduces parsing fragility.
+
+**Creating first, deduplicating later**: Some workflows are tempted to create the PR optimistically and handle "already exists" errors. This fails because GitHub happily creates duplicate PRs for the same branch — there's no uniqueness constraint to catch you.
 
 ## Related Topics
 
-- [PR Submit Phases](pr-submit-phases.md) — Full PR submission workflow
-- [Learn Workflow](../planning/learn-workflow.md) — Uses this pattern in Step 6.5
+- [PR Submit Workflow Phases](pr-submit-phases.md) — Full pipeline context for the update strategy
+- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — The broader pattern behind `PRDetails | PRNotFound`
+- [Draft PR Handling](draft-pr-handling.md) — How plan review PRs use draft state

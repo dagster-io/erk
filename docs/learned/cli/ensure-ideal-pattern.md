@@ -1,17 +1,23 @@
 ---
-title: EnsureIdeal Pattern for Type Narrowing
-read_when:
-  - "handling discriminated union returns in CLI commands"
-  - "narrowing types from T | NonIdealState or T | ErrorType"
-  - "working with PR lookups, branch detection, or API calls that return union types"
-  - "seeing EnsureIdeal in code and wondering when to use it vs Ensure"
-tripwires:
-  - action: "using EnsureIdeal for discriminated union narrowing"
-    warning: "Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method."
-  - action: "choosing between Ensure and EnsureIdeal"
-    warning: "Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal."
+audit_result: edited
 last_audited: "2026-02-08"
-audit_result: clean
+read_when:
+  - handling discriminated union returns in CLI commands
+  - narrowing types from T | NonIdealState or T | ErrorType
+  - working with PR lookups, branch detection, or API calls that return union types
+  - seeing EnsureIdeal in code and wondering when to use it vs Ensure
+title: EnsureIdeal Pattern for Type Narrowing
+tripwires:
+  - action: using EnsureIdeal for discriminated union narrowing
+    warning:
+      Only use when the error type implements NonIdealState protocol OR provides
+      a message field. For custom error types without standard fields, add a specific
+      EnsureIdeal method.
+  - action: choosing between Ensure and EnsureIdeal
+    warning:
+      Ensure is for invariant checks (preconditions). EnsureIdeal is for type
+      narrowing (handling operations that can return non-ideal states). If the value
+      comes from an operation that returns T | ErrorType, use EnsureIdeal.
 ---
 
 # EnsureIdeal Pattern for Type Narrowing

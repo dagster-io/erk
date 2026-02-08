@@ -1,16 +1,18 @@
 ---
-title: Heredoc Quoting and Escaping in Agent-Generated Bash
+audit_result: clean
+last_audited: 2026-02-07 19:35 PT
 read_when:
   - generating bash commands with heredocs in Claude Code commands or skills
   - debugging escaping issues where bash mangles content passed to git, gh, or Python
   - writing Claude Code commands that produce multi-line text via bash
+title: Heredoc Quoting and Escaping in Agent-Generated Bash
 tripwires:
-  - action: "using unquoted heredoc delimiters (<<EOF) when body contains special characters"
-    warning: "Never use unquoted heredoc delimiters (<<EOF) when the body contains $, \\, or backticks — bash silently expands them"
-  - action: "generating large agent outputs via bash heredocs"
-    warning: "Prefer the Write tool over bash heredocs for large agent outputs — heredocs fail silently with special characters"
-last_audited: "2026-02-07 19:35 PT"
-audit_result: clean
+  - action:
+      Never use unquoted heredoc delimiters (<<EOF) when the body contains $,
+      \, or backticks
+    warning: bash silently expands them
+  - action: Prefer the Write tool over bash heredocs for large agent outputs
+    warning: heredocs fail silently with special characters
 ---
 
 # Heredoc Quoting and Escaping in Agent-Generated Bash

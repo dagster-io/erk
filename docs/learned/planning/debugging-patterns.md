@@ -1,18 +1,24 @@
 ---
-title: "Source Investigation Over Trial-and-Error"
+audit_result: edited
 last_audited: "2026-02-08"
-audit_result: clean
 read_when:
   - Debugging validation failures after an initial fix attempt fails
-  - Encountering errors where the required format is unclear from the error message alone
+  - Encountering errors where the required format is unclear from the error message
+    alone
   - Deciding whether to guess at another fix or read the validator source
-tripwires:
-  - action: "making a third trial-and-error attempt at a validation fix"
-    warning: "After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement."
-  - action: "grepping only for the error message text"
-    warning: "Also grep for function names extracted from the error (e.g., 'checkout_footer' from 'Missing checkout footer'). Validator function names are more stable search targets than error message strings."
 sources:
   - "[Impl 5d99bc36]"
+title: Source Investigation Over Trial-and-Error
+tripwires:
+  - action: making a third trial-and-error attempt at a validation fix
+    warning:
+      After 2 failed attempts, stop guessing. Grep for the validator function
+      and read the source to understand the exact requirement.
+  - action: grepping only for the error message text
+    warning:
+      Also grep for function names extracted from the error (e.g., 'checkout_footer'
+      from 'Missing checkout footer'). Validator function names are more stable search
+      targets than error message strings.
 ---
 
 # Source Investigation Over Trial-and-Error

@@ -1,18 +1,22 @@
 ---
-title: Two-Option Decision Documentation
+audit_result: edited
+last_audited: "2026-02-08"
 read_when:
   - documenting a decision point between two valid approaches
   - writing comparison documentation for agents
   - choosing between decision table, prose, or template format for trade-off docs
+title: Two-Option Decision Documentation
 tripwires:
-  - action: "writing a decision doc with only prose 'use X when...' bullets"
-    warning: "Add a decision matrix table. Tables let agents scan trade-offs at a glance without parsing paragraphs. See two-option-template.md."
-  - action: "writing a decision doc without concrete examples"
-    warning: "Include at least one situation→decision→reasoning example. Abstract criteria are hard to apply without concrete illustrations."
-  - action: "creating a two-option doc where every matrix row favors the same option"
-    warning: "That's a best-practice doc, not a decision doc. Don't create false balance."
-last_audited: "2026-02-08"
-audit_result: clean
+  - action: writing a decision doc with only prose 'use X when...' bullets
+    warning:
+      Add a decision matrix table. Tables let agents scan trade-offs at a glance
+      without parsing paragraphs. See two-option-template.md.
+  - action: writing a decision doc without concrete examples
+    warning:
+      Include at least one situation→decision→reasoning example. Abstract criteria
+      are hard to apply without concrete illustrations.
+  - action: creating a two-option doc where every matrix row favors the same option
+    warning: That's a best-practice doc, not a decision doc. Don't create false balance.
 ---
 
 # Two-Option Decision Documentation
