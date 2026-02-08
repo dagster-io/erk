@@ -1,17 +1,14 @@
 ---
-audit_result: clean
-last_audited: 2026-02-08 11:48 PT
-read_when:
-  - understanding why audit-doc works the way it does
-  - modifying the /local:audit-doc command
-  - understanding collateral finding tiers
-  - debugging unexpected audit verdicts
 title: Audit-Doc Design Decisions
+read_when:
+  - "understanding why audit-doc works the way it does"
+  - "modifying the /local:audit-doc command"
+  - "understanding collateral finding tiers"
+  - "debugging unexpected audit verdicts"
 tripwires:
-  - action: using this pattern
-    warning:
-      "CRITICAL: Before modifying collateral finding categories or auto-apply
-      behavior in audit-doc"
+  - "CRITICAL: Before modifying collateral finding categories or auto-apply behavior in audit-doc"
+last_audited: "2026-02-08 11:48 PT"
+audit_result: clean
 ---
 
 # Audit-Doc Design Decisions
