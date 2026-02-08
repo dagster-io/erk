@@ -46,8 +46,8 @@ def clean_bad_tripwires(content: str) -> str:
                             '  - action: "using run_ssh_command() for interactive commands"'
                         )
                         result.append(
-                            '    warning: "Interactive commands need exec_ssh_interactive(), '
-                            'not run_ssh_command()"'
+                            '    warning: "Interactive commands need'
+                            ' exec_ssh_interactive(), not run_ssh_command()"'
                         )
                         i += 1
                         continue
@@ -57,12 +57,13 @@ def clean_bad_tripwires(content: str) -> str:
                     warning_line = lines[i + 1]
                     if "don't duplicate setup" in warning_line:
                         result.append(
-                            '  - action: "duplicating environment setup when using '
-                            'build_codespace_ssh_command()"'
+                            '  - action: "duplicating environment setup'
+                            ' when using build_codespace_ssh_command()"'
                         )
                         result.append(
-                            '    warning: "build_codespace_ssh_command() bootstraps the '
-                            "environment - don't duplicate setup\""
+                            '    warning: "build_codespace_ssh_command()'
+                            " bootstraps the environment"
+                            " - don't duplicate setup\""
                         )
                         i += 1
                         continue
