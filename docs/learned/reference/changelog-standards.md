@@ -1,236 +1,100 @@
 ---
 title: Changelog Standards and Format
 read_when:
-  - "writing CHANGELOG.md entries"
-  - "formatting changelog sections"
-  - "understanding sync marker format"
+  - "writing CHANGELOG.md entries manually"
+  - "understanding the changelog sync marker system"
+  - "deciding how to format a changelog entry"
+tripwires:
+  - action: "adding a changelog entry without a commit hash reference"
+    warning: "All unreleased entries must include 9-character short hashes in parentheses. Hashes are stripped at release time by /local:changelog-release."
+  - action: "writing implementation-focused changelog entries"
+    warning: "Entries must describe user-visible behavior, not internal implementation. Ask: 'Does an erk user see different behavior?'"
+  - action: "modifying CHANGELOG.md directly instead of using /local:changelog-update"
+    warning: "Always use /local:changelog-update to sync with commits. Manual edits bypass the categorization agent and marker system."
+last_audited: "2026-02-08"
+audit_result: edited
 ---
 
 # Changelog Standards and Format
 
-CHANGELOG.md follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format with erk-specific conventions for commit references and sync markers.
+CHANGELOG.md follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) with erk-specific conventions. This document explains the design decisions behind the format — for the authoritative entry format and workflow steps, see the command files linked below.
 
-## Entry Format
+## System Architecture
 
-### Standard Entry
+The changelog system has three components that must stay coordinated:
 
-```markdown
-- {Description of change in past tense, user-focused} ({commit_hash})
-```
+| Component | Role | Authority over |
+|-----------|------|---------------|
+| `/local:changelog-update` | Syncs unreleased section with new commits | Update workflow, entry format, marker management |
+| `/local:changelog-release` | Finalizes unreleased into versioned section | Release format, hash stripping, version bumping |
+| Commit categorizer agent | Classifies commits into categories | Category assignment, filtering rules, roll-up detection |
 
-**Examples:**
+<!-- Source: .claude/commands/local/changelog-update.md -->
+<!-- Source: .claude/commands/local/changelog-release.md -->
+<!-- Source: .claude/agents/changelog/commit-categorizer.md -->
 
-```markdown
-- Fix discover-reviews for large PRs by switching to REST API with pagination (ab3ff4e58)
-- Consolidate `erk init capability list` and `erk init capability check` into unified command (57a406f39)
-```
+The update command orchestrates the categorizer agent, presents a proposal for human review, and only writes to CHANGELOG.md after approval. The release command transforms the unreleased section into a versioned one. See each command file for workflow details.
 
-### Multiple Commits (Single Feature)
+## Why Commit Hash References Exist
 
-When a feature spans multiple commits, reference all relevant hashes:
+Unreleased entries include 9-character short hashes (e.g., `(ab3ff4e58)`) for traceability during review. When a human reviews the changelog proposal, they can quickly `git show` any hash to verify the entry accurately represents the change.
 
-```markdown
-- {Description of complete feature} ({hash1}, {hash2}, {hash3})
-```
+At release time, `/local:changelog-release` strips all hashes. Released entries stand alone without implementation references — they describe user-visible outcomes, not code history.
 
-**Example:**
+This two-phase lifecycle is why hashes appear in unreleased entries but not in versioned sections of `CHANGELOG.md`.
 
-```markdown
-- Add plan review via temporary PR workflow (03b9e3a9d, 260f8a059, 46a916ddb, 436045eee)
-```
+## The Sync Marker System
 
-### Large Features (Major Changes)
+The `<!-- As of: ... -->` HTML comment in the Unreleased section is a cursor — it tells `erk-dev changelog-commits` where to start scanning for new commits. The marker uses `git log {marker}..HEAD --first-parent` to find only mainline commits, excluding feature branch history.
 
-Major Changes use a different format with explanatory prose:
+**Why `--first-parent`:** Without it, squash-merged PRs would expose individual feature branch commits that are already consolidated into the squash commit's entry.
 
-```markdown
-- **Feature Name**: Brief description. Motivation/problem statement. Value to user. ({primary_hash}, {supporting_hash1}, {supporting_hash2})
-```
+**Missing marker recovery:** If the marker is accidentally deleted, the categorizer agent falls back to finding the last release version header and using `--since` to specify a commit directly. This is documented in the categorizer agent's error handling.
 
-**Example:**
+## Entry Writing Decisions
 
-```markdown
-- **Plan Review via Temporary PR**: New workflow for asynchronous plan review through draft PRs. Plans can be submitted as temporary PRs for review, with feedback incorporated back into the plan issue. Includes automatic branch management, PR lifecycle handling, and integration with `/erk:pr-address`. (03b9e3a9d, 260f8a059, 46a916ddb, 436045eee, df3bda1a2, 90887e08b, 8f7b8811d, 8c7c66480, 712fffabf, f1c6fcb08, 91c06aaba)
-```
+### User-Visible Framing
 
-**Key elements:**
+The hardest judgment call in changelog writing is framing. The same change can be described from the implementation side or the user side.
 
-1. **Bold feature name** - Short, memorable name
-2. **What it does** - Brief functional description
-3. **Motivation** - Why we built it, what problem it solves
-4. **Value** - What benefit users get
-5. **All commit hashes** - Primary commit first, then supporting commits
+**WRONG** (implementation-focused): "Refactor discover-reviews to use REST API instead of GraphQL"
+**RIGHT** (user-focused): "Fix discover-reviews for large PRs by switching to REST API with pagination"
 
-## Keep a Changelog Compliance
+The test: describe the **problem solved or behavior changed**, not the technical approach. The implementation is available via the commit hash.
 
-### User Focus
+### When Entries Become Major Changes
 
-**Good (user-focused):**
+Regular entries are single-line items under Added/Changed/Fixed/Removed. Major Changes use a different structure: bold feature name, explanatory prose covering what/why/value, and consolidated commit hashes.
 
-- "Fix discover-reviews for large PRs by switching to REST API with pagination"
-- "Auto-fix Graphite tracking divergence in sync and branch creation"
+The threshold is not code size — it's **conceptual significance**. A feature that changes how users think about the tool (e.g., "Plan Review via Temporary PR") is a Major Change. A large refactor that users never notice is filtered entirely.
 
-**Bad (implementation-focused):**
+See `CHANGELOG.md` for living examples of both formats.
 
-- "Refactor discover-reviews to use REST API instead of GraphQL"
-- "Add tracking divergence detection logic to sync command"
+### Roll-Up vs Separate Entries
 
-### Past Tense
+Multiple commits implementing a single feature should consolidate into one entry. This prevents the changelog from reading like a git log. The categorizer agent detects roll-up candidates by keyword clustering and sequential PR numbers.
 
-**Good:**
+The presentation should describe the **complete feature**, not the implementation journey. Five commits about "artifact sync" become one entry explaining what artifact sync does for users.
 
-- "Added plan review workflow"
-- "Fixed detached HEAD state"
-- "Removed fallback indicator"
+## Section Ordering
 
-**Bad:**
+Categories follow a fixed order: Major Changes, Added, Changed, Fixed, Removed. Empty categories are omitted entirely — don't include empty headers. This order puts the most significant changes first.
 
-- "Add plan review workflow"
-- "Fix detached HEAD state"
-- "Remove fallback indicator"
+## Release Workflow Decisions
 
-### Logical Grouping
+### Minor vs Patch Releases
 
-Group related entries together within a category:
+<!-- Source: .claude/commands/local/changelog-release.md, Phase 3 -->
 
-```markdown
-### Changed
+Patch releases (X.Y.Z+1) are the default. Minor releases (X.Y+1.0) add a **Release Overview** section that consolidates themes across the preceding patch series. The decision to cut a minor release is always human-driven — the release command prompts for it.
 
-- Move code reviews to Haiku model with flag-only prompts (67bd9922e)
-- Fix discover-reviews for large PRs by switching to REST API (ab3ff4e58)
-- Auto-fix Graphite tracking divergence (8b8b06b53)
-```
+### Release Overview Structure
 
-Not scattered randomly based on commit order.
+Minor releases include narrative theme sections (What it solves / How it works / Key features) that provide context beyond the individual entries. These themes span multiple patch releases and describe the arc of development, not just individual changes.
 
-## Commit Reference Formats
-
-### Single Commit
-
-Short hash (9 characters):
-
-```markdown
-({commit_hash})
-```
-
-Example: `(ab3ff4e58)`
-
-### Multiple Commits
-
-Comma-separated, space after each comma:
-
-```markdown
-({hash1}, {hash2}, {hash3})
-```
-
-Example: `(03b9e3a9d, 260f8a059, 46a916ddb)`
-
-### Many Commits (10+)
-
-For very large features with 10+ commits, consider:
-
-1. **Roll-up entry** - Consolidate into single entry with all hashes
-2. **Primary only** - Reference only the primary commit if supporting commits are minor fixes
-
-## Sync Marker Format
-
-The "As of" marker tracks the last commit included in CHANGELOG.md:
-
-```markdown
-<!-- As of: `{commit_hash}` -->
-```
-
-**Placement:** First line of the `## [Unreleased]` section, after the section header.
-
-**Example:**
-
-```markdown
-## [Unreleased]
-
-<!-- As of: `03b9e3a9d` -->
-
-### Major Changes
-```
-
-### Marker Lifecycle
-
-1. **Parsing** - `erk-dev changelog-commits` reads the marker to find the starting point
-2. **Querying** - `git log {marker_hash}..HEAD --first-parent` gets new commits
-3. **Updating** - After adding entries, marker is updated to current HEAD
-
-**Commands:**
-
-```bash
-# Get commits since marker
-erk-dev changelog-commits --json-output
-
-# Update marker to current HEAD
-erk-dev changelog-update-marker
-```
-
-### Missing Marker
-
-If no marker exists (new repo or marker accidentally deleted):
-
-1. Find the most recent release version in CHANGELOG.md (e.g., `## [0.7.0]`)
-2. Find the release commit: `git log --oneline -1 --grep="0.7.0"`
-3. Get commits since that release: `erk-dev changelog-commits --since {release_hash} --json-output`
-
-## Section Order
-
-Sections appear in this order (omit empty sections):
-
-1. Major Changes
-2. Added
-3. Changed
-4. Fixed
-5. Removed
-
-**Example:**
-
-```markdown
-## [Unreleased]
-
-<!-- As of: `{hash}` -->
-
-### Major Changes
-
-- ...
-
-### Added
-
-- ...
-
-### Fixed
-
-- ...
-```
-
-(No "Changed" or "Removed" sections if they're empty)
-
-## Release Section Format
-
-When cutting a release:
-
-```markdown
-## [{version}] - {date} {time} {timezone}
-
-### Release Overview
-
-{High-level summary of what's in this release}
-```
-
-**Example:**
-
-```markdown
-## [0.7.0] - 2026-01-24 15:12 PT
-
-### Release Overview
-
-This release adds remote execution capabilities, plan replanning workflows, and numerous TUI improvements for managing plans and PRs.
-```
+See the `[0.7.0]` and `[0.7.1]` sections in `CHANGELOG.md` for living examples of both release formats.
 
 ## Related Documentation
 
-- [Categorization Rules](../changelog/categorization-rules.md) - How to categorize commits
-- [Agent Delegation](../planning/agent-delegation.md) - changelog-update workflow
+- [Categorization Rules](../changelog/categorization-rules.md) — why-level rationale for category assignment and filtering decisions
+- [Agent Delegation](../planning/agent-delegation.md) — how changelog-update orchestrates the commit-categorizer agent

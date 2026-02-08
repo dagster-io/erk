@@ -1,57 +1,60 @@
 ---
 title: Inline Comment Deduplication
 read_when:
-  - "working with PR inline review comments"
-  - "understanding how duplicate comments are prevented"
-  - "modifying review prompt assembly"
+  - "modifying how PR review comments are posted or fetched"
+  - "debugging duplicate review comments on a PR"
+  - "changing the review prompt template's deduplication instructions"
 tripwires:
   - action: "posting inline review comments without deduplication"
-    warning: "Always deduplicate before posting. Use (path, line, body_prefix) key with 80-char prefix and 2-line proximity tolerance."
+    warning: "Always deduplicate before posting. The dedup logic is prompt-embedded, not code-enforced — see Step 4 of REVIEW_PROMPT_TEMPLATE."
 ---
 
 # Inline Comment Deduplication
 
-When posting inline review comments to a PR, the system deduplicates to prevent posting the same comment multiple times across review iterations.
+## Why This Exists
 
-## Algorithm
+Automated reviews run repeatedly on the same PR (after each push, on re-review requests). Without deduplication, every review iteration posts the same violations again, flooding the PR with identical comments. The problem is worse than simple repetition — GitHub doesn't collapse duplicate review comments, so reviewers see N copies of each violation where N is the number of review iterations.
 
-### Deduplication Key
+## Architecture Decision: Prompt-Embedded, Not Code-Enforced
 
-Each comment is uniquely identified by a tuple:
+The deduplication logic lives entirely in the prompt template, not in Python code. The AI agent executing the review is instructed to fetch existing comments, build a dedup index, and skip matches — all within the prompt steps.
 
-```
-(file_path, line_number, body_prefix)
-```
+<!-- Source: src/erk/review/prompt_assembly.py, REVIEW_PROMPT_TEMPLATE -->
 
-Where `body_prefix` is the first **80 characters** of the comment body.
+This is intentional: the agent needs flexibility to interpret near-matches and make judgment calls that rigid code dedup cannot. For example, a slightly reworded violation on a line that shifted by 1 is "the same comment" to a human reviewer but would slip past exact-match code.
 
-### Proximity Tolerance
+The trade-off is that dedup quality depends on the AI agent correctly following the instructions. If the prompt template's Step 4 instructions are unclear, dedup fails silently — the agent just posts duplicates.
 
-Line numbers are matched with a **2-line tolerance** to account for diff shifts between review iterations. A comment at line 42 is considered a duplicate of an existing comment at lines 40–44 with the same path and body prefix.
+## Design Trade-offs in the Matching Heuristic
 
-### Process
+Two parameters control the dedup sensitivity, chosen to balance false positives (suppressing distinct comments) against false negatives (posting duplicates):
 
-1. Fetch existing review comments on the PR
-2. Build a set of `(path, line, body_prefix)` keys from existing comments
-3. For each new comment to post:
-   - Compute its key
-   - Check for matches within the 2-line proximity window
-   - Skip posting if a match exists
+| Parameter | Value | Why this value |
+|---|---|---|
+| **Body prefix length** | 80 chars | Short enough to tolerate minor rephrasing between iterations; long enough that distinct comments with the same opening phrase aren't collapsed |
+| **Line proximity** | ±2 lines | Accounts for small diff shifts between pushes without matching unrelated comments on nearby lines |
 
-## Why 80 Characters
+**Anti-pattern — exact line matching**: Using exact line numbers causes false negatives on every push that shifts code, since the same violation moves by a few lines. The 2-line window handles the common case of small surrounding edits.
 
-The 80-character prefix balances two concerns:
+**Anti-pattern — full body matching**: Using the entire comment body for matching causes false negatives whenever the agent slightly rephrases its explanation across iterations. The 80-char prefix captures the violation type and location, which are the stable parts.
 
-- **Too short**: Different comments with the same opening would be incorrectly deduplicated
-- **Too long**: Minor rephrasing would cause duplicates to be posted
+## Cross-System Interaction
 
-80 characters captures enough of the comment's intent to reliably detect duplicates while tolerating minor wording changes.
+The dedup pipeline spans three distinct components:
 
-## Reference Implementation
+1. **Fetch** — `erk exec get-pr-review-comments --include-resolved` returns existing threads with path, line, and body fields
+2. **Match** — The agent builds and queries the dedup index (prompt-instructed, not code)
+3. **Post** — `erk exec post-pr-inline-comment` posts only non-duplicate comments
 
-The deduplication logic is embedded in the review prompt template at `src/erk/review/prompt_assembly.py` (Step 4 in the template instructions).
+<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_review_comments.py, get_pr_review_comments -->
+<!-- Source: src/erk/cli/commands/exec/scripts/post_pr_inline_comment.py, post_pr_inline_comment -->
+
+The `--include-resolved` flag is critical for dedup: without it, resolved threads are invisible and the agent re-posts violations that a human already dismissed.
+
+## Review Name Prefix as Scope Boundary
+
+The prompt instructs the agent to match only comments starting with the same review prefix (`**{review_name}**:`). This prevents cross-review dedup — if two different review definitions both flag the same line, both comments are posted. This is correct behavior because different reviews enforce different rules and their comments serve different purposes.
 
 ## Related Documentation
 
-- [Prompt Assembly](prompt-assembly.md) — Two-mode prompt system that includes deduplication instructions
-- [PR Operations Skill](../../../.claude/skills/pr-operations/SKILL.md) — Commands for posting and resolving review comments
+- [Review Prompt Assembly](prompt-assembly.md) — The two-mode prompt system where dedup instructions are embedded

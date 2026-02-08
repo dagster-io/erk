@@ -1,182 +1,71 @@
 ---
 title: Objective Summary Format
-last_audited: "2026-02-04 05:48 PT"
-audit_result: clean
+last_audited: "2026-02-08"
+audit_result: edited
 read_when:
-  - working with objective-next-plan command
-  - implementing Task agent delegation for objective context
-  - parsing objective summary JSON output
+  - working with objective-next-plan command or objective-view command
+  - modifying how objective context flows between agents
+  - changing roadmap status inference logic
 tripwires:
-  - action: "parsing objective summary output without structured format"
-    warning: "Use the documented JSON format with OBJECTIVE, STATUS, ROADMAP, PENDING_STEPS, and RECOMMENDED sections. Status mapping uses pending/done/in_progress/blocked/skipped."
+  - action: "adding a new roadmap status value"
+    warning: "Status inference lives in two places that must stay synchronized: the roadmap parser (objective_roadmap_shared.py) and the agent prompt in objective-next-plan.md. Update both or the formats will diverge."
 ---
 
 # Objective Summary Format
 
-This document specifies the structured output format for Task agent delegation in objective context fetching, specifically used by the `objective-next-plan` command.
+Objective data flows through two distinct formats depending on the consumer. Understanding which format to use — and why they differ — prevents agents from mixing them up or building against the wrong contract.
 
-## Purpose
+## Two Formats, Two Purposes
 
-The objective summary format enables:
+Objective context reaches consumers through two separate paths, each with its own format:
 
-1. **Token optimization** - Task agents fetch and structure objective data, reducing token usage in parent context
-2. **Consistent parsing** - Structured JSON output enables reliable field extraction
-3. **Status translation** - Maps display statuses (ACTIVE/PLANNING/COMPLETED) to workflow statuses (pending/done/in_progress/blocked/skipped)
+| Consumer | Format | Source of truth | Why this format |
+| --- | --- | --- | --- |
+| Claude agent (parent context) | Structured text (OBJECTIVE/ROADMAP/etc.) | `.claude/commands/erk/objective-next-plan.md` Step 2 prompt | Optimized for LLM parsing — flat sections, no nested JSON to deserialize |
+| Programmatic tools (scripts, CLI) | JSON with `phases`, `summary`, `next_step` | `erk objective check --json-output` | Machine-readable for field extraction and validation |
 
-## Output Format
+These formats exist independently because their consumers have fundamentally different parsing capabilities. The agent text format uses labeled sections (OBJECTIVE, STATUS, ROADMAP, PENDING_STEPS, RECOMMENDED) that a haiku subagent can reliably produce. The programmatic JSON format uses typed fields with nested phase/step structures that code can traverse.
 
-Task agents delegated for objective context must return JSON with these sections:
+**Anti-pattern:** Asking a Task agent to return the `erk objective check --json-output` format directly. The JSON output has deeply nested phases with validation metadata that agents don't need and can't reliably produce. Use the text format for agent-to-agent communication.
 
-### Required Sections
+## Status Inference: The Cross-Cutting Concern
 
-#### 1. OBJECTIVE
+Roadmap step status is inferred from two signals — the explicit status column and the PR column — and this inference logic must stay consistent across all consumers.
 
-```json
-{
-  "OBJECTIVE": {
-    "title": "Implement feature X",
-    "issue_number": 1234,
-    "description": "Full objective description..."
-  }
-}
-```
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
 
-**Fields:**
+The canonical status inference lives in `parse_roadmap()` in `objective_roadmap_shared.py`. The priority order:
 
-- `title` (string) - Objective title from GitHub issue
-- `issue_number` (integer) - GitHub issue number
-- `description` (string) - Full objective body text
+1. **Explicit status column** — `done`, `blocked`, `skipped`, `in-progress`, `pending` are used directly
+2. **PR column fallback** — if status is ambiguous, a `#NNN` PR reference infers `done`, and `plan #NNN` infers `in_progress`
+3. **Default** — `pending` when neither signal is present
 
-#### 2. STATUS
+This same logic is described in prose in the `objective-next-plan.md` command prompt (Step 2, status mapping section). When modifying status inference, both locations must be updated.
 
-```json
-{
-  "STATUS": "ACTIVE"
-}
-```
+**Why PR-column inference exists:** Legacy objective issues often had PR links in the PR column without updating the status column. Rather than requiring retroactive cleanup, the parser infers status from the PR reference as a fallback. Explicit status always wins.
 
-**Valid values:**
+## Agent Delegation Pattern
 
-- `ACTIVE` - Objective is in progress
-- `PLANNING` - Objective is being planned
-- `COMPLETED` - Objective is finished
+<!-- Source: .claude/commands/erk/objective-next-plan.md -->
 
-**Status mapping to workflow statuses:**
+The `objective-next-plan` command delegates objective fetching to a haiku Task agent (Step 2) for token efficiency. The parent agent never directly parses the objective issue body — it receives a pre-structured summary from the subagent.
 
-| Display Status | Maps To     |
-| -------------- | ----------- |
-| ACTIVE         | in_progress |
-| PLANNING       | pending     |
-| COMPLETED      | done        |
-| (none)         | pending     |
-| BLOCKED        | blocked     |
-| SKIPPED        | skipped     |
+**Why haiku:** Objective data fetching is mechanical work (call `erk exec get-issue-body`, call `erk objective check --json-output`, format results). Haiku handles this at lower token cost without sacrificing reliability.
 
-#### 3. ROADMAP
+**Why a subagent at all:** Without delegation, the parent agent would spend context window tokens on the full objective issue body (often thousands of tokens of roadmap tables and implementation context). The subagent compresses this to just the fields the parent needs for step selection.
 
-```json
-{
-  "ROADMAP": [
-    {
-      "step": "Design API endpoints",
-      "status": "done",
-      "pr": 1235,
-      "notes": "Completed in PR #1235"
-    },
-    {
-      "step": "Implement auth layer",
-      "status": "in_progress",
-      "pr": null,
-      "notes": "Currently working on"
-    }
-  ]
-}
-```
+## Validation and the Check Command
 
-**Table format:**
+<!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective -->
 
-Each roadmap entry has:
+`erk objective check` validates roadmap consistency through five checks: label presence, roadmap parsing, status/PR consistency, orphaned done-without-PR steps, and sequential phase numbering. The `--json-output` flag exposes full parsed phases and summary statistics.
 
-- `step` (string) - Description of the roadmap step
-- `status` (string) - One of: pending, done, in_progress, blocked, skipped
-- `pr` (integer | null) - Associated PR number, or null if not yet created
-- `notes` (string) - Additional context or notes
+<!-- Source: .claude/commands/local/objective-view.md -->
 
-#### 4. PENDING_STEPS
-
-```json
-{
-  "PENDING_STEPS": [
-    "Implement auth layer",
-    "Add integration tests",
-    "Write documentation"
-  ]
-}
-```
-
-**Fields:**
-
-- Array of strings representing steps not yet completed
-- Derived from ROADMAP entries with status != "done"
-
-#### 5. RECOMMENDED
-
-```json
-{
-  "RECOMMENDED": {
-    "next_step": "Implement auth layer",
-    "reason": "Critical path dependency for remaining work"
-  }
-}
-```
-
-**Fields:**
-
-- `next_step` (string) - Recommended next action
-- `reason` (string) - Rationale for the recommendation
-
-## Task Agent Prompt Structure
-
-When delegating objective context fetching to a Task agent, use this pattern:
-
-```markdown
-Fetch objective context for issue #1234 and format as JSON with the following sections:
-
-1. OBJECTIVE - title, issue_number, description
-2. STATUS - ACTIVE, PLANNING, or COMPLETED
-3. ROADMAP - table with step, status, pr, notes columns
-4. PENDING_STEPS - array of incomplete steps
-5. RECOMMENDED - next_step and reason
-
-Map status values:
-
-- ACTIVE → in_progress
-- PLANNING → pending
-- COMPLETED → done
-
-Use haiku model for token efficiency.
-```
-
-## Model Selection
-
-- **Recommended model**: `haiku`
-- **Rationale**: Objective data fetching is mechanical work (fetch, parse, format). Haiku provides sufficient capability at lower token cost.
-
-## Token Savings
-
-Example from `objective-next-plan` refactor (#6698):
-
-- **Before** (sequential LLM turns): ~3 turns × 1500 tokens = ~4500 tokens
-- **After** (Task agent delegation): ~1200 tokens (agent execution) + 800 tokens (result consumption) = ~2000 tokens
-- **Savings**: ~55% token reduction
+The `objective-view` command uses a separate analysis path — it passes the raw objective body to haiku for phase progress analysis rather than calling `erk objective check`. This works because `objective-view` only needs aggregate progress (steps done per phase), not the full validation.
 
 ## Related Documentation
 
-- [Token Optimization Patterns](../planning/token-optimization-patterns.md) - Task agent delegation pattern
-- [Objective Commands](../cli/objective-commands.md) - Commands that consume this format
-- [Agent Orchestration Safety Patterns](../planning/agent-orchestration-safety.md) - File-based agent output pattern
-
-## Code References
-
-- Implementation: `src/erk/cli/commands/objective/next_plan_cmd.py`
-- Task agent prompt: Search for `Task(subagent_type='general-purpose'` in next_plan_cmd.py
+- [Token Optimization Patterns](../planning/token-optimization-patterns.md) — Task agent delegation pattern
+- [Objective Commands](../cli/objective-commands.md) — CLI commands that consume these formats
+- Objective format templates live in `.claude/skills/objective/references/format.md` (loaded via the `objective` skill)
