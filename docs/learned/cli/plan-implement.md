@@ -25,15 +25,18 @@ The command follows a priority-based source resolution pattern that determines w
 ### Source Resolution Priority
 
 **Priority 1: Explicit argument**
+
 - Issue number → Fetch from GitHub, create branch, setup `.impl/`
 - File path → Local plan, create branch from file, no issue tracking
 - Empty → Fall through to Priority 2
 
 **Priority 2: Existing `.impl/` folder**
+
 - Valid folder → Skip setup, proceed directly to implementation
 - Invalid folder → Fall through to Priority 3
 
 **Priority 3: Current plan mode session**
+
 - Save plan to GitHub issue → Setup from new issue → Implement
 
 This priority order prevents destructive operations (saving plans when `.impl/` exists) and enables flexible workflow restart.
@@ -42,12 +45,12 @@ This priority order prevents destructive operations (saving plans when `.impl/` 
 
 The system uses two folders with fundamentally different lifecycles:
 
-| Aspect        | `.impl/`                     | `.worker-impl/`                  |
-|---------------|------------------------------|----------------------------------|
-| **Context**   | Local + remote (Claude reads)| Remote only (GitHub Actions)     |
-| **Git Status**| In `.gitignore`, never staged| Committed, then auto-deleted     |
-| **Lifecycle** | Preserved forever for review | Transient, deleted after CI pass |
-| **Cleanup**   | Manual user action only      | Automatic after validation       |
+| Aspect         | `.impl/`                      | `.worker-impl/`                  |
+| -------------- | ----------------------------- | -------------------------------- |
+| **Context**    | Local + remote (Claude reads) | Remote only (GitHub Actions)     |
+| **Git Status** | In `.gitignore`, never staged | Committed, then auto-deleted     |
+| **Lifecycle**  | Preserved forever for review  | Transient, deleted after CI pass |
+| **Cleanup**    | Manual user action only       | Automatic after validation       |
 
 **Why this matters:** Agents commonly violate the preservation contract by deleting `.impl/` during implementation. The `impl-verify` command exists as a guardrail to catch this violation.
 
@@ -72,11 +75,13 @@ Local implementations must upload the session to enable `erk learn --async`. Thi
 ### Why Session Upload Exists
 
 Without session upload:
+
 - Learn workflow requires manual session file handling
 - No consistent session storage location
 - Async learn can't find the session for locally-implemented PRs
 
 With session upload:
+
 - Session stored in GitHub Gist (linked to issue)
 - Learn workflow finds session via issue metadata
 - Local and remote implementations treated uniformly
@@ -125,13 +130,13 @@ Hook-based CI override exists because different projects need different validati
 
 Different phases have vastly different completion times:
 
-| Phase                  | Typical Duration | Blocking Factor                    |
-|------------------------|------------------|-------------------------------------|
-| Setup (issue fetch)    | 2-5 seconds      | GitHub API latency                  |
-| Setup (branch create)  | <1 second        | Local git operation                 |
-| Implementation         | 5 mins - 2 hours | Plan complexity, codebase size      |
-| CI verification        | 2-10 minutes     | Test suite size, iteration count    |
-| PR creation            | 5-10 seconds     | GitHub API latency                  |
+| Phase                 | Typical Duration | Blocking Factor                  |
+| --------------------- | ---------------- | -------------------------------- |
+| Setup (issue fetch)   | 2-5 seconds      | GitHub API latency               |
+| Setup (branch create) | <1 second        | Local git operation              |
+| Implementation        | 5 mins - 2 hours | Plan complexity, codebase size   |
+| CI verification       | 2-10 minutes     | Test suite size, iteration count |
+| PR creation           | 5-10 seconds     | GitHub API latency               |
 
 **Why this matters:** When debugging hangs, knowing expected phase duration helps identify where to investigate (network vs code execution vs test infrastructure).
 
@@ -140,6 +145,7 @@ Different phases have vastly different completion times:
 ### Anti-Pattern: Deleting `.impl/` After CI Passes
 
 **WRONG:**
+
 ```bash
 git rm -rf .impl/
 git commit -m "Clean up after implementation"
@@ -152,6 +158,7 @@ git commit -m "Clean up after implementation"
 ### Anti-Pattern: Committing `.impl/` for "Documentation"
 
 **WRONG:**
+
 ```bash
 git add -f .impl/plan.md  # Force-add ignored file
 git commit -m "Add implementation plan"
@@ -168,6 +175,7 @@ The `impl-signal started` command has a side effect that's easy to miss: it dele
 <!-- Source: src/erk/cli/commands/exec/scripts/impl_signal.py, _delete_claude_plan_file() -->
 
 This happens because:
+
 1. Plan content has been saved to GitHub issue (permanent storage)
 2. Plan content has been snapshotted to `.erk/scratch/` (backup)
 3. Keeping the file could cause confusion if user tries to re-save

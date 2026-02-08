@@ -30,13 +30,13 @@ This constraint is **deliberate**: all committed markdown must be formatted cons
 
 ## Standard Workflow
 
-| Phase     | Action                           | Tool         | Why                                        |
-| --------- | -------------------------------- | ------------ | ------------------------------------------ |
-| 1. Edit   | Modify markdown content          | Write/Edit   | Create or update documentation             |
-| 2. Format | Run `make prettier` and report   | devrun agent | Apply Prettier's formatting rules          |
-| 3. CI     | Run `make fast-ci` and report    | devrun agent | Verify all checks pass                     |
-| 4. Fix    | Address test/lint failures       | Parent agent | Analyze devrun output, modify files        |
-| 5. Commit | Commit all changes               | Bash/git     | Push formatted, passing code               |
+| Phase     | Action                         | Tool         | Why                                 |
+| --------- | ------------------------------ | ------------ | ----------------------------------- |
+| 1. Edit   | Modify markdown content        | Write/Edit   | Create or update documentation      |
+| 2. Format | Run `make prettier` and report | devrun agent | Apply Prettier's formatting rules   |
+| 3. CI     | Run `make fast-ci` and report  | devrun agent | Verify all checks pass              |
+| 4. Fix    | Address test/lint failures     | Parent agent | Analyze devrun output, modify files |
+| 5. Commit | Commit all changes             | Bash/git     | Push formatted, passing code        |
 
 **Critical**: Phase 2 (Format) must happen before Phase 3 (CI). Running CI without formatting first wastes a CI cycle and forces a second iteration.
 
@@ -85,13 +85,13 @@ Prompting devrun with "fix any formatting errors." This violates devrun's read-o
 
 ## Decision Table: Format or Manual Edit?
 
-| Change Type                | Tool Flow                     | Rationale                                      |
-| -------------------------- | ----------------------------- | ---------------------------------------------- |
-| Adding paragraphs          | Edit → devrun(make prettier)  | Prose changes affect line wrapping             |
-| Fixing typos (single line) | Edit → devrun(make prettier)  | Even single-line edits can shift wrapping      |
-| Adding code blocks         | Edit → devrun(make prettier)  | Code fence formatting has strict rules         |
-| Updating tables            | Edit → devrun(make prettier)  | Column alignment must match across all rows    |
-| Reordering list items      | Edit → devrun(make prettier)  | List spacing rules depend on nesting depth     |
+| Change Type                | Tool Flow                    | Rationale                                   |
+| -------------------------- | ---------------------------- | ------------------------------------------- |
+| Adding paragraphs          | Edit → devrun(make prettier) | Prose changes affect line wrapping          |
+| Fixing typos (single line) | Edit → devrun(make prettier) | Even single-line edits can shift wrapping   |
+| Adding code blocks         | Edit → devrun(make prettier) | Code fence formatting has strict rules      |
+| Updating tables            | Edit → devrun(make prettier) | Column alignment must match across all rows |
+| Reordering list items      | Edit → devrun(make prettier) | List spacing rules depend on nesting depth  |
 
 **Takeaway**: Always format after markdown edits, regardless of change size. The cost of running `make prettier` (seconds) is far lower than the cost of a CI cycle (minutes).
 

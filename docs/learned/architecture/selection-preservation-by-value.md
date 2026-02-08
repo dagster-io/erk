@@ -78,11 +78,11 @@ See `PlanDataTable.populate()` in `src/erk/tui/widgets/plan_table.py` (lines 149
 
 When the selected item disappears from the refreshed data, you must choose a fallback behavior:
 
-| Strategy        | UX Intent                                 | When to Use                           |
-| --------------- | ----------------------------------------- | ------------------------------------- |
-| Reset to 0      | User should see latest/most important     | Priority-sorted lists (newest first)  |
-| Preserve index  | User should see nearby context            | Navigable lists where position matters|
-| Clear selection | Selection is meaningless without the item | Optional selection states             |
+| Strategy        | UX Intent                                 | When to Use                            |
+| --------------- | ----------------------------------------- | -------------------------------------- |
+| Reset to 0      | User should see latest/most important     | Priority-sorted lists (newest first)   |
+| Preserve index  | User should see nearby context            | Navigable lists where position matters |
+| Clear selection | Selection is meaningless without the item | Optional selection states              |
 
 **Erk's choices:**
 

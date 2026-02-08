@@ -42,11 +42,11 @@ Compare to the Python version in `packages/erk-shared/src/erk_shared/env.py`, wh
 
 ## Behavioral Differences
 
-| Behavior            | Interactive Mode | CI Mode                 |
-| ------------------- | ---------------- | ----------------------- |
-| User confirmations  | Prompted         | Skipped (auto-proceed)  |
-| Plan save           | User confirms    | Auto-saves              |
-| Blocking prompts    | Shown            | Skipped (would hang CI) |
+| Behavior           | Interactive Mode | CI Mode                 |
+| ------------------ | ---------------- | ----------------------- |
+| User confirmations | Prompted         | Skipped (auto-proceed)  |
+| Plan save          | User confirms    | Auto-saves              |
+| Blocking prompts   | Shown            | Skipped (would hang CI) |
 
 **Why auto-proceed in CI?** GitHub Actions has no interactive terminal. Commands that prompt for input (`click.confirm()`, `input()`, etc.) will hang indefinitely waiting for stdin that never arrives.
 

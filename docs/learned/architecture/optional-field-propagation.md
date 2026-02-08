@@ -32,6 +32,7 @@ The danger zone: any transformation between stages.
 With frozen dataclasses, you can't mutate. You must create new instances:
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, dataclasses.replace() usage -->
+
 ```python
 # CORRECT: dataclasses.replace() preserves all fields
 return dataclasses.replace(state, pr_number=123)
@@ -55,6 +56,7 @@ The type system doesn't help: `field: int | None` accepts `None`, so this compil
 ### Pattern 1: Hand-Construction Instead of replace()
 
 **Anti-pattern**:
+
 ```python
 # WRONG: Selective field copying
 new_plan = Plan(
@@ -71,6 +73,7 @@ new_plan = Plan(
 ### Pattern 2: Enrich After Filter
 
 **Anti-pattern**:
+
 ```python
 # WRONG: Filter first, enrich later
 plans = fetch_plans()                    # Has 100 plans

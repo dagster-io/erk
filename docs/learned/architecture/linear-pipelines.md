@@ -94,12 +94,14 @@ The validation pipeline takes CLI arguments directly. The execution pipeline rec
 The shell script serialization boundary distinguishes two classes of state:
 
 **Baked-in flags** (determined at validation time, static in the script):
+
 - `--worktree-path`: Resolved worktree location
 - `--is-current-branch`: Whether landing from that worktree
 - `--objective-number`: Linked objective issue number
 - `--use-graphite`: Whether Graphite merge is enabled
 
 **User-controllable flags** (passed via `"$@"`, editable at source time):
+
 - `--up`: Navigate upstack (child branch resolved at execution time)
 - `--no-pull`: Skip pull after landing
 - `--no-delete`: Preserve branch/slot

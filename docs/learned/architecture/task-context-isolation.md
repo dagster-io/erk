@@ -27,14 +27,14 @@ This creates an isolation boundary: fetch and process in the subagent, return on
 
 ## Decision: context: fork vs Manual Task
 
-| Aspect | `context: fork` | Manual Task |
-|--------|-----------------|-------------|
-| Use when | Reusable fetch/classify patterns | One-off operations with dynamic prompts |
-| Declaration | Frontmatter in skill/command file | Inline Task() call in command |
-| Reusability | Skill invocable anywhere | Single-use per command |
-| Prompt content | Static (in skill file) | Dynamic (built at runtime) |
-| Maintenance | Centralized updates | Duplicated across commands |
-| Conversation context | None (fork isolates) | None (Task isolates) |
+| Aspect               | `context: fork`                   | Manual Task                             |
+| -------------------- | --------------------------------- | --------------------------------------- |
+| Use when             | Reusable fetch/classify patterns  | One-off operations with dynamic prompts |
+| Declaration          | Frontmatter in skill/command file | Inline Task() call in command           |
+| Reusability          | Skill invocable anywhere          | Single-use per command                  |
+| Prompt content       | Static (in skill file)            | Dynamic (built at runtime)              |
+| Maintenance          | Centralized updates               | Duplicated across commands              |
+| Conversation context | None (fork isolates)              | None (Task isolates)                    |
 
 **Prefer `context: fork`** for fetch-and-classify patterns you'll use repeatedly. See `docs/learned/claude-code/context-fork-feature.md` for frontmatter details.
 
@@ -80,11 +80,11 @@ See `/erk:learn` command for manual Task delegation. Note how it builds dynamic 
 
 ## Token Savings Measured
 
-| Approach | Tokens | Why |
-|----------|--------|-----|
-| Direct fetch in parent | ~2,500-3,000 | Raw JSON persists in context |
-| Task isolation | ~750-900 | Only summary + structured data returned |
-| **Reduction** | **65-70%** | Raw JSON never enters parent context |
+| Approach               | Tokens       | Why                                     |
+| ---------------------- | ------------ | --------------------------------------- |
+| Direct fetch in parent | ~2,500-3,000 | Raw JSON persists in context            |
+| Task isolation         | ~750-900     | Only summary + structured data returned |
+| **Reduction**          | **65-70%**   | Raw JSON never enters parent context    |
 
 These measurements come from PR review comment fetches (20-30 comment threads). Larger responses see higher savings.
 
@@ -108,8 +108,10 @@ Skip this pattern when:
 ## Anti-Pattern: Leaking Context Through Prose
 
 WRONG:
+
 ```markdown
 ## Summary
+
 Found 3 actionable threads:
 
 Thread PRRT_abc at foo.py:42 says: "This needs to use LBYL pattern instead of EAFP. The current approach with try/except creates misleading error traces because..."
@@ -120,14 +122,16 @@ Thread PRRT_abc at foo.py:42 says: "This needs to use LBYL pattern instead of EA
 This defeats the isolation. The subagent copied the verbose comment text into the prose summary, which the parent sees.
 
 RIGHT:
+
 ```markdown
 ## Summary
+
 3 actionable threads, 12 informational skipped.
 
-| # | Location | Issue | Complexity |
-|---|----------|-------|------------|
-| 1 | foo.py:42 | Use LBYL pattern | local |
-| 2 | bar.py:15 | Add type annotation | local |
+| #   | Location  | Issue               | Complexity |
+| --- | --------- | ------------------- | ---------- |
+| 1   | foo.py:42 | Use LBYL pattern    | local      |
+| 2   | bar.py:15 | Add type annotation | local      |
 
 See JSON below for thread IDs.
 ```
@@ -136,11 +140,11 @@ The prose is compact. Full context lives in the JSON's `original_comment` field 
 
 ## Model Selection for Subagents
 
-| Task Type | Model | Why |
-|-----------|-------|-----|
-| Mechanical classification | haiku | Deterministic rules, no creativity needed |
-| Context-aware classification | sonnet | Understands reviewer intent, nuance |
-| Complex reasoning | opus | Multi-factor decisions, architectural understanding |
+| Task Type                    | Model  | Why                                                 |
+| ---------------------------- | ------ | --------------------------------------------------- |
+| Mechanical classification    | haiku  | Deterministic rules, no creativity needed           |
+| Context-aware classification | sonnet | Understands reviewer intent, nuance                 |
+| Complex reasoning            | opus   | Multi-factor decisions, architectural understanding |
 
 <!-- Source: .claude/commands/erk/learn.md, model choices for parallel agents -->
 
@@ -161,11 +165,13 @@ The parent shows the prose to the user, then silently parses the JSON to get thr
 Errors should appear in BOTH formats:
 
 **Prose:**
+
 ```
 Error: No PR found for branch feature-xyz
 ```
 
 **JSON:**
+
 ```json
 {
   "success": false,

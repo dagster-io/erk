@@ -63,6 +63,7 @@ Combines title and body into a single commit message and amends the current comm
 When a branch follows the `P{issue_number}-{slug}` naming convention, the command automatically fetches plan context from the linked erk-plan issue.
 
 **Feedback styling:**
+
 - Plan found: Green text showing issue number and optional objective
 - No plan: Dimmed text "No linked plan found"
 
@@ -92,26 +93,27 @@ The enforcement at summarize_cmd.py:86-90 prevents this anti-pattern. It suggest
 
 ## Relationship to pr submit
 
-| Aspect | pr summarize | pr submit |
-|--------|--------------|-----------|
-| Creates PR | ❌ No | ✅ Yes |
-| Amends commit | ✅ Yes | ✅ Yes (before pushing) |
-| Accepts multiple commits | ❌ No (enforced) | ✅ Yes (squashes them) |
-| Plan context | ✅ Yes | ✅ Yes |
-| Commit message context | ❌ No (passes None) | ✅ Yes (includes all commits) |
+| Aspect                   | pr summarize        | pr submit                     |
+| ------------------------ | ------------------- | ----------------------------- |
+| Creates PR               | ❌ No               | ✅ Yes                        |
+| Amends commit            | ✅ Yes              | ✅ Yes (before pushing)       |
+| Accepts multiple commits | ❌ No (enforced)    | ✅ Yes (squashes them)        |
+| Plan context             | ✅ Yes              | ✅ Yes                        |
+| Commit message context   | ❌ No (passes None) | ✅ Yes (includes all commits) |
 
 Both commands use the same `CommitMessageGenerator` and `PlanContextProvider` classes. The difference is what happens after generation:
+
 - `pr summarize` stops after amending
 - `pr submit` continues to push and create/update PR
 
 ## When to Use Which Command
 
-| Scenario | Use |
-|----------|-----|
-| Want AI commit message, not ready to push | `pr summarize` |
-| Ready to create PR on Graphite | `pr submit` |
+| Scenario                                      | Use                                   |
+| --------------------------------------------- | ------------------------------------- |
+| Want AI commit message, not ready to push     | `pr summarize`                        |
+| Ready to create PR on Graphite                | `pr submit`                           |
 | PR already exists, want to update description | `pr submit` (it updates existing PRs) |
-| Just want to fix typo in commit message | `git commit --amend` (no need for AI) |
+| Just want to fix typo in commit message       | `git commit --amend` (no need for AI) |
 
 ## Related Documentation
 

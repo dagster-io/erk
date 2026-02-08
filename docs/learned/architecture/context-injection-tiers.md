@@ -24,14 +24,14 @@ The three-tier architecture addresses this by combining broad coverage (Tier 1) 
 
 Choose the tier based on your reminder's characteristics:
 
-| Factor                       | Tier 1: Ambient   | Tier 2: Per-Prompt  | Tier 3: Just-in-Time |
-| ---------------------------- | ----------------- | ------------------- | -------------------- |
-| **When it fires**            | Session start     | Every user message  | Before specific tool |
-| **Token cost**               | High (once)       | Medium (per turn)   | Low (when triggered) |
-| **Compliance rate**          | ~100% (if read)   | Medium              | High                 |
-| **Specificity**              | Broad             | Broad               | Narrow               |
-| **Can inspect tool params**  | No                | No                  | Yes                  |
-| **Can block tool execution** | No                | No                  | Yes                  |
+| Factor                       | Tier 1: Ambient | Tier 2: Per-Prompt | Tier 3: Just-in-Time |
+| ---------------------------- | --------------- | ------------------ | -------------------- |
+| **When it fires**            | Session start   | Every user message | Before specific tool |
+| **Token cost**               | High (once)     | Medium (per turn)  | Low (when triggered) |
+| **Compliance rate**          | ~100% (if read) | Medium             | High                 |
+| **Specificity**              | Broad           | Broad              | Narrow               |
+| **Can inspect tool params**  | No              | No                 | Yes                  |
+| **Can block tool execution** | No              | No                 | Yes                  |
 
 **Use case heuristic:**
 

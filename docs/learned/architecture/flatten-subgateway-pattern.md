@@ -44,7 +44,7 @@ Real layer instantiates concrete subgateway implementations in `__init__`, store
 
 See `RealGit.__init__` in `packages/erk-shared/src/erk_shared/gateway/git/real.py`. Each subgateway is constructed once during initialization (e.g., `self._branch = RealGitBranchOps(time=self._time)`), then returned by the property.
 
-**Why instantiate in __init__:** Subgateways often need shared dependencies (like `Time` or other subgateways). Constructing them once ensures consistency — multiple property accesses return the same instance with the same dependencies.
+**Why instantiate in **init**:** Subgateways often need shared dependencies (like `Time` or other subgateways). Constructing them once ensures consistency — multiple property accesses return the same instance with the same dependencies.
 
 ### Layer 3: Fake — Linked State and Mutation Tracking
 
@@ -89,11 +89,13 @@ See properties in `PrintingGit` (`packages/erk-shared/src/erk_shared/gateway/git
 Migration changes call paths but doesn't change behavior:
 
 **Before (direct subgateway access):**
+
 ```python
 ctx.git_branch_ops.create_branch(repo_root, "feature-branch")
 ```
 
 **After (through parent property):**
+
 ```python
 ctx.git.branch.create_branch(repo_root, "feature-branch")
 ```

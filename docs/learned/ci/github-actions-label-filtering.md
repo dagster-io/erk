@@ -32,24 +32,24 @@ This document explains the WHY behind the pattern, not the syntax itself.
 if: contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
 ```
 
-| Event Type    | labels.*.name value | Result  | Job runs? | Issue                        |
-| ------------- | ------------------- | ------- | --------- | ---------------------------- |
-| PR with label | `["erk-plan-..."]`  | `true`  | Yes       | Intended: label present      |
-| PR no label   | `[]`                | `false` | No        | **WRONG: should run CI**     |
-| Push event    | `[]` (null context) | `false` | No        | **WRONG: breaks branch CI**  |
+| Event Type    | labels.\*.name value | Result  | Job runs? | Issue                       |
+| ------------- | -------------------- | ------- | --------- | --------------------------- |
+| PR with label | `["erk-plan-..."]`   | `true`  | Yes       | Intended: label present     |
+| PR no label   | `[]`                 | `false` | No        | **WRONG: should run CI**    |
+| Push event    | `[]` (null context)  | `false` | No        | **WRONG: breaks branch CI** |
 
 **Correct approach:** Use negation (`!contains()`) to invert the logic:
 
 ```yaml
 # CORRECT - safe defaults
-if: !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+if: !contains(github.event.pull_request.labels.*.name , 'erk-plan-review')
 ```
 
-| Event Type    | labels.*.name value | Result  | Job runs? | Behavior                   |
-| ------------- | ------------------- | ------- | --------- | -------------------------- |
-| PR with label | `["erk-plan-..."]`  | `false` | No        | Intended: skip plan review |
-| PR no label   | `[]`                | `true`  | Yes       | Intended: run normal CI    |
-| Push event    | `[]` (null context) | `true`  | Yes       | Safe: run CI when unsure   |
+| Event Type    | labels.\*.name value | Result  | Job runs? | Behavior                   |
+| ------------- | -------------------- | ------- | --------- | -------------------------- |
+| PR with label | `["erk-plan-..."]`   | `false` | No        | Intended: skip plan review |
+| PR no label   | `[]`                 | `true`  | Yes       | Intended: run normal CI    |
+| Push event    | `[]` (null context)  | `true`  | Yes       | Safe: run CI when unsure   |
 
 **The insight:** Negation makes "run CI" the default, ensuring push events aren't silently skipped.
 
@@ -74,7 +74,7 @@ See job-level `if` conditions in `.github/workflows/ci.yml` and `.github/workflo
 
 **When renaming labels:** See `docs/learned/ci/label-rename-checklist.md` for the full synchronization procedure.
 
-## The .*.name Syntax
+## The .\*.name Syntax
 
 **What it is:** GitHub Actions' array property extraction operator. Given an array of objects, `.*.property` extracts that property from each object into a new array.
 
@@ -123,13 +123,13 @@ See the `autofix` job in `.github/workflows/ci.yml` for the complete pattern:
 
 ## When to Use This Pattern
 
-| Scenario                                  | Use Label Filtering? | Notes                                           |
-| ----------------------------------------- | -------------------- | ----------------------------------------------- |
-| Skip CI for plan review PRs               | Yes                  | Standard usage (ci.yml, code-reviews.yml)       |
-| Skip autofix for submission-only PRs      | Yes                  | Autofix job uses both job and step-level checks |
-| Conditional workflow dispatch             | No                   | Use workflow inputs instead                     |
-| Matrix job filtering                      | No                   | Filter in discover job, not each matrix element |
-| Filtering within a composite action       | No                   | Composite actions can't access event context    |
+| Scenario                             | Use Label Filtering? | Notes                                           |
+| ------------------------------------ | -------------------- | ----------------------------------------------- |
+| Skip CI for plan review PRs          | Yes                  | Standard usage (ci.yml, code-reviews.yml)       |
+| Skip autofix for submission-only PRs | Yes                  | Autofix job uses both job and step-level checks |
+| Conditional workflow dispatch        | No                   | Use workflow inputs instead                     |
+| Matrix job filtering                 | No                   | Filter in discover job, not each matrix element |
+| Filtering within a composite action  | No                   | Composite actions can't access event context    |
 
 ## Related Documentation
 

@@ -45,11 +45,13 @@ This applies ruff's rules to match what CI expects. Without this step, you're co
 ## Decision Heuristic
 
 **Always run format** if you edited:
+
 - Any `.py` file with the Edit tool
 - Python files with multiline strings (docstrings, error messages)
 - Python files with complex indentation or imports
 
 **Safe to skip** if you:
+
 - Only edited non-Python files (`.md`, `.yaml`, `.toml`)
 - Used a different tool that auto-formats (some IDEs)
 - Made single-character changes to simple expressions

@@ -66,13 +66,13 @@ See the "Post status comment to PR" step in `.github/workflows/pr-fix-conflicts.
 
 ## Decision Table: --body vs --body-file
 
-| Content Characteristics            | Use --body-file | Use --body |
-| ---------------------------------- | --------------- | ---------- |
-| Multi-line with escape sequences   | ✅              | ❌         |
-| Dynamic content (CI outputs)       | ✅              | ❌         |
-| Size unknown or could exceed 1KB   | ✅              | ❌         |
-| Short static strings (<100 chars)  | ⚠️              | ✅         |
-| No formatting needed               | ⚠️              | ✅         |
+| Content Characteristics           | Use --body-file | Use --body |
+| --------------------------------- | --------------- | ---------- |
+| Multi-line with escape sequences  | ✅              | ❌         |
+| Dynamic content (CI outputs)      | ✅              | ❌         |
+| Size unknown or could exceed 1KB  | ✅              | ❌         |
+| Short static strings (<100 chars) | ⚠️              | ✅         |
+| No formatting needed              | ⚠️              | ✅         |
 
 **Rule:** In CI, **always** use `--body-file` unless content is trivially small and static. The cost of the temp file pattern is negligible, and it prevents silent failures.
 

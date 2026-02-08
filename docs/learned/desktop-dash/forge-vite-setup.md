@@ -1,239 +1,83 @@
 ---
 title: Forge Vite Setup
-last_audited: "2026-02-03 15:30 PT"
-audit_result: clean
+last_audited: "2026-02-08"
+audit_result: regenerated
 read_when:
-  - "configuring Electron Forge with Vite"
-  - "understanding erkdesk build configuration"
-  - "debugging Vite build issues in Electron"
-  - "adding new build targets or configs"
+  - "debugging Vite build errors in erkdesk"
+  - "adding a new Vite build target or renderer window"
+  - "understanding why a config setting exists in a specific Vite config"
+tripwires:
+  - Do NOT add Node.js builtins or electron to the renderer Vite config — renderer is a browser environment
+  - Do NOT remove external electron from the preload config — bundling electron causes runtime failures
+  - Do NOT put all three targets in one Vite config — each targets a different JavaScript runtime
 ---
 
 # Forge Vite Setup
 
-Erkdesk uses Electron Forge's VitePlugin to orchestrate three separate Vite builds: main process, preload script, and renderer process. Each has its own configuration file with specific settings for its execution environment.
+Erkdesk's three Vite configs exist because each Electron build target runs in a fundamentally different JavaScript runtime. This doc explains **why** each config has its specific settings — for the three-target architecture overview, see [Erkdesk Project Structure](erkdesk-project-structure.md).
 
-## Overview
+## Why Each Config Differs
 
-**Orchestrator**: `forge.config.ts` defines the VitePlugin configuration
+<!-- Source: erkdesk/forge.config.ts, VitePlugin configuration -->
 
-**Build targets**:
+The VitePlugin in `forge.config.ts` orchestrates three separate Vite builds. Each config solves a runtime-specific problem:
 
-1. Main process → `vite.main.config.ts`
-2. Preload script → `vite.preload.config.ts`
-3. Renderer process → `src/renderer/vite.config.ts`
+| Config                        | Key Setting                                       | Why It Exists                                                                 |
+| ----------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `vite.main.config.ts`         | `mainFields: ["module", "jsnext:main", "jsnext"]` | Prioritizes ESM entry points over CommonJS for better tree-shaking in Node.js |
+| `vite.preload.config.ts`      | `external: ["electron"]`                          | Electron's native modules can't be bundled — they must come from the runtime  |
+| `src/renderer/vite.config.ts` | `plugins: [react()]`                              | Browser environment needs JSX transformation and React Fast Refresh for HMR   |
 
-## forge.config.ts
+### Preload Externalization Is Critical
 
-**File**: `erkdesk/forge.config.ts`
+<!-- Source: erkdesk/vite.preload.config.ts, rollupOptions.external -->
 
-```typescript
-import type { ForgeConfig } from "@electron-forge/shared-types";
-import { VitePlugin } from "@electron-forge/plugin-vite";
-import { MakerZIP } from "@electron-forge/maker-zip";
+The preload script **must** externalize `electron` because Electron provides this module at runtime as a native binding. Attempting to bundle it causes two failures: the bundle bloats with unresolvable native code, and `contextBridge`/`ipcRenderer` imports fail at runtime. This is the most common build misconfiguration.
 
-const config: ForgeConfig = {
-  packagerConfig: {
-    asar: true, // Package app into ASAR archive
-  },
-  makers: [new MakerZIP({}, ["darwin", "linux", "win32"])],
-  plugins: [
-    new VitePlugin({
-      build: [
-        {
-          entry: "src/main/index.ts",
-          config: "vite.main.config.ts",
-          target: "main",
-        },
-        {
-          entry: "src/main/preload.ts",
-          config: "vite.preload.config.ts",
-          target: "preload",
-        },
-      ],
-      renderer: [
-        {
-          name: "main_window",
-          config: "src/renderer/vite.config.ts",
-        },
-      ],
-    }),
-  ],
-};
-```
+### Main Process ESM Priority
 
-**Key settings**:
+<!-- Source: erkdesk/vite.main.config.ts, resolve.mainFields -->
 
-- `asar: true` — Packages app into archive for distribution
-- `makers: [MakerZIP]` — Cross-platform distribution via ZIP archives
-- `build` array — Main and preload process configurations
-- `renderer` array — Renderer process configurations (can have multiple windows)
+The main process overrides Vite's default `mainFields` to prefer ESM entry points (`module`, `jsnext:main`, `jsnext`). Electron's Node.js runtime supports both CommonJS and ESM, but ESM enables tree-shaking that significantly reduces bundle size for dependencies with dual module formats.
 
-## vite.main.config.ts
+## Dev vs Production vs Distribution
 
-**Target**: Node.js environment (Electron main process)
+Three `pnpm` commands map to increasingly complete build pipelines:
 
-**File**: `erkdesk/vite.main.config.ts`
+| Command            | What It Does                                                           | Output            |
+| ------------------ | ---------------------------------------------------------------------- | ----------------- |
+| `pnpm start`       | Starts Vite dev servers with HMR + file watching for all three targets | Live Electron app |
+| `pnpm run package` | Production Vite builds, then packages into ASAR archive                | `out/` directory  |
+| `pnpm run make`    | Runs `package`, then creates platform ZIP archives via MakerZIP        | `out/make/*.zip`  |
 
-```typescript
-import { defineConfig } from "vite";
+In dev mode, Electron Forge injects global constants (`MAIN_WINDOW_VITE_DEV_SERVER_URL`, `MAIN_WINDOW_VITE_NAME`) that the main process uses to load from the Vite dev server instead of bundled files. See [Main Process Startup](main-process-startup.md) for how these globals control loading.
 
-export default defineConfig({
-  resolve: {
-    mainFields: ["module", "jsnext:main", "jsnext"],
-  },
-});
-```
+## Debugging Build Failures
 
-**Settings**:
-
-- `mainFields` — ESM module resolution priority
-  - Prefers `module` field in package.json (ESM entry point)
-  - Falls back to `jsnext:main` and `jsnext` (legacy ESM fields)
-  - Ensures main process uses ESM modules when available
-
-**Why this matters**: Node.js in Electron supports both CommonJS and ESM. Prioritizing ESM improves tree-shaking and reduces bundle size.
-
-## vite.preload.config.ts
-
-**Target**: Preload script (bridge between main and renderer)
-
-**File**: `erkdesk/vite.preload.config.ts`
-
-```typescript
-import { defineConfig } from "vite";
-
-export default defineConfig({
-  build: {
-    rollupOptions: {
-      external: ["electron"],
-    },
-  },
-});
-```
-
-**Settings**:
-
-- `external: ["electron"]` — Electron module NOT bundled
-  - Preload script runs in renderer with Node.js access
-  - `electron` module provided by Electron runtime, not bundled
-  - Prevents bundling Electron's massive native modules
-
-**Why this matters**: Bundling `electron` into preload would bloat the bundle and cause runtime errors (can't bundle native modules).
-
-**Result**: Minimal preload bundle containing only application-specific bridge code.
-
-## src/renderer/vite.config.ts
-
-**Target**: Browser environment (React renderer process)
-
-**File**: `erkdesk/src/renderer/vite.config.ts`
-
-```typescript
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-
-export default defineConfig({
-  plugins: [react()],
-});
-```
-
-**Settings**:
-
-- `plugins: [react()]` — React plugin enabled
-  - JSX transformation
-  - React Fast Refresh (HMR)
-  - Development optimizations
-
-**Why this matters**: Renderer process is a web environment running React. The React plugin provides the standard React development experience.
-
-**HMR in dev**: Changes to React components update instantly without full reload.
-
-## Build Process Flow
-
-### Development Mode (`pnpm start`)
-
-1. Electron Forge starts Vite dev servers for all three targets
-2. Main process: Watches `src/main/index.ts`, rebuilds on change
-3. Preload: Watches `src/main/preload.ts`, rebuilds on change
-4. Renderer: Starts dev server with HMR for React app
-5. Electron launches with dev server URLs
-6. DevTools auto-open for debugging
-
-### Production Build (`pnpm run package`)
-
-1. Vite builds main process (ESM bundle)
-2. Vite builds preload script (minimal bundle, `electron` external)
-3. Vite builds renderer (React production build)
-4. Electron Forge packages all three into ASAR archive
-5. Output in `out/` directory
-
-### Distribution (`pnpm run make`)
-
-1. Runs production build
-2. MakerZIP creates platform-specific ZIP archives
-3. Outputs to `out/make/`:
-   - `erkdesk-darwin-arm64-{version}.zip` (macOS)
-   - `erkdesk-linux-x64-{version}.zip` (Linux)
-   - `erkdesk-win32-x64-{version}.zip` (Windows)
-
-## MakerZIP Configuration
-
-```typescript
-makers: [new MakerZIP({}, ["darwin", "linux", "win32"])];
-```
-
-**Platforms**: Builds for macOS (darwin), Linux, and Windows (win32)
-
-**Why ZIP**: Simple cross-platform distribution without platform-specific installers.
-
-**Future**: Can add:
-
-- `MakerDMG` for macOS disk images
-- `MakerDeb` for Debian/Ubuntu packages
-- `MakerSquirrel` for Windows installers
-
-## Common Patterns
-
-### Adding a New Renderer Window
-
-To add a second window:
-
-```typescript
-renderer: [
-  {
-    name: "main_window",
-    config: "src/renderer/vite.config.ts",
-  },
-  {
-    name: "settings_window",
-    config: "src/settings/vite.config.ts", // New config
-  },
-];
-```
-
-Each renderer gets its own Vite dev server and build.
-
-### Debugging Build Issues
-
-**Problem**: Build fails with module resolution error
-
-**Solution**: Check which target is failing:
-
-- Main process errors → Check `vite.main.config.ts` mainFields
-- Preload errors → Check `external` configuration
-- Renderer errors → Check React plugin setup
-
-**Logs**: Electron Forge shows which Vite config is building:
+Electron Forge log prefixes identify which target failed:
 
 ```
-[build] [main] Building main process...
-[build] [preload] Building preload script...
-[build] [renderer:main_window] Building renderer...
+[build] [main] ...          → check vite.main.config.ts
+[build] [preload] ...       → check vite.preload.config.ts
+[build] [renderer:main_window] ... → check src/renderer/vite.config.ts
 ```
+
+Common failure patterns:
+
+| Symptom                                    | Likely Cause                                                   |
+| ------------------------------------------ | -------------------------------------------------------------- |
+| Module resolution error in main            | `mainFields` not finding ESM entry for a dependency            |
+| `Cannot find module 'electron'` in preload | `electron` missing from `external` array                       |
+| JSX/TSX syntax error in renderer           | React plugin not loaded or misconfigured                       |
+| `require is not defined` in renderer       | Code accidentally importing Node.js modules in browser context |
+
+## Adding a New Renderer Window
+
+Each renderer entry in `forge.config.ts` gets its own Vite dev server and independent build. To add a second window, add a new entry to the `renderer` array in `forge.config.ts` with a unique `name` and its own Vite config file. The new config follows the same pattern as `src/renderer/vite.config.ts` — browser-targeted with the React plugin.
 
 ## Related Documentation
 
-- [Erkdesk Project Structure](erkdesk-project-structure.md) - Overall architecture
-- [Main Process Startup](main-process-startup.md) - Main process implementation
-- [Preload Bridge Patterns](preload-bridge-patterns.md) - Preload script patterns
+- [Erkdesk Project Structure](erkdesk-project-structure.md) — Three-target architecture overview and standalone project rationale
+- [Main Process Startup](main-process-startup.md) — How Forge globals control dev vs production loading
+- [Preload Bridge Patterns](preload-bridge-patterns.md) — Why preload needs electron externalized (the security model it enables)
+- [pnpm Hoisting Pattern](pnpm-hoisting-pattern.md) — Why hoisted linker is required for Forge's Vite plugin

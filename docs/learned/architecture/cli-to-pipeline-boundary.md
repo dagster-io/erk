@@ -44,13 +44,13 @@ The CLI-to-pipeline boundary solves this by extracting business logic into a fra
 
 Extract to pipeline layer when **ANY** of these apply:
 
-| Threshold                      | Why It Matters                                         |
-| ------------------------------ | ------------------------------------------------------ |
-| **>3 distinct steps**          | Each step can fail independently → needs structured error handling |
-| **Complex state (>5 fields)**  | State management requires immutable threading pattern  |
-| **Multiple error types**       | Need discriminated unions for type-safe error handling |
-| **Hard to test**               | Click runner overhead makes tests slow and brittle     |
-| **Logic needed outside CLI**   | Exec scripts, TUI, API need same logic without Click   |
+| Threshold                     | Why It Matters                                                     |
+| ----------------------------- | ------------------------------------------------------------------ |
+| **>3 distinct steps**         | Each step can fail independently → needs structured error handling |
+| **Complex state (>5 fields)** | State management requires immutable threading pattern              |
+| **Multiple error types**      | Need discriminated unions for type-safe error handling             |
+| **Hard to test**              | Click runner overhead makes tests slow and brittle                 |
+| **Logic needed outside CLI**  | Exec scripts, TUI, API need same logic without Click               |
 
 ### When NOT to Extract
 

@@ -59,6 +59,7 @@ See Phase 0 implementation in `.claude/commands/erk/pr-address.md` (lines 32-50)
 **Single decision point**: Mode logic lives in Phase 0. Phases 1-4 don't check the mode — they simply don't run if plan review mode is active.
 
 **Complete separation**: The command document has distinct sections:
+
 - Phase 0: Detection logic
 - Phases 1-4: Code review mode (standard flow)
 - Separate section: Plan review mode (alternative flow)
@@ -80,6 +81,7 @@ gh pr view --json labels -q '.labels[].name'
 If the label exists in the output, switch to alternative mode.
 
 <!-- Source: src/erk/cli/constants.py:52 -->
+
 Example: The `PLAN_REVIEW_LABEL` constant defines `"erk-plan-review"` as the label that triggers plan review mode.
 
 **Why labels work**: Labels are applied by automated workflows (e.g., `erk exec plan-create-review-pr`) and remain stable throughout the PR lifecycle. They're a durable signal of PR intent.
@@ -148,6 +150,7 @@ Skip Phase 0 when:
 
 ```markdown
 ### Phase 1: Classify Feedback
+
 1. Fetch feedback
 2. Parse comments
 3. Check if plan review mode
@@ -162,12 +165,15 @@ Skip Phase 0 when:
 
 ```markdown
 ### Phase 1: Classify
+
 - If plan review: classify differently
 
 ### Phase 2: Generate
+
 - If plan review: generate differently
 
 ### Phase 3: Apply
+
 - If plan review: apply differently
 ```
 
@@ -179,6 +185,7 @@ Skip Phase 0 when:
 
 ```markdown
 ### Phase 2: Generate Fixes
+
 1. Try to generate code fixes
 2. Realize the PR has a plan review label
 3. Abort with error

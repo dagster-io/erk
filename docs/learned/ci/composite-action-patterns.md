@@ -37,6 +37,7 @@ Standard GitHub Actions workflow errors are opaque: "Secret not found" doesn't t
 <!-- Source: .github/actions/erk-remote-setup/action.yml, Validate secrets step -->
 
 Benefits:
+
 - **Fails within 5 seconds** instead of after 2 minutes of setup
 - **Clear error titles** in GitHub UI (visible without expanding logs)
 - **Named secrets** make it obvious which credential is missing
@@ -48,6 +49,7 @@ This pattern is cheap (bash string check) and saves 2+ minutes when credentials 
 The standard Claude Code install method (`curl -fsSL https://claude.ai/install.sh | bash`) hangs in CI environments, sometimes for hours before timeout.
 
 **Root causes** (from GitHub issue triage):
+
 1. Install script spawns subprocesses that hang indefinitely
 2. Lock files at `~/.local/state/claude/locks/` persist after timeout
 3. No built-in timeout or retry in install script
@@ -57,6 +59,7 @@ The standard Claude Code install method (`curl -fsSL https://claude.ai/install.s
 <!-- Source: .github/actions/setup-claude-code/action.yml, WHY DIRECT DOWNLOAD comment -->
 
 The action:
+
 1. Fetches stable version from `https://storage.googleapis.com/.../stable`
 2. Downloads platform-specific binary (linux-x64 or linux-arm64)
 3. Cleans stale lock files before installation
@@ -73,6 +76,7 @@ GitHub Actions cache saves 10-20 seconds per workflow run by avoiding repeated d
 **Key structure**: `tool-name-${{ runner.os }}-${{ runner.arch }}-v1`
 
 The cache key includes:
+
 - **Runner OS**: `linux` vs `darwin` (though erk only uses linux runners)
 - **Runner arch**: `x64` vs `arm64` (GitHub provides both)
 - **Version suffix**: `-v1` for cache busting when the binary changes
@@ -109,6 +113,7 @@ Workflow usage:
 ## Conditional Erk Installation: Package vs Tool Mode
 
 Erk runs in two installation modes depending on repository structure:
+
 - **Package mode**: `packages/erk-shared/` exists → editable install with shared packages
 - **Tool mode**: No shared packages → sync dev dependencies to `.venv/`
 

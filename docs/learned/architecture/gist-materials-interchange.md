@@ -14,12 +14,12 @@ GitHub Actions `workflow_dispatch` inputs accept strings, not file attachments. 
 
 **Decision rationale**: Alternative approaches considered and rejected:
 
-| Approach               | Why Rejected                                                    |
-| ---------------------- | --------------------------------------------------------------- |
-| Artifacts API          | Requires existing workflow run; chicken-and-egg for triggers    |
-| Separate gists         | Multiple URLs exceed `workflow_dispatch` input length limits    |
-| Base64 in input        | GitHub has undocumented input size caps (~1MB); sessions exceed |
-| External storage (S3)  | Adds dependency; gists are GitHub-native and authenticated      |
+| Approach              | Why Rejected                                                    |
+| --------------------- | --------------------------------------------------------------- |
+| Artifacts API         | Requires existing workflow run; chicken-and-egg for triggers    |
+| Separate gists        | Multiple URLs exceed `workflow_dispatch` input length limits    |
+| Base64 in input       | GitHub has undocumented input size caps (~1MB); sessions exceed |
+| External storage (S3) | Adds dependency; gists are GitHub-native and authenticated      |
 
 Gists provide authenticated, ephemeral storage with a single URL reference. They're cleaned up manually after use, not relied upon for persistence.
 
@@ -74,11 +74,11 @@ The unpacker uses a boolean toggle state machine. See the main loop in `download
 
 **States:**
 
-| State               | Active When               | Action on Delimiter Line     |
-| ------------------- | ------------------------- | ---------------------------- |
-| `in_header = True`  | Inside delimiter pair     | Parse `FILE:` line           |
-| `in_header = False` | Outside delimiter pair    | Accumulate content lines     |
-| Transition          | Every delimiter line read | `in_header = not in_header`  |
+| State               | Active When               | Action on Delimiter Line    |
+| ------------------- | ------------------------- | --------------------------- |
+| `in_header = True`  | Inside delimiter pair     | Parse `FILE:` line          |
+| `in_header = False` | Outside delimiter pair    | Accumulate content lines    |
+| Transition          | Every delimiter line read | `in_header = not in_header` |
 
 **Why toggle state**: Simpler than tracking "looking for opening" vs "looking for closing" vs "reading content". Each delimiter line flips the state, maintaining the invariant that header blocks are always bracketed by pairs.
 
@@ -118,11 +118,11 @@ This complexity is unjustified for the current use case. If delimiter collision 
 
 See the `github.create_gist()` call in `upload_learn_materials()` within `src/erk/cli/commands/exec/scripts/upload_learn_materials.py`.
 
-| Field       | Value                                      | Purpose                                      |
-| ----------- | ------------------------------------------ | -------------------------------------------- |
-| Filename    | `learn-materials-plan-{issue}.txt`         | Human-recognizable pattern for debugging     |
-| Description | `"Learn materials for plan #{issue}"`      | Links gist to plan issue in gist list view   |
-| Public      | `False` (secret gist)                      | Prevents indexing; rely on URL obscurity     |
+| Field       | Value                                 | Purpose                                    |
+| ----------- | ------------------------------------- | ------------------------------------------ |
+| Filename    | `learn-materials-plan-{issue}.txt`    | Human-recognizable pattern for debugging   |
+| Description | `"Learn materials for plan #{issue}"` | Links gist to plan issue in gist list view |
+| Public      | `False` (secret gist)                 | Prevents indexing; rely on URL obscurity   |
 
 **Why secret gists**: Session XML may contain API tokens, file paths, or other context we don't want indexed by search engines. Secret gists aren't truly private (anyone with URL can access), but they're excluded from GitHub's public gist listings and search.
 

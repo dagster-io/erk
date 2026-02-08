@@ -41,13 +41,13 @@ Erk provides two PR submission workflows with fundamentally different design goa
 
 The two commands diverge in their operations:
 
-| Decision Point | git-pr-push | pr-submit |
-| --- | --- | --- |
-| Commit handling | Preserves all commits | Squashes to single commit |
-| Stack operations | None (standalone PR) | Rebases entire stack |
-| Tool dependencies | git + gh CLI only | Graphite required |
-| PR creation | `gh pr create` | `gt submit` |
-| Execution context | Works anywhere git/gh installed | Requires Graphite setup |
+| Decision Point    | git-pr-push                     | pr-submit                 |
+| ----------------- | ------------------------------- | ------------------------- |
+| Commit handling   | Preserves all commits           | Squashes to single commit |
+| Stack operations  | None (standalone PR)            | Rebases entire stack      |
+| Tool dependencies | git + gh CLI only               | Graphite required         |
+| PR creation       | `gh pr create`                  | `gt submit`               |
+| Execution context | Works anywhere git/gh installed | Requires Graphite setup   |
 
 **Anti-pattern:** Using `/erk:pr-submit` in GitHub Actions — Graphite isn't available in CI environments. The command will fail during authentication checks.
 

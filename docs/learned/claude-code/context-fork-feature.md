@@ -41,6 +41,7 @@ Do NOT use when:
 **Most common mistake**: Treating forked skills like reference material.
 
 WRONG (produces empty output):
+
 ```yaml
 ---
 context: fork
@@ -48,14 +49,14 @@ context: fork
 # Python Coding Standards
 
 Follow these conventions:
-- Use LBYL, never EAFP
-- Frozen dataclasses only
-...
+  - Use LBYL, never EAFP
+  - Frozen dataclasses only
 ```
 
-This fails because the subagent has no task. It reads guidelines but has nothing to *do*.
+This fails because the subagent has no task. It reads guidelines but has nothing to _do_.
 
 RIGHT:
+
 ```yaml
 ---
 context: fork
@@ -80,6 +81,7 @@ Before Claude Code 2.1.0, only skills supported frontmatter. Commands were raw m
 The extension made commands first-class: same frontmatter options as skills (including `context: fork`, `agent`, `argument-hint`). This eliminated the skill-vs-command distinction for most purposes.
 
 **Implications:**
+
 - Commands can now delegate to subagents without manual Task calls
 - Batch operations (like scanning docs) can be command-driven
 - No need to create a skill if the operation is single-purpose
@@ -93,10 +95,10 @@ See `/local:audit-doc` and `/local:audit-scan` for commands using `context: fork
 
 The comparison isn't about technical capability — both achieve context isolation. The choice is about **prompt ownership**.
 
-| Approach | Prompt Lives In | When to Use |
-|----------|----------------|-------------|
-| `context: fork` | Skill/command file (static) | Reusable logic, fixed classification rules |
-| Manual Task | Parent command (dynamic) | Runtime-generated prompts, conversation-dependent context |
+| Approach        | Prompt Lives In             | When to Use                                               |
+| --------------- | --------------------------- | --------------------------------------------------------- |
+| `context: fork` | Skill/command file (static) | Reusable logic, fixed classification rules                |
+| Manual Task     | Parent command (dynamic)    | Runtime-generated prompts, conversation-dependent context |
 
 <!-- Source: .claude/commands/erk/learn.md, Agent 1-4 parallel launch with dynamic prompts -->
 
@@ -119,6 +121,7 @@ See `pr-feedback-classifier` skill for `agent: general-purpose` usage. It needs 
 **The insight**: Subagent context is disposable. When the Task completes, all intermediate data (verbose API responses, classification reasoning) disappears. Only the final output enters parent context.
 
 For PR comment fetches:
+
 - Direct fetch in parent: ~2,500 tokens (raw JSON persists)
 - Forked skill: ~750 tokens (only summary + structured data returned)
 - **Reduction: 65-70%**
@@ -130,6 +133,7 @@ See `docs/learned/architecture/task-context-isolation.md` for detailed pattern m
 Using `context: fork` but returning verbose prose defeats the isolation.
 
 WRONG:
+
 ```
 Found 3 threads:
 
@@ -140,6 +144,7 @@ Thread PRRT_abc: "This needs to use LBYL pattern. The current code uses try/exce
 The subagent copied verbose data into output — parent sees all of it.
 
 RIGHT:
+
 ```
 3 actionable threads, 12 informational skipped.
 

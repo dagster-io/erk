@@ -211,13 +211,13 @@ Check all three:
 
 ### Complementary (Good — these can coexist)
 
-| Review A       | Review B        | Why Complementary                               |
-| -------------- | --------------- | ----------------------------------------------- |
-| ruff-check     | pytest-unit     | Different dimensions (style vs tests)           |
-| learned-docs   | pytest-unit     | Different dimensions (docs vs tests)            |
-| python-quality | markdown-format | Different scopes (`.py` vs `.md`)               |
-| pr-format      | changelog-check | Different triggers (every PR vs release)        |
-| pytest-unit    | pytest-integration | Performance isolation (fast vs slow)         |
+| Review A       | Review B           | Why Complementary                        |
+| -------------- | ------------------ | ---------------------------------------- |
+| ruff-check     | pytest-unit        | Different dimensions (style vs tests)    |
+| learned-docs   | pytest-unit        | Different dimensions (docs vs tests)     |
+| python-quality | markdown-format    | Different scopes (`.py` vs `.md`)        |
+| pr-format      | changelog-check    | Different triggers (every PR vs release) |
+| pytest-unit    | pytest-integration | Performance isolation (fast vs slow)     |
 
 ### Overlapping (Bad — merge these)
 
@@ -255,7 +255,7 @@ Configure reviews to skip when irrelevant files change:
 on:
   pull_request:
     paths:
-      - "src/**/*.py"  # Only run on Python changes
+      - "src/**/*.py" # Only run on Python changes
 ```
 
 **When to use:** Reviews with clear file type boundaries (Python-only, docs-only).

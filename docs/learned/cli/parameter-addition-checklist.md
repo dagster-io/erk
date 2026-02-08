@@ -112,7 +112,7 @@ See the three source files for complete implementation patterns.
 
 | Mistake                          | Symptom                                                         | Detection Method                       |
 | -------------------------------- | --------------------------------------------------------------- | -------------------------------------- |
-| Skip Step 5 (verification)       | Parameter works in primary path but not secondary invocations  | Grep all invocation sites              |
+| Skip Step 5 (verification)       | Parameter works in primary path but not secondary invocations   | Grep all invocation sites              |
 | Inconsistent names across layers | `Error: No such option: --pr-number` when script expects `--pr` | Check all layers use identical names   |
 | Skip Step 1 (argument-hint)      | Users can't discover feature in Claude Code UI                  | Check frontmatter documents parameter  |
 | Skip Step 3 (command threading)  | Exec script never receives parameter (silent default behavior)  | Grep command for `erk exec` invocation |

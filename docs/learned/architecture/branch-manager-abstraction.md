@@ -30,11 +30,11 @@ BranchManager centralizes the Graphite-vs-Git decision into two frozen dataclass
 
 BranchManager enforces a critical architectural split between mutations and queries:
 
-| Operation Type | Route | Rationale |
-|---|---|---|
+| Operation Type                                                 | Route                | Rationale                                                                                   |
+| -------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------- |
 | **Branch mutations** (create, delete, checkout, submit, track) | `ctx.branch_manager` | Mutations need dual-mode logic: Graphite tracking, metadata cleanup, stack-aware operations |
-| **Branch queries** (current branch, list branches, HEAD SHA) | `ctx.git.branch` | Queries are always plain git — Graphite adds nothing to read-only operations |
-| **Graphite-only queries** (stack info, parent/child, PR cache) | `ctx.branch_manager` | Return `None`/empty in Git mode, rich data in Graphite mode |
+| **Branch queries** (current branch, list branches, HEAD SHA)   | `ctx.git.branch`     | Queries are always plain git — Graphite adds nothing to read-only operations                |
+| **Graphite-only queries** (stack info, parent/child, PR cache) | `ctx.branch_manager` | Return `None`/empty in Git mode, rich data in Graphite mode                                 |
 
 This separation prevents mutation logic from leaking into every query operation while making dual-mode operations explicit in the type system.
 
@@ -42,14 +42,14 @@ This separation prevents mutation logic from leaking into every query operation 
 
 Both implementations satisfy the same ABC interface, but their behavior diverges in ways that cause agent confusion:
 
-| Operation | GraphiteBranchManager Behavior | GitBranchManager Behavior | Why This Trips Up Agents |
-|---|---|---|---|
-| `create_branch()` | Creates + tracks via `gt track`, **then restores original branch** | Creates via git, stays on current | Both leave you on the **original branch** — explicit `checkout_branch()` required |
-| `delete_branch()` | LBYL check on `is_branch_tracked()`, then delegates to `gt delete` or `git branch -d/-D` | Plain `git branch -d/-D` | Graphite mode handles diverged branches gracefully; git mode respects `-d` safety checks |
-| `submit_branch()` | Submits **entire stack** via `gt submit` | Pushes **single branch** via `git push` | Graphite submits multiple PRs; git pushes one ref |
-| `track_branch()` | Delegates to `GraphiteBranchOps` | **Silent no-op** | Git mode won't error — just does nothing |
-| `get_branch_stack()` | Returns ordered list from cache | Returns `None` | Callers must handle `None` for Git-only repos |
-| `get_pr_for_branch()` | Graphite cache first, GitHub API fallback | Always GitHub API | `from_fallback` on `PrInfo` tells you which path was taken |
+| Operation             | GraphiteBranchManager Behavior                                                           | GitBranchManager Behavior               | Why This Trips Up Agents                                                                 |
+| --------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `create_branch()`     | Creates + tracks via `gt track`, **then restores original branch**                       | Creates via git, stays on current       | Both leave you on the **original branch** — explicit `checkout_branch()` required        |
+| `delete_branch()`     | LBYL check on `is_branch_tracked()`, then delegates to `gt delete` or `git branch -d/-D` | Plain `git branch -d/-D`                | Graphite mode handles diverged branches gracefully; git mode respects `-d` safety checks |
+| `submit_branch()`     | Submits **entire stack** via `gt submit`                                                 | Pushes **single branch** via `git push` | Graphite submits multiple PRs; git pushes one ref                                        |
+| `track_branch()`      | Delegates to `GraphiteBranchOps`                                                         | **Silent no-op**                        | Git mode won't error — just does nothing                                                 |
+| `get_branch_stack()`  | Returns ordered list from cache                                                          | Returns `None`                          | Callers must handle `None` for Git-only repos                                            |
+| `get_pr_for_branch()` | Graphite cache first, GitHub API fallback                                                | Always GitHub API                       | `from_fallback` on `PrInfo` tells you which path was taken                               |
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py, GraphiteBranchManager -->
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py, GitBranchManager -->

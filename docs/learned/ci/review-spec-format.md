@@ -56,16 +56,19 @@ See `docs/learned/documentation/source-pointers.md` for the decision checklist b
 Activity logs track review behavior across PR iterations for debugging recurring issues:
 
 **Problem being solved**: Review agent behavior changes between runs due to:
+
 - Code changes in the PR (new commits)
 - Changes to the review spec itself
 - Model behavior drift
 
 **Why 10 entries?** Balance between:
+
 - Sufficient history to identify patterns ("flagged this 3 times, then stopped")
 - GitHub comment size limits (100KB hard limit)
 - Visual scan burden (humans debugging reviews need to read these)
 
 **What logs capture**:
+
 - Aggregate counts ("2 verbatim blocks detected")
 - Specific violations ("src/erk/foo.py in docs/learned/bar.md")
 - Clean runs ("All docs clean, no verbatim copies detected")
@@ -101,6 +104,7 @@ Suggested fix: [Specific action]
 ```
 
 **Not for human politeness** — for agent parsing. Other erk tools may:
+
 - Parse review comments to generate reports
 - Detect duplicate violations across reviews
 - Track resolution status
@@ -120,6 +124,7 @@ Agents need action verbs and objects, not abstract phases.
 ### Anti-Pattern: Embedding Classification Logic in Steps
 
 **WRONG**:
+
 ```markdown
 ## Step 3: Analyze Files
 
@@ -127,6 +132,7 @@ Read each file and decide if it needs tests...
 ```
 
 **RIGHT**: Separate classification into its own step with explicit taxonomy:
+
 ```markdown
 ## Step 3: Classify Each File
 

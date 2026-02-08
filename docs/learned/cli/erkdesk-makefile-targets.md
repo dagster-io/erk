@@ -55,10 +55,10 @@ The Makefile exposes two test modes that map to different pnpm scripts:
 
 See watch mode implementation in `Makefile` (lines 173-177) and `erkdesk/package.json` (lines 14-15).
 
-| Makefile Target         | pnpm Script   | Exit Behavior           | Interactive |
-| ----------------------- | ------------- | ----------------------- | ----------- |
-| `erkdesk-test`          | `pnpm test`   | Non-zero on failure     | No          |
-| `erkdesk-test-watch`    | `test:watch`  | Stays running on change | Yes         |
+| Makefile Target      | pnpm Script  | Exit Behavior           | Interactive |
+| -------------------- | ------------ | ----------------------- | ----------- |
+| `erkdesk-test`       | `pnpm test`  | Non-zero on failure     | No          |
+| `erkdesk-test-watch` | `test:watch` | Stays running on change | Yes         |
 
 **CI uses single-run mode** (`erkdesk-test`) because GitHub Actions workflows need deterministic exit codes. Watch mode would hang the CI runner indefinitely.
 

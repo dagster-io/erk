@@ -9,12 +9,13 @@ Automatically resumable: completed docs are tracked in logs/batch-regen-state.js
 Re-running the script skips previously succeeded docs and retries failed ones.
 
 Usage:
-    python scripts/batch_regenerate_docs.py                           # sonnet regen, opus audit
-    python scripts/batch_regenerate_docs.py --regen-model opus        # opus for both steps
+    python scripts/batch_regenerate_docs.py                           # opus regen, sonnet audit
+    python scripts/batch_regenerate_docs.py --regen-model sonnet      # sonnet for both steps
     python scripts/batch_regenerate_docs.py --dry-run                 # list docs only
     python scripts/batch_regenerate_docs.py --limit 5                 # first 5 docs
     python scripts/batch_regenerate_docs.py --fresh                   # ignore prior progress
     python scripts/batch_regenerate_docs.py --file docs/learned/x.md  # target a specific file
+    python scripts/batch_regenerate_docs.py --output-suffix -v2       # write to foo-v2.md (A/B compare)
 """
 
 import argparse
@@ -26,6 +27,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 STATE_FILE = Path("logs/batch-regen-state.json")
+
+
+def tprint(*args: object, **kwargs: object) -> None:
+    """Print with a [HH:MM:SS] timestamp prefix."""
+    stamp = time.strftime("%H:%M:%S")
+    print(f"[{stamp}]", *args, **kwargs)
 
 
 @dataclass(frozen=True)
@@ -79,7 +86,7 @@ context, tripwires
    - Remove: import paths, function signatures, docstring paraphrases, file listings
 6. Preserve the frontmatter structure (title, read_when, tripwires) — improve their quality if \
 needed but keep the same fields
-7. Save the rewritten document to the same path
+7. Save the rewritten document to: {output_path}
 
 Do NOT change the document's topic or scope. Regenerate it in-place with higher quality content."""
 
@@ -117,7 +124,7 @@ def discover_docs() -> list[str]:
         check=False,
     )
     if result.returncode != 0:
-        print(f"Error running git log: {result.stderr}", file=sys.stderr)
+        tprint(f"Error running git log: {result.stderr}", file=sys.stderr)
         sys.exit(1)
 
     seen: set[str] = set()
@@ -145,9 +152,15 @@ def discover_docs() -> list[str]:
     return [doc for doc in docs if Path(doc).exists()]
 
 
-def build_regen_prompt(*, doc_path: str) -> str:
+def compute_output_path(*, doc_path: str, output_suffix: str) -> str:
+    """Compute the output path by inserting suffix before .md extension."""
+    p = Path(doc_path)
+    return str(p.with_stem(p.stem + output_suffix))
+
+
+def build_regen_prompt(*, doc_path: str, output_path: str) -> str:
     """Return the regeneration prompt for a given doc path."""
-    return REGEN_PROMPT_TEMPLATE.format(doc_path=doc_path)
+    return REGEN_PROMPT_TEMPLATE.format(doc_path=doc_path, output_path=output_path)
 
 
 def run_claude(
@@ -208,17 +221,24 @@ def process_doc(
     audit_model: str,
     timeout: int,
     log_dir: Path,
+    output_suffix: str,
 ) -> DocResult:
     """Process a single doc: regenerate then audit. Returns the outcome."""
     sanitized = doc.replace("/", "-")
     start = time.monotonic()
     lines_before = count_lines(doc)
 
+    # Determine output path (same as input when no suffix)
+    if output_suffix:
+        output_path = compute_output_path(doc_path=doc, output_suffix=output_suffix)
+    else:
+        output_path = doc
+
     # Step 1: Regenerate
-    regen_prompt = build_regen_prompt(doc_path=doc)
+    regen_prompt = build_regen_prompt(doc_path=doc, output_path=output_path)
     regen_log = log_dir / f"{sanitized}-regen.log"
 
-    print(f"  Regenerating ({regen_model})... ", end="", flush=True)
+    tprint(f"  Regenerating ({regen_model})... ", end="", flush=True)
     regen_start = time.monotonic()
     try:
         regen_exit = run_claude(
@@ -230,17 +250,24 @@ def process_doc(
     except subprocess.TimeoutExpired:
         print(f"TIMEOUT after {timeout}s")
         return _failed_result(
-            doc=doc, step="regen", start=start,
-            regen_seconds=timeout, lines_before=lines_before, lines_after_regen=lines_before,
+            doc=doc,
+            step="regen",
+            start=start,
+            regen_seconds=timeout,
+            lines_before=lines_before,
+            lines_after_regen=lines_before,
         )
     regen_secs = int(time.monotonic() - regen_start)
-    lines_after_regen = count_lines(doc)
+    lines_after_regen = count_lines(output_path)
 
     if regen_exit != 0:
         print(f"FAILED (exit {regen_exit}) [{regen_secs}s]")
         return _failed_result(
-            doc=doc, step="regen", start=start,
-            regen_seconds=regen_secs, lines_before=lines_before,
+            doc=doc,
+            step="regen",
+            start=start,
+            regen_seconds=regen_secs,
+            lines_before=lines_before,
             lines_after_regen=lines_after_regen,
         )
 
@@ -248,9 +275,9 @@ def process_doc(
 
     # Step 2: Audit
     audit_log = log_dir / f"{sanitized}-audit.log"
-    audit_prompt = f"/local:audit-doc {doc} --auto-apply"
+    audit_prompt = f"/local:audit-doc {output_path} --auto-apply"
 
-    print(f"  Auditing ({audit_model})... ", end="", flush=True)
+    tprint(f"  Auditing ({audit_model})... ", end="", flush=True)
     audit_start = time.monotonic()
     try:
         audit_exit = run_claude(
@@ -263,31 +290,46 @@ def process_doc(
         print(f"TIMEOUT after {timeout}s")
         elapsed = int(time.monotonic() - start)
         return DocResult(
-            path=doc, succeeded=False, failed_step="audit",
-            elapsed_seconds=elapsed, regen_seconds=regen_secs, audit_seconds=timeout,
-            lines_before=lines_before, lines_after_regen=lines_after_regen,
-            lines_after_audit=count_lines(doc),
+            path=doc,
+            succeeded=False,
+            failed_step="audit",
+            elapsed_seconds=elapsed,
+            regen_seconds=regen_secs,
+            audit_seconds=timeout,
+            lines_before=lines_before,
+            lines_after_regen=lines_after_regen,
+            lines_after_audit=count_lines(output_path),
         )
     audit_secs = int(time.monotonic() - audit_start)
-    lines_after_audit = count_lines(doc)
+    lines_after_audit = count_lines(output_path)
 
     elapsed = int(time.monotonic() - start)
 
     if audit_exit != 0:
         print(f"FAILED (exit {audit_exit}) [{audit_secs}s]")
         return DocResult(
-            path=doc, succeeded=False, failed_step="audit",
-            elapsed_seconds=elapsed, regen_seconds=regen_secs, audit_seconds=audit_secs,
-            lines_before=lines_before, lines_after_regen=lines_after_regen,
+            path=doc,
+            succeeded=False,
+            failed_step="audit",
+            elapsed_seconds=elapsed,
+            regen_seconds=regen_secs,
+            audit_seconds=audit_secs,
+            lines_before=lines_before,
+            lines_after_regen=lines_after_regen,
             lines_after_audit=lines_after_audit,
         )
 
     print(f"done [{audit_secs}s, lines {format_line_delta(lines_after_regen, lines_after_audit)}]")
-    print(f"  Total: {elapsed}s, net lines {format_line_delta(lines_before, lines_after_audit)}")
+    tprint(f"  Total: {elapsed}s, net lines {format_line_delta(lines_before, lines_after_audit)}")
     return DocResult(
-        path=doc, succeeded=True, failed_step="",
-        elapsed_seconds=elapsed, regen_seconds=regen_secs, audit_seconds=audit_secs,
-        lines_before=lines_before, lines_after_regen=lines_after_regen,
+        path=doc,
+        succeeded=True,
+        failed_step="",
+        elapsed_seconds=elapsed,
+        regen_seconds=regen_secs,
+        audit_seconds=audit_secs,
+        lines_before=lines_before,
+        lines_after_regen=lines_after_regen,
         lines_after_audit=lines_after_audit,
     )
 
@@ -299,13 +341,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--regen-model",
-        default="sonnet",
-        help="Claude model for regeneration step (default: sonnet)",
+        default="opus",
+        help="Claude model for regeneration step (default: opus)",
     )
     parser.add_argument(
         "--audit-model",
-        default="opus",
-        help="Claude model for audit step (default: opus)",
+        default="sonnet",
+        help="Claude model for audit step (default: sonnet)",
     )
     parser.add_argument(
         "--dry-run",
@@ -335,6 +377,11 @@ def parse_args() -> argparse.Namespace:
         dest="files",
         help="Target specific file(s) instead of git log discovery (repeatable, ignores state)",
     )
+    parser.add_argument(
+        "--output-suffix",
+        default="",
+        help="Suffix to insert before .md extension (e.g. '-v2' writes foo-v2.md), leaving originals untouched",
+    )
     return parser.parse_args()
 
 
@@ -347,23 +394,23 @@ def main() -> None:
         missing = [f for f in args.files if not Path(f).exists()]
         if missing:
             for f in missing:
-                print(f"Error: file not found: {f}", file=sys.stderr)
+                tprint(f"Error: file not found: {f}", file=sys.stderr)
             sys.exit(1)
         all_docs = args.files
-        print(f"Targeting {len(all_docs)} specified file(s)")
+        tprint(f"Targeting {len(all_docs)} specified file(s)")
         # --file mode ignores state (always processes)
         state: dict[str, dict[str, str | int]] = {}
         skipped: list[str] = []
         docs = list(all_docs)
     else:
-        print("Discovering docs created in the last 2 weeks...")
+        tprint("Discovering docs created in the last 2 weeks...")
         all_docs = discover_docs()
-        print(f"Found {len(all_docs)} docs (after filtering deleted/renamed)")
+        tprint(f"Found {len(all_docs)} docs (after filtering deleted/renamed)")
 
         # Handle --fresh: clear state file
         if args.fresh and STATE_FILE.exists():
             STATE_FILE.unlink()
-            print("Cleared state file (--fresh)")
+            tprint("Cleared state file (--fresh)")
 
         # Load state and filter out already-succeeded docs
         state = load_state(STATE_FILE)
@@ -371,22 +418,22 @@ def main() -> None:
         docs = [d for d in all_docs if state.get(d, {}).get("status") != "succeeded"]
 
         if skipped:
-            print(f"Skipping {len(skipped)} already-succeeded docs, {len(docs)} remaining")
+            tprint(f"Skipping {len(skipped)} already-succeeded docs, {len(docs)} remaining")
 
     # Handle --limit
     if args.limit > 0 and args.limit < len(docs):
         docs = docs[: args.limit]
-        print(f"Limited to {args.limit} docs")
+        tprint(f"Limited to {args.limit} docs")
 
     # Dry run
     if args.dry_run:
         print()
         if skipped:
-            print(f"Skipped ({len(skipped)} already succeeded):")
+            tprint(f"Skipped ({len(skipped)} already succeeded):")
             for doc in skipped:
-                print(f"  {doc}")
+                tprint(f"  {doc}")
             print()
-        print(f"Would process ({len(docs)} docs):")
+        tprint(f"Would process ({len(docs)} docs):")
         print()
         for doc in docs:
             prior = state.get(doc, {})
@@ -394,15 +441,15 @@ def main() -> None:
                 suffix = f" (retry — previously failed: {prior['failed_step']})"
             else:
                 suffix = ""
-            print(f"  {doc}{suffix}")
+            tprint(f"  {doc}{suffix}")
         print()
-        print(f"Total: {len(docs)} to process, {len(skipped)} skipped")
+        tprint(f"Total: {len(docs)} to process, {len(skipped)} skipped")
         return
 
     # Create log directory
     log_dir = Path("logs") / f"batch-regen-{time.strftime('%Y%m%d-%H%M%S')}"
     log_dir.mkdir(parents=True, exist_ok=True)
-    print(f"Log directory: {log_dir}")
+    tprint(f"Log directory: {log_dir}")
 
     # Process docs
     results: list[DocResult] = []
@@ -410,13 +457,14 @@ def main() -> None:
 
     for i, doc in enumerate(docs, start=1):
         print()
-        print(f"[{i}/{len(docs)}] Processing: {doc}")
+        tprint(f"[{i}/{len(docs)}] Processing: {doc}")
         result = process_doc(
             doc=doc,
             regen_model=args.regen_model,
             audit_model=args.audit_model,
             timeout=args.timeout,
             log_dir=log_dir,
+            output_suffix=args.output_suffix,
         )
         results.append(result)
 
@@ -457,25 +505,25 @@ def main() -> None:
     net_sign = "+" if net_lines > 0 else ""
 
     print()
-    print("==========================================")
-    print("Batch Regeneration Complete")
-    print("==========================================")
-    print(f"Total docs:    {len(docs)}")
-    print(f"Succeeded:     {succeeded}")
-    print(f"Failed:        {len(failed_results)}")
-    print(f"Wall clock:    {total_elapsed}s")
-    print(f"Regen time:    {total_regen_secs}s total")
-    print(f"Audit time:    {total_audit_secs}s total")
-    print(f"Lines before:  {total_lines_before}")
-    print(f"Lines after:   {total_lines_after} ({net_sign}{net_lines})")
-    print(f"Logs:          {log_dir}/")
-    print("==========================================")
+    tprint("==========================================")
+    tprint("Batch Regeneration Complete")
+    tprint("==========================================")
+    tprint(f"Total docs:    {len(docs)}")
+    tprint(f"Succeeded:     {succeeded}")
+    tprint(f"Failed:        {len(failed_results)}")
+    tprint(f"Wall clock:    {total_elapsed}s")
+    tprint(f"Regen time:    {total_regen_secs}s total")
+    tprint(f"Audit time:    {total_audit_secs}s total")
+    tprint(f"Lines before:  {total_lines_before}")
+    tprint(f"Lines after:   {total_lines_after} ({net_sign}{net_lines})")
+    tprint(f"Logs:          {log_dir}/")
+    tprint("==========================================")
 
     if failed_results:
         print()
-        print("Failed docs (retry manually):")
+        tprint("Failed docs (retry manually):")
         for r in failed_results:
-            print(f"  {r.path} ({r.failed_step})")
+            tprint(f"  {r.path} ({r.failed_step})")
 
 
 if __name__ == "__main__":

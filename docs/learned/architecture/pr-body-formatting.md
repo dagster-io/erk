@@ -31,14 +31,14 @@ The split happens **before** any GitHub-specific content is added. The plain `pr
 
 ## Decision Table: When to Use This Pattern
 
-| Adding to PR | Use Two-Target Pattern? | Reason |
-|-------------|------------------------|---------|
-| HTML tags (`<details>`, `<img>`, etc.) | ✅ Required | HTML doesn't belong in git log |
-| GitHub badges (shields.io URLs) | ✅ Required | Image markdown is GitHub-specific |
-| Issue closing keywords | ❌ Not needed | "Closes #123" is valid in both |
-| Plain text summary | ❌ Not needed | Same content for both targets |
-| Embedded plan content | ✅ Required | Uses `<details>` HTML wrapper |
-| PR metadata footer | ✅ Required | GitHub-only metadata section |
+| Adding to PR                           | Use Two-Target Pattern? | Reason                            |
+| -------------------------------------- | ----------------------- | --------------------------------- |
+| HTML tags (`<details>`, `<img>`, etc.) | ✅ Required             | HTML doesn't belong in git log    |
+| GitHub badges (shields.io URLs)        | ✅ Required             | Image markdown is GitHub-specific |
+| Issue closing keywords                 | ❌ Not needed           | "Closes #123" is valid in both    |
+| Plain text summary                     | ❌ Not needed           | Same content for both targets     |
+| Embedded plan content                  | ✅ Required             | Uses `<details>` HTML wrapper     |
+| PR metadata footer                     | ✅ Required             | GitHub-only metadata section      |
 
 ## Implementation Invariants
 

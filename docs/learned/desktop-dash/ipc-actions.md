@@ -1,202 +1,93 @@
 ---
 title: erkdesk IPC Action Pattern
-last_audited: "2026-02-07 18:30 PT"
+last_audited: "2026-02-08"
 audit_result: clean
 read_when:
   - "adding new IPC handlers to erkdesk"
-  - "implementing streaming or blocking actions"
-  - "debugging IPC event flow"
+  - "choosing between streaming and blocking execution"
+  - "debugging IPC event flow or memory leaks"
 tripwires:
   - action: "adding IPC handler without updating all 4 locations"
-    warning: "Every IPC handler requires updates in 4 files: main/index.ts (handler), main/preload.ts (bridge), types/erkdesk.d.ts (types), tests (mock). Missing any location breaks type safety or tests."
+    warning: "Every IPC handler requires updates in main/index.ts (handler), main/preload.ts (bridge), types/erkdesk.d.ts (types), and tests. Missing any location breaks type safety or runtime behavior."
     score: 6
   - action: "forgetting to remove IPC handlers on window close"
-    warning: "Call removeHandler() and removeAllListeners() in mainWindow.on('closed') handler. See main/index.ts:190-201 for the pattern. Prevents memory leaks and dangling handlers."
+    warning: "The main window 'closed' handler must call removeHandler/removeAllListeners for every registered handler and kill any active subprocess. See the cleanup block in main/index.ts."
     score: 6
   - action: "forgetting to remove event listeners on renderer unmount"
-    warning: "Call removeActionListeners() in useEffect cleanup to prevent memory leaks. See App.tsx lines 124-126 for the pattern."
+    warning: "Call removeActionListeners() in useEffect cleanup. Without this, stale listeners accumulate on re-renders and cause memory leaks or double-firing."
     score: 5
   - action: "using blocking execution for long-running actions"
-    warning: "Use streaming (startStreamingAction + events) for actions >1s. Blocking execution (executeAction) freezes the UI."
+    warning: "Use streaming (startStreamingAction + events) for actions >1s. Blocking execution (executeAction with execFile) freezes the entire UI because Electron's renderer is single-threaded."
     score: 4
 ---
 
 # erkdesk IPC Action Pattern
 
-erkdesk uses Electron IPC to communicate between the renderer (React) and main process (Node.js). There are two execution patterns: **streaming** (for long-running actions) and **blocking** (for quick operations).
+erkdesk's Electron IPC layer connects the React renderer to the Node.js main process. The core design decision is having **two execution models** — streaming and blocking — with a strict **four-location contract** for every handler.
 
-## Four-Location Checklist
+## Why Two Execution Models
 
-Every IPC handler requires changes in **4 locations**:
+Electron's renderer is single-threaded. A blocking `ipcMain.handle` call that takes 5 seconds freezes the entire UI for 5 seconds — no scrolling, no keyboard input, no visual feedback. This is why erkdesk splits actions into two patterns:
 
-| File                           | Purpose                                     |
-| ------------------------------ | ------------------------------------------- |
-| `main/index.ts`                | Handler implementation (main process)       |
-| `main/preload.ts`              | Context bridge exposure (renderer access)   |
-| `types/erkdesk.d.ts`           | TypeScript types for `window.erkdesk` API   |
-| `tests/` (mock or integration) | Test coverage (mock for unit, real for e2e) |
+| Criteria            | Blocking (`executeAction`)        | Streaming (`startStreamingAction`)         |
+| ------------------- | --------------------------------- | ------------------------------------------ |
+| Duration            | <1 second                         | >1 second                                  |
+| Electron API        | `ipcMain.handle` + `execFile`     | `ipcMain.on` + `spawn`                     |
+| Return model        | Promise resolves with full result | Events stream incrementally                |
+| UI during execution | Frozen                            | Responsive with live output                |
+| Use case            | `erk exec dash-data`              | `erk plan submit`, `erk launch pr-address` |
 
-**Tripwire**: Forgetting any of these 4 locations breaks type safety, tests, or runtime behavior.
+**Key design choice**: Blocking actions resolve errors (not reject) with `success: false`. This gives the renderer a consistent result shape whether the subprocess succeeds or fails, avoiding try/catch branching in every caller.
 
-## Streaming vs Blocking Execution
+**Key design choice**: Streaming kills any active subprocess before starting a new one. Only one streaming action runs at a time. This prevents orphaned processes and overlapping output.
 
-### Streaming Pattern (Preferred for Long Actions)
+## Four-Location Contract
 
-**Use when**: Action takes >1 second (e.g., `erk plan submit`, `erk launch pr-address`)
+Every IPC handler touches **four files that must stay in sync**. This is the most common source of bugs when adding new handlers — forgetting one location compiles fine but fails at runtime or in tests.
 
-**Flow**:
+| Location                         | Role                    | Consequence of Missing                           |
+| -------------------------------- | ----------------------- | ------------------------------------------------ |
+| `erkdesk/src/main/index.ts`      | Handler implementation  | Runtime error: channel has no handler            |
+| `erkdesk/src/main/preload.ts`    | Context bridge exposure | Runtime error: `window.erkdesk.foo` is undefined |
+| `erkdesk/src/types/erkdesk.d.ts` | TypeScript types        | Type errors in renderer code                     |
+| Tests (mock or integration)      | Coverage                | Silent regressions                               |
 
-1. Renderer calls `window.erkdesk.startStreamingAction(command, args)`
-2. Main process spawns subprocess with `spawn()`
-3. Main process sends `action:output` events for stdout/stderr chunks
-4. Main process sends `action:completed` event on exit
-5. Renderer listens via `onActionOutput` and `onActionCompleted`
+## Handler Type Decision: `on` vs `handle`
 
-**Advantages**:
+Electron offers two IPC registration patterns, and erkdesk uses them for different purposes:
 
-- UI remains responsive
-- Real-time output streaming
-- User can see progress
+- **`ipcMain.on`** — fire-and-forget. Used for streaming actions and one-way notifications (WebView bounds updates, URL loads). The renderer doesn't await a return value.
+- **`ipcMain.handle`** — request-response. Used for blocking actions where the renderer `await`s a typed result. Maps to `ipcRenderer.invoke` in the preload bridge.
 
-> **Source**: See [`main/index.ts:130-182`](../../../erkdesk/src/main/index.ts)
+Choosing the wrong one is a subtle bug: using `handle` for streaming means the renderer waits for a Promise that never resolves (the stream has no single return value). Using `on` for blocking means the renderer gets no result back.
 
-The handler spawns the subprocess, strips ANSI codes from stdout/stderr chunks, and forwards them as `action:output` events. On process close, it sends `action:completed` with success/error status.
+## Cleanup: Two Sides, Two Patterns
 
-**ANSI Stripping**: Subprocess output contains ANSI escape codes (colors/formatting). The `stripAnsi` helper removes them before sending to renderer to prevent rendering issues.
+IPC listeners leak memory if not cleaned up. erkdesk has cleanup on **both sides** of the IPC boundary, for different reasons:
 
-### Blocking Pattern (for Quick Operations)
+**Main process** (window close): Every `ipcMain.on` and `ipcMain.handle` registered inside `createWindow` must be removed when the window closes. Otherwise, reopening a window (macOS `activate` event) double-registers handlers, causing duplicate responses.
 
-**Use when**: Action completes in <1 second (e.g., `erk exec dash-data`)
+<!-- Source: erkdesk/src/main/index.ts, mainWindow.on('closed') handler -->
 
-**Flow**:
+See the `mainWindow.on('closed')` handler in `erkdesk/src/main/index.ts` — it removes all five IPC registrations and kills any active subprocess.
 
-1. Renderer awaits `window.erkdesk.executeAction(command, args)`
-2. Main process uses `execFile()` and waits for completion
-3. Returns `{ success, stdout, stderr, error }` once complete
+**Renderer** (component unmount): The `useEffect` in App.tsx that registers `onActionOutput` and `onActionCompleted` listeners must call `removeActionListeners()` in its cleanup function. Without this, React's strict mode (which double-mounts in development) causes listeners to stack.
 
-> **Source**: See [`main/index.ts:96-118`](../../../erkdesk/src/main/index.ts)
+<!-- Source: erkdesk/src/renderer/App.tsx, useEffect with removeActionListeners -->
 
-The handler wraps `execFile()` in a Promise, resolving with `{ success, stdout, stderr, error }`. Errors resolve (not reject) with `success: false` for consistent result handling.
+See the `useEffect` cleanup in `erkdesk/src/renderer/App.tsx` that calls `window.erkdesk.removeActionListeners()`.
 
-**Disadvantage**: UI freezes for the entire duration.
+## ANSI Stripping
 
-## Event Listener Cleanup Pattern
+Subprocess output from CLI tools contains ANSI escape codes for terminal colors. The main process strips these before forwarding to the renderer because React renders raw text, not terminal escapes. The strip happens on the main process side (not renderer) so the event data is clean by the time it crosses the IPC boundary.
 
-Streaming actions register event listeners that **must be cleaned up** to prevent memory leaks.
+<!-- Source: erkdesk/src/main/index.ts, stripAnsi helper -->
 
-> **Source**: See [`App.tsx:108-127`](../../../erkdesk/src/renderer/App.tsx)
-
-The `useEffect` registers `onActionOutput` (appends log lines) and `onActionCompleted` (updates status, clears running action) listeners on mount, and calls `removeActionListeners()` in the cleanup function on unmount.
-
-**Key insight**: `removeActionListeners()` is called in the cleanup function, running on component unmount.
-
-## Handler Registration Patterns
-
-### ipcMain.on (Fire-and-Forget)
-
-Used for streaming actions and one-way notifications:
-
-```tsx
-ipcMain.on("actions:start-streaming", (_event, command, args) => {
-  // No return value expected
-});
-```
-
-### ipcMain.handle (Request-Response)
-
-Used for blocking actions that return values:
-
-```tsx
-ipcMain.handle("plans:fetch", (): Promise<FetchPlansResult> => {
-  return new Promise((resolve) => {
-    // ...
-    resolve(result);
-  });
-});
-```
-
-## Preload Bridge Pattern
-
-The preload script exposes IPC methods via `contextBridge`:
-
-```tsx
-contextBridge.exposeInMainWorld("erkdesk", {
-  startStreamingAction: (command: string, args: string[]) => {
-    ipcRenderer.send("actions:start-streaming", command, args);
-  },
-  onActionOutput: (callback: (event: ActionOutputEvent) => void) => {
-    ipcRenderer.on("action:output", (_ipcEvent, event) => {
-      callback(event);
-    });
-  },
-  removeActionListeners: () => {
-    ipcRenderer.removeAllListeners("action:output");
-    ipcRenderer.removeAllListeners("action:completed");
-  },
-});
-```
-
-**Security note**: `contextBridge` isolates renderer from full Node.js access. Only explicitly exposed methods are available.
-
-## Type Safety with TypeScript
-
-The `erkdesk.d.ts` file extends the global `Window` interface:
-
-```tsx
-export interface ErkdeskAPI {
-  startStreamingAction: (command: string, args: string[]) => void;
-  onActionOutput: (callback: (event: ActionOutputEvent) => void) => void;
-  onActionCompleted: (callback: (event: ActionCompletedEvent) => void) => void;
-  removeActionListeners: () => void;
-}
-
-declare global {
-  interface Window {
-    erkdesk: ErkdeskAPI;
-  }
-}
-```
-
-This enables type-checked access to `window.erkdesk` in renderer code.
-
-## Adding a New IPC Handler
-
-### 1. Define the handler in `main/index.ts`
-
-Choose `ipcMain.on` (streaming) or `ipcMain.handle` (blocking):
-
-```tsx
-ipcMain.on("my-action:execute", (_event, arg1, arg2) => {
-  // Implementation
-});
-```
-
-### 2. Expose in `main/preload.ts`
-
-```tsx
-contextBridge.exposeInMainWorld("erkdesk", {
-  // ... existing methods
-  myAction: (arg1: string, arg2: number) => {
-    ipcRenderer.send("my-action:execute", arg1, arg2);
-  },
-});
-```
-
-### 3. Add types in `types/erkdesk.d.ts`
-
-```tsx
-export interface ErkdeskAPI {
-  // ... existing methods
-  myAction: (arg1: string, arg2: number) => void;
-}
-```
-
-### 4. Add test coverage
-
-Either mock the IPC in unit tests or add integration test coverage.
+See `stripAnsi` in the streaming handler in `erkdesk/src/main/index.ts`.
 
 ## Related Documentation
 
-- [App Architecture](app-architecture.md) — How App.tsx coordinates streaming actions
-- [Action Toolbar](action-toolbar.md) — Action definitions and execution triggers
-- [erkdesk Tripwires](tripwires.md) — Critical patterns to follow
+- [App Architecture](app-architecture.md) — how App.tsx coordinates streaming actions with state
+- [Action Toolbar](action-toolbar.md) — action definitions and execution triggers
+- [Preload Bridge Patterns](preload-bridge-patterns.md) — contextBridge security model
+- [Backend Communication](backend-communication.md) — broader CLI communication patterns

@@ -91,11 +91,13 @@ Multiple commits implementing a single feature should consolidate into one entry
 Don't list implementation commits separately. Merge them into explanatory prose:
 
 **Bad (commit-by-commit):**
+
 - Add artifact sync command (abc123)
 - Fix artifact sync edge case (def456)
 - Add artifact sync alias (ghi789)
 
 **Good (rolled up):**
+
 - **Artifact Sync**: Unified artifact distribution system. Enables sharing Claude Code capabilities across worktrees. Supports aliasing and handles edge cases in multi-worktree scenarios. (abc123, def456, ghi789)
 
 The roll-up communicates the complete feature, not the implementation journey.

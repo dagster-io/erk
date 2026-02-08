@@ -88,11 +88,13 @@ for source_item in session_sources:
 <!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, session type derivation at lines 358-360 -->
 
 WRONG approach (creating schema fields for derived data):
+
 ```python
 # DON'T add "session_type": "planning" | "impl" to SessionSourceDict
 ```
 
 CORRECT approach (derive from relationships):
+
 ```python
 session_id = source_item.get("session_id")
 planning_session_id = sessions["planning_session_id"]

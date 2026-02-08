@@ -34,7 +34,7 @@ The most common silent failure: referencing a step ID that doesn't exist.
 ```yaml
 # WRONG: Step ID doesn't exist
 - name: Deploy
-  if: steps.build.outcome == 'success'  # No step with id: build
+  if: steps.build.outcome == 'success' # No step with id: build
   run: deploy
 ```
 
@@ -51,7 +51,7 @@ Less obvious: referencing the wrong key in a step's outputs.
 ```yaml
 # WRONG: Key is 'skip', not 'should_skip'
 - name: Run tests
-  if: steps.check.outputs.should_skip != 'true'  # Key is actually 'skip'
+  if: steps.check.outputs.should_skip != 'true' # Key is actually 'skip'
   run: pytest
 ```
 
@@ -93,7 +93,7 @@ Before adding compound conditions to erk's workflows:
   run: pytest
 
 - name: Cleanup
-  if: steps.test.outcome == 'success'  # Skips on failure!
+  if: steps.test.outcome == 'success' # Skips on failure!
   run: cleanup.sh
 ```
 
@@ -104,6 +104,7 @@ If tests fail, cleanup never runs. Use `if: always()` to ensure cleanup happens 
 Erk's workflows use `kebab-case` for step IDs to match the broader naming convention (commands, skills, hooks all use kebab-case).
 
 **Pattern:**
+
 - Descriptive, not generic: `discover-pr` not `step1`
 - Verb-noun structure: `check-submission`, `collect-failures`, `run-autofix`
 - No abbreviations: `implementation` not `impl`
@@ -121,6 +122,7 @@ Erk's CI uses a **fan-out → fan-in** pattern:
 3. **Autofix job** depends on all parallel jobs, checks their `result` values
 
 This architecture requires:
+
 - Gate job MUST expose outputs that downstream jobs reference
 - Autofix condition MUST check `needs.<job>.result` for EVERY parallel job
 - Any new parallel job MUST be added to autofix's `needs:` list and condition

@@ -37,11 +37,13 @@ If your workflow only handles pull_request events, local pushes will bypass your
 The solution is two-layered label checking:
 
 **Layer 1: Job-level condition** (pull_request events only)
+
 - Fast path: GitHub evaluates the condition before allocating a runner
 - Prevents job execution entirely if label check fails
 - Cannot work for push events (no PR context available)
 
 **Layer 2: Step-level API query** (all events)
+
 - Required path for push events: Query GitHub API to discover PR and fetch labels
 - Safety net for pull_request events: Redundant check, but provides defense-in-depth
 - Runs after checkout, so it sees current repository state

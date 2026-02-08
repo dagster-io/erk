@@ -28,11 +28,11 @@ This is a **test-vs-production tripwire**: small PRs work perfectly in developme
 
 ### Decision: When to Use REST API Over gh pr Commands
 
-| Use Case | Method | Reason |
-|----------|--------|--------|
+| Use Case                     | Method                                                    | Reason                                            |
+| ---------------------------- | --------------------------------------------------------- | ------------------------------------------------- |
 | Get changed files (any size) | `gh api repos/{owner}/{repo}/pulls/{pr}/files --paginate` | REST API supports pagination, gh pr diff does not |
-| Small PR diff (<100 files) | `gh pr diff {pr}` | Simpler command for common case |
-| Large PR diff (300+ files) | `gh api` with REST | gh pr diff will HTTP 406 |
+| Small PR diff (<100 files)   | `gh pr diff {pr}`                                         | Simpler command for common case                   |
+| Large PR diff (300+ files)   | `gh api` with REST                                        | gh pr diff will HTTP 406                          |
 
 The REST API approach is **always safe** — it works for all PR sizes. The gh pr diff convenience command is **conditionally safe** — fast path for small PRs, broken path for large ones.
 
@@ -71,6 +71,7 @@ subprocess.run(["gh", "pr", "view", pr_number])
 ```
 
 **Format**:
+
 - `REST` — operation has a known REST API endpoint
 - `GraphQL` — operation may be better served by GraphQL
 - Operation description — brief explanation

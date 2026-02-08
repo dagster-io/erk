@@ -53,10 +53,12 @@ The footer follows a three-section pattern:
 Closes #123
 
 To checkout this PR in a fresh worktree and environment locally, run:
+```
+
+source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous
 
 ```
-source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous
-```
+
 ```
 
 **Key format rules:**
@@ -75,19 +77,23 @@ source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous
 Format changes must support old and new formats simultaneously during transition:
 
 **Phase 0: Add new format support**
+
 - Parser recognizes both old and new delimiters/patterns
 - Validator extracts data from both formats
 - Zero generator changes yet
 
 **Phase 1: Update generator**
+
 - New PRs use new format
 - Old PRs remain parseable via Phase 0 support
 
 **Phase 2: Explicit migration** (optional)
+
 - Update existing PR bodies if needed
 - Or leave them in old format (parser handles both)
 
 **Phase 3: Deprecate old format** (optional, after grace period)
+
 - Remove old format support from parser/validator
 
 **Anti-pattern:** Updating generator first breaks parsing of old PRs when code reads them.
@@ -109,6 +115,7 @@ Format changes must support old and new formats simultaneously during transition
 **Cause:** Extra whitespace, wrong capitalization, or malformed issue reference
 
 **Fix:** Check regex patterns in `extract_closing_reference()`:
+
 - Same-repo: `Closes\s+#(\d+)`
 - Cross-repo: `Closes\s+([\w-]+/[\w.-]+)#(\d+)`
 
@@ -121,6 +128,7 @@ Format changes must support old and new formats simultaneously during transition
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _core_submit_flow -->
 
 **Fix:** See two-phase creation in `_core_submit_flow()`:
+
 1. Create PR with `pr_number=0` footer
 2. Update footer with actual PR number after creation
 

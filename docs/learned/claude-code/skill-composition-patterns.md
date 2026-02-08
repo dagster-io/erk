@@ -70,9 +70,9 @@ This separation means multiple skills (not just commands) can compose the same r
 
 Composition (skills reference each other) and context forking (isolated subagent execution) solve different problems:
 
-| Pattern | Context Sharing | Use When |
-|---------|----------------|----------|
-| **Composition** | Both skills share conversation history | Reusing guidelines, building on prior context |
+| Pattern          | Context Sharing                                  | Use When                                                |
+| ---------------- | ------------------------------------------------ | ------------------------------------------------------- |
+| **Composition**  | Both skills share conversation history           | Reusing guidelines, building on prior context           |
 | **Context Fork** | Isolated — forked skill sees only its own prompt | Reducing token pollution, fetch-and-classify operations |
 
 <!-- Source: docs/learned/claude-code/context-fork-feature.md, entire file -->

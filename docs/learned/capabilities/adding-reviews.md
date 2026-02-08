@@ -35,6 +35,7 @@ Subclasses implement:
 2. **`description`**: Human-readable CLI description
 
 **Why just two properties?** The base class derives everything else:
+
 - CLI name: `f"review-{review_name}"` (e.g., `review-dignified-python`)
 - Artifact path: `.claude/reviews/{review_name}.md`
 - Installation check: file existence test
@@ -49,6 +50,7 @@ See `DignifiedPythonReviewDefCapability` for the canonical minimal implementatio
 Review definitions are sourced from `.github/reviews/` in the erk repository (not `.claude/reviews/`). This placement is deliberate:
 
 **Why `.github/` instead of `.claude/`?**
+
 - Reviews are consumed by GitHub Actions workflows (`.github/workflows/code-reviews.yml`)
 - Colocation with the workflow that uses them improves discoverability
 - erk itself uses these reviews for self-review during CI
@@ -96,11 +98,13 @@ ReviewCapability declares `managed_artifacts` to enable `erk doctor` detection:
 ## Anti-Pattern: Installing Reviews Without Workflow
 
 **DON'T:**
+
 ```bash
 erk init capability add review-dignified-python  # Fails preflight
 ```
 
 **DO:**
+
 ```bash
 erk init capability add code-reviews-system      # Install workflow first
 erk init capability add review-dignified-python  # Then install review
@@ -110,12 +114,12 @@ The preflight check prevents this, but understanding WHY clarifies the dependenc
 
 ## Decision Table: Review vs Skill vs Workflow
 
-| If you're creating...                              | Capability Type       | Target Directory      |
-| -------------------------------------------------- | --------------------- | --------------------- |
-| Code review guidance for Claude                    | `ReviewCapability`    | `.claude/reviews/`    |
-| Agent instruction manual (loaded into context)     | `SkillCapability`     | `.claude/skills/`     |
-| GitHub Actions workflow (with actions/scripts)     | Direct `Capability`   | `.github/workflows/`  |
-| Multi-file system (e.g., hooks + reminders + docs) | Direct `Capability`   | Multiple directories  |
+| If you're creating...                              | Capability Type     | Target Directory     |
+| -------------------------------------------------- | ------------------- | -------------------- |
+| Code review guidance for Claude                    | `ReviewCapability`  | `.claude/reviews/`   |
+| Agent instruction manual (loaded into context)     | `SkillCapability`   | `.claude/skills/`    |
+| GitHub Actions workflow (with actions/scripts)     | Direct `Capability` | `.github/workflows/` |
+| Multi-file system (e.g., hooks + reminders + docs) | Direct `Capability` | Multiple directories |
 
 Use `ReviewCapability` only for single `.md` files that define review criteria. Skills and workflows have different base classes.
 

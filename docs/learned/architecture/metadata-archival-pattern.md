@@ -82,12 +82,12 @@ This naming signals "most recent historical value" vs "current active value."
 
 ## Decision Table: When to Archive
 
-| Scenario | Archive? | Why |
-|----------|----------|-----|
-| Field represents active workflow that completes | ✓ | History matters for debugging (which review PR? which session?) |
-| Field is state machine transition | ✓ | Understanding previous state is valuable |
-| Field is ephemeral/always overwritten | ✗ | History would be noise (high-churn fields) |
-| Field is permanent metadata | ✗ | No concept of "clearing" (e.g., `created_at`) |
+| Scenario                                        | Archive? | Why                                                             |
+| ----------------------------------------------- | -------- | --------------------------------------------------------------- |
+| Field represents active workflow that completes | ✓        | History matters for debugging (which review PR? which session?) |
+| Field is state machine transition               | ✓        | Understanding previous state is valuable                        |
+| Field is ephemeral/always overwritten           | ✗        | History would be noise (high-churn fields)                      |
+| Field is permanent metadata                     | ✗        | No concept of "clearing" (e.g., `created_at`)                   |
 
 **Example requiring archival**: `review_pr` — when review completes, we clear the active field but need to know which PR was reviewed.
 

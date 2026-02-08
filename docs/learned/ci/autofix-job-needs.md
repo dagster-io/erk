@@ -35,16 +35,16 @@ When autofix depends on test jobs, the pipeline enters a deadlock state:
 
 ## Decision Table: When to Add Dependencies
 
-| Job Type | Failures Auto-Fixable? | Add to needs? | Rationale |
-|----------|------------------------|---------------|-----------|
-| format (ruff format) | ✅ Yes | ✅ Yes | Autofix runs ruff format to resolve |
-| lint (ruff check) | ✅ Yes | ✅ Yes | Autofix runs ruff check --fix |
-| prettier | ✅ Yes | ✅ Yes | Autofix runs prettier --write |
-| docs-check | ✅ Yes | ✅ Yes | Autofix runs make docs-sync |
-| ty (type check) | ⚠️ Mostly no | ✅ Yes | Fast feedback; most type errors need manual fixes but some are auto-fixable via ruff |
-| unit-tests | ❌ No | ❌ **NO** | Requires code changes, not style fixes |
-| integration-tests | ❌ No | ❌ **NO** | Requires code changes, not style fixes |
-| erkdesk-tests | ❌ No | ❌ **NO** | Requires code changes, not style fixes |
+| Job Type             | Failures Auto-Fixable? | Add to needs? | Rationale                                                                            |
+| -------------------- | ---------------------- | ------------- | ------------------------------------------------------------------------------------ |
+| format (ruff format) | ✅ Yes                 | ✅ Yes        | Autofix runs ruff format to resolve                                                  |
+| lint (ruff check)    | ✅ Yes                 | ✅ Yes        | Autofix runs ruff check --fix                                                        |
+| prettier             | ✅ Yes                 | ✅ Yes        | Autofix runs prettier --write                                                        |
+| docs-check           | ✅ Yes                 | ✅ Yes        | Autofix runs make docs-sync                                                          |
+| ty (type check)      | ⚠️ Mostly no           | ✅ Yes        | Fast feedback; most type errors need manual fixes but some are auto-fixable via ruff |
+| unit-tests           | ❌ No                  | ❌ **NO**     | Requires code changes, not style fixes                                               |
+| integration-tests    | ❌ No                  | ❌ **NO**     | Requires code changes, not style fixes                                               |
+| erkdesk-tests        | ❌ No                  | ❌ **NO**     | Requires code changes, not style fixes                                               |
 
 ## Anti-Pattern: Test Job Dependency
 

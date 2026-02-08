@@ -59,14 +59,14 @@ def _all_capabilities() -> tuple[Capability, ...]:
 
 ## Decision Table: Which Base Class?
 
-| If you're adding...                         | Extend                 | Implement Properties      |
-| ------------------------------------------- | ---------------------- | ------------------------- |
-| Context injection (hook reminder)           | `ReminderCapability`   | `reminder_name`           |
-| Skill file installation                     | `SkillCapability`      | `skill_name`              |
-| GitHub workflow with actions                | `Capability` (direct)  | Full interface (see base) |
-| `.claude/` artifact with custom sync logic  | `Capability` (direct)  | Full interface (see base) |
-| Settings.json modification                  | `Capability` (direct)  | Full interface (see base) |
-| State.toml section (not reminders)          | `Capability` (direct)  | Full interface (see base) |
+| If you're adding...                        | Extend                | Implement Properties      |
+| ------------------------------------------ | --------------------- | ------------------------- |
+| Context injection (hook reminder)          | `ReminderCapability`  | `reminder_name`           |
+| Skill file installation                    | `SkillCapability`     | `skill_name`              |
+| GitHub workflow with actions               | `Capability` (direct) | Full interface (see base) |
+| `.claude/` artifact with custom sync logic | `Capability` (direct) | Full interface (see base) |
+| Settings.json modification                 | `Capability` (direct) | Full interface (see base) |
+| State.toml section (not reminders)         | `Capability` (direct) | Full interface (see base) |
 
 Use base classes when possible. They eliminate boilerplate and ensure consistent behavior.
 
@@ -79,6 +79,7 @@ Reminder capabilities store state in `.erk/state.toml` and enable hook-based con
 See `DevrunReminderCapability` for the canonical minimal implementation—two properties, zero methods.
 
 **Key insight:** `reminder_name` determines:
+
 - CLI name: `{reminder_name}-reminder`
 - State key in `.erk/state.toml`: `reminders.installed = ["devrun"]`
 - Hook detection: hooks query by `reminder_name`
@@ -96,6 +97,7 @@ See `DignifiedPythonCapability`—same two-property pattern as reminders.
 <!-- Source: src/erk/capabilities/workflows/erk_impl.py, ErkImplWorkflowCapability -->
 
 Direct `Capability` subclass is needed when:
+
 - Installing multiple files/directories with custom logic
 - Modifying configuration files (like `settings.json`)
 - Complex preflight checks
@@ -104,12 +106,12 @@ See `ErkImplWorkflowCapability` for the full pattern: implements all abstract me
 
 ## Silent Failure Modes
 
-| Failure | Symptom | Root Cause |
-| ------- | ------- | ---------- |
-| Capability not in `erk init capability list` | Missing from registry tuple | Forgot instantiation step |
-| Hook doesn't fire after install | Wrong `reminder_name` or not checking state file | Name mismatch between class and hook |
-| Doctor doesn't check artifacts | Missing `managed_artifacts` declaration | Artifact detection relies on registry |
-| Install succeeds but `is_installed()` returns False | State tracking not called | Forgot `add_installed_capability()` call |
+| Failure                                             | Symptom                                          | Root Cause                               |
+| --------------------------------------------------- | ------------------------------------------------ | ---------------------------------------- |
+| Capability not in `erk init capability list`        | Missing from registry tuple                      | Forgot instantiation step                |
+| Hook doesn't fire after install                     | Wrong `reminder_name` or not checking state file | Name mismatch between class and hook     |
+| Doctor doesn't check artifacts                      | Missing `managed_artifacts` declaration          | Artifact detection relies on registry    |
+| Install succeeds but `is_installed()` returns False | State tracking not called                        | Forgot `add_installed_capability()` call |
 
 ## Testing Checklist
 

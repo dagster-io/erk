@@ -30,8 +30,8 @@ The distinction isn't just about interactivity. It's about **whether you need co
 
 ### Decision Table
 
-| Question                                             | Answer | Use                      |
-| ---------------------------------------------------- | ------ | ------------------------ |
+| Question                                            | Answer | Use                      |
+| --------------------------------------------------- | ------ | ------------------------ |
 | Does the command need real-time streaming output?   | Yes    | `exec_ssh_interactive()` |
 | Does the user need to interact with the program?    | Yes    | `exec_ssh_interactive()` |
 | Do you need to run code after the command finishes? | Yes    | `run_ssh_command()`      |
@@ -60,11 +60,13 @@ When you run `erk codespace connect`, you **become** the remote session. The loc
 The `-t` flag isn't about "making things interactive." It's about **allocating a pseudo-terminal**.
 
 **Without `-t`:**
+
 - Remote program has no controlling TTY
 - Programs that expect terminal features (cursor movement, color, raw input) block or fail
 - Interactive TUI apps appear to hang waiting for input that can never arrive
 
 **With `-t`:**
+
 - SSH allocates a pseudo-terminal on the remote side
 - Terminal features work as expected
 - User input flows bidirectionally
@@ -74,6 +76,7 @@ This is why `exec_ssh_interactive()` always passes `-t`, but `run_ssh_command()`
 ### Anti-Pattern: Using run_ssh_command for Claude
 
 **WRONG:**
+
 ```python
 # This appears to hang
 ctx.codespace.run_ssh_command(codespace.gh_name, "claude --dangerously-skip-permissions")
@@ -82,6 +85,7 @@ ctx.codespace.run_ssh_command(codespace.gh_name, "claude --dangerously-skip-perm
 **Why it fails:** Claude's TUI tries to enter raw mode, set up a display, and read keyboard input. Without a TTY, all of these operations block indefinitely.
 
 **Correct:**
+
 ```python
 # This replaces the process with the SSH session
 ctx.codespace.exec_ssh_interactive(codespace.gh_name, "bash -l -c 'claude --dangerously-skip-permissions'")
@@ -94,6 +98,7 @@ ctx.codespace.exec_ssh_interactive(codespace.gh_name, "bash -l -c 'claude --dang
 SSH's command handling is subtle: **all arguments after the hostname are concatenated with spaces**.
 
 This breaks shell quoting:
+
 ```bash
 # WRONG - SSH sees three separate arguments
 ssh host bash -l -c 'echo hello'
@@ -113,12 +118,14 @@ In Python code, this means the `remote_command` parameter must be pre-composed a
 The `--shell` flag demonstrates the two use cases:
 
 **Full setup mode (default):**
+
 - Pulls latest code
 - Syncs Python dependencies
 - Activates virtualenv
 - Launches Claude with permissions disabled (codespace isolation provides safety)
 
 **Shell mode:**
+
 - Just drops into bash
 - Used for debugging when the full setup command is broken
 

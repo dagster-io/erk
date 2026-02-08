@@ -207,7 +207,7 @@ Signs the plan preserves investigation findings:
 | Implementation prep       | Re-discover everything             | Execute immediately                 |
 | Context burned            | 10-30K tokens for re-investigation | Minimal (findings already in plan)  |
 | Risk of divergence        | High (different agent, new search) | Low (evidence constrains choices)   |
-| Verification             | Subjective ("looks done")          | Objective (grep, inspect, run)      |
+| Verification              | Subjective ("looks done")          | Objective (grep, inspect, run)      |
 | Attribution (consolidate) | Lost                               | Preserved per source plan           |
 
 ---

@@ -1,143 +1,59 @@
 ---
 title: Slash Command LLM Turn Optimization
 read_when:
-  - "writing slash commands that need to fetch multiple pieces of related data"
-  - "optimizing slash commands that take too many LLM turns"
-  - "noticing repeated sequential subprocess calls in slash commands"
-  - "designing exec scripts for bundled API operations"
+  - "writing a slash command that makes 3+ sequential tool calls to fetch data"
+  - "optimizing a slash command that feels slow due to many LLM round-trips"
+  - "deciding whether to bundle API calls into an exec script or keep them in the command"
 category: cli
 tripwires:
   - action: "making LLM fetch data sequentially when it could be bundled"
-    warning: "Extract 3+ mechanical sequential calls into an exec script. Bundle objective/plan/PR fetches into objective-update-context pattern."
+    warning: "Extract 3+ mechanical sequential calls into an exec script. Each tool call costs a full LLM round-trip."
   - action: "creating exec scripts for operations requiring LLM reasoning between steps"
-    warning: "Keep conditional logic in slash commands. Only bundle mechanical API calls where input params are known upfront."
-  - action: "forgetting to add TypedDict schemas for exec script JSON output"
-    warning: "Define TypedDict in erk_shared for type-safe JSON parsing. Create separate dicts for success result and error result."
-last_audited: "2026-02-05 13:19 PT"
-audit_result: edited
+    warning: "Keep conditional logic in slash commands. Only bundle mechanical API calls where all input params are known upfront."
+last_audited: "2026-02-08"
+audit_result: clean
 ---
 
 # Slash Command LLM Turn Optimization
 
-## Problem
+## Why This Matters
 
-Slash commands that fetch multiple related pieces of data sequentially waste LLM turns:
+Every tool call in a slash command costs a full LLM round-trip: the agent generates the call, waits for execution, then processes the result before generating the next call. For slash commands that fetch multiple pieces of related data (objective body, plan body, PR details), sequential tool calls dominate execution time — the LLM spends most of its turns on mechanical data fetching rather than the reasoning that actually requires intelligence.
 
-**Before optimization:**
+The fix is to push mechanical fetching into a single exec script, giving the LLM all the data it needs in one round-trip.
 
-1. LLM runs: `gh issue view --json body`
-2. LLM waits for response
-3. LLM runs: `gh pr view --json title,body`
-4. LLM waits for response
-5. LLM runs: `gh issue view <plan> --json body`
-6. LLM waits for response
-7. LLM analyzes all data and composes update
+## Decision Framework: Bundle vs Keep Sequential
 
-**Result:** ~8 LLM turns, slow execution
+| Condition                      | Bundle into exec script       | Keep in slash command                                    |
+| ------------------------------ | ----------------------------- | -------------------------------------------------------- |
+| Number of calls                | 3+ sequential fetches         | 1-2 calls                                                |
+| Reasoning needed between calls | No — all params known upfront | Yes — LLM must analyze result N before deciding call N+1 |
+| Dependency structure           | Independent or simple chain   | Complex conditional branching                            |
+| User interaction needed        | No                            | Yes                                                      |
 
-## Solution Pattern
+**The key test**: Can you write all the API calls as a straight-line script with no conditionals? If yes, bundle them. If the LLM needs to make decisions between fetches, keep them in the slash command.
 
-Bundle mechanical API calls into a single exec script that returns all data as JSON:
+## The Two-Phase Pattern
 
-**After optimization:**
+Optimized slash commands follow a two-phase structure:
 
-1. LLM runs: `erk exec objective-update-context --pr X --objective Y --branch Z`
-2. LLM receives complete JSON blob with all data
-3. LLM analyzes and composes update
+**Phase 1 — Bulk fetch (1 turn):** A single `erk exec` call returns all needed data as JSON.
 
-**Result:** ~4 LLM turns, fast execution
+**Phase 2 — Reason and act (2-3 turns):** The LLM analyzes the complete dataset, composes outputs, and executes writes (ideally in parallel).
 
-## Decision Framework
+<!-- Source: .claude/commands/erk/objective-update-with-landed-pr.md, Step 0 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_update_context.py, objective_update_context -->
 
-**Extract into exec script when:**
+The `objective-update-with-landed-pr` command demonstrates this: Step 0 calls `erk exec objective-update-context` once to fetch the objective issue, plan issue, and PR details. The subagent then has everything it needs to compose the update and post the comment in parallel — reducing ~8 turns to ~4.
 
-- ✅ 3+ sequential subprocess calls are needed
-- ✅ All operations are mechanical (no reasoning between steps)
-- ✅ Input parameters are known at the start
-- ✅ Operations are independent or have simple dependencies
+## Write-Side Parallelism
 
-**Keep in slash command when:**
+After the bulk fetch, independent _writes_ can also be parallelized. When a slash command needs to both post a comment and update an issue body, instruct the LLM to invoke both Bash tools in a single message. Claude Code executes parallel tool calls concurrently, saving another round-trip.
 
-- ❌ LLM needs to reason about results between operations
-- ❌ Conditional logic based on complex business rules
-- ❌ Only 1-2 operations needed
-- ❌ Operations require user interaction
-
-## Implementation Example
-
-**Slash command:** `.claude/commands/erk/objective-update-with-landed-pr.md`
-
-**Old approach (sequential):**
-
-```bash
-# In slash command, run these one at a time:
-gh issue view <objective> --json body,title,state,labels,url
-gh issue view <plan> --json body,title
-gh pr view <pr> --json title,body,commits
-```
-
-Each call requires a separate LLM turn to execute.
-
-**New approach (bundled):**
-
-```bash
-# In slash command, run once:
-erk exec objective-update-context --pr <number> --objective <number> --branch <name>
-```
-
-**Exec script:** `src/erk/cli/commands/exec/scripts/objective_update_context.py`
-
-See `objective_update_context()` in `src/erk/cli/commands/exec/scripts/objective_update_context.py:52` for the full implementation.
-
-**Impact:** Reduced from ~8 turns to ~4 turns
-
-## TypedDict Schema Pattern
-
-Always define TypedDict schemas in `erk_shared` for exec script output:
-
-**File:** `packages/erk-shared/src/erk_shared/objective_update_context_result.py`
-
-See `packages/erk-shared/src/erk_shared/objective_update_context_result.py` for the canonical TypedDict definitions (`ObjectiveInfoDict`, `PlanInfoDict`, `PRInfoDict`, `ObjectiveUpdateContextResultDict`, `ObjectiveUpdateContextErrorDict`).
-
-**Why TypedDict:**
-
-- Type-safe JSON parsing in slash commands
-- Editor autocomplete for result fields
-- Type checking catches field name typos
-- Documents the contract between exec script and slash command
-
-## Parallel Tool Invocation
-
-After fetching bundled data, execute independent writes in parallel:
-
-**From:** `.claude/commands/erk/objective-update-with-landed-pr.md` Step 0 subagent instructions (task 4)
-
-```bash
-# Post action comment
-gh issue comment <issue-number> --body "$(cat <<'EOF'
-[action comment content]
-EOF
-)"
-```
-
-```bash
-# Update objective body
-erk exec update-issue-body <issue-number> --body "$(cat <<'BODY_EOF'
-<full updated body text>
-BODY_EOF
-)"
-```
-
-The LLM can invoke both Bash tools in a single message, running them concurrently.
-
-## When NOT to Optimize
-
-**Counter-example: Don't bundle conditional logic**
-
-If operations depend on complex reasoning:
+## Anti-Pattern: Bundling Conditional Logic
 
 ```python
-# BAD: Don't bundle this into exec script
+# WRONG: Don't put this in an exec script
 result1 = fetch_data()
 if llm_needs_to_analyze(result1):
     result2 = fetch_more_data()
@@ -145,20 +61,15 @@ else:
     result2 = fetch_different_data()
 ```
 
-Keep this in the slash command so the LLM can make decisions between steps.
+If the choice of what to fetch next depends on LLM reasoning about previous results, that logic must stay in the slash command. Exec scripts are for mechanical operations with predetermined control flow.
 
-## Related Patterns
+## Relationship to TypedDict Schemas
 
-- [Exec Script Testing](../testing/exec-script-testing.md) - How to test exec scripts
-- [Output Abstraction](output-styling.md#output-abstraction) - JSON to stdout, messages to stderr
-- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) - Error return types
+Bundled exec scripts produce JSON consumed by the LLM. The TypedDict schema pattern (documented in [Exec Script Schema Patterns](exec-script-schema-patterns.md)) applies here: define the result shape in `erk_shared` so both the script and any Python consumers get type-safe access. For slash commands specifically, the TypedDict also documents the JSON contract the LLM will receive, making the command easier to maintain.
 
-## Verification
+## See Also
 
-To verify optimization impact, compare before/after:
-
-1. Count subprocess calls in the old slash command
-2. Count subprocess calls in the new slash command
-3. Measure LLM turn count before and after (observe in Claude Code session)
-
-**Example:** objective-update-with-landed-pr reduced from ~8 to ~4 turns
+- [Exec Script Patterns](exec-script-patterns.md) — Context injection, gateway imports, result dataclass pattern
+- [Exec Script Schema Patterns](exec-script-schema-patterns.md) — TypedDict in erk_shared, cast() consumer pattern
+- [Exec Script Testing](../testing/exec-script-testing.md) — How to test exec scripts
+- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — Error return types for exec script output

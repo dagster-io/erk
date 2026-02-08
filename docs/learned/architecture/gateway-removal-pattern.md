@@ -86,23 +86,28 @@ git rm -rf tests/integration/test_real_gateway_name.py
 If the deleted gateway was composed into parent gateways (e.g., a subgateway property on Git or GitHub), remove the composition from **all 5 parent layers:**
 
 **ABC layer:**
+
 - Delete `@property @abstractmethod` definition
 - Remove TYPE_CHECKING import
 
 **Real layer:**
+
 - Remove constructor parameter
 - Delete `self._gateway = ...` initialization
 - Remove property returning the gateway
 
 **Fake layer:**
+
 - Remove constructor parameters for both test data and gateway injection
 - Delete property returning fake gateway
 - Remove any state linking calls (`link_mutation_tracking`, etc.)
 
 **DryRun layer:**
+
 - Delete property wrapping the subgateway
 
 **Printing layer:**
+
 - Delete property wrapping the subgateway
 
 **Why 5-place removal:** Partial removal causes type checker errors. If the ABC still declares the property but Real doesn't implement it, `ty` reports an unimplemented abstract method. All layers must change atomically.
@@ -178,13 +183,13 @@ Consolidation rationale: ClaudeExecutor and PromptExecutor performed the same fu
 
 **When consolidating two similar gateways, which should survive?**
 
-| Criterion                           | Prefer this gateway |
-| ----------------------------------- | ------------------- |
-| More comprehensive API              | Keep                |
-| More callers using it               | Keep                |
-| Cleaner implementation              | Keep                |
-| Better aligned with discriminated union error handling | Keep |
-| Newer code with less tech debt      | Keep                |
+| Criterion                                              | Prefer this gateway |
+| ------------------------------------------------------ | ------------------- |
+| More comprehensive API                                 | Keep                |
+| More callers using it                                  | Keep                |
+| Cleaner implementation                                 | Keep                |
+| Better aligned with discriminated union error handling | Keep                |
+| Newer code with less tech debt                         | Keep                |
 
 **No clear winner?** Pick arbitrarily, migrate, delete. The choice matters less than eliminating duplication. Merge the best features from both into the survivor.
 

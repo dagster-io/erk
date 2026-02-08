@@ -27,7 +27,7 @@ Erk uses discriminated unions (`SuccessType | ErrorType`) for LBYL-compliant err
 
 ### When Exceptions Are Better: The Worktree Operations Case
 
-Worktree add/remove failures are *expected* (path collisions, missing branches), but they're still better as exceptions because no caller does anything beyond extracting the message and terminating:
+Worktree add/remove failures are _expected_ (path collisions, missing branches), but they're still better as exceptions because no caller does anything beyond extracting the message and terminating:
 
 ```python
 # All callers do the same thing: extract message and exit
@@ -41,7 +41,7 @@ The exception pattern is simpler here: no caller branches on error content, no c
 
 ### When Unions Are Better: Branch Operations
 
-Contrast with `create_branch` and `submit_branch`, where callers *do* branch on error types:
+Contrast with `create_branch` and `submit_branch`, where callers _do_ branch on error types:
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py, BranchCreated, BranchAlreadyExists -->
 
@@ -58,6 +58,7 @@ if isinstance(result, BranchAlreadyExists):
 ```
 
 The discriminated union enables:
+
 1. **Branching logic** — different handling for "already exists" vs other failures
 2. **Field inspection** — accessing `result.branch_name` to construct user messages
 3. **Type-safe continuation** — caller keeps running after handling the error
@@ -98,6 +99,7 @@ if isinstance(result, PushError):
 ```
 
 **Why `UserFacingCliError`:**
+
 - Caught at CLI entry point (`main()`) with consistent error styling
 - Exits with code 1 automatically
 - One-line pattern replaces verbose `user_output(error) + raise SystemExit(1)`
@@ -118,6 +120,7 @@ PipelineStep = Callable[[ErkContext, State], State | Error]
 ```
 
 Each step returns either:
+
 - Updated `State` to pass to next step
 - `Error` to short-circuit pipeline
 
@@ -198,6 +201,7 @@ Incomplete migrations break type safety — mypy won't catch missing checks if y
 Error types implement the `NonIdealState` protocol. See `packages/erk-shared/src/erk_shared/non_ideal_state.py`.
 
 The protocol requires:
+
 - `error_type` property (read-only, machine-readable classification)
 - `message` property (human-readable description)
 

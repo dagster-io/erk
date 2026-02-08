@@ -27,6 +27,7 @@ Most of erk's codebase avoids checking conditions before operations (LBYL), rely
 3. **Defensive operations require precise decisions** — when landing a PR, you need to know "is trunk available for checkout?" before deciding between checkout vs detached HEAD
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py, Worktree.find_worktree_for_branch -->
+
 The solution: Query first with `Worktree.find_worktree_for_branch()`, which returns `Path | None` indicating where the branch is checked out. This makes the constraint explicit in the type system.
 
 ## Decision Tables by Operation
@@ -35,26 +36,28 @@ The solution: Query first with `Worktree.find_worktree_for_branch()`, which retu
 
 After landing a PR, erk deletes the feature branch and attempts to leave the worktree in a valid state:
 
-| Trunk Available? | Result State              | Rationale                                                |
-| ---------------- | ------------------------- | -------------------------------------------------------- |
-| Yes              | Checked out on trunk      | Normal case - worktree remains usable                    |
-| No               | Detached HEAD at trunk    | Trunk held elsewhere - detached HEAD is valid git state  |
-| (error)          | Unchanged                 | Defensive check failed - abort rather than corrupt state |
+| Trunk Available? | Result State           | Rationale                                                |
+| ---------------- | ---------------------- | -------------------------------------------------------- |
+| Yes              | Checked out on trunk   | Normal case - worktree remains usable                    |
+| No               | Detached HEAD at trunk | Trunk held elsewhere - detached HEAD is valid git state  |
+| (error)          | Unchanged              | Defensive check failed - abort rather than corrupt state |
 
 <!-- Source: src/erk/cli/commands/land_cmd.py, _cleanup_non_slot_worktree -->
+
 See `_cleanup_non_slot_worktree()` in `src/erk/cli/commands/land_cmd.py` for the implementation. The key insight: detached HEAD is not an error condition—it's the correct outcome when trunk is unavailable.
 
 ### Checkout Command Navigation
 
 When checking out a branch that's already in a worktree:
 
-| Branch Location          | Action                    | Why Not Checkout?                            |
-| ------------------------ | ------------------------- | -------------------------------------------- |
-| Current worktree         | No-op (already there)     | Branch is already checked out here           |
-| Different worktree       | Navigate to that worktree | Can't checkout (single-checkout constraint)  |
-| Not checked out anywhere | Create worktree + checkout| Safe to checkout                            |
+| Branch Location          | Action                     | Why Not Checkout?                           |
+| ------------------------ | -------------------------- | ------------------------------------------- |
+| Current worktree         | No-op (already there)      | Branch is already checked out here          |
+| Different worktree       | Navigate to that worktree  | Can't checkout (single-checkout constraint) |
+| Not checked out anywhere | Create worktree + checkout | Safe to checkout                            |
 
 <!-- Source: src/erk/cli/commands/checkout_helpers.py, ensure_branch_has_worktree -->
+
 See `ensure_branch_has_worktree()` in `src/erk/cli/commands/checkout_helpers.py`. The navigation strategy preserves the constraint—if a branch exists in worktree A, opening it in worktree B means navigating to A, not checking out in B.
 
 ## Anti-Patterns
@@ -104,6 +107,7 @@ The query result drives the decision. If trunk is unavailable, detached HEAD is 
 Git refuses to delete a branch that's checked out in any worktree. This interacts poorly with stale pool state—if pool.json records worktree path A but the branch is actually in worktree B, deletion fails.
 
 <!-- Source: src/erk/cli/commands/land_cmd.py, _ensure_branch_not_checked_out -->
+
 The defensive pattern in `_ensure_branch_not_checked_out()`:
 
 1. Query where the branch is checked out (ignore pool state)

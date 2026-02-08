@@ -110,11 +110,13 @@ Python scripts accept parameters via Click decorators:
 ## Decision Framework: When to Use Parameter Threading
 
 **Use when**:
+
 - Slash command invokes `erk exec` scripts
 - Skill needs to accept user-provided arguments
 - Parameter must flow from Claude Code UI → bash command → Python implementation
 
 **Don't use when**:
+
 - Parameter is internal to a single Python function (use function parameters)
 - Direct Python imports (use function calls, not subprocess)
 - Command doesn't have multiple layers (just use Click options directly)

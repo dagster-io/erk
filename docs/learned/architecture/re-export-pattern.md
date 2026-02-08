@@ -32,13 +32,13 @@ Erk chooses option 2. Every re-export must carry a `# noqa: F401` comment explai
 
 ## When to Re-Export
 
-| Situation | Re-Export? | Rationale |
-|-----------|------------|-----------|
-| Type is part of module's public interface | ✅ Yes | Shorter path benefits external consumers |
-| Package boundary abstraction (erk vs erk-shared) | ✅ Yes | Hides internal organization |
-| Type only used internally by current module | ❌ No | No external benefit, just complexity |
-| Avoiding circular imports | ❌ No | Use `TYPE_CHECKING` guards instead |
-| Collecting utilities in one place | ❌ No | Creates unclear ownership |
+| Situation                                        | Re-Export? | Rationale                                |
+| ------------------------------------------------ | ---------- | ---------------------------------------- |
+| Type is part of module's public interface        | ✅ Yes     | Shorter path benefits external consumers |
+| Package boundary abstraction (erk vs erk-shared) | ✅ Yes     | Hides internal organization              |
+| Type only used internally by current module      | ❌ No      | No external benefit, just complexity     |
+| Avoiding circular imports                        | ❌ No      | Use `TYPE_CHECKING` guards instead       |
+| Collecting utilities in one place                | ❌ No      | Creates unclear ownership                |
 
 ## Implementation Pattern
 

@@ -37,6 +37,7 @@ This is not a bug — it's an architectural property of distributed systems. The
 See `execute_gh_command_with_retry()` in `packages/erk-shared/src/erk_shared/gateway/github/parsing.py`.
 
 **Key characteristics:**
+
 - Wraps `run_subprocess_with_context()` with transient error detection
 - Checks error messages against `TRANSIENT_ERROR_PATTERNS`
 - Uses exponential backoff (default: 2s, 4s, 8s, 16s, 32s)
@@ -95,12 +96,12 @@ The original fix was bash code with inline retry loops. When refactoring to Pyth
 
 ## Decision Table: When to Use Retry Wrapper
 
-| Scenario | Use execute_gh_command_with_retry? | Why |
-|----------|-----------------------------------|-----|
-| Reading data (GET) | Yes | Network errors are transient, reads are idempotent |
-| Creating resources (POST) | Yes, with idempotency | Retry is safe if operation has idempotency key or natural deduplication |
-| Status updates after push | **Yes** | This doc's exact use case — GitHub needs time to index |
-| Deleting resources (DELETE) | Maybe | Depends on whether 404 on retry is acceptable |
+| Scenario                    | Use execute_gh_command_with_retry? | Why                                                                     |
+| --------------------------- | ---------------------------------- | ----------------------------------------------------------------------- |
+| Reading data (GET)          | Yes                                | Network errors are transient, reads are idempotent                      |
+| Creating resources (POST)   | Yes, with idempotency              | Retry is safe if operation has idempotency key or natural deduplication |
+| Status updates after push   | **Yes**                            | This doc's exact use case — GitHub needs time to index                  |
+| Deleting resources (DELETE) | Maybe                              | Depends on whether 404 on retry is acceptable                           |
 
 ## Related Documentation
 

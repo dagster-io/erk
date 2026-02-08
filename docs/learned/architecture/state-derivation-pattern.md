@@ -68,6 +68,7 @@ Skip state derivation when:
 ```
 
 Problems:
+
 - Can't test display logic without mocking backend
 - Different UI contexts need different formats (can't reuse)
 - Can't change styling without backend deployment
@@ -89,6 +90,7 @@ function derivePrStatus(state, merged, number) {
 ```
 
 Benefits:
+
 - Test the pure function exhaustively (no mocking)
 - Reuse across table cells, tooltips, exports
 - Change colors/text without backend deployment
@@ -100,13 +102,19 @@ Pure derivation functions enable exhaustive state testing:
 
 ```typescript
 test("merged PR shows green", () => {
-  expect(derivePrStatus("closed", true, 456))
-    .toEqual({ color: "green", text: "Merged", tooltip: "PR #456 merged" });
+  expect(derivePrStatus("closed", true, 456)).toEqual({
+    color: "green",
+    text: "Merged",
+    tooltip: "PR #456 merged",
+  });
 });
 
 test("closed unmerged PR shows red", () => {
-  expect(derivePrStatus("closed", false, 456))
-    .toEqual({ color: "red", text: "Closed", tooltip: "PR #456 closed without merge" });
+  expect(derivePrStatus("closed", false, 456)).toEqual({
+    color: "red",
+    text: "Closed",
+    tooltip: "PR #456 closed without merge",
+  });
 });
 ```
 

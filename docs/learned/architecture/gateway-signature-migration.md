@@ -95,6 +95,7 @@ If you're removing a parameter, grep for the parameter name. If you're changing 
 PR #6329 converted `push_to_remote` and `pull_rebase` from exception-based error handling to discriminated unions (`PushResult | PushError`, `PullRebaseResult | PullRebaseError`).
 
 **Scope:**
+
 - **5 gateway implementations** (abc, real, fake, dry_run, printing)
 - **8 call sites** across **7 files**
 - **New types module** (`remote_ops/types.py`) with 4 new frozen dataclasses

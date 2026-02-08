@@ -61,6 +61,7 @@ Context injection makes dependencies visible in the function signature:
 <!-- Source: packages/erk-shared/src/erk_shared/context/helpers.py, require_* functions -->
 
 See `require_cwd()`, `require_git()`, `require_github()` in `packages/erk-shared/src/erk_shared/context/helpers.py`. Each helper:
+
 1. Checks that context is initialized (LBYL)
 2. Returns the typed dependency
 3. Exits with clear error if missing

@@ -94,6 +94,7 @@ Create the actual skill content at `.claude/skills/{skill_name}/` in erk repo ro
 <!-- Source: src/erk/artifacts/paths.py, get_bundled_claude_dir -->
 
 **Critical:** The bundled directory path determines success. If `.claude/skills/my-skill/` doesn't exist:
+
 - `install()` creates empty directory
 - No error is raised
 - User gets useless skill
@@ -117,12 +118,12 @@ erk init capability list my-skill  # Should show "Installed: Yes"
 
 ## Silent Failure Modes
 
-| Symptom | Root Cause | Fix |
-| ------- | ---------- | --- |
-| Capability not in `erk init capability list` | Missing from `_all_capabilities()` tuple | Add instantiation to registry.py |
-| Empty skill directory created | Bundled content directory doesn't exist | Check `.claude/skills/{skill_name}/` exists in erk repo |
-| Install succeeds but `is_installed()` returns False | State file corruption or race condition | Base class calls `add_installed_capability()`—check `.erk/state.toml` manually |
-| Skill content out of date after edits | Using wheel install, content frozen at build | Use editable install (`uv pip install -e .`) for development |
+| Symptom                                             | Root Cause                                   | Fix                                                                            |
+| --------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------ |
+| Capability not in `erk init capability list`        | Missing from `_all_capabilities()` tuple     | Add instantiation to registry.py                                               |
+| Empty skill directory created                       | Bundled content directory doesn't exist      | Check `.claude/skills/{skill_name}/` exists in erk repo                        |
+| Install succeeds but `is_installed()` returns False | State file corruption or race condition      | Base class calls `add_installed_capability()`—check `.erk/state.toml` manually |
+| Skill content out of date after edits               | Using wheel install, content frozen at build | Use editable install (`uv pip install -e .`) for development                   |
 
 ## How `skill_name` Property Works
 

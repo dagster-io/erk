@@ -94,7 +94,7 @@ Top-level `success` field uses **AND semantics**: true only if ALL items succeed
 
 ```json
 {
-  "success": true,  // ALL items succeeded
+  "success": true, // ALL items succeeded
   "results": [
     { "thread_id": "PRRT_1", "success": true },
     { "thread_id": "PRRT_2", "success": true }
@@ -104,7 +104,7 @@ Top-level `success` field uses **AND semantics**: true only if ALL items succeed
 
 ```json
 {
-  "success": false,  // At least ONE item failed
+  "success": false, // At least ONE item failed
   "results": [
     { "thread_id": "PRRT_1", "success": true },
     { "thread_id": "PRRT_2", "success": false, "error": "..." }

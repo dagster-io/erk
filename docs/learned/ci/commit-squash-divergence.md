@@ -18,13 +18,14 @@ After `gt submit` squashes commits, `git push` fails with "fetch first" — this
 
 History-rewriting operations (rebase, squash, amend) create new commit objects with different SHA-1 hashes. The remote still has the old commit objects. Git sees these as divergent histories, not as "same changes in different form."
 
-**The key insight**: Squashing creates *intentional* divergence. The remote hasn't changed (no collaboration happened) — your local branch changed. The failure is git's safety mechanism against unintentional overwrites, not a signal that something went wrong.
+**The key insight**: Squashing creates _intentional_ divergence. The remote hasn't changed (no collaboration happened) — your local branch changed. The failure is git's safety mechanism against unintentional overwrites, not a signal that something went wrong.
 
 ## The Critical Mistake: Pulling After Squashing
 
 When git says "fetch first," the intuitive response is to pull. **This is wrong for squash workflows**.
 
 Pulling merges the remote's pre-squash commits with your local squashed commit, creating a merge commit that includes both versions. The result:
+
 - All commits appear twice in history (once as originals, once in squashed form)
 - PR shows duplicate changes
 - The squash operation is effectively undone
@@ -41,6 +42,7 @@ git push --force-with-lease
 ```
 
 **Why `--force-with-lease` is safe here**:
+
 1. You created the divergence via `gt submit`
 2. The "incoming commits" are your own pre-squash commits (already incorporated in the squashed version)
 3. No collaboration has occurred on the branch since you last fetched

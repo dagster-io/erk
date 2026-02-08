@@ -67,6 +67,7 @@ The pattern `github.event.pull_request.draft != true && !contains(...)` appears 
 **Label check**: Excludes PRs containing plan content rather than code
 
 A PR can be:
+
 - Draft + labeled (WIP plan review) → both checks exclude
 - Non-draft + labeled (ready plan review) → label check excludes
 - Draft + not labeled (WIP code) → draft check excludes
@@ -155,14 +156,14 @@ The guard pattern `(event != X || check_that_only_works_for_X)` creates safe eva
 
 ## Decision Table: Which Layer to Use
 
-| What you're checking | Use this layer | Why |
-|---------------------|---------------|-----|
-| Event type (PR opened, push, workflow_dispatch) | Trigger filtering (`on:`) | No point queuing workflow for irrelevant events |
-| PR draft state | Job-level `if:` | Fast path — no runner allocation for drafts |
-| PR labels (pull_request events) | Job-level `if:` | Fast path — no runner allocation for plan reviews |
-| PR labels (push events) | Step-level API query | Required path — PR context doesn't exist at job level |
-| File existence after checkout | Step-level check → job output | Can't know until checkout completes |
-| Upstream job failure | Downstream job `if:` | Use `needs.job.result` or job outputs |
+| What you're checking                            | Use this layer                | Why                                                   |
+| ----------------------------------------------- | ----------------------------- | ----------------------------------------------------- |
+| Event type (PR opened, push, workflow_dispatch) | Trigger filtering (`on:`)     | No point queuing workflow for irrelevant events       |
+| PR draft state                                  | Job-level `if:`               | Fast path — no runner allocation for drafts           |
+| PR labels (pull_request events)                 | Job-level `if:`               | Fast path — no runner allocation for plan reviews     |
+| PR labels (push events)                         | Step-level API query          | Required path — PR context doesn't exist at job level |
+| File existence after checkout                   | Step-level check → job output | Can't know until checkout completes                   |
+| Upstream job failure                            | Downstream job `if:`          | Use `needs.job.result` or job outputs                 |
 
 ## Why Both Job-Level and Step-Level Label Checks
 

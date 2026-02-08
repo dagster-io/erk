@@ -40,14 +40,14 @@ Similarly, code examples with meaningful indentation and line breaks get collaps
 
 ## Decision Table: When to Use `\b`
 
-| Content Type | Use `\b`? | Why |
-|--------------|-----------|-----|
-| Bulleted lists (`-` or `*`) | **Yes** | Items collapse into single line without it |
-| Numbered lists (`1.`) | **Yes** | Numbers merge with text across lines |
-| Code examples (shell commands) | **Yes** | Indentation and line breaks must be preserved |
-| Pre-formatted tables or diagrams | **Yes** | Column alignment breaks under rewrapping |
-| Normal prose paragraphs | **No** | Let Click handle responsive wrapping |
-| Single-line option help | **No** | Click formats these correctly automatically |
+| Content Type                     | Use `\b`? | Why                                           |
+| -------------------------------- | --------- | --------------------------------------------- |
+| Bulleted lists (`-` or `*`)      | **Yes**   | Items collapse into single line without it    |
+| Numbered lists (`1.`)            | **Yes**   | Numbers merge with text across lines          |
+| Code examples (shell commands)   | **Yes**   | Indentation and line breaks must be preserved |
+| Pre-formatted tables or diagrams | **Yes**   | Column alignment breaks under rewrapping      |
+| Normal prose paragraphs          | **No**    | Let Click handle responsive wrapping          |
+| Single-line option help          | **No**    | Click formats these correctly automatically   |
 
 ## Placement Pattern
 

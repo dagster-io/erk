@@ -28,11 +28,11 @@ Explicit sync gives agents **atomicity** (complete the edit, then sync) and **er
 
 ## The Dual Storage Model
 
-| Location       | Content                      | Purpose                  | Updated By        |
-| -------------- | ---------------------------- | ------------------------ | ----------------- |
-| **PR branch**  | `PLAN-REVIEW-{issue}.md`     | Version control history  | Git commit + push |
-| **Issue body** | Comment with plan-body block | Reviewers see latest     | Sync command      |
-| **Metadata**   | `plan_comment_id` field      | Tracks which comment     | Issue creation    |
+| Location       | Content                      | Purpose                 | Updated By        |
+| -------------- | ---------------------------- | ----------------------- | ----------------- |
+| **PR branch**  | `PLAN-REVIEW-{issue}.md`     | Version control history | Git commit + push |
+| **Issue body** | Comment with plan-body block | Reviewers see latest    | Sync command      |
+| **Metadata**   | `plan_comment_id` field      | Tracks which comment    | Issue creation    |
 
 The metadata field `plan_comment_id` in the issue's plan-header block stores the comment ID that contains the plan content. This allows the sync command to target the correct comment without searching.
 
@@ -59,12 +59,12 @@ See Plan Review Phase 4 in `.claude/commands/erk/pr-address.md` for the complete
 
 The sync command performs LBYL validation before updating:
 
-| Check                  | Error Type              | Why It Matters                                  |
-| ---------------------- | ----------------------- | ----------------------------------------------- |
-| Issue exists           | `issue_not_found`       | Can't sync to nonexistent issue                 |
-| Has `erk-plan` label   | `missing_erk_plan_label` | Prevents syncing to wrong issue type            |
-| Metadata has comment ID | `no_plan_comment_id`    | Can't target update without knowing which comment |
-| Comment exists on issue | `comment_not_found`     | Tracked comment may have been deleted           |
+| Check                   | Error Type               | Why It Matters                                    |
+| ----------------------- | ------------------------ | ------------------------------------------------- |
+| Issue exists            | `issue_not_found`        | Can't sync to nonexistent issue                   |
+| Has `erk-plan` label    | `missing_erk_plan_label` | Prevents syncing to wrong issue type              |
+| Metadata has comment ID | `no_plan_comment_id`     | Can't target update without knowing which comment |
+| Comment exists on issue | `comment_not_found`      | Tracked comment may have been deleted             |
 
 Each validation raises a distinct error so agents can diagnose the failure without guessing.
 
@@ -90,12 +90,12 @@ The decision point: **Will reviewers need to see this change to understand your 
 
 Plan PRs diverge from code PRs in one critical way:
 
-| Aspect         | Code PRs                     | Plan PRs                                 |
-| -------------- | ---------------------------- | ---------------------------------------- |
-| **Targets**    | PR branch only               | PR branch + issue comment                |
-| **Sync**       | Git push (one target)        | Git push + sync command (two targets)    |
-| **Review UI**  | PR diff                      | PR diff + issue comment (structured)     |
-| **Why split?** | N/A                          | Issue provides canonical plan for querying |
+| Aspect         | Code PRs              | Plan PRs                                   |
+| -------------- | --------------------- | ------------------------------------------ |
+| **Targets**    | PR branch only        | PR branch + issue comment                  |
+| **Sync**       | Git push (one target) | Git push + sync command (two targets)      |
+| **Review UI**  | PR diff               | PR diff + issue comment (structured)       |
+| **Why split?** | N/A                   | Issue provides canonical plan for querying |
 
 The issue comment serves as the **canonical plan reference** for plan submission workflows — agents query the issue to get plan content, not the PR branch.
 
@@ -113,8 +113,11 @@ Plan content is wrapped in `plan-body` markers (HTML comments) to separate it fr
 
 ```markdown
 <!-- plan-body -->
+
 # Plan: Title
+
 ...
+
 <!-- /plan-body -->
 ```
 

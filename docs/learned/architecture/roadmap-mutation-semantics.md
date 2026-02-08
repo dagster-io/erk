@@ -69,22 +69,22 @@ The key point for mutation semantics: inference only fires when the status cell 
 
 If you update PR via direct body mutation (not using the command), status won't auto-update:
 
-| Action                                          | Result Status | Why                                                  |
-| ----------------------------------------------- | ------------- | ---------------------------------------------------- |
-| update-roadmap-step sets PR to `#123`           | `done`        | Command writes computed status                       |
-| Manual GitHub edit: change PR cell to `#123`    | (unchanged)   | Status cell not touched, parser reads explicit value |
+| Action                                            | Result Status | Why                                                  |
+| ------------------------------------------------- | ------------- | ---------------------------------------------------- |
+| update-roadmap-step sets PR to `#123`             | `done`        | Command writes computed status                       |
+| Manual GitHub edit: change PR cell to `#123`      | (unchanged)   | Status cell not touched, parser reads explicit value |
 | Script sets PR but leaves status at `in-progress` | `in_progress` | Parser sees explicit value, doesn't infer            |
 
 To enable inference after manual/script edits, you must explicitly set status to `-`.
 
 ## Decision Table: Command vs Direct Mutation
 
-| Context                                   | Use Command                      | Direct Body Mutation                     |
-| ----------------------------------------- | -------------------------------- | ---------------------------------------- |
-| Normal workflow (plan-save, PR landing)   | ✅ Atomic PR + status update      | ❌ Would leave status stale               |
-| Batch updates across multiple steps      | ✅ One call per step              | ⚠️ Possible, but must compute status     |
-| Setting explicit status (blocked/skipped) | ❌ Command doesn't support this  | ✅ Write status column directly           |
-| Quick fix in GitHub UI                    | N/A                              | ⚠️ Must update both cells or set status to `-` |
+| Context                                   | Use Command                     | Direct Body Mutation                           |
+| ----------------------------------------- | ------------------------------- | ---------------------------------------------- |
+| Normal workflow (plan-save, PR landing)   | ✅ Atomic PR + status update    | ❌ Would leave status stale                    |
+| Batch updates across multiple steps       | ✅ One call per step            | ⚠️ Possible, but must compute status           |
+| Setting explicit status (blocked/skipped) | ❌ Command doesn't support this | ✅ Write status column directly                |
+| Quick fix in GitHub UI                    | N/A                             | ⚠️ Must update both cells or set status to `-` |
 
 The command is designed for **normal workflow integration** (skills, hooks, scripts). For special cases like marking steps as `blocked`, direct body mutation is still required.
 

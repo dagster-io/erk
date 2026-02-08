@@ -33,6 +33,7 @@ gh api "/repos/OWNER/REPO/codespaces/machines" --jq '.machines'
 ```
 
 **Decision tree**:
+
 - ✅ Success → Bug is in erk's code (proceed with standard debugging)
 - ❌ HTTP 500/400 → Potential repository-specific GitHub bug (proceed to Step 2)
 - ❌ HTTP 401/403 → Credential/permission issue (fix auth first)
@@ -51,6 +52,7 @@ gh api "/repos/YOUR_USERNAME/test-repo-api-debug/codespaces/machines" --jq '.mac
 ```
 
 **Decision tree**:
+
 - ✅ Success on test repo + ❌ Failure on original repo → **Repository-specific bug confirmed**
 - ❌ Failure on both → General API issue (check GitHub status, rate limits, auth)
 
@@ -59,6 +61,7 @@ gh api "/repos/YOUR_USERNAME/test-repo-api-debug/codespaces/machines" --jq '.mac
 Repository-specific bugs often affect **high-level convenience commands** (like `gh codespace create`) while **lower-level REST endpoints** still work. This is because convenience commands may use different API paths or aggregate multiple calls.
 
 **Search strategy**:
+
 1. Check GitHub REST API docs for alternative endpoints that accomplish the same operation
 2. Try direct POST/GET with explicit parameters instead of convenience wrappers
 3. Check if the operation can be decomposed into multiple API calls
@@ -66,6 +69,7 @@ Repository-specific bugs often affect **high-level convenience commands** (like 
 ## Why High-Level Commands Fail While REST Works
 
 **The pattern**: GitHub CLI convenience commands (like `gh codespace create`) often:
+
 1. Fetch metadata from one endpoint (e.g., list available machines)
 2. Use that metadata to make the actual operation call
 
@@ -82,6 +86,7 @@ When **Step 1 is broken** (e.g., machines endpoint returns HTTP 500), the entire
 ### Machines Endpoint HTTP 500
 
 **Symptoms**:
+
 - `gh codespace create` fails with HTTP 500
 - `GET /repos/{owner}/{repo}/codespaces/machines` returns HTTP 500
 - Same call works fine on test repositories
@@ -93,6 +98,7 @@ When **Step 1 is broken** (e.g., machines endpoint returns HTTP 500), the entire
 ### Large PR Diff Failures
 
 **Symptoms**:
+
 - `gh pr diff` returns HTTP 406 for PRs with >300 files
 - Works fine on small PRs
 
@@ -105,6 +111,7 @@ When **Step 1 is broken** (e.g., machines endpoint returns HTTP 500), the entire
 ### Large Repository GraphQL Timeouts
 
 **Symptoms**:
+
 - GraphQL queries timeout for repositories with >10k issues/PRs
 - Same query structure works on smaller repositories
 
@@ -122,6 +129,7 @@ Use the three-step diagnostic when **all of these are true**:
 - ✅ The same code/command works in other repositories
 
 **Do NOT use this methodology for**:
+
 - Transient network failures (retry instead)
 - Auth/permission errors (fix credentials)
 - Known API limits (use documented workarounds)

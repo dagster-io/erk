@@ -59,14 +59,17 @@ Update the constant definition in `src/erk/cli/constants.py`. This is the source
 Search `.github/workflows/*.yml` for:
 
 **Job-level conditions** — Boolean expressions that skip entire jobs:
+
 - Pattern: `!contains(github.event.pull_request.labels.*.name, 'label-name')`
 - Found in: Job `if:` fields at top level
 
 **Step-level grep checks** — Shell commands that query label via API:
+
 - Pattern: `grep -q "label-name"`
 - Found in: Multi-line `run:` blocks that call `gh api`
 
 **Step names and comments** — Human-readable descriptions:
+
 - Pattern: Step names like "Check label-name label"
 - Pattern: Comments explaining "PR has label-name label"
 

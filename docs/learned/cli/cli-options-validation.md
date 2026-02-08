@@ -23,11 +23,11 @@ Click's type system exists for **API boundaries** — validating that the shape 
 
 For constraints that Click already models, use Click's type system:
 
-| Constraint Type | Click Type | Example |
-|----------------|------------|---------|
-| File must exist | `click.Path(exists=True)` | `@click.option("--config", type=click.Path(exists=True))` |
+| Constraint Type | Click Type                       | Example                                                          |
+| --------------- | -------------------------------- | ---------------------------------------------------------------- |
+| File must exist | `click.Path(exists=True)`        | `@click.option("--config", type=click.Path(exists=True))`        |
 | Choose from set | `click.Choice(["json", "yaml"])` | `@click.option("--format", type=click.Choice(["json", "yaml"]))` |
-| Integer range | `click.IntRange(min=1, max=100)` | `@click.option("--timeout", type=click.IntRange(1, 3600))` |
+| Integer range   | `click.IntRange(min=1, max=100)` | `@click.option("--timeout", type=click.IntRange(1, 3600))`       |
 
 <!-- Source: src/erk/cli/commands/land_cmd.py:386 -->
 
@@ -40,6 +40,7 @@ For domain constraints that depend on application state or require explanatory e
 <!-- Source: src/erk/cli/ensure.py, Ensure class methods -->
 
 Use `Ensure.*` static methods from `src/erk/cli/ensure.py`. These methods:
+
 - Check invariants after parsing (when you have full context)
 - Raise `UserFacingCliError` with styled output
 - Provide type narrowing (`Ensure.not_none` returns `T` from `T | None`)
@@ -47,13 +48,13 @@ Use `Ensure.*` static methods from `src/erk/cli/ensure.py`. These methods:
 
 **Decision table**:
 
-| Scenario | Use This | Rationale |
-|----------|----------|-----------|
-| Path must exist | `click.Path(exists=True)` | Click knows about filesystems |
-| String must be non-empty | `Ensure.not_empty(value, "...")` | Click has no "non-empty string" type |
-| Config field required | `Ensure.config_field_set(config, "token", "...")` | Depends on loaded config state |
-| Branch must exist | `Ensure.git_branch_exists(ctx, root, branch)` | Depends on git state |
-| Value must be truthy | `Ensure.truthy(value, "...")` | Generic condition check |
+| Scenario                 | Use This                                          | Rationale                            |
+| ------------------------ | ------------------------------------------------- | ------------------------------------ |
+| Path must exist          | `click.Path(exists=True)`                         | Click knows about filesystems        |
+| String must be non-empty | `Ensure.not_empty(value, "...")`                  | Click has no "non-empty string" type |
+| Config field required    | `Ensure.config_field_set(config, "token", "...")` | Depends on loaded config state       |
+| Branch must exist        | `Ensure.git_branch_exists(ctx, root, branch)`     | Depends on git state                 |
+| Value must be truthy     | `Ensure.truthy(value, "...")`                     | Generic condition check              |
 
 ## Anti-Pattern: Don't Validate at Both Layers
 

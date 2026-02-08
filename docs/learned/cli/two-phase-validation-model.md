@@ -1,168 +1,119 @@
 ---
-title: Two-Phase Validation Model for Complex Commands
+title: Two-Phase Validation Model
 read_when:
-  - "implementing commands with multiple confirmations"
+  - "implementing commands with user confirmations"
   - "designing commands that perform destructive mutations"
-  - "working on erk land or similar multi-step commands"
+  - "adding confirmation prompts to CLI commands"
+  - "deciding where to place confirmation logic in a command"
 tripwires:
-  - action: "implementing a command with multiple user confirmations"
-    warning: "Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Inline confirmations cause partial state on decline."
-last_audited: "2026-02-07 18:25 PT"
-audit_result: edited
+  - action: "implementing a command with user confirmations interleaved between mutations"
+    warning: "Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Interleaving confirmations with mutations causes partial state on decline."
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Two-Phase Validation Model
 
-Complex CLI commands that perform multiple mutations should use a two-phase model.
+Any CLI command that combines user confirmations with destructive mutations must batch all confirmations before any mutations begin. This document explains the foundational pattern — for the full pipeline architecture that scales this to complex commands, see [Linear Pipelines](../architecture/linear-pipelines.md).
 
-## Phase 1: Validation
+## The Partial Mutation Problem
 
-- Gather ALL user confirmations upfront
-- Perform all precondition checks
-- **Type narrowing**: Use `EnsureIdeal` to narrow discriminated unions (e.g., `PRDetails | PRNotFound` → `PRDetails`)
-- NO mutations occur in this phase
-- Collect all decisions into confirmation objects
+When confirmations are interleaved with mutations, a user declining any prompt leaves the system in an inconsistent state:
 
-## Phase 2: Execution
-
-- Perform mutations in sequence
-- Use pre-gathered confirmations
-- No user interaction in this phase
-
-## Why This Matters
-
-Partial mutations are dangerous. If a command:
-
-1. Merges a PR
-2. Asks for confirmation to delete worktree
+1. Command merges a PR (mutation)
+2. Command asks "Delete the worktree?" (confirmation)
 3. User says no
+4. PR is merged but worktree remains — orphaned state
 
-The PR is already merged but the worktree remains - an inconsistent state.
+There is no undo for step 1. The user never consented to a "merge but keep worktree" outcome — they wanted either "merge and clean up" or "don't merge at all."
 
-## Implementation Pattern
+**The fix is structural**: separate the command into two phases with a hard boundary between them.
 
-Create frozen dataclasses to capture confirmation results:
+## Phase 1: Validation (Read-Only)
+
+- Check all preconditions (PR state, branch existence, clean working tree)
+- Narrow types from discriminated unions (see [EnsureIdeal Pattern](ensure-ideal-pattern.md))
+- Gather **every** user confirmation into stored results
+- Zero mutations — if anything fails or the user declines, the system is unchanged
+
+## Phase 2: Execution (No Interaction)
+
+- Perform mutations using pre-gathered confirmation results
+- Never prompt the user — all decisions were made in Phase 1
+- Short-circuit on first error (mutations already underway may not be reversible)
+
+## Confirmation Capture Pattern
+
+Confirmations gathered in Phase 1 must survive into Phase 2. The pattern is a frozen dataclass that captures the user's response:
+
+<!-- Source: src/erk/cli/commands/land_cmd.py, CleanupConfirmation -->
+
+See `CleanupConfirmation` in `src/erk/cli/commands/land_cmd.py` — a frozen dataclass with a single `proceed: bool` field. This result is stored in the command's state object and read during execution without re-prompting.
+
+**Why a dataclass instead of a bare `bool`?** Named types make the confirmation's purpose explicit. When a command has multiple confirmations (e.g., "delete worktree?" and "update objective?"), distinct types prevent mix-ups. A bare `bool` named `cleanup_confirmed` is less clear than `CleanupConfirmation(proceed=True)`.
+
+## When Confirmation Can Be Skipped
+
+Three cases legitimately bypass the confirmation prompt while still using the two-phase structure:
+
+| Case                           | Why                                       | Implementation                                                                         |
+| ------------------------------ | ----------------------------------------- | -------------------------------------------------------------------------------------- |
+| `--force` flag                 | User explicitly opts out of confirmations | Return `CleanupConfirmation(proceed=True)` immediately                                 |
+| `--dry-run` mode               | No mutations will occur                   | Return `CleanupConfirmation(proceed=True)` — execution phase checks dry-run separately |
+| Non-interactive mode (scripts) | No stdin to read from                     | Honor the confirmation's default value via `ScriptConsole`                             |
+
+<!-- Source: src/erk/cli/commands/land_cmd.py, _gather_cleanup_confirmation -->
+
+See `_gather_cleanup_confirmation()` in `src/erk/cli/commands/land_cmd.py` for how force, dry-run, and cleanup type interact to decide whether to prompt.
+
+## Decision: When to Use This Pattern
+
+**Use two-phase when ANY of these apply:**
+
+- Command has 1+ confirmation prompts AND 1+ mutations
+- Mutations cannot be rolled back (PR merges, branch deletions, issue updates)
+- Users could reasonably decline a prompt after an earlier mutation
+
+**Don't use two-phase when:**
+
+- Command has no confirmations (pure mutations with `--force` or read-only operations)
+- All mutations are idempotent and independently safe
+- The command is a single atomic operation (one prompt, one mutation)
+
+## Anti-Pattern: Inline Confirmation
 
 ```python
-@dataclass(frozen=True)
-class CleanupConfirmation:
-    """Pre-gathered cleanup confirmation result.
-
-    Captures user's response to cleanup prompt during validation phase,
-    allowing all confirmations to be batched upfront before any mutations.
-    """
-
-    proceed: bool  # True = proceed with cleanup, False = preserve
+# WRONG: Confirmation between mutations
+ctx.github.merge_pr(repo_root, pr_number)  # Mutation 1
+if ctx.console.confirm("Delete worktree?"):  # Prompt AFTER mutation
+    delete_worktree(worktree_path)           # Mutation 2
 ```
 
-Gather confirmations during validation, then thread them through to execution:
-
-1. Validation phase calls `_gather_cleanup_confirmation()` - prompts user
-2. Result stored in context object (`cleanup_confirmed` field)
-3. Execution phase uses stored result - no additional prompts
-
-## Reference Implementation
-
-See `CleanupConfirmation` and `_gather_cleanup_confirmation()` in `src/erk/cli/commands/land_cmd.py`.
-
-Key functions:
-
-- `_gather_cleanup_confirmation()`: Prompts during validation
-- `_cleanup_and_navigate()`: Uses pre-gathered confirmation during execution
-
-## EnsureIdeal as Type Narrowing
-
-The validation phase often includes type narrowing from discriminated unions. `EnsureIdeal` provides a concrete implementation of type narrowing for CLI commands:
+If the user declines, the PR is merged but the worktree survives. Neither the user nor the codebase expected this hybrid state.
 
 ```python
-# Phase 1: Validation - narrow types from unions
-pr_details = EnsureIdeal.unwrap_pr(
-    ctx.github.get_pr_for_branch(repo_root, branch),
-    f"No pull request found for branch '{branch}'."
-)
-# Type narrowed: PRDetails | PRNotFound → PRDetails
-
-# Phase 2: Execution - use narrowed type
-ctx.github.merge_pr(repo_root, pr_details.number)
+# CORRECT: All confirmations first, then all mutations
+cleanup = _gather_cleanup_confirmation(ctx, ...)  # Phase 1
+ctx.github.merge_pr(repo_root, pr_number)         # Phase 2
+if cleanup.proceed:
+    delete_worktree(worktree_path)
 ```
 
-See [EnsureIdeal Pattern](ensure-ideal-pattern.md) for complete documentation.
+## Scaling: From Pattern to Pipeline
 
-## Extended Example: Land Command Pipeline
+For simple commands (1-2 confirmations, 2-3 mutations), inline two-phase structure is sufficient. As commands grow in complexity, the pattern evolves:
 
-The land command implements an extended two-phase model with separate validation and execution pipelines. This demonstrates how the two-phase pattern scales to complex workflows with multiple steps.
+1. **Inline two-phase** — Gather confirmations in a helper, execute mutations after. Suitable for ≤3 steps.
+2. **Pipeline architecture** — Formal validation and execution pipelines with uniform step signatures and immutable state threading. Required when a command has 5+ steps, multiple error types, or needs a serialization boundary.
 
-### Validation Pipeline (5 Steps)
+The land command evolved from inline two-phase to the full pipeline architecture. For the pipeline pattern, see:
 
-**Purpose**: Check preconditions, resolve values, no mutations
+- [Linear Pipelines](../architecture/linear-pipelines.md) — Validation/execution pipeline architecture
+- [CLI-to-Pipeline Boundary](../architecture/cli-to-pipeline-boundary.md) — When to extract pipelines from CLI commands
+- [Land State Threading](../architecture/land-state-threading.md) — Immutable state management across pipeline steps
 
-Steps (see `_validation_pipeline()` in `land_pipeline.py`):
+## Related Documentation
 
-1. `resolve_target` -- resolve PR number, fetch details, type-narrow via `EnsureIdeal.unwrap_pr()`
-2. `validate_pr` -- check PR state is OPEN, base is trunk, unresolved comments
-3. `check_learn_status` -- check learn plan status and prompt if needed
-4. `gather_confirmations` -- batch all cleanup confirmations upfront via `_gather_cleanup_confirmation()`
-5. `resolve_objective` -- look up linked objective for the branch
-
-Each step has signature `(ErkContext, LandState) -> LandState | LandError`. The runner short-circuits on the first `LandError`.
-
-**Key characteristics**:
-
-- Read-only operations (no mutations)
-- Type narrowing (PR number resolution, branch detection)
-- Fails fast on first error
-- Returns enriched state with validated values
-
-### Execution Pipeline (6 Steps)
-
-**Purpose**: Perform mutations with validated state
-
-Steps (see `_execution_pipeline()` in `land_pipeline.py`):
-
-1. `merge_pr` -- merge PR via Graphite or GitHub API
-2. `update_objective` -- update linked objective if present
-3. `update_learn_plan` -- update parent plan's learn_status if this is a learn plan
-4. `promote_tripwires` -- extract and promote tripwire candidates from learn plans
-5. `close_review_pr` -- close review PR if plan has one
-6. `cleanup_and_navigate` -- dispatch cleanup by type, navigate to trunk or child branch
-
-Same step signature and short-circuit behavior as the validation pipeline.
-
-**Key characteristics**:
-
-- Mutating operations (modifies repository state)
-- Assumes validation passed (no type narrowing needed)
-- Steps may have dependencies on previous step results
-- No user interaction (all confirmations pre-gathered)
-
-### Benefits of Pipeline Separation
-
-1. **Clear boundaries**: Validation pipeline is read-only, execution pipeline mutates
-2. **Independent testability**: Can test validation without side effects
-3. **Resumability**: Execution pipeline can be serialized to shell script and re-executed
-4. **Composability**: Each pipeline is a sequence of steps with same signature
-
-### State Threading
-
-State objects (`LandState`) thread through both pipelines:
-
-- **Validation pipeline**: Enriches state with resolved values (PR number, target branch)
-- **Execution pipeline**: Uses validated state, adds execution results
-
-See [Land State Threading](../architecture/land-state-threading.md) for immutable state management patterns.
-
-### Reference Implementation
-
-**File**: `src/erk/cli/commands/land_pipeline.py` (706 lines, 20 functions)
-
-**Cross-references**:
-
-- [Linear Pipelines](../architecture/linear-pipelines.md) - Two-pipeline pattern architecture
-- [CLI-to-Pipeline Boundary](../architecture/cli-to-pipeline-boundary.md) - Separating CLI from business logic
-- [Learn Plan Land Flow](learn-plan-land-flow.md) - Learn-plan-specific execution steps
-
-## Related Topics
-
-- [EnsureIdeal Pattern](ensure-ideal-pattern.md) - Type narrowing from discriminated unions
-- [CI-Aware Commands](ci-aware-commands.md) - Commands must skip prompts in CI
-- [Output Styling Guide](output-styling.md) - Using `ctx.console.confirm()` for testability
+- [EnsureIdeal Pattern](ensure-ideal-pattern.md) — Type narrowing in the validation phase
+- [CI-Aware Commands](ci-aware-commands.md) — Commands must handle non-interactive mode
+- [Output Styling Guide](output-styling.md) — Using `ctx.console.confirm()` for testable prompts

@@ -44,6 +44,7 @@ The placement question arises because some capabilities fit templates (skills, r
 <!-- Source: src/erk/capabilities/skills/dignified_python.py, DignifiedPythonCapability class -->
 
 Examples:
+
 - `HooksCapability` lives at root because it modifies `.claude/settings.json` with hook entries, not copying a directory
 - `DignifiedPythonCapability` lives in `skills/` because it extends `SkillCapability` and follows the standard "copy skill directory" pattern
 

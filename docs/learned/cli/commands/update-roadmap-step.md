@@ -28,11 +28,11 @@ The command is infrastructure for workflow integration, not an interactive tool.
 
 When the command updates a PR cell, it **writes both the status and PR cells atomically**:
 
-| PR Value | Written Status | Why |
-| --- | --- | --- |
-| `#123` | `done` | PR reference indicates landed work |
-| `plan #6464` | `in-progress` | Plan prefix indicates active planning |
-| `""` (empty) | `pending` | Clearing PR resets to initial state |
+| PR Value     | Written Status | Why                                   |
+| ------------ | -------------- | ------------------------------------- |
+| `#123`       | `done`         | PR reference indicates landed work    |
+| `plan #6464` | `in-progress`  | Plan prefix indicates active planning |
+| `""` (empty) | `pending`      | Clearing PR resets to initial state   |
 
 This differs from parse-time inference (which only fires when status is `-` or empty). Writing computed status makes the table human-readable in GitHub's UI without requiring a parse pass.
 
@@ -57,13 +57,13 @@ Output is structured JSON with `success`, `issue_number`, `step_id`, `previous_p
 
 The command follows erk's discriminated union pattern for error returns:
 
-| Exit Code | Scenario | JSON `error` Field |
-| --- | --- | --- |
-| 0 | Success | N/A |
-| 1 | Issue doesn't exist | `issue_not_found` |
-| 1 | No roadmap table in body | `no_roadmap` |
-| 1 | Step ID not in roadmap | `step_not_found` |
-| 1 | Regex replacement failed | `replacement_failed` |
+| Exit Code | Scenario                 | JSON `error` Field   |
+| --------- | ------------------------ | -------------------- |
+| 0         | Success                  | N/A                  |
+| 1         | Issue doesn't exist      | `issue_not_found`    |
+| 1         | No roadmap table in body | `no_roadmap`         |
+| 1         | Step ID not in roadmap   | `step_not_found`     |
+| 1         | Regex replacement failed | `replacement_failed` |
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, update_roadmap_step -->
 

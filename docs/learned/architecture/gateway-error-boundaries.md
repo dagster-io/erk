@@ -18,6 +18,7 @@ tripwires:
 In erk's 5-file gateway pattern, **only real.py catches exceptions**. The other four files (abc.py, fake.py, dry_run.py, printing.py) never use try/except — they express failure through different mechanisms.
 
 This separation exists because error boundaries serve different purposes:
+
 - **Real implementations** defend against actual system failures (subprocess crashes, missing files, network timeouts)
 - **Fake implementations** simulate failure modes for testing via constructor configuration
 - **Dry-run implementations** model the success path for validation workflows
@@ -29,7 +30,7 @@ This separation exists because error boundaries serve different purposes:
 
 When implementing a gateway method that can fail, it's tempting to add try/except blocks to all five files. This feels symmetric — "if real.py catches exceptions, shouldn't fake.py and dry_run.py do the same?"
 
-**No.** The symmetry is in the *return type* (discriminated unions), not the error handling mechanism.
+**No.** The symmetry is in the _return type_ (discriminated unions), not the error handling mechanism.
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/command_executor/fake.py, FakeCommandExecutor.__init__ -->
 
@@ -44,16 +45,19 @@ Real implementations wrap subprocess calls and file system operations — both s
 See `RealGitHub.update_pr_base_branch()` in `packages/erk-shared/src/erk_shared/gateway/github/real.py` for the pattern: subprocess commands wrapped in try/except to gracefully handle gh CLI availability issues.
 
 **Why catch exceptions here?**
+
 1. Subprocess failures are unpredictable (process crashes, command not found, permission denied)
 2. Callers need structured error information (type, message, context) to make branching decisions
 3. LBYL philosophy: check for failure modes and convert to explicit discriminants
 
 **What gets caught?**
+
 - Subprocess execution failures (`CalledProcessError`, `FileNotFoundError`)
 - System-level errors (disk full, permission denied, network timeouts)
 - External command availability (gh not installed, not authenticated)
 
 **What doesn't get caught?**
+
 - Programming errors (AttributeError, TypeError) — these should crash, not be masked as "operation failed"
 - Validation errors that should be caught upstream by caller preconditions
 
@@ -78,6 +82,7 @@ result = fake.merge_pr(repo_root, pr_number, ...)
 ```
 
 **Why no try/except in fakes?**
+
 1. No subprocess calls = no runtime exceptions to catch
 2. Error scenarios are predetermined by test setup, not discovered at runtime
 3. Simpler implementation: direct conditional returns based on params
@@ -85,12 +90,12 @@ result = fake.merge_pr(repo_root, pr_number, ...)
 
 ## Implementation Responsibilities by File
 
-| File         | Error Mechanism                                | Uses try/except? |
-| ------------ | ---------------------------------------------- | ---------------- |
-| `abc.py`     | Defines discriminated union return types       | No               |
-| `real.py`    | Catches subprocess/system exceptions           | **Yes**          |
-| `fake.py`    | Returns discriminants based on constructor     | No               |
-| `dry_run.py` | Always returns success discriminant            | No               |
+| File          | Error Mechanism                                    | Uses try/except? |
+| ------------- | -------------------------------------------------- | ---------------- |
+| `abc.py`      | Defines discriminated union return types           | No               |
+| `real.py`     | Catches subprocess/system exceptions               | **Yes**          |
+| `fake.py`     | Returns discriminants based on constructor         | No               |
+| `dry_run.py`  | Always returns success discriminant                | No               |
 | `printing.py` | Delegates to wrapped implementation (pass-through) | No               |
 
 ### abc.py: Type Definitions
@@ -102,6 +107,7 @@ Defines the method signature with discriminated union return type. No implementa
 The only file with try/except blocks. Catches exceptions from subprocess calls and system operations, converts to discriminated union error types.
 
 **Pattern:**
+
 1. Wrap subprocess/system call in try/except
 2. Check return codes or response data for expected failure modes
 3. Return appropriate discriminant (success or specific error type)
@@ -112,6 +118,7 @@ The only file with try/except blocks. Catches exceptions from subprocess calls a
 Methods check constructor params and return discriminants directly. No exception handling because there are no subprocess calls.
 
 **Pattern:**
+
 1. Check relevant constructor param (e.g., `if self._merge_should_succeed:`)
 2. Return success or error discriminant based on param
 3. Track operation in internal state for test assertions
@@ -121,6 +128,7 @@ Methods check constructor params and return discriminants directly. No exception
 Always returns success discriminants. Used for validation workflows where you want to check the command sequence without executing operations.
 
 **Pattern:**
+
 1. Log what would have been done
 2. Return success discriminant
 3. No error handling (failure scenarios aren't modeled in dry-run)
@@ -130,6 +138,7 @@ Always returns success discriminants. Used for validation workflows where you wa
 Logs the operation, delegates to wrapped implementation, returns whatever the wrapped implementation returns. No error handling — errors flow through from the wrapped gateway.
 
 **Pattern:**
+
 1. Log operation parameters
 2. Delegate to `self._impl.method(...)`
 3. Return the result (success or error discriminant)

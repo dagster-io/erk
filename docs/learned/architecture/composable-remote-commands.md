@@ -51,6 +51,7 @@ Every remote command follows this structure. See `run_next_plan()` in `src/erk/c
 `build_codespace_ssh_command(erk_cli_command)` wraps the erk command with environment bootstrap. See `build_codespace_ssh_command()` in `src/erk/core/codespace_run.py`.
 
 **Current bootstrap sequence** (as of 2026-02-07):
+
 ```bash
 bash -l -c 'git pull && uv sync && source .venv/bin/activate && <erk_command>'
 ```
@@ -70,10 +71,10 @@ Two execution methods on `ctx.codespace` (see `Codespace` ABC in `packages/erk-s
 
 **Decision table**:
 
-| Command Needs User Input? | Execution Method           | Returns? |
-|---------------------------|----------------------------|----------|
-| Yes (TUI, prompts)        | `exec_ssh_interactive()`   | No (replaces process) |
-| No (streaming output)     | `run_ssh_command()`        | Yes (exit code) |
+| Command Needs User Input? | Execution Method         | Returns?              |
+| ------------------------- | ------------------------ | --------------------- |
+| Yes (TUI, prompts)        | `exec_ssh_interactive()` | No (replaces process) |
+| No (streaming output)     | `run_ssh_command()`      | Yes (exit code)       |
 
 **Why two methods**: Interactive commands need true terminal passthrough (SSH must control the full TTY). Non-interactive commands need exit code propagation for CI/automation.
 

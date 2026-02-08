@@ -34,6 +34,7 @@ The finally block is critical: watch loops intentionally run until Ctrl+C, so st
 ## Anti-Pattern: Missing finally Block
 
 **WRONG**:
+
 ```python
 display.start()
 while True:
@@ -45,6 +46,7 @@ display.stop()  # Never reached when user hits Ctrl+C
 The stop() call never executes when KeyboardInterrupt fires. Terminal remains in live mode, breaking subsequent output.
 
 **CORRECT**:
+
 ```python
 display.start()
 try:
@@ -78,6 +80,7 @@ Live displays are inherently human-readable (Rich tables, spinners, progress bar
 - **`is_active`**: Boolean tracking start/stop lifecycle state
 
 The fake enables tests to verify:
+
 - **Update frequency**: "Did we update the display after each step?"
 - **Update content**: "Does the display show correct progress/status?"
 - **Lifecycle correctness**: "Did we start before updating and stop at the end?"
@@ -87,10 +90,12 @@ Critically, the fake records the **actual renderable objects** (Rich Table, Pane
 ## When to Use vs Console Gateway
 
 **Use LiveDisplay when**:
+
 - Output updates repeatedly (watch loops, progress bars)
 - User should see a single "slot" being rewritten, not scrolling output
 
 **Use Console when**:
+
 - Output is static (one-time table, message)
 - Each call adds a new line (scrolling output)
 
@@ -99,6 +104,7 @@ The performance boundary: Starting/stopping LiveDisplay for a single update is w
 ## Implementation Files
 
 Standard 3-file gateway pattern:
+
 - `packages/erk-shared/src/erk_shared/gateway/live_display/abc.py`
 - `packages/erk-shared/src/erk_shared/gateway/live_display/real.py`
 - `packages/erk-shared/src/erk_shared/gateway/live_display/fake.py`

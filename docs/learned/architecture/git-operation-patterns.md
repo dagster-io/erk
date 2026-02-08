@@ -22,6 +22,7 @@ Erk's LBYL-first philosophy extends to git operations: **check existence before 
 ## Why git show-ref --verify Is the Right Check
 
 `git show-ref --verify` has a clear, version-stable returncode contract:
+
 - **returncode 0** = ref exists
 - **returncode non-zero** = ref doesn't exist
 
@@ -38,12 +39,12 @@ See `RealGitBranchOps.create_branch()` and `RealGitBranchOps.delete_branch()` in
 
 ## Decision Framework: LBYL vs Exception Handling
 
-| Scenario | Pattern | Rationale |
-|----------|---------|-----------|
-| Branch/ref existence check | LBYL with `git show-ref --verify` | Clear returncode contract, no message parsing |
-| Atomic operations (merge, rebase, fetch) | try/except in real.py only | No meaningful pre-check, multiple failure modes, subprocess risks |
-| File existence before git operation | LBYL with `Path.exists()` | Follows erk's Pathlib-first + LBYL standards |
-| Multiple expected failure modes | Discriminated unions | Enable caller branching logic on specific error types |
+| Scenario                                 | Pattern                           | Rationale                                                         |
+| ---------------------------------------- | --------------------------------- | ----------------------------------------------------------------- |
+| Branch/ref existence check               | LBYL with `git show-ref --verify` | Clear returncode contract, no message parsing                     |
+| Atomic operations (merge, rebase, fetch) | try/except in real.py only        | No meaningful pre-check, multiple failure modes, subprocess risks |
+| File existence before git operation      | LBYL with `Path.exists()`         | Follows erk's Pathlib-first + LBYL standards                      |
+| Multiple expected failure modes          | Discriminated unions              | Enable caller branching logic on specific error types             |
 
 **Key insight**: LBYL applies when a pre-check is semantically meaningful and actionable. For operations where the check IS the operation (atomic commands like merge), use try/except in real.py only.
 
@@ -63,6 +64,7 @@ except CalledProcessError as e:
 ```
 
 **Problems:**
+
 - Git error messages change across versions (2.30 vs 2.40+ have different phrasing)
 - Messages may be localized (`git config core.language`)
 - String matching is brittle to minor wording changes
@@ -85,16 +87,19 @@ Gateway methods use try/except **only in real.py** to catch subprocess and syste
 See `BranchCreated` and `BranchAlreadyExists` in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py` for the discriminated union pattern: empty success marker + error type with message field.
 
 **Use try/except in real.py when:**
+
 1. **No meaningful LBYL check exists** — operations like `gh pr merge` can't be pre-validated without actually attempting the merge
 2. **Multiple subprocess-level failure modes** — distinguish between "command not found", "permission denied", "merge conflict"
 3. **Unpredictable system errors** — disk full, network timeout, process killed
 
 **What to catch:**
+
 - `CalledProcessError` from subprocess commands
 - `FileNotFoundError` for missing executables (gh, git)
 - `OSError` for system-level failures (permissions, disk space)
 
 **What NOT to catch:**
+
 - Programming errors (`AttributeError`, `TypeError`) — these should crash
 - Validation failures that caller should check via LBYL
 
@@ -102,13 +107,13 @@ See `BranchCreated` and `BranchAlreadyExists` in `packages/erk-shared/src/erk_sh
 
 Error handling responsibilities differ by implementation file:
 
-| File | Error Handling Mechanism | Uses try/except? |
-|------|-------------------------|------------------|
-| `real.py` | Catches subprocess/system exceptions, converts to discriminated unions | **Yes** |
-| `fake.py` | Returns error discriminants based on constructor params | No |
-| `dry_run.py` | Always returns success discriminants | No |
-| `abc.py` | Defines return type signatures only | No |
-| `printing.py` | Delegates transparently | No |
+| File          | Error Handling Mechanism                                               | Uses try/except? |
+| ------------- | ---------------------------------------------------------------------- | ---------------- |
+| `real.py`     | Catches subprocess/system exceptions, converts to discriminated unions | **Yes**          |
+| `fake.py`     | Returns error discriminants based on constructor params                | No               |
+| `dry_run.py`  | Always returns success discriminants                                   | No               |
+| `abc.py`      | Defines return type signatures only                                    | No               |
+| `printing.py` | Delegates transparently                                                | No               |
 
 **Why this split?** Real implementations interact with unpredictable external systems. Fake implementations simulate pre-configured failure scenarios for tests. The error boundary belongs at the subprocess interface, not in test infrastructure.
 
@@ -126,6 +131,7 @@ The LBYL pattern with `git show-ref` complements discriminated union error handl
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py, RealGitBranchOps.create_branch -->
 
 Example flow in `RealGitBranchOps.create_branch()`:
+
 - LBYL check with `git show-ref` detects "branch exists" → return `BranchAlreadyExists`
 - Creation attempt via subprocess (wrapped in try/except in real.py's caller context)
 - Success → return `BranchCreated`

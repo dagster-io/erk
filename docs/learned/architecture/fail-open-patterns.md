@@ -102,6 +102,7 @@ See `cleanup_review_pr()` in `src/erk/cli/commands/review_pr_cleanup.py`.
    - Is the operation reversible if it fails?
 
 2. **Structure error handling asymmetrically**:
+
    ```python
    # Non-critical: catch, log, continue
    try:
@@ -141,6 +142,7 @@ For complex workflows involving multiple failure modes, combine fail-open with *
 1. **Layer 1: Lenient handler** — returns `None` on ANY failure (missing data, API errors, not found). No exceptions, no error messages. Pure gateway logic.
 
 2. **Layer 2: Root cause recovery** — caller inspects `None` and decides what to do:
+
    ```python
    pr_info = _get_pr_for_plan_direct(...)
 
@@ -171,11 +173,11 @@ Use two layers when:
 
 **Example**: PR lookup for the same plan issue:
 
-| Context            | Critical?  | Failure Handling        | Rationale                             |
-| ------------------ | ---------- | ----------------------- | ------------------------------------- |
-| User CLI command   | Yes        | Error exit              | User needs immediate feedback         |
-| Async background   | No         | Log warning, continue   | Review comments are optional for learn |
-| Pre-flight check   | Yes        | Abort early             | Prevent invalid workflow trigger      |
+| Context          | Critical? | Failure Handling      | Rationale                              |
+| ---------------- | --------- | --------------------- | -------------------------------------- |
+| User CLI command | Yes       | Error exit            | User needs immediate feedback          |
+| Async background | No        | Log warning, continue | Review comments are optional for learn |
+| Pre-flight check | Yes       | Abort early           | Prevent invalid workflow trigger       |
 
 The same gateway function (`_get_pr_for_plan_direct`) returns `None` in all cases. The **caller** decides whether `None` is acceptable.
 
@@ -212,16 +214,19 @@ Both commands call the same fail-open `cleanup_review_pr()` function, demonstrat
 Use fail-closed (raise exception) when:
 
 **Data integrity is critical**:
+
 - Financial transactions (debit/credit must both succeed or both fail)
 - Account creation (user needs immediate feedback on validation failures)
 - Database constraints (foreign key violations should abort)
 
 **Silent failure would confuse users**:
+
 - User explicitly requested the operation
 - Operation creates irreversible state
 - Failure indicates a bug, not transient error
 
 **Correctness requires all steps**:
+
 - Multi-step atomic operations (git commit + push)
 - Configuration validation (invalid config should abort startup)
 
@@ -230,11 +235,13 @@ Use fail-closed (raise exception) when:
 Use fail-fast (validate before mutations) when:
 
 **Preconditions can be checked upfront**:
+
 - Validate `--up` flag requires child branches BEFORE merging PR
 - Check file exists BEFORE processing it
 - Verify network connectivity BEFORE starting long operation
 
 **Partial execution is worse than no execution**:
+
 - Don't delete half the worktrees if cleanup fails midway
 - Don't modify half the metadata blocks if parsing fails
 

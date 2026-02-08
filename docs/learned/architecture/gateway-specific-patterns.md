@@ -100,12 +100,12 @@ See `docs/learned/architecture/discriminated-union-error-handling.md` for curren
 
 When designing gateway error handling:
 
-| Situation | Use | Reason |
-|-----------|-----|--------|
-| Single failure mode with message | Exception | No variants to distinguish |
-| Multiple failure modes, callers don't distinguish | Exception | Type system overhead without benefit |
-| Multiple failure modes, callers DO distinguish | Discriminated union | Type narrowing adds value |
-| Cleanup operation in same method | Same as main operation | Don't mix strategies |
+| Situation                                         | Use                    | Reason                               |
+| ------------------------------------------------- | ---------------------- | ------------------------------------ |
+| Single failure mode with message                  | Exception              | No variants to distinguish           |
+| Multiple failure modes, callers don't distinguish | Exception              | Type system overhead without benefit |
+| Multiple failure modes, callers DO distinguish    | Discriminated union    | Type narrowing adds value            |
+| Cleanup operation in same method                  | Same as main operation | Don't mix strategies                 |
 
 **Never mix exceptions and discriminated unions in a single method signature.** Choose one strategy for all error cases.
 

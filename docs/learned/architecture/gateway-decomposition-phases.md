@@ -30,6 +30,7 @@ The decomposition transformed Git from a monolith into a **pure facade** — an 
 The objective used **linear extraction** — one complete subgateway per PR, with full 5-layer implementation (ABC, Real, Fake, DryRun, Printing) in a single changeset. Earlier attempts at parallel extraction created merge conflicts as multiple PRs touched the same callsites.
 
 Each phase followed identical steps:
+
 1. Create subgateway directory with 5-layer implementation
 2. Add property to Git ABC (with TYPE_CHECKING import guard)
 3. Instantiate in Real/Fake, wrap in DryRun/Printing
@@ -55,11 +56,11 @@ Each phase followed identical steps:
 
 Subgateways fall into three dry-run categories based on their operation mix:
 
-| Variant          | Example               | DryRun Behavior                      | Why                                                                      |
-| ---------------- | --------------------- | ------------------------------------ | ------------------------------------------------------------------------ |
-| Mutation-focused | GitBranchOps, GitTag  | Mutations no-op or log, return mocks | Tests need to see what would happen without actually modifying git state |
-| Query-only       | GitStatusOps          | Pass-through delegate                | Read-only operations have no side effects to suppress                    |
-| Mixed            | GitRemoteOps, Commit  | Mutations log, queries delegate      | Fetch/pull must no-op, but `get_remote_url` needs real data             |
+| Variant          | Example              | DryRun Behavior                      | Why                                                                      |
+| ---------------- | -------------------- | ------------------------------------ | ------------------------------------------------------------------------ |
+| Mutation-focused | GitBranchOps, GitTag | Mutations no-op or log, return mocks | Tests need to see what would happen without actually modifying git state |
+| Query-only       | GitStatusOps         | Pass-through delegate                | Read-only operations have no side effects to suppress                    |
+| Mixed            | GitRemoteOps, Commit | Mutations log, queries delegate      | Fetch/pull must no-op, but `get_remote_url` needs real data              |
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py, DryRunGitStatusOps -->
 
@@ -74,6 +75,7 @@ Mutation-focused subgateways intercept writes and return success without executi
 ## Phase 8: The Convenience Method Purge
 
 Phase 8 revealed that "remaining methods" were actually dead code. The Git ABC contained:
+
 - **2 duplicate abstract method declarations** (defined twice in the same ABC)
 - **14 convenience methods** that just forwarded to subgateways (e.g., `get_current_branch()` calling `self.branch.get_current_branch()`)
 
@@ -90,6 +92,7 @@ PR #6285 removed all 16 without extracting a new subgateway. The "cleanup phase"
 ## API Migration Pattern
 
 **Before (monolithic):**
+
 ```python
 git.fetch_branch(repo_root, "origin", "main")
 git.commit(cwd, "feat: add feature")
@@ -97,6 +100,7 @@ git.tag_exists(repo_root, "v1.0.0")
 ```
 
 **After (subgateway properties):**
+
 ```python
 git.remote.fetch_branch(repo_root, "origin", "main")
 git.commit.commit(cwd, "feat: add feature")
@@ -117,6 +121,7 @@ The double-name in `git.commit.commit()` is intentional — `commit` is both the
 ### What Didn't Work
 
 Early experiments tried:
+
 - **Parallel extraction** — Multiple PRs touched the same callsites, causing conflicts
 - **Incremental layer implementation** — Adding ABC then implementing layers later left the codebase in broken state between PRs
 - **Backwards compatibility shims** — Convenience methods that delegated to subgateways. These just delayed migration and confused ownership.

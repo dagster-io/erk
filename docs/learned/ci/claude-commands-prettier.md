@@ -49,13 +49,13 @@ The CI workflow runs Prettier as an independent job, not part of the Python form
 
 ```yaml
 jobs:
-  prettier:  # Independent job
+  prettier: # Independent job
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/setup-prettier
       - run: prettier --check '**/*.md' --ignore-path .gitignore
 
-  format:    # Separate Python job
+  format: # Separate Python job
     runs-on: ubuntu-latest
     steps:
       - run: make format-check
@@ -76,12 +76,14 @@ See [autofix-job-needs.md](autofix-job-needs.md) for how the autofix job depends
 When editing markdown in `.claude/commands/`, always format via the devrun agent:
 
 **Correct pattern:**
+
 1. Edit markdown with Write/Edit tools
 2. Delegate formatting: `Task(subagent_type='devrun', prompt="Run make prettier and report results")`
 3. Review devrun output
 4. If prettier made changes, read the formatted file to see what changed
 
 **Anti-pattern:**
+
 - Running `Bash("make prettier")` directly from the main agent
 - Attempting to manually fix prettier violations by re-editing with the Edit tool
 

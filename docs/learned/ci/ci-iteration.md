@@ -18,6 +18,7 @@ audit_result: clean
 The devrun agent enforces a critical architectural separation: **command execution is read-only, file modification is deliberate**. This prevents agents from "fixing" code without understanding failures, which leads to copy-paste solutions and masks root causes.
 
 Without this separation, agents fall into the auto-fix trap:
+
 1. Run tests, see failures
 2. Apply superficial fix (suppress warning, catch exception broadly)
 3. Tests pass, but the underlying issue remains
@@ -121,13 +122,14 @@ The parent agent remains responsible for deciding when to format. devrun just ex
 
 Three slash commands encode different CI iteration strategies:
 
-| Command            | Scope                  | Use When                               |
-| ------------------ | ---------------------- | -------------------------------------- |
-| `/local:fast-ci`   | Unit tests only        | Rapid development feedback             |
-| `/local:py-fast-ci` | Python checks only     | Iterating on Python, skip markdown     |
-| `/local:all-ci`    | Full suite + integration | Pre-submit validation                  |
+| Command             | Scope                    | Use When                           |
+| ------------------- | ------------------------ | ---------------------------------- |
+| `/local:fast-ci`    | Unit tests only          | Rapid development feedback         |
+| `/local:py-fast-ci` | Python checks only       | Iterating on Python, skip markdown |
+| `/local:all-ci`     | Full suite + integration | Pre-submit validation              |
 
 All three commands:
+
 1. Load the `ci-iteration` skill for iteration logic
 2. Use devrun exclusively for all `pytest/ty/ruff/prettier/make/gt` commands
 3. Track progress with TodoWrite
@@ -145,16 +147,16 @@ All three commands:
 
 ## Decision Table: When to Use devrun
 
-| Scenario                               | Use devrun? | Rationale                               |
-| -------------------------------------- | ----------- | --------------------------------------- |
-| Running pytest to find failures        | ✅ Yes       | Read-only command execution             |
-| Fixing test failures                   | ❌ No        | Parent agent fixes with Edit/Write      |
-| Executing `make fast-ci`               | ✅ Yes       | Compound command execution              |
-| Analyzing type errors from ty output   | ✅ Yes       | Parse and report                        |
-| Adding type annotations to fix errors  | ❌ No        | Parent agent modifies files             |
-| Running `prettier --check`             | ✅ Yes       | Read-only check                         |
-| Running `prettier --write` via make    | ✅ Yes       | Command invokes write, not agent        |
-| Deciding which files need formatting   | ❌ No        | Parent agent analyzes devrun report     |
+| Scenario                              | Use devrun? | Rationale                           |
+| ------------------------------------- | ----------- | ----------------------------------- |
+| Running pytest to find failures       | ✅ Yes      | Read-only command execution         |
+| Fixing test failures                  | ❌ No       | Parent agent fixes with Edit/Write  |
+| Executing `make fast-ci`              | ✅ Yes      | Compound command execution          |
+| Analyzing type errors from ty output  | ✅ Yes      | Parse and report                    |
+| Adding type annotations to fix errors | ❌ No       | Parent agent modifies files         |
+| Running `prettier --check`            | ✅ Yes      | Read-only check                     |
+| Running `prettier --write` via make   | ✅ Yes      | Command invokes write, not agent    |
+| Deciding which files need formatting  | ❌ No       | Parent agent analyzes devrun report |
 
 ## Common Anti-Patterns
 

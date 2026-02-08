@@ -31,6 +31,7 @@ See `.github/workflows/objective-reconcile.yml` for workflow structure. The work
 See `reconcile_objectives()` in `src/erk/cli/commands/objective/reconcile_cmd.py` for CLI implementation. Despite the plural name, it requires a single objective number and launches Claude interactively with `/erk:objective-next-plan`.
 
 **What actually happens:**
+
 1. CLI validates objective exists and has `erk-objective` label
 2. Launches Claude Code in plan mode with full codebase access
 3. Claude executes the `/erk:objective-next-plan` command interactively
@@ -60,6 +61,7 @@ The `/erk:objective-next-plan` command requires context-dependent decisions:
 3. **Plan quality** — Interactive planning produces better plans than templated generation
 
 Autonomous batch reconciliation would require either:
+
 - Pre-selecting the next step (which step? Linear progression ignores dependencies)
 - Skipping exploration (plans lack context about current codebase state)
 - Auto-approving plans (quality drops without review)
@@ -80,11 +82,11 @@ Sweep mode uses `group: reconcile-objectives-sweep` with `cancel-in-progress: fa
 
 Both workflows require:
 
-| Secret                      | Purpose                              |
-| --------------------------- | ------------------------------------ |
-| `ERK_QUEUE_GH_PAT`          | GitHub token for issue operations    |
-| `ANTHROPIC_API_KEY`         | Claude API access                    |
-| `CLAUDE_CODE_OAUTH_TOKEN`   | OAuth token for Claude Code sessions |
+| Secret                    | Purpose                              |
+| ------------------------- | ------------------------------------ |
+| `ERK_QUEUE_GH_PAT`        | GitHub token for issue operations    |
+| `ANTHROPIC_API_KEY`       | Claude API access                    |
+| `CLAUDE_CODE_OAUTH_TOKEN` | OAuth token for Claude Code sessions |
 
 <!-- Source: .github/workflows/objective-reconciler.yml -->
 
@@ -113,6 +115,7 @@ The workflows reference `auto-advance` label as the selector for sweep mode, but
 The label exists in workflow YAML but not in the label ontology. This is a **missing implementation piece**, not just documentation.
 
 To enable sweep mode:
+
 1. Define `auto-advance` label in GitHub repo settings
 2. Document criteria for applying the label (all objectives? specific phases?)
 3. Update objective creation workflow to optionally add the label
@@ -125,6 +128,7 @@ To enable sweep mode:
 The `erk launch objective-reconcile` command is a thin wrapper around GitHub's workflow dispatch API. See `_trigger_objective_reconcile()` in `src/erk/cli/commands/launch_cmd.py:160-191` for implementation.
 
 The wrapper:
+
 1. Validates objective exists
 2. Builds workflow inputs (`objective`, `dry_run`)
 3. Triggers workflow via GitHub API
@@ -137,6 +141,7 @@ No local reconciliation logic—purely a remote trigger.
 Both workflows support `--dry-run` flag, but it's **not implemented in the actual reconcile command**. The flag passes through to the workflow but has no effect because `reconcile_cmd.py` doesn't check for it.
 
 To implement dry-run:
+
 1. Add `--dry-run` flag to `reconcile_objectives()` CLI command
 2. Pass flag to interactive agent config
 3. Modify `/erk:objective-next-plan` to skip `EnterPlanMode` in dry-run
@@ -146,11 +151,11 @@ Currently, `--dry-run` is **documentation-driven fiction**.
 
 ## When to Use Which Mode
 
-| Scenario                                          | Use                     | Why                                  |
-| ------------------------------------------------- | ----------------------- | ------------------------------------ |
-| Manually create plan for specific objective step  | `erk launch objective-reconcile --objective <N>` | Human reviews step selection and plan |
-| Want autonomous reconciliation                    | Don't use either mode   | Not implemented; interactive sessions don't batch |
-| Testing reconciliation workflow                   | Single-objective mode with `--dry-run` | No-op currently; would need implementation |
+| Scenario                                         | Use                                              | Why                                               |
+| ------------------------------------------------ | ------------------------------------------------ | ------------------------------------------------- |
+| Manually create plan for specific objective step | `erk launch objective-reconcile --objective <N>` | Human reviews step selection and plan             |
+| Want autonomous reconciliation                   | Don't use either mode                            | Not implemented; interactive sessions don't batch |
+| Testing reconciliation workflow                  | Single-objective mode with `--dry-run`           | No-op currently; would need implementation        |
 
 ## Future Enhancement Path
 

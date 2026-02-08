@@ -32,16 +32,19 @@ A template base class would need parameters for all these variations, creating m
 All workflow capabilities implement the `Capability` ABC from `src/erk/core/capabilities/base.py`. The contract requires:
 
 **Identity properties:**
+
 - `name` — CLI identifier (e.g., `"learn-workflow"`)
 - `description` — Short description for help text
 - `scope` — Always `"project"` for workflows (they install into `.github/`)
 - `installation_check_description` — What `is_installed()` checks (e.g., `".github/workflows/learn.yml exists"`)
 
 **Artifact tracking:**
+
 - `artifacts` — List of `CapabilityArtifact` describing installed files/directories
 - `managed_artifacts` — List of `ManagedArtifact` linking to artifact detection system
 
 **Installation lifecycle:**
+
 - `is_installed()` — Check if workflow files exist
 - `install()` — Copy from bundled artifacts, record installation
 - `uninstall()` — Remove workflow files, clear installation record
@@ -117,6 +120,7 @@ Use `get_bundled_github_dir()` from `src/erk/artifacts/paths.py` to get the corr
 The `managed_artifacts` property links capability installation to artifact detection:
 
 **Single-file workflow:**
+
 ```python
 @property
 def managed_artifacts(self) -> list[ManagedArtifact]:
@@ -124,6 +128,7 @@ def managed_artifacts(self) -> list[ManagedArtifact]:
 ```
 
 **Multi-artifact workflow:**
+
 ```python
 @property
 def managed_artifacts(self) -> list[ManagedArtifact]:
@@ -174,10 +179,12 @@ Integration testing via CLI commands catches the real failure modes: missing bun
 ## Decision: When to Add vs Modify
 
 **Add a new workflow capability when:**
+
 - Creating a new GitHub Actions workflow
 - The workflow has unique installation requirements (multi-file, dependencies, etc.)
 
 **Modify existing workflow capability when:**
+
 - Updating the workflow YAML content
 - Adding/removing custom actions from an existing workflow
 - Changing installation validation logic

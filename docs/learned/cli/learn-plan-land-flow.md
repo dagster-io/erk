@@ -20,6 +20,7 @@ When landing a PR from a learn plan branch, the land execution pipeline runs add
 **The core problem**: Learn plans document insights from implementation sessions. The parent plan (the feature that was implemented) needs to track when its documentation has landed, and tripwire candidates identified during learning should be promoted to category `tripwires.md` files.
 
 **Without special handling**, these metadata updates would be manual:
+
 - Engineers would manually update parent issue status after landing docs
 - Tripwires would remain buried in learn plan issues instead of being surfaced
 - No visibility into which plans have completed their learning cycle
@@ -85,8 +86,8 @@ Learn plans are child plans (they document parent features). The parent plan iss
 
 ```yaml
 # In parent plan issue body
-learn_status: plan_completed  # Was: completed_with_plan
-learn_plan_pr: 456            # The landed PR number
+learn_status: plan_completed # Was: completed_with_plan
+learn_plan_pr: 456 # The landed PR number
 ```
 
 ## Tripwire Promotion
@@ -154,12 +155,12 @@ Not every branch is a plan branch. Regular feature branches should land normally
 
 Both learn plans and objectives use the execution pipeline for post-merge updates, but they differ in criticality:
 
-| Aspect            | Learn Plan Updates              | Objective Updates         |
-| ----------------- | ------------------------------- | ------------------------- |
-| **Criticality**   | Advisory metadata               | High-value tracking       |
-| **Failure mode**  | Fail-open (continue if missing) | Prompt user to retry      |
-| **Update target** | Parent plan issue               | Objective issue           |
-| **Pipeline order**| After objective updates         | Before learn plan updates |
+| Aspect             | Learn Plan Updates              | Objective Updates         |
+| ------------------ | ------------------------------- | ------------------------- |
+| **Criticality**    | Advisory metadata               | High-value tracking       |
+| **Failure mode**   | Fail-open (continue if missing) | Prompt user to retry      |
+| **Update target**  | Parent plan issue               | Objective issue           |
+| **Pipeline order** | After objective updates         | Before learn plan updates |
 
 **Why objectives come first**: If execution fails partway through, we prefer to have updated the objective (which tracks high-level progress) rather than the learn metadata (which is auxiliary documentation tracking).
 

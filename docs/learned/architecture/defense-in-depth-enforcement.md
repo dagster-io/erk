@@ -28,12 +28,12 @@ Critical rules—those that create bugs, tech debt, or maintenance burden when v
 
 Not all layers are equally reliable. From least to most reliable:
 
-| Layer | Reliability | Why It Fails |
-|-------|-------------|--------------|
-| Agent instructions | Lowest | Non-deterministic, context-dependent, can be overridden by competing guidance |
-| Loaded skills | Low | Timing-dependent, can be loaded after violations already written |
-| Manual review | Medium | Human consistency issues, different reviewers catch different things |
-| Automated PR checks | Highest | Deterministic, runs on every PR, provides exact source locations |
+| Layer               | Reliability | Why It Fails                                                                  |
+| ------------------- | ----------- | ----------------------------------------------------------------------------- |
+| Agent instructions  | Lowest      | Non-deterministic, context-dependent, can be overridden by competing guidance |
+| Loaded skills       | Low         | Timing-dependent, can be loaded after violations already written              |
+| Manual review       | Medium      | Human consistency issues, different reviewers catch different things          |
+| Automated PR checks | Highest     | Deterministic, runs on every PR, provides exact source locations              |
 
 **Key insight:** Defense-in-depth means upstream layers reduce burden on downstream layers, but downstream layers must exist for critical rules.
 
@@ -46,12 +46,14 @@ For deeper discussion of deterministic vs non-deterministic operations, see `rel
 Apply this pattern when rule violations create tangible problems:
 
 **Use defense-in-depth for:**
+
 - Technical debt (stale code blocks, duplicate imports)
 - Bugs (missing required fields, incorrect types)
 - Security issues (exposed credentials, unsafe patterns)
 - Breaking changes (API contract violations)
 
 **Don't use defense-in-depth for:**
+
 - Style preferences (one enforcement layer sufficient)
 - Non-critical guidelines (agent instructions only)
 - Patterns with high false positive rates (review fatigue)
@@ -62,14 +64,15 @@ The decision test: "If this rule is violated, does it create work for someone la
 
 Track where violations are caught to identify weak layers:
 
-| Where Caught | Interpretation | Action |
-|--------------|----------------|--------|
-| Layer 1 (agent) | Ideal—lowest cost | None needed |
-| Layer 2 (skill) | Good—caught pre-PR | None needed |
+| Where Caught       | Interpretation                | Action                             |
+| ------------------ | ----------------------------- | ---------------------------------- |
+| Layer 1 (agent)    | Ideal—lowest cost             | None needed                        |
+| Layer 2 (skill)    | Good—caught pre-PR            | None needed                        |
 | Layer 3 (PR check) | Acceptable—safety net working | Consider improving upstream layers |
-| Production | **Failure**—all layers failed | Add or fix enforcement layers |
+| Production         | **Failure**—all layers failed | Add or fix enforcement layers      |
 
 If Layer 3 consistently catches violations, it indicates:
+
 1. Upstream layers (1-2) need better detection or clearer guidance
 2. The rule might be unintuitive (consider simplifying)
 3. Layer 3 is correctly functioning as the fail-safe
@@ -91,6 +94,7 @@ Erk prevents verbatim code blocks in `docs/learned/` using three enforcement lay
 **Layer 3 - Automated PR Review (audit-pr-docs):** Scans every PR touching `docs/learned/`, posts inline comments for violations with exact source file and line numbers. See `audit-pr-docs.md` in `.github/reviews/`.
 
 Each layer has distinct failure modes:
+
 - Agent may not be invoked for the PR
 - Skill may load after code already written
 - Automated review is deterministic—always runs, always catches violations

@@ -19,24 +19,26 @@ The `PromptExecutor` abstraction enables executing Claude CLI commands from Pyth
 
 The abstraction supports fundamentally different integration patterns:
 
-| Mode | Returns | Output | Use Case |
-|------|---------|--------|----------|
-| `execute_command_streaming()` | `Iterator[ExecutorEvent]` | Yields typed events in real-time | Real-time progress displays, extracting PR metadata during execution |
-| `execute_prompt()` | `PromptResult` | Captures output string | Simple prompt-and-response, commit message generation, title extraction |
-| `execute_prompt_passthrough()` | `int` (exit code) | Streams to terminal | Code review, user-facing output where Claude's formatting matters |
-| `execute_interactive()` | Never returns | Replaces process | Launching Claude for interactive sessions (erk prepare, erk edit) |
+| Mode                           | Returns                   | Output                           | Use Case                                                                |
+| ------------------------------ | ------------------------- | -------------------------------- | ----------------------------------------------------------------------- |
+| `execute_command_streaming()`  | `Iterator[ExecutorEvent]` | Yields typed events in real-time | Real-time progress displays, extracting PR metadata during execution    |
+| `execute_prompt()`             | `PromptResult`            | Captures output string           | Simple prompt-and-response, commit message generation, title extraction |
+| `execute_prompt_passthrough()` | `int` (exit code)         | Streams to terminal              | Code review, user-facing output where Claude's formatting matters       |
+| `execute_interactive()`        | Never returns             | Replaces process                 | Launching Claude for interactive sessions (erk prepare, erk edit)       |
 
 **Design rationale**: Single abstraction with mode selection beats four separate abstractions. Callers choose the mode that matches their integration needs. The fake implements all modes, so tests can verify mode selection without subprocess overhead.
 
 ## Streaming vs Single-Shot Trade-offs
 
 **Streaming** (`execute_command_streaming`):
+
 - Yields `ExecutorEvent` objects as they occur
 - Enables real-time UI updates (spinners, progress bars)
 - Can extract PR metadata mid-execution
 - Must handle event stream complexity
 
 **Single-shot** (`execute_prompt`):
+
 - Returns final output as string
 - Simpler API for fire-and-forget prompts
 - Cannot show progress during execution
@@ -65,24 +67,28 @@ The fake uses **constructor injection** to configure all behaviors. No setters, 
 The fake distinguishes between failure types because callers handle them differently:
 
 **Process errors** (Claude CLI not found, permission denied):
+
 ```python
 FakePromptExecutor(simulated_process_error="Permission denied")
 # Yields ProcessErrorEvent - simulates Popen failure
 ```
 
 **No output** (Claude ran but produced nothing):
+
 ```python
 FakePromptExecutor(simulated_no_output=True)
 # Yields NoOutputEvent - simulates empty stdout
 ```
 
 **Hook blocking** (command completed without turns):
+
 ```python
 FakePromptExecutor(simulated_zero_turns=True)
 # Yields NoTurnsEvent - simulates hook rejection
 ```
 
 **Command failure** (non-zero exit code):
+
 ```python
 FakePromptExecutor(command_should_fail=True)
 # Yields ErrorEvent - simulates Claude execution failure
@@ -123,16 +129,18 @@ assert executor.prompt_calls[0] == ("Generate title", None, True)
 `execute_interactive()` has fundamentally different behavior in real vs fake:
 
 **Production** (`ClaudePromptExecutor`):
+
 - Calls `os.execvp()` to replace current process
 - Never returns
 - Terminates the Python interpreter
 
 **Fake** (`FakePromptExecutor`):
+
 - Records the call
 - Returns normally
 - Allows tests to continue and make assertions
 
-This asymmetry is intentional. Tests verify that interactive execution was *requested* with correct parameters, not that the process was actually replaced.
+This asymmetry is intentional. Tests verify that interactive execution was _requested_ with correct parameters, not that the process was actually replaced.
 
 ## TTY Redirection Logic
 
@@ -149,12 +157,14 @@ This asymmetry is intentional. Tests verify that interactive execution was *requ
 Two result types because two integration patterns:
 
 **PromptResult** (from `execute_prompt()`):
+
 - Success/failure boolean
 - Output string
 - Error message on failure
 - Minimal - just the essentials for single-shot prompts
 
 **CommandResult** (from `execute_command()`):
+
 - Everything from PromptResult
 - Plus PR metadata (URL, number, title)
 - Plus issue linkage

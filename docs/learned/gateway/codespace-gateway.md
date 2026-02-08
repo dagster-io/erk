@@ -1,56 +1,74 @@
 ---
 title: Codespace Gateway Pattern
 read_when:
-  - "implementing codespace SSH operations"
-  - "working with the Codespace gateway ABC"
+  - "adding a new codespace SSH operation to the gateway"
+  - "deciding whether a new gateway needs dry-run/printing implementations"
   - "testing code that executes commands on codespaces"
-  - "adding new codespace operations"
 tripwires:
   - action: "implementing codespace gateway"
     warning: "Use 3-place pattern (abc, real, fake) without dry-run or print implementations."
-last_audited: "2026-02-05 13:26 PT"
-audit_result: edited
+  - action: "adding dry-run or printing implementation for codespace gateway"
+    warning: "Codespace operations are all-or-nothing remote execution. Dry-run and printing don't apply. See 'When to Use 3-Place vs 5-Place' section."
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Codespace Gateway Pattern
 
-The codespace gateway provides an abstraction for SSH operations on GitHub Codespaces, following a **3-place pattern** (ABC, real, fake).
+The codespace gateway uses a **3-place pattern** (ABC, real, fake) instead of the standard 5-place gateway pattern. This document explains when and why to omit dry-run and printing implementations — a decision that applies to any gateway wrapping process-replacing or inherently remote operations.
 
-## The 3-Place Pattern
+## When to Use 3-Place vs 5-Place
 
-Unlike most gateways (which have 5 places: abc, real, fake, dry-run, print), the codespace gateway has only 3:
+The standard gateway pattern has 5 implementations (abc, real, fake, dry_run, printing). The 3-place variant drops dry-run and printing. The decision is based on whether a meaningful preview exists:
 
-1. **ABC**: `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py`
-2. **Real**: `packages/erk-shared/src/erk_shared/gateway/codespace/real.py`
-3. **Fake**: `packages/erk-shared/src/erk_shared/gateway/codespace/fake.py`
+| Characteristic                        | 5-place (standard)                     | 3-place (codespace, agent_launcher)            |
+| ------------------------------------- | -------------------------------------- | ---------------------------------------------- |
+| Operations are reversible/previewable | Yes — can show "would create branch X" | No — process replacement or remote execution   |
+| Dry-run adds value                    | Yes — read-only operations still work  | No — no local equivalent to "pretend to SSH"   |
+| Methods return values                 | Yes — callers branch on results        | Mixed — `NoReturn` methods replace the process |
+| Side effects are local                | Yes — filesystem, git                  | No — remote machine state, process table       |
 
-**No dry-run or print implementations** - codespace operations are inherently remote and can't be meaningfully dry-run locally.
+**The key insight**: Dry-run exists to let users preview mutations before committing. When the operation is all-or-nothing remote execution (`os.execvp`, SSH), there's nothing meaningful to preview. The fake serves the testing role that dry-run would otherwise fill for local operations.
 
-## Gateway Interface
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/codespace/abc.py, Codespace -->
 
-The `Codespace` ABC in `abc.py` defines three operations:
+See the `Codespace` ABC in `packages/erk-shared/src/erk_shared/gateway/codespace/abc.py` for the three abstract methods.
 
-- **`start_codespace()`** — Ensures a codespace is running before SSH operations. Real implementation uses `gh api --method POST` (NOT `gh codespace start`, which doesn't exist — see [GitHub CLI Limits](../architecture/github-cli-limits.md)).
-- **`run_ssh_command()`** — Execute a command via SSH and wait for completion. Returns exit code. See [Codespace Remote Execution](../erk/codespace-remote-execution.md).
-- **`exec_ssh_interactive()`** — Replace current process with an SSH session via `os.execvp`. Never returns (`NoReturn`).
+## Two Execution Modes and Their Implications
 
-## Testing Pattern
+The gateway exposes two fundamentally different SSH execution paths, and choosing wrong causes subtle bugs:
 
-The `FakeCodespace` in `fake.py` tracks all calls via `SSHCall` dataclass objects. See `tests/unit/gateways/codespace/test_fake_codespace.py` for usage examples. Key assertion properties: `ssh_calls`, `started_codespaces`, `exec_called`, `last_call`.
+| Method                   | Mechanism                                | Returns?           | When to use                                       |
+| ------------------------ | ---------------------------------------- | ------------------ | ------------------------------------------------- |
+| `exec_ssh_interactive()` | `os.execvp()` — replaces current process | Never (`NoReturn`) | TUI, interactive sessions, anything needing a TTY |
+| `run_ssh_command()`      | `subprocess.run()` — child process       | Exit code (`int`)  | Automated commands where you need the result      |
 
-## Why No Dry-Run?
+**Why this matters**: `exec_ssh_interactive()` uses the `-t` flag for TTY allocation (required for interactive TUI), while `run_ssh_command()` omits it. Adding `-t` to non-interactive commands causes buffering issues; omitting it from interactive commands causes rendering failures.
 
-Dry-run is designed for local filesystem operations that can be simulated. Codespace operations are:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/codespace/real.py, RealCodespace -->
 
-- **Remote**: No local equivalent to "pretend to SSH"
-- **Stateful**: Can't show what would happen without side effects
-- **Interactive**: exec_ssh_interactive() replaces the process entirely
+See `RealCodespace` in `packages/erk-shared/src/erk_shared/gateway/codespace/real.py` for the `-t` flag distinction.
 
-The fake implementation serves the testing role that dry-run would fill.
+## GitHub API Workaround for Codespace Start
+
+`start_codespace()` uses the REST API (`gh api --method POST /user/codespaces/{name}/start`) instead of `gh codespace start` because the latter doesn't exist as a gh CLI subcommand. This is a known GitHub CLI limitation — see [GitHub CLI Limits](../architecture/github-cli-limits.md) for the full list of operations requiring REST API fallbacks.
+
+## Testing: Simulating Process Replacement
+
+The fake faces a unique challenge: how do you test a method that replaces the current process? The `FakeCodespace` solves this by raising `SystemExit(0)` from `exec_ssh_interactive()`, which means tests must wrap calls in `pytest.raises(SystemExit)`.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/codespace/fake.py, FakeCodespace -->
+
+See `FakeCodespace` in `packages/erk-shared/src/erk_shared/gateway/codespace/fake.py` for the tracking implementation.
+
+**Anti-pattern**: Catching `SystemExit` broadly in test code that also calls `exec_ssh_interactive()`. The `SystemExit` from the fake is intentional — swallowing it silently masks whether the method was actually called.
+
+The AgentLauncher gateway uses the same `SystemExit` simulation pattern for its `os.execvp()` wrapper, confirming this as the standard approach for `NoReturn` fakes in erk.
 
 ## Related Documentation
 
-- [Codespace Remote Execution](../erk/codespace-remote-execution.md) - Streaming command execution pattern
-- [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) - General gateway patterns
-- [GitHub CLI Limits](../architecture/github-cli-limits.md) - Why gh codespace start doesn't work
-- [Composable Remote Commands](../architecture/composable-remote-commands.md) - Template for new commands
+- [Codespace Remote Execution](../erk/codespace-remote-execution.md) — bootstrap wrapper, environment setup, debugging failures
+- [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) — 5-place pattern, 3-place variant decision criteria
+- [SSH Command Execution](../architecture/ssh-command-execution.md) — exec vs subprocess, TTY allocation, SSH argument semantics
+- [GitHub CLI Limits](../architecture/github-cli-limits.md) — why `gh codespace start` doesn't work
+- [Composable Remote Commands](../architecture/composable-remote-commands.md) — five-step pattern for adding new remote commands

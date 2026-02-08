@@ -78,13 +78,13 @@ See `reconcile_objectives()` in `src/erk/cli/commands/objective/reconcile_cmd.py
 
 ## When to Use LBYL Existence Checks
 
-| Scenario | Use LBYL? | Reasoning |
-|----------|-----------|-----------|
-| Resource existence is first validation step | ✅ Yes | Enables user-friendly "not found" errors before deeper validation |
-| Need resource data anyway | ⚠️ Optional | Can skip existence check and handle sentinel inline (but LBYL is cleaner) |
-| Making operation idempotent | ✅ Yes | Check existence, return early if missing, proceed if present |
-| Performance-critical hot path | ❌ No | Double API calls (exists + fetch) add latency |
-| Operation already idempotent | ❌ No | Operations like `git fetch` don't fail on missing resources |
+| Scenario                                    | Use LBYL?   | Reasoning                                                                 |
+| ------------------------------------------- | ----------- | ------------------------------------------------------------------------- |
+| Resource existence is first validation step | ✅ Yes      | Enables user-friendly "not found" errors before deeper validation         |
+| Need resource data anyway                   | ⚠️ Optional | Can skip existence check and handle sentinel inline (but LBYL is cleaner) |
+| Making operation idempotent                 | ✅ Yes      | Check existence, return early if missing, proceed if present              |
+| Performance-critical hot path               | ❌ No       | Double API calls (exists + fetch) add latency                             |
+| Operation already idempotent                | ❌ No       | Operations like `git fetch` don't fail on missing resources               |
 
 ## Implementing Idempotency with LBYL
 

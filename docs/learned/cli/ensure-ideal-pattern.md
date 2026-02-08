@@ -22,10 +22,10 @@ audit_result: regenerated
 
 The separation between `Ensure` and `EnsureIdeal` reflects two distinct validation concerns:
 
-| Class         | Validates                    | Source of Values              | Failure Meaning                |
-| ------------- | ---------------------------- | ----------------------------- | ------------------------------ |
+| Class         | Validates                    | Source of Values               | Failure Meaning                       |
+| ------------- | ---------------------------- | ------------------------------ | ------------------------------------- |
 | `Ensure`      | Invariants and preconditions | Arguments, config, local state | Programming error or user input error |
-| `EnsureIdeal` | Gateway operation results    | I/O operations, API calls     | Expected external failure      |
+| `EnsureIdeal` | Gateway operation results    | I/O operations, API calls      | Expected external failure             |
 
 **Decision rule**: If the value originates from a gateway method returning `T | ErrorType`, use `EnsureIdeal`. If it's an argument check, config validation, or state assertion, use `Ensure`.
 
@@ -51,7 +51,7 @@ pr = EnsureIdeal.unwrap_pr(
 )
 ```
 
-**Why no message?** `PRNotFound` is a minimal sentinel used by the low-level gateway ABC. It knows the PR wasn't found, but not *why* — that context lives in the caller.
+**Why no message?** `PRNotFound` is a minimal sentinel used by the low-level gateway ABC. It knows the PR wasn't found, but not _why_ — that context lives in the caller.
 
 See `PRNotFound` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`.
 
@@ -94,7 +94,7 @@ Don't add EnsureIdeal methods for:
 
 ## Relationship to Two-Phase Validation
 
-`EnsureIdeal` is a Phase 1 (validation) tool. It terminates on failure, so it must run *before* any mutations occur.
+`EnsureIdeal` is a Phase 1 (validation) tool. It terminates on failure, so it must run _before_ any mutations occur.
 
 **WRONG** — Mutation before narrowing:
 
