@@ -88,8 +88,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before checking isinstance(ctx.graphite, GraphiteDisabled) inline in command code** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use BranchManager abstraction instead. Add a method to BranchManager ABC that handles both Graphite and Git paths. This centralizes the branching logic and enables testing with FakeBranchManager.
 
-**CRITICAL: Before choosing between Write tool and bash heredocs for large agent outputs** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. heredocs fail silently with special characters — prefer the Write tool
-
 **CRITICAL: Before choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
 
 **CRITICAL: Before choosing between exec_ssh_interactive() and run_ssh_command() for interactive commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Interactive commands need exec_ssh_interactive(), not run_ssh_command()
@@ -205,8 +203,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before using git pull or git pull --rebase on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Use /erk:sync-divergence instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push.
 
 **CRITICAL: Before using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code** → Read [Erk Architecture Patterns](erk-architecture.md) first. Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables.
-
-**CRITICAL: Before using run_ssh_command() for interactive commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Interactive commands need exec_ssh_interactive(), not run_ssh_command()
 
 **CRITICAL: Before using subprocess.run with git command outside of a gateway** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations.
 
