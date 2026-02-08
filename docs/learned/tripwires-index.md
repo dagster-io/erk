@@ -19,10 +19,10 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [checklists](checklists/tripwires.md)       | 1         | `checklists/` code                            |
 | [ci](ci/tripwires.md)                       | 35        | `.github/workflows/`, `.github/actions/`      |
 | [claude-code](claude-code/tripwires.md)     | 3         | Claude Code configuration, settings           |
-| [cli](cli/tripwires.md)                     | 53        | `src/erk/cli/`                                |
-| [commands](commands/tripwires.md)           | 6         | `.claude/commands/`, slash commands           |
+| [cli](cli/tripwires.md)                     | 50        | `src/erk/cli/`                                |
 | [config](config/tripwires.md)               | 2         | `config/` code                                |
-| [desktop-dash](desktop-dash/tripwires.md)   | 24        | `desktop-dash/` code                          |
+| [configuration](configuration/tripwires.md) | 1         | `configuration/` code                         |
+| [desktop-dash](desktop-dash/tripwires.md)   | 29        | `desktop-dash/` code                          |
 | [documentation](documentation/tripwires.md) | 11        | `documentation/` code                         |
 | [erk](erk/tripwires.md)                     | 1         | `erk/` code                                   |
 | [gateway](gateway/tripwires.md)             | 2         | `gateway/` code                               |
