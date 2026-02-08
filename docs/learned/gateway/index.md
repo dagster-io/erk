@@ -3,5 +3,5 @@
 
 # Gateway Documentation
 
-- **[codespace-gateway.md](codespace-gateway.md)** — implementing codespace SSH operations, working with the Codespace gateway ABC, testing code that executes commands on codespaces, adding new codespace operations
-- **[codespace-registry.md](codespace-registry.md)** — working with GitHub Codespaces, implementing codespace registration, managing remote execution environments
+- **[codespace-gateway.md](codespace-gateway.md)** — adding a new codespace SSH operation to the gateway, deciding whether a new gateway needs dry-run and printing implementations, testing code that uses os.execvp or NoReturn methods, choosing between exec_ssh_interactive and run_ssh_command
+- **[codespace-registry.md](codespace-registry.md)** — working with GitHub Codespace registration or lookup, adding a gateway that separates read-only ABC from mutation functions, choosing between ABC methods vs standalone functions for gateway operations
