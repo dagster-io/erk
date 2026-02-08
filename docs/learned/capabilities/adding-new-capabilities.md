@@ -11,7 +11,7 @@ tripwires:
   - action: "creating a new capability type with custom installation logic"
     warning: "Don't subclass Capability directly unless needed. Use SkillCapability or ReminderCapability for 90% of cases—they handle state management automatically."
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: edited
 ---
 
 # Adding New Capabilities
