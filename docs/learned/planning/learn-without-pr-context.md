@@ -29,10 +29,10 @@ When `_get_pr_for_plan_direct` returns `None`, the orchestrator logs a warning a
 
 When a PR _is_ found, the orchestrator fetches two separate comment types via gateway calls (not `gh` CLI):
 
-| Comment type        | File written                  | Contains                                  |
-| ------------------- | ----------------------------- | ----------------------------------------- |
-| Review threads      | `pr-review-comments.json`     | Inline code review threads with file/line |
-| Discussion comments | `pr-discussion-comments.json` | Top-level PR conversation                 |
+| Comment type         | File written                  | Contains                                    |
+| -------------------- | ----------------------------- | ------------------------------------------- |
+| Review threads       | `pr-review-comments.json`    | Inline code review threads with file/line   |
+| Discussion comments  | `pr-discussion-comments.json` | Top-level PR conversation                   |
 
 Both use LBYL discriminated union checking (`isinstance(result, PRNotFound)`) rather than exception handling, consistent with erk's error patterns.
 

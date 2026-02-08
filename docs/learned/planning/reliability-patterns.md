@@ -10,7 +10,7 @@ tripwires:
   - action: "staging git changes (git add/git rm) without an immediate commit before a git reset --hard"
     warning: "git reset --hard silently discards staged changes. Commit and push cleanup BEFORE any reset step."
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 ---
 
 # Workflow Reliability Patterns
@@ -21,8 +21,8 @@ Erk's automated workflows blend AI agent behavior (non-deterministic) with scrip
 
 Every operation in an automated workflow falls on a reliability spectrum. The key architectural decision is matching operation criticality to the right reliability tier.
 
-| Operation type    | Reliability | Failure mode                               | Use for                                       |
-| ----------------- | ----------- | ------------------------------------------ | --------------------------------------------- |
+| Operation type    | Reliability | Failure mode                               | Use for                                      |
+| ----------------- | ----------- | ------------------------------------------ | -------------------------------------------- |
 | Deterministic     | High        | Only fails if the step itself doesn't run  | Cleanup, state mutations, security-sensitive  |
 | Non-deterministic | Low         | Context limits, misinterpretation, skipped | Creative/generative tasks, contextual choices |
 
@@ -34,11 +34,11 @@ For any operation where silent failure creates downstream problems, implement mu
 
 ### The Reliability Hierarchy
 
-| Layer                            | Failure mode                             | Appropriate for              |
-| -------------------------------- | ---------------------------------------- | ---------------------------- |
-| Agent instruction                | Context limits, misinterpretation        | Optimization, not guarantees |
-| Staged git changes (uncommitted) | Silently discarded by `git reset --hard` | Nothing critical             |
-| Dedicated workflow commit step   | Only fails if step condition is wrong    | Critical operations          |
+| Layer                           | Failure mode                              | Appropriate for              |
+| ------------------------------- | ----------------------------------------- | ---------------------------- |
+| Agent instruction               | Context limits, misinterpretation         | Optimization, not guarantees |
+| Staged git changes (uncommitted) | Silently discarded by `git reset --hard`  | Nothing critical             |
+| Dedicated workflow commit step  | Only fails if step condition is wrong     | Critical operations          |
 
 **Key insight:** Only the dedicated workflow step is truly reliable. Upstream layers reduce the frequency of Layer 3 needing to act, but they cannot replace it. This mirrors the broader [defense-in-depth enforcement](../architecture/defense-in-depth-enforcement.md) pattern.
 
@@ -58,18 +58,18 @@ See the "Clean up .worker-impl/ after implementation" step in `.github/workflows
 
 When adding an automated operation to a workflow:
 
-| Question                           | If Yes                                            | If No                         |
-| ---------------------------------- | ------------------------------------------------- | ----------------------------- |
-| Does silent failure corrupt state? | Must be deterministic (workflow-native)           | Agent-dependent is acceptable |
-| Can partial failure be detected?   | Agent-dependent with retry may work               | Must be workflow-native       |
-| Does the operation need judgment?  | Agent-dependent, but add workflow-native fallback | Prefer workflow-native        |
-| Is this followed by `git reset`?   | Commit and push BEFORE the reset                  | Standard ordering is fine     |
+| Question                             | If Yes                                              | If No                                |
+| ------------------------------------ | --------------------------------------------------- | ------------------------------------ |
+| Does silent failure corrupt state?   | Must be deterministic (workflow-native)              | Agent-dependent is acceptable        |
+| Can partial failure be detected?     | Agent-dependent with retry may work                  | Must be workflow-native              |
+| Does the operation need judgment?    | Agent-dependent, but add workflow-native fallback    | Prefer workflow-native               |
+| Is this followed by `git reset`?     | Commit and push BEFORE the reset                     | Standard ordering is fine            |
 
 ## The Commit-Before-Reset Rule
 
 `git reset --hard` silently discards all staged-but-uncommitted changes. This is git's intended behavior, but in multi-step workflows it creates a subtle trap: a cleanup step that stages changes looks correct in isolation, but a later reset step silently undoes it.
 
-**The rule:** Any cleanup that uses `git rm` or `git add` must commit and push _before_ any step that might run `git reset --hard`.
+**The rule:** Any cleanup that uses `git rm` or `git add` must commit and push *before* any step that might run `git reset --hard`.
 
 <!-- Source: .github/workflows/plan-implement.yml, Clean up .worker-impl/ after implementation -->
 <!-- Source: .github/workflows/plan-implement.yml, Trigger CI workflows -->
