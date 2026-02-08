@@ -27,11 +27,11 @@ All PR creation sites use `GitHub.get_pr_for_branch()`, which returns `PRDetails
 
 Different workflows need different behavior when a PR already exists:
 
-| Strategy       | When PR exists                 | When no PR          | Used by                     |
-| -------------- | ------------------------------ | ------------------- | --------------------------- |
-| **Reject**     | Raise error, refuse to proceed | Create new PR       | Plan review PR creation     |
-| **Update**     | Edit title/body of existing PR | Create new PR       | Submit pipeline (core flow) |
-| **Query-only** | Use existing PR's details      | Return error result | PR sync, PR check, landing  |
+| Strategy | When PR exists | When no PR | Used by |
+| --- | --- | --- | --- |
+| **Reject** | Raise error, refuse to proceed | Create new PR | Plan review PR creation |
+| **Update** | Edit title/body of existing PR | Create new PR | Submit pipeline (core flow) |
+| **Query-only** | Use existing PR's details | Return error result | PR sync, PR check, landing |
 
 ### Why "Reject" for plan review PRs
 
