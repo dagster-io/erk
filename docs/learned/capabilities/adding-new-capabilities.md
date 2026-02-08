@@ -4,88 +4,135 @@ read_when:
   - "adding reminder capabilities"
   - "creating new capability types"
   - "debugging capability registration"
+  - "understanding why capabilities don't appear in hooks"
 tripwires:
-  - action: "using `is_reminder_installed()` in hook check"
-    warning: "Capability class MUST be defined in reminders/ folder AND registered in registry.py @cache tuple. Incomplete registration causes silent hook failures."
-last_audited: "2026-02-05"
-audit_result: clean
+  - action: "capability not appearing in hooks or CLI"
+    warning: "Class MUST be imported AND instantiated in registry.py _all_capabilities() tuple. Missing registration causes silent failures—class exists but is never discovered."
+  - action: "creating a new capability type with custom installation logic"
+    warning: "Don't subclass Capability directly unless needed. Use SkillCapability or ReminderCapability for 90% of cases—they handle state management automatically."
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Adding New Capabilities
 
-Capabilities in erk follow a 3-file pattern. This guide covers how to add new capability types, with emphasis on the reminder capability pattern.
+Capabilities are optional features installed via `erk init capability add`. The system is designed around base classes that handle most implementation details automatically.
 
-## The 3-File Pattern
+## Why Use Base Classes
 
-Adding a new capability requires changes to 3 files:
+Erk provides specialized base classes because capability installation follows predictable patterns:
 
-| File                                    | Purpose                                      |
-| --------------------------------------- | -------------------------------------------- |
-| `src/erk/capabilities/<type>/<name>.py` | Define the capability class                  |
-| `src/erk/core/capabilities/registry.py` | Register capability in `_all_capabilities()` |
-| `user_prompt_hook.py`                   | Hook checks for installed capabilities       |
+<!-- Source: src/erk/core/capabilities/skill_capability.py, SkillCapability -->
+<!-- Source: src/erk/core/capabilities/reminder_capability.py, ReminderCapability -->
 
-## Example: Adding a Reminder Capability
+- **ReminderCapability**: Stores state in `.erk/state.toml` under `[reminders]` section. No files created.
+- **SkillCapability**: Installs skill files from bundled artifacts. Delegates to artifact sync system.
 
-### Step 1: Define the Capability Class
+Both base classes handle `is_installed()`, `install()`, `uninstall()`, and state tracking. Subclasses provide only `name` and `description`.
 
-Create `src/erk/capabilities/reminders/my_reminder.py`.
+## Registration: The Critical Step
 
-See `src/erk/capabilities/reminders/devrun.py` for the canonical pattern. Reminder capabilities require only two properties:
+<!-- Source: src/erk/core/capabilities/registry.py, _all_capabilities -->
 
-- `reminder_name` - The marker file name
-- `description` - Human-readable description
+Registration requires **two steps** in `registry.py`:
 
-### Step 2: Register in Registry
+1. **Import** the capability class at module level
+2. **Instantiate** it in the `_all_capabilities()` tuple
 
-In `src/erk/core/capabilities/registry.py`:
+**Why both?** The registry uses a `@cache` decorator on `_all_capabilities()`. Import verifies the module loads; instantiation makes the capability discoverable.
 
-1. Add import at top
-2. Add instance to the `_all_capabilities()` tuple
+### Anti-Pattern: Import Without Instantiation
 
-### Step 3: Hook Integration
+```python
+# registry.py
+from erk.capabilities.reminders.my_reminder import MyReminderCapability  # ✓ Imported
 
-The `user_prompt_hook.py` uses `is_reminder_installed()` to check if capabilities are active. For reminder capabilities, this check is automatic via the `ReminderCapability` base class.
+@cache
+def _all_capabilities() -> tuple[Capability, ...]:
+    return (
+        DevrunReminderCapability(),
+        # MyReminderCapability() MISSING  # ✗ Never instantiated
+    )
+```
 
-## Registration Checklist
+**Result:** CLI commands won't list it. Hooks won't check it. `get_capability("my-reminder")` returns `None`. The class exists but is invisible to the system.
 
-When adding a new capability:
+## Decision Table: Which Base Class?
 
-- [ ] Class defined in appropriate folder (`reminders/` for reminders)
-- [ ] Class imported in `registry.py`
-- [ ] Instance added to `_all_capabilities()` tuple
-- [ ] Hook integration tested (capability actually fires)
+| If you're adding...                        | Extend                | Implement Properties      |
+| ------------------------------------------ | --------------------- | ------------------------- |
+| Context injection (hook reminder)          | `ReminderCapability`  | `reminder_name`           |
+| Skill file installation                    | `SkillCapability`     | `skill_name`              |
+| GitHub workflow with actions               | `Capability` (direct) | Full interface (see base) |
+| `.claude/` artifact with custom sync logic | `Capability` (direct) | Full interface (see base) |
+| Settings.json modification                 | `Capability` (direct) | Full interface (see base) |
+| State.toml section (not reminders)         | `Capability` (direct) | Full interface (see base) |
+
+Use base classes when possible. They eliminate boilerplate and ensure consistent behavior.
+
+## Example: Reminder Capability
+
+<!-- Source: src/erk/capabilities/reminders/devrun.py, DevrunReminderCapability -->
+
+Reminder capabilities store state in `.erk/state.toml` and enable hook-based context injection. The base class handles all state management.
+
+See `DevrunReminderCapability` for the canonical minimal implementation—two properties, zero methods.
+
+**Key insight:** `reminder_name` determines:
+
+- CLI name: `{reminder_name}-reminder`
+- State key in `.erk/state.toml`: `reminders.installed = ["devrun"]`
+- Hook detection: hooks query by `reminder_name`
+
+## Example: Skill Capability
+
+<!-- Source: src/erk/capabilities/skills/dignified_python.py, DignifiedPythonCapability -->
+
+Skill capabilities install files from bundled artifacts. The base class delegates to the artifact sync system.
+
+See `DignifiedPythonCapability`—same two-property pattern as reminders.
+
+## Example: Direct Capability Subclass
+
+<!-- Source: src/erk/capabilities/workflows/erk_impl.py, ErkImplWorkflowCapability -->
+
+Direct `Capability` subclass is needed when:
+
+- Installing multiple files/directories with custom logic
+- Modifying configuration files (like `settings.json`)
+- Complex preflight checks
+
+See `ErkImplWorkflowCapability` for the full pattern: implements all abstract methods, calls `add_installed_capability()` during `install()`, declares `managed_artifacts` for artifact detection.
 
 ## Silent Failure Modes
 
-Capabilities can fail silently if registration is incomplete:
+| Failure                                             | Symptom                                          | Root Cause                               |
+| --------------------------------------------------- | ------------------------------------------------ | ---------------------------------------- |
+| Capability not in `erk init capability list`        | Missing from registry tuple                      | Forgot instantiation step                |
+| Hook doesn't fire after install                     | Wrong `reminder_name` or not checking state file | Name mismatch between class and hook     |
+| Doctor doesn't check artifacts                      | Missing `managed_artifacts` declaration          | Artifact detection relies on registry    |
+| Install succeeds but `is_installed()` returns False | State tracking not called                        | Forgot `add_installed_capability()` call |
 
-| Missing Step                    | Symptom                                 |
-| ------------------------------- | --------------------------------------- |
-| Class file not created          | Import error in registry                |
-| Not registered in `registry.py` | `is_reminder_installed()` returns False |
-| Wrong `reminder_name` return    | Hook checks wrong marker file           |
+## Testing Checklist
 
-## Testing Capability Registration
+After adding a capability:
 
 ```bash
-# List all capabilities
-erk init capability list
+# Verify registration
+erk init capability list | grep my-capability
 
-# Check if specific capability is installed
-erk init capability status my-reminder
+# Install and verify
+erk init capability add my-capability
+erk init capability list my-capability  # Should show "Installed: Yes"
+
+# For reminders: check state file
+cat .erk/state.toml  # Should have reminder_name in [reminders] section
+
+# For skills: verify file installed
+ls .claude/skills/my-skill/
 ```
 
-## Capability Types
+## Related Topics
 
-| Type     | Base Class           | Purpose                            |
-| -------- | -------------------- | ---------------------------------- |
-| Reminder | `ReminderCapability` | Context injection in prompts       |
-| Skill    | `Capability`         | Skill file management              |
-| Hook     | `Capability`         | Hook installation/configuration    |
-| Workflow | `Capability`         | GitHub Actions workflow management |
-
-## Related Documentation
-
-- [Erk Hooks](../hooks/erk.md) - How hooks consume capability state
-- [Capability System Architecture](../architecture/capability-system.md) - Full capability system docs
+- [Capability System Architecture](../architecture/capability-system.md) - Complete system design and tracking
+- [Bundled Artifacts System](../architecture/bundled-artifacts.md) - How skills and workflows are sourced
