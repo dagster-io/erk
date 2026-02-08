@@ -12,7 +12,7 @@ tripwires:
   - action: "removing .worker-impl/ during implementation (before CI passes)"
     warning: "The folder is load-bearing during implementation — Claude reads from it (via copy to .impl/). Only remove after implementation succeeds and CI passes."
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 ---
 
 # .worker-impl/ vs .impl/ Cleanup Discipline
@@ -23,13 +23,13 @@ Two folders serve implementation plans, but they have fundamentally different ow
 
 The split exists because remote (GitHub Actions) and local implementations have different trust models:
 
-| Aspect           | `.impl/`                          | `.worker-impl/`                           |
-| ---------------- | --------------------------------- | ----------------------------------------- |
-| **Created by**   | Local agent or copied from remote | `erk plan submit` (automation)            |
-| **Git status**   | In `.gitignore`, never committed  | Committed to branch, visible in PR        |
-| **Owner**        | Human user                        | Workflow automation                       |
-| **Cleanup**      | Manual only, never auto-deleted   | Automatic after CI passes                 |
-| **Review value** | High — plan vs implementation     | None — plan content lives in GitHub issue |
+| Aspect              | `.impl/`                          | `.worker-impl/`                          |
+| ------------------- | --------------------------------- | ---------------------------------------- |
+| **Created by**      | Local agent or copied from remote | `erk plan submit` (automation)           |
+| **Git status**      | In `.gitignore`, never committed  | Committed to branch, visible in PR       |
+| **Owner**           | Human user                        | Workflow automation                      |
+| **Cleanup**         | Manual only, never auto-deleted   | Automatic after CI passes                |
+| **Review value**    | High — plan vs implementation     | None — plan content lives in GitHub issue |
 
 <!-- Source: packages/erk-shared/src/erk_shared/worker_impl_folder.py, module docstring -->
 <!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, module docstring -->
@@ -58,11 +58,11 @@ Remove `.worker-impl/` only after all three conditions are met:
 
 Cleanup uses three independent layers because no single layer is reliable on its own. This was learned through production failures — see [reliability-patterns.md](reliability-patterns.md) for the full case study.
 
-| Layer                    | Mechanism                                      | Why it can fail                                     |
-| ------------------------ | ---------------------------------------------- | --------------------------------------------------- |
-| 1. Agent instruction     | `/erk:plan-implement` tells Claude to clean up | Context limits, misinterpretation                   |
-| 2. Workflow staging      | `git rm` without immediate commit              | Silently discarded by downstream `git reset --hard` |
-| 3. Dedicated commit step | Atomic remove + commit + push                  | Only fails if step condition is wrong               |
+| Layer | Mechanism | Why it can fail |
+| ----- | --------- | --------------- |
+| 1. Agent instruction | `/erk:plan-implement` tells Claude to clean up | Context limits, misinterpretation |
+| 2. Workflow staging | `git rm` without immediate commit | Silently discarded by downstream `git reset --hard` |
+| 3. Dedicated commit step | Atomic remove + commit + push | Only fails if step condition is wrong |
 
 **Only Layer 3 is deterministic.** Layers 1 and 2 reduce how often Layer 3 needs to act, but cannot replace it.
 
