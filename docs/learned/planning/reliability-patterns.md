@@ -10,7 +10,7 @@ tripwires:
   - action: "staging git changes (git add/git rm) without an immediate commit before a git reset --hard"
     warning: "git reset --hard silently discards staged changes. Commit and push cleanup BEFORE any reset step."
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # Workflow Reliability Patterns
