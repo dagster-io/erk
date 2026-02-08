@@ -6,7 +6,8 @@ read_when:
   - "understanding collateral finding tiers"
   - "debugging unexpected audit verdicts"
 tripwires:
-  - "CRITICAL: Before modifying collateral finding categories or auto-apply behavior in audit-doc"
+  - action: "modifying collateral finding categories or auto-apply behavior in audit-doc"
+    warning: "CRITICAL: Before modifying collateral finding categories or auto-apply behavior in audit-doc"
 last_audited: "2026-02-08 11:48 PT"
 audit_result: clean
 ---

@@ -5,11 +5,14 @@ read_when:
   - documenting erkdesk or desktop-dash patterns in docs/learned/
   - reviewing learned-docs for verbatim code across languages
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 tripwires:
-  - Including TypeScript/Bash code blocks from erkdesk/ without checking the One Code Rule
-  - Assuming the verbatim copy prohibition only applies to Python
-  - Rationalizing erkdesk source as "third-party API pattern" because it uses React/Electron
+  - action: "Including TypeScript/Bash code blocks from erkdesk/ without checking the One Code Rule"
+    warning: "Including TypeScript/Bash code blocks from erkdesk/ without checking the One Code Rule"
+  - action: "Assuming the verbatim copy prohibition only applies to Python"
+    warning: "Assuming the verbatim copy prohibition only applies to Python"
+  - action: "Rationalizing erkdesk source as third-party API pattern because it uses React/Electron"
+    warning: "Rationalizing erkdesk source as \"third-party API pattern\" because it uses React/Electron"
 ---
 
 # Language Scope Auditing

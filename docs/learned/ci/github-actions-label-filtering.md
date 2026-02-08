@@ -5,8 +5,10 @@ read_when:
   - implementing label-based workflow conditions
   - confused about .*.name syntax vs array filtering
 tripwires:
-  - GitHub Actions cannot interpolate Python constants - label strings must be hardcoded in YAML
-  - Always use negation (!contains) for safe defaults on push events without PR context
+  - action: "GitHub Actions cannot interpolate Python constants - label s..."
+    warning: "GitHub Actions cannot interpolate Python constants - label strings must be hardcoded in YAML"
+  - action: "use negation (!contains) for safe defaults on push events without PR context"
+    warning: "Always use negation (!contains) for safe defaults on push events without PR context"
 ---
 
 # GitHub Actions Label Filtering Reference

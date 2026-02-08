@@ -8,9 +8,12 @@ read_when:
 last_audited: "2026-02-08"
 audit_result: clean
 tripwires:
-  - "NEVER categorize internal refactors as Major Changes—they must be user-visible"
-  - "ALWAYS filter .claude/commands/local/* changes (developer-only)"
-  - "NEVER expose implementation details in changelog entries"
+  - action: "categorize internal refactors as Major Changes—they must be user-visible"
+    warning: "NEVER categorize internal refactors as Major Changes—they must be user-visible"
+  - action: "filter"
+    warning: "ALWAYS filter .claude/commands/local/* changes (developer-only)"
+  - action: "expose implementation details in changelog entries"
+    warning: "NEVER expose implementation details in changelog entries"
 ---
 
 # Changelog Categorization Rules

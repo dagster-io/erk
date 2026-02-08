@@ -6,9 +6,12 @@ read_when:
   - creating commands intended for use within plan mode
   - deciding which tools a restricted command needs
 tripwires:
-  - ALWAYS apply the minimal-set principle — only allow tools the command actually needs
-  - NEVER omit Task from allowed-tools if the command delegates to subagents
-  - Commands and agents use DIFFERENT allowed-tools syntax — check the format section
+  - action: "apply the minimal-set principle — only allow tools the command actually needs"
+    warning: "ALWAYS apply the minimal-set principle — only allow tools the command actually needs"
+  - action: "omit Task from allowed-tools if the command delegates to subagents"
+    warning: "NEVER omit Task from allowed-tools if the command delegates to subagents"
+  - action: "Commands and agents use DIFFERENT allowed-tools syntax — che..."
+    warning: "Commands and agents use DIFFERENT allowed-tools syntax — check the format section"
 ---
 
 # Tool Restriction Safety Pattern

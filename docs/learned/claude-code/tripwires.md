@@ -15,3 +15,5 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before creating Claude Code agent commands in .claude/commands/** → Read [Claude Code Agent Command Patterns](agent-commands.md) first. Filenames MUST match the command name for discoverability.
 
 **CRITICAL: Before creating a skill or command with context: fork without explicit task instructions** → Read [Context Fork Feature](context-fork-feature.md) first. Skills/commands with context: fork need actionable task prompts. Guidelines-only content returns empty output.
+
+**CRITICAL: Before reloading skills already loaded in the session** → Read [Skill Composition Patterns](skill-composition-patterns.md) first. Skills persist for entire sessions. Check conversation history before loading.

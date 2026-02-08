@@ -6,12 +6,16 @@ read_when:
   - writing tests that mock the erkdesk bridge API
   - understanding Electron security boundaries in erkdesk
 last_audited: "2026-02-08"
-audit_result: rewritten
+audit_result: clean
 tripwires:
-  - Never expose ipcRenderer directly — only wrap individual channels as named methods
-  - Every bridge method must appear in four places: main handler, preload exposure, type interface, and window-close cleanup
-  - Tests mock window.erkdesk, not ipcRenderer — the bridge is the test boundary
-  - Streaming IPC requires a trio of bridge methods: start, listen, and cleanup — forgetting cleanup causes memory leaks
+  - action: "expose ipcRenderer directly — only wrap individual channels as named methods"
+    warning: "Never expose ipcRenderer directly — only wrap individual channels as named methods"
+  - action: "Every bridge method must appear in four places: main handler..."
+    warning: "Every bridge method must appear in four places: main handler, preload exposure, type interface, and window-close cleanup"
+  - action: "Tests mock window.erkdesk, not ipcRenderer — the bridge is t..."
+    warning: "Tests mock window.erkdesk, not ipcRenderer — the bridge is the test boundary"
+  - action: "Streaming IPC requires a trio of bridge methods: start, list..."
+    warning: "Streaming IPC requires a trio of bridge methods: start, listen, and cleanup — forgetting cleanup causes memory leaks"
 ---
 
 # Preload Bridge Patterns

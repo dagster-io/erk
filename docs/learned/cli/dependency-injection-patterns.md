@@ -6,11 +6,14 @@ read_when:
   - "understanding exec script architecture"
   - "migrating exec scripts from subprocess to gateways"
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 tripwires:
-  - "Never create gateway instances in business logic — inject them as parameters"
-  - "Separate _*_impl() functions return exit codes or discriminated unions, never call sys.exit()"
-  - "Click commands retrieve real implementations from context via require_* helpers"
+  - action: "create gateway instances in business logic — inject them as parameters"
+    warning: "Never create gateway instances in business logic — inject them as parameters"
+  - action: "call sys"
+    warning: "Separate _*_impl() functions return exit codes or discriminated unions, never call sys.exit()"
+  - action: "Click commands retrieve real implementations from context vi..."
+    warning: "Click commands retrieve real implementations from context via require_* helpers"
 ---
 
 # Dependency Injection in Exec Scripts

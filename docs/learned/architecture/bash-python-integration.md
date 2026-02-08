@@ -5,8 +5,10 @@ read_when:
   - debugging escaping issues where bash mangles content passed to git, gh, or Python
   - writing Claude Code commands that produce multi-line text via bash
 tripwires:
-  - Never use unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks — bash silently expands them
-  - Prefer the Write tool over bash heredocs for large agent outputs — heredocs fail silently with special characters
+  - action: "the body contains $"
+    warning: "Never use unquoted heredoc delimiters (<<EOF) when the body contains $, \\, or backticks — bash silently expands them"
+  - action: "Prefer the Write tool over bash heredocs for large agent out..."
+    warning: "Prefer the Write tool over bash heredocs for large agent outputs — heredocs fail silently with special characters"
 last_audited: "2026-02-07 19:35 PT"
 audit_result: clean
 ---

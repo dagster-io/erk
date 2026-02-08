@@ -5,10 +5,12 @@ read_when:
   - deciding whether a new IPC channel should be fire-and-forget or request-response
   - debugging why the WebContentsView lags behind the divider during drag
 tripwires:
-  - WebView IPC channels (bounds, URL) must be fire-and-forget (send/on), never request-response (invoke/handle) — invoke serializes high-frequency updates and causes visible lag
-  - the WebContentsView starts at zero bounds intentionally; do not set initial bounds in createWindow — see defensive-bounds-handling.md
+  - action: "request-response (invoke/handle) — invoke serializes high-frequency updates a..."
+    warning: "WebView IPC channels (bounds, URL) must be fire-and-forget (send/on), never request-response (invoke/handle) — invoke serializes high-frequency updates and causes visible lag"
+  - action: "the WebContentsView starts at zero bounds intentionally; do..."
+    warning: "the WebContentsView starts at zero bounds intentionally; do not set initial bounds in createWindow — see defensive-bounds-handling.md"
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # WebView IPC Design Decisions

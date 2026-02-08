@@ -10,7 +10,7 @@ tripwires:
   - action: "review capability installation fails"
     warning: "ReviewCapability has automatic preflight check for code-reviews-system workflow. Install will fail if .github/workflows/code-reviews.yml doesn't exist in target repo. Install code-reviews-system capability first."
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # Adding Review Capabilities

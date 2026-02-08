@@ -10,7 +10,7 @@ tripwires:
   - action: "skill not appearing in erk init capability list"
     warning: "MUST import class AND add instance to registry.py _all_capabilities() tuple. Import alone is not sufficient."
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # Adding Skill Capabilities

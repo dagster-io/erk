@@ -5,11 +5,14 @@ read_when:
   - debugging WebContentsView positioning or bounds mismatches
   - adding new triggers that affect the right pane's size or position
 tripwires:
-  - every code path that changes the right pane's rendered size must trigger a bounds report to the main process
-  - the right pane div is a positioning placeholder only — it renders no content, the WebContentsView overlays it
-  - cleanup lives in the main process window-close handler, not in the SplitPane component
+  - action: "every code path that changes the right pane's rendered size..."
+    warning: "every code path that changes the right pane's rendered size must trigger a bounds report to the main process"
+  - action: "the right pane div is a positioning placeholder only — it re..."
+    warning: "the right pane div is a positioning placeholder only — it renders no content, the WebContentsView overlays it"
+  - action: "cleanup lives in the main process window-close handler, not..."
+    warning: "cleanup lives in the main process window-close handler, not in the SplitPane component"
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 ---
 
 # SplitPane Renderer-Native Coordination

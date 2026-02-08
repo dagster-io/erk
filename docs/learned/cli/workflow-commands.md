@@ -5,9 +5,12 @@ read_when:
   - "adding a new workflow to erk launch"
   - "understanding local vs remote command duality"
 tripwires:
-  - "WORKFLOW_COMMAND_MAP maps command names to .yml filenames — command names intentionally diverge from filenames (e.g., pr-fix-conflicts → pr-fix-conflicts.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)"
-  - "plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError — use erk plan submit instead"
-  - "PR workflows automatically update plan issue dispatch metadata when the branch follows the P{issue_number} naming pattern"
+  - action: "WORKFLOW_COMMAND_MAP maps command names to .yml filenames —..."
+    warning: "WORKFLOW_COMMAND_MAP maps command names to .yml filenames — command names intentionally diverge from filenames (e.g., pr-fix-conflicts → pr-fix-conflicts.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)"
+  - action: "raises UsageError — use erk plan submit instead"
+    warning: "plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError — use erk plan submit instead"
+  - action: "the branch follows the P{issue_number} naming pattern"
+    warning: "PR workflows automatically update plan issue dispatch metadata when the branch follows the P{issue_number} naming pattern"
 last_audited: "2026-02-08 05:59 PT"
 audit_result: clean
 ---
