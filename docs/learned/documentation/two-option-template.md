@@ -12,7 +12,7 @@ tripwires:
   - action: "creating a two-option doc where every matrix row favors the same option"
     warning: "That's a best-practice doc, not a decision doc. Don't create false balance."
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 ---
 
 # Two-Option Decision Documentation
