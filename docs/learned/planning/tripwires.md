@@ -16,6 +16,10 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
 
+**CRITICAL: Before adding a new pipeline stage to trigger-async-learn** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md.
+
+**CRITICAL: Before adding branch_name to plan-header at creation time** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below.
+
 **CRITICAL: Before adding erk-consolidated label to a single-issue replan** → Read [Consolidation Labels](consolidation-labels.md) first. Only multi-plan consolidation gets the erk-consolidated label. Single-issue replans are updates, not consolidations.
 
 **CRITICAL: Before adding new agents to learn workflow** → Read [Learn Workflow](learn-workflow.md) first. Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition.
@@ -31,6 +35,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before assuming branch_name is always present in plan-header metadata** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. branch_name is null until Phase 2 (plan submit). Check the plan metadata field lifecycle in lifecycle.md.
 
 **CRITICAL: Before assuming plan content is in the issue body** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. Schema v2 stores plan content in the FIRST COMMENT, not the issue body. The body contains only the plan-header metadata block. See extract_plan_from_comment() for the extraction logic.
+
+**CRITICAL: Before automatically removing .impl/ folder** → Read [.worker-impl/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. NEVER auto-delete .impl/. It belongs to the user for plan-vs-implementation review. Only .worker-impl/ is auto-cleaned.
 
 **CRITICAL: Before blocking implementation on review PR feedback** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Review PRs are advisory and non-blocking. Implementation can proceed regardless of review PR state.
 
@@ -102,9 +108,15 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before passing session content to an analysis agent** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. Raw JSONL sessions can be 6+ million characters. Always preprocess first. The learn workflow validates preprocessed output exists before spawning agents.
 
+**CRITICAL: Before preprocessing remote sessions locally** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. Remote sessions are already preprocessed. Only local sessions (source_type == 'local') go through local preprocessing.
+
+**CRITICAL: Before prompting an agent to 'include findings in the plan' without structuring them first** → Read [Context Preservation Prompting Patterns](context-preservation-prompting.md) first. Unstructured prompts don't work — agents summarize at too high a level. Use the four-category gathering step instead.
+
 **CRITICAL: Before reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
 
 **CRITICAL: Before relying on agent instructions as the sole enforcement for a critical operation** → Read [Workflow Reliability Patterns](reliability-patterns.md) first. Agent behavior is non-deterministic. Critical operations need a deterministic workflow step as the final safety net.
+
+**CRITICAL: Before removing .worker-impl/ during implementation (before CI passes)** → Read [.worker-impl/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. The folder is load-bearing during implementation — Claude reads from it (via copy to .impl/). Only remove after implementation succeeds and CI passes.
 
 **CRITICAL: Before renaming gateway files during a move without checking for non-standard naming** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Source files that don't follow standard naming (e.g., executor.py instead of abc.py) must be renamed to abc.py/real.py/fake.py during the move. The gateway directory convention requires standard file names.
 
@@ -117,6 +129,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before running sequential analysis that could be parallelized** → Read [Multi-Tier Agent Orchestration](agent-orchestration.md) first. If agents analyze independent data sources, run them in parallel. Only use sequential execution when one agent's output is another's input.
 
 **CRITICAL: Before saving a plan with --objective-issue flag** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
+
+**CRITICAL: Before staging .worker-impl/ deletion without an immediate commit** → Read [.worker-impl/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md.
 
 **CRITICAL: Before staging git changes (git add/git rm) without an immediate commit before a git reset --hard** → Read [Workflow Reliability Patterns](reliability-patterns.md) first. git reset --hard silently discards staged changes. Commit and push cleanup BEFORE any reset step.
 
