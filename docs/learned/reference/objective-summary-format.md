@@ -19,10 +19,10 @@ Objective data flows through two distinct formats depending on the consumer. Und
 
 Objective context reaches consumers through two separate paths, each with its own format:
 
-| Consumer                          | Format                                     | Source of truth                                             | Why this format                                                          |
-| --------------------------------- | ------------------------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Claude agent (parent context)     | Structured text (OBJECTIVE/ROADMAP/etc.)   | `.claude/commands/erk/objective-next-plan.md` Step 2 prompt | Optimized for LLM parsing — flat sections, no nested JSON to deserialize |
-| Programmatic tools (scripts, CLI) | JSON with `phases`, `summary`, `next_step` | `erk objective check --json-output`                         | Machine-readable for field extraction and validation                     |
+| Consumer | Format | Source of truth | Why this format |
+| --- | --- | --- | --- |
+| Claude agent (parent context) | Structured text (OBJECTIVE/ROADMAP/etc.) | `.claude/commands/erk/objective-next-plan.md` Step 2 prompt | Optimized for LLM parsing — flat sections, no nested JSON to deserialize |
+| Programmatic tools (scripts, CLI) | JSON with `phases`, `summary`, `next_step` | `erk objective check --json-output` | Machine-readable for field extraction and validation |
 
 These formats exist independently because their consumers have fundamentally different parsing capabilities. The agent text format uses labeled sections (OBJECTIVE, STATUS, ROADMAP, PENDING_STEPS, RECOMMENDED) that a haiku subagent can reliably produce. The programmatic JSON format uses typed fields with nested phase/step structures that code can traverse.
 
