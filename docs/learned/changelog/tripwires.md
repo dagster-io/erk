@@ -2,13 +2,6 @@
 title: Changelog Tripwires
 read_when:
   - "working on changelog code"
-tripwires:
-  - action: "categorizing internal refactors as Major Changes"
-    warning: "NEVER categorize internal refactors as Major Changes—they must be user-visible"
-  - action: "exposing implementation details in changelog entries"
-    warning: "NEVER expose implementation details in changelog entries"
-  - action: "including .claude/commands/local/* changes in changelog"
-    warning: "ALWAYS filter .claude/commands/local/* changes (developer-only)"
 ---
 
 <!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
