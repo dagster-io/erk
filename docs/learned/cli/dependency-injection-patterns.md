@@ -8,9 +8,12 @@ read_when:
 last_audited: "2026-02-08"
 audit_result: clean
 tripwires:
-  - "Never create gateway instances in business logic — inject them as parameters"
-  - "Separate _*_impl() functions return exit codes or discriminated unions, never call sys.exit()"
-  - "Click commands retrieve real implementations from context via require_* helpers"
+  - action: "creating gateway instances in exec scripts"
+    warning: "Never create gateway instances in business logic — inject them as parameters"
+  - action: "implementing exec script business logic"
+    warning: "Separate _*_impl() functions return exit codes or discriminated unions, never call sys.exit()"
+  - action: "implementing Click commands"
+    warning: "Click commands retrieve real implementations from context via require_* helpers"
 ---
 
 # Dependency Injection in Exec Scripts
