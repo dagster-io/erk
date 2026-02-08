@@ -12,9 +12,42 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+
+**CRITICAL: Before Do NOT add Node.js builtins or electron to the renderer Vite config** → Read [Forge Vite Setup](forge-vite-setup.md) first. renderer is a browser environment
+
+**CRITICAL: Before Do NOT add erkdesk as a pnpm workspace member** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. it is intentionally standalone
+
+**CRITICAL: Before Do NOT assume 'Cannot find module' errors mean a missing dependency** → Read [pnpm Hoisting Pattern for Electron](pnpm-hoisting-pattern.md) first. in Electron with pnpm, check .npmrc first
+
+**CRITICAL: Before Do NOT put all three targets in one Vite config** → Read [Forge Vite Setup](forge-vite-setup.md) first. each targets a different JavaScript runtime
+
+**CRITICAL: Before Do NOT remove erkdesk/.npmrc or change node-linker away from hoisted** → Read [pnpm Hoisting Pattern for Electron](pnpm-hoisting-pattern.md) first. Electron cannot resolve pnpm's symlinked node_modules layout
+
+**CRITICAL: Before Do NOT remove external electron from the preload config** → Read [Forge Vite Setup](forge-vite-setup.md) first. bundling electron causes runtime failures
+
+**CRITICAL: Before Do NOT run pnpm commands from the repo root** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. always cd into erkdesk/ first
+
+**CRITICAL: Before Do NOT use BrowserView** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. use WebContentsView (BrowserView is deprecated)
+
+**CRITICAL: Before Every new IPC handler needs matching cleanup in mainWindow.on("closed")** → Read [Main Process Startup](main-process-startup.md) first. use removeAllListeners for ipcMain.on, removeHandler for ipcMain.handle
+
 **CRITICAL: Before Introduce a status color outside the five-color palette** → Read [Visual Status Indicators](visual-status-indicators.md) first. Map to the canonical five colors (green/amber/purple/red/gray) rather than adding new ones. See the color semantics table in this doc.
 
+**CRITICAL: Before Kill activeAction before spawning a new streaming process** → Read [Main Process Startup](main-process-startup.md) first. concurrent subprocess conflicts cause interleaved output
+
+**CRITICAL: Before Never expose ipcRenderer directly** → Read [Preload Bridge Patterns](preload-bridge-patterns.md) first. only wrap individual channels as named methods
+
+**CRITICAL: Before Register IPC handlers inside createWindow(), not at module scope** → Read [Main Process Startup](main-process-startup.md) first. macOS activate re-calls createWindow, causing duplicate listeners
+
 **CRITICAL: Before Render status indicators from backend-provided display strings** → Read [Visual Status Indicators](visual-status-indicators.md) first. Status indicators must derive from raw state fields via pure functions, not pre-rendered strings. See state-derivation-pattern.md.
+
+**CRITICAL: Before Tests mock window.erkdesk, not ipcRenderer** → Read [Preload Bridge Patterns](preload-bridge-patterns.md) first. the bridge is the test boundary
+
+**CRITICAL: Before Use execFile for request/response IPC, spawn for streaming IPC** → Read [Main Process Startup](main-process-startup.md) first. do not mix the patterns
+
+**CRITICAL: Before WebContentsView starts at zero bounds** → Read [Main Process Startup](main-process-startup.md) first. renderer must report bounds before it becomes visible
+
+**CRITICAL: Before WebView IPC channels (bounds, URL) must be fire-and-forget (send/on), never request-response (invoke/handle)** → Read [WebView IPC Design Decisions](webview-api.md) first. invoke serializes high-frequency updates and causes visible lag
 
 **CRITICAL: Before adding IPC handler without updating all 4 locations** → Read [erkdesk IPC Action Pattern](ipc-actions.md) first. Every IPC handler requires updates in main/index.ts (handler), main/preload.ts (bridge), types/erkdesk.d.ts (types), and tests. Missing any location compiles fine but fails at runtime.
 
@@ -51,6 +84,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before designing notification features** → Read [Desktop Dashboard Interaction Model](interaction-model.md) first. Notification/badge system is planned but NOT implemented. Don't assume infrastructure exists for state-diff detection, OS notifications, or row badges.
 
 **CRITICAL: Before duplicating PlanDataProvider logic in TypeScript** → Read [Backend Communication Pattern Decision](backend-communication.md) first. erkdesk delegates all data fetching to `erk exec dash-data`. The Python side owns data assembly — erkdesk is a thin rendering shell over CLI output.
+
+**CRITICAL: Before erkdesk tests run separately from the Python suite** → Read [Vitest Configuration for erkdesk](vitest-setup.md) first. `make fast-ci` and `make all-ci` do NOT include them; use `make erkdesk-test`
 
 **CRITICAL: Before exposing IPC to the renderer in erkdesk** → Read [Preload Bridge Patterns](preload-bridge-patterns.md) first. Never expose ipcRenderer directly — only wrap individual channels as named methods
 
@@ -90,6 +125,10 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before passing renderer-reported bounds to Electron setBounds()** → Read [Defensive Bounds Handling](defensive-bounds-handling.md) first. never pass renderer-reported bounds directly to Electron setBounds() without clamping
 
+**CRITICAL: Before performing this action** → Read [Preload Bridge Patterns](preload-bridge-patterns.md) first. Check the relevant documentation.
+
+**CRITICAL: Before performing this action** → Read [Vitest Configuration for erkdesk](vitest-setup.md) first. Check the relevant documentation.
+
 **CRITICAL: Before porting a TUI modal or overlay to erkdesk** → Read [Desktop Dashboard Interaction Model](interaction-model.md) first. The right pane (WebContentsView showing live GitHub) replaces all TUI modals. Don't build detail modals — the embedded GitHub page provides richer context than any custom UI.
 
 **CRITICAL: Before preserving selection by array index across refresh** → Read [erkdesk App Architecture](app-architecture.md) first. Auto-refresh reorders plans. Selection must be preserved by issue_number, not by index. See the setInterval effect in App.tsx.
@@ -110,6 +149,12 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before storing derived state in useState** → Read [erkdesk App Architecture](app-architecture.md) first. selectedPlan is computed inline from plans[selectedIndex], not stored in state. Never cache derived values — compute them on render.
 
+**CRITICAL: Before the WebContentsView starts at zero bounds intentionally; do not set initial bounds in createWindow** → Read [WebView IPC Design Decisions](webview-api.md) first. see defensive-bounds-handling.md
+
+**CRITICAL: Before the right pane div is a positioning placeholder only** → Read [SplitPane Renderer-Native Coordination](split-pane-implementation.md) first. it renders no content, the WebContentsView overlays it
+
+**CRITICAL: Before the window.erkdesk mock in setup.ts must match the ErkdeskAPI interface** → Read [Vitest Configuration for erkdesk](vitest-setup.md) first. adding a new IPC method requires updating both the type definition and the mock or TypeScript will catch the mismatch
+
 **CRITICAL: Before updating state directly instead of using functional setState in interval callbacks** → Read [Erkdesk Auto-Refresh Patterns](erkdesk-auto-refresh-patterns.md) first. Interval closures capture stale state. Use functional setState (setPrevState => ...) to read latest values inside setInterval callbacks.
 
 **CRITICAL: Before using an iframe to embed GitHub content in erkdesk** → Read [Desktop App Framework Evaluation](framework-evaluation.md) first. GitHub sets X-Frame-Options: deny. Iframes respect this header and will be blocked. Only native browser contexts (WebContentsView) bypass it.
@@ -119,6 +164,16 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before using ipcMain.handle for streaming or ipcMain.on for blocking** → Read [erkdesk IPC Action Pattern](ipc-actions.md) first. handle for streaming = Promise that never resolves. on for blocking = renderer gets no result. Match the Electron API to the communication pattern.
 
 **CRITICAL: Before using the Electron <webview> tag instead of WebContentsView** → Read [Desktop App Framework Evaluation](framework-evaluation.md) first. <webview> is soft-deprecated. WebContentsView is the recommended successor with better security isolation and performance.
+
+**CRITICAL: Before using this pattern** → Read [Defensive Bounds Handling](defensive-bounds-handling.md) first. always clamp at the main process trust boundary, not only in the renderer
+
+**CRITICAL: Before using this pattern** → Read [Defensive Bounds Handling](defensive-bounds-handling.md) first. never pass renderer-reported bounds directly to Electron setBounds() without clamping
+
+**CRITICAL: Before using this pattern** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. Do NOT add erkdesk-tests to the autofix job's needs list in CI
+
+**CRITICAL: Before using this pattern** → Read [SplitPane Renderer-Native Coordination](split-pane-implementation.md) first. cleanup lives in the main process window-close handler, not in the SplitPane component
+
+**CRITICAL: Before using this pattern** → Read [SplitPane Renderer-Native Coordination](split-pane-implementation.md) first. every code path that changes the right pane's rendered size must trigger a bounds report to the main process
 
 **CRITICAL: Before working with Electron views in erkdesk** → Read [Erkdesk Project Structure](erkdesk-project-structure.md) first. Do NOT use BrowserView — use WebContentsView (BrowserView is deprecated)
 
