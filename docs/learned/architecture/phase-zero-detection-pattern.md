@@ -1,17 +1,15 @@
 ---
-audit_result: edited
-last_audited: "2026-02-08"
+title: Phase 0 Detection Pattern
 read_when:
   - implementing mode variants in multi-phase commands
   - designing conditional execution workflows
   - debugging scattered mode detection logic
-title: Phase 0 Detection Pattern
 tripwires:
-  - action: Detect mode in Phase 0 before any other phases execute
+  - action: "Detect mode in Phase 0 before any other phases execute"
+    warning: "Late detection wastes work and creates scattered conditionals across all phases"
     score: 5
-    warning:
-      Late detection wastes work and creates scattered conditionals across all
-      phases
+last_audited: "2026-02-08"
+audit_result: clean
 ---
 
 # Phase 0 Detection Pattern

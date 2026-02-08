@@ -1,28 +1,19 @@
 ---
-audit_result: edited
-last_audited: "2026-02-08"
+title: Bundled Artifact Portability
 read_when:
   - classifying a new skill as portable vs Claude-only
   - adding or modifying force-include entries in pyproject.toml
   - debugging why editable installs resolve to unexpected artifact paths
   - understanding the artifact sync and health detection systems
-title: Bundled Artifact Portability
 tripwires:
-  - action:
-      adding a skill to codex_portable_skills() without verifying it works outside
-      Claude Code
-    warning:
-      Portable skills must not use hooks, TodoWrite, EnterPlanMode, AskUserQuestion,
-      or session log paths. Check against the portability classification table before
-      adding.
-  - action: adding a force-include entry in pyproject.toml without updating codex_portable.py
-    warning:
-      The portability registry and pyproject.toml force-include must stay in
-      sync. A skill mapped to erk/data/codex/ must appear in codex_portable_skills().
-  - action: creating a .codex/ directory in the erk repo
-    warning:
-      There is no .codex/ directory in the erk repo. All skills live in .claude/skills/
-      regardless of portability. The build and sync systems handle remapping.
+  - action: "adding a skill to codex_portable_skills() without verifying it works outside Claude Code"
+    warning: "Portable skills must not use hooks, TodoWrite, EnterPlanMode, AskUserQuestion, or session log paths. Check against the portability classification table before adding."
+  - action: "adding a force-include entry in pyproject.toml without updating codex_portable.py"
+    warning: "The portability registry and pyproject.toml force-include must stay in sync. A skill mapped to erk/data/codex/ must appear in codex_portable_skills()."
+  - action: "creating a .codex/ directory in the erk repo"
+    warning: "There is no .codex/ directory in the erk repo. All skills live in .claude/skills/ regardless of portability. The build and sync systems handle remapping."
+last_audited: "2026-02-08"
+audit_result: clean
 ---
 
 # Bundled Artifact Portability
