@@ -57,7 +57,7 @@
 - **[interactive-agent-config.md](interactive-agent-config.md)** — Working with global config loading (GlobalConfig), Implementing interactive agent launch behavior, Adding new agent configuration options
 - **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with issue.json, closing reference lost after erk pr submit
 - **[land-state-threading.md](land-state-threading.md)** — implementing pipelines with immutable state, using dataclasses.replace() for state updates, designing stateful workflows with frozen dataclasses
-- **[lbyl-gateway-pattern.md](lbyl-gateway-pattern.md)** — implementing existence checks before gateway operations, adding LBYL validation to CLI commands, understanding issue_exists() and similar methods
+- **[lbyl-gateway-pattern.md](lbyl-gateway-pattern.md)** — implementing existence checks before gateway operations, adding LBYL validation to CLI commands, understanding why gateways have separate existence methods
 - **[learn-origin-tracking.md](learn-origin-tracking.md)** — understanding how learn PRs are identified, modifying erk land behavior, working with erk-skip-learn label
 - **[linear-pipelines.md](linear-pipelines.md)** — designing multi-step operations with validation and execution phases, refactoring complex commands into functional pipelines, working with land command or similar staged workflows
 - **[live-display-gateway.md](live-display-gateway.md)** — implementing live-updating terminal displays, working with TUI real-time updates, showing progress indicators
@@ -68,7 +68,7 @@
 - **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
 - **[optional-field-propagation.md](optional-field-propagation.md)** — transforming dataclass instances in pipelines, debugging null metadata fields, adding optional fields to dataclasses
 - **[parallel-agent-pattern.md](parallel-agent-pattern.md)** — launching multiple agents concurrently, using Task with run_in_background, collecting results with TaskOutput, running agents in parallel
-- **[parameter-threading-pattern.md](parameter-threading-pattern.md)** — adding parameters to multi-layer commands (skill → command → exec), working with slash commands that call erk exec, understanding parameter flow through command layers
+- **[parameter-threading-pattern.md](parameter-threading-pattern.md)** — adding parameters to multi-layer commands (skill → command → exec), working with slash commands that call erk exec, debugging "No such option" errors in commands
 - **[pathlib-symlinks.md](pathlib-symlinks.md)** — Writing file validation code, Debugging unexpected path resolution behavior, Working with symlinked configuration files
 - **[permission-modes.md](permission-modes.md)** — Working with interactive agent permissions, Implementing Codex or Claude backend integration, Modifying permission mode configuration
 - **[phase-zero-detection-pattern.md](phase-zero-detection-pattern.md)** — adding conditional execution to phase-based commands, implementing mode variants in CLI commands, modifying pr-address or similar multi-phase workflows
