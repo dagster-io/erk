@@ -4,12 +4,9 @@ read_when:
   - "creating new GitHub Actions workflows launchable via erk launch"
   - "understanding the relationship between CLI names and workflow files"
 tripwires:
-  - action: "creating new launchable workflows"
-    warning: "the CLI command name MUST match the workflow filename (without .yml)"
-  - action: "setting the name field in workflow files"
-    warning: "the workflow's name: field MUST match the CLI command name"
-  - action: "adding new workflows to erk launch"
-    warning: "update WORKFLOW_COMMAND_MAP when adding launchable workflows"
+  - "The CLI command name MUST match the workflow filename (without .yml)"
+  - "The workflow's name: field MUST match the CLI command name"
+  - "Update WORKFLOW_COMMAND_MAP when adding launchable workflows"
 ---
 
 # Workflow Naming Conventions

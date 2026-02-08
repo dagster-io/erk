@@ -5,8 +5,7 @@ read_when:
   - "understanding keyword-only parameter exceptions"
   - "working with ABC/Protocol method validation"
 tripwires:
-  - action: "flagging 5+ parameter violations in code review"
-    warning: "before flagging violations, verify NO exception applies (ABC/Protocol/Click)"
+  - "Before flagging 5+ parameter violations, verify NO exception applies (ABC/Protocol/Click)"
 ---
 
 # Code Review Filtering

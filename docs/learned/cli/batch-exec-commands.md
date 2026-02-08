@@ -15,7 +15,7 @@ tripwires:
     warning: "Always exit 0, encode errors in JSON output with per-item success fields."
     score: 6
 last_audited: "2026-02-08"
-audit_result: clean
+audit_result: regenerated
 ---
 
 # Batch Exec Commands
