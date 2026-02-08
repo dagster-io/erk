@@ -1,141 +1,78 @@
 ---
-title: Bash-Python Integration Patterns
+title: Heredoc Quoting and Escaping in Agent-Generated Bash
 read_when:
-  - writing Python code in bash heredocs, generating complex regex patterns in bash hooks, debugging escaping issues in bash-to-Python transitions
+  - generating bash commands with heredocs in Claude Code commands or skills
+  - debugging escaping issues where bash mangles content passed to git, gh, or Python
+  - writing Claude Code commands that produce multi-line text via bash
+tripwires:
+  - Never use unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks — bash silently expands them
+  - Prefer the Write tool over bash heredocs for large agent outputs — heredocs fail silently with special characters
+last_audited: "2026-02-07 18:44 PT"
+audit_result: clean
 ---
 
-# Bash-Python Integration Patterns
+# Heredoc Quoting and Escaping in Agent-Generated Bash
 
-Erk hooks and scripts frequently generate Python code dynamically within bash heredocs. This creates escaping challenges when the Python code contains strings, regex patterns, or special characters.
+## Why This Matters
 
-## The Escaping Challenge
+Erk's Claude Code commands and skills frequently generate bash commands containing heredocs — for git commit messages, GitHub issue bodies, and CLI arguments. The quoting mode of the heredoc delimiter determines whether bash interprets the content or passes it literally. Getting this wrong produces **silent corruption**: bash expands `$variables`, eats backslashes, and interprets backticks without any error message.
 
-When writing Python inside bash heredocs, you encounter multiple layers of escaping:
+This is a cross-cutting concern because the same escaping rules apply everywhere heredocs appear: `.claude/commands/`, `.claude/skills/`, agent-generated bash, and hook scripts.
 
-1. **Bash string interpretation** — Variables like `$var` are expanded unless properly quoted
-2. **Heredoc delimiter interpretation** — Single-quoted heredocs (`<<'EOF'`) prevent expansion, double-quoted allow it
-3. **Python string escaping** — Python requires `\` escaping for regex special characters
-4. **Regex metacharacters** — Patterns like `\s`, `\d`, `\w` need proper escaping through all layers
+## The Core Decision: Quoted vs Unquoted Delimiter
 
-## Problem Pattern: Regex in Bash Heredocs
+| Heredoc Style | Bash Behavior | Use When |
+| --- | --- | --- |
+| `<<EOF` | Expands `$var`, `\n`, backticks | You need bash variable interpolation in the body |
+| `<<'EOF'` | Literal pass-through, no expansion | Body contains `$`, `\`, backticks, or regex patterns |
 
-Complex regex patterns in Python strings require careful escaping to survive bash processing.
+**Default to `<<'EOF'`** (single-quoted). The unquoted form is an opt-in for interpolation, not the default. This is the opposite of most developers' muscle memory, which is why agents keep getting it wrong.
 
-### Example: Import Alias Detection Regex
+## Why Agents Get This Wrong
 
-**The Goal**: Detect `import X as Y` where `X != Y` (aliasing violation)
+1. **Training data bias** — Most heredoc examples online use unquoted `<<EOF` because humans write simple cases
+2. **Silent failure mode** — Bash doesn't error on expansion; it quietly changes the content
+3. **Multi-layer escaping** — When heredoc body contains Python regex (`\s`, `\w`) or shell-like syntax (`$PATH`), each layer of interpretation compounds
 
-**Python Pattern**: `r'^\s*import\s+(\w+)\s+as\s+(?!\1\b)\w+\s*$'`
-
-This pattern uses:
-
-- `\s` for whitespace
-- `\w` for word characters
-- `(?!\1\b)` negative lookahead (reject re-export pattern `import X as X`)
-
-**Bash Heredoc Challenge**: Writing this in a bash string requires escaping cascades:
+## Anti-Pattern: Unquoted Heredoc with Special Characters
 
 ```bash
-# WRONG: Bash expands \s, \w, \1
+# WRONG: Bash expands $PATH, eats \s, interprets backticks
 cat <<EOF
-import re
-pattern = r'^\s*import\s+(\w+)\s+as\s+(?!\1\b)\w+\s*$'
-EOF
-# Result: Python receives malformed pattern (bash ate the backslashes)
-
-# RIGHT: Use single-quoted heredoc to prevent bash expansion
-cat <<'EOF'
-import re
-pattern = r'^\s*import\s+(\w+)\s+as\s+(?!\1\b)\w+\s*$'
-EOF
-# Result: Python receives literal string exactly as written
-```
-
-## Safe Pattern: Single-Quoted Heredocs
-
-**Rule**: When generating Python code with regex patterns, **always use single-quoted heredocs** (`<<'EOF'`).
-
-| Heredoc Style | Bash Expansion                | Use When                                                   |
-| ------------- | ----------------------------- | ---------------------------------------------------------- |
-| `<<EOF`       | ✅ Expands `$var`, `\n`, etc. | Need bash variable interpolation                           |
-| `<<'EOF'`     | ❌ Literal (no expansion)     | Writing regex, Python raw strings, or code with `$` or `\` |
-
-## Concrete Example: Pre-Commit Hook
-
-**Context**: Pre-commit hook generates Python script to check for import aliases.
-
-**Wrong Approach** (double-quoted heredoc):
-
-```bash
-cat <<EOF > /tmp/check_imports.py
-import re
-pattern = r'^\s*import\s+(\w+)\s+as\s+(?!\1\b)\w+\s*$'  # Bash will mangle this
-matches = re.findall(pattern, content)
+file_path = "$PATH"
+pattern = r'^\s*import'
+result = `command`
 EOF
 ```
 
-**Right Approach** (single-quoted heredoc):
+The fix is always the same: quote the delimiter (`<<'EOF'`). If you also need variable interpolation, see the hybrid pattern below.
 
-```bash
-cat <<'EOF' > /tmp/check_imports.py
-import re
-pattern = r'^\s*import\s+(\w+)\s+as\s+(?!\1\b)\w+\s*$'  # Survives bash unchanged
-matches = re.findall(pattern, content)
-EOF
-```
+## Hybrid Pattern: When You Need Both Literal Content and Variables
 
-## Hybrid Pattern: Partial Interpolation
+**Problem**: The heredoc body needs some bash variables but also contains `$` or `\` characters that must survive literally.
 
-**Problem**: Need to pass bash variables into Python code that also contains regex patterns.
+**Approach 1 — Double escaping** (avoid when possible): Use `<<EOF` and double every backslash (`\\s`), escape dollar signs (`\$`). This makes the body unreadable.
 
-**Solution**: Use double-quoted heredoc with selective escaping:
+**Approach 2 — Placeholder substitution** (preferred): Use `<<'EOF'` for literal content, then post-process with `sed` to inject variables. This keeps the body clean and readable.
 
-```bash
-FILE_PATH="/path/to/file.py"
+**Approach 3 — Use the Write tool** (best for agents): Skip bash heredocs entirely. The Write tool guarantees exact content without escaping concerns. This is why the `/erk:learn` command mandates the Write tool over heredocs for agent outputs.
 
-cat <<EOF > /tmp/check_imports.py
-import re
+## Erk-Specific Patterns
 
-# Bash variable interpolated here
-file_path = "$FILE_PATH"
+Erk's Claude Code commands use `<<'EOF'` consistently for `gh issue create`, `gh issue comment`, `git commit -m`, and `erk exec` commands. This is a deliberate convention.
 
-# Escape backslashes for regex pattern
-pattern = r'^\\s*import\\s+(\\w+)\\s+as\\s+(?!\\1\\b)\\w+\\s*\$'
+<!-- Source: .claude/commands/erk/git-pr-push.md, heredoc commit pattern -->
 
-with open(file_path) as f:
-    content = f.read()
-    matches = re.findall(pattern, content, re.MULTILINE)
-EOF
-```
+See the commit message heredoc pattern in `.claude/commands/erk/git-pr-push.md` — it uses `<<'COMMIT_MSG'` to prevent expansion of commit message content.
 
-**Downside**: Every backslash in the regex must be doubled (`\\s` instead of `\s`), making patterns harder to read.
+<!-- Source: .claude/commands/erk/learn.md, Write tool vs heredoc rationale -->
 
-**Alternative**: Split into two stages:
+See the Write-tool-over-heredoc rationale in `.claude/commands/erk/learn.md` — heredocs fail silently with large agent outputs containing special characters.
 
-```bash
-# Stage 1: Generate template with placeholder
-cat <<'EOF' > /tmp/check_imports.py.template
-import re
-pattern = r'^\s*import\s+(\w+)\s+as\s+(?!\1\b)\w+\s*$'
-file_path = "PLACEHOLDER"
-with open(file_path) as f:
-    matches = re.findall(pattern, f.read(), re.MULTILINE)
-EOF
+## When to Avoid Heredocs Entirely
 
-# Stage 2: Replace placeholder with actual value
-sed "s|PLACEHOLDER|$FILE_PATH|g" /tmp/check_imports.py.template > /tmp/check_imports.py
-```
+Prefer the Write tool over bash heredocs when:
 
-This keeps the regex pattern clean and readable.
-
-## Recommendations
-
-1. **Default to single-quoted heredocs** (`<<'EOF'`) for generated Python code
-2. **Use placeholders + sed** when you need variable interpolation alongside complex patterns
-3. **Avoid double-quoted heredocs with manual escaping** — they're fragile and hard to maintain
-4. **Test generated Python code** with `python -c "$(cat /tmp/script.py)"` before deployment
-
-## Related Documentation
-
-- [Hook Development Patterns](../hooks/hook-development-patterns.md)
-- [Pre-Commit Hook Implementation](../hooks/pre-commit-implementation.md)
+- **Content exceeds ~1KB** — Large heredocs are fragile in agent contexts
+- **Content is agent-generated** — Agent output frequently contains `$`, `\`, backticks, and markdown code fences that interact badly with bash interpretation
+- **Content will be read back** — The Write tool creates the file with exact content; heredocs add an interpretation layer that can corrupt silently
