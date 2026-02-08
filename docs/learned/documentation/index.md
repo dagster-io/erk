@@ -3,8 +3,7 @@
 
 # Documentation Documentation
 
-- **[audit-methodology.md](audit-methodology.md)** — auditing documentation for quality, cleaning up stale or incorrect docs, understanding harmful documentation patterns
-- **[canonical-authority-declarations.md](canonical-authority-declarations.md)** — writing documentation that could conflict with other sources, clarifying which doc is authoritative for a pattern, organizing documentation to prevent duplication
+- **[audit-methodology.md](audit-methodology.md)** — auditing documentation for quality or staleness, classifying doc content as duplicative vs high-value, understanding why stale documentation harms agents
 - **[divio-documentation-system.md](divio-documentation-system.md)** — structuring documentation, deciding what type of doc to write, creating tutorials, how-to guides, or reference material, understanding why docs feel disorganized
 - **[frontmatter-tripwire-format.md](frontmatter-tripwire-format.md)** — Creating new documentation in docs/learned/, Adding tripwires to existing docs, Understanding frontmatter schema, Running erk docs sync
 - **[language-scope-auditing.md](language-scope-auditing.md)** — writing documentation that includes code examples, reviewing learned-docs for verbatim code violations, understanding what code blocks are forbidden in docs/learned/
