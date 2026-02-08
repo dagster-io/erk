@@ -1,24 +1,28 @@
 ---
 audit_result: edited
-last_audited: '2026-02-07'
+last_audited: "2026-02-07"
 read_when:
-- designing return types for operations that may fail
-- implementing T | ErrorType patterns
-- handling errors without exceptions
+  - designing return types for operations that may fail
+  - implementing T | ErrorType patterns
+  - handling errors without exceptions
 title: Discriminated Union Error Handling
 tripwires:
-- action: choosing between exceptions and discriminated unions for operation failures
-  warning: If callers branch on the error and continue the operation, use discriminated
-    unions. If all callers just terminate and surface the message, use exceptions.
-    Read the 'When to Use' section.
-- action: migrating a gateway method to return discriminated union
-  warning: Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all
-    call sites AND tests. Incomplete migrations break type safety.
-- action: accessing properties on a discriminated union result without isinstance()
-    check
-  warning: Always check isinstance(result, ErrorType) before accessing success-variant
-    properties. Without type narrowing, you may access .message on a success type
-    or .data on an error type.
+  - action: choosing between exceptions and discriminated unions for operation failures
+    warning:
+      If callers branch on the error and continue the operation, use discriminated
+      unions. If all callers just terminate and surface the message, use exceptions.
+      Read the 'When to Use' section.
+  - action: migrating a gateway method to return discriminated union
+    warning:
+      Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all
+      call sites AND tests. Incomplete migrations break type safety.
+  - action:
+      accessing properties on a discriminated union result without isinstance()
+      check
+    warning:
+      Always check isinstance(result, ErrorType) before accessing success-variant
+      properties. Without type narrowing, you may access .message on a success type
+      or .data on an error type.
 ---
 
 # Discriminated Union Error Handling
