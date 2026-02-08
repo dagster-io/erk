@@ -1,391 +1,100 @@
 ---
 title: LibCST Systematic Import Refactoring
-last_audited: "2026-02-03 03:56 PT"
-audit_result: edited
+last_audited: "2026-02-08"
+audit_result: clean
 read_when:
   - "refactoring imports across many files"
   - "renaming modules or packages"
-  - "consolidating gateway locations"
-last_audited: "2026-02-03"
-audit_result: edited
+  - "deciding between manual edits and automated refactoring"
+tripwires:
+  - action: "manually updating imports across 10+ files"
+    warning: "Use LibCST via the libcst-refactor agent or a one-off script. Manual editing misses call sites and creates partial migration states."
+  - action: "writing LibCST transformation logic from scratch"
+    warning: "The libcst-refactor agent (.claude/agents/libcst-refactor.md) contains battle-tested patterns, gotchas, and a script template. Load it first."
+  - action: "interleaving file moves and import updates"
+    warning: "Move ALL files first (git mv), THEN batch-update ALL imports. Interleaving creates intermediate broken states. See gateway-consolidation-checklist.md."
 ---
 
 # LibCST Systematic Import Refactoring
 
-Guide for using LibCST to systematically refactor imports across the codebase.
+## When to Use LibCST
 
-## Overview
+LibCST parses Python source into a concrete syntax tree that preserves formatting and comments, making it ideal for mechanical import refactoring. The key question is whether the transformation is worth the tooling overhead.
 
-LibCST is a Python library for parsing and transforming Python source code while preserving formatting and comments. It's ideal for mechanical refactoring tasks like updating imports.
+| Situation                                                       | Approach                     | Why                                                                           |
+| --------------------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------- |
+| 1-3 files need import changes                                   | Manual Edit tool             | Faster than writing a transformer; review is trivial                          |
+| 4-9 files, simple rename                                        | Edit tool with `replace_all` | Still mechanical but not enough files to justify a script                     |
+| 10+ files, import path change                                   | `libcst-refactor` agent      | Systematic replacement prevents missed call sites                             |
+| ABC consolidation (type renames + import moves + field renames) | `libcst-refactor` agent      | Multiple transformation types across 40+ files; manual editing is error-prone |
+| Non-Python files (YAML, markdown, configs)                      | Grep + manual or sed         | LibCST only handles Python                                                    |
 
-**When to use:** Renaming modules, moving packages, or updating import paths across 10+ files.
+**The crossover point is ~10 files.** Below that, the time to write and test a transformer exceeds the time to make manual edits. Above that, manual editing becomes the riskier option because missed call sites cause runtime `ImportError`s that may not surface until a specific code path executes.
 
-**When not to use:** One-off changes to 1-2 files (use manual editing).
+## The Erk Workflow
 
-## Installation
+LibCST fits into a specific phase of erk's refactoring workflow. The ordering matters — doing these out of sequence creates intermediate broken states where some imports reference old paths and others reference new ones.
 
-LibCST is included in erk's dev dependencies:
+<!-- Source: docs/learned/planning/gateway-consolidation-checklist.md -->
 
-```bash
-uv sync --dev
-```
+The gateway consolidation checklist documents the full phase ordering. The critical constraint: **move all files before updating any imports**, so that all old→new path mappings are known when the LibCST pass runs.
 
-## Basic Pattern
+### Phase Integration
 
-LibCST transformations follow this pattern:
+1. **`git mv`** all source files to their new locations
+2. **LibCST pass** — one transformer handles all import remappings in a single run
+3. **`ruff check --fix`** — fixes import sorting violations (I001) caused by changed paths
+4. **Full test suite** — catches any imports the transformer missed
 
-1. **Define a visitor class** that identifies nodes to transform
-2. **Implement transformation logic** in visitor methods
-3. **Apply to files** using libcst's command-line tool or Python API
+The LibCST pass is a single operation, not a file-by-file edit. This is the key advantage: the transformer processes every Python file, applies all remappings, and reports which files changed. No call site can be missed unless it's in a non-Python file.
 
-## Example: Gateway Path Consolidation
+## Using the libcst-refactor Agent
 
-Problem: Moving `erk_shared.tui.commands.executor` to `erk_shared.gateway.command_executor`.
+<!-- Source: .claude/agents/libcst-refactor.md -->
 
-### Step 1: Write the Transformer
+The `libcst-refactor` agent (invoked via `Task(subagent_type='libcst-refactor')`) contains the complete LibCST reference: 6 critical success principles, 11 transformation patterns, 5 gotchas with solutions, debugging techniques, and a battle-tested script template. The agent creates ephemeral refactoring scripts, runs them, and reports results.
 
-Create `scripts/refactor_command_executor_imports.py`:
+**Do not duplicate the agent's content in conversation or plans.** Invoke it with a clear description of the transformation needed. The agent is context-isolated — it doesn't see your conversation history, so include:
 
-```python
-"""Refactor CommandExecutor imports to new gateway path."""
+- The old import path(s) and new import path(s)
+- Which directories to scan (`src/`, `packages/`, `tests/`)
+- Any type renames (e.g., `ClaudeExecutor` → `PromptExecutor`)
+- Any field/attribute renames (e.g., `ctx.claude_executor` → `ctx.prompt_executor`)
 
-import libcst as cst
-from libcst import matchers as m
+## Lessons from Past Refactorings
 
+### ABC Consolidation Requires Multi-Layer Transformation
 
-class CommandExecutorImportTransformer(cst.CSTTransformer):
-    """Transform CommandExecutor imports to new gateway location."""
+Simple import-path changes only need `leave_ImportFrom`. But consolidating one ABC into another (e.g., merging `ClaudeExecutor` into `PromptExecutor`) requires three transformation layers in a single pass:
 
-    def leave_ImportFrom(
-        self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom
-    ) -> cst.ImportFrom:
-        """Transform import statements."""
-        # Match: from erk_shared.tui.commands.executor import ...
-        if m.matches(
-            updated_node,
-            m.ImportFrom(
-                module=m.Attribute(
-                    value=m.Attribute(
-                        value=m.Attribute(
-                            value=m.Name("erk_shared"),
-                            attr=m.Name("tui"),
-                        ),
-                        attr=m.Name("commands"),
-                    ),
-                    attr=m.Name("executor"),
-                )
-            ),
-        ):
-            # Replace with: from erk_shared.gateway.command_executor import ...
-            return updated_node.with_changes(
-                module=cst.Attribute(
-                    value=cst.Attribute(
-                        value=cst.Name("erk_shared"),
-                        attr=cst.Name("gateway"),
-                    ),
-                    attr=cst.Name("command_executor"),
-                )
-            )
+1. **Import paths** — `leave_ImportFrom` to remap module paths
+2. **Type names** — `leave_Name` to rename class references throughout
+3. **Attribute access** — `leave_Attribute` to rename context fields like `ctx.old_name` → `ctx.new_name`
 
-        # Match: from erk_shared.tui.commands.real_executor import ...
-        if m.matches(
-            updated_node,
-            m.ImportFrom(
-                module=m.Attribute(
-                    value=m.Attribute(
-                        value=m.Attribute(
-                            value=m.Name("erk_shared"),
-                            attr=m.Name("tui"),
-                        ),
-                        attr=m.Name("commands"),
-                    ),
-                    attr=m.Name("real_executor"),
-                )
-            ),
-        ):
-            # Replace with: from erk_shared.gateway.command_executor.real import ...
-            return updated_node.with_changes(
-                module=cst.Attribute(
-                    value=cst.Attribute(
-                        value=cst.Attribute(
-                            value=cst.Name("erk_shared"),
-                            attr=cst.Name("gateway"),
-                        ),
-                        attr=cst.Name("command_executor"),
-                    ),
-                    attr=cst.Name("real"),
-                )
-            )
+Running these as separate passes risks inconsistency — a file could have the new import path but the old type name. A single `CSTTransformer` class with all three `leave_*` methods ensures atomicity per file.
 
-        return updated_node
+### Partial Path Matching Is the Most Common Bug
 
+A matcher for `erk_shared.gateway` will also match `erk_shared.gateway.git`. The fix is to match the complete module path, not just a prefix. When writing matchers for deeply nested import paths, the nested `m.Attribute()` structure is verbose but necessary — each level must be explicit.
 
-if __name__ == "__main__":
-    import sys
-    from pathlib import Path
+### Relative Imports Should Be Skipped
 
-    # Read input
-    source_code = sys.stdin.read()
-
-    # Parse and transform
-    module = cst.parse_module(source_code)
-    transformed = module.visit(CommandExecutorImportTransformer())
-
-    # Write output
-    print(transformed.code, end="")
-```
-
-### Step 2: Apply to Files
-
-```bash
-# Find files with old imports
-files=$(grep -rl "from erk_shared.tui.commands.executor" packages/ src/)
-
-# Apply transformation
-for file in $files; do
-    python scripts/refactor_command_executor_imports.py < "$file" > "$file.tmp"
-    mv "$file.tmp" "$file"
-done
-```
-
-### Step 3: Fix Import Sorting
-
-```bash
-ruff check --fix packages/ src/
-```
-
-## Matchers Pattern Library
-
-LibCST uses matchers to identify AST nodes. Common patterns:
-
-### Import From Module
+Transformers that update absolute import paths must not touch relative imports (`.abc`, `.types`). Relative imports are internal to the moved package and remain correct after the move. Guard against this early:
 
 ```python
-# Match: from foo.bar import baz
-m.ImportFrom(
-    module=m.Attribute(
-        value=m.Name("foo"),
-        attr=m.Name("bar"),
-    )
-)
-```
-
-### Import From with Alias
-
-```python
-# Match: from foo import bar as baz
-m.ImportFrom(
-    names=[
-        m.ImportAlias(
-            name=m.Name("bar"),
-            asname=m.AsName(name=m.Name("baz")),
-        )
-    ]
-)
-```
-
-### Function Call
-
-```python
-# Match: ctx.git.branch.create_branch()
-m.Call(
-    func=m.Attribute(
-        value=m.Attribute(
-            value=m.Attribute(value=m.Name("ctx"), attr=m.Name("git")),
-            attr=m.Name("branch"),
-        ),
-        attr=m.Name("create_branch"),
-    )
-)
-```
-
-## Advanced: Using libcst-agent
-
-For complex transformations across many files, use the `libcst-refactor` agent via the Task tool:
-
-```python
-# In conversation with Claude Code
-# User: "Update all imports of CommandExecutor to use the new gateway path"
-# Claude: Uses Task tool with subagent_type='libcst-refactor'
-```
-
-The agent:
-
-- Scans the codebase for matching patterns
-- Generates transformation code
-- Applies changes with verification
-- Reports results
-
-## Testing Transformations
-
-Before applying to the codebase:
-
-1. **Test on a single file** - verify transformation works
-2. **Check diff** - ensure only intended changes
-3. **Run tests** - catch broken imports
-4. **Run linter** - fix formatting issues
-
-```bash
-# Test on one file
-python scripts/refactor_imports.py < packages/foo/bar.py | diff -u packages/foo/bar.py -
-
-# Apply and verify
-python scripts/refactor_imports.py < packages/foo/bar.py > packages/foo/bar.py.tmp
-mv packages/foo/bar.py.tmp packages/foo/bar.py
-pytest tests/unit/test_bar.py
-```
-
-## Use Case: ABC Consolidation
-
-LibCST is particularly valuable for ABC consolidation refactorings where you're merging two abstractions into one. The PromptExecutor consolidation (PR #6587) is a canonical example.
-
-### Problem Statement
-
-When consolidating `ClaudeExecutor` into `PromptExecutor`, you need to:
-
-1. **Rename imports** - Update all `from ...claude_executor import ...` to `from ...prompt_executor import ...`
-2. **Rename types** - Change `ClaudeExecutor` → `PromptExecutor`, `ClaudeEvent` → `ExecutorEvent`, etc.
-3. **Update test constructors** - Rename `FakeClaudeExecutor(...)` → `FakePromptExecutor(...)`
-4. **Update context fields** - Change `ctx.claude_executor` → `ctx.prompt_executor`
-
-Across **40+ files** manually is error-prone. LibCST automates this.
-
-### Transformation Strategy
-
-**Step 1: Import path updates**
-
-```python
-class PromptExecutorImportTransformer(cst.CSTTransformer):
-    def leave_ImportFrom(self, original_node, updated_node):
-        # Match: from erk_shared.core.claude_executor import ...
-        # Replace with: from erk_shared.core.prompt_executor import ...
-        if m.matches(updated_node, m.ImportFrom(module=m.Attribute(
-            value=m.Attribute(value=m.Name("erk_shared"), attr=m.Name("core")),
-            attr=m.Name("claude_executor")
-        ))):
-            return updated_node.with_changes(
-                module=cst.Attribute(
-                    value=cst.Attribute(value=cst.Name("erk_shared"), attr=cst.Name("core")),
-                    attr=cst.Name("prompt_executor")
-                )
-            )
-        return updated_node
-```
-
-**Step 2: Type renames**
-
-```python
-def leave_Name(self, original_node, updated_node):
-    # Rename class/type references
-    renames = {
-        "ClaudeExecutor": "PromptExecutor",
-        "FakeClaudeExecutor": "FakePromptExecutor",
-        "ClaudeEvent": "ExecutorEvent",
-        "is_claude_available": "is_available"
-    }
-    if updated_node.value in renames:
-        return updated_node.with_changes(value=renames[updated_node.value])
-    return updated_node
-```
-
-**Step 3: Context field updates**
-
-```python
-def leave_Attribute(self, original_node, updated_node):
-    # Match: ctx.claude_executor
-    # Replace with: ctx.prompt_executor
-    if m.matches(updated_node, m.Attribute(
-        value=m.Name("ctx"),
-        attr=m.Name("claude_executor")
-    )):
-        return updated_node.with_changes(attr=cst.Name("prompt_executor"))
-    return updated_node
-```
-
-### Application
-
-Run the transformer across the codebase:
-
-```bash
-# Dry run (preview changes)
-python -m libcst.tool codemod --no-format prompt_executor_consolidation.py src/ tests/
-
-# Apply changes
-python -m libcst.tool codemod prompt_executor_consolidation.py src/ tests/
-
-# Verify with tests
-make test-unit
-```
-
-### Results from PR #6587
-
-- **40+ files updated** - All imports, types, and references renamed
-- **Zero manual edits** - Entirely automated with LibCST
-- **Tests passed immediately** - Transformation was mechanically correct
-- **2-hour refactor** - Would have taken days manually
-
-### Lessons Learned
-
-**Do:**
-
-- Test transformer on 2-3 representative files first
-- Use `with_changes()` to preserve formatting and comments
-- Verify with `ruff check` and `make test-unit` after transformation
-
-**Don't:**
-
-- Rename types that have nothing to do with the consolidation (e.g., avoid renaming user-facing "Claude" strings)
-- Transform relative imports (`.abc`, `.types`) inside moved packages
-- Apply to the entire codebase without testing on a subset first
-
-## Common Pitfalls
-
-### Matching Partial Paths
-
-**Problem:** Matcher matches more than intended.
-
-**Example:** Matching `erk_shared.gateway` also matches `erk_shared.gateway.git`.
-
-**Fix:** Use complete path matchers or add guards:
-
-```python
-if m.matches(node, m.ImportFrom(module=...)):
-    # Verify exact module path
-    module_str = cst.Module([]).code_for_node(node.module)
-    if module_str == "erk_shared.gateway.command_executor":
-        # Transform
-        ...
-```
-
-### Preserving Comments
-
-**Problem:** Comments get dropped during transformation.
-
-**Fix:** LibCST preserves comments automatically - don't reconstruct entire nodes, use `with_changes()`:
-
-```python
-# GOOD - preserves comments
-return updated_node.with_changes(module=new_module)
-
-# BAD - loses comments
-return cst.ImportFrom(module=new_module, names=updated_node.names)
-```
-
-### Breaking Relative Imports
-
-**Problem:** Transformation breaks relative imports within moved package.
-
-**Fix:** Keep relative imports relative:
-
-```python
-# If transforming: from .abc import Foo
-# Leave it unchanged - relative imports are internal
+# Skip relative imports — they're internal to the package
 if updated_node.relative:
     return updated_node
 ```
 
-## Related Topics
+This is one of the four permitted code block exceptions (third-party API pattern — teaching LibCST's `relative` attribute).
 
-- [Gateway Consolidation Checklist](../planning/gateway-consolidation-checklist.md) - Full consolidation process
-- [libcst-refactor Agent](../../.claude/agents/libcst-refactor.md) - Automated refactoring
-- [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) - Gateway structure
+### Type Name Renames Need Scope Guards
+
+A naive `leave_Name` that renames "Claude" to "Prompt" will also rename user-facing strings containing "Claude". Scope the rename to exact class/type names, and use a whitelist dictionary rather than substring matching.
+
+## Related Documentation
+
+- [Gateway Consolidation Checklist](../planning/gateway-consolidation-checklist.md) — the full refactoring workflow that LibCST plugs into
+- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 5-place pattern that must be updated during consolidation
+- [Re-Export Pattern](../architecture/re-export-pattern.md) — temporary re-exports during migration, cleaned up after LibCST pass

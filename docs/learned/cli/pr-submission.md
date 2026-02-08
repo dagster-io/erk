@@ -1,16 +1,16 @@
 ---
-audit_result: edited
-last_audited: "2026-02-08"
-read_when:
-  - choosing between git-pr-push and pr-submit commands
-  - understanding PR submission workflows
-  - deciding whether to use Graphite or plain git
 title: PR Submission Decision Framework
+read_when:
+  - "choosing between git-pr-push and pr-submit commands"
+  - "understanding PR submission workflows"
+  - "deciding whether to use Graphite or plain git"
+last_audited: "2026-02-08"
+audit_result: clean
 tripwires:
-  - action: using this pattern
-    warning: Before creating PRs, understand the workflow tradeoffs
-  - action: using this pattern
-    warning: PR validation rules apply to both workflows
+  - action: "submitting PRs"
+    warning: "Before creating PRs, understand the workflow tradeoffs"
+  - action: "implementing PR submission commands"
+    warning: "PR validation rules apply to both workflows"
 ---
 
 # PR Submission Decision Framework

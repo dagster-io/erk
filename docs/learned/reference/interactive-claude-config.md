@@ -1,237 +1,124 @@
 ---
-last_audited: "2026-02-03"
-audit_result: edited
-title: Interactive Claude Configuration
+last_audited: "2026-02-08"
+audit_result: clean
+title: Interactive Agent Configuration
 read_when:
-  - "configuring Claude CLI launches from erk commands"
-  - "understanding permission modes for interactive Claude sessions"
-  - "working with dangerous flags for Claude permissions"
-  - "implementing commands that launch Claude interactively"
+  - "implementing erk commands that launch Claude or Codex interactively"
+  - "understanding the two dangerous flags and when to use each"
+  - "working with the with_overrides() None-preservation pattern"
+  - "configuring agent permission modes across config and CLI layers"
 category: reference
 tripwires:
   - action: "confusing `dangerous` with `allow_dangerous`"
-    warning: "`dangerous` forces skip all prompts (--dangerously-skip-permissions). `allow_dangerous` allows user opt-in (--allow-dangerously-skip-permissions). They have different behaviors."
-  - action: "passing non-None override values when wanting to preserve config"
-    warning: "Pass None to preserve config value. Pass value to override. with_overrides(model_override=False) disables model, should be model_override=None."
-  - action: "forgetting that CLI flags always override config file values"
-    warning: "The with_overrides() pattern ensures CLI flags take precedence. Never read config directly when overrides are present."
+    warning: "`dangerous` forces skip all prompts (automation). `allow_dangerous` lets users opt in (productivity). See the decision table in this doc."
+  - action: "passing a non-None value to with_overrides() when wanting to preserve config"
+    warning: "None means 'keep config value'. Any non-None value (including False) is an active override. `allow_dangerous_override=dangerous_flag` when the flag is False will DISABLE the setting, not preserve it."
+  - action: "using ClaudePermissionMode directly in new commands"
+    warning: "New code should use PermissionMode ('safe', 'edits', 'plan', 'dangerous'). The Claude-specific modes are an internal mapping detail."
+  - action: "referencing InteractiveClaudeConfig in new code"
+    warning: "Renamed to InteractiveAgentConfig. The class is backend-agnostic (supports Claude and Codex). Config section also renamed: user-facing key is still 'interactive_claude' but attribute is 'interactive_agent'."
 ---
 
-# Interactive Claude Configuration
+# Interactive Agent Configuration
 
-## Overview
+## Why This Doc Exists
 
-`InteractiveClaudeConfig` controls how erk commands launch Claude Code interactively. It's configured via `[interactive-claude]` section in `~/.erk/config.toml` and can be overridden by CLI flags.
+<!-- Source: packages/erk-shared/src/erk_shared/context/types.py, InteractiveAgentConfig -->
 
-**Source:** `packages/erk-shared/src/erk_shared/context/types.py`
+`InteractiveAgentConfig` is the bridge between user configuration (`~/.erk/config.toml`) and agent CLI launches. It touches three layers — config loading, CLI flag parsing, and process execution — creating cross-cutting patterns that no single source file fully explains. This doc captures the design decisions and pitfalls across those layers.
 
-## Configuration Structure
+## Two-Layer Permission Model
 
-See `InteractiveClaudeConfig` in `packages/erk-shared/src/erk_shared/context/types.py:72` for the canonical dataclass definition. Fields: `model` (`str | None`), `verbose` (`bool`), `permission_mode` (`ClaudePermissionMode`), `dangerous` (`bool`), `allow_dangerous` (`bool`).
+<!-- Source: packages/erk-shared/src/erk_shared/context/types.py, PermissionMode -->
+<!-- Source: packages/erk-shared/src/erk_shared/context/types.py, ClaudePermissionMode -->
 
-### Fields
+Erk uses a **generic** `PermissionMode` that maps to **backend-specific** modes. This exists because erk supports multiple agent backends (Claude, Codex), each with different CLI flag vocabularies. New code should always use `PermissionMode`, never `ClaudePermissionMode` directly.
 
-| Field             | Type                   | Default         | Description                                     |
-| ----------------- | ---------------------- | --------------- | ----------------------------------------------- |
-| `model`           | `str \| None`          | `None`          | Claude model to use (e.g., `"claude-opus-4-5"`) |
-| `verbose`         | `bool`                 | `False`         | Whether to show verbose output                  |
-| `permission_mode` | `ClaudePermissionMode` | `"acceptEdits"` | Permission mode for Claude CLI                  |
-| `dangerous`       | `bool`                 | `False`         | Force skip all permission prompts               |
-| `allow_dangerous` | `bool`                 | `False`         | Allow user to opt into skipping prompts         |
+| Generic (`PermissionMode`) | Claude mapping        | Semantic meaning              |
+| -------------------------- | --------------------- | ----------------------------- |
+| `"safe"`                   | `"default"`           | Prompt for every permission   |
+| `"edits"`                  | `"acceptEdits"`       | Auto-accept file edits        |
+| `"plan"`                   | `"plan"`              | Exploration and planning only |
+| `"dangerous"`              | `"bypassPermissions"` | Bypass all permissions        |
 
-## Permission Modes
+See `PermissionMode` and `permission_mode_to_claude()` in `packages/erk-shared/src/erk_shared/context/types.py` for the mapping implementation.
 
-Defined in `packages/erk-shared/src/erk_shared/context/types.py:24` as `Literal["default", "acceptEdits", "plan", "bypassPermissions"]`.
+## The Two Dangerous Flags
 
-| Mode                | CLI Flag                              | Behavior                               |
-| ------------------- | ------------------------------------- | -------------------------------------- |
-| `default`           | (none)                                | Default mode with permission prompts   |
-| `acceptEdits`       | `--permission-mode acceptEdits`       | Accept edits without prompts           |
-| `plan`              | `--permission-mode plan`              | Plan mode for exploration and planning |
-| `bypassPermissions` | `--permission-mode bypassPermissions` | Bypass all permissions                 |
-
-## Dangerous Flags: Two Distinct Meanings
-
-**Critical:** There are TWO separate dangerous flags with different meanings:
-
-### `dangerous` Field
-
-**Maps to:** `--dangerously-skip-permissions`
-
-**Behavior:** Forces Claude to skip permission prompts for the entire session
-
-**When to use:**
-
-- Automated workflows where prompts would block
-- Scripts that need unattended execution
-- CI/CD pipelines
-
-**Config example:**
-
-```toml
-[interactive-claude]
-dangerous = true
-```
-
-### `allow_dangerous` Field
-
-**Maps to:** `--allow-dangerously-skip-permissions`
-
-**Behavior:** Allows the USER to opt into skipping prompts during a session, but doesn't force it
-
-**When to use:**
-
-- Interactive workflows where user might want to skip prompts later
-- Commands that launch Claude for manual work
-- Developer productivity (user decides whether to skip)
-
-**Config example:**
-
-```toml
-[interactive-claude]
-allow_dangerous = true
-```
-
-### Comparison Table
+The most common mistake when working with this config is confusing `dangerous` and `allow_dangerous`. They map to different Claude CLI flags with fundamentally different trust models:
 
 | Aspect             | `dangerous`                      | `allow_dangerous`                      |
 | ------------------ | -------------------------------- | -------------------------------------- |
-| CLI Flag           | `--dangerously-skip-permissions` | `--allow-dangerously-skip-permissions` |
-| Auto-skips prompts | ✅ Yes                           | ❌ No                                  |
-| User can skip      | ✅ Yes                           | ✅ Yes                                 |
-| Default behavior   | Skip all                         | Prompt normally                        |
-| Use case           | Automation                       | Developer productivity                 |
+| Claude CLI flag    | `--dangerously-skip-permissions` | `--allow-dangerously-skip-permissions` |
+| Who decides?       | The **config/script** decides    | The **user** decides at runtime        |
+| Auto-skips prompts | Yes — all prompts suppressed     | No — prompts appear normally           |
+| Use case           | CI/CD, automation, unattended    | Interactive dev — user opts in later   |
 
-## Config File Location
+**Why two flags exist:** Automation needs unconditional permission bypass (prompts would hang). Interactive use needs the _option_ to bypass without _forcing_ it — the user might want prompts for some sessions but not others.
 
-`~/.erk/config.toml`
+## The None-Preservation Override Pattern
 
-**Section:** `[interactive-claude]`
+<!-- Source: packages/erk-shared/src/erk_shared/context/types.py, InteractiveAgentConfig.with_overrides -->
 
-**Example:**
+`with_overrides()` uses `None` as a sentinel meaning "keep the config file value." This is the critical design decision: **any non-None value is an active override**, including `False`.
 
-```toml
-[interactive-claude]
-model = "claude-opus-4-5"
-verbose = false
-permission_mode = "acceptEdits"
-dangerous = false
-allow_dangerous = true
-```
+| Override value passed | Effect                                   |
+| --------------------- | ---------------------------------------- |
+| `None`                | Config file value preserved              |
+| `"plan"`              | Forces plan mode regardless of config    |
+| `True`                | Forces enabled regardless of config      |
+| `False`               | **Forces disabled** regardless of config |
 
-## Default Configuration
+### The Boolean Flag Trap
 
-When no config file exists, erk uses:
+When mapping a CLI boolean flag to an override, you must use a ternary — not the flag value directly:
 
 ```python
-InteractiveClaudeConfig(
-    model=None,
-    verbose=False,
-    permission_mode="acceptEdits",
-    dangerous=False,
-    allow_dangerous=False,
-)
+# WRONG: When dangerous_flag is False, this disables allow_dangerous
+# even if the config file has allow_dangerous = true
+allow_dangerous_override=dangerous_flag
 ```
 
-## Override Pattern: `with_overrides()`
-
-Commands override config values using `with_overrides()`:
+The correct pattern converts absent flags to `None`:
 
 ```python
-config = ic_config.with_overrides(
-    permission_mode_override="plan",
-    model_override=None,
-    dangerous_override=None,
-    allow_dangerous_override=None,
-)
+# WRONG: Passes False when flag absent, overriding config
+allow_dangerous_override=dangerous_flag
+
+# RIGHT: Passes None when flag absent, preserving config
+allow_dangerous_override=True if dangerous_flag else None
 ```
 
-**Critical rule:** Pass `None` to preserve the config value, pass a value to override.
+<!-- Source: src/erk/cli/commands/objective/next_plan_cmd.py, next_plan -->
 
-| Override Value | Result                  |
-| -------------- | ----------------------- |
-| `"plan"`       | Forces plan mode        |
-| `None`         | Keeps config file value |
-| `True`         | Forces enabled          |
-| `False`        | Forces disabled         |
+See `next_plan()` in `src/erk/cli/commands/objective/next_plan_cmd.py` for the canonical example of this pattern with a `-d` flag.
 
-### Example: Force Plan Mode
+## Cross-Layer Naming: CLI Key vs Attribute
 
-**Use case:** `erk objective next-plan` always uses plan mode, regardless of config
+<!-- Source: src/erk/cli/commands/config.py, _CLI_KEY_TO_ATTR -->
 
-```python
-config = ic_config.with_overrides(
-    permission_mode_override="plan",  # Force plan mode
-    model_override=None,              # Keep config value
-    dangerous_override=None,          # Keep config value
-    allow_dangerous_override=None,    # Keep config value
-)
-```
+The config system maintains **backward compatibility** for user-facing keys while the internal attribute name evolved:
 
-### Example: Conditional Override from CLI Flag
+- **User-facing config key:** `interactive_claude.*` (in `~/.erk/config.toml` and `erk config get/set`)
+- **Internal attribute:** `GlobalConfig.interactive_agent` (an `InteractiveAgentConfig`)
 
-**Use case:** CLI `-d` flag enables `allow_dangerous`
+The mapping lives in `_CLI_KEY_TO_ATTR` in `src/erk/cli/commands/config.py`. This means `erk config set interactive_claude.verbose true` writes to `GlobalConfig.interactive_agent.verbose` — the translation is invisible to users.
 
-```python
-# If user passed -d flag
-dangerous_flag = True
+**Why the split:** The class was renamed from `InteractiveClaudeConfig` to `InteractiveAgentConfig` when Codex support was added, but existing user config files still use `[interactive-claude]`. Rather than force a migration, the CLI layer translates.
 
-config = ic_config.with_overrides(
-    permission_mode_override=None,
-    model_override=None,
-    dangerous_override=None,
-    allow_dangerous_override=True if dangerous_flag else None,
-    # ^^^^^ Ternary: True if flag present, None to preserve config
-)
-```
+## Command Integration Pattern
 
-**Why the ternary:**
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/agent_launcher/abc.py, AgentLauncher.launch_interactive -->
 
-- `-d` present: `allow_dangerous_override=True` → enables it
-- `-d` absent: `allow_dangerous_override=None` → preserves config value
+Every erk command that launches an interactive agent session follows the same three-step pattern:
 
-**Anti-pattern:**
+1. **Load config** — from `ctx.global_config.interactive_agent` (or `InteractiveAgentConfig.default()` if no global config)
+2. **Apply overrides** — via `with_overrides()` for command-specific requirements (e.g., plan commands always force `permission_mode_override="plan"`)
+3. **Launch** — via `ctx.agent_launcher.launch_interactive(config, command=...)` which uses `os.execvp()` to replace the process
 
-```python
-# WRONG: This disables allow_dangerous when flag is absent
-allow_dangerous_override=dangerous_flag  # False disables, should be None
-```
-
-## Integration Example
-
-**From:** `src/erk/cli/commands/objective/next_plan_cmd.py`
-
-See `next_plan()` in `src/erk/cli/commands/objective/next_plan_cmd.py:25` for the full implementation.
+This pattern is implemented identically across `next_plan_cmd.py`, `replan_cmd.py`, and `reconcile_cmd.py`. The `AgentLauncher` ABC enables testing without actually exec'ing a process.
 
 ## Related Documentation
 
-- [Objective Commands: Next-Plan](../cli/objective-commands.md#next-plan-command) - Usage of permission mode override
-- [CLI Development Patterns](../cli/) - Command implementation patterns
-
-## Testing Considerations
-
-When testing commands that use `InteractiveClaudeConfig`:
-
-**Create test config:**
-
-```python
-from erk_shared.context.types import InteractiveClaudeConfig, GlobalConfig
-
-# Default test config
-test_config = InteractiveClaudeConfig.default()
-
-# Custom test config
-test_config = InteractiveClaudeConfig(
-    model="claude-opus-4-5",
-    verbose=True,
-    permission_mode="plan",
-    dangerous=True,
-    allow_dangerous=False,
-)
-
-# Embed in GlobalConfig
-global_config = GlobalConfig.test(
-    erk_root=Path("/tmp/test"),
-    interactive_claude=test_config,
-)
-```
+- [CLI Development Patterns](../cli/) — Command implementation patterns
+- [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) — The ABC pattern used by `AgentLauncher`

@@ -1,20 +1,16 @@
 ---
-audit_result: edited
-last_audited: "2026-02-08"
-read_when:
-  - Writing CLI command docstrings
-  - Adding Examples sections to Click commands
-  - Formatting bulleted lists in help text
 title: Click Help Text Formatting
+last_audited: "2026-02-08"
+audit_result: clean
 tripwires:
   - action: "writing Examples sections in CLI docstrings without \b"
-    warning:
-      "Place \b on its own line after 'Examples:' heading. Without it, Click\
-      \ rewraps text and breaks formatting."
-  - action: adding bulleted lists to CLI command help text
-    warning:
-      "Place \b before bulleted/numbered lists to prevent Click from merging\
-      \ items into single line."
+    warning: "Place \b on its own line after 'Examples:' heading. Without it, Click rewraps text and breaks formatting."
+  - action: "adding bulleted lists to CLI command help text"
+    warning: "Place \b before bulleted/numbered lists to prevent Click from merging items into single line."
+read_when:
+  - "Writing CLI command docstrings"
+  - "Adding Examples sections to Click commands"
+  - "Formatting bulleted lists in help text"
 ---
 
 # Click Help Text Formatting

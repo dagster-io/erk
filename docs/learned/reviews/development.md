@@ -1,364 +1,154 @@
 ---
 title: Review Development Guide
-last_audited: "2026-02-04 05:48 PT"
-audit_result: edited
 read_when:
-  - creating a new GitHub review workflow
-  - adding review automation to CI
-  - understanding review creation process
+  - creating a new code review for CI
+  - adding a new review spec to .github/reviews/
+  - understanding the end-to-end review creation process
 tripwires:
   - action: "creating a new review without checking if existing reviews can be extended"
-    warning: "Before creating a new review, check if an existing review type can handle the new checks. Reviews should have distinct, complementary scopes."
+    warning: "Before creating a new review, check if an existing review type can handle the new checks. See the review types taxonomy for the decision framework."
+  - action: "creating a separate GitHub Actions workflow file for a new review"
+    warning: "Reviews use convention-based discovery from a single workflow. Drop a markdown file in .github/reviews/ — do NOT create a new .yml workflow."
 ---
 
 # Review Development Guide
 
-This document provides a step-by-step guide for creating new GitHub review workflows in erk's CI system.
+Erk uses a convention-based review system: a single GitHub Actions workflow discovers and runs review specs defined as markdown files. Creating a new review means writing a markdown file, not a workflow file.
 
-## When to Create a New Review
+## Why Convention-Based (Not Per-Workflow)
 
-Create a new review when:
+Early reviews each had their own `.github/workflows/review-<name>.yml`. This created maintenance problems: duplicated setup steps, inconsistent boilerplate, and no centralized control over tool permissions or timeout defaults.
 
-1. **Distinct scope** - The checks don't fit into any existing review type
-2. **Different triggers** - The review needs to run on different events or files than existing reviews
-3. **Separate concerns** - The review addresses a different quality dimension (e.g., security vs style vs tests)
+<!-- Source: .github/workflows/code-reviews.yml -->
 
-**Don't create a new review** if:
+The current system uses one workflow (`code-reviews.yml`) that discovers all `*.md` files in `.github/reviews/`, parses their frontmatter, matches their `paths` patterns against PR changed files, and runs matching reviews as parallel matrix jobs. Adding a review means dropping a markdown file — the workflow handles discovery, path matching, prompt assembly, and Claude invocation automatically.
 
-- Existing review can be extended with additional checks
-- The checks overlap significantly with an existing review
-- The review would run on the same files/triggers as an existing review
+<!-- Source: src/erk/review/parsing.py, discover_matching_reviews -->
+<!-- Source: src/erk/review/prompt_assembly.py, assemble_review_prompt -->
 
-**Decision framework**: See [Review Types Taxonomy](../ci/review-types-taxonomy.md) for guidance on choosing review types.
+## The Five-Place Pattern
 
-## Review Creation Checklist
+Creating a new review touches up to five places. Understanding why each exists prevents partial implementations.
 
-### Step 1: Define Review Scope
+| Place                            | What goes here                                        | Why it's separate                                                  |
+| -------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------ |
+| `.github/reviews/<name>.md`      | Review spec (frontmatter + step-by-step instructions) | Convention-based discovery reads this directory                    |
+| Review spec frontmatter          | `paths`, `marker`, `model`, `allowed_tools`           | Controls when the review triggers and what tools the agent can use |
+| Review spec body                 | Numbered steps the agent executes                     | Each review has unique analysis logic                              |
+| `docs/learned/reviews/<name>.md` | Cross-cutting insights about this review              | Only if the review has non-obvious behavior worth documenting      |
+| `docs/learned/reviews/index.md`  | Auto-generated via `erk docs sync`                    | Frontmatter `read_when` drives the index entry                     |
 
-**Questions to answer:**
+**The first three are mandatory. The last two are only needed if the review has cross-cutting insights** that don't fit in the spec itself (most reviews don't need a separate learned doc).
 
-- What quality dimension does this review check? (code quality, test coverage, documentation, security, etc.)
-- What files/changes trigger the review?
-- What markers does the review write? (review-approved, review-failed, review-blocked, etc.)
-- What tools does the review use? (ruff, prettier, pytest, custom scripts, etc.)
+## Pre-Creation Decision: Extend or Create?
 
-**Document in a design doc** before implementation. Include:
+This is the most important decision. Creating overlapping reviews wastes CI time and confuses failure attribution.
 
-- Review name and purpose
-- Trigger conditions
-- Check criteria
-- Marker behavior
-- Tool restrictions
+<!-- Source: docs/learned/ci/review-types-taxonomy.md -->
 
-### Step 2: Choose Review Type
+See `docs/learned/ci/review-types-taxonomy.md` for the full three-dimensional decision framework (quality dimension, file scope, tools). The quick test:
 
-Based on [Review Types Taxonomy](../ci/review-types-taxonomy.md):
+| Signal                                                           | Action                 |
+| ---------------------------------------------------------------- | ---------------------- |
+| Same quality dimension + same files + same tools                 | Extend existing review |
+| New quality dimension OR new file scope OR different tools       | Create new review      |
+| Same dimension but different performance profiles (fast vs slow) | Create new review      |
 
-- **Code Quality Review** - Style, linting, formatting checks
-- **Test Coverage Review** - Test execution and coverage metrics
-- **Documentation Review** - Doc quality, completeness, accuracy
-- **Integration Review** - Cross-system checks (e.g., learned docs, PR formatting)
+## Writing the Review Spec
 
-Choose the type that best matches your scope. This determines naming, organization, and integration patterns.
+### Frontmatter Requirements
 
-### Step 3: Implement YAML Workflow
+<!-- Source: src/erk/review/parsing.py, validate_review_frontmatter -->
+<!-- Source: docs/learned/ci/review-spec-format.md -->
 
-**File location**: `.github/workflows/review-<name>.yml`
+See `validate_review_frontmatter()` in `src/erk/review/parsing.py` for required and optional fields with their defaults. See `docs/learned/ci/review-spec-format.md` for the design rationale behind the spec format.
 
-**Required structure:**
+Key decisions when writing frontmatter:
 
-```yaml
-name: <Review Name>
-on:
-  pull_request:
-    paths:
-      # Trigger paths (use ** for recursive matching)
-      - "src/**/*.py"
-      - "tests/**/*.py"
+- **`paths`**: Be specific — overly broad patterns (e.g., `**/*`) cause unnecessary review runs on unrelated PRs
+- **`marker`**: Must be a unique HTML comment. The prompt assembly system uses this for summary comment identification and activity log preservation
+- **`allowed_tools`**: Security boundary. Most reviews only need `Read(*)` and `Bash(gh:*)`. Don't grant `Write` or `Bash(*)` unless the review needs to modify files
+- **`model`**: Default to `claude-haiku-4-5` for cost efficiency. Only escalate to sonnet for reviews requiring deep reasoning
 
-permissions:
-  contents: read
-  pull-requests: write # Required for marker writing
+### Body Structure: Numbered Steps
 
-jobs:
-  review:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+Review bodies must use numbered steps (`## Step 1: [Action Verb + Object]`) because the prompt assembly system wraps them with additional boilerplate steps (fetching the diff, checking for duplicate comments, posting summary).
 
-      # Run checks (use existing actions or custom scripts)
-      - name: Run <tool>
-        run: |
-          # Tool invocation
-          make check-something
+<!-- Source: src/erk/review/prompt_assembly.py, REVIEW_PROMPT_TEMPLATE -->
 
-      # Write marker based on result
-      - name: Write review marker
-        if: always() # Run even if checks fail
-        run: |
-          if [ ${{ steps.check.outcome }} == "success" ]; then
-            erk exec marker create --type review-<name> --content approved
-          else
-            erk exec marker create --type review-<name> --content failed
-          fi
-```
+See `REVIEW_PROMPT_TEMPLATE` in `src/erk/review/prompt_assembly.py` for the boilerplate that wraps your spec. Your spec's steps become "Step 1: Review-Specific Instructions" inside a larger prompt that handles diff retrieval, deduplication, inline comment posting, and summary updates.
 
-**Key patterns:**
+**This means your spec should NOT include steps for:**
 
-1. **Trigger paths** - Be specific to avoid unnecessary review runs
-2. **Tool restrictions** - Use existing tools when possible (ruff, prettier, pytest)
-3. **Marker naming** - Use `review-<name>` prefix for consistency
-4. **Conditional markers** - Always write a marker (success or failure)
+- Fetching the diff (the template does this)
+- Posting inline comments (the template provides the `erk exec` commands)
+- Posting/updating the summary comment (the template handles this)
 
-### Step 4: Register Marker Type
+**Your spec should focus on:**
 
-Register the review's marker type in the marker system. Search the codebase for existing marker registrations to find the current pattern and location (`grep -r "MarkerType\|marker.*schema" src/`).
+- What standards to load (Step 1: Load rules)
+- How to analyze the diff (Step 2: Classify changes)
+- What constitutes a violation vs a pass (explicit taxonomy)
+- Inline comment format for violations
 
-### Step 5: Integrate with PR Checks
+### Classification Taxonomies Over Prose
 
-**File location**: `src/erk/cli/commands/pr/check_cmd.py`
+Reviews with explicit classification taxonomies produce better results than reviews with general guidance. Compare:
 
-Add the new review to the PR check logic. Read the existing `check_cmd.py` to understand the current pattern for integrating review results.
+**WRONG**: "Analyze each file and flag issues"
 
-### Step 6: Document the Review
+**RIGHT**: Explicit categories with actions:
 
-Create review documentation:
+- Category A (thin CLI wrapper): Skip — only Click decorators
+- Category B (new source with logic): Flag — needs test coverage
+- Category C (type-only file): Skip — no runtime behavior
 
-**File location**: `docs/learned/reviews/<name>-review.md`
+This makes activity logs meaningful ("3 thin CLI wrappers skipped, 1 source file flagged") and reduces false positives.
 
-**Required sections:**
+## Testing a New Review
 
-1. **Purpose** - What the review checks
-2. **Trigger conditions** - When it runs
-3. **Pass/fail criteria** - What causes approval vs failure
-4. **Marker behavior** - What markers are written and when
-5. **Tools used** - Dependencies and versions
-6. **Related reviews** - How this review complements others
+### Local Testing
 
-**Template:**
+Use `erk exec run-review --name <name> --local --dry-run` to preview the assembled prompt without running Claude. This verifies your spec parses correctly and the prompt reads coherently.
 
-```markdown
----
-title: <Review Name> Review
-read_when:
-  - creating <type> checks
-  - understanding <review> behavior
-tripwires:
-  - action: "specific action to avoid"
-    warning: "specific warning message"
----
+<!-- Source: src/erk/cli/commands/exec/scripts/run_review.py, run_review -->
 
-# <Review Name> Review
+Then `--local` (without `--dry-run`) runs the review against local changes vs the trunk branch. This is faster than pushing a PR but doesn't test the GitHub comment posting path.
 
-## Purpose
+### CI Testing
 
-[What quality dimension this review checks]
+Push a branch with changes that should trigger the review. Verify:
 
-## Trigger Conditions
+1. The discovery job finds your review (check the "Discover matching reviews" step output)
+2. The review job runs with your spec
+3. Inline comments land on the correct lines
+4. The summary comment uses your marker and formats correctly
+5. The review does NOT run when only unrelated files change (push a docs-only change and confirm it's skipped)
 
-[When the review runs - paths, events, conditions]
+## Anti-Patterns
 
-## Pass/Fail Criteria
+### Creating a Separate Workflow File
 
-[What determines approval vs failure]
+**WRONG**: Creating `.github/workflows/review-my-check.yml`
 
-## Marker Behavior
+The convention-based system exists precisely to avoid per-review workflow files. Drop a markdown file in `.github/reviews/` and the single `code-reviews.yml` workflow handles the rest.
 
-[What markers are written and when]
+### Assuming Write Access
 
-## Tools Used
+**WRONG**: Writing a review spec that modifies files
 
-[Dependencies, versions, configurations]
+Reviews are read-only analysis. The `allowed_tools` frontmatter field enforces this — most reviews use `Read(*)` and `Bash(gh:*)` only. If your review needs to modify files, it's not a review — it's a linter or formatter that belongs in a different CI job.
 
-## Related Reviews
+### Vague Step Descriptions
 
-[How this review complements or differs from others]
-```
+**WRONG**: `## Step 1: Setup`
 
-### Step 7: Update Reviews Index
+**RIGHT**: `## Step 1: Load Dignified Python Standards`
 
-**File location**: `docs/learned/reviews/index.md`
-
-Add entry to index with frontmatter:
-
-```markdown
-- **[<name>-review.md](<name>-review.md)** — [Brief description]. Read when [trigger conditions].
-```
-
-### Step 8: Test the Review
-
-**Local testing:**
-
-1. Create a test branch with changes that should trigger the review
-2. Push the branch and create a draft PR
-3. Verify the review workflow runs
-4. Check marker is written correctly
-5. Verify `erk pr check` reports the review status
-
-**CI testing:**
-
-1. Verify review runs on expected file changes
-2. Verify review does NOT run on unrelated file changes
-3. Test both pass and fail scenarios
-4. Check marker metadata is correct
-
-## YAML Schema Reference
-
-### Trigger Paths
-
-```yaml
-on:
-  pull_request:
-    paths:
-      - "src/**/*.py" # All Python files in src/
-      - "tests/**/*.py" # All Python files in tests/
-      - "!tests/fixtures/**" # Exclude fixtures
-      - "docs/**/*.md" # All markdown in docs/
-```
-
-### Conditional Markers
-
-```yaml
-- name: Write success marker
-  if: success()
-  run: erk exec marker create --type review-my --content approved
-
-- name: Write failure marker
-  if: failure()
-  run: erk exec marker create --type review-my --content failed
-```
-
-### Tool Invocation Patterns
-
-**Pattern 1: Make target**
-
-```yaml
-- name: Run checks
-  run: make check-my-review
-```
-
-**Pattern 2: Direct tool invocation**
-
-```yaml
-- name: Run ruff
-  run: ruff check src/ tests/
-```
-
-**Pattern 3: Custom script**
-
-```yaml
-- name: Run custom check
-  run: python scripts/check_my_review.py
-```
-
-## Tool Restrictions
-
-### Allowed Tools
-
-- **Python**: ruff, pytest, mypy, coverage
-- **Markdown**: prettier
-- **Git**: git commands via `erk exec` helpers
-- **GitHub CLI**: gh commands for API access
-- **Custom scripts**: Python scripts in `scripts/` directory
-
-### Restricted Tools
-
-- ❌ **No external services** - Reviews must be self-contained
-- ❌ **No API keys required** - Must work in public CI without secrets
-- ❌ **No network calls** - Except for GitHub API via gh CLI
-- ❌ **No heavy dependencies** - Keep review fast and lightweight
-
-## Marker Naming Conventions
-
-- **Prefix**: `review-<name>`
-- **Content values**: `approved`, `failed`, `blocked`, `skipped`
-- **Metadata keys**: Use snake_case
-
-**Examples:**
-
-- `review-learned-docs` - Learned docs review (verbatim code, duplication, accuracy)
-- `review-test-coverage` - Test coverage review
-
-## Common Patterns
-
-### Pattern 1: Multiple Checks in One Review
-
-```yaml
-- name: Run lint
-  id: lint
-  run: ruff check src/
-
-- name: Run format check
-  id: format
-  run: ruff format --check src/
-
-- name: Write marker
-  if: always()
-  run: |
-    if [ ${{ steps.lint.outcome }} == "success" ] && [ ${{ steps.format.outcome }} == "success" ]; then
-      erk exec marker create --type review-quality --content approved
-    else
-      erk exec marker create --type review-quality --content failed
-    fi
-```
-
-### Pattern 2: Conditional Review Execution
-
-```yaml
-- name: Check if review needed
-  id: check_needed
-  run: |
-    if git diff --name-only origin/main | grep -q "^src/"; then
-      echo "needed=true" >> $GITHUB_OUTPUT
-    fi
-
-- name: Run review
-  if: steps.check_needed.outputs.needed == 'true'
-  run: make review
-```
-
-### Pattern 3: Review with Metadata
-
-```yaml
-- name: Run review with output
-  id: review
-  run: |
-    OUTPUT=$(make review-with-output)
-    echo "check_count=$(echo $OUTPUT | jq .count)" >> $GITHUB_OUTPUT
-
-- name: Write marker with metadata
-  run: |
-    erk exec marker create \
-      --type review-my \
-      --content approved \
-      --metadata check_count=${{ steps.review.outputs.check_count }}
-```
-
-## Integration with Existing Reviews
-
-### Existing Reviews (as of 2025-01)
-
-1. **learned-docs** - Documentation quality review (verbatim code, duplication, accuracy)
-2. (More reviews documented in reviews/index.md)
-
-### Avoiding Overlap
-
-Before creating a new review, check if existing reviews already cover:
-
-- The same file paths
-- Similar quality dimensions
-- Related tools or checks
-
-**Decision matrix**: See [Review Types Taxonomy](../ci/review-types-taxonomy.md) for guidance on avoiding overlap.
+Agents need action verbs and specific objects, not abstract phase names.
 
 ## Related Documentation
 
-- [Review Types Taxonomy](../ci/review-types-taxonomy.md) - Decision framework for choosing review types
-- [Learned Docs Review](learned-docs-review.md) - Example documentation quality review
-- [Reviews Index](index.md) - Complete list of all reviews
-
-## Code References
-
-- Workflow files: `.github/workflows/code-reviews.yml`
-- Review specs: `.github/reviews/`
-- PR check integration: `src/erk/cli/commands/pr/check_cmd.py`
+- [Review Types Taxonomy](../ci/review-types-taxonomy.md) — Decision framework for extend-vs-create
+- [Review Spec Format](../ci/review-spec-format.md) — Design rationale behind spec structure
+- Existing review specs in `.github/reviews/` — Reference implementations
