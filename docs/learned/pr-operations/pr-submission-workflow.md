@@ -1,22 +1,17 @@
 ---
-audit_result: edited
-last_audited: "2026-02-08"
+title: Git-Only PR Submission Path
 read_when:
   - understanding why two separate git-only PR paths exist
   - working on the git-pr-push command or the core submit flow
   - debugging PR creation in environments without Graphite
   - deciding whether to use the command-level or pipeline-level git path
-title: Git-Only PR Submission Path
 tripwires:
-  - action: adding git-only PR logic to a new location
-    warning:
-      Two git-only paths already exist (command-level and pipeline-level). Understand
-      why both exist before adding a third. See pr-submission-workflow.md.
-  - action: using gh pr create directly in Python code
-    warning:
-      The pipeline uses ctx.github.create_pr() (REST API gateway), not gh pr
-      create. The command-level path uses gh CLI directly because it runs in shell context.
-      See pr-submission-workflow.md.
+  - action: "adding git-only PR logic to a new location"
+    warning: "Two git-only paths already exist (command-level and pipeline-level). Understand why both exist before adding a third. See pr-submission-workflow.md."
+  - action: "using gh pr create directly in Python code"
+    warning: "The pipeline uses ctx.github.create_pr() (REST API gateway), not gh pr create. The command-level path uses gh CLI directly because it runs in shell context. See pr-submission-workflow.md."
+last_audited: "2026-02-08"
+audit_result: clean
 ---
 
 # Git-Only PR Submission Path

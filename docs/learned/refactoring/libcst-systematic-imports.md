@@ -1,7 +1,7 @@
 ---
 title: LibCST Systematic Import Refactoring
 last_audited: "2026-02-08"
-audit_result: regenerated
+audit_result: clean
 read_when:
   - "refactoring imports across many files"
   - "renaming modules or packages"

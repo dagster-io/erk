@@ -1,28 +1,19 @@
 ---
-audit_result: edited
+title: Learn Pipeline Workflow
 last_audited: "2026-02-08"
+audit_result: clean
 read_when:
   - debugging why learn materials are missing or malformed
   - understanding data flow from sessions to documentation plan
   - choosing between local learn and async learn modes
   - adding a new stage to the learn pipeline
-title: Learn Pipeline Workflow
 tripwires:
-  - action: adding a new pipeline stage to trigger-async-learn
-    warning:
-      New stages must be direct Python function calls, not subprocess invocations.
-      The orchestrator uses tight coupling for performance. See the Direct-Call Architecture
-      section in async-learn-local-preprocessing.md.
-  - action: changing how sessions are classified as planning vs impl
-    warning:
-      Classification uses planning_session_id from GitHub metadata. The resulting
-      prefix (planning- vs impl-) propagates into XML filenames and is used by downstream
-      learn agents to weight insights differently.
-  - action: modifying the gist upload content format
-    warning:
-      The download side (download-learn-materials) parses delimiters to split
-      content back into files. Changes to the upload format must be mirrored in the
-      download parser. See gist-materials-interchange.md.
+  - action: "adding a new pipeline stage to trigger-async-learn"
+    warning: "New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md."
+  - action: "changing how sessions are classified as planning vs impl"
+    warning: "Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently."
+  - action: "modifying the gist upload content format"
+    warning: "The download side (download-learn-materials) parses delimiters to split content back into files. Changes to the upload format must be mirrored in the download parser. See gist-materials-interchange.md."
 ---
 
 # Learn Pipeline Workflow

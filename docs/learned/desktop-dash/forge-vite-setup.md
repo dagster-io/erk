@@ -1,18 +1,15 @@
 ---
-audit_result: edited
-last_audited: "2026-02-08"
-read_when:
-  - debugging Vite build errors in erkdesk
-  - adding a new Vite build target or renderer window
-  - understanding why a config setting exists in a specific Vite config
 title: Forge Vite Setup
+last_audited: "2026-02-08"
+audit_result: clean
+read_when:
+  - "debugging Vite build errors in erkdesk"
+  - "adding a new Vite build target or renderer window"
+  - "understanding why a config setting exists in a specific Vite config"
 tripwires:
-  - action: Do NOT add Node.js builtins or electron to the renderer Vite config
-    warning: renderer is a browser environment
-  - action: Do NOT remove external electron from the preload config
-    warning: bundling electron causes runtime failures
-  - action: Do NOT put all three targets in one Vite config
-    warning: each targets a different JavaScript runtime
+  - Do NOT add Node.js builtins or electron to the renderer Vite config — renderer is a browser environment
+  - Do NOT remove external electron from the preload config — bundling electron causes runtime failures
+  - Do NOT put all three targets in one Vite config — each targets a different JavaScript runtime
 ---
 
 # Forge Vite Setup
