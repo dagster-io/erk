@@ -12,7 +12,7 @@ tripwires:
     warning: "Never create gateway instances in business logic — inject them as parameters"
   - action: "calling sys.exit() in _*_impl() functions"
     warning: "Separate _*_impl() functions return exit codes or discriminated unions, never call sys.exit()"
-  - action: "instantiating gateways directly in Click commands"
+  - action: "creating gateway instances directly in Click commands"
     warning: "Click commands retrieve real implementations from context via require_* helpers"
 ---
 

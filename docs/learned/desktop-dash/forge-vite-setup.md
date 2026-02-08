@@ -7,11 +7,11 @@ read_when:
   - "adding a new Vite build target or renderer window"
   - "understanding why a config setting exists in a specific Vite config"
 tripwires:
-  - action: "adding Node.js builtins or electron to the renderer Vite config"
+  - action: "adding Node.js builtins or electron to renderer Vite config"
     warning: "Do NOT add Node.js builtins or electron to the renderer Vite config — renderer is a browser environment"
-  - action: "removing external electron from the preload config"
+  - action: "removing external electron from preload Vite config"
     warning: "Do NOT remove external electron from the preload config — bundling electron causes runtime failures"
-  - action: "putting all three targets in one Vite config"
+  - action: "combining all three targets in one Vite config"
     warning: "Do NOT put all three targets in one Vite config — each targets a different JavaScript runtime"
 ---
 

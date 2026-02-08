@@ -10,6 +10,7 @@
 - **[discovery-fallback.md](discovery-fallback.md)** — implementing session analysis or learn workflows, handling missing or unavailable session files, choosing between session discovery commands
 - **[jsonl-schema-reference.md](jsonl-schema-reference.md)** — parsing Claude Code session files, understanding JSONL entry types, extracting data from session logs, building tools that process session transcripts, debugging session parsing issues
 - **[layout.md](layout.md)** — working with session logs, parsing session logs, understanding ~/.claude/projects/ structure, debugging session lookup issues, implementing features that depend on project directory resolution
+- **[lifecycle.md](lifecycle.md)** — working with Claude Code session files across workflows, implementing learn or analysis workflows that consume session data, debugging missing session files in plan-based workflows
 - **[parallel-session-awareness.md](parallel-session-awareness.md)** — working with session-specific data, implementing session-scoped features, accessing plans, scratch files, or session metadata
 - **[preprocessing.md](preprocessing.md)** — preprocessing Claude Code session logs for analysis
 - **[raw-session-processing.md](raw-session-processing.md)** — processing issues with erk-raw-session label, extracting documentation from landed PR sessions, understanding raw session issue format
