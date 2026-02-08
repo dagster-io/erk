@@ -12,6 +12,6 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
-**CRITICAL: Before implementing codespace gateway** → Read [Codespace Gateway Pattern](codespace-gateway.md) first. Use 3-place pattern (abc, real, fake) without dry-run or print implementations.
+**CRITICAL: Before adding a mutation method to the CodespaceRegistry ABC** → Read [CodespaceRegistry Gateway — Read-Only ABC with Standalone Mutations](codespace-registry.md) first. Mutations are standalone functions in real.py, not ABC methods. This is intentional — see the design rationale below.
 
-**CRITICAL: Before reading from or writing to ~/.erk/codespaces.toml directly** → Read [CodespaceRegistry Gateway](codespace-registry.md) first. Use CodespaceRegistry gateway instead. All codespace configuration should go through this gateway for testability.
+**CRITICAL: Before reading from or writing to ~/.erk/codespaces.toml directly** → Read [CodespaceRegistry Gateway — Read-Only ABC with Standalone Mutations](codespace-registry.md) first. Use CodespaceRegistry gateway instead. All codespace configuration should go through this gateway for testability.
