@@ -14,71 +14,81 @@ tripwires:
   - action: "Return non-zero exit codes for batch command failures"
     warning: "Always exit 0, encode errors in JSON output with per-item success fields."
     score: 6
-last_audited: "2026-02-05 14:25 PT"
-audit_result: edited
+last_audited: "2026-02-08"
+audit_result: regenerated
 ---
 
 # Batch Exec Commands
 
 Batch exec commands process multiple items in a single invocation via JSON stdin, providing efficient bulk operations with comprehensive error reporting. They follow a strict contract for input validation, success semantics, and output structure.
 
-## Pattern Overview
+## Why Batch Commands Exist
 
-A batch exec command:
+The batch pattern solves three problems:
 
-1. **Reads JSON array from stdin** (list of items to process)
-2. **Validates ALL items upfront** before processing ANY
-3. **Processes all items** (or fails fast on validation error)
-4. **Outputs JSON result with per-item success** to stdout
-5. **Always exits 0** (even on errors)
+1. **Startup cost amortization** — Context initialization (loading config, initializing gateways) happens once instead of per-item
+2. **Atomic validation** — Reject malformed inputs before any side effects occur
+3. **Aggregate reporting** — Single result object showing all successes and failures together
 
-## Design Contract
+Without batch commands, processing 50 PR threads would require 50 subprocess invocations, each re-initializing the GitHub gateway and parsing `.git/config`. With batch, one invocation handles all 50.
 
-### Input Validation
+## The Five-Step Contract
 
-**CRITICAL**: Validate the entire input array before processing any items.
+Every batch exec command follows this sequence:
+
+1. **Read JSON array from stdin**
+2. **Validate ALL items upfront** (fail fast on first validation error)
+3. **Process all validated items** (collect per-item results)
+4. **Output JSON result** with top-level success and per-item details
+5. **Exit 0** (even on errors)
+
+<!-- Source: src/erk/cli/commands/exec/scripts/resolve_review_threads.py, resolve_review_threads command -->
+
+Breaking this contract creates ambiguity: callers can't distinguish between "validation failed" and "some items failed" without inspecting the JSON structure.
+
+## Upfront Validation: Why It Matters
+
+The most critical design decision is **validate everything before processing anything**.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/resolve_review_threads.py, _validate_batch_input() -->
+
+See `_validate_batch_input()` in `src/erk/cli/commands/exec/scripts/resolve_review_threads.py` for the reference implementation. It returns either `list[ThreadResolutionItem]` or `BatchResolveError`, never mixing the two.
+
+**Why upfront validation prevents problems:**
+
+- **Atomicity** — No partial state mutations when input is malformed
+- **Clear feedback** — User sees all validation errors at once, not one at a time through trial-and-error
+- **Predictability** — Either all items are processed or none are
+
+**Anti-pattern: Validate-and-process in a single loop**
 
 ```python
-# CORRECT: Validate all upfront, return error or validated items
-def validate_batch_input(data: object) -> list[ValidatedItem] | BatchError:
-    if not isinstance(data, list):
-        return BatchError(success=False, error_type="invalid-input", message="...")
-    validated = []
-    for idx, item in enumerate(data):
-        if not isinstance(item, dict) or "required_field" not in item:
-            return BatchError(success=False, error_type="invalid-input", message=f"Item {idx} invalid")
-        validated.append(item)
-    return validated
+# WRONG: This processes item 0 even if item 1 is malformed
+for item in items:
+    if not valid(item):
+        return error
+    process_item(item)  # Side effect before validation completes!
+```
 
-validated = validate_batch_input(data)
+This violates atomicity: if item 5 is malformed, items 0-4 were already processed. The batch is half-executed, but the caller sees an error.
+
+**Correct pattern: Two-phase execution**
+
+```python
+# Phase 1: Validate all items, return error or validated list
+validated = validate_all(items)
 if isinstance(validated, BatchError):
     output_json(validated)
-    raise SystemExit(0)
+    exit(0)
 
-# Now process all items (validation passed)
+# Phase 2: Process all validated items
 for item in validated:
-    process_item(item)
+    process_item(item)  # Now safe: validation passed
 ```
 
-See `_validate_batch_input()` in `resolve_review_threads.py` for the concrete implementation.
+This guarantees: if you see `results` in the output, validation succeeded and all items were processed.
 
-**WRONG: Process during validation**
-
-```python
-# This violates atomicity - some items processed before validation completes
-for item in items:
-    if not validate(item):
-        return error
-    process_item(item)  # Half the batch might be processed!
-```
-
-**Why upfront validation matters:**
-
-- **Atomicity**: Don't partially modify state before discovering validation errors
-- **Clear feedback**: User sees all validation errors at once, not one at a time
-- **Predictability**: Either all items are processed or none are
-
-### Success Semantics: AND (Not OR)
+## Success Semantics: AND Not OR
 
 Top-level `success` field uses **AND semantics**: true only if ALL items succeeded.
 
@@ -104,48 +114,37 @@ Top-level `success` field uses **AND semantics**: true only if ALL items succeed
 
 **Why AND semantics:**
 
-- **Clear failure detection**: `if result['success']` tells you everything worked
-- **No ambiguity**: success=true guarantees zero failures
-- **Composable**: Scripts can chain batch commands with `&&`
+- **Clear failure detection** — `if result['success']` tells you everything worked
+- **No ambiguity** — `success=true` guarantees zero failures
+- **Composable** — Scripts can chain batch commands with `&&` based on top-level success
 
 **Anti-pattern: OR semantics** (success=true if ANY item succeeds)
 
-This makes `success` meaningless: partial failures are indistinguishable from total success without inspecting every result item.
+This makes `success` meaningless. Partial failures become indistinguishable from total success without inspecting every result item. Callers must loop through `results` to determine if the batch actually worked, defeating the purpose of a top-level flag.
 
-### Exit Code Convention
+## Exit Code Convention: Always Zero
 
-**Always exit 0**, even on errors. Encode all error information in JSON output.
+Batch commands **always exit 0**, even on errors. All error information lives in JSON output.
 
-```python
-# CORRECT
-try:
-    result = process_batch(items)
-    print(json.dumps(result))
-    sys.exit(0)  # Always 0
-except Exception as e:
-    error_result = {"success": False, "error": str(e)}
-    print(json.dumps(error_result))
-    sys.exit(0)  # Still 0
-```
+<!-- Source: src/erk/cli/commands/exec/scripts/resolve_review_threads.py, bottom of resolve_review_threads command -->
 
 **Why always exit 0:**
 
-- **JSON output preserved**: Non-zero exits might suppress stdout in some shells
-- **Scripting compatibility**: Scripts can use `||` without treating errors as fatal
-- **Error details in JSON**: Richer error information than exit codes alone
+- **JSON output preserved** — Some shells suppress stdout on non-zero exits
+- **Scripting compatibility** — Scripts can use `||` without treating errors as fatal
+- **Rich error details** — JSON can encode error types, messages, and per-item context; exit codes cannot
 
-**When to use non-zero exits:**
+**Exception: Context initialization failures**
 
-- Context initialization failures (can't even load config)
-- Situations where JSON output is impossible
+If the command can't even initialize context (e.g., not in a git repo), it exits 1. This is acceptable because JSON output is impossible without context.
 
-Note: JSON parse errors on stdin still exit 0 with an error JSON response (see `resolve_review_threads.py` for the pattern).
+See the `resolve_review_threads()` command in `src/erk/cli/commands/exec/scripts/resolve_review_threads.py` — it uses `raise SystemExit(0)` in all code paths after stdin is parsed.
 
-### Output Structure
+## Two Response Shapes
 
-Standard batch result structure (two response shapes):
+Batch commands return one of two JSON structures, never mixing them:
 
-**Success/partial failure** (validation passed, items were processed):
+### Shape 1: Results Array (Validation Passed)
 
 ```typescript
 {
@@ -162,7 +161,9 @@ Standard batch result structure (two response shapes):
 }
 ```
 
-**Validation/parse error** (items were never processed):
+This shape means: validation passed, items were processed, here are the results.
+
+### Shape 2: Top-Level Error (Validation Failed)
 
 ```typescript
 {
@@ -171,6 +172,36 @@ Standard batch result structure (two response shapes):
   "message": string            // Human-readable error description
 }
 ```
+
+This shape means: validation failed, no items were processed, no `results` array exists.
+
+**Why two shapes:**
+
+Validation errors are categorically different from processing errors. If input is malformed, there are no "per-item results" to report. The two-shape design makes this distinction explicit.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/resolve_review_threads.py, BatchResolveResult and BatchResolveError dataclasses -->
+
+See `BatchResolveResult` and `BatchResolveError` in `src/erk/cli/commands/exec/scripts/resolve_review_threads.py` for the frozen dataclass implementations.
+
+## TypedDict for Input, Dataclass for Output
+
+Input items use `TypedDict` for direct JSON compatibility. Output results use frozen dataclasses with `asdict()` for serialization.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/resolve_review_threads.py, ThreadResolutionItem TypedDict -->
+
+**Why TypedDict for input:**
+
+- **No constructor** — `json.loads()` produces dicts, not class instances
+- **Validation is explicit** — `_validate_batch_input()` checks types and fields manually
+- **Runtime type narrowing** — Cast to `dict[str, Any]` after `isinstance()` check
+
+**Why dataclass for output:**
+
+- **Frozen by default** — Prevents accidental mutation after construction
+- **asdict() serialization** — Clean conversion to JSON-serializable dicts
+- **Type safety** — Compiler checks field names and types
+
+See `ThreadResolutionItem` (TypedDict) vs `BatchResolveResult` (dataclass) in `src/erk/cli/commands/exec/scripts/resolve_review_threads.py`.
 
 ## When to Use Batch vs Single Commands
 
@@ -182,13 +213,15 @@ Standard batch result structure (two response shapes):
 | Scripting single operations | ❌        | ✅ (simpler)               |
 | Interactive CLI use         | ❌        | ✅ (better UX)             |
 
-**Rule of thumb**: Batch commands are for automation and bulk operations. Single commands are for interactive use and scripts processing one item.
+**Rule of thumb:** Batch commands are for automation and bulk operations. Single commands are for interactive use and scripts processing one item.
 
-## Example: resolve-review-threads Batch Command
+The cutoff is around 5-10 items: below this, the subprocess overhead is negligible. Above this, batch becomes significantly faster.
 
-The `resolve-review-threads` command demonstrates the pattern.
+## Input/Output Examples
 
-### Input (stdin)
+### All Items Succeed
+
+**Input (stdin):**
 
 ```json
 [
@@ -198,7 +231,7 @@ The `resolve-review-threads` command demonstrates the pattern.
 ]
 ```
 
-### Output (stdout) - All Success
+**Output (stdout):**
 
 ```json
 {
@@ -211,7 +244,19 @@ The `resolve-review-threads` command demonstrates the pattern.
 }
 ```
 
-### Output - Partial Failure
+### Partial Failure
+
+**Input (stdin):**
+
+```json
+[
+  { "thread_id": "PRRT_abc123", "comment": "Fixed" },
+  { "thread_id": "PRRT_invalid", "comment": "Addressed" },
+  { "thread_id": "PRRT_ghi789" }
+]
+```
+
+**Output (stdout):**
 
 ```json
 {
@@ -219,7 +264,7 @@ The `resolve-review-threads` command demonstrates the pattern.
   "results": [
     { "thread_id": "PRRT_abc123", "success": true, "comment_added": true },
     {
-      "thread_id": "PRRT_def456",
+      "thread_id": "PRRT_invalid",
       "success": false,
       "error": "Thread not found",
       "error_type": "not_found"
@@ -229,7 +274,21 @@ The `resolve-review-threads` command demonstrates the pattern.
 }
 ```
 
-### Output - Validation Failure
+Note: `success=false` at top level because one item failed, but processing continued for all items.
+
+### Validation Failure
+
+**Input (stdin):**
+
+```json
+[
+  { "thread_id": "PRRT_abc123", "comment": "Fixed" },
+  { "comment": "Missing thread_id field" },
+  { "thread_id": "PRRT_ghi789" }
+]
+```
+
+**Output (stdout):**
 
 ```json
 {
@@ -239,31 +298,10 @@ The `resolve-review-threads` command demonstrates the pattern.
 }
 ```
 
-Note: No `results` array on validation failure -- the response uses `BatchResolveError` shape with `error_type` and `message` instead.
-
-## Data Structures
-
-See the reference implementation in `src/erk/cli/commands/exec/scripts/resolve_review_threads.py` for concrete types:
-
-- **`BatchResolveResult`** (frozen dataclass): Top-level result with `success: bool` and `results: list[dict[str, object]]`
-- **`BatchResolveError`** (frozen dataclass): Error response with `success: bool`, `error_type: str`, `message: str`
-- **`ThreadResolutionItem`** (TypedDict): Input item schema with `thread_id: str` and `comment: str | None`
-
-Per-item output results use `ResolveThreadSuccess` / `ResolveThreadError` from `resolve_review_thread.py`, serialized to dicts via `asdict()`.
-
-**Design note:** Input items use `TypedDict` for direct JSON compatibility. Output results use frozen dataclasses with `asdict()` for serialization. Validation errors use the same `BatchResolveError` dataclass as other error responses.
-
-## Testing Batch Commands
-
-See [exec-script-batch-testing.md](../testing/exec-script-batch-testing.md) for test organization patterns:
-
-- Success cases (all items succeed)
-- Partial failure (mixed success/error results)
-- Validation errors (upfront rejection)
-- JSON structure verification
+Note: No `results` array. Validation failed, so no items were processed.
 
 ## Related Documentation
 
-- [erk-exec-commands.md](erk-exec-commands.md) - Complete exec command reference
-- [exec-script-batch-testing.md](../testing/exec-script-batch-testing.md) - Testing patterns for batch commands
-- [exec-script-schema-patterns.md](exec-script-schema-patterns.md) - TypedDict vs dataclass decisions
+- [erk-exec-commands.md](erk-exec-commands.md) — Complete exec command reference
+- [exec-script-batch-testing.md](../testing/exec-script-batch-testing.md) — Testing patterns for batch commands
+- [exec-script-schema-patterns.md](exec-script-schema-patterns.md) — TypedDict vs dataclass decisions

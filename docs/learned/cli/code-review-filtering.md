@@ -4,83 +4,64 @@ read_when:
   - "debugging false positives in code review"
   - "understanding keyword-only parameter exceptions"
   - "working with ABC/Protocol method validation"
+tripwires:
+  - "Before flagging 5+ parameter violations, verify NO exception applies (ABC/Protocol/Click)"
 ---
 
 # Code Review Filtering
 
-The dignified-python code review filters certain patterns to avoid false positive violations.
+## Why Exception Filtering Matters
 
-## Keyword-Only Parameter Exceptions
+Code reviews enforce dignified-python patterns, but certain structural constraints make some rules impossible to follow. The keyword-only parameter rule (5+ parameters must use `*` separator) exists to improve call-site readability, but breaks down when signatures are constrained by external contracts.
 
-The 5+ parameters rule requires keyword-only arguments (`*` separator) for functions with many parameters. However, certain patterns are explicitly excluded.
+**The core tension**: We want readable call sites in application code, but interface definitions (ABC/Protocol) and framework callbacks (Click) have different priorities. Interface definitions optimize for contract clarity, not call-site readability. Framework callbacks follow the framework's injection rules, not our preferences.
 
-### ABC/Protocol Method Signatures
+Exception filtering lets the review system distinguish "can't follow the rule due to constraints" from "chose not to follow the rule."
 
-Methods defined in abstract base classes (ABC) or Protocol interfaces are **exempt** from the keyword-only parameter rule.
+## Exception Categories and Rationale
 
-**Rationale:** ABC/Protocol methods define contracts that implementations must follow. The signature is constrained by the interface, not the implementation.
+<!-- Source: .github/reviews/dignified-python.md, lines 80-88 -->
+<!-- Source: .claude/skills/dignified-python/references/api-design.md, lines 112-141 -->
 
-```python
-# EXEMPT - ABC method (no violation)
-class GitHub(ABC):
-    @abstractmethod
-    def create_pr(
-        self,
-        repo_root: Path,
-        title: str,
-        body: str,
-        base: str,
-        head: str,
-        draft: bool,
-    ) -> PRDetails:
-        ...
+### ABC and Protocol Methods: Exempt
 
-# EXEMPT - Protocol method (no violation)
-class Executor(Protocol):
-    def execute(
-        self,
-        command: str,
-        args: list[str],
-        cwd: Path,
-        timeout: int,
-        capture: bool,
-    ) -> Result:
-        ...
-```
+**Why interfaces are different**: ABC and Protocol methods define contracts that implementations must honor. The signature is the contract. Adding `*` to an interface method forces ALL implementations to match, even when some implementations only have 2-3 parameters (common after implementing the interface with delegation or simpler logic).
 
-### Click Command Callbacks
+**The trap**: If we enforce keyword-only on interfaces, refactoring an implementation to simplify its parameters creates a signature mismatch. The implementation is less complex than the interface, but can't drop the `*` separator without violating the contract.
 
-Click command callbacks are **exempt** because Click injects parameters positionally based on decorator order.
+See the exception documentation in `.github/reviews/dignified-python.md` (lines 80-88) and `.claude/skills/dignified-python/references/api-design.md` for the formal exception rules.
 
-```python
-# EXEMPT - Click callback (no violation)
-@click.command()
-@click.option("--title")
-@click.option("--body")
-@click.option("--labels", multiple=True)
-@click.option("--draft", is_flag=True)
-@click.option("--auto-merge", is_flag=True)
-@click.pass_obj
-def create_pr(ctx, title, body, labels, draft, auto_merge):
-    ...
-```
+### Click Command Callbacks: Exempt
 
-## Detection Logic
+**Why framework injection wins**: Click injects parameters positionally based on decorator order. The decorators define the signature, not the function parameter list. Adding `*` to a Click callback breaks the framework's injection mechanism.
 
-The code review checks for violations using this logic:
+**The constraint**: Click's `@click.option()` decorators process arguments in order and pass them positionally to the callback. Keyword-only parameters after `*` don't receive injected values correctly because Click doesn't know about the separator.
 
-1. Count function parameters (excluding `self`, `cls`)
-2. If count >= 5, check for `*` or `*,` on its own line in signature
-3. **Before flagging**, verify no exception applies:
-   - Is this an `@abstractmethod` in an ABC class?
-   - Is this a method in a `Protocol` class?
-   - Is this decorated with `@click.command()` or `@click.group()`?
+### Context Objects: Allowed as First Positional
 
-If any exception applies, skip without flagging.
+**Why `ctx` stays positional**: Context objects (`ctx`, `self`, `cls`) carry ambient state and infrastructure. They're not data parameters — they're plumbing. Requiring `ctx` to be keyword-only (`func(*, ctx=ctx, ...)`) is verbose ceremony that adds no clarity.
 
-## Docstring Convention for Exceptions
+**The pattern**: Context objects can remain positional as the first parameter, followed by `*` for remaining parameters. This balances readability (short, conventional context passing) with explicitness (data parameters are keyword-only).
 
-When documenting why a function is exempt from a rule, use this format in the docstring:
+## Detection Strategy: Declarative Constraints
+
+<!-- Source: .github/reviews/dignified-python.md, lines 80-88 -->
+
+The review system checks exceptions **before flagging**, not after. This prevents false positive noise in PR reviews.
+
+**The decision tree**:
+
+1. Count non-self/cls parameters
+2. If ≥5, check for `*` or `*,` on its own line in signature
+3. If missing, check decorator stack for `@abstractmethod`, `@click.command()`, `@click.group()`
+4. Check class inheritance for `Protocol` base
+5. Only flag if none of the above apply
+
+**Why this order matters**: Decorators and inheritance are declarative — the programmer has already signaled "this is special" by using the ABC/Protocol/Click mechanism. The review respects those signals.
+
+## Documenting Exceptions in Code
+
+When a method signature qualifies for an exception, document it in the docstring:
 
 ```python
 def some_method(
@@ -98,16 +79,9 @@ def some_method(
     ...
 ```
 
-This helps future reviewers understand why the pattern was allowed.
-
-## Reference Implementation
-
-The exception filtering is implemented in `.github/reviews/dignified-python.md`:
-
-- Lines 80-88 document the exceptions
-- The review prompt explicitly instructs to check exceptions before flagging
+**Why document the exception**: Future agents reviewing this code need to know the exemption was intentional, not an oversight. The docstring note short-circuits the "should this have `*`?" question.
 
 ## Related Documentation
 
-- [Dignified Python Skill](../../.claude/skills/dignified-python/) - Full coding standards
-- [Convention-Based Code Reviews](../ci/convention-based-reviews.md) - Review system overview
+- `.github/reviews/dignified-python.md` - Review implementation and exception rules
+- `.claude/skills/dignified-python/references/api-design.md` - Keyword-only parameter rationale and patterns

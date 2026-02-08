@@ -11,90 +11,91 @@ tripwires:
 
 # CLI Options Validation
 
-When adding new CLI options, consider whether validation logic is needed to provide helpful error messages for invalid input.
+When adding CLI options, the choice between Click-level validation and runtime validation depends on **where the constraint originates**: external APIs (like Click's built-ins) or domain logic.
 
-## The Decision Tree
+## The Core Insight: Two Validation Tiers
 
-```
-Is the new option a boolean flag (--verbose, --force)?
-├─ YES → No validation needed
-│
-└─ NO → Does it accept user-provided values?
-    ├─ YES → Add validation
-    └─ NO → No validation needed
-```
+Click's type system exists for **API boundaries** — validating that the shape of user input matches what your code expects. Domain constraints (business rules, state dependencies, complex conditions) belong in runtime validation using `Ensure.*` methods.
 
-## What Needs Validation
+**Why this matters**: Click validation fails fast at parse time with usage errors. Runtime validation executes in command logic and can provide context-aware error messages with remediation steps.
 
-Options that accept values should validate:
+## Click Validation: Use Click's Built-In Types
 
-### Paths
+For constraints that Click already models, use Click's type system:
 
-```python
-@click.option("--config", type=click.Path(exists=True))
-def command(config: str) -> None:
-    """Command that needs a config file."""
-    # Click validates that the path exists
-```
+| Constraint Type | Click Type                       | Example                                                          |
+| --------------- | -------------------------------- | ---------------------------------------------------------------- |
+| File must exist | `click.Path(exists=True)`        | `@click.option("--config", type=click.Path(exists=True))`        |
+| Choose from set | `click.Choice(["json", "yaml"])` | `@click.option("--format", type=click.Choice(["json", "yaml"]))` |
+| Integer range   | `click.IntRange(min=1, max=100)` | `@click.option("--timeout", type=click.IntRange(1, 3600))`       |
 
-### Enums/Choices
+<!-- Source: src/erk/cli/commands/land_cmd.py:386 -->
 
-```python
-@click.option("--format", type=click.Choice(["json", "yaml", "text"]))
-def command(format: str) -> None:
-    """Command with format option."""
-    # Click validates the choice
-```
+See the `click.prompt()` call with `type=click.IntRange(1, 3)` in `src/erk/cli/commands/land_cmd.py` for a real example validating menu choices.
 
-### Numbers with Constraints
+## Runtime Validation: Use Ensure Methods
 
-```python
-@click.option("--timeout", type=click.IntRange(min=1, max=3600))
-def command(timeout: int) -> None:
-    """Command with timeout option."""
-    # Click validates the range
-```
+For domain constraints that depend on application state or require explanatory error messages:
 
-### Custom Validation
+<!-- Source: src/erk/cli/ensure.py, Ensure class methods -->
 
-For complex constraints, validate early in the command:
+Use `Ensure.*` static methods from `src/erk/cli/ensure.py`. These methods:
 
-```python
-@click.option("--branch", type=str)
-def command(branch: str) -> None:
-    """Command that needs a valid branch name."""
-    if not is_valid_branch_name(branch):
-        raise UserFacingCliError(
-            f"Invalid branch name: {branch}. "
-            f"Branch names cannot contain spaces or special characters."
-        )
-    # Continue with validated input
-```
+- Check invariants after parsing (when you have full context)
+- Raise `UserFacingCliError` with styled output
+- Provide type narrowing (`Ensure.not_none` returns `T` from `T | None`)
+- Support custom error messages with remediation steps
 
-## What Doesn't Need Validation
+**Decision table**:
 
-- **Boolean flags**: `--verbose`, `--force`, `--dry-run`
-- **Optional strings without constraints**: `--message`
-- **Options with defaults**: Click handles missing values
+| Scenario                 | Use This                                          | Rationale                            |
+| ------------------------ | ------------------------------------------------- | ------------------------------------ |
+| Path must exist          | `click.Path(exists=True)`                         | Click knows about filesystems        |
+| String must be non-empty | `Ensure.not_empty(value, "...")`                  | Click has no "non-empty string" type |
+| Config field required    | `Ensure.config_field_set(config, "token", "...")` | Depends on loaded config state       |
+| Branch must exist        | `Ensure.git_branch_exists(ctx, root, branch)`     | Depends on git state                 |
+| Value must be truthy     | `Ensure.truthy(value, "...")`                     | Generic condition check              |
 
-## Error Handling
+## Anti-Pattern: Don't Validate at Both Layers
 
-For validation failures, use `UserFacingCliError` (not `RuntimeError` - see [CLI Error Handling Anti-Patterns](error-handling-antipatterns.md)):
+<!-- Source: src/erk/cli/commands/pr/address_cmd.py:39-40 -->
+
+**WRONG**: Duplicating validation
 
 ```python
-from erk.cli.exceptions import UserFacingCliError
-
-if not is_valid(value):
-    raise UserFacingCliError(f"Invalid value: {value}. Expected format: ...")
+@click.option("--dangerous", is_flag=True, required=True)  # Click validation
+def command(dangerous: bool) -> None:
+    if not dangerous:  # Runtime validation - redundant!
+        raise click.UsageError("Missing option '--dangerous'.")
 ```
+
+This creates two error paths for the same constraint. Pick one layer.
+
+The `address_cmd.py` example validates `--dangerous` at runtime because the validation message includes context about Claude CLI invocation. If the constraint were purely syntactic, Click's `required=True` would suffice.
+
+## What Never Needs Validation
+
+- **Boolean flags**: `--verbose`, `--force` — they're always bool
+- **Optional strings without constraints**: `--message` — any string is valid
+- **Options with Click defaults**: Click handles missing values
+
+## Error Handling Pattern
+
+Always use `UserFacingCliError` for validation failures. Never use `RuntimeError` or raw `Exception`.
+
+<!-- Source: src/erk/cli/ensure.py:33-53 -->
+
+See `UserFacingCliError` class in `src/erk/cli/ensure.py` — it extends `click.ClickException` so Click catches it at every command level and converts it to styled output with exit code 1.
+
+**Why not RuntimeError**: `RuntimeError` is for code bugs (programmer errors). Validation failures are user errors — they need actionable messages, not stack traces.
 
 ## Testing Validation
 
-Always test validation logic:
+Test both success and failure paths:
 
 ```python
 def test_invalid_timeout_rejected():
-    """Verify timeout must be positive."""
+    """Verify timeout validation rejects zero."""
     result = runner.invoke(command, ["--timeout", "0"])
     assert result.exit_code != 0
     assert "Invalid value" in result.output
