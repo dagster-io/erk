@@ -6,8 +6,8 @@ read_when:
   - "showing progress indicators"
 tripwires:
   - action: "using LiveDisplay in watch loops without proper cleanup"
-    warning: "LiveDisplay is primarily used in watch loops — guard with try/finally to ensure stop() is called even on KeyboardInterrupt"
-  - action: "writing live display output to stdout"
+    warning: "guard with try/finally to ensure stop() is called even on KeyboardInterrupt"
+  - action: "writing LiveDisplay output to stdout"
     warning: "RealLiveDisplay writes to stderr by default (matches erk's user_output convention) — stdout is reserved for structured data"
 ---
 
