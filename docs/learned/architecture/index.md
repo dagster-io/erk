@@ -5,7 +5,6 @@
 
 - **[abc-convenience-methods.md](abc-convenience-methods.md)** — adding non-abstract methods to gateway ABCs, composing primitive gateway operations into higher-level methods, handling exception type differences between real and fake implementations
 - **[at-reference-resolution.md](at-reference-resolution.md)** — Modifying @ reference validation, Debugging broken @ references in symlinked files, Understanding why validation passes but Claude Code fails
-- **[bash-python-integration.md](bash-python-integration.md)** — generating bash commands with heredocs in Claude Code commands or skills, debugging escaping issues where bash mangles content passed to git, gh, or Python, writing Claude Code commands that produce multi-line text via bash
 - **[branch-manager-abstraction.md](branch-manager-abstraction.md)** — working with branch operations (create, delete, checkout, submit), implementing commands that manipulate branches, understanding the Graphite vs Git mode difference, debugging branch-related operations
 - **[branch-manager-decision-tree.md](branch-manager-decision-tree.md)** — deciding between ctx.branch_manager and ctx.git.branch for branch creation, implementing branch operations in erk code, working with placeholder branches or worktree pool slots
 - **[bundled-artifacts.md](bundled-artifacts.md)** — understanding artifact syncing, working with managed artifacts, debugging erk sync
@@ -18,7 +17,6 @@
 - **[cli-to-pipeline-boundary.md](cli-to-pipeline-boundary.md)** — refactoring complex CLI commands, separating business logic from Click layer, deciding when to extract pipeline from CLI command
 - **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
-- **[composable-remote-commands.md](composable-remote-commands.md)** — adding a new remote command to run on codespaces, implementing erk codespace run subcommands, working with streaming remote execution
 - **[context-injection-tiers.md](context-injection-tiers.md)** — designing a new hook or reminder system, understanding how coding standard reminders work, deciding where to inject context for agent compliance, choosing between ambient, per-prompt, and just-in-time injection
 - **[defense-in-depth-enforcement.md](defense-in-depth-enforcement.md)** — designing multi-layer validation or enforcement systems, implementing critical rules across multiple components, understanding why erk uses redundant enforcement mechanisms
 - **[discriminated-union-error-handling.md](discriminated-union-error-handling.md)** — designing return types for operations that may fail, implementing T | ErrorType patterns, handling errors without exceptions
@@ -57,10 +55,9 @@
 - **[interactive-agent-config.md](interactive-agent-config.md)** — Working with global config loading (GlobalConfig), Implementing interactive agent launch behavior, Adding new agent configuration options
 - **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with issue.json, closing reference lost after erk pr submit
 - **[land-state-threading.md](land-state-threading.md)** — implementing pipelines with immutable state, using dataclasses.replace() for state updates, designing stateful workflows with frozen dataclasses
-- **[lbyl-gateway-pattern.md](lbyl-gateway-pattern.md)** — implementing existence checks before gateway operations, adding LBYL validation to CLI commands, understanding issue_exists() and similar methods
+- **[lbyl-gateway-pattern.md](lbyl-gateway-pattern.md)** — implementing existence checks before gateway operations, adding LBYL validation to CLI commands, understanding why gateways have separate existence methods
 - **[learn-origin-tracking.md](learn-origin-tracking.md)** — understanding how learn PRs are identified, modifying erk land behavior, working with erk-skip-learn label
 - **[linear-pipelines.md](linear-pipelines.md)** — designing multi-step operations with validation and execution phases, refactoring complex commands into functional pipelines, working with land command or similar staged workflows
-- **[live-display-gateway.md](live-display-gateway.md)** — implementing live-updating terminal displays, working with TUI real-time updates, showing progress indicators
 - **[markers.md](markers.md)** — creating worktree state tracking, adding friction before destructive operations, implementing pending learn workflow
 - **[metadata-archival-pattern.md](metadata-archival-pattern.md)** — clearing a metadata field that should be auditable, adding companion fields for historical tracking, extending plan-header schema with lifecycle transitions
 - **[metadata-blocks.md](metadata-blocks.md)** — working with erk metadata in GitHub issues, parsing or extracting data from issue comments, creating new event types for issue tracking
@@ -68,7 +65,7 @@
 - **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
 - **[optional-field-propagation.md](optional-field-propagation.md)** — transforming dataclass instances in pipelines, debugging null metadata fields, adding optional fields to dataclasses
 - **[parallel-agent-pattern.md](parallel-agent-pattern.md)** — launching multiple agents concurrently, using Task with run_in_background, collecting results with TaskOutput, running agents in parallel
-- **[parameter-threading-pattern.md](parameter-threading-pattern.md)** — adding parameters to multi-layer commands (skill → command → exec), working with slash commands that call erk exec, understanding parameter flow through command layers
+- **[parameter-threading-pattern.md](parameter-threading-pattern.md)** — adding parameters to multi-layer commands (skill → command → exec), working with slash commands that call erk exec, debugging "No such option" errors in commands
 - **[pathlib-symlinks.md](pathlib-symlinks.md)** — Writing file validation code, Debugging unexpected path resolution behavior, Working with symlinked configuration files
 - **[permission-modes.md](permission-modes.md)** — Working with interactive agent permissions, Implementing Codex or Claude backend integration, Modifying permission mode configuration
 - **[phase-zero-detection-pattern.md](phase-zero-detection-pattern.md)** — adding conditional execution to phase-based commands, implementing mode variants in CLI commands, modifying pr-address or similar multi-phase workflows
