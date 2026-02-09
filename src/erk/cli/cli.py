@@ -48,6 +48,7 @@ from erk.core.version_check import (
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.gateway.git.real import RealGit
+from erk_shared.gateway.git.repo_ops.real import RealGitRepoOps
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])  # terse help flags
 
@@ -191,7 +192,7 @@ cli.add_command(down_cmd)
 register_with_aliases(cli, implement)  # Has @alias("impl")
 cli.add_command(init_group)
 cli.add_command(land)
-if is_learned_docs_available():
+if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
     from erk.cli.commands.learn.learn_cmd import learn_cmd
 
     cli.add_command(learn_cmd)
@@ -212,7 +213,7 @@ cli.add_command(wt_group)
 cli.add_command(prepare_cwd_recovery_cmd)
 
 # Additional command groups
-if is_learned_docs_available():
+if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
     from erk.cli.commands.docs.group import docs_group
 
     cli.add_command(docs_group)

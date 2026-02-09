@@ -73,10 +73,8 @@ jobs:
       - uses: ./.github/actions/setup-prettier
       - name: Check AGENTS.md standard compliance
         run: make md-check
-      - name: Validate agent documentation frontmatter
-        run: make docs-validate
-      - name: Check generated docs are in sync
-        run: make docs-sync-check
+      - name: Check agent documentation
+        run: make docs-check
 
   # === Type/Test Checks (parallel) ===
   ty:
@@ -336,8 +334,7 @@ jobs:
           if [ "${{ needs.docs-check.result }}" = "failure" ]; then
             errors+="=== DOCS CHECK ERRORS ===\n"
             errors+="$(make md-check 2>&1 || true)\n"
-            errors+="$(make docs-validate 2>&1 || true)\n"
-            errors+="$(make docs-sync-check 2>&1 || true)\n\n"
+            errors+="$(make docs-check 2>&1 || true)\n\n"
           fi
 
           if [ "${{ needs.ty.result }}" = "failure" ]; then
