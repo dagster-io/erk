@@ -5,9 +5,9 @@ paths:
   - "**/*.sh"
   - ".claude/**/*.md"
 marker: "<!-- tripwires-review -->"
-model: claude-haiku-4-5
+model: claude-sonnet-4-5
 timeout_minutes: 30
-allowed_tools: "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Read(*)"
+allowed_tools: "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Bash(grep:*),Read(*)"
 enabled: true
 ---
 
@@ -24,33 +24,64 @@ For comprehensive coverage, read these category tripwire files based on the diff
 - Changes in `src/erk/tui/` → Read `docs/learned/tui/tripwires.md`
 - Planning-related changes → Read `docs/learned/planning/tripwires.md`
 
-Each tripwire follows this format:
+Tripwires have two formats:
+
+**With explicit pattern:**
 
 ```
-**CRITICAL: Before [trigger action]** → Read [linked doc] first. [summary]
+**[trigger action]** [pattern: `regex`] → Read [linked doc] first. [summary]
+```
+
+**Without pattern (semantic matching):**
+
+```
+**[trigger action]** → Read [linked doc] first. [summary]
 ```
 
 Parse EVERY tripwire entry to extract:
 
 - **Trigger**: The action pattern (e.g., "calling os.chdir()", "passing dry_run boolean flags")
+- **Pattern**: Optional explicit regex for mechanical matching (e.g., `subprocess\.run\(`)
 - **Linked doc**: The documentation file to read if triggered
 - **Summary**: Brief description of what the rule enforces
 
+Separate tripwires into two groups:
+
+- **Tier 1**: Tripwires WITH `[pattern: ...]` — use mechanical regex matching
+- **Tier 2**: Tripwires WITHOUT patterns — use semantic LLM-based matching
+
 ## Step 2: Match Tripwires to Diff
 
-For EACH tripwire parsed in Step 1, scan the diff for code matching its trigger pattern.
+### Tier 1: Mechanical Pattern Matching
 
-**Deriving search patterns from tripwires:**
+For tripwires WITH an explicit `[pattern: ...]`:
 
-Each tripwire's trigger text (e.g., "Before calling os.chdir()") tells you what to search for:
+1. Use grep with the exact regex pattern to search the diff
+2. Apply each pattern EXACTLY as written — do not modify or skip patterns
+3. Record matches: pattern, file path, line number, matched text
+4. This is deterministic — no reasoning needed, just pattern matching
 
-- Extract the action from the trigger (e.g., "calling os.chdir()" → search for `os.chdir(`)
-- Convert natural language to code patterns (e.g., "importing time module" → `import time`)
-- Look for the specific constructs mentioned (e.g., "adding a new method to Git ABC" → new method definitions in `src/erk/gateways/git/abc.py`)
+Example:
+
+```bash
+# For pattern: subprocess\.run\(
+grep -n 'subprocess\.run(' path/to/file.py
+```
+
+### Tier 2: Semantic Matching
+
+For tripwires WITHOUT an explicit pattern:
+
+1. Read the action text to understand what to look for
+2. Derive a search approach from the action text (existing behavior)
+3. Scan the diff for matching code constructs
+4. Use your judgment — these require understanding intent, not just tokens
+
+Example action: "choosing between exceptions and discriminated unions" requires analyzing architectural decisions, not just searching for keywords.
 
 This is DYNAMIC - the category tripwire files are the source of truth. New tripwires added via frontmatter are automatically collected when `erk docs sync` runs.
 
-Track which tripwires matched the diff (triggered tripwires).
+Track which tripwires matched the diff (triggered tripwires) from BOTH tiers.
 
 ## Step 3: Load Docs for Matched Tripwires (Lazy Loading)
 

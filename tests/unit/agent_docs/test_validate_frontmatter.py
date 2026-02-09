@@ -95,3 +95,82 @@ def test_multiple_audit_errors_reported() -> None:
 
     assert result is None
     assert len(errors) == 2
+
+
+def test_tripwire_with_valid_pattern() -> None:
+    data: dict[str, object] = {
+        "title": "My Doc",
+        "read_when": ["editing code"],
+        "tripwires": [
+            {
+                "action": "using subprocess.run",
+                "warning": "Use wrapper functions",
+                "pattern": r"subprocess\.run\(",
+            }
+        ],
+    }
+    result, errors = validate_agent_doc_frontmatter(data)
+
+    assert result is not None
+    assert errors == []
+    assert len(result.tripwires) == 1
+    assert result.tripwires[0].pattern == r"subprocess\.run\("
+
+
+def test_tripwire_without_pattern() -> None:
+    data: dict[str, object] = {
+        "title": "My Doc",
+        "read_when": ["editing code"],
+        "tripwires": [
+            {
+                "action": "choosing between exceptions",
+                "warning": "Read the guide",
+            }
+        ],
+    }
+    result, errors = validate_agent_doc_frontmatter(data)
+
+    assert result is not None
+    assert errors == []
+    assert len(result.tripwires) == 1
+    assert result.tripwires[0].pattern is None
+
+
+def test_tripwire_with_invalid_pattern() -> None:
+    data: dict[str, object] = {
+        "title": "My Doc",
+        "read_when": ["editing code"],
+        "tripwires": [
+            {
+                "action": "using subprocess.run",
+                "warning": "Use wrapper functions",
+                "pattern": r"[invalid(regex",
+            }
+        ],
+    }
+    result, errors = validate_agent_doc_frontmatter(data)
+
+    assert result is None
+    assert len(errors) == 1
+    assert "tripwires[0].pattern" in errors[0]
+    assert "not a valid regex" in errors[0]
+
+
+def test_tripwire_with_non_string_pattern() -> None:
+    data: dict[str, object] = {
+        "title": "My Doc",
+        "read_when": ["editing code"],
+        "tripwires": [
+            {
+                "action": "using subprocess.run",
+                "warning": "Use wrapper functions",
+                "pattern": 42,
+            }
+        ],
+    }
+    result, errors = validate_agent_doc_frontmatter(data)
+
+    assert result is None
+    assert len(errors) == 1
+    assert "tripwires[0].pattern" in errors[0]
+    assert "must be a string" in errors[0]

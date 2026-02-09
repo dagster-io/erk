@@ -21,10 +21,12 @@ class Tripwire:
     Attributes:
         action: The action pattern that triggers (gerund phrase, e.g., "writing to /tmp/").
         warning: Brief explanation of why and what to do instead.
+        pattern: Optional regex pattern for mechanical diff matching.
     """
 
     action: str
     warning: str
+    pattern: str | None
 
 
 @dataclass(frozen=True)
@@ -124,12 +126,14 @@ class CollectedTripwire:
         warning: Brief explanation of why and what to do instead.
         doc_path: Relative path from docs/learned/.
         doc_title: Human-readable document title.
+        pattern: Optional regex pattern for mechanical diff matching.
     """
 
     action: str
     warning: str
     doc_path: str
     doc_title: str
+    pattern: str | None
 
 
 @dataclass(frozen=True)
@@ -139,10 +143,12 @@ class CategoryTripwireStats:
     Attributes:
         category: Category name (e.g., "architecture", "cli").
         count: Number of tripwires in this category.
+        pattern_count: Number of tripwires with explicit patterns.
     """
 
     category: str
     count: int
+    pattern_count: int
 
 
 @dataclass(frozen=True)

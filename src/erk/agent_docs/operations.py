@@ -4,6 +4,7 @@ This module provides functionality for validating and syncing agent documentatio
 files with frontmatter metadata.
 """
 
+import re
 from collections import defaultdict
 from collections.abc import Mapping
 from pathlib import Path
@@ -131,6 +132,7 @@ def _validate_tripwires(
         item_dict = cast(dict[str, Any], item)
         action = item_dict.get("action")
         warning = item_dict.get("warning")
+        pattern = item_dict.get("pattern")
 
         if not action:
             errors.append(f"Field 'tripwires[{i}].action' is required")
@@ -142,9 +144,22 @@ def _validate_tripwires(
         elif not isinstance(warning, str):
             errors.append(f"Field 'tripwires[{i}].warning' must be a string")
 
+        # Validate pattern if present
+        pattern_value: str | None = None
+        if pattern is not None:
+            if not isinstance(pattern, str):
+                errors.append(f"Field 'tripwires[{i}].pattern' must be a string")
+            elif isinstance(pattern, str):
+                # Validate that pattern is a valid regex
+                try:
+                    re.compile(pattern)
+                    pattern_value = pattern
+                except re.error as e:
+                    errors.append(f"Field 'tripwires[{i}].pattern' is not a valid regex: {e}")
+
         # Only create Tripwire if both fields are valid strings
         if isinstance(action, str) and action and isinstance(warning, str) and warning:
-            tripwires.append(Tripwire(action=action, warning=warning))
+            tripwires.append(Tripwire(action=action, warning=warning, pattern=pattern_value))
 
     return tripwires, errors
 
@@ -355,6 +370,7 @@ def collect_tripwires(project_root: Path) -> list[CollectedTripwire]:
                     warning=tripwire.warning,
                     doc_path=rel_path,
                     doc_title=result.frontmatter.title,
+                    pattern=tripwire.pattern,
                 )
             )
 
@@ -425,7 +441,7 @@ def generate_category_tripwires_doc(
         "",
         f"# {title} Tripwires",
         "",
-        "Action-triggered rules for this category. Consult BEFORE taking any matching action.",
+        "Rules triggered by matching actions in code.",
         "",
     ]
 
@@ -435,16 +451,25 @@ def generate_category_tripwires_doc(
         return "\n".join(lines)
 
     # Sort by action for consistent output
-    for tripwire in sorted(tripwires, key=lambda t: t.action):
+    sorted_tripwires = sorted(tripwires, key=lambda t: t.action)
+
+    for tripwire in sorted_tripwires:
         # Use relative path from category directory
         rel_doc_path = (
             tripwire.doc_path.split("/", 1)[-1] if "/" in tripwire.doc_path else tripwire.doc_path
         )
-        lines.append(
-            f"**CRITICAL: Before {tripwire.action}** → "
-            f"Read [{tripwire.doc_title}]({rel_doc_path}) first. "
-            f"{tripwire.warning}"
-        )
+
+        # Build the tripwire line
+        line = f"**{tripwire.action}**"
+
+        # Add pattern if present
+        if tripwire.pattern is not None:
+            line += f" [pattern: `{tripwire.pattern}`]"
+
+        # Add the rest
+        line += f" → Read [{tripwire.doc_title}]({rel_doc_path}) first. {tripwire.warning}"
+
+        lines.append(line)
         lines.append("")
 
     return "\n".join(lines)
@@ -811,8 +836,16 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
             dry_run=dry_run,
             agent_docs_root=agent_docs_root,
         )
+
+        # Count tripwires with patterns
+        pattern_count = sum(1 for t in category_tripwires if t.pattern is not None)
+
         category_stats.append(
-            CategoryTripwireStats(category=category_name, count=len(category_tripwires))
+            CategoryTripwireStats(
+                category=category_name,
+                count=len(category_tripwires),
+                pattern_count=pattern_count,
+            )
         )
 
     # Generate tripwires index (only if there are tripwires)
