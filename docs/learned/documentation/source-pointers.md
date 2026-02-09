@@ -50,14 +50,13 @@ Both parts are required. The HTML comment is what `audit-pr-docs` scans for duri
 
 Source pointers replace all code blocks _except_ the four cases where the One Code Rule grants an exception. The decision is mechanical:
 
-| Content type                                              | Action               | Reasoning                                                                      |
-| --------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------ |
-| Erk source code (any length)                              | Replace with pointer | Will drift from reality; the source file is the authority                      |
-| Data format examples (JSON, YAML, TOML)                   | Keep as code block   | Shows structural shape, not implementation logic                               |
-| Third-party API patterns (Click, pytest, Rich)            | Keep as code block   | Teaching external API usage that isn't in erk's source                         |
-| Anti-patterns marked WRONG                                | Keep as code block   | The wrongness is the point — these are intentionally incorrect                 |
-| CLI commands with expected output                         | Keep as code block   | I/O examples are self-contained and stable                                     |
-| Third-party reference tables (API endpoints, syntax refs) | Keep as code block   | Token cache of expensive-to-fetch external docs (include `## Sources` section) |
+| Content type                                   | Action               | Reasoning                                                      |
+| ---------------------------------------------- | -------------------- | -------------------------------------------------------------- |
+| Erk source code (any length)                   | Replace with pointer | Will drift from reality; the source file is the authority      |
+| Data format examples (JSON, YAML, TOML)        | Keep as code block   | Shows structural shape, not implementation logic               |
+| Third-party API patterns (Click, pytest, Rich) | Keep as code block   | Teaching external API usage that isn't in erk's source         |
+| Anti-patterns marked WRONG                     | Keep as code block   | The wrongness is the point — these are intentionally incorrect |
+| CLI commands with expected output              | Keep as code block   | I/O examples are self-contained and stable                     |
 
 **Partial excerpts are not an exception.** Copying "just the interesting lines" from a source file creates the same staleness problem as copying the whole function. If the code is erk source, use a pointer regardless of length.
 
