@@ -127,15 +127,14 @@ These checks leverage the code understanding already built in the Read Reference
 
 For each section of the document, classify it into one of these value categories:
 
-| Category            | Description                                                                                                     | Action                                                          |
-| ------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **DUPLICATIVE**     | Restates what code already says (signatures, imports, basic behavior)                                           | Replace with "Read `path`" reference                            |
-| **INACCURATE**      | States something that doesn't match current code (wrong names, broken imports, incorrect behavior, moved files) | Fix to match reality; correct or replace with code reference    |
-| **DRIFT RISK**      | Documents specific values, paths, or behaviors that will change                                                 | Flag as high-maintenance; consider code reference instead       |
-| **HIGH VALUE**      | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                          | Keep                                                            |
-| **CONTEXTUAL**      | Connects multiple code locations into a coherent narrative the code alone can't provide                         | Keep                                                            |
-| **REFERENCE CACHE** | Distilled third-party reference material OR discovered/undocumented API quirks (with `## Sources` section)      | Keep — expensive or impossible to re-acquire                    |
-| **EXAMPLES**        | Code examples that are essentially identical to what exists in source/tests                                     | Remove code block; replace with reference to actual test/source |
+| Category        | Description                                                                                                     | Action                                                          |
+| --------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **DUPLICATIVE** | Restates what code already says (signatures, imports, basic behavior)                                           | Replace with "Read `path`" reference                            |
+| **INACCURATE**  | States something that doesn't match current code (wrong names, broken imports, incorrect behavior, moved files) | Fix to match reality; correct or replace with code reference    |
+| **DRIFT RISK**  | Documents specific values, paths, or behaviors that will change                                                 | Flag as high-maintenance; consider code reference instead       |
+| **HIGH VALUE**  | Captures _why_ decisions were made, trade-offs, decision tables, patterns across files                          | Keep                                                            |
+| **CONTEXTUAL**  | Connects multiple code locations into a coherent narrative the code alone can't provide                         | Keep                                                            |
+| **EXAMPLES**    | Code examples that are essentially identical to what exists in source/tests                                     | Remove code block; replace with reference to actual test/source |
 
 **Reference cache awareness:** Third-party reference tables and discovered API quirks are NOT duplicative just because the information exists in external documentation. The value is the cached distillation itself. Undocumented quirks discovered through usage are especially high-value — they are literally undiscoverable from official sources.
 
@@ -149,13 +148,12 @@ Apply the content quality standards from the `learned-docs` skill's core rules d
 
 For every fenced code block in the document, classify it:
 
-| Classification      | Keep?      | Criteria                                                                |
-| ------------------- | ---------- | ----------------------------------------------------------------------- |
-| **ANTI-PATTERN**    | Yes        | Shows what NOT to do (wrong way vs right way)                           |
-| **CONCEPTUAL**      | Yes        | Illustrates a concept that doesn't exist as a single function in source |
-| **VERBATIM**        | **Remove** | Reproduces actual source code (implementation, signatures, usage)       |
-| **REFERENCE TABLE** | Yes        | Third-party API tables/syntax that are expensive to re-acquire          |
-| **TEMPLATE**        | Maybe      | Shows a pattern for new code — keep only if the pattern isn't in source |
+| Classification   | Keep?      | Criteria                                                                |
+| ---------------- | ---------- | ----------------------------------------------------------------------- |
+| **ANTI-PATTERN** | Yes        | Shows what NOT to do (wrong way vs right way)                           |
+| **CONCEPTUAL**   | Yes        | Illustrates a concept that doesn't exist as a single function in source |
+| **VERBATIM**     | **Remove** | Reproduces actual source code (implementation, signatures, usage)       |
+| **TEMPLATE**     | Maybe      | Shows a pattern for new code — keep only if the pattern isn't in source |
 
 For VERBATIM blocks, apply the replacement format from the `learned-docs` skill's core rules: replace with a prose reference capturing the insight, plus a source pointer. Any doc with unreplaced VERBATIM blocks should receive at minimum a `SIMPLIFY` verdict.
 
@@ -165,7 +163,7 @@ Complete the full internal analysis from the Adversarial Analysis phase, but out
 
 **Verdict thresholds** (based on section classification percentages):
 
-- **KEEP**: ≥50% HIGH VALUE, CONTEXTUAL, or REFERENCE CACHE
+- **KEEP**: ≥50% HIGH VALUE or CONTEXTUAL
 - **SIMPLIFY**: ≥30% DUPLICATIVE/INACCURATE/DRIFT RISK but has high-value sections worth preserving
 - **REPLACE WITH CODE REFS**: ≥60% DUPLICATIVE/INACCURATE/DRIFT RISK, minimal high-value content
 - **CONSIDER DELETING**: ≥80% DUPLICATIVE/INACCURATE/DRIFT RISK, no meaningful high-value content
