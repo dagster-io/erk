@@ -4,9 +4,9 @@
 
 Tripwires are "if you're about to do X, consult Y" rules defined in `docs/learned/` frontmatter. They serve two audiences:
 1. **Authoring agents** — loaded via `tripwires.md` in agent context during code writing
-2. **Review agents** — parsed by the `.github/reviews/tripwires.md` Claude Haiku prompt during PR review
+2. **Review agents** — parsed by the `.github/reviews/tripwires.md` Claude Sonnet prompt during PR review
 
-The current system is authoring-oriented. The `action` field uses prose like "using bare subprocess.run with check=True" and the generated format is "**CRITICAL: Before {action}**". The review prompt (Step 2) asks Haiku to **derive grep patterns from this natural language** — this is the weakest link. Many tripwires have no greppable pattern at all (71 planning tripwires, ~50% of architecture tripwires).
+The current system is authoring-oriented. The `action` field uses prose like "using bare subprocess.run with check=True" and the generated format is "**CRITICAL: Before {action}**". The review prompt (Step 2) asks the LLM to **derive grep patterns from this natural language** — this is the weakest link. Many tripwires have no greppable pattern at all (71 planning tripwires, ~50% of architecture tripwires).
 
 ## Three Changes
 
@@ -42,9 +42,9 @@ tripwires:
 - NO: Workflow actions ("entering Plan Mode in replan workflow")
 - NO: Negative patterns ("without explicit checkout" — can't grep for absence)
 
-### 2. Embed patterns in the existing `tripwires.md` generation
+### 2. Embed patterns and drop the "Before" prefix in `tripwires.md` generation
 
-Modify `generate_category_tripwires_doc()` to include patterns inline. All tripwires are present (with or without patterns). The review prompt uses patterns mechanically where available, and falls back to LLM reasoning for the rest.
+Modify `generate_category_tripwires_doc()` to: (a) include patterns inline, and (b) drop the rigid "Before {action}" framing. The `action` field already contains a gerund/noun phrase — prepending "Before" creates awkward phrasing for many tripwires (e.g., "Before Detect mode in Phase 0 before any other phases execute").
 
 **Generated format (before):**
 ```
@@ -53,17 +53,20 @@ Modify `generate_category_tripwires_doc()` to include patterns inline. All tripw
 
 **Generated format (after — with pattern):**
 ```
-**CRITICAL: Before using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions...
+**using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions...
 ```
 
-**Generated format (after — without pattern, unchanged):**
+**Generated format (after — without pattern):**
 ```
-**CRITICAL: Before choosing between exceptions and discriminated unions** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error...
+**choosing between exceptions and discriminated unions** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error...
 ```
+
+The `action` field text is already descriptive enough to stand on its own. The "CRITICAL: Before" boilerplate added noise without adding signal — both authoring agents and review agents can parse the action text directly.
 
 **Files:**
 - `src/erk/agent_docs/operations.py`:
-  - `generate_category_tripwires_doc()` (line 400) — Conditionally include `[pattern: ...]` when `tripwire.pattern is not None`
+  - `generate_category_tripwires_doc()` (line 400) — Change template from `**CRITICAL: Before {action}**` to `**{action}**`, conditionally append `[pattern: ...]`
+  - Update the file header from "Consult BEFORE taking any matching action" to something like "Rules triggered by matching actions in code"
   - Add pattern coverage stats to sync output (e.g., "45 of 110 architecture tripwires have patterns")
 
 ### 3. Restructure the review prompt
@@ -72,7 +75,7 @@ Restructure the review prompt into two tiers: mechanical matching for pattern-be
 
 **Current flow (`.github/reviews/tripwires.md`):**
 1. Load category `tripwires.md` → parse all entries
-2. **Claude derives grep patterns from prose for ALL tripwires** ← unreliable, Haiku's weakest step
+2. **Claude derives grep patterns from prose for ALL tripwires** ← unreliable, weakest step
 3. Lazy-load docs for matches → check exceptions
 4. Post comments
 
@@ -107,6 +110,8 @@ For tripwires WITHOUT an explicit pattern:
 ```
 
 **Step 3** — Unchanged (lazy-load docs, check exceptions).
+
+**Model** — Change `model: claude-haiku-4-5` to `model: claude-sonnet-4-5` in `.github/reviews/tripwires.md` frontmatter.
 
 **Allowed tools** — Add `Bash(grep:*)` to `allowed_tools` in frontmatter so Claude can run grep for Tier 1 patterns mechanically.
 
