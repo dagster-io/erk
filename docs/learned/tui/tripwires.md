@@ -12,9 +12,21 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+**CRITICAL: Before adding a command without an availability predicate** → Read [TUI Command Architecture](action-inventory.md) first. Every command needs an is_available predicate based on PlanRowData field presence. Commands without predicates appear when they can't execute.
+
+**CRITICAL: Before adding a field to PlanRowData without updating make_plan_row** → Read [TUI Data Contract](data-contract.md) first. The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break.
+
+**CRITICAL: Before adding an ACTION command that executes instantly** → Read [TUI Command Architecture](action-inventory.md) first. ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories.
+
+**CRITICAL: Before duplicating command definitions for list and detail contexts** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. Commands are defined once in the registry. Use a second Provider subclass with its own \_get_context() to serve the same commands from a new context.
+
+**CRITICAL: Before duplicating execute_palette_command logic between ErkDashApp and PlanDetailScreen** → Read [Dual Provider Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. This duplication is a known trade-off. Both ErkDashApp.execute_palette_command() and PlanDetailScreen.execute_command() implement the same command_id switch because they dispatch to different APIs (provider methods vs executor methods). See the asymmetries section below.
+
+**CRITICAL: Before formatting display strings during table render** → Read [TUI Data Contract](data-contract.md) first. Display strings are pre-formatted at fetch time. Add new \*\_display fields to PlanRowData and format in RealPlanDataProvider.\_build_row_data(), not in the widget layer.
+
 **CRITICAL: Before generating TUI commands that depend on optional PlanRowData fields** → Read [Adding Commands to TUI](adding-commands.md) first. Implement three-layer validation: registry predicate, handler guard, app-level helper. Never rely on registry predicate alone.
 
-**CRITICAL: Before implementing separate command handlers for list and detail views** → Read [Dual Handler Pattern for Context-Agnostic Commands](dual-handler-pattern.md) first. Use dual handler pattern: single handler operates on 'selected plan' regardless of context. CommandRegistry routes list context and detail context to same handler.
+**CRITICAL: Before modifying how plan titles are displayed in TUI** → Read [TUI Plan Title Rendering Pipeline](plan-title-rendering-pipeline.md) first. Ensure `[erk-learn]` prefix is added BEFORE any filtering/sorting stages.
 
 **CRITICAL: Before putting PlanDataProvider ABC in src/erk/tui/** → Read [TUI Data Contract](data-contract.md) first. The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways.
 
