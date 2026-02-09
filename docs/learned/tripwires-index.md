@@ -14,17 +14,17 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | Category                                    | Tripwires | Load When Working In                          |
 | ------------------------------------------- | --------- | --------------------------------------------- |
 | [architecture](architecture/tripwires.md)   | 110       | `src/erk/gateway/`, gateways, subprocess      |
-| [capabilities](capabilities/tripwires.md)   | 6         | Claude Code capabilities, tool use            |
+| [capabilities](capabilities/tripwires.md)   | 9         | Claude Code capabilities, tool use            |
 | [changelog](changelog/tripwires.md)         | 3         | `changelog/` code                             |
 | [checklists](checklists/tripwires.md)       | 1         | `checklists/` code                            |
-| [ci](ci/tripwires.md)                       | 32        | `.github/workflows/`, `.github/actions/`      |
+| [ci](ci/tripwires.md)                       | 35        | `.github/workflows/`, `.github/actions/`      |
 | [claude-code](claude-code/tripwires.md)     | 3         | Claude Code configuration, settings           |
-| [cli](cli/tripwires.md)                     | 48        | `src/erk/cli/`                                |
-| [commands](commands/tripwires.md)           | 5         | `.claude/commands/`, slash commands           |
+| [cli](cli/tripwires.md)                     | 53        | `src/erk/cli/`                                |
+| [commands](commands/tripwires.md)           | 6         | `.claude/commands/`, slash commands           |
 | [config](config/tripwires.md)               | 2         | `config/` code                                |
 | [configuration](configuration/tripwires.md) | 1         | `configuration/` code                         |
-| [desktop-dash](desktop-dash/tripwires.md)   | 36        | `desktop-dash/` code                          |
-| [documentation](documentation/tripwires.md) | 22        | `documentation/` code                         |
+| [desktop-dash](desktop-dash/tripwires.md)   | 58        | `desktop-dash/` code                          |
+| [documentation](documentation/tripwires.md) | 25        | `documentation/` code                         |
 | [erk](erk/tripwires.md)                     | 8         | `erk/` code                                   |
 | [gateway](gateway/tripwires.md)             | 5         | `gateway/` code                               |
 | [hooks](hooks/tripwires.md)                 | 4         | `.claude/hooks/`, hook development            |
