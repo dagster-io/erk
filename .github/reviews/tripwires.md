@@ -5,9 +5,9 @@ paths:
   - "**/*.sh"
   - ".claude/**/*.md"
 marker: "<!-- tripwires-review -->"
-model: claude-haiku-4-5
+model: claude-sonnet-4-5
 timeout_minutes: 30
-allowed_tools: "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Read(*)"
+allowed_tools: "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Bash(grep:*),Read(*)"
 enabled: true
 ---
 
@@ -24,29 +24,50 @@ For comprehensive coverage, read these category tripwire files based on the diff
 - Changes in `src/erk/tui/` → Read `docs/learned/tui/tripwires.md`
 - Planning-related changes → Read `docs/learned/planning/tripwires.md`
 
-Each tripwire follows this format:
+Tripwires come in two formats:
+
+**With explicit pattern** (Tier 1 — mechanical matching):
 
 ```
-**CRITICAL: Before [trigger action]** → Read [linked doc] first. [summary]
+**[action text]** [pattern: `regex_here`] → Read [linked doc] first. [summary]
 ```
 
-Parse EVERY tripwire entry to extract:
+**Without pattern** (Tier 2 — semantic matching):
 
-- **Trigger**: The action pattern (e.g., "calling os.chdir()", "passing dry_run boolean flags")
+```
+**[action text]** → Read [linked doc] first. [summary]
+```
+
+Parse EVERY tripwire entry and classify into:
+
+- **Tier 1**: Has `[pattern: ...]` — extract the regex for mechanical grep matching
+- **Tier 2**: No pattern — extract the action text for LLM-derived matching
+
+For all tripwires, extract:
+
+- **Action**: The action text (e.g., "calling os.chdir()", "passing dry_run boolean flags")
 - **Linked doc**: The documentation file to read if triggered
 - **Summary**: Brief description of what the rule enforces
 
 ## Step 2: Match Tripwires to Diff
 
-For EACH tripwire parsed in Step 1, scan the diff for code matching its trigger pattern.
+### Tier 1: Mechanical Pattern Matching
 
-**Deriving search patterns from tripwires:**
+For tripwires that have an explicit `[pattern: ...]`:
 
-Each tripwire's trigger text (e.g., "Before calling os.chdir()") tells you what to search for:
+1. Use `grep` to search the diff for lines matching the pattern regex
+2. Record: pattern, file path, line number, matched text
+3. Apply each pattern EXACTLY as written — do not modify or skip patterns
+4. This is deterministic — no reasoning needed, just mechanical regex matching
 
-- Extract the action from the trigger (e.g., "calling os.chdir()" → search for `os.chdir(`)
-- Convert natural language to code patterns (e.g., "importing time module" → `import time`)
-- Look for the specific constructs mentioned (e.g., "adding a new method to Git ABC" → new method definitions in `src/erk/gateways/git/abc.py`)
+### Tier 2: Semantic Matching
+
+For tripwires WITHOUT an explicit pattern:
+
+1. Derive a search approach from the action text (e.g., "calling os.chdir()" → search for `os.chdir(`)
+2. Convert natural language to code patterns (e.g., "importing time module" → `import time`)
+3. Scan the diff for matching code constructs
+4. Use your judgment — these require understanding intent, not just tokens
 
 This is DYNAMIC - the category tripwire files are the source of truth. New tripwires added via frontmatter are automatically collected when `erk docs sync` runs.
 
@@ -91,11 +112,17 @@ Summary format (preserve existing Activity Log entries and prepend new entry):
 
 (List only tripwires that matched the diff)
 
-### Patterns Checked
-✅ [pattern] - None found
-❌ [pattern] - Found in src/foo.py:12
+### Tier 1 Pattern Matches
+✅ `pattern` - None found
+❌ `pattern` - Found in src/foo.py:12
 
-(Use ✅ when compliant, ❌ when violation found. Only list patterns relevant to the diff.)
+(Mechanical grep results for pattern-bearing tripwires)
+
+### Tier 2 Semantic Matches
+✅ [action] - None found
+❌ [action] - Found in src/foo.py:12
+
+(LLM-derived matches for tripwires without patterns)
 
 ### Violations Summary
 - `file.py:123`: [brief description]
@@ -110,6 +137,6 @@ Activity log entry examples:
 - "Found 2 violations (bare subprocess.run in x.py, /tmp/ usage in y.py)"
 - "All violations resolved"
 - "No tripwire violations detected"
-- "Triggered 3 tripwires, loaded docs, found 1 violation"
+- "Triggered 3 tripwires (2 Tier 1, 1 Tier 2), loaded docs, found 1 violation"
 
 Keep the last 10 log entries maximum.

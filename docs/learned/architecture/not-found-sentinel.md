@@ -8,6 +8,7 @@ read_when:
 tripwires:
   - action: "checking if get_pr_for_branch() returned a PR"
     warning: "Use `isinstance(pr, PRNotFound)` not `pr is not None`. PRNotFound is a sentinel object, not None."
+    pattern: "get_pr_for_branch\\("
 ---
 
 # Not-Found Sentinel Pattern

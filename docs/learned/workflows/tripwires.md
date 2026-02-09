@@ -10,8 +10,8 @@ read_when:
 
 # Workflows Tripwires
 
-Action-triggered rules for this category. Consult BEFORE taking any matching action.
+Rules triggered by matching actions in code.
 
-**CRITICAL: Before loading erk-diff-analysis skill more than once per session** → Read [Skill-Based Commit Message Generation](commit-messages.md) first. Skills persist for the entire session. Check conversation history for 'erk-diff-analysis' before reloading.
+**loading erk-diff-analysis skill more than once per session** → Read [Skill-Based Commit Message Generation](commit-messages.md) first. Skills persist for the entire session. Check conversation history for 'erk-diff-analysis' before reloading.
 
-**CRITICAL: Before writing a commit message manually for multi-file changes** → Read [Skill-Based Commit Message Generation](commit-messages.md) first. Load the erk-diff-analysis skill first. It produces component-aware, strategically framed messages that become both the commit and PR body.
+**writing a commit message manually for multi-file changes** → Read [Skill-Based Commit Message Generation](commit-messages.md) first. Load the erk-diff-analysis skill first. It produces component-aware, strategically framed messages that become both the commit and PR body.

@@ -10,6 +10,6 @@ read_when:
 
 # Textual Tripwires
 
-Action-triggered rules for this category. Consult BEFORE taking any matching action.
+Rules triggered by matching actions in code.
 
-**CRITICAL: Before adding cell values to Textual DataTable** → Read [DataTable Rich Markup Escaping](datatable-markup-escaping.md) first. Always wrap in `Text(value)` if strings contain user data with brackets. Otherwise `[anything]` will be interpreted as Rich markup.
+**adding cell values to Textual DataTable** → Read [DataTable Rich Markup Escaping](datatable-markup-escaping.md) first. Always wrap in `Text(value)` if strings contain user data with brackets. Otherwise `[anything]` will be interpreted as Rich markup.

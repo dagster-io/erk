@@ -4,6 +4,7 @@ This module provides functionality for validating and syncing agent documentatio
 files with frontmatter metadata.
 """
 
+import re
 from collections import defaultdict
 from collections.abc import Mapping
 from pathlib import Path
@@ -142,9 +143,25 @@ def _validate_tripwires(
         elif not isinstance(warning, str):
             errors.append(f"Field 'tripwires[{i}].warning' must be a string")
 
-        # Only create Tripwire if both fields are valid strings
+        # Validate optional pattern field
+        pattern: str | None = None
+        pattern_data = item_dict.get("pattern")
+        if pattern_data is not None:
+            if not isinstance(pattern_data, str):
+                errors.append(f"Field 'tripwires[{i}].pattern' must be a string")
+            elif not pattern_data:
+                errors.append(f"Field 'tripwires[{i}].pattern' must not be empty")
+            else:
+                try:
+                    re.compile(pattern_data)
+                except re.error as e:
+                    errors.append(f"Field 'tripwires[{i}].pattern' is not a valid regex: {e}")
+                else:
+                    pattern = pattern_data
+
+        # Only create Tripwire if both required fields are valid strings
         if isinstance(action, str) and action and isinstance(warning, str) and warning:
-            tripwires.append(Tripwire(action=action, warning=warning))
+            tripwires.append(Tripwire(action=action, warning=warning, pattern=pattern))
 
     return tripwires, errors
 
@@ -353,6 +370,7 @@ def collect_tripwires(project_root: Path) -> list[CollectedTripwire]:
                 CollectedTripwire(
                     action=tripwire.action,
                     warning=tripwire.warning,
+                    pattern=tripwire.pattern,
                     doc_path=rel_path,
                     doc_title=result.frontmatter.title,
                 )
@@ -425,7 +443,7 @@ def generate_category_tripwires_doc(
         "",
         f"# {title} Tripwires",
         "",
-        "Action-triggered rules for this category. Consult BEFORE taking any matching action.",
+        "Rules triggered by matching actions in code.",
         "",
     ]
 
@@ -440,8 +458,11 @@ def generate_category_tripwires_doc(
         rel_doc_path = (
             tripwire.doc_path.split("/", 1)[-1] if "/" in tripwire.doc_path else tripwire.doc_path
         )
+        pattern_annotation = ""
+        if tripwire.pattern is not None:
+            pattern_annotation = f" [pattern: `{tripwire.pattern}`]"
         lines.append(
-            f"**CRITICAL: Before {tripwire.action}** → "
+            f"**{tripwire.action}**{pattern_annotation} → "
             f"Read [{tripwire.doc_title}]({rel_doc_path}) first. "
             f"{tripwire.warning}"
         )
@@ -811,8 +832,13 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
             dry_run=dry_run,
             agent_docs_root=agent_docs_root,
         )
+        pattern_count = sum(1 for t in category_tripwires if t.pattern is not None)
         category_stats.append(
-            CategoryTripwireStats(category=category_name, count=len(category_tripwires))
+            CategoryTripwireStats(
+                category=category_name,
+                count=len(category_tripwires),
+                pattern_count=pattern_count,
+            )
         )
 
     # Generate tripwires index (only if there are tripwires)

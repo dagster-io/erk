@@ -8,8 +8,10 @@ read_when:
 tripwires:
   - action: "passing variables to gh api graphql as JSON blob"
     warning: "Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work."
+    pattern: "gh\\s+api\\s+graphql"
   - action: "passing array or object variables to gh api graphql with -F and json.dumps()"
     warning: "Arrays and objects require special gh syntax: arrays use -f key[]=value1 -f key[]=value2, objects use -f key[subkey]=value. Using -F key=[...] or -F key={...} passes them as literal strings, not typed values."
+    pattern: "json\\.dumps\\(.*-F"
 last_audited: "2026-02-05 14:20 PT"
 audit_result: edited
 ---

@@ -10,6 +10,6 @@ read_when:
 
 # Configuration Tripwires
 
-Action-triggered rules for this category. Consult BEFORE taking any matching action.
+Rules triggered by matching actions in code.
 
-**CRITICAL: Before adding a new config option without defining it in a Pydantic schema** → Read [Schema-Driven Config System](schema-driven-config.md) first. All config keys must be defined in schema.py with proper ConfigLevel. The schema is the single source of truth — CLI commands discover fields via Pydantic introspection, so manual lists are unnecessary and will diverge.
+**adding a new config option without defining it in a Pydantic schema** → Read [Schema-Driven Config System](schema-driven-config.md) first. All config keys must be defined in schema.py with proper ConfigLevel. The schema is the single source of truth — CLI commands discover fields via Pydantic introspection, so manual lists are unnecessary and will diverge.

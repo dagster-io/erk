@@ -9,6 +9,7 @@ read_when:
 tripwires:
   - action: "using bare subprocess.run with check=True"
     warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations."
+    pattern: "subprocess\\.run\\("
   - action: "adding a Claude subprocess call with --print mode"
     warning: "Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section."
 ---
