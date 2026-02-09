@@ -22,7 +22,7 @@ from erk.agent_docs.models import (
     TripwiresIndexValidationResult,
 )
 from erk.core.frontmatter import parse_markdown_frontmatter
-from erk_shared.subprocess_utils import run_subprocess_with_context
+from erk_shared.gateway.agent_docs.abc import AgentDocs
 
 AGENT_DOCS_DIR = "docs/learned"
 
@@ -227,34 +227,16 @@ def validate_agent_doc_frontmatter(
     ), []
 
 
-def validate_agent_doc_file(file_path: Path, agent_docs_root: Path) -> AgentDocValidationResult:
-    """Validate a single agent documentation file.
+def validate_agent_doc_content(rel_path: str, content: str) -> AgentDocValidationResult:
+    """Validate a single agent documentation file's content.
 
     Args:
-        file_path: Absolute path to the markdown file.
-        agent_docs_root: Path to the .erk/docs/agent directory.
+        rel_path: Relative path under docs/learned/ (e.g., "architecture/subprocess-wrappers.md").
+        content: File content to validate.
 
     Returns:
         Validation result with any errors found.
     """
-    rel_path = str(file_path.relative_to(agent_docs_root))
-
-    if not file_path.exists():
-        return AgentDocValidationResult(
-            file_path=rel_path,
-            frontmatter=None,
-            errors=("File does not exist",),
-        )
-
-    try:
-        content = file_path.read_text(encoding="utf-8")
-    except Exception as e:
-        return AgentDocValidationResult(
-            file_path=rel_path,
-            frontmatter=None,
-            errors=(f"Cannot read file: {e}",),
-        )
-
     result = parse_markdown_frontmatter(content)
     if result.error is not None:
         return AgentDocValidationResult(
@@ -273,80 +255,99 @@ def validate_agent_doc_file(file_path: Path, agent_docs_root: Path) -> AgentDocV
     )
 
 
-def discover_agent_docs(agent_docs_root: Path) -> list[Path]:
+def discover_agent_docs(agent_docs: AgentDocs, project_root: Path) -> list[str]:
     """Discover all markdown files in the agent docs directory.
 
     Args:
-        agent_docs_root: Path to the .erk/docs/agent directory.
+        agent_docs: Gateway for accessing docs/learned/ files.
+        project_root: Root of the project.
 
     Returns:
-        List of paths to markdown files, sorted alphabetically.
+        List of relative paths under docs/learned/, sorted alphabetically.
     """
-    if not agent_docs_root.exists():
+    if not agent_docs.has_docs_dir(project_root):
         return []
 
-    files: list[Path] = []
-    for md_file in agent_docs_root.rglob("*.md"):
+    # Get all files from gateway
+    all_files = agent_docs.list_files(project_root)
+
+    # Filter out auto-generated files
+    files: list[str] = []
+    for rel_path in all_files:
+        filename = Path(rel_path).name
         # Skip auto-generated files (index.md, tripwires-index.md, tripwires.md)
-        if md_file.name == "index.md":
+        if filename == "index.md":
             continue
-        if md_file.name == "tripwires-index.md":
+        if filename == "tripwires-index.md":
             continue
         # Skip auto-generated tripwires.md files (check for banner)
-        if md_file.name == "tripwires.md":
-            content = md_file.read_text(encoding="utf-8")
-            if "AUTO-GENERATED FILE" in content:
+        if filename == "tripwires.md":
+            content = agent_docs.read_file(project_root, rel_path)
+            if content is not None and "AUTO-GENERATED FILE" in content:
                 continue
-        files.append(md_file)
+        files.append(rel_path)
 
     return sorted(files)
 
 
-def validate_agent_docs(project_root: Path) -> list[AgentDocValidationResult]:
+def validate_agent_docs(
+    agent_docs: AgentDocs, project_root: Path
+) -> list[AgentDocValidationResult]:
     """Validate all agent documentation files in a project.
 
     Args:
+        agent_docs: Gateway for accessing docs/learned/ files.
         project_root: Path to the project root.
 
     Returns:
         List of validation results for each file.
     """
-    agent_docs_root = project_root / AGENT_DOCS_DIR
-    if not agent_docs_root.exists():
+    if not agent_docs.has_docs_dir(project_root):
         return []
 
-    files = discover_agent_docs(agent_docs_root)
+    rel_paths = discover_agent_docs(agent_docs, project_root)
     results: list[AgentDocValidationResult] = []
 
-    for file_path in files:
-        result = validate_agent_doc_file(file_path, agent_docs_root)
+    for rel_path in rel_paths:
+        content = agent_docs.read_file(project_root, rel_path)
+        if content is None:
+            results.append(
+                AgentDocValidationResult(
+                    file_path=rel_path,
+                    frontmatter=None,
+                    errors=("File does not exist",),
+                )
+            )
+            continue
+        result = validate_agent_doc_content(rel_path, content)
         results.append(result)
 
     return results
 
 
-def collect_tripwires(project_root: Path) -> list[CollectedTripwire]:
+def collect_tripwires(agent_docs: AgentDocs, project_root: Path) -> list[CollectedTripwire]:
     """Collect all tripwires from agent documentation frontmatter.
 
     Args:
+        agent_docs: Gateway for accessing docs/learned/ files.
         project_root: Path to the project root.
 
     Returns:
         List of collected tripwires with their source documentation info.
     """
-    agent_docs_root = project_root / AGENT_DOCS_DIR
-    if not agent_docs_root.exists():
+    if not agent_docs.has_docs_dir(project_root):
         return []
 
-    files = discover_agent_docs(agent_docs_root)
+    rel_paths = discover_agent_docs(agent_docs, project_root)
     tripwires: list[CollectedTripwire] = []
 
-    for file_path in files:
-        result = validate_agent_doc_file(file_path, agent_docs_root)
+    for rel_path in rel_paths:
+        content = agent_docs.read_file(project_root, rel_path)
+        if content is None:
+            continue
+        result = validate_agent_doc_content(rel_path, content)
         if not result.is_valid or result.frontmatter is None:
             continue
-
-        rel_path = str(file_path.relative_to(agent_docs_root))
 
         for tripwire in result.frontmatter.tripwires:
             tripwires.append(
@@ -489,39 +490,45 @@ def generate_tripwires_index(
     return "\n".join(lines)
 
 
-def collect_valid_docs(project_root: Path) -> tuple[list[DocInfo], list[CategoryInfo], int]:
+def collect_valid_docs(
+    agent_docs: AgentDocs, project_root: Path
+) -> tuple[list[DocInfo], list[CategoryInfo], int]:
     """Collect all valid documentation files organized by category.
 
     Args:
+        agent_docs: Gateway for accessing docs/learned/ files.
         project_root: Path to the project root.
 
     Returns:
         Tuple of (uncategorized_docs, categories, invalid_count).
     """
-    agent_docs_root = project_root / AGENT_DOCS_DIR
-    if not agent_docs_root.exists():
+    if not agent_docs.has_docs_dir(project_root):
         return [], [], 0
 
-    files = discover_agent_docs(agent_docs_root)
+    rel_paths = discover_agent_docs(agent_docs, project_root)
     uncategorized: list[DocInfo] = []
     categories: dict[str, list[DocInfo]] = {}
     invalid_count = 0
 
-    for file_path in files:
-        result = validate_agent_doc_file(file_path, agent_docs_root)
+    for rel_path in rel_paths:
+        content = agent_docs.read_file(project_root, rel_path)
+        if content is None:
+            invalid_count += 1
+            continue
+        result = validate_agent_doc_content(rel_path, content)
         if not result.is_valid or result.frontmatter is None:
             invalid_count += 1
             continue
 
-        rel_path = file_path.relative_to(agent_docs_root)
         doc_info = DocInfo(
-            rel_path=str(rel_path),
+            rel_path=rel_path,
             frontmatter=result.frontmatter,
         )
 
         # Check if in subdirectory (category)
-        if len(rel_path.parts) > 1:
-            category = rel_path.parts[0]
+        path_parts = Path(rel_path).parts
+        if len(path_parts) > 1:
+            category = path_parts[0]
             if category not in categories:
                 categories[category] = []
             categories[category].append(doc_info)
@@ -619,39 +626,11 @@ def generate_category_index(category: CategoryInfo) -> str:
     return "\n".join(lines)
 
 
-def _format_with_prettier(content: str, file_path: Path) -> str:
-    """Format markdown content with prettier.
-
-    Runs prettier twice to ensure idempotent output. Prettier converts
-    underscore emphasis (__text__) to asterisk emphasis on first pass,
-    then escapes asterisks on second pass. A single pass causes cycling
-    between `erk docs sync` and `make prettier --write`.
-
-    Args:
-        content: The markdown content to format.
-        file_path: Path to use for prettier's parser detection.
-
-    Returns:
-        Formatted content.
-    """
-    # First pass: normalize emphasis markers and basic formatting
-    result = run_subprocess_with_context(
-        cmd=["prettier", "--stdin-filepath", str(file_path)],
-        operation_context="format markdown with prettier (pass 1)",
-        input=content,
-    )
-    # Second pass: escape any asterisks that would be re-interpreted
-    result = run_subprocess_with_context(
-        cmd=["prettier", "--stdin-filepath", str(file_path)],
-        operation_context="format markdown with prettier (pass 2)",
-        input=result.stdout,
-    )
-    return result.stdout
-
-
 def _update_index_file(
+    agent_docs: AgentDocs,
+    project_root: Path,
     *,
-    index_path: Path,
+    rel_path: str,
     content: str,
     created: list[str],
     updated: list[str],
@@ -661,78 +640,77 @@ def _update_index_file(
     """Update an index file if content changed.
 
     Args:
-        index_path: Path to the index file.
+        agent_docs: Gateway for accessing docs/learned/ files.
+        project_root: Root of the project.
+        rel_path: Relative path under docs/learned/ (e.g., "architecture/index.md").
         content: New content to write.
         created: List to append if file was created.
         updated: List to append if file was updated.
         unchanged: List to append if file was unchanged.
         dry_run: If True, don't actually write.
     """
-    rel_path = str(index_path.relative_to(index_path.parent.parent.parent))
-
     # Format content with prettier before comparing or writing
-    formatted_content = _format_with_prettier(content, index_path)
+    formatted_content = agent_docs.format_markdown(content)
 
-    if not index_path.exists():
+    existing = agent_docs.read_file(project_root, rel_path)
+    if existing is None:
         if not dry_run:
-            index_path.write_text(formatted_content, encoding="utf-8")
+            agent_docs.write_file(project_root, rel_path, formatted_content)
         created.append(rel_path)
         return
 
-    existing = index_path.read_text(encoding="utf-8")
     if existing == formatted_content:
         unchanged.append(rel_path)
         return
 
     if not dry_run:
-        index_path.write_text(formatted_content, encoding="utf-8")
+        agent_docs.write_file(project_root, rel_path, formatted_content)
     updated.append(rel_path)
 
 
 def _update_generated_file(
+    agent_docs: AgentDocs,
+    project_root: Path,
     *,
-    file_path: Path,
+    rel_path: str,
     content: str,
     created: list[str],
     updated: list[str],
     unchanged: list[str],
     dry_run: bool,
-    agent_docs_root: Path,
 ) -> None:
     """Update a generated file if content changed.
 
     Args:
-        file_path: Path to the generated file.
+        agent_docs: Gateway for accessing docs/learned/ files.
+        project_root: Root of the project.
+        rel_path: Relative path under docs/learned/ (e.g., "architecture/tripwires.md").
         content: New content to write.
         created: List to append if file was created.
         updated: List to append if file was updated.
         unchanged: List to append if file was unchanged.
         dry_run: If True, don't actually write.
-        agent_docs_root: Path to .erk/docs/agent/ for relative path calculation.
     """
-    rel_path = str(file_path.relative_to(agent_docs_root.parent.parent))
-
     # Format content with prettier before comparing or writing
-    formatted_content = _format_with_prettier(content, file_path)
+    formatted_content = agent_docs.format_markdown(content)
 
-    if not file_path.exists():
+    existing = agent_docs.read_file(project_root, rel_path)
+    if existing is None:
         if not dry_run:
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            file_path.write_text(formatted_content, encoding="utf-8")
+            agent_docs.write_file(project_root, rel_path, formatted_content)
         created.append(rel_path)
         return
 
-    existing = file_path.read_text(encoding="utf-8")
     if existing == formatted_content:
         unchanged.append(rel_path)
         return
 
     if not dry_run:
-        file_path.write_text(formatted_content, encoding="utf-8")
+        agent_docs.write_file(project_root, rel_path, formatted_content)
     updated.append(rel_path)
 
 
-def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
+def sync_agent_docs(agent_docs: AgentDocs, project_root: Path, *, dry_run: bool) -> SyncResult:
     """Sync agent documentation index files from frontmatter.
 
     Generates index.md files for the root docs/learned/ directory and
@@ -740,14 +718,14 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
     per-category tripwires.md files (e.g., architecture/tripwires.md).
 
     Args:
+        agent_docs: Gateway for accessing docs/learned/ files.
         project_root: Path to the project root.
         dry_run: If True, don't write files, just report what would change.
 
     Returns:
         SyncResult with lists of created, updated, and unchanged files.
     """
-    agent_docs_root = project_root / AGENT_DOCS_DIR
-    if not agent_docs_root.exists():
+    if not agent_docs.has_docs_dir(project_root):
         return SyncResult(
             created=(),
             updated=(),
@@ -757,17 +735,18 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
             tripwires_by_category=(),
         )
 
-    uncategorized, categories, invalid_count = collect_valid_docs(project_root)
+    uncategorized, categories, invalid_count = collect_valid_docs(agent_docs, project_root)
 
     created: list[str] = []
     updated: list[str] = []
     unchanged: list[str] = []
 
     # Generate root index
-    root_index_path = agent_docs_root / "index.md"
     root_content = generate_root_index(uncategorized, categories)
     _update_index_file(
-        index_path=root_index_path,
+        agent_docs,
+        project_root,
+        rel_path="index.md",
         content=root_content,
         created=created,
         updated=updated,
@@ -780,10 +759,11 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
         if len(category.docs) < 2:
             continue
 
-        category_index_path = agent_docs_root / category.name / "index.md"
         category_content = generate_category_index(category)
         _update_index_file(
-            index_path=category_index_path,
+            agent_docs,
+            project_root,
+            rel_path=f"{category.name}/index.md",
             content=category_content,
             created=created,
             updated=updated,
@@ -792,7 +772,7 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
         )
 
     # Collect and generate per-category tripwire files
-    tripwires = collect_tripwires(project_root)
+    tripwires = collect_tripwires(agent_docs, project_root)
     tripwires_count = len(tripwires)
 
     tripwires_by_category = group_tripwires_by_category(tripwires)
@@ -800,16 +780,16 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
 
     for category_name, category_tripwires in sorted(tripwires_by_category.items()):
         # Generate tripwires file for this category
-        tripwires_path = agent_docs_root / category_name / "tripwires.md"
         tripwires_content = generate_category_tripwires_doc(category_name, category_tripwires)
         _update_generated_file(
-            file_path=tripwires_path,
+            agent_docs,
+            project_root,
+            rel_path=f"{category_name}/tripwires.md",
             content=tripwires_content,
             created=created,
             updated=updated,
             unchanged=unchanged,
             dry_run=dry_run,
-            agent_docs_root=agent_docs_root,
         )
         category_stats.append(
             CategoryTripwireStats(category=category_name, count=len(category_tripwires))
@@ -817,16 +797,16 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
 
     # Generate tripwires index (only if there are tripwires)
     if tripwires_by_category:
-        tripwires_index_path = agent_docs_root / "tripwires-index.md"
         tripwires_index_content = generate_tripwires_index(tripwires_by_category)
         _update_generated_file(
-            file_path=tripwires_index_path,
+            agent_docs,
+            project_root,
+            rel_path="tripwires-index.md",
             content=tripwires_index_content,
             created=created,
             updated=updated,
             unchanged=unchanged,
             dry_run=dry_run,
-            agent_docs_root=agent_docs_root,
         )
 
     return SyncResult(
@@ -839,7 +819,9 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
     )
 
 
-def validate_tripwires_index(project_root: Path) -> TripwiresIndexValidationResult:
+def validate_tripwires_index(
+    agent_docs: AgentDocs, project_root: Path
+) -> TripwiresIndexValidationResult:
     """Validate that tripwires-index.md is complete and up-to-date.
 
     Checks that:
@@ -847,16 +829,15 @@ def validate_tripwires_index(project_root: Path) -> TripwiresIndexValidationResu
     2. Every tripwires.md file is listed in the index
 
     Args:
+        agent_docs: Gateway for accessing docs/learned/ files.
         project_root: Path to the project root.
 
     Returns:
         Validation result with any errors found.
     """
-    agent_docs_root = project_root / AGENT_DOCS_DIR
-    tripwires_index_path = agent_docs_root / "tripwires-index.md"
-
     # Check if index exists
-    if not tripwires_index_path.exists():
+    index_content = agent_docs.read_file(project_root, "tripwires-index.md")
+    if index_content is None:
         return TripwiresIndexValidationResult(
             is_valid=False,
             errors=("tripwires-index.md does not exist. Run 'erk docs sync' to generate it.",),
@@ -864,21 +845,20 @@ def validate_tripwires_index(project_root: Path) -> TripwiresIndexValidationResu
             index_exists=False,
         )
 
-    # Read the index content
-    index_content = tripwires_index_path.read_text(encoding="utf-8")
-
     # Find all auto-generated tripwires.md files (those with the AUTO-GENERATED banner)
-    tripwire_files = list(agent_docs_root.glob("*/tripwires.md"))
+    all_files = agent_docs.list_files(project_root)
+    tripwire_files = [f for f in all_files if f.endswith("/tripwires.md")]
 
     # Check each auto-generated tripwire file is in the index
     missing_from_index: list[str] = []
-    for tripwire_file in tripwire_files:
+    for tripwire_rel_path in tripwire_files:
         # Skip manually-authored tripwires docs (without AUTO-GENERATED banner)
-        file_content = tripwire_file.read_text(encoding="utf-8")
-        if "AUTO-GENERATED FILE" not in file_content:
+        file_content = agent_docs.read_file(project_root, tripwire_rel_path)
+        if file_content is None or "AUTO-GENERATED FILE" not in file_content:
             continue
 
-        category = tripwire_file.parent.name
+        # Extract category from path (e.g., "architecture/tripwires.md" -> "architecture")
+        category = Path(tripwire_rel_path).parent.name
         # Check for the link format: [category](category/tripwires.md)
         expected_link = f"[{category}]({category}/tripwires.md)"
         if expected_link not in index_content:

@@ -22,6 +22,7 @@ from erk_shared.context.types import (
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
+from erk_shared.gateway.agent_docs.abc import AgentDocs
 from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.git import GitBranchManager
@@ -76,6 +77,7 @@ class ErkContext:
     time: Time
     erk_installation: ErkInstallation  # ~/.erk/ installation data (config, pool state)
     claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)
+    agent_docs: AgentDocs  # docs/learned/ file access
     plan_store: PlanStore
     prompt_executor: PromptExecutor
 

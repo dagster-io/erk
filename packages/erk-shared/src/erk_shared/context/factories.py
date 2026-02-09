@@ -126,6 +126,10 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     time = RealTime()
     github_issues = RealGitHubIssues(target_repo=None, time=time)
     fake_time = FakeTime()
+
+    # Import here to avoid circular imports
+    from erk.agent_docs.real import RealAgentDocs
+
     return ErkContext(
         git=git,
         github=RealGitHub(time=time, repo_info=repo_info, issues=github_issues),
@@ -137,6 +141,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         console=ScriptConsole(),
         time=fake_time,
         erk_installation=erk_installation,
+        agent_docs=RealAgentDocs(),
         plan_store=GitHubPlanStore(github_issues, fake_time),
         shell=FakeShell(),
         completion=FakeCompletion(),

@@ -13,6 +13,8 @@ from typing import Any, cast
 import click
 import tomlkit
 
+# Real implementations from erk (not erk_shared)
+from erk.agent_docs.real import RealAgentDocs
 from erk.cli.config import load_config, load_local_config, merge_configs_with_local
 from erk.core.completion import RealCompletion
 from erk.core.prompt_executor import ClaudePromptExecutor
@@ -36,6 +38,7 @@ from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
+from erk_shared.gateway.agent_docs.abc import AgentDocs
 from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.codespace.abc import Codespace
@@ -125,6 +128,10 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         confirm_responses=None,
     )
     fake_time = FakeTime()
+
+    # Import here to avoid issues during module initialization
+    from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
+
     return ErkContext(
         git=git,
         github=fake_github,
@@ -136,6 +143,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         shell=FakeShell(),
         codespace=fake_codespace,
         agent_launcher=FakeAgentLauncher(),
+        agent_docs=FakeAgentDocs(),
         completion=FakeCompletion(),
         time=fake_time,
         erk_installation=FakeErkInstallation(),
@@ -166,6 +174,7 @@ def context_for_test(
     shell: Shell | None = None,
     codespace: Codespace | None = None,
     agent_launcher: AgentLauncher | None = None,
+    agent_docs: AgentDocs | None = None,
     completion: Completion | None = None,
     time: Time | None = None,
     erk_installation: ErkInstallation | None = None,
@@ -304,6 +313,11 @@ def context_for_test(
     if agent_launcher is None:
         agent_launcher = FakeAgentLauncher()
 
+    if agent_docs is None:
+        from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
+
+        agent_docs = FakeAgentDocs()
+
     if completion is None:
         completion = FakeCompletion()
 
@@ -364,6 +378,7 @@ def context_for_test(
         shell=shell,
         codespace=codespace,
         agent_launcher=agent_launcher,
+        agent_docs=agent_docs,
         completion=completion,
         time=time,
         erk_installation=erk_installation,
@@ -576,6 +591,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
 
     real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
     real_agent_launcher: AgentLauncher = RealAgentLauncher()
+    real_agent_docs: AgentDocs = RealAgentDocs()
     prompt_executor: PromptExecutor = ClaudePromptExecutor(console=console)
 
     # 11. Create context with all values
@@ -590,6 +606,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         shell=RealShell(),
         codespace=RealCodespace(),
         agent_launcher=real_agent_launcher,
+        agent_docs=real_agent_docs,
         completion=RealCompletion(),
         time=time,
         erk_installation=erk_installation,
