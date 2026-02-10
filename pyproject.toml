@@ -82,6 +82,7 @@ packages = ["src/erk"]
 # Actions: composite GitHub actions (needed by workflows)
 ".github/actions/setup-claude-erk" = "erk/data/github/actions/setup-claude-erk"
 ".github/actions/setup-claude-code" = "erk/data/github/actions/setup-claude-code"
+".github/actions/erk-remote-setup" = "erk/data/github/actions/erk-remote-setup"
 # Convention-based code reviews (reviews directory + generic workflow)
 ".github/workflows/code-reviews.yml" = "erk/data/github/workflows/code-reviews.yml"
 ".github/reviews" = "erk/data/github/reviews"
