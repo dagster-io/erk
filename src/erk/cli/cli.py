@@ -23,6 +23,7 @@ from erk.cli.commands.init import init_group
 from erk.cli.commands.land_cmd import land
 from erk.cli.commands.launch_cmd import launch
 from erk.cli.commands.learn.learn_cmd import learn_cmd
+from erk.cli.commands.local_runner_cmd import local_runner
 from erk.cli.commands.log_cmd import log_cmd
 from erk.cli.commands.md.group import md_group
 from erk.cli.commands.objective import objective_group
@@ -193,6 +194,7 @@ register_with_aliases(cli, implement)  # Has @alias("impl")
 cli.add_command(init_group)
 cli.add_command(land)
 cli.add_command(learn_cmd)
+cli.add_command(local_runner)
 admin_group.add_command(log_cmd)
 cli.add_command(dash)
 cli.add_command(plan_group)
