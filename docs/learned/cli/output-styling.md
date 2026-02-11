@@ -11,6 +11,8 @@ tripwires:
     warning: "Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed."
   - action: "displaying user-provided text in Rich CLI tables"
     warning: "Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear."
+  - action: "writing multi-line error messages in Ensure method calls"
+    warning: "Use implicit string concatenation with \\n at end of first string. Line 1 is the primary error, line 2+ is remediation context. Do NOT use \\n\\n (double newline) — Ensure handles spacing."
 ---
 
 # CLI Output Styling Guide
@@ -451,6 +453,28 @@ All error messages should follow these principles:
 ```
 
 **DO NOT** include "Error: " prefix - the `Ensure` class adds it automatically in red.
+
+### Multi-line Error Messages
+
+For errors that need both a primary message and remediation context, use implicit string concatenation with `\n`:
+
+```python
+github_id = Ensure.not_none(
+    repo.github,
+    "Not a GitHub repository\n"
+    "This command requires the repository to have a GitHub remote configured.",
+)
+```
+
+**Convention:**
+
+- Line 1: Primary error description (concise, specific)
+- Newline separator via `\n` at end of first string
+- Line 2+: Remediation guidance or additional context
+
+**DO NOT** use `\n\n` (double newline) — the Ensure class already handles spacing in its error output formatting.
+
+This pattern was established in the admin.py migration (PR #6860) and applies to all Ensure method calls where the error benefits from remediation context.
 
 ### Examples
 

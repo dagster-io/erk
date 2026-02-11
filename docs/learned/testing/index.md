@@ -3,6 +3,7 @@
 
 # Testing Documentation
 
+- **[admin-command-testing.md](admin-command-testing.md)** — writing tests for admin CLI commands, using FakeGitHubAdmin in tests, testing permission-related CLI commands
 - **[alias-verification-pattern.md](alias-verification-pattern.md)** — enforcing the no-import-aliases rule, building automated alias detection, distinguishing re-exports from alias violations
 - **[cli-test-error-assertions.md](cli-test-error-assertions.md)** — writing CLI tests with error assertions, testing error messages in Click commands, asserting on CLI output
 - **[cli-testing.md](cli-testing.md)** — writing tests for erk CLI commands, using ErkContext.for_test(), testing Click commands with context
