@@ -10,7 +10,6 @@ from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.core.context import ErkContext
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.types import GitHubRepoLocation
-from erk_shared.gateway.github_admin.real import RealGitHubAdmin
 from erk_shared.output.output import user_output
 
 
@@ -56,9 +55,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
         "This command requires the repository to have a GitHub remote configured.",
     )
 
-    # Create admin interface
-    # TODO: Use injected admin from context when dry-run support is added
-    admin = RealGitHubAdmin()
+    admin = ctx.github_admin
     location = GitHubRepoLocation(root=repo.root, repo_id=github_id)
 
     if action is None:
