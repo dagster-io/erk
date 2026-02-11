@@ -40,18 +40,18 @@ OBJECTIVE_WITH_ROADMAP = """# Objective: Test Feature
 
 ### Phase 1: Foundation
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Setup infrastructure | - | #123 |
-| 1.2 | Add basic tests | - | plan #124 |
-| 1.3 | Update docs | - | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Setup infrastructure | done | - | #123 |
+| 1.2 | Add basic tests | in-progress | #124 | - |
+| 1.3 | Update docs | pending | - | - |
 
 ### Phase 2A: Core Implementation
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 2A.1 | Build main feature | - | #125 |
-| 2A.2 | Add integration tests | blocked | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 2A.1 | Build main feature | done | - | #125 |
+| 2A.2 | Add integration tests | blocked | - | - |
 """
 
 OBJECTIVE_EMPTY_ROADMAP = """# Objective: Empty
@@ -247,7 +247,7 @@ def test_view_objective_phase_completion_counts() -> None:
 
 
 def test_view_objective_status_emojis() -> None:
-    """Test that status indicators show correct emojis."""
+    """Test that status indicators show correct emojis and plan references."""
     issue = _make_issue(900, "Objective: Emojis", OBJECTIVE_WITH_ROADMAP)
     fake_gh = FakeGitHubIssues(issues={900: issue})
     runner = CliRunner()
@@ -266,3 +266,27 @@ def test_view_objective_status_emojis() -> None:
         assert "🔄 in_progress" in result.output  # in_progress status
         assert "⏳ pending" in result.output  # pending status
         assert "🚫 blocked" in result.output  # blocked status
+        # in_progress status shows plan reference
+        assert "in_progress plan #124" in result.output
+
+
+def test_view_objective_plan_pr_columns() -> None:
+    """Test that plan and PR are shown as separate columns."""
+    issue = _make_issue(950, "Objective: Columns", OBJECTIVE_WITH_ROADMAP)
+    fake_gh = FakeGitHubIssues(issues={950: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["950"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = strip_ansi(result.output)
+        # Step 1.1 has no plan but has PR #123
+        assert "#123" in output
+        # Step 1.2 has plan #124 but no PR
+        assert "#124" in output

@@ -42,9 +42,11 @@ def validate_roadmap_frontmatter(
         errors.append("Missing required field: schema_version")
         return None, errors
 
-    if schema_version != "1":
+    if schema_version not in ("1", "2"):
         errors.append(f"Unsupported schema_version: {schema_version}")
         return None, errors
+
+    is_v2 = schema_version == "2"
 
     # Validate steps is a list
     if "steps" not in data:
@@ -74,7 +76,8 @@ def validate_roadmap_frontmatter(
         step_id = step_dict["id"]
         description = step_dict["description"]
         status = step_dict["status"]
-        pr = step_dict.get("pr")
+        raw_plan = step_dict.get("plan")
+        raw_pr = step_dict.get("pr")
 
         # Validate types
         if not isinstance(step_id, str):
@@ -86,16 +89,27 @@ def validate_roadmap_frontmatter(
         if not isinstance(status, str):
             errors.append(f"Step {i} field 'status' must be a string")
             return None, errors
-        if pr is not None and not isinstance(pr, str):
+        if raw_plan is not None and not isinstance(raw_plan, str):
+            errors.append(f"Step {i} field 'plan' must be a string or null")
+            return None, errors
+        if raw_pr is not None and not isinstance(raw_pr, str):
             errors.append(f"Step {i} field 'pr' must be a string or null")
             return None, errors
+
+        # v1 migration: "plan #NNN" in pr field → "#NNN" in plan field
+        plan_value = raw_plan
+        pr_value = raw_pr
+        if not is_v2 and isinstance(raw_pr, str) and raw_pr.startswith("plan #"):
+            plan_value = "#" + raw_pr[len("plan #") :]
+            pr_value = None
 
         steps.append(
             RoadmapStep(
                 id=step_id,
                 description=description,
                 status=status,
-                pr=pr,
+                plan=plan_value,
+                pr=pr_value,
             )
         )
 
@@ -136,12 +150,13 @@ def serialize_steps_to_frontmatter(steps: list[RoadmapStep]) -> str:
         YAML frontmatter string with --- delimiters
     """
     data = {
-        "schema_version": "1",
+        "schema_version": "2",
         "steps": [
             {
                 "id": step.id,
                 "description": step.description,
                 "status": step.status,
+                "plan": step.plan,
                 "pr": step.pr,
             }
             for step in steps
@@ -233,15 +248,18 @@ def update_step_in_frontmatter(
     block_content: str,
     step_id: str,
     *,
+    plan: str | None = None,
     pr: str,
     status: str | None,
 ) -> str | None:
-    """Update a step's PR field (and optionally status) in frontmatter YAML.
+    """Update a step's plan/PR fields (and optionally status) in frontmatter YAML.
 
     Args:
         block_content: Raw content from metadata block
         step_id: Step ID to update (e.g., "1.1")
-        pr: New PR value (e.g., "#123", "plan #456")
+        plan: New plan value (e.g., "#6464"), or None to leave unchanged.
+              Pass empty string "" to clear.
+        pr: New PR value (e.g., "#123", "")
         status: Explicit status to set, or None to reset to "pending"
 
     Returns:
@@ -259,12 +277,25 @@ def update_step_in_frontmatter(
 
     for step in steps:
         if step.id == step_id:
+            # Determine plan value: explicit arg > auto-clear on --pr > preserve
+            if plan is not None:
+                if plan:
+                    new_plan = plan
+                else:
+                    new_plan = None
+            elif pr:
+                # Setting --pr auto-clears plan
+                new_plan = None
+            else:
+                new_plan = step.plan
+
             updated_steps.append(
                 RoadmapStep(
                     id=step.id,
                     description=step.description,
                     status=new_status,
-                    pr=pr,
+                    plan=new_plan,
+                    pr=pr if pr else None,
                 )
             )
             found = True

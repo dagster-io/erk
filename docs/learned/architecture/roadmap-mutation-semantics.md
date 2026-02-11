@@ -30,16 +30,16 @@ This split means the command produces human-readable tables (status always refle
 
 ### What It Does
 
-When you run `erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"`, the command:
+When you run `erk exec update-roadmap-step 6423 --step 1.3 --plan "#6464"`, the command:
 
-1. Computes display status from the PR value
-2. Writes **both** the status and PR cells in a single atomic update
+1. Computes display status from the plan/PR values
+2. Writes **status, plan, and PR cells** in a single atomic update
 
-| PR Value Provided | Written Status Cell | Written PR Cell |
-| ----------------- | ------------------- | --------------- |
-| `#123`            | `done`              | `#123`          |
-| `plan #456`       | `in-progress`       | `plan #456`     |
-| `""` (empty)      | `pending`           | `-`             |
+| Flag Provided   | Written Status | Written Plan Cell | Written PR Cell |
+| --------------- | -------------- | ----------------- | --------------- |
+| `--pr "#123"`   | `done`         | `-`               | `#123`          |
+| `--plan "#456"` | `in-progress`  | `#456`            | `-`             |
+| `--pr ""`       | `pending`      | `-`               | `-`             |
 
 ### Why Both Cells Are Written
 
@@ -55,9 +55,7 @@ By writing computed status directly, the table is always human-readable.
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
 
-See `_replace_step_pr_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:63-97`. The function uses regex to find the target row and replaces both status and PR cells in a single operation.
-
-The computation logic (lines 84-90) maps PR values to status strings before building the replacement row.
+See `_replace_step_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`. The function uses regex to find the target row and replaces status, plan, and PR cells in a single operation. It supports both 4-col (legacy) and 5-col table formats, upgrading 4-col headers to 5-col on write.
 
 ## Parse: Status Inference at Read Time
 
@@ -71,7 +69,8 @@ If you update PR via direct body mutation (not using the command), status won't 
 
 | Action                                            | Result Status | Why                                                  |
 | ------------------------------------------------- | ------------- | ---------------------------------------------------- |
-| update-roadmap-step sets PR to `#123`             | `done`        | Command writes computed status                       |
+| update-roadmap-step `--pr "#123"`                 | `done`        | Command writes computed status                       |
+| update-roadmap-step `--plan "#456"`               | `in-progress` | Command writes computed status                       |
 | Manual GitHub edit: change PR cell to `#123`      | (unchanged)   | Status cell not touched, parser reads explicit value |
 | Script sets PR but leaves status at `in-progress` | `in_progress` | Parser sees explicit value, doesn't infer            |
 

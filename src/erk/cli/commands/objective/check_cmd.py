@@ -23,7 +23,13 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.output.output import user_output
 
 ERK_OBJECTIVE_LABEL = "erk-objective"
-_STALE_STATUS_PATTERN = re.compile(r"\|[^|]+\|[^|]+\|\s*-\s*\|\s*(?:#\d+|plan #\d+)\s*\|")
+# Match stale status in both 4-col and 5-col tables (anchored to line start):
+# 4-col: | step | desc | - | #123 |  (only matches exactly 4-col rows)
+# 5-col: | step | desc | - | plan | #456 |
+_STALE_STATUS_4COL = re.compile(
+    r"^\|[^|]+\|[^|]+\|\s*-\s*\|\s*(?:#\d+|plan #\d+)\s*\|$", re.MULTILINE
+)
+_STALE_STATUS_5COL = re.compile(r"^\|[^|]+\|[^|]+\|\s*-\s*\|[^|]*\|\s*#\d+\s*\|$", re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -115,7 +121,7 @@ def validate_objective(
     consistency_issues: list[str] = []
     for phase in phases:
         for step in phase.steps:
-            # Steps with PR #NNN should infer as done
+            # Steps with PR #NNN should be done
             if (
                 step.pr
                 and step.pr.startswith("#")
@@ -126,15 +132,15 @@ def validate_objective(
                     f"Step {step.id} has PR {step.pr} but status is '{step.status}' "
                     f"(expected 'done')"
                 )
-            # Steps with plan #NNN should infer as in_progress
+            # Steps with plan reference should be in_progress
             if (
-                step.pr
-                and step.pr.startswith("plan #")
+                step.plan
+                and step.plan.startswith("#")
                 and step.status != "in_progress"
                 and step.status != "skipped"
             ):
                 consistency_issues.append(
-                    f"Step {step.id} has {step.pr} but status is '{step.status}' "
+                    f"Step {step.id} has plan {step.plan} but status is '{step.status}' "
                     f"(expected 'in_progress')"
                 )
 
@@ -165,7 +171,7 @@ def validate_objective(
         checks.append((False, f"Phase numbering is not sequential: {phase_labels}"))
 
     # Check 6: No stale display statuses (steps with PRs should have explicit status)
-    stale_matches = _STALE_STATUS_PATTERN.findall(issue.body)
+    stale_matches = _STALE_STATUS_4COL.findall(issue.body) + _STALE_STATUS_5COL.findall(issue.body)
     if not stale_matches:
         checks.append((True, "No stale display statuses"))
     else:

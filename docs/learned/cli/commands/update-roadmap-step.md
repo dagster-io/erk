@@ -26,13 +26,15 @@ The command is infrastructure for workflow integration, not an interactive tool.
 
 ## Status Computation Semantics
 
-When the command updates a PR cell, it **writes both the status and PR cells atomically**:
+When the command updates plan/PR cells, it **writes status, plan, and PR cells atomically**:
 
-| PR Value     | Written Status | Why                                   |
-| ------------ | -------------- | ------------------------------------- |
-| `#123`       | `done`         | PR reference indicates landed work    |
-| `plan #6464` | `in-progress`  | Plan prefix indicates active planning |
-| `""` (empty) | `pending`      | Clearing PR resets to initial state   |
+| Flag           | Written Status | Plan Cell | PR Cell   | Why                                   |
+| -------------- | -------------- | --------- | --------- | ------------------------------------- |
+| `--plan #6464` | `in-progress`  | `#6464`   | (cleared) | Plan reference indicates active work  |
+| `--pr #123`    | `done`         | (cleared) | `#123`    | PR reference indicates landed work    |
+| `--pr ""`      | `pending`      | (cleared) | `-`       | Clearing refs resets to initial state |
+
+The command also accepts legacy `--pr "plan #NNN"` syntax, which is automatically migrated to `--plan "#NNN"`.
 
 This differs from parse-time inference (which only fires when status is `-` or empty). Writing computed status makes the table human-readable in GitHub's UI without requiring a parse pass.
 
@@ -41,8 +43,23 @@ This differs from parse-time inference (which only fires when status is `-` or e
 ## Usage Pattern
 
 ```bash
-# Link step to plan issue
-erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
+# Single step — plan reference
+erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --plan <PLAN_REF>
+
+# Single step — landed PR (auto-clears plan)
+erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --pr <PR_REF>
+
+# Multiple steps
+erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --step <STEP_ID> ... --plan <PLAN_REF>
+```
+
+### Examples
+
+**Single step updates:**
+
+```bash
+# Set step to plan phase
+erk exec update-roadmap-step 6423 --step 1.3 --plan "#6464"
 
 # Mark step as done with landed PR
 erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500"
@@ -53,7 +70,9 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr ""
 
 Output is structured JSON with `success`, `issue_number`, `step_id`, `previous_pr`, `new_pr`, and `url` fields.
 
-## Error Handling Strategy
+````bash
+# Update multiple steps with same plan (single API call)
+erk exec update-roadmap-step 6697 --step 5.1 --step 5.2 --step 5.3 --plan "#6759"
 
 The command follows erk's discriminated union pattern for error returns:
 
@@ -69,16 +88,88 @@ The command follows erk's discriminated union pattern for error returns:
 
 All error paths exit with code 1 but include typed error fields for programmatic handling. See `update_roadmap_step()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:107-182` for the LBYL guard sequence.
 
-## Plan-Save Integration Point
+## Parameter Semantics: --plan and --pr
 
-The command's primary caller is the plan-save workflow (Step 3.5):
+The command uses separate `--plan` and `--pr` flags for the two lifecycle stages:
 
-1. Agent creates plan issue → gets issue number
-2. Fetch parent objective → extract roadmap
-3. **Call update-roadmap-step** → sets step's PR to `plan #<issue>`
-4. Status automatically written as `in-progress`
+| Flag             | Status Computed | Lifecycle Stage               |
+| ---------------- | --------------- | ----------------------------- |
+| `--plan "#6464"` | `in-progress`   | Step has an active plan issue |
+| `--pr "#6500"`   | `done`          | Step has a landed PR          |
+| `--pr ""`        | `pending`       | Clear the reference           |
 
-This integration is why the command returns structured JSON — upstream scripts need the URL and previous state for logging.
+Setting `--pr` automatically clears the plan column. The legacy `--pr "plan #NNN"` syntax is still accepted and automatically migrated to `--plan "#NNN"`.
+
+See [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md) for the write-time vs parse-time distinction.
+
+## Output Format
+
+### Single Step (Legacy Format)
+
+When updating a single step, the command maintains backward-compatible output:
+
+```json
+{
+  "success": true,
+  "issue_number": 6423,
+  "step_id": "1.3",
+  "previous_pr": "",
+  "new_pr": "plan #6464",
+  "url": "https://github.com/owner/repo/issues/6423"
+}
+````
+
+### Multiple Steps (New Format)
+
+When updating multiple steps, the output includes a `steps` array with per-step results:
+
+**All steps successful:**
+
+```json
+{
+  "success": true,
+  "issue_number": 6697,
+  "new_pr": "plan #6759",
+  "url": "https://github.com/owner/repo/issues/6697",
+  "steps": [
+    { "step_id": "5.1", "success": true, "previous_pr": null },
+    { "step_id": "5.2", "success": true, "previous_pr": null },
+    { "step_id": "5.3", "success": true, "previous_pr": null }
+  ]
+}
+```
+
+**Partial failure (some steps not found):**
+
+```json
+{
+  "success": false,
+  "issue_number": 6697,
+  "new_pr": "plan #6759",
+  "url": "https://github.com/owner/repo/issues/6697",
+  "steps": [
+    { "step_id": "5.1", "success": true, "previous_pr": null },
+    { "step_id": "9.9", "success": false, "error": "step_not_found" },
+    { "step_id": "5.3", "success": true, "previous_pr": null }
+  ]
+}
+```
+
+Note: When using multiple steps, the command makes a **single GitHub API call** with all successful replacements batched together.
+
+## Exit Codes
+
+The command always exits 0. Check the JSON `success` field for pass/fail:
+
+| Scenario                         | Exit Code | JSON `success` | JSON Error Type      |
+| -------------------------------- | --------- | -------------- | -------------------- |
+| All steps updated                | 0         | `true`         | N/A                  |
+| Issue not found                  | 0         | `false`        | `issue_not_found`    |
+| No roadmap table in issue body   | 0         | `false`        | `no_roadmap`         |
+| Any step ID not found in roadmap | 0         | `false`        | `step_not_found`     |
+| Replacement failed (regex error) | 0         | `false`        | `replacement_failed` |
+
+Callers should always parse the JSON output and check `success` rather than relying on exit codes.
 
 ## Implementation Notes
 
@@ -86,13 +177,14 @@ This integration is why the command returns structured JSON — upstream scripts
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
 
-The regex in `_replace_step_pr_in_body()` expects four-column tables:
+The regex in `_replace_step_refs_in_body()` supports both four-column (legacy) and five-column tables:
 
 ```
-| step_id | description | status | pr |
+| step_id | description | status | plan | pr |   (5-col, canonical)
+| step_id | description | status | pr |           (4-col, legacy)
 ```
 
-Step lookup works across all phases (the parser flattens phases into a single step list). See `_find_step_pr()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:48-60`.
+When updating a 4-col table, the command upgrades the header to 5-col automatically. Step lookup works across all phases (the parser flattens phases into a single step list). See `_find_step_refs()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`.
 
 ### Shared Parsing Logic
 

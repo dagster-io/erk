@@ -36,11 +36,11 @@ Both `in-progress` (hyphenated, human-friendly in markdown) and `in_progress` (u
 
 When the Status column is `-` or empty (or any unrecognized value), the parser falls through to infer status from the PR column:
 
-| PR Column Value | Inferred Status | Reasoning                                 |
-| --------------- | --------------- | ----------------------------------------- |
-| `#123`          | done            | A merged PR means work is complete        |
-| `plan #456`     | in_progress     | A plan issue means work is underway       |
-| `-` or empty    | pending         | No PR reference means work hasn't started |
+| Plan Column  | PR Column    | Inferred Status | Reasoning                               |
+| ------------ | ------------ | --------------- | --------------------------------------- |
+| any          | `#123`       | done            | A merged PR means work is complete      |
+| `#456`       | `-` or empty | in_progress     | A plan issue means work is underway     |
+| `-` or empty | `-` or empty | pending         | No references means work hasn't started |
 
 <!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
 

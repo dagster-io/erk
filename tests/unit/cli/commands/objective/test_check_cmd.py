@@ -46,19 +46,19 @@ VALID_OBJECTIVE_BODY = """# Objective: Test Feature
 
 ### Phase 1: Foundation
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Setup infrastructure | done | #123 |
-| 1.2 | Add basic tests | in-progress | plan #124 |
-| 1.3 | Update docs | pending | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Setup infrastructure | done | - | #123 |
+| 1.2 | Add basic tests | in-progress | #124 | - |
+| 1.3 | Update docs | pending | - | - |
 
 ### Phase 2: Core Implementation
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 2.1 | Build main feature | done | #125 |
-| 2.2 | Add integration tests | blocked | - |
-| 2.3 | Performance tuning | skipped | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 2.1 | Build main feature | done | - | #125 |
+| 2.2 | Add integration tests | blocked | - | - |
+| 2.3 | Performance tuning | skipped | - | - |
 """
 
 
@@ -165,10 +165,10 @@ def test_done_step_without_pr_fails() -> None:
 
 ### Phase 1: Done
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | First | done | #100 |
-| 1.2 | Second | done | #101 |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | First | done | - | #100 |
+| 1.2 | Second | done | - | #101 |
 """
     issue = _make_issue(400, "Objective: All Done", body)
     fake_gh = FakeGitHubIssues(issues={400: issue})
@@ -224,15 +224,15 @@ def test_sequential_phase_numbering_passes() -> None:
 
 ### Phase 1: First
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Step one | - | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Step one | - | - | - |
 
 ### Phase 2: Second
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 2.1 | Step two | - | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 2.1 | Step two | - | - | - |
 """
     issue = _make_issue(500, "Objective: Sequential", body)
     fake_gh = FakeGitHubIssues(issues={500: issue})
@@ -256,15 +256,15 @@ def test_non_sequential_phase_numbering_still_passes() -> None:
 
 ### Phase 1: First
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Step one | - | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Step one | - | - | - |
 
 ### Phase 3: Third
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 3.1 | Step three | - | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 3.1 | Step three | - | - | - |
 """
     issue = _make_issue(600, "Objective: Gaps", body)
     fake_gh = FakeGitHubIssues(issues={600: issue})
@@ -288,21 +288,21 @@ def test_sub_phase_numbering_passes() -> None:
 
 ### Phase 1A: First Part
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1A.1 | Step one | - | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1A.1 | Step one | - | - | - |
 
 ### Phase 1B: Second Part
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1B.1 | Step two | - | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1B.1 | Step two | - | - | - |
 
 ### Phase 2: Core
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 2.1 | Step three | - | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 2.1 | Step three | - | - | - |
 """
     issue = _make_issue(900, "Objective: Sub-phases", body)
     fake_gh = FakeGitHubIssues(issues={900: issue})
@@ -350,10 +350,10 @@ def test_all_steps_complete_json() -> None:
 
 ### Phase 1: Done
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | First | done | #100 |
-| 1.2 | Second | skipped | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | First | done | - | #100 |
+| 1.2 | Second | skipped | - | - |
 """
     issue = _make_issue(800, "Objective: Complete", body)
     fake_gh = FakeGitHubIssues(issues={800: issue})
@@ -381,10 +381,10 @@ def test_stale_display_status_with_pr_fails() -> None:
 
 ### Phase 1: Legacy Format
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Do thing | - | #123 |
-| 1.2 | Another thing | - | plan #124 |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Do thing | - | - | #123 |
+| 1.2 | Another thing | - | #124 | - |
 """
     issue = _make_issue(1000, "Objective: Stale Status", body)
     fake_gh = FakeGitHubIssues(issues={1000: issue})
@@ -399,7 +399,7 @@ def test_stale_display_status_with_pr_fails() -> None:
     assert result.exit_code == 1
     assert "[FAIL]" in result.output
     assert "Stale '-' status with PR reference" in result.output
-    assert "2 step(s)" in result.output
+    assert "1 step(s)" in result.output
 
 
 def test_explicit_display_status_with_pr_passes() -> None:
@@ -410,11 +410,11 @@ def test_explicit_display_status_with_pr_passes() -> None:
 
 ### Phase 1: Updated Format
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Do thing | done | #123 |
-| 1.2 | Another thing | in-progress | plan #124 |
-| 1.3 | Not started | pending | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Do thing | done | - | #123 |
+| 1.2 | Another thing | in-progress | #124 | - |
+| 1.3 | Not started | pending | - | - |
 """
     issue = _make_issue(1100, "Objective: Correct Format", body)
     fake_gh = FakeGitHubIssues(issues={1100: issue})
