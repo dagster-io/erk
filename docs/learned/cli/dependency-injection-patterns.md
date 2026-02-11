@@ -5,7 +5,7 @@ read_when:
   - "testing exec scripts that use gateways"
   - "understanding exec script architecture"
   - "migrating exec scripts from subprocess to gateways"
-last_audited: "2026-02-08"
+last_audited: "2026-02-11"
 audit_result: clean
 tripwires:
   - action: "creating gateway instances in business logic"
@@ -253,17 +253,17 @@ The dependency injection pattern also applies to CLI commands (not just exec scr
 **Before (anti-pattern):**
 
 ```python
-from erk.gateway.github.admin.real import RealGitHubAdmin
+from erk_shared.gateway.github_admin.real import RealGitHubAdmin
 
 admin = RealGitHubAdmin()
-result = admin.get_pr_setting(repo, setting)
+permissions = admin.get_workflow_permissions(location)
 ```
 
 **After (correct):**
 
 ```python
 admin = ctx.github_admin
-result = admin.get_pr_setting(repo, setting)
+permissions = admin.get_workflow_permissions(location)
 ```
 
 ### Why This Matters
@@ -277,7 +277,7 @@ result = admin.get_pr_setting(repo, setting)
 
 When refactoring a CLI command to use context injection:
 
-1. Remove `from erk.gateway.*.real import Real*` imports
+1. Remove `from erk_shared.gateway.*.real import Real*` imports
 2. Replace `Real*()` construction with `ctx.<gateway>`
 3. Verify tests use `erk_isolated_fs_env()` which handles fake injection
 

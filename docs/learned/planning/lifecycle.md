@@ -1,7 +1,7 @@
 ---
 title: Plan Lifecycle
-last_audited: "2026-02-03"
-audit_result: edited
+last_audited: "2026-02-11"
+audit_result: clean
 read_when:
   - "creating a plan"
   - "closing a plan"

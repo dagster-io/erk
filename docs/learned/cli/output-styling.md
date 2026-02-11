@@ -1,7 +1,7 @@
 ---
 title: CLI Output Styling Guide
-last_audited: "2026-02-03"
-audit_result: edited
+last_audited: "2026-02-11"
+audit_result: clean
 read_when:
   - "styling CLI output"
   - "using colors in CLI"

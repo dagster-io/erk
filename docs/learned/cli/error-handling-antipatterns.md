@@ -1,5 +1,7 @@
 ---
 title: CLI Error Handling Anti-Patterns
+last_audited: "2026-02-11"
+audit_result: clean
 read_when:
   - "handling expected CLI failures"
   - "deciding between RuntimeError and UserFacingCliError"
