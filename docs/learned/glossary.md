@@ -1254,7 +1254,7 @@ A long-running goal that produces bounded plans when evaluated against the codeb
 
 **Purpose**: Break large, complex goals into reviewable, implementable chunks. Instead of tackling "migrate all errors to Ensure class" in one massive PR, an objective evaluates the codebase, identifies a manageable subset of violations, and creates a plan for that subset.
 
-**Storage**: `.erk/objectives/<name>/`
+**Storage**: GitHub issues with the `erk-objective` label.
 
 ### Turn
 
@@ -1269,7 +1269,7 @@ A single evaluation cycle where Claude assesses current state against the object
 3. Reports status with optional gap description
 4. If gaps found, creates bounded implementation plan
 
-**CLI**: `erk objective next-plan <objective-name>`
+**CLI**: `erk objective next-plan <issue-ref>`
 
 ### Key Files
 
