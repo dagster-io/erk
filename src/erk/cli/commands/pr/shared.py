@@ -18,6 +18,7 @@ from erk.core.commit_message_generator import (
     CommitMessageResult,
 )
 from erk.core.context import ErkContext
+from erk.core.plan_context_provider import PlanContext
 from erk_shared.gateway.github.pr_footer import (
     build_pr_body_footer,
     extract_closing_reference,
@@ -26,9 +27,6 @@ from erk_shared.gateway.github.pr_footer import (
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.naming import extract_leading_issue_number
-
-if TYPE_CHECKING:
-    from erk.core.plan_context_provider import PlanContext
 
 
 # ---------------------------------------------------------------------------

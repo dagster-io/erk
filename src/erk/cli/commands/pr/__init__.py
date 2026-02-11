@@ -11,6 +11,7 @@ from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
 from erk.cli.commands.pr.submit_cmd import pr_submit
 from erk.cli.commands.pr.sync_cmd import pr_sync
 from erk.cli.commands.pr.sync_divergence_cmd import pr_sync_divergence
+from erk.cli.commands.pr.update_description_cmd import pr_update_description
 
 
 @click.group("pr")
@@ -27,3 +28,4 @@ pr_group.add_command(pr_rewrite, name="rewrite")
 pr_group.add_command(pr_submit, name="submit")
 pr_group.add_command(pr_sync, name="sync")
 pr_group.add_command(pr_sync_divergence, name="sync-divergence")
+pr_group.add_command(pr_update_description, name="update-description")

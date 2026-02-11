@@ -260,6 +260,20 @@ If the user explicitly skipped any comments during the process, list them:
 - #5: src/legacy.py:100 - "Refactor this module" (user deferred)
 ```
 
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+**Skip this phase in Plan Review Mode** - plan PRs don't have meaningful code diffs to summarize.
+
+Run:
+
+```bash
+erk pr update-description --session-id "${CLAUDE_SESSION_ID}"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
 ### Common Mistakes
 
 See `pr-operations` skill for the complete table of common mistakes and correct approaches.
