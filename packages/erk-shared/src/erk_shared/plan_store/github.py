@@ -14,16 +14,24 @@ from urllib.parse import urlparse
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
+from erk_shared.gateway.github.metadata.core import (
+    find_metadata_block,
+    render_metadata_block,
+    replace_metadata_block_in_body,
+)
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
     extract_plan_header_objective_issue,
+    format_plan_content_comment,
 )
 from erk_shared.gateway.github.metadata.schemas import (
     CREATED_FROM_SESSION,
     OBJECTIVE_ISSUE,
     SOURCE_REPO,
+    PlanHeaderSchema,
 )
+from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.plan_issues import create_plan_issue
 from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, with_retries
 from erk_shared.gateway.github.types import BodyText
@@ -187,6 +195,33 @@ class GitHubPlanStore(PlanBackend):
 
         return plan_body
 
+    def get_metadata_field(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        field_name: str,
+    ) -> object | PlanNotFound:
+        """Get a single metadata field from the plan-header block.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Issue number as string
+            field_name: Name of the metadata field to read
+
+        Returns:
+            Field value (may be None if unset), or PlanNotFound if plan doesn't exist
+        """
+        issue_number = int(plan_id)
+        issue = self._github_issues.get_issue(repo_root, issue_number)
+        if isinstance(issue, IssueNotFound):
+            return PlanNotFound(plan_id=plan_id)
+
+        block = find_metadata_block(issue.body, "plan-header")
+        if block is None:
+            return None
+
+        return block.data.get(field_name)
+
     def list_plans(self, repo_root: Path, query: PlanQuery) -> list[Plan]:
         """Query plans from GitHub.
 
@@ -343,35 +378,18 @@ class GitHubPlanStore(PlanBackend):
     ) -> None:
         """Update plan metadata in the issue body.
 
-        Fetches the current issue body, updates the plan-header metadata block
-        with allowed fields, and updates the issue body.
+        Fetches the current issue body, updates the plan-header metadata block,
+        and updates the issue body. Accepts any field recognized by PlanHeaderSchema
+        except immutable fields (schema_version, created_at, created_by).
 
         Args:
             repo_root: Repository root directory
             plan_id: Provider-specific identifier (issue number)
-            metadata: New metadata to set. Allowed fields:
-                - worktree_name
-                - last_dispatched_run_id
-                - last_dispatched_node_id
-                - last_dispatched_at
-                - last_local_impl_at
-                - last_local_impl_event
-                - last_local_impl_session
-                - last_local_impl_user
-                - last_remote_impl_at
+            metadata: New metadata to set (validated by PlanHeaderSchema)
 
         Raises:
             RuntimeError: If provider fails or plan not found
         """
-        # Import here to avoid circular imports
-        from erk_shared.gateway.github.metadata.core import (
-            find_metadata_block,
-            render_metadata_block,
-            replace_metadata_block_in_body,
-        )
-        from erk_shared.gateway.github.metadata.schemas import PlanHeaderSchema
-        from erk_shared.gateway.github.metadata.types import MetadataBlock
-
         issue_number = int(plan_id)
         issue = self._github_issues.get_issue(repo_root, issue_number)
         if isinstance(issue, IssueNotFound):
@@ -385,22 +403,12 @@ class GitHubPlanStore(PlanBackend):
 
         current_data = dict(block.data)
 
-        # Whitelist of allowed metadata fields
-        allowed_fields = {
-            "worktree_name",
-            "last_dispatched_run_id",
-            "last_dispatched_node_id",
-            "last_dispatched_at",
-            "last_local_impl_at",
-            "last_local_impl_event",
-            "last_local_impl_session",
-            "last_local_impl_user",
-            "last_remote_impl_at",
-        }
+        # Protect immutable fields from being overwritten
+        immutable_fields = {"schema_version", "created_at", "created_by"}
 
-        # Merge allowed fields from new metadata
+        # Merge metadata (schema.validate() catches unknown fields)
         for key, value in metadata.items():
-            if key in allowed_fields:
+            if key not in immutable_fields:
                 current_data[key] = value
 
         # Validate updated data
@@ -416,6 +424,50 @@ class GitHubPlanStore(PlanBackend):
         self._github_issues.update_issue_body(
             repo_root, issue_number, BodyText(content=updated_body)
         )
+
+    def update_plan_content(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        content: str,
+    ) -> None:
+        """Update the plan content in the plan comment.
+
+        Finds the plan content comment via plan_comment_id metadata field,
+        or falls back to the first comment. Formats content using
+        format_plan_content_comment() and updates via update_comment().
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Issue number as string
+            content: New plan content
+
+        Raises:
+            RuntimeError: If plan not found or no plan comment found
+        """
+        issue_number = int(plan_id)
+        issue = self._github_issues.get_issue(repo_root, issue_number)
+        if isinstance(issue, IssueNotFound):
+            msg = f"Issue #{issue_number} not found"
+            raise RuntimeError(msg)
+
+        # Try to find the plan comment ID from metadata
+        plan_comment_id = extract_plan_header_comment_id(issue.body)
+
+        if plan_comment_id is not None:
+            formatted = format_plan_content_comment(content)
+            self._github_issues.update_comment(repo_root, plan_comment_id, formatted)
+            return
+
+        # Fall back to first comment (same pattern as _get_plan_body)
+        comments = self._github_issues.get_issue_comments_with_urls(repo_root, issue_number)
+        if comments:
+            formatted = format_plan_content_comment(content)
+            self._github_issues.update_comment(repo_root, comments[0].id, formatted)
+            return
+
+        msg = f"No plan content comment found for issue #{issue_number}"
+        raise RuntimeError(msg)
 
     def add_comment(
         self,
@@ -439,6 +491,29 @@ class GitHubPlanStore(PlanBackend):
         issue_number = int(plan_id)
         comment_id = self._github_issues.add_comment(repo_root, issue_number, body)
         return str(comment_id)
+
+    def post_event(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        *,
+        metadata: Mapping[str, object],
+        comment: str | None,
+    ) -> None:
+        """Post a combined event: metadata update + optional comment.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Issue number as string
+            metadata: Metadata fields to update
+            comment: Optional comment body to post
+
+        Raises:
+            RuntimeError: If provider fails or plan not found
+        """
+        if comment is not None:
+            self.add_comment(repo_root, plan_id, comment)
+        self.update_metadata(repo_root, plan_id, metadata)
 
     def _parse_identifier(self, identifier: str) -> int:
         """Parse identifier to extract issue number.
