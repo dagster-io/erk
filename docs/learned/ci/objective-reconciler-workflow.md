@@ -92,6 +92,10 @@ Both workflows require:
 
 See `.github/workflows/objective-reconciler.yml:41-48` for the setup action that consumes these secrets.
 
+### Slash Command
+
+The workflow launches Claude with `/erk:objective-next-plan` to create plans for pending objective steps.
+
 ## Cost Model Reality
 
 The original document estimated ~$0.003 per objective. This is wrong for two reasons:
