@@ -424,7 +424,7 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
     write_claude_settings(settings_path, new_settings)
     statusline_msg = " Status line configured in ~/.claude/settings.json"
     user_output(click.style("  ✓", fg="green") + statusline_msg)
-    user_output("  Note: Install erk-statusline with: uv tool install erk-statusline")
+    user_output("  Note: Install erk-statusline with: uv add erk-statusline && uv sync")
 
     return True
 

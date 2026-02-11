@@ -54,4 +54,4 @@ def get_uvx_warning_message(command_name: str) -> str:
 Commands that change directories need to run from a persistent installation, not uvx's
 isolated subprocess.
 
-To fix this, install erk in uv's tools: uv tool install erk"""
+To fix this, add erk to your project: uv add erk && uv sync"""
