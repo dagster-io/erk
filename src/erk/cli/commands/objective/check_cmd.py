@@ -1,6 +1,7 @@
 """Validate an objective's format and roadmap consistency."""
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -70,6 +71,7 @@ def validate_objective(
     3. Status/PR consistency (done steps should have PRs)
     4. No orphaned statuses (done without PR reference)
     5. Phase numbering is sequential
+    6. No stale display statuses (steps with PRs should have explicit status, not '-')
 
     This function does not produce output or raise SystemExit.
 
@@ -160,6 +162,14 @@ def validate_objective(
     else:
         phase_labels = [f"{n}{s}" for n, s in phase_keys]
         checks.append((False, f"Phase numbering is not sequential: {phase_labels}"))
+
+    # Check 6: No stale display statuses (steps with PRs should have explicit status)
+    stale_pattern = re.compile(r"\|[^|]+\|[^|]+\|\s*-\s*\|\s*(?:#\d+|plan #\d+)\s*\|")
+    stale_matches = stale_pattern.findall(issue.body)
+    if not stale_matches:
+        checks.append((True, "No stale display statuses"))
+    else:
+        checks.append((False, f"Stale '-' status with PR reference: {len(stale_matches)} step(s)"))
 
     summary = compute_summary(phases)
     next_step = find_next_step(phases)
