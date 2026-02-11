@@ -6,11 +6,10 @@ from typing import Literal
 import click
 
 from erk.cli.core import discover_repo_context
-from erk.cli.ensure import UserFacingCliError
+from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.core.context import ErkContext
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.types import GitHubRepoLocation
-from erk_shared.gateway.github_admin.real import RealGitHubAdmin
 from erk_shared.output.output import user_output
 
 
@@ -50,15 +49,14 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # Check for GitHub identity
-    if repo.github is None:
-        user_output(click.style("Error: ", fg="red") + "Not a GitHub repository")
-        user_output("This command requires the repository to have a GitHub remote configured.")
-        raise SystemExit(1)
+    github_id = Ensure.not_none(
+        repo.github,
+        "Not a GitHub repository\n"
+        "This command requires the repository to have a GitHub remote configured.",
+    )
 
-    # Create admin interface
-    # TODO: Use injected admin from context when dry-run support is added
-    admin = RealGitHubAdmin()
-    location = GitHubRepoLocation(root=repo.root, repo_id=repo.github)
+    admin = ctx.github_admin
+    location = GitHubRepoLocation(root=repo.root, repo_id=github_id)
 
     if action is None:
         # Display current setting
@@ -90,8 +88,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
             )
 
         except RuntimeError as e:
-            user_output(click.style("Error: ", fg="red") + str(e))
-            raise SystemExit(1) from e
+            raise UserFacingCliError(str(e)) from e
 
     elif action == "enable":
         # Enable PR creation
@@ -105,8 +102,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
             user_output("Workflows can now create and approve pull requests.")
 
         except RuntimeError as e:
-            user_output(click.style("Error: ", fg="red") + str(e))
-            raise SystemExit(1) from e
+            raise UserFacingCliError(str(e)) from e
 
     elif action == "disable":
         # Disable PR creation
@@ -120,8 +116,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
             user_output("Workflows can no longer create pull requests.")
 
         except RuntimeError as e:
-            user_output(click.style("Error: ", fg="red") + str(e))
-            raise SystemExit(1) from e
+            raise UserFacingCliError(str(e)) from e
 
 
 @admin_group.command("upgrade-repo")
@@ -138,11 +133,12 @@ def upgrade_repo(ctx: ErkContext) -> None:
 
     # Check if this is an erk-managed repository
     erk_dir = repo.root / ".erk"
-    if not erk_dir.exists():
-        user_output(click.style("Error: ", fg="red") + "Not an erk-managed repository")
-        user_output(f"The directory {repo.root} does not contain a .erk directory.")
-        user_output("This command only works in repositories initialized with erk.")
-        raise SystemExit(1)
+    Ensure.invariant(
+        erk_dir.exists(),
+        f"Not an erk-managed repository\n"
+        f"The directory {repo.root} does not contain a .erk directory.\n"
+        f"This command only works in repositories initialized with erk.",
+    )
 
     # Update version file
     version_file = erk_dir / "required-erk-uv-tool-version"
@@ -178,17 +174,15 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 
-    if repo.github is None:
-        user_output(click.style("Error: ", fg="red") + "Not a GitHub repository")
-        raise SystemExit(1)
+    github_id = Ensure.not_none(repo.github, "Not a GitHub repository")
 
     # Convert GitHubRepoId to string format for gh CLI
-    repo_slug = f"{repo.github.owner}/{repo.github.repo}"
+    repo_slug = f"{github_id.owner}/{github_id.repo}"
 
-    current_branch = ctx.git.branch.get_current_branch(repo.root)
-    if current_branch is None:
-        user_output(click.style("Error: ", fg="red") + "Not on a branch (detached HEAD)")
-        raise SystemExit(1)
+    current_branch = Ensure.not_none(
+        ctx.git.branch.get_current_branch(repo.root),
+        "Not on a branch (detached HEAD)",
+    )
 
     # Step 1: Ensure current branch exists on remote
     user_output(f"Ensuring branch '{current_branch}' exists on remote...")
@@ -253,10 +247,10 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, issue: int | None, watch: b
     user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
 
     # Step 6: Trigger workflow
-    username = ctx.issues.get_current_username()
-    if username is None:
-        user_output(click.style("Error: ", fg="red") + "Not authenticated with GitHub")
-        raise SystemExit(1)
+    username = Ensure.not_none(
+        ctx.issues.get_current_username(),
+        "Not authenticated with GitHub",
+    )
 
     user_output(f"Triggering plan-implement workflow from '{current_branch}'...")
     ctx.github.trigger_workflow(
