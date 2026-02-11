@@ -12,26 +12,26 @@ Objective #5185 systematically migrates CLI `user_output() + SystemExit(1)` patt
 
 ### Group A: `Ensure.not_none()` migrations (4 patterns)
 
-| Location | Command | Current check | Notes |
-|----------|---------|---------------|-------|
-| L53-56 | `github_pr_setting` | `repo.github is None` | Multi-line message (2 lines) |
-| L181-183 | `test_plan_implement_gh_workflow` | `repo.github is None` | Single-line message |
-| L189-191 | `test_plan_implement_gh_workflow` | `current_branch is None` | Single-line message |
-| L257-259 | `test_plan_implement_gh_workflow` | `username is None` | Single-line message |
+| Location | Command                           | Current check            | Notes                        |
+| -------- | --------------------------------- | ------------------------ | ---------------------------- |
+| L53-56   | `github_pr_setting`               | `repo.github is None`    | Multi-line message (2 lines) |
+| L181-183 | `test_plan_implement_gh_workflow` | `repo.github is None`    | Single-line message          |
+| L189-191 | `test_plan_implement_gh_workflow` | `current_branch is None` | Single-line message          |
+| L257-259 | `test_plan_implement_gh_workflow` | `username is None`       | Single-line message          |
 
 ### Group B: `Ensure.invariant()` migration (1 pattern)
 
-| Location | Command | Current check | Notes |
-|----------|---------|---------------|-------|
+| Location | Command        | Current check          | Notes                                                                                            |
+| -------- | -------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
 | L140-145 | `upgrade_repo` | `not erk_dir.exists()` | Multi-line message (3 lines); NOT `Ensure.path_exists()` since `.erk/` is not a git-managed path |
 
 ### Group C: `UserFacingCliError` direct (3 patterns)
 
-| Location | Command | Current pattern | Notes |
-|----------|---------|-----------------|-------|
-| L92-94 | `github_pr_setting` | `except RuntimeError` | Cannot use Ensure (exception catch, not condition check) |
-| L107-109 | `github_pr_setting` | `except RuntimeError` | Same |
-| L121-124 | `github_pr_setting` | `except RuntimeError` | Same |
+| Location | Command             | Current pattern       | Notes                                                    |
+| -------- | ------------------- | --------------------- | -------------------------------------------------------- |
+| L92-94   | `github_pr_setting` | `except RuntimeError` | Cannot use Ensure (exception catch, not condition check) |
+| L107-109 | `github_pr_setting` | `except RuntimeError` | Same                                                     |
+| L121-124 | `github_pr_setting` | `except RuntimeError` | Same                                                     |
 
 These 3 are NOT Ensure candidates per the migration decision tree ("no clear boolean condition"). Instead, replace the manual `user_output(click.style("Error: "...)) + raise SystemExit(1)` with `raise UserFacingCliError(str(e)) from e`, which handles styling internally.
 
