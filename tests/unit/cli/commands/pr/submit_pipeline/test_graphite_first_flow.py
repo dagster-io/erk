@@ -106,6 +106,35 @@ def test_submit_failure_returns_error(tmp_path: Path) -> None:
     assert result.error_type == "graphite_submit_failed"
 
 
+def test_restack_error_returns_actionable_message(tmp_path: Path) -> None:
+    """SubmitError(error_type='graphite_restack_required') when restack needed."""
+    fake_graphite = FakeGraphite(
+        submit_stack_raises=RuntimeError(
+            "gt submit failed (exit code 1): "
+            "ERROR: You must restack and resolve conflicts with gt restack before submitting."
+        ),
+    )
+    global_config = GlobalConfig(
+        erk_root=Path("/test/erks"),
+        use_graphite=True,
+        shell_setup_complete=False,
+        github_planning=True,
+    )
+    ctx = context_for_test(
+        graphite=fake_graphite,
+        cwd=tmp_path,
+        global_config=global_config,
+    )
+    state = _make_state(cwd=tmp_path)
+
+    result = _graphite_first_flow(ctx, state)
+
+    assert isinstance(result, SubmitError)
+    assert result.error_type == "graphite_restack_required"
+    assert "gt restack" in result.message
+    assert "erk pr submit" in result.message
+
+
 def test_pr_not_found_after_submit_returns_error(tmp_path: Path) -> None:
     """SubmitError(error_type='pr_not_found') when no PR after gt submit."""
     fake_graphite = FakeGraphite()

@@ -185,6 +185,19 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
             force=state.force,
         )
     except RuntimeError as e:
+        error_str = str(e)
+        if "restack" in error_str.lower():
+            return SubmitError(
+                phase="push_and_create_pr",
+                error_type="graphite_restack_required",
+                message=(
+                    "Your Graphite stack has conflicts that need manual resolution.\n\n"
+                    "Run these commands:\n"
+                    "  gt restack        # Resolve conflicts interactively\n"
+                    "  erk pr submit     # Re-submit after resolving"
+                ),
+                details={},
+            )
         return SubmitError(
             phase="push_and_create_pr",
             error_type="graphite_submit_failed",
