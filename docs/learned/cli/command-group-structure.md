@@ -25,31 +25,19 @@ src/erk/cli/commands/
 
 ## Group Definition Pattern
 
-The `__init__.py` defines the group and registers commands using `register_with_aliases`:
+The `__init__.py` defines the group and registers commands using `register_with_aliases`.
+
+> **Source**: `src/erk/cli/commands/objective/__init__.py`
+
+The key pattern is:
 
 ```python
-"""Objective management commands."""
-
-import click
-
-from erk.cli.alias import register_with_aliases
-from erk.cli.commands.objective.check_cmd import check_objective
-from erk.cli.commands.objective.close_cmd import close_objective
-from erk.cli.commands.objective.list_cmd import list_objectives
-from erk.cli.commands.objective.next_plan_cmd import next_plan
-from erk.cli.help_formatter import ErkCommandGroup
-
-
 @click.group("objective", cls=ErkCommandGroup)
 def objective_group() -> None:
     """Manage objectives (multi-PR coordination issues)."""
     pass
 
-
 register_with_aliases(objective_group, check_objective)
-register_with_aliases(objective_group, close_objective)
-register_with_aliases(objective_group, list_objectives)
-register_with_aliases(objective_group, next_plan)
 ```
 
 Key patterns:
