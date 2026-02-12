@@ -134,6 +134,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before implementing a cleanup operation that modifies metadata based on external API success** → Read [Fail-Open Pattern](fail-open-patterns.md) first. Use fail-open pattern. If critical step fails, do NOT execute dependent steps that modify persistent state.
 
+**CRITICAL: Before implementing commands that update multiple GitHub entities** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. Use single-read, batch-update, single-write pattern. Fetch all needed data in one API call, apply N updates in memory, write once. Don't iterate with N API calls per update.
+
 **CRITICAL: Before implementing idempotent operations that fail on missing resources** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Use LBYL existence check to return early, making the operation truly idempotent.
 
 **CRITICAL: Before implementing mtime-based cache invalidation** → Read [Graphite Cache Invalidation](graphite-cache-invalidation.md) first. Use triple-check guard pattern: (cache exists) AND (mtime exists) AND (mtime matches). Partial checks cause stale data bugs.

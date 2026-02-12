@@ -11,8 +11,8 @@ tripwires:
   - action: "Use OR semantics for batch success (success=true if any item succeeds)"
     warning: "Use AND semantics: top-level success=true only if ALL items succeed."
     score: 7
-  - action: "Return non-zero exit codes for batch command failures"
-    warning: "Always exit 0, encode errors in JSON output with per-item success fields."
+  - action: "Return non-zero exit codes for JSON stdin batch command failures"
+    warning: "JSON stdin batch commands always exit 0, encode errors in JSON output with per-item success fields. Note: multi-option commands (--flag a --flag b) use traditional exit codes instead."
     score: 6
 last_audited: "2026-02-08"
 audit_result: clean
@@ -121,6 +121,23 @@ Top-level `success` field uses **AND semantics**: true only if ALL items succeed
 **Anti-pattern: OR semantics** (success=true if ANY item succeeds)
 
 This makes `success` meaningless. Partial failures become indistinguishable from total success without inspecting every result item. Callers must loop through `results` to determine if the batch actually worked, defeating the purpose of a top-level flag.
+
+## Pattern Scope: JSON Stdin vs Multi-Option
+
+The exit code convention ("always exit 0") applies specifically to **JSON stdin batch commands** — commands that receive their input as a JSON array on stdin and process multiple items in bulk (typically 10+ items).
+
+**This convention does NOT apply to multi-option commands** that accept multiple values via repeated CLI flags:
+
+| Pattern      | Input Method                     | Exit Code Convention              | Use Case                      |
+| ------------ | -------------------------------- | --------------------------------- | ----------------------------- |
+| JSON stdin   | `echo '[...]' \| erk exec cmd`   | Always 0, errors in JSON          | Bulk automation (10+ items)   |
+| Multi-option | `erk exec cmd --item a --item b` | Traditional (non-zero on failure) | Interactive shell (3-5 items) |
+
+<!-- Source: docs/learned/cli/commands/update-roadmap-step.md -->
+
+See [update-roadmap-step.md](commands/update-roadmap-step.md) for an example of a multi-option command with traditional exit code semantics. The command uses `--step` multiple times, exits 1 on any failure, and is designed for shell chain compatibility.
+
+**Why the distinction matters:** JSON stdin batch commands are designed for pipeline composition where errors are handled by inspecting JSON output. Multi-option commands are designed for interactive shell use where `&&` chains should fail fast. Both conventions are correct for their intended use cases.
 
 ## Exit Code Convention: Always Zero
 

@@ -14,7 +14,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before Design batch commands that process items despite validation failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Validate ALL items upfront before processing ANY items. Stop on first validation error.
 
-**CRITICAL: Before Return non-zero exit codes for batch command failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Always exit 0, encode errors in JSON output with per-item success fields.
+**CRITICAL: Before Return non-zero exit codes for JSON stdin batch command failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. JSON stdin batch commands always exit 0, encode errors in JSON output with per-item success fields. Note: multi-option commands (--flag a --flag b) use traditional exit codes instead.
 
 **CRITICAL: Before Use OR semantics for batch success (success=true if any item succeeds)** → Read [Batch Exec Commands](batch-exec-commands.md) first. Use AND semantics: top-level success=true only if ALL items succeed.
 
