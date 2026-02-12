@@ -132,7 +132,7 @@ def test_rebase_with_conflicts_resolved_by_claude(tmp_path: Path) -> None:
         conflicted_files=["src/config.py"],
         rebase_in_progress=dynamic_rebase_in_progress,
     )
-    fake_claude = FakePromptExecutor(passthrough_exit_code=0)
+    fake_claude = FakePromptExecutor()
 
     result = _rebase_with_conflict_resolution_impl(
         git=fake_git,
@@ -148,8 +148,8 @@ def test_rebase_with_conflicts_resolved_by_claude(tmp_path: Path) -> None:
     assert result.action == "rebased"
     assert result.commits_behind == 2
     assert "src/config.py" in result.conflicts_resolved
-    # Claude should have been invoked once to resolve the conflict (via passthrough)
-    assert len(fake_claude.passthrough_calls) == 1
+    # Claude should have been invoked once to resolve the conflict
+    assert len(fake_claude.prompt_calls) == 1
 
 
 def test_rebase_fails_after_max_attempts(tmp_path: Path) -> None:
@@ -160,7 +160,12 @@ def test_rebase_fails_after_max_attempts(tmp_path: Path) -> None:
         rebase_in_progress=True,  # Stays in progress (Claude can't resolve)
         conflicted_files=["src/config.py"],
     )
-    fake_claude = FakePromptExecutor(passthrough_exit_code=1)  # Claude fails
+    fake_claude = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(success=False, output="", error="conflict resolution failed"),
+        ]
+        * 3,
+    )
 
     result = _rebase_with_conflict_resolution_impl(
         git=fake_git,
@@ -175,8 +180,8 @@ def test_rebase_fails_after_max_attempts(tmp_path: Path) -> None:
     assert isinstance(result, RebaseError)
     assert result.error == "rebase-failed"
     assert "3 attempts" in result.message
-    # Claude should have been called max_attempts times (via passthrough)
-    assert len(fake_claude.passthrough_calls) == 3
+    # Claude should have been called max_attempts times
+    assert len(fake_claude.prompt_calls) == 3
 
 
 def test_rebase_fetch_failure(tmp_path: Path) -> None:
@@ -342,7 +347,7 @@ def test_conflict_resolution_uses_correct_prompt(tmp_path: Path) -> None:
         conflicted_files=["src/config.py"],
         rebase_in_progress=dynamic_rebase_in_progress,
     )
-    fake_claude = FakePromptExecutor(passthrough_exit_code=0)
+    fake_claude = FakePromptExecutor()
 
     _rebase_with_conflict_resolution_impl(
         git=fake_git,
@@ -354,12 +359,12 @@ def test_conflict_resolution_uses_correct_prompt(tmp_path: Path) -> None:
         max_attempts=5,
     )
 
-    # Verify the conflict resolution prompt was used (via passthrough)
-    assert len(fake_claude.passthrough_calls) == 1
-    passthrough_call = fake_claude.passthrough_calls[0]
-    assert passthrough_call.prompt == CONFLICT_RESOLUTION_PROMPT
-    assert passthrough_call.dangerous is True
-    assert passthrough_call.cwd == tmp_path
+    # Verify the conflict resolution prompt was used
+    assert len(fake_claude.prompt_calls) == 1
+    prompt_call = fake_claude.prompt_calls[0]
+    assert prompt_call.prompt == CONFLICT_RESOLUTION_PROMPT
+    assert prompt_call.dangerous is True
+    assert prompt_call.cwd == tmp_path
 
 
 def test_model_parameter_passed_correctly(tmp_path: Path) -> None:
@@ -406,7 +411,12 @@ def test_max_attempts_parameter(tmp_path: Path) -> None:
         rebase_in_progress=True,  # Stays in progress
         conflicted_files=["src/config.py"],
     )
-    fake_claude = FakePromptExecutor(passthrough_exit_code=1)
+    fake_claude = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(success=False, output="", error="conflict resolution failed"),
+        ]
+        * 2,
+    )
 
     test_ctx = ErkContext.for_test(
         cwd=tmp_path,
@@ -430,5 +440,5 @@ def test_max_attempts_parameter(tmp_path: Path) -> None:
 
     assert result.exit_code == 1
     assert "2 attempts" in result.output
-    # Claude should have been called exactly 2 times (via passthrough)
-    assert len(fake_claude.passthrough_calls) == 2
+    # Claude should have been called exactly 2 times
+    assert len(fake_claude.prompt_calls) == 2
