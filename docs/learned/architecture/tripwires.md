@@ -196,6 +196,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before using bash heredocs for large agent outputs** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. heredocs fail silently with special characters; prefer the Write tool
 
+**CRITICAL: Before using execute_prompt_passthrough() in code that runs in CI or shell scripts** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use execute_prompt() instead when stdout may be captured via command substitution -- passthrough streams full session JSON which can exceed shell ARG_MAX (~200KB)
+
 **CRITICAL: Before using gh api or gh api graphql to fetch or resolve PR review threads** → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. Load `pr-operations` skill first. Use `erk exec get-pr-review-comments` and `erk exec resolve-review-thread` instead. Raw gh api calls miss thread resolution functionality.
 
 **CRITICAL: Before using gh codespace start** → Read [GitHub CLI Limits](github-cli-limits.md) first. gh codespace start does not exist. Use REST API POST /user/codespaces/{name}/start via gh api instead.
