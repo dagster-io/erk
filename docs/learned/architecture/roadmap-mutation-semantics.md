@@ -11,6 +11,9 @@ tripwires:
     warning: "The update-roadmap-step command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty."
   - action: "expecting status to auto-update after manual PR edits"
     warning: "Only the update-roadmap-step command writes computed status. Manual GitHub edits or direct body mutations leave status at its current value — you must explicitly set status to '-' to enable inference on next parse."
+  - action: "implementing commands that update multiple GitHub entities"
+    warning: "Use single-read, batch-update, single-write pattern. Fetch all needed data in one API call, apply N updates in memory, write once. Don't iterate with N API calls per update."
+    score: 5
 ---
 
 # Roadmap Mutation Semantics

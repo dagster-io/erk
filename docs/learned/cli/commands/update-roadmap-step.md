@@ -2,6 +2,8 @@
 title: Update Roadmap Step Command
 read_when:
   - working with objective roadmap tables, updating step PR references, implementing plan-save workflow
+  - implementing CLI commands that accept multiple values for the same parameter
+  - deciding between multi-option and JSON stdin batch patterns
 tripwires:
   - action: "parsing roadmap tables to update PR cells"
     warning: "Use the update-roadmap-step command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers."
@@ -52,6 +54,70 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr ""
 ```
 
 Output is structured JSON with `success`, `issue_number`, `step_id`, `previous_pr`, `new_pr`, and `url` fields.
+
+## Multi-Step Usage
+
+The command accepts multiple `--step` flags to update several roadmap steps in a single invocation:
+
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, update_roadmap_step -->
+
+```bash
+# Update multiple steps at once
+erk exec update-roadmap-step 6423 --step 1.1 --step 1.2 --step 1.3 --pr "#6500"
+
+# Each step gets the same PR value applied
+```
+
+This pattern is optimized for GitHub API efficiency: the command fetches the issue body once, applies all step updates in memory, then writes the body once. This avoids N API calls for N steps.
+
+### Exit Code Semantics
+
+Multi-step invocation uses **traditional CLI exit codes**, not the batch command convention:
+
+| Exit Code | Meaning                                            |
+| --------- | -------------------------------------------------- |
+| 0         | All steps updated successfully                     |
+| 1         | Any step failed (step not found, no roadmap, etc.) |
+
+This differs from JSON stdin batch commands (which always exit 0). The distinction exists because multi-option commands are designed for interactive shell use where `&&` chains should stop on first failure:
+
+```bash
+# Exit code 1 stops the chain
+erk exec update-roadmap-step 6423 --step 1.1 --pr "#123" && gt submit
+```
+
+### JSON Output Format
+
+Multi-step invocations return a `steps` array in the JSON output:
+
+```json
+{
+  "success": true,
+  "issue_number": 6423,
+  "steps": [
+    { "step_id": "1.1", "previous_pr": "", "new_pr": "#6500" },
+    { "step_id": "1.2", "previous_pr": "plan #6464", "new_pr": "#6500" }
+  ]
+}
+```
+
+Single `--step` invocations continue to work as before, returning the original flat output structure for backward compatibility.
+
+## Parameter Semantics: --pr Accepts Plans and PRs
+
+The `--pr` parameter accepts two semantic types, reflecting the lifecycle of roadmap cells:
+
+| Input          | Status Computed | Lifecycle Stage               |
+| -------------- | --------------- | ----------------------------- |
+| `"plan #6464"` | `in-progress`   | Step has an active plan issue |
+| `"#6500"`      | `done`          | Step has a landed PR          |
+| `""` (empty)   | `pending`       | Clear the reference           |
+
+This naming is admittedly confusing — `--pr` accepts plan references despite the parameter name. The parameter was named for the common case (linking landed PRs) but the overloading enables the full lifecycle. A future refactor may rename this to `--ref` for clarity.
+
+**Why both are accepted:** The roadmap tracks the full lifecycle: empty (pending) -> plan issue (in-progress) -> landed PR (done). Using a single parameter for all stages keeps the CLI simple. The `plan ` prefix is the discriminator for status inference.
+
+See [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md) for the write-time vs parse-time distinction.
 
 ## Error Handling Strategy
 
