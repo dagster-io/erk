@@ -1,7 +1,7 @@
 ---
 title: Plan Lifecycle
-last_audited: "2026-02-03"
-audit_result: edited
+last_audited: "2026-02-11"
+audit_result: clean
 read_when:
   - "creating a plan"
   - "closing a plan"
@@ -734,6 +734,33 @@ The same cleanup logic is triggered when a plan is closed via `erk plan close`:
 - Same metadata archival
 
 See `src/erk/cli/commands/review_pr_cleanup.py` for the canonical implementation.
+
+---
+
+## Objective Roadmap Integration
+
+When implementing a plan that corresponds to an objective roadmap step, the workflow includes automatic roadmap updates via markers.
+
+### Marker-Based State Management
+
+1. **Create markers during planning:**
+   - `objective-context` marker: stores objective issue number (triggers exit-plan-mode hook to suggest correct save command)
+   - `roadmap-step` marker: stores step ID (e.g., "1C.2") for automatic roadmap updates
+
+2. **Automatic roadmap update on plan save:**
+   - `/erk:plan-save` checks for `roadmap-step` marker
+   - If present, runs `erk exec update-roadmap-step` to update the objective's roadmap table with the plan issue link
+   - Marker is cleared after successful submission
+
+### Lifecycle
+
+```
+Create markers → Save plan → Update roadmap → Create review PR → Submit → Clear markers
+```
+
+### When to Use
+
+This pattern applies when a plan is created from an objective step via `/erk:objective-next-plan`. The markers are set automatically during that workflow. Manual marker creation is not typically needed.
 
 ---
 
