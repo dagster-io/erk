@@ -171,14 +171,15 @@ def _invoke_claude_for_conflicts(
     Returns:
         True if Claude invocation succeeded.
     """
-    exit_code = prompt_executor.execute_prompt_passthrough(
+    result = prompt_executor.execute_prompt(
         CONFLICT_RESOLUTION_PROMPT,
         model=model,
         tools=None,
         cwd=cwd,
+        system_prompt=None,
         dangerous=True,
     )
-    return exit_code == 0
+    return result.success
 
 
 def _rebase_with_conflict_resolution_impl(
