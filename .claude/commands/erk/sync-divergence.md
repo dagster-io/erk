@@ -48,7 +48,7 @@ Resolve "Branch X has been updated remotely" errors by syncing with remote and h
    git rebase origin/$BRANCH
    ```
 
-   > **Note:** `gt restack` alone won't fix remote divergence — it only handles parent branch relationships. You need `git rebase origin/$BRANCH` first to sync the PR commits with remote. However, `gt restack` IS needed afterward (step 7) to re-base onto the current parent branch.
+   > **Note:** `gt restack` alone won't fix remote divergence — it only handles parent branch relationships. You need `git rebase origin/$BRANCH` first to sync the PR commits with remote. However, `gt restack` IS needed afterward (step 8) to re-base onto the current parent branch.
 
 6. **If rebase causes conflicts:**
 
@@ -56,7 +56,17 @@ Resolve "Branch X has been updated remotely" errors by syncing with remote and h
 
    @../../../.erk/docs/kits/erk/includes/conflict-resolution.md
 
-7. **Re-restack onto parent branch** (when using Graphite):
+7. **Re-track branch with Graphite** (when using Graphite):
+
+   The raw `git rebase` in step 5 changed commit SHAs outside Graphite's awareness. Graphite's internal cache (`.graphite_cache_persist`) still points to the old pre-rebase SHAs. Re-track the branch so Graphite recognizes the new commits before restacking:
+
+   ```bash
+   gt track
+   ```
+
+   > Without this step, `gt restack` will fail with a "diverged from tracking" error because Graphite's cached SHAs no longer match the rebased commits.
+
+8. **Re-restack onto parent branch** (when using Graphite):
 
    After the rebase resolves the remote divergence, the branch may be based on an older master. Re-restack to ensure the branch sits on top of the current parent:
 
@@ -66,11 +76,11 @@ Resolve "Branch X has been updated remotely" errors by syncing with remote and h
 
    > This is separate from step 5. The `git rebase origin/$BRANCH` in step 5 syncs the PR commits with remote. This `gt restack` ensures the branch base is current master, not the remote's older master.
 
-8. **After successful sync:**
+9. **After successful sync:**
    - For Graphite: `gt submit` (or `gt ss`)
    - For git-only: `git push --force-with-lease`
 
-9. **Verify completion** - Run `git status` and `git log --oneline -5` to confirm sync succeeded
+10. **Verify completion** - Run `git status` and `git log --oneline -5` to confirm sync succeeded
 
 ## Edge Cases
 
