@@ -32,7 +32,7 @@
 - **[learn-plan-land-flow.md](learn-plan-land-flow.md)** — landing PRs associated with learn plans, understanding how learn plan metadata updates parent issues, working with tripwire promotion during land operations
 - **[local-commands.md](local-commands.md)** — designing local commands, understanding local command taxonomy, creating audit or assessment commands
 - **[local-remote-command-groups.md](local-remote-command-groups.md)** — considering invoke_without_command=True for Click command groups, deciding between command groups vs separate commands for local/remote workflows, understanding why erk uses separate commands instead of unified groups
-- **[objective-commands.md](objective-commands.md)** — working with erk objective commands, implementing objective check or close functionality, understanding objective validation patterns
+- **[objective-commands.md](objective-commands.md)** — working with erk objective commands, understanding auto-advance objectives
 - **[optional-arguments.md](optional-arguments.md)** — making a CLI argument optional, inferring CLI arguments from context, implementing branch-based argument defaults
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
 - **[parameter-addition-checklist.md](parameter-addition-checklist.md)** — adding a parameter to a multi-layer command, working with skills that call erk exec scripts, debugging parameter not found errors
