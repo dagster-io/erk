@@ -135,7 +135,7 @@ The exit code convention ("always exit 0") applies specifically to **JSON stdin 
 
 <!-- Source: docs/learned/cli/commands/update-roadmap-step.md, update-roadmap-step command -->
 
-See [update-roadmap-step.md](commands/update-roadmap-step.md) for an example of a multi-option command with traditional exit code semantics. The command uses `--step` multiple times, exits 1 on any failure, and is designed for shell chain compatibility.
+See the `update-roadmap-step` command in [update-roadmap-step.md](commands/update-roadmap-step.md) for an example of a multi-option command with traditional exit code semantics. The command uses `--step` multiple times, exits 1 on any failure, and is designed for shell chain compatibility.
 
 **Why the distinction matters:** JSON stdin batch commands are designed for pipeline composition where errors are handled by inspecting JSON output. Multi-option commands are designed for interactive shell use where `&&` chains should fail fast. Both conventions are correct for their intended use cases.
 
