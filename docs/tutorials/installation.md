@@ -21,7 +21,7 @@ uv sync
 erk --version
 ```
 
-You should see output like `erk 0.4.x`.
+You should see output like `erk 0.7.x`.
 
 **Troubleshooting:**
 

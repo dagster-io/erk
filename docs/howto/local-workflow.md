@@ -72,7 +72,7 @@ This fetches PR comments and unresolved review threads, then makes the requested
 Once approved and CI passes, merge the PR:
 
 ```bash
-erk pr land
+erk land
 ```
 
 This merges via GitHub, closes the plan issue, deletes the branch, and cleans up the worktree. Add `--up` to navigate to a stacked branch after landing. It also plugs into other workflows, such as objectives and learning, which are covered in other guides.
