@@ -74,9 +74,6 @@ Use interactive mode when:
 - Confirmation prompts are required
 - The agent command has multi-step user interaction
 
-## Reference Implementation
+## Related Documentation
 
-See `packages/erk-kits/src/erk_kits/data/kits/command/kit_cli_commands/command/ops.py`:
-
-- `RealClaudeCliOps`: Production implementation with streaming output
-- `FakeClaudeCliOps`: Test double for unit testing
+- [Prompt Executor Gateway](prompt-executor-gateway.md) - The `PromptExecutor` abstraction for executing Claude CLI from Python with comprehensive fake support

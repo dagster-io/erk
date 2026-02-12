@@ -12,6 +12,8 @@ tripwires:
     warning: use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
   - action: execute_interactive() never returns in production
     warning: it replaces the process via os.execvp
+  - action: using execute_prompt_passthrough() in code that runs in CI or shell scripts
+    warning: use execute_prompt() instead when stdout may be captured via command substitution -- passthrough streams full session JSON which can exceed shell ARG_MAX (~200KB)
 ---
 
 # Prompt Executor Gateway
@@ -22,12 +24,12 @@ The `PromptExecutor` abstraction enables executing Claude CLI commands from Pyth
 
 The abstraction supports fundamentally different integration patterns:
 
-| Mode                           | Returns                   | Output                           | Use Case                                                                |
-| ------------------------------ | ------------------------- | -------------------------------- | ----------------------------------------------------------------------- |
-| `execute_command_streaming()`  | `Iterator[ExecutorEvent]` | Yields typed events in real-time | Real-time progress displays, extracting PR metadata during execution    |
-| `execute_prompt()`             | `PromptResult`            | Captures output string           | Simple prompt-and-response, commit message generation, title extraction |
-| `execute_prompt_passthrough()` | `int` (exit code)         | Streams to terminal              | Code review, user-facing output where Claude's formatting matters       |
-| `execute_interactive()`        | Never returns             | Replaces process                 | Launching Claude for interactive sessions (erk prepare, erk edit)       |
+| Mode                           | Returns                   | Output                           | Use Case                                                                                                                |
+| ------------------------------ | ------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `execute_command_streaming()`  | `Iterator[ExecutorEvent]` | Yields typed events in real-time | Real-time progress displays, extracting PR metadata during execution                                                    |
+| `execute_prompt()`             | `PromptResult`            | Captures output string           | Simple prompt-and-response, commit message generation, title extraction                                                 |
+| `execute_prompt_passthrough()` | `int` (exit code)         | Streams to terminal              | Code review, user-facing output where Claude's formatting matters. Not safe for shell capture -- see ARG_MAX Risk below |
+| `execute_interactive()`        | Never returns             | Replaces process                 | Launching Claude for interactive sessions (erk prepare, erk edit)                                                       |
 
 **Design rationale**: Single abstraction with mode selection beats four separate abstractions. Callers choose the mode that matches their integration needs. The fake implements all modes, so tests can verify mode selection without subprocess overhead.
 
@@ -48,6 +50,23 @@ The abstraction supports fundamentally different integration patterns:
 - Best for batch operations, background tasks
 
 Choose streaming when the user is waiting and needs feedback. Choose single-shot when the result matters more than the process.
+
+## ARG_MAX Risk with Passthrough Mode
+
+<!-- Source: src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py, _invoke_claude_for_conflicts -->
+
+When `execute_prompt_passthrough()` runs in a CI workflow or shell script, the full Claude session JSON streams to stdout. If that stdout is captured via command substitution (`$(...)` or backticks), it becomes a shell argument or environment variable subject to Linux's ARG_MAX limit (~200KB). Large Claude outputs routinely exceed this.
+
+**Rule:** Use `execute_prompt()` whenever the output will be consumed programmatically rather than displayed to a human. Passthrough mode is for human-readable terminal output only.
+
+**Symptoms of violation:**
+
+- "Argument list too long" errors in CI logs
+- Failures only on large PRs or complex prompts (small outputs pass under the limit)
+
+**Example fix:** See `_invoke_claude_for_conflicts()` in `src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py`, which was changed from `execute_prompt_passthrough()` to `execute_prompt()` in PR #6880 because only the success/failure status was needed, not the streaming output.
+
+**Related:** See [GitHub CLI PR Comment Patterns](../ci/github-cli-comment-patterns.md) for the same ARG_MAX issue at the `gh` CLI level, solved with `--body-file`.
 
 ## Model Selection Philosophy
 
@@ -126,6 +145,24 @@ assert executor.prompt_calls[0] == ("Generate title", None, True)
 ```
 
 **All tracking properties return copies** to prevent test pollution. Modifying `executor.prompt_calls` does not affect the fake's internal state.
+
+### Test Updates When Switching Execution Modes
+
+When changing a call site from one execution mode to another (e.g., `execute_prompt_passthrough()` to `execute_prompt()`), tests require coordinated updates across two dimensions:
+
+**Assertion tracking property:**
+
+- `execute_prompt()` -> assert against `fake.prompt_calls`
+- `execute_prompt_passthrough()` -> assert against `fake.passthrough_calls`
+
+**Fake configuration for failure scenarios:**
+
+- `execute_prompt()` -> configure `prompt_results` with `PromptResult` objects
+- `execute_prompt_passthrough()` -> configure `passthrough_exit_code`
+
+Both changes must be applied to every affected test. Missing either dimension causes test failures that may be confusing because the fake silently returns default success values.
+
+For a concrete example of this migration pattern applied to 4 tests, see `test_rebase_with_conflict_resolution.py` in `tests/unit/cli/commands/exec/scripts/`.
 
 ## Interactive Execution Asymmetry
 
