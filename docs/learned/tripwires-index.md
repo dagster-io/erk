@@ -29,7 +29,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [gateway](gateway/tripwires.md)             | 5         | `gateway/` code                               |
 | [hooks](hooks/tripwires.md)                 | 4         | `.claude/hooks/`, hook development            |
 | [integrations](integrations/tripwires.md)   | 18        | `integrations/` code                          |
-| [objectives](objectives/tripwires.md)       | 20        | `objectives/` code                            |
+| [objectives](objectives/tripwires.md)       | 21        | `objectives/` code                            |
 | [planning](planning/tripwires.md)           | 71        | `.impl/`, `.worker-impl/`, planning workflows |
 | [pr-operations](pr-operations/tripwires.md) | 12        | `pr-operations/` code                         |
 | [refactoring](refactoring/tripwires.md)     | 3         | `refactoring/` code                           |

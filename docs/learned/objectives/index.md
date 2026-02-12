@@ -3,6 +3,7 @@
 
 # Objectives Documentation
 
+- **[objective-lifecycle.md](objective-lifecycle.md)** — creating or modifying objective lifecycle code, understanding how objectives are created, mutated, and closed, adding new mutation paths to objective roadmaps
 - **[objective-roadmap-check.md](objective-roadmap-check.md)** — validating objective roadmap consistency beyond structure, understanding why check command exists separate from parsing, adding new validation checks to objective check
 - **[research-documentation-integration.md](research-documentation-integration.md)** — deciding whether objective work should produce learned docs, choosing between manual doc capture and the learn workflow during an objective, capturing cross-cutting discoveries from multi-plan investigations
 - **[roadmap-format-versioning.md](roadmap-format-versioning.md)** — extending the roadmap table format with new columns, planning backward-compatible parser changes to roadmap tables, understanding why the roadmap uses a simple 4-column format

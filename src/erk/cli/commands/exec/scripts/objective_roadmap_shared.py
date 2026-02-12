@@ -6,6 +6,8 @@ Used by erk objective check (check_cmd.py) and erk exec update-roadmap-step.
 import re
 from dataclasses import dataclass
 
+from erk_shared.gateway.github.metadata.core import extract_raw_metadata_blocks
+
 
 @dataclass(frozen=True)
 class RoadmapStep:
@@ -27,12 +29,87 @@ class RoadmapPhase:
     steps: list[RoadmapStep]
 
 
+def _enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPhase]:
+    """Extract phase names from markdown headers and enrich phase objects.
+
+    Frontmatter doesn't store phase names, so we extract them from
+    markdown headers like "### Phase 1: Planning".
+
+    Args:
+        body: Full objective body with markdown headers
+        phases: List of phases with placeholder names
+
+    Returns:
+        List of phases with actual names from markdown headers
+    """
+    # Build map of phase identifiers to names from markdown
+    phase_pattern = re.compile(
+        r"^###\s+Phase\s+(\d+)([A-Z]?):\s*(.+?)(?:\s+\(\d+\s+PR\))?$", re.MULTILINE
+    )
+    phase_name_map: dict[tuple[int, str], str] = {}
+
+    for match in phase_pattern.finditer(body):
+        number = int(match.group(1))
+        suffix = match.group(2)
+        name = match.group(3).strip()
+        phase_name_map[(number, suffix)] = name
+
+    # Enrich phases with actual names
+    enriched_phases: list[RoadmapPhase] = []
+
+    for phase in phases:
+        key = (phase.number, phase.suffix)
+        if key in phase_name_map:
+            # Replace placeholder name with actual name from markdown
+            enriched_phases.append(
+                RoadmapPhase(
+                    number=phase.number,
+                    suffix=phase.suffix,
+                    name=phase_name_map[key],
+                    steps=phase.steps,
+                )
+            )
+        else:
+            # Keep placeholder name if no markdown header found
+            enriched_phases.append(phase)
+
+    return enriched_phases
+
+
 def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
-    """Parse roadmap markdown tables into phases and steps.
+    """Parse roadmap from YAML frontmatter or markdown tables.
+
+    Tries frontmatter first (within objective-roadmap metadata block),
+    falls back to table parsing for backward compatibility.
 
     Returns:
         (phases, validation_errors)
     """
+    # Try frontmatter-first parsing
+    raw_blocks = extract_raw_metadata_blocks(body)
+    roadmap_block = None
+    for block in raw_blocks:
+        if block.key == "objective-roadmap":
+            roadmap_block = block
+            break
+
+    if roadmap_block is not None:
+        # Import here to avoid circular dependency
+        from erk.cli.commands.exec.scripts.objective_roadmap_frontmatter import (
+            group_steps_by_phase,
+            parse_roadmap_frontmatter,
+        )
+
+        steps = parse_roadmap_frontmatter(roadmap_block.body)
+
+        if steps is not None:
+            # Successfully parsed frontmatter
+            phases = group_steps_by_phase(steps)
+            # Extract phase names from markdown headers
+            phases = _enrich_phase_names(body, phases)
+            return (phases, [])
+
+    # Fall back to table parsing for backward compatibility
     phases: list[RoadmapPhase] = []
     validation_errors: list[str] = []
 
