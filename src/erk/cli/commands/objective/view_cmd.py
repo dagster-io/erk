@@ -1,5 +1,7 @@
 """Command to fetch and display a single objective."""
 
+from datetime import datetime
+
 import click
 
 from erk.cli.alias import alias
@@ -57,7 +59,7 @@ def _format_step_status(status: str, pr: str | None) -> str:
     return click.style("⏳ pending", dim=True)
 
 
-def _format_timestamp(dt_value, *, label: str) -> str:
+def _format_timestamp(dt_value: datetime, *, label: str) -> str:
     """Format a timestamp with relative time.
 
     Args:
@@ -164,12 +166,11 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
         user_output(click.style("─── Summary ───", bold=True))
 
         # Format steps summary
-        done = summary["done"]
-        in_progress = summary["in_progress"]
-        pending = summary["pending"]
-        total = summary["total_steps"]
-
-        steps_summary = f"{done}/{total} done, {in_progress} in progress, {pending} pending"
+        steps_summary = (
+            f"{summary['done']}/{summary['total_steps']} done,"
+            f" {summary['in_progress']} in progress,"
+            f" {summary['pending']} pending"
+        )
         user_output(_format_field("Steps", steps_summary))
 
         # Display next step if available
