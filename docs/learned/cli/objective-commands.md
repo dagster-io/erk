@@ -27,11 +27,11 @@ The `with_overrides()` method on `InteractiveAgentConfig` allows selective overr
 
 The `next-plan` command forces `permission_mode_override="plan"` but allows conditional override of the `--dangerous` flag, letting users opt into skipping permission prompts.
 
-## Why next-plan Takes Optional Argument
+## next-plan Argument
 
 <!-- Source: src/erk/cli/commands/objective/next_plan_cmd.py, next_plan -->
 
-The `next-plan` command accepts an optional `ISSUE_REF` string argument. This flexibility allows the slash command `/erk:objective-next-plan` to prompt for the issue interactively if needed.
+The `next-plan` command requires an `ISSUE_REF` string argument (an objective issue number or GitHub URL). The slash command `/erk:objective-next-plan` receives this argument from the caller.
 
 ## Validation Check Design
 
@@ -69,20 +69,7 @@ Phases are validated for sequential ordering by `(number, suffix)` tuples. This 
 
 User-provided objective titles may contain brackets like `[foo]`, which Rich interprets as style tags. The `list_objectives` command currently **does not escape** user data, which means titles with brackets will render incorrectly (the bracketed text disappears).
 
-The correct pattern is:
-
-```python
-from rich.markup import escape as escape_markup
-
-table.add_row(
-    f"[link={issue.url}]#{issue.number}[/link]",
-    escape_markup(issue.title),  # ← Escape user data
-    format_relative_time(issue.created_at.isoformat()),
-    issue.url,
-)
-```
-
-**Why this is a tripwire**: It's a silent bug. The code doesn't crash; the output just looks wrong. And it's intermittent — only affects titles with brackets, which are rare enough to escape notice during development.
+**Why this is a tripwire**: It's a silent bug. The code doesn't crash; the output just looks wrong. And it's intermittent — only affects titles with brackets, which are rare enough to escape notice during development. The fix would be to wrap `issue.title` with `escape_markup()` from `rich.markup`.
 
 See [CLI Output Styling Guide](output-styling.md#rich-markup-escaping-in-cli-tables) for the full escaping pattern.
 
