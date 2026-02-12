@@ -81,8 +81,6 @@ The `close` command prompts for confirmation unless `--force` is provided. The c
 
 **Why default to true**: Closing an objective is usually intentional and reversible (GitHub issues can be reopened). Defaulting to "yes" reduces friction while still providing a safety check for accidental invocations.
 
-## Session-Based Idempotency
-
 ## Command Aliases
 
 <!-- Source: src/erk/cli/commands/objective/__init__.py -->
