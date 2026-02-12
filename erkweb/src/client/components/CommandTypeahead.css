@@ -1,0 +1,49 @@
+.command-typeahead {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: #252526;
+  border: 1px solid #444;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  z-index: 10;
+}
+
+.command-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.command-item:hover,
+.command-item.selected {
+  background: #094771;
+}
+
+.command-name {
+  color: #569cd6;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  flex-shrink: 0;
+}
+
+.command-hint {
+  color: #666;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.command-desc {
+  color: #888;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

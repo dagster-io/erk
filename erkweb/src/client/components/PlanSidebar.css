@@ -1,0 +1,97 @@
+.plan-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-right: 1px solid #333;
+  background: #1e1e1e;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #333;
+  background: #252526;
+  flex-shrink: 0;
+}
+
+.sidebar-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.sidebar-count {
+  font-size: 11px;
+  color: #888;
+  background: #2a2a2a;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.sidebar-status {
+  padding: 16px 12px;
+  color: #888;
+  font-size: 13px;
+  text-align: center;
+}
+
+.sidebar-error {
+  padding: 12px;
+  color: #f44747;
+  font-size: 12px;
+}
+
+.plan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.plan-row {
+  cursor: pointer;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.plan-row:hover {
+  background: #2a2d2e;
+}
+
+.plan-row.selected {
+  background: #094771;
+}
+
+.plan-row td {
+  padding: 6px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plan-number {
+  color: #888;
+  width: 50px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.plan-title {
+  color: #d4d4d4;
+  max-width: 140px;
+}
+
+.plan-pr {
+  color: #888;
+  font-size: 11px;
+}
+
+.plan-checks {
+  font-size: 11px;
+  text-align: right;
+}
