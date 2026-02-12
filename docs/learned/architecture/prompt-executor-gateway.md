@@ -12,8 +12,19 @@ tripwires:
     warning: use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
   - action: execute_interactive() never returns in production
     warning: it replaces the process via os.execvp
-  - action: using execute_prompt_passthrough() in code that runs in CI or shell scripts
-    warning: use execute_prompt() instead when stdout may be captured via command substitution -- passthrough streams full session JSON which can exceed shell ARG_MAX (~200KB)
+  - action:
+      Before using execute_prompt_passthrough() in CI workflows or shell scripts
+      where stdout may be captured
+    warning:
+      Use execute_prompt() instead when output will be captured via command substitution
+      or assigned to variables. Passthrough mode streams full session JSON to stdout,
+      which can exceed shell ARG_MAX limits (~200KB). Only use passthrough for human-visible
+      terminal output.
+  - action: When switching between execute_prompt() and execute_prompt_passthrough()
+    warning:
+      Update tests to change both assertion tracking property (prompt_calls <->
+      passthrough_calls) AND fake configuration (prompt_results <-> passthrough_exit_code).
+      Missing either dimension causes confusing test failures.
 ---
 
 # Prompt Executor Gateway
