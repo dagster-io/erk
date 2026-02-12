@@ -133,7 +133,7 @@ The exit code convention ("always exit 0") applies specifically to **JSON stdin 
 | JSON stdin   | `echo '[...]' \| erk exec cmd`   | Always 0, errors in JSON          | Bulk automation (10+ items)   |
 | Multi-option | `erk exec cmd --item a --item b` | Traditional (non-zero on failure) | Interactive shell (3-5 items) |
 
-<!-- Source: docs/learned/cli/commands/update-roadmap-step.md -->
+<!-- Source: docs/learned/cli/commands/update-roadmap-step.md, update-roadmap-step command -->
 
 See [update-roadmap-step.md](commands/update-roadmap-step.md) for an example of a multi-option command with traditional exit code semantics. The command uses `--step` multiple times, exits 1 on any failure, and is designed for shell chain compatibility.
 
