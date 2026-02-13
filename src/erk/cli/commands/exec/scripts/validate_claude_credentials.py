@@ -45,6 +45,8 @@ from typing import Literal
 
 import click
 
+from erk_shared.subprocess_utils import build_claude_subprocess_env
+
 
 @dataclass(frozen=True)
 class ValidationSuccess:
@@ -93,10 +95,11 @@ def _validate_credentials_impl() -> ValidationSuccess | ValidationError:
 
     # Validate by making a minimal API call
     result = subprocess.run(
-        ["claude", "--print", "--max-turns", "1", "respond with ok"],
+        ["claude", "--print", "--no-session-persistence", "--max-turns", "1", "respond with ok"],
         check=False,
         capture_output=True,
         text=True,
+        env=build_claude_subprocess_env(),
     )
 
     if result.returncode != 0:

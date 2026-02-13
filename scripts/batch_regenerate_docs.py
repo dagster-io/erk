@@ -20,6 +20,7 @@ Usage:
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -176,11 +177,14 @@ def run_claude(
     cmd = [
         "claude",
         "--print",
+        "--no-session-persistence",
         "--dangerously-skip-permissions",
         "--model",
         model,
         prompt,
     ]
+    env = os.environ.copy()
+    env.pop("CLAUDECODE", None)
     with log_path.open("w") as log_file:
         result = subprocess.run(
             cmd,
@@ -188,6 +192,7 @@ def run_claude(
             stderr=subprocess.STDOUT,
             timeout=timeout,
             check=False,
+            env=env,
         )
     return result.returncode
 

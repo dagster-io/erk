@@ -17,6 +17,7 @@ import subprocess
 from pathlib import Path
 
 from erk_shared.scratch.scratch import write_scratch_file
+from erk_shared.subprocess_utils import build_claude_subprocess_env
 
 # Prompt template for Haiku distillation
 DISTILLATION_PROMPT = """You are preprocessing a Claude Code session log for doc extraction.
@@ -87,12 +88,14 @@ def distill_with_haiku(
                 "--model",
                 "haiku",
                 "--print",
+                "--no-session-persistence",
                 "-p",
                 full_prompt,
             ],
             capture_output=True,
             text=True,
             check=True,
+            env=build_claude_subprocess_env(),
         )
 
         return result.stdout.strip()

@@ -5,6 +5,7 @@ It's intentionally minimal to avoid pulling in complex dependencies.
 """
 
 import logging
+import os
 import subprocess
 import time
 from collections.abc import Sequence
@@ -21,6 +22,20 @@ from erk_shared.gateway.github.transient_errors import is_transient_error
 from erk_shared.gateway.time.abc import Time
 
 logger = logging.getLogger(__name__)
+
+
+def build_claude_subprocess_env() -> dict[str, str]:
+    """Build environment for Claude subprocess with nested session guard removed.
+
+    Claude Code sets CLAUDECODE=1 to detect nested sessions and block them.
+    Our subprocess calls use --print (non-interactive, single-shot) with
+    --no-session-persistence, so they don't share runtime resources with
+    the parent session. Stripping CLAUDECODE allows these safe subprocess
+    calls to work when erk commands are invoked from within a Claude session.
+    """
+    env = os.environ.copy()
+    env.pop("CLAUDECODE", None)
+    return env
 
 
 def _build_timing_description(cmd: Sequence[str]) -> str:

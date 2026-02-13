@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 
 from erk_shared.gateway.shell.abc import Shell, detect_shell_from_env
+from erk_shared.subprocess_utils import build_claude_subprocess_env
 
 
 class RealShell(Shell):
@@ -60,6 +61,7 @@ class RealShell(Shell):
         cmd = [
             "claude",
             "--print",
+            "--no-session-persistence",
             "--permission-mode",
             "bypassPermissions",
             "/erk:create-raw-extraction-plan",
@@ -71,6 +73,7 @@ class RealShell(Shell):
             check=True,
             capture_output=True,
             text=True,
+            env=build_claude_subprocess_env(),
         )
 
         # Parse JSON output to extract issue_url

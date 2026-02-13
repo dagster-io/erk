@@ -7,6 +7,7 @@ from pathlib import Path
 import click
 
 from erk_dev.cli.output import user_output
+from erk_shared.subprocess_utils import build_claude_subprocess_env
 
 
 def find_command_file(command_name: str) -> Path | None:
@@ -155,7 +156,7 @@ def slash_command_command(
     # Build claude command
     # Note: Claude CLI requires --print for non-interactive mode
     # When using --output-format=stream-json with --print, --verbose is required
-    cmd = ["claude", "--print", "--output-format", output_format]
+    cmd = ["claude", "--print", "--no-session-persistence", "--output-format", output_format]
 
     # stream-json requires verbose when using --print
     if output_format == "stream-json" or verbose:
@@ -178,6 +179,7 @@ def slash_command_command(
             capture_output=False,  # Stream to stdout/stderr
             text=True,
             check=True,
+            env=build_claude_subprocess_env(),
         )
         sys.exit(result.returncode)
     except subprocess.CalledProcessError as e:
