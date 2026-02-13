@@ -73,6 +73,7 @@ class TestDistillWithHaiku:
             assert "--model" in cmd
             assert "haiku" in cmd
             assert "--print" in cmd
+            assert "--no-session-persistence" in cmd
             assert "-p" in cmd
 
     def test_returns_stdout_stripped(self) -> None:
