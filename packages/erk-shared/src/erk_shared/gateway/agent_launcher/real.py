@@ -73,5 +73,10 @@ class RealAgentLauncher(AgentLauncher):
         # Build Claude CLI arguments
         cmd_args = build_claude_args(config, command=command)
 
+        # Strip nested session guard before replacing process.
+        # Claude Code sets CLAUDECODE=1 to block nested sessions, but execvp
+        # replaces the current process entirely — no resources are shared.
+        os.environ.pop("CLAUDECODE", None)
+
         # Replace current process with Claude
         os.execvp("claude", cmd_args)

@@ -91,6 +91,20 @@ class ClaudePromptExecutor(PromptExecutor):
         """Check if Claude CLI is in PATH using shutil.which."""
         return shutil.which("claude") is not None
 
+    @staticmethod
+    def _subprocess_env() -> dict[str, str]:
+        """Build environment for claude subprocess with nested session guard removed.
+
+        Claude Code sets CLAUDECODE=1 to detect nested sessions and block them.
+        Our subprocess calls use --print (non-interactive, single-shot) with
+        --no-session-persistence, so they don't share runtime resources with
+        the parent session. Stripping CLAUDECODE allows these safe subprocess
+        calls to work when erk commands are invoked from within a Claude session.
+        """
+        env = os.environ.copy()
+        env.pop("CLAUDECODE", None)
+        return env
+
     def execute_command_streaming(
         self,
         *,
@@ -137,7 +151,9 @@ class ClaudePromptExecutor(PromptExecutor):
 
         if verbose:
             # Verbose mode - stream to terminal, no parsing, no events
-            result = subprocess.run(cmd_args, cwd=worktree_path, check=False)
+            result = subprocess.run(
+                cmd_args, cwd=worktree_path, check=False, env=self._subprocess_env()
+            )
 
             if result.returncode != 0:
                 error_msg = f"Claude command {command} failed with exit code {result.returncode}"
@@ -159,6 +175,7 @@ class ClaudePromptExecutor(PromptExecutor):
                 stderr=subprocess.PIPE,
                 text=True,
                 bufsize=1,  # Line buffered
+                env=self._subprocess_env(),
             )
         except OSError as e:
             yield ProcessErrorEvent(
@@ -519,6 +536,11 @@ class ClaudePromptExecutor(PromptExecutor):
                     "falling back to inherited descriptors"
                 )
 
+        # Strip nested session guard before replacing process.
+        # Claude Code sets CLAUDECODE=1 to block nested sessions, but execvp
+        # replaces the current process entirely — no resources are shared.
+        os.environ.pop("CLAUDECODE", None)
+
         # Replace current process with Claude
         os.execvp("claude", cmd_args)
         # Never returns - process is replaced
@@ -565,6 +587,7 @@ class ClaudePromptExecutor(PromptExecutor):
             text=True,
             cwd=cwd,
             check=False,
+            env=self._subprocess_env(),
         )
 
         if result.returncode != 0:
@@ -622,5 +645,6 @@ class ClaudePromptExecutor(PromptExecutor):
             cwd=cwd,
             stdin=subprocess.DEVNULL,
             check=False,
+            env=self._subprocess_env(),
         )
         return result.returncode
