@@ -20,12 +20,13 @@ Usage:
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
+
+from erk_shared.subprocess_utils import build_claude_subprocess_env
 
 STATE_FILE = Path("logs/batch-regen-state.json")
 
@@ -183,8 +184,7 @@ def run_claude(
         model,
         prompt,
     ]
-    env = os.environ.copy()
-    env.pop("CLAUDECODE", None)
+    env = build_claude_subprocess_env()
     with log_path.open("w") as log_file:
         result = subprocess.run(
             cmd,
