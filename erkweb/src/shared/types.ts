@@ -1,50 +1,3 @@
-// WebSocket protocol messages
-
-// Client → Server
-export type ClientMessage =
-  | {type: 'chat_send'; text: string; cwd?: string; newSession?: boolean; resumeSessionId?: string}
-  | {type: 'chat_stop'}
-  | {type: 'permission_response'; toolUseId: string; allowed: boolean; applyAlways: boolean};
-
-// Server → Client
-export type ServerMessage =
-  | {type: 'chat_init'; sessionId: string; model: string}
-  | {type: 'chat_partial'; text: string}
-  | {type: 'chat_text'; fullText: string}
-  | {
-      type: 'chat_tool_use';
-      toolName: string;
-      toolInput: Record<string, unknown>;
-      toolUseId: string;
-    }
-  | {
-      type: 'chat_tool_result';
-      toolUseId: string;
-      output: string;
-      isError: boolean;
-    }
-  | {type: 'chat_tool_progress'; toolUseId: string; toolName: string; elapsedSeconds: number}
-  | {type: 'chat_done'; numTurns: number; costUsd: number}
-  | {type: 'chat_error'; message: string}
-  | {
-      type: 'permission_request';
-      toolUseId: string;
-      toolName: string;
-      toolInput: Record<string, unknown>;
-      reason?: string;
-      hasSuggestions: boolean;
-    }
-  | {
-      type: 'chat_commands';
-      commands: SlashCommandInfo[];
-    };
-
-export interface SlashCommandInfo {
-  name: string;
-  description: string;
-  argumentHint: string;
-}
-
 // Plan data from `erk exec dash-data`
 export interface PlanRow {
   issue_number: number;
@@ -67,6 +20,10 @@ export interface PlanRow {
   run_url: string | null;
   worktree_branch: string | null;
   pr_head_branch: string | null;
+  // Additional fields for state detection
+  run_status: string | null;
+  run_conclusion: string | null;
+  log_entries: [string, string, string][];
 }
 
 export interface FetchPlansResult {
@@ -76,27 +33,89 @@ export interface FetchPlansResult {
   error?: string;
 }
 
-// Session info from `erk exec list-sessions`
-export interface SessionInfo {
-  session_id: string;
-  mtime_relative: string;
-  summary: string;
-  branch: string | null;
-}
-
-// Chat message for UI state
-export interface ChatMessageContent {
-  type: 'text' | 'tool_use' | 'tool_result';
-  text?: string;
-  toolName?: string;
-  toolInput?: Record<string, unknown>;
-  toolUseId?: string;
+// Server action result
+export interface ActionResult {
+  success: boolean;
   output?: string;
-  isError?: boolean;
+  error?: string;
 }
 
-export interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: ChatMessageContent[];
-  timestamp: number;
+// Plan lifecycle states
+export type PlanState =
+  | 'created'
+  | 'in-review'
+  | 'queued'
+  | 'dispatched'
+  | 'implementing-remote'
+  | 'implementing-local'
+  | 'complete'
+  | 'no-changes'
+  | 'merged-closed';
+
+export interface PlanStateInfo {
+  key: PlanState;
+  label: string;
+}
+
+export const PLAN_STATES: PlanStateInfo[] = [
+  {key: 'created', label: 'Created'},
+  {key: 'in-review', label: 'In Review'},
+  {key: 'queued', label: 'Queued'},
+  {key: 'dispatched', label: 'Dispatched'},
+  {key: 'implementing-remote', label: 'Implementing (remote)'},
+  {key: 'implementing-local', label: 'Implementing (local)'},
+  {key: 'complete', label: 'Complete'},
+  {key: 'no-changes', label: 'No Changes'},
+  {key: 'merged-closed', label: 'Merged / Closed'},
+];
+
+/**
+ * Derive the lifecycle state of a plan from its PlanRow data.
+ */
+export function derivePlanState(plan: PlanRow): PlanState {
+  // Merged or closed
+  if (plan.pr_state === 'MERGED' || plan.pr_state === 'CLOSED') {
+    return 'merged-closed';
+  }
+
+  // PR exists and is open
+  if (plan.pr_state === 'OPEN') {
+    // Check for no-changes (run completed with no diff)
+    if (plan.run_conclusion === 'failure' && plan.run_state_display.includes('no-changes')) {
+      return 'no-changes';
+    }
+    // PR is ready (not draft) = complete
+    return 'complete';
+  }
+
+  // Remote implementation in progress
+  if (plan.run_status === 'in_progress') {
+    return 'implementing-remote';
+  }
+
+  // Local implementation in progress
+  if (plan.local_impl_display && plan.local_impl_display !== '-') {
+    return 'implementing-local';
+  }
+
+  // Dispatched: has workflow-started log entry
+  const hasWorkflowStarted = plan.log_entries.some(
+    ([event]) => event === 'workflow-started' || event === 'workflow_started',
+  );
+  if (hasWorkflowStarted && plan.run_status === 'queued') {
+    return 'dispatched';
+  }
+
+  // Queued: has submission-queued log entry
+  const hasSubmissionQueued = plan.log_entries.some(
+    ([event]) => event === 'submission-queued' || event === 'submission_queued',
+  );
+  if (hasSubmissionQueued) {
+    return 'queued';
+  }
+
+  // TODO: In Review detection requires plan-header metadata parsing
+  // For now, skip this state
+
+  return 'created';
 }
