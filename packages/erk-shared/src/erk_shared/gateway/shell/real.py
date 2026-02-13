@@ -7,7 +7,10 @@ import subprocess
 from pathlib import Path
 
 from erk_shared.gateway.shell.abc import Shell, detect_shell_from_env
-from erk_shared.subprocess_utils import build_claude_subprocess_env
+from erk_shared.subprocess_utils import (
+    build_claude_subprocess_env,
+    run_subprocess_with_context,
+)
 
 
 class RealShell(Shell):
@@ -67,12 +70,10 @@ class RealShell(Shell):
             "/erk:create-raw-extraction-plan",
         ]
 
-        result = subprocess.run(
-            cmd,
+        result = run_subprocess_with_context(
+            cmd=cmd,
+            operation_context="create extraction plan via Claude CLI",
             cwd=cwd,
-            check=True,
-            capture_output=True,
-            text=True,
             env=build_claude_subprocess_env(),
         )
 

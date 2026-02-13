@@ -4,7 +4,6 @@ This fake enables testing shell-dependent functionality without
 requiring specific shell configurations or installed tools.
 """
 
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -74,7 +73,7 @@ class FakeShell(Shell):
             tool_versions: Mapping of tool name to version string. Tools not in
                 this mapping will return None from get_tool_version()
             claude_extraction_raises: If True, run_claude_extraction_plan will raise
-                CalledProcessError
+                RuntimeError
             extraction_plan_url: URL to return from run_claude_extraction_plan on success
             subshell_exit_code: Exit code to return from spawn_subshell()
         """
@@ -103,16 +102,13 @@ class FakeShell(Shell):
         """Track call to run_claude_extraction_plan without executing anything.
 
         This method records the call parameters for test assertions.
-        Raises subprocess.CalledProcessError if configured to do so.
+        Raises RuntimeError if configured to do so (matching real
+        implementation's run_subprocess_with_context behavior).
         Returns the configured extraction_plan_url on success.
         """
         self._extraction_calls.append(cwd)
         if self._claude_extraction_raises:
-            raise subprocess.CalledProcessError(
-                returncode=1,
-                cmd=["erk", "plan", "extraction", "raw"],
-                stderr="Simulated extraction failure",
-            )
+            raise RuntimeError("Simulated extraction failure")
         return self._extraction_plan_url
 
     @property
