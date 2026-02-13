@@ -1,5 +1,7 @@
 ---
 title: Error Detection Patterns for Subprocess Failures
+last_audited: "2026-02-13"
+audit_result: clean
 read_when:
   - "classifying errors from subprocess stderr output"
   - "detecting specific failure modes from external tool output"

@@ -1,7 +1,7 @@
 ---
 title: Erk Test Reference
-last_audited: "2026-02-03"
-audit_result: edited
+last_audited: "2026-02-13"
+audit_result: clean
 read_when:
   - "writing tests for erk"
   - "using erk fakes"

@@ -1,6 +1,6 @@
 ---
 title: CLI Error Handling Anti-Patterns
-last_audited: "2026-02-11"
+last_audited: "2026-02-13"
 audit_result: clean
 read_when:
   - "handling expected CLI failures"

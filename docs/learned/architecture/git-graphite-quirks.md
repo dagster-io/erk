@@ -1,6 +1,6 @@
 ---
 title: Git and Graphite Edge Cases Catalog
-last_audited: "2026-02-03"
+last_audited: "2026-02-13"
 audit_result: edited
 read_when:
   - "debugging unexpected git/gt behavior"
@@ -221,26 +221,13 @@ gt restack --no-interactive
 
 **Why It's Surprising**: Git handles remote vs local refs transparently - creating branches from either just works. Graphite's stack tracking requires the local parent branch to be an ancestor of the new branch, which fails silently if local has diverged from remote.
 
-**Solution**: The `GraphiteBranchManager.create_branch()` method validates parent branch state via `_ensure_local_matches_remote()`:
+**Solution**: The `GraphiteBranchManager.create_branch()` method handles parent branch state via `_ensure_local_matches_remote()`:
 
 1. If local branch doesn't exist, create it from remote
 2. If local exists and matches remote, proceed normally
-3. If local has diverged from remote, fail with clear fix instructions
+3. If local has diverged from remote, force-update the local branch to match remote
 
-**Error Message**:
-
-```
-Local branch 'feature-parent' has diverged from origin/feature-parent.
-Graphite requires the local branch to match the remote for stack tracking.
-
-To fix, update your local branch to match remote and restack:
-  git fetch origin && git branch -f feature-parent origin/feature-parent
-  gt restack --downstack
-
-Or if you have local changes to keep, push them first:
-  With Graphite: gt checkout feature-parent && gt submit
-  With git:      git checkout feature-parent && git push origin feature-parent
-```
+The force-update is safe because by the time `_ensure_local_matches_remote()` runs, the new child branch has already been checked out, so we're not on the local parent branch being updated.
 
 **When This Happens**:
 
@@ -283,7 +270,7 @@ This ensures callers can create multiple branches without unexpected working dir
 ```python
 from erk_shared.gateway.gt.types import RestackError, RestackSuccess
 
-result = ctx.graphite.restack_idempotent(repo.root, no_interactive=True)
+result = ctx.graphite.restack_idempotent(repo.root, no_interactive=True, quiet=False)
 
 if isinstance(result, RestackError):
     if result.error_type == "restack-conflict":
