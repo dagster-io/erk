@@ -11,6 +11,7 @@ from erk.cli.commands.exec.scripts.objective_roadmap_shared import (
     parse_roadmap,
 )
 from erk.cli.core import discover_repo_context
+from erk.cli.ensure import UserFacingCliError
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
@@ -94,17 +95,14 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
     # Fetch issue from GitHub
     result = ctx.issues.get_issue(repo_root, issue_number)
     if isinstance(result, IssueNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
-        raise SystemExit(1)
+        raise UserFacingCliError(f"Issue #{issue_number} not found")
     issue = result
 
     # Verify erk-objective label
     if "erk-objective" not in issue.labels:
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"Issue #{issue_number} is not an objective (missing erk-objective label)"
+        raise UserFacingCliError(
+            f"Issue #{issue_number} is not an objective (missing erk-objective label)"
         )
-        raise SystemExit(1)
 
     # Parse roadmap from issue body
     phases, _validation_errors = parse_roadmap(issue.body)
