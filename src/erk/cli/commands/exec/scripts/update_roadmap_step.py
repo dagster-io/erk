@@ -298,7 +298,9 @@ def update_roadmap_step(
             any_failure = True
             continue
 
-        new_body = _replace_step_pr_in_body(updated_body, step_id, pr, explicit_status=explicit_status)
+        new_body = _replace_step_pr_in_body(
+            updated_body, step_id, pr, explicit_status=explicit_status
+        )
         if new_body is None:
             results.append(
                 {
