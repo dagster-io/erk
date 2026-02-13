@@ -17,22 +17,7 @@ All roadmap steps are complete. Should I close objective #<number> now?
 - I'll close it manually later
 ```
 
-### Trigger 2: Completion Language in Current Focus
-
-When "Current Focus" is updated to contain completion language:
-
-- "Objective complete"
-- "Ready to close"
-- "All phases done"
-- "Goal achieved"
-
-Immediately ask:
-
-```
-The objective indicates completion. Should I close #<number>?
-```
-
-### Trigger 3: Final PR Landed
+### Trigger 2: Final PR Landed
 
 When the user says they're landing/merging the final PR for an objective:
 
@@ -46,7 +31,7 @@ Ask before or immediately after the merge:
 This PR completes objective #<number>. Should I close it now?
 ```
 
-### Trigger 4: Post-Update Check
+### Trigger 3: Post-Update Check
 
 After any objective update that marks the last pending step as done, proactively check:
 
@@ -75,7 +60,6 @@ Before closing, verify:
 - [ ] All related PRs are merged
 - [ ] Action comments capture key lessons learned
 - [ ] Issue body reflects final state
-- [ ] "Current Focus" indicates completion
 
 ## The Two-Step Close
 
@@ -151,7 +135,6 @@ Agent should:
 
 **Don't leave objectives in limbo.** These states indicate a missed closing opportunity:
 
-- "Current Focus" says "ready to close" but issue is open
 - All steps are done but no final summary posted
 - Last update was days ago with completion language
 

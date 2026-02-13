@@ -140,7 +140,7 @@ Run the `/erk:objective-update-with-landed-pr` workflow inline:
 2. Update the objective body:
    - Mark relevant roadmap steps as `done`
    - Add PR number to the step
-   - Update "Current Focus" section
+   - Reconcile stale prose sections (Design Decisions, Implementation Context)
 
 3. Check if all steps are complete - if so, offer to close the objective.
 

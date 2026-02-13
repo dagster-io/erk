@@ -38,7 +38,7 @@ capture lessons learned along the way.
 2. **Incremental capture** - Each action gets its own comment
 3. **Lessons as first-class** - Every action comment includes lessons learned
 4. **Clear roadmap** - Status visible at a glance in the body
-5. **Body stays current** - Update body when roadmap status changes
+5. **Body stays current via reconciliation** - After every PR landing, agents audit prose sections against what was actually implemented and correct stale information
 6. **Steelthread-first** - Each phase starts with minimal vertical slice proving the concept works
 7. **One PR per phase** - Each phase is sized for a coherent single PR
 8. **Always shippable** - System remains functional after each merged PR
@@ -89,9 +89,6 @@ Fill out remaining functionality.
 
 **Test:** [Full acceptance criteria]
 
-## Current Focus
-
-**Next action:** [What should happen next]
 EOF
 )"
 ```
@@ -111,7 +108,7 @@ EOF
 )"
 ```
 
-After posting, update the issue body (roadmap statuses, "Current Focus").
+After posting, update the issue body (roadmap statuses, reconcile stale prose sections).
 
 ### Spawning an Erk-Plan
 
@@ -125,7 +122,7 @@ erk plan create --title "Implement [step description]" --body "Part of Objective
 
 1. **Create objective** - When starting multi-plan work
 2. **Log actions** - After completing each significant piece of work
-3. **Update body** - Keep roadmap status current
+3. **Update body** - Keep roadmap status current, reconcile stale prose after each PR landing
 4. **Spawn erk-plans** - For individual implementation steps
 5. **Close** - When goal achieved or abandoned (proactively ask when all steps done)
 

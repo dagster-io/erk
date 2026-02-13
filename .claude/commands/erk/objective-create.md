@@ -268,10 +268,6 @@ Fill out remaining functionality.
 
 - [Guiding principle 1]
 - [Guiding principle 2]
-
-## Current Focus
-
-[What to prioritize right now - can be updated as the objective evolves]
 ```
 
 After showing the proposal, ask:

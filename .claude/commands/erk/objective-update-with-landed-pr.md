@@ -62,7 +62,34 @@ You are updating objective issue #<objective-number> after landing PR #<pr-numbe
 Your tasks:
 
 1. **Analyze which steps the PR completed** by comparing the plan body against the objective roadmap
-2. **Compose an action comment** using this template:
+2. **Update roadmap steps** using the exec command for each completed step:
+
+```bash
+erk exec update-roadmap-step <objective-number> --step <step-id> --pr "#<pr-number>" --status done
+```
+
+This handles both frontmatter and table dual-write automatically. Run once per step completed by the PR.
+
+3. **Perform prose reconciliation.** Read the objective body (post-mechanical-update) and compare against what the PR actually did. Check each reconcilable section:
+
+**Reconciliation Checklist:**
+
+1. Read each Design Decision. Did the PR override or refine any? If so, update the decision text.
+2. Read Implementation Context. Does the architecture description still match reality after this PR? If not, correct it.
+3. Read step descriptions for upcoming steps. Did this PR change the landscape such that future step descriptions need adjustment?
+4. If nothing is stale, skip Body Reconciliation subsection and skip body update.
+
+| Contradiction Type          | Example                                                      | Section to Update                             |
+| --------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
+| **Decision override**       | Objective says "Use polling", PR implemented WebSockets      | Design Decisions                              |
+| **Scope change**            | Step says "Add 3 methods", PR only needed 2                  | Step description in roadmap                   |
+| **Architecture drift**      | Context says "config in config.py", PR moved it to settings/ | Implementation Context                        |
+| **Constraint invalidation** | Requirement listed is no longer valid                        | Implementation Context                        |
+| **New discovery**           | PR revealed a caching bug affecting future steps             | Implementation Context or new Design Decision |
+
+These are common contradiction types, not an exhaustive list. Flag any divergence between the objective text and what was actually implemented, even if it doesn't fit a predefined category.
+
+4. **Compose an action comment** using this template:
 
 ```markdown
 ## Action: [Brief title - what was accomplished]
@@ -83,22 +110,17 @@ Your tasks:
 ### Roadmap Updates
 
 - Step X.Y: pending -> done
+
+### Body Reconciliation
+
+- **[Section name]**: [What changed and why]
 ```
 
 **Inferring content (DO NOT ask the user):**
 
 - **What Was Done:** Infer from PR title, PR description, and commit messages. The plan body contains the implementation plan - use it to understand what was accomplished.
 - **Lessons Learned:** Infer from implementation patterns or architectural decisions. If straightforward, note what pattern worked well.
-
-3. **Update roadmap steps** using the exec command for each completed step:
-
-```bash
-erk exec update-roadmap-step <objective-number> --step <step-id> --pr "#<pr-number>" --status done
-```
-
-This handles both frontmatter and table dual-write automatically. Run once per step completed by the PR.
-
-4. **Update "Current Focus"** in the objective body to describe the next pending step or next phase. Use `erk exec update-issue-body` to write the updated body with the new Current Focus section.
+- **Body Reconciliation:** Only include this subsection if prose sections needed updating. If nothing is stale, omit entirely (not "No changes needed").
 
 5. **Execute writes:**
 
@@ -110,10 +132,12 @@ EOF
 )"
 ```
 
+If prose reconciliation found stale sections, update the objective body:
+
 ```bash
-# Update Current Focus in objective body
+# Update reconciled prose in objective body (skip if no prose changes)
 erk exec update-issue-body <issue-number> --body "$(cat <<'BODY_EOF'
-<full updated body text with new Current Focus>
+<full updated body text with reconciled sections>
 BODY_EOF
 )"
 ```
