@@ -78,7 +78,7 @@
 .plan-number {
   color: #888;
   width: 50px;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
 }
 
 .plan-title {

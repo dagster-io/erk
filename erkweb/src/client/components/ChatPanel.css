@@ -31,7 +31,7 @@
 .chat-session {
   font-size: 11px;
   color: #666;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   margin-left: auto;
 }
 
@@ -80,7 +80,7 @@
 .activity-elapsed {
   color: #666;
   margin-left: auto;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
 }
 
 .chat-input-area {
@@ -101,7 +101,7 @@
   border-radius: 6px;
   color: #d4d4d4;
   padding: 8px 12px;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   resize: none;
   line-height: 1.4;
