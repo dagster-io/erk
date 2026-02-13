@@ -14,6 +14,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before Archive value to 'last\_' variant BEFORE clearing** → Read [Archive-on-Clear Metadata Pattern](metadata-archival-pattern.md) first. Order matters — clear-then-archive loses the value silently
 
+**CRITICAL: Before Before using execute_prompt_passthrough() in CI workflows or shell scripts where stdout may be captured** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. Use execute_prompt() instead when output will be captured via command substitution or assigned to variables. Passthrough mode streams full session JSON to stdout, which can exceed shell ARG_MAX limits (~200KB). Only use passthrough for human-visible terminal output.
+
 **CRITICAL: Before Call plan-update-issue after editing local plan files** → Read [Plan File Sync Pattern](plan-file-sync-pattern.md) first. Sync is NOT automatic — GitHub issue will show stale content without explicit sync
 
 **CRITICAL: Before Detect mode in Phase 0 before any other phases execute** → Read [Phase 0 Detection Pattern](phase-zero-detection-pattern.md) first. Late detection wastes work and creates scattered conditionals across all phases
@@ -25,6 +27,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before Rely solely on agent-level enforcement for critical rules** → Read [Defense-in-Depth Enforcement](defense-in-depth-enforcement.md) first. Add skill-level and PR-level enforcement layers. Only workflow/CI enforcement is truly reliable.
 
 **CRITICAL: Before Return pre-rendered display strings from backend APIs** → Read [State Derivation Pattern](state-derivation-pattern.md) first. Return raw state fields instead. Derive display state in frontend pure functions for testability and reusability.
+
+**CRITICAL: Before When switching between execute_prompt() and execute_prompt_passthrough()** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. Update tests to change both assertion tracking property (prompt_calls <-> passthrough_calls) AND fake configuration (prompt_results <-> passthrough_exit_code). Missing either dimension causes confusing test failures.
 
 **CRITICAL: Before accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
 
