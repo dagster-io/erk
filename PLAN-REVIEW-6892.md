@@ -16,20 +16,25 @@ Import both fonts from the CDN in the `<head>`:
 <link href="https://cdn.jsdelivr.net/npm/geist@1/dist/fonts/geist-mono/style.css" rel="stylesheet" />
 ```
 
-### 2. Update body font in `erkweb/src/client/App.css`
+### 2. Define CSS custom properties in `erkweb/src/client/App.css`
 
-Line 13 — change:
+Add CSS variables on `:root` and update the body font declaration:
+
 ```css
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+:root {
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+}
 ```
-to:
+
+Then change the body `font-family` (line 13) to use the variable:
 ```css
-font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+font-family: var(--font-sans);
 ```
 
-### 3. Update all monospace font declarations
+### 3. Replace all hardcoded monospace font declarations with `var(--font-mono)`
 
-Replace every occurrence of `'SF Mono', 'Fira Code', monospace` with `'Geist Mono', monospace` across 11 declarations in 7 files:
+Replace every occurrence of `font-family: 'SF Mono', 'Fira Code', monospace` with `font-family: var(--font-mono)` across 11 declarations in 7 files:
 
 - `erkweb/src/client/components/ChatPanel.css` (lines 34, 83, 104)
 - `erkweb/src/client/components/ChatMessage.css` (line 52)
