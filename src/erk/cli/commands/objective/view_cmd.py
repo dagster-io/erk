@@ -154,10 +154,10 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
             # Display steps
             for step in phase.steps:
                 status_display = _format_step_status(step.status, step.pr)
-                pr_display = "-" if step.pr is None else step.pr
 
                 # Right-align PR column
-                step_line = f"  {step.id:5} {status_display:30} {step.description:50} {pr_display}"
+                pr_col = "-" if step.pr is None else step.pr
+                step_line = f"  {step.id:5} {status_display:30} {step.description:50} {pr_col}"
                 user_output(step_line)
 
             user_output("")
@@ -166,19 +166,25 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
         user_output(click.style("─── Summary ───", bold=True))
 
         # Format steps summary
-        steps_summary = (
-            f"{summary['done']}/{summary['total_steps']} done,"
-            f" {summary['in_progress']} in progress,"
-            f" {summary['pending']} pending"
+        user_output(
+            _format_field(
+                "Steps",
+                (
+                    f"{summary['done']}/{summary['total_steps']} done,"
+                    f" {summary['in_progress']} in progress,"
+                    f" {summary['pending']} pending"
+                ),
+            )
         )
-        user_output(_format_field("Steps", steps_summary))
 
         # Display next step if available
         if next_step:
-            next_step_text = (
-                f"{next_step['id']} - {next_step['description']} (Phase: {next_step['phase']})"
+            user_output(
+                _format_field(
+                    "Next step",
+                    f"{next_step['id']} - {next_step['description']} (Phase: {next_step['phase']})",
+                )
             )
-            user_output(_format_field("Next step", next_step_text))
         else:
             user_output(_format_field("Next step", "None"))
 
