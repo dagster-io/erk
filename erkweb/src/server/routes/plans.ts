@@ -1,11 +1,9 @@
 import {execFile, execFileSync} from 'child_process';
-import {existsSync, readFileSync} from 'fs';
-import os from 'os';
 import path from 'path';
 
 import {Router} from 'express';
 
-import type {ChatMessage, ChatMessageContent, FetchPlansResult} from '../../shared/types.js';
+import type {ActionResult, FetchPlansResult} from '../../shared/types.js';
 
 const router = Router();
 
@@ -191,168 +189,163 @@ router.get('/plans/:issueNumber/impl-status', (req, res) => {
   });
 });
 
-// List recent Claude Code sessions for a given working directory
-router.get('/sessions', (req, res) => {
-  const cwd = typeof req.query.cwd === 'string' ? req.query.cwd : undefined;
-  if (!cwd) {
-    res.json({success: false, error: 'cwd query parameter required'});
-    return;
-  }
+/**
+ * Run a server-side erk command for a plan and return the result.
+ */
+function runErkCommand(
+  args: string[],
+  options: {cwd?: string; timeout?: number},
+  callback: (result: ActionResult) => void,
+) {
   execFile(
     'erk',
-    ['exec', 'list-sessions', '--limit', '10', '--min-size', '1000'],
-    {env: erkEnv, cwd, timeout: 10_000},
-    (error, stdout) => {
+    args,
+    {env: erkEnv, cwd: options.cwd, timeout: options.timeout ?? 120_000},
+    (error, stdout, stderr) => {
       if (error) {
-        res.json({success: false, error: error.message, sessions: []});
-        return;
-      }
-      try {
-        const data = JSON.parse(stdout);
-        res.json({
-          success: true,
-          sessions: (data.sessions ?? []).map(
-            (s: {
-              session_id: string;
-              mtime_relative: string;
-              summary: string;
-              branch: string | null;
-            }) => ({
-              session_id: s.session_id,
-              mtime_relative: s.mtime_relative,
-              summary: s.summary,
-              branch: s.branch,
-            }),
-          ),
-        });
-      } catch {
-        res.json({success: false, error: 'Failed to parse sessions', sessions: []});
+        callback({success: false, error: stderr || error.message});
+      } else {
+        callback({success: true, output: stdout.trim()});
       }
     },
   );
+}
+
+// Submit plan to queue
+router.post('/plans/:issueNumber/submit', (req, res) => {
+  runErkCommand(['plan', 'submit', req.params.issueNumber, '-f'], {timeout: 120_000}, (result) =>
+    res.json(result),
+  );
 });
 
-/**
- * Find a session JSONL file by walking up from cwd to find the Claude projects directory.
- */
-function findSessionFile(cwd: string, sessionId: string): string | null {
-  // Validate session ID format (UUID)
-  if (!/^[0-9a-f-]{36}$/.test(sessionId)) {
-    return null;
-  }
-
-  const projectsDir = path.join(os.homedir(), '.claude', 'projects');
-  let current = cwd;
-  while (current !== path.dirname(current)) {
-    const encoded = current.replaceAll('/', '-').replaceAll('.', '-');
-    const sessionPath = path.join(projectsDir, encoded, `${sessionId}.jsonl`);
-    if (existsSync(sessionPath)) {
-      return sessionPath;
+// Address PR feedback remotely
+router.post('/plans/:issueNumber/address-remote', (req, res) => {
+  // Need PR number - look it up from plans data
+  resolveWorktreePathForIssue(req.params.issueNumber, (error, _worktreePath) => {
+    if (error) {
+      res.json({success: false, error});
+      return;
     }
-    current = path.dirname(current);
-  }
-  return null;
-}
-
-/**
- * Parse a session JSONL file into ChatMessage array for the UI.
- */
-function parseSessionMessages(filePath: string): ChatMessage[] {
-  const messages: ChatMessage[] = [];
-  const raw = readFileSync(filePath, 'utf-8');
-
-  for (const line of raw.split('\n')) {
-    if (!line.trim()) {
-      continue;
-    }
-    let obj: Record<string, unknown>;
-    try {
-      obj = JSON.parse(line);
-    } catch {
-      continue;
-    }
-    const type = obj.type;
-    if (type !== 'user' && type !== 'assistant') {
-      continue;
-    }
-
-    const msg = obj.message as {role?: string; content?: unknown[]} | undefined;
-    if (!msg?.content || !Array.isArray(msg.content)) {
-      continue;
-    }
-
-    const content: ChatMessageContent[] = [];
-    for (const block of msg.content) {
-      if (typeof block !== 'object' || block === null || !('type' in block)) {
-        continue;
-      }
-      const b = block as Record<string, unknown>;
-      if (b.type === 'text' && typeof b.text === 'string') {
-        content.push({type: 'text', text: b.text});
-      } else if (b.type === 'tool_use' && typeof b.name === 'string') {
-        content.push({
-          type: 'tool_use',
-          toolName: b.name,
-          toolInput: (b.input as Record<string, unknown>) ?? {},
-          toolUseId: (b.id as string) ?? '',
-        });
-      } else if (b.type === 'tool_result') {
-        const resultContent = b.content;
-        let output = '';
-        if (typeof resultContent === 'string') {
-          output = resultContent;
-        } else if (Array.isArray(resultContent)) {
-          output = resultContent
-            .filter(
-              (c: unknown) =>
-                typeof c === 'object' &&
-                c !== null &&
-                (c as Record<string, unknown>).type === 'text',
-            )
-            .map((c: unknown) => (c as {text: string}).text)
-            .join('\n');
+    // Get PR number from dash-data
+    execFile(
+      'erk',
+      ['exec', 'dash-data', '--creator', ghUsername],
+      {env: erkEnv},
+      (dataError, dataStdout) => {
+        if (dataError) {
+          res.json({success: false, error: 'Failed to fetch plan data'});
+          return;
         }
-        content.push({
-          type: 'tool_result',
-          toolUseId: (b.tool_use_id as string) ?? '',
-          output: output.slice(0, 5000),
-          isError: (b.is_error as boolean) ?? false,
-        });
-      }
-    }
+        try {
+          const data = JSON.parse(dataStdout);
+          const plans: Array<{issue_number: number; pr_number: number | null}> = data.plans ?? data;
+          const plan = plans.find((p) => String(p.issue_number) === req.params.issueNumber);
+          if (!plan?.pr_number) {
+            res.json({success: false, error: 'No PR found for this plan'});
+            return;
+          }
+          runErkCommand(
+            ['launch', 'pr-address', '--pr', String(plan.pr_number)],
+            {timeout: 120_000},
+            (result) => res.json(result),
+          );
+        } catch {
+          res.json({success: false, error: 'Failed to parse plan data'});
+        }
+      },
+    );
+  });
+});
 
-    if (content.length > 0) {
-      messages.push({
-        role: type as 'user' | 'assistant',
-        content,
-        timestamp: 0,
-      });
+// Fix conflicts remotely
+router.post('/plans/:issueNumber/fix-conflicts', (req, res) => {
+  resolveWorktreePathForIssue(req.params.issueNumber, (error, _worktreePath) => {
+    if (error) {
+      res.json({success: false, error});
+      return;
     }
-  }
-  return messages;
-}
+    execFile(
+      'erk',
+      ['exec', 'dash-data', '--creator', ghUsername],
+      {env: erkEnv},
+      (dataError, dataStdout) => {
+        if (dataError) {
+          res.json({success: false, error: 'Failed to fetch plan data'});
+          return;
+        }
+        try {
+          const data = JSON.parse(dataStdout);
+          const plans: Array<{issue_number: number; pr_number: number | null}> = data.plans ?? data;
+          const plan = plans.find((p) => String(p.issue_number) === req.params.issueNumber);
+          if (!plan?.pr_number) {
+            res.json({success: false, error: 'No PR found for this plan'});
+            return;
+          }
+          runErkCommand(
+            ['launch', 'pr-fix-conflicts', '--pr', String(plan.pr_number)],
+            {timeout: 120_000},
+            (result) => res.json(result),
+          );
+        } catch {
+          res.json({success: false, error: 'Failed to parse plan data'});
+        }
+      },
+    );
+  });
+});
 
-// Load messages from a previous session
-router.get('/sessions/:sessionId/messages', (req, res) => {
-  const cwd = typeof req.query.cwd === 'string' ? req.query.cwd : undefined;
-  if (!cwd) {
-    res.json({success: false, error: 'cwd query parameter required'});
-    return;
-  }
-  const sessionPath = findSessionFile(cwd, req.params.sessionId);
-  if (!sessionPath) {
-    res.json({success: false, error: 'Session not found'});
-    return;
-  }
-  try {
-    const messages = parseSessionMessages(sessionPath);
-    res.json({success: true, messages});
-  } catch (err) {
-    res.json({
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to read session',
-    });
-  }
+// Land PR
+router.post('/plans/:issueNumber/land', (req, res) => {
+  resolveWorktreePathForIssue(req.params.issueNumber, (error, _worktreePath) => {
+    if (error) {
+      res.json({success: false, error});
+      return;
+    }
+    execFile(
+      'erk',
+      ['exec', 'dash-data', '--creator', ghUsername],
+      {env: erkEnv},
+      (dataError, dataStdout) => {
+        if (dataError) {
+          res.json({success: false, error: 'Failed to fetch plan data'});
+          return;
+        }
+        try {
+          const data = JSON.parse(dataStdout);
+          const plans: Array<{
+            issue_number: number;
+            pr_number: number | null;
+            pr_head_branch: string | null;
+          }> = data.plans ?? data;
+          const plan = plans.find((p) => String(p.issue_number) === req.params.issueNumber);
+          if (!plan?.pr_number || !plan?.pr_head_branch) {
+            res.json({success: false, error: 'No PR or branch found for this plan'});
+            return;
+          }
+          runErkCommand(
+            [
+              'exec',
+              'land-execute',
+              `--pr-number=${plan.pr_number}`,
+              `--branch=${plan.pr_head_branch}`,
+              '-f',
+            ],
+            {timeout: 120_000},
+            (result) => res.json(result),
+          );
+        } catch {
+          res.json({success: false, error: 'Failed to parse plan data'});
+        }
+      },
+    );
+  });
+});
+
+// Close plan
+router.post('/plans/:issueNumber/close', (req, res) => {
+  runErkCommand(['plan', 'close', req.params.issueNumber], {timeout: 30_000}, (result) =>
+    res.json(result),
+  );
 });
 
 export default router;

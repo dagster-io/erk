@@ -22,24 +22,32 @@ export function PlanSidebar({plans, loading, error, selectedPlan, onSelect}: Pla
         {!loading && !error && plans.length === 0 && (
           <div className="sidebar-status">No plans found</div>
         )}
-        <table className="plan-table">
-          <tbody>
-            {plans.map((plan) => (
-              <tr
-                key={plan.issue_number}
-                className={`plan-row ${
-                  selectedPlan?.issue_number === plan.issue_number ? 'selected' : ''
-                }`}
-                onClick={() => onSelect(plan)}
-              >
-                <td className="plan-number">#{plan.issue_number}</td>
-                <td className="plan-title">{plan.title}</td>
-                <td className="plan-pr">{plan.pr_display}</td>
-                <td className="plan-checks">{plan.checks_display}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {plans.map((plan) => (
+          <div
+            key={plan.issue_number}
+            className={`plan-item ${selectedPlan?.issue_number === plan.issue_number ? 'selected' : ''}`}
+            onClick={() => onSelect(plan)}
+          >
+            <div className="plan-primary">
+              <span className="plan-number">#{plan.issue_number}</span>
+              <span className="plan-title">{plan.title}</span>
+            </div>
+            <div className="plan-meta">
+              <span className="plan-meta-tag">
+                impl: <span className="plan-meta-value">{plan.local_impl_display || 'none'}</span>
+              </span>
+              <span className="plan-meta-tag">
+                pr: <span className="plan-meta-value">{plan.pr_display || 'none'}</span>
+              </span>
+              <span className="plan-meta-tag">
+                checks: <span className="plan-meta-value">{plan.checks_display || 'none'}</span>
+              </span>
+              <span className="plan-meta-tag">
+                run: <span className="plan-meta-value">{plan.run_state_display || 'none'}</span>
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

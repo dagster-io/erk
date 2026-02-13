@@ -1,128 +1,70 @@
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 
-import type {PlanRow} from '../../shared/types.js';
+import type {ActionResult, PlanRow} from '../../shared/types.js';
 import './PlanDetail.css';
-
-interface ImplStatus {
-  hasImpl: boolean;
-  implValid: boolean;
-  worktreePath?: string;
-}
 
 interface PlanDetailProps {
   plan: PlanRow;
   onClose: () => void;
-  onSend: (text: string, options?: {cwd?: string; newSession?: boolean}) => void;
-  isStreaming: boolean;
 }
 
-export function PlanDetail({plan, onClose, onSend, isStreaming}: PlanDetailProps) {
-  const [busy, setBusy] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [implStatus, setImplStatus] = useState<ImplStatus | null>(null);
+type ActionState = 'idle' | 'running' | 'success' | 'error';
 
-  // Fetch impl status when the selected plan changes
-  useEffect(() => {
-    setImplStatus(null);
-    if (!plan.exists_locally) {
-      return;
-    }
+interface ActionStatus {
+  state: ActionState;
+  message?: string;
+}
 
-    let cancelled = false;
-    fetch(`/api/plans/${plan.issue_number}/impl-status`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (!cancelled && data.success) {
-          setImplStatus({
-            hasImpl: data.hasImpl,
-            implValid: data.implValid,
-            worktreePath: data.worktreePath,
-          });
-        }
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [plan.issue_number, plan.exists_locally]);
+async function runAction(issueNumber: number, action: string): Promise<ActionResult> {
+  const res = await fetch(`/api/plans/${issueNumber}/${action}`, {method: 'POST'});
+  return res.json();
+}
 
-  async function resolveWorktreePath(): Promise<string | null> {
-    // Use cached worktree path from impl-status if available
-    if (implStatus?.worktreePath) {
-      return implStatus.worktreePath;
-    }
+function copyToClipboard(text: string, setToast: (msg: string) => void) {
+  navigator.clipboard.writeText(text).then(
+    () => setToast('Copied!'),
+    () => setToast('Copy failed'),
+  );
+}
 
-    const res = await fetch(`/api/plans/${plan.issue_number}/worktree-path`);
-    const data = await res.json();
-    if (!data.success) {
-      setActionError(data.error ?? 'Failed to resolve worktree path');
-      return null;
-    }
-    return data.worktreePath;
+export function PlanDetail({plan, onClose}: PlanDetailProps) {
+  const [actionStatuses, setActionStatuses] = useState<Record<string, ActionStatus>>({});
+  const [toast, setToast] = useState<string | null>(null);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2000);
   }
 
-  async function handleImplement() {
-    setBusy(true);
-    setActionError(null);
+  async function executeAction(actionKey: string) {
+    setActionStatuses((prev) => ({...prev, [actionKey]: {state: 'running'}}));
     try {
-      const res = await fetch(`/api/plans/${plan.issue_number}/prepare`, {method: 'POST'});
-      const data = await res.json();
-      if (!data.success) {
-        setActionError(data.error ?? 'Failed to prepare worktree');
-        return;
-      }
-      onSend(`/erk:plan-implement ${plan.issue_number}`, {
-        cwd: data.worktreePath,
-        newSession: true,
-      });
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Prepare request failed');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleAddressFeedback() {
-    setBusy(true);
-    setActionError(null);
-    try {
-      const cwd = await resolveWorktreePath();
-      if (cwd) {
-        onSend('/erk:pr-address', {cwd, newSession: true});
+      const result = await runAction(plan.issue_number, actionKey);
+      if (result.success) {
+        setActionStatuses((prev) => ({
+          ...prev,
+          [actionKey]: {state: 'success', message: result.output},
+        }));
+      } else {
+        setActionStatuses((prev) => ({
+          ...prev,
+          [actionKey]: {state: 'error', message: result.error},
+        }));
       }
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Request failed');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleContinueImpl() {
-    setBusy(true);
-    setActionError(null);
-    try {
-      const cwd = await resolveWorktreePath();
-      if (cwd) {
-        onSend(
-          'Read .impl/progress.md and .impl/plan.md, then continue the implementation from where it left off.',
-          {cwd, newSession: true},
-        );
-      }
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Request failed');
-    } finally {
-      setBusy(false);
+      setActionStatuses((prev) => ({
+        ...prev,
+        [actionKey]: {
+          state: 'error',
+          message: err instanceof Error ? err.message : 'Request failed',
+        },
+      }));
     }
   }
 
   const isMerged = plan.pr_state === 'merged';
-  const hasLocalWorktree = plan.exists_locally;
   const hasPR = plan.pr_number !== null;
-  const hasActiveImpl = implStatus?.implValid === true;
   const hasComments = !plan.comments_display.endsWith('/0');
-  const canImplement = !isMerged && !hasPR;
-  const canAddressFeedback = hasPR && hasLocalWorktree && !isMerged && hasComments;
-  const canContinueImpl = hasActiveImpl && !isMerged && !hasPR;
 
   return (
     <div className="plan-detail">
@@ -135,6 +77,7 @@ export function PlanDetail({plan, onClose, onSend, isStreaming}: PlanDetailProps
         </button>
       </div>
       <div className="detail-content">
+        {/* Issue - full width */}
         <div className="detail-section">
           <div className="detail-label">Issue</div>
           <div className="detail-value">
@@ -148,92 +91,182 @@ export function PlanDetail({plan, onClose, onSend, isStreaming}: PlanDetailProps
           </div>
         </div>
 
-        <div className="detail-section">
-          <div className="detail-label">PR</div>
-          <div className="detail-value">
-            {plan.pr_url ? (
-              <a href={plan.pr_url} target="_blank" rel="noopener noreferrer">
-                {plan.pr_display}
-              </a>
-            ) : (
-              <span className="detail-muted">{plan.pr_display || 'None'}</span>
-            )}
-            {plan.pr_state && (
-              <span className={`detail-badge pr-state-${plan.pr_state}`}>{plan.pr_state}</span>
-            )}
-          </div>
-        </div>
-
-        <div className="detail-section">
-          <div className="detail-label">Checks</div>
-          <div className="detail-value">{plan.checks_display || '-'}</div>
-        </div>
-
-        <div className="detail-section">
-          <div className="detail-label">Comments</div>
-          <div className="detail-value">{plan.comments_display || '-'}</div>
-        </div>
-
-        <div className="detail-section">
-          <div className="detail-label">Objective</div>
-          <div className="detail-value">
-            {plan.objective_display || <span className="detail-muted">None</span>}
-          </div>
-        </div>
-
-        <div className="detail-section">
-          <div className="detail-label">Worktree</div>
-          <div className="detail-value">
-            <code>{plan.worktree_name}</code>
-            {plan.exists_locally ? (
-              <span className="detail-badge local">local</span>
-            ) : (
-              <span className="detail-badge remote">remote only</span>
-            )}
-          </div>
-        </div>
-
-        {plan.worktree_branch && (
-          <div className="detail-section">
-            <div className="detail-label">Branch</div>
+        {/* Metadata grid */}
+        <div className="detail-grid">
+          <div className="detail-cell">
+            <div className="detail-label">PR</div>
             <div className="detail-value">
-              <code>{plan.worktree_branch}</code>
+              {plan.pr_url ? (
+                <a href={plan.pr_url} target="_blank" rel="noopener noreferrer">
+                  {plan.pr_display}
+                </a>
+              ) : (
+                <span className="detail-muted">{plan.pr_display || 'None'}</span>
+              )}
+              {plan.pr_state && (
+                <span className={`detail-badge pr-state-${plan.pr_state}`}>{plan.pr_state}</span>
+              )}
             </div>
           </div>
-        )}
 
-        <div className="detail-section">
-          <div className="detail-label">Implementation</div>
-          <div className="detail-value">
-            Local: {plan.local_impl_display || '-'} / Remote: {plan.remote_impl_display || '-'}
+          <div className="detail-cell">
+            <div className="detail-label">Checks</div>
+            <div className="detail-value">{plan.checks_display || '-'}</div>
+          </div>
+
+          <div className="detail-cell">
+            <div className="detail-label">Comments</div>
+            <div className="detail-value">{plan.comments_display || '-'}</div>
+          </div>
+
+          <div className="detail-cell">
+            <div className="detail-label">Objective</div>
+            <div className="detail-value">
+              {plan.objective_display || <span className="detail-muted">None</span>}
+            </div>
+          </div>
+
+          <div className="detail-cell">
+            <div className="detail-label">Worktree</div>
+            <div className="detail-value">
+              <code>{plan.worktree_name}</code>
+              {plan.exists_locally ? (
+                <span className="detail-badge local">local</span>
+              ) : (
+                <span className="detail-badge remote">remote only</span>
+              )}
+            </div>
+          </div>
+
+          <div className="detail-cell">
+            <div className="detail-label">Branch</div>
+            <div className="detail-value">
+              {plan.worktree_branch ? (
+                <code>{plan.worktree_branch}</code>
+              ) : (
+                <span className="detail-muted">-</span>
+              )}
+            </div>
+          </div>
+
+          <div className="detail-cell">
+            <div className="detail-label">Implementation</div>
+            <div className="detail-value">
+              L: {plan.local_impl_display || '-'} / R: {plan.remote_impl_display || '-'}
+            </div>
+          </div>
+
+          <div className="detail-cell">
+            <div className="detail-label">Run</div>
+            <div className="detail-value">
+              {plan.run_url ? (
+                <a href={plan.run_url} target="_blank" rel="noopener noreferrer">
+                  {plan.run_state_display}
+                </a>
+              ) : (
+                plan.run_state_display || '-'
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="detail-actions">
-          <button
-            className="detail-action-btn implement-btn"
-            disabled={isStreaming || busy || !canImplement}
-            onClick={handleImplement}
-          >
-            {busy ? 'Preparing...' : 'Implement'}
-          </button>
-          <button
-            className="detail-action-btn feedback-btn"
-            disabled={isStreaming || busy || !canAddressFeedback}
-            onClick={handleAddressFeedback}
-          >
-            Address PR Feedback
-          </button>
-          <button
-            className="detail-action-btn continue-btn"
-            disabled={isStreaming || busy || !canContinueImpl}
-            onClick={handleContinueImpl}
-          >
-            Continue Implementation
-          </button>
-          {actionError && <div className="detail-action-error">{actionError}</div>}
+        {/* Actions & Commands side by side */}
+        <div className="detail-commands-actions">
+          <div className="detail-actions">
+            <div className="detail-label">Actions</div>
+            <ActionButton
+              label="Submit to Queue"
+              actionKey="submit"
+              status={actionStatuses['submit']}
+              disabled={isMerged}
+              onClick={() => executeAction('submit')}
+            />
+            <ActionButton
+              label="Address PR Remote"
+              actionKey="address-remote"
+              status={actionStatuses['address-remote']}
+              disabled={!hasPR || isMerged || !hasComments}
+              onClick={() => executeAction('address-remote')}
+            />
+            <ActionButton
+              label="Fix Conflicts Remote"
+              actionKey="fix-conflicts"
+              status={actionStatuses['fix-conflicts']}
+              disabled={!hasPR || isMerged}
+              onClick={() => executeAction('fix-conflicts')}
+            />
+            <ActionButton
+              label="Land PR"
+              actionKey="land"
+              status={actionStatuses['land']}
+              disabled={!hasPR || isMerged}
+              onClick={() => executeAction('land')}
+            />
+            <ActionButton
+              label="Close Plan"
+              actionKey="close"
+              status={actionStatuses['close']}
+              disabled={isMerged}
+              onClick={() => executeAction('close')}
+            />
+          </div>
+
+          <div className="detail-copy-section">
+            <div className="detail-label">Commands</div>
+            <div className="detail-copy-col">
+              {hasPR && <CodeSnippet code={`erk pr co ${plan.pr_number}`} onCopy={showToast} />}
+              <CodeSnippet code={`erk prepare ${plan.issue_number}`} onCopy={showToast} />
+              <CodeSnippet
+                code={`source "$(erk prepare ${plan.issue_number} --script)" && erk implement --dangerous`}
+                onCopy={showToast}
+              />
+              <CodeSnippet code={`erk plan submit ${plan.issue_number}`} onCopy={showToast} />
+            </div>
+            {toast && <div className="detail-toast">{toast}</div>}
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function ActionButton({
+  label,
+  status,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  actionKey: string;
+  status?: ActionStatus;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const isRunning = status?.state === 'running';
+
+  return (
+    <div className="action-item">
+      <button
+        className={`detail-action-btn ${status?.state === 'success' ? 'action-success' : ''} ${status?.state === 'error' ? 'action-error' : ''}`}
+        disabled={disabled || isRunning}
+        onClick={onClick}
+      >
+        {isRunning ? `${label}...` : label}
+      </button>
+      {status?.state === 'error' && status.message && (
+        <div className="action-error-msg">{status.message}</div>
+      )}
+      {status?.state === 'success' && status.message && (
+        <div className="action-success-msg">{status.message}</div>
+      )}
+    </div>
+  );
+}
+
+function CodeSnippet({code, onCopy}: {code: string; onCopy: (msg: string) => void}) {
+  return (
+    <button className="detail-code-snippet" onClick={() => copyToClipboard(code, onCopy)}>
+      <code>{code}</code>
+    </button>
   );
 }
