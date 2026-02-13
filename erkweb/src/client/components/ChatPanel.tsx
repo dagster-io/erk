@@ -1,13 +1,50 @@
-import {type KeyboardEvent, useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+import {ChatInput} from './ChatInput.js';
 import {ChatMessage} from './ChatMessage.js';
-import {CommandTypeahead, filterCommands} from './CommandTypeahead.js';
 import {PermissionPrompt} from './PermissionPrompt.js';
-import type {ChatMessage as ChatMessageType, SlashCommandInfo} from '../../shared/types.js';
+import type {
+  ChatMessage as ChatMessageType,
+  SessionInfo,
+  SlashCommandInfo,
+} from '../../shared/types.js';
 import type {ActivityStatus, PermissionRequest} from '../hooks/useChat.js';
 import './ChatPanel.css';
+
+/** Throttle streaming text so ReactMarkdown only re-parses every ~100ms. */
+function useThrottledValue(value: string, ms: number): string {
+  const [throttled, setThrottled] = useState(value);
+  const lastRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const now = Date.now();
+    if (now - lastRef.current >= ms) {
+      lastRef.current = now;
+      setThrottled(value);
+      return;
+    }
+    timerRef.current = setTimeout(
+      () => {
+        lastRef.current = Date.now();
+        setThrottled(value);
+      },
+      ms - (now - lastRef.current),
+    );
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [value, ms]);
+
+  // Flush immediately when value clears (stream ended)
+  useEffect(() => {
+    if (!value) setThrottled('');
+  }, [value]);
+
+  return throttled;
+}
 
 function formatElapsed(seconds: number): string {
   const s = Math.floor(seconds);
@@ -19,17 +56,30 @@ function formatElapsed(seconds: number): string {
   return `${m}m ${rem}s`;
 }
 
+function summarizeSession(s: SessionInfo): string {
+  if (s.summary) {
+    const clean = s.summary.replace(/<[^>]+>/g, '').trim();
+    return clean.length > 50 ? clean.slice(0, 50) + '...' : clean;
+  }
+  return s.session_id.slice(0, 8);
+}
+
 interface ChatPanelProps {
   messages: ChatMessageType[];
   streamingText: string;
   isStreaming: boolean;
   sessionId: string | null;
   model: string | null;
+  chatBranch: string | null;
+  sessions: SessionInfo[];
+  selectedSessionId: string | null;
+  sessionsLoading: boolean;
   permissionRequest: PermissionRequest | null;
   activity: ActivityStatus | null;
   commands: SlashCommandInfo[];
   onSend: (text: string) => void;
   onStop: () => void;
+  onSelectSession: (sessionId: string | null) => void;
   onPermissionRespond: (toolUseId: string, allowed: boolean, applyAlways: boolean) => void;
 }
 
@@ -39,35 +89,23 @@ export function ChatPanel({
   isStreaming,
   sessionId,
   model,
+  chatBranch,
+  sessions,
+  selectedSessionId,
+  sessionsLoading,
   permissionRequest,
   activity,
   commands,
   onSend,
   onStop,
+  onSelectSession,
   onPermissionRespond,
 }: ChatPanelProps) {
-  const [input, setInput] = useState('');
-  const [typeaheadIndex, setTypeaheadIndex] = useState(0);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isNearBottomRef = useRef(true);
+  const throttledStreamingText = useThrottledValue(streamingText, 100);
 
-  // Determine if typeahead should be shown
-  const slashMatch = /^\/(\S*)$/.exec(input);
-  const showTypeahead = slashMatch !== null && commands.length > 0 && !isStreaming;
-  const typeaheadFilter = slashMatch ? slashMatch[1] : '';
-  const filteredCommands = useMemo(
-    () => (showTypeahead ? filterCommands(commands, typeaheadFilter) : []),
-    [commands, typeaheadFilter, showTypeahead],
-  );
-
-  // Reset index when filter changes
-  useEffect(() => {
-    setTypeaheadIndex(0);
-  }, [typeaheadFilter]);
-
-  // Track whether user is near the bottom of the scroll container
   const handleScroll = () => {
     const container = messagesContainerRef.current;
     if (!container) {
@@ -78,14 +116,12 @@ export function ChatPanel({
       container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
   };
 
-  // Auto-scroll when content changes, but only if user was already near bottom
   useEffect(() => {
     if (isNearBottomRef.current) {
-      messagesEndRef.current?.scrollIntoView({behavior: 'smooth'});
+      messagesEndRef.current?.scrollIntoView({behavior: 'instant'});
     }
   }, [messages, streamingText, permissionRequest, activity]);
 
-  // Observe DOM mutations (e.g. tool blocks expanding) to keep scroll pinned
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) {
@@ -93,70 +129,37 @@ export function ChatPanel({
     }
     const observer = new MutationObserver(() => {
       if (isNearBottomRef.current) {
-        messagesEndRef.current?.scrollIntoView({behavior: 'smooth'});
+        messagesEndRef.current?.scrollIntoView({behavior: 'instant'});
       }
     });
     observer.observe(container, {childList: true, subtree: true, attributes: true});
     return () => observer.disconnect();
   }, []);
 
-  // Auto-resize textarea
-  useEffect(() => {
-    const ta = textareaRef.current;
-    if (ta) {
-      ta.style.height = 'auto';
-      ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
-    }
-  }, [input]);
-
-  const selectCommand = (cmd: SlashCommandInfo) => {
-    setInput(`/${cmd.name} `);
-    textareaRef.current?.focus();
-  };
-
-  const handleSend = () => {
-    const text = input.trim();
-    if (!text || isStreaming) {
-      return;
-    }
-    onSend(text);
-    setInput('');
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (showTypeahead && filteredCommands.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setTypeaheadIndex((prev) => Math.min(prev + 1, filteredCommands.length - 1));
-        return;
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setTypeaheadIndex((prev) => Math.max(prev - 1, 0));
-        return;
-      }
-      if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
-        e.preventDefault();
-        selectCommand(filteredCommands[typeaheadIndex]);
-        return;
-      }
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setInput('');
-        return;
-      }
-    }
-
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   return (
     <div className="chat-panel">
       <div className="chat-header">
         <span className="chat-title">Chat</span>
+        {chatBranch && (
+          <span className="chat-branch" title={chatBranch}>
+            {chatBranch}
+          </span>
+        )}
+        {sessions.length > 0 && (
+          <select
+            className="session-picker"
+            value={selectedSessionId ?? ''}
+            onChange={(e) => onSelectSession(e.target.value || null)}
+            disabled={isStreaming}
+          >
+            <option value="">New session</option>
+            {sessions.map((s) => (
+              <option key={s.session_id} value={s.session_id}>
+                {s.mtime_relative} - {summarizeSession(s)}
+              </option>
+            ))}
+          </select>
+        )}
         {model && <span className="chat-model">{model}</span>}
         {sessionId && (
           <span className="chat-session" title={sessionId}>
@@ -165,16 +168,20 @@ export function ChatPanel({
         )}
       </div>
 
-      <div className="chat-messages" ref={messagesContainerRef} onScroll={handleScroll}>
+      <div
+        className={`chat-messages${sessionsLoading ? ' loading' : ''}`}
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+      >
         {messages.map((msg, i) => (
           <ChatMessage key={i} message={msg} />
         ))}
-        {streamingText && (
+        {throttledStreamingText && (
           <div className="chat-message assistant streaming">
             <div className="message-role">Claude</div>
             <div className="message-content">
               <div className="text-block">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingText}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{throttledStreamingText}</ReactMarkdown>
               </div>
             </div>
           </div>
@@ -195,35 +202,7 @@ export function ChatPanel({
         </div>
       )}
 
-      <div className="chat-input-area">
-        {showTypeahead && filteredCommands.length > 0 && (
-          <CommandTypeahead
-            commands={filteredCommands}
-            filter={typeaheadFilter}
-            selectedIndex={typeaheadIndex}
-            onSelect={selectCommand}
-          />
-        )}
-        <textarea
-          ref={textareaRef}
-          className="chat-input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Send a message... (Enter to send, Shift+Enter for newline)"
-          rows={1}
-          disabled={isStreaming}
-        />
-        {isStreaming ? (
-          <button className="chat-btn stop-btn" onClick={onStop}>
-            Stop
-          </button>
-        ) : (
-          <button className="chat-btn send-btn" onClick={handleSend} disabled={!input.trim()}>
-            Send
-          </button>
-        )}
-      </div>
+      <ChatInput isStreaming={isStreaming} commands={commands} onSend={onSend} onStop={onStop} />
     </div>
   );
 }

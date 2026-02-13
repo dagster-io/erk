@@ -2,7 +2,7 @@
 
 // Client → Server
 export type ClientMessage =
-  | {type: 'chat_send'; text: string; cwd?: string}
+  | {type: 'chat_send'; text: string; cwd?: string; newSession?: boolean; resumeSessionId?: string}
   | {type: 'chat_stop'}
   | {type: 'permission_response'; toolUseId: string; allowed: boolean; applyAlways: boolean};
 
@@ -74,6 +74,14 @@ export interface FetchPlansResult {
   plans: PlanRow[];
   count: number;
   error?: string;
+}
+
+// Session info from `erk exec list-sessions`
+export interface SessionInfo {
+  session_id: string;
+  mtime_relative: string;
+  summary: string;
+  branch: string | null;
 }
 
 // Chat message for UI state
