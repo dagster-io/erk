@@ -87,6 +87,8 @@ This handles both frontmatter and table dual-write automatically. Run once per s
 | **Constraint invalidation** | Requirement listed is no longer valid                        | Implementation Context                        |
 | **New discovery**           | PR revealed a caching bug affecting future steps             | Implementation Context or new Design Decision |
 
+These are common contradiction types, not an exhaustive list. Flag any divergence between the objective text and what was actually implemented, even if it doesn't fit a predefined category.
+
 4. **Compose an action comment** using this template:
 
 ```markdown
