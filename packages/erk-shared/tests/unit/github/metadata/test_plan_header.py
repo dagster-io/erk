@@ -117,11 +117,12 @@ def test_extract_plan_header_review_pr_not_present() -> None:
 
 
 def test_extract_plan_header_review_pr_missing_block() -> None:
-    """Test error when plan-header block is missing."""
+    """Test that missing plan-header block returns None."""
     body = "This is just regular text with no metadata block."
 
-    with pytest.raises(ValueError, match="plan-header block not found"):
-        extract_plan_header_review_pr(body)
+    result = extract_plan_header_review_pr(body)
+
+    assert result is None
 
 
 def test_extract_plan_header_review_pr_after_update() -> None:
