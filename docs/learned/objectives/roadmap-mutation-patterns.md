@@ -11,6 +11,8 @@ tripwires:
     warning: "Surgical updates only change one cell. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr)."
   - action: "directly mutating issue body markdown without using either command"
     warning: "Direct body mutation skips status computation. The surgical command writes computed status atomically; bypassing it leaves status stale. See roadmap-mutation-semantics.md."
+last_audited: "2026-02-08"
+audit_result: clean
 ---
 
 # Roadmap Mutation Patterns

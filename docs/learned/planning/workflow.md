@@ -4,8 +4,8 @@ read_when:
   - "using .impl/ folders"
   - "understanding plan file structure"
   - "implementing plans"
-last_audited: "2026-02-05 10:01 PT"
-audit_result: clean
+last_audited: "2026-02-05 12:35 PT"
+audit_result: edited
 ---
 
 # Planning Workflow
@@ -214,16 +214,9 @@ Why? ExitPlanMode shows a plan approval dialog. After saving, this dialog:
 
 ### Safety Net: Hook Blocks ExitPlanMode
 
-If ExitPlanMode is called anyway (e.g., by mistake), the `exit-plan-mode-hook` detects the plan-saved marker and blocks with exit 2:
+If ExitPlanMode is called anyway (e.g., by mistake), the `exit-plan-mode-hook` detects the plan-saved marker and blocks with a "session complete" message. The marker is **preserved** (not deleted) so subsequent ExitPlanMode calls continue to be blocked.
 
-```python
-if plan_saved_marker.exists():
-    plan_saved_marker.unlink()
-    click.echo("✅ Plan saved to GitHub. Session complete.")
-    sys.exit(2)  # Block to prevent plan approval dialog
-```
-
-This ensures the plan dialog never appears after a successful save.
+See `src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py` for the full implementation.
 
 ## Progress Tracking
 
@@ -335,7 +328,7 @@ This command:
 
 - Validates the issue has the `erk-plan` label
 - Verifies the issue is OPEN (not closed)
-- Triggers the `dispatch-erk-queue.yml` GitHub Actions workflow via direct workflow dispatch
+- Triggers the `plan-implement.yml` GitHub Actions workflow via direct workflow dispatch
 - Displays the workflow run URL
 
 The GitHub Actions workflow will:
@@ -350,7 +343,7 @@ The GitHub Actions workflow will:
 
 ```bash
 # List workflow runs
-gh run list --workflow=dispatch-erk-queue.yml
+gh run list --workflow=plan-implement.yml
 
 # Watch latest run
 gh run watch
