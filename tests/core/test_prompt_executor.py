@@ -1,7 +1,9 @@
 """Tests for prompt_executor module."""
 
 import json
+import os
 from pathlib import Path
+from unittest.mock import patch
 
 from erk.core.output_filter import extract_pr_metadata_from_text
 from erk.core.prompt_executor import ClaudePromptExecutor, format_prompt_error
@@ -607,3 +609,33 @@ class TestFormatPromptError:
         # stdout should be truncated to 500 chars
         assert "stdout: " + ("x" * 500) in result
         assert ("x" * 501) not in result
+
+
+# =============================================================================
+# Tests for _subprocess_env (CLAUDECODE stripping)
+# =============================================================================
+
+
+def test_subprocess_env_strips_claudecode_when_present() -> None:
+    """_subprocess_env() removes CLAUDECODE from the returned environment."""
+    with patch.dict(os.environ, {"CLAUDECODE": "1", "PATH": "/usr/bin"}):
+        env = ClaudePromptExecutor._subprocess_env()
+
+    assert "CLAUDECODE" not in env
+    assert env["PATH"] == "/usr/bin"
+
+
+def test_subprocess_env_works_when_claudecode_absent() -> None:
+    """_subprocess_env() works when CLAUDECODE is not in environment."""
+    with patch.dict(os.environ, {"PATH": "/usr/bin"}, clear=True):
+        env = ClaudePromptExecutor._subprocess_env()
+
+    assert "CLAUDECODE" not in env
+    assert env["PATH"] == "/usr/bin"
+
+
+def test_subprocess_env_does_not_modify_os_environ() -> None:
+    """_subprocess_env() returns a copy, does not modify os.environ."""
+    with patch.dict(os.environ, {"CLAUDECODE": "1"}):
+        ClaudePromptExecutor._subprocess_env()
+        assert os.environ.get("CLAUDECODE") == "1"
