@@ -78,7 +78,7 @@
   background: #2a2a2a;
   padding: 1px 4px;
   border-radius: 3px;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
 }
 
