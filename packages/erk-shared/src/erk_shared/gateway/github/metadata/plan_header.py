@@ -1383,14 +1383,11 @@ def extract_plan_header_review_pr(issue_body: str) -> int | None:
         issue_body: Issue body containing plan-header block
 
     Returns:
-        PR number if present, None otherwise
-
-    Raises:
-        ValueError: If plan-header block is invalid
+        PR number if present, None if absent or block missing
     """
     block = find_metadata_block(issue_body, "plan-header")
     if block is None:
-        raise ValueError("plan-header block not found in issue body")
+        return None
 
     return block.data.get(REVIEW_PR)
 
