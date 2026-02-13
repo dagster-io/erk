@@ -55,6 +55,16 @@ make all-ci
 | `make test-integration` | Integration tests (tests/integration/)     | Slow  |
 | `make test-all`         | Both unit + integration                    | Slow  |
 
+## Progressive Test Verification
+
+When implementing changes, verify in expanding scope:
+
+1. **Specific test file** -- Run only the test file for the function you changed (e.g., `test_graphite_first_flow.py`)
+2. **Module test suite** -- Run the broader test directory (e.g., all `submit_pipeline/` tests)
+3. **Full CI** -- Run `make fast-ci` for complete validation
+
+This catches issues at the narrowest scope first, keeping the feedback loop fast. Don't jump straight to `make fast-ci` after a small change.
+
 ## Test Directory Structure
 
 ```

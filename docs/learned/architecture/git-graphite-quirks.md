@@ -299,6 +299,21 @@ if isinstance(result, RestackError):
 
 Type definitions: `packages/erk-shared/src/erk_shared/gateway/gt/types.py:26-43`
 
+## RestackError vs graphite_restack_required
+
+Two error types relate to restacking, but at different levels with different meanings:
+
+| Error                       | Layer                          | When It Fires                                      | Meaning                                                       |
+| --------------------------- | ------------------------------ | -------------------------------------------------- | ------------------------------------------------------------- |
+| `RestackError`              | Gateway (`gt restack` output)  | `gt restack` command itself fails during execution | Restack was attempted but hit conflicts or failures           |
+| `graphite_restack_required` | CLI (`SubmitError.error_type`) | `gt submit` fails because remote has diverged      | Restack hasn't been attempted yet; user needs to run it first |
+
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _graphite_first_flow -->
+
+The `graphite_restack_required` error type is detected by keyword matching on the RuntimeError message from `gt submit`. See `_graphite_first_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
+
+**Key distinction:** `RestackError` means "we tried to restack and it failed." `graphite_restack_required` means "you need to restack before this operation can proceed."
+
 ## Graphite SHA Tracking Divergence
 
 **Problem**: Graphite's `.graphite_cache_persist` file stores a `branchRevision` SHA for each tracked branch. After rebase or restack operations, the actual git SHA changes but Graphite's tracked SHA becomes stale.
