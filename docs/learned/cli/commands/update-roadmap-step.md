@@ -13,6 +13,8 @@ tripwires:
 
 # Update Roadmap Step Command
 
+`erk exec update-roadmap-step` updates one or more step PR cells in an objective's roadmap table.
+
 ## Why This Command Exists
 
 The alternative to `erk exec update-roadmap-step` is inline markdown table manipulation: fetch body → parse table → find row by step ID → regex-replace PR cell → update body. That's ~15 lines of fragile ad-hoc code duplicated across every caller (skills, hooks, scripts).
@@ -43,7 +45,19 @@ This differs from parse-time inference (which only fires when status is `-` or e
 ## Usage Pattern
 
 ```bash
-# Link step to plan issue
+# Single step
+erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --pr <PR_REF>
+
+# Multiple steps
+erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --step <STEP_ID> ... --pr <PR_REF>
+```
+
+### Examples
+
+**Single step updates:**
+
+```bash
+# Set step to plan phase
 erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
 
 # Mark step as done with landed PR
@@ -53,7 +67,15 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500"
 erk exec update-roadmap-step 6423 --step 1.3 --pr ""
 ```
 
-Output is structured JSON with `success`, `issue_number`, `step_id`, `previous_pr`, `new_pr`, and `url` fields.
+**Multi-step updates:**
+
+```bash
+# Update multiple steps with same PR (single API call)
+erk exec update-roadmap-step 6697 --step 5.1 --step 5.2 --step 5.3 --pr "plan #6759"
+
+# Update steps across different phases
+erk exec update-roadmap-step 6697 --step 1.1 --step 2.3 --pr "#6800"
+```
 
 ## Multi-Step Usage
 
@@ -61,47 +83,7 @@ The command accepts multiple `--step` flags to update several roadmap steps in a
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, update_roadmap_step -->
 
-```bash
-# Update multiple steps at once
-erk exec update-roadmap-step 6423 --step 1.1 --step 1.2 --step 1.3 --pr "#6500"
-
-# Each step gets the same PR value applied
-```
-
 This pattern is optimized for GitHub API efficiency: the command fetches the issue body once, applies all step updates in memory, then writes the body once. This avoids N API calls for N steps.
-
-### Exit Code Semantics
-
-Multi-step invocation uses **traditional CLI exit codes**, not the batch command convention:
-
-| Exit Code | Meaning                                            |
-| --------- | -------------------------------------------------- |
-| 0         | All steps updated successfully                     |
-| 1         | Any step failed (step not found, no roadmap, etc.) |
-
-This differs from JSON stdin batch commands (which always exit 0). The distinction exists because multi-option commands are designed for interactive shell use where `&&` chains should stop on first failure:
-
-```bash
-# Exit code 1 stops the chain
-erk exec update-roadmap-step 6423 --step 1.1 --pr "#123" && gt submit
-```
-
-### JSON Output Format
-
-Multi-step invocations return a `steps` array in the JSON output:
-
-```json
-{
-  "success": true,
-  "issue_number": 6423,
-  "steps": [
-    { "step_id": "1.1", "previous_pr": "", "new_pr": "#6500" },
-    { "step_id": "1.2", "previous_pr": "plan #6464", "new_pr": "#6500" }
-  ]
-}
-```
-
-Single `--step` invocations continue to work as before, returning the original flat output structure for backward compatibility.
 
 ## Parameter Semantics: --pr Accepts Plans and PRs
 
@@ -119,32 +101,74 @@ This naming is admittedly confusing — `--pr` accepts plan references despite t
 
 See [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md) for the write-time vs parse-time distinction.
 
-## Error Handling Strategy
+## Output Format
 
-The command follows erk's discriminated union pattern for error returns:
+### Single Step (Legacy Format)
 
-| Exit Code | Scenario                 | JSON `error` Field   |
-| --------- | ------------------------ | -------------------- |
-| 0         | Success                  | N/A                  |
-| 1         | Issue doesn't exist      | `issue_not_found`    |
-| 1         | No roadmap table in body | `no_roadmap`         |
-| 1         | Step ID not in roadmap   | `step_not_found`     |
-| 1         | Regex replacement failed | `replacement_failed` |
+When updating a single step, the command maintains backward-compatible output:
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, update_roadmap_step -->
+```json
+{
+  "success": true,
+  "issue_number": 6423,
+  "step_id": "1.3",
+  "previous_pr": "",
+  "new_pr": "plan #6464",
+  "url": "https://github.com/owner/repo/issues/6423"
+}
+```
 
-All error paths exit with code 1 but include typed error fields for programmatic handling. See `update_roadmap_step()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:107-182` for the LBYL guard sequence.
+### Multiple Steps (New Format)
 
-## Plan-Save Integration Point
+When updating multiple steps, the output includes a `steps` array with per-step results:
 
-The command's primary caller is the plan-save workflow (Step 3.5):
+**All steps successful:**
 
-1. Agent creates plan issue → gets issue number
-2. Fetch parent objective → extract roadmap
-3. **Call update-roadmap-step** → sets step's PR to `plan #<issue>`
-4. Status automatically written as `in-progress`
+```json
+{
+  "success": true,
+  "issue_number": 6697,
+  "new_pr": "plan #6759",
+  "url": "https://github.com/owner/repo/issues/6697",
+  "steps": [
+    { "step_id": "5.1", "success": true, "previous_pr": null },
+    { "step_id": "5.2", "success": true, "previous_pr": null },
+    { "step_id": "5.3", "success": true, "previous_pr": null }
+  ]
+}
+```
 
-This integration is why the command returns structured JSON — upstream scripts need the URL and previous state for logging.
+**Partial failure (some steps not found):**
+
+```json
+{
+  "success": false,
+  "issue_number": 6697,
+  "new_pr": "plan #6759",
+  "url": "https://github.com/owner/repo/issues/6697",
+  "steps": [
+    { "step_id": "5.1", "success": true, "previous_pr": null },
+    { "step_id": "9.9", "success": false, "error": "step_not_found" },
+    { "step_id": "5.3", "success": true, "previous_pr": null }
+  ]
+}
+```
+
+Note: When using multiple steps, the command makes a **single GitHub API call** with all successful replacements batched together.
+
+## Exit Codes
+
+The command always exits 0. Check the JSON `success` field for pass/fail:
+
+| Scenario                         | Exit Code | JSON `success` | JSON Error Type      |
+| -------------------------------- | --------- | -------------- | -------------------- |
+| All steps updated                | 0         | `true`         | N/A                  |
+| Issue not found                  | 0         | `false`        | `issue_not_found`    |
+| No roadmap table in issue body   | 0         | `false`        | `no_roadmap`         |
+| Any step ID not found in roadmap | 0         | `false`        | `step_not_found`     |
+| Replacement failed (regex error) | 0         | `false`        | `replacement_failed` |
+
+Callers should always parse the JSON output and check `success` rather than relying on exit codes.
 
 ## Implementation Notes
 
@@ -165,6 +189,17 @@ Step lookup works across all phases (the parser flattens phases into a single st
 <!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
 
 Both `update-roadmap-step` and `erk objective check` use `parse_roadmap()` from `objective_roadmap_shared.py`. The shared module defines `RoadmapStep` and `RoadmapPhase` dataclasses — the canonical representation of parsed roadmap state.
+
+## Plan-Save Integration Point
+
+The command's primary caller is the plan-save workflow (Step 3.5):
+
+1. Agent creates plan issue → gets issue number
+2. Fetch parent objective → extract roadmap
+3. **Call update-roadmap-step** → sets step's PR to `plan #<issue>`
+4. Status automatically written as `in-progress`
+
+This integration is why the command returns structured JSON — upstream scripts need the URL and previous state for logging.
 
 ## Anti-Pattern: Manual Table Surgery
 

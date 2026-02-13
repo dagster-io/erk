@@ -150,7 +150,7 @@ def test_step_not_found() -> None:
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is False
     assert output["error"] == "step_not_found"
@@ -168,7 +168,7 @@ def test_issue_not_found() -> None:
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is False
     assert output["error"] == "issue_not_found"
@@ -187,7 +187,7 @@ def test_no_roadmap_table() -> None:
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is False
     assert output["error"] == "no_roadmap"
@@ -387,3 +387,194 @@ def test_status_without_flag_defaults_to_pending_in_frontmatter() -> None:
     # Frontmatter status should be pending (reset for inference)
     # The step 1.3 should have status: pending in YAML
     assert "status: pending" in updated_body
+
+
+def test_update_multiple_steps_success() -> None:
+    """Update multiple steps in a single operation - all succeed."""
+    issue = _make_issue(6697, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6697: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6697", "--step", "1.2", "--step", "1.3", "--step", "2.1", "--pr", "plan #6759"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["issue_number"] == 6697
+    assert output["new_pr"] == "plan #6759"
+    assert output["url"] == "https://github.com/test/repo/issues/6697"
+
+    # Verify steps array
+    assert "steps" in output
+    assert len(output["steps"]) == 3
+
+    # Check step 1.2 (previously had "plan #200")
+    step_1_2 = next(s for s in output["steps"] if s["step_id"] == "1.2")
+    assert step_1_2["success"] is True
+    assert step_1_2["previous_pr"] == "plan #200"
+
+    # Check step 1.3 (previously empty)
+    step_1_3 = next(s for s in output["steps"] if s["step_id"] == "1.3")
+    assert step_1_3["success"] is True
+    assert step_1_3["previous_pr"] is None
+
+    # Check step 2.1 (previously empty)
+    step_2_1 = next(s for s in output["steps"] if s["step_id"] == "2.1")
+    assert step_2_1["success"] is True
+    assert step_2_1["previous_pr"] is None
+
+    # Verify single API call was made
+    assert len(fake_gh.updated_bodies) == 1
+    updated_body = fake_gh.updated_bodies[0][1]
+
+    # All three steps should have the new PR
+    assert updated_body.count("plan #6759") == 3
+    # Old PR should be gone
+    assert "plan #200" not in updated_body
+
+
+def test_update_multiple_steps_partial_failure() -> None:
+    """Multi-step update rejected upfront when any step is missing."""
+    issue = _make_issue(6697, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6697: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6697", "--step", "1.2", "--step", "9.9", "--step", "2.1", "--pr", "plan #6759"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    # Multi-step exits 0 even on failure (check JSON success field)
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["issue_number"] == 6697
+    assert output["new_pr"] == "plan #6759"
+
+    # Only the missing step appears in results (upfront validation)
+    assert len(output["steps"]) == 1
+    assert output["steps"][0]["step_id"] == "9.9"
+    assert output["steps"][0]["success"] is False
+    assert output["steps"][0]["error"] == "step_not_found"
+
+    # No API call should have been made (upfront rejection)
+    assert len(fake_gh.updated_bodies) == 0
+
+
+def test_update_multiple_steps_same_phase() -> None:
+    """Update multiple steps within the same phase."""
+    issue = _make_issue(6697, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6697: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6697", "--step", "1.1", "--step", "1.2", "--step", "1.3", "--pr", "#555"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # All three steps in Phase 1 should be updated
+    assert len(output["steps"]) == 3
+    for step_result in output["steps"]:
+        assert step_result["success"] is True
+
+    # Verify all steps have merged PR status
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert updated_body.count("#555") == 3
+    # All should have "done" status
+    assert updated_body.count("| done |") >= 3
+
+
+def test_update_multiple_steps_cross_phase() -> None:
+    """Update steps across different phases."""
+    issue = _make_issue(6697, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6697: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6697", "--step", "1.1", "--step", "2.2", "--pr", "plan #777"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert len(output["steps"]) == 2
+
+    # Both steps should succeed
+    step_1_1 = next(s for s in output["steps"] if s["step_id"] == "1.1")
+    assert step_1_1["success"] is True
+    assert step_1_1["previous_pr"] == "#100"
+
+    step_2_2 = next(s for s in output["steps"] if s["step_id"] == "2.2")
+    assert step_2_2["success"] is True
+    assert step_2_2["previous_pr"] is None
+
+    # Verify both phases updated
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert updated_body.count("plan #777") == 2
+
+
+def test_single_step_maintains_legacy_format() -> None:
+    """Single --step usage maintains backward-compatible output format."""
+    issue = _make_issue(6423, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--pr", "plan #6464"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+
+    # Should use legacy format (no "steps" array)
+    assert "steps" not in output
+    assert output["success"] is True
+    assert output["step_id"] == "1.3"
+    assert output["previous_pr"] is None
+    assert output["new_pr"] == "plan #6464"
+
+
+def test_update_multiple_steps_all_fail() -> None:
+    """Multi-step update where ALL steps fail (none found in roadmap)."""
+    issue = _make_issue(6697, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={6697: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6697", "--step", "9.1", "--step", "9.2", "--step", "9.3", "--pr", "plan #6759"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    # Multi-step exits 0 even on failure (check JSON success field)
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["issue_number"] == 6697
+    assert output["new_pr"] == "plan #6759"
+
+    # All three missing steps in results
+    assert len(output["steps"]) == 3
+    for step_result in output["steps"]:
+        assert step_result["success"] is False
+        assert step_result["error"] == "step_not_found"
+
+    step_ids = [s["step_id"] for s in output["steps"]]
+    assert step_ids == ["9.1", "9.2", "9.3"]
+
+    # No API call should have been made
+    assert len(fake_gh.updated_bodies) == 0

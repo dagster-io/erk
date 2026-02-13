@@ -1,4 +1,4 @@
-"""Update a step's PR cell in an objective's roadmap table.
+"""Update step PR cells in an objective's roadmap table.
 
 Why this command exists (instead of using update-issue-body directly):
 
@@ -22,17 +22,22 @@ Why this command exists (instead of using update-issue-body directly):
     - Resilient to roadmap format changes (one command updates, not N sites)
 
 Usage:
+    # Single step
     erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
     erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500"
     erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --status done
     erk exec update-roadmap-step 6423 --step 1.3 --pr ""
 
+    # Multiple steps
+    erk exec update-roadmap-step 6697 --step 5.1 --step 5.2 --step 5.3 --pr "plan #6759"
+
 Output:
-    JSON with {success, issue_number, step_id, previous_pr, new_pr, url}
+    Single step: JSON with {success, issue_number, step_id, previous_pr, new_pr, url}
+    Multiple steps: JSON with {success, issue_number, new_pr, url, steps: [...]}
+        Each step result: {step_id, success, previous_pr, error}
 
 Exit Codes:
-    0: Success - step updated
-    1: Error - issue/step not found, no roadmap, or API error
+    0: Always. Check JSON "success" field for pass/fail.
 """
 
 import json
@@ -48,6 +53,47 @@ from erk_shared.gateway.github.metadata.core import (
     replace_metadata_block_in_body,
 )
 from erk_shared.gateway.github.types import BodyText
+
+
+def _step_error_message(step_id: str, issue_number: int, error: object) -> str:
+    if error == "step_not_found":
+        return f"Step '{step_id}' not found in issue #{issue_number}"
+    return f"Failed to replace PR cell for step '{step_id}'"
+
+
+def _build_output(
+    *,
+    issue_number: int,
+    step: tuple[str, ...],
+    pr: str,
+    url: str,
+    results: list[dict[str, object]],
+    all_failed: bool,
+) -> dict[str, object]:
+    """Build JSON output dict, using legacy format for single step."""
+    if len(step) != 1:
+        return {
+            "success": not all_failed,
+            "issue_number": issue_number,
+            "new_pr": pr or None,
+            "url": url,
+            "steps": results,
+        }
+    single_result = results[0]
+    if not single_result["success"]:
+        return {
+            "success": False,
+            "error": single_result["error"],
+            "message": _step_error_message(step[0], issue_number, single_result["error"]),
+        }
+    return {
+        "success": True,
+        "issue_number": issue_number,
+        "step_id": step[0],
+        "previous_pr": single_result.get("previous_pr"),
+        "new_pr": pr or None,
+        "url": url,
+    }
 
 
 def _find_step_pr(body: str, step_id: str) -> tuple[str | None, bool]:
@@ -163,7 +209,7 @@ def _replace_step_pr_in_body(
 
 @click.command(name="update-roadmap-step")
 @click.argument("issue_number", type=int)
-@click.option("--step", required=True, help="Step ID to update (e.g., '1.3')")
+@click.option("--step", required=True, multiple=True, help="Step ID(s) to update (e.g., '1.3')")
 @click.option(
     "--pr", required=True, help="PR reference (e.g., 'plan #123', '#456', or '' to clear)"
 )
@@ -180,11 +226,11 @@ def update_roadmap_step(
     ctx: click.Context,
     issue_number: int,
     *,
-    step: str,
+    step: tuple[str, ...],
     pr: str,
     explicit_status: str | None,
 ) -> None:
-    """Update a step's PR cell in an objective's roadmap table."""
+    """Update step PR cells in an objective's roadmap table."""
     github = require_issues(ctx)
     repo_root = require_repo_root(ctx)
 
@@ -200,7 +246,7 @@ def update_roadmap_step(
                 }
             )
         )
-        raise SystemExit(1)
+        raise SystemExit(0)
 
     # Parse roadmap to validate it exists
     phases, _ = parse_roadmap(issue.body)
@@ -214,48 +260,90 @@ def update_roadmap_step(
                 }
             )
         )
-        raise SystemExit(1)
+        raise SystemExit(0)
 
-    # Find the step's current PR value
-    previous_pr, found = _find_step_pr(issue.body, step)
-    if not found:
-        click.echo(
-            json.dumps(
+    # Validate all steps exist before processing any
+    all_step_ids = {s.id for phase in phases for s in phase.steps}
+    missing_steps = [s for s in step if s not in all_step_ids]
+    if missing_steps:
+        results = [
+            {"step_id": s, "success": False, "error": "step_not_found"} for s in missing_steps
+        ]
+        output = _build_output(
+            issue_number=issue_number,
+            step=step,
+            pr=pr,
+            url=issue.url,
+            results=results,
+            all_failed=True,
+        )
+        click.echo(json.dumps(output))
+        raise SystemExit(0)
+
+    # Process multiple steps with single API call
+    results: list[dict[str, object]] = []
+    updated_body = issue.body
+    any_failure = False
+
+    for step_id in step:
+        previous_pr, found = _find_step_pr(updated_body, step_id)
+        if not found:
+            results.append(
                 {
+                    "step_id": step_id,
                     "success": False,
                     "error": "step_not_found",
-                    "message": f"Step '{step}' not found in issue #{issue_number}",
                 }
             )
-        )
-        raise SystemExit(1)
+            any_failure = True
+            continue
 
-    # Replace the PR cell in the raw body
-    updated_body = _replace_step_pr_in_body(issue.body, step, pr, explicit_status=explicit_status)
-    if updated_body is None:
-        click.echo(
-            json.dumps(
+        new_body = _replace_step_pr_in_body(
+            updated_body, step_id, pr, explicit_status=explicit_status
+        )
+        if new_body is None:
+            results.append(
                 {
+                    "step_id": step_id,
                     "success": False,
                     "error": "replacement_failed",
-                    "message": f"Failed to replace PR cell for step '{step}'",
                 }
             )
-        )
-        raise SystemExit(1)
+            any_failure = True
+            continue
 
-    # Write the updated body back
-    github.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
-
-    click.echo(
-        json.dumps(
+        updated_body = new_body
+        results.append(
             {
+                "step_id": step_id,
                 "success": True,
-                "issue_number": issue_number,
-                "step_id": step,
                 "previous_pr": previous_pr,
-                "new_pr": pr if pr else None,
-                "url": issue.url,
             }
         )
+
+    # Exit early if all steps failed
+    if any_failure and not any(r["success"] for r in results):
+        output = _build_output(
+            issue_number=issue_number,
+            step=step,
+            pr=pr,
+            url=issue.url,
+            results=results,
+            all_failed=True,
+        )
+        click.echo(json.dumps(output))
+        raise SystemExit(0)
+
+    # Single API call to write all updates
+    github.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+
+    # Build and emit output
+    output = _build_output(
+        issue_number=issue_number,
+        step=step,
+        pr=pr,
+        url=issue.url,
+        results=results,
+        all_failed=False,
     )
+    click.echo(json.dumps(output))
