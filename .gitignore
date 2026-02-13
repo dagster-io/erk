@@ -31,3 +31,5 @@ erkdesk/node_modules/
 erkdesk/out/
 erkdesk/dist/
 erkdesk/.vite/
+
+.superset/
