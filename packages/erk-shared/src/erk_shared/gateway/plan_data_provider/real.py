@@ -121,10 +121,16 @@ class RealPlanDataProvider(PlanDataProvider):
         # First pass: collect learn_plan_issue numbers for batch fetch
         learn_issue_numbers: set[int] = set()
         for issue in plan_data.issues:
-            if issue.body:
-                learn_plan_issue = extract_plan_header_learn_plan_issue(issue.body)
-                if learn_plan_issue is not None:
-                    learn_issue_numbers.add(learn_plan_issue)
+            try:
+                if issue.body:
+                    learn_plan_issue = extract_plan_header_learn_plan_issue(issue.body)
+                    if learn_plan_issue is not None:
+                        learn_issue_numbers.add(learn_plan_issue)
+            except Exception:
+                logger.warning(
+                    "Failed to extract learn plan issue from issue #%d, skipping",
+                    issue.number,
+                )
 
         # Batch fetch learn issue states
         learn_issue_states = self._fetch_learn_issue_states(learn_issue_numbers)
@@ -134,29 +140,32 @@ class RealPlanDataProvider(PlanDataProvider):
         use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
 
         for issue in plan_data.issues:
-            plan = _issue_to_plan(issue)
+            try:
+                plan = _issue_to_plan(issue)
 
-            # Get workflow run for filtering
-            workflow_run = plan_data.workflow_runs.get(issue.number)
+                # Get workflow run for filtering
+                workflow_run = plan_data.workflow_runs.get(issue.number)
 
-            # Apply run_state filter
-            if filters.run_state is not None:
-                if workflow_run is None:
-                    continue
-                if get_workflow_run_state(workflow_run) != filters.run_state:
-                    continue
+                # Apply run_state filter
+                if filters.run_state is not None:
+                    if workflow_run is None:
+                        continue
+                    if get_workflow_run_state(workflow_run) != filters.run_state:
+                        continue
 
-            # Build row data
-            row = self._build_row_data(
-                plan=plan,
-                issue_number=issue.number,
-                pr_linkages=plan_data.pr_linkages,
-                workflow_run=workflow_run,
-                worktree_by_issue=worktree_by_issue,
-                use_graphite=use_graphite,
-                learn_issue_states=learn_issue_states,
-            )
-            rows.append(row)
+                # Build row data
+                row = self._build_row_data(
+                    plan=plan,
+                    issue_number=issue.number,
+                    pr_linkages=plan_data.pr_linkages,
+                    workflow_run=workflow_run,
+                    worktree_by_issue=worktree_by_issue,
+                    use_graphite=use_graphite,
+                    learn_issue_states=learn_issue_states,
+                )
+                rows.append(row)
+            except Exception:
+                logger.warning("Failed to build row data for issue #%d, skipping", issue.number)
 
         return rows
 

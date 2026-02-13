@@ -28,6 +28,7 @@ from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import (
     clear_plan_header_review_pr,
     extract_plan_header_review_pr,
@@ -105,13 +106,14 @@ def _plan_review_complete_impl(
             message=f"Issue #{issue_number} not found",
         )
 
-    try:
-        review_pr = extract_plan_header_review_pr(issue.body)
-    except ValueError:
+    # LBYL: Check plan-header block exists
+    if find_metadata_block(issue.body, "plan-header") is None:
         raise PlanReviewCompleteException(
             error="no_plan_header",
             message=f"Issue #{issue_number} is missing plan-header metadata block",
-        ) from None
+        )
+
+    review_pr = extract_plan_header_review_pr(issue.body)
 
     # LBYL: Check review_pr is not None
     if review_pr is None:
