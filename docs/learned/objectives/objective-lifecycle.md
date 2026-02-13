@@ -165,7 +165,7 @@ All mutations must update **both** frontmatter and table when frontmatter exists
 | Site                                    | Type      | Trigger                                       | Updates                     | Frontmatter-Aware?                 |
 | --------------------------------------- | --------- | --------------------------------------------- | --------------------------- | ---------------------------------- |
 | `update-roadmap-step.py`                | Surgical  | `erk exec update-roadmap-step` or `plan-save` | Single PR cell              | ✅ Yes (this plan)                 |
-| `objective-update-with-landed-pr`       | Full-body | After landing PR                              | Roadmap + Current Focus     | ✅ Yes (this plan)                 |
+| `objective-update-with-landed-pr`       | Full-body | After landing PR                              | Roadmap + prose sections    | ✅ Yes (this plan)                 |
 | `plan-save.md` Step 3.5                 | Indirect  | Creating plan from objective                  | Calls `update-roadmap-step` | ✅ Inherits                        |
 | `check_cmd.py` / `validate_objective()` | Read-only | `erk objective check`                         | N/A (reads only)            | ✅ Inherits from `parse_roadmap()` |
 | `objective_update_context.py`           | Read-only | Fetch context for updates                     | N/A (reads only)            | ✅ Inherits from `parse_roadmap()` |
@@ -209,7 +209,7 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr ""  # Clear
 
 **Path**: `.claude/commands/erk/objective-update-with-landed-pr.md`
 
-**What it does**: Updates objective after landing a PR. Marks steps as done, posts action comment, updates Current Focus section.
+**What it does**: Updates objective after landing a PR. Marks steps as done, posts action comment, reconciles stale prose sections.
 
 **Mutation flow**:
 
@@ -221,10 +221,10 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr ""  # Clear
      - Update relevant step(s): set `pr: "#<number>"` and `status: "done"`
      - Serialize updated YAML
      - **Also** update markdown table (dual-write)
-     - Update "Current Focus" section
+     - Reconcile stale prose sections (Design Decisions, Implementation Context)
    - **If no frontmatter:**
      - Update table: set PR cell to `#<number>`, status to `-`
-     - Update "Current Focus" section
+     - Reconcile stale prose sections (Design Decisions, Implementation Context)
 4. Post action comment to GitHub
 5. Write updated body to GitHub
 6. Check if all steps are done/skipped → close objective if complete
@@ -279,6 +279,36 @@ During dual-write:
 - Mutations update both to keep in sync
 - Reads prefer frontmatter, fall back to table
 - Tables can drift (frontmatter wins if they conflict)
+
+## Body Reconciliation
+
+Objective body sections fall into three tiers based on how they're updated:
+
+| Tier             | Sections                                                    | Owner             | Updated When                      |
+| ---------------- | ----------------------------------------------------------- | ----------------- | --------------------------------- |
+| **Mechanical**   | Roadmap status/PR cells                                     | Exec commands     | Plan assigned / PR landed         |
+| **Reconcilable** | Design Decisions, Implementation Context, step descriptions | LLM agent         | After PR overrides what's written |
+| **Immutable**    | Exploration Notes                                           | Agent at creation | Never (historical artifact)       |
+
+### When Reconciliation Happens
+
+1. **After every PR landing** (primary trigger): The `objective-update-with-landed-pr` subagent performs prose reconciliation after mechanical step updates. It compares the objective body against what the PR actually implemented and corrects stale information.
+
+2. **At next-step pickup** (lighter touch): When `objective-next-plan` runs, the agent scans the objective body for context that may be stale from other work in the codebase.
+
+### What the Agent Checks
+
+The agent reads the objective body (post-mechanical-update) and the PR title/description/plan, looking for:
+
+- **Decision overrides**: Objective says one approach, PR implemented another
+- **Scope changes**: Step description doesn't match what was actually built
+- **Architecture drift**: Implementation Context describes files/patterns that moved or changed
+- **Constraint invalidation**: Requirements that are no longer valid
+- **New discoveries**: Insights that affect future steps
+
+### How Reconciliation Is Reported
+
+Action comments gain an optional **Body Reconciliation** subsection (after Roadmap Updates) documenting what changed. If nothing is stale, the subsection is omitted entirely.
 
 ## Closing
 
@@ -339,7 +369,7 @@ All roadmap steps completed:
 │   ↓                                                      │
 │ - Post action comment                                    │
 │ - Update roadmap: pr="#N", status="done"                 │
-│ - Update Current Focus                                   │
+│ - Reconcile stale prose sections                         │
 └─────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────┐

@@ -55,11 +55,12 @@ The surgical command finds a step row by ID using regex and replaces **only** th
 The full-body update is orchestrated by a Claude command (not a Python script). It fetches context via `objective-update-context`, then delegates to a subagent that:
 
 1. Analyzes which roadmap steps the landed PR completed
-2. Composes an action comment documenting the change
-3. Rewrites the entire objective body with updated roadmap
-4. Posts both the comment and updated body
+2. Performs prose reconciliation (checks Design Decisions, Implementation Context, step descriptions for staleness)
+3. Composes an action comment documenting the change (with optional Body Reconciliation subsection)
+4. Rewrites the entire objective body with updated roadmap and reconciled prose
+5. Posts both the comment and updated body
 
-**Why agent-driven instead of a script:** Landing a PR requires _judgment_ — the step description might need updating if the PR title differs, completed phases might need collapsing, and the "Current Focus" section needs to shift to the next pending step. These decisions don't reduce to mechanical regex.
+**Why agent-driven instead of a script:** Landing a PR requires _judgment_ — the step description might need updating if the PR scope differs, completed phases might need collapsing, Design Decisions might need revision, and Implementation Context might need correction. These decisions don't reduce to mechanical regex.
 
 **Race condition risk:** The entire issue body is fetched, modified, and written back. Any edits made between fetch and write are lost. This is acceptable because:
 
@@ -86,6 +87,12 @@ Both patterns are triggered by upstream workflow commands, not invoked directly 
 <!-- Source: src/erk/cli/commands/objective_helpers.py, prompt_objective_update -->
 
 See `prompt_objective_update()` in `src/erk/cli/commands/objective_helpers.py` for how `erk land` discovers the linked objective and offers to run the full-body update.
+
+## Prose Reconciliation
+
+The full-body update now includes **prose reconciliation** — the subagent doesn't just update roadmap mechanics, it also audits the objective's reconcilable sections (Design Decisions, Implementation Context, step descriptions) against what the PR actually implemented. If any prose is stale, the subagent corrects it in the body update and documents the changes in a "Body Reconciliation" subsection of the action comment.
+
+This is the key innovation: body mutations are no longer limited to roadmap table mechanics. The LLM agent actively maintains the accuracy of the objective's prose sections, preventing the "silent staleness" problem where objectives describe outdated architecture or overridden decisions.
 
 ## Anti-Patterns
 

@@ -82,9 +82,6 @@ Fill out remaining functionality.
 
 **Test:** [Full acceptance criteria]
 
-## Current Focus
-
-**Next action:** [First step]
 EOF
 )"
 ```
@@ -162,7 +159,7 @@ gh issue view <issue-number> --comments
 
 1. **Read the issue body** - Current state and design decisions
 2. **Read recent comments** - Latest actions and lessons
-3. **Check "Current Focus"** - What should happen next
+3. **Check roadmap** - What steps are pending next
 4. **Review linked PRs** - Context from completed work
 
 ### Continuing Work
@@ -223,7 +220,6 @@ Objectives coordinate work across multiple sessions. The body should be self-con
 1. **Design decisions** - Locked choices that guide implementation
 2. **Implementation context** - Architecture, patterns, requirements
 3. **Clear roadmap** - What to do, in what order
-4. **Current focus** - Exactly what's next
 
 ### What to Avoid
 
@@ -252,7 +248,7 @@ This applies to:
 The issue body is the source of truth. After every significant change:
 
 - Update step statuses
-- Update "Current Focus"
+- Reconcile stale prose sections (Design Decisions, Implementation Context)
 - Add new design decisions if any
 
 ### Write Actionable Lessons

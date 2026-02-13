@@ -78,10 +78,6 @@ Fill out remaining functionality.
 **Note:** Provide context and references, not prescriptive code.
 The implementing agent should have freedom to design the solution
 while having all the context they need.
-
-## Current Focus
-
-**Next action:** [Exactly what should happen next]
 ```
 
 ### Status Values
@@ -119,7 +115,13 @@ Each action comment logs work done and lessons learned. Post one comment per sig
 
 - Step 1.2: pending → done
 - [Any other status changes]
+
+### Body Reconciliation
+
+- **[Section name]**: [What changed and why]
 ```
+
+**Note:** The Body Reconciliation subsection is optional. Include it only when the PR diverged from what the objective described. If nothing is stale, omit this subsection entirely (not "No changes needed").
 
 ### Action Comment Guidelines
 
@@ -150,6 +152,7 @@ Update after:
 - Hitting a blocker that changes the plan
 - Discovering new work that needs adding to the roadmap
 - Changing direction or design decisions
+- **Landing a PR that diverged from what the objective described** (triggers Body Reconciliation)
 
 Do NOT update for:
 
@@ -161,10 +164,10 @@ Do NOT update for:
 
 After posting an action comment, update these sections in the issue body:
 
-- **Roadmap tables** - Change step statuses, add PR links
-- **Current Focus** - Update "Next action" to reflect new state
-- **Design Decisions** - Add any new decisions that emerged
-- **Implementation Context** - Add reference material discovered
+- **Roadmap tables** - Change step statuses, add PR links (via exec commands)
+- **Design Decisions** - Revise any decisions that were overridden during implementation
+- **Implementation Context** - Correct architecture descriptions that no longer match reality
+- **Step descriptions** - Adjust scope if what was built differs from what was planned
 
 ### Adding Context (Non-Completion Action)
 
@@ -282,10 +285,6 @@ See `erk/gateways/git/` for the full pattern.
 
 - Tests should use FakeGitHub instead of subprocess mocking
 - One integration test per major workflow
-
-## Current Focus
-
-**Next action:** Create FakeGitHub with minimal `create_pr()` method
 ```
 
 ### Action Comments
@@ -345,8 +344,7 @@ See `erk/gateways/git/` for the full pattern.
 When all steps in a phase are done:
 
 1. Mark phase header with ✅ (e.g., "### Phase 1: Git Gateway ✅")
-2. Update "Current Focus" to point to next phase
-3. Consider adding a summary note under the phase
+2. Consider adding a summary note under the phase
 
 ### Blocking Dependencies
 
@@ -476,7 +474,6 @@ When a single PR completes substantial work across multiple phases:
 - Changed all Phase 2-6 step statuses from `pending` to `done`
 - Added PR #3485 link to each completed step
 - Added new Phase 7 section with steps for discovered follow-up work
-- Updated "Current Focus" to "Complete Phase 7 - restore artifact sync"
 
 ### Adding Discovered Work
 
@@ -542,7 +539,6 @@ When implementation reveals additional scope:
 - Changed step 2.3 status from `blocked` to `done`
 - Removed HTML comment about blocker
 - Added PR #412 link
-- Updated "Current Focus" to next pending step
 
 ## Programmatic Roadmap Operations
 

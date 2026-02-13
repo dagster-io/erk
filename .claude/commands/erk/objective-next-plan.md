@@ -168,13 +168,15 @@ erk exec marker create --session-id "${CLAUDE_SESSION_ID}" \
 
 Replace `<step-id>` with the step ID selected by the user (e.g., "2A.1"). This marker enables `plan-save` to automatically update the objective's roadmap table with the plan issue number.
 
-### Step 6: Gather Context for Planning
+### Step 6: Gather Context and Reconcile
 
-Before entering plan mode, gather relevant context:
+Before entering plan mode, gather relevant context and check for staleness:
 
-1. **Objective context:** Goal, design decisions, current focus
+1. **Objective context:** Goal, design decisions, implementation context
 2. **Step context:** What the specific step requires
 3. **Prior work:** Look at completed steps and their PRs for patterns
+
+**Reconciliation check:** Before creating the plan, scan the objective's reconcilable sections (Design Decisions, Implementation Context) for information that may have become stale since the last PR landing. If your codebase exploration reveals contradictions, update the objective body and post an "Action: Reconciled objective context" comment before proceeding with planning.
 
 Use this context to inform the plan.
 
