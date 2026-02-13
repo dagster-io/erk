@@ -8,11 +8,12 @@ Learned docs exist for **cross-cutting insight that can't live next to any singl
 
 Knowledge placement hierarchy (use the most specific option):
 
-1. **Code comment** — insight about a single line or block
-2. **Docstring** — insight about a single function or class
-3. **Learned doc** — insight that spans multiple files, connects systems, or captures decisions
+1. **Type artifact** — catalogs, fixed option sets, error codes → Literal types, Enums, constants in source
+2. **Code comment** — insight about a single line or block
+3. **Docstring** — insight about a single function or class
+4. **Learned doc** — insight that spans multiple files, connects systems, or captures decisions
 
-If knowledge can live in the code, it should. Learned docs are the escalation path, not the default.
+If knowledge can live in the code, it should. If it can be a type, it should be a type. Learned docs are the escalation path, not the default.
 
 ## Audience and Purpose
 
@@ -87,6 +88,7 @@ For source pointer format, see `docs/learned/documentation/source-pointers.md`.
 - Erk file listings with counts (go stale)
 - Code that duplicates source (use source pointers)
 - Single-artifact knowledge (use code comments or docstrings)
+- Enumerable catalogs (error types, status values, config options) — encode as Literal types, Enums, or typed constants in source code with inline comments; reference with source pointers, not tables
 
 ## See Also
 
