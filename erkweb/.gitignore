@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/patches
+.vite/

@@ -1,0 +1,113 @@
+.permission-prompt {
+  border: 1px solid #569cd6;
+  border-radius: 6px;
+  margin: 8px 16px;
+  background: #1a2332;
+  overflow: hidden;
+}
+
+.permission-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(86, 156, 214, 0.1);
+  border-bottom: 1px solid rgba(86, 156, 214, 0.2);
+}
+
+.permission-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #569cd6;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.permission-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #569cd6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.permission-body {
+  padding: 10px 12px;
+}
+
+.permission-tool {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+}
+
+.permission-tool-name {
+  color: #569cd6;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.permission-tool-summary {
+  color: #d4d4d4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.permission-reason {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #888;
+}
+
+.permission-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid rgba(86, 156, 214, 0.2);
+}
+
+.permission-btn {
+  padding: 5px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.permission-btn.allow {
+  background: #094771;
+  color: #fff;
+}
+
+.permission-btn.allow:hover {
+  background: #0b5a8e;
+}
+
+.permission-btn.deny {
+  background: #333;
+  color: #ccc;
+}
+
+.permission-btn.deny:hover {
+  background: #444;
+}
+
+.permission-btn.always {
+  background: #1a6b3c;
+  color: #fff;
+}
+
+.permission-btn.always:hover {
+  background: #228b4a;
+}
