@@ -67,6 +67,19 @@ This file routes to skills and docs; it doesn't contain everything.
 - `gt-graphite`: Worktree stack mental model
 - `devrun`: READ-ONLY agent for running pytest/ty/ruff/make
 
+**Background Agent Output Safety:**
+
+When using background agents via the `Task` tool, be aware that `TaskOutput` may occasionally return raw JSONL session transcripts instead of clean text summaries. Raw JSONL is identifiable by fields like `"parentUuid"`, `"isSidechain"`, or `"sessionId"`.
+
+**CRITICAL:** If you receive raw session JSONL from a background agent:
+
+- **NEVER** include the raw JSONL in your response or context
+- **DISCARD** the raw output immediately
+- **SUMMARIZE** the information from what you already know about the agent's work
+- Background agents exist to protect parent context from verbose output — dumping raw transcripts defeats this purpose
+
+Raw JSONL wastes thousands of context tokens and makes output unreadable. The goal is to use background agents to isolate expensive operations, not to import their entire session history.
+
 **Documentation Index** (embedded below for ambient awareness):
 
 @docs/learned/index.md
