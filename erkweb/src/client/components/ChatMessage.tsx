@@ -1,3 +1,4 @@
+import {memo} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -9,7 +10,7 @@ interface ChatMessageProps {
   message: ChatMessageType;
 }
 
-export function ChatMessage({message}: ChatMessageProps) {
+export const ChatMessage = memo(function ChatMessage({message}: ChatMessageProps) {
   // Build a map of tool results by toolUseId
   const toolResults = new Map<string, (typeof message.content)[number]>();
   for (const block of message.content) {
@@ -40,4 +41,4 @@ export function ChatMessage({message}: ChatMessageProps) {
       </div>
     </div>
   );
-}
+});

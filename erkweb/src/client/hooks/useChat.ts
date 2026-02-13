@@ -4,6 +4,7 @@ import type {
   ChatMessage,
   ChatMessageContent,
   ServerMessage,
+  SessionInfo,
   SlashCommandInfo,
 } from '../../shared/types.js';
 
@@ -31,10 +32,17 @@ export function useChat() {
   const [activity, setActivity] = useState<ActivityStatus | null>(null);
   const [commands, setCommands] = useState<SlashCommandInfo[]>([]);
 
+  const [chatBranch, setChatBranch] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+
   const wsRef = useRef<WebSocket | null>(null);
   const pendingToolsRef = useRef<Map<string, ChatMessageContent>>(new Map());
   const queryStartRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const defaultCwdRef = useRef<string | null>(null);
+  const selectedSessionIdRef = useRef<string | null>(null);
 
   // Tick the elapsed timer every second while streaming
   useEffect(() => {
@@ -83,6 +91,8 @@ export function useChat() {
         case 'chat_init':
           setSessionId(msg.sessionId);
           setModel(msg.model);
+          setSelectedSessionId(msg.sessionId);
+          selectedSessionIdRef.current = msg.sessionId;
           break;
 
         case 'chat_commands':
@@ -245,26 +255,123 @@ export function useChat() {
     };
   }, []);
 
-  const sendMessage = useCallback((text: string) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+  const sendMessage = useCallback(
+    (text: string, options?: {cwd?: string; newSession?: boolean}) => {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+        return;
+      }
+
+      // Consume selected session ID (used once, then cleared)
+      const resumeId = selectedSessionIdRef.current;
+      selectedSessionIdRef.current = null;
+      setSelectedSessionId(null);
+
+      if (options?.newSession || resumeId) {
+        setMessages([]);
+      }
+
+      // Use default cwd from selected plan if no explicit cwd
+      const effectiveCwd = options?.cwd ?? defaultCwdRef.current ?? undefined;
+
+      // Add user message to state
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'user',
+          content: [{type: 'text' as const, text}],
+          timestamp: Date.now(),
+        },
+      ]);
+
+      setIsStreaming(true);
+      setStreamingText('');
+      setActivity({type: 'thinking', elapsedSeconds: 0});
+
+      wsRef.current.send(
+        JSON.stringify({
+          type: 'chat_send',
+          text,
+          cwd: effectiveCwd,
+          newSession: options?.newSession,
+          resumeSessionId: resumeId ?? undefined,
+        }),
+      );
+    },
+    [],
+  );
+
+  // Set the default cwd and branch for the chat (driven by plan selection).
+  // Fetches recent sessions and auto-loads the most recent one.
+  const setChatContext = useCallback((cwd: string | null, branch: string | null) => {
+    defaultCwdRef.current = cwd;
+    setChatBranch(branch);
+    setSelectedSessionId(null);
+    selectedSessionIdRef.current = null;
+    setMessages([]);
+    if (!cwd) {
+      setSessions([]);
+      setSessionsLoading(false);
       return;
     }
+    setSessionsLoading(true);
+    const encodedCwd = encodeURIComponent(cwd);
+    fetch(`/api/sessions?cwd=${encodedCwd}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) {
+          setSessionsLoading(false);
+          return;
+        }
+        setSessions(data.sessions);
+        const latest = data.sessions[0];
+        if (!latest) {
+          setSessionsLoading(false);
+          return;
+        }
+        setSelectedSessionId(latest.session_id);
+        selectedSessionIdRef.current = latest.session_id;
+        fetch(`/api/sessions/${latest.session_id}/messages?cwd=${encodedCwd}`)
+          .then((r) => r.json())
+          .then((msgData) => {
+            if (msgData.success) {
+              setMessages(msgData.messages);
+            }
+            setSessionsLoading(false);
+          })
+          .catch(() => setSessionsLoading(false));
+      })
+      .catch(() => setSessionsLoading(false));
+  }, []);
 
-    // Add user message to state
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: 'user',
-        content: [{type: 'text' as const, text}],
-        timestamp: Date.now(),
-      },
-    ]);
+  // Immediately clear messages and show loading before worktree path resolves.
+  const setLoading = useCallback((branch: string | null) => {
+    setMessages([]);
+    setSessions([]);
+    setSelectedSessionId(null);
+    selectedSessionIdRef.current = null;
+    setSessionsLoading(true);
+    setChatBranch(branch);
+  }, []);
 
-    setIsStreaming(true);
-    setStreamingText('');
-    setActivity({type: 'thinking', elapsedSeconds: 0});
-
-    wsRef.current.send(JSON.stringify({type: 'chat_send', text}));
+  const selectSession = useCallback((sid: string | null) => {
+    setSelectedSessionId(sid);
+    selectedSessionIdRef.current = sid;
+    if (!sid) {
+      setMessages([]);
+      return;
+    }
+    const cwd = defaultCwdRef.current;
+    if (!cwd) {
+      return;
+    }
+    fetch(`/api/sessions/${sid}/messages?cwd=${encodeURIComponent(cwd)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setMessages(data.messages);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const stopGeneration = useCallback(() => {
@@ -293,10 +400,17 @@ export function useChat() {
     isStreaming,
     sessionId,
     model,
+    chatBranch,
+    sessions,
+    selectedSessionId,
+    sessionsLoading,
     permissionRequest,
     activity,
     commands,
     sendMessage,
+    setChatContext,
+    setLoading,
+    selectSession,
     stopGeneration,
     respondToPermission,
   };

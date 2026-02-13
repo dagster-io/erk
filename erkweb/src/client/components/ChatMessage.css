@@ -1,6 +1,8 @@
 .chat-message {
   padding: 12px 16px;
   border-bottom: 1px solid #2a2a2a;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 80px;
 }
 
 .chat-message.user {

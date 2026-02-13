@@ -1,3 +1,5 @@
+import {dirname} from 'path';
+
 import {
   type PermissionUpdate,
   type Query,
@@ -8,6 +10,21 @@ import type {WebSocket} from 'ws';
 
 import type {ClientMessage, ServerMessage} from '../../shared/types.js';
 import {discoverCommands} from '../commands.js';
+
+// Build a clean env for spawning Claude Code processes.
+// - Ensures the running node binary's directory is in PATH (fixes ENOENT on cwd change)
+// - Excludes CLAUDECODE to prevent "nested session" detection when starting fresh sessions
+const nodeDir = dirname(process.execPath);
+function buildQueryEnv(): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value !== undefined && key !== 'CLAUDECODE') {
+      env[key] = value;
+    }
+  }
+  env.PATH = env.PATH ? `${nodeDir}:${env.PATH}` : nodeDir;
+  return env;
+}
 
 interface PermissionResponse {
   allowed: boolean;
@@ -84,12 +101,15 @@ export function handleChatConnection(ws: WebSocket) {
         (process.env.ERKWEB_PERMISSION_MODE as 'default' | 'acceptEdits' | 'bypassPermissions') ||
         'default';
 
+      const resumeId = msg.newSession ? undefined : msg.resumeSessionId || sessionId || undefined;
+
       try {
         activeQuery = query({
           prompt: msg.text,
           options: {
             cwd,
-            resume: sessionId ?? undefined,
+            env: buildQueryEnv(),
+            resume: resumeId,
             includePartialMessages: true,
             settingSources: ['user', 'project'],
             systemPrompt: {type: 'preset', preset: 'claude_code'},
