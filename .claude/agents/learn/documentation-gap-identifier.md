@@ -95,14 +95,21 @@ Ensure completeness by checking that every item from CodeDiffAnalyzer inventory 
 
 Assign a classification to each item:
 
-| Classification    | When to Use                                           |
-| ----------------- | ----------------------------------------------------- |
-| NEW_DOC           | New topic not covered by existing docs                |
-| UPDATE_EXISTING   | Existing doc covers related topic, needs update       |
-| UPDATE_REFERENCES | Existing doc valid but has phantom file paths         |
-| DELETE_STALE      | Existing doc describes artifacts that no longer exist |
-| TRIPWIRE          | Cross-cutting concern that applies broadly            |
-| SKIP              | Already documented, or doesn't need documentation     |
+| Classification    | When to Use                                            |
+| ----------------- | ------------------------------------------------------ |
+| NEW_DOC           | New topic not covered by existing docs                 |
+| UPDATE_EXISTING   | Existing doc covers related topic, needs update        |
+| UPDATE_REFERENCES | Existing doc valid but has phantom file paths          |
+| DELETE_STALE      | Existing doc describes artifacts that no longer exist  |
+| TRIPWIRE          | Cross-cutting concern that applies broadly             |
+| SHOULD_BE_CODE    | Enumerable catalog that should be a code type artifact |
+| SKIP              | Already documented, or doesn't need documentation      |
+
+**Code artifact test:** If the proposed documentation is an enumerable catalog
+(error types, status values, config keys, option sets), it should be a Literal
+type, Enum, or typed constant in source code — not a documentation table.
+Classify as SHOULD_BE_CODE. The learn plan will propose a code change instead
+of documentation content.
 
 ### Prevention Item Classification
 
@@ -162,6 +169,7 @@ Return a structured report:
 | Updates to existing docs | N |
 | Tripwire candidates (score >= 4) | N |
 | Potential tripwires (score 2-3) | N |
+| Code artifact items | N |
 | Contradictions found | N |
 
 ## Contradiction Resolutions (HIGH Priority)

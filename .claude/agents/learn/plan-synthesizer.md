@@ -77,6 +77,11 @@ For each item from the gap analysis (non-SKIP items):
 
 **For UPDATE_REFERENCES items:** Action is UPDATE. Draft content lists phantom paths and, if known, the correct current paths.
 
+**For SHOULD_BE_CODE items:** Action is CODE_CHANGE. Draft content describes the
+type artifact to create or extend (Literal, Enum, typed constant) and where in
+the source code it belongs. Do NOT generate markdown documentation content — this
+item becomes a code change, not a doc.
+
 ### Step 5: Describe Tripwire Insights
 
 For items identified as tripwire candidates in the gap analysis, discuss them naturally in the plan:
