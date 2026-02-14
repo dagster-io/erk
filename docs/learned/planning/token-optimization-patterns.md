@@ -1,22 +1,25 @@
 ---
 read_when:
-- designing multi-agent workflows that process multiple documents
-- experiencing context bloat from fetching large payloads into parent agent
-- choosing where to place content fetching in an orchestration pipeline
-- deciding which model tier to use for delegated work
+  - designing multi-agent workflows that process multiple documents
+  - experiencing context bloat from fetching large payloads into parent agent
+  - choosing where to place content fetching in an orchestration pipeline
+  - deciding which model tier to use for delegated work
 title: Token Optimization Patterns
 tripwires:
-- action: fetching N large documents into parent agent context
-  warning: Delegate content fetching to child agents. Parent receives only analysis
-    summaries, not raw content. Achieves O(1) parent context instead of O(n). See
-    token-optimization-patterns.md.
-- action: using opus/sonnet for mechanical data fetching or formatting tasks
-  warning: Use haiku for mechanical work (fetch, parse, format). Reserve expensive
-    models for synthesis and reasoning.
-- action: designing multi-agent pipelines where child agents return results via TaskOutput
-  warning: Add output size guidance to agent definitions (word count targets, table-preferred
-    format, capped entries) to prevent context bloat when outputs accumulate in parent
-    context.
+  - action: fetching N large documents into parent agent context
+    warning:
+      Delegate content fetching to child agents. Parent receives only analysis
+      summaries, not raw content. Achieves O(1) parent context instead of O(n). See
+      token-optimization-patterns.md.
+  - action: using opus/sonnet for mechanical data fetching or formatting tasks
+    warning:
+      Use haiku for mechanical work (fetch, parse, format). Reserve expensive
+      models for synthesis and reasoning.
+  - action: designing multi-agent pipelines where child agents return results via TaskOutput
+    warning:
+      Add output size guidance to agent definitions (word count targets, table-preferred
+      format, capped entries) to prevent context bloat when outputs accumulate in parent
+      context.
 ---
 
 # Token Optimization Patterns
