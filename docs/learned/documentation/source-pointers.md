@@ -56,8 +56,11 @@ Source pointers replace all code blocks _except_ the four cases where the One Co
 | Data format examples (JSON, YAML, TOML)        | Keep as code block   | Shows structural shape, not implementation logic               |
 | Third-party API patterns (Click, pytest, Rich) | Keep as code block   | Teaching external API usage that isn't in erk's source         |
 | Anti-patterns marked WRONG                     | Keep as code block   | The wrongness is the point — these are intentionally incorrect |
-| CLI commands with expected output              | Keep as code block   | I/O examples are self-contained and stable                     |
-| Command output format (JSON a command returns) | Keep as code block   | Documents the output contract for callers, not implementation  |
+
+| CLI invocation examples (with or without output) | Keep as code block | Usage examples document the command's interface, not implementation logic |
+| Command output format (JSON a command returns) | Keep as code block | Documents the output contract for callers, not implementation |
+
+**CLI examples matching docstrings are not verbatim copies.** A bash invocation example like `erk exec foo --bar baz` naturally looks identical whether it appears in a docstring or in documentation. This is expected — both are documenting the same CLI interface. Do not flag these as VERBATIM.
 
 **Partial excerpts are not an exception.** Copying "just the interesting lines" from a source file creates the same staleness problem as copying the whole function. If the code is erk source, use a pointer regardless of length.
 
