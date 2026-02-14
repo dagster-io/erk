@@ -112,6 +112,8 @@ class PlanDataTable(DataTable):
         col_index += 1
         self.add_column("title", key="title")
         col_index += 1
+        self.add_column("created", key="created")
+        col_index += 1
         if self._plan_filters.show_prs:
             self.add_column("pr", key="pr")
             self._pr_column_index = col_index
@@ -221,7 +223,7 @@ class PlanDataTable(DataTable):
         # Build values list based on columns
         # Wrap title in Text to prevent Rich markup interpretation
         # (e.g., "[erk-learn]" prefix would otherwise be treated as a markup tag)
-        values: list[str | Text] = [plan_cell, Text(row.title)]
+        values: list[str | Text] = [plan_cell, Text(row.title), row.created_display]
         if self._plan_filters.show_prs:
             # Strip Rich markup and colorize if clickable
             pr_display = _strip_rich_markup(row.pr_display)

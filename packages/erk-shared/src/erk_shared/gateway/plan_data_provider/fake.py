@@ -1,5 +1,6 @@
 """Fake plan data provider for testing TUI components."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.tui.data.types import PlanFilters, PlanRowData
@@ -179,6 +180,7 @@ def make_plan_row(
     learn_plan_pr: int | None = None,
     learn_run_url: str | None = None,
     objective_issue: int | None = None,
+    created_at: datetime | None = None,
 ) -> PlanRowData:
     """Create a PlanRowData for testing with sensible defaults.
 
@@ -207,6 +209,7 @@ def make_plan_row(
         learn_plan_pr: PR number that implemented the learn plan
         learn_run_url: URL to GitHub Actions workflow run (for pending status)
         objective_issue: Objective issue number (for linking plans to objectives)
+        created_at: Creation datetime (defaults to 2025-01-01T00:00:00Z)
 
     Returns:
         PlanRowData populated with test data
@@ -261,6 +264,10 @@ def make_plan_row(
     # Compute objective display
     objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
 
+    # Default created_at to a fixed sentinel datetime
+    effective_created_at = created_at or datetime(2025, 1, 1, tzinfo=UTC)
+    created_display = "-"
+
     return PlanRowData(
         issue_number=issue_number,
         issue_url=issue_url,
@@ -300,4 +307,6 @@ def make_plan_row(
         learn_display_icon=learn_display_icon,
         objective_issue=objective_issue,
         objective_display=objective_display,
+        created_at=effective_created_at,
+        created_display=created_display,
     )

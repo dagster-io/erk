@@ -550,6 +550,9 @@ class RealPlanDataProvider(PlanDataProvider):
         # Format objective display
         objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
 
+        # Format created_at display
+        created_display = format_relative_time(plan.created_at.isoformat()) or "-"
+
         return PlanRowData(
             issue_number=issue_number,
             issue_url=plan.url,
@@ -589,6 +592,8 @@ class RealPlanDataProvider(PlanDataProvider):
             learn_display_icon=learn_display_icon,
             objective_issue=objective_issue,
             objective_display=objective_display,
+            created_at=plan.created_at,
+            created_display=created_display,
         )
 
 
