@@ -13,7 +13,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.download_remote_session import (
     _get_remote_sessions_dir,
-    _normalize_gist_url,
+    normalize_gist_url,
 )
 from erk.cli.commands.exec.scripts.download_remote_session import (
     download_remote_session as download_remote_session_command,
@@ -60,7 +60,7 @@ def test_normalize_gist_url_webpage_to_raw() -> None:
     """
     webpage_url = "https://gist.github.com/schrockn/33680528033dc162ed0d563c063c70bb"
 
-    result = _normalize_gist_url(webpage_url)
+    result = normalize_gist_url(webpage_url)
 
     expected = "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/"
     assert result == expected
@@ -70,7 +70,7 @@ def test_normalize_gist_url_webpage_with_trailing_slash() -> None:
     """Test that webpage URL with trailing slash is handled correctly."""
     webpage_url = "https://gist.github.com/schrockn/33680528033dc162ed0d563c063c70bb/"
 
-    result = _normalize_gist_url(webpage_url)
+    result = normalize_gist_url(webpage_url)
 
     expected = "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/"
     assert result == expected
@@ -80,7 +80,7 @@ def test_normalize_gist_url_raw_passthrough() -> None:
     """Test that gist.githubusercontent.com raw URL passes through unchanged."""
     raw_url = "https://gist.githubusercontent.com/user/abc123/raw/session.jsonl"
 
-    result = _normalize_gist_url(raw_url)
+    result = normalize_gist_url(raw_url)
 
     assert result == raw_url
 
@@ -89,7 +89,7 @@ def test_normalize_gist_url_unknown_format_passthrough() -> None:
     """Test that unknown URL formats pass through unchanged."""
     unknown_url = "https://example.com/some/path"
 
-    result = _normalize_gist_url(unknown_url)
+    result = normalize_gist_url(unknown_url)
 
     assert result == unknown_url
 

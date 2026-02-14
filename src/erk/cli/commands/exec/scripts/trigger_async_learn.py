@@ -26,12 +26,15 @@ Examples:
 """
 
 import json
+import urllib.error
+import urllib.request
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import NoReturn
 
 import click
 
+from erk.cli.commands.exec.scripts.download_remote_session import normalize_gist_url
 from erk.cli.commands.exec.scripts.get_learn_sessions import _discover_sessions
 from erk.cli.commands.exec.scripts.preprocess_session import (
     deduplicate_assistant_messages,
@@ -231,6 +234,39 @@ def _preprocess_session_direct(
     return output_paths
 
 
+def _download_remote_session_for_learn(
+    *,
+    gist_url: str,
+    session_id: str,
+    output_dir: Path,
+) -> Path | None:
+    """Download a remote session JSONL for learn preprocessing.
+
+    Downloads from a gist URL and saves to output_dir with the session_id
+    as the filename stem (required by the preprocessing pipeline).
+
+    Args:
+        gist_url: Gist URL (webpage or raw) to download from.
+        session_id: Session ID used as the output filename stem.
+        output_dir: Directory to save the downloaded JSONL file.
+
+    Returns:
+        Path to the downloaded file on success, None on failure.
+    """
+    normalized_url = normalize_gist_url(gist_url)
+    try:
+        with urllib.request.urlopen(normalized_url) as response:
+            content = response.read()
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / f"{session_id}.jsonl"
+        output_path.write_bytes(content)
+        return output_path
+    except urllib.error.URLError as e:
+        message = click.style(f"   ⚠️  Failed to download remote session: {e}", fg="yellow")
+        click.echo(message, err=True)
+        return None
+
+
 def _get_pr_for_plan_direct(
     *,
     github_issues,
@@ -370,28 +406,50 @@ def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow:
     message = click.style(f"📂 Created {dirname}", fg="cyan")
     click.echo(message, err=True)
 
-    # Step 3: Preprocess each local session source (direct function calls)
+    # Step 3: Preprocess each session source (local and remote)
     for source_item in session_sources:
         if not isinstance(source_item, dict):
             continue
 
-        if source_item.get("source_type") != "local":
-            continue
-
-        session_path_str = source_item.get("path")
-        if not isinstance(session_path_str, str):
-            continue
-
+        source_type = source_item.get("source_type")
         session_id = source_item.get("session_id")
         planning_session_id = sessions["planning_session_id"]
         prefix = "planning" if session_id == planning_session_id else "impl"
 
-        message = click.style(f"🔄 Preprocessing {prefix} session...", fg="cyan")
-        click.echo(message, err=True)
+        if source_type == "local":
+            session_path_str = source_item.get("path")
+            if not isinstance(session_path_str, str):
+                continue
 
-        session_path = Path(session_path_str)
-        if not session_path.exists():
-            _output_error(f"Preprocessing {prefix} session failed: Session file not found")
+            message = click.style(f"🔄 Preprocessing {prefix} session...", fg="cyan")
+            click.echo(message, err=True)
+
+            session_path = Path(session_path_str)
+            if not session_path.exists():
+                _output_error(f"Preprocessing {prefix} session failed: Session file not found")
+
+        elif source_type == "remote":
+            gist_url = source_item.get("gist_url")
+            if not isinstance(gist_url, str) or not isinstance(session_id, str):
+                continue
+
+            message = click.style(f"⬇️  Downloading remote {prefix} session...", fg="cyan")
+            click.echo(message, err=True)
+
+            downloaded_path = _download_remote_session_for_learn(
+                gist_url=gist_url,
+                session_id=session_id,
+                output_dir=learn_dir / "remote-downloads",
+            )
+            if downloaded_path is None:
+                continue
+
+            message = click.style(f"🔄 Preprocessing remote {prefix} session...", fg="cyan")
+            click.echo(message, err=True)
+            session_path = downloaded_path
+
+        else:
+            continue
 
         output_paths = _preprocess_session_direct(
             session_path=session_path,
