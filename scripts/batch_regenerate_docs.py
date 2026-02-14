@@ -26,8 +26,6 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.subprocess_utils import build_claude_subprocess_env
-
 STATE_FILE = Path("logs/batch-regen-state.json")
 
 
@@ -178,13 +176,11 @@ def run_claude(
     cmd = [
         "claude",
         "--print",
-        "--no-session-persistence",
         "--dangerously-skip-permissions",
         "--model",
         model,
         prompt,
     ]
-    env = build_claude_subprocess_env()
     with log_path.open("w") as log_file:
         result = subprocess.run(
             cmd,
@@ -192,7 +188,6 @@ def run_claude(
             stderr=subprocess.STDOUT,
             timeout=timeout,
             check=False,
-            env=env,
         )
     return result.returncode
 

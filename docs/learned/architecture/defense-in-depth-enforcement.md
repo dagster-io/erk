@@ -5,7 +5,7 @@ read_when:
   - implementing critical rules across multiple components
   - understanding why erk uses redundant enforcement mechanisms
 tripwires:
-  - action: "Rely solely on agent-level enforcement for critical rules"
+  - action: "relying solely on agent-level enforcement for critical rules"
     warning: "Add skill-level and PR-level enforcement layers. Only workflow/CI enforcement is truly reliable."
     score: 7
 ---

@@ -21,7 +21,7 @@ This design choice prioritizes consistency over directness: CI scripts, develope
 
 All erkdesk targets follow the `{package}-{action}` pattern to avoid namespace collisions with top-level test commands. The pattern mirrors existing Python package test targets like `test-erk-dev`.
 
-See erkdesk target definitions in `Makefile` (lines 161-177).
+See erkdesk target definitions in `Makefile`.
 
 | Target Pattern         | Purpose                          | Example              |
 | ---------------------- | -------------------------------- | -------------------- |
@@ -30,15 +30,15 @@ See erkdesk target definitions in `Makefile` (lines 161-177).
 
 **Why not top-level `test-erkdesk`?** The package name goes first to group all erkdesk-related targets alphabetically in tab completion and `make -p` output.
 
-## Fast-CI Integration: The 4712+ Test Milestone
+## Fast-CI Integration
 
 <!-- Source: Makefile, fast-ci target -->
 
 The `fast-ci` target includes erkdesk tests alongside Python unit tests, creating a **single unified CI feedback loop**. This was a deliberate architectural decision: erkdesk is not a separate project—it's part of the erk monorepo and must pass the same quality gate.
 
-See the `fast-ci` target composition in `Makefile` (lines 90-102).
+See the `fast-ci` target composition in `Makefile`.
 
-The "4712+" test count (Python unit ~4700, erkdesk component ~10+) reflects January 2025 state and will grow as erkdesk matures. The combined run time stays under 30 seconds because:
+The combined test count (Python unit + erkdesk component) continues to grow. The combined run time stays under 30 seconds because:
 
 1. Python tests use `pytest -n auto` for parallelization
 2. Vitest runs erkdesk tests in parallel by default
@@ -53,7 +53,7 @@ The "4712+" test count (Python unit ~4700, erkdesk component ~10+) reflects Janu
 
 The Makefile exposes two test modes that map to different pnpm scripts:
 
-See watch mode implementation in `Makefile` (lines 173-177) and `erkdesk/package.json` (lines 14-15).
+See watch mode implementation in `Makefile` and `erkdesk/package.json`.
 
 | Makefile Target      | pnpm Script  | Exit Behavior           | Interactive |
 | -------------------- | ------------ | ----------------------- | ----------- |
@@ -105,7 +105,7 @@ When adding new testable packages (e.g., a future `erkweb` component):
 
 <!-- Source: Makefile, .PHONY declarations -->
 
-The `.PHONY` declaration on line 1 lists all non-file targets. Add new erkdesk targets there to prevent Makefile from treating them as file paths.
+The `.PHONY` declaration lists all non-file targets. Add new erkdesk targets there to prevent Makefile from treating them as file paths.
 
 ## See Also
 

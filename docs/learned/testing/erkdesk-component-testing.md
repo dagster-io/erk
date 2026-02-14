@@ -1,6 +1,14 @@
 ---
 title: Erkdesk Component Test Architecture
 category: testing
+content_type: mixed
+third_party_references:
+  - name: React Testing Library
+    what: Query variants, query priority, findBy/getBy/queryBy semantics
+  - name: Vitest
+    what: vi.fn() matchers, vi.mocked() patterns
+  - name: userEvent
+    what: keyboard() syntax for regular keys, special keys, modifiers
 read_when:
   - writing tests for erkdesk React components
   - deciding whether to test at component level or App level
@@ -13,6 +21,8 @@ tripwires:
     warning: "PlanList and ActionToolbar receive data via props — they don't call window.erkdesk directly. IPC verification belongs in App.test.tsx where the actual fetch-state-props flow lives."
   - action: "creating inline PlanRow test data with all fields"
     warning: "Use the makePlan() factory with Partial<PlanRow> overrides. PlanRow has 18+ fields; inline objects go stale when the type changes. See any test file for the pattern."
+last_audited: "2026-02-08 13:55 PT"
+audit_result: clean
 ---
 
 # Erkdesk Component Test Architecture
@@ -81,6 +91,112 @@ For fake timer patterns and the `shouldAdvanceTime` requirement, see [Vitest Fak
 <!-- Source: erkdesk/src/renderer/App.test.tsx -->
 
 App registers `onActionOutput` and `onActionCompleted` listeners on mount and calls `removeActionListeners` on unmount. Tests verify both sides of this lifecycle by checking that listeners are registered after render and cleaned up after `unmount()`. This prevents memory leaks and stale callbacks when the component is re-mounted.
+
+## React Testing Library Quick Reference
+
+<!-- Source: React Testing Library docs -->
+<!-- Source: Vitest docs -->
+
+### Query Variants
+
+| Variant    | No Match       | 1 Match         | 1+ Match | Await? | Use When                         |
+| ---------- | -------------- | --------------- | -------- | ------ | -------------------------------- |
+| `getBy*`   | throws         | returns element | throws   | No     | Asserting element exists         |
+| `queryBy*` | returns `null` | returns element | throws   | No     | Asserting element does NOT exist |
+| `findBy*`  | throws         | returns element | throws   | Yes    | Waiting for async rendering      |
+
+```typescript
+// getBy* - throws if not found (use for positive assertions)
+screen.getByText("Plan Title");
+
+// queryBy* - returns null if not found (use for negative assertions)
+expect(screen.queryByText("Plan Title")).not.toBeInTheDocument();
+
+// findBy* - async, waits for element (use for async rendering)
+await screen.findByText("Plan Title");
+```
+
+### Query Priority
+
+Prefer queries in this order (most semantic to least):
+
+1. **`getByRole()`** — best for accessibility, matches ARIA roles (`button`, `heading`, `list`, etc.)
+2. **`getByLabelText()`** — for form inputs associated with a `<label>`
+3. **`getByText()`** — for visible text content
+4. **`getByTestId()`** — last resort when no semantic query applies
+
+```typescript
+// By role + accessible name (preferred)
+screen.getByRole("button", { name: "Submit" });
+screen.getByRole("heading", { name: "Plans" });
+
+// By text content
+screen.getByText("Plan Title");
+
+// By test ID (use sparingly)
+screen.getByTestId("plan-list");
+```
+
+### `userEvent.keyboard()` Syntax
+
+| Input         | Syntax                    | Example                                    |
+| ------------- | ------------------------- | ------------------------------------------ |
+| Regular key   | `'j'`                     | `await user.keyboard('j')`                 |
+| Special key   | `'{KeyName}'`             | `await user.keyboard('{ArrowDown}')`       |
+| Multiple keys | concatenate               | `await user.keyboard('jjk')`               |
+| Modifier hold | `'{Mod>}key{/Mod}'`       | `await user.keyboard('{Shift>}a{/Shift}')` |
+| Enter/Escape  | `'{Enter}'`, `'{Escape}'` | `await user.keyboard('{Enter}')`           |
+
+Always call `userEvent.setup()` before using keyboard:
+
+```typescript
+const user = userEvent.setup();
+await user.keyboard("j");
+```
+
+### Async State Testing with `waitFor()`
+
+Components that fetch data in `useEffect` update state asynchronously after render. Assertions must wait:
+
+```typescript
+// WRONG: Immediate assertion fails — useEffect hasn't completed
+render(<App />);
+expect(screen.getByText("Plan Title")).toBeInTheDocument(); // Fails
+
+// CORRECT: waitFor retries until assertion passes
+render(<App />);
+await waitFor(() => {
+  expect(screen.getByText("Plan Title")).toBeInTheDocument();
+});
+```
+
+**When to use `waitFor()`**: Component fetches data in `useEffect`, updates state asynchronously, or DOM changes after user interaction.
+
+**When NOT needed**: Component receives data via props (synchronous render), testing static UI without state changes.
+
+### CSS Class Assertions
+
+```typescript
+// Element has the class
+expect(screen.getByText("Plan 1")).toHaveClass("selected");
+
+// Element does not have the class
+expect(screen.getByText("Plan 2")).not.toHaveClass("selected");
+```
+
+### Callback Verification
+
+```typescript
+const onSelect = vi.fn();
+
+render(<PlanList onSelect={onSelect} />);
+await user.click(screen.getByText("Plan 1"));
+
+// Verify callback was invoked
+expect(onSelect).toHaveBeenCalled();
+expect(onSelect).toHaveBeenCalledWith("1");     // specific arguments
+expect(onSelect).toHaveBeenCalledTimes(1);       // exact call count
+```
 
 ## Related
 

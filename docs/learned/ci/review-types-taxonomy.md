@@ -266,35 +266,21 @@ on:
 
 ### Pattern 2: Performance Tiering
 
-**Fast reviews** (< 30s) run on every PR:
+**Fast reviews** run on every PR: linting (ruff, prettier), format checks, type checking.
 
-- Linting (ruff, prettier)
-- Format checks
-- Type checking
-
-**Slow reviews** (> 1 min) run selectively:
-
-- Integration tests (manual trigger or specific labels)
-- Coverage reports (weekly or release-only)
-- Large-scale analysis (pre-merge only)
+**Slow reviews** run selectively: integration tests (manual trigger or specific labels), coverage reports, large-scale analysis.
 
 **Why it works:** Developers get fast feedback from lints, slow checks don't block iteration.
 
 ### Pattern 3: Early Exit for Empty Diffs
 
-Reviews should detect when there's nothing relevant to check:
-
-```python
-if len(source_added) == 0 and len(source_modified) == 0:
-    # Skip review with brief summary
-    exit(0)
-```
-
-**When to use:** Reviews that only care about certain change types (e.g., test coverage only matters if source changed).
-
-**Why it works:** Avoids posting empty or meaningless review comments.
+Reviews should detect when there's nothing relevant to check and exit early with code 0.
 
 <!-- Source: .github/reviews/test-coverage.md, Step 2 early exit -->
+
+**When to use:** Reviews that only care about certain change types (e.g., test coverage only matters if source changed). See the early exit pattern in `.github/reviews/test-coverage.md`.
+
+**Why it works:** Avoids posting empty or meaningless review comments.
 
 ## Review Configuration Format
 

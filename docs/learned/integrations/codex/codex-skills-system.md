@@ -1,5 +1,6 @@
 ---
 title: Codex Skills System
+content_type: reference-cache
 read_when:
   - "porting erk skills to Codex"
   - "implementing dual-target skill installation"
@@ -12,7 +13,7 @@ tripwires:
     warning: "Erk has a dual-target architecture. See get_bundled_codex_dir() in artifacts/paths.py and codex_portable_skills() in codex_portable.py for the portability registry."
   - action: "assuming all erk skills are portable to Codex"
     warning: "Only skills in codex_portable_skills() are portable. Skills that depend on Claude-specific features (hooks, session logs, commands) are in claude_only_skills()."
-last_audited: "2026-02-08 13:09 PT"
+last_audited: "2026-02-08 13:55 PT"
 audit_result: clean
 ---
 
@@ -30,7 +31,23 @@ Both systems use `SKILL.md` as the entry point, but they diverge on three axes t
 
 **3. Codex supports executable scripts; Claude does not.** Codex skills can include `scripts/`, `references/`, `assets/`, and `agents/openai.yaml`. This means some behaviors erk implements via Claude hooks could theoretically move to Codex scripts — but the two mechanisms are different enough that a shared abstraction isn't practical.
 
-## SKILL.md Frontmatter (Third-Party API)
+## Codex Skills API Reference
+
+### Skill Directory Structure
+
+Each skill is a directory containing a `SKILL.md` file:
+
+```
+.codex/skills/my-skill/
+├── SKILL.md              # Required: YAML frontmatter + instructions
+├── scripts/              # Optional: executable code
+├── references/           # Optional: additional documentation
+├── assets/               # Optional: templates, icons
+└── agents/
+    └── openai.yaml       # Optional: UI metadata, MCP dependencies
+```
+
+### SKILL.md Frontmatter
 
 ```yaml
 ---
@@ -43,16 +60,70 @@ metadata:
 
 The markdown body below contains agent instructions, loaded only on invocation.
 
+#### Frontmatter Validation
+
+Source: `codex-rs/core/src/skills/loader.rs`
+
+| Field                        | Required | Max Length | Notes                      |
+| ---------------------------- | -------- | ---------- | -------------------------- |
+| `name`                       | Yes      | 64 chars   | Skill identifier           |
+| `description`                | Yes      | 1024 chars | Used for implicit matching |
+| `metadata.short-description` | No       | 1024 chars | Brief description          |
+
+### agents/openai.yaml Field Reference
+
+UI metadata and MCP dependencies:
+
+| Field                  | Type              | Description                                          |
+| ---------------------- | ----------------- | ---------------------------------------------------- |
+| `display_name`         | string            | Human-readable name                                  |
+| `short_description`    | string            | Brief description for UI                             |
+| `icon_small`           | path              | Small icon file                                      |
+| `icon_large`           | path              | Large icon file                                      |
+| `brand_color`          | string            | Brand color for UI                                   |
+| `default_prompt`       | string (max 1024) | Default prompt when skill is selected                |
+| `dependencies.tools[]` | list              | MCP tool dependencies (type, value, transport, etc.) |
+
+### Discovery Scopes
+
+Skills are loaded from multiple roots in priority order:
+
+| Scope  | Path                                     | Priority |
+| ------ | ---------------------------------------- | -------- |
+| Repo   | `.codex/skills/` (project-level)         | Highest  |
+| User   | `$CODEX_HOME/skills/` (user-installed)   |          |
+| System | `$CODEX_HOME/skills/.system/` (embedded) |          |
+| Admin  | `/etc/codex/skills/` (on Unix)           | Lowest   |
+
+Deduplication: if a skill name appears in multiple scopes, the highest-priority version wins. Skills are sorted by scope priority, then by name.
+
+Scan limits: max depth 6, max 2000 skill directories per root.
+
+### Invocation
+
+**Explicit:**
+
+- `$skill-name` mention in the prompt text
+- `/skills` command menu in TUI
+
+**Implicit:** Codex auto-activates skills when the task description matches the skill's `description` field.
+
+**Progressive Disclosure:** At session startup, only `name` and `description` are loaded into context (~50 tokens per skill). The full SKILL.md body is loaded only when the skill is invoked (~2-5K tokens). This is different from Claude, which loads all skill content into context.
+
 ## Claude vs Codex Skills Decision Table
 
-| Aspect               | Claude Code                                | Codex                                                | Erk Implication                                             |
-| -------------------- | ------------------------------------------ | ---------------------------------------------------- | ----------------------------------------------------------- |
-| Required frontmatter | None                                       | `name` and `description`                             | All erk skills carry frontmatter to stay Codex-compatible   |
-| Loading behavior     | All skills in context at startup           | Progressive: metadata at startup, body on invocation | Codex is more token-efficient for large skill sets          |
-| Invocation           | `@` references, auto-loaded, hook triggers | `$skill-name` mention, implicit matching             | Slash commands need translation (see below)                 |
-| Script support       | No                                         | Yes (`scripts/` directory)                           | Could replace some hook-based behavior                      |
-| Hooks                | PreToolUse, PostToolUse, etc.              | Not available                                        | Safety-net hooks must be baked into skill body or AGENTS.md |
-| Scope levels         | 2 (repo, user)                             | 4 (repo, user, system, admin)                        | Erk only targets repo scope currently                       |
+| Aspect               | Claude Code                                  | Codex                                                | Erk Implication                                             |
+| -------------------- | -------------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------- |
+| Location             | `.claude/skills/`                            | `.codex/skills/`                                     | Dual-target install writes to both directories              |
+| File format          | `SKILL.md` with optional YAML frontmatter    | `SKILL.md` with required YAML frontmatter            | All erk skills use YAML frontmatter for cross-compatibility |
+| Required frontmatter | None (content-only is valid)                 | `name` and `description`                             | All erk skills carry frontmatter to stay Codex-compatible   |
+| Loading behavior     | All skills in context at startup             | Progressive: metadata at startup, body on invocation | Codex is more token-efficient for large skill sets          |
+| Invocation           | `@` references, auto-loaded, hook triggers   | `$skill-name` mention, implicit matching             | Slash commands need translation (see below)                 |
+| Script support       | No                                           | Yes (`scripts/` directory)                           | Could replace some hook-based behavior                      |
+| UI metadata          | No                                           | Yes (`agents/openai.yaml`)                           | Not currently used by erk                                   |
+| Hooks                | PreToolUse, PostToolUse, etc.                | Not available                                        | Safety-net hooks must be baked into skill body or AGENTS.md |
+| Scope levels         | 2 (repo, user)                               | 4 (repo, user, system, admin)                        | Erk only targets repo scope currently                       |
+| Commands             | Backwards-compat alias (`.claude/commands/`) | Merged into skills (no separate commands)            | Commands can be ported directly to `.codex/skills/`         |
 
 ## Dual-Target Architecture: Why Format Compatibility Enables a Fallback
 

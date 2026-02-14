@@ -5,7 +5,7 @@ read_when:
   - syncing local plan changes to GitHub issues
   - working with plan feedback workflows
 tripwires:
-  - action: "Call plan-update-issue after editing local plan files"
+  - action: "editing local plan files without syncing to GitHub"
     warning: "Sync is NOT automatic — GitHub issue will show stale content without explicit sync"
     score: 4
 last_audited: "2026-02-08"

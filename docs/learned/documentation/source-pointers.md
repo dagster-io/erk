@@ -50,15 +50,15 @@ Both parts are required. The HTML comment is what `audit-pr-docs` scans for duri
 
 Source pointers replace all code blocks _except_ the four cases where the One Code Rule grants an exception. The decision is mechanical:
 
-| Content type                                   | Action               | Reasoning                                                      |
-| ---------------------------------------------- | -------------------- | -------------------------------------------------------------- |
-| Erk source code (any length)                   | Replace with pointer | Will drift from reality; the source file is the authority      |
-| Data format examples (JSON, YAML, TOML)        | Keep as code block   | Shows structural shape, not implementation logic               |
-| Third-party API patterns (Click, pytest, Rich) | Keep as code block   | Teaching external API usage that isn't in erk's source         |
-| Anti-patterns marked WRONG                     | Keep as code block   | The wrongness is the point — these are intentionally incorrect |
-
-| CLI invocation examples (with or without output) | Keep as code block | Usage examples document the command's interface, not implementation logic |
-| Command output format (JSON a command returns) | Keep as code block | Documents the output contract for callers, not implementation |
+| Content type                                              | Action               | Reasoning                                                                      |
+| --------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------ |
+| Erk source code (any length)                              | Replace with pointer | Will drift from reality; the source file is the authority                      |
+| Data format examples (JSON, YAML, TOML)                   | Keep as code block   | Shows structural shape, not implementation logic                               |
+| Third-party API patterns (Click, pytest, Rich)            | Keep as code block   | Teaching external API usage that isn't in erk's source                         |
+| Anti-patterns marked WRONG                                | Keep as code block   | The wrongness is the point — these are intentionally incorrect                 |
+| CLI invocation examples (with or without output)          | Keep as code block   | Usage examples document the command's interface, not implementation logic      |
+| Command output format (JSON a command returns)            | Keep as code block   | Documents the output contract for callers, not implementation                  |
+| Third-party reference tables (API endpoints, syntax refs) | Keep as code block   | Token cache of expensive-to-fetch external docs (include `## Sources` section) |
 
 **CLI examples matching docstrings are not verbatim copies.** A bash invocation example like `erk exec foo --bar baz` naturally looks identical whether it appears in a docstring or in documentation. This is expected — both are documenting the same CLI interface. Do not flag these as VERBATIM.
 

@@ -12,8 +12,6 @@ tripwires:
     action: "Using RuntimeError for expected CLI failures"
     warning: "RuntimeError signals a programmer error (bug in the code), NOT expected user-facing failures. Use UserFacingCliError for expected conditions (missing files, invalid input, precondition violations) that should exit cleanly with an actionable message."
     context: "Expected failures are part of normal CLI operation. RuntimeError implies something impossible happened; UserFacingCliError implies the user needs to fix their input or environment."
-  - action: "converting RuntimeError catch blocks to UserFacingCliError"
-    warning: "Always preserve exception chain with 'from e'. Pattern: raise UserFacingCliError(str(e)) from e"
 ---
 
 # CLI Error Handling Anti-Patterns
@@ -32,7 +30,7 @@ This semantic confusion creates three failure modes:
 
 <!-- Source: src/erk/cli/ensure.py, UserFacingCliError -->
 
-Use `UserFacingCliError` for expected CLI failures. See the class definition in `src/erk/cli/ensure.py:33-53`.
+Use `UserFacingCliError` for expected CLI failures. See the `UserFacingCliError` class in `src/erk/cli/ensure.py`.
 
 **Why it exists:**
 
@@ -111,7 +109,7 @@ Notice the corrected version includes:
 
 <!-- Source: src/erk/cli/ensure.py, Ensure class methods -->
 
-The `Ensure` class provides domain-specific assertion methods that all raise `UserFacingCliError`. See methods like `Ensure.invariant()`, `Ensure.path_exists()`, `Ensure.git_branch_exists()` in `src/erk/cli/ensure.py:55-556`.
+The `Ensure` class provides domain-specific assertion methods that all raise `UserFacingCliError`. See methods like `Ensure.invariant()`, `Ensure.path_exists()`, `Ensure.git_branch_exists()` in `src/erk/cli/ensure.py`.
 
 These methods:
 
@@ -152,12 +150,10 @@ This signals "the programmer who wrote this code made a mistake in their enum ha
 
 ## Current Migration Status
 
-As of PR #6860:
+As of PR #6353:
 
-- PR #6353: 8 files converted from RuntimeError → UserFacingCliError
-- PR #6860: admin.py converted — 8 error patterns migrated (4 `Ensure.not_none`, 1 `Ensure.invariant`, 3 RuntimeError-to-UserFacingCliError with exception chaining)
-- Cumulative: ~16 files/patterns converted across PRs #6353 and #6860
-- Remaining: Audit remaining CLI commands for RuntimeError instances that should be UserFacingCliError
+- 8 files converted from RuntimeError → UserFacingCliError
+- ~5 files still contain RuntimeError instances (some legitimate, some anti-patterns)
 - Ongoing migration: Convert anti-pattern RuntimeErrors when editing affected code
 
 When you encounter `RuntimeError` in CLI command code, ask: "Can a user trigger this through normal CLI usage?" If yes, migrate to `UserFacingCliError`.

@@ -41,33 +41,17 @@ The separation between `Ensure` and `EnsureIdeal` reflects two distinct validati
 
 ### `unwrap_pr(result, message)` — For Low-Level Gateway Calls
 
-Use with gateway methods returning `PRDetails | PRNotFound`:
+Use with gateway methods returning `PRDetails | PRNotFound`. Call `EnsureIdeal.unwrap_pr(result, message)` where you supply the error message because `PRNotFound` is a minimal sentinel without a `message` field.
 
-```python
-# PRNotFound is a sentinel WITHOUT a message field
-pr = EnsureIdeal.unwrap_pr(
-    ctx.github.get_pr_for_branch(repo_root, branch),
-    f"No pull request found for branch '{branch}'"  # You supply the message
-)
-```
-
-**Why no message?** `PRNotFound` is a minimal sentinel used by the low-level gateway ABC. It knows the PR wasn't found, but not _why_ — that context lives in the caller.
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py, PRNotFound -->
 
 See `PRNotFound` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`.
 
 ### `pr(result)` — For GitHubChecks Methods
 
-Use with `GitHubChecks` methods returning `PRDetails | NoPRForBranch | PRNotFoundError`:
+Use with `GitHubChecks` methods returning `PRDetails | NoPRForBranch | PRNotFoundError`. Call `EnsureIdeal.pr(result)` with no message parameter — the error types implement `NonIdealState` protocol which includes a `message` property.
 
-```python
-# NoPRForBranch implements NonIdealState protocol with .message
-pr = EnsureIdeal.pr(
-    GitHubChecks.pr_for_branch(ctx.github, repo_root, branch)
-    # No message parameter — error type provides it
-)
-```
-
-**Why built-in message?** `GitHubChecks` wraps the low-level gateway and returns richer error types that implement `NonIdealState`, which includes a `message` property.
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/checks.py, GitHubChecks.pr_for_branch -->
 
 See `GitHubChecks.pr_for_branch()` in `packages/erk-shared/src/erk_shared/gateway/github/checks.py`.
 

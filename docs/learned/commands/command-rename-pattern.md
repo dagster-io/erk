@@ -7,11 +7,8 @@ read_when:
   - performing a terminology shift that affects command names
 title: Command Rename Pattern
 tripwires:
-  - action:
-      Read this doc — renames require a full reference sweep, not just a file
-      move
-    trigger: Before renaming any file in .claude/commands/ or .claude/skills/
-    warning: Check the relevant documentation.
+  - action: "renaming any file in .claude/commands/ or .claude/skills/"
+    warning: "Read this doc — renames require a full reference sweep, not just a file move"
 ---
 
 # Command Rename Pattern

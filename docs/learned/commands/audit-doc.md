@@ -8,10 +8,8 @@ read_when:
   - debugging unexpected audit verdicts
 title: Audit-Doc Design Decisions
 tripwires:
-  - action: using this pattern
-    warning:
-      "CRITICAL: Before modifying collateral finding categories or auto-apply
-      behavior in audit-doc"
+  - action: "modifying collateral finding categories or auto-apply behavior in audit-doc"
+    warning: "CRITICAL: Read this doc first to understand the conceptual vs mechanical finding distinction"
 ---
 
 # Audit-Doc Design Decisions

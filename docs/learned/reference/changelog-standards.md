@@ -11,7 +11,7 @@ tripwires:
     warning: "Entries must describe user-visible behavior, not internal implementation. Ask: 'Does an erk user see different behavior?'"
   - action: "modifying CHANGELOG.md directly instead of using /local:changelog-update"
     warning: "Always use /local:changelog-update to sync with commits. Manual edits bypass the categorization agent and marker system."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 13:55 PT"
 audit_result: edited
 ---
 
@@ -35,6 +35,57 @@ The changelog system has three components that must stay coordinated:
 
 The update command orchestrates the categorizer agent, presents a proposal for human review, and only writes to CHANGELOG.md after approval. The release command transforms the unreleased section into a versioned one. See each command file for workflow details.
 
+## Entry Format Reference
+
+### Standard Entry
+
+```markdown
+- {Imperative verb} {description of change, user-focused} ({commit_hash})
+```
+
+**Examples:**
+
+```markdown
+- Fix discover-reviews for large PRs by switching to REST API with pagination (ab3ff4e58)
+- Consolidate `erk init capability list` and `erk init capability check` into unified command (57a406f39)
+```
+
+### Multiple Commits (Single Feature)
+
+When a feature spans multiple commits, reference all relevant hashes:
+
+```markdown
+- {Description of complete feature} ({hash1}, {hash2}, {hash3})
+```
+
+**Example:**
+
+```markdown
+- Add plan review via temporary PR workflow (03b9e3a9d, 260f8a059, 46a916ddb, 436045eee)
+```
+
+### Large Features (Major Changes)
+
+Major Changes use a different format with explanatory prose:
+
+```markdown
+- **Feature Name**: Brief description. Motivation/problem statement. Value to user. ({primary_hash}, {supporting_hash1}, {supporting_hash2})
+```
+
+**Example:**
+
+```markdown
+- **Plan Review via Temporary PR**: New workflow for asynchronous plan review through draft PRs. Plans can be submitted as temporary PRs for review, with feedback incorporated back into the plan issue. Includes automatic branch management, PR lifecycle handling, and integration with `/erk:pr-address`. (03b9e3a9d, 260f8a059, 46a916ddb, 436045eee, df3bda1a2, 90887e08b, 8f7b8811d, 8c7c66480, 712fffabf, f1c6fcb08, 91c06aaba)
+```
+
+**Key elements:**
+
+1. **Bold feature name** - Short, memorable name
+2. **What it does** - Brief functional description
+3. **Motivation** - Why we built it, what problem it solves
+4. **Value** - What benefit users get
+5. **All commit hashes** - Primary commit first, then supporting commits
+
 ## Why Commit Hash References Exist
 
 Unreleased entries include 9-character short hashes (e.g., `(ab3ff4e58)`) for traceability during review. When a human reviews the changelog proposal, they can quickly `git show` any hash to verify the entry accurately represents the change.
@@ -43,13 +94,57 @@ At release time, `/local:changelog-release` strips all hashes. Released entries 
 
 This two-phase lifecycle is why hashes appear in unreleased entries but not in versioned sections of `CHANGELOG.md`.
 
+### Commit Reference Formats
+
+Hashes are 9-character short hashes in parentheses: `(ab3ff4e58)`. Multiple commits use comma-separated format: `(03b9e3a9d, 260f8a059, 46a916ddb)`. See the entry format examples above for full context.
+
+For very large features with 10+ commits, consider:
+
+1. **Roll-up entry** - Consolidate into single entry with all hashes
+2. **Primary only** - Reference only the primary commit if supporting commits are minor fixes
+
 ## The Sync Marker System
 
-The `<!-- As of: ... -->` HTML comment in the Unreleased section is a cursor — it tells `erk-dev changelog-commits` where to start scanning for new commits. The marker uses `git log {marker}..HEAD --first-parent` to find only mainline commits, excluding feature branch history.
+The "As of" marker in the Unreleased section is a cursor — it tells `erk-dev changelog-commits` where to start scanning for new commits. The marker uses `git log {marker}..HEAD --first-parent` to find only mainline commits, excluding feature branch history.
+
+### Sync Marker Format
+
+The parser (`parse_changelog_marker` in `packages/erk-dev/src/erk_dev/commands/changelog_commits/command.py`) accepts two formats:
+
+1. **Backtick format** (visible in rendered markdown): `` As of `{commit_hash}` ``
+2. **HTML comment format** (invisible in rendered markdown): `<!-- As of {commit_hash} -->`
+
+**Placement:** First line of the `## [Unreleased]` section, after the section header.
+
+**Example:**
+
+```markdown
+## [Unreleased]
+
+<!-- As of 03b9e3a9d -->
+
+### Major Changes
+```
+
+### Marker Lifecycle
+
+1. **Parsing** - `erk-dev changelog-commits` reads the marker to find the starting point
+2. **Querying** - `git log {marker_hash}..HEAD --first-parent` gets new commits
+3. **Updating** - After adding entries, marker is updated to current HEAD
 
 **Why `--first-parent`:** Without it, squash-merged PRs would expose individual feature branch commits that are already consolidated into the squash commit's entry.
 
-**Missing marker recovery:** If the marker is accidentally deleted, the categorizer agent falls back to finding the last release version header and using `--since` to specify a commit directly. This is documented in the categorizer agent's error handling.
+### Missing Marker Recovery
+
+If the marker is accidentally deleted, `erk-dev changelog-commits` has a built-in fallback: it parses the most recent release version from CHANGELOG.md and resolves the corresponding git tag to find the starting commit. The categorizer agent can also use `--since` to specify a commit directly.
+
+The fallback path in `changelog_commits/command.py`:
+
+1. `parse_last_release_version()` finds the first version header after `[Unreleased]` (e.g., `0.7.0`)
+2. `get_release_tag_commit()` resolves the git tag `v{version}` via `git rev-parse --verify v0.7.0^{commit}`
+3. Uses that tag commit as the marker, same as normal flow
+
+The categorizer agent can also bypass marker parsing entirely: `erk-dev changelog-commits --since {release_hash} --json-output`
 
 ## Entry Writing Decisions
 
@@ -60,7 +155,35 @@ The hardest judgment call in changelog writing is framing. The same change can b
 **WRONG** (implementation-focused): "Refactor discover-reviews to use REST API instead of GraphQL"
 **RIGHT** (user-focused): "Fix discover-reviews for large PRs by switching to REST API with pagination"
 
+More examples:
+
+**Good (user-focused):**
+
+- "Fix discover-reviews for large PRs by switching to REST API with pagination"
+- "Auto-fix Graphite tracking divergence in sync and branch creation"
+
+**Bad (implementation-focused):**
+
+- "Refactor discover-reviews to use REST API instead of GraphQL"
+- "Add tracking divergence detection logic to sync command"
+
 The test: describe the **problem solved or behavior changed**, not the technical approach. The implementation is available via the commit hash.
+
+### Imperative Verb Convention
+
+Entries use imperative mood verbs (matching `/local:changelog-update` which instructs "Start with a verb: Add, Fix, Improve, Remove, Move, Migrate"):
+
+**Good:**
+
+- "Add plan review workflow"
+- "Fix detached HEAD state"
+- "Remove fallback indicator"
+
+**Bad:**
+
+- "Added plan review workflow"
+- "Fixed detached HEAD state"
+- "Removed fallback indicator"
 
 ### When Entries Become Major Changes
 
@@ -80,7 +203,45 @@ The presentation should describe the **complete feature**, not the implementatio
 
 Categories follow a fixed order: Major Changes, Added, Changed, Fixed, Removed. Empty categories are omitted entirely — don't include empty headers. This order puts the most significant changes first.
 
+**Example:**
+
+```markdown
+## [Unreleased]
+
+<!-- As of {hash} -->
+
+### Major Changes
+
+- ...
+
+### Added
+
+- ...
+
+### Fixed
+
+- ...
+```
+
+(No "Changed" or "Removed" sections if they're empty)
+
 ## Release Workflow Decisions
+
+### Release Section Header Format
+
+```markdown
+## [{version}] - {date} {time} {timezone}
+```
+
+**Example:**
+
+```markdown
+## [0.7.0] - 2026-01-24 15:12 PT
+
+### Release Overview
+
+This release adds remote execution capabilities, plan replanning workflows, and numerous TUI improvements for managing plans and PRs.
+```
 
 ### Minor vs Patch Releases
 

@@ -5,14 +5,14 @@ read_when:
   - "testing exec scripts that use gateways"
   - "understanding exec script architecture"
   - "migrating exec scripts from subprocess to gateways"
-last_audited: "2026-02-11"
+last_audited: "2026-02-08"
 audit_result: clean
 tripwires:
-  - action: "creating gateway instances in business logic"
+  - action: "implementing business logic with gateways"
     warning: "Never create gateway instances in business logic — inject them as parameters"
-  - action: "calling sys.exit() in _*_impl() functions"
+  - action: "implementing internal CLI functions"
     warning: "Separate _*_impl() functions return exit codes or discriminated unions, never call sys.exit()"
-  - action: "creating gateway instances directly in Click commands"
+  - action: "retrieving dependencies in Click commands"
     warning: "Click commands retrieve real implementations from context via require_* helpers"
 ---
 
@@ -45,55 +45,15 @@ Exec scripts use Click's context injection to enable fast, subprocess-free testi
 
 <!-- Source: src/erk/cli/commands/exec/scripts/ci_verify_autofix.py, _verify_autofix_impl() -->
 
-Business logic functions accept gateway ABCs as keyword-only parameters:
+Business logic functions accept gateway ABCs as keyword-only parameters. The Click command handles instantiation, passing real implementations from context. Tests pass fakes directly.
 
-```python
-# WRONG: Hardcoded gateway instantiation in business logic
-def _my_impl() -> int:
-    ci_runner = RealCIRunner()  # ❌ Tests cannot substitute fakes
-    result = ci_runner.run_check(...)
-    return 0 if result.passed else 1
-
-# CORRECT: Injected gateway ABC
-def _my_impl(*, ci_runner: CIRunner) -> int:
-    result = ci_runner.run_check(...)
-    return 0 if result.passed else 1
-```
-
-The Click command handles instantiation, passing real implementations from context. Tests pass fakes directly.
-
-See `_verify_autofix_impl()` in `src/erk/cli/commands/exec/scripts/ci_verify_autofix.py` for the canonical example.
+See `_verify_autofix_impl()` in `src/erk/cli/commands/exec/scripts/ci_verify_autofix.py` for the canonical example — it accepts `CIRunner` and `GitHub` ABCs as keyword-only parameters, never instantiating concrete implementations.
 
 ## Context Retrieval Pattern
 
 <!-- Source: packages/erk-shared/src/erk_shared/context/helpers.py -->
 
-Click commands use `require_*` helpers to extract typed dependencies from the Click context:
-
-```python
-@click.command()
-@click.pass_context
-def my_command(ctx: click.Context) -> None:
-    # Extract dependencies using LBYL helpers
-    cwd = require_cwd(ctx)
-    git = require_git(ctx)
-    github = require_github(ctx)
-
-    # Instantiate any gateways not in context
-    ci_runner = RealCIRunner()
-
-    # Pass to business logic
-    result = _my_command_impl(
-        cwd=cwd,
-        git=git,
-        github=github,
-        ci_runner=ci_runner,
-    )
-
-    # Handle exit code or output
-    if isinstance(result, ErrorType):
-        raise SystemExit(1)
-```
+Click commands use `require_*` helpers to extract typed dependencies from the Click context. The pattern: (1) extract dependencies via `require_*`, (2) instantiate any gateways not in context, (3) pass all dependencies to `_*_impl()`, (4) handle result.
 
 See `packages/erk-shared/src/erk_shared/context/helpers.py` for all available `require_*` helpers.
 
@@ -101,32 +61,7 @@ See `packages/erk-shared/src/erk_shared/context/helpers.py` for all available `r
 
 <!-- Source: tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py -->
 
-Tests bypass Click entirely, calling `_*_impl()` directly with fakes:
-
-```python
-def test_verify_with_passing_checks(tmp_path: Path) -> None:
-    # Create fakes with desired behavior
-    github = FakeGitHub()
-    ci_runner = FakeCIRunner.create_passing_all()
-
-    # Call business logic directly
-    result = _verify_autofix_impl(
-        original_sha="abc123",
-        repo="owner/repo",
-        cwd=tmp_path,
-        current_sha="def456",
-        github=github,
-        ci_runner=ci_runner,
-    )
-
-    # Assert on result structure
-    assert isinstance(result, VerifySuccess)
-    assert result.new_commit_pushed is True
-
-    # Assert on gateway interactions
-    assert len(github.created_commit_statuses) == 7
-    assert len(ci_runner.check_names_run) == 7
-```
+Tests bypass Click entirely, calling `_*_impl()` directly with fakes. The test creates fakes with desired behavior (e.g., `FakeCIRunner.create_passing_all()`), calls the impl function directly, and asserts on both the result structure and gateway interactions.
 
 See `tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py` for complete test examples.
 
@@ -244,49 +179,9 @@ def _my_impl(*, ci_runner: CIRunner) -> int:
     return 0 if result.passed else 1
 ```
 
-## CLI Command Context Injection
-
-The dependency injection pattern also applies to CLI commands (not just exec scripts).
-
-### Pattern: Prefer `ctx.<gateway>` Over Direct Construction
-
-**Before (anti-pattern):**
-
-```python
-from erk_shared.gateway.github_admin.real import RealGitHubAdmin
-
-admin = RealGitHubAdmin()
-permissions = admin.get_workflow_permissions(location)
-```
-
-**After (correct):**
-
-```python
-admin = ctx.github_admin
-permissions = admin.get_workflow_permissions(location)
-```
-
-### Why This Matters
-
-1. **Testability**: Tests inject `FakeGitHubAdmin` via context
-2. **Dry-run support**: Dry-run mode can inject `DryRunGitHubAdmin`
-3. **Consistency**: Same injection pattern as exec scripts
-4. **Import hygiene**: No direct imports of `Real*` implementations in command files
-
-### Migration Pattern
-
-When refactoring a CLI command to use context injection:
-
-1. Remove `from erk_shared.gateway.*.real import Real*` imports
-2. Replace `Real*()` construction with `ctx.<gateway>`
-3. Verify tests use `erk_isolated_fs_env()` which handles fake injection
-
-This pattern was demonstrated in PR #6860 where `RealGitHubAdmin` was replaced with `ctx.github_admin` in admin.py.
-
 ## Related Documentation
 
 - [Gateway Inventory](../architecture/gateway-inventory.md) — Available gateway ABCs
 - [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) — Creating new gateways
 - [Fake-Driven Testing](../testing/fake-driven-testing.md) — Using gateway fakes in tests
 - [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — Return value patterns
-- [Admin Command Testing](../testing/admin-command-testing.md) — Testing admin commands with FakeGitHubAdmin

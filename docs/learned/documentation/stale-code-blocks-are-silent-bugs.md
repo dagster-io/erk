@@ -46,7 +46,7 @@ Not all code blocks carry this risk. The One Code Rule (defined in `learned-docs
 1. **Data formats** — JSON/YAML/TOML shape examples (structure, not processing logic)
 2. **Third-party API patterns** — Click, pytest, Rich (teaching external APIs that aren't in erk source)
 3. **Anti-patterns marked WRONG** — the wrongness is the point; these are intentionally incorrect
-4. **I/O examples** — CLI commands with expected output, command output format documentation (self-contained, stable)
+4. **I/O examples** — CLI commands with expected output (self-contained, stable)
 
 The decision test is mechanical: "Could an agent get this by reading erk source?" If yes, use a pointer regardless of how short the excerpt is. Partial excerpts ("just the interesting lines") create the same staleness problem as copying the whole function.
 

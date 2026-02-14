@@ -9,6 +9,9 @@ tripwires:
     warning: "Use CodespaceRegistry gateway instead. All codespace config access should go through the gateway for testability."
   - action: "using the field name 'default' in codespaces.toml"
     warning: "The actual field name is 'default_codespace', not 'default'. Check RealCodespaceRegistry in real.py for the schema."
+content_type: third_party_reference
+last_audited: "2026-02-08 13:55 PT"
+audit_result: edited
 ---
 
 # Codespaces TOML Configuration
@@ -38,6 +41,29 @@ Key details:
 - **`default_codespace`** (optional): Friendly name of the default codespace. Omitted (not set to empty string) when no default exists.
 - **`[codespaces.<name>]`**: Each entry requires `gh_name` (GitHub identifier from `gh codespace list`) and `created_at` (ISO 8601 timestamp of registration time).
 
+## CLI Usage
+
+The CLI commands operate through the `erk codespace` group. The actual subcommands are `setup`, `connect`, `list`, `remove`, `set-default`, and `run`.
+
+```bash
+# Create and register a new codespace (also opens SSH for Claude login)
+erk codespace setup dev
+
+# Set the default codespace
+erk codespace set-default dev
+
+# List all registered codespaces
+erk codespace list
+
+# Remove a codespace from the registry (does not delete the GitHub Codespace)
+erk codespace remove dev
+
+# Connect to a codespace
+erk codespace connect dev
+```
+
+See `src/erk/cli/commands/codespace/` for the full command implementations.
+
 ## Design Decisions
 
 ### Why a Separate File from config.toml
@@ -57,6 +83,15 @@ See `RealCodespaceRegistry` in `packages/erk-shared/src/erk_shared/gateway/codes
 ### Dual TOML Libraries
 
 The implementation uses `tomllib` (stdlib, read-only) for loading and `tomlkit` (third-party, format-preserving) for saving. This ensures user comments and formatting survive round-trips through mutation operations.
+
+## Validation
+
+The CodespaceRegistry gateway validates:
+
+- **TOML syntax** — File must be valid TOML (via `tomllib.loads`)
+- **Required fields** — Each codespace must have `gh_name` and `created_at` (enforced by key access in `_codespace_from_dict`)
+- **Unique names** — `register_codespace` raises `ValueError` if a name already exists
+- **Default resolution** — If `default_codespace` names a codespace that doesn't exist, `get_default()` returns `None` (soft failure, not a validation error)
 
 ## Anti-Patterns
 

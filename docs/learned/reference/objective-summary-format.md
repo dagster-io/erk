@@ -1,11 +1,12 @@
 ---
 title: Objective Summary Format
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 13:55 PT"
 audit_result: edited
 read_when:
   - working with objective-next-plan command or objective-view command
   - modifying how objective context flows between agents
   - changing roadmap status inference logic
+  - parsing objective summary JSON output
 tripwires:
   - action: "adding a new roadmap status value"
     warning: "Status inference lives in two places that must stay synchronized: the roadmap parser (objective_roadmap_shared.py) and the agent prompt in objective-next-plan.md. Update both or the formats will diverge."
@@ -27,6 +28,20 @@ Objective context reaches consumers through two separate paths, each with its ow
 These formats exist independently because their consumers have fundamentally different parsing capabilities. The agent text format uses labeled sections (OBJECTIVE, STATUS, ROADMAP, PENDING_STEPS, RECOMMENDED) that a haiku subagent can reliably produce. The programmatic JSON format uses typed fields with nested phase/step structures that code can traverse.
 
 **Anti-pattern:** Asking a Task agent to return the `erk objective check --json-output` format directly. The JSON output has deeply nested phases with validation metadata that agents don't need and can't reliably produce. Use the text format for agent-to-agent communication.
+
+## Agent Text Format Specification
+
+<!-- Source: .claude/commands/erk/objective-next-plan.md, Step 2 -->
+
+Task agents delegated for objective context must return structured output with five labeled sections. The canonical format is defined in the `objective-next-plan.md` command prompt (Step 2). The sections are:
+
+1. **OBJECTIVE** — issue number, title (format: `OBJECTIVE: #<number> — <title>`)
+2. **STATUS** — issue state (`OPEN` or `CLOSED`)
+3. **ROADMAP** — markdown table with columns: Step, Phase, Description, Status (including PR references where applicable)
+4. **PENDING_STEPS** — bullet list of steps with status "pending"
+5. **RECOMMENDED** — the `next_step` from `erk objective check --json-output`, or "none"
+
+This is flat labeled text, not JSON. The format is optimized for haiku-tier agents to produce reliably without JSON serialization errors. Roadmap step statuses use the same values as the parser: `pending`, `done`, `in_progress`, `blocked`, `skipped`.
 
 ## Status Inference: The Cross-Cutting Concern
 

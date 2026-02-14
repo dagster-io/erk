@@ -43,19 +43,11 @@ Registration requires **two steps** in `registry.py`:
 
 ### Anti-Pattern: Import Without Instantiation
 
-```python
-# registry.py
-from erk.capabilities.reminders.my_reminder import MyReminderCapability  # ✓ Imported
+Importing the capability class but forgetting to add it to the `_all_capabilities()` tuple results in silent failure: CLI commands won't list it, hooks won't check it, `get_capability("my-reminder")` returns `None`. The class exists but is invisible to the system.
 
-@cache
-def _all_capabilities() -> tuple[Capability, ...]:
-    return (
-        DevrunReminderCapability(),
-        # MyReminderCapability() MISSING  # ✗ Never instantiated
-    )
-```
+<!-- Source: src/erk/core/capabilities/registry.py, _all_capabilities -->
 
-**Result:** CLI commands won't list it. Hooks won't check it. `get_capability("my-reminder")` returns `None`. The class exists but is invisible to the system.
+See the `_all_capabilities()` tuple in `src/erk/core/capabilities/registry.py` for the registration pattern.
 
 ## Decision Table: Which Base Class?
 

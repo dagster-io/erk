@@ -1,17 +1,18 @@
 ---
 title: Forge Vite Setup
-last_audited: "2026-02-08"
+content_type: reference-cache
+last_audited: "2026-02-08 13:55 PT"
 audit_result: clean
 read_when:
   - "debugging Vite build errors in erkdesk"
   - "adding a new Vite build target or renderer window"
   - "understanding why a config setting exists in a specific Vite config"
 tripwires:
-  - action: "adding Node.js builtins or electron to renderer Vite config"
+  - action: "configuring Vite renderer targets"
     warning: "Do NOT add Node.js builtins or electron to the renderer Vite config — renderer is a browser environment"
-  - action: "removing external electron from preload Vite config"
+  - action: "configuring Vite preload externals"
     warning: "Do NOT remove external electron from the preload config — bundling electron causes runtime failures"
-  - action: "combining all three targets in one Vite config"
+  - action: "consolidating Vite configs"
     warning: "Do NOT put all three targets in one Vite config — each targets a different JavaScript runtime"
 ---
 
@@ -42,6 +43,94 @@ The preload script **must** externalize `electron` because Electron provides thi
 <!-- Source: erkdesk/vite.main.config.ts, resolve.mainFields -->
 
 The main process overrides Vite's default `mainFields` to prefer ESM entry points (`module`, `jsnext:main`, `jsnext`). Electron's Node.js runtime supports both CommonJS and ESM, but ESM enables tree-shaking that significantly reduces bundle size for dependencies with dual module formats.
+
+## Configuration Reference
+
+### forge.config.ts
+
+```typescript
+import type { ForgeConfig } from "@electron-forge/shared-types";
+import { VitePlugin } from "@electron-forge/plugin-vite";
+import { MakerZIP } from "@electron-forge/maker-zip";
+
+const config: ForgeConfig = {
+  packagerConfig: {
+    asar: true, // Package app into ASAR archive
+  },
+  makers: [new MakerZIP({}, ["darwin", "linux", "win32"])],
+  plugins: [
+    new VitePlugin({
+      build: [
+        {
+          entry: "src/main/index.ts",
+          config: "vite.main.config.ts",
+          target: "main",
+        },
+        {
+          entry: "src/main/preload.ts",
+          config: "vite.preload.config.ts",
+          target: "preload",
+        },
+      ],
+      renderer: [
+        {
+          name: "main_window",
+          config: "src/renderer/vite.config.ts",
+        },
+      ],
+    }),
+  ],
+};
+```
+
+### vite.main.config.ts
+
+```typescript
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  resolve: {
+    mainFields: ["module", "jsnext:main", "jsnext"],
+  },
+});
+```
+
+### vite.preload.config.ts
+
+```typescript
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      external: ["electron"],
+    },
+  },
+});
+```
+
+### src/renderer/vite.config.ts
+
+```typescript
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+});
+```
+
+### vitest.config.ts setupFiles
+
+Test configuration uses `setupFiles` to load test utilities before each test file. The Vitest config is separate from the build configs — it targets Node.js for running component and unit tests.
+
+### MakerZIP Configuration
+
+```typescript
+makers: [new MakerZIP({}, ["darwin", "linux", "win32"])];
+```
+
+Platforms: macOS (darwin), Linux, and Windows (win32). ZIP provides simple cross-platform distribution without platform-specific installers.
 
 ## Dev vs Production vs Distribution
 
@@ -76,7 +165,22 @@ Common failure patterns:
 
 ## Adding a New Renderer Window
 
-Each renderer entry in `forge.config.ts` gets its own Vite dev server and independent build. To add a second window, add a new entry to the `renderer` array in `forge.config.ts` with a unique `name` and its own Vite config file. The new config follows the same pattern as `src/renderer/vite.config.ts` — browser-targeted with the React plugin.
+Each renderer entry in `forge.config.ts` gets its own Vite dev server and independent build. To add a second window, add a new entry to the `renderer` array in `forge.config.ts` with a unique `name` and its own Vite config file:
+
+```typescript
+renderer: [
+  {
+    name: "main_window",
+    config: "src/renderer/vite.config.ts",
+  },
+  {
+    name: "settings_window",
+    config: "src/settings/vite.config.ts", // New config
+  },
+];
+```
+
+The new config follows the same pattern as `src/renderer/vite.config.ts` — browser-targeted with the React plugin.
 
 ## Related Documentation
 

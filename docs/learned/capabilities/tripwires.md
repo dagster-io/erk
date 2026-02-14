@@ -12,8 +12,6 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
-**CRITICAL: Before adding top-level imports for artifacts.state in workflow capabilities** → Read [Adding Workflow Capabilities](adding-workflows.md) first. Use inline imports for artifacts.state to avoid circular dependencies
-
 **CRITICAL: Before capability not appearing in hooks or CLI** → Read [Adding New Capabilities](adding-new-capabilities.md) first. Class MUST be imported AND instantiated in registry.py \_all_capabilities() tuple. Missing registration causes silent failures—class exists but is never discovered.
 
 **CRITICAL: Before creating a new capability type with custom installation logic** → Read [Adding New Capabilities](adding-new-capabilities.md) first. Don't subclass Capability directly unless needed. Use SkillCapability or ReminderCapability for 90% of cases—they handle state management automatically.
@@ -22,9 +20,11 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before creating a skill capability** → Read [Adding Skill Capabilities](adding-skills.md) first. Bundled content directory must exist or install() silently creates empty skill directory. See silent failure modes below.
 
-**CRITICAL: Before extending a base class for workflow capabilities** → Read [Adding Workflow Capabilities](adding-workflows.md) first. Workflow capabilities extend Capability directly, not a template base class
+**CRITICAL: Before implementing workflow capabilities** → Read [Adding Workflow Capabilities](adding-workflows.md) first. Workflow capabilities extend Capability directly, not a template base class
 
-**CRITICAL: Before placing workflow files in incorrect bundled artifacts location** → Read [Adding Workflow Capabilities](adding-workflows.md) first. Workflows must exist in bundled artifacts path resolved by get_bundled_github_dir()
+**CRITICAL: Before importing artifacts.state in workflow capabilities** → Read [Adding Workflow Capabilities](adding-workflows.md) first. Use inline imports for artifacts.state to avoid circular dependencies
+
+**CRITICAL: Before installing workflow artifacts** → Read [Adding Workflow Capabilities](adding-workflows.md) first. Workflows must exist in bundled artifacts path resolved by get_bundled_github_dir()
 
 **CRITICAL: Before review capability installation fails** → Read [Adding Review Capabilities](adding-reviews.md) first. ReviewCapability has automatic preflight check for code-reviews-system workflow. Install will fail if .github/workflows/code-reviews.yml doesn't exist in target repo. Install code-reviews-system capability first.
 
