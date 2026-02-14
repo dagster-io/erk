@@ -15,6 +15,7 @@ import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 
 from erk_shared.gateway.github.metadata.core import (
     create_worktree_creation_block,
@@ -82,11 +83,15 @@ def get_impl_path(worktree_path: Path, git_ops=None) -> Path | None:
     return None
 
 
+PlanProviderType = Literal["github"]
+"""Supported plan providers. Only "github" for now; extend when adding new providers."""
+
+
 @dataclass(frozen=True)
 class PlanRef:
     """Provider-agnostic reference to a plan, stored in .impl/plan-ref.json."""
 
-    provider: str  # "github", "linear", etc.
+    provider: PlanProviderType
     plan_id: str  # Provider-specific ID as string ("42", "PROJ-123")
     url: str  # Web URL to view the plan
     created_at: str  # ISO 8601 UTC timestamp of local file creation
@@ -120,7 +125,7 @@ class LocalRunState:
 def save_plan_ref(
     impl_dir: Path,
     *,
-    provider: str,
+    provider: PlanProviderType,
     plan_id: str,
     url: str,
     labels: tuple[str, ...],
@@ -130,7 +135,7 @@ def save_plan_ref(
 
     Args:
         impl_dir: Path to .impl/ directory
-        provider: Plan provider ("github", "linear", etc.)
+        provider: Plan provider type
         plan_id: Provider-specific ID as string ("42", "PROJ-123")
         url: Web URL to view the plan
         labels: Plan labels
