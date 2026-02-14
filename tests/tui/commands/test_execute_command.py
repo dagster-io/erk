@@ -1,5 +1,6 @@
 """Tests for PlanDetailScreen.execute_command."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.tui.app import PlanDetailScreen
@@ -176,6 +177,8 @@ class TestExecuteCommandClosePlan:
             learn_display_icon="-",
             objective_issue=None,
             objective_display="-",
+            created_at=datetime(2025, 1, 1, tzinfo=UTC),
+            created_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
@@ -242,6 +245,8 @@ class TestExecuteCommandSubmitToQueue:
             learn_display_icon="-",
             objective_issue=None,
             objective_display="-",
+            created_at=datetime(2025, 1, 1, tzinfo=UTC),
+            created_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)

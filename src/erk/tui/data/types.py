@@ -52,6 +52,8 @@ class PlanRowData:
         learn_display_icon: Icon-only display for table ("-", "⟳", "∅", "#456", "✓ #12")
         objective_issue: Objective issue number (for linking plans to objectives)
         objective_display: Formatted display string (e.g., "#123" or "-")
+        created_at: Creation datetime of the issue
+        created_display: Formatted relative time string (e.g., "2d ago")
     """
 
     issue_number: int
@@ -92,6 +94,8 @@ class PlanRowData:
     learn_display_icon: str
     objective_issue: int | None
     objective_display: str
+    created_at: datetime
+    created_display: str
 
 
 @dataclass(frozen=True)

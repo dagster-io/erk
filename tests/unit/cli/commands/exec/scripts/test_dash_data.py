@@ -64,6 +64,8 @@ def test_serialize_plan_row_datetime_fields() -> None:
         learn_display_icon="-",
         objective_issue=None,
         objective_display="-",
+        created_at=now,
+        created_display="-",
     )
 
     result = _serialize_plan_row(row)
@@ -113,6 +115,8 @@ def test_serialize_plan_row_tuple_to_list() -> None:
         learn_display_icon="-",
         objective_issue=None,
         objective_display="-",
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
+        created_display="-",
     )
 
     result = _serialize_plan_row(row)
@@ -184,6 +188,8 @@ def test_serialize_plan_row_all_fields_present() -> None:
         "learn_display_icon",
         "objective_issue",
         "objective_display",
+        "created_at",
+        "created_display",
     }
     assert set(result.keys()) == expected_fields
 
@@ -230,6 +236,8 @@ def test_serialize_plan_row_json_roundtrip() -> None:
         learn_display_icon="⟳",
         objective_issue=100,
         objective_display="#100",
+        created_at=now,
+        created_display="-",
     )
 
     result = _serialize_plan_row(row)
