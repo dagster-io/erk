@@ -18,32 +18,15 @@ from erk.agent_docs.operations import (
 from erk.cli.subprocess_utils import run_with_error_reporting
 
 
-@click.command(name="check")
-def check_command() -> None:
-    """Check agent documentation health.
+def run_check(project_root: Path) -> None:
+    """Run agent documentation health checks against a project root.
 
-    Runs two validation phases:
-    1. Frontmatter validation - ensures all docs have required fields
-    2. Sync check - ensures generated index/tripwire files are up to date
+    This is the testable core of the check command. It validates frontmatter
+    and checks that generated index/tripwire files are in sync.
 
-    This is the unified health check command used in CI.
-
-    Exit codes:
-    - 0: All checks passed
-    - 1: One or more checks failed
+    Raises:
+        SystemExit: With code 0 if no docs found, code 1 if checks fail.
     """
-    # Find repository root
-    result = run_with_error_reporting(
-        ["git", "rev-parse", "--show-toplevel"],
-        error_prefix="Failed to find repository root",
-        troubleshooting=["Ensure you're running from within a git repository"],
-    )
-    project_root = Path(result.stdout.strip())
-
-    if not project_root.exists():
-        click.echo(click.style("Error: Repository root not found", fg="red"), err=True)
-        raise SystemExit(1)
-
     agent_docs_dir = project_root / "docs" / "learned"
     if not agent_docs_dir.exists():
         click.echo(click.style("No docs/learned/ directory found", fg="cyan"), err=True)
@@ -162,3 +145,32 @@ def check_command() -> None:
             click.echo("Run 'erk docs sync' to regenerate files from frontmatter.", err=True)
 
         raise SystemExit(1)
+
+
+@click.command(name="check")
+def check_command() -> None:
+    """Check agent documentation health.
+
+    Runs two validation phases:
+    1. Frontmatter validation - ensures all docs have required fields
+    2. Sync check - ensures generated index/tripwire files are up to date
+
+    This is the unified health check command used in CI.
+
+    Exit codes:
+    - 0: All checks passed
+    - 1: One or more checks failed
+    """
+    # Find repository root
+    result = run_with_error_reporting(
+        ["git", "rev-parse", "--show-toplevel"],
+        error_prefix="Failed to find repository root",
+        troubleshooting=["Ensure you're running from within a git repository"],
+    )
+    project_root = Path(result.stdout.strip())
+
+    if not project_root.exists():
+        click.echo(click.style("Error: Repository root not found", fg="red"), err=True)
+        raise SystemExit(1)
+
+    run_check(project_root)
