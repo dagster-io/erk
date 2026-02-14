@@ -56,6 +56,7 @@ from erk.core.worktree_pool import (
 )
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_learn_status,
     extract_plan_header_learned_from_issue,
@@ -594,12 +595,14 @@ def _store_learn_materials_gist_url(
         )
         return
 
-    try:
-        updated_body = update_plan_header_learn_materials_gist_url(issue.body, gist_url)
-    except ValueError as e:
-        user_output(click.style("⚠ ", fg="yellow") + f"Could not store gist URL: {e}")
+    if find_metadata_block(issue.body, "plan-header") is None:
+        user_output(
+            click.style("⚠ ", fg="yellow")
+            + "Could not store gist URL: plan-header block not found in issue body"
+        )
         return
 
+    updated_body = update_plan_header_learn_materials_gist_url(issue.body, gist_url)
     ctx.issues.update_issue_body(repo_root, plan_issue_number, BodyText(content=updated_body))
 
 
