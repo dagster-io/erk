@@ -1,5 +1,7 @@
 """Plan command group."""
 
+from pathlib import Path
+
 import click
 
 from erk.cli.capability_check import is_learned_docs_available
@@ -12,6 +14,7 @@ from erk.cli.commands.plan.log_cmd import plan_log
 from erk.cli.commands.plan.replan_cmd import replan_plan
 from erk.cli.commands.plan.view import view_plan
 from erk.cli.commands.submit import submit_cmd
+from erk_shared.gateway.git.repo_ops.real import RealGitRepoOps
 
 
 @click.group("plan")
@@ -24,7 +27,7 @@ plan_group.add_command(check_plan)
 plan_group.add_command(checkout_plan, name="co")
 plan_group.add_command(close_plan)
 plan_group.add_command(create_plan, name="create")
-if is_learned_docs_available():
+if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
     from erk.cli.commands.plan.docs import docs_group
     from erk.cli.commands.plan.learn import learn_group
 

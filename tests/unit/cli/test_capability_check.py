@@ -1,9 +1,9 @@
 """Tests for capability_check module."""
 
 from pathlib import Path
-from unittest.mock import patch
 
 from erk.cli.capability_check import is_learned_docs_available
+from erk_shared.gateway.git.repo_ops.fake import FakeGitRepoOps
 
 
 class TestIsLearnedDocsAvailable:
@@ -14,39 +14,30 @@ class TestIsLearnedDocsAvailable:
         docs_dir = tmp_path / "docs" / "learned"
         docs_dir.mkdir(parents=True)
 
-        with (
-            patch("erk.cli.capability_check.RealGitRepoOps") as mock_repo_ops_cls,
-        ):
-            mock_repo_ops = mock_repo_ops_cls.return_value
-            mock_repo_ops.get_git_common_dir.return_value = tmp_path / ".git"
-            mock_repo_ops.get_repository_root.return_value = tmp_path
+        repo_ops = FakeGitRepoOps(
+            git_common_dirs={tmp_path: tmp_path / ".git"},
+            repository_roots={tmp_path: tmp_path},
+        )
 
-            result = is_learned_docs_available()
+        result = is_learned_docs_available(repo_ops=repo_ops, cwd=tmp_path)
 
         assert result is True
 
     def test_returns_false_when_docs_learned_missing(self, tmp_path: Path) -> None:
         """Returns False when docs/learned/ does not exist."""
-        with (
-            patch("erk.cli.capability_check.RealGitRepoOps") as mock_repo_ops_cls,
-        ):
-            mock_repo_ops = mock_repo_ops_cls.return_value
-            mock_repo_ops.get_git_common_dir.return_value = tmp_path / ".git"
-            mock_repo_ops.get_repository_root.return_value = tmp_path
+        repo_ops = FakeGitRepoOps(
+            git_common_dirs={tmp_path: tmp_path / ".git"},
+            repository_roots={tmp_path: tmp_path},
+        )
 
-            result = is_learned_docs_available()
+        result = is_learned_docs_available(repo_ops=repo_ops, cwd=tmp_path)
 
         assert result is False
 
-    def test_returns_false_outside_git_repo(self) -> None:
+    def test_returns_false_outside_git_repo(self, tmp_path: Path) -> None:
         """Returns False when not in a git repository."""
-        with (
-            patch("erk.cli.capability_check.RealGitRepoOps") as mock_repo_ops_cls,
-        ):
-            mock_repo_ops = mock_repo_ops_cls.return_value
-            mock_repo_ops.get_git_common_dir.return_value = None
+        repo_ops = FakeGitRepoOps()
 
-            result = is_learned_docs_available()
+        result = is_learned_docs_available(repo_ops=repo_ops, cwd=tmp_path)
 
         assert result is False
-        mock_repo_ops.get_repository_root.assert_not_called()

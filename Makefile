@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check erkdesk-install erkdesk-start erkdesk-package erkdesk-make erkdesk-test erkdesk-test-watch
+.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check erkdesk-install erkdesk-start erkdesk-package erkdesk-make erkdesk-test erkdesk-test-watch
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -62,6 +62,9 @@ test-all: test-all-erk test-erk-dev
 md-check:
 	uv run erk md check
 
+docs-check:
+	uv run erk docs check
+
 docs-validate:
 	uv run erk docs validate
 
@@ -109,6 +112,7 @@ all-ci:
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run erk md check || exit_code=1; \
+	echo "\n--- Docs Check ---" && uv run erk docs check || exit_code=1; \
 	echo "\n--- Exec Reference Check ---" && uv run erk-dev gen-exec-reference-docs --check || exit_code=1; \
 	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \

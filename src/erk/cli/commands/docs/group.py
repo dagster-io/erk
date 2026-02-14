@@ -2,6 +2,7 @@
 
 import click
 
+from erk.cli.commands.docs.check import check_command
 from erk.cli.commands.docs.sync import sync_command
 from erk.cli.commands.docs.validate import validate_command
 
@@ -12,5 +13,6 @@ def docs_group() -> None:
 
 
 # Register commands
+docs_group.add_command(check_command)
 docs_group.add_command(sync_command)
 docs_group.add_command(validate_command)
