@@ -139,8 +139,6 @@ For each section of the document, classify it into one of these value categories
 
 **Reference cache awareness:** Third-party reference tables and discovered API quirks are NOT duplicative just because the information exists in external documentation. The value is the cached distillation itself. Undocumented quirks discovered through usage are especially high-value — they are literally undiscoverable from official sources.
 
-**Reference cache awareness:** Third-party reference tables and discovered API quirks are NOT duplicative just because the information exists in external documentation. The value is the cached distillation itself. Undocumented quirks discovered through usage are especially high-value — they are literally undiscoverable from official sources.
-
 Apply the content quality standards from the `learned-docs` skill's core rules doc to classify each section. Specifically:
 
 - **Code blocks**: High-drift-risk by default. Apply the skill's "One Code Rule" and four exceptions to determine keep/remove.
