@@ -6,7 +6,7 @@ read_when:
   - refactoring command dispatch systems
 tripwires:
   - action: "Before removing CLI command functions, workflow triggers, or command infrastructure"
-    warning: "When removing command infrastructure: (1) Search for command name in WORKFLOW_COMMAND_MAP and similar dispatch maps in src/erk/cli/constants.py, (2) Remove or update map entries that reference the deleted function, (3) Verify no dead references remain using grep -r \"command_name\" src/erk/cli/, (4) Check for related test files that should be removed"
+    warning: 'When removing command infrastructure: (1) Search for command name in WORKFLOW_COMMAND_MAP and similar dispatch maps in src/erk/cli/constants.py, (2) Remove or update map entries that reference the deleted function, (3) Verify no dead references remain using grep -r "command_name" src/erk/cli/, (4) Check for related test files that should be removed'
     score: 6
 last_audited: "2026-02-14"
 audit_result: clean
