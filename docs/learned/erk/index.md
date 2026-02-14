@@ -7,6 +7,7 @@
 - **[codespace-machine-types.md](codespace-machine-types.md)** — creating or configuring codespaces, choosing a machine type for codespace setup, debugging codespace creation failures
 - **[codespace-remote-execution.md](codespace-remote-execution.md)** — modifying the codespace environment bootstrap sequence, debugging why a remote erk command fails before reaching the actual command, deciding whether a new remote command needs build_codespace_ssh_command
 - **[graphite-branch-setup.md](graphite-branch-setup.md)** — submitting a PR with Graphite, encountering no_parent error, setting up branch tracking for gt
+- **[graphite-stack-troubleshooting.md](graphite-stack-troubleshooting.md)** — PR submission fails with 'no changes' error, Graphite stack has empty branches, debugging gt upstack onto failures
 - **[issue-pr-linkage-storage.md](issue-pr-linkage-storage.md)** — understanding how plans link to PRs, debugging why a PR isn't linked to its issue, working with .impl/issue.json, creating PRs that close issues
 - **[placeholder-branches.md](placeholder-branches.md)** — working with worktree pool slots or slot commands, understanding why placeholder branches bypass BranchManager, debugging slot cleanup during erk land
 - **[pr-address-workflows.md](pr-address-workflows.md)** — addressing PR review comments, choosing between local and remote PR addressing, understanding erk launch pr-address, understanding /erk:pr-address command

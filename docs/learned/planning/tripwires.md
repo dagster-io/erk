@@ -126,6 +126,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before running /erk:learn on an issue that already has the erk-learn label** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plans cannot generate additional learn plans — this creates documentation cycles. The learn command validates this upfront and rejects learn-on-learn.
 
+**CRITICAL: Before running `erk:pr-submit` or PR submission workflows** → Read [PR Submission Patterns](pr-submission-patterns.md) first. Check `git log <parent>..HEAD` shows at least 1 commit. If empty, investigate stack structure with `gt info` and `gt ls`. Read Graphite Stack Troubleshooting first.
+
 **CRITICAL: Before running sequential analysis that could be parallelized** → Read [Multi-Tier Agent Orchestration](agent-orchestration.md) first. If agents analyze independent data sources, run them in parallel. Only use sequential execution when one agent's output is another's input.
 
 **CRITICAL: Before saving a plan with --objective-issue flag** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.

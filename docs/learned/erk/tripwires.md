@@ -12,6 +12,8 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+**CRITICAL: Before Before submitting PRs in Graphite stacks** → Read [Graphite Stack Troubleshooting](graphite-stack-troubleshooting.md) first. Validate all ancestor branches have commits. Empty branches block entire stack. Use `gt info` to diagnose, `gt upstack onto` to fix.
+
 **CRITICAL: Before adding a new step to the bootstrap sequence** → Read [Codespace Remote Execution Pattern](codespace-remote-execution.md) first. This affects ALL remote commands. The bootstrap runs on every SSH invocation, so added steps must be idempotent and fast.
 
 **CRITICAL: Before constructing a checkout footer string manually** → Read [PR Checkout Footer Validation Pattern](pr-commands.md) first. Use build_pr_body_footer() from the gateway layer. Manual construction risks format drift from the validator regex.
