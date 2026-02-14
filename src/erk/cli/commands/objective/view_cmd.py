@@ -37,12 +37,13 @@ def _format_field(label: str, value: str) -> str:
     return f"{styled_label} {value}"
 
 
-def _format_step_status(status: str, pr: str | None) -> str:
+def _format_step_status(status: str, *, plan: str | None, pr: str | None) -> str:
     """Format step status indicator with emoji and color.
 
     Args:
         status: Step status ("done", "in_progress", "pending", "blocked", "skipped")
-        pr: PR reference (e.g., "#123" or "plan #123") or None
+        plan: Plan reference (e.g., "#6464") or None
+        pr: PR reference (e.g., "#123") or None
 
     Returns:
         Formatted status string with emoji
@@ -50,8 +51,8 @@ def _format_step_status(status: str, pr: str | None) -> str:
     if status == "done":
         return click.style("✅ done", fg="green")
     if status == "in_progress":
-        pr_text = f" {pr}" if pr else ""
-        return click.style(f"🔄 in_progress{pr_text}", fg="yellow")
+        ref_text = f" plan {plan}" if plan else ""
+        return click.style(f"🔄 in_progress{ref_text}", fg="yellow")
     if status == "blocked":
         return click.style("🚫 blocked", fg="red")
     if status == "skipped":
@@ -151,11 +152,15 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
 
             # Display steps
             for step in phase.steps:
-                status_display = _format_step_status(step.status, step.pr)
+                status_display = _format_step_status(step.status, plan=step.plan, pr=step.pr)
 
-                # Right-align PR column
+                # Show plan and PR as separate columns
+                plan_col = "-" if step.plan is None else step.plan
                 pr_col = "-" if step.pr is None else step.pr
-                step_line = f"  {step.id:5} {status_display:30} {step.description:50} {pr_col}"
+                step_line = (
+                    f"  {step.id:5} {status_display:30}"
+                    f" {step.description:50} {plan_col:10} {pr_col}"
+                )
                 user_output(step_line)
 
             user_output("")

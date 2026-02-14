@@ -16,7 +16,8 @@ class RoadmapStep:
     id: str
     description: str
     status: str  # "pending", "done", "in_progress", "blocked", "skipped"
-    pr: str | None  # None, "#123", or "plan #123"
+    plan: str | None  # None or "#123" (plan issue number)
+    pr: str | None  # None or "#456" (landed PR number)
 
 
 @dataclass(frozen=True)
@@ -139,24 +140,39 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
         phase_body = body[phase_start:phase_end]
 
         # Find the table in this phase section
-        # Table header: | Step | Description | Status | PR |
-        table_header_pattern = re.compile(
+        # Try 5-col header first: | Step | Description | Status | Plan | PR |
+        five_col_header = re.compile(
+            r"^\|\s*Step\s*\|\s*Description\s*\|\s*Status\s*\|\s*Plan\s*\|\s*PR\s*\|$",
+            re.MULTILINE | re.IGNORECASE,
+        )
+        four_col_header = re.compile(
             r"^\|\s*Step\s*\|\s*Description\s*\|\s*Status\s*\|\s*PR\s*\|$",
             re.MULTILINE | re.IGNORECASE,
         )
-        header_match = table_header_pattern.search(phase_body)
 
-        if not header_match:
+        header_match = five_col_header.search(phase_body)
+        is_five_col = header_match is not None
+        if header_match is None:
+            header_match = four_col_header.search(phase_body)
+
+        if header_match is None:
             validation_errors.append(
                 f"Phase {phase_number} is missing roadmap table "
-                f"(expected header: | Step | Description | Status | PR |)"
+                f"(expected header: | Step | Description | Status | Plan | PR |)"
             )
             continue
 
         # Find table rows after the separator line
-        # Skip the separator line (|---|---|---|---|)
         table_start = header_match.end()
-        separator_pattern = re.compile(r"^\|[\s:-]+\|[\s:-]+\|[\s:-]+\|[\s:-]+\|$", re.MULTILINE)
+        sep_cell = r"[\s:-]+"
+        if is_five_col:
+            separator_pattern = re.compile(
+                r"^\|" + r"\|".join([sep_cell] * 5) + r"\|$", re.MULTILINE
+            )
+        else:
+            separator_pattern = re.compile(
+                r"^\|" + r"\|".join([sep_cell] * 4) + r"\|$", re.MULTILINE
+            )
         separator_match = separator_pattern.search(phase_body[table_start:])
 
         if not separator_match:
@@ -164,9 +180,12 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             continue
 
         rows_start = table_start + separator_match.end()
-        # Extract all rows until we hit a blank line or non-table content
         rows_text = phase_body[rows_start:]
-        row_pattern = re.compile(r"^\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$", re.MULTILINE)
+
+        if is_five_col:
+            row_pattern = re.compile(r"^\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$", re.MULTILINE)
+        else:
+            row_pattern = re.compile(r"^\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$", re.MULTILINE)
         row_matches = row_pattern.finditer(rows_text)
 
         steps: list[RoadmapStep] = []
@@ -174,7 +193,22 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             step_id = row_match.group(1).strip()
             description = row_match.group(2).strip()
             status_col = row_match.group(3).strip().lower()
-            pr_col = row_match.group(4).strip()
+
+            if is_five_col:
+                plan_col = row_match.group(4).strip()
+                pr_col = row_match.group(5).strip()
+            else:
+                # 4-col: migrate "plan #NNN" from PR column to plan field
+                raw_pr = row_match.group(4).strip()
+                if raw_pr.startswith("plan #"):
+                    plan_col = "#" + raw_pr[len("plan #") :]
+                    pr_col = "-"
+                else:
+                    plan_col = "-"
+                    pr_col = raw_pr
+
+            plan_value = plan_col if plan_col and plan_col != "-" else None
+            pr_value = pr_col if pr_col and pr_col != "-" else None
 
             # Explicit status values take priority
             if status_col in ("done", "blocked", "skipped"):
@@ -183,10 +217,10 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
                 status = "in_progress"
             elif status_col == "pending":
                 status = "pending"
-            # Fall back to PR-column inference for "-" or legacy values
-            elif pr_col and pr_col.startswith("#"):
+            # Fall back to column inference for "-" or legacy values
+            elif pr_value and pr_value.startswith("#"):
                 status = "done"
-            elif pr_col and pr_col.startswith("plan #"):
+            elif plan_value and plan_value.startswith("#"):
                 status = "in_progress"
             else:
                 status = "pending"
@@ -196,7 +230,8 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
                     id=step_id,
                     description=description,
                     status=status,
-                    pr=pr_col if pr_col and pr_col != "-" else None,
+                    plan=plan_value,
+                    pr=pr_value,
                 )
             )
 
@@ -261,6 +296,7 @@ def serialize_phases(phases: list[RoadmapPhase]) -> list[dict[str, object]]:
                     "id": step.id,
                     "description": step.description,
                     "status": step.status,
+                    "plan": step.plan,
                     "pr": step.pr,
                 }
                 for step in phase.steps

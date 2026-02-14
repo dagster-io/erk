@@ -9,7 +9,27 @@ from erk.cli.commands.exec.scripts.objective_roadmap_shared import (
     serialize_phases,
 )
 
-WELL_FORMED_BODY = """# Objective: Test
+WELL_FORMED_BODY_5COL = """# Objective: Test
+
+## Roadmap
+
+### Phase 1: Foundation
+
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Setup infra | - | - | #100 |
+| 1.2 | Add tests | - | #101 | - |
+| 1.3 | Update docs | - | - | - |
+
+### Phase 2: Core
+
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 2.1 | Build feature | blocked | - | - |
+| 2.2 | Performance | skipped | - | - |
+"""
+
+WELL_FORMED_BODY_4COL = """# Objective: Test
 
 ## Roadmap
 
@@ -30,9 +50,9 @@ WELL_FORMED_BODY = """# Objective: Test
 """
 
 
-def test_parse_roadmap_well_formed() -> None:
-    """Test parsing a well-formed roadmap body."""
-    phases, errors = parse_roadmap(WELL_FORMED_BODY)
+def test_parse_roadmap_5col_well_formed() -> None:
+    """Test parsing a well-formed 5-col roadmap body."""
+    phases, errors = parse_roadmap(WELL_FORMED_BODY_5COL)
 
     assert len(phases) == 2
     assert errors == []
@@ -48,27 +68,71 @@ def test_parse_roadmap_well_formed() -> None:
     assert len(phases[1].steps) == 2
 
 
+def test_parse_roadmap_5col_plan_and_pr_values() -> None:
+    """Test that plan and PR values are parsed correctly from 5-col tables."""
+    phases, _ = parse_roadmap(WELL_FORMED_BODY_5COL)
+    steps = phases[0].steps
+
+    assert steps[0].plan is None
+    assert steps[0].pr == "#100"
+    assert steps[1].plan == "#101"
+    assert steps[1].pr is None
+    assert steps[2].plan is None
+    assert steps[2].pr is None
+
+
+def test_parse_roadmap_5col_status_inference() -> None:
+    """Test that statuses are correctly inferred from plan/PR columns."""
+    phases, _ = parse_roadmap(WELL_FORMED_BODY_5COL)
+    steps = phases[0].steps + phases[1].steps
+
+    assert steps[0].status == "done"  # PR #100
+    assert steps[1].status == "in_progress"  # plan #101
+    assert steps[2].status == "pending"  # no refs
+    assert steps[3].status == "blocked"  # explicit status
+    assert steps[4].status == "skipped"  # explicit status
+
+
+def test_parse_roadmap_4col_backward_compat() -> None:
+    """Test that 4-col tables parse correctly with plan migration."""
+    phases, errors = parse_roadmap(WELL_FORMED_BODY_4COL)
+
+    assert len(phases) == 2
+    assert errors == []
+
+    steps = phases[0].steps
+    # "plan #101" in PR column → plan="#101", pr=None
+    assert steps[1].plan == "#101"
+    assert steps[1].pr is None
+    assert steps[1].status == "in_progress"
+
+    # "#100" in PR column stays as pr
+    assert steps[0].plan is None
+    assert steps[0].pr == "#100"
+    assert steps[0].status == "done"
+
+
 def test_parse_roadmap_sub_phases() -> None:
     """Test parsing sub-phase headers like Phase 1A, Phase 1B."""
     body = """## Roadmap
 
 ### Phase 1A: First Part
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1A.1 | Step one | - | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1A.1 | Step one | - | - | - |
 
 ### Phase 1B: Second Part
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1B.1 | Step two | - | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1B.1 | Step two | - | - | - |
 
 ### Phase 2: Core
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 2.1 | Step three | - | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 2.1 | Step three | - | - | - |
 """
     phases, _errors = parse_roadmap(body)
 
@@ -85,28 +149,6 @@ def test_parse_roadmap_sub_phases() -> None:
     assert phases[2].number == 2
     assert phases[2].suffix == ""
     assert phases[2].name == "Core"
-
-
-def test_parse_roadmap_status_inference() -> None:
-    """Test that statuses are correctly inferred from PR and status columns."""
-    phases, _ = parse_roadmap(WELL_FORMED_BODY)
-    steps = phases[0].steps + phases[1].steps
-
-    assert steps[0].status == "done"  # #100
-    assert steps[1].status == "in_progress"  # plan #101
-    assert steps[2].status == "pending"  # -
-    assert steps[3].status == "blocked"  # status column
-    assert steps[4].status == "skipped"  # status column
-
-
-def test_parse_roadmap_pr_values() -> None:
-    """Test that PR values are parsed correctly."""
-    phases, _ = parse_roadmap(WELL_FORMED_BODY)
-    steps = phases[0].steps
-
-    assert steps[0].pr == "#100"
-    assert steps[1].pr == "plan #101"
-    assert steps[2].pr is None  # dash means no PR
 
 
 def test_parse_roadmap_no_phases() -> None:
@@ -138,11 +180,11 @@ def test_compute_summary() -> None:
             suffix="",
             name="Test",
             steps=[
-                RoadmapStep(id="1.1", description="A", status="done", pr="#1"),
-                RoadmapStep(id="1.2", description="B", status="pending", pr=None),
-                RoadmapStep(id="1.3", description="C", status="in_progress", pr="plan #2"),
-                RoadmapStep(id="1.4", description="D", status="blocked", pr=None),
-                RoadmapStep(id="1.5", description="E", status="skipped", pr=None),
+                RoadmapStep(id="1.1", description="A", status="done", plan=None, pr="#1"),
+                RoadmapStep(id="1.2", description="B", status="pending", plan=None, pr=None),
+                RoadmapStep(id="1.3", description="C", status="in_progress", plan="#2", pr=None),
+                RoadmapStep(id="1.4", description="D", status="blocked", plan=None, pr=None),
+                RoadmapStep(id="1.5", description="E", status="skipped", plan=None, pr=None),
             ],
         )
     ]
@@ -172,7 +214,7 @@ def test_serialize_phases() -> None:
             suffix="",
             name="Test",
             steps=[
-                RoadmapStep(id="1.1", description="A", status="done", pr="#1"),
+                RoadmapStep(id="1.1", description="A", status="done", plan=None, pr="#1"),
             ],
         )
     ]
@@ -185,6 +227,7 @@ def test_serialize_phases() -> None:
     assert len(result[0]["steps"]) == 1
     assert result[0]["steps"][0]["id"] == "1.1"
     assert result[0]["steps"][0]["status"] == "done"
+    assert result[0]["steps"][0]["plan"] is None
     assert result[0]["steps"][0]["pr"] == "#1"
 
 
@@ -196,9 +239,11 @@ def test_find_next_step_returns_first_pending() -> None:
             suffix="",
             name="Phase One",
             steps=[
-                RoadmapStep(id="1.1", description="Done", status="done", pr="#1"),
-                RoadmapStep(id="1.2", description="Pending", status="pending", pr=None),
-                RoadmapStep(id="1.3", description="Also pending", status="pending", pr=None),
+                RoadmapStep(id="1.1", description="Done", status="done", plan=None, pr="#1"),
+                RoadmapStep(id="1.2", description="Pending", status="pending", plan=None, pr=None),
+                RoadmapStep(
+                    id="1.3", description="Also pending", status="pending", plan=None, pr=None
+                ),
             ],
         )
     ]
@@ -217,7 +262,7 @@ def test_find_next_step_returns_none_when_all_done() -> None:
             suffix="",
             name="Done",
             steps=[
-                RoadmapStep(id="1.1", description="A", status="done", pr="#1"),
+                RoadmapStep(id="1.1", description="A", status="done", plan=None, pr="#1"),
             ],
         )
     ]
@@ -232,9 +277,9 @@ def test_parse_roadmap_explicit_done_status() -> None:
 
 ### Phase 1: Test
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Step one | done | #100 |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Step one | done | - | #100 |
 """
     phases, errors = parse_roadmap(body)
 
@@ -251,9 +296,9 @@ def test_parse_roadmap_explicit_in_progress_status() -> None:
 
 ### Phase 1: Test
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Step one | in-progress | plan #101 |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Step one | in-progress | #101 | - |
 """
     phases, errors = parse_roadmap(body)
 
@@ -261,7 +306,7 @@ def test_parse_roadmap_explicit_in_progress_status() -> None:
     assert len(phases) == 1
     assert len(phases[0].steps) == 1
     assert phases[0].steps[0].status == "in_progress"
-    assert phases[0].steps[0].pr == "plan #101"
+    assert phases[0].steps[0].plan == "#101"
 
 
 def test_parse_roadmap_explicit_pending_status() -> None:
@@ -270,9 +315,9 @@ def test_parse_roadmap_explicit_pending_status() -> None:
 
 ### Phase 1: Test
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Step one | pending | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Step one | pending | - | - |
 """
     phases, errors = parse_roadmap(body)
 
@@ -283,17 +328,17 @@ def test_parse_roadmap_explicit_pending_status() -> None:
     assert phases[0].steps[0].pr is None
 
 
-def test_parse_roadmap_explicit_status_overrides_pr_inference() -> None:
-    """Test that explicit status values take priority over PR-based inference."""
+def test_parse_roadmap_explicit_status_overrides_inference() -> None:
+    """Test that explicit status values take priority over column inference."""
     body = """## Roadmap
 
 ### Phase 1: Test
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Explicit done | done | #100 |
-| 1.2 | Explicit in-progress | in-progress | plan #101 |
-| 1.3 | Fallback to inference | - | #102 |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Explicit done | done | - | #100 |
+| 1.2 | Explicit in-progress | in-progress | #101 | - |
+| 1.3 | Fallback to inference | - | - | #102 |
 """
     phases, errors = parse_roadmap(body)
 
@@ -330,10 +375,10 @@ steps:
 
 ### Phase 1: Test Phase
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | From table (ignored) | - | #100 |
-| 1.2 | Also from table (ignored) | - | - |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | From table (ignored) | - | - | #100 |
+| 1.2 | Also from table (ignored) | - | - | - |
 """
 
     phases, errors = parse_roadmap(body)
@@ -351,8 +396,8 @@ steps:
 
 def test_parse_roadmap_no_frontmatter_fallback() -> None:
     """Test that table parsing works when no frontmatter is present."""
-    # This is WELL_FORMED_BODY which has no metadata block
-    phases, errors = parse_roadmap(WELL_FORMED_BODY)
+    # WELL_FORMED_BODY_5COL has no metadata block
+    phases, errors = parse_roadmap(WELL_FORMED_BODY_5COL)
 
     # Should fall back to table parsing
     assert errors == []
@@ -361,7 +406,7 @@ def test_parse_roadmap_no_frontmatter_fallback() -> None:
     assert len(phases[0].steps) == 3
     # Values come from table
     assert phases[0].steps[0].pr == "#100"
-    assert phases[0].steps[1].pr == "plan #101"
+    assert phases[0].steps[1].plan == "#101"
 
 
 def test_parse_roadmap_invalid_frontmatter_fallback() -> None:
@@ -378,9 +423,9 @@ invalid: yaml: syntax [
 
 ### Phase 1: Fallback Phase
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | From table | - | #200 |
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | From table | - | - | #200 |
 """
 
     phases, errors = parse_roadmap(body)
@@ -391,3 +436,42 @@ invalid: yaml: syntax [
     assert phases[0].name == "Fallback Phase"
     assert len(phases[0].steps) == 1
     assert phases[0].steps[0].pr == "#200"
+
+
+def test_parse_roadmap_v1_frontmatter_migrates_plan() -> None:
+    """Test that v1 frontmatter migrates 'plan #NNN' from pr to plan field."""
+    body = """## Objective
+
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "1"
+steps:
+  - id: "1.1"
+    description: "Has plan ref"
+    status: "in_progress"
+    pr: "plan #6464"
+  - id: "1.2"
+    description: "Has real PR"
+    status: "done"
+    pr: "#999"
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
+### Phase 1: Test
+
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Ignored | - | - | - |
+| 1.2 | Ignored | - | - | - |
+"""
+
+    phases, errors = parse_roadmap(body)
+
+    assert errors == []
+    assert len(phases) == 1
+    # "plan #6464" migrated → plan="#6464", pr=None
+    assert phases[0].steps[0].plan == "#6464"
+    assert phases[0].steps[0].pr is None
+    # "#999" stays as pr
+    assert phases[0].steps[1].plan is None
+    assert phases[0].steps[1].pr == "#999"

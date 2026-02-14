@@ -26,7 +26,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before modifying business logic in src/ without adding a test** → Read [Universal Tripwires](universal-tripwires.md) first. Bug fixes require regression tests.
 
-**CRITICAL: Before parsing objective roadmap PR column status** → Read [Erk Glossary](glossary.md) first. PR column format is non-standard: empty=pending, #XXXX=done (merged PR), `plan #XXXX`=plan in progress. This is erk-specific, not GitHub convention.
+**CRITICAL: Before parsing objective roadmap PR column status** → Read [Erk Glossary](glossary.md) first. Roadmap table uses separate Plan and PR columns: Plan `#XXXX`=in progress (plan issue), PR `#XXXX`=done (merged PR), both empty=pending. Legacy 4-col format with `plan #XXXX` in PR column is auto-migrated.
 
 **CRITICAL: Before passing session IDs via environment variables** → Read [Universal Tripwires](universal-tripwires.md) first. Use CLI flags (--session-id) for context propagation, not environment variables. Erk code never has access to CLAUDE_CODE_SESSION_ID.
 

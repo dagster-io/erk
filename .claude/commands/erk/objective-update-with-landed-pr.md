@@ -65,7 +65,7 @@ Your tasks:
 2. **Update roadmap steps** using the exec command for each completed step:
 
 ```bash
-erk exec update-roadmap-step <objective-number> --step <step-id> --pr "#<pr-number>" --status done
+erk exec update-roadmap-step <objective-number> --step <step-id> --pr "#<pr-number>"
 ```
 
 This handles both frontmatter and table dual-write automatically. Run once per step completed by the PR.
@@ -123,16 +123,16 @@ These are common contradiction types, not an exhaustive list. Flag any divergenc
 - **Body Reconciliation:** Only include this subsection if prose sections needed updating. If nothing is stale, omit entirely (not "No changes needed").
 
 5. **Compose the updated objective body** by editing the roadmap table:
-   - Set the PR cell to `#<pr-number>` for completed steps
-   - Set the Status cell to the correct display value: `done` for completed steps (PR is `#NNN`), `in-progress` for in-flight plans (PR is `plan #NNN`), `pending` for no PR
+   - Set the PR cell to `#<pr-number>` for completed steps, clear Plan cell
+   - Set the Status cell to the correct display value: `done` for completed steps (PR is `#NNN`), `in-progress` for in-flight plans (Plan is `#NNN`), `pending` for no refs
    - If PR title meaningfully differs from step description, update the description
    - Update "Current Focus" to describe the next pending step or next phase
 
 **Status display rules:**
 
-- Step has `#NNN` in PR column → Status `done`
-- Step has `plan #NNN` in PR column → Status `in-progress`
-- Step has no PR → Status `pending`
+- Step has `#NNN` in PR column → Status `done`, clear Plan column
+- Step has `#NNN` in Plan column → Status `in-progress`
+- Step has no Plan or PR → Status `pending`
 - `blocked`/`skipped` are explicit overrides — only change if blocker is resolved
 
 6. **Execute both writes in parallel:**

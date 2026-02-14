@@ -52,7 +52,7 @@ Roadmap step status is inferred from two signals — the explicit status column 
 The canonical status inference lives in `parse_roadmap()` in `objective_roadmap_shared.py`. The priority order:
 
 1. **Explicit status column** — `done`, `blocked`, `skipped`, `in-progress`, `pending` are used directly
-2. **PR column fallback** — if status is ambiguous, a `#NNN` PR reference infers `done`, and `plan #NNN` infers `in_progress`
+2. **Column fallback** — if status is ambiguous, a `#NNN` in the PR column infers `done`, and a `#NNN` in the Plan column infers `in_progress`
 3. **Default** — `pending` when neither signal is present
 
 This same logic is described in prose in the `objective-next-plan.md` command prompt (Step 2, status mapping section). When modifying status inference, both locations must be updated.

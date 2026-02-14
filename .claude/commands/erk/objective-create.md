@@ -113,10 +113,10 @@ Write a structured objective proposal and show it to the user. Use the appropria
 
 Minimal vertical slice proving the concept works end-to-end.
 
-| Step | Description                  | Status  | PR  |
-| ---- | ---------------------------- | ------- | --- |
-| 1.1  | [Minimal infrastructure]     | pending |     |
-| 1.2  | [Wire into one command/path] | pending |     |
+| Step | Description                  | Status  | Plan | PR  |
+| ---- | ---------------------------- | ------- | ---- | --- |
+| 1.1  | [Minimal infrastructure]     | pending |      |     |
+| 1.2  | [Wire into one command/path] | pending |      |     |
 
 **Test:** [End-to-end acceptance test for steelthread]
 
@@ -125,9 +125,9 @@ Minimal vertical slice proving the concept works end-to-end.
 Fill out remaining functionality.
 
 | Step | Description                    | Status  | PR  |
-| ---- | ------------------------------ | ------- | --- |
-| 2.1  | [Extend to remaining commands] | pending |     |
-| 2.2  | [Full test coverage]           | pending |     |
+| ---- | ------------------------------ | ------- | --- | --- |
+| 2.1  | [Extend to remaining commands] | pending |     |     |
+| 2.2  | [Full test coverage]           | pending |     |     |
 
 **Test:** [Full acceptance criteria]
 
@@ -136,8 +136,8 @@ Fill out remaining functionality.
 [Description]
 
 | Step | Description | Status  | PR  |
-| ---- | ----------- | ------- | --- |
-| 3.1  | ...         | pending |     |
+| ---- | ----------- | ------- | --- | --- |
+| 3.1  | ...         | pending |     |     |
 
 **Test:** [Verification criteria]
 
@@ -177,8 +177,8 @@ Fill out remaining functionality.
 [Description - this phase establishes infrastructure needed by subsequent phases]
 
 | Step | Description | Status  | PR  |
-| ---- | ----------- | ------- | --- |
-| 1.1  | ...         | pending |     |
+| ---- | ----------- | ------- | --- | --- |
+| 1.1  | ...         | pending |     |     |
 
 **Test:** [Verification criteria]
 
@@ -187,8 +187,8 @@ Fill out remaining functionality.
 [Description - uses Phase 1 infrastructure]
 
 | Step | Description | Status  | PR  |
-| ---- | ----------- | ------- | --- |
-| 2.1  | ...         | pending |     |
+| ---- | ----------- | ------- | --- | --- |
+| 2.1  | ...         | pending |     |     |
 
 **Test:** [Verification criteria]
 
@@ -224,9 +224,9 @@ Fill out remaining functionality.
 ## Implementation
 
 | Step | Description | Status  | PR  |
-| ---- | ----------- | ------- | --- |
-| 1    | ...         | pending |     |
-| 2    | ...         | pending |     |
+| ---- | ----------- | ------- | --- | --- |
+| 1    | ...         | pending |     |     |
+| 2    | ...         | pending |     |     |
 
 **Test:** [Acceptance criteria]
 

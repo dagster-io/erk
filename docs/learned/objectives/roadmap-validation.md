@@ -42,7 +42,7 @@ This separation matters because the update command needs structural parsing but 
 
 The semantic checks in `validate_objective()` enforce invariants that connect the status system to the PR column:
 
-1. **PR implies status**: A step with PR `#NNN` should resolve to `done`; `plan #NNN` should resolve to `in_progress`. If explicit status contradicts the PR column, the check fails.
+1. **References imply status**: A step with PR `#NNN` should resolve to `done`; a step with plan `#NNN` should resolve to `in_progress`. If explicit status contradicts the plan/PR columns, the check fails.
 
 2. **Status implies PR**: A step with status `done` must have a PR reference. "Done" without evidence of what was done is an orphaned status.
 
@@ -50,9 +50,9 @@ The semantic checks in `validate_objective()` enforce invariants that connect th
 
 These invariants interact with the status inference system documented in [Roadmap Status System](roadmap-status-system.md). The update command avoids violating invariant #1 by resetting the status cell to `-` when changing the PR cell, letting inference derive the correct status.
 
-<!-- Source: update_roadmap_step.py, _replace_step_pr_in_body -->
+<!-- Source: update_roadmap_step.py, _replace_step_refs_in_body -->
 
-See `_replace_step_pr_in_body()` in `update_roadmap_step.py` for the status-reset-on-update logic.
+See `_replace_step_refs_in_body()` in `update_roadmap_step.py` for the status-reset-on-update logic.
 
 ## Anti-Patterns
 

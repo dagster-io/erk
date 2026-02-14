@@ -9,7 +9,7 @@ read_when:
   - "working with objectives or turns"
 tripwires:
   - action: "parsing objective roadmap PR column status"
-    warning: "PR column format is non-standard: empty=pending, #XXXX=done (merged PR), `plan #XXXX`=plan in progress. This is erk-specific, not GitHub convention."
+    warning: "Roadmap table uses separate Plan and PR columns: Plan `#XXXX`=in progress (plan issue), PR `#XXXX`=done (merged PR), both empty=pending. Legacy 4-col format with `plan #XXXX` in PR column is auto-migrated."
 ---
 
 # Erk Glossary
