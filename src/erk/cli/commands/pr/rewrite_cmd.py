@@ -11,7 +11,8 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.pr.shared import (
-    build_plan_details_section,
+    assemble_pr_body,
+    discover_issue_for_footer,
     render_progress,
     require_claude_available,
     run_commit_message_generation,
@@ -21,14 +22,10 @@ from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.gateway.branch_manager.types import SubmitBranchError
-from erk_shared.gateway.github.pr_footer import (
-    build_pr_body_footer,
-    extract_footer_from_body,
-    extract_header_from_body,
-    rebuild_pr_body,
-)
+from erk_shared.gateway.github.pr_footer import extract_header_from_body
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
 from erk_shared.gateway.gt.operations.squash import execute_squash
 from erk_shared.gateway.gt.types import SquashError
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
@@ -171,33 +168,25 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         raise click.ClickException(f"Push failed: {submit_result.message}")
     click.echo(click.style("   Branch pushed", fg="green"))
 
-    # Preserve existing header/footer from the PR body
-    existing_header = extract_header_from_body(pr_info.body)
-    existing_footer_raw = extract_footer_from_body(pr_info.body)
-
-    # Build the new PR body content, potentially with plan details
-    pr_body_content = body
-    if plan_context is not None:
-        pr_body_content = body + build_plan_details_section(plan_context)
-
-    # Build footer (reuse existing footer if present, otherwise build new one)
+    # Discover issue number and assemble PR body (shared with submit pipeline)
+    impl_dir = cwd / ".impl"
     plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
-    new_footer = build_pr_body_footer(
-        pr_number,
-        issue_number=None,
+
+    issue_discovery = discover_issue_for_footer(
+        impl_dir=impl_dir,
+        branch_name=current_branch,
+        existing_pr_body=pr_info.body,
         plans_repo=plans_repo,
     )
 
-    if existing_footer_raw is not None:
-        # Reconstruct with preserved header and footer
-        final_body = rebuild_pr_body(
-            header=existing_header,
-            content=pr_body_content,
-            footer=existing_footer_raw,
-        )
-    else:
-        # No existing footer — use header + content + new footer
-        final_body = existing_header + pr_body_content + new_footer
+    final_body = assemble_pr_body(
+        body=body,
+        plan_context=plan_context,
+        pr_number=pr_number,
+        issue_number=issue_discovery.issue_number,
+        plans_repo=issue_discovery.plans_repo,
+        header=extract_header_from_body(pr_info.body),
+    )
 
     ctx.github.update_pr_title_and_body(
         repo_root=Path(repo_root),
@@ -206,6 +195,11 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         body=BodyText(content=final_body),
     )
     click.echo(click.style("   PR updated", fg="green"))
+
+    # Add learn skip label if applicable
+    is_learn_origin = is_learn_plan(impl_dir)
+    if is_learn_origin:
+        ctx.github.add_label_to_pr(Path(repo_root), pr_number, ERK_SKIP_LEARN_LABEL)
 
     # Retrack Graphite branch if needed (fix tracking divergence from amend)
     if ctx.graphite_branch_ops is not None:

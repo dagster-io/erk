@@ -16,7 +16,7 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.pr.shared import (
-    build_plan_details_section,
+    assemble_pr_body,
     run_commit_message_generation,
 )
 from erk.cli.ensure import UserFacingCliError
@@ -629,18 +629,15 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     impl_dir = state.cwd / ".impl"
     is_learn_origin = is_learn_plan(impl_dir)
 
-    # Embed plan in PR body if available (not in commit message)
-    pr_body_for_github = pr_body
-    if state.plan_context is not None:
-        pr_body_for_github = pr_body + build_plan_details_section(state.plan_context)
-
-    # Build footer and combine
-    metadata_section = build_pr_body_footer(
+    # Assemble PR body with plan details and footer
+    final_body = assemble_pr_body(
+        body=pr_body,
+        plan_context=state.plan_context,
         pr_number=state.pr_number,
         issue_number=issue_number,
         plans_repo=effective_plans_repo,
+        header="",
     )
-    final_body = pr_body_for_github + metadata_section
 
     # Update PR metadata
     ctx.github.update_pr_title_and_body(

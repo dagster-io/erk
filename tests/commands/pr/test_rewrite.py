@@ -300,8 +300,43 @@ def test_pr_rewrite_fails_when_claude_not_available() -> None:
         assert "Claude CLI not found" in result.output
 
 
-def test_pr_rewrite_preserves_existing_pr_footer() -> None:
-    """Test that rewrite preserves the existing PR footer (closing refs, etc.)."""
+def test_pr_rewrite_discovers_issue_from_impl_folder() -> None:
+    """Test that rewrite discovers issue number from .impl/issue.json for footer."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Create .impl/issue.json with issue number
+        impl_dir = env.cwd / ".impl"
+        impl_dir.mkdir()
+        (impl_dir / "issue.json").write_text(
+            '{"issue_number": 456, "issue_url": "https://github.com/owner/repo/issues/456",'
+            ' "created_at": "2026-01-01T00:00:00Z", "synced_at": "2026-01-01T00:00:00Z"}'
+        )
+
+        git, graphite, github, executor = _make_rewrite_fakes(
+            env,
+            branch_name="feature",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            prompt_executor=executor,
+        )
+
+        result = runner.invoke(pr_group, ["rewrite"], obj=ctx)
+
+        assert result.exit_code == 0, result.output
+
+        # Verify the footer includes the discovered issue reference
+        assert len(github.updated_pr_bodies) == 1
+        updated_body = github.updated_pr_bodies[0][1]
+        assert "Closes #456" in updated_body
+
+
+def test_pr_rewrite_preserves_closing_ref_from_existing_footer() -> None:
+    """Test that rewrite preserves closing reference from existing PR footer."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         existing_body = "Old body\n---\n\nCloses #123\n\nTo checkout this PR..."
@@ -324,7 +359,7 @@ def test_pr_rewrite_preserves_existing_pr_footer() -> None:
 
         assert result.exit_code == 0, result.output
 
-        # Verify the PR body was updated and footer preserved
+        # Verify the PR body was updated and closing ref preserved
         assert len(github.updated_pr_bodies) == 1
         updated_body = github.updated_pr_bodies[0][1]
         assert "Closes #123" in updated_body

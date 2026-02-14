@@ -6,6 +6,7 @@ This module contains common functionality used by multiple PR commands
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -17,10 +18,21 @@ from erk.core.commit_message_generator import (
     CommitMessageResult,
 )
 from erk.core.context import ErkContext
+from erk_shared.gateway.github.pr_footer import (
+    build_pr_body_footer,
+    extract_closing_reference,
+    extract_footer_from_body,
+)
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.impl_folder import validate_issue_linkage
 
 if TYPE_CHECKING:
     from erk.core.plan_context_provider import PlanContext
+
+
+# ---------------------------------------------------------------------------
+# PR Body Assembly
+# ---------------------------------------------------------------------------
 
 
 def build_plan_details_section(plan_context: PlanContext) -> str:
@@ -38,6 +50,91 @@ def build_plan_details_section(plan_context: PlanContext) -> str:
         "</details>",
     ]
     return "\n".join(parts)
+
+
+@dataclass(frozen=True)
+class IssueDiscovery:
+    """Result of discovering issue number for PR footer."""
+
+    issue_number: int | None
+    plans_repo: str | None
+
+
+def discover_issue_for_footer(
+    *,
+    impl_dir: Path,
+    branch_name: str,
+    existing_pr_body: str | None,
+    plans_repo: str | None,
+) -> IssueDiscovery:
+    """Discover issue number for PR footer from .impl/ or existing PR body.
+
+    Tries two sources in order:
+    1. .impl/issue.json or branch name pattern (P{N}-{slug})
+    2. Closing reference in existing PR footer (fallback)
+
+    Args:
+        impl_dir: Path to .impl/ directory
+        branch_name: Current git branch name
+        existing_pr_body: Current PR body text (for closing ref fallback)
+        plans_repo: Default plans_repo from local config
+
+    Returns:
+        IssueDiscovery with issue_number and plans_repo
+    """
+    # Primary: discover from .impl/issue.json or branch name
+    issue_number: int | None = None
+    try:
+        issue_number = validate_issue_linkage(impl_dir, branch_name)
+    except ValueError:
+        pass
+
+    effective_plans_repo = plans_repo
+
+    # Fallback: preserve existing closing reference from PR body
+    if issue_number is None and existing_pr_body is not None:
+        existing_footer = extract_footer_from_body(existing_pr_body)
+        if existing_footer is not None:
+            closing_ref = extract_closing_reference(existing_footer)
+            if closing_ref is not None:
+                issue_number = closing_ref.issue_number
+                effective_plans_repo = closing_ref.plans_repo
+
+    return IssueDiscovery(issue_number=issue_number, plans_repo=effective_plans_repo)
+
+
+def assemble_pr_body(
+    *,
+    body: str,
+    plan_context: PlanContext | None,
+    pr_number: int,
+    issue_number: int | None,
+    plans_repo: str | None,
+    header: str,
+) -> str:
+    """Assemble final PR body with plan details and footer.
+
+    Args:
+        body: AI-generated body content
+        plan_context: Optional plan context for <details> section
+        pr_number: PR number for footer checkout command
+        issue_number: Optional issue number for "Closes #N"
+        plans_repo: Optional plans repo for cross-repo references
+        header: Existing PR header to preserve (may be empty)
+
+    Returns:
+        Complete PR body ready for GitHub API
+    """
+    pr_body_content = body
+    if plan_context is not None:
+        pr_body_content = body + build_plan_details_section(plan_context)
+
+    metadata_section = build_pr_body_footer(
+        pr_number,
+        issue_number=issue_number,
+        plans_repo=plans_repo,
+    )
+    return header + pr_body_content + metadata_section
 
 
 def render_progress(event: ProgressEvent) -> None:
