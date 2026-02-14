@@ -349,10 +349,11 @@ def _prompt_async_learn_and_continue(
 ) -> None:
     """Prompt user for async learn options when no learning has occurred.
 
-    Offers three choices:
+    Offers four choices:
     1. Trigger async learn and continue - dispatches workflow, then lands
     2. Continue without learning - proceeds with landing
     3. Cancel - aborts landing
+    4. Run erk learn manually - prints command and aborts landing
 
     Args:
         ctx: ErkContext
@@ -361,7 +362,7 @@ def _prompt_async_learn_and_continue(
         script: If True, output no-op activation script on abort
 
     Raises:
-        SystemExit(0) if user cancels
+        SystemExit(0) if user cancels or chooses manual learn
     """
     user_output(
         "⚠️  " + click.style(f"Plan #{plan_issue_number} has not been learned from.", fg="yellow")
@@ -379,11 +380,13 @@ def _prompt_async_learn_and_continue(
     user_output("     Reads session logs, uploads to gist, runs analysis in GitHub Actions")
     user_output("  2. ⏩ Continue without learning")
     user_output("  3. ❌ Cancel")
+    user_output(f"  4. 📖 Run `erk learn {plan_issue_number}` manually")
+    user_output("     Opens interactive learn session — cancel landing for now")
     user_output("")
 
     choice = click.prompt(
         "Enter choice",
-        type=click.IntRange(1, 3),
+        type=click.IntRange(1, 4),
         default=1,
     )
 
@@ -393,7 +396,7 @@ def _prompt_async_learn_and_continue(
     elif choice == 2:
         # Continue without learning
         user_output("Continuing without learning.")
-    else:
+    elif choice == 3:
         # Cancel
         user_output("Cancelled. Run 'erk learn' first, then retry landing.")
         if script:
@@ -410,6 +413,11 @@ def _prompt_async_learn_and_continue(
                 comment="cancelled",
             )
             machine_output(str(result.path), nl=False)
+        raise SystemExit(0)
+    else:
+        # Manual learn - print command and exit
+        user_output("Run this command to learn from the plan:")
+        user_output(f"  erk learn {plan_issue_number}")
         raise SystemExit(0)
 
 

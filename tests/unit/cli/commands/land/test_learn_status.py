@@ -633,3 +633,64 @@ def test_check_learn_status_null_no_sessions_triggers_async_in_non_interactive(
     captured = capsys.readouterr()
     assert "Triggering async learn for plan #123" in captured.err
     assert "Async learn triggered" in captured.err
+
+
+def test_check_learn_status_and_prompt_manual_learn_prints_command_and_exits(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Test that choosing option 4 prints the erk learn command and exits."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    issue_number = 456
+
+    # Create issue (without learn_status - will fall back to session check)
+    issue = create_test_issue(
+        number=issue_number,
+        title="Test plan",
+        body="",
+        labels=["erk-plan"],
+    )
+    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+
+    # Mock find_sessions_for_plan to return sessions WITHOUT learn_session_ids
+    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
+        return SessionsForPlan(
+            planning_session_id="plan-session-1",
+            implementation_session_ids=["impl-session-1"],
+            learn_session_ids=[],  # Not learned
+            last_remote_impl_at=None,
+            last_remote_impl_run_id=None,
+            last_remote_impl_session_id=None,
+            last_session_gist_url=None,
+            last_session_id=None,
+            last_session_source=None,
+        )
+
+    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
+
+    # Mock click.prompt to return choice 4 (manual learn)
+    monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 4)
+
+    # Create context with interactive FakeConsole
+    fake_console = FakeConsole(
+        is_interactive=True,
+        is_stdout_tty=True,
+        is_stderr_tty=True,
+        confirm_responses=[],
+    )
+    ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
+
+    # Should raise SystemExit(0) when user chooses manual learn
+    with pytest.raises(SystemExit) as exc_info:
+        _check_learn_status_and_prompt(
+            ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+        )
+
+    assert exc_info.value.code == 0
+
+    # Verify the learn command was printed with correct issue number
+    captured = capsys.readouterr()
+    assert "erk learn 456" in captured.err
