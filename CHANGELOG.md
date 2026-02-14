@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of 573f178b2 -->
+
+### Added
+
+- Add `erk objective view` command for displaying objective metadata and roadmap
+- Add YAML frontmatter as primary roadmap data source for objective issues, with table fallback
+- Gate learn commands and docs command group behind `learned-docs` capability
+- Add schema-driven `interactive_claude` configuration to `erk config` commands
+- Add `--machine` flag to `erk codespace setup` and set default 16-core machine in devcontainer
+- Embed implementation plan in remote queue draft PRs created via `erk plan submit`
+- Add multi-step support to `update-roadmap-step` command
+
+### Changed
+
+- Update installation instructions from `uv tool install` to local venv workflow
+
+### Fixed
+
+- Fix nested Claude Code subprocess calls failing by stripping CLAUDECODE environment variable
+- Fix TUI dashboard failing to load any plans when a single issue has a missing plan-header metadata block
+- Improve error message for Graphite restack conflicts in `erk pr submit`
+- Fix `pr-fix-conflicts` workflow "Argument list too long" error by capturing Claude output internally
+- Fix codespace creation by using REST API to bypass broken GitHub machines endpoint
+
+### Removed
+
+- Remove `erk objective reconcile` command (duplicate of `erk objective next-plan`)
+
 ## [0.7.2] - 2026-02-02 14:13 PT
 
 ### Fixed
