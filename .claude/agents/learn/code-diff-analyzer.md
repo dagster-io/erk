@@ -4,6 +4,7 @@ description: Analyze PR diff to identify documentation needs for new code
 allowed-tools:
   - Bash
   - Read
+  - Write
   - Glob
   - Grep
 ---

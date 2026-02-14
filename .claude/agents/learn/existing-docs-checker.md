@@ -3,6 +3,7 @@ name: existing-docs-checker
 description: Search existing documentation to identify duplicates and contradictions before suggesting new docs
 allowed-tools:
   - Read
+  - Write
   - Glob
   - Grep
 ---

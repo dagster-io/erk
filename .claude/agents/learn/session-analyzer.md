@@ -3,6 +3,7 @@ name: session-analyzer
 description: Analyze a preprocessed session XML to extract patterns, decisions, and insights
 allowed-tools:
   - Read
+  - Write
   - Glob
   - Grep
 ---
