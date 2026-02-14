@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import click
 
@@ -27,7 +26,6 @@ from erk_shared.gateway.github.pr_footer import (
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.naming import extract_leading_issue_number
-
 
 # ---------------------------------------------------------------------------
 # PR Body Assembly

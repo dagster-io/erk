@@ -264,9 +264,7 @@ def test_preserves_header_and_footer() -> None:
         )
         existing_body = f"{header}\n\nOld content\n\n---\n{footer_content.lstrip()}"
 
-        git, graphite, github, executor = _make_standard_fakes(
-            env, pr_body=existing_body
-        )
+        git, graphite, github, executor = _make_standard_fakes(env, pr_body=existing_body)
 
         ctx = build_workspace_test_context(
             env, git=git, graphite=graphite, github=github, prompt_executor=executor
