@@ -23,15 +23,26 @@ All documentation produced by this command follows the content quality standards
 
 **Prerequisite:** Load the `learned-docs` skill for content quality standards before proceeding.
 
-Tell the user:
+Tell the user (choose the appropriate pipeline display based on whether `gist_url` was provided in the command arguments):
+
+**When `gist_url` is provided:**
+
+```
+Learn pipeline for plan #<issue-number> (using preprocessed materials):
+  1. Download preprocessed materials from gist
+  2. Launch analysis agents (session, diff, docs check, PR comments)
+  3. Synthesize findings into a documentation plan
+  4. Save plan as a new GitHub issue
+```
+
+**When no `gist_url`:**
 
 ```
 Learn pipeline for plan #<issue-number>:
-  1. Check for preprocessed learn materials (gist URL on plan header)
-  2. If no gist: read local sessions, preprocess, upload to gist
-  3. Launch analysis agents (session, diff, docs check, PR comments)
-  4. Synthesize findings into a documentation plan
-  5. Save plan as a new GitHub issue
+  1. Discover and preprocess session logs, upload to gist
+  2. Launch analysis agents (session, diff, docs check, PR comments)
+  3. Synthesize findings into a documentation plan
+  4. Save plan as a new GitHub issue
 ```
 
 ### Step 1: Validate Plan Type

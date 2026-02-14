@@ -445,7 +445,9 @@ def test_gist_url_skips_session_discovery_and_display(tmp_path: Path) -> None:
     # Output should contain the preprocessed materials message (user_output writes to stderr)
     captured_output = result.output
     # CliRunner captures stderr in output when mix_stderr=True (default)
-    assert "Preprocessed learn materials available for plan #555" in captured_output
+    assert "Preprocessed learn materials for plan #555" in captured_output
+    assert "https://gist.github.com/testuser/skip-sessions-test" in captured_output
+    assert "Sessions have been preprocessed and uploaded." in captured_output
 
     # Output should NOT contain session discovery artifacts
     assert "Sessions for plan" not in captured_output
