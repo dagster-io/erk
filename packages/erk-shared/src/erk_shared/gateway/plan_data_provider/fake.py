@@ -265,10 +265,7 @@ def make_plan_row(
     objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
 
     # Default created_at to a fixed sentinel datetime
-    if created_at is not None:
-        effective_created_at = created_at
-    else:
-        effective_created_at = datetime(2025, 1, 1, tzinfo=UTC)
+    effective_created_at = created_at or datetime(2025, 1, 1, tzinfo=UTC)
     created_display = "-"
 
     return PlanRowData(
