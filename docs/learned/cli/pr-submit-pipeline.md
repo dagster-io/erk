@@ -12,8 +12,6 @@ tripwires:
     warning: "SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state."
   - action: "adding discovery logic outside prepare_state()"
     warning: "All discovery (branch name, issue number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated."
-  - action: "implementing a new `erk pr` command"
-    warning: "Compare feature parity with `submit_pipeline.py`. Check: issue discovery, closing reference preservation, learn plan labels, footer construction, and plan details section. Use shared utilities from `shared.py` (`assemble_pr_body`, `discover_issue_for_footer`)."
 ---
 
 # PR Submit Pipeline Architecture

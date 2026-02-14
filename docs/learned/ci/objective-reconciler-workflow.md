@@ -26,7 +26,9 @@ Erk provides two distinct workflows with different triggering and scope:
 
 See `.github/workflows/objective-reconcile.yml` for workflow structure. The workflow dispatches with `distinct_id` for run discovery.
 
-The reconcile command (removed in PR #6736) launched Claude interactively with `/erk:objective-next-plan`.
+<!-- Source: src/erk/cli/commands/launch_cmd.py, _trigger_objective_reconcile -->
+
+See `_trigger_objective_reconcile()` in `src/erk/cli/commands/launch_cmd.py` for CLI implementation. Despite the function name, it requires a single objective number and launches Claude interactively with `/erk:objective-next-plan`.
 
 **What actually happens:**
 
@@ -89,10 +91,6 @@ Both workflows require:
 <!-- Source: .github/workflows/objective-reconciler.yml -->
 
 See `.github/workflows/objective-reconciler.yml:41-48` for the setup action that consumes these secrets.
-
-### Slash Command
-
-The workflow launches Claude with `/erk:objective-next-plan` to create plans for pending objective steps.
 
 ## Cost Model Reality
 

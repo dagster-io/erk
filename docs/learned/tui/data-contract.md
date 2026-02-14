@@ -11,9 +11,10 @@ tripwires:
   - action: "adding a field to PlanRowData without updating make_plan_row"
     warning: "The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break."
   - action: "putting PlanDataProvider ABC in src/erk/tui/"
-    warning: "The ABC lives in erk-shared so desktop-dash and other external consumers can depend on it without importing the full TUI package."
-last_audited: "2026-02-08"
-audit_result: clean
+    warning: "The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways."
+last_audited: "2026-02-08 13:55 PT"
+audit_result: edited
+content_type: data_format_contract
 ---
 
 # TUI Data Contract
@@ -44,7 +45,7 @@ The data types and their provider ABC live in different packages:
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py, PlanDataProvider -->
 
-The ABC lives in `erk-shared` (not `src/erk/tui/`) because external consumers like the desktop dashboard's `erk exec dash-data` command need to instantiate a `RealPlanDataProvider` without importing the full TUI package. If the ABC were in `src/erk/tui/`, the desktop-dash Electron app would transitively pull in Textual and all TUI widgets.
+The ABC lives in `erk-shared` (not `src/erk/tui/`) so that the provider interface and its real/fake implementations are co-located in the shared package. Note that the ABC does import `PlanRowData` and `PlanFilters` from `erk.tui.data.types`, so it does not fully decouple from the TUI package. The primary benefit is organizational: external consumers like `erk exec dash-data` can import the provider from `erk-shared` alongside other shared gateways, keeping the dependency graph consistent.
 
 ## Data Transformation Pipeline
 
@@ -57,6 +58,142 @@ The ABC lives in `erk-shared` (not `src/erk/tui/`) because external consumers li
 3. **`PlanRowData`** — Display-ready with pre-formatted strings, worktree data, and PR linkages
 
 The key assembly step is `_build_row_data()`, which merges data from four sources in a single pass: the `Plan` domain object, PR linkages from a batched GraphQL query, local worktree filesystem scan, and plan header metadata extracted from the issue body. Understanding this merging is essential when debugging why a field shows stale data — the bug could be in any of these four sources.
+
+## PlanRowData Field Reference
+
+The `PlanRowData` frozen dataclass (`src/erk/tui/data/types.py`) contains 38 fields organized into 9 categories. All data is immutable to ensure table state consistency.
+
+### Identifiers (4 fields)
+
+| Field          | Type  | Nullable | Description                                        |
+| -------------- | ----- | -------- | -------------------------------------------------- |
+| `issue_number` | `int` | No       | GitHub issue number                                |
+| `issue_url`    | `str` | Yes      | Full URL to the GitHub issue (None if unavailable) |
+| `pr_number`    | `int` | Yes      | PR number if linked, None otherwise                |
+| `pr_url`       | `str` | Yes      | URL to PR (GitHub or Graphite)                     |
+
+### Title Fields (3 fields)
+
+| Field        | Type  | Nullable | Description                              |
+| ------------ | ----- | -------- | ---------------------------------------- |
+| `title`      | `str` | No       | Plan title, may be truncated for display |
+| `full_title` | `str` | No       | Complete untruncated plan title          |
+| `pr_title`   | `str` | Yes      | PR title if linked                       |
+
+### Body Content (1 field)
+
+| Field        | Type  | Nullable | Description                    |
+| ------------ | ----- | -------- | ------------------------------ |
+| `issue_body` | `str` | No       | Raw issue body text (markdown) |
+
+### Display Strings (10 fields)
+
+Pre-formatted strings with emoji and relative times. Ready for direct rendering or conversion to GUI indicators.
+
+| Field                 | Type  | Nullable | Description                          | Example                                  |
+| --------------------- | ----- | -------- | ------------------------------------ | ---------------------------------------- |
+| `pr_display`          | `str` | No       | Formatted PR cell content            | `"#123 👀"`, `"-"`                       |
+| `checks_display`      | `str` | No       | Formatted checks cell                | `"✓"`, `"✗"`, `"-"`                      |
+| `local_impl_display`  | `str` | No       | Relative time since last local impl  | `"2h ago"`, `"-"`                        |
+| `remote_impl_display` | `str` | No       | Relative time since last remote impl | `"1d ago"`, `"-"`                        |
+| `run_id_display`      | `str` | No       | Formatted workflow run ID            | `"123456"`, `"-"`                        |
+| `run_state_display`   | `str` | No       | Formatted workflow run state         | `"✓"`, `"⟳"`, `"-"`                      |
+| `comments_display`    | `str` | No       | Formatted display of comments        | `"3/5"`, `"-"`                           |
+| `learn_display`       | `str` | No       | Formatted display string with text   | `"- not started"`, `"⟳ in progress"`     |
+| `learn_display_icon`  | `str` | No       | Icon-only display for table          | `"-"`, `"⟳"`, `"∅"`, `"#456"`, `"✓ #12"` |
+| `objective_display`   | `str` | No       | Formatted display string             | `"#123"`, `"-"`                          |
+
+**Display String Pattern:** All `*_display` fields are pre-formatted at fetch time, not render time. This ensures table rendering is fast and consistent.
+
+**GUI Conversion:** Desktop dashboard should replace emoji indicators with proper GUI elements (colored status dots, progress spinners, badges).
+
+### Worktree Fields (4 fields)
+
+| Field             | Type   | Nullable | Description                                              |
+| ----------------- | ------ | -------- | -------------------------------------------------------- |
+| `worktree_name`   | `str`  | No       | Name of local worktree, empty string if none             |
+| `exists_locally`  | `bool` | No       | Whether worktree exists on local machine                 |
+| `worktree_branch` | `str`  | Yes      | Branch name in the worktree (if exists locally)          |
+| `pr_head_branch`  | `str`  | Yes      | Head branch from PR metadata (source branch for landing) |
+
+### Timestamps (2 fields)
+
+| Field                 | Type       | Nullable | Description                   |
+| --------------------- | ---------- | -------- | ----------------------------- |
+| `last_local_impl_at`  | `datetime` | Yes      | Raw timestamp for local impl  |
+| `last_remote_impl_at` | `datetime` | Yes      | Raw timestamp for remote impl |
+
+**JSON Serialization:** Datetime fields need ISO string conversion when serializing to JSON.
+
+### GitHub Actions Fields (5 fields)
+
+| Field            | Type                               | Nullable | Description                                                            |
+| ---------------- | ---------------------------------- | -------- | ---------------------------------------------------------------------- |
+| `run_id`         | `str`                              | Yes      | Raw workflow run ID (for display and URL construction)                 |
+| `run_status`     | `str`                              | Yes      | Workflow run status: `"completed"`, `"in_progress"`, etc.              |
+| `run_conclusion` | `str`                              | Yes      | Workflow run conclusion: `"success"`, `"failure"`, `"cancelled"`, etc. |
+| `run_url`        | `str`                              | Yes      | URL to the GitHub Actions run page                                     |
+| `log_entries`    | `tuple[tuple[str, str, str], ...]` | No       | List of `(event_name, timestamp, comment_url)` tuples for plan log     |
+
+### PR State Fields (3 fields)
+
+| Field                    | Type  | Nullable | Description                                |
+| ------------------------ | ----- | -------- | ------------------------------------------ |
+| `pr_state`               | `str` | Yes      | PR state: `"OPEN"`, `"MERGED"`, `"CLOSED"` |
+| `resolved_comment_count` | `int` | No       | Count of resolved PR review comments       |
+| `total_comment_count`    | `int` | No       | Total count of PR review comments          |
+
+### Learn Status Fields (5 fields)
+
+| Field                     | Type   | Nullable | Description                                               |
+| ------------------------- | ------ | -------- | --------------------------------------------------------- |
+| `learn_status`            | `str`  | Yes      | Raw learn status value from plan header                   |
+| `learn_plan_issue`        | `int`  | Yes      | Plan issue number (for `completed_with_plan` status)      |
+| `learn_plan_issue_closed` | `bool` | Yes      | Whether the learn plan issue is closed                    |
+| `learn_plan_pr`           | `int`  | Yes      | PR number (for `plan_completed` status)                   |
+| `learn_run_url`           | `str`  | Yes      | URL to GitHub Actions workflow run (for `pending` status) |
+
+### Objective Fields (1 field)
+
+| Field             | Type  | Nullable | Description                                              |
+| ----------------- | ----- | -------- | -------------------------------------------------------- |
+| `objective_issue` | `int` | Yes      | Objective issue number (for linking plans to objectives) |
+
+## PlanDataProvider ABC
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py, PlanDataProvider -->
+
+Abstract interface for fetching plan data. Implementations must provide 3 abstract properties and 5 abstract methods:
+
+**Properties:** `repo_root` (Path), `clipboard` (Clipboard), `browser` (BrowserLauncher)
+
+**Methods:**
+
+| Method                  | Signature                              | Returns                     |
+| ----------------------- | -------------------------------------- | --------------------------- |
+| `fetch_plans`           | `(filters: PlanFilters)`               | `list[PlanRowData]`         |
+| `close_plan`            | `(issue_number: int, issue_url: str)`  | `list[int]` (PR numbers)    |
+| `submit_to_queue`       | `(issue_number: int, issue_url: str)`  | `None`                      |
+| `fetch_branch_activity` | `(rows: list[PlanRowData])`            | `dict[int, BranchActivity]` |
+| `fetch_plan_content`    | `(issue_number: int, issue_body: str)` | `str \| None`               |
+
+## PlanFilters
+
+<!-- Source: src/erk/tui/data/types.py, PlanFilters -->
+
+Filter options for plan list queries. Frozen dataclass with 7 fields:
+
+| Field       | Type              | Description                                |
+| ----------- | ----------------- | ------------------------------------------ |
+| `labels`    | `tuple[str, ...]` | Filter by labels (default: `["erk-plan"]`) |
+| `state`     | `str \| None`     | `"open"`, `"closed"`, or None for all      |
+| `run_state` | `str \| None`     | Filter by workflow run state               |
+| `limit`     | `int \| None`     | Maximum number of results                  |
+| `show_prs`  | `bool`            | Whether to include PR data                 |
+| `show_runs` | `bool`            | Whether to include workflow run data       |
+| `creator`   | `str \| None`     | Filter by creator username                 |
+
+Also provides `PlanFilters.default()` factory for standard open erk-plan queries.
 
 ## JSON Serialization Gotchas
 

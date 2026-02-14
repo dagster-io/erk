@@ -17,7 +17,7 @@
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
 - **[pr-summarize.md](pr-summarize.md)** — generating AI commit messages for existing commits, amending commit messages with plan context, understanding pr summarize vs pr submit
 - **[pr-sync-divergence.md](pr-sync-divergence.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, syncing local branch with remote tracking branch
-- **[update-roadmap-step.md](update-roadmap-step.md)** — working with objective roadmap tables, updating step PR references, implementing plan-save workflow, implementing CLI commands that accept multiple values for the same parameter, deciding between multi-option and JSON stdin batch patterns
+- **[update-roadmap-step.md](update-roadmap-step.md)** — working with objective roadmap tables, updating step PR references, implementing plan-save workflow
 - **[dependency-injection-patterns.md](dependency-injection-patterns.md)** — writing erk exec scripts, testing exec scripts that use gateways, understanding exec script architecture, migrating exec scripts from subprocess to gateways
 - **[ensure-ideal-pattern.md](ensure-ideal-pattern.md)** — handling discriminated union returns in CLI commands, narrowing types from T | NonIdealState or T | ErrorType, working with PR lookups, branch detection, or API calls that return union types, seeing EnsureIdeal in code and wondering when to use it vs Ensure
 - **[erk-exec-commands.md](erk-exec-commands.md)** — running erk exec subcommands, looking up erk exec syntax
@@ -33,7 +33,7 @@
 - **[learn-plan-land-flow.md](learn-plan-land-flow.md)** — landing PRs associated with learn plans, understanding how learn plan metadata updates parent issues, working with tripwire promotion during land operations
 - **[local-commands.md](local-commands.md)** — designing local commands, understanding local command taxonomy, creating audit or assessment commands
 - **[local-remote-command-groups.md](local-remote-command-groups.md)** — considering invoke_without_command=True for Click command groups, deciding between command groups vs separate commands for local/remote workflows, understanding why erk uses separate commands instead of unified groups
-- **[objective-commands.md](objective-commands.md)** — working with erk objective commands, understanding auto-advance objectives
+- **[objective-commands.md](objective-commands.md)** — working with erk objective commands, implementing objective check or close functionality, understanding objective validation patterns
 - **[optional-arguments.md](optional-arguments.md)** — making a CLI argument optional, inferring CLI arguments from context, implementing branch-based argument defaults
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
 - **[parameter-addition-checklist.md](parameter-addition-checklist.md)** — adding a parameter to a multi-layer command, working with skills that call erk exec scripts, debugging parameter not found errors

@@ -1,6 +1,9 @@
 ---
 title: Vitest Mock Reset Discipline for Shared Global Mocks
 category: testing
+content_type: third_party_reference
+last_audited: "2026-02-08 13:56 PT"
+audit_result: edited
 read_when:
   - testing erkdesk components that use window.erkdesk IPC bridge
   - encountering mock contamination between tests
@@ -26,7 +29,7 @@ This is especially insidious because the developer never sees the failure locall
 
 ## Why This Happens
 
-Vitest's `mockResolvedValue()` is additive, not replacing. Calling it a second time doesn't clear the previous value — it queues a new one. Without an explicit `mockReset()`, mock state accumulates across tests in the same file and across files sharing a global mock.
+Vitest's `mockResolvedValue()` sets a persistent default return value on the mock. Without an explicit `mockReset()`, the default value configured by test A remains active when test B runs. This isn't about queueing (that's `mockResolvedValueOnce()`) — it's about persistence. The mock's configured implementation, return values, and call history all carry over between tests unless explicitly cleared.
 
 ## The Two-Step Reset Pattern
 
@@ -44,7 +47,7 @@ See the `beforeEach` block in `App.test.tsx` for the canonical example — it re
 **WRONG: Missing reset**
 
 ```typescript
-// BUG: Previous test's mockResolvedValue still queued
+// BUG: Previous test's mockResolvedValue still active
 beforeEach(() => {
   vi.mocked(window.erkdesk.fetchPlans).mockResolvedValue({
     success: true,
@@ -90,12 +93,22 @@ The global mock in `setup.ts` is typed against the `ErkdeskAPI` interface, so th
 
 The key insight: global defaults exist to prevent crashes when a test doesn't configure a specific method. Per-test `mockReset()` + `mockResolvedValue()` overrides the defaults with scenario-specific behavior. Without the reset step, you get the previous test's overrides instead of the global defaults.
 
+### Global Mock Setup
+
+The global mock in `erkdesk/src/test/setup.ts` creates a `mockErkdesk` object typed against the `ErkdeskAPI` interface, with each named method (`fetchPlans`, `loadWebViewURL`, `updateWebViewBounds`, etc.) as a separate `vi.fn()` mock. This gives TypeScript compile-time enforcement: adding a new method to `ErkdeskAPI` in `erkdesk/src/types/erkdesk.d.ts` produces a type error until the mock is updated.
+
+The `declare global { interface Window { erkdesk: ErkdeskAPI } }` in `erkdesk.d.ts` uses TypeScript declaration merging to make `window.erkdesk` recognized throughout the test suite. This is a type-level construct, not a runtime one.
+
 ## When to Reset Specific Methods vs All Methods
 
 <!-- Source: erkdesk/src/renderer/App.test.tsx -->
 <!-- Source: erkdesk/src/renderer/components/SplitPane.test.tsx -->
 
 `App.test.tsx` resets every `window.erkdesk` method because App calls most of them. `SplitPane.test.tsx` resets only `updateWebViewBounds` because that's the only method SplitPane uses directly. The principle: reset every method your test's component calls, no more. Resetting methods your component doesn't use adds noise without preventing bugs.
+
+## Per-Method Mocking
+
+The `ErkdeskAPI` interface exposes named methods (`fetchPlans`, `executeAction`, `startStreamingAction`, etc.) rather than a single dispatch channel. Each method is mocked individually using `vi.mocked(window.erkdesk.methodName)`. This means per-test configuration targets specific methods directly -- see the `beforeEach` block in `App.test.tsx` for the canonical example of resetting and configuring multiple named method mocks.
 
 ## Related
 

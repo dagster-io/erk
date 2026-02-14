@@ -7,8 +7,9 @@ read_when:
 tripwires:
   - action: "composing conditions across multiple GitHub Actions workflow steps"
     warning: "Verify each `steps.step_id.outputs.key` reference exists and matches actual step IDs."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 13:56 PT"
 audit_result: edited
+content_type: reference_cache
 ---
 
 # GitHub Actions Workflow Patterns
@@ -59,6 +60,41 @@ Less obvious: referencing the wrong key in a step's outputs.
 
 See `.github/workflows/ci.yml:20-29` where the `check-submission` job exposes `skip` as an output. Multiple downstream jobs reference `needs.check-submission.outputs.skip` — if any job used `should_skip` instead, it would silently skip.
 
+### Missing Step ID
+
+```yaml
+# WRONG: No id, can't reference this step
+- name: Run tests
+  run: npm test
+
+- name: Deploy if tests pass
+  if: steps.run-tests.outcome == 'success' # Always false!
+  run: deploy
+```
+
+### Typo in Step Reference
+
+```yaml
+- name: Build
+  id: build-step
+
+- name: Deploy
+  if: steps.build.outcome == 'success' # Wrong! Should be 'build-step'
+  run: deploy
+```
+
+### Wrong Output Key
+
+```yaml
+- name: Check
+  id: check
+  run: echo "result=pass" >> $GITHUB_OUTPUT
+
+- name: Use result
+  if: steps.check.outputs.outcome == 'pass' # Wrong! Key is 'result'
+  run: echo "passed"
+```
+
 ## Property Vocabulary: outcome vs outputs vs result
 
 GitHub Actions has three similar-sounding properties with different semantics:
@@ -74,6 +110,43 @@ GitHub Actions has three similar-sounding properties with different semantics:
 <!-- Source: .github/workflows/ci.yml, autofix job -->
 
 See the `autofix` job in `.github/workflows/ci.yml` for `needs.<job>.result` usage (job-level) and the `check-submission` job for `steps.<step>.outputs.*` usage (step-level within the same job).
+
+## Step Condition Patterns
+
+### Robust Conditional with Output Check
+
+```yaml
+- name: Build
+  id: build
+  run: |
+    npm run build
+    echo "artifact_path=dist/" >> $GITHUB_OUTPUT
+
+- name: Deploy
+  if: |
+    steps.build.outcome == 'success' &&
+    steps.build.outputs.artifact_path != ''
+  run: deploy ${{ steps.build.outputs.artifact_path }}
+```
+
+### Complete Step Pattern
+
+```yaml
+- name: Human-readable description
+  id: machine-readable-id
+  run: |
+    # Do work
+    echo "key=value" >> $GITHUB_OUTPUT
+  continue-on-error: true # If step failure shouldn't fail job
+```
+
+### When to Add Step IDs
+
+Add `id:` to steps that:
+
+- Output values other steps need
+- Are referenced in conditions
+- Might fail and need status checks
 
 ## Validation Discipline for Erk Workflows
 
@@ -118,8 +191,8 @@ Browse `.github/workflows/ci.yml` for 20+ examples of step ID naming that follow
 Erk's CI uses a **fan-out → fan-in** pattern:
 
 1. **Gate job** (`check-submission`) runs first, exposes `skip` output
-2. **Parallel jobs** (`format`, `lint`, `prettier`, `ty`, `unit-tests`) all depend on gate job and check `needs.check-submission.outputs.skip`
-3. **Autofix job** depends on all parallel jobs, checks their `result` values
+2. **Parallel jobs** (`format`, `lint`, `prettier`, `docs-check`, `ty`, `unit-tests`, `integration-tests`, `erkdesk-tests`) all depend on gate job and check `needs.check-submission.outputs.skip`
+3. **Autofix job** depends on most parallel jobs (all except `erkdesk-tests`), checks their `result` values
 
 This architecture requires:
 

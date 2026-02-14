@@ -5,8 +5,8 @@ read_when:
   - working with ABC/Protocol method validation
 title: Code Review Filtering
 tripwires:
-  - action: using this pattern
-    warning: Before flagging 5+ parameter violations, verify NO exception applies (ABC/Protocol/Click)
+  - action: "flagging 5+ parameter violations in code review"
+    warning: "Before flagging, verify NO exception applies (ABC/Protocol/Click)"
 ---
 
 # Code Review Filtering
@@ -21,32 +21,26 @@ Exception filtering lets the review system distinguish "can't follow the rule du
 
 ## Exception Categories and Rationale
 
-<!-- Source: .github/reviews/dignified-python.md, lines 80-88 -->
-<!-- Source: .claude/skills/dignified-python/references/api-design.md, lines 112-141 -->
+<!-- Source: .github/reviews/dignified-python.md -->
+<!-- Source: .claude/skills/dignified-python/references/api-design.md -->
 
 ### ABC and Protocol Methods: Exempt
 
-**Why interfaces are different**: ABC and Protocol methods define contracts that implementations must honor. The signature is the contract. Adding `*` to an interface method forces ALL implementations to match, even when some implementations only have 2-3 parameters (common after implementing the interface with delegation or simpler logic).
-
-**The trap**: If we enforce keyword-only on interfaces, refactoring an implementation to simplify its parameters creates a signature mismatch. The implementation is less complex than the interface, but can't drop the `*` separator without violating the contract.
-
-See the exception documentation in `.github/reviews/dignified-python.md` (lines 80-88) and `.claude/skills/dignified-python/references/api-design.md` for the formal exception rules.
+ABC and Protocol methods define contracts — adding `*` forces all implementations to match, even when simplified implementations have fewer parameters. This creates a refactoring trap.
 
 ### Click Command Callbacks: Exempt
 
-**Why framework injection wins**: Click injects parameters positionally based on decorator order. The decorators define the signature, not the function parameter list. Adding `*` to a Click callback breaks the framework's injection mechanism.
-
-**The constraint**: Click's `@click.option()` decorators process arguments in order and pass them positionally to the callback. Keyword-only parameters after `*` don't receive injected values correctly because Click doesn't know about the separator.
+Click injects parameters positionally based on decorator order. Keyword-only parameters after `*` break framework injection.
 
 ### Context Objects: Allowed as First Positional
 
-**Why `ctx` stays positional**: Context objects (`ctx`, `self`, `cls`) carry ambient state and infrastructure. They're not data parameters — they're plumbing. Requiring `ctx` to be keyword-only (`func(*, ctx=ctx, ...)`) is verbose ceremony that adds no clarity.
+Context objects (`ctx`, `self`, `cls`) can remain positional as the first parameter, followed by `*` for data parameters.
 
-**The pattern**: Context objects can remain positional as the first parameter, followed by `*` for remaining parameters. This balances readability (short, conventional context passing) with explicitness (data parameters are keyword-only).
+See `.github/reviews/dignified-python.md` and `.claude/skills/dignified-python/references/api-design.md` for the formal exception rules.
 
 ## Detection Strategy: Declarative Constraints
 
-<!-- Source: .github/reviews/dignified-python.md, lines 80-88 -->
+<!-- Source: .github/reviews/dignified-python.md -->
 
 The review system checks exceptions **before flagging**, not after. This prevents false positive noise in PR reviews.
 

@@ -47,21 +47,6 @@ For example, listing config fields should become a pointer to `GlobalConfigSchem
 
 See [source-pointers.md](source-pointers.md) for the exact pointer format.
 
-### When the Code Artifact Doesn't Exist Yet
-
-Pattern 1 assumes the code artifact already exists. When it doesn't — and the
-learn pipeline proposes documenting an enumerable catalog — the correct action
-is to **create the code artifact first**, then point to it. Don't document what
-should be typed.
-
-Examples of catalogs that belong as code artifacts:
-
-- Error type catalogs → `Literal["type1", "type2", ...]` or Enum with docstring comments
-- Status values → Literal or Enum
-- Config option names → typed constants or TypedDict fields
-
-A learn plan should propose a code change for these, not a documentation table.
-
 ## Pattern 2: Duplication Removal
 
 **Root cause**: The same conceptual knowledge gets written independently in multiple docs because authors don't find the existing doc before writing.

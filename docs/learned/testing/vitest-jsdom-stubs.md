@@ -1,6 +1,9 @@
 ---
 title: jsdom DOM API Stubs for Vitest
 category: testing
+content_type: third_party_reference
+last_audited: "2026-02-08 13:55 PT"
+audit_result: edited
 read_when:
   - writing React component tests with Vitest + jsdom
   - encountering "X is not a function" errors in jsdom test runs
@@ -33,6 +36,20 @@ The key insight: environment stubs are **no-op shims** that prevent crashes, whi
 
 See `erkdesk/src/test/setup.ts` for all current stubs and the default `window.erkdesk` mock.
 
+## jsdom Missing API Stubs
+
+These are the stub implementations for browser APIs that jsdom does not provide. All stubs live in `setup.ts` and run before any test files are imported.
+
+### Element.prototype.scrollIntoView
+
+jsdom has no layout engine, so `scrollIntoView` is undefined. A simple `vi.fn()` no-op assigned to `Element.prototype.scrollIntoView` prevents `TypeError` crashes.
+
+### ResizeObserver
+
+jsdom does not implement `ResizeObserver`. The stub uses a class with `observe`, `unobserve`, and `disconnect` as `vi.fn()` no-ops assigned to `global.ResizeObserver`.
+
+Both stubs are defined in `erkdesk/src/test/setup.ts`. If a new jsdom gap surfaces, add the stub there following the same no-op pattern.
+
 ## When to Add a New Stub
 
 **Add stubs reactively, not proactively.** When a test fails with `TypeError: element.X is not a function`, that's the signal to add a stub to setup.ts. Don't preemptively stub APIs that no component uses — it obscures which APIs the codebase actually depends on.
@@ -42,9 +59,11 @@ The current stubs (`scrollIntoView`, `ResizeObserver`) were each added in respon
 - `scrollIntoView` — used by `PlanList.tsx` for keyboard navigation
 - `ResizeObserver` — used by `SplitPane.tsx` for resize detection
 
+## Configuration
+
 <!-- Source: erkdesk/vitest.config.ts -->
 
-The setup file path is configured in `erkdesk/vitest.config.ts` via the `setupFiles` array. Vitest executes setup files before importing any test files, which is why environment stubs must live there — they need to be in place before components first render.
+The setup file path is configured in `erkdesk/vitest.config.ts` via the `setupFiles` array (currently `./src/test/setup.ts`). Vitest executes setup files before importing any test files, which is why environment stubs must live there — they need to be in place before components first render.
 
 ## Anti-Patterns
 

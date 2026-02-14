@@ -30,7 +30,7 @@ erk pr summarize --debug
 
 <!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, _execute_pr_summarize -->
 
-The command enforces single-commit state at summarize_cmd.py:80-90. This constraint matches Graphite's stack model - one commit per PR.
+The command enforces single-commit state in `_execute_pr_summarize()`. This constraint matches Graphite's stack model - one commit per PR.
 
 ## Three-Phase Execution
 
@@ -38,7 +38,7 @@ The command mirrors `pr submit`'s structure but stops before pushing:
 
 ### Phase 1: Get Diff
 
-Extracts the diff between current branch and parent using the shared `execute_diff_extraction` pipeline. Sets `pr_number=0` as a placeholder since no PR exists yet (see summarize_cmd.py:186).
+Extracts the diff between current branch and parent using the shared `execute_diff_extraction` pipeline. Sets `pr_number=0` as a placeholder since no PR exists yet.
 
 ### Phase 2: Generate Commit Message
 
@@ -50,7 +50,7 @@ Uses `CommitMessageGenerator` with identical context priority to `pr submit`:
 
 <!-- Source: src/erk/core/commit_message_generator.py, CommitMessageGenerator._build_context_section -->
 
-The generator places plan content before commit messages in the prompt (commit_message_generator.py:207-227), making it the primary source of truth for WHY the changes exist.
+The generator places plan content before commit messages in the prompt, making it the primary source of truth for WHY the changes exist.
 
 ### Phase 3: Amend Commit
 
@@ -58,7 +58,7 @@ Combines title and body into a single commit message and amends the current comm
 
 ## Plan Context Integration
 
-<!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, plan context feedback (lines 120-131) -->
+<!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, plan context feedback -->
 
 When a branch follows the `P{issue_number}-{slug}` naming convention, the command automatically fetches plan context from the linked erk-plan issue.
 
@@ -75,9 +75,9 @@ This feedback pattern is standardized across `pr summarize` and `pr submit` - bo
 
 **Why plan context takes priority over commit messages:**
 
-When both exist, the plan is placed first in the prompt to Claude (commit_message_generator.py:207-227). This ordering reflects reality: the plan describes the intended outcome, while commit messages describe incremental implementation steps.
+When both exist, the plan is placed first in the prompt to Claude. This ordering reflects reality: the plan describes the intended outcome, while commit messages describe incremental implementation steps.
 
-For `pr summarize`, commit messages are never included in the request (summarize_cmd.py:140 passes `commit_messages=None`). This is correct - you're amending the single commit, so its current message is being replaced, not incorporated.
+For `pr summarize`, commit messages are never included in the request (passes `commit_messages=None`). This is correct - you're amending the single commit, so its current message is being replaced, not incorporated.
 
 ## Anti-Pattern: Summarizing Multi-Commit Branches
 
@@ -87,9 +87,9 @@ For `pr summarize`, commit messages are never included in the request (summarize
 
 **CORRECT**: Run `gt squash` first to combine commits, then `pr summarize`.
 
-<!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, lines 86-90 -->
+<!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, single-commit enforcement -->
 
-The enforcement at summarize_cmd.py:86-90 prevents this anti-pattern. It suggests `gt squash` explicitly in the error message.
+The enforcement in `_execute_pr_summarize()` prevents this anti-pattern. It suggests `gt squash` explicitly in the error message.
 
 ## Relationship to pr submit
 

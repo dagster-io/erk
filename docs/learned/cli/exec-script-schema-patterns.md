@@ -38,26 +38,17 @@ Define the JSON schema as a TypedDict in `packages/erk-shared/`, not in either t
 
 ## Consumer Pattern: cast() for Type-Aware Access
 
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, cast() pattern at lines 187-189 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, cast() pattern -->
 
-After parsing JSON, use `cast()` to narrow the dict type. This enables autocomplete and type checking for all subsequent field access:
+After parsing JSON, use `cast()` to narrow the dict type. This enables autocomplete and type checking for all subsequent field access. Import the TypedDict, parse JSON with `json.loads()`, then `cast()` the result to the TypedDict type. All subsequent key access gets type checking.
 
-```python
-from typing import cast
-from erk_shared.learn.extraction.get_learn_sessions_result import GetLearnSessionsResultDict
+<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, cast() pattern -->
 
-sessions_result = _run_subprocess([...])  # Returns dict from json.loads()
-sessions = cast(GetLearnSessionsResultDict, sessions_result)
-
-# Now typed access works
-session_sources = sessions["session_sources"]  # ty check knows this is list[SessionSourceDict]
-```
-
-See `trigger_async_learn()` for the full pattern.
+See `trigger_async_learn()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py` for the full pattern.
 
 ## LBYL Guards: Type → Value → Presence
 
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, filtering pattern at lines 347-356 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, filtering pattern -->
 
 When accessing nested fields from JSON, check type before value, value before presence. See the session source filtering in `trigger_async_learn()`:
 
@@ -85,7 +76,7 @@ for source_item in session_sources:
 
 **Decision rule**: Session _sources_ come from the schema. Session _types_ (roles) are derived from comparing IDs.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, session type derivation at lines 358-360 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, session type derivation -->
 
 WRONG approach (creating schema fields for derived data):
 
@@ -105,7 +96,7 @@ prefix = "planning" if session_id == planning_session_id else "impl"
 
 ## Empty Output is Valid, Not an Error
 
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, empty handling at lines 376-378 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, empty handling -->
 
 When preprocessing filters out a session (empty, warmup, or other valid reason), treat the empty list as success:
 

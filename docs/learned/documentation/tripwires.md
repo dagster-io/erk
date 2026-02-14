@@ -12,11 +12,11 @@ read_when:
 
 Action-triggered rules for this category. Consult BEFORE taking any matching action.
 
+**CRITICAL: Before adding TypeScript/Bash code from erkdesk** → Read [Language Scope Auditing](language-scope-auditing.md) first. Including TypeScript/Bash code blocks from erkdesk/ without checking the One Code Rule
+
 **CRITICAL: Before adding a code block longer than a few lines to a learned doc** → Read [Stale Code Blocks Are Silent Bugs](stale-code-blocks-are-silent-bugs.md) first. Check if this falls under the One Code Rule exceptions (data formats, third-party APIs, anti-patterns, I/O examples). If not, use a source pointer.
 
 **CRITICAL: Before adding prettier-ignore to docs/learned/** → Read [Markdown Authoring and Prettier Interactions](markdown-and-prettier.md) first. prettier-ignore is almost never needed in docs. If Prettier is mangling your content, the structure may need rethinking rather than suppression.
-
-**CRITICAL: Before assuming verbatim copy prohibition only applies to Python** → Read [Language Scope Auditing](language-scope-auditing.md) first. Assuming the verbatim copy prohibition only applies to Python
 
 **CRITICAL: Before bulk deleting documentation files** → Read [Documentation Audit Methodology](audit-methodology.md) first. After bulk deletions, run 'erk docs sync' to fix broken cross-references.
 
@@ -25,6 +25,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 **CRITICAL: Before continuing to code after discovering scope is larger than expected** → Read [Planless vs Planning Workflow Decision Framework](when-to-switch-pattern.md) first. Stop and switch to planning. Mid-task warning signs (uncertainty accumulating, scope creeping, multiple valid approaches) indicate you should plan. See when-to-switch-pattern.md.
 
 **CRITICAL: Before copying erk source code into a docs/learned/ markdown file** → Read [Stale Code Blocks Are Silent Bugs](stale-code-blocks-are-silent-bugs.md) first. Verbatim source in docs silently goes stale. Use a source pointer instead — see source-pointers.md.
+
+**CRITICAL: Before copying non-Python code verbatim** → Read [Language Scope Auditing](language-scope-auditing.md) first. Assuming the verbatim copy prohibition only applies to Python
 
 **CRITICAL: Before copying source code into a docs/learned/ markdown file** → Read [Source Pointers](source-pointers.md) first. Use a source pointer instead. See source-pointers.md for the two-part format (HTML comment + prose reference).
 
@@ -38,13 +40,11 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before documenting type definitions without verifying they exist** → Read [Documentation Audit Methodology](audit-methodology.md) first. Type references in docs must match actual codebase types — phantom types are the most common audit finding. Verify with grep before committing.
 
-**CRITICAL: Before including TypeScript/Bash code blocks from erkdesk/ without checking One Code Rule** → Read [Language Scope Auditing](language-scope-auditing.md) first. Including TypeScript/Bash code blocks from erkdesk/ without checking the One Code Rule
+**CRITICAL: Before justifying erkdesk code inclusion** → Read [Language Scope Auditing](language-scope-auditing.md) first. Rationalizing erkdesk source as "third-party API pattern" because it uses React/Electron
 
 **CRITICAL: Before manually wrapping lines or aligning tables in markdown** → Read [Markdown Authoring and Prettier Interactions](markdown-and-prettier.md) first. Never manually format markdown. Prettier rewrites all formatting on save. Write naturally, then run `make prettier` via devrun.
 
 **CRITICAL: Before never expect agents to self-diagnose knowledge gaps** → Read [Passive Context vs. On-Demand Retrieval](passive-context-vs-retrieval.md) first. use passive context or structural triggers
-
-**CRITICAL: Before rationalizing erkdesk source as third-party API pattern** → Read [Language Scope Auditing](language-scope-auditing.md) first. Rationalizing erkdesk source as 'third-party API pattern' because it uses React/Electron
 
 **CRITICAL: Before restructuring or deleting doc content** → Read [Documentation Simplification Patterns](simplification-patterns.md) first. Run 'erk docs sync' after structural changes to regenerate indexes and fix broken cross-references.
 

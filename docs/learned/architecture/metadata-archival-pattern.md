@@ -5,7 +5,7 @@ read_when:
   - adding companion fields for historical tracking
   - extending plan-header schema with lifecycle transitions
 tripwires:
-  - action: "Archive value to 'last_' variant BEFORE clearing"
+  - action: "archiving value to 'last_' variant BEFORE clearing"
     warning: "Order matters — clear-then-archive loses the value silently"
     score: 6
 last_audited: "2026-02-07 20:55 PT"

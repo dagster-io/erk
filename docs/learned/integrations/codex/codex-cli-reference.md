@@ -1,6 +1,7 @@
 ---
 title: Codex CLI Reference for Erk Integration
-last_audited: "2026-02-08"
+content_type: reference-cache
+last_audited: "2026-02-08 13:55 PT"
 audit_result: clean
 read_when:
   - "implementing Codex backend support in erk"
@@ -37,6 +38,75 @@ Codex has two modes that map to erk's two launch patterns:
 
 **Why this matters:** The same `PermissionMode.edits` produces different Codex flags depending on mode. Exec uses `--full-auto`, but TUI uses `--sandbox workspace-write -a on-request`. This forces any future `permission_mode_to_codex()` to take a `mode: Literal["exec", "tui"]` parameter — unlike `permission_mode_to_claude()` which is mode-independent.
 
+## Exec Mode Flag Reference
+
+Source: `codex-rs/exec/src/cli.rs`
+
+### Core Flags
+
+| Flag                    | Short | Type       | Description                                                  |
+| ----------------------- | ----- | ---------- | ------------------------------------------------------------ |
+| `PROMPT`                |       | positional | Prompt text (or `-` to read from stdin)                      |
+| `--model`               | `-m`  | string     | Model identifier (e.g., `o3`, `gpt-5.2-codex`)               |
+| `--json`                |       | bool       | Output JSONL events to stdout (alias: `--experimental-json`) |
+| `--output-last-message` | `-o`  | path       | Write agent's final message to file                          |
+| `--cd`                  | `-C`  | path       | Set working directory for the agent                          |
+| `--image`               | `-i`  | path[]     | Attach image(s), comma-delimited or repeated                 |
+| `--color`               |       | enum       | `auto` (default), `always`, `never`                          |
+| `--skip-git-repo-check` |       | bool       | Allow running outside a Git repo                             |
+| `--add-dir`             |       | path[]     | Additional writable directories                              |
+| `--output-schema`       |       | path       | JSON Schema for structured output                            |
+| `--profile`             | `-p`  | string     | Config profile name from config.toml                         |
+| `--config`              | `-c`  | key=value  | Override config.toml values (TOML syntax, repeatable)        |
+
+### Sandbox & Permission Flags
+
+| Flag                                         | Short    | Type | Values                                                  |
+| -------------------------------------------- | -------- | ---- | ------------------------------------------------------- |
+| `--sandbox`                                  | `-s`     | enum | `read-only`, `workspace-write`, `danger-full-access`    |
+| `--full-auto`                                |          | bool | Convenience: `--sandbox workspace-write` + auto-approve |
+| `--dangerously-bypass-approvals-and-sandbox` | `--yolo` | bool | Skip all confirmations and sandboxing                   |
+
+### Provider Flags
+
+| Flag               | Type   | Description                                     |
+| ------------------ | ------ | ----------------------------------------------- |
+| `--oss`            | bool   | Use open-source provider (LM Studio, Ollama)    |
+| `--local-provider` | string | Specify: `lmstudio`, `ollama`, or `ollama-chat` |
+
+### Exec Subcommands
+
+**`codex exec resume [SESSION_ID]`** — Resume a previous session
+
+- `--last` — Resume most recent session
+- `--all` — Show all sessions (disables cwd filtering)
+
+**`codex exec review`** — Run code review
+
+- `--uncommitted` — Review staged/unstaged/untracked changes
+- `--base BRANCH` — Review against base branch
+- `--commit SHA` — Review changes in a commit
+- `--title TITLE` — Commit title (requires `--commit`)
+
+## TUI Mode Flag Reference
+
+Source: `codex-rs/tui/src/cli.rs`
+
+Shares most exec flags plus these TUI-only additions:
+
+| Flag                 | Short | Type | Values                                           |
+| -------------------- | ----- | ---- | ------------------------------------------------ |
+| `--ask-for-approval` | `-a`  | enum | `untrusted`, `on-failure`, `on-request`, `never` |
+| `--no-alt-screen`    |       | bool | Run inline, preserving terminal scrollback       |
+| `--search`           |       | bool | Enable live web search                           |
+
+**Approval modes explained:**
+
+- `untrusted` — Ask unless command is "trusted" (ls, cat, sed, etc.)
+- `on-failure` — Run all commands; ask only on execution failure
+- `on-request` — Model decides when to ask for approval
+- `never` — Never ask (same as exec default)
+
 ## Sandbox Model vs Permission Model
 
 Claude and Codex have fundamentally different security philosophies, which is why the `PermissionMode` mapping isn't always clean:
@@ -64,9 +134,30 @@ See `_PERMISSION_MODE_TO_CLAUDE` and `permission_mode_to_claude()` in `packages/
 
 ### Lossy Mappings
 
-**`plan` → `read-only` is lossy.** Claude's `plan` mode has special agent behavior (explore and plan but don't implement). Codex has no plan mode concept — `--sandbox read-only` prevents writes but doesn't signal planning intent to the agent. Codex TUI adds `-a never` to suppress approval prompts, matching plan mode's non-interactive exploration, but the agent itself doesn't know it's in "plan mode."
+**`plan` -> `read-only` is lossy.** Claude's `plan` mode has special agent behavior (explore and plan but don't implement). Codex has no plan mode concept — `--sandbox read-only` prevents writes but doesn't signal planning intent to the agent. Codex TUI adds `-a never` to suppress approval prompts, matching plan mode's non-interactive exploration, but the agent itself doesn't know it's in "plan mode."
 
 **`dangerous` collapses two Claude flags into one.** Claude requires both `--permission-mode bypassPermissions` and `--dangerously-skip-permissions` (see [PermissionMode Abstraction](../../architecture/permission-modes.md) for why both are needed). Codex's `--yolo` handles both concepts in a single flag.
+
+## Claude-to-Codex Flag Mapping
+
+| Claude Flag                            | Codex Equivalent             | Notes                                              |
+| -------------------------------------- | ---------------------------- | -------------------------------------------------- |
+| `--print`                              | (implicit in `codex exec`)   | Exec mode is always non-interactive                |
+| `--verbose`                            | (none)                       | Not available                                      |
+| `--output-format stream-json`          | `--json`                     | Boolean flag, always JSONL                         |
+| `--output-format text`                 | `--output-last-message FILE` | Writes final message to file                       |
+| `--permission-mode default`            | `--sandbox read-only`        |                                                    |
+| `--permission-mode acceptEdits`        | `--full-auto`                | workspace-write + auto-approve                     |
+| `--permission-mode plan`               | `--sandbox read-only`        | No direct plan mode equivalent                     |
+| `--permission-mode bypassPermissions`  | `--yolo`                     |                                                    |
+| `--dangerously-skip-permissions`       | `--yolo`                     |                                                    |
+| `--allow-dangerously-skip-permissions` | (none)                       | No equivalent — Codex uses explicit sandbox levels |
+| `--model MODEL`                        | `--model MODEL`              | Same concept                                       |
+| `--system-prompt TEXT`                 | **NOT AVAILABLE**            | Must prepend to user prompt                        |
+| `--allowedTools TOOLS`                 | **NOT AVAILABLE**            | No tool restriction in Codex                       |
+| `--no-session-persistence`             | **NOT AVAILABLE**            | Sessions always persist to `~/.codex/threads/`     |
+| `--max-turns N`                        | **NOT AVAILABLE**            | No turn limit flag                                 |
+| `cwd` (subprocess arg)                 | `--cd DIR`                   | Explicit flag in Codex                             |
 
 ## Claude Features Missing from Codex
 
@@ -99,6 +190,13 @@ When building a Codex-aware `AgentLauncher` (parallel to `build_claude_args()` i
 2. **Working directory is a flag, not a subprocess kwarg.** Claude infers cwd from `os.chdir()` before `os.execvp()`. Codex requires `--cd` explicitly.
 
 3. **Approval is TUI-only.** The `-a` / `--ask-for-approval` flag only exists in TUI mode. A `build_codex_args()` function must know which mode it's building for, unlike Claude where arg construction is mode-independent.
+
+Erk launches agent TUIs via `os.execvp()` which replaces the current process. The key difference:
+
+- **Claude**: `os.execvp("claude", ["claude", "--permission-mode", "acceptEdits", "/command"])`
+- **Codex**: `os.execvp("codex", ["codex", "--sandbox", "workspace-write", "-a", "on-request", "--cd", str(worktree_path)])`
+
+Codex TUI does NOT support slash commands. The prompt (if any) is a positional argument. Erk skills would need to be installed as Codex skills and invoked via `$skill-name` syntax in the prompt.
 
 ## Skill Portability
 

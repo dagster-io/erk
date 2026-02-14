@@ -5,7 +5,7 @@ read_when:
   - designing conditional execution workflows
   - debugging scattered mode detection logic
 tripwires:
-  - action: "Detect mode in Phase 0 before any other phases execute"
+  - action: "detecting mode after Phase 0 has already executed"
     warning: "Late detection wastes work and creates scattered conditionals across all phases"
     score: 5
 last_audited: "2026-02-08"

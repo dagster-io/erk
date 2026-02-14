@@ -1,7 +1,8 @@
 ---
 title: Click Help Text Formatting
-last_audited: "2026-02-08"
-audit_result: clean
+last_audited: "2026-02-08 13:57 PT"
+audit_result: edited
+content_type: reference_cache
 tripwires:
   - action: "writing Examples sections in CLI docstrings without \b"
     warning: "Place \b on its own line after 'Examples:' heading. Without it, Click rewraps text and breaks formatting."
@@ -36,7 +37,7 @@ Click sees two consecutive lines and joins them: `- First item - Second item`. T
 
 Similarly, code examples with meaningful indentation and line breaks get collapsed into terminal-width chunks, breaking shell copy-paste and visual alignment.
 
-**This is why 72% of erk CLI commands had broken help text** before systematic `\b` adoption (plan #6617 analysis).
+**Many erk CLI commands had broken help text** before systematic `\b` adoption.
 
 ## Decision Table: When to Use `\b`
 
@@ -76,6 +77,54 @@ Examples: \b
 
 The blank line creates a paragraph break; `\b` tells Click not to rewrap the next paragraph.
 
+## Before and After Comparison
+
+This section demonstrates the full impact of Click's rewrapping on a real command docstring. Click's `\b` behavior is underdocumented -- the escape is mentioned briefly in Click's formatting notes but not emphasized as **required for structural content**.
+
+### Without `\b` (Broken)
+
+```python
+@click.command("doctor")
+def doctor_cmd(ctx: ErkContext) -> None:
+    """Run diagnostic checks on erk setup.
+
+    Checks for:
+
+      - Repository Setup: git config, Claude settings, erk config, hooks
+      - User Setup: prerequisites (erk, claude, gt, gh, uv), GitHub auth
+
+    Examples:
+
+      # Run checks (condensed output)
+      erk doctor
+
+      # Show all individual checks
+      erk doctor --verbose
+    """
+```
+
+**Rendered output (broken):**
+
+```
+Usage: erk doctor [OPTIONS]
+
+Run diagnostic checks on erk setup.
+
+Checks for: - Repository Setup: git config, Claude settings, erk config,
+hooks - User Setup: prerequisites (erk, claude, gt, gh, uv), GitHub auth
+
+Examples: # Run checks (condensed output) erk doctor # Show all individual
+checks erk doctor --verbose
+```
+
+Both the bulleted list and the examples section are collapsed into run-on text. The list items lose their structure, and shell commands become impossible to copy-paste.
+
+### With `\b` (Correct)
+
+<!-- Source: src/erk/cli/commands/doctor.py, doctor_cmd docstring -->
+
+See the `doctor_cmd()` docstring in `src/erk/cli/commands/doctor.py` for the canonical example. It places `\b` on its own line before both the bulleted "Checks for" list and the "Examples:" section. The rendered `--help` output preserves every structural element: list items on separate lines, indentation intact, shell commands on their own lines.
+
 ## Examples Section Standard
 
 <!-- Source: src/erk/cli/commands/doctor.py, doctor_cmd docstring -->
@@ -90,7 +139,7 @@ See `doctor_cmd()` in `src/erk/cli/commands/doctor.py` for the canonical pattern
 - Shell comments use `#` prefix
 - Blank lines between examples for grouping
 
-This format ensures copy-paste works correctly from terminal output.
+See also `branch_delete()` in `src/erk/cli/commands/branch/delete_cmd.py` for another example of the same pattern applied to numbered lists.
 
 ## Anti-Pattern: Omitting `\b`
 
@@ -149,25 +198,13 @@ Examples:
 
 AI agents trained on Python documentation see standard docstrings without `\b` because most Python code doesn't use Click. When generating CLI help text, agents naturally follow docstring conventions from their training data, omitting the Click-specific escape sequence.
 
-**This is not obvious from reading Click documentation** — the `\b` escape is mentioned briefly in formatting notes but not emphasized as **required for structural content**.
+**This is not obvious from reading Click documentation** -- the `\b` escape is mentioned briefly in formatting notes but not emphasized as **required for structural content**.
 
 Learned docs exist to capture this kind of cross-cutting knowledge that's easy to miss during implementation.
 
 ## Coverage Status
 
-As of plan #6617 (2025 analysis):
-
-- 21 commands (28%) use `\b` correctly
-- 53 commands (72%) missing `\b` entirely
-
-**Commands with correct usage span multiple CLI areas:**
-
-- `erk doctor` — diagnostic checks
-- `erk launch` — agent session management
-- `erk plan log` — planning workflows
-- `erk branch delete` — branch operations
-- `erk pr summarize` — PR operations
-- `erk init capability add/remove` — capability management
+Adoption has improved since plan #6617 (2025 analysis) but many commands still lack `\b`. To check current counts, search for `\\b` in CLI command docstrings under `src/erk/cli/commands/`.
 
 **Common mistake pattern:** Commands have Examples sections but no `\b`, causing examples to reflow into single-line output.
 
