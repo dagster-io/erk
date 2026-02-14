@@ -85,7 +85,7 @@ Quick reference for all `erk exec` subcommands.
 | `update-dispatch-info`            | Update dispatch info in GitHub issue plan-header metadata.                |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).       |
 | `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.        |
-| `update-roadmap-step`             | Update a step's PR cell in an objective's roadmap table.                  |
+| `update-roadmap-step`             | Update step PR cells in an objective's roadmap table.                     |
 | `upload-learn-materials`          | Upload learn materials directory to a gist.                               |
 | `upload-session`                  | Upload a session JSONL to GitHub Gist and update plan header.             |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.       |
@@ -1132,7 +1132,7 @@ Update plan-header metadata with remote session artifact location.
 
 ### update-roadmap-step
 
-Update a step's PR cell in an objective's roadmap table.
+Update step PR cells in an objective's roadmap table.
 
 **Usage:** `erk exec update-roadmap-step` <issue_number>
 
@@ -1146,7 +1146,7 @@ Update a step's PR cell in an objective's roadmap table.
 
 | Flag       | Type   | Required | Default        | Description                                              |
 | ---------- | ------ | -------- | -------------- | -------------------------------------------------------- |
-| `--step`   | TEXT   | Yes      | Sentinel.UNSET | Step ID to update (e.g., '1.3')                          |
+| `--step`   | TEXT   | Yes      | Sentinel.UNSET | Step ID(s) to update (e.g., '1.3')                       |
 | `--pr`     | TEXT   | Yes      | Sentinel.UNSET | PR reference (e.g., 'plan #123', '#456', or '' to clear) |
 | `--status` | CHOICE | No       | -              | Explicit status to set (default: infer from PR value)    |
 
