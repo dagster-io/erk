@@ -3,7 +3,6 @@ name: existing-docs-checker
 description: Search existing documentation to identify duplicates and contradictions before suggesting new docs
 allowed-tools:
   - Read
-  - Write
   - Glob
   - Grep
 ---
@@ -19,7 +18,6 @@ You receive:
 - `plan_title`: Title of the plan being analyzed (e.g., "Add parallel agent orchestration")
 - `pr_title`: PR title if available (often similar to plan title)
 - `search_hints`: Key terms extracted from plan title (e.g., "parallel", "agent", "orchestration")
-- `output_path`: Path to write your analysis output (e.g., `.erk/scratch/sessions/.../learn-agents/existing-docs-check.md`)
 
 ## Search Process
 
@@ -181,15 +179,3 @@ For each contradiction:
 - **Verify before harmonizing**: When two docs describe the same concept differently, check if both reference real code first
 - **File paths are verifiable claims**: Every `src/` or `packages/` path in a doc is testable. Test it.
 - **Stale > Wrong**: A doc referencing nonexistent code actively misleads. A missing doc merely leaves a gap.
-
-## Output
-
-**CRITICAL:** Write your complete output to the `output_path` using the Write tool.
-
-Your final message to the caller MUST be only:
-
-```
-Output written to <output_path>
-```
-
-Do NOT include the analysis content in your final message.

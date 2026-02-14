@@ -290,6 +290,11 @@ Task(
     - session_xml_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/<filename>.xml
     - context: <brief description from plan title>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<session-id>.md
+
+    ## Output Routing
+    CRITICAL: Write your complete output to the output_path using the Write tool.
+    Your final message MUST be only: "Output written to <output_path>"
+    Do NOT return the analysis content in your final message.
 )
 ```
 
@@ -310,6 +315,11 @@ Task(
     - pr_number: <pr-number>
     - issue_number: <issue-number>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md
+
+    ## Output Routing
+    CRITICAL: Write your complete output to the output_path using the Write tool.
+    Your final message MUST be only: "Output written to <output_path>"
+    Do NOT return the analysis content in your final message.
 )
 ```
 
@@ -333,6 +343,11 @@ Task(
     - pr_title: <PR title if available, or empty string>
     - search_hints: <key terms extracted from plan title, comma-separated>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md
+
+    ## Output Routing
+    CRITICAL: Write your complete output to the output_path using the Write tool.
+    Your final message MUST be only: "Output written to <output_path>"
+    Do NOT return the analysis content in your final message.
 )
 ```
 
@@ -443,6 +458,11 @@ Task(
     - pr_comments_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/pr-comments-analysis.md" (or null if no PR)
     - plan_title: <title from plan issue>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md
+
+    ## Output Routing
+    CRITICAL: Write your complete output to the output_path using the Write tool.
+    Your final message MUST be only: "Output written to <output_path>"
+    Do NOT return the analysis content in your final message.
 )
 ```
 
@@ -479,6 +499,11 @@ Task(
     - gist_url: <gist URL from Step 4>
     - pr_number: <PR number if available, else null>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md
+
+    ## Output Routing
+    CRITICAL: Write your complete output to the output_path using the Write tool.
+    Your final message MUST be only: "Output written to <output_path>"
+    Do NOT return the analysis content in your final message.
 )
 ```
 
@@ -502,6 +527,11 @@ Task(
     - learn_plan_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md"
     - gap_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md"
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json
+
+    ## Output Routing
+    CRITICAL: Write your complete output to the output_path using the Write tool.
+    Your final message MUST be only: "Output written to <output_path>"
+    Do NOT return the analysis content in your final message.
 )
 ```
 

@@ -3,7 +3,6 @@ name: plan-synthesizer
 description: Transform gap analysis into a complete, actionable learn plan markdown
 allowed-tools:
   - Read
-  - Write
   - Glob
   - Grep
 ---
@@ -22,7 +21,6 @@ You receive:
 - `plan_title`: Title from the original plan issue
 - `gist_url`: URL to raw materials gist
 - `pr_number`: PR number if available (for PR comment references)
-- `output_path`: Path to write your synthesized plan (e.g., `.erk/scratch/sessions/.../learn-agents/learn-plan.md`)
 
 ## Process
 
@@ -222,18 +220,4 @@ Items with score 2-3 (may warrant promotion with additional context):
 6. **Source pointers over verbatim code**: Draft content starters MUST use source file references instead of copying code blocks. Code in documentation goes stale silently. See `docs/learned/documentation/source-pointers.md`.
 
 7. **Stale cleanup before new content**: DELETE_STALE items appear before CREATE items in the output. Removing phantom documentation is higher priority than adding new documentation.
-
-## Output
-
-**CRITICAL:** Write your complete output to the `output_path` using the Write tool.
-
-Your final message to the caller MUST be only:
-
-```
-
-Output written to <output_path>
-
-```
-
-Do NOT include the analysis content in your final message.
 ```
