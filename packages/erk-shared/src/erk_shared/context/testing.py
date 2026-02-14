@@ -134,7 +134,9 @@ def context_for_test(
     resolved_agent_launcher: AgentLauncher = (
         agent_launcher if agent_launcher is not None else FakeAgentLauncher()
     )
-    resolved_agent_docs: AgentDocs = agent_docs if agent_docs is not None else FakeAgentDocs()
+    resolved_agent_docs: AgentDocs = (
+        agent_docs if agent_docs is not None else FakeAgentDocs(files={}, has_docs_dir=True)
+    )
     resolved_codespace: Codespace = codespace if codespace is not None else FakeCodespace()
     resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 

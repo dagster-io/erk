@@ -143,7 +143,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         shell=FakeShell(),
         codespace=fake_codespace,
         agent_launcher=FakeAgentLauncher(),
-        agent_docs=FakeAgentDocs(),
+        agent_docs=FakeAgentDocs(files={}, has_docs_dir=True),
         completion=FakeCompletion(),
         time=fake_time,
         erk_installation=FakeErkInstallation(),
@@ -316,7 +316,7 @@ def context_for_test(
     if agent_docs is None:
         from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
 
-        agent_docs = FakeAgentDocs()
+        agent_docs = FakeAgentDocs(files={}, has_docs_dir=True)
 
     if completion is None:
         completion = FakeCompletion()
@@ -586,12 +586,15 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         github = DryRunGitHub(github)
 
     # 10. Create claude installation and prompt executor
+    from erk_shared.gateway.agent_docs.dry_run import DryRunAgentDocs
     from erk_shared.gateway.agent_launcher.real import RealAgentLauncher
     from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
 
     real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
     real_agent_launcher: AgentLauncher = RealAgentLauncher()
     real_agent_docs: AgentDocs = RealAgentDocs()
+    if dry_run:
+        real_agent_docs = DryRunAgentDocs(real_agent_docs)
     prompt_executor: PromptExecutor = ClaudePromptExecutor(console=console)
 
     # 11. Create context with all values

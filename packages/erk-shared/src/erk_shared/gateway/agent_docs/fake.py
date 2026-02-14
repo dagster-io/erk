@@ -19,18 +19,17 @@ class FakeAgentDocs(AgentDocs):
     def __init__(
         self,
         *,
-        files: dict[str, str] | None = None,
-        has_docs_dir: bool = True,
+        files: dict[str, str],
+        has_docs_dir: bool,
     ) -> None:
         """Create FakeAgentDocs with pre-seeded file contents.
 
         Args:
             files: Dict mapping relative paths to content
                 (e.g., {"architecture/foo.md": "# Content"}).
-                Defaults to empty dict.
-            has_docs_dir: Whether docs/learned/ directory exists. Defaults to True.
+            has_docs_dir: Whether docs/learned/ directory exists.
         """
-        self._files = files if files is not None else {}
+        self._files = dict(files)
         self._has_docs_dir = has_docs_dir
         self._written_files: dict[str, str] = {}
 

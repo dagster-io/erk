@@ -21,7 +21,7 @@ read_when:
 
 
 def test_sync_exits_zero_when_no_docs_dir() -> None:
-    agent_docs = FakeAgentDocs(has_docs_dir=False)
+    agent_docs = FakeAgentDocs(files={}, has_docs_dir=False)
     ctx = context_for_test(agent_docs=agent_docs)
 
     runner = CliRunner()
@@ -32,7 +32,7 @@ def test_sync_exits_zero_when_no_docs_dir() -> None:
 
 
 def test_sync_creates_index_files() -> None:
-    agent_docs = FakeAgentDocs(files={"doc.md": VALID_DOC})
+    agent_docs = FakeAgentDocs(has_docs_dir=True, files={"doc.md": VALID_DOC})
     ctx = context_for_test(agent_docs=agent_docs)
 
     runner = CliRunner()
@@ -43,7 +43,7 @@ def test_sync_creates_index_files() -> None:
 
 
 def test_sync_dry_run_does_not_write() -> None:
-    agent_docs = FakeAgentDocs(files={"doc.md": VALID_DOC})
+    agent_docs = FakeAgentDocs(has_docs_dir=True, files={"doc.md": VALID_DOC})
     ctx = context_for_test(agent_docs=agent_docs)
 
     runner = CliRunner()
@@ -56,10 +56,11 @@ def test_sync_dry_run_does_not_write() -> None:
 
 def test_sync_check_exits_one_when_out_of_sync() -> None:
     agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
         files={
             "architecture/doc1.md": VALID_DOC,
             "architecture/doc2.md": VALID_DOC,
-        }
+        },
     )
     ctx = context_for_test(agent_docs=agent_docs)
 
@@ -71,7 +72,7 @@ def test_sync_check_exits_one_when_out_of_sync() -> None:
 
 
 def test_sync_check_exits_zero_when_in_sync() -> None:
-    agent_docs = FakeAgentDocs(files={"doc.md": VALID_DOC})
+    agent_docs = FakeAgentDocs(has_docs_dir=True, files={"doc.md": VALID_DOC})
     ctx = context_for_test(agent_docs=agent_docs)
 
     # Pre-sync so files match

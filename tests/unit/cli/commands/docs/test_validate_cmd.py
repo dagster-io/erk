@@ -29,7 +29,7 @@ Missing read_when.
 
 
 def test_validate_exits_zero_when_no_docs_dir() -> None:
-    agent_docs = FakeAgentDocs(has_docs_dir=False)
+    agent_docs = FakeAgentDocs(files={}, has_docs_dir=False)
     ctx = context_for_test(agent_docs=agent_docs)
 
     runner = CliRunner()
@@ -40,7 +40,7 @@ def test_validate_exits_zero_when_no_docs_dir() -> None:
 
 
 def test_validate_exits_zero_when_no_doc_files() -> None:
-    agent_docs = FakeAgentDocs(files={"index.md": "# Root Index"})
+    agent_docs = FakeAgentDocs(has_docs_dir=True, files={"index.md": "# Root Index"})
     ctx = context_for_test(agent_docs=agent_docs)
 
     runner = CliRunner()
@@ -52,10 +52,11 @@ def test_validate_exits_zero_when_no_doc_files() -> None:
 
 def test_validate_passes_with_valid_docs() -> None:
     agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
         files={
             "doc.md": VALID_DOC,
             "tripwires-index.md": "<!-- AUTO-GENERATED FILE -->\n# Index\n",
-        }
+        },
     )
     ctx = context_for_test(agent_docs=agent_docs)
 
@@ -68,10 +69,11 @@ def test_validate_passes_with_valid_docs() -> None:
 
 def test_validate_fails_with_invalid_docs() -> None:
     agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
         files={
             "bad.md": INVALID_DOC,
             "tripwires-index.md": "<!-- AUTO-GENERATED FILE -->\n# Index\n",
-        }
+        },
     )
     ctx = context_for_test(agent_docs=agent_docs)
 
@@ -84,10 +86,11 @@ def test_validate_fails_with_invalid_docs() -> None:
 
 def test_validate_verbose_shows_all_files() -> None:
     agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
         files={
             "doc.md": VALID_DOC,
             "tripwires-index.md": "<!-- AUTO-GENERATED FILE -->\n# Index\n",
-        }
+        },
     )
     ctx = context_for_test(agent_docs=agent_docs)
 

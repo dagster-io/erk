@@ -32,7 +32,7 @@ Missing read_when.
 
 def test_check_exits_zero_when_no_docs_dir() -> None:
     """Check exits 0 when docs/learned/ doesn't exist."""
-    agent_docs = FakeAgentDocs(has_docs_dir=False)
+    agent_docs = FakeAgentDocs(files={}, has_docs_dir=False)
     ctx = context_for_test(agent_docs=agent_docs)
 
     runner = CliRunner()
@@ -44,7 +44,7 @@ def test_check_exits_zero_when_no_docs_dir() -> None:
 
 def test_check_exits_zero_when_no_doc_files() -> None:
     """Check exits 0 when docs/learned/ exists but has no doc files."""
-    agent_docs = FakeAgentDocs(files={"index.md": "# Root Index"})
+    agent_docs = FakeAgentDocs(has_docs_dir=True, files={"index.md": "# Root Index"})
     ctx = context_for_test(agent_docs=agent_docs)
 
     runner = CliRunner()
@@ -57,10 +57,11 @@ def test_check_exits_zero_when_no_doc_files() -> None:
 def test_check_fails_with_invalid_frontmatter() -> None:
     """Check fails when a doc has invalid frontmatter."""
     agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
         files={
             "bad.md": INVALID_DOC,
             "tripwires-index.md": "<!-- AUTO-GENERATED FILE -->\n# Index\n",
-        }
+        },
     )
     ctx = context_for_test(agent_docs=agent_docs)
 
@@ -74,10 +75,11 @@ def test_check_fails_with_invalid_frontmatter() -> None:
 def test_check_passes_with_valid_docs_in_sync() -> None:
     """Check passes when all docs valid and generated files in sync."""
     agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
         files={
             "doc.md": VALID_DOC,
             "tripwires-index.md": "<!-- AUTO-GENERATED FILE -->\n# Tripwires Index\n",
-        }
+        },
     )
     ctx = context_for_test(agent_docs=agent_docs)
 
@@ -96,10 +98,11 @@ def test_check_passes_with_valid_docs_in_sync() -> None:
 def test_check_fails_when_sync_out_of_date() -> None:
     """Check fails when generated files need updating."""
     agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
         files={
             "architecture/doc1.md": VALID_DOC,
             "architecture/doc2.md": VALID_DOC,
-        }
+        },
     )
     ctx = context_for_test(agent_docs=agent_docs)
 
