@@ -12,9 +12,6 @@ export function StateFilter({selectedState, counts, onSelect}: StateFilterProps)
 
   return (
     <div className="state-filter">
-      <div className="state-filter-header">
-        <span className="state-filter-title">erk</span>
-      </div>
       <div className="state-filter-list">
         <div
           className={`state-filter-item ${selectedState === null ? 'selected' : ''}`}
