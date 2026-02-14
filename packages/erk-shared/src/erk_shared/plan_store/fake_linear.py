@@ -160,8 +160,10 @@ class FakeLinearPlanBackend(PlanBackend):
         # Mutation tracking (for test assertions)
         self._created_plans: list[tuple[str, str, tuple[str, ...]]] = []
         self._updated_metadata: list[tuple[str, Mapping[str, object]]] = []
+        self._updated_content: list[tuple[str, str]] = []  # (plan_id, content)
         self._added_comments: list[tuple[str, str, str]] = []  # (plan_id, body, comment_id)
         self._closed_plans: list[str] = []
+        self._posted_events: list[tuple[str, Mapping[str, object], str | None]] = []
 
     # -------------------------------------------------------------------------
     # Read operations (from PlanBackend ABC)
@@ -182,6 +184,27 @@ class FakeLinearPlanBackend(PlanBackend):
 
         issue = self._issues[plan_id]
         return self._convert_to_plan(issue)
+
+    def get_metadata_field(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        field_name: str,
+    ) -> object | PlanNotFound:
+        """Get a single metadata field from custom_fields.
+
+        Args:
+            repo_root: Repository root directory (ignored for fake)
+            plan_id: Linear UUID string
+            field_name: Name of the metadata field to read
+
+        Returns:
+            Field value (may be None if unset), or PlanNotFound if plan doesn't exist
+        """
+        if plan_id not in self._issues:
+            return PlanNotFound(plan_id=plan_id)
+
+        return self._issues[plan_id].custom_fields.get(field_name)
 
     def list_plans(self, repo_root: Path, query: PlanQuery) -> list[Plan]:
         """Query plans by criteria.
@@ -349,6 +372,43 @@ class FakeLinearPlanBackend(PlanBackend):
         )
         self._updated_metadata.append((plan_id, metadata))
 
+    def update_plan_content(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        content: str,
+    ) -> None:
+        """Update the plan content (description).
+
+        Args:
+            repo_root: Repository root directory (ignored for fake)
+            plan_id: Linear UUID string
+            content: New plan content
+
+        Raises:
+            RuntimeError: If plan not found
+        """
+        if plan_id not in self._issues:
+            msg = f"Linear issue {plan_id} not found"
+            raise RuntimeError(msg)
+
+        old_issue = self._issues[plan_id]
+
+        # Create updated issue with new description (frozen dataclass)
+        self._issues[plan_id] = LinearIssue(
+            id=old_issue.id,
+            title=old_issue.title,
+            description=content,
+            state=old_issue.state,
+            url=old_issue.url,
+            labels=old_issue.labels,
+            assignee=old_issue.assignee,
+            created_at=old_issue.created_at,
+            updated_at=datetime.now(UTC),
+            custom_fields=old_issue.custom_fields,
+        )
+        self._updated_content.append((plan_id, content))
+
     def add_comment(
         self,
         repo_root: Path,
@@ -388,6 +448,30 @@ class FakeLinearPlanBackend(PlanBackend):
 
         return comment_id
 
+    def post_event(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        *,
+        metadata: Mapping[str, object],
+        comment: str | None,
+    ) -> None:
+        """Post a combined event: metadata update + optional comment.
+
+        Args:
+            repo_root: Repository root directory (ignored for fake)
+            plan_id: Linear UUID string
+            metadata: Metadata fields to update
+            comment: Optional comment body to post
+
+        Raises:
+            RuntimeError: If plan not found
+        """
+        if comment is not None:
+            self.add_comment(repo_root, plan_id, comment)
+        self.update_metadata(repo_root, plan_id, metadata)
+        self._posted_events.append((plan_id, metadata, comment))
+
     # -------------------------------------------------------------------------
     # Read-only properties for test assertions
     # -------------------------------------------------------------------------
@@ -407,6 +491,22 @@ class FakeLinearPlanBackend(PlanBackend):
         Returns list of (plan_id, metadata) tuples.
         """
         return list(self._updated_metadata)
+
+    @property
+    def updated_content(self) -> list[tuple[str, str]]:
+        """Read-only access to content updates for test assertions.
+
+        Returns list of (plan_id, content) tuples.
+        """
+        return list(self._updated_content)
+
+    @property
+    def posted_events(self) -> list[tuple[str, Mapping[str, object], str | None]]:
+        """Read-only access to posted events for test assertions.
+
+        Returns list of (plan_id, metadata, comment_or_none) tuples.
+        """
+        return list(self._posted_events)
 
     @property
     def added_comments(self) -> list[tuple[str, str, str]]:

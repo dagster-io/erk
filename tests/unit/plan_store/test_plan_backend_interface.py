@@ -336,3 +336,176 @@ def test_create_multiple_plans_have_unique_ids(plan_backend: PlanBackend) -> Non
     # All IDs should be unique
     ids = [r.plan_id for r in results]
     assert len(ids) == len(set(ids))
+
+
+# =============================================================================
+# get_metadata_field tests
+# =============================================================================
+
+
+def test_get_metadata_field_returns_plan_not_found(plan_backend: PlanBackend) -> None:
+    """Both backends return PlanNotFound for nonexistent plan."""
+    nonexistent_id = _get_nonexistent_id(plan_backend)
+    result = plan_backend.get_metadata_field(Path("/repo"), nonexistent_id, "worktree_name")
+    assert isinstance(result, PlanNotFound)
+
+
+def test_get_metadata_field_returns_none_for_missing_field(plan_backend: PlanBackend) -> None:
+    """Both backends return None when plan exists but field is absent."""
+    created = plan_backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Plan for metadata test",
+        content="# Test plan",
+        labels=("erk-plan",),
+        metadata={},
+    )
+
+    result = plan_backend.get_metadata_field(Path("/repo"), created.plan_id, "worktree_name")
+    assert result is None
+
+
+def test_get_metadata_field_roundtrips_with_update_metadata(
+    plan_backend: PlanBackend,
+) -> None:
+    """Both backends can set and read back a metadata field."""
+    created = plan_backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Plan for roundtrip",
+        content="# Roundtrip plan",
+        labels=("erk-plan",),
+        metadata={},
+    )
+
+    plan_backend.update_metadata(
+        Path("/repo"),
+        created.plan_id,
+        {"worktree_name": "my-worktree"},
+    )
+
+    result = plan_backend.get_metadata_field(Path("/repo"), created.plan_id, "worktree_name")
+    assert result == "my-worktree"
+
+
+# =============================================================================
+# update_plan_content tests
+# =============================================================================
+
+
+def test_update_plan_content_updates_body(plan_backend: PlanBackend) -> None:
+    """Both backends can update plan content and verify via get_plan."""
+    created = plan_backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Plan for content update",
+        content="# Original content",
+        labels=("erk-plan",),
+        metadata={},
+    )
+
+    plan_backend.update_plan_content(
+        Path("/repo"),
+        created.plan_id,
+        "# Updated content\n\nNew body text.",
+    )
+
+    plan = plan_backend.get_plan(Path("/repo"), created.plan_id)
+    assert not isinstance(plan, PlanNotFound)
+
+    # Linear updates description directly; GitHub updates the comment
+    # For Linear, body comes from description
+    if plan_backend.get_provider_name() == "linear":
+        assert plan.body == "# Updated content\n\nNew body text."
+
+
+def test_update_plan_content_not_found_raises(plan_backend: PlanBackend) -> None:
+    """Both backends raise RuntimeError for nonexistent plan."""
+    nonexistent_id = _get_nonexistent_id(plan_backend)
+    with pytest.raises(RuntimeError):
+        plan_backend.update_plan_content(Path("/repo"), nonexistent_id, "new content")
+
+
+# =============================================================================
+# post_event tests
+# =============================================================================
+
+
+def test_post_event_metadata_only(plan_backend: PlanBackend) -> None:
+    """Both backends handle metadata update without comment."""
+    created = plan_backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Plan for event",
+        content="# Event plan",
+        labels=("erk-plan",),
+        metadata={},
+    )
+
+    plan_backend.post_event(
+        Path("/repo"),
+        created.plan_id,
+        metadata={"worktree_name": "event-wt"},
+        comment=None,
+    )
+
+    result = plan_backend.get_metadata_field(Path("/repo"), created.plan_id, "worktree_name")
+    assert result == "event-wt"
+
+
+def test_post_event_metadata_and_comment(plan_backend: PlanBackend) -> None:
+    """Both backends handle metadata update with comment."""
+    created = plan_backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Plan for event with comment",
+        content="# Event plan",
+        labels=("erk-plan",),
+        metadata={},
+    )
+
+    plan_backend.post_event(
+        Path("/repo"),
+        created.plan_id,
+        metadata={"worktree_name": "event-wt-2"},
+        comment="Implementation started",
+    )
+
+    result = plan_backend.get_metadata_field(Path("/repo"), created.plan_id, "worktree_name")
+    assert result == "event-wt-2"
+
+
+def test_post_event_not_found_raises(plan_backend: PlanBackend) -> None:
+    """Both backends raise RuntimeError for nonexistent plan."""
+    nonexistent_id = _get_nonexistent_id(plan_backend)
+    with pytest.raises(RuntimeError):
+        plan_backend.post_event(
+            Path("/repo"),
+            nonexistent_id,
+            metadata={"worktree_name": "wt"},
+            comment=None,
+        )
+
+
+# =============================================================================
+# Whitelist removal test (GitHub-specific)
+# =============================================================================
+
+
+def test_update_metadata_accepts_previously_blocked_fields() -> None:
+    """GitHub backend now accepts fields that were previously blocked by whitelist."""
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-plan"})
+    backend = GitHubPlanStore(fake_issues)
+
+    created = backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Whitelist test",
+        content="# Plan",
+        labels=("erk-plan",),
+        metadata={},
+    )
+
+    # These fields were previously blocked by the whitelist
+    backend.update_metadata(
+        Path("/repo"),
+        created.plan_id,
+        {"learn_status": "pending"},
+    )
+
+    result = backend.get_metadata_field(Path("/repo"), created.plan_id, "learn_status")
+    assert result == "pending"

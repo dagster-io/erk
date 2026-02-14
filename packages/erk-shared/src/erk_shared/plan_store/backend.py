@@ -39,11 +39,14 @@ class PlanBackend(PlanStore):
         list_plans: Query plans by criteria
         get_provider_name: Get the provider name
         close_plan: Close a plan
+        get_metadata_field: Get a single metadata field value
 
     Write operations (added by PlanBackend):
         create_plan: Create a new plan
         update_metadata: Update plan metadata
+        update_plan_content: Update plan content body
         add_comment: Add a comment to a plan
+        post_event: Combined metadata update + optional comment
     """
 
     # Read operations (inherited from PlanStore, re-declared with updated param names)
@@ -83,6 +86,25 @@ class PlanBackend(PlanStore):
 
         Returns:
             Provider name (e.g., "github", "gitlab", "linear")
+        """
+        ...
+
+    @abstractmethod
+    def get_metadata_field(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        field_name: str,
+    ) -> object | PlanNotFound:
+        """Get a single metadata field from a plan.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Provider-specific identifier
+            field_name: Name of the metadata field to read
+
+        Returns:
+            Field value (may be None if unset), or PlanNotFound if plan doesn't exist
         """
         ...
 
@@ -134,6 +156,25 @@ class PlanBackend(PlanStore):
         """
         ...
 
+    @abstractmethod
+    def update_plan_content(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        content: str,
+    ) -> None:
+        """Update the plan content body.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Provider-specific identifier
+            content: New plan content
+
+        Raises:
+            RuntimeError: If plan not found or update fails
+        """
+        ...
+
     # close_plan is inherited from PlanStore
 
     @abstractmethod
@@ -152,6 +193,28 @@ class PlanBackend(PlanStore):
 
         Returns:
             Comment ID as string
+
+        Raises:
+            RuntimeError: If provider fails or plan not found
+        """
+        ...
+
+    @abstractmethod
+    def post_event(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        *,
+        metadata: Mapping[str, object],
+        comment: str | None,
+    ) -> None:
+        """Post a combined event: metadata update + optional comment.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Provider-specific identifier
+            metadata: Metadata fields to update
+            comment: Optional comment body to post
 
         Raises:
             RuntimeError: If provider fails or plan not found
