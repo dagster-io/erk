@@ -24,7 +24,8 @@ from erk_shared.gateway.github.pr_footer import (
     extract_footer_from_body,
 )
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.impl_folder import validate_issue_linkage
+from erk_shared.impl_folder import read_issue_reference
+from erk_shared.naming import extract_leading_issue_number
 
 if TYPE_CHECKING:
     from erk.core.plan_context_provider import PlanContext
@@ -60,13 +61,20 @@ class IssueDiscovery:
     plans_repo: str | None
 
 
+@dataclass(frozen=True)
+class IssueLinkageMismatch:
+    """Branch name and .impl/issue.json disagree on issue number."""
+
+    message: str
+
+
 def discover_issue_for_footer(
     *,
     impl_dir: Path,
     branch_name: str,
     existing_pr_body: str | None,
     plans_repo: str | None,
-) -> IssueDiscovery:
+) -> IssueDiscovery | IssueLinkageMismatch:
     """Discover issue number for PR footer from .impl/ or existing PR body.
 
     Tries two sources in order:
@@ -80,14 +88,23 @@ def discover_issue_for_footer(
         plans_repo: Default plans_repo from local config
 
     Returns:
-        IssueDiscovery with issue_number and plans_repo
+        IssueDiscovery with issue_number and plans_repo, or
+        IssueLinkageMismatch if branch and .impl/issue.json disagree
     """
     # Primary: discover from .impl/issue.json or branch name
-    issue_number: int | None = None
-    try:
-        issue_number = validate_issue_linkage(impl_dir, branch_name)
-    except ValueError:
-        pass
+    branch_issue = extract_leading_issue_number(branch_name)
+    issue_ref = read_issue_reference(impl_dir) if impl_dir.exists() else None
+    impl_issue = issue_ref.issue_number if issue_ref is not None else None
+
+    if branch_issue is not None and impl_issue is not None and branch_issue != impl_issue:
+        return IssueLinkageMismatch(
+            message=(
+                f"Branch name (P{branch_issue}-...) disagrees with "
+                f".impl/issue.json (#{impl_issue}). Fix the mismatch before proceeding."
+            )
+        )
+
+    issue_number = branch_issue if impl_issue is None else impl_issue
 
     effective_plans_repo = plans_repo
 

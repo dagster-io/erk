@@ -11,6 +11,7 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.pr.shared import (
+    IssueLinkageMismatch,
     assemble_pr_body,
     discover_issue_for_footer,
     render_progress,
@@ -178,6 +179,8 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         existing_pr_body=pr_info.body,
         plans_repo=plans_repo,
     )
+    if isinstance(issue_discovery, IssueLinkageMismatch):
+        raise click.ClickException(issue_discovery.message)
 
     final_body = assemble_pr_body(
         body=body,
