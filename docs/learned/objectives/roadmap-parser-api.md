@@ -26,7 +26,7 @@ The roadmap parser is a shared module consumed by two commands with fundamentall
 The `objective_roadmap_shared.py` module exists because two commands need the same parsing logic but use different subsets of it. Both `check_cmd.py` (erk objective check) and `update_roadmap_step.py` consume the shared parser, but differ in scope: `check_cmd` uses all 4 functions and both data types for full validation workflow, while `update_roadmap_step` only imports `parse_roadmap` for validation before surgical regex edits.
 
 <!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective -->
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
 
 The key insight: `update_roadmap_step` calls `parse_roadmap` for **validation**, not for mutation. It confirms the target step ID exists in the parsed output, then performs a separate regex replacement on the raw markdown. The parsed data is thrown away. This means the parser's job is to be a source of truth about table structure, not a round-trip serializer.
 
@@ -75,6 +75,10 @@ def _enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPh
 ```
 
 Extracts phase names from markdown headers (e.g., `### Phase 1: Planning`) and replaces placeholder names in parsed `RoadmapPhase` objects. Called by `parse_roadmap()` after frontmatter parsing because frontmatter stores flat steps without phase names. Uses regex pattern `^###\s+Phase\s+(\d+)([A-Z]?):\s*(.+?)` to match headers.
+
+### Separate plan and pr fields on RoadmapStep
+
+`RoadmapStep` has separate `plan` and `pr` fields (both `str | None`). The `plan` field holds a plan issue reference (e.g., `"#6464"`), while `pr` holds a landed PR reference (e.g., `"#123"`). This replaces the old convention where `pr` held both formats (`"plan #456"` vs `"#123"`). The parser handles backward compatibility: 4-column tables with `plan #NNN` in the PR column are automatically migrated to separate fields during parsing.
 
 ## Relationship to Sibling Docs
 

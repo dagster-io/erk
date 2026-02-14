@@ -175,7 +175,7 @@ Callers should always parse the JSON output and check `success` rather than rely
 
 ### Table Structure Assumptions
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
 
 The regex in `_replace_step_refs_in_body()` supports both four-column (legacy) and five-column tables:
 

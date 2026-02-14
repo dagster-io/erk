@@ -61,7 +61,7 @@ See the status resolution logic in `parse_roadmap()` in `src/erk/cli/commands/ex
 
 The most important cross-cutting insight: **mutation writes both cells, but parsing only infers from one**. This asymmetry is intentional.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
 
 The `update-roadmap-step` command computes display status from the PR value and writes both the Status and PR cells atomically. It does this so the table is always human-readable on GitHub without requiring a parse pass. But `parse_roadmap()` only falls through to PR inference when the Status cell is `-` or empty.
 

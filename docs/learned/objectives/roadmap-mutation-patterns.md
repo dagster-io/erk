@@ -19,9 +19,9 @@ Erk has two distinct strategies for mutating objective roadmap tables, each opti
 
 ## Why Two Patterns?
 
-The roadmap table is a 4-column markdown table stored in a GitHub issue body. Two fundamentally different mutation shapes arise from different workflow events:
+The roadmap table is a 5-column markdown table stored in a GitHub issue body (`| Step | Description | Status | Plan | PR |`). Two fundamentally different mutation shapes arise from different workflow events:
 
-- **Single-cell updates** (plan saved, PR created): Only the PR column of one step changes. The rest of the table — descriptions, other steps, layout — should be untouched. Fetching, parsing, and rewriting the entire table for a single cell change would risk overwriting concurrent edits by other agents or humans.
+- **Single-step updates** (plan saved, PR created): Only the plan/PR columns of one step change. The rest of the table — descriptions, other steps, layout — should be untouched. Fetching, parsing, and rewriting the entire table for a single step change would risk overwriting concurrent edits by other agents or humans.
 
 - **Full-body rewrites** (PR landed): Landing a PR may trigger structural changes — marking a step done, collapsing completed phases, reordering, or adding narrative text. A single-cell regex replacement can't express these layout-level changes.
 
@@ -40,13 +40,13 @@ The split isn't about capability (the full-body approach _could_ do single-cell 
 
 ## Surgical Update: `update-roadmap-step`
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_pr_in_body -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
 
-The surgical command finds a step row by ID using regex and replaces **only** the status and PR cells in a single operation. See `_replace_step_pr_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`.
+The surgical command finds a step row by ID using regex and replaces **only** the status, plan, and PR cells in a single operation. See `_replace_step_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`.
 
-**Why it writes both status and PR cells:** The command could leave status as `-` and let parse-time inference determine it later. Instead, it computes a display status (`done`, `in-progress`, `pending`) from the PR value and writes it directly. This makes the table human-readable in GitHub's UI without requiring a parse pass. For the full rationale, see [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md).
+**Why it writes status, plan, and PR cells:** The command could leave status as `-` and let parse-time inference determine it later. Instead, it computes a display status (`done`, `in-progress`, `pending`) from the plan/PR values and writes it directly. Setting `--pr` automatically clears the plan column, and vice versa. This makes the table human-readable in GitHub's UI without requiring a parse pass. For the full rationale, see [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md).
 
-**Race condition safety:** Because the regex only touches one row's last two cells, concurrent edits to other steps or descriptions are preserved. This is the key advantage over full-body rewrites for single-step changes.
+**Race condition safety:** Because the regex only touches one row's last three cells, concurrent edits to other steps or descriptions are preserved. This is the key advantage over full-body rewrites for single-step changes.
 
 ## Full-Body Update: `objective-update-with-landed-pr`
 
