@@ -27,12 +27,11 @@ Tell the user:
 
 ```
 Learn pipeline for plan #<issue-number>:
-  1. Read local session logs from ~/.claude/projects/
-  2. Preprocess sessions (compress JSONL → XML, deduplicate, truncate)
-  3. Upload preprocessed XML + PR comments to a secret GitHub gist
-  4. Launch analysis agents (session, diff, docs check, PR comments)
-  5. Synthesize findings into a documentation plan
-  6. Save plan as a new GitHub issue
+  1. Check for preprocessed learn materials (gist URL on plan header)
+  2. If no gist: read local sessions, preprocess, upload to gist
+  3. Launch analysis agents (session, diff, docs check, PR comments)
+  4. Synthesize findings into a documentation plan
+  5. Save plan as a new GitHub issue
 ```
 
 ### Step 1: Validate Plan Type
