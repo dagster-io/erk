@@ -52,9 +52,26 @@ Resolve "Branch X has been updated remotely" errors by syncing with remote and h
 
 6. **If rebase causes conflicts:**
 
-   <!-- Include shared conflict resolution steps -->
+   For each conflicted file:
 
-   @../../../.erk/docs/kits/erk/includes/conflict-resolution.md
+   a. **Read the file** - Understand both sides of the conflict by examining the conflict markers:
+   - `<<<<<<< HEAD` marks the start of your local changes
+   - `=======` separates local from incoming changes
+   - `>>>>>>> <commit>` marks the end of incoming changes
+
+   b. **Understand intent** - Determine what each side was trying to accomplish:
+   - What was the local change trying to do?
+   - What was the remote change trying to do?
+   - Are they complementary or contradictory?
+
+   c. **Resolve intelligently:**
+   - If changes are complementary -> merge both
+   - If changes conflict semantically -> prefer the more recent/complete version
+   - If unclear -> ask the user for guidance
+
+   d. **Remove all conflict markers** - The resolved file should have no `<<<<<<<`, `=======`, or `>>>>>>>` markers
+
+   e. **Stage the resolution** - `git add <file>`
 
 7. **Re-track branch with Graphite** (when using Graphite):
 
