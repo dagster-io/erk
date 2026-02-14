@@ -17,6 +17,7 @@ import click
 
 from erk.cli.commands.pr.shared import (
     assemble_pr_body,
+    echo_plan_context_status,
     run_commit_message_generation,
 )
 from erk.cli.ensure import UserFacingCliError
@@ -477,14 +478,7 @@ def fetch_plan_context(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
         branch_name=state.branch_name,
     )
 
-    if plan_context is not None:
-        msg = f"   Incorporating plan from issue #{plan_context.issue_number}"
-        click.echo(click.style(msg, fg="green"))
-        if plan_context.objective_summary is not None:
-            click.echo(click.style(f"   Linked to {plan_context.objective_summary}", fg="green"))
-    else:
-        click.echo(click.style("   No linked plan found", dim=True))
-    click.echo("")
+    echo_plan_context_status(plan_context)
 
     return dataclasses.replace(state, plan_context=plan_context)
 
