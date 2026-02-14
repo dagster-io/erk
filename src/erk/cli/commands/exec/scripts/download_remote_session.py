@@ -34,7 +34,7 @@ import click
 from erk_shared.context.helpers import require_repo_root
 
 
-def _normalize_gist_url(gist_url: str) -> str:
+def normalize_gist_url(gist_url: str) -> str:
     """Convert gist webpage URL to raw content URL if needed.
 
     Accepts:
@@ -90,7 +90,7 @@ def _download_from_gist(gist_url: str, session_dir: Path) -> Path | str:
     Returns:
         Path to the downloaded session file on success, error message string on failure.
     """
-    normalized_url = _normalize_gist_url(gist_url)
+    normalized_url = normalize_gist_url(gist_url)
     try:
         with urllib.request.urlopen(normalized_url) as response:
             content = response.read()

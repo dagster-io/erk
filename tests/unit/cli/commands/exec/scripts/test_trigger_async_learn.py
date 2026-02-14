@@ -736,3 +736,182 @@ def test_trigger_async_learn_skip_workflow(tmp_path: Path) -> None:
 
     # Verify no workflows were triggered on FakeGitHub
     assert len(fake_gh.triggered_workflows) == 0
+
+
+# ============================================================================
+# Remote Session Tests (Layer 4: Business Logic over Fakes)
+# ============================================================================
+
+
+def _make_plan_issue_body_with_remote_session(
+    *,
+    branch_name: str | None,
+    planning_session_id: str,
+    remote_session_id: str,
+    gist_url: str,
+) -> str:
+    """Create a plan issue body with both a planning session and a remote gist session."""
+    branch_line = f"branch_name: {branch_name}" if branch_name is not None else "branch_name: null"
+    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2025-11-25T14:37:43.513418+00:00'
+created_by: testuser
+worktree_name: test-worktree
+{branch_line}
+created_from_session: {planning_session_id}
+last_session_gist_url: {gist_url}
+last_session_id: {remote_session_id}
+last_session_source: remote
+last_dispatched_run_id: null
+last_dispatched_at: null
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+
+def test_trigger_async_learn_includes_remote_session(tmp_path: Path) -> None:
+    """Test that remote sessions are downloaded and preprocessed alongside local sessions."""
+    runner = CliRunner()
+    repo_info = RepoInfo(owner="test-owner", name="test-repo")
+
+    planning_id = "plan-sess-1"
+    remote_id = "remote-impl-sess-2"
+
+    # Create a real JSONL session file for the planning session
+    session_dir = tmp_path / ".claude" / "projects" / "test-project"
+    session_dir.mkdir(parents=True)
+    planning_content = _make_minimal_session_jsonl(planning_id)
+    (session_dir / f"{planning_id}.jsonl").write_text(planning_content, encoding="utf-8")
+
+    # Create a remote session JSONL file and serve via file:// URL
+    remote_content = _make_minimal_session_jsonl(remote_id)
+    remote_file = tmp_path / "remote-session.jsonl"
+    remote_file.write_text(remote_content, encoding="utf-8")
+    gist_url = remote_file.as_uri()
+
+    # Set up plan issue with both planning and remote session references
+    body = _make_plan_issue_body_with_remote_session(
+        branch_name=None,
+        planning_session_id=planning_id,
+        remote_session_id=remote_id,
+        gist_url=gist_url,
+    )
+    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+
+    fake_claude = FakeClaudeInstallation.for_test(
+        projects={
+            session_dir: FakeProject(
+                sessions={
+                    planning_id: FakeSessionData(
+                        content=planning_content,
+                        size_bytes=len(planning_content),
+                        modified_at=1700000000.0,
+                    ),
+                }
+            ),
+        },
+    )
+
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    output = _parse_json_output(result.output)
+    assert output["success"] is True
+
+    # Verify both sessions were preprocessed
+    learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
+    planning_xmls = list(learn_dir.glob(f"planning-{planning_id}*.xml"))
+    impl_xmls = list(learn_dir.glob(f"impl-{remote_id}*.xml"))
+    assert len(planning_xmls) >= 1, f"Expected planning XML, found: {list(learn_dir.iterdir())}"
+    assert len(impl_xmls) >= 1, f"Expected impl XML, found: {list(learn_dir.iterdir())}"
+
+    # Verify gist upload includes content from both sessions
+    assert len(fake_gh.created_gists) == 1
+    _filename, gist_content, _description, _public = fake_gh.created_gists[0]
+    assert planning_id in gist_content
+    assert remote_id in gist_content
+
+
+def test_trigger_async_learn_remote_session_download_failure(tmp_path: Path) -> None:
+    """Test that a failed remote session download is handled gracefully."""
+    runner = CliRunner()
+    repo_info = RepoInfo(owner="test-owner", name="test-repo")
+
+    planning_id = "plan-sess-1"
+    remote_id = "remote-impl-sess-2"
+
+    # Create a real JSONL session file for the planning session
+    session_dir = tmp_path / ".claude" / "projects" / "test-project"
+    session_dir.mkdir(parents=True)
+    planning_content = _make_minimal_session_jsonl(planning_id)
+    (session_dir / f"{planning_id}.jsonl").write_text(planning_content, encoding="utf-8")
+
+    # Use an unreachable file:// URL to simulate download failure
+    gist_url = "file:///nonexistent/path/to/session.jsonl"
+
+    body = _make_plan_issue_body_with_remote_session(
+        branch_name=None,
+        planning_session_id=planning_id,
+        remote_session_id=remote_id,
+        gist_url=gist_url,
+    )
+    fake_issues = FakeGitHubIssues(issues={123: _make_issue_info(123, body)})
+
+    fake_claude = FakeClaudeInstallation.for_test(
+        projects={
+            session_dir: FakeProject(
+                sessions={
+                    planning_id: FakeSessionData(
+                        content=planning_content,
+                        size_bytes=len(planning_content),
+                        modified_at=1700000000.0,
+                    ),
+                }
+            ),
+        },
+    )
+
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    result = runner.invoke(trigger_async_learn_command, ["123"], obj=ctx)
+
+    # Pipeline should still succeed - the planning session is processed, remote failure is warned
+    assert result.exit_code == 0, result.output
+    output = _parse_json_output(result.output)
+    assert output["success"] is True
+
+    # Verify the planning session was still preprocessed
+    learn_dir = tmp_path / ".erk" / "scratch" / "learn-123"
+    planning_xmls = list(learn_dir.glob(f"planning-{planning_id}*.xml"))
+    assert len(planning_xmls) >= 1
+
+    # Verify warning was logged about the download failure
+    stderr_lines = _get_stderr_lines(result.output)
+    warning_lines = [line for line in stderr_lines if "Failed to download" in line]
+    assert len(warning_lines) == 1
