@@ -382,7 +382,7 @@ def _prompt_async_learn_and_continue(
     user_output("     Reads session logs, uploads to gist, runs analysis in GitHub Actions")
     user_output("  2. ⏩ Continue without learning")
     user_output("  3. ❌ Cancel")
-    user_output(f"  4. 📖 Preprocess sessions, then continue landing")
+    user_output("  4. 📖 Preprocess sessions, then continue landing")
     user_output(f"     Uploads gist so you can run `erk learn {plan_issue_number}` at your leisure")
     user_output("")
 
