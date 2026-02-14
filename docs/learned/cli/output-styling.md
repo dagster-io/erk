@@ -336,7 +336,7 @@ click.echo("")
 This pattern is currently used in:
 
 - `erk pr submit` - During PR submission (`src/erk/cli/commands/pr/submit_pipeline.py:466-472`)
-- `erk pr summarize` - When generating PR descriptions (`src/erk/cli/commands/pr/summarize_cmd.py:120-131`)
+- `erk pr rewrite` - When generating PR descriptions (`src/erk/cli/commands/pr/rewrite_cmd.py:_execute_pr_rewrite`)
 
 ### Design Rationale
 
