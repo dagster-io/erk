@@ -164,3 +164,23 @@ In this case, use a slots-based class with underscore-prefixed internal fields. 
 - Constructor uses clean names (`session_id=`), not underscore-prefixed (`_session_id=`)
 - Internal slots use underscores (`_session_id`) to avoid shadowing properties
 - Immutability is by convention (underscore prefix signals "don't mutate"), not runtime enforcement
+
+## Frontmatter Conventions
+
+### Alphabetical Ordering of allowed-tools
+
+When listing tools in agent or command frontmatter allowed-tools, maintain alphabetical order. This makes it easy to scan for a specific tool and ensures consistent formatting across files.
+
+Example ordering: `Bash, Edit, Glob, Grep, Read, Task, Write` (not arbitrary insertion order).
+
+This convention was established in PR #6949 when adding Write to 6 agent files — each insertion maintained alphabetical position rather than appending to end.
+
+## Multi-Step File Editing
+
+When making multiple structural changes to a single file (e.g., updating frontmatter, adding an input parameter, and adding an output section), use separate Edit calls for each change rather than one large replacement. This approach:
+
+1. Makes each change atomic and independently verifiable
+2. Prevents conflicts from overlapping edit contexts
+3. Allows partial rollback if one edit produces unexpected results
+
+In PR #6949, each of the 6 agent files received three separate Edit calls: one for frontmatter, one for input parameters, and one for the output section.

@@ -29,6 +29,10 @@ The Write tool can silently fail when the target directory doesn't exist. If the
 
 Fail-fast at the orchestration layer — run `ls` on the expected files between the write step and the dependent agent launch. This costs one trivial Bash call and catches the failure before any downstream context is spent.
 
+**Prerequisite: Directory creation before agent launch.** When multiple agents will write to the same output directory, create the directory with `mkdir -p` before launching any agents. This prevents a race condition where the first agent to finish tries to write before the directory exists. The learn command demonstrates this pattern — it creates the `learn-agents/` subdirectory as the first step before launching parallel agents.
+
+<!-- Source: .claude/commands/erk/learn.md, search for "mkdir -p .erk/scratch/sessions" -->
+
 ## The Three-Step Handoff Pattern
 
 Every agent-to-agent data transfer in erk follows this sequence:
@@ -40,6 +44,42 @@ Every agent-to-agent data transfer in erk follows this sequence:
 <!-- Source: .claude/commands/erk/learn.md:401-441 -->
 
 The learn workflow is the canonical example. See the "Write Agent Results to Scratch Storage" and "Verify Files Exist" sections in `.claude/commands/erk/learn.md` — four parallel analysis agents write results to `learn-agents/` scratch subdirectory, the orchestrator verifies all expected files, then launches the sequential DocumentationGapIdentifier agent with those file paths.
+
+## Lightweight Verification with ls -la
+
+The three-step handoff pattern uses `ls` to verify file existence. For self-writing agents, this can be further optimized: instead of verifying one file at a time, use a single `ls -la` on the output directory to batch-verify all expected files at once.
+
+<!-- Source: .claude/commands/erk/learn.md, search for "ls -la .erk/scratch" -->
+
+See the verification step in `.claude/commands/erk/learn.md` for an example where a single `ls -la` call confirms all 7 agent output files exist.
+
+**Previous approach (content relay):** Parent reads each agent's full output via TaskOutput to verify success, then writes to file. Content appears twice in parent context.
+
+**Current approach (self-write):** Agents write files directly, parent runs one `ls -la` to confirm. No content enters parent context during verification.
+
+This is a refinement of the verify step in the three-step handoff pattern, not a replacement. The principle remains the same: fail fast at the orchestration layer before launching dependent agents.
+
+## The Self-Write Extension
+
+The three-step handoff pattern assumes the parent writes files on behalf of agents. The self-write extension shifts step 1 to the agent itself:
+
+**Original three-step handoff:**
+
+1. Parent calls TaskOutput to read agent result, then Write to persist it
+2. Parent verifies file exists
+3. Parent passes path to dependent agent
+
+**Self-write extension:**
+
+1. Agent writes its own output to output_path (received via Task prompt)
+2. Parent verifies file exists (using ls -la batch check)
+3. Parent passes path to dependent agent
+
+The critical difference: step 1 no longer flows content through the parent. The agent writes directly, and the parent only sees a short confirmation message. This eliminates the content relay overhead described in [Context Efficiency](../architecture/context-efficiency.md).
+
+<!-- Source: .claude/commands/erk/learn.md, search for "## Output Routing" -->
+
+See the Output Routing sections in `.claude/commands/erk/learn.md` for the canonical implementation where 7 agents use this pattern.
 
 ## Parallel vs Sequential Agent Dependencies
 

@@ -14,4 +14,6 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before loading erk-diff-analysis skill more than once per session** → Read [Skill-Based Commit Message Generation](commit-messages.md) first. Skills persist for the entire session. Check conversation history for 'erk-diff-analysis' before reloading.
 
+**CRITICAL: Before running gt sync with uncommitted changes in the working tree** → Read [Git Sync State Preservation](git-sync-state-preservation.md) first. gt sync can rebase and create WIP commits that lose uncommitted working tree changes. Always commit or stash before sync, and verify git status after.
+
 **CRITICAL: Before writing a commit message manually for multi-file changes** → Read [Skill-Based Commit Message Generation](commit-messages.md) first. Load the erk-diff-analysis skill first. It produces component-aware, strategically framed messages that become both the commit and PR body.

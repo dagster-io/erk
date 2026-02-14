@@ -32,6 +32,7 @@
 - **[plan-implement-change-detection.md](plan-implement-change-detection.md)** — maintaining erk-impl workflow, debugging change detection issues, understanding why no-changes was triggered
 - **[plan-implement-customization.md](plan-implement-customization.md)** — customizing erk-impl workflow for a specific repository, installing system dependencies in erk-impl CI, overriding Python version in erk-impl workflow
 - **[plan-implement-workflow-patterns.md](plan-implement-workflow-patterns.md)** — modifying erk-impl workflow, adding cleanup steps to GitHub Actions, working with git reset in workflows
+- **[prettier-fixes.md](prettier-fixes.md)** — CI fails with prettier formatting violations, prettier restores content you removed, deciding whether to fight prettier's formatting decisions
 - **[prompt-patterns.md](prompt-patterns.md)** — Using Claude Code in GitHub Actions workflows, Creating multi-line prompts in CI YAML, Adding new prompts to the erk bundle
 - **[review-spec-format.md](review-spec-format.md)** — creating a new code review, understanding why review specs follow certain patterns, debugging review behavior or structure
 - **[review-types-taxonomy.md](review-types-taxonomy.md)** — creating a new review workflow, deciding whether to extend an existing review or create a new one, understanding review scope boundaries

@@ -24,6 +24,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding new agents to learn workflow** → Read [Learn Workflow](learn-workflow.md) first. Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition.
 
+**CRITICAL: Before adding output_path or Output Routing sections to agent definition files** → Read [Agent Output Routing Strategies](agent-output-routing-strategies.md) first. Consider whether this agent is single-purpose or general-purpose. For general-purpose agents, embed routing instructions in the orchestrator's Task prompt to preserve reusability.
+
 **CRITICAL: Before adding subprocess calls to trigger-async-learn** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. This command uses direct Python function calls, not subprocess invocations. This is intentional — see the direct-call architecture section below.
 
 **CRITICAL: Before after plan-implement execution completes** → Read [Plan Lifecycle](lifecycle.md) first. Always clean .worker-impl/ with `git rm -rf .worker-impl/` and commit. Transient artifacts cause CI formatter failures (Prettier).

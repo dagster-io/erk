@@ -282,6 +282,23 @@ A replan workflow spawned 3 analysis agents in parallel, then immediately launch
 
 **Reference:** See `/erk:replan` Step 4e for the canonical implementation of this pattern.
 
+## Task Parameters for Self-Writing Agents
+
+When agents write their own outputs (instead of returning content to the parent), pass `output_path` as a Task parameter. This tells the agent where to write its output file.
+
+**Pattern:**
+
+- Create the output directory before launching agents: `mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/`
+- Pass output_path in the Task input block, pointing to a unique file in that directory
+- Include Output Routing instructions in the Task prompt (see [Agent Output Routing Patterns](../commands/agent-patterns.md))
+- After all agents complete, verify files exist with `ls -la` instead of reading full content via TaskOutput
+
+<!-- Source: .claude/commands/erk/learn.md, search for "output_path:" -->
+
+See the Task calls in `.claude/commands/erk/learn.md` for the canonical implementation of this pattern across 7 agents.
+
+**Key insight:** Use `ls -la` batch verification instead of TaskOutput reads. This confirms files exist without loading their content into parent context.
+
 ### Tools Available
 
 Agents specify tools in frontmatter. **Principle:** Only request tools the agent will actually use. Fewer tools = clearer scope.

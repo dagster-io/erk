@@ -3,6 +3,7 @@
 
 # Pr Operations Documentation
 
+- **[automated-review-handling.md](automated-review-handling.md)** — automated review bot flags an issue in a PR, deciding whether to fix or investigate a bot complaint
 - **[checkout-footer-syntax.md](checkout-footer-syntax.md)** — building or modifying PR body footer content, debugging erk pr check validation failures, working on the submit pipeline or git-pr-push command
 - **[commit-message-generation.md](commit-message-generation.md)** — understanding how PR descriptions are generated, working with plan context in PR summaries, customizing commit message generation
 - **[draft-pr-handling.md](draft-pr-handling.md)** — creating or working with draft PRs, understanding when to use draft status, converting between draft and ready for review, debugging why CI didn't run on a PR, working with orphaned or duplicate PRs for a plan

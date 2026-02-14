@@ -14,7 +14,11 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding allowed-tools to a command or agent frontmatter** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. ALWAYS apply the minimal-set principle — only allow tools the command actually needs
 
+**CRITICAL: Before adding tool invocations to agent instructions without updating frontmatter** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. allowed-tools frontmatter MUST include every tool the agent's instructions reference. Missing tools cause silent runtime failures.
+
 **CRITICAL: Before creating commands that delegate to subagents** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. NEVER omit Task from allowed-tools if the command delegates to subagents
+
+**CRITICAL: Before creating new agent files in .claude/agents/** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. All agent files MUST have YAML frontmatter with name, description, and allowed-tools. Missing frontmatter causes silent behavioral failures.
 
 **CRITICAL: Before modifying collateral finding categories or auto-apply behavior in audit-doc** → Read [Audit-Doc Design Decisions](audit-doc.md) first. CRITICAL: Read this doc first to understand the conceptual vs mechanical finding distinction
 
