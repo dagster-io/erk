@@ -5,7 +5,6 @@
 
 - **[objective-lifecycle.md](objective-lifecycle.md)** — creating or modifying objective lifecycle code, understanding how objectives are created, mutated, and closed, adding new mutation paths to objective roadmaps
 - **[objective-roadmap-check.md](objective-roadmap-check.md)** — validating objective roadmap consistency beyond structure, understanding why check command exists separate from parsing, adding new validation checks to objective check
-- **[objective-roadmap-frontmatter.md](objective-roadmap-frontmatter.md)** — working with roadmap YAML frontmatter, modifying objective roadmap step data, understanding the two-layer roadmap protocol
 - **[research-documentation-integration.md](research-documentation-integration.md)** — deciding whether objective work should produce learned docs, choosing between manual doc capture and the learn workflow during an objective, capturing cross-cutting discoveries from multi-plan investigations
 - **[roadmap-format-versioning.md](roadmap-format-versioning.md)** — extending the roadmap table format with new columns, planning backward-compatible parser changes to roadmap tables, understanding the 4-col to 5-col migration
 - **[roadmap-mutation-patterns.md](roadmap-mutation-patterns.md)** — deciding between surgical vs full-body roadmap updates, choosing how to update an objective roadmap after a workflow event, understanding race condition risks in roadmap table mutations

@@ -1,8 +1,6 @@
 """Trigger GitHub Actions workflows via unified interface.
 
 Usage examples:
-    erk launch objective-reconcile
-    erk launch objective-reconcile --objective 123 --dry-run
     erk launch pr-address --pr 456
     erk launch pr-fix-conflicts --pr 456
     erk launch pr-fix-conflicts --pr 456 --no-squash
@@ -157,39 +155,6 @@ def _trigger_pr_address(
     user_output(f"Run URL: {click.style(run_url, fg='cyan')}")
 
 
-def _trigger_objective_reconcile(
-    ctx: ErkContext,
-    repo: RepoContext,
-    *,
-    objective: int,
-    dry_run: bool,
-) -> None:
-    """Trigger objective-reconcile workflow."""
-    user_output(f"Triggering objective-reconcile workflow for objective #{objective}...")
-
-    inputs: dict[str, str] = {
-        "objective": str(objective),
-    }
-    if dry_run:
-        inputs["dry_run"] = "true"
-
-    run_id = ctx.github.trigger_workflow(
-        repo_root=repo.root,
-        workflow=_get_workflow_file("objective-reconcile"),
-        inputs=inputs,
-    )
-    user_output(click.style("\u2713", fg="green") + " Workflow triggered")
-
-    user_output("")
-    # Get repo slug from RepoContext's github field
-    if repo.github is not None:
-        repo_slug = f"{repo.github.owner}/{repo.github.repo}"
-    else:
-        repo_slug = "unknown/unknown"
-    run_url = f"https://github.com/{repo_slug}/actions/runs/{run_id}"
-    user_output(f"Run URL: {click.style(run_url, fg='cyan')}")
-
-
 def _trigger_learn(
     ctx: ErkContext,
     repo: RepoContext,
@@ -255,20 +220,9 @@ def _trigger_plan_implement(
     help="Issue number (required for learn)",
 )
 @click.option(
-    "--objective",
-    "objective_number",
-    type=int,
-    help="Objective issue number (required for objective-reconcile)",
-)
-@click.option(
     "--no-squash",
     is_flag=True,
     help="Skip squashing commits before rebase (pr-fix-conflicts only)",
-)
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Preview actions without executing (objective-reconcile only)",
 )
 @click.option(
     "--model",
@@ -282,9 +236,7 @@ def launch(
     *,
     pr_number: int | None,
     issue_number: int | None,
-    objective_number: int | None,
     no_squash: bool,
-    dry_run: bool,
     model: str | None,
 ) -> None:
     """Trigger a GitHub Actions workflow.
@@ -294,7 +246,6 @@ def launch(
     \b
       pr-fix-conflicts    - Rebase PR with AI-powered conflict resolution
       pr-address          - Address PR review comments remotely
-      objective-reconcile - Reconcile auto-advance objectives
       learn               - Extract insights from a plan issue
 
     Examples:
@@ -310,14 +261,6 @@ def launch(
     \b
       # Address PR review comments
       erk launch pr-address --pr 456
-
-    \b
-      # Reconcile all objectives
-      erk launch objective-reconcile
-
-    \b
-      # Reconcile specific objective in dry-run mode
-      erk launch objective-reconcile --objective 789 --dry-run
 
     \b
       # Trigger learn for a plan issue
@@ -357,19 +300,6 @@ def launch(
         )
         assert pr_number is not None
         _trigger_pr_address(ctx, repo, pr_number=pr_number, model=model)
-    elif workflow_name == "objective-reconcile":
-        Ensure.invariant(
-            objective_number is not None,
-            "--objective is required for objective-reconcile workflow. "
-            "For sweep mode, use GitHub Actions UI or wait for scheduled run.",
-        )
-        assert objective_number is not None
-        _trigger_objective_reconcile(
-            ctx,
-            repo,
-            objective=objective_number,
-            dry_run=dry_run,
-        )
     elif workflow_name == "learn":
         Ensure.invariant(
             issue_number is not None,

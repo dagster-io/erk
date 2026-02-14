@@ -1,7 +1,6 @@
 ---
 title: Erkdesk Component Test Architecture
 category: testing
-content_type: mixed
 third_party_references:
   - name: React Testing Library
     what: Query variants, query priority, findBy/getBy/queryBy semantics

@@ -20,8 +20,6 @@ Rules triggered by matching actions in code.
 
 **calling create_pr without first checking get_pr_for_branch** → Read [PR Creation Decision Logic](pr-creation-patterns.md) first. Always LBYL-check for an existing PR before creating. Duplicate PRs cause confusion and orphaned state. See pr-creation-patterns.md.
 
-**completing pr-address without updating PR body/title** → Read [PR Submit Workflow Phases](pr-submit-phases.md) first. Phase 5 (erk pr update-description) must run after addressing review comments. Skipping leaves PR body stale, which breaks objective-update-with-landed-pr accuracy.
-
 **creating a PR without draft=True in automated workflows** → Read [Draft PR Handling](draft-pr-handling.md) first. All automated erk PR creation uses draft mode. This gates CI costs and prevents premature review. See draft-pr-handling.md.
 
 **editing commit-message-prompt.md in either location** → Read [Template Synchronization](template-synchronization.md) first. Update BOTH copies: .claude/skills/erk-diff-analysis/references/commit-message-prompt.md AND packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md. CI enforces byte-equality.

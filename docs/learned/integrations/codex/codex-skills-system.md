@@ -1,6 +1,5 @@
 ---
 title: Codex Skills System
-content_type: reference-cache
 read_when:
   - "porting erk skills to Codex"
   - "implementing dual-target skill installation"

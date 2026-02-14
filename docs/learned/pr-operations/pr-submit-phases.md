@@ -5,9 +5,6 @@ read_when:
   - "debugging PR submission issues"
   - "working with AI-generated PR descriptions"
   - "understanding plan context integration in PRs"
-tripwires:
-  - action: "completing pr-address without updating PR body/title"
-    warning: "Phase 5 (erk pr update-description) must run after addressing review comments. Skipping leaves PR body stale, which breaks objective-update-with-landed-pr accuracy."
 ---
 
 # PR Submit Workflow Phases

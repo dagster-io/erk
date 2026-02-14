@@ -1,7 +1,6 @@
 ---
 title: jsdom DOM API Stubs for Vitest
 category: testing
-content_type: third_party_reference
 last_audited: "2026-02-08 13:55 PT"
 audit_result: edited
 read_when:

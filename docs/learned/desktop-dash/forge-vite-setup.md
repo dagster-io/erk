@@ -1,6 +1,5 @@
 ---
 title: Forge Vite Setup
-content_type: reference-cache
 last_audited: "2026-02-08 13:55 PT"
 audit_result: clean
 read_when:
@@ -8,11 +7,11 @@ read_when:
   - "adding a new Vite build target or renderer window"
   - "understanding why a config setting exists in a specific Vite config"
 tripwires:
-  - action: "configuring Vite renderer targets"
+  - action: "Keep renderer config browser-only"
     warning: "Do NOT add Node.js builtins or electron to the renderer Vite config — renderer is a browser environment"
-  - action: "configuring Vite preload externals"
+  - action: "Keep electron external in preload config"
     warning: "Do NOT remove external electron from the preload config — bundling electron causes runtime failures"
-  - action: "consolidating Vite configs"
+  - action: "Maintain separate Vite configs per target"
     warning: "Do NOT put all three targets in one Vite config — each targets a different JavaScript runtime"
 ---
 

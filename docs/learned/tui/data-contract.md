@@ -14,7 +14,6 @@ tripwires:
     warning: "The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways."
 last_audited: "2026-02-08 13:55 PT"
 audit_result: edited
-content_type: data_format_contract
 ---
 
 # TUI Data Contract

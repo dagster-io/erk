@@ -638,10 +638,10 @@ def generate_category_index(category: CategoryInfo) -> str:
     lines = [GENERATED_FILE_BANNER.rstrip(), "", f"# {title} Documentation", ""]
 
     for doc in category.docs:
-        # Use just the filename for relative links within category
-        filename = Path(doc.rel_path).name
+        # Use path relative to category directory for links
+        rel_to_category = str(Path(doc.rel_path).relative_to(category.name))
         read_when = ", ".join(doc.frontmatter.read_when)
-        lines.append(f"- **[{filename}]({filename})** — {read_when}")
+        lines.append(f"- **[{rel_to_category}]({rel_to_category})** — {read_when}")
 
     lines.append("")
     return "\n".join(lines)

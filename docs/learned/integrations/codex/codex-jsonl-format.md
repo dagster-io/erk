@@ -1,6 +1,5 @@
 ---
 title: Codex CLI JSONL Output Format
-content_type: reference-cache
 read_when:
   - "parsing codex exec --json output"
   - "implementing a CodexPromptExecutor"

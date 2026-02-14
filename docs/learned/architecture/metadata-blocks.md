@@ -112,30 +112,6 @@ impl_sessions = extract_implementation_sessions(comments)
 learn_sessions = extract_learn_sessions(comments)
 ```
 
-## MetadataBlock vs RawMetadataBlock
-
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/types.py -->
-
-The metadata system has two block types with different field semantics:
-
-| Type               | Field   | Content                                 | Returned by                     |
-| ------------------ | ------- | --------------------------------------- | ------------------------------- |
-| `MetadataBlock`    | `.data` | Parsed YAML dict (`dict[str, Any]`)     | `find_metadata_block()`         |
-| `RawMetadataBlock` | `.body` | Raw string between HTML comment markers | `extract_raw_metadata_blocks()` |
-
-**Function return type matrix:**
-
-| Function                                                 | Returns                  | Use when                                              |
-| -------------------------------------------------------- | ------------------------ | ----------------------------------------------------- |
-| `find_metadata_block(text, key)`                         | `MetadataBlock \| None`  | Need parsed YAML data for a specific key              |
-| `extract_raw_metadata_blocks(text)`                      | `list[RawMetadataBlock]` | Need raw content (e.g., for YAML frontmatter parsing) |
-| `extract_metadata_value(text, key, field)`               | `str \| None`            | Need a single field value                             |
-| `replace_metadata_block_in_body(body, key, new_content)` | `str`                    | Need to replace block content in-place                |
-
-**Warning**: Accessing `.data` on a `RawMetadataBlock` or `.body` on a `MetadataBlock` will fail with an `AttributeError`. These types are not interchangeable.
-
-**When to use which**: Use `find_metadata_block()` when you need parsed YAML data (most common). Use `extract_raw_metadata_blocks()` when you need the raw content for custom parsing, such as the roadmap frontmatter parser which needs `---` delimiters intact.
-
 ## Best Practices
 
 1. **Always use the parsing functions** - Don't write custom regex for metadata blocks
