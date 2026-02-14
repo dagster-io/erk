@@ -43,7 +43,6 @@ State Transitions:
     4. plan-saved marker exists → BLOCK with "session complete" message (delete marker)
 """
 
-import json
 import os
 import sys
 from dataclasses import dataclass
@@ -57,6 +56,7 @@ from erk.hooks.decorators import HookContext, hook_command
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.abc import Git
+from erk_shared.impl_folder import read_plan_ref
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
 
@@ -611,52 +611,6 @@ def _get_pr_number_for_branch(
     return pr_info.number
 
 
-def _get_plan_issue_from_impl(repo_root: Path) -> int | None:
-    """Load plan issue number from .impl/plan-ref.json (or legacy issue.json).
-
-    Args:
-        repo_root: Path to the git repository root
-
-    Returns:
-        Issue number if found, None otherwise
-    """
-    impl_dir = repo_root / ".impl"
-
-    # Try plan-ref.json first (new format)
-    plan_ref_file = impl_dir / "plan-ref.json"
-    if plan_ref_file.is_file():
-        content = plan_ref_file.read_text(encoding="utf-8")
-        if content.strip():
-            try:
-                data = json.loads(content)
-            except json.JSONDecodeError:
-                return None
-            plan_id = data.get("plan_id")
-            if isinstance(plan_id, str) and plan_id.isdigit():
-                return int(plan_id)
-        return None
-
-    # Fall back to legacy issue.json
-    issue_file = impl_dir / "issue.json"
-    if not issue_file.is_file():
-        return None
-
-    content = issue_file.read_text(encoding="utf-8")
-    if not content.strip():
-        return None
-
-    try:
-        data = json.loads(content)
-    except json.JSONDecodeError:
-        return None
-    # Try "issue_number" first (preferred), then fall back to "number"
-    issue_number = data.get("issue_number") or data.get("number")
-    if isinstance(issue_number, int):
-        return issue_number
-
-    return None
-
-
 # ============================================================================
 # Main Hook Entry Point
 # ============================================================================
@@ -728,7 +682,10 @@ def _gather_inputs(
     if needs_blocking_message:
         current_branch = git.branch.get_current_branch(repo_root)
         worktree_name = _get_worktree_name(git, repo_root)
-        plan_issue_number = _get_plan_issue_from_impl(repo_root)
+        plan_ref = read_plan_ref(repo_root / ".impl")
+        plan_issue_number = (
+            int(plan_ref.plan_id) if plan_ref is not None and plan_ref.plan_id.isdigit() else None
+        )
         editor = os.environ.get("EDITOR")
         # Only lookup PR if we have a branch
         if current_branch is not None:
