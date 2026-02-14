@@ -103,4 +103,13 @@ TYPE: <planning|implementation>
 | <approach A>   | <failure reason> | <successful approach> |
 ```
 
+## Output Size Guidance
+
+- Target **under 1500 words** total output
+- Use table rows, not prose paragraphs — one row per finding
+- Omit empty sections entirely (e.g., if no external lookups, skip that section)
+- Limit each "Patterns Discovered" bullet to one sentence
+- Cap "Errors Resolved" and "Failed Approaches" tables at the **5 most impactful** entries
+- No block quotes or lengthy code excerpts — reference file paths instead
+
 Focus on actionable insights. Skip trivial file reads or obvious operations.
