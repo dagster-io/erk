@@ -89,7 +89,13 @@
   overflow-y: auto;
   overscroll-behavior: none;
   position: relative;
-  background: linear-gradient(to right, transparent 64px, var(--border) 64px, var(--border) 65px, transparent 65px);
+  background: linear-gradient(
+    to right,
+    transparent 64px,
+    var(--border) 64px,
+    var(--border) 65px,
+    transparent 65px
+  );
 }
 
 /* Line table */
