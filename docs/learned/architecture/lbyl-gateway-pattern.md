@@ -61,7 +61,7 @@ Dry-run and printing gateways delegate existence checks to their wrapped impleme
 
 ## CLI Usage Pattern
 
-<!-- Source: src/erk/cli/commands/objective/reconcile_cmd.py, reconcile_objectives -->
+<!-- Source: src/erk/cli/commands/objective/check_cmd.py, check_objective -->
 
 CLI commands follow this pattern:
 
@@ -70,7 +70,7 @@ CLI commands follow this pattern:
 3. Fetch resource with `get_issue()` or equivalent
 4. Validate additional properties (labels, state, etc.)
 
-See `reconcile_objectives()` in `src/erk/cli/commands/objective/reconcile_cmd.py` for the complete pattern. The existence check happens before fetch, enabling a clear "Issue not found" message instead of handling the `IssueNotFound` sentinel.
+See `check_objective()` in `src/erk/cli/commands/objective/check_cmd.py` for the complete pattern. The existence check happens before fetch, enabling a clear "Issue not found" message instead of handling the `IssueNotFound` sentinel.
 
 **Anti-pattern:** Calling `get_issue()` and checking for `IssueNotFound` inline. This works but produces worse error messages and violates LBYL.
 

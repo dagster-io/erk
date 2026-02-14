@@ -48,6 +48,34 @@ The `RoadmapStep.id` field is named `id`, not `step_id`. Every consumer accesses
 
 The shared module lives in `src/erk/cli/commands/exec/scripts/` — the exec scripts directory — even though `check_cmd.py` in `src/erk/cli/commands/objective/` imports from it. This is a historical artifact: the parser was originally created for exec scripts and gained a second consumer later. The cross-package import works but is architecturally unusual. If a third consumer appears, consider promoting the module to a more neutral location.
 
+## Undocumented Helpers
+
+### `extract_raw_metadata_blocks()` (from core.py)
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py, extract_raw_metadata_blocks -->
+
+Extracts all metadata blocks from text using HTML comment markers. Returns `list[RawMetadataBlock]` where each block has `.key` (str) and `.body` (raw string content). Used by `parse_roadmap()` to locate the `objective-roadmap` block before passing its body to frontmatter parsing.
+
+### `replace_metadata_block_in_body()` (from core.py)
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py, replace_metadata_block_in_body -->
+
+```python
+def replace_metadata_block_in_body(body: str, key: str, new_block_content: str) -> str
+```
+
+Replaces an entire metadata block's content in the body. Finds the block by key and substitutes the content between the HTML comment markers. Used during roadmap mutations to replace the frontmatter block after updating step data.
+
+### `_enrich_phase_names()` (from objective_roadmap_shared.py)
+
+<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, _enrich_phase_names -->
+
+```python
+def _enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPhase]
+```
+
+Extracts phase names from markdown headers (e.g., `### Phase 1: Planning`) and replaces placeholder names in parsed `RoadmapPhase` objects. Called by `parse_roadmap()` after frontmatter parsing because frontmatter stores flat steps without phase names. Uses regex pattern `^###\s+Phase\s+(\d+)([A-Z]?):\s*(.+?)` to match headers.
+
 ## Relationship to Sibling Docs
 
 This document covers the **structural architecture** of the shared parser. For specific behavioral rules:
@@ -56,3 +84,4 @@ This document covers the **structural architecture** of the shared parser. For s
 - **Mutation-time vs parse-time semantics** → [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md)
 - **Surgical vs full-body update decisions** → [Roadmap Mutation Patterns](roadmap-mutation-patterns.md)
 - **CLI usage and parsing rules** → [Roadmap Parser](roadmap-parser.md)
+- **Frontmatter architecture** → [Objective Roadmap Frontmatter](objective-roadmap-frontmatter.md)

@@ -138,16 +138,7 @@ No local reconciliation logic—purely a remote trigger.
 
 ## Dry-Run Mode
 
-Both workflows support `--dry-run` flag, but it's **not implemented in the actual reconcile command**. The flag passes through to the workflow but has no effect because `reconcile_cmd.py` doesn't check for it.
-
-To implement dry-run:
-
-1. Add `--dry-run` flag to `reconcile_objectives()` CLI command
-2. Pass flag to interactive agent config
-3. Modify `/erk:objective-next-plan` to skip `EnterPlanMode` in dry-run
-4. Print "DRY RUN: Would create plan for step X" instead
-
-Currently, `--dry-run` is **documentation-driven fiction**.
+Both workflows support `--dry-run` flag. In single-objective mode, dry-run displays the objective's current state via `erk objective view` without launching Claude. In sweep mode, dry-run iterates over objectives and displays their state without creating plans.
 
 ## When to Use Which Mode
 
