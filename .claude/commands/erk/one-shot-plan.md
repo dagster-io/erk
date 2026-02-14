@@ -14,12 +14,7 @@ Read `.impl/task.md` to understand what you need to do.
 
 ## Step 2: Load Context
 
-Read `AGENTS.md` and `docs/learned/index.md` to understand the project conventions. Search `docs/learned/` for relevant documentation.
-
-Load skills as needed:
-
-- `dignified-python` — for Python coding standards
-- `fake-driven-testing` — for test patterns
+Read `AGENTS.md` to understand the project conventions. Follow its documentation-first discovery process: scan `docs/learned/index.md`, grep `docs/learned/` for relevant docs, and load skills as directed by AGENTS.md routing rules.
 
 ## Step 3: Explore the Codebase
 
@@ -59,19 +54,7 @@ Parse the JSON output. It will contain:
 
 ## Step 6: Write Plan Issue Reference
 
-Write the issue information to `.impl/plan-issue.json` so the workflow can extract it:
-
-```bash
-# Write JSON with issue_number and title
-```
-
-The file must contain valid JSON:
-
-```json
-{"issue_number": N, "title": "..."}
-```
-
-Where N is the integer issue number and title is the string title from the plan-save-to-issue output.
+Parse the JSON output from Step 5 and write `{"issue_number": N, "title": "..."}` to `.impl/plan-issue.json` so the workflow can extract the values. Use the `issue_number` and `title` fields from the `plan-save-to-issue` output.
 
 ## Important Notes
 

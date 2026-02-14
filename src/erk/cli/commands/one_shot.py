@@ -9,27 +9,27 @@ Usage:
     erk one-shot "fix the typo in README.md" --dry-run
 """
 
-from datetime import datetime
-
 import click
 
 from erk.cli.commands.implement_shared import normalize_model_name
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
 from erk_shared.gateway.git.remote_ops.types import PushError
+from erk_shared.gateway.time.abc import Time
 from erk_shared.naming import format_branch_timestamp_suffix, sanitize_worktree_name
 from erk_shared.output.output import user_output
 
 ONE_SHOT_WORKFLOW = "one-shot.yml"
 
 
-def _generate_branch_name(instruction: str) -> str:
+def _generate_branch_name(instruction: str, *, time: Time) -> str:
     """Generate a branch name from the instruction.
 
     Format: oneshot-{slug}-{MM-DD-HHMM}
 
     Args:
         instruction: The task description
+        time: Time gateway for deterministic timestamps
 
     Returns:
         Branch name string
@@ -40,7 +40,7 @@ def _generate_branch_name(instruction: str) -> str:
     max_slug_len = 31 - len(prefix)
     if len(slug) > max_slug_len:
         slug = slug[:max_slug_len].rstrip("-")
-    timestamp = format_branch_timestamp_suffix(datetime.now())
+    timestamp = format_branch_timestamp_suffix(time.now())
     return f"{prefix}{slug}{timestamp}"
 
 
@@ -106,14 +106,12 @@ def one_shot(
     trunk = ctx.git.branch.detect_trunk_branch(repo.root)
 
     # Generate branch name
-    branch_name = _generate_branch_name(instruction)
+    branch_name = _generate_branch_name(instruction, time=ctx.time)
 
-    # Truncate instruction for PR title
+    # Build PR title
     max_title_len = 60
-    title_instruction = instruction[:max_title_len]
-    if len(instruction) > max_title_len:
-        title_instruction += "..."
-    pr_title = f"One-shot: {title_instruction}"
+    suffix = "..." if len(instruction) > max_title_len else ""
+    pr_title = f"One-shot: {instruction[:max_title_len]}{suffix}"
 
     if dry_run:
         user_output(
