@@ -31,16 +31,22 @@ on:
         default: "claude-sonnet-4-5"
 
 concurrency:
-  group: one-shot-${{ github.event.inputs.branch_name }}
+  group: one-shot-${{ inputs.branch_name }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
 jobs:
-  execute:
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    permissions:
-      contents: write
-      pull-requests: write
+    timeout-minutes: 30
+    outputs:
+      issue_number: ${{ steps.extract_plan.outputs.issue_number }}
+      issue_title: ${{ steps.extract_plan.outputs.issue_title }}
+      base_branch: ${{ steps.trunk.outputs.trunk_branch }}
     steps:
       - name: Validate required secrets
         env:
@@ -80,12 +86,14 @@ jobs:
           printf '%s\n' "$INSTRUCTION" > .impl/task.md
           echo "Instruction written to .impl/task.md"
 
-      - name: Save pre-implementation HEAD
-        id: pre_impl
-        run: echo "head=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+      - name: Detect trunk branch
+        id: trunk
+        run: |
+          result=$(erk exec detect-trunk-branch)
+          echo "trunk_branch=$(echo "$result" | jq -r '.trunk_branch')" >> $GITHUB_OUTPUT
 
-      - name: Run one-shot execution
-        id: execute
+      - name: Run one-shot planning
+        id: plan
         run: |
           set +e
           claude --print \
@@ -93,13 +101,13 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "/erk:one-shot-execute"
+            "/erk:one-shot-plan"
           EXIT_CODE=$?
           echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
           if [ $EXIT_CODE -eq 0 ]; then
-            echo "execution_success=true" >> $GITHUB_OUTPUT
+            echo "plan_success=true" >> $GITHUB_OUTPUT
           else
-            echo "execution_success=false" >> $GITHUB_OUTPUT
+            echo "plan_success=false" >> $GITHUB_OUTPUT
           fi
           exit 0
         env:
@@ -107,70 +115,41 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
 
-      - name: Check for changes
-        id: check_changes
-        if: steps.execute.outputs.execution_success == 'true'
-        env:
-          PRE_IMPL_HEAD: ${{ steps.pre_impl.outputs.head }}
+      - name: Extract plan issue info
+        id: extract_plan
+        if: steps.plan.outputs.plan_success == 'true'
         run: |
-          UNCOMMITTED=$(git status --porcelain | grep -v '\.impl/' || true)
-          CURRENT_HEAD=$(git rev-parse HEAD)
-          NEW_COMMITS="false"
-          if [ "$CURRENT_HEAD" != "$PRE_IMPL_HEAD" ]; then
-            NEW_COMMITS="true"
+          if [ ! -f .impl/plan-issue.json ]; then
+            echo "::error::Plan succeeded but .impl/plan-issue.json not found"
+            exit 1
           fi
-
-          if [ -z "$UNCOMMITTED" ] && [ "$NEW_COMMITS" = "false" ]; then
-            echo "No code changes detected"
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "Changes detected"
-            echo "has_changes=true" >> $GITHUB_OUTPUT
+          ISSUE_NUMBER=$(jq -r '.issue_number' .impl/plan-issue.json)
+          ISSUE_TITLE=$(jq -r '.title' .impl/plan-issue.json)
+          if [ -z "$ISSUE_NUMBER" ] || [ "$ISSUE_NUMBER" = "null" ]; then
+            echo "::error::Failed to extract issue_number from .impl/plan-issue.json"
+            exit 1
           fi
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          echo "issue_title=$ISSUE_TITLE" >> $GITHUB_OUTPUT
+          echo "Plan saved as issue #$ISSUE_NUMBER: $ISSUE_TITLE"
 
-      - name: Commit and push changes
-        if: steps.execute.outputs.execution_success == 'true' && steps.check_changes.outputs.has_changes == 'true'
-        env:
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GH_TOKEN: ${{ github.token }}
-          BRANCH_NAME: ${{ inputs.branch_name }}
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
+      - name: Fail workflow if planning failed
+        if: steps.plan.outputs.plan_success != 'true'
         run: |
-          git config user.name "$SUBMITTED_BY"
-          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
-          claude --print \
-            --model ${{ inputs.model_name }} \
-            --output-format stream-json \
-            --dangerously-skip-permissions \
-            --verbose \
-            "/erk:git-pr-push One-shot implementation"
-
-      - name: Mark PR ready for review
-        if: steps.execute.outputs.execution_success == 'true' && steps.check_changes.outputs.has_changes == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BRANCH_NAME: ${{ inputs.branch_name }}
-        run: |
-          gh pr ready "$BRANCH_NAME"
-          echo "PR marked ready for review"
-
-      - name: Trigger CI workflows
-        if: steps.execute.outputs.execution_success == 'true' && steps.check_changes.outputs.has_changes == 'true'
-        env:
-          BRANCH_NAME: ${{ inputs.branch_name }}
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
-        run: |
-          git config user.name "$SUBMITTED_BY"
-          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
-          git fetch origin "$BRANCH_NAME"
-          git reset --hard "origin/$BRANCH_NAME"
-          git commit --allow-empty -m "Trigger CI workflows"
-          git push origin "$BRANCH_NAME"
-          echo "CI workflows triggered via push event"
-
-      - name: Fail workflow if execution failed
-        if: steps.execute.outputs.execution_success != 'true'
-        run: |
-          echo "One-shot execution failed with exit code: ${{ steps.execute.outputs.exit_code }}"
+          echo "One-shot planning failed with exit code: ${{ steps.plan.outputs.exit_code }}"
           exit 1
+
+  implement:
+    needs: plan
+    if: needs.plan.outputs.issue_number != ''
+    uses: ./.github/workflows/plan-implement.yml
+    with:
+      issue_number: ${{ needs.plan.outputs.issue_number }}
+      issue_title: ${{ needs.plan.outputs.issue_title }}
+      submitted_by: ${{ inputs.submitted_by }}
+      distinct_id: ${{ inputs.distinct_id }}
+      branch_name: ${{ inputs.branch_name }}
+      pr_number: ${{ inputs.pr_number }}
+      model_name: ${{ inputs.model_name }}
+      base_branch: ${{ needs.plan.outputs.base_branch }}
+    secrets: inherit
