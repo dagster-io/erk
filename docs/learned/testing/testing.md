@@ -510,6 +510,21 @@ When renaming tests for discriminated union migration:
 4. [ ] Verify fake setup returns type (not raises exception)
 5. [ ] Update related parametrized test names
 
+## Test Fixture Maintenance on Signature Changes
+
+When function signatures change (e.g., adding a column to a table, adding a new parameter), **all test fixtures must be updated comprehensively**. Partial updates cause hard-to-debug failures.
+
+### Checklist
+
+1. Find all test files that call the changed function: `grep -r "function_name" tests/`
+2. Update every fixture and test data structure to match the new signature
+3. Run the full test suite — don't rely on just running the tests you think are affected
+4. Check for builder functions or factory helpers that construct test data — these need updates too
+
+### Common Mistake
+
+Updating the implementation and the directly-tested function, but missing test helpers, builders, or parametrized test data that also construct instances of the changed type.
+
 ## Related
 
 - **Testing philosophy**: Load `fake-driven-testing` skill

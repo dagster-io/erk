@@ -43,6 +43,50 @@ if environment is not None:
 
 **Use case:** When you want a flag that can optionally take a value, with a sensible default when no value is given.
 
+## Omit Click Default Parameters
+
+Click options have implicit defaults: `required=False` and `default=None`. Omit these from decorators — they add noise without changing behavior.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py:280-298 -->
+
+```python
+# WRONG - redundant defaults
+@click.option(
+    "--status",
+    "explicit_status",
+    required=False,       # This is Click's default
+    default=None,         # This is Click's default
+    type=click.Choice(["done", "pending"]),
+    help="Status to set",
+)
+
+# CORRECT - omit defaults
+@click.option(
+    "--status",
+    "explicit_status",
+    type=click.Choice(["done", "pending"]),
+    help="Status to set",
+)
+```
+
+**When to keep `required`**: Only include `required=True` — the non-default case.
+
+**When to keep `default`**: Only when setting a non-None default value (e.g., `default="text"`).
+
+## IntRange Updates for Menu Options
+
+When adding new choices to an interactive menu that uses `click.IntRange`, update the range bounds to include the new option:
+
+```python
+# Before: 3 menu options
+@click.option("--choice", type=click.IntRange(1, 3))
+
+# After: added 4th option
+@click.option("--choice", type=click.IntRange(1, 4))
+```
+
+Forgetting to update the range causes the new option to be rejected at the CLI validation layer.
+
 ## Related Topics
 
 - [Optional Arguments](optional-arguments.md) - Inferring arguments from context

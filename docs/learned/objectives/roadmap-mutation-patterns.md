@@ -11,6 +11,8 @@ tripwires:
     warning: "Surgical updates only change one cell. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr)."
   - action: "directly mutating issue body markdown without using either command"
     warning: "Direct body mutation skips status computation. The surgical command writes computed status atomically; bypassing it leaves status stale. See roadmap-mutation-semantics.md."
+  - action: "writing regex patterns to match roadmap table rows without ^ and $ anchors"
+    warning: "All roadmap table row regex patterns MUST use ^...$ anchors with re.MULTILINE. Without anchors, patterns can match partial lines or span rows."
 ---
 
 # Roadmap Mutation Patterns
@@ -94,6 +96,26 @@ See `prompt_objective_update()` in `src/erk/cli/commands/objective_helpers.py` f
 **WRONG: Using full-body rewrite to link a plan to a step.** The full-body approach fetches, parses, and regenerates the entire body — unnecessary for a single cell change and risks overwriting concurrent edits. Use the surgical command.
 
 **WRONG: Directly editing the issue body markdown without using either command.** Direct mutation skips status computation entirely. If you set the PR cell to `#123` but leave status at `pending`, the table is inconsistent until the next parse. See [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md) for the write-vs-read asymmetry.
+
+## Regex Anchoring for Table Row Matching
+
+All regex patterns that match roadmap table rows MUST use `^...$` anchors with `re.MULTILINE`. Without anchors, patterns can match partial lines or span multiple rows, causing incorrect mutations.
+
+<!-- Source: src/erk/cli/commands/objective/check_cmd.py:29-32 -->
+
+```python
+# CORRECT - anchored with ^ and $, uses re.MULTILINE
+_STALE_STATUS_4COL = re.compile(
+    r"^\|[^|]+\|[^|]+\|\s*-\s*\|\s*(?:#\d+|plan #\d+)\s*\|$", re.MULTILINE
+)
+_STALE_STATUS_5COL = re.compile(
+    r"^\|[^|]+\|[^|]+\|\s*-\s*\|[^|]*\|\s*#\d+\s*\|$", re.MULTILINE
+)
+```
+
+**Why anchoring matters**: Without `^` and `$` anchors, a pattern like `\|[^|]+\|` could match across row boundaries. The `re.MULTILINE` flag makes `^` and `$` match at line starts/ends rather than just string starts/ends.
+
+**Pattern**: Every regex that operates on markdown table rows should follow this template: `r"^<row pattern>$"` with `re.MULTILINE`.
 
 ## Related Documentation
 

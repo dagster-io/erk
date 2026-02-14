@@ -412,6 +412,25 @@ Other `NoReturn` methods that follow this pattern:
 
 See [SSH Command Execution](../architecture/ssh-command-execution.md) for when to use `exec_ssh_interactive()` vs `run_ssh_command()`.
 
+## Empty String Normalization for JSON Output
+
+When a CLI parameter receives `""` (empty string) to clear a value, normalize to `None` before JSON output. This ensures JSON consumers see `null` rather than `""`, which has different semantics.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _build_output_dict() -->
+
+```python
+# Normalize empty strings to None for JSON output
+plan_out = plan_value if plan_value else None
+pr_out = pr_value if pr_value else None
+```
+
+**Why normalize?** Empty string (`""`) and absent (`None`/`null`) have different meanings in JSON:
+
+- `""` — value was explicitly set to empty
+- `null` — value was cleared or never set
+
+For "clear this field" operations, `null` is the correct JSON representation.
+
 ## Related Documentation
 
 - [CLI Testing Patterns](cli-testing.md) - General CLI testing patterns

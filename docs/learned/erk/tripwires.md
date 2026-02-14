@@ -24,6 +24,8 @@ Rules triggered by matching actions in code.
 
 **embedding single quotes in a remote erk command argument** → Read [Codespace Remote Execution Pattern](codespace-remote-execution.md) first. The bootstrap wraps the entire command in single quotes. Single quotes in arguments will break the shell string.
 
+**running gt sync without verifying clean working tree** → Read [Graphite Stack Troubleshooting](graphite-stack-troubleshooting.md) first. gt sync performs a rebase that can lose uncommitted changes. Commit or stash first. See docs/learned/workflows/git-sync-state-preservation.md
+
 **using `gh codespace create` to create a codespace** → Read [Codespace Machine Types](codespace-machine-types.md) first. The machines endpoint returns HTTP 500 for this repo. Use `POST /user/codespaces` REST API directly. See the workaround section below.
 
 **using issue number in checkout footer instead of PR number** → Read [PR Checkout Footer Validation Pattern](pr-commands.md) first. Checkout footer requires the PR number (from gh pr create output), NOT the plan issue number from .impl/issue.json.
