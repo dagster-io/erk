@@ -99,7 +99,7 @@ docs/agent/
 
 Category descriptions in `docs/agent/index.md` help agents understand when to explore each category and where to add new docs.
 
-**Location:** Descriptions are defined in `CATEGORY_DESCRIPTIONS` in `packages/erk-kits/src/erk_kits/operations/agent_docs.py`.
+**Location:** Descriptions are defined in `CATEGORY_DESCRIPTIONS` in `src/erk/agent_docs/operations.py`.
 
 **Format:** Each description should answer two questions:
 
