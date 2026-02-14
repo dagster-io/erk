@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "adding or modifying CLI commands without regenerating reference docs"
     warning: "After CLI changes, run 'erk-dev gen-exec-reference-docs' to update auto-generated exec reference documentation. Stale docs confuse users and agents."
+  - action: "exec reference check fails in CI"
+    warning: "Run 'erk-dev gen-exec-reference-docs' via devrun agent. This is routine maintenance after exec script changes, not a bug to investigate."
 ---
 
 # Auto-Generated Reference Documentation
