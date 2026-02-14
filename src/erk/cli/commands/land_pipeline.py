@@ -21,10 +21,6 @@ from erk.cli.commands.objective_helpers import (
     prompt_objective_update,
 )
 from erk.cli.commands.review_pr_cleanup import cleanup_review_pr
-from erk.cli.commands.tripwire_promotion_helpers import (
-    extract_tripwire_candidates_from_learn_plan,
-    prompt_tripwire_promotion,
-)
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.ensure_ideal import EnsureIdeal
@@ -498,26 +494,6 @@ def update_learn_plan(ctx: ErkContext, state: LandState) -> LandState | LandErro
     return state
 
 
-def promote_tripwires(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    """Extract and promote tripwire candidates from learn plans."""
-    if state.plan_issue_number is None:
-        return state
-
-    candidates = extract_tripwire_candidates_from_learn_plan(
-        ctx,
-        repo_root=state.main_repo_root,
-        plan_issue_number=state.plan_issue_number,
-    )
-    if candidates:
-        prompt_tripwire_promotion(
-            ctx,
-            repo_root=state.main_repo_root,
-            candidates=candidates,
-            force=True,
-        )
-    return state
-
-
 def close_review_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
     """Close review PR if plan has one."""
     if state.plan_issue_number is None:
@@ -577,7 +553,6 @@ def _execution_pipeline() -> tuple[LandStep, ...]:
         merge_pr,
         update_objective,
         update_learn_plan,
-        promote_tripwires,
         close_review_pr,
         cleanup_and_navigate,
     )
