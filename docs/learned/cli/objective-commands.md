@@ -15,7 +15,6 @@ tripwires:
 
 ## Why Reconcile and Next-Plan Are Nearly Identical
 
-<!-- Source: src/erk/cli/commands/objective/reconcile_cmd.py, reconcile_objectives -->
 <!-- Source: src/erk/cli/commands/objective/next_plan_cmd.py, next_plan -->
 
 The `erk objective reconcile` and `erk objective next-plan` commands perform the same task — launching Claude to create an implementation plan from an objective step — but differ in their validation discipline:
@@ -43,7 +42,6 @@ This pattern appears in both `reconcile` and `next-plan` commands. Both force `p
 ## Why next-plan Takes Optional Argument, reconcile Takes Required
 
 <!-- Source: src/erk/cli/commands/objective/next_plan_cmd.py, next_plan -->
-<!-- Source: src/erk/cli/commands/objective/reconcile_cmd.py, reconcile_objectives -->
 
 The `next-plan` command accepts an optional `ISSUE_REF` string argument. This flexibility allows the slash command `/erk:objective-next-plan` to prompt for the issue interactively if needed.
 

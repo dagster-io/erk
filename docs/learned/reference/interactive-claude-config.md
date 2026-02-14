@@ -222,7 +222,7 @@ Every erk command that launches an interactive agent session follows the same th
 2. **Apply overrides** — via `with_overrides()` for command-specific requirements (e.g., plan commands always force `permission_mode_override="plan"`)
 3. **Launch** — via `ctx.agent_launcher.launch_interactive(config, command=...)` which uses `os.execvp()` to replace the process
 
-This pattern is implemented identically across `next_plan_cmd.py`, `replan_cmd.py`, and `reconcile_cmd.py`. The `AgentLauncher` ABC enables testing without actually exec'ing a process.
+This pattern is implemented identically across `next_plan_cmd.py` and `replan_cmd.py`. The `AgentLauncher` ABC enables testing without actually exec'ing a process.
 
 ## Testing Considerations
 

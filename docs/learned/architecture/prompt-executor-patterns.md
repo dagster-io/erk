@@ -291,7 +291,6 @@ Several commands bypass `PromptExecutor` and call the `claude` binary directly v
 
 - `src/erk/cli/commands/plan/replan_cmd.py`
 - `src/erk/cli/commands/objective/next_plan_cmd.py`
-- `src/erk/cli/commands/objective/reconcile_cmd.py`
 - `src/erk/core/interactive_claude.py` (helper that builds `["claude", ...]` args)
 
 For multi-backend support, these should route through `PromptExecutor` or a backend-aware arg builder.

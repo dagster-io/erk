@@ -1,10 +1,10 @@
-# Single Objective Reconciler Workflow
+# Single Objective Next-Plan Workflow
 #
-# Reconciles a specific auto-advance objective by determining next actionable steps
-# and creating plan issues. This workflow is launchable via `erk workflow launch`.
+# Creates the next implementation plan for a specific objective by determining
+# the next actionable step. This workflow is launchable via `erk workflow launch`.
 #
 # Trigger: Manual (workflow_dispatch) via erk workflow launch objective-reconcile --objective <N>
-# Output: Creates plan issues linked to the specified objective, updates roadmap table
+# Output: Creates plan issues linked to the specified objective
 
 name: objective-reconcile
 run-name: "reconcile:#${{ inputs.objective }}:${{ inputs.distinct_id }}"
@@ -48,13 +48,14 @@ jobs:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
-      - name: Reconcile objective
+      - name: Create next plan for objective
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          FLAGS="--objective ${{ inputs.objective }}"
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            FLAGS="$FLAGS --dry-run"
+            echo "Dry run: would create next plan for objective #${{ inputs.objective }}"
+            erk objective view ${{ inputs.objective }}
+            exit 0
           fi
-          erk objective reconcile $FLAGS
+          erk objective next-plan ${{ inputs.objective }}

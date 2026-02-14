@@ -18,6 +18,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding a new workflow_dispatch workflow without run-name** → Read [GitHub Actions API Interaction Patterns](github-actions-api.md) first. Every erk workflow must use run-name with distinct_id for trigger_workflow discovery. Pattern: run-name: '<context>:${{ inputs.distinct_id }}'
 
+**CRITICAL: Before adding new fields to the roadmap schema without updating validate_roadmap_frontmatter()** → Read [Objective Roadmap Schema Reference](objective-roadmap-schema.md) first. New fields must be validated in validate_roadmap_frontmatter() in objective_roadmap_frontmatter.py. Extra fields are preserved but unknown required fields will cause validation failures.
+
 **CRITICAL: Before confusing `dangerous` with `allow_dangerous`** → Read [Interactive Agent Configuration](interactive-claude-config.md) first. `dangerous` forces skip all prompts (automation). `allow_dangerous` lets users opt in (productivity). See the decision table in this doc.
 
 **CRITICAL: Before defining the same skill or command in multiple TOML sections** → Read [TOML File Handling](toml-handling.md) first. TOML duplicate key constraint: Each skill/command must have a single canonical destination. See bundled-artifacts.md for portability classification.

@@ -1,12 +1,12 @@
-# Objective Reconciler Sweep Workflow
+# Objective Next-Plan Sweep Workflow
 #
-# Reconciles ALL auto-advance objectives by determining next actionable steps
-# and creating plan issues. Runs on a schedule or manual trigger.
+# Creates next implementation plans for ALL open objectives by determining
+# next actionable steps. Runs on a schedule or manual trigger.
 #
-# For single-objective reconciliation via CLI, use objective-reconcile.yml instead.
+# For single-objective next-plan via CLI, use objective-reconcile.yml instead.
 #
 # Trigger: Schedule (cron) or manual workflow_dispatch
-# Output: Creates plan issues linked to objectives, updates roadmap tables
+# Output: Creates plan issues linked to objectives
 
 name: objective-reconciler
 run-name: "reconcile-objectives-sweep:${{ github.run_attempt }}"
@@ -47,13 +47,18 @@ jobs:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
-      - name: Run reconcile sweep
+      - name: Run next-plan sweep
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          FLAGS=""
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            FLAGS="$FLAGS --dry-run"
-          fi
-          erk objective reconcile $FLAGS
+          OBJECTIVES=$(gh issue list --label erk-objective --state open --json number --jq '.[].number')
+          for OBJ in $OBJECTIVES; do
+            echo "Processing objective #$OBJ..."
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              echo "Dry run: would create next plan for objective #$OBJ"
+              erk objective view "$OBJ"
+            else
+              erk objective next-plan "$OBJ" || true
+            fi
+          done

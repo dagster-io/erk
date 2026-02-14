@@ -122,6 +122,20 @@ def merge_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
 
 This is safe because execution only runs after validation succeeds. The assertion documents the validation pipeline's guarantee.
 
+## Process Boundary Flag-Inversion Bug
+
+<!-- Source: src/erk/cli/commands/land_pipeline.py, make_execution_state() -->
+
+When threading boolean flags across process boundaries (validation -> shell script -> execution), negated flags require careful handling.
+
+**The bug**: The `no_cleanup` CLI flag was not properly threaded to the execution pipeline. When the user answered "n" to the cleanup confirmation prompt, the negated flag (`cleanup_confirmed = not no_cleanup`) was lost across the shell script boundary, causing cleanup to proceed anyway.
+
+**Root cause**: `make_execution_state()` reconstructed state from CLI flags, but the `no_cleanup` flag was not passed through to the execution script. The execution pipeline defaulted to cleanup=True.
+
+**Fix**: PR #6939 (commit aa0802f8b) ensured the negated flag is explicitly serialized as a CLI flag and reconstructed in `make_execution_state()`.
+
+**Anti-pattern**: Assuming boolean flag negation survives process boundaries implicitly. When a flag like `no_cleanup` is negated to `cleanup_confirmed = not no_cleanup`, the shell script must encode and decode the negation explicitly.
+
 ## Reference Implementation
 
 <!-- Source: src/erk/cli/commands/land_pipeline.py -->
