@@ -8,7 +8,7 @@ from erk.status.collectors.base import StatusCollector
 from erk.status.models.status_data import PlanStatus
 from erk_shared.impl_folder import (
     get_impl_path,
-    read_issue_reference,
+    read_plan_ref,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,10 +84,10 @@ class PlanFileCollector(StatusCollector):
         # Return folder path, not plan.md file path
         impl_folder = worktree_path / ".impl"
 
-        # Read issue reference if present
-        issue_ref = read_issue_reference(impl_folder)
-        issue_number = issue_ref.issue_number if issue_ref else None
-        issue_url = issue_ref.issue_url if issue_ref else None
+        # Read plan reference if present
+        plan_ref = read_plan_ref(impl_folder)
+        issue_number = int(plan_ref.plan_id) if plan_ref else None
+        issue_url = plan_ref.url if plan_ref else None
 
         return PlanStatus(
             exists=True,

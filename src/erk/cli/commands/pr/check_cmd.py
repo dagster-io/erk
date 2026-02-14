@@ -9,7 +9,7 @@ from erk_shared.gateway.pr.submit import (
     has_checkout_footer_for_pr,
     has_issue_closing_reference,
 )
-from erk_shared.impl_folder import read_issue_reference, validate_issue_linkage
+from erk_shared.impl_folder import read_plan_ref, validate_plan_linkage
 from erk_shared.output.output import user_output
 
 
@@ -52,25 +52,26 @@ def pr_check(ctx: ErkContext) -> None:
     # .impl always lives at worktree/repo root
     impl_dir = repo_root / ".impl"
 
-    # Check 0: Branch/issue.json agreement
-    # This catches cases where branch name says "P42-..." but issue.json says #99
+    # Check 0: Branch/plan-ref agreement
+    # This catches cases where branch name says "P42-..." but plan-ref says #99
     issue_number: int | None = None
     try:
-        issue_number = validate_issue_linkage(impl_dir, branch)
-        if issue_number is not None:
-            checks.append((True, f"Branch name and .impl/issue.json agree (#{issue_number})"))
+        plan_id = validate_plan_linkage(impl_dir, branch)
+        if plan_id is not None:
+            issue_number = int(plan_id)
+            checks.append((True, f"Branch name and plan reference agree (#{issue_number})"))
     except ValueError as e:
         checks.append((False, str(e)))
-        # Continue with other checks - use the issue from .impl/issue.json as fallback
-        issue_ref_fallback = read_issue_reference(impl_dir)
-        if issue_ref_fallback is not None:
-            issue_number = issue_ref_fallback.issue_number
+        # Continue with other checks - use the plan ref as fallback
+        plan_ref_fallback = read_plan_ref(impl_dir)
+        if plan_ref_fallback is not None:
+            issue_number = int(plan_ref_fallback.plan_id)
 
     # Check 1: Issue closing reference (if issue number is discoverable)
-    issue_ref = read_issue_reference(impl_dir)
+    plan_ref = read_plan_ref(impl_dir)
 
-    if issue_ref is not None:
-        expected_issue_number = issue_ref.issue_number
+    if plan_ref is not None:
+        expected_issue_number = int(plan_ref.plan_id)
         plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
         if has_issue_closing_reference(pr_body, expected_issue_number, plans_repo):
             # Format expected reference for display

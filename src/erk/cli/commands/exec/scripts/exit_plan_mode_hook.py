@@ -612,7 +612,7 @@ def _get_pr_number_for_branch(
 
 
 def _get_plan_issue_from_impl(repo_root: Path) -> int | None:
-    """Load plan issue number from .impl/issue.json file.
+    """Load plan issue number from .impl/plan-ref.json (or legacy issue.json).
 
     Args:
         repo_root: Path to the git repository root
@@ -620,7 +620,21 @@ def _get_plan_issue_from_impl(repo_root: Path) -> int | None:
     Returns:
         Issue number if found, None otherwise
     """
-    issue_file = repo_root / ".impl" / "issue.json"
+    impl_dir = repo_root / ".impl"
+
+    # Try plan-ref.json first (new format)
+    plan_ref_file = impl_dir / "plan-ref.json"
+    if plan_ref_file.is_file():
+        content = plan_ref_file.read_text(encoding="utf-8")
+        if content.strip():
+            data = json.loads(content)
+            plan_id = data.get("plan_id")
+            if isinstance(plan_id, str) and plan_id.isdigit():
+                return int(plan_id)
+        return None
+
+    # Fall back to legacy issue.json
+    issue_file = impl_dir / "issue.json"
     if not issue_file.is_file():
         return None
 

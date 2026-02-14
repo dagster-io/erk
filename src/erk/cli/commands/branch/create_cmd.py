@@ -18,7 +18,7 @@ from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
-from erk_shared.impl_folder import create_impl_folder, save_issue_reference
+from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 from erk_shared.issue_workflow import (
     IssueBranchSetup,
     IssueValidationFailed,
@@ -200,13 +200,13 @@ def branch_create(
             overwrite=True,
         )
 
-        save_issue_reference(
+        save_plan_ref(
             impl_path,
-            setup.issue_number,
-            setup.issue_url,
-            issue_title=setup.issue_title,
-            labels=None,
-            objective_issue=setup.objective_issue,
+            provider="github",
+            plan_id=str(setup.issue_number),
+            url=setup.issue_url,
+            labels=(),
+            objective_id=setup.objective_issue,
         )
 
         # In script mode, output activation script path and exit

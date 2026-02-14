@@ -35,7 +35,7 @@ from erk.cli.help_formatter import CommandWithHiddenOptions
 from erk.core.context import ErkContext
 from erk.core.prompt_executor import PromptExecutor
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk_shared.impl_folder import create_impl_folder, save_issue_reference
+from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -155,18 +155,18 @@ def _implement_from_issue(
     )
     ctx.console.success("✓ Created .impl/ folder")
 
-    # Save issue reference for PR linking
-    ctx.console.info("Saving issue reference for PR linking...")
+    # Save plan reference for PR linking
+    ctx.console.info("Saving plan reference for PR linking...")
     impl_dir = ctx.cwd / ".impl"
-    save_issue_reference(
+    save_plan_ref(
         impl_dir,
-        int(issue_number),
-        plan.url,
-        issue_title=plan.title,
-        labels=None,
-        objective_issue=plan.objective_id,
+        provider="github",
+        plan_id=str(issue_number),
+        url=plan.url,
+        labels=(),
+        objective_id=plan.objective_id,
     )
-    ctx.console.success(f"✓ Saved issue reference: {plan.url}")
+    ctx.console.success(f"✓ Saved plan reference: {plan.url}")
 
     # Execute based on mode
     if script:

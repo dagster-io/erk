@@ -28,7 +28,7 @@ from typing import NoReturn
 
 import click
 
-from erk_shared.impl_folder import read_issue_reference
+from erk_shared.impl_folder import read_plan_ref
 
 
 def _error_json(error_type: str, message: str) -> NoReturn:
@@ -132,10 +132,10 @@ def impl_init(json_output: bool) -> None:
     # Validate folder structure
     impl_dir, impl_type = _validate_impl_folder()
 
-    # Get issue reference info
-    issue_ref = read_issue_reference(impl_dir)
-    has_issue_tracking = issue_ref is not None
-    issue_number = issue_ref.issue_number if issue_ref else None
+    # Get plan reference info
+    plan_ref = read_plan_ref(impl_dir)
+    has_issue_tracking = plan_ref is not None
+    issue_number = int(plan_ref.plan_id) if plan_ref else None
 
     # Read plan content
     plan_file = impl_dir / "plan.md"

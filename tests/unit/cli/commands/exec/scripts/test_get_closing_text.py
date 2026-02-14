@@ -161,7 +161,7 @@ def test_get_closing_text_invalid_json(tmp_path: Path) -> None:
     issue_json = impl_dir / "issue.json"
     issue_json.write_text("not valid json {{{", encoding="utf-8")
 
-    # With invalid JSON, validate_issue_linkage returns the branch issue number
+    # With invalid JSON, validate_plan_linkage returns the branch issue number
     git = FakeGit(current_branches={tmp_path: "P42-feature"})
     ctx = ErkContext.for_test(git=git, cwd=tmp_path)
 

@@ -41,7 +41,7 @@ from erk_shared.gateway.http.auth import fetch_github_token
 from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.gateway.live_display.abc import LiveDisplay
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
-from erk_shared.impl_folder import read_issue_reference
+from erk_shared.impl_folder import read_plan_ref
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -292,11 +292,12 @@ def _build_plans_table(
     for worktree in worktrees:
         impl_folder = worktree.path / ".impl"
         if impl_folder.exists() and impl_folder.is_dir():
-            issue_ref = read_issue_reference(impl_folder)
-            if issue_ref is not None:
+            plan_ref = read_plan_ref(impl_folder)
+            if plan_ref is not None:
                 # If multiple worktrees have same issue, keep first found
-                if issue_ref.issue_number not in worktree_by_issue:
-                    worktree_by_issue[issue_ref.issue_number] = worktree.path.name
+                plan_issue = int(plan_ref.plan_id)
+                if plan_issue not in worktree_by_issue:
+                    worktree_by_issue[plan_issue] = worktree.path.name
 
     # Apply run state filter if specified
     if run_state:
@@ -327,9 +328,9 @@ def _build_plans_table(
     for wt in worktrees:
         impl_folder = wt.path / ".impl"
         if impl_folder.exists() and impl_folder.is_dir():
-            issue_ref = read_issue_reference(impl_folder)
-            if issue_ref is not None and wt.branch is not None:
-                issue_to_branch[issue_ref.issue_number] = wt.branch
+            plan_ref = read_plan_ref(impl_folder)
+            if plan_ref is not None and wt.branch is not None:
+                issue_to_branch[int(plan_ref.plan_id)] = wt.branch
 
     # Build activity timestamps for display and sorting
     activity_by_issue: dict[int, str] = {}

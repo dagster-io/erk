@@ -123,8 +123,8 @@ def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
     assert result.error_type == "issue_linkage_mismatch"
 
 
-def test_auto_repair_creates_issue_json(tmp_path: Path) -> None:
-    """Branch P42-x + .impl/ exists + no issue.json => creates file."""
+def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
+    """Branch P42-x + .impl/ exists + no plan-ref.json => creates file."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
 
@@ -141,11 +141,11 @@ def test_auto_repair_creates_issue_json(tmp_path: Path) -> None:
 
     assert isinstance(result, SubmitState)
     assert result.issue_number == 42
-    # Verify issue.json was created
-    issue_json = impl_dir / "issue.json"
-    assert issue_json.exists()
-    data = json.loads(issue_json.read_text())
-    assert data["issue_number"] == 42
+    # Verify plan-ref.json was created
+    plan_ref_json = impl_dir / "plan-ref.json"
+    assert plan_ref_json.exists()
+    data = json.loads(plan_ref_json.read_text())
+    assert data["plan_id"] == "42"
 
 
 def test_no_issue_number_from_branch(tmp_path: Path) -> None:

@@ -42,10 +42,10 @@ def test_implement_from_plain_issue_number() -> None:
         assert result.exit_code == 0
         assert "Created .impl/ folder" in result.output
 
-        # Verify .impl/ folder exists with correct issue number
-        issue_json_path = env.cwd / ".impl" / "issue.json"
-        issue_json_content = issue_json_path.read_text(encoding="utf-8")
-        assert '"issue_number": 123' in issue_json_content
+        # Verify .impl/ folder exists with correct plan ID
+        plan_ref_path = env.cwd / ".impl" / "plan-ref.json"
+        plan_ref_content = plan_ref_path.read_text(encoding="utf-8")
+        assert '"plan_id": "123"' in plan_ref_content
 
 
 def test_implement_from_issue_number() -> None:
@@ -72,7 +72,7 @@ def test_implement_from_issue_number() -> None:
         impl_path = env.cwd / ".impl"
         assert impl_path.exists()
         assert (impl_path / "plan.md").exists()
-        assert (impl_path / "issue.json").exists()
+        assert (impl_path / "plan-ref.json").exists()
 
 
 def test_implement_from_issue_url() -> None:
@@ -96,10 +96,10 @@ def test_implement_from_issue_url() -> None:
         assert result.exit_code == 0
         assert "Created .impl/ folder" in result.output
 
-        # Verify issue.json contains correct issue number
-        issue_json_path = env.cwd / ".impl" / "issue.json"
-        issue_json_content = issue_json_path.read_text(encoding="utf-8")
-        assert '"issue_number": 123' in issue_json_content
+        # Verify plan-ref.json contains correct plan ID
+        plan_ref_path = env.cwd / ".impl" / "plan-ref.json"
+        plan_ref_content = plan_ref_path.read_text(encoding="utf-8")
+        assert '"plan_id": "123"' in plan_ref_content
 
 
 def test_implement_creates_impl_folder_in_cwd() -> None:

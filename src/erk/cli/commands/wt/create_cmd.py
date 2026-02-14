@@ -21,7 +21,7 @@ from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
-from erk_shared.impl_folder import create_impl_folder, get_impl_path, save_issue_reference
+from erk_shared.impl_folder import create_impl_folder, get_impl_path, save_plan_ref
 from erk_shared.issue_workflow import (
     IssueBranchSetup,
     IssueValidationFailed,
@@ -897,14 +897,14 @@ def create_wt(
         # Use overwrite=False since fresh worktree should not have .impl/
         impl_folder_destination = create_impl_folder(wt_path, setup.plan_content, overwrite=False)
 
-        # Create .impl/issue.json metadata using shared helper
-        save_issue_reference(
+        # Create .impl/plan-ref.json metadata using shared helper
+        save_plan_ref(
             wt_path / ".impl",
-            setup.issue_number,
-            setup.issue_url,
-            issue_title=setup.issue_title,
-            labels=None,
-            objective_issue=setup.objective_issue,
+            provider="github",
+            plan_id=str(setup.issue_number),
+            url=setup.issue_url,
+            labels=(),
+            objective_id=setup.objective_issue,
         )
 
         if not script and not output_json:

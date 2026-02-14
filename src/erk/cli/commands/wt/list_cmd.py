@@ -15,7 +15,7 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_utils import find_current_worktree
 from erk_shared.gateway.git.abc import BranchSyncInfo
 from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
-from erk_shared.impl_folder import get_impl_path, read_issue_reference
+from erk_shared.impl_folder import get_impl_path, read_plan_ref
 
 
 def _get_sync_status(ctx: ErkContext, worktree_path: Path, branch: str | None) -> str:
@@ -96,9 +96,9 @@ def _get_impl_issue(
     impl_path = get_impl_path(worktree_path, git_ops=ctx.git)
     if impl_path is not None:
         # impl_path points to plan.md, get the parent .impl/ directory
-        issue_ref = read_issue_reference(impl_path.parent)
-        if issue_ref is not None:
-            return f"#{issue_ref.issue_number}", issue_ref.issue_url
+        plan_ref = read_plan_ref(impl_path.parent)
+        if plan_ref is not None:
+            return f"#{plan_ref.plan_id}", plan_ref.url
 
     # Fallback to git config (no URL available from git config)
     # If branch not provided, fetch it (for backwards compatibility)

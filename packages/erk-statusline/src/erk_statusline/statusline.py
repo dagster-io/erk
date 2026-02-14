@@ -205,7 +205,7 @@ def get_worktree_info_via_gateway(ctx: StatuslineContext, repo_root: Path) -> tu
 
 
 def get_issue_number(git_root: str) -> int | None:
-    """Load issue number from .impl/issue.json file.
+    """Load issue number from .impl/plan-ref.json (or legacy issue.json) file.
 
     Args:
         git_root: Absolute path to git repository root
@@ -216,7 +216,22 @@ def get_issue_number(git_root: str) -> int | None:
     if not git_root:
         return None
 
-    issue_file = Path(git_root) / ".impl" / "issue.json"
+    impl_dir = Path(git_root) / ".impl"
+
+    # Try plan-ref.json first (new format)
+    plan_ref_file = impl_dir / "plan-ref.json"
+    if plan_ref_file.is_file():
+        try:
+            with open(plan_ref_file, encoding="utf-8") as f:
+                data = json.load(f)
+                plan_id = data.get("plan_id")
+                if isinstance(plan_id, str) and plan_id.isdigit():
+                    return int(plan_id)
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    # Fall back to issue.json (legacy format)
+    issue_file = impl_dir / "issue.json"
     if not issue_file.is_file():
         return None
 
@@ -234,18 +249,34 @@ def get_issue_number(git_root: str) -> int | None:
 
 
 def get_objective_issue(git_root: str) -> int | None:
-    """Load objective issue number from .impl/issue.json file.
+    """Load objective issue number from .impl/plan-ref.json (or legacy issue.json) file.
 
     Args:
         git_root: Absolute path to git repository root
 
     Returns:
-        Objective issue number if file exists and has objective_issue field, None otherwise.
+        Objective issue number if file exists and has objective_id field, None otherwise.
     """
     if not git_root:
         return None
 
-    issue_file = Path(git_root) / ".impl" / "issue.json"
+    impl_dir = Path(git_root) / ".impl"
+
+    # Try plan-ref.json first (new format)
+    plan_ref_file = impl_dir / "plan-ref.json"
+    if plan_ref_file.is_file():
+        try:
+            with open(plan_ref_file, encoding="utf-8") as f:
+                data = json.load(f)
+                objective = data.get("objective_id")
+                if isinstance(objective, int):
+                    return objective
+        except (json.JSONDecodeError, OSError):
+            pass
+        return None  # plan-ref.json exists but no objective_id
+
+    # Fall back to issue.json (legacy format)
+    issue_file = impl_dir / "issue.json"
     if not issue_file.is_file():
         return None
 

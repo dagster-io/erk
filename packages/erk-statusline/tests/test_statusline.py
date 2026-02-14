@@ -632,7 +632,7 @@ class TestBuildGhLabel:
 
 
 class TestGetIssueNumber:
-    """Test issue number loading from .impl/issue.json."""
+    """Test issue number loading from .impl/plan-ref.json (with legacy issue.json fallback)."""
 
     def test_no_git_root_returns_none(self) -> None:
         """Empty git root should return None."""
@@ -713,9 +713,47 @@ class TestGetIssueNumber:
             result = get_issue_number(tmpdir)
             assert result is None
 
+    def test_plan_ref_json_returns_number(self) -> None:
+        """Valid plan-ref.json with plan_id field should return the number."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            impl_dir = Path(tmpdir) / ".impl"
+            impl_dir.mkdir()
+            plan_ref_file = impl_dir / "plan-ref.json"
+            plan_ref_file.write_text(
+                '{"provider": "github", "plan_id": "42", "url": "https://example.com"}'
+            )
+
+            result = get_issue_number(tmpdir)
+            assert result == 42
+
+    def test_plan_ref_json_preferred_over_issue_json(self) -> None:
+        """plan-ref.json should be preferred over issue.json."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            impl_dir = Path(tmpdir) / ".impl"
+            impl_dir.mkdir()
+            # Write both with different numbers
+            plan_ref_file = impl_dir / "plan-ref.json"
+            plan_ref_file.write_text('{"provider": "github", "plan_id": "99", "url": "u"}')
+            issue_file = impl_dir / "issue.json"
+            issue_file.write_text('{"issue_number": 42}')
+
+            result = get_issue_number(tmpdir)
+            assert result == 99
+
+    def test_plan_ref_json_non_numeric_plan_id_returns_none(self) -> None:
+        """plan-ref.json with non-numeric plan_id falls back to issue.json."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            impl_dir = Path(tmpdir) / ".impl"
+            impl_dir.mkdir()
+            plan_ref_file = impl_dir / "plan-ref.json"
+            plan_ref_file.write_text('{"provider": "linear", "plan_id": "PROJ-123", "url": "u"}')
+
+            result = get_issue_number(tmpdir)
+            assert result is None
+
 
 class TestGetObjectiveIssue:
-    """Test objective issue loading from .impl/issue.json."""
+    """Test objective issue loading from .impl/plan-ref.json (with legacy issue.json fallback)."""
 
     def test_no_git_root_returns_none(self) -> None:
         """Empty git root should return None."""
@@ -768,6 +806,48 @@ class TestGetObjectiveIssue:
             impl_dir.mkdir()
             issue_file = impl_dir / "issue.json"
             issue_file.write_text('{"objective_issue": "not an int"}')
+
+            result = get_objective_issue(tmpdir)
+            assert result is None
+
+    def test_plan_ref_json_returns_objective(self) -> None:
+        """Valid plan-ref.json with objective_id field should return the number."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            impl_dir = Path(tmpdir) / ".impl"
+            impl_dir.mkdir()
+            plan_ref_file = impl_dir / "plan-ref.json"
+            plan_ref_file.write_text(
+                '{"provider": "github", "plan_id": "42", "url": "u", "objective_id": 789}'
+            )
+
+            result = get_objective_issue(tmpdir)
+            assert result == 789
+
+    def test_plan_ref_json_preferred_over_issue_json_for_objective(self) -> None:
+        """plan-ref.json should be preferred over issue.json for objective."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            impl_dir = Path(tmpdir) / ".impl"
+            impl_dir.mkdir()
+            plan_ref_file = impl_dir / "plan-ref.json"
+            plan_ref_file.write_text(
+                '{"provider": "github", "plan_id": "42", "url": "u", "objective_id": 100}'
+            )
+            issue_file = impl_dir / "issue.json"
+            issue_file.write_text('{"issue_number": 42, "objective_issue": 200}')
+
+            result = get_objective_issue(tmpdir)
+            assert result == 100
+
+    def test_plan_ref_json_without_objective_returns_none(self) -> None:
+        """plan-ref.json without objective_id should return None (not fall back)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            impl_dir = Path(tmpdir) / ".impl"
+            impl_dir.mkdir()
+            plan_ref_file = impl_dir / "plan-ref.json"
+            plan_ref_file.write_text('{"provider": "github", "plan_id": "42", "url": "u"}')
+            # Even if issue.json has an objective, plan-ref.json takes priority
+            issue_file = impl_dir / "issue.json"
+            issue_file.write_text('{"issue_number": 42, "objective_issue": 200}')
 
             result = get_objective_issue(tmpdir)
             assert result is None

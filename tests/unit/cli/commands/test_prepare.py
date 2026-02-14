@@ -76,7 +76,7 @@ def test_prepare_creates_branch_and_impl_folder() -> None:
         impl_folder = worktree_path / ".impl"
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
-        assert (impl_folder / "issue.json").exists()
+        assert (impl_folder / "plan-ref.json").exists()
 
 
 def test_prepare_with_issue_url() -> None:

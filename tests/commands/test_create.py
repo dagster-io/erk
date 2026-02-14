@@ -145,15 +145,14 @@ def test_create_from_plan_with_valid_issue() -> None:
         plan_content = plan_path.read_text(encoding="utf-8")
         assert "## Implementation" in plan_content
 
-        # Assert: issue.json has metadata
-        issue_json_path = impl_path / "issue.json"
-        assert issue_json_path.exists()
+        # Assert: plan-ref.json has metadata
+        plan_ref_path = impl_path / "plan-ref.json"
+        assert plan_ref_path.exists()
         import json
 
-        issue_json = json.loads(issue_json_path.read_text(encoding="utf-8"))
-        assert issue_json["issue_number"] == 123
-        assert issue_json["issue_title"] == "Add User Authentication"
-        assert issue_json["issue_url"] == "https://github.com/owner/repo/issues/123"
+        plan_ref = json.loads(plan_ref_path.read_text(encoding="utf-8"))
+        assert plan_ref["plan_id"] == "123"
+        assert plan_ref["url"] == "https://github.com/owner/repo/issues/123"
 
 
 def test_create_from_plan_missing_label() -> None:

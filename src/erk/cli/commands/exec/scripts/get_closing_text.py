@@ -35,7 +35,7 @@ import click
 
 from erk.cli.config import load_config
 from erk_shared.context.helpers import get_current_branch, require_cwd
-from erk_shared.impl_folder import validate_issue_linkage
+from erk_shared.impl_folder import validate_plan_linkage
 
 
 def _find_repo_root(start: Path) -> Path | None:
@@ -71,14 +71,14 @@ def get_closing_text(ctx: click.Context) -> None:
     if not impl_dir.exists():
         impl_dir = cwd / ".worker-impl"
 
-    # Validate linkage and get issue number (branch fallback if no .impl/)
+    # Validate linkage and get plan ID (branch fallback if no .impl/)
     try:
-        issue_number = validate_issue_linkage(impl_dir, branch_name)
+        plan_id = validate_plan_linkage(impl_dir, branch_name)
     except ValueError as e:
         click.echo(f"Error: {e}", err=True)
         raise SystemExit(1) from None
 
-    if issue_number is None:
+    if plan_id is None:
         # No issue to close (neither branch nor .impl/ has one)
         return
 
@@ -91,8 +91,8 @@ def get_closing_text(ctx: click.Context) -> None:
 
     # Format closing text
     if plans_repo is None:
-        closing_text = f"Closes #{issue_number}"
+        closing_text = f"Closes #{plan_id}"
     else:
-        closing_text = f"Closes {plans_repo}#{issue_number}"
+        closing_text = f"Closes {plans_repo}#{plan_id}"
 
     click.echo(closing_text)

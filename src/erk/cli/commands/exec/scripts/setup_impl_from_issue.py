@@ -33,7 +33,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
-from erk_shared.impl_folder import create_impl_folder, save_issue_reference
+from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 from erk_shared.naming import generate_issue_branch_name
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -161,14 +161,14 @@ def setup_impl_from_issue(
             overwrite=True,
         )
 
-        # Step 4: Save issue reference for PR linking
-        save_issue_reference(
+        # Step 4: Save plan reference for PR linking
+        save_plan_ref(
             impl_path,
-            issue_number,
-            plan.url,
-            issue_title=plan.title,
-            labels=None,
-            objective_issue=plan.objective_id,
+            provider="github",
+            plan_id=str(issue_number),
+            url=plan.url,
+            labels=(),
+            objective_id=plan.objective_id,
         )
 
     # Output structured success result

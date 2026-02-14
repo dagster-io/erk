@@ -12,7 +12,7 @@ Unlike .impl/ folders (ephemeral, local, never committed), .worker-impl/ folders
 Folder structure:
 .worker-impl/
 ├── plan.md          # Full plan content from GitHub issue
-├── issue.json       # Canonical schema from impl_folder (issue_number, issue_url, etc.)
+├── plan-ref.json    # Provider-agnostic plan reference (provider, plan_id, url, etc.)
 └── README.md        # Explanation that folder is temporary
 """
 
@@ -20,25 +20,25 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from erk_shared.impl_folder import save_issue_reference
+from erk_shared.impl_folder import save_plan_ref
 
 
 def create_worker_impl_folder(
     plan_content: str,
-    issue_number: int,
-    issue_url: str,
+    plan_id: str,
+    url: str,
     repo_root: Path,
     *,
-    objective_issue: int | None,
+    objective_id: int | None,
 ) -> Path:
     """Create .worker-impl/ folder with all required files.
 
     Args:
         plan_content: Full plan markdown content from GitHub issue
-        issue_number: GitHub issue number
-        issue_url: Full GitHub issue URL
+        plan_id: Provider-specific plan ID as string (e.g., "42")
+        url: Full plan URL
         repo_root: Repository root directory path
-        objective_issue: Optional linked objective issue number
+        objective_id: Optional linked objective issue number
 
     Returns:
         Path to the created .worker-impl/ directory
@@ -67,14 +67,14 @@ def create_worker_impl_folder(
     plan_file = worker_impl_folder / "plan.md"
     plan_file.write_text(plan_content, encoding="utf-8")
 
-    # Write issue.json using canonical function from impl_folder
-    save_issue_reference(
+    # Write plan-ref.json using canonical function from impl_folder
+    save_plan_ref(
         worker_impl_folder,
-        issue_number,
-        issue_url,
-        issue_title=None,
-        labels=None,
-        objective_issue=objective_issue,
+        provider="github",
+        plan_id=plan_id,
+        url=url,
+        labels=(),
+        objective_id=objective_id,
     )
 
     # Write README.md
@@ -84,8 +84,8 @@ This folder contains the implementation plan for this branch.
 
 **Status:** Queued for remote implementation
 
-**Source:** GitHub issue #{issue_number}
-{issue_url}
+**Source:** Plan #{plan_id}
+{url}
 
 **This folder is temporary** and will be automatically removed after implementation completes.
 """

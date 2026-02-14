@@ -38,9 +38,9 @@ from erk_shared.gateway.gt.prompts import truncate_diff
 from erk_shared.gateway.pr.diff_extraction import filter_diff_excluded_files
 from erk_shared.gateway.pr.graphite_enhance import should_enhance_with_graphite
 from erk_shared.impl_folder import (
-    has_issue_reference,
-    save_issue_reference,
-    validate_issue_linkage,
+    has_plan_ref,
+    save_plan_ref,
+    validate_plan_linkage,
 )
 from erk_shared.scratch.scratch import write_scratch_file
 
@@ -112,11 +112,13 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
     trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
     parent_branch = ctx.branch_manager.get_parent_branch(repo_root, branch_name) or trunk_branch
 
-    # Issue number discovery via .impl/issue.json or branch name
+    # Plan ID discovery via .impl/plan-ref.json (or legacy issue.json) or branch name
     impl_dir = cwd / ".impl"
     issue_number: int | None = None
     try:
-        issue_number = validate_issue_linkage(impl_dir, branch_name)
+        plan_id = validate_plan_linkage(impl_dir, branch_name)
+        if plan_id is not None:
+            issue_number = int(plan_id)
     except ValueError as e:
         return SubmitError(
             phase="prepare",
@@ -125,18 +127,18 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
             details={"branch": branch_name},
         )
 
-    # Auto-repair: create .impl/issue.json if missing but issue inferred from branch
-    if issue_number is not None and not has_issue_reference(impl_dir) and impl_dir.exists():
+    # Auto-repair: create .impl/plan-ref.json if missing but issue inferred from branch
+    if issue_number is not None and not has_plan_ref(impl_dir) and impl_dir.exists():
         remote_url = ctx.git.remote.get_remote_url(repo_root, "origin")
         owner, repo_name = parse_git_remote_url(remote_url)
         issue_url = f"https://github.com/{owner}/{repo_name}/issues/{issue_number}"
-        save_issue_reference(
+        save_plan_ref(
             impl_dir,
-            issue_number,
-            issue_url,
-            issue_title=None,
-            labels=None,
-            objective_issue=None,
+            provider="github",
+            plan_id=str(issue_number),
+            url=issue_url,
+            labels=(),
+            objective_id=None,
         )
 
     return dataclasses.replace(

@@ -46,7 +46,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_remote_impl,
 )
 from erk_shared.gateway.github.types import BodyText
-from erk_shared.impl_folder import read_issue_reference, write_local_run_state
+from erk_shared.impl_folder import read_plan_ref, write_local_run_state
 
 
 @dataclass(frozen=True)
@@ -91,10 +91,10 @@ def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
 
-    # Read issue reference from .impl/issue.json
+    # Read plan reference from .impl/plan-ref.json (or legacy issue.json)
     impl_dir = cwd / ".impl"
-    issue_ref = read_issue_reference(impl_dir)
-    if issue_ref is None:
+    plan_ref = read_plan_ref(impl_dir)
+    if plan_ref is None:
         result = MarkImplError(
             success=False,
             error_type="no-issue-reference",
@@ -140,12 +140,12 @@ def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
         raise SystemExit(0) from None
 
     # Fetch current issue
-    issue = github_issues.get_issue(repo_root, issue_ref.issue_number)
+    issue = github_issues.get_issue(repo_root, int(plan_ref.plan_id))
     if isinstance(issue, IssueNotFound):
         result = MarkImplError(
             success=False,
             error_type="issue-not-found",
-            message=f"Issue #{issue_ref.issue_number} not found",
+            message=f"Issue #{int(plan_ref.plan_id)} not found",
         )
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(0)
@@ -178,7 +178,7 @@ def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
     # Update issue body
     try:
         github_issues.update_issue_body(
-            repo_root, issue_ref.issue_number, BodyText(content=updated_body)
+            repo_root, int(plan_ref.plan_id), BodyText(content=updated_body)
         )
     except RuntimeError as e:
         result = MarkImplError(
@@ -191,6 +191,6 @@ def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
 
     result_success = MarkImplSuccess(
         success=True,
-        issue_number=issue_ref.issue_number,
+        issue_number=int(plan_ref.plan_id),
     )
     click.echo(json.dumps(asdict(result_success), indent=2))

@@ -9,7 +9,7 @@ from pathlib import Path
 from erk.core.context import minimal_context
 from erk.status.collectors.impl import PlanFileCollector
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.impl_folder import create_impl_folder, save_issue_reference
+from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 
 
 def test_plan_collector_no_plan_folder(tmp_path: Path) -> None:
@@ -50,14 +50,14 @@ def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
     plan_content = "# Test Plan\n\n## Step 1: Step one\n"
     plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
 
-    # Save issue reference
-    save_issue_reference(
+    # Save plan reference
+    save_plan_ref(
         plan_folder,
-        42,
-        "https://github.com/owner/repo/issues/42",
-        issue_title=None,
-        labels=None,
-        objective_issue=None,
+        provider="github",
+        plan_id="42",
+        url="https://github.com/owner/repo/issues/42",
+        labels=(),
+        objective_id=None,
     )
 
     git = FakeGit()

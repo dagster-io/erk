@@ -79,10 +79,10 @@ def create_worker_impl_from_issue(
     worker_impl_path = repo_root / ".worker-impl"
     create_worker_impl_folder(
         plan_content=plan.body,
-        issue_number=issue_number,
-        issue_url=plan.url,
+        plan_id=str(issue_number),
+        url=plan.url,
         repo_root=repo_root,
-        objective_issue=plan.objective_id,
+        objective_id=plan.objective_id,
     )
 
     # Output structured success result
