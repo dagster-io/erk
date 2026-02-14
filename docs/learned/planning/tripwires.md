@@ -68,6 +68,8 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before creating temp files for AI workflows** → Read [Scratch Storage](scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
 
+**CRITICAL: Before designing multi-agent pipelines where child agents return results via TaskOutput** → Read [Token Optimization Patterns](token-optimization-patterns.md) first. Add output size guidance to agent definitions (word count targets, table-preferred format, capped entries) to prevent context bloat when outputs accumulate in parent context.
+
 **CRITICAL: Before editing plan content only in the PR branch without syncing** → Read [PR-Based Plan Review Workflow](pr-review-workflow.md) first. Plan content lives in two places (PR branch + issue comment). Edit the local file, then sync to the issue with `erk exec plan-update-from-feedback`. See plan-file-sync-pattern.md.
 
 **CRITICAL: Before entering Plan Mode in replan or consolidation workflow** → Read [Context Preservation in Replan Workflow](context-preservation-in-replan.md) first. Gather investigation context FIRST (Step 6a). Enter plan mode only after collecting file paths, evidence, and discoveries. Sparse plans are destructive to downstream implementation.
