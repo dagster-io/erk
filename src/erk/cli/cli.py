@@ -25,6 +25,7 @@ from erk.cli.commands.launch_cmd import launch
 from erk.cli.commands.log_cmd import log_cmd
 from erk.cli.commands.md.group import md_group
 from erk.cli.commands.objective import objective_group
+from erk.cli.commands.one_shot import one_shot
 from erk.cli.commands.plan import plan_group
 from erk.cli.commands.plan.list_cmd import dash
 from erk.cli.commands.pr import pr_group
@@ -203,6 +204,7 @@ cli.add_command(pr_group)
 cli.add_command(prepare)
 cli.add_command(info_group)
 cli.add_command(objective_group)
+cli.add_command(one_shot)
 cli.add_command(project_group)
 cli.add_command(slot_group)
 cli.add_command(run_group)
