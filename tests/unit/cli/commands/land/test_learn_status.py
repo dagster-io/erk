@@ -875,7 +875,7 @@ def test_option4_calls_preprocess_and_prepare_manual_learn(
     # Track whether _preprocess_and_prepare_manual_learn was called
     preprocess_calls: list[tuple[Path, int]] = []
 
-    def mock_preprocess_and_prepare(ctx, *, repo_root, plan_issue_number, script):
+    def mock_preprocess_and_prepare(ctx, *, repo_root, plan_issue_number):
         preprocess_calls.append((repo_root, plan_issue_number))
         raise SystemExit(0)
 

@@ -421,8 +421,78 @@ def _prompt_async_learn_and_continue(
             ctx,
             repo_root=repo_root,
             plan_issue_number=plan_issue_number,
-            script=script,
         )
+
+
+@dataclass(frozen=True)
+class LearnPreprocessResult:
+    """Successful result from learn preprocessing subprocess."""
+
+    output: dict[str, object]
+    gist_url: str | None
+
+
+@dataclass(frozen=True)
+class LearnPreprocessError:
+    """Error from learn preprocessing subprocess."""
+
+    message: str
+
+
+def _run_learn_preprocessing(
+    ctx: ErkContext,
+    *,
+    plan_issue_number: int,
+    skip_workflow: bool,
+) -> LearnPreprocessResult | LearnPreprocessError:
+    """Run learn preprocessing subprocess and store gist URL on plan header.
+
+    Calls `erk exec trigger-async-learn` with optional --skip-workflow flag,
+    parses the JSON output, and stores the gist URL on the plan issue header
+    if preprocessing was successful.
+
+    Args:
+        ctx: ErkContext
+        plan_issue_number: Issue number of the plan
+        skip_workflow: If True, run preprocessing only (no CI workflow trigger)
+
+    Returns:
+        LearnPreprocessResult on success, LearnPreprocessError on failure
+    """
+    cmd = ["erk", "exec", "trigger-async-learn", str(plan_issue_number)]
+    if skip_workflow:
+        cmd.append("--skip-workflow")
+
+    try:
+        # Stream stderr (progress) in real-time while capturing stdout (JSON result)
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=None,  # Inherit stderr - progress streams through
+            text=True,
+            cwd=ctx.cwd,
+        )
+        stdout, _ = process.communicate()
+    except FileNotFoundError:
+        return LearnPreprocessError(message="erk command not found")
+
+    if process.returncode != 0:
+        return LearnPreprocessError(message=_parse_trigger_error(stdout, ""))
+
+    # Parse output JSON
+    output = json.loads(stdout)
+    gist_url = output.get("gist_url")
+
+    # Store gist URL on plan header for auto-detection by `erk learn`
+    if gist_url and output.get("success"):
+        _store_learn_materials_gist_url(
+            ctx,
+            repo_root=ctx.cwd,
+            plan_issue_number=plan_issue_number,
+            gist_url=gist_url,
+        )
+
+    return LearnPreprocessResult(output=output, gist_url=gist_url)
 
 
 def _trigger_async_learn(
@@ -452,41 +522,16 @@ def _trigger_async_learn(
     )
     user_output("")
 
-    try:
-        # Stream stderr (progress) in real-time while capturing stdout (JSON result)
-        process = subprocess.Popen(
-            ["erk", "exec", "trigger-async-learn", str(plan_issue_number)],
-            stdout=subprocess.PIPE,
-            stderr=None,  # Inherit stderr - progress streams through
-            text=True,
-            cwd=ctx.cwd,
+    result = _run_learn_preprocessing(ctx, plan_issue_number=plan_issue_number, skip_workflow=False)
+
+    if isinstance(result, LearnPreprocessError):
+        user_output(
+            click.style("⚠ ", fg="yellow") + f"Could not trigger async learn: {result.message}"
         )
-        stdout, _ = process.communicate()
-    except FileNotFoundError:
-        msg = "Could not trigger async learn: erk command not found"
-        user_output(click.style("⚠ ", fg="yellow") + msg)
         return
 
-    if process.returncode != 0:
-        error_msg = _parse_trigger_error(stdout, "")
-        msg = f"Could not trigger async learn: {error_msg}"
-        user_output(click.style("⚠ ", fg="yellow") + msg)
-        return
-
-    # Parse output JSON to get workflow_url
-    output = json.loads(stdout)
+    output = result.output
     if output.get("success"):
-        # Store gist URL on plan header for auto-detection by `erk learn`
-        gist_url = output.get("gist_url")
-        if gist_url:
-            main_repo_root = ctx.cwd
-            _store_learn_materials_gist_url(
-                ctx,
-                repo_root=main_repo_root,
-                plan_issue_number=plan_issue_number,
-                gist_url=gist_url,
-            )
-
         workflow_url = output.get("workflow_url", "")
         if workflow_url:
             user_output(click.style("✓", fg="green") + f" Async learn triggered: {workflow_url}")
@@ -563,7 +608,6 @@ def _preprocess_and_prepare_manual_learn(
     *,
     repo_root: Path,
     plan_issue_number: int,
-    script: bool,
 ) -> None:
     """Run preprocessing for manual learn and store gist URL on plan header.
 
@@ -577,7 +621,6 @@ def _preprocess_and_prepare_manual_learn(
         ctx: ErkContext
         repo_root: Repository root path (unused, for interface consistency)
         plan_issue_number: Issue number of the plan
-        script: If True, output no-op activation script on abort
     """
     _ = repo_root
 
@@ -586,45 +629,17 @@ def _preprocess_and_prepare_manual_learn(
     user_output("   Reads local session logs, preprocesses them, and uploads to a secret gist.")
     user_output("")
 
-    try:
-        process = subprocess.Popen(
-            ["erk", "exec", "trigger-async-learn", str(plan_issue_number), "--skip-workflow"],
-            stdout=subprocess.PIPE,
-            stderr=None,
-            text=True,
-            cwd=ctx.cwd,
-        )
-        stdout, _ = process.communicate()
-    except FileNotFoundError as e:
-        user_output(
-            click.style("⚠ ", fg="yellow")
-            + "Preprocessing failed: erk command not found. "
-            + f"Run manually: erk learn {plan_issue_number}"
-        )
-        raise SystemExit(0) from e
+    result = _run_learn_preprocessing(ctx, plan_issue_number=plan_issue_number, skip_workflow=True)
 
-    if process.returncode != 0:
-        error_msg = _parse_trigger_error(stdout, "")
+    if isinstance(result, LearnPreprocessError):
         user_output(
             click.style("⚠ ", fg="yellow")
-            + f"Preprocessing failed: {error_msg}. "
+            + f"Preprocessing failed: {result.message}. "
             + f"Run manually: erk learn {plan_issue_number}"
         )
         raise SystemExit(0)
 
-    # Parse gist_url from JSON output
-    output = json.loads(stdout)
-    gist_url = output.get("gist_url")
-
-    if gist_url:
-        # Store gist URL on plan header for auto-detection by `erk learn`
-        main_repo_root = ctx.cwd
-        _store_learn_materials_gist_url(
-            ctx,
-            repo_root=main_repo_root,
-            plan_issue_number=plan_issue_number,
-            gist_url=gist_url,
-        )
+    if result.gist_url:
         user_output(click.style("✓", fg="green") + " Preprocessed and uploaded learn materials")
 
     user_output("")
