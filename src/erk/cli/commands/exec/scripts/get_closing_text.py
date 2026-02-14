@@ -51,9 +51,9 @@ def _find_repo_root(start: Path) -> Path | None:
 @click.command(name="get-closing-text")
 @click.pass_context
 def get_closing_text(ctx: click.Context) -> None:
-    """Get closing text for PR body based on .impl/issue.json or branch name.
+    """Get closing text for PR body based on .impl/plan-ref.json or branch name.
 
-    Validates that branch name and .impl/issue.json agree (if both present).
+    Validates that branch name and plan reference agree (if both present).
     Falls back to branch name if no .impl/ folder exists.
 
     Outputs nothing and exits successfully if no issue number is discoverable.

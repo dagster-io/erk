@@ -627,7 +627,10 @@ def _get_plan_issue_from_impl(repo_root: Path) -> int | None:
     if plan_ref_file.is_file():
         content = plan_ref_file.read_text(encoding="utf-8")
         if content.strip():
-            data = json.loads(content)
+            try:
+                data = json.loads(content)
+            except json.JSONDecodeError:
+                return None
             plan_id = data.get("plan_id")
             if isinstance(plan_id, str) and plan_id.isdigit():
                 return int(plan_id)
@@ -642,7 +645,10 @@ def _get_plan_issue_from_impl(repo_root: Path) -> int | None:
     if not content.strip():
         return None
 
-    data = json.loads(content)
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        return None
     # Try "issue_number" first (preferred), then fall back to "number"
     issue_number = data.get("issue_number") or data.get("number")
     if isinstance(issue_number, int):
