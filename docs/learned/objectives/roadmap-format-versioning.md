@@ -48,6 +48,7 @@ During parsing, 4-column `plan #NNN` values are automatically migrated to the `p
 The parser uses **header-based format detection** — it checks for the 5-column header first, then falls back to 4-column. This keeps format detection co-located with the data itself (no version metadata needed in the table).
 
 Key design choices:
+
 - **5-col header tried first**: `| Step | Description | Status | Plan | PR |`
 - **4-col fallback**: `| Step | Description | Status | PR |`
 - **Auto-upgrade on write**: When `_replace_step_refs_in_body()` edits a 4-col table, it upgrades the header to 5-col

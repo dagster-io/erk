@@ -18,7 +18,7 @@ Action-triggered rules for this category. Consult BEFORE taking any matching act
 
 **CRITICAL: Before adding a new validation check** → Read [Roadmap Validation Architecture](roadmap-validation.md) first. Structural checks go in parse_roadmap() and return warnings alongside data. Semantic checks go in validate_objective() and produce pass/fail results. Don't mix levels.
 
-**CRITICAL: Before adding columns to the roadmap table format** → Read [Roadmap Format Versioning](roadmap-format-versioning.md) first. The 7-column extension was planned but never implemented. Read this doc to understand the migration strategy before adding columns.
+**CRITICAL: Before adding columns to the roadmap table format** → Read [Roadmap Format Versioning](roadmap-format-versioning.md) first. The 4→5 column migration is the established pattern. Read this doc to understand the header-based detection and auto-upgrade strategy before adding columns.
 
 **CRITICAL: Before adding step_type, issue, or depends_on fields to RoadmapStep** → Read [Roadmap Format Versioning](roadmap-format-versioning.md) first. These fields were planned but never built. The parser, serializer, and all callers would need coordinated changes.
 
