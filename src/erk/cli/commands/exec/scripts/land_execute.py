@@ -71,6 +71,11 @@ from erk_shared.context.helpers import require_context
     help="Preserve the local branch and its slot assignment after landing",
 )
 @click.option(
+    "--no-cleanup",
+    is_flag=True,
+    help="User declined cleanup during validation phase",
+)
+@click.option(
     "--script",
     is_flag=True,
     help="Output activation script path (for shell integration)",
@@ -101,6 +106,7 @@ def land_execute(
     use_graphite: bool,
     pull_flag: bool,
     no_delete: bool,
+    no_cleanup: bool,
     script: bool,
     up_flag: bool,
     force_flag: bool,
@@ -152,5 +158,6 @@ def land_execute(
         use_graphite=use_graphite,
         pull_flag=pull_flag,
         no_delete=no_delete,
+        no_cleanup=no_cleanup,
         script=script,
     )

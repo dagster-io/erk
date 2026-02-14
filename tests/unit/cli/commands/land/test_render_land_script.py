@@ -14,6 +14,7 @@ def test_render_land_execution_script_uses_shell_variables_for_pr_and_branch() -
         is_current_branch=False,
         objective_number=None,
         use_graphite=False,
+        cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
 
@@ -39,6 +40,7 @@ def test_render_land_execution_script_includes_usage_comment() -> None:
         is_current_branch=False,
         objective_number=None,
         use_graphite=False,
+        cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
 
@@ -54,6 +56,7 @@ def test_render_land_execution_script_includes_shift_and_passthrough() -> None:
         is_current_branch=False,
         objective_number=None,
         use_graphite=False,
+        cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
 
@@ -73,6 +76,7 @@ def test_render_land_execution_script_bakes_in_static_flags() -> None:
         is_current_branch=True,
         objective_number=42,
         use_graphite=True,
+        cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
 
@@ -92,6 +96,7 @@ def test_render_land_execution_script_without_static_flags() -> None:
         is_current_branch=False,
         objective_number=None,
         use_graphite=False,
+        cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
 
@@ -114,6 +119,7 @@ def test_render_land_execution_script_does_not_bake_user_flags() -> None:
         is_current_branch=False,
         objective_number=None,
         use_graphite=False,
+        cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
 
@@ -133,10 +139,43 @@ def test_render_land_execution_script_includes_cd_command() -> None:
         is_current_branch=False,
         objective_number=None,
         use_graphite=False,
+        cleanup_confirmed=True,
         target_path=Path("/path/to/target"),
     )
 
     assert "cd /path/to/target" in script
+
+
+def test_render_land_execution_script_bakes_no_cleanup_when_cleanup_declined() -> None:
+    """Script includes --no-cleanup when user declined cleanup during validation."""
+    script = render_land_execution_script(
+        pr_number=123,
+        branch="feature-branch",
+        worktree_path=None,
+        is_current_branch=False,
+        objective_number=None,
+        use_graphite=False,
+        cleanup_confirmed=False,
+        target_path=Path("/repo"),
+    )
+
+    assert "--no-cleanup" in script
+
+
+def test_render_land_execution_script_omits_no_cleanup_when_cleanup_confirmed() -> None:
+    """Script omits --no-cleanup when user confirmed cleanup during validation."""
+    script = render_land_execution_script(
+        pr_number=123,
+        branch="feature-branch",
+        worktree_path=None,
+        is_current_branch=False,
+        objective_number=None,
+        use_graphite=False,
+        cleanup_confirmed=True,
+        target_path=Path("/repo"),
+    )
+
+    assert "--no-cleanup" not in script
 
 
 def test_render_land_execution_script_has_header_comment() -> None:
@@ -148,6 +187,7 @@ def test_render_land_execution_script_has_header_comment() -> None:
         is_current_branch=False,
         objective_number=None,
         use_graphite=False,
+        cleanup_confirmed=True,
         target_path=Path("/repo"),
     )
 

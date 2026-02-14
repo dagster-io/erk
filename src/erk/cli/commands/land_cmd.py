@@ -1133,6 +1133,7 @@ def _land_target(
     force: bool,
     pull_flag: bool,
     no_delete: bool,
+    cleanup_confirmed: bool,
 ) -> None:
     """Generate execution script after validation pipeline has completed.
 
@@ -1152,6 +1153,7 @@ def _land_target(
         force: Skip confirmation prompts
         pull_flag: Whether to pull after landing
         no_delete: Preserve branch after landing
+        cleanup_confirmed: Whether user confirmed cleanup during validation
 
     Raises:
         SystemExit(0) after outputting script instructions
@@ -1206,6 +1208,7 @@ def _land_target(
         is_current_branch=target.is_current_branch,
         objective_number=objective_number,
         use_graphite=target.use_graphite,
+        cleanup_confirmed=cleanup_confirmed,
         target_path=target_path,
     )
 
@@ -1441,6 +1444,7 @@ def render_land_execution_script(
     is_current_branch: bool,
     objective_number: int | None,
     use_graphite: bool,
+    cleanup_confirmed: bool,
     target_path: Path,
 ) -> str:
     """Generate shell script that executes land and navigates.
@@ -1466,6 +1470,7 @@ def render_land_execution_script(
     - --is-current-branch: whether landing from that worktree
     - --objective-number: linked objective
     - --use-graphite: whether Graphite is enabled
+    - --no-cleanup: user declined cleanup during validation
 
     **Passed via "$@" (user-controllable flags):**
     - --up: navigate upstack (resolved at execution time)
@@ -1502,6 +1507,8 @@ def render_land_execution_script(
         cmd_parts.append(f"--objective-number={objective_number}")
     if use_graphite:
         cmd_parts.append("--use-graphite")
+    if not cleanup_confirmed:
+        cmd_parts.append("--no-cleanup")
     # User-controllable flags passed through "$@"
     cmd_parts.append('"$@"')
 
@@ -1531,6 +1538,7 @@ def _execute_land(
     use_graphite: bool,
     pull_flag: bool,
     no_delete: bool,
+    no_cleanup: bool,
     script: bool,
 ) -> None:
     """Execute deferred land operations from activation script.
@@ -1554,6 +1562,7 @@ def _execute_land(
         use_graphite: Whether to use Graphite for merge
         pull_flag: Whether to pull after landing
         no_delete: Whether to preserve branch and slot
+        no_cleanup: Whether user declined cleanup during validation
         script: Whether running in script mode
     """
     # Validate required parameters
@@ -1573,6 +1582,7 @@ def _execute_land(
         use_graphite=use_graphite,
         pull_flag=pull_flag,
         no_delete=no_delete,
+        no_cleanup=no_cleanup,
         script=script,
         target_child_branch=target_child_branch,
     )
@@ -1713,4 +1723,5 @@ def land(
         force=force,
         pull_flag=pull_flag,
         no_delete=no_delete,
+        cleanup_confirmed=result.cleanup_confirmed,
     )

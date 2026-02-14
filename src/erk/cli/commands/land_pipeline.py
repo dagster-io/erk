@@ -669,6 +669,7 @@ def make_execution_state(
     use_graphite: bool,
     pull_flag: bool,
     no_delete: bool,
+    no_cleanup: bool,
     script: bool,
     target_child_branch: str | None,
 ) -> LandState:
@@ -701,6 +702,6 @@ def make_execution_state(
         # Derived
         objective_number=objective_number,
         plan_issue_number=plan_issue_number,
-        cleanup_confirmed=True,  # Execute mode: user approved via script
+        cleanup_confirmed=not no_cleanup,
         merged_pr_number=None,
     )

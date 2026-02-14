@@ -583,6 +583,7 @@ Execute deferred land operations.
 | `--use-graphite`      | FLAG    | No       | -              | Use Graphite for merge                                                            |
 | `--pull`              | FLAG    | No       | -              | Pull latest changes after landing (default: --pull)                               |
 | `--no-delete`         | FLAG    | No       | -              | Preserve the local branch and its slot assignment after landing                   |
+| `--no-cleanup`        | FLAG    | No       | -              | User declined cleanup during validation phase                                     |
 | `--script`            | FLAG    | No       | -              | Output activation script path (for shell integration)                             |
 | `--up`                | FLAG    | No       | -              | Navigate upstack to child branch after landing (resolves child at execution time) |
 | `-f`, `--force`       | FLAG    | No       | -              | Accept flag for compatibility (execute mode always skips confirmations)           |
