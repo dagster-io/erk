@@ -12,7 +12,7 @@ audit_result: edited
 
 # Learn Plan Land Flow
 
-When landing a PR from a learn plan branch, the land execution pipeline runs additional steps that update the parent plan's metadata and promote tripwire candidates. This document explains **why** learn plans need special handling and how the pipeline orchestrates these post-merge operations.
+When landing a PR from a learn plan branch, the land execution pipeline runs additional steps that update the parent plan's metadata. This document explains **why** learn plans need special handling and how the pipeline orchestrates these post-merge operations.
 
 ## Why Learn Plans Need Special Pipeline Steps
 
@@ -58,6 +58,8 @@ After the PR merges, the execution pipeline runs learn-specific steps in this or
 3. **`update_learn_plan`** — Update parent plan's `learn_status` field
 4. **`close_review_pr`** — Close associated review PR if exists
 5. **`cleanup_and_navigate`** (standard) — Delete branches and navigate
+
+Note: The pipeline previously included a 6th step for tripwire promotion (`promote_tripwires`), but this was removed. The current pipeline has 5 steps.
 
 **Why learn plan updates come after objective updates**: Objective tracking is higher priority than learning metadata. If execution fails partway through, we prefer to have updated the objective rather than the learn status.
 
@@ -143,9 +145,12 @@ Both learn plans and objectives use the execution pipeline for post-merge update
 
 **Why objectives come first**: If execution fails partway through, we prefer to have updated the objective (which tracks high-level progress) rather than the learn metadata (which is auxiliary documentation tracking).
 
+## Menu Option: Trigger Async Learn
+
+The 4th menu option in the land flow allows manually triggering `erk learn` for PRs that haven't been learned yet. This was added in PR #6956 to support the async learn workflow where learning happens after landing.
+
 ## Related Documentation
 
 - [Linear Pipelines](../architecture/linear-pipelines.md) - Two-pipeline pattern and step sequencing
 - [Land State Threading](../architecture/land-state-threading.md) - Immutable state management through pipelines
 - [Learn Workflow](../planning/learn-workflow.md) - Complete learn plan lifecycle from creation to landing
-- [Tripwire Promotion Patterns](../planning/tripwire-promotion-patterns.md) - Extracting and promoting tripwires from learn plans

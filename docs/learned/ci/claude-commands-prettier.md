@@ -7,6 +7,8 @@ tripwires:
     warning: "Run 'make prettier' via devrun after editing markdown. CI runs prettier-check as a separate job and will fail on unformatted files."
   - action: "attempting to use prettier on Python files"
     warning: "Prettier only formats markdown in erk. Python uses ruff format. See formatter-tools.md for the complete matrix."
+  - action: "investigating a bot complaint about formatting"
+    warning: "Prettier is the formatting authority for markdown/YAML/JSON files. If prettier --check passes locally, dismiss the bot complaint. See docs/learned/pr-operations/automated-review-handling.md."
 read_when:
   - "Creating slash commands in .claude/commands/"
   - "Modifying existing .claude/ markdown files"

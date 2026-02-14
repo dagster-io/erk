@@ -75,6 +75,16 @@ This enables the "interview then plan" workflow: run a read-only command to gath
 
 See `/local:interview` for the canonical example of this pattern.
 
+## Completeness Requirement
+
+All agent files in `.claude/agents/` MUST include `allowed-tools` in their frontmatter. This applies to every agent definition — not just read-only ones. The frontmatter block must be complete with `name`, `description`, and `allowed-tools`.
+
+When reviewing agent files, verify:
+
+1. Every agent has `allowed-tools` in frontmatter
+2. The listed tools match what the agent's instructions reference (e.g., if instructions say "use Read to examine files", `Read` must be in `allowed-tools`)
+3. No tools are listed that the agent doesn't need (minimal-set principle)
+
 ## Related Documentation
 
 - [Agent Delegation](../planning/agent-delegation.md) — delegation patterns including tool restriction inheritance
