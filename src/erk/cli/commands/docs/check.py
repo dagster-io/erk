@@ -6,8 +6,6 @@ It's the unified health check for agent docs, combining:
 - erk docs sync --check (generated files in sync check)
 """
 
-from pathlib import Path
-
 import click
 
 from erk.agent_docs.operations import (
@@ -15,11 +13,13 @@ from erk.agent_docs.operations import (
     validate_agent_docs,
     validate_tripwires_index,
 )
-from erk.cli.subprocess_utils import run_with_error_reporting
+from erk_shared.context.context import ErkContext
 
 
-def run_check(project_root: Path) -> None:
-    """Run agent documentation health checks against a project root.
+@click.command(name="check")
+@click.pass_obj
+def check_command(ctx: ErkContext) -> None:
+    """Check agent documentation health.
 
     This is the testable core of the check command. It validates frontmatter
     and checks that generated index/tripwire files are in sync.
@@ -27,8 +27,10 @@ def run_check(project_root: Path) -> None:
     Raises:
         SystemExit: With code 0 if no docs found, code 1 if checks fail.
     """
-    agent_docs_dir = project_root / "docs" / "learned"
-    if not agent_docs_dir.exists():
+    # Use repo_root from context
+    project_root = ctx.repo_root
+
+    if not ctx.agent_docs.has_docs_dir(project_root):
         click.echo(click.style("No docs/learned/ directory found", fg="cyan"), err=True)
         raise SystemExit(0)
 
@@ -36,8 +38,8 @@ def run_check(project_root: Path) -> None:
     click.echo(click.style("Validating frontmatter...", fg="cyan"), err=True)
     click.echo(err=True)
 
-    validation_results = validate_agent_docs(project_root)
-    tripwires_index_result = validate_tripwires_index(project_root)
+    validation_results = validate_agent_docs(ctx.agent_docs, project_root)
+    tripwires_index_result = validate_tripwires_index(ctx.agent_docs, project_root)
 
     if len(validation_results) == 0:
         click.echo(click.style("No agent documentation files found", fg="cyan"), err=True)
@@ -83,7 +85,7 @@ def run_check(project_root: Path) -> None:
     click.echo(click.style("Checking generated files...", fg="cyan"), err=True)
     click.echo(err=True)
 
-    sync_result = sync_agent_docs(project_root, dry_run=True)
+    sync_result = sync_agent_docs(ctx.agent_docs, project_root, dry_run=True)
 
     # Show out-of-sync files
     if sync_result.created:
@@ -145,32 +147,3 @@ def run_check(project_root: Path) -> None:
             click.echo("Run 'erk docs sync' to regenerate files from frontmatter.", err=True)
 
         raise SystemExit(1)
-
-
-@click.command(name="check")
-def check_command() -> None:
-    """Check agent documentation health.
-
-    Runs two validation phases:
-    1. Frontmatter validation - ensures all docs have required fields
-    2. Sync check - ensures generated index/tripwire files are up to date
-
-    This is the unified health check command used in CI.
-
-    Exit codes:
-    - 0: All checks passed
-    - 1: One or more checks failed
-    """
-    # Find repository root
-    result = run_with_error_reporting(
-        ["git", "rev-parse", "--show-toplevel"],
-        error_prefix="Failed to find repository root",
-        troubleshooting=["Ensure you're running from within a git repository"],
-    )
-    project_root = Path(result.stdout.strip())
-
-    if not project_root.exists():
-        click.echo(click.style("Error: Repository root not found", fg="red"), err=True)
-        raise SystemExit(1)
-
-    run_check(project_root)

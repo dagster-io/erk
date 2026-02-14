@@ -15,6 +15,7 @@ from erk_shared.core.fakes import (
     FakeScriptWriter,
 )
 from erk_shared.core.prompt_executor import PromptExecutor
+from erk_shared.gateway.agent_docs.abc import AgentDocs
 from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.codespace.abc import Codespace
@@ -35,6 +36,7 @@ def context_for_test(
     graphite: Graphite | None = None,
     claude_installation: ClaudeInstallation | None = None,
     agent_launcher: AgentLauncher | None = None,
+    agent_docs: AgentDocs | None = None,
     prompt_executor: PromptExecutor | None = None,
     codespace: Codespace | None = None,
     debug: bool = False,
@@ -57,6 +59,7 @@ def context_for_test(
         graphite: Optional Graphite implementation. If None, creates FakeGraphite.
         claude_installation: Optional ClaudeInstallation. If None, creates FakeClaudeInstallation.
         agent_launcher: Optional AgentLauncher. If None, creates FakeAgentLauncher.
+        agent_docs: Optional AgentDocs. If None, creates FakeAgentDocs.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         codespace: Optional Codespace. If None, creates FakeCodespace.
         debug: Whether to enable debug mode (default False).
@@ -74,6 +77,7 @@ def context_for_test(
         >>> git_ops = FakeGit()
         >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
     """
+    from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
     from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
     from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.gateway.codespace.fake import FakeCodespace
@@ -130,6 +134,9 @@ def context_for_test(
     resolved_agent_launcher: AgentLauncher = (
         agent_launcher if agent_launcher is not None else FakeAgentLauncher()
     )
+    resolved_agent_docs: AgentDocs = (
+        agent_docs if agent_docs is not None else FakeAgentDocs(files={}, has_docs_dir=True)
+    )
     resolved_codespace: Codespace = codespace if codespace is not None else FakeCodespace()
     resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 
@@ -165,6 +172,7 @@ def context_for_test(
         console=fake_console,
         time=fake_time,
         erk_installation=FakeErkInstallation(),
+        agent_docs=resolved_agent_docs,
         plan_store=GitHubPlanStore(resolved_issues, fake_time),
         shell=FakeShell(),
         completion=FakeCompletion(),

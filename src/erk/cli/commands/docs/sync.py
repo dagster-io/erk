@@ -3,12 +3,10 @@
 This command generates index.md files for docs/learned/ from frontmatter metadata.
 """
 
-from pathlib import Path
-
 import click
 
 from erk.agent_docs.operations import sync_agent_docs
-from erk.cli.subprocess_utils import run_with_error_reporting
+from erk_shared.context.context import ErkContext
 
 
 @click.command(name="sync")
@@ -22,7 +20,8 @@ from erk.cli.subprocess_utils import run_with_error_reporting
     is_flag=True,
     help="Check if files are in sync without writing. Exit 1 if changes needed.",
 )
-def sync_command(*, dry_run: bool, check: bool) -> None:
+@click.pass_obj
+def sync_command(ctx: ErkContext, *, dry_run: bool, check: bool) -> None:
     """Regenerate index files from frontmatter.
 
     Generates index.md files for:
@@ -38,25 +37,15 @@ def sync_command(*, dry_run: bool, check: bool) -> None:
     # --check implies dry-run behavior
     effective_dry_run = dry_run or check
 
-    # Find repository root
-    result = run_with_error_reporting(
-        ["git", "rev-parse", "--show-toplevel"],
-        error_prefix="Failed to find repository root",
-        troubleshooting=["Ensure you're running from within a git repository"],
-    )
-    project_root = Path(result.stdout.strip())
+    # Use repo_root from context
+    project_root = ctx.repo_root
 
-    if not project_root.exists():
-        click.echo(click.style("Error: Repository root not found", fg="red"), err=True)
-        raise SystemExit(1)
-
-    agent_docs_dir = project_root / "docs" / "learned"
-    if not agent_docs_dir.exists():
+    if not ctx.agent_docs.has_docs_dir(project_root):
         click.echo(click.style("No docs/learned/ directory found", fg="cyan"), err=True)
         raise SystemExit(0)
 
     # Sync index files
-    sync_result = sync_agent_docs(project_root, dry_run=effective_dry_run)
+    sync_result = sync_agent_docs(ctx.agent_docs, project_root, dry_run=effective_dry_run)
 
     # Report results
     if effective_dry_run:

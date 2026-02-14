@@ -4,12 +4,10 @@ This command validates that all markdown files in docs/learned/ have valid
 frontmatter with required fields: title and read_when.
 """
 
-import subprocess
-from pathlib import Path
-
 import click
 
 from erk.agent_docs.operations import validate_agent_docs, validate_tripwires_index
+from erk_shared.context.context import ErkContext
 
 
 @click.command(name="validate")
@@ -19,7 +17,8 @@ from erk.agent_docs.operations import validate_agent_docs, validate_tripwires_in
     is_flag=True,
     help="Show details for all files, not just errors.",
 )
-def validate_command(*, verbose: bool) -> None:
+@click.pass_obj
+def validate_command(ctx: ErkContext, *, verbose: bool) -> None:
     """Validate agent documentation frontmatter.
 
     Checks that all markdown files in docs/learned/ have valid frontmatter:
@@ -34,26 +33,15 @@ def validate_command(*, verbose: bool) -> None:
     - 0: All files are valid
     - 1: Validation errors found
     """
-    # Find repository root
-    result = subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    project_root = Path(result.stdout.strip())
+    # Use repo_root from context
+    project_root = ctx.repo_root
 
-    if not project_root.exists():
-        click.echo(click.style("Error: Repository root not found", fg="red"), err=True)
-        raise SystemExit(1)
-
-    agent_docs_dir = project_root / "docs" / "learned"
-    if not agent_docs_dir.exists():
+    if not ctx.agent_docs.has_docs_dir(project_root):
         click.echo(click.style("No docs/learned/ directory found", fg="cyan"), err=True)
         raise SystemExit(0)
 
     # Validate all files
-    results = validate_agent_docs(project_root)
+    results = validate_agent_docs(ctx.agent_docs, project_root)
 
     if len(results) == 0:
         click.echo(click.style("No agent documentation files found", fg="cyan"), err=True)
@@ -76,7 +64,7 @@ def validate_command(*, verbose: bool) -> None:
                     click.echo(f"    {error}", err=True)
 
     # Validate tripwires index
-    tripwires_index_result = validate_tripwires_index(project_root)
+    tripwires_index_result = validate_tripwires_index(ctx.agent_docs, project_root)
     if not tripwires_index_result.is_valid:
         if verbose or invalid_count == 0:
             # Only show header if we haven't shown validation errors above
