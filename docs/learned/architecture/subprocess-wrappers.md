@@ -42,18 +42,11 @@ Erk uses a two-layer design for subprocess execution to provide consistent error
 
 **Behavior**: Raises `RuntimeError` with rich context on failure
 
-**Example**:
+**Usage**: Pass `cmd` (the command list), `operation_context` (human-readable description), and `cwd` (working directory). On failure, raises `RuntimeError` with the operation context, command, exit code, and stderr.
 
-```python
-from erk_shared.subprocess_utils import run_subprocess_with_context
+<!-- Source: packages/erk-shared/src/erk_shared/subprocess_utils.py, run_subprocess_with_context -->
 
-# ✅ CORRECT: Rich error context with stderr
-result = run_subprocess_with_context(
-    ["git", "worktree", "add", str(path), branch],
-    operation_context=f"add worktree for branch '{branch}' at {path}",
-    cwd=repo_root,
-)
-```
+See `run_subprocess_with_context()` in `packages/erk-shared/src/erk_shared/subprocess_utils.py` for the full signature and implementation.
 
 **Why use this**:
 
