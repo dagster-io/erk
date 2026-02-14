@@ -5,6 +5,7 @@
 erkweb uses 6 React components with hand-written CSS files and custom CSS variables for a dark theme. Adopting `@dagster-io/ui-components` replaces most of this custom CSS with a shared component library (Box, Button, Tabs, Tag, ListItem, SpinnerWithText, etc.) and its built-in color system. This simplifies the codebase and provides guardrails for future UI work.
 
 **User decisions:**
+
 - CSS modules for any remaining custom CSS (no new styled-components callsites in erkweb)
 - Full migration of all 6 components in one pass
 - Adopt dagster-ui Colors, drop custom CSS variables
@@ -15,6 +16,7 @@ erkweb uses 6 React components with hand-written CSS files and custom CSS variab
 Add to `erkweb/package.json`:
 
 **dependencies:**
+
 - `@dagster-io/ui-components`
 - `styled-components@^5.3.3` (peer dep required by library — we won't use it directly)
 - `@blueprintjs/core@^5` (peer dep — needed by Tabs, Button, etc.)
@@ -24,19 +26,23 @@ Add to `erkweb/package.json`:
 - `react-is@^18.3.1` (peer dep for styled-components)
 
 **devDependencies:**
+
 - `@types/styled-components` (TypeScript support for ThemeProvider)
 
 ## Step 2: Global setup
 
 ### `erkweb/index.html`
+
 - Remove the `<style>` block with `@font-face` declarations (Geist fonts will come from dagster-ui's `GlobalGeist`/`GlobalGeistMono`)
 
 ### `erkweb/src/client/main.tsx`
+
 - Wrap `<App />` with `<ThemeProvider theme={theme}>` (from styled-components + dagster-ui)
 - Add `<GlobalGeist />` and `<GlobalGeistMono />` siblings
 - Apply dark mode class to enable dagster-ui dark theme CSS vars
 
 ### `erkweb/src/client/App.css` → `App.module.css`
+
 - Delete `:root` CSS variables block entirely
 - Convert to CSS module (`App.module.css`)
 - Keep: `.app-container`, `.app`, `.review-layout`, `.main-content`, `.empty-state`, scrollbar styles
@@ -50,31 +56,33 @@ Add to `erkweb/package.json`:
 
 **Never hardcode hex values** — always use ui-components CSS vars or Colors functions. Replace all existing hardcoded color values with the appropriate ui-components equivalent.
 
-| Current CSS variable | CSS var (in .module.css) | JS (in .tsx) |
-|---|---|---|
-| `--bg-deepest` | ui-components bg var | `Colors.backgroundDefault()` |
-| `--bg-deep` | ui-components bg var | `Colors.backgroundLight()` |
-| `--bg-surface` | ui-components bg var | `Colors.backgroundLighter()` |
-| `--bg-raised` | ui-components bg var | `Colors.backgroundLighterHover()` |
-| `--border` | ui-components border var | `Colors.borderDefault()` |
-| `--text-primary` | ui-components text var | `Colors.textDefault()` |
-| `--text-secondary` | ui-components text var | `Colors.textLight()` |
-| `--text-muted` | ui-components text var | `Colors.textLighter()` |
-| `--accent-blue` | ui-components link var | `Colors.linkDefault()` |
-| `--accent-green` | ui-components green var | `Colors.accentGreen()` |
-| `--accent-purple` | ui-components blue var | `Colors.backgroundBlue()` |
+| Current CSS variable | CSS var (in .module.css) | JS (in .tsx)                      |
+| -------------------- | ------------------------ | --------------------------------- |
+| `--bg-deepest`       | ui-components bg var     | `Colors.backgroundDefault()`      |
+| `--bg-deep`          | ui-components bg var     | `Colors.backgroundLight()`        |
+| `--bg-surface`       | ui-components bg var     | `Colors.backgroundLighter()`      |
+| `--bg-raised`        | ui-components bg var     | `Colors.backgroundLighterHover()` |
+| `--border`           | ui-components border var | `Colors.borderDefault()`          |
+| `--text-primary`     | ui-components text var   | `Colors.textDefault()`            |
+| `--text-secondary`   | ui-components text var   | `Colors.textLight()`              |
+| `--text-muted`       | ui-components text var   | `Colors.textLighter()`            |
+| `--accent-blue`      | ui-components link var   | `Colors.linkDefault()`            |
+| `--accent-green`     | ui-components green var  | `Colors.accentGreen()`            |
+| `--accent-purple`    | ui-components blue var   | `Colors.backgroundBlue()`         |
 
 Note: Exact CSS var names TBD during implementation — inspect ui-components source to find the correct var names.
 
 ## Step 4: Migrate components
 
 ### 4a. ModeToggle (`components/ModeToggle.tsx`)
+
 - **Delete** `ModeToggle.css` — fully replaced
 - Replace custom tab buttons with dagster-ui `Tabs` + `Tab`
 - Use `Box` for the header container with border/background props
 - Logo remains a `<span>` with inline style using `Colors.linkDefault()`
 
 ### 4b. StateFilter (`components/StateFilter.tsx`)
+
 - **Delete** `StateFilter.css` → create `StateFilter.module.css`
 - Outer container: `Box` with background from Colors
 - List items: use dagster-ui `ListItem` (not clickable divs)
@@ -82,6 +90,7 @@ Note: Exact CSS var names TBD during implementation — inspect ui-components so
 - Count badges: styled with Colors values
 
 ### 4c. PlanSidebar (`components/PlanSidebar.tsx`)
+
 - **Delete** `PlanSidebar.css` → create `PlanSidebar.module.css`
 - Header: `Box` with border/background
 - Count badge: dagster-ui `Tag`
@@ -91,10 +100,12 @@ Note: Exact CSS var names TBD during implementation — inspect ui-components so
 - Meta tags: styled with `Colors` values
 
 ### 4d. LocalPlansList (`components/LocalPlansList.tsx`)
+
 - **Delete** `LocalPlansList.css` → create `LocalPlansList.module.css`
 - Same pattern as PlanSidebar (Box header, SpinnerWithText, NonIdealState, ListItem)
 
 ### 4e. PlanDetail (`components/PlanDetail.tsx`)
+
 - **Delete** `PlanDetail.css` → create `PlanDetail.module.css`
 - Header: `Box` with flex, border, background
 - Close button: dagster-ui `Button` with icon
@@ -105,6 +116,7 @@ Note: Exact CSS var names TBD during implementation — inspect ui-components so
 - Metadata grid: CSS module layout, labels/values use `Colors`
 
 ### 4f. PlanReviewPanel (`components/PlanReviewPanel.tsx`)
+
 - **Delete** `PlanReviewPanel.css` → create `PlanReviewPanel.module.css`
 - Header/footer: `Box` with border/background
 - Copy button: dagster-ui `Button`
@@ -121,6 +133,7 @@ Note: Exact CSS var names TBD during implementation — inspect ui-components so
 ## Files summary
 
 **Delete (7):**
+
 - `src/client/App.css`
 - `src/client/components/ModeToggle.css`
 - `src/client/components/StateFilter.css`
@@ -130,6 +143,7 @@ Note: Exact CSS var names TBD during implementation — inspect ui-components so
 - `src/client/components/PlanReviewPanel.css`
 
 **Create (6):**
+
 - `src/client/App.module.css`
 - `src/client/components/StateFilter.module.css`
 - `src/client/components/PlanSidebar.module.css`
@@ -138,6 +152,7 @@ Note: Exact CSS var names TBD during implementation — inspect ui-components so
 - `src/client/components/PlanReviewPanel.module.css`
 
 **Modify (8+):**
+
 - `package.json` — add dependencies
 - `index.html` — remove font-face block
 - `src/client/main.tsx` — add ThemeProvider, GlobalGeist, GlobalGeistMono, dark mode

@@ -1,4 +1,4 @@
-import './ModeToggle.css';
+import {Box, Colors, Tab, Tabs} from '@dagster-io/ui-components';
 
 export type AppMode = 'dashboard' | 'review';
 
@@ -9,20 +9,28 @@ interface ModeToggleProps {
 
 export function ModeToggle({mode, onModeChange}: ModeToggleProps) {
   return (
-    <div className="mode-toggle">
-      <span className="mode-toggle-logo">erk</span>
-      <button
-        className={`mode-toggle-btn ${mode === 'dashboard' ? 'active' : ''}`}
-        onClick={() => onModeChange('dashboard')}
+    <Box
+      flex={{direction: 'row', gap: 16, alignItems: 'center'}}
+      padding={{horizontal: 16, top: 4}}
+      background={Colors.backgroundLighterHover()}
+      border="bottom"
+    >
+      <span
+        style={{
+          fontWeight: 700,
+          fontSize: 18,
+          fontFamily: 'Geist Mono, monospace',
+          color: Colors.linkDefault(),
+          marginRight: 8,
+          padding: '10px 0',
+        }}
       >
-        Dashboard
-      </button>
-      <button
-        className={`mode-toggle-btn ${mode === 'review' ? 'active' : ''}`}
-        onClick={() => onModeChange('review')}
-      >
-        Review plans
-      </button>
-    </div>
+        erk
+      </span>
+      <Tabs selectedTabId={mode} onChange={(newMode: string) => onModeChange(newMode as AppMode)}>
+        <Tab id="dashboard" title="Dashboard" />
+        <Tab id="review" title="Review plans" />
+      </Tabs>
+    </Box>
   );
 }

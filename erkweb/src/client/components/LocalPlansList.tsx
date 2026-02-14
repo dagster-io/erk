@@ -1,5 +1,7 @@
+import {Box, Colors, NonIdealState, SpinnerWithText, Tag} from '@dagster-io/ui-components';
+
+import styles from './LocalPlansList.module.css';
 import type {LocalPlanFile} from '../../shared/types.js';
-import './LocalPlansList.css';
 
 interface LocalPlansListProps {
   plans: LocalPlanFile[];
@@ -34,39 +36,56 @@ export function LocalPlansList({
   onSelect,
 }: LocalPlansListProps) {
   return (
-    <div className="local-plans-list">
-      <div className="sidebar-header">
-        <span className="sidebar-title">Local Plans</span>
-        <span className="sidebar-count">{plans.length}</span>
-      </div>
-      <div className="sidebar-content">
-        {loading && <div className="sidebar-status">Loading...</div>}
-        {error && <div className="sidebar-error">{error}</div>}
-        {!loading && !error && plans.length === 0 && (
-          <div className="sidebar-status">No local plans found</div>
-        )}
-        {plans.map((plan) => (
-          <div
-            key={plan.slug}
-            className={`plan-item ${selectedSlug === plan.slug ? 'selected' : ''}`}
-            onClick={() => onSelect(plan.slug)}
-          >
-            <div className="plan-primary">
-              <span className="plan-title">{plan.title}</span>
-            </div>
-            <div className="local-plan-meta">
-              {plan.commentCount > 0 ? (
-                <span className="local-plan-comments">
-                  {plan.commentCount} comment{plan.commentCount !== 1 ? 's' : ''}
-                </span>
-              ) : (
-                <span className="local-plan-no-comments">No comments</span>
-              )}
-              <span className="local-plan-time">{formatRelativeTime(plan.modifiedAt)}</span>
-            </div>
+    <Box
+      flex={{direction: 'column'}}
+      style={{height: '100%', overflow: 'hidden'}}
+      background={Colors.backgroundLight()}
+      border="right"
+    >
+      <Box
+        flex={{direction: 'row', gap: 8, alignItems: 'center'}}
+        padding={{horizontal: 12, vertical: 8}}
+        background={Colors.backgroundLighterHover()}
+        border="bottom"
+        style={{flexShrink: 0}}
+      >
+        <span style={{fontWeight: 700, fontSize: 14, lineHeight: '20px'}}>Local Plans</span>
+        <Tag>{plans.length}</Tag>
+      </Box>
+      <div className={styles.content}>
+        {loading && (
+          <div className={styles.status}>
+            <SpinnerWithText label="Loading..." />
           </div>
-        ))}
+        )}
+        {error && <NonIdealState icon="error" title="Error" description={error} />}
+        {!loading && !error && plans.length === 0 && (
+          <NonIdealState icon="search" title="No local plans found" />
+        )}
+        {!loading &&
+          !error &&
+          plans.map((plan) => (
+            <div
+              key={plan.slug}
+              className={`${styles.item} ${selectedSlug === plan.slug ? styles.selected : ''}`}
+              onClick={() => onSelect(plan.slug)}
+            >
+              <div className={styles.primary}>
+                <span className={styles.title}>{plan.title}</span>
+              </div>
+              <div className={styles.meta}>
+                {plan.commentCount > 0 ? (
+                  <span className={styles.comments}>
+                    {plan.commentCount} comment{plan.commentCount !== 1 ? 's' : ''}
+                  </span>
+                ) : (
+                  <span className={styles.noComments}>No comments</span>
+                )}
+                <span className={styles.time}>{formatRelativeTime(plan.modifiedAt)}</span>
+              </div>
+            </div>
+          ))}
       </div>
-    </div>
+    </Box>
   );
 }

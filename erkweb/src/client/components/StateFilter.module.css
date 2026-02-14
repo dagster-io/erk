@@ -1,0 +1,58 @@
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-text-light);
+  border-radius: 8px;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-default);
+}
+
+.item.selected {
+  background: var(--color-background-blue);
+  color: var(--color-text-default);
+}
+
+.item.empty {
+  color: var(--color-text-lighter);
+}
+
+.item.empty:hover {
+  color: var(--color-text-light);
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--color-text-lighter);
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.item.selected .count {
+  color: var(--color-text-light);
+}

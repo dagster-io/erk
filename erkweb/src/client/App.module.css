@@ -1,19 +1,3 @@
-:root {
-  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'Geist Mono', monospace;
-  --bg-deepest: #141418;
-  --bg-deep: #18181c;
-  --bg-surface: #1c1c22;
-  --bg-raised: #22222a;
-  --border: rgba(255, 255, 255, 0.08);
-  --text-primary: #d0d0d8;
-  --text-secondary: #9090a0;
-  --text-muted: #606068;
-  --accent-purple: rgba(120, 90, 200, 0.25);
-  --accent-blue: rgb(185, 180, 241);
-  --accent-green: #8cc88a;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -24,13 +8,9 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
-  background: var(--bg-deep);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  font-size: 14px;
 }
 
-.app-container {
+.appContainer {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -45,7 +25,7 @@ body,
   overflow: hidden;
 }
 
-.review-layout {
+.reviewLayout {
   display: grid;
   grid-template-columns: 330px 1fr;
   flex: 1;
@@ -53,22 +33,22 @@ body,
   overflow: hidden;
 }
 
-.main-content {
+.mainContent {
   height: 100%;
   overflow-y: auto;
 }
 
-.empty-state {
+.emptyState {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--text-muted);
+  color: var(--color-text-lighter);
   font-size: 15px;
 }
 
 ::selection {
-  background: var(--accent-purple);
+  background: rgba(120, 90, 200, 0.25);
 }
 
 ::-webkit-scrollbar {

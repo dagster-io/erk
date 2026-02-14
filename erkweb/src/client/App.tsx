@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
+import styles from './App.module.css';
 import {LocalPlansList} from './components/LocalPlansList.js';
 import {type AppMode, ModeToggle} from './components/ModeToggle.js';
 import {PlanDetail} from './components/PlanDetail.js';
@@ -9,7 +10,6 @@ import {StateFilter} from './components/StateFilter.js';
 import {useLocalPlanDetail, useLocalPlansList} from './hooks/useLocalPlans.js';
 import {usePlans} from './hooks/usePlans.js';
 import {PLAN_STATES, type PlanRow, type PlanState, derivePlanState} from '../shared/types.js';
-import './App.css';
 
 const REVIEW_PREFIX = '/review-plans';
 
@@ -79,10 +79,10 @@ export function App() {
   }, [plans, selectedState]);
 
   return (
-    <div className="app-container">
+    <div className={styles.appContainer}>
       <ModeToggle mode={mode} onModeChange={setMode} />
       {mode === 'dashboard' ? (
-        <div className="app">
+        <div className={styles.app}>
           <StateFilter
             selectedState={selectedState}
             counts={stateCounts}
@@ -95,16 +95,16 @@ export function App() {
             selectedPlan={selectedPlan}
             onSelect={setSelectedPlan}
           />
-          <div className="main-content">
+          <div className={styles.mainContent}>
             {selectedPlan ? (
               <PlanDetail plan={selectedPlan} onClose={() => setSelectedPlan(null)} />
             ) : (
-              <div className="empty-state">Select a plan to view details</div>
+              <div className={styles.emptyState}>Select a plan to view details</div>
             )}
           </div>
         </div>
       ) : (
-        <div className="review-layout">
+        <div className={styles.reviewLayout}>
           <LocalPlansList
             plans={localPlans}
             loading={localLoading}
@@ -112,11 +112,11 @@ export function App() {
             selectedSlug={selectedSlug}
             onSelect={setSelectedSlug}
           />
-          <div className="main-content">
+          <div className={styles.mainContent}>
             {localPlanDetail ? (
               <PlanReviewPanel plan={localPlanDetail} />
             ) : (
-              <div className="empty-state">Select a local plan to review</div>
+              <div className={styles.emptyState}>Select a local plan to review</div>
             )}
           </div>
         </div>
