@@ -45,6 +45,43 @@ Branch names are stable identifiers (set at `erk prepare` time). PR labels can b
 3. Optionally prompt user to trigger async learn (if not already learned)
 4. Populate `state.plan_issue_number` for execution pipeline
 
+## Learn Status Menu Options
+
+<!-- Source: src/erk/cli/commands/land_cmd.py, _prompt_async_learn_and_continue() -->
+
+When landing a plan branch that has not been learned from, the `check_learn_status()` step presents a four-choice menu. See `_prompt_async_learn_and_continue()` in `src/erk/cli/commands/land_cmd.py`.
+
+**Options**:
+
+1. **Trigger async learn and continue landing**: Initiates async learn workflow via remote agent, then proceeds with land
+2. **Continue landing without learning**: Skips learning; metadata remains incomplete but PR lands normally
+3. **Cancel landing**: Exits land pipeline with SystemExit(0)
+4. **Run erk learn manually**: Prints command to run in separate terminal, exits with SystemExit(0) (added in PR #6956)
+
+**Option 4: Manual learn workflow**
+
+When selected:
+
+- Prints to stderr: "Run this command to learn from the plan:"
+- Prints to stderr: " erk learn {plan_number}"
+- Exits with SystemExit(0) (same pattern as cancel)
+
+This option is useful when users want an interactive learn session rather than async, giving them control over the learning process without typing the plan number manually.
+
+**Implementation note**: The IntRange validator must match the option count. When option 4 was added, IntRange changed from (1, 3) to (1, 4). See cli/tripwires.md for this pattern.
+
+### Adding Menu Options to Interactive Prompts
+
+When adding a new option to Click interactive menus (like the learn-status prompt), follow this checklist:
+
+1. **Update display text**: Add the new option line with appropriate numbering
+2. **Update IntRange validator**: Extend the range to include the new option number
+3. **Add choice handler**: Add `elif choice == N:` block with the new behavior
+4. **Update docstring**: Change "three choices" to "four choices" etc.
+5. **Add test**: Verify the new option behavior with monkeypatch
+
+See `_prompt_async_learn_and_continue()` in `src/erk/cli/commands/land_cmd.py` for reference implementation.
+
 ## Execution Pipeline Steps for Learn Plans
 
 <!-- Source: src/erk/cli/commands/land_pipeline.py, _execution_pipeline() -->

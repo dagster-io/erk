@@ -6,6 +6,10 @@ read_when:
   - "implementing CLI options with complex behavior"
   - "creating flags that optionally accept values"
   - "designing CLI flags with default behaviors"
+  - "adding options to Click interactive menus"
+tripwires:
+  - action: "adding options to Click interactive menus"
+    warning: "Always update IntRange validator to match new option count (e.g., IntRange(1, 3) -> IntRange(1, 4)). Failure causes runtime validation errors when users select the new option."
 ---
 
 # Click Patterns

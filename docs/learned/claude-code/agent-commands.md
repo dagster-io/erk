@@ -9,6 +9,8 @@ read_when:
 tripwires:
   - action: "creating Claude Code agent commands in .claude/commands/"
     warning: "Filenames MUST match the command name for discoverability."
+  - action: "PR submission fails with 'Fast mode not available via API'"
+    warning: "Report to user that manual `/fast` toggle is required. Do not retry automatically. This is a Claude Code API limitation, not an erk bug."
 ---
 
 # Claude Code Agent Command Patterns

@@ -386,6 +386,18 @@ machine_output(json.dumps(result))
 machine_output(str(activation_path))
 ```
 
+### Script-Aware Output Pattern
+
+Interactive CLI options that print commands for users to run should use `user_output()` (stderr) to avoid interfering with script capture:
+
+```python
+# Example: 4th learn-status menu option (from land_cmd.py)
+user_output("Run this command to learn from the plan:")
+user_output(f"  erk learn {plan_number}")
+```
+
+This ensures the output displays to users but does not pollute stdout for scripts that might capture command output. The 4th menu option in `_prompt_async_learn_and_continue()` follows this pattern.
+
 ## Confirmation Prompts
 
 When prompting users for confirmation, use the right abstraction based on context availability.

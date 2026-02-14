@@ -428,6 +428,33 @@ If `confirm()` is called but no responses remain, FakeConsole raises `AssertionE
 
 See `tests/commands/submit/test_existing_branch_detection.py` for comprehensive examples of testing interactive prompts.
 
+## Testing Interactive Click Prompts with Monkeypatch
+
+When testing commands that use `click.prompt()` for user input (as opposed to `ctx.console.confirm()`), use monkeypatch to control the return value:
+
+```python
+def test_click_prompt_interaction(monkeypatch, capsys) -> None:
+    # Simulate user selecting option 4
+    monkeypatch.setattr("click.prompt", lambda **kwargs: 4)
+
+    # Test code that calls click.prompt()
+    with pytest.raises(SystemExit):
+        some_function_that_prompts()
+
+    # Verify output
+    captured = capsys.readouterr()
+    assert "expected output" in captured.err
+```
+
+**Key techniques:**
+
+- Use `monkeypatch.setattr("click.prompt", lambda **kwargs: N)` to simulate user selecting option N
+- Capture output with `capsys` fixture to verify printed messages
+- Check for `SystemExit` with `pytest.raises(SystemExit)` for cancel/exit behaviors
+- Combine with FakeConsole and FakeGitHubIssues for full test isolation
+
+**Example:** See `test_check_learn_status_and_prompt_manual_learn_prints_command_and_exits` in `tests/unit/cli/commands/land/test_learn_status.py` for a complete example.
+
 ## GraphiteBranchManager Testing
 
 `GraphiteBranchManager` is a frozen dataclass in `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` with fields:

@@ -14,6 +14,8 @@ tripwires:
     warning: "The submit pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates."
   - action: "constructing a PR footer manually instead of using build_pr_body_footer()"
     warning: "The footer format includes checkout commands and closing references with specific patterns. Use the builder function to ensure validation passes."
+  - action: "running `erk:pr-submit` or PR submission workflows"
+    warning: "Check `git log <parent>..HEAD` shows at least 1 commit. If empty, investigate stack structure with `gt info` and `gt ls`. Read Graphite Stack Troubleshooting first."
 ---
 
 # PR Submission Patterns

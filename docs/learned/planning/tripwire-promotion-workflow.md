@@ -16,8 +16,8 @@ How tripwire candidates flow from learn sessions to active tripwires.
 2. **Learn Plan**: Tripwire candidates described in prose (Tripwire Candidates section)
 3. **Extraction**: Tripwire Extractor agent extracts structured candidates
 4. **Storage**: `store-tripwire-candidates` saves to PR comment as metadata block
-5. **Promotion**: `promote_tripwire_to_frontmatter()` adds entries to doc YAML
-6. **Index Generation**: `erk docs sync` regenerates `tripwires.md` from all frontmatter
+
+**Note**: Tripwire promotion was removed from the land execution pipeline in PR #6954 (Feb 2026). The promotion and index generation steps now occur through a separate manual workflow. Tripwire candidates remain stored as GitHub issue metadata. The promotion utilities in `erk_shared.learn.tripwire_promotion` remain available for manual or future automated promotion workflows.
 
 ## Key Components
 
