@@ -122,7 +122,20 @@ These are common contradiction types, not an exhaustive list. Flag any divergenc
 - **Lessons Learned:** Infer from implementation patterns or architectural decisions. If straightforward, note what pattern worked well.
 - **Body Reconciliation:** Only include this subsection if prose sections needed updating. If nothing is stale, omit entirely (not "No changes needed").
 
-5. **Execute writes:**
+5. **Compose the updated objective body** by editing the roadmap table:
+   - Set the PR cell to `#<pr-number>` for completed steps
+   - Set the Status cell to the correct display value: `done` for completed steps (PR is `#NNN`), `in-progress` for in-flight plans (PR is `plan #NNN`), `pending` for no PR
+   - If PR title meaningfully differs from step description, update the description
+   - Update "Current Focus" to describe the next pending step or next phase
+
+**Status display rules:**
+
+- Step has `#NNN` in PR column → Status `done`
+- Step has `plan #NNN` in PR column → Status `in-progress`
+- Step has no PR → Status `pending`
+- `blocked`/`skipped` are explicit overrides — only change if blocker is resolved
+
+6. **Execute both writes in parallel:**
 
 ```bash
 # Post action comment
@@ -142,11 +155,11 @@ BODY_EOF
 )"
 ```
 
-6. **Self-validate by counting steps from the body you just composed:**
+7. **Self-validate by counting steps from the body you just composed:**
    - Count total steps, done (have PR), skipped, pending, blocked, in_progress (have plan PR)
    - **DO NOT** re-fetch from GitHub — use the body you just wrote
 
-7. **Check closing triggers:**
+8. **Check closing triggers:**
 
 **If ALL steps are `done` or `skipped`:**
 

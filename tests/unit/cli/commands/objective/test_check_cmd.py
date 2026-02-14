@@ -48,15 +48,15 @@ VALID_OBJECTIVE_BODY = """# Objective: Test Feature
 
 | Step | Description | Status | PR |
 |------|-------------|--------|-----|
-| 1.1 | Setup infrastructure | - | #123 |
-| 1.2 | Add basic tests | - | plan #124 |
-| 1.3 | Update docs | - | - |
+| 1.1 | Setup infrastructure | done | #123 |
+| 1.2 | Add basic tests | in-progress | plan #124 |
+| 1.3 | Update docs | pending | - |
 
 ### Phase 2: Core Implementation
 
 | Step | Description | Status | PR |
 |------|-------------|--------|-----|
-| 2.1 | Build main feature | - | #125 |
+| 2.1 | Build main feature | done | #125 |
 | 2.2 | Add integration tests | blocked | - |
 | 2.3 | Performance tuning | skipped | - |
 """
@@ -167,8 +167,8 @@ def test_done_step_without_pr_fails() -> None:
 
 | Step | Description | Status | PR |
 |------|-------------|--------|-----|
-| 1.1 | First | - | #100 |
-| 1.2 | Second | - | #101 |
+| 1.1 | First | done | #100 |
+| 1.2 | Second | done | #101 |
 """
     issue = _make_issue(400, "Objective: All Done", body)
     fake_gh = FakeGitHubIssues(issues={400: issue})
@@ -352,7 +352,7 @@ def test_all_steps_complete_json() -> None:
 
 | Step | Description | Status | PR |
 |------|-------------|--------|-----|
-| 1.1 | First | - | #100 |
+| 1.1 | First | done | #100 |
 | 1.2 | Second | skipped | - |
 """
     issue = _make_issue(800, "Objective: Complete", body)
@@ -371,3 +371,61 @@ def test_all_steps_complete_json() -> None:
     assert output["summary"]["skipped"] == 1
     assert output["summary"]["pending"] == 0
     assert output["next_step"] is None
+
+
+def test_stale_display_status_with_pr_fails() -> None:
+    """Test that stale '-' status with PR reference is flagged by Check 6."""
+    body = """# Objective: Stale Status
+
+## Roadmap
+
+### Phase 1: Legacy Format
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | Do thing | - | #123 |
+| 1.2 | Another thing | - | plan #124 |
+"""
+    issue = _make_issue(1000, "Objective: Stale Status", body)
+    fake_gh = FakeGitHubIssues(issues={1000: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1000"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 1
+    assert "[FAIL]" in result.output
+    assert "Stale '-' status with PR reference" in result.output
+    assert "2 step(s)" in result.output
+
+
+def test_explicit_display_status_with_pr_passes() -> None:
+    """Test that explicit status values with PR references pass Check 6."""
+    body = """# Objective: Correct Format
+
+## Roadmap
+
+### Phase 1: Updated Format
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | Do thing | done | #123 |
+| 1.2 | Another thing | in-progress | plan #124 |
+| 1.3 | Not started | pending | - |
+"""
+    issue = _make_issue(1100, "Objective: Correct Format", body)
+    fake_gh = FakeGitHubIssues(issues={1100: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1100"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0
+    assert "[FAIL]" not in result.output
+    assert "No stale display statuses" in result.output
