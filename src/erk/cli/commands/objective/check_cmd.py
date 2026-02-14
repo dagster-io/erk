@@ -23,6 +23,7 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.output.output import user_output
 
 ERK_OBJECTIVE_LABEL = "erk-objective"
+_STALE_STATUS_PATTERN = re.compile(r"\|[^|]+\|[^|]+\|\s*-\s*\|\s*(?:#\d+|plan #\d+)\s*\|")
 
 
 @dataclass(frozen=True)
@@ -164,8 +165,7 @@ def validate_objective(
         checks.append((False, f"Phase numbering is not sequential: {phase_labels}"))
 
     # Check 6: No stale display statuses (steps with PRs should have explicit status)
-    stale_pattern = re.compile(r"\|[^|]+\|[^|]+\|\s*-\s*\|\s*(?:#\d+|plan #\d+)\s*\|")
-    stale_matches = stale_pattern.findall(issue.body)
+    stale_matches = _STALE_STATUS_PATTERN.findall(issue.body)
     if not stale_matches:
         checks.append((True, "No stale display statuses"))
     else:
