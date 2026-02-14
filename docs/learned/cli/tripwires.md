@@ -12,6 +12,8 @@ read_when:
 
 Rules triggered by matching actions in code.
 
+**Before removing CLI command functions, workflow triggers, or command infrastructure** → Read [Incomplete Command/Workflow Removal](incomplete-command-removal.md) first. When removing command infrastructure: (1) Search for command name in WORKFLOW_COMMAND_MAP and similar dispatch maps in src/erk/cli/constants.py, (2) Remove or update map entries that reference the deleted function, (3) Verify no dead references remain using grep -r "command_name" src/erk/cli/, (4) Check for related test files that should be removed
+
 **Design batch commands that process items despite validation failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Validate ALL items upfront before processing ANY items. Stop on first validation error.
 
 **Return non-zero exit codes for batch command failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Always exit 0, encode errors in JSON output with per-item success fields.
