@@ -143,7 +143,9 @@ def learn_cmd(
             repo_root=repo_root,
             interactive=interactive,
             dangerous=dangerous,
-            confirm_prompt="Use Claude to learn from preprocessed materials and produce documentation?",
+            confirm_prompt=(
+                "Use Claude to learn from preprocessed materials and produce documentation?"
+            ),
             command=f"/erk:learn {issue_number} gist_url={gist_url}",
         )
         return
@@ -203,7 +205,9 @@ def learn_cmd(
         repo_root=repo_root,
         interactive=interactive,
         dangerous=dangerous,
-        confirm_prompt="Use Claude to learn from these sessions and produce documentation in docs/learned?",
+        confirm_prompt=(
+            "Use Claude to learn from these sessions and produce documentation in docs/learned?"
+        ),
         command=f"/erk:learn {issue_number}",
     )
 
