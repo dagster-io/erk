@@ -9,6 +9,8 @@ read_when:
 tripwires:
   - action: "using bare subprocess.run with check=True"
     warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations."
+  - action: "adding a Claude subprocess call with --print mode"
+    warning: "Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section."
 ---
 
 # Subprocess Execution Wrappers
@@ -36,22 +38,15 @@ Erk uses a two-layer design for subprocess execution to provide consistent error
 
 **When to use**: In business logic, gateway classes, and core functionality that may be called from multiple contexts.
 
-**Import**: `from erk.core.subprocess import run_subprocess_with_context`
+**Import**: `from erk_shared.subprocess_utils import run_subprocess_with_context`
 
 **Behavior**: Raises `RuntimeError` with rich context on failure
 
-**Example**:
+**Usage**: Pass `cmd` (the command list), `operation_context` (human-readable description), and `cwd` (working directory). On failure, raises `RuntimeError` with the operation context, command, exit code, and stderr.
 
-```python
-from erk.core.subprocess import run_subprocess_with_context
+<!-- Source: packages/erk-shared/src/erk_shared/subprocess_utils.py, run_subprocess_with_context -->
 
-# ✅ CORRECT: Rich error context with stderr
-result = run_subprocess_with_context(
-    ["git", "worktree", "add", str(path), branch],
-    operation_context=f"add worktree for branch '{branch}' at {path}",
-    cwd=repo_root,
-)
-```
+See `run_subprocess_with_context()` in `packages/erk-shared/src/erk_shared/subprocess_utils.py` for the full signature and implementation.
 
 **Why use this**:
 
@@ -355,6 +350,32 @@ The same PR lookup in `get_pr_for_plan.py` is **strict** because it's a user-fac
 
 - [Fail-Open Patterns](fail-open-patterns.md) - When to allow graceful degradation
 - [Branch Name Inference](../planning/branch-name-inference.md) - Recovery mechanism for missing branch_name
+
+## Claude Subprocess Environment
+
+When spawning Claude as a subprocess (using `--print` mode), two protections are required at every call site:
+
+1. **`--no-session-persistence` flag**: Prevents the subprocess Claude from creating persistent session artifacts that leak state between invocations.
+2. **`env=build_claude_subprocess_env()` parameter**: Strips the `CLAUDECODE` environment variable from the subprocess environment, preventing nested Claude instances from inheriting the parent's session context.
+
+See `build_claude_subprocess_env()` in `packages/erk-shared/src/erk_shared/subprocess_utils.py` for the shared utility.
+
+### When to Use
+
+- Every `subprocess.run()` or `subprocess.Popen()` call that invokes `claude` with `--print`
+- Every `run_subprocess_with_context()` call targeting the Claude CLI
+- Both streaming (`Popen`) and single-shot (`subprocess.run`) invocations
+
+### Required Pattern
+
+Both protections must be applied together. Applying only one leaves a gap:
+
+- Flag without env stripping: session won't persist but CLAUDECODE context leaks
+- Env stripping without flag: CLAUDECODE is clean but sessions still persist
+
+### Call Sites
+
+All Claude subprocess calls across the codebase use this pattern. Grep for `--no-session-persistence` to see the canonical call sites, which span `src/erk/`, `packages/erk-shared/`, `packages/erk-dev/`, and `scripts/`.
 
 ## Summary
 
