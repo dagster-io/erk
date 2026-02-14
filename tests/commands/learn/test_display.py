@@ -367,6 +367,99 @@ def test_learn_passes_gist_url_when_available(tmp_path: Path) -> None:
     assert f"/erk:learn 789 gist_url={gist_url}" == command
 
 
+def test_gist_url_skips_session_discovery_and_display(tmp_path: Path) -> None:
+    """When gist URL is present, session paths are not displayed."""
+    session_id = "test-session-gist-skip"
+    gist_url = "https://gist.github.com/testuser/skip-sessions-test"
+    issue_body = _make_plan_body_with_gist_url(session_id, gist_url)
+
+    now = datetime.now(UTC)
+    fake_issues = FakeGitHubIssues(
+        issues={
+            555: IssueInfo(
+                number=555,
+                title="Test Plan",
+                body=issue_body,
+                state="OPEN",
+                url="https://github.com/owner/repo/issues/555",
+                labels=["erk-plan"],
+                assignees=[],
+                created_at=now,
+                updated_at=now,
+                author="testuser",
+            ),
+        },
+    )
+
+    git_dir = tmp_path / ".git"
+    fake_git = FakeGit(
+        git_common_dirs={tmp_path: git_dir},
+        current_branches={tmp_path: "main"},
+        remote_urls={(tmp_path, "origin"): "https://github.com/owner/repo.git"},
+    )
+
+    # Set up fake Claude installation with a session that would normally be discovered
+    fake_installation = FakeClaudeInstallation.for_test(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    session_id: FakeSessionData(
+                        content='{"type": "user"}\n',
+                        size_bytes=1024,
+                        modified_at=now.timestamp(),
+                    )
+                }
+            )
+        }
+    )
+
+    fake_executor = FakePromptExecutor(available=True)
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=tmp_path,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+    )
+
+    global_config = GlobalConfig.test(erk_root=repo_dir)
+
+    ctx = context_for_test(
+        cwd=tmp_path,
+        git=fake_git,
+        issues=fake_issues,
+        claude_installation=fake_installation,
+        prompt_executor=fake_executor,
+        repo=repo,
+        global_config=global_config,
+    )
+
+    runner = CliRunner()
+
+    result = runner.invoke(cli, ["learn", "555", "-i"], obj=ctx)
+
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+
+    # Output should contain the preprocessed materials message (user_output writes to stderr)
+    captured_output = result.output
+    # CliRunner captures stderr in output when mix_stderr=True (default)
+    assert "Preprocessed learn materials available for plan #555" in captured_output
+
+    # Output should NOT contain session discovery artifacts
+    assert "Sessions for plan" not in captured_output
+    assert "Planning session" not in captured_output
+    assert "Readable sessions" not in captured_output
+
+    # The command passed to execute_interactive should include gist_url
+    assert len(fake_executor.interactive_calls) == 1
+    _worktree_path, _dangerous, command, _target_subpath, _model, _ = (
+        fake_executor.interactive_calls[0]
+    )
+    assert command == f"/erk:learn 555 gist_url={gist_url}"
+
+
 def test_learn_without_gist_url_does_not_include_param(tmp_path: Path) -> None:
     """Verify command has no gist_url when plan header doesn't have one."""
     session_id = "test-session-no-gist"

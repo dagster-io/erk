@@ -133,6 +133,24 @@ def learn_cmd(
     repo = discover_repo_context(ctx, ctx.cwd)
     repo_root = repo.root
 
+    # Check for preprocessed learn materials gist URL before session discovery
+    gist_url = _get_learn_materials_gist_url(ctx, repo_root, issue_number)
+    if gist_url is not None:
+        msg = f"📦 Preprocessed learn materials available for plan #{issue_number}"
+        user_output(click.style(msg, fg="cyan"))
+        _confirm_and_launch(
+            ctx=ctx,
+            repo_root=repo_root,
+            interactive=interactive,
+            dangerous=dangerous,
+            confirm_prompt=(
+                "Use Claude to learn from preprocessed materials and produce documentation?"
+            ),
+            command=f"/erk:learn {issue_number} gist_url={gist_url}",
+        )
+        return
+
+    # No gist URL — fall through to session discovery
     # Find sessions for the plan
     sessions_for_plan = find_sessions_for_plan(
         ctx.issues,
@@ -182,29 +200,34 @@ def learn_cmd(
     if not has_sessions:
         return
 
-    # Determine if we should prompt or auto-launch
-    # -i/--interactive: auto-launch without prompting
-    # default (no flag): prompt user
+    _confirm_and_launch(
+        ctx=ctx,
+        repo_root=repo_root,
+        interactive=interactive,
+        dangerous=dangerous,
+        confirm_prompt=(
+            "Use Claude to learn from these sessions and produce documentation in docs/learned?"
+        ),
+        command=f"/erk:learn {issue_number}",
+    )
+
+
+def _confirm_and_launch(
+    *,
+    ctx: ErkContext,
+    repo_root: Path,
+    interactive: bool,
+    dangerous: bool,
+    confirm_prompt: str,
+    command: str,
+) -> None:
+    """Confirm with user (or auto-launch with -i), then execute interactively."""
     should_launch = interactive
     if not interactive:
         user_output("")
-        should_launch = user_confirm(
-            "Use Claude to learn from these sessions and produce documentation in docs/learned?",
-            default=True,
-        )
+        should_launch = user_confirm(confirm_prompt, default=True)
 
     if should_launch:
-        # Check for preprocessed learn materials gist URL on plan header
-        gist_url = _get_learn_materials_gist_url(ctx, repo_root, issue_number)
-        if gist_url is not None:
-            user_output(
-                click.style("📦", fg="cyan")
-                + " Found preprocessed learn materials, passing to Claude"
-            )
-            command = f"/erk:learn {issue_number} gist_url={gist_url}"
-        else:
-            command = f"/erk:learn {issue_number}"
-
         ctx.prompt_executor.execute_interactive(
             worktree_path=repo_root,
             dangerous=dangerous,
