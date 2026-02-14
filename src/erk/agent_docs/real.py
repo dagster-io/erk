@@ -65,7 +65,7 @@ class RealAgentDocs(AgentDocs):
         file_path = project_root / "docs" / "learned" / rel_path
         if not file_path.exists():
             return None
-        return file_path.read_text()
+        return file_path.read_text(encoding="utf-8")
 
     def write_file(self, project_root: Path, rel_path: str, content: str) -> None:
         """Write a file to docs/learned/ directory.
@@ -80,7 +80,7 @@ class RealAgentDocs(AgentDocs):
         """
         file_path = project_root / "docs" / "learned" / rel_path
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_path.write_text(content)
+        file_path.write_text(content, encoding="utf-8")
 
     def format_markdown(self, content: str) -> str:
         """Format markdown content with prettier.
