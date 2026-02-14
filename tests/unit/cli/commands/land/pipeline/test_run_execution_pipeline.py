@@ -76,6 +76,7 @@ def test_merge_pr_step_succeeds(tmp_path: Path) -> None:
         use_graphite=False,
         pull_flag=True,
         no_delete=False,
+        no_cleanup=False,
         script=False,
         target_child_branch=None,
     )
@@ -116,6 +117,7 @@ def test_execution_pipeline_stops_on_merge_error(tmp_path: Path) -> None:
         use_graphite=False,
         pull_flag=True,
         no_delete=False,
+        no_cleanup=False,
         script=False,
         target_child_branch=None,
     )
@@ -125,3 +127,43 @@ def test_execution_pipeline_stops_on_merge_error(tmp_path: Path) -> None:
     assert isinstance(result, LandError)
     assert result.phase == "merge_pr"
     assert "Merge failed" in result.message
+
+
+def test_make_execution_state_no_cleanup_sets_cleanup_confirmed_false(tmp_path: Path) -> None:
+    """make_execution_state with no_cleanup=True produces cleanup_confirmed=False."""
+    state = make_execution_state(
+        cwd=tmp_path,
+        pr_number=42,
+        branch="feature-branch",
+        worktree_path=None,
+        is_current_branch=False,
+        objective_number=None,
+        use_graphite=False,
+        pull_flag=True,
+        no_delete=False,
+        no_cleanup=True,
+        script=False,
+        target_child_branch=None,
+    )
+
+    assert state.cleanup_confirmed is False
+
+
+def test_make_execution_state_default_cleanup_confirmed_true(tmp_path: Path) -> None:
+    """make_execution_state with no_cleanup=False produces cleanup_confirmed=True."""
+    state = make_execution_state(
+        cwd=tmp_path,
+        pr_number=42,
+        branch="feature-branch",
+        worktree_path=None,
+        is_current_branch=False,
+        objective_number=None,
+        use_graphite=False,
+        pull_flag=True,
+        no_delete=False,
+        no_cleanup=False,
+        script=False,
+        target_child_branch=None,
+    )
+
+    assert state.cleanup_confirmed is True
