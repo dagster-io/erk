@@ -136,13 +136,15 @@ def learn_cmd(
     # Check for preprocessed learn materials gist URL before session discovery
     gist_url = _get_learn_materials_gist_url(ctx, repo_root, issue_number)
     if gist_url is not None:
-        _handle_gist_url_path(
+        msg = f"📦 Preprocessed learn materials available for plan #{issue_number}"
+        user_output(click.style(msg, fg="cyan"))
+        _confirm_and_launch(
             ctx=ctx,
             repo_root=repo_root,
-            issue_number=issue_number,
-            gist_url=gist_url,
             interactive=interactive,
             dangerous=dangerous,
+            confirm_prompt="Use Claude to learn from preprocessed materials and produce documentation?",
+            command=f"/erk:learn {issue_number} gist_url={gist_url}",
         )
         return
 
@@ -196,54 +198,32 @@ def learn_cmd(
     if not has_sessions:
         return
 
-    # Determine if we should prompt or auto-launch
-    # -i/--interactive: auto-launch without prompting
-    # default (no flag): prompt user
-    should_launch = interactive
-    if not interactive:
-        user_output("")
-        should_launch = user_confirm(
-            "Use Claude to learn from these sessions and produce documentation in docs/learned?",
-            default=True,
-        )
-
-    if should_launch:
-        command = f"/erk:learn {issue_number}"
-        ctx.prompt_executor.execute_interactive(
-            worktree_path=repo_root,
-            dangerous=dangerous,
-            command=command,
-            target_subpath=None,
-            permission_mode="edits",
-        )
+    _confirm_and_launch(
+        ctx=ctx,
+        repo_root=repo_root,
+        interactive=interactive,
+        dangerous=dangerous,
+        confirm_prompt="Use Claude to learn from these sessions and produce documentation in docs/learned?",
+        command=f"/erk:learn {issue_number}",
+    )
 
 
-def _handle_gist_url_path(
+def _confirm_and_launch(
     *,
     ctx: ErkContext,
     repo_root: Path,
-    issue_number: int,
-    gist_url: str,
     interactive: bool,
     dangerous: bool,
+    confirm_prompt: str,
+    command: str,
 ) -> None:
-    """Handle the early-exit path when preprocessed learn materials exist.
-
-    Displays a message about the preprocessed materials, prompts the user
-    (or auto-launches with -i), and launches Claude with the gist_url.
-    Skips all session discovery since the gist contains everything needed.
-    """
-    msg = f"📦 Preprocessed learn materials available for plan #{issue_number}"
-    user_output(click.style(msg, fg="cyan"))
-
+    """Confirm with user (or auto-launch with -i), then execute interactively."""
     should_launch = interactive
     if not interactive:
         user_output("")
-        prompt = "Use Claude to learn from preprocessed materials and produce documentation?"
-        should_launch = user_confirm(prompt, default=True)
+        should_launch = user_confirm(confirm_prompt, default=True)
 
     if should_launch:
-        command = f"/erk:learn {issue_number} gist_url={gist_url}"
         ctx.prompt_executor.execute_interactive(
             worktree_path=repo_root,
             dangerous=dangerous,
