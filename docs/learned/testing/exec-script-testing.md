@@ -10,10 +10,13 @@ read_when:
 tripwires:
   - action: "using monkeypatch.chdir() in exec script tests"
     warning: "Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors."
+    pattern: "monkeypatch\\.chdir\\("
   - action: "testing code that reads from Path.home() or ~/.claude/ or ~/.erk/"
     warning: "Tests that run in parallel must use monkeypatch to isolate from real filesystem state. Functions like extract_slugs_from_session() cause flakiness when they read from the user's home directory."
+    pattern: "Path\\.home\\(\\)"
   - action: "using Path.home() directly in production code"
     warning: "Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness."
+    pattern: "Path\\.home\\(\\)"
 ---
 
 # Exec Script Testing Patterns

@@ -10,10 +10,10 @@ read_when:
 
 # Changelog Tripwires
 
-Action-triggered rules for this category. Consult BEFORE taking any matching action.
+Rules triggered by matching actions in code.
 
-**CRITICAL: Before using this pattern** → Read [Changelog Categorization Rules](categorization-rules.md) first. NEVER categorize internal refactors as Major Changes—they must be user-visible
+**using this pattern** → Read [Changelog Categorization Rules](categorization-rules.md) first. NEVER categorize internal refactors as Major Changes—they must be user-visible
 
-**CRITICAL: Before using this pattern** → Read [Changelog Categorization Rules](categorization-rules.md) first. ALWAYS filter .claude/commands/local/\* changes (developer-only)
+**using this pattern** → Read [Changelog Categorization Rules](categorization-rules.md) first. ALWAYS filter .claude/commands/local/\* changes (developer-only)
 
-**CRITICAL: Before using this pattern** → Read [Changelog Categorization Rules](categorization-rules.md) first. NEVER expose implementation details in changelog entries
+**using this pattern** → Read [Changelog Categorization Rules](categorization-rules.md) first. NEVER expose implementation details in changelog entries

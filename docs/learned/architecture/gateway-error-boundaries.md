@@ -9,6 +9,7 @@ tripwires:
     action: "try/except in fake.py or dry_run.py"
     warning: "Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions."
     context: "The 5-file gateway pattern has clear error boundary responsibilities. Real implementations catch and convert subprocess/system errors. Fakes simulate errors via constructor params. Dry-run always returns success."
+    pattern: "\\btry:|\\bexcept\\s"
 ---
 
 # Gateway Error Boundaries

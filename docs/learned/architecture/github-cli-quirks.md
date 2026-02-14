@@ -7,6 +7,7 @@ read_when:
 tripwires:
   - action: "using gh gist create with --filename flag"
     warning: "--filename only works with stdin input (-), not file paths."
+    pattern: "gh\\s+gist\\s+create.*--filename"
 ---
 
 # GitHub CLI Quirks and Edge Cases

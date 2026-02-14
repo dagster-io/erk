@@ -7,6 +7,7 @@ read_when:
 tripwires:
   - action: "using unquoted heredoc delimiters (<<EOF) when the body contains $, \\, or backticks"
     warning: "bash silently expands them"
+    pattern: "<<\\s*EOF\\b"
   - action: "using bash heredocs for large agent outputs"
     warning: "heredocs fail silently with special characters; prefer the Write tool"
 last_audited: "2026-02-07 19:35 PT"

@@ -10,8 +10,8 @@ read_when:
 
 # Config Tripwires
 
-Action-triggered rules for this category. Consult BEFORE taking any matching action.
+Rules triggered by matching actions in code.
 
-**CRITICAL: Before reading from or writing to ~/.erk/codespaces.toml directly** → Read [Codespaces TOML Configuration](codespaces-toml.md) first. Use CodespaceRegistry gateway instead. All codespace config access should go through the gateway for testability.
+**reading from or writing to ~/.erk/codespaces.toml directly** → Read [Codespaces TOML Configuration](codespaces-toml.md) first. Use CodespaceRegistry gateway instead. All codespace config access should go through the gateway for testability.
 
-**CRITICAL: Before using the field name 'default' in codespaces.toml** → Read [Codespaces TOML Configuration](codespaces-toml.md) first. The actual field name is 'default_codespace', not 'default'. Check RealCodespaceRegistry in real.py for the schema.
+**using the field name 'default' in codespaces.toml** → Read [Codespaces TOML Configuration](codespaces-toml.md) first. The actual field name is 'default_codespace', not 'default'. Check RealCodespaceRegistry in real.py for the schema.

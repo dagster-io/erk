@@ -7,8 +7,10 @@ read_when:
 tripwires:
   - action: "adding monkeypatch or @patch to a test"
     warning: "Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md."
+    pattern: "@patch|monkeypatch\\."
   - action: "using monkeypatch to stub Path.home() or subprocess.run()"
     warning: "These are the two most common monkeypatch targets. Both have established gateway replacements — ClaudeInstallation/ErkInstallation for paths, specific gateways for subprocess."
+    pattern: "monkeypatch\\.setattr.*Path\\.home|monkeypatch.*subprocess\\.run"
 last_audited: "2026-02-08"
 audit_result: clean
 ---

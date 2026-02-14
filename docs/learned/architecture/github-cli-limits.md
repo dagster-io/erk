@@ -12,8 +12,10 @@ read_when:
 tripwires:
   - action: "using gh pr diff --name-only in production code"
     warning: "For PRs with 300+ files, gh pr diff fails with HTTP 406. Use REST API with pagination instead."
+    pattern: "gh\\s+pr\\s+diff\\s+--name-only"
   - action: "using gh codespace start"
     warning: "gh codespace start does not exist. Use REST API POST /user/codespaces/{name}/start via gh api instead."
+    pattern: "gh\\s+codespace\\s+start"
 ---
 
 # GitHub CLI Limits

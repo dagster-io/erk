@@ -7,6 +7,7 @@ read_when:
 tripwires:
   - action: "using `--output-format stream-json` with `--print` in Claude CLI"
     warning: "Must also include `--verbose`. Without it, the command fails with 'stream-json requires --verbose'."
+    pattern: "--output-format\\s+stream-json"
 ---
 
 # Claude CLI Integration from Python
