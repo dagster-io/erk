@@ -117,6 +117,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-python-uv
       - uses: ./.github/actions/setup-graphite
+      - uses: ./.github/actions/setup-prettier
       - name: Run integration tests
         run: make test-integration
 
