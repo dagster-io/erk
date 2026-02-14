@@ -156,9 +156,8 @@ The execution pipeline runs in `erk exec land-execute` (invoked by the shell scr
 1. **`merge_pr`**: Merge the PR first. If this fails, no other mutations have happened (branch still exists, objective not updated).
 2. **`update_objective`**: Update linked objective with the merged PR number. Runs before learn plan update because objective update is more critical.
 3. **`update_learn_plan`**: Update parent plan's learn_status if this is a learn plan. This is advisory metadata, so it runs after objective update.
-4. **`promote_tripwires`**: Extract and prompt for tripwire promotion from learn plan. This is non-critical and safe to defer until after PR merge.
-5. **`close_review_pr`**: Close review PR if the plan has one. This is cleanup and runs near the end.
-6. **`cleanup_and_navigate`**: Delete branch, unassign slot, navigate to trunk/child. This is the terminal step and may call `SystemExit` to change directories.
+4. **`close_review_pr`**: Close review PR if the plan has one. This is cleanup and runs near the end.
+5. **`cleanup_and_navigate`**: Delete branch, unassign slot, navigate to trunk/child. This is the terminal step and may call `SystemExit` to change directories.
 
 **Why this ordering matters**: Early steps (merge, objective update) are high-value mutations that should complete before lower-priority metadata updates (tripwires, review PR). If execution fails partway through, the most important state (PR merged, objective recorded) will have succeeded.
 

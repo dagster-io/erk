@@ -3,10 +3,9 @@ title: Learn Plan Land Flow
 read_when:
   - "landing PRs associated with learn plans"
   - "understanding how learn plan metadata updates parent issues"
-  - "working with tripwire promotion during land operations"
 tripwires:
   - action: "landing a PR without updating associated learn plan status"
-    warning: "Learn plan PRs trigger special execution pipeline steps that update parent plan metadata and promote tripwires. Ensure check_learn_status, update_learn_plan, promote_tripwires, and close_review_pr steps execute after merge."
+    warning: "Learn plan PRs trigger special execution pipeline steps that update parent plan metadata. Ensure check_learn_status, update_learn_plan, and close_review_pr steps execute after merge."
 last_audited: "2026-02-08"
 audit_result: edited
 ---
@@ -17,19 +16,17 @@ When landing a PR from a learn plan branch, the land execution pipeline runs add
 
 ## Why Learn Plans Need Special Pipeline Steps
 
-**The core problem**: Learn plans document insights from implementation sessions. The parent plan (the feature that was implemented) needs to track when its documentation has landed, and tripwire candidates identified during learning should be promoted to category `tripwires.md` files.
+**The core problem**: Learn plans document insights from implementation sessions. The parent plan (the feature that was implemented) needs to track when its documentation has landed.
 
 **Without special handling**, these metadata updates would be manual:
 
 - Engineers would manually update parent issue status after landing docs
-- Tripwires would remain buried in learn plan issues instead of being surfaced
 - No visibility into which plans have completed their learning cycle
 
 **The solution**: The execution pipeline detects learn plan branches and runs additional steps after merge:
 
 1. **Update parent plan metadata**: Set `learn_status = plan_completed` and record the PR number
-2. **Promote tripwires**: Extract candidates from plan and append to category files
-3. **Close review PR**: Clean up any associated review PR
+2. **Close review PR**: Clean up any associated review PR
 
 ## How Learn Plan Detection Works
 
@@ -59,13 +56,10 @@ After the PR merges, the execution pipeline runs learn-specific steps in this or
 1. **`merge_pr`** (standard) — Merge first; if this fails, no cleanup needed
 2. **`update_objective`** (standard) — Update objective before learn plan (objective more critical)
 3. **`update_learn_plan`** — Update parent plan's `learn_status` field
-4. **`promote_tripwires`** — Extract tripwires and append to category files
-5. **`close_review_pr`** — Close associated review PR if exists
-6. **`cleanup_and_navigate`** (standard) — Delete branches and navigate
+4. **`close_review_pr`** — Close associated review PR if exists
+5. **`cleanup_and_navigate`** (standard) — Delete branches and navigate
 
 **Why learn plan updates come after objective updates**: Objective tracking is higher priority than learning metadata. If execution fails partway through, we prefer to have updated the objective rather than the learn status.
-
-**Why tripwires come after metadata updates**: Tripwire promotion is non-critical. Even if it fails, the parent plan's status is still correct and the PR is merged. Tripwires can be manually promoted later.
 
 ## Parent Plan Metadata Update
 
@@ -89,21 +83,6 @@ Learn plans are child plans (they document parent features). The parent plan iss
 learn_status: plan_completed # Was: completed_with_plan
 learn_plan_pr: 456 # The landed PR number
 ```
-
-## Tripwire Promotion
-
-<!-- Source: src/erk/cli/commands/land_pipeline.py, promote_tripwires() step -->
-<!-- Source: src/erk/cli/commands/tripwire_promotion_helpers.py, extract_tripwire_candidates_from_learn_plan() -->
-
-The `promote_tripwires()` step extracts structured tripwire candidates from the plan issue and appends them to the appropriate category `tripwires.md` files. See `promote_tripwires()` in `src/erk/cli/commands/land_pipeline.py` and the extraction logic in `src/erk/cli/commands/tripwire_promotion_helpers.py`.
-
-**Why extract from issue instead of PR?**
-
-Learn plans capture tripwires in issue comments during planning. By the time the PR lands, those tripwires are already structured metadata on the GitHub issue. Extracting from the issue avoids re-parsing PR bodies or relying on specific comment formats.
-
-**Extraction source**: The `extract_tripwire_candidates_from_comments()` function reads all issue comments looking for structured tripwire-candidates metadata blocks.
-
-**Fail-open pattern**: If no tripwires are found or extraction fails, the step silently continues. Tripwire promotion is advisory—landing should succeed even if promotion fails.
 
 ## Review PR Cleanup
 
