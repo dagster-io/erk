@@ -13,10 +13,14 @@ import click
 from erk.cli.commands.pr.shared import (
     IssueLinkageMismatch,
     assemble_pr_body,
+    cleanup_diff_file,
+    discover_branch_context,
     discover_issue_for_footer,
+    echo_plan_context_status,
     render_progress,
     require_claude_available,
     run_commit_message_generation,
+    run_diff_extraction,
 )
 from erk.core.command_log import get_or_generate_session_id
 from erk.core.commit_message_generator import CommitMessageGenerator
@@ -29,7 +33,6 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
 from erk_shared.gateway.gt.operations.squash import execute_squash
 from erk_shared.gateway.gt.types import SquashError
-from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 
 
 @click.command("rewrite")
@@ -71,24 +74,17 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     cwd = Path.cwd()
     session_id = get_or_generate_session_id(cwd)
 
-    current_branch = ctx.git.branch.get_current_branch(cwd)
-    if current_branch is None:
-        raise click.ClickException("Not on a branch (detached HEAD state)")
-
-    repo_root = ctx.git.repo.get_repository_root(cwd)
+    discovery = discover_branch_context(ctx, cwd=cwd)
 
     # Verify PR exists for this branch
-    pr_info = ctx.github.get_pr_for_branch(repo_root, current_branch)
+    pr_info = ctx.github.get_pr_for_branch(discovery.repo_root, discovery.current_branch)
     if isinstance(pr_info, PRNotFound):
         raise click.ClickException(
-            f"No PR found for branch '{current_branch}'\n\nCreate a PR first with: erk pr submit"
+            f"No PR found for branch '{discovery.current_branch}'\n\n"
+            "Create a PR first with: erk pr submit"
         )
 
     pr_number = pr_info.number
-    trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
-    parent_branch = (
-        ctx.branch_manager.get_parent_branch(Path(repo_root), current_branch) or trunk_branch
-    )
 
     click.echo(click.style("📝 Rewriting PR...", bold=True))
     click.echo("")
@@ -102,11 +98,11 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
 
     # Phase 3: Extract diff
     click.echo(click.style("Phase 2: Getting diff", bold=True))
-    diff_file = _run_diff_extraction(
+    diff_file = run_diff_extraction(
         ctx,
         cwd=cwd,
         session_id=session_id,
-        base_branch=parent_branch,
+        base_branch=discovery.parent_branch,
         debug=debug,
     )
     if diff_file is None:
@@ -118,30 +114,19 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
 
     plan_provider = PlanContextProvider(ctx.github_issues)
     plan_context = plan_provider.get_plan_context(
-        repo_root=Path(repo_root),
-        branch_name=current_branch,
+        repo_root=discovery.repo_root,
+        branch_name=discovery.current_branch,
     )
 
-    if plan_context is not None:
-        click.echo(
-            click.style(
-                f"   Incorporating plan from issue #{plan_context.issue_number}",
-                fg="green",
-            )
-        )
-        if plan_context.objective_summary is not None:
-            click.echo(click.style(f"   Linked to {plan_context.objective_summary}", fg="green"))
-    else:
-        click.echo(click.style("   No linked plan found", dim=True))
-    click.echo("")
+    echo_plan_context_status(plan_context)
 
     msg_gen = CommitMessageGenerator(ctx.prompt_executor)
     msg_result = run_commit_message_generation(
         generator=msg_gen,
         diff_file=diff_file,
-        repo_root=Path(repo_root),
-        current_branch=current_branch,
-        parent_branch=parent_branch,
+        repo_root=discovery.repo_root,
+        current_branch=discovery.current_branch,
+        parent_branch=discovery.parent_branch,
         commit_messages=None,
         plan_context=plan_context,
         debug=debug,
@@ -164,7 +149,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     # Phase 6: Push and update remote PR
     click.echo(click.style("Phase 5: Pushing and updating PR", bold=True))
 
-    submit_result = ctx.branch_manager.submit_branch(Path(repo_root), current_branch)
+    submit_result = ctx.branch_manager.submit_branch(discovery.repo_root, discovery.current_branch)
     if isinstance(submit_result, SubmitBranchError):
         raise click.ClickException(f"Push failed: {submit_result.message}")
     click.echo(click.style("   Branch pushed", fg="green"))
@@ -175,7 +160,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
 
     issue_discovery = discover_issue_for_footer(
         impl_dir=impl_dir,
-        branch_name=current_branch,
+        branch_name=discovery.current_branch,
         existing_pr_body=pr_info.body,
         plans_repo=plans_repo,
     )
@@ -192,7 +177,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     )
 
     ctx.github.update_pr_title_and_body(
-        repo_root=Path(repo_root),
+        repo_root=discovery.repo_root,
         pr_number=pr_number,
         title=title,
         body=BodyText(content=final_body),
@@ -202,15 +187,14 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     # Add learn skip label if applicable
     is_learn_origin = is_learn_plan(impl_dir)
     if is_learn_origin:
-        ctx.github.add_label_to_pr(Path(repo_root), pr_number, ERK_SKIP_LEARN_LABEL)
+        ctx.github.add_label_to_pr(discovery.repo_root, pr_number, ERK_SKIP_LEARN_LABEL)
 
     # Retrack Graphite branch if needed (fix tracking divergence from amend)
     if ctx.graphite_branch_ops is not None:
-        ctx.graphite_branch_ops.retrack_branch(Path(repo_root), current_branch)
+        ctx.graphite_branch_ops.retrack_branch(discovery.repo_root, discovery.current_branch)
 
     # Clean up scratch diff file
-    if diff_file.exists():
-        diff_file.unlink(missing_ok=True)
+    cleanup_diff_file(diff_file)
 
     click.echo("")
     click.echo(f"✅ PR rewritten: {title}")
@@ -232,29 +216,3 @@ def _run_squash(
             if isinstance(result, SquashError):
                 return result
     return None
-
-
-def _run_diff_extraction(
-    ctx: ErkContext,
-    *,
-    cwd: Path,
-    session_id: str,
-    base_branch: str,
-    debug: bool,
-) -> Path | None:
-    """Run diff extraction phase.
-
-    Uses execute_diff_extraction with pr_number=0 as placeholder.
-    """
-    result: Path | None = None
-
-    for event in execute_diff_extraction(
-        ctx, cwd, pr_number=0, session_id=session_id, base_branch=base_branch
-    ):
-        if isinstance(event, ProgressEvent):
-            if debug:
-                render_progress(event)
-        elif isinstance(event, CompletionEvent):
-            result = event.result
-
-    return result

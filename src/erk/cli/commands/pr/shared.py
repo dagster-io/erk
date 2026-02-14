@@ -24,8 +24,122 @@ from erk_shared.gateway.github.pr_footer import (
     extract_footer_from_body,
 )
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.naming import extract_leading_issue_number
+
+# ---------------------------------------------------------------------------
+# Branch Discovery
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class BranchDiscovery:
+    """Result of discovering branch context for PR commands."""
+
+    current_branch: str
+    repo_root: Path
+    trunk_branch: str
+    parent_branch: str
+
+
+def discover_branch_context(ctx: ErkContext, *, cwd: Path) -> BranchDiscovery:
+    """Discover branch context: current branch, repo root, trunk, and parent.
+
+    Raises:
+        click.ClickException: If in detached HEAD state
+    """
+    current_branch = ctx.git.branch.get_current_branch(cwd)
+    if current_branch is None:
+        raise click.ClickException("Not on a branch (detached HEAD state)")
+
+    repo_root = ctx.git.repo.get_repository_root(cwd)
+    trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
+    parent_branch = ctx.branch_manager.get_parent_branch(repo_root, current_branch) or trunk_branch
+
+    return BranchDiscovery(
+        current_branch=current_branch,
+        repo_root=repo_root,
+        trunk_branch=trunk_branch,
+        parent_branch=parent_branch,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Diff Extraction
+# ---------------------------------------------------------------------------
+
+
+def run_diff_extraction(
+    ctx: ErkContext,
+    *,
+    cwd: Path,
+    session_id: str,
+    base_branch: str,
+    debug: bool,
+) -> Path | None:
+    """Run diff extraction with progress rendering.
+
+    Wraps execute_diff_extraction() with event loop processing.
+
+    Args:
+        ctx: ErkContext providing gateways
+        cwd: Current working directory
+        session_id: Session ID for scratch file isolation
+        base_branch: Branch to diff against
+        debug: Whether to show progress output
+
+    Returns:
+        Path to diff file, or None if extraction failed
+    """
+    result: Path | None = None
+
+    for event in execute_diff_extraction(
+        ctx, cwd, pr_number=0, session_id=session_id, base_branch=base_branch
+    ):
+        if isinstance(event, ProgressEvent):
+            if debug:
+                render_progress(event)
+        elif isinstance(event, CompletionEvent):
+            result = event.result
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Plan Context Display
+# ---------------------------------------------------------------------------
+
+
+def echo_plan_context_status(plan_context: PlanContext | None) -> None:
+    """Echo plan context status to the CLI."""
+    if plan_context is not None:
+        click.echo(
+            click.style(
+                f"   Incorporating plan from issue #{plan_context.issue_number}",
+                fg="green",
+            )
+        )
+        if plan_context.objective_summary is not None:
+            click.echo(click.style(f"   Linked to {plan_context.objective_summary}", fg="green"))
+    else:
+        click.echo(click.style("   No linked plan found", dim=True))
+    click.echo("")
+
+
+# ---------------------------------------------------------------------------
+# Cleanup
+# ---------------------------------------------------------------------------
+
+
+def cleanup_diff_file(diff_file: Path | None) -> None:
+    """Clean up a temporary diff file if it exists."""
+    if diff_file is not None and diff_file.exists():
+        try:
+            diff_file.unlink()
+        except OSError:
+            pass
+
 
 # ---------------------------------------------------------------------------
 # PR Body Assembly
