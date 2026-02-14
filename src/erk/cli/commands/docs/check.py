@@ -45,12 +45,13 @@ def run_check(project_root: Path) -> None:
 
     invalid_count = sum(1 for r in validation_results if not r.is_valid)
 
+    fail_status = click.style("FAIL", fg="red")
+
     # Show validation errors only
     if invalid_count > 0:
         for validation_result in validation_results:
             if not validation_result.is_valid:
-                status = click.style("FAIL", fg="red")
-                click.echo(f"{status} {validation_result.file_path}", err=True)
+                click.echo(f"{fail_status} {validation_result.file_path}", err=True)
                 for error in validation_result.errors:
                     click.echo(f"    {error}", err=True)
 
@@ -58,8 +59,7 @@ def run_check(project_root: Path) -> None:
     if not tripwires_index_result.is_valid:
         if invalid_count > 0:
             click.echo(err=True)
-        status = click.style("FAIL", fg="red")
-        click.echo(f"{status} tripwires-index.md", err=True)
+        click.echo(f"{fail_status} tripwires-index.md", err=True)
         for error in tripwires_index_result.errors:
             click.echo(f"    {error}", err=True)
 
