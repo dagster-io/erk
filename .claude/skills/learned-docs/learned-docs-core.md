@@ -55,10 +55,7 @@ Documenting what NOT to do — and why — is high-value. Future agents will be 
 1. **Data formats** — JSON/YAML/TOML structure examples showing shape, not processing code
 2. **Third-party API knowledge** — Click commands, pytest fixtures, Rich tables (teaching external APIs), API endpoint tables, DSL syntax references, expression catalogs, AND discovered/undocumented API behavior and quirks learned through usage. Include a `## Sources` section with URLs or usage context.
 3. **Anti-patterns** — Code explicitly marked WRONG or DON'T DO THIS (the point is the wrongness)
-   <<<<<<< Updated upstream
-4. # **Input/output examples** — CLI commands with expected output, shell one-liners, command output format documentation (JSON/text showing what a command returns)
-5. **Input/output examples** — CLI invocation examples (with or without output), shell one-liners, command output format documentation (JSON/text showing what a command returns). CLI usage examples that match docstring usage sections are NOT verbatim source code copies — they document the command's interface and naturally look identical in both places.
-   > > > > > > > Stashed changes
+4. **Input/output examples** — CLI invocation examples (with or without output), shell one-liners, command output format documentation (JSON/text showing what a command returns). CLI usage examples that match docstring usage sections are NOT verbatim source code copies — they document the command's interface and naturally look identical in both places.
 
 ### The Decision Test
 
