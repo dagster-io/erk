@@ -343,6 +343,7 @@ PlanHeaderFieldName = Literal[
     "learn_plan_issue",
     "learn_plan_pr",
     "learned_from_issue",
+    "learn_materials_gist_url",
     "review_pr",
     "last_review_pr",
 ]
@@ -389,6 +390,9 @@ LAST_SESSION_SOURCE: Literal["last_session_source"] = "last_session_source"
 LEARN_PLAN_ISSUE: Literal["learn_plan_issue"] = "learn_plan_issue"
 LEARN_PLAN_PR: Literal["learn_plan_pr"] = "learn_plan_pr"
 LEARNED_FROM_ISSUE: Literal["learned_from_issue"] = "learned_from_issue"
+
+# Learn materials gist URL (preprocessed learn materials, distinct from session gist)
+LEARN_MATERIALS_GIST_URL: Literal["learn_materials_gist_url"] = "learn_materials_gist_url"
 
 # Review PR tracking fields
 REVIEW_PR: Literal["review_pr"] = "review_pr"
@@ -454,6 +458,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         last_session_id: Claude Code session ID of uploaded session (nullable)
         last_session_at: ISO 8601 timestamp of session upload (nullable)
         last_session_source: "local" or "remote" indicating session origin (nullable)
+        learn_materials_gist_url: URL of gist with preprocessed learn materials (nullable)
         review_pr: PR number for plan review (nullable)
         last_review_pr: PR number of the last completed review (nullable)
     """
@@ -495,6 +500,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             LEARN_PLAN_ISSUE,
             LEARN_PLAN_PR,
             LEARNED_FROM_ISSUE,
+            LEARN_MATERIALS_GIST_URL,
             REVIEW_PR,
             LAST_REVIEW_PR,
         }
@@ -729,6 +735,13 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("learned_from_issue must be an integer or null")
             if data[LEARNED_FROM_ISSUE] <= 0:
                 raise ValueError("learned_from_issue must be positive when provided")
+
+        # Validate optional learn_materials_gist_url field
+        if LEARN_MATERIALS_GIST_URL in data and data[LEARN_MATERIALS_GIST_URL] is not None:
+            if not isinstance(data[LEARN_MATERIALS_GIST_URL], str):
+                raise ValueError("learn_materials_gist_url must be a string or null")
+            if len(data[LEARN_MATERIALS_GIST_URL]) == 0:
+                raise ValueError("learn_materials_gist_url must not be empty when provided")
 
         # Validate optional review_pr field
         if REVIEW_PR in data and data[REVIEW_PR] is not None:

@@ -270,3 +270,180 @@ def test_learn_without_dangerous_flag(tmp_path: Path) -> None:
     worktree_path, dangerous, command, target_subpath, model, _ = fake_executor.interactive_calls[0]
     assert dangerous is False, "Expected dangerous=False when --dangerous flag not provided"
     assert "/erk:learn" in command
+
+
+def _make_plan_body_with_gist_url(session_id: str, gist_url: str) -> str:
+    """Create a valid issue body with plan-header metadata including learn_materials_gist_url."""
+    plan_header_data = {
+        "schema_version": "2",
+        "created_at": "2024-01-01T00:00:00Z",
+        "created_by": "test-user",
+        "created_from_session": session_id,
+        "learn_materials_gist_url": gist_url,
+    }
+    header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+    return f"{header_block}\n\n# Plan\n\nTest plan content"
+
+
+def test_learn_passes_gist_url_when_available(tmp_path: Path) -> None:
+    """Verify learn_materials_gist_url from plan header is passed to /erk:learn command."""
+    session_id = "test-session-gist"
+    gist_url = "https://gist.github.com/testuser/abc123def456"
+    issue_body = _make_plan_body_with_gist_url(session_id, gist_url)
+
+    now = datetime.now(UTC)
+    fake_issues = FakeGitHubIssues(
+        issues={
+            789: IssueInfo(
+                number=789,
+                title="Test Plan",
+                body=issue_body,
+                state="OPEN",
+                url="https://github.com/owner/repo/issues/789",
+                labels=["erk-plan"],
+                assignees=[],
+                created_at=now,
+                updated_at=now,
+                author="testuser",
+            ),
+        },
+    )
+
+    git_dir = tmp_path / ".git"
+    fake_git = FakeGit(
+        git_common_dirs={tmp_path: git_dir},
+        current_branches={tmp_path: "main"},
+        remote_urls={(tmp_path, "origin"): "https://github.com/owner/repo.git"},
+    )
+
+    fake_installation = FakeClaudeInstallation.for_test(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    session_id: FakeSessionData(
+                        content='{"type": "user"}\n',
+                        size_bytes=1024,
+                        modified_at=now.timestamp(),
+                    )
+                }
+            )
+        }
+    )
+
+    fake_executor = FakePromptExecutor(available=True)
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=tmp_path,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+    )
+
+    global_config = GlobalConfig.test(erk_root=repo_dir)
+
+    ctx = context_for_test(
+        cwd=tmp_path,
+        git=fake_git,
+        issues=fake_issues,
+        claude_installation=fake_installation,
+        prompt_executor=fake_executor,
+        repo=repo,
+        global_config=global_config,
+    )
+
+    runner = CliRunner()
+
+    result = runner.invoke(cli, ["learn", "789", "-i"], obj=ctx)
+
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+
+    # Verify execute_interactive was called with gist_url in the command
+    assert len(fake_executor.interactive_calls) == 1
+    _worktree_path, _dangerous, command, _target_subpath, _model, _ = (
+        fake_executor.interactive_calls[0]
+    )
+    assert f"/erk:learn 789 gist_url={gist_url}" == command
+
+
+def test_learn_without_gist_url_does_not_include_param(tmp_path: Path) -> None:
+    """Verify command has no gist_url when plan header doesn't have one."""
+    session_id = "test-session-no-gist"
+    issue_body = _make_plan_body_with_session(session_id)
+
+    now = datetime.now(UTC)
+    fake_issues = FakeGitHubIssues(
+        issues={
+            321: IssueInfo(
+                number=321,
+                title="Test Plan",
+                body=issue_body,
+                state="OPEN",
+                url="https://github.com/owner/repo/issues/321",
+                labels=["erk-plan"],
+                assignees=[],
+                created_at=now,
+                updated_at=now,
+                author="testuser",
+            ),
+        },
+    )
+
+    git_dir = tmp_path / ".git"
+    fake_git = FakeGit(
+        git_common_dirs={tmp_path: git_dir},
+        current_branches={tmp_path: "main"},
+        remote_urls={(tmp_path, "origin"): "https://github.com/owner/repo.git"},
+    )
+
+    fake_installation = FakeClaudeInstallation.for_test(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    session_id: FakeSessionData(
+                        content='{"type": "user"}\n',
+                        size_bytes=1024,
+                        modified_at=now.timestamp(),
+                    )
+                }
+            )
+        }
+    )
+
+    fake_executor = FakePromptExecutor(available=True)
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=tmp_path,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+    )
+
+    global_config = GlobalConfig.test(erk_root=repo_dir)
+
+    ctx = context_for_test(
+        cwd=tmp_path,
+        git=fake_git,
+        issues=fake_issues,
+        claude_installation=fake_installation,
+        prompt_executor=fake_executor,
+        repo=repo,
+        global_config=global_config,
+    )
+
+    runner = CliRunner()
+
+    result = runner.invoke(cli, ["learn", "321", "-i"], obj=ctx)
+
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+
+    # Verify command does NOT include gist_url
+    assert len(fake_executor.interactive_calls) == 1
+    _worktree_path, _dangerous, command, _target_subpath, _model, _ = (
+        fake_executor.interactive_calls[0]
+    )
+    assert command == "/erk:learn 321"
+    assert "gist_url" not in command

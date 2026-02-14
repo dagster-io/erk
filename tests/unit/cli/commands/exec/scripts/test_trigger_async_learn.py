@@ -690,3 +690,49 @@ def test_trigger_async_learn_logs_gist_size(tmp_path: Path) -> None:
     gist_lines = [line for line in stderr_lines if "3 file(s)" in line]
     assert len(gist_lines) == 1
     assert "chars" in gist_lines[0]
+
+
+def test_trigger_async_learn_skip_workflow(tmp_path: Path) -> None:
+    """Test that --skip-workflow runs preprocessing but does not trigger the workflow."""
+    runner = CliRunner()
+    repo_info = RepoInfo(owner="test-owner", name="test-repo")
+
+    # Plan issue with no sessions (no created_from_session in metadata)
+    body = _make_plan_issue_body(branch_name=None)
+    fake_issues = FakeGitHubIssues(issues={456: _make_issue_info(456, body)})
+    fake_claude = FakeClaudeInstallation.for_test()
+    fake_gh = FakeGitHub(repo_info=repo_info, issues_gateway=fake_issues)
+
+    ctx = ErkContext.for_test(
+        repo_root=tmp_path,
+        cwd=tmp_path,
+        github=fake_gh,
+        github_issues=fake_issues,
+        claude_installation=fake_claude,
+        repo_info=repo_info,
+    )
+
+    # Create learn dir with content for gist upload
+    learn_dir = tmp_path / ".erk" / "scratch" / "learn-456"
+    learn_dir.mkdir(parents=True)
+    (learn_dir / "placeholder.txt").write_text("test content", encoding="utf-8")
+
+    result = runner.invoke(trigger_async_learn_command, ["456", "--skip-workflow"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    output = _parse_json_output(result.output)
+
+    # Verify preprocessing succeeded but workflow was not triggered
+    assert output["success"] is True
+    assert output["issue_number"] == 456
+    assert output["workflow_triggered"] is False
+
+    # Verify no run_id or workflow_url fields in output
+    assert "run_id" not in output
+    assert "workflow_url" not in output
+
+    # Verify gist_url is still present
+    assert isinstance(output["gist_url"], str)
+
+    # Verify no workflows were triggered on FakeGitHub
+    assert len(fake_gh.triggered_workflows) == 0

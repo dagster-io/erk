@@ -66,13 +66,23 @@ LEARN_WORKFLOW = "learn.yml"
 
 @dataclass(frozen=True)
 class TriggerSuccess:
-    """Success response for trigger-async-learn command."""
+    """Success response for trigger-async-learn command when workflow is triggered."""
 
     success: bool
     issue_number: int
     workflow_triggered: bool
     run_id: str
     workflow_url: str
+    gist_url: str
+
+
+@dataclass(frozen=True)
+class PreprocessSuccess:
+    """Success response for trigger-async-learn command when --skip-workflow is used."""
+
+    success: bool
+    issue_number: int
+    workflow_triggered: bool
     gist_url: str
 
 
@@ -92,6 +102,18 @@ def _output_success(issue_number: int, run_id: str, workflow_url: str, gist_url:
         workflow_triggered=True,
         run_id=run_id,
         workflow_url=workflow_url,
+        gist_url=gist_url,
+    )
+    click.echo(json.dumps(asdict(result)))
+    raise SystemExit(0)
+
+
+def _output_preprocess_success(issue_number: int, gist_url: str) -> None:
+    """Output preprocess-only success JSON and exit."""
+    result = PreprocessSuccess(
+        success=True,
+        issue_number=issue_number,
+        workflow_triggered=False,
         gist_url=gist_url,
     )
     click.echo(json.dumps(asdict(result)))
@@ -259,8 +281,13 @@ def _get_pr_for_plan_direct(
 
 @click.command(name="trigger-async-learn")
 @click.argument("issue_number", type=int)
+@click.option(
+    "--skip-workflow",
+    is_flag=True,
+    help="Run preprocessing and upload gist, but skip triggering the learn.yml workflow.",
+)
 @click.pass_context
-def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
+def trigger_async_learn(ctx: click.Context, issue_number: int, *, skip_workflow: bool) -> None:
     """Trigger async learn workflow for a plan issue.
 
     ISSUE_NUMBER is the GitHub issue number to learn from.
@@ -270,7 +297,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
     2. Preprocesses sessions locally
     3. Fetches PR review comments if applicable
     4. Uploads materials to a gist
-    5. Triggers the learn.yml workflow with the gist URL
+    5. Triggers the learn.yml workflow with the gist URL (unless --skip-workflow)
     """
     # Get required dependencies from context
     if ctx.obj is None:
@@ -501,7 +528,11 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
     stats_styled = click.style(f"({file_count} file(s), {total_size:,} chars)", dim=True)
     click.echo(f"   🔗 {url_styled} {stats_styled}", err=True)
 
-    # Step 6: Trigger the learn workflow with gist_url
+    # Step 6: Trigger the learn workflow with gist_url (unless --skip-workflow)
+    if skip_workflow:
+        _output_preprocess_success(issue_number, gist_url)
+        return
+
     workflow_inputs: dict[str, str] = {
         "issue_number": str(issue_number),
         "gist_url": str(gist_url),
