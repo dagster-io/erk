@@ -1,7 +1,7 @@
 """Shared utilities for PR commands.
 
 This module contains common functionality used by multiple PR commands
-(summarize, submit) to avoid code duplication.
+(rewrite, submit) to avoid code duplication.
 """
 
 from __future__ import annotations
@@ -21,6 +21,23 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 
 if TYPE_CHECKING:
     from erk.core.plan_context_provider import PlanContext
+
+
+def build_plan_details_section(plan_context: PlanContext) -> str:
+    """Build a collapsed <details> section embedding the plan in the PR body."""
+    issue_num = plan_context.issue_number
+    parts = [
+        "",
+        "## Implementation Plan",
+        "",
+        "<details>",
+        f"<summary><strong>Implementation Plan</strong> (Issue #{issue_num})</summary>",
+        "",
+        plan_context.plan_content,
+        "",
+        "</details>",
+    ]
+    return "\n".join(parts)
 
 
 def render_progress(event: ProgressEvent) -> None:

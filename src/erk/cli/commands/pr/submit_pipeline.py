@@ -16,6 +16,7 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.pr.shared import (
+    build_plan_details_section,
     run_commit_message_generation,
 )
 from erk.cli.ensure import UserFacingCliError
@@ -597,23 +598,6 @@ def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -> SubmitState | 
     return dataclasses.replace(state, graphite_url=graphite_url)
 
 
-def _build_plan_details_section(plan_context: PlanContext) -> str:
-    """Build a collapsed <details> section embedding the plan in the PR body."""
-    issue_num = plan_context.issue_number
-    parts = [
-        "",
-        "## Implementation Plan",
-        "",
-        "<details>",
-        f"<summary><strong>Implementation Plan</strong> (Issue #{issue_num})</summary>",
-        "",
-        plan_context.plan_content,
-        "",
-        "</details>",
-    ]
-    return "\n".join(parts)
-
-
 def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Update PR title/body with footer, add labels, amend local commit, clean up diff file."""
     click.echo(click.style("Phase 6: Updating PR metadata", bold=True))
@@ -648,7 +632,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     # Embed plan in PR body if available (not in commit message)
     pr_body_for_github = pr_body
     if state.plan_context is not None:
-        pr_body_for_github = pr_body + _build_plan_details_section(state.plan_context)
+        pr_body_for_github = pr_body + build_plan_details_section(state.plan_context)
 
     # Build footer and combine
     metadata_section = build_pr_body_footer(

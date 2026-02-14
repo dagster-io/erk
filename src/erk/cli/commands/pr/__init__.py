@@ -7,8 +7,8 @@ from erk.cli.commands.pr.address_cmd import address
 from erk.cli.commands.pr.check_cmd import pr_check
 from erk.cli.commands.pr.checkout_cmd import pr_checkout
 from erk.cli.commands.pr.fix_conflicts_cmd import fix_conflicts
+from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
 from erk.cli.commands.pr.submit_cmd import pr_submit
-from erk.cli.commands.pr.summarize_cmd import pr_summarize
 from erk.cli.commands.pr.sync_cmd import pr_sync
 from erk.cli.commands.pr.sync_divergence_cmd import pr_sync_divergence
 
@@ -23,7 +23,7 @@ pr_group.add_command(address, name="address")
 pr_group.add_command(pr_check, name="check")
 register_with_aliases(pr_group, pr_checkout)
 pr_group.add_command(fix_conflicts, name="fix-conflicts")
+pr_group.add_command(pr_rewrite, name="rewrite")
 pr_group.add_command(pr_submit, name="submit")
-pr_group.add_command(pr_summarize, name="summarize")
 pr_group.add_command(pr_sync, name="sync")
 pr_group.add_command(pr_sync_divergence, name="sync-divergence")
