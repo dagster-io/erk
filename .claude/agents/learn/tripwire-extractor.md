@@ -1,3 +1,13 @@
+---
+name: tripwire-extractor
+description: Extract structured tripwire candidates from learn plan and gap analysis documents
+allowed-tools:
+  - Read
+  - Write
+  - Glob
+  - Grep
+---
+
 # Tripwire Extractor Agent
 
 Extract structured tripwire candidates from learn plan and gap analysis documents.
@@ -8,6 +18,7 @@ You receive:
 
 - `learn_plan_path`: Path to the synthesized learn plan markdown
 - `gap_analysis_path`: Path to the DocumentationGapIdentifier output
+- `output_path`: Path to write your tripwire candidates JSON output
 
 ## Process
 
@@ -63,9 +74,15 @@ If no tripwire-worthy items are found, write:
 
 ## Output
 
-Write the JSON to the file path: `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json`
+**CRITICAL:** Write the JSON to the `output_path` using the Write tool. Do NOT use bash heredoc.
 
-Use the Write tool to create this file. Do NOT use bash heredoc.
+Your final message to the caller MUST be only:
+
+```
+Output written to <output_path>
+```
+
+Do NOT include the JSON content in your final message.
 
 ## Quality Criteria
 

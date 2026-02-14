@@ -3,6 +3,7 @@ name: session-analyzer
 description: Analyze a preprocessed session XML to extract patterns, decisions, and insights
 allowed-tools:
   - Read
+  - Write
   - Glob
   - Grep
 ---
@@ -17,6 +18,7 @@ You receive:
 
 - `session_xml_path`: Path to preprocessed XML file (e.g., `.erk/scratch/sessions/.../learn/impl-{id}.xml`)
 - `context`: Brief description of what this plan implemented
+- `output_path`: Path to write your analysis output (e.g., `.erk/scratch/sessions/.../learn-agents/session-{id}.md`)
 
 ## Analysis Process
 
@@ -104,3 +106,15 @@ TYPE: <planning|implementation>
 ```
 
 Focus on actionable insights. Skip trivial file reads or obvious operations.
+
+## Output
+
+**CRITICAL:** Write your complete output to the `output_path` using the Write tool.
+
+Your final message to the caller MUST be only:
+
+```
+Output written to <output_path>
+```
+
+Do NOT include the analysis content in your final message.

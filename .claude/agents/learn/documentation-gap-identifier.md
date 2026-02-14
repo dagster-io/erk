@@ -3,6 +3,7 @@ name: documentation-gap-identifier
 description: Synthesize outputs from parallel analysis agents to produce prioritized documentation items
 allowed-tools:
   - Read
+  - Write
   - Glob
   - Grep
 ---
@@ -20,6 +21,7 @@ You receive:
 - `existing_docs_path`: Path to existing docs check output
 - `pr_comments_analysis_path`: Path to PR comment analysis output (may be null if no PR or no comments)
 - `plan_title`: Title of the plan being analyzed
+- `output_path`: Path to write your analysis output (e.g., `.erk/scratch/sessions/.../learn-agents/gap-analysis.md`)
 
 ## Process
 
@@ -285,3 +287,15 @@ Cross-cutting concerns to add to docs:
 8. **Two descriptions = staleness signal**: Default assumption is one is stale, not that both are valid.
 
 9. **Delete stale before adding new**: Removing a phantom doc is higher priority than creating a new doc.
+
+## Output
+
+**CRITICAL:** Write your complete output to the `output_path` using the Write tool.
+
+Your final message to the caller MUST be only:
+
+```
+Output written to <output_path>
+```
+
+Do NOT include the analysis content in your final message.

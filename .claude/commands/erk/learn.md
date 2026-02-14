@@ -255,6 +255,12 @@ Uploaded preprocessed sessions to secret gist: <gist_url>
 
 After preprocessing, launch analysis agents in parallel to extract insights concurrently.
 
+First, create the output directory for agent results:
+
+```bash
+mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/
+```
+
 Tell the user:
 
 ```
@@ -283,6 +289,7 @@ Task(
     Input:
     - session_xml_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/<filename>.xml
     - context: <brief description from plan title>
+    - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<session-id>.md
 )
 ```
 
@@ -302,6 +309,7 @@ Task(
     Input:
     - pr_number: <pr-number>
     - issue_number: <issue-number>
+    - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md
 )
 ```
 
@@ -324,6 +332,7 @@ Task(
     - plan_title: <title from plan issue>
     - pr_title: <PR title if available, or empty string>
     - search_hints: <key terms extracted from plan title, comma-separated>
+    - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md
 )
 ```
 
@@ -360,7 +369,14 @@ Task(
     - **Suggested alternatives**: Discussed but rejected → document the decision
     - **Edge case questions**: "What happens if..." → document the behavior
 
-    ## Output Format
+    ## Output
+
+    **CRITICAL:** Write your complete output to the output_path using the Write tool.
+    Your final message to the caller MUST be only: "Output written to <output_path>"
+
+    output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/pr-comments-analysis.md
+
+    Use this format for the content written to the file:
 
     ### PR Comment Analysis Summary
     PR #NNNN: N review threads, M discussion comments analyzed.
@@ -374,20 +390,28 @@ Task(
     ### Key Insights
     [Bullet list of the most important documentation opportunities]
 
-    If no comments or no documentation opportunities found, output:
+    If no comments or no documentation opportunities found, write:
     "No documentation opportunities identified from PR review comments."
 )
 ```
 
-#### Collect Agent Results
+#### Wait for Parallel Agents and Verify Output Files
 
-Use TaskOutput to retrieve findings from each agent:
+Wait for each background agent to complete:
 
 ```
 TaskOutput(task_id: <agent-task-id>, block: true)
 ```
 
-Collect all results before proceeding to the next step.
+Each agent writes its own output file and returns only a short confirmation. You do NOT need to relay or write the agent output — just confirm the tasks completed.
+
+After all agents finish, verify their output files exist:
+
+```bash
+ls -la .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/
+```
+
+Confirm you see the expected files (session-\*.md, diff-analysis.md, existing-docs-check.md, pr-comments-analysis.md) before proceeding. If any files are missing, the agent failed to write its output and must be re-launched.
 
 Tell the user:
 
@@ -397,48 +421,6 @@ Parallel analysis complete. Running sequential synthesis:
   - Synthesizing learn plan
   - Extracting tripwire candidates
 ```
-
-#### Write Agent Results to Scratch Storage
-
-**CRITICAL:** Use the Write tool to save each agent's output. Do NOT use bash heredoc syntax - it fails with large outputs.
-
-First, create the directory:
-
-```bash
-mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/
-```
-
-Then use the Write tool for each agent output:
-
-1. **Session analysis results** - Write to `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<session-id>.md`
-2. **Diff analysis results** - Write to `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md`
-3. **Existing docs check results** - Write to `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md`
-4. **PR comment analysis results** - Write to `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/pr-comments-analysis.md`
-
-**Example:**
-
-```
-Write(
-  file_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md",
-  content: <full agent output from TaskOutput>
-)
-```
-
-**Why Write tool instead of heredoc?**
-
-- Agent outputs can be 10KB+ of markdown
-- Bash heredoc fails silently with special characters
-- Write tool guarantees the file is created with exact content
-
-#### Verify Files Exist
-
-**Verify files exist before launching gap-identifier:**
-
-```bash
-ls -la .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/
-```
-
-Confirm you see the expected files (session-\*.md, diff-analysis.md, existing-docs-check.md, pr-comments-analysis.md) before proceeding. If any files are missing, the Write tool call failed and must be retried.
 
 #### Synthesize Agent Findings (Agent 5)
 
@@ -460,10 +442,11 @@ Task(
     - existing_docs_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md"
     - pr_comments_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/pr-comments-analysis.md" (or null if no PR)
     - plan_title: <title from plan issue>
+    - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md
 )
 ```
 
-**Note:** This agent runs AFTER the parallel agents complete (sequential dependency).
+**Note:** This agent runs AFTER the parallel agents complete (sequential dependency). It writes its own output file and returns only a short confirmation.
 
 The DocumentationGapIdentifier agent will:
 
@@ -473,15 +456,6 @@ The DocumentationGapIdentifier agent will:
 - Classify items: NEW_DOC | UPDATE_EXISTING | TRIPWIRE | SKIP
 - Prioritize by impact: HIGH (gateway methods, contradictions) > MEDIUM (patterns) > LOW (helpers)
 - Produce the MANDATORY enumerated table required by Step 5
-
-Write the DocumentationGapIdentifier output to scratch storage using the Write tool:
-
-```
-Write(
-  file_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md",
-  content: <full agent output from TaskOutput>
-)
-```
 
 #### Synthesize Learn Plan (Agent 6)
 
@@ -504,19 +478,11 @@ Task(
     - plan_title: <title from plan issue>
     - gist_url: <gist URL from Step 4>
     - pr_number: <PR number if available, else null>
+    - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md
 )
 ```
 
-**Note:** This agent runs AFTER DocumentationGapIdentifier completes (sequential dependency).
-
-Write the synthesized output to scratch storage using the Write tool:
-
-```
-Write(
-  file_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md",
-  content: <full agent output from TaskOutput>
-)
-```
+**Note:** This agent runs AFTER DocumentationGapIdentifier completes (sequential dependency). It writes its own output file and returns only a short confirmation.
 
 #### Extract Tripwire Candidates (Agent 7)
 
@@ -535,19 +501,11 @@ Task(
     Input:
     - learn_plan_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md"
     - gap_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md"
+    - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json
 )
 ```
 
-**Note:** This agent runs AFTER PlanSynthesizer completes (sequential dependency).
-
-Write the output to scratch storage using the Write tool:
-
-```
-Write(
-  file_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json",
-  content: <full agent output from TaskOutput>
-)
-```
+**Note:** This agent runs AFTER PlanSynthesizer completes (sequential dependency). It writes its own output file and returns only a short confirmation.
 
 #### Agent Dependency Graph
 

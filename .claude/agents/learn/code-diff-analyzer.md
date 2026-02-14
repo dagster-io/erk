@@ -4,6 +4,7 @@ description: Analyze PR diff to identify documentation needs for new code
 allowed-tools:
   - Bash
   - Read
+  - Write
   - Glob
   - Grep
 ---
@@ -18,6 +19,7 @@ You receive:
 
 - `pr_number`: The PR number to analyze
 - `issue_number`: The parent plan issue number
+- `output_path`: Path to write your analysis output (e.g., `.erk/scratch/sessions/.../learn-agents/diff-analysis.md`)
 
 ## Analysis Process
 
@@ -117,3 +119,15 @@ See `docs/learned/documentation/source-pointers.md` for the two-part pattern use
 ```
 
 Note: "Self-documenting code" is NOT a valid reason to skip. Document context, not just code.
+
+## Output
+
+**CRITICAL:** Write your complete output to the `output_path` using the Write tool.
+
+Your final message to the caller MUST be only:
+
+```
+Output written to <output_path>
+```
+
+Do NOT include the analysis content in your final message.
