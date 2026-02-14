@@ -1,6 +1,5 @@
 ---
 title: GitHub Actions API Interaction Patterns
-content_type: reference-cache
 read_when:
   - "triggering GitHub Actions workflows from erk code"
   - "querying workflow run status from gateway methods"

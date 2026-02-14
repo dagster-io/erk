@@ -9,7 +9,6 @@ tripwires:
     warning: "Use CodespaceRegistry gateway instead. All codespace config access should go through the gateway for testability."
   - action: "using the field name 'default' in codespaces.toml"
     warning: "The actual field name is 'default_codespace', not 'default'. Check RealCodespaceRegistry in real.py for the schema."
-content_type: third_party_reference
 last_audited: "2026-02-08 13:55 PT"
 audit_result: edited
 ---

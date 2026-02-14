@@ -9,7 +9,6 @@ tripwires:
     warning: "Verify each `steps.step_id.outputs.key` reference exists and matches actual step IDs."
 last_audited: "2026-02-08 13:56 PT"
 audit_result: edited
-content_type: reference_cache
 ---
 
 # GitHub Actions Workflow Patterns

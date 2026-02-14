@@ -48,13 +48,7 @@ Rules triggered by matching actions in code.
 
 **raising exceptions from validate_objective()** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. validate_objective() returns discriminated unions, never raises. Only CLI presentation functions (\_output_json, \_output_human) raise SystemExit.
 
-**storing phase names in frontmatter YAML** → Read [Objective Roadmap Frontmatter](objective-roadmap-frontmatter.md) first. Phase names live only in markdown headers, not frontmatter. Frontmatter stores flat steps; phase membership is derived from step ID prefixes.
-
 **treating status as a single-source value** → Read [Roadmap Status System](roadmap-status-system.md) first. Status resolution uses a two-tier system: explicit values first, then PR-based inference. Always check both the Status and PR columns.
-
-**updating roadmap frontmatter without updating the rendered table** → Read [Objective Roadmap Frontmatter](objective-roadmap-frontmatter.md) first. During the dual-write migration period, both YAML frontmatter and markdown table must be updated together. Frontmatter is the source of truth, but the table is the rendered view. Updating one without the other causes drift.
-
-**using find_metadata_block() to read roadmap data** → Read [Objective Roadmap Frontmatter](objective-roadmap-frontmatter.md) first. Roadmap blocks need raw body content for YAML parsing. Use extract_raw_metadata_blocks() which returns RawMetadataBlock with .body field, not find_metadata_block() which returns MetadataBlock with parsed .data dict.
 
 **using full-body update for single-cell changes** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-roadmap-step) to preserve other cells and avoid race conditions.
 

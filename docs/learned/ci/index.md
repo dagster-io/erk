@@ -28,7 +28,6 @@
 - **[learn-ci-environment-detection.md](learn-ci-environment-detection.md)** — running /erk:learn in CI, understanding CI vs interactive mode differences, debugging learn workflow in GitHub Actions
 - **[makefile-prettier-ignore-path.md](makefile-prettier-ignore-path.md)** — creating .prettierignore file, adding patterns to exclude files from Prettier, debugging why .prettierignore has no effect
 - **[markdown-formatting.md](markdown-formatting.md)** — editing markdown files, handling Prettier CI failures, implementing documentation changes
-- **[objective-reconciler-workflow.md](objective-reconciler-workflow.md)** — understanding automated objective advancement, configuring objective reconciler GitHub Action, debugging objective reconciliation
 - **[plan-implement-change-detection.md](plan-implement-change-detection.md)** — maintaining erk-impl workflow, debugging change detection issues, understanding why no-changes was triggered
 - **[plan-implement-customization.md](plan-implement-customization.md)** — customizing erk-impl workflow for a specific repository, installing system dependencies in erk-impl CI, overriding Python version in erk-impl workflow
 - **[plan-implement-workflow-patterns.md](plan-implement-workflow-patterns.md)** — modifying erk-impl workflow, adding cleanup steps to GitHub Actions, working with git reset in workflows

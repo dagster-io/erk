@@ -1,6 +1,5 @@
 ---
 title: Vitest Fake Timers with Promises
-content_type: reference-cache
 read_when:
   - "testing React components that use setInterval or setTimeout with async operations"
   - "debugging Vitest tests that hang when advancing fake timers"

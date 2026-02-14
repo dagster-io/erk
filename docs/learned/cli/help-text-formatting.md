@@ -2,7 +2,6 @@
 title: Click Help Text Formatting
 last_audited: "2026-02-08 13:57 PT"
 audit_result: edited
-content_type: reference_cache
 tripwires:
   - action: "writing Examples sections in CLI docstrings without \b"
     warning: "Place \b on its own line after 'Examples:' heading. Without it, Click rewraps text and breaks formatting."

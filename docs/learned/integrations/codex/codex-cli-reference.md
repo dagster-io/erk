@@ -1,6 +1,5 @@
 ---
 title: Codex CLI Reference for Erk Integration
-content_type: reference-cache
 last_audited: "2026-02-08 13:55 PT"
 audit_result: clean
 read_when:

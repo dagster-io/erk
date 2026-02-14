@@ -123,56 +123,11 @@ executor = FakePromptExecutor(simulated_zero_turns=True)
 
 ## Real-World Usage Example
 
-The `erk land` command demonstrates `stream_command_with_feedback()` for optional post-operation actions. This wrapper around `execute_command_streaming()` provides live progress output:
+<!-- Source: src/erk/cli/commands/objective_helpers.py, prompt_objective_update -->
 
-```python
-def prompt_objective_update(
-    ctx: ErkContext,
-    *,
-    repo_root: Path,
-    objective_number: int,
-    pr_number: int,
-    branch: str,
-    force: bool,
-) -> None:
-    """Prompt user to update objective after landing."""
-    user_output(f"   Linked to Objective #{objective_number}")
+The `erk land` command demonstrates `stream_command_with_feedback()` for optional post-operation actions. See `prompt_objective_update()` in `src/erk/cli/commands/objective_helpers.py` for the full implementation.
 
-    cmd = (
-        f"/erk:objective-update-with-landed-pr "
-        f"--pr {pr_number} --objective {objective_number} --branch {branch} --auto-close"
-    )
-
-    if force:
-        # --force skips prompt but still executes the update
-        user_output("Starting objective update...")
-        result = stream_command_with_feedback(
-            executor=ctx.prompt_executor,
-            command=cmd,
-            worktree_path=repo_root,
-            dangerous=True,
-        )
-    else:
-        if not ctx.console.confirm("Update objective now?", default=True):
-            user_output(f"Skipped. To update later, run:\n  {cmd}")
-            return
-        result = stream_command_with_feedback(
-            executor=ctx.prompt_executor,
-            command=cmd,
-            worktree_path=repo_root,
-            dangerous=True,
-        )
-
-    if result.success:
-        user_output(click.style("✓", fg="green") + " Objective updated successfully")
-    else:
-        user_output(
-            click.style("⚠", fg="yellow")
-            + f" Objective update failed: {result.error_message}"
-        )
-```
-
-Key points:
+Key points from that function:
 
 - Use `stream_command_with_feedback()` for live progress output during long-running operations
 - Use `dangerous=True` when the user has already confirmed the action

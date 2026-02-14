@@ -38,8 +38,6 @@ Rules triggered by matching actions in code.
 
 **adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file** [pattern: `subprocess\.run\(|run_subprocess_with_context\(`] → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must add integration tests in tests/integration/test*real*\*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior.
 
-**adding workarounds in downstream consumers to compensate for stale source data** → Read [Source-of-Truth Maintenance Pattern](source-of-truth-maintenance.md) first. Fix data at the source instead. If PR body is stale after addressing review, update it in pr-address itself rather than enriching objective-update-with-landed-pr.
-
 **amending a commit when Graphite is enabled** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in sync_cmd and branch_manager.
 
 **archiving value to 'last\_' variant BEFORE clearing** → Read [Archive-on-Clear Metadata Pattern](metadata-archival-pattern.md) first. Order matters — clear-then-archive loses the value silently

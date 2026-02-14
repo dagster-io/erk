@@ -25,7 +25,6 @@ WORKFLOW_COMMAND_MAP: dict[str, str] = {
     "plan-implement": DISPATCH_WORKFLOW_NAME,  # plan-implement.yml
     "pr-fix-conflicts": REBASE_WORKFLOW_NAME,  # pr-fix-conflicts.yml
     "pr-address": PR_ADDRESS_WORKFLOW_NAME,  # pr-address.yml
-    "objective-reconcile": "objective-reconcile.yml",
     "learn": "learn.yml",
 }
 

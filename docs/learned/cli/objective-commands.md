@@ -13,39 +13,17 @@ tripwires:
 
 # Objective Commands
 
-## Why Reconcile and Next-Plan Are Nearly Identical
-
-<!-- Source: src/erk/cli/commands/objective/next_plan_cmd.py, next_plan -->
-
-The `erk objective reconcile` and `erk objective next-plan` commands perform the same task — launching Claude to create an implementation plan from an objective step — but differ in their validation discipline:
-
-**reconcile** enforces LBYL validation before launching Claude. It checks that the objective exists and has the `erk-objective` label, failing fast if validation fails. This prevents cryptic errors from launching Claude with invalid input.
-
-**next-plan** skips validation and immediately launches Claude. This is useful when you trust the input or want to handle errors interactively within Claude rather than at the CLI boundary.
-
-Both commands force plan mode by calling `ia_config.with_overrides(permission_mode_override="plan")` regardless of the user's config file setting. This ensures the agent explores and plans rather than immediately executing.
-
 ## Permission Mode Override Pattern
 
 <!-- Source: packages/erk-shared/src/erk_shared/context/types.py, InteractiveAgentConfig.with_overrides -->
+<!-- Source: src/erk/cli/commands/objective/next_plan_cmd.py, next_plan -->
 
 The `with_overrides()` method on `InteractiveAgentConfig` allows selective override of config values:
 
 - Pass a value (e.g., `"plan"`) to force that mode
 - Pass `None` to preserve the config file value
 
-This pattern appears in both `reconcile` and `next-plan` commands. Both force `permission_mode_override="plan"` but differ in handling the `--dangerous` flag:
-
-- **reconcile** always passes `allow_dangerous_override=None`, preserving the config file value
-- **next-plan** conditionally overrides based on the `--dangerous` flag, allowing users to opt into skipping permission prompts
-
-## Why next-plan Takes Optional Argument, reconcile Takes Required
-
-<!-- Source: src/erk/cli/commands/objective/next_plan_cmd.py, next_plan -->
-
-The `next-plan` command accepts an optional `ISSUE_REF` string argument. This flexibility allows the slash command `/erk:objective-next-plan` to prompt for the issue interactively if needed.
-
-The `reconcile` command requires an integer `OBJECTIVE` argument because it performs upfront validation that needs the issue number immediately. The validation (checking `issue_exists()` and verifying the `erk-objective` label) happens before launching Claude, so the issue number can't be deferred.
+The `next-plan` command forces `permission_mode_override="plan"` to ensure the agent explores and plans rather than immediately executing. The `--dangerous` flag conditionally overrides `allow_dangerous_override`, allowing users to opt into skipping permission prompts.
 
 ## Validation Check Design
 
@@ -120,7 +98,6 @@ All objective commands use the `register_with_aliases()` pattern, which register
 | `close`     | `c`   | First letter, unambiguous (check uses "ch")      |
 | `list`      | `ls`  | Unix convention (ls for list)                    |
 | `next-plan` | `np`  | First letters of both words                      |
-| `reconcile` | `rec` | Prefix, unambiguous (r alone would be ambiguous) |
 
 **Why aliases matter**: Objective commands are used in rapid iteration workflows. Typing `erk objective np` is faster than `erk objective next-plan`, reducing friction without sacrificing discoverability (the full name remains canonical).
 

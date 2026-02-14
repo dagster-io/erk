@@ -88,4 +88,3 @@ This document covers the **structural architecture** of the shared parser. For s
 - **Mutation-time vs parse-time semantics** → [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md)
 - **Surgical vs full-body update decisions** → [Roadmap Mutation Patterns](roadmap-mutation-patterns.md)
 - **CLI usage and parsing rules** → [Roadmap Parser](roadmap-parser.md)
-- **Frontmatter architecture** → [Objective Roadmap Frontmatter](objective-roadmap-frontmatter.md)
