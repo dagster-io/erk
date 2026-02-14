@@ -36,7 +36,7 @@ The documentation is organized by topic category:
 
 **Python Coding Standards:**
 
-- Load the `dignified-python-313` skill for all Python coding standards
+- Load the `dignified-python` skill for all Python coding standards
 - Covers: exception handling, type annotations, imports, ABC patterns, file operations, CLI development
 
 **Testing:**
@@ -60,7 +60,7 @@ The documentation is organized by topic category:
 ## Documentation Structure
 
 ```
-docs/agent/
+docs/learned/
 ├── architecture/              # Core patterns and design
 ├── cli/                       # CLI development
 ├── commands/                  # Slash command patterns
@@ -92,12 +92,12 @@ docs/agent/
 | Working with session logs           | [Sessions](sessions/)                                                                    |
 | Writing temp files for AI workflows | [Planning](planning/) - see scratch-storage.md                                           |
 | Organizing CLI commands             | [CLI Development](cli/) - see command-organization.md                                    |
-| Python coding standards             | Load `dignified-python-313` skill                                                        |
+| Python coding standards             | Load `dignified-python` skill                                                            |
 | Understanding agentic programming   | [../writing/agentic-programming/](../writing/agentic-programming/agentic-programming.md) |
 
 ## Adding Category Descriptions
 
-Category descriptions in `docs/agent/index.md` help agents understand when to explore each category and where to add new docs.
+Category descriptions in `docs/learned/index.md` help agents understand when to explore each category and where to add new docs.
 
 **Location:** Descriptions are defined in `CATEGORY_DESCRIPTIONS` in `src/erk/agent_docs/operations.py`.
 
@@ -121,4 +121,4 @@ Category descriptions in `docs/agent/index.md` help agents understand when to ex
 ),
 ```
 
-After editing, run `erk docs sync` to regenerate `docs/agent/index.md`.
+After editing, run `erk docs sync` to regenerate `docs/learned/index.md`.
