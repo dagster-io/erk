@@ -6,7 +6,7 @@ because it requires a prettier subprocess (covered in integration tests).
 
 from pathlib import Path
 
-from erk.agent_docs.real import RealAgentDocs
+from erk_shared.gateway.agent_docs.real import RealAgentDocs
 
 
 def test_has_docs_dir_true_when_exists(tmp_path: Path) -> None:

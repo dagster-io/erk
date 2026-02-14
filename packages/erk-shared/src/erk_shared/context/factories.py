@@ -128,7 +128,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     fake_time = FakeTime()
 
     # Import here to avoid circular imports
-    from erk.agent_docs.real import RealAgentDocs
+    from erk_shared.gateway.agent_docs.real import RealAgentDocs
 
     return ErkContext(
         git=git,

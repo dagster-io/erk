@@ -10,9 +10,9 @@ import pytest
 from click.testing import CliRunner
 
 from erk.agent_docs.operations import sync_agent_docs
-from erk.agent_docs.real import RealAgentDocs
 from erk.cli.cli import cli
 from erk_shared.context.testing import context_for_test
+from erk_shared.gateway.agent_docs.real import RealAgentDocs
 
 VALID_DOC = """\
 ---

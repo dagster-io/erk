@@ -5,7 +5,7 @@ Tests format_markdown which calls prettier via subprocess.
 
 import pytest
 
-from erk.agent_docs.real import RealAgentDocs
+from erk_shared.gateway.agent_docs.real import RealAgentDocs
 
 
 @pytest.mark.integration

@@ -13,8 +13,6 @@ from typing import Any, cast
 import click
 import tomlkit
 
-# Real implementations from erk (not erk_shared)
-from erk.agent_docs.real import RealAgentDocs
 from erk.cli.config import load_config, load_local_config, merge_configs_with_local
 from erk.core.completion import RealCompletion
 from erk.core.prompt_executor import ClaudePromptExecutor
@@ -39,6 +37,7 @@ from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.gateway.agent_docs.abc import AgentDocs
+from erk_shared.gateway.agent_docs.real import RealAgentDocs
 from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.codespace.abc import Codespace
