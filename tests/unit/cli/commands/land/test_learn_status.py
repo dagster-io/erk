@@ -640,12 +640,12 @@ def test_check_learn_status_null_no_sessions_triggers_async_in_non_interactive(
     assert "Async learn triggered" in captured.err
 
 
-def test_check_learn_status_and_prompt_manual_learn_prints_command_and_exits(
+def test_check_learn_status_and_prompt_manual_learn_preprocesses_and_continues(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Test that choosing option 4 prints the erk learn command and exits."""
+    """Test that choosing option 4 preprocesses sessions and continues landing."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -676,8 +676,17 @@ def test_check_learn_status_and_prompt_manual_learn_prints_command_and_exits(
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
-    # Mock click.prompt to return choice 4 (manual learn)
+    # Mock click.prompt to return choice 4 (preprocess and continue)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 4)
+
+    # Track whether _preprocess_and_prepare_manual_learn was called
+    preprocess_calls: list[int] = []
+
+    def mock_preprocess(ctx, *, repo_root, plan_issue_number):
+        preprocess_calls.append(plan_issue_number)
+        # Returns normally (no SystemExit) - landing continues
+
+    monkeypatch.setattr(land_cmd, "_preprocess_and_prepare_manual_learn", mock_preprocess)
 
     # Create context with interactive FakeConsole
     fake_console = FakeConsole(
@@ -688,17 +697,13 @@ def test_check_learn_status_and_prompt_manual_learn_prints_command_and_exits(
     )
     ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
 
-    # Should raise SystemExit(0) when user chooses manual learn
-    with pytest.raises(SystemExit) as exc_info:
-        _check_learn_status_and_prompt(
-            ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
-        )
+    # Should return normally (no SystemExit) - landing continues
+    _check_learn_status_and_prompt(
+        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+    )
 
-    assert exc_info.value.code == 0
-
-    # Verify the learn command was printed with correct issue number
-    captured = capsys.readouterr()
-    assert "erk learn 456" in captured.err
+    # Verify preprocessing was called
+    assert preprocess_calls == [456]
 
 
 # Tests for _store_learn_materials_gist_url
@@ -833,12 +838,12 @@ def test_trigger_async_learn_stores_gist_url_on_plan_header(
 # Tests for option 4 calling preprocessing
 
 
-def test_option4_calls_preprocess_and_prepare_manual_learn(
+def test_option4_calls_preprocess_and_continues_landing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Test that choosing option 4 calls _preprocess_and_prepare_manual_learn."""
+    """Test that choosing option 4 calls _preprocess_and_prepare_manual_learn and continues."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -869,7 +874,7 @@ def test_option4_calls_preprocess_and_prepare_manual_learn(
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
-    # Mock click.prompt to return choice 4 (preprocess and manual learn)
+    # Mock click.prompt to return choice 4 (preprocess and continue)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 4)
 
     # Track whether _preprocess_and_prepare_manual_learn was called
@@ -877,7 +882,7 @@ def test_option4_calls_preprocess_and_prepare_manual_learn(
 
     def mock_preprocess_and_prepare(ctx, *, repo_root, plan_issue_number):
         preprocess_calls.append((repo_root, plan_issue_number))
-        raise SystemExit(0)
+        # Returns normally - no SystemExit, landing continues
 
     monkeypatch.setattr(
         land_cmd, "_preprocess_and_prepare_manual_learn", mock_preprocess_and_prepare
@@ -892,13 +897,10 @@ def test_option4_calls_preprocess_and_prepare_manual_learn(
     )
     ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
 
-    # Should raise SystemExit(0) from the mocked _preprocess_and_prepare_manual_learn
-    with pytest.raises(SystemExit) as exc_info:
-        _check_learn_status_and_prompt(
-            ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
-        )
-
-    assert exc_info.value.code == 0
+    # Should return normally (no SystemExit) - landing continues after preprocessing
+    _check_learn_status_and_prompt(
+        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+    )
 
     # Verify _preprocess_and_prepare_manual_learn was called with correct args
     assert len(preprocess_calls) == 1

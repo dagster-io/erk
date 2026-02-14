@@ -355,7 +355,7 @@ def _prompt_async_learn_and_continue(
     1. Trigger async learn and continue - dispatches workflow, then lands
     2. Continue without learning - proceeds with landing
     3. Cancel - aborts landing
-    4. Run erk learn manually - prints command and aborts landing
+    4. Preprocess sessions and continue - uploads gist, then lands
 
     Args:
         ctx: ErkContext
@@ -364,7 +364,7 @@ def _prompt_async_learn_and_continue(
         script: If True, output no-op activation script on abort
 
     Raises:
-        SystemExit(0) if user cancels or chooses manual learn
+        SystemExit(0) if user cancels
     """
     user_output(
         "⚠️  " + click.style(f"Plan #{plan_issue_number} has not been learned from.", fg="yellow")
@@ -382,8 +382,8 @@ def _prompt_async_learn_and_continue(
     user_output("     Reads session logs, uploads to gist, runs analysis in GitHub Actions")
     user_output("  2. ⏩ Continue without learning")
     user_output("  3. ❌ Cancel")
-    user_output(f"  4. 📖 Preprocess and run `erk learn {plan_issue_number}` manually")
-    user_output("     Preprocesses sessions, uploads gist, then cancel landing for manual learn")
+    user_output(f"  4. 📖 Preprocess sessions, then continue landing")
+    user_output(f"     Uploads gist so you can run `erk learn {plan_issue_number}` at your leisure")
     user_output("")
 
     choice = click.prompt(
@@ -612,13 +612,14 @@ def _preprocess_and_prepare_manual_learn(
     repo_root: Path,
     plan_issue_number: int,
 ) -> None:
-    """Run preprocessing for manual learn and store gist URL on plan header.
+    """Run preprocessing for manual learn, store gist URL, then continue landing.
 
     Calls `erk exec trigger-async-learn --skip-workflow` to do full preprocessing
     (discover sessions, preprocess XML, fetch PR comments, upload gist) without
     triggering the CI workflow. Then stores the gist URL on the plan issue header.
 
-    If preprocessing fails, falls back to printing the bare `erk learn` command.
+    After preprocessing (success or failure), returns to continue with landing.
+    The user can run `erk learn` at their leisure.
 
     Args:
         ctx: ErkContext
@@ -640,15 +641,14 @@ def _preprocess_and_prepare_manual_learn(
             + f"Preprocessing failed: {result.message}. "
             + f"Run manually: erk learn {plan_issue_number}"
         )
-        raise SystemExit(0)
+        user_output("Continuing with landing.")
+        return
 
     if result.gist_url:
         user_output(click.style("✓", fg="green") + " Preprocessed and uploaded learn materials")
 
-    user_output("")
-    user_output("Run this command to learn from the plan:")
-    user_output(f"  erk learn {plan_issue_number}")
-    raise SystemExit(0)
+    user_output(f"Run `erk learn {plan_issue_number}` at your leisure to learn from this plan.")
+    user_output("Continuing with landing.")
 
 
 def _update_parent_learn_status_if_learn_plan(
