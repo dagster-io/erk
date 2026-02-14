@@ -1,11 +1,12 @@
 ---
 title: CLI Error Handling Anti-Patterns
-last_audited: "2026-02-11"
+last_audited: "2026-02-13"
 audit_result: clean
 read_when:
   - "handling expected CLI failures"
   - "deciding between RuntimeError and UserFacingCliError"
   - "converting exception-based error handling to UserFacingCliError"
+  - "writing actionable error messages for pipeline failures"
 tripwires:
   - score: 7
     action: "Using RuntimeError for expected CLI failures"
@@ -172,11 +173,54 @@ except RuntimeError as e:
 
 The `from e` preserves the causal chain for debugging while presenting a clean user-facing error message. This pattern was established in PR #6860.
 
+## Actionable Error Messages in Pipelines
+
+The same principle applies within pipeline error types like `SubmitError`. Even though these are consumed by the CLI layer (not raised as exceptions), the `message` field should tell the user what happened and what to do.
+
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _graphite_first_flow -->
+
+**Format pattern** (established in PR #6885):
+
+1. First line: clear problem statement (what happened)
+2. Blank line separator
+3. Explicit command sequence with inline comments
+4. Final command shows "what to do next" (re-run original command)
+
+See the `graphite_restack_required` message in `_graphite_first_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py` for the reference implementation.
+
+**Anti-pattern:** Wrapping raw subprocess stderr directly into the error message. The user sees internal tool output without context or remediation guidance.
+
+## Multi-Layer Error Wrapping Without Semantic Interpretation
+
+When subprocess calls fail, the error passes through multiple layers:
+
+1. `CalledProcessError` (subprocess) with raw stderr
+2. `RuntimeError` (gateway layer) wrapping the subprocess error
+3. `SubmitError` (pipeline layer) wrapping the RuntimeError
+4. `ClickException` (CLI layer) presenting the SubmitError message
+
+Each layer adds wrapping but, without pattern detection, none adds semantic value. The user sees nested error messages that read like internal debugging output.
+
+**Solution:** At the pipeline boundary (where RuntimeError is caught), detect known error patterns and convert to semantic error types with actionable guidance. The pipeline layer is the right place because it has domain context (what operation was attempted) that the gateway layer lacks.
+
+See `_graphite_first_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py` for the pattern of catching RuntimeError and routing to specific SubmitError error_types based on keyword detection.
+
+## Case Study: Bypass Flag vs Actionable Error (PR #6885)
+
+**Initial approach:** Add `--no-restack` flag to bypass the restack requirement when `gt submit` detects divergence.
+
+**User correction:** Don't offer a bypass. Help users understand they have conflicts and how to resolve them.
+
+**Why bypass was wrong:** The restack isn't optional -- the stack genuinely has conflicts. A `--no-restack` flag would let users push diverged stacks, creating worse problems downstream. The correct response is an actionable error message explaining how to resolve the actual issue.
+
+**Principle:** When a subprocess failure requires user intervention, the error message should guide users through resolution, not offer a flag to skip the problem. Technical bypasses hide issues; actionable errors solve them.
+
 ## Related Patterns
 
 - **Discriminated union error handling** — `docs/learned/architecture/discriminated-union-error-handling.md` explains when to use `T | ErrorType` instead of exceptions
 - **Output styling** — `docs/learned/cli/output-styling.md` documents the `Error: ` prefix convention and Click styling patterns
 - **LBYL enforcement** — `dignified-python` skill covers the broader LBYL vs EAFP philosophy (check conditions first, never try/except for control flow)
+- **Error detection patterns** — `docs/learned/cli/error-detection-patterns.md` documents keyword-based error classification for subprocess failures
 
 ## Why This Matters
 

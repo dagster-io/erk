@@ -1,6 +1,6 @@
 ---
 title: Git and Graphite Edge Cases Catalog
-last_audited: "2026-02-03"
+last_audited: "2026-02-13"
 audit_result: edited
 read_when:
   - "debugging unexpected git/gt behavior"
@@ -221,26 +221,13 @@ gt restack --no-interactive
 
 **Why It's Surprising**: Git handles remote vs local refs transparently - creating branches from either just works. Graphite's stack tracking requires the local parent branch to be an ancestor of the new branch, which fails silently if local has diverged from remote.
 
-**Solution**: The `GraphiteBranchManager.create_branch()` method validates parent branch state via `_ensure_local_matches_remote()`:
+**Solution**: The `GraphiteBranchManager.create_branch()` method handles parent branch state via `_ensure_local_matches_remote()`:
 
 1. If local branch doesn't exist, create it from remote
 2. If local exists and matches remote, proceed normally
-3. If local has diverged from remote, fail with clear fix instructions
+3. If local has diverged from remote, force-update the local branch to match remote
 
-**Error Message**:
-
-```
-Local branch 'feature-parent' has diverged from origin/feature-parent.
-Graphite requires the local branch to match the remote for stack tracking.
-
-To fix, update your local branch to match remote and restack:
-  git fetch origin && git branch -f feature-parent origin/feature-parent
-  gt restack --downstack
-
-Or if you have local changes to keep, push them first:
-  With Graphite: gt checkout feature-parent && gt submit
-  With git:      git checkout feature-parent && git push origin feature-parent
-```
+The force-update is safe because by the time `_ensure_local_matches_remote()` runs, the new child branch has already been checked out, so we're not on the local parent branch being updated.
 
 **When This Happens**:
 
@@ -283,7 +270,7 @@ This ensures callers can create multiple branches without unexpected working dir
 ```python
 from erk_shared.gateway.gt.types import RestackError, RestackSuccess
 
-result = ctx.graphite.restack_idempotent(repo.root, no_interactive=True)
+result = ctx.graphite.restack_idempotent(repo.root, no_interactive=True, quiet=False)
 
 if isinstance(result, RestackError):
     if result.error_type == "restack-conflict":
@@ -298,6 +285,21 @@ if isinstance(result, RestackError):
 ### Reference
 
 Type definitions: `packages/erk-shared/src/erk_shared/gateway/gt/types.py:26-43`
+
+## RestackError vs graphite_restack_required
+
+Two error types relate to restacking, but at different levels with different meanings:
+
+| Error                       | Layer                          | When It Fires                                      | Meaning                                                       |
+| --------------------------- | ------------------------------ | -------------------------------------------------- | ------------------------------------------------------------- |
+| `RestackError`              | Gateway (`gt restack` output)  | `gt restack` command itself fails during execution | Restack was attempted but hit conflicts or failures           |
+| `graphite_restack_required` | CLI (`SubmitError.error_type`) | `gt submit` fails because remote has diverged      | Restack hasn't been attempted yet; user needs to run it first |
+
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _graphite_first_flow -->
+
+The `graphite_restack_required` error type is detected by keyword matching on the RuntimeError message from `gt submit`. See `_graphite_first_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
+
+**Key distinction:** `RestackError` means "we tried to restack and it failed." `graphite_restack_required` means "you need to restack before this operation can proceed."
 
 ## Graphite SHA Tracking Divergence
 
