@@ -55,15 +55,16 @@ def pr_update_description(ctx: ErkContext, *, debug: bool, session_id: str | Non
     _execute_update_description(ctx, debug=debug, session_id=session_id)
 
 
-def _execute_update_description(
-    ctx: ErkContext, *, debug: bool, session_id: str | None
-) -> None:
+def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str | None) -> None:
     """Execute the update-description pipeline."""
     # Verify Claude is available
     require_claude_available(ctx)
 
     cwd = Path.cwd()
-    resolved_session_id = session_id if session_id is not None else str(uuid.uuid4())
+    if session_id is not None:
+        resolved_session_id = session_id
+    else:
+        resolved_session_id = str(uuid.uuid4())
 
     # Phase 1: Discovery
     click.echo(click.style("Phase 1: Discovery", bold=True))
