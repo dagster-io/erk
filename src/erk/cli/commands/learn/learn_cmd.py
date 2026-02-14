@@ -9,11 +9,16 @@ Note: Session data retrieval and tracking are handled by separate exec scripts:
 """
 
 from dataclasses import dataclass
+from pathlib import Path
 
 import click
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
+from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.plan_header import (
+    extract_plan_header_learn_materials_gist_url,
+)
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_confirm, user_output
 from erk_shared.sessions.discovery import (
@@ -189,13 +194,46 @@ def learn_cmd(
         )
 
     if should_launch:
+        # Check for preprocessed learn materials gist URL on plan header
+        gist_url = _get_learn_materials_gist_url(ctx, repo_root, issue_number)
+        if gist_url is not None:
+            user_output(
+                click.style("📦", fg="cyan")
+                + " Found preprocessed learn materials, passing to Claude"
+            )
+            command = f"/erk:learn {issue_number} gist_url={gist_url}"
+        else:
+            command = f"/erk:learn {issue_number}"
+
         ctx.prompt_executor.execute_interactive(
             worktree_path=repo_root,
             dangerous=dangerous,
-            command=f"/erk:learn {issue_number}",
+            command=command,
             target_subpath=None,
             permission_mode="edits",
         )
+
+
+def _get_learn_materials_gist_url(
+    ctx: ErkContext,
+    repo_root: Path,
+    issue_number: int,
+) -> str | None:
+    """Check plan header for a stored learn_materials_gist_url.
+
+    Args:
+        ctx: ErkContext
+        repo_root: Repository root path
+        issue_number: Plan issue number
+
+    Returns:
+        Gist URL if found on the plan header, None otherwise
+    """
+    issue = ctx.issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        return None
+
+    return extract_plan_header_learn_materials_gist_url(issue.body)
 
 
 def _display_human_readable(result: LearnResult) -> None:

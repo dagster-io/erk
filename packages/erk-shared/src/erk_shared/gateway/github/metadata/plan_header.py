@@ -46,6 +46,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     LAST_SESSION_GIST_URL,
     LAST_SESSION_ID,
     LAST_SESSION_SOURCE,
+    LEARN_MATERIALS_GIST_URL,
     LEARN_PLAN_ISSUE,
     LEARN_PLAN_PR,
     LEARN_RUN_ID,
@@ -1390,6 +1391,54 @@ def extract_plan_header_review_pr(issue_body: str) -> int | None:
         return None
 
     return block.data.get(REVIEW_PR)
+
+
+def extract_plan_header_learn_materials_gist_url(issue_body: str) -> str | None:
+    """Extract learn_materials_gist_url from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        URL of preprocessed learn materials gist if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LEARN_MATERIALS_GIST_URL)
+
+
+def update_plan_header_learn_materials_gist_url(
+    issue_body: str,
+    gist_url: str,
+) -> str:
+    """Update learn_materials_gist_url field in plan-header metadata block.
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        gist_url: URL of the preprocessed learn materials gist
+
+    Returns:
+        Updated issue body with new learn_materials_gist_url field
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    updated_data = dict(block.data)
+    updated_data[LEARN_MATERIALS_GIST_URL] = gist_url
+
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
 
 
 def clear_plan_header_review_pr(issue_body: str) -> str:

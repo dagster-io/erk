@@ -56,9 +56,11 @@ from erk.core.worktree_pool import (
 )
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_learn_status,
     extract_plan_header_learned_from_issue,
+    update_plan_header_learn_materials_gist_url,
     update_plan_header_learn_plan_completed,
 )
 from erk_shared.gateway.github.types import BodyText, PRDetails
@@ -353,7 +355,7 @@ def _prompt_async_learn_and_continue(
     1. Trigger async learn and continue - dispatches workflow, then lands
     2. Continue without learning - proceeds with landing
     3. Cancel - aborts landing
-    4. Run erk learn manually - prints command and aborts landing
+    4. Preprocess sessions and continue - uploads gist, then lands
 
     Args:
         ctx: ErkContext
@@ -362,7 +364,7 @@ def _prompt_async_learn_and_continue(
         script: If True, output no-op activation script on abort
 
     Raises:
-        SystemExit(0) if user cancels or chooses manual learn
+        SystemExit(0) if user cancels
     """
     user_output(
         "⚠️  " + click.style(f"Plan #{plan_issue_number} has not been learned from.", fg="yellow")
@@ -380,8 +382,8 @@ def _prompt_async_learn_and_continue(
     user_output("     Reads session logs, uploads to gist, runs analysis in GitHub Actions")
     user_output("  2. ⏩ Continue without learning")
     user_output("  3. ❌ Cancel")
-    user_output(f"  4. 📖 Run `erk learn {plan_issue_number}` manually")
-    user_output("     Opens interactive learn session — cancel landing for now")
+    user_output("  4. 📖 Preprocess sessions, then continue landing")
+    user_output(f"     Uploads gist so you can run `erk learn {plan_issue_number}` at your leisure")
     user_output("")
 
     choice = click.prompt(
@@ -415,10 +417,83 @@ def _prompt_async_learn_and_continue(
             machine_output(str(result.path), nl=False)
         raise SystemExit(0)
     else:
-        # Manual learn - print command and exit
-        user_output("Run this command to learn from the plan:")
-        user_output(f"  erk learn {plan_issue_number}")
-        raise SystemExit(0)
+        # Preprocess and manual learn - run preprocessing, store gist URL, print command and exit
+        _preprocess_and_prepare_manual_learn(
+            ctx,
+            repo_root=repo_root,
+            plan_issue_number=plan_issue_number,
+        )
+
+
+@dataclass(frozen=True)
+class LearnPreprocessResult:
+    """Successful result from learn preprocessing subprocess."""
+
+    output: dict[str, object]
+    gist_url: str | None
+
+
+@dataclass(frozen=True)
+class LearnPreprocessError:
+    """Error from learn preprocessing subprocess."""
+
+    message: str
+
+
+def _run_learn_preprocessing(
+    ctx: ErkContext,
+    *,
+    plan_issue_number: int,
+    skip_workflow: bool,
+) -> LearnPreprocessResult | LearnPreprocessError:
+    """Run learn preprocessing subprocess and store gist URL on plan header.
+
+    Calls `erk exec trigger-async-learn` with optional --skip-workflow flag,
+    parses the JSON output, and stores the gist URL on the plan issue header
+    if preprocessing was successful.
+
+    Args:
+        ctx: ErkContext
+        plan_issue_number: Issue number of the plan
+        skip_workflow: If True, run preprocessing only (no CI workflow trigger)
+
+    Returns:
+        LearnPreprocessResult on success, LearnPreprocessError on failure
+    """
+    cmd = ["erk", "exec", "trigger-async-learn", str(plan_issue_number)]
+    if skip_workflow:
+        cmd.append("--skip-workflow")
+
+    try:
+        # Stream stderr (progress) in real-time while capturing stdout (JSON result)
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=None,  # Inherit stderr - progress streams through
+            text=True,
+            cwd=ctx.cwd,
+        )
+        stdout, _ = process.communicate()
+    except FileNotFoundError:
+        return LearnPreprocessError(message="erk command not found")
+
+    if process.returncode != 0:
+        return LearnPreprocessError(message=_parse_trigger_error(stdout, ""))
+
+    # Parse output JSON
+    output = json.loads(stdout)
+    gist_url = output.get("gist_url")
+
+    # Store gist URL on plan header for auto-detection by `erk learn`
+    if gist_url and output.get("success"):
+        _store_learn_materials_gist_url(
+            ctx,
+            repo_root=ctx.cwd,
+            plan_issue_number=plan_issue_number,
+            gist_url=gist_url,
+        )
+
+    return LearnPreprocessResult(output=output, gist_url=gist_url)
 
 
 def _trigger_async_learn(
@@ -448,29 +523,15 @@ def _trigger_async_learn(
     )
     user_output("")
 
-    try:
-        # Stream stderr (progress) in real-time while capturing stdout (JSON result)
-        process = subprocess.Popen(
-            ["erk", "exec", "trigger-async-learn", str(plan_issue_number)],
-            stdout=subprocess.PIPE,
-            stderr=None,  # Inherit stderr - progress streams through
-            text=True,
-            cwd=ctx.cwd,
+    result = _run_learn_preprocessing(ctx, plan_issue_number=plan_issue_number, skip_workflow=False)
+
+    if isinstance(result, LearnPreprocessError):
+        user_output(
+            click.style("⚠ ", fg="yellow") + f"Could not trigger async learn: {result.message}"
         )
-        stdout, _ = process.communicate()
-    except FileNotFoundError:
-        msg = "Could not trigger async learn: erk command not found"
-        user_output(click.style("⚠ ", fg="yellow") + msg)
         return
 
-    if process.returncode != 0:
-        error_msg = _parse_trigger_error(stdout, "")
-        msg = f"Could not trigger async learn: {error_msg}"
-        user_output(click.style("⚠ ", fg="yellow") + msg)
-        return
-
-    # Parse output JSON to get workflow_url
-    output = json.loads(stdout)
+    output = result.output
     if output.get("success"):
         workflow_url = output.get("workflow_url", "")
         if workflow_url:
@@ -506,6 +567,88 @@ def _parse_trigger_error(stdout: str, stderr: str) -> str:
         except json.JSONDecodeError:
             pass  # Fall through to return raw stderr/stdout
     return stderr or stdout or "unknown error"
+
+
+def _store_learn_materials_gist_url(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    plan_issue_number: int,
+    gist_url: str,
+) -> None:
+    """Store learn materials gist URL on the plan issue's plan-header metadata.
+
+    Fetches the plan issue, updates the learn_materials_gist_url field, and
+    writes back the updated body. Errors are logged but do not propagate.
+
+    Args:
+        ctx: ErkContext
+        repo_root: Repository root path
+        plan_issue_number: Issue number of the plan
+        gist_url: URL of the preprocessed learn materials gist
+    """
+    issue = ctx.issues.get_issue(repo_root, plan_issue_number)
+    if isinstance(issue, IssueNotFound):
+        user_output(
+            click.style("⚠ ", fg="yellow")
+            + f"Could not store gist URL: issue #{plan_issue_number} not found"
+        )
+        return
+
+    if find_metadata_block(issue.body, "plan-header") is None:
+        user_output(
+            click.style("⚠ ", fg="yellow")
+            + "Could not store gist URL: plan-header block not found in issue body"
+        )
+        return
+
+    updated_body = update_plan_header_learn_materials_gist_url(issue.body, gist_url)
+    ctx.issues.update_issue_body(repo_root, plan_issue_number, BodyText(content=updated_body))
+
+
+def _preprocess_and_prepare_manual_learn(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    plan_issue_number: int,
+) -> None:
+    """Run preprocessing for manual learn, store gist URL, then continue landing.
+
+    Calls `erk exec trigger-async-learn --skip-workflow` to do full preprocessing
+    (discover sessions, preprocess XML, fetch PR comments, upload gist) without
+    triggering the CI workflow. Then stores the gist URL on the plan issue header.
+
+    After preprocessing (success or failure), returns to continue with landing.
+    The user can run `erk learn` at their leisure.
+
+    Args:
+        ctx: ErkContext
+        repo_root: Repository root path (unused, for interface consistency)
+        plan_issue_number: Issue number of the plan
+    """
+    _ = repo_root
+
+    header = click.style(f"🔄 Preprocessing sessions for plan #{plan_issue_number}...", fg="cyan")
+    user_output(header)
+    user_output("   Reads local session logs, preprocesses them, and uploads to a secret gist.")
+    user_output("")
+
+    result = _run_learn_preprocessing(ctx, plan_issue_number=plan_issue_number, skip_workflow=True)
+
+    if isinstance(result, LearnPreprocessError):
+        user_output(
+            click.style("⚠ ", fg="yellow")
+            + f"Preprocessing failed: {result.message}. "
+            + f"Run manually: erk learn {plan_issue_number}"
+        )
+        user_output("Continuing with landing.")
+        return
+
+    if result.gist_url:
+        user_output(click.style("✓", fg="green") + " Preprocessed and uploaded learn materials")
+
+    user_output(f"Run `erk learn {plan_issue_number}` at your leisure to learn from this plan.")
+    user_output("Continuing with landing.")
 
 
 def _update_parent_learn_status_if_learn_plan(

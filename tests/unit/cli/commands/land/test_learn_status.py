@@ -1,5 +1,6 @@
 """Unit tests for learn status check prompts in land command."""
 
+import json
 import subprocess
 from pathlib import Path
 
@@ -7,7 +8,11 @@ import click
 import pytest
 
 from erk.cli.commands import land_cmd
-from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
+from erk.cli.commands.land_cmd import (
+    _check_learn_status_and_prompt,
+    _store_learn_materials_gist_url,
+    _trigger_async_learn,
+)
 from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.console.fake import FakeConsole
@@ -635,12 +640,12 @@ def test_check_learn_status_null_no_sessions_triggers_async_in_non_interactive(
     assert "Async learn triggered" in captured.err
 
 
-def test_check_learn_status_and_prompt_manual_learn_prints_command_and_exits(
+def test_check_learn_status_and_prompt_manual_learn_preprocesses_and_continues(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Test that choosing option 4 prints the erk learn command and exits."""
+    """Test that choosing option 4 preprocesses sessions and continues landing."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -671,8 +676,17 @@ def test_check_learn_status_and_prompt_manual_learn_prints_command_and_exits(
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
-    # Mock click.prompt to return choice 4 (manual learn)
+    # Mock click.prompt to return choice 4 (preprocess and continue)
     monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 4)
+
+    # Track whether _preprocess_and_prepare_manual_learn was called
+    preprocess_calls: list[int] = []
+
+    def mock_preprocess(ctx, *, repo_root, plan_issue_number):
+        preprocess_calls.append(plan_issue_number)
+        # Returns normally (no SystemExit) - landing continues
+
+    monkeypatch.setattr(land_cmd, "_preprocess_and_prepare_manual_learn", mock_preprocess)
 
     # Create context with interactive FakeConsole
     fake_console = FakeConsole(
@@ -683,14 +697,211 @@ def test_check_learn_status_and_prompt_manual_learn_prints_command_and_exits(
     )
     ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
 
-    # Should raise SystemExit(0) when user chooses manual learn
-    with pytest.raises(SystemExit) as exc_info:
-        _check_learn_status_and_prompt(
-            ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+    # Should return normally (no SystemExit) - landing continues
+    _check_learn_status_and_prompt(
+        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+    )
+
+    # Verify preprocessing was called
+    assert preprocess_calls == [456]
+
+
+# Tests for _store_learn_materials_gist_url
+
+
+def test_store_learn_materials_gist_url_updates_plan_header(
+    tmp_path: Path,
+) -> None:
+    """Test that _store_learn_materials_gist_url stores the gist URL on the plan issue."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    issue_number = 123
+
+    # Create issue with plan header body (required for update_plan_header_learn_materials_gist_url)
+    issue_body = format_plan_header_body_for_test()
+    issue = create_test_issue(
+        number=issue_number,
+        title="Test plan",
+        body=issue_body,
+        labels=["erk-plan"],
+    )
+    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+
+    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+
+    _store_learn_materials_gist_url(
+        ctx,
+        repo_root=repo_root,
+        plan_issue_number=issue_number,
+        gist_url="https://gist.github.com/test/abc123",
+    )
+
+    # Verify FakeGitHubIssues had its body updated
+    assert len(fake_issues.updated_bodies) == 1
+    updated_issue_number, updated_body = fake_issues.updated_bodies[0]
+    assert updated_issue_number == issue_number
+    assert "learn_materials_gist_url" in updated_body
+    assert "https://gist.github.com/test/abc123" in updated_body
+
+
+def test_store_learn_materials_gist_url_handles_missing_issue(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Test that _store_learn_materials_gist_url handles missing issue gracefully."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    # Create context with empty FakeGitHubIssues (no issues)
+    fake_issues = FakeGitHubIssues()
+    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+
+    # Should not raise, just print warning
+    _store_learn_materials_gist_url(
+        ctx,
+        repo_root=repo_root,
+        plan_issue_number=999,
+        gist_url="https://gist.github.com/test/abc123",
+    )
+
+    # Verify warning was printed
+    captured = capsys.readouterr()
+    assert "Could not store gist URL" in captured.err
+    assert "#999" in captured.err
+
+    # Verify no body updates occurred
+    assert len(fake_issues.updated_bodies) == 0
+
+
+# Tests for _trigger_async_learn storing gist URL
+
+
+def test_trigger_async_learn_stores_gist_url_on_plan_header(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Test that _trigger_async_learn stores gist URL on plan header when subprocess returns it."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    issue_number = 123
+
+    # Create issue with plan header body
+    issue_body = format_plan_header_body_for_test()
+    issue = create_test_issue(
+        number=issue_number,
+        title="Test plan",
+        body=issue_body,
+        labels=["erk-plan"],
+    )
+    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+
+    # Mock subprocess.Popen to return successful JSON with gist_url
+    class MockPopen:
+        def __init__(self, cmd, **kwargs):
+            self.args = cmd
+            self.returncode = 0
+            self._stdout = json.dumps(
+                {
+                    "success": True,
+                    "issue_number": 123,
+                    "workflow_triggered": True,
+                    "run_id": "test-run-id",
+                    "workflow_url": "https://github.com/owner/repo/actions/runs/test-run-id",
+                    "gist_url": "https://gist.github.com/test/abc123",
+                }
+            )
+
+        def communicate(self):
+            return self._stdout, None
+
+    monkeypatch.setattr(subprocess, "Popen", MockPopen)
+
+    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
+
+    _trigger_async_learn(ctx, repo_root=repo_root, plan_issue_number=issue_number)
+
+    # Verify FakeGitHubIssues was updated with the gist URL
+    assert len(fake_issues.updated_bodies) == 1
+    updated_issue_number, updated_body = fake_issues.updated_bodies[0]
+    assert updated_issue_number == issue_number
+    assert "learn_materials_gist_url" in updated_body
+    assert "https://gist.github.com/test/abc123" in updated_body
+
+    # Verify success message was shown
+    captured = capsys.readouterr()
+    assert "Async learn triggered" in captured.err
+
+
+# Tests for option 4 calling preprocessing
+
+
+def test_option4_calls_preprocess_and_continues_landing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Test that choosing option 4 calls _preprocess_and_prepare_manual_learn and continues."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    issue_number = 456
+
+    # Create issue (without learn_status - will fall back to session check)
+    issue = create_test_issue(
+        number=issue_number,
+        title="Test plan",
+        body="",
+        labels=["erk-plan"],
+    )
+    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+
+    # Mock find_sessions_for_plan to return sessions WITHOUT learn_session_ids
+    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
+        return SessionsForPlan(
+            planning_session_id="plan-session-1",
+            implementation_session_ids=["impl-session-1"],
+            learn_session_ids=[],  # Not learned
+            last_remote_impl_at=None,
+            last_remote_impl_run_id=None,
+            last_remote_impl_session_id=None,
+            last_session_gist_url=None,
+            last_session_id=None,
+            last_session_source=None,
         )
 
-    assert exc_info.value.code == 0
+    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
-    # Verify the learn command was printed with correct issue number
-    captured = capsys.readouterr()
-    assert "erk learn 456" in captured.err
+    # Mock click.prompt to return choice 4 (preprocess and continue)
+    monkeypatch.setattr(click, "prompt", lambda *args, **kwargs: 4)
+
+    # Track whether _preprocess_and_prepare_manual_learn was called
+    preprocess_calls: list[tuple[Path, int]] = []
+
+    def mock_preprocess_and_prepare(ctx, *, repo_root, plan_issue_number):
+        preprocess_calls.append((repo_root, plan_issue_number))
+        # Returns normally - no SystemExit, landing continues
+
+    monkeypatch.setattr(
+        land_cmd, "_preprocess_and_prepare_manual_learn", mock_preprocess_and_prepare
+    )
+
+    # Create context with interactive FakeConsole
+    fake_console = FakeConsole(
+        is_interactive=True,
+        is_stdout_tty=True,
+        is_stderr_tty=True,
+        confirm_responses=[],
+    )
+    ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
+
+    # Should return normally (no SystemExit) - landing continues after preprocessing
+    _check_learn_status_and_prompt(
+        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
+    )
+
+    # Verify _preprocess_and_prepare_manual_learn was called with correct args
+    assert len(preprocess_calls) == 1
+    assert preprocess_calls[0] == (repo_root, issue_number)
