@@ -1,0 +1,360 @@
+.plan-review-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-surface);
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+  flex-shrink: 0;
+}
+
+.review-header-left {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.review-title {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-slug {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-raised);
+  flex-shrink: 0;
+}
+
+.review-annotation-count {
+  font-size: 12px;
+  color: #d4b85c;
+  font-family: var(--font-mono);
+}
+
+.review-copy-btn {
+  position: relative;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: #ffffff;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.review-copy-btn-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.review-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.review-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  position: relative;
+  background: linear-gradient(to right, transparent 64px, var(--border) 64px, var(--border) 65px, transparent 65px);
+}
+
+/* Line table */
+.line-table {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 8px 16px 8px 0;
+}
+
+.line-row {
+  display: flex;
+  border-bottom: 1px solid transparent;
+}
+
+.line-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.line-row.line-selected {
+  background: rgba(56, 139, 253, 0.12);
+}
+
+/* Gutter */
+.line-gutter {
+  width: 64px;
+  flex-shrink: 0;
+  padding: 0 8px 0 0;
+  text-align: right;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.line-gutter:hover {
+  background: rgba(200, 160, 50, 0.12);
+}
+
+.line-gutter-plus {
+  display: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: #d4b85c;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 4px;
+  background: rgba(200, 160, 50, 0.25);
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.line-row:hover .line-gutter-plus {
+  display: block;
+}
+
+.line-number {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Line content */
+.line-content {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-primary);
+}
+
+/* Prism token styles — dark theme for markdown */
+.line-content .token.title .token.important {
+  color: #7ee787;
+  font-weight: 700;
+}
+
+.line-content .token.bold {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.line-content .token.italic {
+  color: var(--text-primary);
+  font-style: italic;
+}
+
+.line-content .token.code {
+  color: rgb(185, 180, 241);
+}
+
+.line-content .token.code-snippet {
+  color: rgb(185, 180, 241);
+}
+
+.line-content .token.strike {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.line-content .token.url,
+.line-content .token.url-reference .token.string {
+  color: #58a6ff;
+  text-decoration: underline;
+}
+
+.line-content .token.list.punctuation {
+  color: rgb(237, 179, 174);
+}
+
+.line-content .token.blockquote.punctuation {
+  color: #8b949e;
+}
+
+.line-content .token.hr.punctuation {
+  color: #8b949e;
+}
+
+.line-content .token.table-header,
+.line-content .token.table-data-rows {
+  color: var(--text-primary);
+}
+
+.line-content .token.punctuation {
+  color: #8b949e;
+}
+
+/* Annotation blocks (amber) */
+.annotation-block {
+  margin: 8px 0 4px 64px;
+  padding: 8px 12px;
+  background: rgba(200, 160, 50, 0.08);
+  border: 1px solid rgba(200, 160, 50, 0.2);
+  border-radius: 6px;
+  border-left: 3px solid rgba(200, 160, 50, 0.5);
+}
+
+.annotation-range {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #aab0b6;
+  margin-bottom: 4px;
+}
+
+.annotation-text {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: #ffffff;
+  white-space: pre-wrap;
+  padding: 4px 0;
+}
+
+.annotation-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.annotation-btn {
+  padding: 4px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.annotation-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.annotation-btn-delete:hover {
+  background: rgba(244, 71, 71, 0.12);
+  border-color: rgba(244, 71, 71, 0.3);
+  color: #f44747;
+}
+
+/* Comment form (inline) */
+.comment-form {
+  margin: 8px 0 4px 64px;
+  padding: 8px 12px;
+  background: rgba(200, 160, 50, 0.06);
+  border: 1px solid rgba(200, 160, 50, 0.2);
+  border-radius: 6px;
+  border-left: 3px solid rgba(200, 160, 50, 0.5);
+}
+
+.comment-form-range {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.comment-form-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(200, 160, 50, 0.3);
+  border-radius: 6px;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.comment-form-input:focus {
+  outline: none;
+  border-color: rgba(200, 160, 50, 0.6);
+}
+
+.comment-form-input::placeholder {
+  color: var(--text-muted);
+}
+
+.comment-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.comment-form-save,
+.comment-form-cancel {
+  padding: 4px 14px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
+}
+
+.comment-form-save {
+  background: rgba(200, 160, 50, 0.3);
+  color: #d4b85c;
+}
+
+.comment-form-save:hover:not(:disabled) {
+  background: rgba(200, 160, 50, 0.45);
+}
+
+.comment-form-save:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.comment-form-cancel {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.comment-form-cancel:hover {
+  color: var(--text-primary);
+}

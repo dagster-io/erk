@@ -40,6 +40,26 @@ export interface ActionResult {
   error?: string;
 }
 
+// Local plan file types (for review mode)
+export interface LocalPlanFile {
+  slug: string;
+  title: string;
+  modifiedAt: number;
+  commentCount: number;
+}
+
+export interface LocalPlanDetail {
+  slug: string;
+  title: string;
+  content: string; // full raw markdown
+}
+
+export interface PlanAnnotation {
+  startLine: number;
+  endLine: number;
+  comment: string;
+}
+
 // Plan lifecycle states
 export type PlanState =
   | 'created'

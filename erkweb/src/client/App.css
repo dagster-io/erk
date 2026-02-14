@@ -30,10 +30,26 @@ body,
   font-size: 14px;
 }
 
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
 .app {
   display: grid;
   grid-template-columns: 230px 2fr 3fr;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.review-layout {
+  display: grid;
+  grid-template-columns: 330px 1fr;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 

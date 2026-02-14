@@ -1,0 +1,33 @@
+.local-plans-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+  background: var(--bg-deep);
+}
+
+.local-plan-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.local-plan-comments {
+  font-size: 11px;
+  color: #d4b85c;
+  font-family: var(--font-mono);
+}
+
+.local-plan-no-comments {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.local-plan-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-left: 8px;
+}
