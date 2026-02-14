@@ -75,6 +75,7 @@
 - **[pipeline-transformation-patterns.md](pipeline-transformation-patterns.md)** — designing data transformation pipelines, deciding when to enrich vs filter data, troubleshooting lost metadata in pipelines
 - **[plan-context-integration.md](plan-context-integration.md)** — using PlanContextProvider for PR generation, extracting plan content from branches, understanding how PR descriptions get plan context
 - **[plan-file-sync-pattern.md](plan-file-sync-pattern.md)** — editing PLAN-REVIEW files locally, syncing local plan changes to GitHub issues, working with plan feedback workflows
+- **[pr-body-assembly.md](pr-body-assembly.md)** — implementing or modifying PR body construction, working with PR footer, closing references, or issue discovery, adding a new PR command that generates or updates PR descriptions
 - **[pr-body-formatting.md](pr-body-formatting.md)** — adding GitHub-specific enhancements to PR descriptions, understanding separation between git commit messages and PR bodies, implementing badges, metadata, or HTML in PR bodies, debugging why HTML appears in git commit messages
 - **[pr-finalization-paths.md](pr-finalization-paths.md)** — debugging PR body content or issue closing, understanding local vs remote PR submission, working with 'Closes #N' in PRs
 - **[pr-footer-validation.md](pr-footer-validation.md)** — working with PR metadata footer format, modifying PR footer generation or parsing, debugging PR footer extraction errors

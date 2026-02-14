@@ -13,6 +13,8 @@ tripwires:
     warning: "Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. See tests/commands/submit/test_existing_branch_detection.py for examples."
   - action: "accessing FakeGit properties in tests"
     warning: "FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway."
+  - action: "asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`"
+    warning: "Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper."
 ---
 
 # Erk Test Reference
