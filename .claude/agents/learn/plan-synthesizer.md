@@ -3,6 +3,7 @@ name: plan-synthesizer
 description: Transform gap analysis into a complete, actionable learn plan markdown
 allowed-tools:
   - Read
+  - Write
   - Glob
   - Grep
 ---

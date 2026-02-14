@@ -3,6 +3,7 @@ name: documentation-gap-identifier
 description: Synthesize outputs from parallel analysis agents to produce prioritized documentation items
 allowed-tools:
   - Read
+  - Write
   - Glob
   - Grep
 ---

@@ -1,3 +1,13 @@
+---
+name: tripwire-extractor
+description: Extract structured tripwire candidates from learn plan and gap analysis documents
+allowed-tools:
+  - Read
+  - Write
+  - Glob
+  - Grep
+---
+
 # Tripwire Extractor Agent
 
 Extract structured tripwire candidates from learn plan and gap analysis documents.
