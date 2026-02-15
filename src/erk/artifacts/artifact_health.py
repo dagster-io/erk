@@ -293,10 +293,9 @@ def get_artifact_health(
         artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 
     # Check reviews (always file-based, in .erk/reviews/)
-    project_erk_dir = project_dir / ".erk"
     for name in _get_bundled_by_type("review", installed_capabilities=installed_capabilities):
         key = f"reviews/{name}.md"
-        path = project_erk_dir / "reviews" / f"{name}.md"
+        path = project_dir / ".erk" / "reviews" / f"{name}.md"
         installed_hash = _compute_path_hash(path, is_directory=False)
         artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 

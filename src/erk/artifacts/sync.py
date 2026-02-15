@@ -8,7 +8,7 @@ from pathlib import Path
 from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.discovery import _compute_directory_hash, _compute_file_hash, _compute_hook_hash
 from erk.artifacts.models import ArtifactFileState, ArtifactState
-from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_github_dir
+from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_erk_dir, get_bundled_github_dir
 from erk.artifacts.state import load_installed_capabilities, save_artifact_state
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
@@ -464,8 +464,6 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     artifacts.extend(_hash_directory_artifacts(actions_dir, action_names, "actions"))
 
     # Hash reviews from source (bundled in .erk/reviews/)
-    from erk.artifacts.paths import get_bundled_erk_dir
-
     reviews_dir = get_bundled_erk_dir() / "reviews"
     if reviews_dir.exists():
         for review_name in sorted(_get_bundled_by_type("review", installed_capabilities=None)):
@@ -704,8 +702,6 @@ def sync_artifacts(
         all_synced.extend(synced)
 
     # Sync reviews (from bundled .erk/reviews/ to project .erk/reviews/)
-    from erk.artifacts.paths import get_bundled_erk_dir
-
     target_reviews_dir = project_dir / ".erk" / "reviews"
     count, synced = _sync_reviews(
         get_bundled_erk_dir(),
