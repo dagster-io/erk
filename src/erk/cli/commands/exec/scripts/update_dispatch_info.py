@@ -16,11 +16,7 @@ from dataclasses import asdict, dataclass
 
 import click
 
-from erk_shared.context.helpers import require_issues as require_github_issues
-from erk_shared.context.helpers import require_repo_root
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.plan_header import update_plan_header_dispatch
-from erk_shared.gateway.github.types import BodyText
+from erk_shared.context.helpers import require_plan_backend, require_repo_root
 
 
 @dataclass(frozen=True)
@@ -53,53 +49,31 @@ def update_dispatch_info(
 ) -> None:
     """Update dispatch info in GitHub issue plan-header metadata.
 
-    Fetches the issue, updates the plan-header block with last_dispatched_run_id,
-    last_dispatched_node_id, and last_dispatched_at, and posts the updated body
-    back to GitHub.
+    Updates the plan-header block with last_dispatched_run_id,
+    last_dispatched_node_id, and last_dispatched_at via PlanBackend.
 
     If issue uses old format (no plan-header block), exits with error code 1.
     """
     # Get dependencies from context
-    github_issues = require_github_issues(ctx)
+    backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
 
-    # Fetch current issue
-    issue = github_issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
-        result = UpdateError(
-            success=False,
-            error="issue-not-found",
-            message=f"Issue #{issue_number} not found",
-        )
-        click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1)
-
-    # Update dispatch info
+    # Update dispatch info metadata directly via PlanBackend
     try:
-        updated_body = update_plan_header_dispatch(
-            issue_body=issue.body,
-            run_id=run_id,
-            node_id=node_id,
-            dispatched_at=dispatched_at,
+        backend.update_metadata(
+            repo_root,
+            str(issue_number),
+            metadata={
+                "last_dispatched_run_id": run_id,
+                "last_dispatched_node_id": node_id,
+                "last_dispatched_at": dispatched_at,
+            },
         )
-    except ValueError as e:
-        # plan-header block not found (old format issue)
-        result = UpdateError(
-            success=False,
-            error="no-plan-header-block",
-            message=str(e),
-        )
-        click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
-
-    # Update issue body
-    try:
-        github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
     except RuntimeError as e:
         result = UpdateError(
             success=False,
             error="github-api-failed",
-            message=f"Failed to update issue body: {e}",
+            message=f"Failed to update dispatch info: {e}",
         )
         click.echo(json.dumps(asdict(result)), err=True)
         raise SystemExit(1) from None
