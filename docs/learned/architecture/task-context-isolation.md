@@ -36,9 +36,9 @@ This creates an isolation boundary: fetch and process in the subagent, return on
 | Maintenance          | Centralized updates               | Duplicated across commands              |
 | Conversation context | None (fork isolates)              | None (Task isolates)                    |
 
-**Prefer `context: fork`** for fetch-and-classify patterns you'll use repeatedly. See `docs/learned/claude-code/context-fork-feature.md` for frontmatter details.
+**Prefer `context: fork`** for fetch-and-classify patterns you'll use repeatedly **in interactive mode**. For commands that run via `claude --print` in CI/workflows, use explicit Task delegation instead — `context: fork` does not create isolation in non-interactive mode. See `docs/learned/claude-code/context-fork-feature.md` for frontmatter details and execution mode limitations.
 
-**Use manual Task** when prompt content depends on runtime values from the parent conversation.
+**Use manual Task** when prompt content depends on runtime values from the parent conversation, or when the command runs in CI via `--print` mode.
 
 ## Pattern Components
 
@@ -70,9 +70,8 @@ The parent extracts the JSON (regex match on ` ```json ... ``` ` code blocks), p
 See `pr-feedback-classifier` skill in `.claude/skills/pr-feedback-classifier/SKILL.md` for the canonical `context: fork` implementation. Note the output format structure — both prose table and JSON in one response.
 
 <!-- Source: .claude/commands/erk/pr-address.md, Phase 1 classification -->
-<!-- Source: .claude/commands/erk/pr-preview-address.md, Phase 1 classification -->
 
-See `/erk:pr-address` and `/erk:pr-preview-address` commands for invocation patterns. Both invoke the skill, parse JSON from the result, and use thread IDs from the JSON to act.
+See `/erk:pr-address` command for invocation patterns. It invokes the classifier via Task tool delegation (for CI compatibility), parses JSON from the result, and uses thread IDs from the JSON to act.
 
 <!-- Source: .claude/commands/erk/learn.md, Agent 1-4 parallel launch -->
 
@@ -193,8 +192,69 @@ The double-delivery pattern (prose + JSON) solved both problems: human-readable 
 
 The `context: fork` feature (Claude Code 2.1.0+) replaced manual Task delegation for reusable patterns. `pr-feedback-classifier` became a skill instead of inline Task prompts duplicated across commands.
 
+## CI Context Constraints
+
+### Task Tool as Required Isolation Mechanism
+
+In `--print` mode (used by GitHub Actions workflows), `context: fork` does not create true subagent isolation. The Task tool is the **required** pattern for commands that need isolation in CI contexts.
+
+**When Task is required (not optional)**:
+
+- Command runs via `claude --print` in workflows
+- Skill has terminal output instructions that could contaminate parent
+- Multi-phase workflows where isolation failure would abandon remaining phases
+
+**Task Delegation Pattern for Skills:**
+
+See the implementation in `.claude/commands/erk/pr-address.md` (grep for "Task tool") for the Phase 1 and Phase 4 classification patterns. The pattern:
+
+1. Use `Task(subagent_type: "general-purpose", ...)`
+2. In the prompt, instruct the agent to "Load and follow the skill instructions in .claude/skills/SKILLNAME/SKILL.md"
+3. Pass through any arguments
+4. Request the complete output as the final message
+
+This creates genuine subagent isolation regardless of execution mode.
+
+### Why This Matters
+
+The pr-address workflow has 5 phases. Without proper isolation, the classifier's "Output ONLY JSON" instruction causes the parent to stop after Phase 1, abandoning batch changes, commits, thread resolution, and verification. The workflow reports success but produces no work.
+
+## Terminal Instruction Contamination
+
+### The Failure Mode
+
+When `context: fork` fails to create isolation (e.g., in `--print` mode), skill instructions become parent instructions. Skills with terminal output instructions are particularly dangerous:
+
+**Example problematic skill instruction:**
+"Output ONLY the following JSON (no prose, no markdown, no code fences)"
+
+**What happens when fork fails:**
+
+1. Skill content loads inline into parent context
+2. "Output ONLY JSON" becomes the parent's instruction
+3. Parent outputs the structured data
+4. Parent stops execution (following the "only" directive)
+5. Remaining workflow phases are abandoned
+6. Workflow exits with success status (no errors occurred)
+
+### Diagnosis
+
+**Symptoms:**
+
+- Workflow reports success but produces no commits/changes
+- Session has very few turns (only first phase completes)
+- Final output is JSON (from what should have been a subagent)
+- All tool calls share the same session ID (no fork occurred)
+
+**Prevention:**
+
+- Use Task tool for guaranteed isolation in CI contexts
+- Test commands with `claude --print` before committing
+- Verify subagent isolation by checking session IDs in logs
+
 ## Related Documentation
 
-- [Context Fork Feature](../claude-code/context-fork-feature.md) — Declarative isolation via skill frontmatter
+- [Context Fork Feature](../claude-code/context-fork-feature.md) — Declarative isolation via skill frontmatter, including execution mode limitations
 - [Skill Composition Patterns](../claude-code/skill-composition-patterns.md) — When to use skills vs commands
 - [PR Operations](../pr-operations/pr-operations.md) — Commands that use this pattern
+- [Claude CLI Execution Modes](claude-cli-execution-modes.md) — Behavioral differences between interactive and --print modes

@@ -38,6 +38,8 @@ Rules triggered by matching actions in code.
 
 **asking devrun agent to fix errors** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. devrun is READ-ONLY. Never prompt with 'fix errors' or 'make tests pass'. Use pattern: 'Run command and report results', then parent agent fixes based on output.
 
+**assuming work was done after GitHub Actions workflow reports success** → Read [CI Workflow Verification Patterns](workflow-verification-patterns.md) first. GitHub Actions success (exit 0) does NOT guarantee expected outputs. Verify commits, file changes, and thread states exist. Don't trust exit code alone.
+
 **attempting to use prettier on Python files** → Read [Prettier Formatting for Claude Commands](claude-commands-prettier.md) first. Prettier only formats markdown in erk. Python uses ruff format. See formatter-tools.md for the complete matrix.
 
 **calling create_commit_status() immediately after git push** → Read [GitHub Commit Indexing Timing](github-commit-indexing-timing.md) first. GitHub's commit indexing has a race condition. Commits may not be immediately available for status updates after push. Use execute_gh_command_with_retry() wrapper, not direct subprocess calls.
