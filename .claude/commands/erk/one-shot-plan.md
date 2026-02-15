@@ -14,13 +14,7 @@ Read `.impl/task.md` to understand what you need to do.
 
 ## Step 2: Read Objective Context (if present)
 
-If `.impl/objective-context.json` exists, read it. It contains:
-
-```json
-{ "objective_issue": "<number>", "step_id": "<id>" }
-```
-
-When present, this means the plan is for a specific step of an objective. Use `erk exec check-objective <objective_issue>` to fetch the full objective context (title, roadmap, progress). Incorporate the objective context into your planning — understand the broader goal and how this step fits into it.
+If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), this plan is for a specific step of an objective. Use `erk exec check-objective $OBJECTIVE_ISSUE` to fetch the full objective context (title, roadmap, progress). The `$STEP_ID` environment variable contains the specific roadmap step ID being planned. Incorporate the objective context into your planning — understand the broader goal and how this step fits into it.
 
 ## Step 3: Load Context
 
@@ -59,7 +53,7 @@ erk exec plan-save-to-issue --plan-file .impl/plan.md --format json --created-fr
 
 If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` flag.
 
-If `.impl/objective-context.json` exists and contains an `objective_issue`, add `--objective-issue <number>` to the command above to link the plan to its parent objective.
+If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), add `--objective-issue $OBJECTIVE_ISSUE` to the command above to link the plan to its parent objective.
 
 Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `issue_number` and `title` from the output.
 

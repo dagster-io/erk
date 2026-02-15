@@ -96,20 +96,6 @@ jobs:
           printf '%s\n' "$INSTRUCTION" > .impl/task.md
           echo "Instruction written to .impl/task.md"
 
-      - name: Write objective context
-        if: inputs.objective_issue != ''
-        env:
-          OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
-          STEP_ID: ${{ inputs.step_id }}
-        run: |
-          cat > .impl/objective-context.json <<EOF
-          {
-            "objective_issue": "$OBJECTIVE_ISSUE",
-            "step_id": "$STEP_ID"
-          }
-          EOF
-          echo "Objective context written: issue #$OBJECTIVE_ISSUE, step $STEP_ID"
-
       - name: Detect trunk branch
         id: trunk
         run: |
@@ -139,6 +125,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
+          STEP_ID: ${{ inputs.step_id }}
 
       - name: Verify plan outputs exist
         if: steps.plan.outputs.plan_success == 'true'
