@@ -31,12 +31,10 @@ from erk_shared.context.helpers import (
     require_cwd,
     require_git,
     require_issues,
+    require_plan_backend,
     require_repo_root,
     require_time,
 )
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.plan_header import update_plan_header_learn_event
-from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
 from erk_shared.learn.tracking import track_learn_invocation
 from erk_shared.naming import extract_leading_issue_number
@@ -85,6 +83,7 @@ def _extract_issue_number(identifier: str) -> int | None:
 def _do_track(
     *,
     github_issues,
+    backend,
     repo_root: Path,
     issue_number: int,
     session_id: str | None,
@@ -94,6 +93,7 @@ def _do_track(
 
     Args:
         github_issues: GitHub issues interface
+        backend: PlanBackend interface for metadata updates
         repo_root: Repository root path
         issue_number: Plan issue number
         session_id: Session ID invoking learn (optional)
@@ -113,21 +113,23 @@ def _do_track(
 
     # Update plan-header with learn event (in addition to comment)
     timestamp = time.now().replace(tzinfo=UTC).isoformat()
-    issue = github_issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
-        result = TrackLearnError(
-            success=False,
-            error="issue-not-found",
-            message=f"Issue #{issue_number} not found",
+    try:
+        backend.update_metadata(
+            repo_root,
+            str(issue_number),
+            metadata={
+                "last_learn_at": timestamp,
+                "last_learn_session": session_id,
+            },
         )
-        click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1)
-    updated_body = update_plan_header_learn_event(
-        issue_body=issue.body,
-        learn_at=timestamp,
-        session_id=session_id,
-    )
-    github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+    except RuntimeError as e:
+        error = TrackLearnError(
+            success=False,
+            error="github-api-failed",
+            message=f"Failed to track learn evaluation on issue #{issue_number}: {e}",
+        )
+        click.echo(json.dumps(asdict(error)), err=True)
+        raise SystemExit(1) from None
 
 
 @click.command(name="track-learn-evaluation")
@@ -148,6 +150,7 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
     """
     # Get dependencies from context
     github_issues = require_issues(ctx)
+    backend = require_plan_backend(ctx)
     git = require_git(ctx)
     cwd = require_cwd(ctx)
     repo_root = require_repo_root(ctx)
@@ -180,9 +183,10 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
         click.echo(json.dumps(asdict(error)))
         raise SystemExit(1)
 
-    # Post tracking comment
+    # Post tracking comment and update metadata
     _do_track(
         github_issues=github_issues,
+        backend=backend,
         repo_root=repo_root,
         issue_number=issue_number,
         session_id=session_id,

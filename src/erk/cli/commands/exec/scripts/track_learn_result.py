@@ -26,11 +26,8 @@ from dataclasses import asdict, dataclass
 
 import click
 
-from erk_shared.context.helpers import require_issues, require_repo_root
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.plan_header import update_plan_header_learn_result
+from erk_shared.context.helpers import require_plan_backend, require_repo_root
 from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
-from erk_shared.gateway.github.types import BodyText
 
 
 @dataclass(frozen=True)
@@ -150,33 +147,31 @@ def track_learn_result(
         raise SystemExit(1)
 
     # Get dependencies from context
-    github_issues = require_issues(ctx)
+    backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
-
-    # Fetch current issue body
-    issue_info = github_issues.get_issue(repo_root, issue)
-    if isinstance(issue_info, IssueNotFound):
-        error = TrackLearnResultError(
-            success=False,
-            error="issue-not-found",
-            message=f"Issue #{issue} not found",
-        )
-        click.echo(json.dumps(asdict(error)), err=True)
-        raise SystemExit(1)
 
     # Cast status to LearnStatusValue (already validated by click.Choice)
     learn_status: LearnStatusValue = status  # type: ignore[assignment]
 
-    # Update plan-header with learn result
-    updated_body = update_plan_header_learn_result(
-        issue_body=issue_info.body,
-        learn_status=learn_status,
-        learn_plan_issue=plan_issue,
-        learn_plan_pr=plan_pr,
-    )
-
-    # Update issue
-    github_issues.update_issue_body(repo_root, issue, BodyText(content=updated_body))
+    # Update plan-header with learn result via PlanBackend
+    try:
+        backend.update_metadata(
+            repo_root,
+            str(issue),
+            metadata={
+                "learn_status": learn_status,
+                "learn_plan_issue": plan_issue,
+                "learn_plan_pr": plan_pr,
+            },
+        )
+    except RuntimeError as e:
+        error = TrackLearnResultError(
+            success=False,
+            error="github-api-failed",
+            message=f"Failed to update learn status on issue #{issue}: {e}",
+        )
+        click.echo(json.dumps(asdict(error)), err=True)
+        raise SystemExit(1) from None
 
     result = TrackLearnResultSuccess(
         success=True,
