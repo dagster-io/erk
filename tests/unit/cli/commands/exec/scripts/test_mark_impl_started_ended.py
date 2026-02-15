@@ -19,10 +19,11 @@ from erk_shared.gateway.github.metadata.core import find_metadata_block
 
 
 def make_plan_header_body(
-    schema_version: str = "2",
-    created_at: str = "2025-11-25T14:37:43.513418+00:00",
-    created_by: str = "testuser",
-    worktree_name: str = "test-worktree",
+    *,
+    schema_version: str,
+    created_at: str,
+    created_by: str,
+    worktree_name: str,
 ) -> str:
     """Create a test issue body with plan-header metadata block."""
     return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
@@ -95,7 +96,12 @@ def test_mark_impl_started_local_updates_metadata(tmp_path: Path) -> None:
     )
 
     # Setup fake issue with plan-header
-    body = make_plan_header_body()
+    body = make_plan_header_body(
+        schema_version="2",
+        created_at="2025-11-25T14:37:43.513418+00:00",
+        created_by="testuser",
+        worktree_name="test-worktree",
+    )
     fake_gh = FakeGitHubIssues(issues={123: make_issue_info(123, body)})
     repo_root = Path("/fake/repo")
     runner = CliRunner()
@@ -154,7 +160,12 @@ def test_mark_impl_started_remote_updates_metadata(tmp_path: Path, monkeypatch) 
     )
 
     # Setup fake issue with plan-header
-    body = make_plan_header_body()
+    body = make_plan_header_body(
+        schema_version="2",
+        created_at="2025-11-25T14:37:43.513418+00:00",
+        created_by="testuser",
+        worktree_name="test-worktree",
+    )
     fake_gh = FakeGitHubIssues(issues={456: make_issue_info(456, body)})
     repo_root = Path("/fake/repo")
     runner = CliRunner()
@@ -221,7 +232,12 @@ def test_mark_impl_ended_local_updates_metadata(tmp_path: Path) -> None:
     )
 
     # Setup fake issue with plan-header
-    body = make_plan_header_body()
+    body = make_plan_header_body(
+        schema_version="2",
+        created_at="2025-11-25T14:37:43.513418+00:00",
+        created_by="testuser",
+        worktree_name="test-worktree",
+    )
     fake_gh = FakeGitHubIssues(issues={789: make_issue_info(789, body)})
     repo_root = Path("/fake/repo")
     runner = CliRunner()
@@ -280,7 +296,12 @@ def test_mark_impl_ended_remote_updates_metadata(tmp_path: Path, monkeypatch) ->
     )
 
     # Setup fake issue with plan-header
-    body = make_plan_header_body()
+    body = make_plan_header_body(
+        schema_version="2",
+        created_at="2025-11-25T14:37:43.513418+00:00",
+        created_by="testuser",
+        worktree_name="test-worktree",
+    )
     fake_gh = FakeGitHubIssues(issues={999: make_issue_info(999, body)})
     repo_root = Path("/fake/repo")
     runner = CliRunner()
