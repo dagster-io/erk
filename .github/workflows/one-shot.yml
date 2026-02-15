@@ -146,6 +146,19 @@ jobs:
         run: |
           erk plan check ${{ steps.read_result.outputs.issue_number }}
 
+      - name: Register one-shot plan with issue and PR
+        if: steps.plan.outputs.plan_success == 'true' && steps.read_result.outputs.issue_number != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+        run: |
+          erk exec register-one-shot-plan \
+            --issue-number "${{ steps.read_result.outputs.issue_number }}" \
+            --run-id "${{ github.run_id }}" \
+            --pr-number "${{ inputs.pr_number }}" \
+            --submitted-by "${{ inputs.submitted_by }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
       - name: Fail workflow if planning failed
         if: steps.plan.outputs.plan_success != 'true'
         run: |

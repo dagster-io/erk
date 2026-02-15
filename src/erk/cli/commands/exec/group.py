@@ -118,6 +118,9 @@ from erk.cli.commands.exec.scripts.quick_submit import quick_submit
 from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
     rebase_with_conflict_resolution,
 )
+from erk.cli.commands.exec.scripts.register_one_shot_plan import (
+    register_one_shot_plan,
+)
 from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
     reply_to_discussion_comment,
 )
@@ -232,6 +235,7 @@ exec_group.add_command(pre_tool_use_hook, name="pre-tool-use-hook")
 exec_group.add_command(preprocess_session, name="preprocess-session")
 exec_group.add_command(quick_submit, name="quick-submit")
 exec_group.add_command(rebase_with_conflict_resolution, name="rebase-with-conflict-resolution")
+exec_group.add_command(register_one_shot_plan, name="register-one-shot-plan")
 exec_group.add_command(resolve_review_thread, name="resolve-review-thread")
 exec_group.add_command(resolve_review_threads, name="resolve-review-threads")
 exec_group.add_command(run_review, name="run-review")

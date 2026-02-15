@@ -6,6 +6,7 @@ when triggering remote workflows on branches that follow the P{issue}-pattern.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import click
@@ -20,6 +21,38 @@ from erk_shared.output.output import user_output
 if TYPE_CHECKING:
     from erk.core.context import ErkContext
     from erk.core.repo_discovery import RepoContext
+    from erk_shared.gateway.github.abc import GitHub
+    from erk_shared.gateway.github.issues.abc import GitHubIssues
+
+
+def write_dispatch_metadata(
+    *,
+    issues: GitHubIssues,
+    github: GitHub,
+    repo_root: Path,
+    issue_number: int,
+    run_id: str,
+    dispatched_at: str,
+) -> None:
+    """Fetch issue, resolve node_id, and write dispatch metadata to plan header.
+
+    Raises:
+        RuntimeError: If issue not found or node_id unavailable.
+        ValueError: If issue body has no plan-header block.
+    """
+    issue = issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        raise RuntimeError(f"Issue #{issue_number} not found")
+    node_id = github.get_workflow_run_node_id(repo_root, run_id)
+    if node_id is None:
+        raise RuntimeError(f"Could not get node_id for run {run_id}")
+    updated = update_plan_header_dispatch(
+        issue_body=issue.body,
+        run_id=run_id,
+        node_id=node_id,
+        dispatched_at=dispatched_at,
+    )
+    issues.update_issue_body(repo_root, issue_number, BodyText(content=updated))
 
 
 def maybe_update_plan_dispatch_metadata(
