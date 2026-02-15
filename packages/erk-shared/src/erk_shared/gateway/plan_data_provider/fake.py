@@ -22,6 +22,7 @@ class FakePlanDataProvider(PlanDataProvider):
         self,
         *,
         plans: list[PlanRowData] | None = None,
+        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
         clipboard: Clipboard | None = None,
         browser: BrowserLauncher | None = None,
         repo_root: Path | None = None,
@@ -31,6 +32,8 @@ class FakePlanDataProvider(PlanDataProvider):
 
         Args:
             plans: List of PlanRowData to return, or None for empty list
+            plans_by_labels: Per-label-set responses for testing view switching.
+                When set, fetch_plans() checks this first using the filter labels.
             clipboard: Clipboard interface, defaults to FakeClipboard()
             browser: BrowserLauncher interface, defaults to FakeBrowserLauncher()
             repo_root: Repository root path, defaults to Path("/fake/repo")
@@ -38,6 +41,7 @@ class FakePlanDataProvider(PlanDataProvider):
                 Use to simulate API failures.
         """
         self._plans = plans or []
+        self._plans_by_labels = plans_by_labels
         self._fetch_count = 0
         self._clipboard = clipboard if clipboard is not None else FakeClipboard()
         self._browser = browser if browser is not None else FakeBrowserLauncher()
@@ -64,7 +68,8 @@ class FakePlanDataProvider(PlanDataProvider):
         """Return canned plan data.
 
         Args:
-            filters: Ignored in fake - returns all canned data
+            filters: Checks plans_by_labels first using filter labels,
+                falls back to default plans list.
 
         Returns:
             List of canned PlanRowData
@@ -75,6 +80,8 @@ class FakePlanDataProvider(PlanDataProvider):
         self._fetch_count += 1
         if self._fetch_error is not None:
             raise RuntimeError(self._fetch_error)
+        if self._plans_by_labels is not None and filters.labels in self._plans_by_labels:
+            return self._plans_by_labels[filters.labels]
         return self._plans
 
     @property
@@ -181,6 +188,7 @@ def make_plan_row(
     learn_run_url: str | None = None,
     objective_issue: int | None = None,
     created_at: datetime | None = None,
+    is_learn_plan: bool = False,
 ) -> PlanRowData:
     """Create a PlanRowData for testing with sensible defaults.
 
@@ -309,4 +317,5 @@ def make_plan_row(
         objective_display=objective_display,
         created_at=effective_created_at,
         created_display=created_display,
+        is_learn_plan=is_learn_plan,
     )

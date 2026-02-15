@@ -59,6 +59,12 @@ class HelpScreen(ModalScreen):
             yield Label("erk dash - Keyboard Shortcuts", id="help-title")
 
             with Vertical(classes="help-section"):
+                yield Label("Views", classes="help-section-title")
+                yield Label("1       Plans view", classes="help-binding")
+                yield Label("2       Learn view", classes="help-binding")
+                yield Label("3       Objectives view", classes="help-binding")
+
+            with Vertical(classes="help-section"):
                 yield Label("Navigation", classes="help-section-title")
                 yield Label("↑/k     Move cursor up", classes="help-binding")
                 yield Label("↓/j     Move cursor down", classes="help-binding")

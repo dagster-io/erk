@@ -6,6 +6,7 @@ from textual.message import Message
 from textual.widgets import DataTable
 
 from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.views.types import ViewMode
 
 
 class PlanDataTable(DataTable):
@@ -70,6 +71,7 @@ class PlanDataTable(DataTable):
         """
         super().__init__(cursor_type="row")
         self._plan_filters = plan_filters
+        self._view_mode: ViewMode = ViewMode.PLANS
         self._rows: list[PlanRowData] = []
         self._plan_column_index: int = 0  # Always first column
         self._objective_column_index: int | None = None
@@ -98,14 +100,36 @@ class PlanDataTable(DataTable):
         """Disable right arrow navigation (row mode only)."""
         pass
 
+    def reconfigure(self, *, plan_filters: PlanFilters, view_mode: ViewMode) -> None:
+        """Reconfigure the table for a new view mode.
+
+        Clears existing columns and rows, then sets up new columns
+        appropriate for the view mode.
+
+        Args:
+            plan_filters: New filter options for column configuration
+            view_mode: The new view mode
+        """
+        self._plan_filters = plan_filters
+        self._view_mode = view_mode
+        self._plan_column_index = 0
+        self._objective_column_index = None
+        self._pr_column_index = None
+        self._learn_column_index = None
+        self._local_wt_column_index = None
+        self._run_id_column_index = None
+        self.clear(columns=True)
+        self._setup_columns()
+
     def on_mount(self) -> None:
         """Configure columns when widget is mounted."""
         self._setup_columns()
 
     def _setup_columns(self) -> None:
-        """Add columns based on current filter settings.
+        """Add columns based on current filter settings and view mode.
 
         Tracks the column index for local-wt to enable click detection.
+        Objectives view uses simplified columns (plan, title, created only).
         """
         col_index = 0
         self.add_column("plan", key="plan")
@@ -114,6 +138,11 @@ class PlanDataTable(DataTable):
         col_index += 1
         self.add_column("created", key="created")
         col_index += 1
+
+        # Objectives view uses simplified columns
+        if self._view_mode == ViewMode.OBJECTIVES:
+            return
+
         if self._plan_filters.show_prs:
             self.add_column("pr", key="pr")
             self._pr_column_index = col_index
@@ -199,6 +228,10 @@ class PlanDataTable(DataTable):
         plan_cell: str | Text = f"#{row.issue_number}"
         if row.issue_url:
             plan_cell = Text(plan_cell, style="cyan underline")
+
+        # Objectives view: simplified columns (plan, title, created)
+        if self._view_mode == ViewMode.OBJECTIVES:
+            return (plan_cell, Text(row.title), row.created_display)
 
         # Format worktree
         if row.exists_locally:

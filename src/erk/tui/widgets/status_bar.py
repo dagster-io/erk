@@ -28,19 +28,22 @@ class StatusBar(Static):
         """Initialize status bar."""
         super().__init__()
         self._plan_count = 0
+        self._noun = "plans"
         self._seconds_remaining = 0
         self._last_update: str | None = None
         self._fetch_duration: float | None = None
         self._message: str | None = None
         self._sort_mode: str | None = None
 
-    def set_plan_count(self, count: int) -> None:
+    def set_plan_count(self, count: int, *, noun: str = "plans") -> None:
         """Update the plan count display.
 
         Args:
-            count: Number of plans currently displayed
+            count: Number of items currently displayed
+            noun: The noun to display (e.g., "plans", "learn", "objectives")
         """
         self._plan_count = count
+        self._noun = noun
         self._update_display()
 
     def set_refresh_countdown(self, seconds: int) -> None:
@@ -85,11 +88,8 @@ class StatusBar(Static):
         """Render the status bar content."""
         parts: list[str] = []
 
-        # Plan count
-        if self._plan_count == 1:
-            parts.append("1 plan")
-        else:
-            parts.append(f"{self._plan_count} plans")
+        # Item count with view-specific noun
+        parts.append(f"{self._plan_count} {self._noun}")
 
         # Sort mode
         if self._sort_mode:
@@ -111,6 +111,6 @@ class StatusBar(Static):
             parts.append(self._message)
 
         # Key hints
-        parts.append("Enter:open  p:PR  /:filter  s:sort  r:refresh  q:quit  ?:help")
+        parts.append("1-3:views  Enter:open  /:filter  s:sort  r:refresh  q:quit  ?:help")
 
         self.update(" │ ".join(parts))

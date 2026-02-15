@@ -66,6 +66,7 @@ def test_serialize_plan_row_datetime_fields() -> None:
         objective_display="-",
         created_at=now,
         created_display="-",
+        is_learn_plan=False,
     )
 
     result = _serialize_plan_row(row)
@@ -117,6 +118,7 @@ def test_serialize_plan_row_tuple_to_list() -> None:
         objective_display="-",
         created_at=datetime(2025, 1, 1, tzinfo=UTC),
         created_display="-",
+        is_learn_plan=False,
     )
 
     result = _serialize_plan_row(row)
@@ -145,7 +147,7 @@ def test_serialize_plan_row_with_pr_data() -> None:
 
 
 def test_serialize_plan_row_all_fields_present() -> None:
-    """Test that all 35 PlanRowData fields appear in serialized output."""
+    """Test that all PlanRowData fields appear in serialized output."""
     row = make_plan_row(1, "All Fields")
     result = _serialize_plan_row(row)
 
@@ -190,6 +192,7 @@ def test_serialize_plan_row_all_fields_present() -> None:
         "objective_display",
         "created_at",
         "created_display",
+        "is_learn_plan",
     }
     assert set(result.keys()) == expected_fields
 
@@ -238,6 +241,7 @@ def test_serialize_plan_row_json_roundtrip() -> None:
         objective_display="#100",
         created_at=now,
         created_display="-",
+        is_learn_plan=False,
     )
 
     result = _serialize_plan_row(row)

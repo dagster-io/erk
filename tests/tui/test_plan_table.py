@@ -3,6 +3,7 @@
 from rich.text import Text
 
 from erk.tui.data.types import PlanFilters
+from erk.tui.views.types import ViewMode
 from erk.tui.widgets.plan_table import PlanDataTable, _strip_rich_markup
 from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
@@ -65,6 +66,12 @@ class TestPlanRowData:
         assert row.learn_plan_issue is None
         assert row.learn_plan_pr is None
         assert row.learn_display_icon == "-"
+        assert row.is_learn_plan is False
+
+    def test_make_plan_row_with_is_learn_plan(self) -> None:
+        """make_plan_row respects is_learn_plan flag."""
+        row = make_plan_row(123, "Learn Plan", is_learn_plan=True)
+        assert row.is_learn_plan is True
 
     def test_make_plan_row_with_pr(self) -> None:
         """make_plan_row with PR data."""
@@ -318,3 +325,22 @@ class TestLocalWtColumnIndex:
         # Still 7: runs come after local-wt
         expected_index = 7
         assert expected_index == 7
+
+
+class TestObjectivesViewRowConversion:
+    """Tests for row conversion in Objectives view."""
+
+    def test_objectives_view_has_simplified_columns(self) -> None:
+        """Objectives view produces only plan, title, created columns."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters)
+        table._view_mode = ViewMode.OBJECTIVES
+        row = make_plan_row(42, "Objective Plan")
+
+        values = table._row_to_values(row)
+
+        # Objectives view: plan, title, created
+        assert len(values) == 3
+        assert _text_to_str(values[0]) == "#42"
+        assert _text_to_str(values[1]) == "Objective Plan"
+        assert values[2] == "-"  # created_display

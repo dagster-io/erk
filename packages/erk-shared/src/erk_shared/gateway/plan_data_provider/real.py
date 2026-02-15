@@ -553,6 +553,9 @@ class RealPlanDataProvider(PlanDataProvider):
         # Format created_at display
         created_display = format_relative_time(plan.created_at.isoformat()) or "-"
 
+        # Determine if this is a learn plan
+        is_learn_plan = "erk-learn" in plan.labels
+
         return PlanRowData(
             issue_number=issue_number,
             issue_url=plan.url,
@@ -594,6 +597,7 @@ class RealPlanDataProvider(PlanDataProvider):
             objective_display=objective_display,
             created_at=plan.created_at,
             created_display=created_display,
+            is_learn_plan=is_learn_plan,
         )
 
 
