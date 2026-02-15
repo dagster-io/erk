@@ -219,8 +219,19 @@ def _replace_step_refs_in_body(
     existing_plan = match.group(4).strip()
     existing_pr = match.group(5).strip()
 
-    resolved_plan = existing_plan if new_plan is None else (new_plan if new_plan else "-")
-    resolved_pr = existing_pr if new_pr is None else (new_pr if new_pr else "-")
+    if new_plan is None:
+        resolved_plan = existing_plan
+    elif new_plan:
+        resolved_plan = new_plan
+    else:
+        resolved_plan = "-"
+
+    if new_pr is None:
+        resolved_pr = existing_pr
+    elif new_pr:
+        resolved_pr = new_pr
+    else:
+        resolved_pr = "-"
 
     # Determine display status
     if explicit_status is not None:
