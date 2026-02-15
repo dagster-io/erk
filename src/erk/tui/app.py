@@ -24,8 +24,10 @@ from erk.tui.screens.issue_body_screen import IssueBodyScreen
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk.tui.sorting.logic import sort_plans
 from erk.tui.sorting.types import BranchActivity, SortKey, SortState
+from erk.tui.views.types import ViewMode, get_view_config
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
+from erk.tui.widgets.view_bar import ViewBar
 from erk_shared.gateway.command_executor.real import RealCommandExecutor
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
@@ -72,6 +74,9 @@ class ErkDashApp(App):
         Binding("slash", "start_filter", "Filter", key_display="/"),
         Binding("s", "toggle_sort", "Sort"),
         Binding("ctrl+p", "command_palette", "Commands"),
+        Binding("1", "switch_view_plans", "Plans", show=False),
+        Binding("2", "switch_view_learn", "Learn", show=False),
+        Binding("3", "switch_view_objectives", "Objectives", show=False),
     ]
 
     def get_system_commands(self, screen: Screen) -> Iterator[SystemCommand]:
@@ -119,10 +124,14 @@ class ErkDashApp(App):
         self._sort_state = initial_sort if initial_sort is not None else SortState.initial()
         self._activity_by_issue: dict[int, BranchActivity] = {}
         self._activity_loading = False
+        self._view_mode: ViewMode = ViewMode.PLANS
+        self._view_bar: ViewBar | None = None
+        self._data_cache: dict[tuple[str, ...], list[PlanRowData]] = {}
 
     def compose(self) -> ComposeResult:
         """Create the application layout."""
         yield Header(show_clock=True)
+        yield ViewBar(active_view=self._view_mode)
         with Container(id="main-container"):
             yield Label("Loading plans...", id="loading-message")
             yield PlanDataTable(self._plan_filters)
@@ -135,6 +144,7 @@ class ErkDashApp(App):
         self._status_bar = self.query_one(StatusBar)
         self._filter_input = self.query_one("#filter-input", Input)
         self._loading_label = self.query_one("#loading-message", Label)
+        self._view_bar = self.query_one(ViewBar)
 
         # Hide table until loaded
         self._table.display = False
@@ -151,10 +161,21 @@ class ErkDashApp(App):
         # Track fetch timing
         start_time = time.monotonic()
 
+        # Use view-specific labels for the current view
+        view_config = get_view_config(self._view_mode)
+        active_filters = PlanFilters(
+            labels=view_config.labels,
+            state=self._plan_filters.state,
+            run_state=self._plan_filters.run_state,
+            limit=self._plan_filters.limit,
+            show_prs=self._plan_filters.show_prs,
+            show_runs=self._plan_filters.show_runs,
+        )
+
         try:
             # Run sync fetch in executor to avoid blocking
             loop = asyncio.get_running_loop()
-            rows = await loop.run_in_executor(None, self._provider.fetch_plans, self._plan_filters)
+            rows = await loop.run_in_executor(None, self._provider.fetch_plans, active_filters)
 
             # If sorting by activity, also fetch activity data
             if self._sort_state.key == SortKey.BRANCH_ACTIVITY:
@@ -188,6 +209,12 @@ class ErkDashApp(App):
             update_time: Formatted time of this update
             duration: Duration of the fetch in seconds
         """
+        # Cache the fetched data for the current view's labels
+        view_config = get_view_config(self._view_mode)
+        self._data_cache[view_config.labels] = rows
+
+        rows = self._filter_rows_for_view(rows, self._view_mode)
+
         self._all_rows = rows
         self._loading = False
 
@@ -200,7 +227,8 @@ class ErkDashApp(App):
             self._table.populate(self._rows)
 
         if self._status_bar is not None:
-            self._status_bar.set_plan_count(len(self._rows))
+            noun = view_config.display_name.lower()
+            self._status_bar.set_plan_count(len(self._rows), noun=noun)
             self._status_bar.set_sort_mode(self._sort_state.display_label)
             if update_time is not None:
                 self._status_bar.set_last_update(update_time, duration)
@@ -226,6 +254,25 @@ class ErkDashApp(App):
             self._sort_state.key,
             self._activity_by_issue if self._sort_state.key == SortKey.BRANCH_ACTIVITY else None,
         )
+
+    @staticmethod
+    def _filter_rows_for_view(rows: list[PlanRowData], mode: ViewMode) -> list[PlanRowData]:
+        """Filter rows based on view mode.
+
+        Plans view excludes learn plans; Learn view includes only learn plans.
+
+        Args:
+            rows: Raw rows to filter
+            mode: The active view mode
+
+        Returns:
+            Filtered rows for the given view
+        """
+        if mode == ViewMode.LEARN:
+            return [r for r in rows if r.is_learn_plan]
+        if mode == ViewMode.PLANS:
+            return [r for r in rows if not r.is_learn_plan]
+        return rows
 
     def _notify_with_severity(self, message: str, severity: str | None) -> None:
         """Wrapper for notify that handles optional severity.
@@ -288,6 +335,58 @@ class ErkDashApp(App):
     def action_help(self) -> None:
         """Show help screen."""
         self.push_screen(HelpScreen())
+
+    def _switch_view(self, mode: ViewMode) -> None:
+        """Switch to a different view mode.
+
+        Caches current data, reconfigures the table, and loads new data.
+
+        Args:
+            mode: The view mode to switch to
+        """
+        if mode == self._view_mode:
+            return
+
+        self._view_mode = mode
+        view_config = get_view_config(mode)
+
+        # Update view bar
+        if self._view_bar is not None:
+            self._view_bar.set_active_view(mode)
+
+        # Reconfigure table columns for the new view
+        if self._table is not None:
+            self._table.reconfigure(
+                plan_filters=self._plan_filters,
+                view_mode=mode,
+            )
+
+        # Check cache for the new view's labels
+        cached_data = self._data_cache.get(view_config.labels)
+        if cached_data is not None:
+            rows = self._filter_rows_for_view(cached_data, mode)
+            self._all_rows = rows
+            self._rows = self._apply_filter_and_sort(rows)
+            if self._table is not None:
+                self._table.populate(self._rows)
+            if self._status_bar is not None:
+                noun = view_config.display_name.lower()
+                self._status_bar.set_plan_count(len(self._rows), noun=noun)
+        else:
+            # No cached data - fetch fresh
+            self.run_worker(self._load_data(), exclusive=True)
+
+    def action_switch_view_plans(self) -> None:
+        """Switch to Plans view."""
+        self._switch_view(ViewMode.PLANS)
+
+    def action_switch_view_learn(self) -> None:
+        """Switch to Learn view."""
+        self._switch_view(ViewMode.LEARN)
+
+    def action_switch_view_objectives(self) -> None:
+        """Switch to Objectives view."""
+        self._switch_view(ViewMode.OBJECTIVES)
 
     def action_toggle_sort(self) -> None:
         """Toggle between sort modes."""
@@ -424,7 +523,8 @@ class ErkDashApp(App):
             self._table.populate(self._rows)
 
         if self._status_bar is not None:
-            self._status_bar.set_plan_count(len(self._rows))
+            view_config = get_view_config(self._view_mode)
+            self._status_bar.set_plan_count(len(self._rows), noun=view_config.display_name.lower())
 
     def _exit_filter_mode(self) -> None:
         """Exit filter mode, restore all rows, and focus table."""
@@ -441,7 +541,8 @@ class ErkDashApp(App):
             self._table.focus()
 
         if self._status_bar is not None:
-            self._status_bar.set_plan_count(len(self._rows))
+            view_config = get_view_config(self._view_mode)
+            self._status_bar.set_plan_count(len(self._rows), noun=view_config.display_name.lower())
 
     def action_open_row(self) -> None:
         """Open selected row - PR if available, otherwise issue."""

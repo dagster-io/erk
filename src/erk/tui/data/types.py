@@ -96,6 +96,7 @@ class PlanRowData:
     objective_display: str
     created_at: datetime
     created_display: str
+    is_learn_plan: bool
 
 
 @dataclass(frozen=True)

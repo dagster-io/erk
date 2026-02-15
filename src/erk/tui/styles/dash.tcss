@@ -4,6 +4,15 @@ Screen {
     background: $surface;
 }
 
+/* View bar styling */
+ViewBar {
+    dock: top;
+    height: 1;
+    background: $surface;
+    color: $text-muted;
+    padding: 0 1;
+}
+
 /* Plan table styling */
 PlanDataTable {
     height: 1fr;
