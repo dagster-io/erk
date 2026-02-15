@@ -5,15 +5,41 @@ Uses ErkContext.for_test() for dependency injection with FakeGitHubIssues.
 """
 
 import json
+import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+
+
+def _is_on_git_branch() -> bool:
+    """Check if the process is running in a git repo on a named branch.
+
+    Returns False in detached HEAD state (common in CI), which causes
+    _get_branch_name() to return None and started events to fail.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return bool(result.stdout.strip())
+    except subprocess.CalledProcessError:
+        return False
+
+
+_requires_git_branch = pytest.mark.skipif(
+    not _is_on_git_branch(),
+    reason="Requires named git branch (CI may use detached HEAD)",
+)
 
 
 def _make_plan_header_body() -> str:
@@ -228,6 +254,7 @@ def test_started_fails_with_whitespace_session_id(tmp_path: Path) -> None:
 # --- Happy path tests ---
 
 
+@_requires_git_branch
 def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
     """Started event posts a comment and updates issue metadata via PlanBackend."""
     issue = _make_issue(number=123)
@@ -289,6 +316,7 @@ def test_ended_updates_metadata(tmp_path: Path) -> None:
     assert "plan-header" in updated_body
 
 
+@_requires_git_branch
 def test_started_writes_local_run_state(tmp_path: Path) -> None:
     """Started event writes local run state file."""
     issue = _make_issue(number=789)
