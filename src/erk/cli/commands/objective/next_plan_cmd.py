@@ -1,5 +1,7 @@
 """Launch Claude to create a plan from an objective step."""
 
+from pathlib import Path
+
 import click
 
 from erk.cli.alias import alias
@@ -7,6 +9,7 @@ from erk.cli.commands.exec.scripts.objective_roadmap_shared import (
     RoadmapPhase,
     RoadmapStep,
 )
+from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_step_refs_in_body
 from erk.cli.commands.implement_shared import normalize_model_name
 from erk.cli.commands.objective.check_cmd import (
     ObjectiveValidationError,
@@ -20,6 +23,9 @@ from erk.cli.commands.one_shot_dispatch import (
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
 from erk_shared.context.types import InteractiveAgentConfig
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.types import BodyText
 from erk_shared.output.output import user_output
 
 
@@ -40,6 +46,44 @@ def _find_step_by_id(
             if step.id == step_id:
                 return step, phase
     return None
+
+
+def _update_objective_step(
+    issues: GitHubIssues,
+    repo_root: Path,
+    *,
+    issue_number: int,
+    step_id: str,
+    pr_number: int,
+) -> None:
+    """Mark a step as 'planning' with the draft PR in the objective roadmap.
+
+    Fetches the current issue body, updates the step's status to 'planning'
+    and sets the PR column to the draft PR number, then writes back.
+
+    Args:
+        issues: GitHub issues gateway
+        repo_root: Repository root path
+        issue_number: Objective issue number
+        step_id: Step ID to update (e.g., "1.1")
+        pr_number: Draft PR number from one-shot dispatch
+    """
+    issue = issues.get_issue(repo_root, issue_number)
+    if isinstance(issue, IssueNotFound):
+        return
+
+    updated_body = _replace_step_refs_in_body(
+        issue.body,
+        step_id,
+        new_plan=None,
+        new_pr=f"#{pr_number}",
+        explicit_status="planning",
+    )
+
+    if updated_body is None:
+        return
+
+    issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
 
 
 @alias("np")
@@ -223,4 +267,14 @@ def _handle_one_shot(
         },
     )
 
-    dispatch_one_shot(ctx, params=params, dry_run=dry_run)
+    dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run)
+
+    # After successful dispatch, immediately mark step as "planning" with draft PR
+    if dispatch_result is not None:
+        _update_objective_step(
+            ctx.issues,
+            repo.root,
+            issue_number=issue_number,
+            step_id=target_step.id,
+            pr_number=dispatch_result.pr_number,
+        )

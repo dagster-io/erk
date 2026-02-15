@@ -249,7 +249,7 @@ def update_step_in_frontmatter(
     step_id: str,
     *,
     plan: str | None = None,
-    pr: str,
+    pr: str | None = None,
     status: str | None,
 ) -> str | None:
     """Update a step's plan/PR fields (and optionally status) in frontmatter YAML.
@@ -257,10 +257,9 @@ def update_step_in_frontmatter(
     Args:
         block_content: Raw content from metadata block
         step_id: Step ID to update (e.g., "1.1")
-        plan: New plan value (e.g., "#6464"), or None to leave unchanged.
-              Pass empty string "" to clear.
-        pr: New PR value (e.g., "#123", "")
-        status: Explicit status to set, or None to reset to "pending"
+        plan: New plan value. None=preserve existing, ""=clear, "#6464"=set.
+        pr: New PR value. None=preserve existing, ""=clear, "#123"=set.
+        status: Explicit status to set, or None to infer from resolved values.
 
     Returns:
         Updated block content with modified YAML, or None if step not found
@@ -273,29 +272,48 @@ def update_step_in_frontmatter(
     # Find and update the step
     found = False
     updated_steps: list[RoadmapStep] = []
-    new_status = status if status is not None else "pending"
 
     for step in steps:
         if step.id == step_id:
-            # Determine plan value: explicit arg > auto-clear on --pr > preserve
+            # Resolve PR: None=preserve, ""=clear, "#123"=set
+            if pr is None:
+                resolved_pr = step.pr
+            elif pr:
+                resolved_pr = pr
+            else:
+                resolved_pr = None
+
+            # Resolve plan: None=preserve, ""=clear, "#6464"=set
+            # Auto-clear: when pr is explicitly set (non-None, non-empty)
+            # and plan is not explicitly provided, clear plan.
             if plan is not None:
                 if plan:
-                    new_plan = plan
+                    resolved_plan = plan
                 else:
-                    new_plan = None
-            elif pr:
-                # Setting --pr auto-clears plan
-                new_plan = None
+                    resolved_plan = None
+            elif pr is not None and pr:
+                # Setting --pr auto-clears plan (only when pr is explicitly provided)
+                resolved_plan = None
             else:
-                new_plan = step.plan
+                resolved_plan = step.plan
+
+            # Determine status: explicit > infer from resolved values > preserve
+            if status is not None:
+                new_status = status
+            elif resolved_pr:
+                new_status = "done"
+            elif resolved_plan:
+                new_status = "in_progress"
+            else:
+                new_status = step.status  # preserve existing status
 
             updated_steps.append(
                 RoadmapStep(
                     id=step.id,
                     description=step.description,
                     status=new_status,
-                    plan=new_plan,
-                    pr=pr if pr else None,
+                    plan=resolved_plan,
+                    pr=resolved_pr,
                 )
             )
             found = True

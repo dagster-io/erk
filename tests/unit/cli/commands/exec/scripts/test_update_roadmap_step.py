@@ -31,27 +31,6 @@ ROADMAP_BODY_5COL = """\
 | 2.2 | Add tests | blocked | - | - |
 """
 
-ROADMAP_BODY_4COL = """\
-# Objective: Build Feature X
-
-## Roadmap
-
-### Phase 1: Foundation (1 PR)
-
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Set up project structure | - | #100 |
-| 1.2 | Add core types | - | plan #200 |
-| 1.3 | Add utility functions | - | - |
-
-### Phase 2: Implementation (1 PR)
-
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 2.1 | Implement main feature | - | - |
-| 2.2 | Add tests | blocked | - |
-"""
-
 NO_ROADMAP_BODY = """\
 # Objective: Simple Issue
 
@@ -125,30 +104,6 @@ def test_update_step_with_pr() -> None:
     updated_body = fake_gh.updated_bodies[0][1]
     assert "#500" in updated_body
     assert "| done |" in updated_body
-
-
-def test_legacy_plan_prefix_in_pr_migrated() -> None:
-    """Legacy 'plan #NNN' in --pr is migrated to --plan."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
-    fake_gh = FakeGitHubIssues(issues={6423: issue})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        update_roadmap_step,
-        ["6423", "--step", "1.3", "--pr", "plan #6464"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
-    )
-
-    assert result.exit_code == 0, f"Failed: {result.output}"
-    output = json.loads(result.output)
-    assert output["success"] is True
-    # Should be treated as --plan "#6464"
-    assert output["new_plan"] == "#6464"
-    assert output["new_pr"] is None
-
-    updated_body = fake_gh.updated_bodies[0][1]
-    assert "#6464" in updated_body
-    assert "| in-progress |" in updated_body
 
 
 def test_clear_pr_reference() -> None:
@@ -513,27 +468,6 @@ def test_update_multiple_steps_same_phase() -> None:
     assert updated_body.count("| done |") >= 3
 
 
-def test_4col_table_upgraded_to_5col_on_write() -> None:
-    """When updating a 4-col table, the header is upgraded to 5-col."""
-    issue = _make_issue(6423, ROADMAP_BODY_4COL)
-    fake_gh = FakeGitHubIssues(issues={6423: issue})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        update_roadmap_step,
-        ["6423", "--step", "1.3", "--plan", "#6464"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
-    )
-
-    assert result.exit_code == 0, f"Failed: {result.output}"
-    output = json.loads(result.output)
-    assert output["success"] is True
-
-    updated_body = fake_gh.updated_bodies[0][1]
-    # Table header should be upgraded to 5-col
-    assert "| Step | Description | Status | Plan | PR |" in updated_body
-
-
 def test_single_step_maintains_legacy_output_format() -> None:
     """Single --step usage maintains backward-compatible output format."""
     issue = _make_issue(6423, ROADMAP_BODY_5COL)
@@ -631,6 +565,74 @@ def test_include_body_not_set_by_default() -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert "updated_body" not in output
+
+
+def test_none_plan_preserves_existing_value() -> None:
+    """_replace_step_refs_in_body with new_plan=None preserves existing plan."""
+    from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_step_refs_in_body
+
+    body = ROADMAP_BODY_5COL
+    # Step 1.2 has plan=#200
+    result = _replace_step_refs_in_body(
+        body, "1.2", new_plan=None, new_pr="#500", explicit_status=None
+    )
+
+    assert result is not None
+    # Plan should be preserved (not cleared)
+    assert "#200" in result
+    # PR should be updated
+    assert "#500" in result
+
+
+def test_none_pr_preserves_existing_value() -> None:
+    """_replace_step_refs_in_body with new_pr=None preserves existing PR."""
+    from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_step_refs_in_body
+
+    body = ROADMAP_BODY_5COL
+    # Step 1.1 has pr=#100
+    result = _replace_step_refs_in_body(
+        body, "1.1", new_plan=None, new_pr=None, explicit_status="planning"
+    )
+
+    assert result is not None
+    # PR should be preserved
+    assert "#100" in result
+    assert "| planning |" in result
+
+
+def test_empty_string_clears_value() -> None:
+    """_replace_step_refs_in_body with empty string clears to '-'."""
+    from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_step_refs_in_body
+
+    body = ROADMAP_BODY_5COL
+    # Step 1.2 has plan=#200, pr=-
+    result = _replace_step_refs_in_body(body, "1.2", new_plan="", new_pr=None, explicit_status=None)
+
+    assert result is not None
+    # Plan should be cleared, PR preserved (was already "-")
+    # After clearing plan and preserving pr="-", status should be pending
+    assert "| pending |" in result
+
+
+def test_planning_status_via_explicit_status() -> None:
+    """update-roadmap-step with --status planning sets planning status."""
+    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--pr", "#200", "--status", "planning"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "| planning |" in updated_body
+    assert "#200" in updated_body
 
 
 def test_include_body_on_failure() -> None:

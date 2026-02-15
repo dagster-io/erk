@@ -34,9 +34,6 @@ Usage:
     # Multiple steps
     erk exec update-roadmap-step 6697 --step 5.1 --step 5.2 --step 5.3 --plan "#6759"
 
-    # Legacy --pr with "plan #" prefix still works (migrated to --plan)
-    erk exec update-roadmap-step 6423 --step 1.3 --pr "plan #6464"
-
 Output:
     Single step: JSON with {success, issue_number, step_id,
         previous_plan, new_plan, previous_pr, new_pr, url}
@@ -50,10 +47,11 @@ Exit Codes:
 
 import json
 import re
+from typing import get_args
 
 import click
 
-from erk.cli.commands.exec.scripts.objective_roadmap_shared import parse_roadmap
+from erk.cli.commands.exec.scripts.objective_roadmap_shared import RoadmapStepStatus, parse_roadmap
 from erk_shared.context.helpers import require_issues, require_repo_root
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
@@ -61,8 +59,6 @@ from erk_shared.gateway.github.metadata.core import (
     replace_metadata_block_in_body,
 )
 from erk_shared.gateway.github.types import BodyText
-
-_PLAN_PREFIX_RE = re.compile(r"^plan #")
 
 
 def _step_error_message(step_id: str, issue_number: int, error: object) -> str:
@@ -151,13 +147,11 @@ def _replace_step_refs_in_body(
     When frontmatter exists, updates both frontmatter (source of truth)
     and markdown table (rendered view) to keep them in sync.
 
-    Always writes 5-col tables and upgrades 4-col headers when detected.
-
     Args:
         body: Full issue body text.
         step_id: Step ID to update (e.g., "1.3").
-        new_plan: New plan value (e.g., "#6464") or None/empty to clear.
-        new_pr: New PR value (e.g., "#123") or None/empty to clear.
+        new_plan: New plan value. None=preserve existing, ""=clear, "#6464"=set.
+        new_pr: New PR value. None=preserve existing, ""=clear, "#123"=set.
         explicit_status: If provided, use this status instead of inferring.
 
     Returns:
@@ -177,15 +171,13 @@ def _replace_step_refs_in_body(
             update_step_in_frontmatter,
         )
 
-        # Convert None to empty string for frontmatter API
-        plan_str = new_plan if new_plan else ""
-        pr_str = new_pr if new_pr else ""
-
+        # Pass None through to frontmatter API (preserves existing value).
+        # Non-None values (including "") are forwarded as-is.
         updated_block_content = update_step_in_frontmatter(
             roadmap_block.body,
             step_id,
-            plan=plan_str,
-            pr=pr_str,
+            plan=new_plan,
+            pr=new_pr,
             status=explicit_status,
         )
 
@@ -208,78 +200,45 @@ def _replace_step_refs_in_body(
             return None
 
     # Also update the markdown table (either as fallback or to keep in sync)
-    # Try 5-col row first: | step_id | description | status | plan | pr |
-    five_col_pattern = re.compile(
+    # 5-col row: | step_id | description | status | plan | pr |
+    pattern = re.compile(
         r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$",
         re.MULTILINE,
     )
-    four_col_pattern = re.compile(
-        r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|$",
-        re.MULTILINE,
-    )
 
-    match = five_col_pattern.search(body)
-    is_five_col_row = match is not None
-    if match is None:
-        match = four_col_pattern.search(body)
-
+    match = pattern.search(body)
     if match is None:
         # If we updated frontmatter but can't find table row, still return body
         if roadmap_block is not None:
             return body
         return None
 
+    # Resolve None → preserve existing value from matched row
+    existing_plan = match.group(4).strip()
+    existing_pr = match.group(5).strip()
+
+    resolved_plan = existing_plan if new_plan is None else (new_plan if new_plan else "-")
+    resolved_pr = existing_pr if new_pr is None else (new_pr if new_pr else "-")
+
     # Determine display status
     if explicit_status is not None:
         display_status = explicit_status.replace("_", "-")
-    elif new_pr:
+    elif resolved_pr != "-" and resolved_pr:
         display_status = "done"
-    elif new_plan:
+    elif resolved_plan != "-" and resolved_plan:
         display_status = "in-progress"
     else:
         display_status = "pending"
 
-    plan_display = new_plan if new_plan else "-"
-    pr_display = new_pr if new_pr else "-"
+    plan_display = resolved_plan
+    pr_display = resolved_pr
 
-    # Always write 5-col row
     replacement = (
         f"|{match.group(1)}|{match.group(2)}| {display_status} | {plan_display} | {pr_display} |"
     )
 
     body = body[: match.start()] + replacement + body[match.end() :]
 
-    # If we matched a 4-col row, upgrade the table header too
-    if not is_five_col_row:
-        body = _upgrade_table_header(body)
-
-    return body
-
-
-def _upgrade_table_header(body: str) -> str:
-    """Upgrade 4-col table headers to 5-col in the body.
-
-    Replaces:
-        | Step | Description | Status | PR |
-        |------|-------------|--------|-----|
-    With:
-        | Step | Description | Status | Plan | PR |
-        |------|-------------|--------|------|-----|
-    """
-    # Upgrade header row
-    body = re.sub(
-        r"^\|\s*Step\s*\|\s*Description\s*\|\s*Status\s*\|\s*PR\s*\|$",
-        "| Step | Description | Status | Plan | PR |",
-        body,
-        flags=re.MULTILINE | re.IGNORECASE,
-    )
-    # Upgrade separator row (4-col → 5-col)
-    body = re.sub(
-        r"^\|([\s:-]+)\|([\s:-]+)\|([\s:-]+)\|([\s:-]+)\|$",
-        r"|------|-------------|--------|------|-----|",
-        body,
-        flags=re.MULTILINE,
-    )
     return body
 
 
@@ -301,7 +260,7 @@ def _upgrade_table_header(body: str) -> str:
     "explicit_status",
     required=False,
     default=None,
-    type=click.Choice(["done", "pending", "in_progress", "blocked", "skipped"]),
+    type=click.Choice(list(get_args(RoadmapStepStatus))),
     help="Explicit status to set (default: infer from plan/PR value)",
 )
 @click.option(
@@ -323,11 +282,6 @@ def update_roadmap_step(
     include_body: bool,
 ) -> None:
     """Update step plan/PR cells in an objective's roadmap table."""
-    # Handle legacy "plan #NNN" in --pr by migrating to --plan
-    if pr_ref is not None and _PLAN_PREFIX_RE.match(pr_ref):
-        plan_ref = "#" + pr_ref[len("plan #") :]
-        pr_ref = None
-
     # Require at least one of --plan or --pr
     if plan_ref is None and pr_ref is None:
         click.echo(
