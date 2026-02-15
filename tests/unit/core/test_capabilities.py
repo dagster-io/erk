@@ -16,8 +16,7 @@ from erk.capabilities.erk_bash_permissions import ErkBashPermissionsCapability
 from erk.capabilities.hooks import HooksCapability
 from erk.capabilities.learned_docs import LearnedDocsCapability
 from erk.capabilities.ruff_format import RuffFormatCapability
-from erk.capabilities.skills.dignified_python import DignifiedPythonCapability
-from erk.capabilities.skills.fake_driven_testing import FakeDrivenTestingCapability
+from erk.capabilities.skills.bundled import bundled_skills
 from erk.capabilities.statusline import StatuslineCapability
 from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
 from erk.capabilities.workflows.learn import LearnWorkflowCapability
@@ -27,6 +26,7 @@ from erk.core.capabilities.base import (
     CapabilityResult,
     CapabilityScope,
 )
+from erk.core.capabilities.codex_portable import codex_portable_skills
 from erk.core.capabilities.detection import is_reminder_installed
 from erk.core.capabilities.registry import (
     get_capability,
@@ -314,38 +314,41 @@ def test_custom_capability_install_and_is_installed(tmp_path: Path) -> None:
 
 
 def test_dignified_python_capability_properties() -> None:
-    """Test DignifiedPythonCapability has correct properties."""
-    cap = DignifiedPythonCapability()
+    """Test dignified-python capability has correct properties via registry."""
+    cap = get_capability("dignified-python")
+    assert cap is not None
     assert cap.name == "dignified-python"
-    assert cap.skill_name == "dignified-python"
     assert "Python" in cap.description
     assert ".claude/skills/dignified-python" in cap.installation_check_description
 
 
 def test_fake_driven_testing_capability_properties() -> None:
-    """Test FakeDrivenTestingCapability has correct properties."""
-    cap = FakeDrivenTestingCapability()
+    """Test fake-driven-testing capability has correct properties via registry."""
+    cap = get_capability("fake-driven-testing")
+    assert cap is not None
     assert cap.name == "fake-driven-testing"
-    assert cap.skill_name == "fake-driven-testing"
     assert "test" in cap.description.lower()
 
 
 def test_skill_capability_is_installed_false_when_missing(tmp_path: Path) -> None:
     """Test skill capability is_installed returns False when skill directory missing."""
-    cap = DignifiedPythonCapability()
+    cap = get_capability("dignified-python")
+    assert cap is not None
     assert cap.is_installed(tmp_path) is False
 
 
 def test_skill_capability_is_installed_true_when_exists(tmp_path: Path) -> None:
     """Test skill capability is_installed returns True when skill directory exists."""
     (tmp_path / ".claude" / "skills" / "dignified-python").mkdir(parents=True)
-    cap = DignifiedPythonCapability()
+    cap = get_capability("dignified-python")
+    assert cap is not None
     assert cap.is_installed(tmp_path) is True
 
 
 def test_skill_capability_artifacts() -> None:
     """Test that skill capabilities list correct artifacts."""
-    cap = DignifiedPythonCapability()
+    cap = get_capability("dignified-python")
+    assert cap is not None
     artifacts = cap.artifacts
 
     assert len(artifacts) == 1
@@ -354,15 +357,21 @@ def test_skill_capability_artifacts() -> None:
 
 
 def test_all_skill_capabilities_registered() -> None:
-    """Test that all skill capabilities are registered."""
-    expected_skills = [
-        "dignified-python",
-        "fake-driven-testing",
-    ]
-    for skill_name in expected_skills:
+    """Test that all bundled skill capabilities are registered."""
+    for skill_name in bundled_skills():
         cap = get_capability(skill_name)
         assert cap is not None, f"Skill '{skill_name}' not registered"
         assert cap.name == skill_name
+
+
+def test_all_codex_portable_skills_have_capability() -> None:
+    """Drift prevention: every codex_portable_skills() entry must have a registered capability."""
+    for skill_name in codex_portable_skills():
+        cap = get_capability(skill_name)
+        assert cap is not None, (
+            f"Skill '{skill_name}' is in codex_portable_skills() but has no registered capability. "
+            f"Add it to bundled_skills() in bundled.py or create a dedicated capability class."
+        )
 
 
 # =============================================================================
@@ -718,8 +727,6 @@ def test_all_project_capabilities_have_project_scope() -> None:
     """Test that project-level capabilities have 'project' scope."""
     project_caps = [
         LearnedDocsCapability(),
-        DignifiedPythonCapability(),
-        FakeDrivenTestingCapability(),
         ErkImplWorkflowCapability(),
         DevrunAgentCapability(),
         ErkBashPermissionsCapability(),
@@ -727,6 +734,12 @@ def test_all_project_capabilities_have_project_scope() -> None:
 
     for cap in project_caps:
         assert cap.scope == "project", f"{cap.name} should have 'project' scope"
+
+    # Bundled skills are also project-scoped
+    for skill_name in bundled_skills():
+        cap = get_capability(skill_name)
+        assert cap is not None
+        assert cap.scope == "project", f"{skill_name} should have 'project' scope"
 
 
 def test_statusline_has_user_scope() -> None:
@@ -1038,8 +1051,6 @@ def test_default_capabilities_not_required() -> None:
     # Most capabilities should be optional
     optional_caps = [
         LearnedDocsCapability(),
-        DignifiedPythonCapability(),
-        FakeDrivenTestingCapability(),
         ErkImplWorkflowCapability(),
         LearnWorkflowCapability(),
         DevrunAgentCapability(),
@@ -1049,6 +1060,12 @@ def test_default_capabilities_not_required() -> None:
 
     for cap in optional_caps:
         assert cap.required is False, f"{cap.name} should not be required"
+
+    # All bundled skills should also be optional
+    for skill_name in bundled_skills():
+        cap = get_capability(skill_name)
+        assert cap is not None
+        assert cap.required is False, f"{skill_name} should not be required"
 
 
 def test_capability_base_required_default_is_false() -> None:
@@ -1566,7 +1583,8 @@ def test_reminder_capabilities_not_in_required_list() -> None:
 
 def test_skill_capability_managed_artifacts() -> None:
     """Test that SkillCapability declares its managed artifacts."""
-    cap = DignifiedPythonCapability()
+    cap = get_capability("dignified-python")
+    assert cap is not None
     managed = cap.managed_artifacts
 
     assert len(managed) == 1
