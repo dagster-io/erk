@@ -5,6 +5,7 @@ pieces so both `erk one-shot` and `erk objective next-plan --one-shot` can
 dispatch tasks through the same CI workflow.
 """
 
+import logging
 from dataclasses import dataclass
 
 import click
@@ -12,10 +13,13 @@ import click
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
 from erk_shared.gateway.git.remote_ops.types import PushError
+from erk_shared.gateway.github.parsing import construct_workflow_run_url
 from erk_shared.gateway.github.plan_issues import create_plan_issue
 from erk_shared.gateway.time.abc import Time
 from erk_shared.naming import format_branch_timestamp_suffix, sanitize_worktree_name
 from erk_shared.output.output import user_output
+
+logger = logging.getLogger(__name__)
 
 ONE_SHOT_WORKFLOW = "one-shot.yml"
 
@@ -229,6 +233,19 @@ def dispatch_one_shot(
             inputs=inputs,
         )
 
+        # Update PR body with workflow run link (best-effort)
+        if repo.github is not None:
+            run_url = construct_workflow_run_url(repo.github.owner, repo.github.repo, run_id)
+            try:
+                pr_body = (
+                    f"Autonomous one-shot execution.\n\n"
+                    f"**Instruction:** {params.instruction}\n\n"
+                    f"**Workflow run:** {run_url}"
+                )
+                ctx.github.update_pr_body(repo.root, pr_number, pr_body)
+            except Exception as e:
+                logger.warning("Failed to update stub PR body with workflow run link: %s", e)
+
         # Restore original branch after successful workflow trigger
         ctx.branch_manager.checkout_branch(repo.root, original_branch)
 
@@ -237,9 +254,7 @@ def dispatch_one_shot(
         user_output(click.style("Done!", fg="green", bold=True))
         if repo.github is not None:
             pr_url = f"https://github.com/{repo.github.owner}/{repo.github.repo}/pull/{pr_number}"
-            run_url = (
-                f"https://github.com/{repo.github.owner}/{repo.github.repo}/actions/runs/{run_id}"
-            )
+            # run_url already constructed above
             user_output(f"PR: {click.style(pr_url, fg='cyan')}")
             user_output(f"Run: {click.style(run_url, fg='cyan')}")
         else:
