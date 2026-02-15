@@ -24,11 +24,19 @@ Identify documentation that: (1) describes systems, workflows, or concepts inacc
 
 ### Prerequisites
 
-Load the `learned-docs` skill for content quality standards. The skill's core rules doc defines what counts as duplicative, high-value, and verbatim content.
+**MANDATORY:** Load the `learned-docs` skill before starting any phase. This skill defines the content quality standards that drive all classification decisions in this audit. Without it, the audit will miss standards violations (source pointer format, One Code Rule, explain-why-not-what, enumerable catalogs).
 
 ### Phase 1: Resolve and Read Document
 
-Parse `$ARGUMENTS` to:
+**FIRST:** Read `.claude/skills/learned-docs/learned-docs-core.md` using the Read tool. All subsequent phases depend on these rules — specifically:
+
+- The One Code Rule and its four exceptions (Phase 6: Code Block Triage)
+- Source pointer format: name-based over line-range (Phase 2, Phase 5)
+- "Explain why, not what" (Phase 5: Adversarial Analysis)
+- "Enumerable catalogs → source pointers, not tables" (Phase 5)
+- DUPLICATIVE vs HIGH VALUE classification criteria (Phase 5)
+
+Then proceed to parse `$ARGUMENTS` to:
 
 1. Detect if `--auto-apply` flag is present (strip from path arguments)
 2. **CI auto-detection:** If `--auto-apply` was not explicitly passed, check for CI environment:
