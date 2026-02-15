@@ -71,4 +71,4 @@ Some exec scripts still use direct GitHub CLI calls and are candidates for migra
 
 - [Gateway vs Backend](gateway-vs-backend.md) - Backend ABC (3-place) vs Gateway ABC (5-place)
 - [Backend Testing Composition](../testing/backend-testing-composition.md) - Testing pattern
-- [PlanBackend ABC Methods](plan-backend-methods.md) - Complete method reference
+- [`PlanBackend` ABC](../../../packages/erk-shared/src/erk_shared/plan_store/backend.py) - Complete method reference

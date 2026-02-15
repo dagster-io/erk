@@ -71,7 +71,7 @@ Running `erk pr submit` multiple times can trigger finalize, which completely re
 - `.impl/` directory doesn't exist (auto-repair only runs if directory exists)
 - Issue was manually added to PR body (not stored in plan-ref.json)
 
-**Implementation:** See `extract_closing_reference()` in `erk_shared/github/pr_footer.py`.
+**Implementation:** See `extract_closing_reference()` in `erk_shared/gateway/github/pr_footer.py`.
 
 ## Anti-Pattern
 

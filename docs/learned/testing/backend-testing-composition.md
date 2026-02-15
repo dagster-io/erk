@@ -64,7 +64,7 @@ Assert on fake gateway mutation tracking properties:
 | ---------------------------- | ------------------------------------------------- |
 | `fake_issues.added_comments` | List of `(issue_number, body, comment_id)` tuples |
 | `fake_issues.updated_bodies` | List of `(issue_number, body)` tuples             |
-| `fake_issues.added_labels`   | List of `(issue_number, label)` tuples            |
+| `fake_issues.created_labels` | List of `(label, description, color)` tuples from `ensure_label_exists()` |
 
 ## Related Documentation
 
