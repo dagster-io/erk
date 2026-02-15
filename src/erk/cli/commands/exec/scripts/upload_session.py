@@ -34,16 +34,20 @@ Examples:
 """
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC
 from pathlib import Path
 from typing import Literal
 
 import click
 
-from erk_shared.context.helpers import require_github, require_issues, require_repo_root
+from erk_shared.context.helpers import (
+    require_github,
+    require_plan_backend,
+    require_repo_root,
+    require_time,
+)
 from erk_shared.gateway.github.abc import GistCreateError
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.types import BodyText
+from erk_shared.plan_store.types import PlanNotFound
 
 
 @click.command(name="upload-session")
@@ -85,6 +89,7 @@ def upload_session(
     """
     repo_root = require_repo_root(ctx)
     github = require_github(ctx)
+    time = require_time(ctx)
 
     # Read session content
     session_content = session_file.read_text(encoding="utf-8")
@@ -121,35 +126,30 @@ def upload_session(
     if issue_number is not None:
         result["issue_number"] = issue_number
 
-        # Import here to avoid circular imports
-        from erk_shared.gateway.github.metadata.plan_header import (
-            update_plan_header_session_gist,
-        )
+        backend = require_plan_backend(ctx)
+        plan_id = str(issue_number)
+        timestamp = time.now().replace(tzinfo=UTC).isoformat()
+        metadata: dict[str, object] = {
+            "last_session_gist_url": gist_result.gist_url,
+            "last_session_gist_id": gist_result.gist_id,
+            "last_session_id": session_id,
+            "last_session_at": timestamp,
+            "last_session_source": source,
+        }
 
-        # Get current issue body
-        issues = require_issues(ctx)
-        issue_info = issues.get_issue(repo_root, issue_number)
-        if isinstance(issue_info, IssueNotFound):
-            msg = f"Issue #{issue_number} not found"
-            raise RuntimeError(msg)
-        issue_body = issue_info.body
-
-        # Update with session gist info
-        timestamp = datetime.now(UTC).isoformat()
-        try:
-            updated_body = update_plan_header_session_gist(
-                issue_body=issue_body,
-                gist_url=gist_result.gist_url,
-                gist_id=gist_result.gist_id,
-                session_id=session_id,
-                session_at=timestamp,
-                source=source,
-            )
-            issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
-            result["issue_updated"] = True
-        except (ValueError, RuntimeError) as e:
-            # Issue update failed but gist was created - partial success
+        # LBYL: Check plan exists before updating
+        plan_result = backend.get_plan(repo_root, plan_id)
+        if isinstance(plan_result, PlanNotFound):
+            # Issue not found but gist was created - partial success
             result["issue_updated"] = False
-            result["issue_update_error"] = str(e)
+            result["issue_update_error"] = f"Issue #{issue_number} not found"
+        else:
+            try:
+                backend.update_metadata(repo_root, plan_id, metadata)
+                result["issue_updated"] = True
+            except RuntimeError as e:
+                # Issue update failed but gist was created - partial success
+                result["issue_updated"] = False
+                result["issue_update_error"] = str(e)
 
     click.echo(json.dumps(result))
