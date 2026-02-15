@@ -16,7 +16,7 @@ from erk.capabilities.erk_bash_permissions import ErkBashPermissionsCapability
 from erk.capabilities.hooks import HooksCapability
 from erk.capabilities.learned_docs import LearnedDocsCapability
 from erk.capabilities.ruff_format import RuffFormatCapability
-from erk.capabilities.skills.bundled import BUNDLED_SKILLS
+from erk.capabilities.skills.bundled import bundled_skills
 from erk.capabilities.statusline import StatuslineCapability
 from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
 from erk.capabilities.workflows.learn import LearnWorkflowCapability
@@ -358,7 +358,7 @@ def test_skill_capability_artifacts() -> None:
 
 def test_all_skill_capabilities_registered() -> None:
     """Test that all bundled skill capabilities are registered."""
-    for skill_name in BUNDLED_SKILLS:
+    for skill_name in bundled_skills():
         cap = get_capability(skill_name)
         assert cap is not None, f"Skill '{skill_name}' not registered"
         assert cap.name == skill_name
@@ -370,7 +370,7 @@ def test_all_codex_portable_skills_have_capability() -> None:
         cap = get_capability(skill_name)
         assert cap is not None, (
             f"Skill '{skill_name}' is in codex_portable_skills() but has no registered capability. "
-            f"Add it to BUNDLED_SKILLS in bundled.py or create a dedicated capability class."
+            f"Add it to bundled_skills() in bundled.py or create a dedicated capability class."
         )
 
 
@@ -736,7 +736,7 @@ def test_all_project_capabilities_have_project_scope() -> None:
         assert cap.scope == "project", f"{cap.name} should have 'project' scope"
 
     # Bundled skills are also project-scoped
-    for skill_name in BUNDLED_SKILLS:
+    for skill_name in bundled_skills():
         cap = get_capability(skill_name)
         assert cap is not None
         assert cap.scope == "project", f"{skill_name} should have 'project' scope"
@@ -1062,7 +1062,7 @@ def test_default_capabilities_not_required() -> None:
         assert cap.required is False, f"{cap.name} should not be required"
 
     # All bundled skills should also be optional
-    for skill_name in BUNDLED_SKILLS:
+    for skill_name in bundled_skills():
         cap = get_capability(skill_name)
         assert cap is not None
         assert cap.required is False, f"{skill_name} should not be required"
