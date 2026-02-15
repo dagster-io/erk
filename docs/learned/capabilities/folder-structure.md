@@ -1,5 +1,7 @@
 ---
 title: Capabilities Folder Structure
+last_audited: "2026-02-15"
+audit_result: edited
 read_when:
   - "adding new capability implementations"
   - "deciding where to place capability files"
@@ -41,14 +43,14 @@ The placement question arises because some capabilities fit templates (skills, r
 **Anti-pattern:** Creating a type folder for a single capability. Type folders exist to group similar implementations, not to organize one-offs.
 
 <!-- Source: src/erk/capabilities/hooks.py, HooksCapability class -->
-<!-- Source: src/erk/capabilities/skills/dignified_python.py, DignifiedPythonCapability class -->
+<!-- Source: src/erk/capabilities/skills/bundled.py, BundledSkillCapability class -->
 
 Examples:
 
 - `HooksCapability` lives at root because it modifies `.claude/settings.json` with hook entries, not copying a directory
-- `DignifiedPythonCapability` lives in `skills/` because it extends `SkillCapability` and follows the standard "copy skill directory" pattern
+- `BundledSkillCapability` lives in `skills/` because it extends `SkillCapability` and follows the standard "copy skill directory" pattern
 
-See `HooksCapability` in `src/erk/capabilities/hooks.py` for complex installation logic vs `DignifiedPythonCapability` in `src/erk/capabilities/skills/dignified_python.py` for template-based installation.
+See `HooksCapability` in `src/erk/capabilities/hooks.py` for complex installation logic vs `BundledSkillCapability` in `src/erk/capabilities/skills/bundled.py` for template-based installation.
 
 ## One File Per Capability
 

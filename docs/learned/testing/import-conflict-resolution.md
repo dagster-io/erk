@@ -1,5 +1,7 @@
 ---
 title: Merge Conflict Resolution for Import Consolidation
+last_audited: "2026-02-15"
+audit_result: edited
 read_when:
   - "resolving merge conflicts during rebase"
   - "fixing import conflicts after consolidation"

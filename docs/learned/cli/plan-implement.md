@@ -1,5 +1,7 @@
 ---
 title: Plan-Implement Workflow
+last_audited: "2026-02-15"
+audit_result: clean
 read_when:
   - "understanding the /erk:plan-implement command"
   - "implementing plans from GitHub issues"

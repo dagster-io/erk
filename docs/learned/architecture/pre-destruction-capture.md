@@ -1,5 +1,7 @@
 ---
 title: Pre-Destruction Data Capture Pattern
+last_audited: "2026-02-15"
+audit_result: clean
 read_when:
   - "implementing operations that destroy or transform data"
   - "designing pipelines with data capture requirements"
