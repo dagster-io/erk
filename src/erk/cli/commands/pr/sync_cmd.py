@@ -254,6 +254,12 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
             ctx.graphite_branch_ops.retrack_branch(repo.root, current_branch)
             user_output(click.style("✓", fg="green") + " Graphite tracking updated")
 
+        # Push restacked branch to remote
+        user_output("Pushing to remote...")
+        submit_result = ctx.branch_manager.submit_branch(repo.root, current_branch)
+        if isinstance(submit_result, SubmitBranchError):
+            raise click.ClickException(f"Failed to push: {submit_result.message}")
+        user_output(click.style("✓", fg="green") + " Pushed to remote")
         return
 
     user_output(f"Base branch: {base_branch}")
