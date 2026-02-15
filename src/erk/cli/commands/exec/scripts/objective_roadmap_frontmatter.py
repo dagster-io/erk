@@ -18,6 +18,7 @@ import yaml
 from erk.cli.commands.exec.scripts.objective_roadmap_shared import (
     RoadmapPhase,
     RoadmapStep,
+    RoadmapStepStatus,
 )
 from erk.core.frontmatter import parse_markdown_frontmatter
 
@@ -107,7 +108,7 @@ def validate_roadmap_frontmatter(
             RoadmapStep(
                 id=step_id,
                 description=description,
-                status=status,
+                status=cast(RoadmapStepStatus, status),
                 plan=plan_value,
                 pr=pr_value,
             )
@@ -298,8 +299,9 @@ def update_step_in_frontmatter(
                 resolved_plan = step.plan
 
             # Determine status: explicit > infer from resolved values > preserve
+            new_status: RoadmapStepStatus
             if status is not None:
-                new_status = status
+                new_status = cast(RoadmapStepStatus, status)
             elif resolved_pr:
                 new_status = "done"
             elif resolved_plan:

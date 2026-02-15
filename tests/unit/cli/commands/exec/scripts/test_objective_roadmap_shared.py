@@ -29,6 +29,7 @@ WELL_FORMED_BODY_5COL = """# Objective: Test
 | 2.2 | Performance | skipped | - | - |
 """
 
+
 def test_parse_roadmap_5col_well_formed() -> None:
     """Test parsing a well-formed 5-col roadmap body."""
     phases, errors = parse_roadmap(WELL_FORMED_BODY_5COL)

@@ -5,7 +5,7 @@ Used by erk objective check (check_cmd.py) and erk exec update-roadmap-step.
 
 import re
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 from erk_shared.gateway.github.metadata.core import extract_raw_metadata_blocks
 
@@ -214,8 +214,9 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             pr_value = pr_col if pr_col and pr_col != "-" else None
 
             # Explicit status values take priority
+            status: RoadmapStepStatus
             if status_col in ("done", "blocked", "skipped", "planning"):
-                status = status_col
+                status = cast(RoadmapStepStatus, status_col)
             elif status_col in ("in-progress", "in_progress"):
                 status = "in_progress"
             elif status_col == "pending":
