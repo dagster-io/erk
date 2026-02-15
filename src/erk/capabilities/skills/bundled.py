@@ -8,8 +8,6 @@ Skills with custom install/uninstall logic (like learned-docs) are NOT here;
 they have their own capability classes.
 """
 
-from functools import cache
-
 from erk.core.capabilities.skill_capability import SkillCapability
 
 BUNDLED_SKILLS: dict[str, str] = {
@@ -43,10 +41,9 @@ class BundledSkillCapability(SkillCapability):
         return self._description
 
 
-@cache
-def create_bundled_skill_capabilities() -> tuple[SkillCapability, ...]:
+def create_bundled_skill_capabilities() -> list[SkillCapability]:
     """Create SkillCapability instances for all bundled skills."""
-    return tuple(
+    return [
         BundledSkillCapability(_skill_name=name, _description=desc)
         for name, desc in BUNDLED_SKILLS.items()
-    )
+    ]
