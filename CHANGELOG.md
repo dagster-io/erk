@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of 573f178b2 -->
+<!-- As of 3622a2705 -->
+
+### Major Changes
+
+- **One-shot autonomous remote execution**: New `erk one-shot` command dispatches fully autonomous remote planning and implementation — creates branch, draft PR, and triggers GitHub Actions workflow where Claude explores, plans, implements, and submits without local planning. Supports `--model` flag. (934ac33b8)
 
 ### Added
 
@@ -18,10 +22,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `--machine` flag to `erk codespace setup` and set default 16-core machine in devcontainer
 - Embed implementation plan in remote queue draft PRs created via `erk plan submit`
 - Add multi-step support to `update-roadmap-step` command
+- Add `erk pr rewrite` command combining squash, AI message generation, commit amend, push, and remote PR update into a single operation (03dace5f2)
+- Add "created" column to `erk dash` TUI showing relative creation time for each plan (93fad4040)
+- Add `erk pr update-description` command for updating PR title and body with AI-generated content (b993f61a2)
+- Add "Run `erk learn` manually" option to the `erk land` learn-check menu (6efec0cda)
+- Add unified `erk docs check` command merging `erk docs sync --check` and `erk docs validate` (32923ff55)
+- Add separate Plan and PR columns to objective roadmap tables (4dc16904f)
 
 ### Changed
 
 - Update installation instructions from `uv tool install` to local venv workflow
+- Simplify branch reuse prompt in `erk plan submit` to a single binary choice (37d7b8820)
+- Remove unnecessary confirmation prompt in `erk learn` for gist-URL path; `-d` flag now implies auto-launch (3d23fcfd1)
+- Update default model in plan-implement workflow from Sonnet to Opus (fad0a8030)
 
 ### Fixed
 
@@ -30,10 +43,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improve error message for Graphite restack conflicts in `erk pr submit`
 - Fix `pr-fix-conflicts` workflow "Argument list too long" error by capturing Claude output internally
 - Fix codespace creation by using REST API to bypass broken GitHub machines endpoint
+- Fix `erk land` ignoring "n" answer to cleanup confirmation (aa0802f8b)
+- Fix remote implementation sessions being silently skipped during learn preprocessing (a698c0525)
 
 ### Removed
 
 - Remove `erk objective reconcile` command (duplicate of `erk objective next-plan`)
+- Remove `erk pr summarize` command, replaced by `erk pr rewrite` (03dace5f2)
 
 ## [0.7.2] - 2026-02-02 14:13 PT
 
