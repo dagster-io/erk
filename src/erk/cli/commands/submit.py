@@ -452,10 +452,10 @@ def _create_branch_and_pr(
     user_output("Creating .worker-impl/ folder...")
     create_worker_impl_folder(
         plan_content=plan.body,
-        issue_number=issue_number,
-        issue_url=issue.url,
+        plan_id=str(issue_number),
+        url=issue.url,
         repo_root=repo.root,
-        objective_issue=plan.objective_id,
+        objective_id=plan.objective_id,
     )
 
     # Stage, commit, and push

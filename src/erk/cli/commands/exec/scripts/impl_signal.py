@@ -52,7 +52,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
 )
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.impl_folder import (
-    read_issue_reference,
+    read_plan_ref,
     write_local_run_state,
 )
 
@@ -224,10 +224,10 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
     if not impl_dir.exists():
         impl_dir = Path.cwd() / ".worker-impl"
 
-    # Read issue reference FIRST (doesn't require context)
-    issue_ref = read_issue_reference(impl_dir)
-    if issue_ref is None:
-        _output_error(event, "no-issue-reference", "No issue reference found in issue.json")
+    # Read plan reference FIRST (doesn't require context)
+    plan_ref = read_plan_ref(impl_dir)
+    if plan_ref is None:
+        _output_error(event, "no-issue-reference", "No plan reference found")
         return
 
     # Delete Claude plan file if session_id provided
@@ -290,14 +290,14 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
             description=description,
         )
 
-        github.add_comment(repo_root, issue_ref.issue_number, comment_body)
+        github.add_comment(repo_root, int(plan_ref.plan_id), comment_body)
     except RuntimeError as e:
         _output_error(event, "github-comment-failed", f"Failed to post comment: {e}")
         return
 
     # Update issue metadata (non-fatal - comment was already posted)
     try:
-        issue = github.get_issue(repo_root, issue_ref.issue_number)
+        issue = github.get_issue(repo_root, int(plan_ref.plan_id))
         if not isinstance(issue, IssueNotFound):
             updated_body = _build_updated_issue_body(
                 issue_body=issue.body,
@@ -308,7 +308,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
                 branch_name=branch_name,
             )
             github.update_issue_body(
-                repo_root, issue_ref.issue_number, BodyText(content=updated_body)
+                repo_root, int(plan_ref.plan_id), BodyText(content=updated_body)
             )
     except ValueError:
         # Non-fatal - metadata update failed
@@ -317,7 +317,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
     result = SignalSuccess(
         success=True,
         event=event,
-        issue_number=issue_ref.issue_number,
+        issue_number=int(plan_ref.plan_id),
     )
     click.echo(json.dumps(asdict(result), indent=2))
     raise SystemExit(0)
@@ -332,10 +332,10 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
     if not impl_dir.exists():
         impl_dir = Path.cwd() / ".worker-impl"
 
-    # Read issue reference FIRST (doesn't require context)
-    issue_ref = read_issue_reference(impl_dir)
-    if issue_ref is None:
-        _output_error(event, "no-issue-reference", "No issue reference found in issue.json")
+    # Read plan reference FIRST (doesn't require context)
+    plan_ref = read_plan_ref(impl_dir)
+    if plan_ref is None:
+        _output_error(event, "no-issue-reference", "No plan reference found")
         return
 
     # Now get context dependencies (after confirming we need them)
@@ -373,9 +373,9 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
 
     # Update issue metadata
     try:
-        issue = github.get_issue(repo_root, issue_ref.issue_number)
+        issue = github.get_issue(repo_root, int(plan_ref.plan_id))
         if isinstance(issue, IssueNotFound):
-            _output_error(event, "github-api-failed", f"Issue #{issue_ref.issue_number} not found")
+            _output_error(event, "github-api-failed", f"Issue #{plan_ref.plan_id} not found")
             return
 
         if in_github_actions():
@@ -392,7 +392,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
                 user=user,
             )
 
-        github.update_issue_body(repo_root, issue_ref.issue_number, BodyText(content=updated_body))
+        github.update_issue_body(repo_root, int(plan_ref.plan_id), BodyText(content=updated_body))
     except ValueError as e:
         _output_error(event, "github-api-failed", f"Failed to update issue: {e}")
         return
@@ -400,7 +400,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
     result = SignalSuccess(
         success=True,
         event=event,
-        issue_number=issue_ref.issue_number,
+        issue_number=int(plan_ref.plan_id),
     )
     click.echo(json.dumps(asdict(result), indent=2))
     raise SystemExit(0)

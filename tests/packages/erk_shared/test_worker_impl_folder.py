@@ -17,15 +17,13 @@ def test_create_worker_impl_folder_success(tmp_path: Path) -> None:
     from erk_shared.worker_impl_folder import create_worker_impl_folder
 
     plan_content = "# Test Plan\n\n## Tasks\n\n1. First task\n2. Second task\n"
-    issue_number = 123
-    issue_url = "https://github.com/owner/repo/issues/123"
 
     worker_impl_folder = create_worker_impl_folder(
         plan_content=plan_content,
-        issue_number=issue_number,
-        issue_url=issue_url,
+        plan_id="123",
+        url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Verify folder was created
@@ -38,22 +36,22 @@ def test_create_worker_impl_folder_success(tmp_path: Path) -> None:
     assert plan_file.exists()
     assert plan_file.read_text(encoding="utf-8") == plan_content
 
-    # Verify issue.json exists with correct structure (canonical schema from impl_folder)
-    issue_file = worker_impl_folder / "issue.json"
-    assert issue_file.exists()
-    issue_data = json.loads(issue_file.read_text(encoding="utf-8"))
-    assert issue_data["issue_number"] == issue_number
-    assert issue_data["issue_url"] == issue_url
-    assert "created_at" in issue_data
-    assert "synced_at" in issue_data
+    # Verify plan-ref.json exists with correct structure
+    plan_ref_file = worker_impl_folder / "plan-ref.json"
+    assert plan_ref_file.exists()
+    plan_ref_data = json.loads(plan_ref_file.read_text(encoding="utf-8"))
+    assert plan_ref_data["provider"] == "github"
+    assert plan_ref_data["plan_id"] == "123"
+    assert plan_ref_data["url"] == "https://github.com/owner/repo/issues/123"
+    assert "created_at" in plan_ref_data
+    assert "synced_at" in plan_ref_data
 
     # Verify README.md exists
     readme_file = worker_impl_folder / "README.md"
     assert readme_file.exists()
     readme_content = readme_file.read_text(encoding="utf-8")
     assert "Worker Implementation Plan" in readme_content
-    assert f"issue #{issue_number}" in readme_content
-    assert issue_url in readme_content
+    assert "#123" in readme_content
 
 
 def test_create_worker_impl_folder_already_exists(tmp_path: Path) -> None:
@@ -68,10 +66,10 @@ def test_create_worker_impl_folder_already_exists(tmp_path: Path) -> None:
     with pytest.raises(FileExistsError, match=".worker-impl/ folder already exists"):
         create_worker_impl_folder(
             plan_content="# Test",
-            issue_number=123,
-            issue_url="https://github.com/owner/repo/issues/123",
+            plan_id="123",
+            url="https://github.com/owner/repo/issues/123",
             repo_root=tmp_path,
-            objective_issue=None,
+            objective_id=None,
         )
 
 
@@ -84,10 +82,10 @@ def test_create_worker_impl_folder_repo_root_not_exists(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="Repository root does not exist"):
         create_worker_impl_folder(
             plan_content="# Test",
-            issue_number=123,
-            issue_url="https://github.com/owner/repo/issues/123",
+            plan_id="123",
+            url="https://github.com/owner/repo/issues/123",
             repo_root=nonexistent_path,
-            objective_issue=None,
+            objective_id=None,
         )
 
 
@@ -102,10 +100,10 @@ def test_create_worker_impl_folder_repo_root_not_directory(tmp_path: Path) -> No
     with pytest.raises(ValueError, match="Repository root is not a directory"):
         create_worker_impl_folder(
             plan_content="# Test",
-            issue_number=123,
-            issue_url="https://github.com/owner/repo/issues/123",
+            plan_id="123",
+            url="https://github.com/owner/repo/issues/123",
             repo_root=file_path,
-            objective_issue=None,
+            objective_id=None,
         )
 
 
@@ -116,10 +114,10 @@ def test_remove_worker_impl_folder_success(tmp_path: Path) -> None:
     # Create .worker-impl/ folder first
     create_worker_impl_folder(
         plan_content="# Test\n",
-        issue_number=123,
-        issue_url="https://github.com/owner/repo/issues/123",
+        plan_id="123",
+        url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
-        objective_issue=None,
+        objective_id=None,
     )
 
     worker_impl_folder = tmp_path / ".worker-impl"
@@ -157,10 +155,10 @@ def test_worker_impl_folder_exists_true(tmp_path: Path) -> None:
     # Create .worker-impl/ folder
     create_worker_impl_folder(
         plan_content="# Test\n",
-        issue_number=123,
-        issue_url="https://github.com/owner/repo/issues/123",
+        plan_id="123",
+        url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
-        objective_issue=None,
+        objective_id=None,
     )
 
     assert worker_impl_folder_exists(tmp_path) is True
@@ -206,10 +204,10 @@ def example():
 """
     create_worker_impl_folder(
         plan_content=plan_content,
-        issue_number=456,
-        issue_url="https://github.com/owner/repo/issues/456",
+        plan_id="456",
+        url="https://github.com/owner/repo/issues/456",
         repo_root=tmp_path,
-        objective_issue=None,
+        objective_id=None,
     )
 
     plan_file = tmp_path / ".worker-impl" / "plan.md"
@@ -219,20 +217,20 @@ def example():
     assert saved_content == plan_content
 
 
-def test_create_worker_impl_folder_with_objective_issue(tmp_path: Path) -> None:
-    """Test creating .worker-impl/ folder with objective_issue included."""
+def test_create_worker_impl_folder_with_objective_id(tmp_path: Path) -> None:
+    """Test creating .worker-impl/ folder with objective_id included."""
     from erk_shared.worker_impl_folder import create_worker_impl_folder
 
     create_worker_impl_folder(
         plan_content="# Test Plan\n",
-        issue_number=123,
-        issue_url="https://github.com/owner/repo/issues/123",
+        plan_id="123",
+        url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
-        objective_issue=456,
+        objective_id=456,
     )
 
-    issue_file = tmp_path / ".worker-impl" / "issue.json"
-    issue_data = json.loads(issue_file.read_text(encoding="utf-8"))
+    plan_ref_file = tmp_path / ".worker-impl" / "plan-ref.json"
+    plan_ref_data = json.loads(plan_ref_file.read_text(encoding="utf-8"))
 
-    assert issue_data["issue_number"] == 123
-    assert issue_data["objective_issue"] == 456
+    assert plan_ref_data["plan_id"] == "123"
+    assert plan_ref_data["objective_id"] == 456

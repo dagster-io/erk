@@ -403,7 +403,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         impl_folder = worktree_path / ".impl"
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
-        assert (impl_folder / "issue.json").exists()
+        assert (impl_folder / "plan-ref.json").exists()
 
         # Verify activation script was created
         activate_script = worktree_path / ".erk" / "bin" / "activate.sh"

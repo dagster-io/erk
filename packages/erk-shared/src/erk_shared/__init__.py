@@ -8,7 +8,7 @@ Import from submodules:
 - github.types: PRInfo, PRMergeability, PRState, PullRequestInfo, WorkflowRun
 - github.issues: GitHubIssues, RealGitHubIssues, FakeGitHubIssues, etc.
 - github.metadata: MetadataBlock, create_metadata_block, etc.
-- impl_folder: IssueReference, read_issue_reference, etc.
+- impl_folder: PlanRef, read_plan_ref, save_plan_ref, etc.
 - naming: sanitize_worktree_name, generate_filename_from_title
 - output.output: user_output, machine_output, format_duration
 - subprocess_utils: run_subprocess_with_context

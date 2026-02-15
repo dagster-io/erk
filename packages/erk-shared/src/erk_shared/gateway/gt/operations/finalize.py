@@ -13,7 +13,7 @@ from erk_shared.gateway.github.pr_footer import (
 )
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.abc import GtKit
-from erk_shared.impl_folder import read_issue_reference
+from erk_shared.impl_folder import read_plan_ref
 
 # Label added to PRs that originate from learn plans.
 # Checked by land_cmd.py to skip creating pending-learn marker.
@@ -32,11 +32,11 @@ def is_learn_plan(impl_dir: Path) -> bool:
         True if "erk-learn" label is present, False otherwise (including if
         issue.json doesn't exist or labels field is missing)
     """
-    issue_ref = read_issue_reference(impl_dir)
-    if issue_ref is None:
+    plan_ref = read_plan_ref(impl_dir)
+    if plan_ref is None:
         return False
 
-    return "erk-learn" in issue_ref.labels
+    return "erk-learn" in plan_ref.labels
 
 
 def _extract_closing_ref_from_pr(

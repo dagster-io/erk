@@ -2,7 +2,7 @@
 
 This module provides shared utilities for managing .impl/ folder structures:
 - plan.md: Immutable implementation plan
-- issue.json: GitHub issue reference (optional)
+- plan-ref.json: Provider-agnostic plan reference (optional, replaces legacy issue.json)
 
 These utilities are used by both erk (for local operations) and erk-kits
 (for kit CLI commands).
@@ -15,6 +15,7 @@ import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 
 from erk_shared.gateway.github.metadata.core import (
     create_worktree_creation_block,
@@ -82,15 +83,21 @@ def get_impl_path(worktree_path: Path, git_ops=None) -> Path | None:
     return None
 
 
-@dataclass(frozen=True)
-class IssueReference:
-    """Reference to a GitHub issue associated with a plan."""
+PlanProviderType = Literal["github"]
+"""Supported plan providers. Only "github" for now; extend when adding new providers."""
 
-    issue_number: int
-    issue_url: str
-    created_at: str
-    synced_at: str
-    labels: tuple[str, ...] = ()
+
+@dataclass(frozen=True)
+class PlanRef:
+    """Provider-agnostic reference to a plan, stored in .impl/plan-ref.json."""
+
+    provider: PlanProviderType
+    plan_id: str  # Provider-specific ID as string ("42", "PROJ-123")
+    url: str  # Web URL to view the plan
+    created_at: str  # ISO 8601 UTC timestamp of local file creation
+    synced_at: str  # ISO 8601 UTC timestamp of last sync
+    labels: tuple[str, ...]  # Plan labels
+    objective_id: int | None  # Parent objective, or None
 
 
 @dataclass(frozen=True)
@@ -115,24 +122,24 @@ class LocalRunState:
     user: str  # User who ran the implementation
 
 
-def save_issue_reference(
+def save_plan_ref(
     impl_dir: Path,
-    issue_number: int,
-    issue_url: str,
     *,
-    issue_title: str | None,
-    labels: list[str] | None,
-    objective_issue: int | None,
+    provider: PlanProviderType,
+    plan_id: str,
+    url: str,
+    labels: tuple[str, ...],
+    objective_id: int | None,
 ) -> None:
-    """Save GitHub issue reference to .impl/issue.json.
+    """Save provider-agnostic plan reference to .impl/plan-ref.json.
 
     Args:
         impl_dir: Path to .impl/ directory
-        issue_number: GitHub issue number
-        issue_url: Full GitHub issue URL
-        issue_title: Optional issue title for reference
-        labels: Optional list of issue labels (used to detect learn plans)
-        objective_issue: Optional linked objective issue number
+        provider: Plan provider type
+        plan_id: Provider-specific ID as string ("42", "PROJ-123")
+        url: Web URL to view the plan
+        labels: Plan labels
+        objective_id: Optional linked objective issue number
 
     Raises:
         FileNotFoundError: If impl_dir doesn't exist
@@ -141,123 +148,136 @@ def save_issue_reference(
         msg = f"Implementation directory does not exist: {impl_dir}"
         raise FileNotFoundError(msg)
 
-    issue_file = impl_dir / "issue.json"
+    plan_ref_file = impl_dir / "plan-ref.json"
     now = datetime.now(UTC).isoformat()
 
-    data: dict[str, str | int | list[str]] = {
-        "issue_number": issue_number,
-        "issue_url": issue_url,
+    data: dict[str, str | int | list[str] | None] = {
+        "provider": provider,
+        "plan_id": plan_id,
+        "url": url,
         "created_at": now,
         "synced_at": now,
+        "labels": list(labels),
+        "objective_id": objective_id,
     }
-    if issue_title is not None:
-        data["issue_title"] = issue_title
-    if labels is not None:
-        data["labels"] = labels
-    if objective_issue is not None:
-        data["objective_issue"] = objective_issue
 
-    issue_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    plan_ref_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
-def read_issue_reference(impl_dir: Path) -> IssueReference | None:
-    """Read GitHub issue reference from .impl/issue.json.
+def read_plan_ref(impl_dir: Path) -> PlanRef | None:
+    """Read plan reference from .impl/plan-ref.json, with legacy fallback.
+
+    1. Try plan-ref.json first (new format)
+    2. Fall back to issue.json (legacy), mapping fields
+    3. Return None if neither file exists or is valid
 
     Args:
         impl_dir: Path to .impl/ directory
 
     Returns:
-        IssueReference if file exists and is valid, None otherwise
+        PlanRef if file exists and is valid, None otherwise
     """
-    issue_file = impl_dir / "issue.json"
+    # Try new format first
+    plan_ref_file = impl_dir / "plan-ref.json"
+    if plan_ref_file.exists():
+        try:
+            data = json.loads(plan_ref_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return None
 
+        required_fields = ["provider", "plan_id", "url", "created_at", "synced_at"]
+        if any(f not in data for f in required_fields):
+            return None
+
+        labels_list = data.get("labels", [])
+        labels = tuple(labels_list) if isinstance(labels_list, list) else ()
+
+        return PlanRef(
+            provider=data["provider"],
+            plan_id=data["plan_id"],
+            url=data["url"],
+            created_at=data["created_at"],
+            synced_at=data["synced_at"],
+            labels=labels,
+            objective_id=data.get("objective_id"),
+        )
+
+    # Fall back to legacy issue.json
+    issue_file = impl_dir / "issue.json"
     if not issue_file.exists():
         return None
 
-    # Gracefully handle JSON parsing errors (third-party API exception handling)
     try:
         data = json.loads(issue_file.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
-        # Could add logging here if needed for debugging:
-        # logger.debug(f"Failed to parse issue.json: {e}")
         return None
 
-    # Validate required fields exist
     required_fields = ["issue_number", "issue_url", "created_at", "synced_at"]
-    missing_fields = [f for f in required_fields if f not in data]
-
-    if missing_fields:
-        # Could add logging here for debugging:
-        # logger.debug(f"issue.json missing required fields: {missing_fields}")
+    if any(f not in data for f in required_fields):
         return None
 
-    # Read optional labels field (for backward compatibility with older issue.json files)
     labels_list = data.get("labels", [])
     labels = tuple(labels_list) if isinstance(labels_list, list) else ()
 
-    return IssueReference(
-        issue_number=data["issue_number"],
-        issue_url=data["issue_url"],
+    return PlanRef(
+        provider="github",
+        plan_id=str(data["issue_number"]),
+        url=data["issue_url"],
         created_at=data["created_at"],
         synced_at=data["synced_at"],
         labels=labels,
+        objective_id=data.get("objective_issue"),
     )
 
 
-def has_issue_reference(impl_dir: Path) -> bool:
-    """Check if .impl/issue.json exists.
+def has_plan_ref(impl_dir: Path) -> bool:
+    """Check if plan reference exists (either plan-ref.json or legacy issue.json).
 
     Args:
         impl_dir: Path to .impl/ directory
 
     Returns:
-        True if issue.json exists, False otherwise
+        True if either plan-ref.json or issue.json exists, False otherwise
     """
-    issue_file = impl_dir / "issue.json"
-    return issue_file.exists()
+    return (impl_dir / "plan-ref.json").exists() or (impl_dir / "issue.json").exists()
 
 
-def validate_issue_linkage(impl_dir: Path, branch_name: str) -> int | None:
-    """Validate branch name and .impl/issue.json agree. Returns issue number.
+def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
+    """Validate branch name and plan reference agree. Returns plan_id.
 
     Branch names follow the pattern P{issue_number}-{slug} (e.g., "P2382-add-feature").
-    If both branch name and .impl/issue.json contain an issue number, they MUST match.
+    If both branch name and plan reference contain an issue number, they MUST match.
 
     Args:
         impl_dir: Path to .impl/ or .worker-impl/ directory
         branch_name: Current git branch name
 
     Returns:
-        Issue number if discoverable from either source, None if neither has one.
+        Plan ID (as string) if discoverable from either source, None if neither has one.
 
     Raises:
         ValueError: If both sources have issue numbers and they disagree.
-
-    Examples:
-        >>> # Branch P42-feature with .impl/issue.json containing issue 42 -> 42
-        >>> # Branch P42-feature with no .impl/ -> 42
-        >>> # Branch main with .impl/issue.json containing issue 42 -> 42
-        >>> # Branch main with no .impl/ -> None
-        >>> # Branch P42-feature with .impl/issue.json containing issue 99 -> ValueError
     """
     branch_issue = extract_leading_issue_number(branch_name)
 
-    issue_ref = read_issue_reference(impl_dir) if impl_dir.exists() else None
-    impl_issue = issue_ref.issue_number if issue_ref is not None else None
+    plan_ref = read_plan_ref(impl_dir) if impl_dir.exists() else None
+    impl_plan_id = plan_ref.plan_id if plan_ref is not None else None
 
     # If both exist, they must match
-    if branch_issue is not None and impl_issue is not None:
-        if branch_issue != impl_issue:
+    if branch_issue is not None and impl_plan_id is not None:
+        if str(branch_issue) != impl_plan_id:
             raise ValueError(
                 f"Branch name (P{branch_issue}-...) disagrees with "
-                f".impl/issue.json (#{impl_issue}). Fix the mismatch before proceeding."
+                f"plan reference (#{impl_plan_id}). Fix the mismatch before proceeding."
             )
-        return branch_issue
+        return impl_plan_id
 
-    # Return whichever is available (impl_issue takes precedence if branch_issue is None)
-    if impl_issue is not None:
-        return impl_issue
-    return branch_issue
+    # Return whichever is available
+    if impl_plan_id is not None:
+        return impl_plan_id
+    if branch_issue is not None:
+        return str(branch_issue)
+    return None
 
 
 def read_run_info(impl_dir: Path) -> RunInfo | None:

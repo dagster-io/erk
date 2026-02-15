@@ -31,7 +31,7 @@ from typing import NoReturn
 
 import click
 
-from erk_shared.impl_folder import read_issue_reference
+from erk_shared.impl_folder import read_plan_ref
 
 
 def _error(msg: str) -> NoReturn:
@@ -75,9 +75,9 @@ def _get_issue_reference(impl_dir: Path, *, silent: bool = False) -> dict[str, i
     Returns:
         Dict with issue_number and issue_url, or None if not available
     """
-    issue_ref = read_issue_reference(impl_dir)
+    plan_ref = read_plan_ref(impl_dir)
 
-    if issue_ref is None:
+    if plan_ref is None:
         # Not an error - just means no GitHub tracking
         if not silent:
             click.echo(
@@ -87,8 +87,8 @@ def _get_issue_reference(impl_dir: Path, *, silent: bool = False) -> dict[str, i
         return None
 
     return {
-        "issue_number": issue_ref.issue_number,
-        "issue_url": issue_ref.issue_url,
+        "issue_number": int(plan_ref.plan_id),
+        "issue_url": plan_ref.url,
     }
 
 

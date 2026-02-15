@@ -29,7 +29,7 @@ Quick reference for all `erk exec` subcommands.
 | `find-project-dir`                | Find Claude Code project directory for a filesystem path.                 |
 | `generate-pr-address-summary`     | Generate enhanced PR comment for pr-address workflow.                     |
 | `generate-pr-summary`             | Generate PR summary from PR diff using Claude.                            |
-| `get-closing-text`                | Get closing text for PR body based on .impl/issue.json or branch name.    |
+| `get-closing-text`                | Get closing text for PR body based on .impl/plan-ref.json or branch name. |
 | `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                         |
 | `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).        |
 | `get-issue-timeline-prs`          | Fetch PRs referencing an issue via REST API timeline.                     |
@@ -351,7 +351,7 @@ Generate PR summary from PR diff using Claude.
 
 ### get-closing-text
 
-Get closing text for PR body based on .impl/issue.json or branch name.
+Get closing text for PR body based on .impl/plan-ref.json or branch name.
 
 **Usage:** `erk exec get-closing-text`
 

@@ -627,21 +627,22 @@ erk pr checkout 123
         assert "#99" in result.output
 
 
-def test_pr_check_passes_when_branch_and_issue_json_match(tmp_path: Path) -> None:
-    """Test PR check passes with matching branch name and .impl/issue.json."""
+def test_pr_check_passes_when_branch_and_plan_ref_match(tmp_path: Path) -> None:
+    """Test PR check passes with matching branch name and .impl/plan-ref.json."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Create .impl/issue.json with issue 456
+        # Create .impl/plan-ref.json with plan 456
         impl_dir = env.cwd / ".impl"
         impl_dir.mkdir()
-        issue_json = impl_dir / "issue.json"
-        issue_json.write_text(
+        plan_ref_json = impl_dir / "plan-ref.json"
+        plan_ref_json.write_text(
             json.dumps(
                 {
-                    "issue_number": 456,
-                    "issue_url": "https://github.com/owner/repo/issues/456",
+                    "provider": "github",
+                    "plan_id": "456",
+                    "url": "https://github.com/owner/repo/issues/456",
                     "created_at": "2025-01-01T00:00:00Z",
                     "synced_at": "2025-01-01T00:00:00Z",
                 }
@@ -705,7 +706,7 @@ erk pr checkout 123
         result = runner.invoke(pr_group, ["check"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "[PASS] Branch name and .impl/issue.json agree (#456)" in result.output
+        assert "[PASS] Branch name and plan reference agree (#456)" in result.output
         assert "[PASS] PR body contains issue closing reference (Closes #456)" in result.output
         assert "[PASS] PR body contains checkout footer" in result.output
         assert "All checks passed" in result.output

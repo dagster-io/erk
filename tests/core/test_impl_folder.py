@@ -16,12 +16,12 @@ from erk_shared.impl_folder import (
     add_worktree_creation_comment,
     create_impl_folder,
     get_impl_path,
-    has_issue_reference,
-    read_issue_reference,
+    has_plan_ref,
     read_last_dispatched_run_id,
     read_plan_author,
-    save_issue_reference,
-    validate_issue_linkage,
+    read_plan_ref,
+    save_plan_ref,
+    validate_plan_linkage,
 )
 
 # =============================================================================
@@ -109,300 +109,6 @@ def test_get_impl_path_not_exists(tmp_path: Path) -> None:
     """Test getting plan path when it doesn't exist."""
     plan_path = get_impl_path(tmp_path)
     assert plan_path is None
-
-
-# ============================================================================
-# Issue Reference Storage Tests
-# ============================================================================
-
-
-def test_save_issue_reference_success(tmp_path: Path) -> None:
-    """Test saving issue reference to .plan/issue.json."""
-    # Create .plan/ directory
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    # Save issue reference
-    save_issue_reference(
-        plan_dir,
-        42,
-        "https://github.com/owner/repo/issues/42",
-        issue_title=None,
-        labels=None,
-        objective_issue=None,
-    )
-
-    # Verify file created
-    issue_file = plan_dir / "issue.json"
-    assert issue_file.exists()
-
-    # Verify content
-    content = issue_file.read_text(encoding="utf-8")
-    data = json.loads(content)
-    assert data["issue_number"] == 42
-    assert data["issue_url"] == "https://github.com/owner/repo/issues/42"
-    assert "created_at" in data
-    assert "synced_at" in data
-
-
-def test_save_issue_reference_plan_dir_not_exists(tmp_path: Path) -> None:
-    """Test save_issue_reference raises error when plan dir doesn't exist."""
-    impl_dir = tmp_path / ".impl"
-    # Don't create the directory
-
-    with pytest.raises(FileNotFoundError, match="Implementation directory does not exist"):
-        save_issue_reference(
-            impl_dir, 42, "http://url", issue_title=None, labels=None, objective_issue=None
-        )
-
-
-def test_save_issue_reference_overwrites_existing(tmp_path: Path) -> None:
-    """Test save_issue_reference overwrites existing issue.json."""
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    # Save first reference
-    save_issue_reference(
-        plan_dir, 10, "http://url/10", issue_title=None, labels=None, objective_issue=None
-    )
-
-    # Overwrite with new reference
-    save_issue_reference(
-        plan_dir, 20, "http://url/20", issue_title=None, labels=None, objective_issue=None
-    )
-
-    # Verify latest reference saved
-    ref = read_issue_reference(plan_dir)
-    assert ref is not None
-    assert ref.issue_number == 20
-    assert ref.issue_url == "http://url/20"
-
-
-def test_save_issue_reference_timestamps(tmp_path: Path) -> None:
-    """Test save_issue_reference generates ISO 8601 timestamps."""
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    save_issue_reference(
-        plan_dir, 1, "http://url", issue_title=None, labels=None, objective_issue=None
-    )
-
-    issue_file = plan_dir / "issue.json"
-    data = json.loads(issue_file.read_text(encoding="utf-8"))
-
-    # Verify timestamps are ISO 8601 format
-    assert "T" in data["created_at"]
-    assert ":" in data["created_at"]
-    assert "T" in data["synced_at"]
-    assert ":" in data["synced_at"]
-
-
-def test_save_issue_reference_with_objective_issue(tmp_path: Path) -> None:
-    """Test save_issue_reference stores objective_issue when provided."""
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    save_issue_reference(
-        plan_dir,
-        42,
-        "https://github.com/owner/repo/issues/42",
-        issue_title="Test issue",
-        labels=None,
-        objective_issue=123,
-    )
-
-    issue_file = plan_dir / "issue.json"
-    data = json.loads(issue_file.read_text(encoding="utf-8"))
-
-    assert data["issue_number"] == 42
-    assert data["objective_issue"] == 123
-
-
-def test_save_issue_reference_without_objective_issue(tmp_path: Path) -> None:
-    """Test save_issue_reference omits objective_issue when None."""
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    save_issue_reference(
-        plan_dir,
-        42,
-        "https://github.com/owner/repo/issues/42",
-        issue_title="Test issue",
-        labels=None,
-        objective_issue=None,
-    )
-
-    issue_file = plan_dir / "issue.json"
-    data = json.loads(issue_file.read_text(encoding="utf-8"))
-
-    assert data["issue_number"] == 42
-    assert "objective_issue" not in data
-
-
-def test_read_issue_reference_success(tmp_path: Path) -> None:
-    """Test reading existing issue reference."""
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    # Save reference
-    save_issue_reference(
-        plan_dir,
-        42,
-        "https://github.com/owner/repo/issues/42",
-        issue_title=None,
-        labels=None,
-        objective_issue=None,
-    )
-
-    # Read it back
-    ref = read_issue_reference(plan_dir)
-
-    assert ref is not None
-    assert ref.issue_number == 42
-    assert ref.issue_url == "https://github.com/owner/repo/issues/42"
-    assert ref.created_at is not None
-    assert ref.synced_at is not None
-
-
-def test_read_issue_reference_not_exists(tmp_path: Path) -> None:
-    """Test read_issue_reference returns None when file doesn't exist."""
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    ref = read_issue_reference(plan_dir)
-
-    assert ref is None
-
-
-def test_read_issue_reference_invalid_json(tmp_path: Path) -> None:
-    """Test read_issue_reference returns None for invalid JSON."""
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    # Create invalid JSON file
-    issue_file = plan_dir / "issue.json"
-    issue_file.write_text("not valid json", encoding="utf-8")
-
-    ref = read_issue_reference(plan_dir)
-
-    assert ref is None
-
-
-def test_read_issue_reference_missing_fields(tmp_path: Path) -> None:
-    """Test read_issue_reference returns None when required fields missing."""
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    # Create JSON with missing fields
-    issue_file = plan_dir / "issue.json"
-    data = {"issue_number": 42}  # Missing other required fields
-    issue_file.write_text(json.dumps(data), encoding="utf-8")
-
-    ref = read_issue_reference(plan_dir)
-
-    assert ref is None
-
-
-def test_read_issue_reference_all_fields_present(tmp_path: Path) -> None:
-    """Test read_issue_reference returns IssueReference with all fields."""
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    # Create complete JSON
-    issue_file = plan_dir / "issue.json"
-    data = {
-        "issue_number": 123,
-        "issue_url": "https://github.com/owner/repo/issues/123",
-        "created_at": "2025-01-01T10:00:00Z",
-        "synced_at": "2025-01-01T11:00:00Z",
-    }
-    issue_file.write_text(json.dumps(data), encoding="utf-8")
-
-    ref = read_issue_reference(plan_dir)
-
-    assert ref is not None
-    assert ref.issue_number == 123
-    assert ref.issue_url == "https://github.com/owner/repo/issues/123"
-    assert ref.created_at == "2025-01-01T10:00:00Z"
-    assert ref.synced_at == "2025-01-01T11:00:00Z"
-
-
-def test_has_issue_reference_exists(tmp_path: Path) -> None:
-    """Test has_issue_reference returns True when file exists."""
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    save_issue_reference(
-        plan_dir, 42, "http://url", issue_title=None, labels=None, objective_issue=None
-    )
-
-    assert has_issue_reference(plan_dir) is True
-
-
-def test_has_issue_reference_not_exists(tmp_path: Path) -> None:
-    """Test has_issue_reference returns False when file doesn't exist."""
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    assert has_issue_reference(plan_dir) is False
-
-
-def test_has_issue_reference_plan_dir_not_exists(tmp_path: Path) -> None:
-    """Test has_issue_reference returns False when plan dir doesn't exist."""
-    plan_dir = tmp_path / ".impl"
-    # Don't create directory
-
-    assert has_issue_reference(plan_dir) is False
-
-
-def test_issue_reference_roundtrip(tmp_path: Path) -> None:
-    """Test complete workflow: save -> read -> verify."""
-    plan_dir = tmp_path / ".impl"
-    plan_dir.mkdir()
-
-    # Save reference
-    issue_num = 999
-    issue_url = "https://github.com/test/repo/issues/999"
-    save_issue_reference(
-        plan_dir, issue_num, issue_url, issue_title=None, labels=None, objective_issue=None
-    )
-
-    # Verify has_issue_reference detects it
-    assert has_issue_reference(plan_dir) is True
-
-    # Read reference back
-    ref = read_issue_reference(plan_dir)
-
-    # Verify all fields match
-    assert ref is not None
-    assert ref.issue_number == issue_num
-    assert ref.issue_url == issue_url
-    # Timestamps should exist (not testing exact values since they're generated)
-    assert len(ref.created_at) > 0
-    assert len(ref.synced_at) > 0
-
-
-def test_issue_reference_with_plan_folder(tmp_path: Path) -> None:
-    """Test issue reference integration with plan folder creation."""
-    # Create plan folder
-    plan_content = "# Test Plan\n"
-    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
-
-    # Initially no issue reference
-    assert has_issue_reference(plan_folder) is False
-
-    # Save issue reference
-    save_issue_reference(
-        plan_folder, 42, "http://url/42", issue_title=None, labels=None, objective_issue=None
-    )
-
-    # Verify reference exists
-    assert has_issue_reference(plan_folder) is True
-
-    # Read and verify
-    ref = read_issue_reference(plan_folder)
-    assert ref is not None
-    assert ref.issue_number == 42
 
 
 # ============================================================================
@@ -742,45 +448,261 @@ worktree_name: test-worktree
 
 
 # ============================================================================
-# Issue Linkage Validation Tests
+# PlanRef Storage Tests
 # ============================================================================
 
 
-def test_validate_issue_linkage_both_match(tmp_path: Path) -> None:
-    """Test validation passes when branch and .impl/issue.json match."""
+def test_save_plan_ref_success(tmp_path: Path) -> None:
+    """Test saving plan reference to .impl/plan-ref.json."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
-    save_issue_reference(
+
+    save_plan_ref(
         impl_dir,
-        42,
-        "https://github.com/org/repo/issues/42",
-        issue_title=None,
-        labels=None,
-        objective_issue=None,
+        provider="github",
+        plan_id="42",
+        url="https://github.com/owner/repo/issues/42",
+        labels=("erk-plan",),
+        objective_id=99,
     )
 
-    # Branch name matches issue number
-    result = validate_issue_linkage(impl_dir, "P42-add-feature-01-04-1234")
+    plan_ref_file = impl_dir / "plan-ref.json"
+    assert plan_ref_file.exists()
 
-    assert result == 42
+    data = json.loads(plan_ref_file.read_text(encoding="utf-8"))
+    assert data["provider"] == "github"
+    assert data["plan_id"] == "42"
+    assert data["url"] == "https://github.com/owner/repo/issues/42"
+    assert data["labels"] == ["erk-plan"]
+    assert data["objective_id"] == 99
+    assert "created_at" in data
+    assert "synced_at" in data
 
 
-def test_validate_issue_linkage_mismatch_raises(tmp_path: Path) -> None:
-    """Test validation raises ValueError when branch and .impl/issue.json disagree."""
+def test_save_plan_ref_dir_not_exists(tmp_path: Path) -> None:
+    """Test save_plan_ref raises error when dir doesn't exist."""
+    impl_dir = tmp_path / ".impl"
+
+    with pytest.raises(FileNotFoundError, match="Implementation directory does not exist"):
+        save_plan_ref(
+            impl_dir,
+            provider="github",
+            plan_id="42",
+            url="http://url",
+            labels=(),
+            objective_id=None,
+        )
+
+
+def test_save_plan_ref_no_objective(tmp_path: Path) -> None:
+    """Test save_plan_ref stores null for objective_id when None."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
-    save_issue_reference(
+
+    save_plan_ref(
         impl_dir,
-        99,
-        "https://github.com/org/repo/issues/99",
-        issue_title=None,
-        labels=None,
-        objective_issue=None,
+        provider="github",
+        plan_id="42",
+        url="http://url",
+        labels=(),
+        objective_id=None,
     )
 
-    # Branch says issue 42, but .impl/ says issue 99
+    data = json.loads((impl_dir / "plan-ref.json").read_text(encoding="utf-8"))
+    assert data["objective_id"] is None
+
+
+def test_read_plan_ref_roundtrip(tmp_path: Path) -> None:
+    """Test save -> read roundtrip for plan-ref.json."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+
+    save_plan_ref(
+        impl_dir,
+        provider="github",
+        plan_id="42",
+        url="https://github.com/owner/repo/issues/42",
+        labels=("erk-plan", "erk-learn"),
+        objective_id=99,
+    )
+
+    ref = read_plan_ref(impl_dir)
+    assert ref is not None
+    assert ref.provider == "github"
+    assert ref.plan_id == "42"
+    assert ref.url == "https://github.com/owner/repo/issues/42"
+    assert ref.labels == ("erk-plan", "erk-learn")
+    assert ref.objective_id == 99
+    assert len(ref.created_at) > 0
+    assert len(ref.synced_at) > 0
+
+
+def test_read_plan_ref_from_legacy_issue_json(tmp_path: Path) -> None:
+    """Test read_plan_ref falls back to legacy issue.json format."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+
+    # Write legacy issue.json (no plan-ref.json)
+    issue_data = {
+        "issue_number": 42,
+        "issue_url": "https://github.com/owner/repo/issues/42",
+        "created_at": "2025-01-15T10:00:00+00:00",
+        "synced_at": "2025-01-15T10:00:00+00:00",
+        "labels": ["erk-plan"],
+        "objective_issue": 99,
+    }
+    (impl_dir / "issue.json").write_text(json.dumps(issue_data), encoding="utf-8")
+
+    ref = read_plan_ref(impl_dir)
+    assert ref is not None
+    assert ref.provider == "github"
+    assert ref.plan_id == "42"
+    assert ref.url == "https://github.com/owner/repo/issues/42"
+    assert ref.labels == ("erk-plan",)
+    assert ref.objective_id == 99
+
+
+def test_read_plan_ref_prefers_plan_ref_json(tmp_path: Path) -> None:
+    """Test read_plan_ref prefers plan-ref.json over legacy issue.json."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+
+    # Write both files with different data
+    plan_ref_data = {
+        "provider": "linear",
+        "plan_id": "PROJ-123",
+        "url": "https://linear.app/proj/PROJ-123",
+        "created_at": "2025-01-15T10:00:00+00:00",
+        "synced_at": "2025-01-15T10:00:00+00:00",
+        "labels": [],
+        "objective_id": None,
+    }
+    (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")
+
+    issue_data = {
+        "issue_number": 42,
+        "issue_url": "https://github.com/owner/repo/issues/42",
+        "created_at": "2025-01-15T10:00:00+00:00",
+        "synced_at": "2025-01-15T10:00:00+00:00",
+    }
+    (impl_dir / "issue.json").write_text(json.dumps(issue_data), encoding="utf-8")
+
+    ref = read_plan_ref(impl_dir)
+    assert ref is not None
+    assert ref.provider == "linear"
+    assert ref.plan_id == "PROJ-123"
+
+
+def test_read_plan_ref_not_exists(tmp_path: Path) -> None:
+    """Test read_plan_ref returns None when no files exist."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+
+    ref = read_plan_ref(impl_dir)
+    assert ref is None
+
+
+def test_read_plan_ref_invalid_json(tmp_path: Path) -> None:
+    """Test read_plan_ref returns None for invalid JSON."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+
+    (impl_dir / "plan-ref.json").write_text("not valid json", encoding="utf-8")
+
+    ref = read_plan_ref(impl_dir)
+    assert ref is None
+
+
+def test_read_plan_ref_missing_fields(tmp_path: Path) -> None:
+    """Test read_plan_ref returns None when required fields missing."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+
+    (impl_dir / "plan-ref.json").write_text(json.dumps({"provider": "github"}), encoding="utf-8")
+
+    ref = read_plan_ref(impl_dir)
+    assert ref is None
+
+
+def test_has_plan_ref_with_plan_ref_json(tmp_path: Path) -> None:
+    """Test has_plan_ref detects plan-ref.json."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+
+    save_plan_ref(
+        impl_dir,
+        provider="github",
+        plan_id="42",
+        url="http://url",
+        labels=(),
+        objective_id=None,
+    )
+
+    assert has_plan_ref(impl_dir) is True
+
+
+def test_has_plan_ref_detects_legacy_file(tmp_path: Path) -> None:
+    """Test has_plan_ref detects legacy issue.json."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+
+    # Write only legacy issue.json file
+    legacy_data = {
+        "issue_number": 42,
+        "issue_url": "http://url",
+        "created_at": "2025-01-15T10:00:00+00:00",
+        "synced_at": "2025-01-15T10:00:00+00:00",
+    }
+    (impl_dir / "issue.json").write_text(json.dumps(legacy_data), encoding="utf-8")
+
+    assert has_plan_ref(impl_dir) is True
+
+
+def test_has_plan_ref_not_exists(tmp_path: Path) -> None:
+    """Test has_plan_ref returns False when neither file exists."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+
+    assert has_plan_ref(impl_dir) is False
+
+
+# ============================================================================
+# Plan Linkage Validation Tests (PlanRef-based)
+# ============================================================================
+
+
+def test_validate_plan_linkage_both_match(tmp_path: Path) -> None:
+    """Test validation passes when branch and plan-ref.json match."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    save_plan_ref(
+        impl_dir,
+        provider="github",
+        plan_id="42",
+        url="https://github.com/org/repo/issues/42",
+        labels=(),
+        objective_id=None,
+    )
+
+    result = validate_plan_linkage(impl_dir, "P42-add-feature-01-04-1234")
+    assert result == "42"
+
+
+def test_validate_plan_linkage_mismatch_raises(tmp_path: Path) -> None:
+    """Test validation raises ValueError when branch and plan ref disagree."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    save_plan_ref(
+        impl_dir,
+        provider="github",
+        plan_id="99",
+        url="https://github.com/org/repo/issues/99",
+        labels=(),
+        objective_id=None,
+    )
+
     with pytest.raises(ValueError) as exc_info:
-        validate_issue_linkage(impl_dir, "P42-add-feature-01-04-1234")
+        validate_plan_linkage(impl_dir, "P42-add-feature-01-04-1234")
 
     error_msg = str(exc_info.value)
     assert "P42" in error_msg
@@ -788,71 +710,50 @@ def test_validate_issue_linkage_mismatch_raises(tmp_path: Path) -> None:
     assert "disagrees" in error_msg
 
 
-def test_validate_issue_linkage_branch_only(tmp_path: Path) -> None:
-    """Test validation returns branch issue when no .impl/ exists."""
+def test_validate_plan_linkage_branch_only(tmp_path: Path) -> None:
+    """Test validation returns branch issue as string when no plan ref exists."""
     impl_dir = tmp_path / ".impl"
-    # Don't create impl_dir
 
-    result = validate_issue_linkage(impl_dir, "P123-some-feature-01-04-1234")
-
-    assert result == 123
+    result = validate_plan_linkage(impl_dir, "P123-some-feature-01-04-1234")
+    assert result == "123"
 
 
-def test_validate_issue_linkage_impl_only(tmp_path: Path) -> None:
-    """Test validation returns impl issue when branch has no issue number."""
+def test_validate_plan_linkage_impl_only(tmp_path: Path) -> None:
+    """Test validation returns plan_id when branch has no issue number."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
-    save_issue_reference(
+    save_plan_ref(
         impl_dir,
-        456,
-        "https://github.com/org/repo/issues/456",
-        issue_title=None,
-        labels=None,
-        objective_issue=None,
+        provider="github",
+        plan_id="456",
+        url="https://github.com/org/repo/issues/456",
+        labels=(),
+        objective_id=None,
     )
 
-    # Branch without issue prefix (e.g., main, master, feature-branch)
-    result = validate_issue_linkage(impl_dir, "main")
-
-    assert result == 456
+    result = validate_plan_linkage(impl_dir, "main")
+    assert result == "456"
 
 
-def test_validate_issue_linkage_neither(tmp_path: Path) -> None:
-    """Test validation returns None when neither source has issue number."""
+def test_validate_plan_linkage_neither(tmp_path: Path) -> None:
+    """Test validation returns None when neither source has info."""
     impl_dir = tmp_path / ".impl"
-    # Don't create impl_dir
 
-    # Branch without issue prefix
-    result = validate_issue_linkage(impl_dir, "feature-branch")
-
+    result = validate_plan_linkage(impl_dir, "feature-branch")
     assert result is None
 
 
-def test_validate_issue_linkage_impl_exists_no_issue_json(tmp_path: Path) -> None:
-    """Test validation uses branch when .impl/ exists but has no issue.json."""
+def test_validate_plan_linkage_legacy_fallback(tmp_path: Path) -> None:
+    """Test validation works with legacy issue.json via read_plan_ref fallback."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
-    # Create plan.md but NOT issue.json
-    (impl_dir / "plan.md").write_text("# Plan", encoding="utf-8")
+    legacy_data = {
+        "issue_number": 42,
+        "issue_url": "https://github.com/org/repo/issues/42",
+        "created_at": "2025-01-15T10:00:00+00:00",
+        "synced_at": "2025-01-15T10:00:00+00:00",
+    }
+    (impl_dir / "issue.json").write_text(json.dumps(legacy_data), encoding="utf-8")
 
-    result = validate_issue_linkage(impl_dir, "P789-feature-01-04-1234")
-
-    assert result == 789
-
-
-def test_validate_issue_linkage_worker_impl(tmp_path: Path) -> None:
-    """Test validation works with .worker-impl/ folder."""
-    worker_impl_dir = tmp_path / ".worker-impl"
-    worker_impl_dir.mkdir()
-    save_issue_reference(
-        worker_impl_dir,
-        555,
-        "https://github.com/org/repo/issues/555",
-        issue_title=None,
-        labels=None,
-        objective_issue=None,
-    )
-
-    result = validate_issue_linkage(worker_impl_dir, "P555-worker-feature-01-04-1234")
-
-    assert result == 555
+    result = validate_plan_linkage(impl_dir, "P42-add-feature-01-04-1234")
+    assert result == "42"

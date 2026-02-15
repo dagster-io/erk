@@ -10,7 +10,7 @@ from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.status_history import extract_workflow_run_id
 from erk_shared.gateway.github.types import WorkflowRun
-from erk_shared.impl_folder import read_issue_reference
+from erk_shared.impl_folder import read_plan_ref
 
 
 def get_workflow_run_for_worktree(
@@ -42,12 +42,12 @@ def get_workflow_run_for_worktree(
         # Sentinel path in tests - treat as non-existent
         return (None, None)
 
-    issue_ref = read_issue_reference(impl_dir)
-    if issue_ref is None:
+    plan_ref = read_plan_ref(impl_dir)
+    if plan_ref is None:
         return (None, None)
 
     # Fetch issue comments (returns list of comment body strings)
-    comment_bodies = github_issues.get_issue_comments(repo_root, issue_ref.issue_number)
+    comment_bodies = github_issues.get_issue_comments(repo_root, int(plan_ref.plan_id))
     if not comment_bodies:
         return (None, None)
 
@@ -64,9 +64,9 @@ def get_workflow_run_for_worktree(
     # Build workflow URL
     # Extract owner/repo from issue URL if available
     workflow_url = None
-    if issue_ref.issue_url:
+    if plan_ref.url:
         # Parse owner/repo from URL like https://github.com/owner/repo/issues/123
-        parts = issue_ref.issue_url.split("/")
+        parts = plan_ref.url.split("/")
         if len(parts) >= 5:
             owner = parts[-4]
             repo = parts[-3]

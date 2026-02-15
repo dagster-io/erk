@@ -1,7 +1,7 @@
-"""Tests for implementation issue + worktree creation workflow.
+"""Tests for implementation plan ref + worktree creation workflow.
 
 Tests the integration of plan file reading, worktree creation, issue creation,
-and linking them together via .impl/issue.json.
+and linking them together via .impl/plan-ref.json.
 """
 
 from pathlib import Path
@@ -11,86 +11,88 @@ import pytest
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.impl_folder import (
     create_impl_folder,
-    has_issue_reference,
-    read_issue_reference,
-    save_issue_reference,
+    has_plan_ref,
+    read_plan_ref,
+    save_plan_ref,
 )
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
 
 
-def test_save_and_read_issue_reference(tmp_path: Path) -> None:
-    """Test saving and reading issue reference from impl folder."""
+def test_save_and_read_plan_ref(tmp_path: Path) -> None:
+    """Test saving and reading plan reference from impl folder."""
     impl_folder = tmp_path / ".impl"
     impl_folder.mkdir()
 
-    issue_number = 42
-    issue_url = "https://github.com/owner/repo/issues/42"
-
-    # Save issue reference
-    save_issue_reference(
-        impl_folder, issue_number, issue_url, issue_title=None, labels=None, objective_issue=None
+    # Save plan reference
+    save_plan_ref(
+        impl_folder,
+        provider="github",
+        plan_id="42",
+        url="https://github.com/owner/repo/issues/42",
+        labels=(),
+        objective_id=None,
     )
 
     # Verify file was created
-    issue_json = impl_folder / "issue.json"
-    assert issue_json.exists()
+    plan_ref_json = impl_folder / "plan-ref.json"
+    assert plan_ref_json.exists()
 
     # Read back and verify
-    ref = read_issue_reference(impl_folder)
+    ref = read_plan_ref(impl_folder)
     assert ref is not None
-    assert ref.issue_number == issue_number
-    assert ref.issue_url == issue_url
+    assert ref.plan_id == "42"
+    assert ref.url == "https://github.com/owner/repo/issues/42"
     assert ref.created_at is not None
     assert ref.synced_at is not None
 
 
-def test_save_issue_reference_plan_dir_must_exist(tmp_path: Path) -> None:
-    """Test that save_issue_reference raises if impl dir doesn't exist."""
+def test_save_plan_ref_dir_must_exist(tmp_path: Path) -> None:
+    """Test that save_plan_ref raises if impl dir doesn't exist."""
     impl_folder = tmp_path / ".impl"  # Doesn't exist
 
     with pytest.raises(FileNotFoundError, match="Implementation directory does not exist"):
-        save_issue_reference(
+        save_plan_ref(
             impl_folder,
-            42,
-            "https://github.com/owner/repo/issues/42",
-            issue_title=None,
-            labels=None,
-            objective_issue=None,
+            provider="github",
+            plan_id="42",
+            url="https://github.com/owner/repo/issues/42",
+            labels=(),
+            objective_id=None,
         )
 
 
-def test_has_issue_reference_false_when_no_file(tmp_path: Path) -> None:
-    """Test has_issue_reference returns False when issue.json doesn't exist."""
+def test_has_plan_ref_false_when_no_file(tmp_path: Path) -> None:
+    """Test has_plan_ref returns False when no plan-ref.json or issue.json exists."""
     impl_folder = tmp_path / ".impl"
     impl_folder.mkdir()
 
-    assert has_issue_reference(impl_folder) is False
+    assert has_plan_ref(impl_folder) is False
 
 
-def test_has_issue_reference_true_when_file_exists(tmp_path: Path) -> None:
-    """Test has_issue_reference returns True when issue.json exists."""
+def test_has_plan_ref_true_when_file_exists(tmp_path: Path) -> None:
+    """Test has_plan_ref returns True when plan-ref.json exists."""
     impl_folder = tmp_path / ".impl"
     impl_folder.mkdir()
 
-    save_issue_reference(
+    save_plan_ref(
         impl_folder,
-        42,
-        "https://github.com/owner/repo/issues/42",
-        issue_title=None,
-        labels=None,
-        objective_issue=None,
+        provider="github",
+        plan_id="42",
+        url="https://github.com/owner/repo/issues/42",
+        labels=(),
+        objective_id=None,
     )
 
-    assert has_issue_reference(impl_folder) is True
+    assert has_plan_ref(impl_folder) is True
 
 
-def test_read_issue_reference_returns_none_when_no_file(tmp_path: Path) -> None:
-    """Test read_issue_reference returns None when file doesn't exist."""
+def test_read_plan_ref_returns_none_when_no_file(tmp_path: Path) -> None:
+    """Test read_plan_ref returns None when file doesn't exist."""
     impl_folder = tmp_path / ".plan"
     impl_folder.mkdir()
 
-    ref = read_issue_reference(impl_folder)
+    ref = read_plan_ref(impl_folder)
     assert ref is None
 
 
@@ -117,18 +119,23 @@ Test the workflow.
     assert result.number == 123
 
     # Step 3: Link issue to plan folder
-    save_issue_reference(
-        impl_folder, result.number, result.url, issue_title=None, labels=None, objective_issue=None
+    save_plan_ref(
+        impl_folder,
+        provider="github",
+        plan_id=str(result.number),
+        url=result.url,
+        labels=(),
+        objective_id=None,
     )
 
     # Step 4: Verify link was created
-    assert has_issue_reference(impl_folder)
+    assert has_plan_ref(impl_folder)
 
     # Step 5: Read back and verify
-    ref = read_issue_reference(impl_folder)
+    ref = read_plan_ref(impl_folder)
     assert ref is not None
-    assert ref.issue_number == 123
-    assert ref.issue_url == result.url
+    assert ref.plan_id == "123"
+    assert ref.url == result.url
 
 
 def test_workflow_issue_creation_tracks_erk_plan_label() -> None:
