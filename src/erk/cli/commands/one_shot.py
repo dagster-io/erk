@@ -113,6 +113,15 @@ def one_shot(
     suffix = "..." if len(instruction) > max_title_len else ""
     pr_title = f"One-shot: {instruction[:max_title_len]}{suffix}"
 
+    # Save current branch for restoration after workflow trigger
+    original_branch = ctx.git.branch.get_current_branch(repo.root)
+    if original_branch is None:
+        user_output(
+            click.style("Error: ", fg="red")
+            + "Not on a branch (detached HEAD state). Cannot submit from here."
+        )
+        raise SystemExit(1)
+
     if dry_run:
         user_output(
             click.style("Dry-run mode:", fg="cyan", bold=True) + " No changes will be made\n"
@@ -130,56 +139,69 @@ def one_shot(
     # Create branch from trunk
     user_output("Creating branch...")
     ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=False)
-    ctx.git.branch.checkout_branch(repo.root, branch_name)
 
-    # Make empty commit
-    ctx.git.commit.commit(repo.root, f"One-shot: {instruction}")
+    try:
+        ctx.branch_manager.checkout_branch(repo.root, branch_name)
 
-    # Push to remote
-    user_output("Pushing to remote...")
-    push_result = ctx.git.remote.push_to_remote(
-        repo.root, "origin", branch_name, set_upstream=True, force=False
-    )
-    if isinstance(push_result, PushError):
-        Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+        # Make empty commit
+        ctx.git.commit.commit(repo.root, f"One-shot: {instruction}")
 
-    # Create draft PR
-    user_output("Creating draft PR...")
-    pr_number = ctx.github.create_pr(
-        repo.root,
-        branch_name,
-        pr_title,
-        f"Autonomous one-shot execution.\n\n**Instruction:** {instruction}",
-        trunk,
-        draft=True,
-    )
-    user_output(f"Created draft PR #{pr_number}")
+        # Push to remote
+        user_output("Pushing to remote...")
+        push_result = ctx.git.remote.push_to_remote(
+            repo.root, "origin", branch_name, set_upstream=True, force=False
+        )
+        if isinstance(push_result, PushError):
+            Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
 
-    # Build workflow inputs
-    inputs: dict[str, str] = {
-        "instruction": instruction,
-        "branch_name": branch_name,
-        "pr_number": str(pr_number),
-        "submitted_by": submitted_by,
-    }
-    if model is not None:
-        inputs["model_name"] = model
+        # Create draft PR
+        user_output("Creating draft PR...")
+        pr_number = ctx.github.create_pr(
+            repo.root,
+            branch_name,
+            pr_title,
+            f"Autonomous one-shot execution.\n\n**Instruction:** {instruction}",
+            trunk,
+            draft=True,
+        )
+        user_output(f"Created draft PR #{pr_number}")
 
-    # Trigger workflow
-    user_output("Triggering one-shot workflow...")
-    run_id = ctx.github.trigger_workflow(
-        repo_root=repo.root,
-        workflow=ONE_SHOT_WORKFLOW,
-        inputs=inputs,
-    )
+        # Build workflow inputs
+        inputs: dict[str, str] = {
+            "instruction": instruction,
+            "branch_name": branch_name,
+            "pr_number": str(pr_number),
+            "submitted_by": submitted_by,
+        }
+        if model is not None:
+            inputs["model_name"] = model
 
-    # Display results
-    user_output("")
-    user_output(click.style("Done!", fg="green", bold=True))
-    if repo.github is not None:
-        pr_url = f"https://github.com/{repo.github.owner}/{repo.github.repo}/pull/{pr_number}"
-        run_url = f"https://github.com/{repo.github.owner}/{repo.github.repo}/actions/runs/{run_id}"
-        user_output(f"PR: {click.style(pr_url, fg='cyan')}")
-        user_output(f"Run: {click.style(run_url, fg='cyan')}")
-    else:
-        user_output(f"PR #{pr_number} created, workflow run {run_id} triggered")
+        # Trigger workflow
+        user_output("Triggering one-shot workflow...")
+        run_id = ctx.github.trigger_workflow(
+            repo_root=repo.root,
+            workflow=ONE_SHOT_WORKFLOW,
+            inputs=inputs,
+        )
+
+        # Restore original branch after successful workflow trigger
+        ctx.branch_manager.checkout_branch(repo.root, original_branch)
+
+        # Display results
+        user_output("")
+        user_output(click.style("Done!", fg="green", bold=True))
+        if repo.github is not None:
+            pr_url = f"https://github.com/{repo.github.owner}/{repo.github.repo}/pull/{pr_number}"
+            run_url = (
+                f"https://github.com/{repo.github.owner}/{repo.github.repo}/actions/runs/{run_id}"
+            )
+            user_output(f"PR: {click.style(pr_url, fg='cyan')}")
+            user_output(f"Run: {click.style(run_url, fg='cyan')}")
+        else:
+            user_output(f"PR #{pr_number} created, workflow run {run_id} triggered")
+    finally:
+        # Always ensure we're back on original branch, even on error
+        current = ctx.git.branch.get_current_branch(repo.root)
+        if current != original_branch:
+            user_output(click.style("Restoring original branch...", fg="yellow"))
+            ctx.branch_manager.checkout_branch(repo.root, original_branch)

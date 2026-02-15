@@ -4,6 +4,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.fake import FakeGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -19,6 +20,7 @@ def test_one_shot_happy_path() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
         )
         github = FakeGitHub(authenticated=True)
 
@@ -65,6 +67,9 @@ def test_one_shot_happy_path() -> None:
         assert "branch_name" in inputs
         assert "pr_number" in inputs
 
+        # Verify we're back on original branch
+        assert git.branch.get_current_branch(env.cwd) == "main"
+
 
 def test_one_shot_empty_instruction() -> None:
     """Test that empty instruction is rejected."""
@@ -75,6 +80,7 @@ def test_one_shot_empty_instruction() -> None:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
         )
         github = FakeGitHub(authenticated=True)
 
@@ -100,6 +106,7 @@ def test_one_shot_dry_run() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
         )
         github = FakeGitHub(authenticated=True)
 
@@ -135,6 +142,7 @@ def test_one_shot_with_model() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
         )
         github = FakeGitHub(authenticated=True)
 
@@ -165,6 +173,7 @@ def test_one_shot_model_alias() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
         )
         github = FakeGitHub(authenticated=True)
 
@@ -192,6 +201,7 @@ def test_one_shot_pr_title_truncation() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
         )
         github = FakeGitHub(authenticated=True)
 
@@ -212,3 +222,59 @@ def test_one_shot_pr_title_truncation() -> None:
         _branch, title, _body, _base, _draft = github.created_prs[0]
         assert "..." in title
         assert len(title) < len(long_instruction) + 20
+
+
+def test_one_shot_restores_branch_on_error() -> None:
+    """Test that original branch is restored even if push fails."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+            push_to_remote_error=PushError(message="network error"),
+        )
+        github = FakeGitHub(authenticated=True)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(
+            cli,
+            ["one-shot", "fix the import in config.py"],
+            obj=ctx,
+        )
+
+        # Verify command failed
+        assert result.exit_code != 0
+
+        # Verify we're back on original branch despite error
+        assert git.branch.get_current_branch(env.cwd) == "main"
+
+
+def test_one_shot_rejects_detached_head() -> None:
+    """Test that one-shot rejects execution from detached HEAD."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: None},
+        )
+        github = FakeGitHub(authenticated=True)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(
+            cli,
+            ["one-shot", "fix something"],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 1
+        assert "detached HEAD" in result.output
+        assert len(git.created_branches) == 0
