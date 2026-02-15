@@ -131,7 +131,6 @@ class HookInput:
     objective_context_marker_exists: bool
     objective_id: int | None  # Objective issue number if marker exists
     plan_file_path: Path | None  # Path to plan file if exists, None otherwise
-    plan_file_content: str | None  # Full text content of plan file, if it exists
     plan_title: str | None  # Title extracted from plan file for display
     current_branch: str | None
     worktree_name: str | None  # Directory name of current worktree
@@ -151,7 +150,6 @@ class HookInput:
         objective_context_marker_exists: bool = False,
         objective_id: int | None = None,
         plan_file_path: Path | None = None,
-        plan_file_content: str | None = None,
         plan_title: str | None = None,
         current_branch: str | None = "feature-branch",
         worktree_name: str | None = None,
@@ -167,7 +165,6 @@ class HookInput:
         - All marker exists flags: False
         - objective_issue: None
         - plan_file_path: None
-        - plan_file_content: None
         - plan_title: None
         - current_branch: "feature-branch"
         - worktree_name: None
@@ -184,7 +181,6 @@ class HookInput:
             objective_context_marker_exists=objective_context_marker_exists,
             objective_id=objective_id,
             plan_file_path=plan_file_path,
-            plan_file_content=plan_file_content,
             plan_title=plan_title,
             current_branch=current_branch,
             worktree_name=worktree_name,
@@ -250,7 +246,6 @@ def build_blocking_message(
     session_id: str,
     current_branch: str | None,
     plan_file_path: Path | None,
-    plan_file_content: str | None,
     objective_id: int | None,
     plan_title: str | None,
     worktree_name: str | None,
@@ -266,7 +261,6 @@ def build_blocking_message(
         session_id: Claude session ID for marker creation commands.
         current_branch: Current git branch name.
         plan_file_path: Path to the plan file, if it exists.
-        plan_file_content: Full text content of the plan file, if it exists.
         objective_id: Objective issue number, if this plan is part of an objective.
         plan_title: Title extracted from plan file, if available.
         worktree_name: Directory name of current worktree.
@@ -309,13 +303,12 @@ def build_blocking_message(
 
     lines: list[str] = []
 
-    # Include plan contents so the user can see them
-    if plan_file_content is not None:
+    # Instruct agent to display the plan so the user can review it
+    if plan_file_path is not None:
         lines.extend(
             [
-                "PLAN CONTENTS (display this to the user before asking the question):",
-                "",
-                plan_file_content,
+                "DISPLAY PLAN: Before asking the question below, read the plan file and display",
+                f"its contents to the user with proper markdown formatting: {plan_file_path}",
                 "",
             ]
         )
@@ -477,7 +470,6 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             session_id=hook_input.session_id,
             current_branch=hook_input.current_branch,
             plan_file_path=hook_input.plan_file_path,
-            plan_file_content=hook_input.plan_file_content,
             objective_id=hook_input.objective_id,
             plan_title=hook_input.plan_title,
             worktree_name=hook_input.worktree_name,
@@ -681,11 +673,9 @@ def _gather_inputs(
     if session_id is not None:
         plan_file_path = _find_session_plan(session_id, repo_root, claude_installation)
 
-    # Read plan file content and extract title for display (after finding plan file)
-    plan_file_content: str | None = None
+    # Extract title for display (after finding plan file)
     plan_title: str | None = None
     if plan_file_path is not None:
-        plan_file_content = plan_file_path.read_text(encoding="utf-8")
         plan_title = extract_plan_title(plan_file_path)
 
     # Get current branch (only if we need to show the blocking message)
@@ -724,7 +714,6 @@ def _gather_inputs(
         objective_context_marker_exists=objective_context_marker_exists,
         objective_id=objective_id,
         plan_file_path=plan_file_path,
-        plan_file_content=plan_file_content,
         plan_title=plan_title,
         current_branch=current_branch,
         worktree_name=worktree_name,
