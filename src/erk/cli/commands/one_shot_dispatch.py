@@ -5,6 +5,7 @@ pieces so both `erk one-shot` and `erk objective next-plan --one-shot` can
 dispatch tasks through the same CI workflow.
 """
 
+import logging
 from dataclasses import dataclass
 
 import click
@@ -17,6 +18,8 @@ from erk_shared.gateway.github.plan_issues import create_plan_issue
 from erk_shared.gateway.time.abc import Time
 from erk_shared.naming import format_branch_timestamp_suffix, sanitize_worktree_name
 from erk_shared.output.output import user_output
+
+logger = logging.getLogger(__name__)
 
 ONE_SHOT_WORKFLOW = "one-shot.yml"
 
@@ -240,8 +243,8 @@ def dispatch_one_shot(
                     f"**Workflow run:** {run_url}"
                 )
                 ctx.github.update_pr_body(repo.root, pr_number, pr_body)
-            except Exception:
-                pass  # Best-effort: workflow is already triggered
+            except Exception as e:
+                logger.warning("Failed to update stub PR body with workflow run link: %s", e)
 
         # Restore original branch after successful workflow trigger
         ctx.branch_manager.checkout_branch(repo.root, original_branch)

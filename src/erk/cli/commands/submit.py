@@ -788,8 +788,8 @@ def _submit_single_issue(
         if not isinstance(pr_details, PRNotFound):
             updated_body = pr_details.body + f"\n\n**Workflow run:** {workflow_url}"
             ctx.github.update_pr_body(repo.root, pr_number, updated_body)
-    except Exception:
-        pass  # Best-effort: workflow is already triggered
+    except Exception as e:
+        logger.warning("Failed to update PR body with workflow run link: %s", e)
 
     # Write dispatch metadata synchronously to fix race condition with erk dash
     # This ensures the issue body has the run info before we return to the user
