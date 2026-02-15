@@ -542,3 +542,244 @@ def test_learn_without_gist_url_does_not_include_param(tmp_path: Path) -> None:
     )
     assert command == "/erk:learn 321"
     assert "gist_url" not in command
+
+
+def test_gist_url_auto_launches_without_interactive_flag(tmp_path: Path) -> None:
+    """Gist-URL path always auto-launches, even without -i flag."""
+    session_id = "test-session-gist-auto"
+    gist_url = "https://gist.github.com/testuser/auto-launch-test"
+    issue_body = _make_plan_body_with_gist_url(session_id, gist_url)
+
+    now = datetime.now(UTC)
+    fake_issues = FakeGitHubIssues(
+        issues={
+            900: IssueInfo(
+                number=900,
+                title="Test Plan",
+                body=issue_body,
+                state="OPEN",
+                url="https://github.com/owner/repo/issues/900",
+                labels=["erk-plan"],
+                assignees=[],
+                created_at=now,
+                updated_at=now,
+                author="testuser",
+            ),
+        },
+    )
+
+    git_dir = tmp_path / ".git"
+    fake_git = FakeGit(
+        git_common_dirs={tmp_path: git_dir},
+        current_branches={tmp_path: "main"},
+        remote_urls={(tmp_path, "origin"): "https://github.com/owner/repo.git"},
+    )
+
+    fake_installation = FakeClaudeInstallation.for_test(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    session_id: FakeSessionData(
+                        content='{"type": "user"}\n',
+                        size_bytes=1024,
+                        modified_at=now.timestamp(),
+                    )
+                }
+            )
+        }
+    )
+
+    fake_executor = FakePromptExecutor(available=True)
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=tmp_path,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+    )
+
+    global_config = GlobalConfig.test(erk_root=repo_dir)
+
+    ctx = context_for_test(
+        cwd=tmp_path,
+        git=fake_git,
+        issues=fake_issues,
+        claude_installation=fake_installation,
+        prompt_executor=fake_executor,
+        repo=repo,
+        global_config=global_config,
+    )
+
+    runner = CliRunner()
+
+    # Act: Run learn WITHOUT -i flag — gist path should still auto-launch
+    result = runner.invoke(cli, ["learn", "900"], obj=ctx)
+
+    # Assert: Should auto-launch without prompting
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+    assert len(fake_executor.interactive_calls) == 1
+    _worktree_path, _dangerous, command, _target_subpath, _model, _ = (
+        fake_executor.interactive_calls[0]
+    )
+    assert f"/erk:learn 900 gist_url={gist_url}" == command
+
+
+def test_dangerous_flag_auto_launches_without_interactive_flag(tmp_path: Path) -> None:
+    """The -d flag implies auto-launch, skipping the confirmation prompt."""
+    session_id = "test-session-dangerous-auto"
+    issue_body = _make_plan_body_with_session(session_id)
+
+    now = datetime.now(UTC)
+    fake_issues = FakeGitHubIssues(
+        issues={
+            901: IssueInfo(
+                number=901,
+                title="Test Plan",
+                body=issue_body,
+                state="OPEN",
+                url="https://github.com/owner/repo/issues/901",
+                labels=["erk-plan"],
+                assignees=[],
+                created_at=now,
+                updated_at=now,
+                author="testuser",
+            ),
+        },
+    )
+
+    git_dir = tmp_path / ".git"
+    fake_git = FakeGit(
+        git_common_dirs={tmp_path: git_dir},
+        current_branches={tmp_path: "main"},
+        remote_urls={(tmp_path, "origin"): "https://github.com/owner/repo.git"},
+    )
+
+    fake_installation = FakeClaudeInstallation.for_test(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    session_id: FakeSessionData(
+                        content='{"type": "user"}\n',
+                        size_bytes=1024,
+                        modified_at=now.timestamp(),
+                    )
+                }
+            )
+        }
+    )
+
+    fake_executor = FakePromptExecutor(available=True)
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=tmp_path,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+    )
+
+    global_config = GlobalConfig.test(erk_root=repo_dir)
+
+    ctx = context_for_test(
+        cwd=tmp_path,
+        git=fake_git,
+        issues=fake_issues,
+        claude_installation=fake_installation,
+        prompt_executor=fake_executor,
+        repo=repo,
+        global_config=global_config,
+    )
+
+    runner = CliRunner()
+
+    # Act: Run learn with -d but NOT -i — should auto-launch
+    result = runner.invoke(cli, ["learn", "901", "-d"], obj=ctx)
+
+    # Assert: Should auto-launch with dangerous=True
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+    assert len(fake_executor.interactive_calls) == 1
+    _worktree_path, dangerous, command, _target_subpath, _model, _ = (
+        fake_executor.interactive_calls[0]
+    )
+    assert dangerous is True
+    assert command == "/erk:learn 901"
+
+
+def test_session_path_without_flags_prompts_user(tmp_path: Path) -> None:
+    """Session-discovery path without -i or -d prompts for confirmation."""
+    session_id = "test-session-prompt"
+    issue_body = _make_plan_body_with_session(session_id)
+
+    now = datetime.now(UTC)
+    fake_issues = FakeGitHubIssues(
+        issues={
+            902: IssueInfo(
+                number=902,
+                title="Test Plan",
+                body=issue_body,
+                state="OPEN",
+                url="https://github.com/owner/repo/issues/902",
+                labels=["erk-plan"],
+                assignees=[],
+                created_at=now,
+                updated_at=now,
+                author="testuser",
+            ),
+        },
+    )
+
+    git_dir = tmp_path / ".git"
+    fake_git = FakeGit(
+        git_common_dirs={tmp_path: git_dir},
+        current_branches={tmp_path: "main"},
+        remote_urls={(tmp_path, "origin"): "https://github.com/owner/repo.git"},
+    )
+
+    fake_installation = FakeClaudeInstallation.for_test(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    session_id: FakeSessionData(
+                        content='{"type": "user"}\n',
+                        size_bytes=1024,
+                        modified_at=now.timestamp(),
+                    )
+                }
+            )
+        }
+    )
+
+    fake_executor = FakePromptExecutor(available=True)
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=tmp_path,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+    )
+
+    global_config = GlobalConfig.test(erk_root=repo_dir)
+
+    ctx = context_for_test(
+        cwd=tmp_path,
+        git=fake_git,
+        issues=fake_issues,
+        claude_installation=fake_installation,
+        prompt_executor=fake_executor,
+        repo=repo,
+        global_config=global_config,
+    )
+
+    runner = CliRunner()
+
+    # Act: Run learn without -i or -d, provide "n" to deny the prompt
+    result = runner.invoke(cli, ["learn", "902"], obj=ctx, input="n\n")
+
+    # Assert: Should NOT have auto-launched (user declined)
+    assert result.exit_code == 0, f"Command failed: {result.output}"
+    assert len(fake_executor.interactive_calls) == 0

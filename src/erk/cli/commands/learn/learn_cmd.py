@@ -142,15 +142,12 @@ def learn_cmd(
             + "\n\nSessions have been preprocessed and uploaded."
             + "\nClaude will download and analyze from the gist directly."
         )
-        _confirm_and_launch(
-            ctx=ctx,
-            repo_root=repo_root,
-            interactive=interactive,
+        ctx.prompt_executor.execute_interactive(
+            worktree_path=repo_root,
             dangerous=dangerous,
-            confirm_prompt=(
-                "Use Claude to learn from preprocessed materials and produce documentation?"
-            ),
             command=f"/erk:learn {issue_number} gist_url={gist_url}",
+            target_subpath=None,
+            permission_mode="edits",
         )
         return
 
@@ -226,8 +223,8 @@ def _confirm_and_launch(
     command: str,
 ) -> None:
     """Confirm with user (or auto-launch with -i), then execute interactively."""
-    should_launch = interactive
-    if not interactive:
+    should_launch = interactive or dangerous
+    if not should_launch:
         user_output("")
         should_launch = user_confirm(confirm_prompt, default=True)
 
