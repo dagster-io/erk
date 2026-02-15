@@ -213,9 +213,11 @@ class ErkDashApp(App):
         view_config = get_view_config(self._view_mode)
         self._data_cache[view_config.labels] = rows
 
-        # Learn view: filter to only learn plans
+        # Filter rows by view mode
         if self._view_mode == ViewMode.LEARN:
             rows = [r for r in rows if r.is_learn_plan]
+        elif self._view_mode == ViewMode.PLANS:
+            rows = [r for r in rows if not r.is_learn_plan]
 
         self._all_rows = rows
         self._loading = False
@@ -347,10 +349,12 @@ class ErkDashApp(App):
         # Check cache for the new view's labels
         cached_data = self._data_cache.get(view_config.labels)
         if cached_data is not None:
-            # Apply learn filter if needed
+            # Apply view-mode filter
             rows = cached_data
             if mode == ViewMode.LEARN:
                 rows = [r for r in rows if r.is_learn_plan]
+            elif mode == ViewMode.PLANS:
+                rows = [r for r in rows if not r.is_learn_plan]
             self._all_rows = rows
             self._rows = self._apply_filter_and_sort(rows)
             if self._table is not None:

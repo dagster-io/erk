@@ -1662,7 +1662,9 @@ class TestViewSwitching:
         async with app.run_test() as pilot:
             await pilot.pause()
             assert app._view_mode == ViewMode.PLANS
-            assert len(app._rows) == 2
+            # Plans view excludes learn plans
+            assert len(app._rows) == 1
+            assert app._rows[0].issue_number == 1
 
             # Switch to Learn view
             await pilot.press("2")
@@ -1672,6 +1674,27 @@ class TestViewSwitching:
             # Learn view filters to only learn plans
             assert len(app._rows) == 1
             assert app._rows[0].issue_number == 2
+
+    @pytest.mark.asyncio
+    async def test_plans_view_excludes_learn_plans(self) -> None:
+        """Plans view filters out learn plans."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Regular Plan A"),
+                make_plan_row(2, "Learn Plan", is_learn_plan=True),
+                make_plan_row(3, "Regular Plan B"),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            assert app._view_mode == ViewMode.PLANS
+            # Plans view should exclude the learn plan
+            assert len(app._rows) == 2
+            issue_numbers = {r.issue_number for r in app._rows}
+            assert issue_numbers == {1, 3}
 
     @pytest.mark.asyncio
     async def test_pressing_3_switches_to_objectives_view(self) -> None:
@@ -1716,7 +1739,8 @@ class TestViewSwitching:
         async with app.run_test() as pilot:
             await pilot.pause()
             assert app._view_mode == ViewMode.PLANS
-            assert len(app._rows) == 2
+            # Plans view excludes learn plans
+            assert len(app._rows) == 1
 
             # Switch to Learn
             await pilot.press("2")
@@ -1728,7 +1752,7 @@ class TestViewSwitching:
             await pilot.press("1")
             await pilot.pause()
             assert app._view_mode == ViewMode.PLANS
-            assert len(app._rows) == 2
+            assert len(app._rows) == 1
 
     @pytest.mark.asyncio
     async def test_same_view_key_is_noop(self) -> None:
