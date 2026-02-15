@@ -110,7 +110,7 @@ The preflight check prevents this, but understanding WHY clarifies the dependenc
 
 | If you're creating...                              | Capability Type     | Target Directory     |
 | -------------------------------------------------- | ------------------- | -------------------- |
-| Code review guidance for Claude                    | `ReviewCapability`  | `.erk/reviews/`   |
+| Code review guidance for Claude                    | `ReviewCapability`  | `.erk/reviews/`      |
 | Agent instruction manual (loaded into context)     | `SkillCapability`   | `.claude/skills/`    |
 | GitHub Actions workflow (with actions/scripts)     | Direct `Capability` | `.github/workflows/` |
 | Multi-file system (e.g., hooks + reminders + docs) | Direct `Capability` | Multiple directories |
