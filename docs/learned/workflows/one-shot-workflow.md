@@ -7,7 +7,7 @@ read_when:
   - "working with one-shot.yml"
 tripwires:
   - action: "modifying one-shot branch naming convention"
-    warning: "Branch format is `oneshot-{slug}-{MM-DD-HHMM}`. The workflow and CLI both depend on this prefix for identification."
+    warning: "Branch format is `oneshot-{slug}-{MM-DD-HHMM}` (no plan issue) or `P{N}-{slug}-{MM-DD-HHMM}` (when plan_issue_number is provided). The workflow and CLI both depend on these prefixes for identification."
   - action: "assuming one-shot plan and implementation run in the same Claude session"
     warning: "They run in separate sessions. The plan is written to `.impl/plan.md` and the implementer reads it fresh. No context carries over."
 ---
@@ -48,7 +48,7 @@ erk one-shot "Add a --verbose flag to the plan submit command" --model sonnet
 **Responsibilities:**
 
 1. Validates instruction and optional model parameter
-2. Generates branch name: `oneshot-{slug}-{MM-DD-HHMM}` via `_generate_branch_name()`
+2. Generates branch name via `generate_branch_name()` in `one_shot_dispatch.py`: `P{N}-{slug}-{MM-DD-HHMM}` when `plan_issue_number` is provided, otherwise `oneshot-{slug}-{MM-DD-HHMM}`
 3. Creates branch from trunk with an empty commit
 4. Pushes branch to remote
 5. Creates a draft PR with instruction in description
@@ -113,7 +113,7 @@ The planner and implementer run in separate Claude sessions. This means:
 
 ### Branch Naming
 
-`oneshot-{slug}-{MM-DD-HHMM}` format distinguishes one-shot branches from plan-based branches (`P{issue}-{slug}-{timestamp}`).
+`oneshot-{slug}-{MM-DD-HHMM}` format is used when no plan issue exists. When `plan_issue_number` is provided, the `P{N}-{slug}-{MM-DD-HHMM}` format is used instead, matching plan-based branches.
 
 ### Original Branch Restoration
 
