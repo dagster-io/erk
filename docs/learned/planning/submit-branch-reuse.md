@@ -16,11 +16,12 @@ Without branch detection, each `erk plan submit` creates a new timestamped branc
 
 ## User Workflow
 
-When existing branches are detected, users see three decision paths:
+When existing branches are detected, users see two decision paths:
 
-1. **Use existing branch** (default): Continue working on the most recent branch
-2. **Delete and create new**: Remove existing branches and start fresh
-3. **Abort**: Cancel the submission
+1. **Reuse existing branch** (default): Continue working on the most recent branch. If the branch exists on remote with a PR, that PR is reused; otherwise a new PR is created.
+2. **Create new branch and PR**: Remove existing branches and start fresh. Creates a new branch and PR, and closes any old orphaned draft PRs.
+
+Users can press Ctrl+C to abort if needed.
 
 ### Example Interaction
 
@@ -31,7 +32,7 @@ Found existing local branch(es) for this issue:
 
 New branch would be: P123-feature-01-15-1600
 
-Use existing branch 'P123-feature-01-12-1430'? [Y/n]
+<branch reuse confirmation prompt — see src/erk/cli/commands/submit.py:151-153 for current wording>
 ```
 
 ## Detection Logic
