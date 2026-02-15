@@ -19,7 +19,7 @@ How-to guides are **goal-oriented**. They provide practical steps to solve real-
 
 - **[Run Remote Execution](remote-execution.md)** - Run implementations in GitHub Actions
 - **[Work Without Plans](planless-workflow.md)** - Quick changes without formal plans
-- **[Extract Documentation](documentation-extraction.md)** - Capture patterns for future agents
+- **[Learn from Sessions](learn-from-sessions.md)** - Extract insights for future agents
 
 ## See Also
 
