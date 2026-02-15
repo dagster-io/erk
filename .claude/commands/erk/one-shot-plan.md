@@ -1,5 +1,5 @@
 ---
-description: Create a plan from a one-shot instruction and save as GitHub issue (used by CI workflow)
+description: Create a plan from a one-shot instruction, save it as a GitHub issue, and write results to .impl/ (used by CI workflow)
 ---
 
 # One-Shot Plan
@@ -44,21 +44,27 @@ Follow the planning conventions in `docs/learned/planning/` if available.
 Run the following command to save the plan as a GitHub issue:
 
 ```bash
-erk exec plan-save-to-issue --plan-file .impl/plan.md --format json
+erk exec plan-save-to-issue --plan-file .impl/plan.md --format json --created-from-workflow-run-url "$WORKFLOW_RUN_URL"
 ```
 
-Parse the JSON output. It will contain:
+If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` flag.
 
-- `issue_number`: The created issue number
-- `title`: The issue title
+Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `issue_number` and `title` from the output.
 
-## Step 6: Write Plan Issue Reference
+## Step 6: Write Plan Result
 
-Parse the JSON output from Step 5 and write `{"issue_number": N, "title": "..."}` to `.impl/plan-issue.json` so the workflow can extract the values. Use the `issue_number` and `title` fields from the `plan-save-to-issue` output.
+Write the plan result to `.impl/plan-result.json` with the following format:
+
+```json
+{"issue_number": <num>, "title": "<title>"}
+```
+
+Use the `issue_number` and `title` extracted from the Step 5 output.
 
 ## Important Notes
 
 - This is planning only — do NOT implement any code changes
+- Your outputs are `.impl/plan.md` and `.impl/plan-result.json`
 - The plan must be detailed enough for another agent to implement without additional context
 - Keep the plan focused on the instruction
 - Never modify CHANGELOG.md

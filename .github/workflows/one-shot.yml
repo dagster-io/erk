@@ -44,8 +44,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
-      issue_number: ${{ steps.extract_plan.outputs.issue_number }}
-      issue_title: ${{ steps.extract_plan.outputs.issue_title }}
+      issue_number: ${{ steps.read_result.outputs.issue_number }}
+      issue_title: ${{ steps.read_result.outputs.issue_title }}
       base_branch: ${{ steps.trunk.outputs.trunk_branch }}
     steps:
       - name: Validate required secrets
@@ -113,25 +113,38 @@ jobs:
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-      - name: Extract plan issue info
-        id: extract_plan
+      - name: Verify plan outputs exist
         if: steps.plan.outputs.plan_success == 'true'
         run: |
-          if [ ! -f .impl/plan-issue.json ]; then
-            echo "::error::Plan succeeded but .impl/plan-issue.json not found"
+          if [ ! -f .impl/plan.md ]; then
+            echo "::error::Planning succeeded but .impl/plan.md not found"
             exit 1
           fi
-          ISSUE_NUMBER=$(jq -r '.issue_number' .impl/plan-issue.json)
-          ISSUE_TITLE=$(jq -r '.title' .impl/plan-issue.json)
-          if [ -z "$ISSUE_NUMBER" ] || [ "$ISSUE_NUMBER" = "null" ]; then
-            echo "::error::Failed to extract issue_number from .impl/plan-issue.json"
+          if [ ! -f .impl/plan-result.json ]; then
+            echo "::error::Planning succeeded but .impl/plan-result.json not found"
             exit 1
           fi
+          echo "Plan outputs found: .impl/plan.md and .impl/plan-result.json"
+
+      - name: Read plan result
+        id: read_result
+        if: steps.plan.outputs.plan_success == 'true'
+        run: |
+          ISSUE_NUMBER=$(jq -r '.issue_number' .impl/plan-result.json)
+          ISSUE_TITLE=$(jq -r '.title' .impl/plan-result.json)
           echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
           echo "issue_title=$ISSUE_TITLE" >> $GITHUB_OUTPUT
           echo "Plan saved as issue #$ISSUE_NUMBER: $ISSUE_TITLE"
+
+      - name: Validate plan format
+        if: steps.plan.outputs.plan_success == 'true' && steps.read_result.outputs.issue_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+        run: |
+          erk plan check ${{ steps.read_result.outputs.issue_number }}
 
       - name: Fail workflow if planning failed
         if: steps.plan.outputs.plan_success != 'true'
