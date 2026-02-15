@@ -36,8 +36,9 @@ def test_dispatch_happy_path() -> None:
             extra_workflow_inputs={},
         )
 
-        result = dispatch_one_shot(ctx, params=params)
+        result = dispatch_one_shot(ctx, params=params, dry_run=False)
 
+        assert result is not None
         assert result.branch_name.startswith("oneshot-")
 
         # Verify branch was created
@@ -88,7 +89,7 @@ def test_dispatch_with_extra_inputs() -> None:
             },
         )
 
-        dispatch_one_shot(ctx, params=params)
+        dispatch_one_shot(ctx, params=params, dry_run=False)
 
         # Verify extra inputs are in workflow trigger
         _workflow, inputs = github.triggered_workflows[0]
@@ -98,7 +99,7 @@ def test_dispatch_with_extra_inputs() -> None:
 
 
 def test_dispatch_dry_run() -> None:
-    """Test dry_run_one_shot outputs info without mutations."""
+    """Test dispatch_one_shot dry_run outputs info without mutations."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()

@@ -63,18 +63,22 @@ def dispatch_one_shot(
     ctx: ErkContext,
     *,
     params: OneShotDispatchParams,
-) -> OneShotDispatchResult:
+    dry_run: bool,
+) -> OneShotDispatchResult | None:
     """Execute the full dispatch sequence for a one-shot workflow.
 
     Creates branch, pushes, creates draft PR, triggers workflow,
-    then restores original branch.
+    then restores original branch. In dry-run mode, prints what
+    would happen without executing.
 
     Args:
         ctx: Erk context with git/github gateways
         params: Dispatch parameters
+        dry_run: If True, print preview without executing
 
     Returns:
-        OneShotDispatchResult with pr_number, run_id, branch_name
+        OneShotDispatchResult with pr_number, run_id, branch_name,
+        or None in dry-run mode
     """
     # Validate we're in a git repo
     Ensure.invariant(
@@ -101,6 +105,23 @@ def dispatch_one_shot(
     max_title_len = 60
     suffix = "..." if len(params.instruction) > max_title_len else ""
     pr_title = f"One-shot: {params.instruction[:max_title_len]}{suffix}"
+
+    if dry_run:
+        user_output(
+            click.style("Dry-run mode:", fg="cyan", bold=True) + " No changes will be made\n"
+        )
+        user_output(f"Instruction: {params.instruction}")
+        user_output(f"Branch: {branch_name}")
+        user_output(f"PR title: {pr_title}")
+        user_output(f"Base branch: {trunk}")
+        user_output(f"Submitted by: {submitted_by}")
+        if params.model is not None:
+            user_output(f"Model: {params.model}")
+        user_output(f"Workflow: {ONE_SHOT_WORKFLOW}")
+        if params.extra_workflow_inputs:
+            for key, value in params.extra_workflow_inputs.items():
+                user_output(f"Extra input: {key}={value}")
+        return None
 
     # Save current branch for restoration after workflow trigger
     original_branch = ctx.git.branch.get_current_branch(repo.root)
@@ -189,52 +210,3 @@ def dispatch_one_shot(
         if current != original_branch:
             user_output(click.style("Restoring original branch...", fg="yellow"))
             ctx.branch_manager.checkout_branch(repo.root, original_branch)
-
-
-def dry_run_one_shot(
-    ctx: ErkContext,
-    *,
-    params: OneShotDispatchParams,
-) -> None:
-    """Print what would happen without executing.
-
-    Args:
-        ctx: Erk context
-        params: Dispatch parameters
-    """
-    # Validate we're in a git repo
-    Ensure.invariant(
-        not isinstance(ctx.repo, NoRepoSentinel),
-        "Not in a git repository",
-    )
-    assert not isinstance(ctx.repo, NoRepoSentinel)
-    repo: RepoContext = ctx.repo
-
-    # Validate GitHub authentication
-    Ensure.gh_authenticated(ctx)
-
-    # Get GitHub username
-    _, username, _ = ctx.github.check_auth_status()
-    submitted_by = username or "unknown"
-
-    # Detect trunk branch
-    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
-
-    # Generate branch name
-    branch_name = generate_branch_name(params.instruction, time=ctx.time)
-
-    user_output(click.style("Dry-run mode:", fg="cyan", bold=True) + " No changes will be made\n")
-    user_output(f"Instruction: {params.instruction}")
-    user_output(f"Branch: {branch_name}")
-    max_title_len = 60
-    suffix = "..." if len(params.instruction) > max_title_len else ""
-    pr_title = f"One-shot: {params.instruction[:max_title_len]}{suffix}"
-    user_output(f"PR title: {pr_title}")
-    user_output(f"Base branch: {trunk}")
-    user_output(f"Submitted by: {submitted_by}")
-    if params.model is not None:
-        user_output(f"Model: {params.model}")
-    user_output(f"Workflow: {ONE_SHOT_WORKFLOW}")
-    if params.extra_workflow_inputs:
-        for key, value in params.extra_workflow_inputs.items():
-            user_output(f"Extra input: {key}={value}")

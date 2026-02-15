@@ -15,7 +15,6 @@ from erk.cli.commands.implement_shared import normalize_model_name
 from erk.cli.commands.one_shot_dispatch import (
     OneShotDispatchParams,
     dispatch_one_shot,
-    dry_run_one_shot,
 )
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
@@ -70,7 +69,4 @@ def one_shot(
         extra_workflow_inputs={},
     )
 
-    if dry_run:
-        dry_run_one_shot(ctx, params=params)
-    else:
-        dispatch_one_shot(ctx, params=params)
+    dispatch_one_shot(ctx, params=params, dry_run=dry_run)

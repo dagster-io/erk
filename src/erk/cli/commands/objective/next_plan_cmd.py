@@ -16,7 +16,6 @@ from erk.cli.commands.objective.check_cmd import (
 from erk.cli.commands.one_shot_dispatch import (
     OneShotDispatchParams,
     dispatch_one_shot,
-    dry_run_one_shot,
 )
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
@@ -165,6 +164,7 @@ def _handle_one_shot(
     # Validate repo context
     if isinstance(ctx.repo, NoRepoSentinel):
         raise click.ClickException("Not in a git repository")
+    assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
     repo: RepoContext = ctx.repo
 
     # Validate objective
@@ -222,7 +222,4 @@ def _handle_one_shot(
         },
     )
 
-    if dry_run:
-        dry_run_one_shot(ctx, params=params)
-    else:
-        dispatch_one_shot(ctx, params=params)
+    dispatch_one_shot(ctx, params=params, dry_run=dry_run)
