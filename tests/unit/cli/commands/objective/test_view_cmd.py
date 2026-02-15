@@ -36,6 +36,38 @@ def _make_issue(
 
 OBJECTIVE_WITH_ROADMAP = """# Objective: Test Feature
 
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Setup infrastructure"
+    status: "done"
+    plan: null
+    pr: "#123"
+  - id: "1.2"
+    description: "Add basic tests"
+    status: "in_progress"
+    plan: "#124"
+    pr: null
+  - id: "1.3"
+    description: "Update docs"
+    status: "pending"
+    plan: null
+    pr: null
+  - id: "2A.1"
+    description: "Build main feature"
+    status: "done"
+    plan: null
+    pr: "#125"
+  - id: "2A.2"
+    description: "Add integration tests"
+    status: "blocked"
+    plan: null
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
 ## Roadmap
 
 ### Phase 1: Foundation

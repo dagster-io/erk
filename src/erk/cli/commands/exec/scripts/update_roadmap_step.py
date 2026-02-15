@@ -141,11 +141,8 @@ def _replace_step_refs_in_body(
 ) -> str | None:
     """Replace the plan/PR cells for a step in the raw markdown body.
 
-    Checks for frontmatter first within objective-roadmap metadata block.
-    Falls back to regex table replacement for backward compatibility.
-
-    When frontmatter exists, updates both frontmatter (source of truth)
-    and markdown table (rendered view) to keep them in sync.
+    Updates frontmatter within objective-roadmap metadata block (source of truth).
+    Also updates the rendered markdown table to keep it in sync.
 
     Args:
         body: Full issue body text.
@@ -201,7 +198,7 @@ def _replace_step_refs_in_body(
         except ValueError:
             return None
 
-    # Also update the markdown table (either as fallback or to keep in sync)
+    # Also update the rendered markdown table to keep in sync
     # 5-col row: | step_id | description | status | plan | pr |
     pattern = re.compile(
         r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$",

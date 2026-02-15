@@ -10,41 +10,6 @@ from erk.cli.commands.exec.scripts.objective_roadmap_frontmatter import (
 from erk.cli.commands.exec.scripts.objective_roadmap_shared import RoadmapStep
 
 
-def test_parse_valid_v1_frontmatter() -> None:
-    """Parse valid v1 YAML frontmatter returns correct steps with plan migration."""
-    block_content = """---
-schema_version: "1"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "pending"
-    pr: null
-  - id: "1.2"
-    description: "Second step"
-    status: "done"
-    pr: "#123"
-  - id: "1.3"
-    description: "Third step"
-    status: "in_progress"
-    pr: "plan #456"
----"""
-
-    steps = parse_roadmap_frontmatter(block_content)
-
-    assert steps is not None
-    assert len(steps) == 3
-    assert steps[0].id == "1.1"
-    assert steps[0].plan is None
-    assert steps[0].pr is None
-    assert steps[1].id == "1.2"
-    assert steps[1].plan is None
-    assert steps[1].pr == "#123"
-    # v1 migration: "plan #456" → plan="#456", pr=None
-    assert steps[2].id == "1.3"
-    assert steps[2].plan == "#456"
-    assert steps[2].pr is None
-
-
 def test_parse_valid_v2_frontmatter() -> None:
     """Parse valid v2 YAML frontmatter with separate plan and pr fields."""
     block_content = """---
@@ -115,7 +80,7 @@ steps:
 
 
 def test_parse_wrong_schema_version() -> None:
-    """Parse returns None when schema_version is not '1' or '2'."""
+    """Parse returns None when schema_version is not '2'."""
     block_content = """---
 schema_version: "99"
 steps:
@@ -133,7 +98,7 @@ steps:
 def test_parse_steps_not_list() -> None:
     """Parse returns None when steps is not a list."""
     block_content = """---
-schema_version: "1"
+schema_version: "2"
 steps: "not a list"
 ---"""
 
@@ -145,11 +110,12 @@ steps: "not a list"
 def test_parse_missing_required_field() -> None:
     """Parse returns None when step is missing required field."""
     block_content = """---
-schema_version: "1"
+schema_version: "2"
 steps:
   - id: "1.1"
     description: "Step"
     # missing status field
+    plan: null
     pr: null
 ---"""
 
@@ -256,15 +222,17 @@ def test_group_steps_sorts_phases() -> None:
 def test_update_step_in_frontmatter() -> None:
     """Update step PR field returns updated frontmatter."""
     block_content = """---
-schema_version: "1"
+schema_version: "2"
 steps:
   - id: "1.1"
     description: "First step"
     status: "pending"
+    plan: null
     pr: null
   - id: "1.2"
     description: "Second step"
     status: "pending"
+    plan: null
     pr: null
 ---"""
 
@@ -288,11 +256,12 @@ steps:
 def test_update_step_in_frontmatter_not_found() -> None:
     """Update step returns None when step ID not found."""
     block_content = """---
-schema_version: "1"
+schema_version: "2"
 steps:
   - id: "1.1"
     description: "First step"
     status: "pending"
+    plan: null
     pr: null
 ---"""
 
@@ -347,11 +316,12 @@ steps:
 def test_update_step_with_trailing_content() -> None:
     """Update step preserves non-frontmatter content after YAML."""
     block_content = """---
-schema_version: "1"
+schema_version: "2"
 steps:
   - id: "1.1"
     description: "Step"
     status: "pending"
+    plan: null
     pr: null
 ---
 
@@ -370,11 +340,12 @@ Some markdown content after frontmatter."""
 def test_parse_handles_extra_fields() -> None:
     """Parse ignores extra fields in step data (forward compatibility)."""
     block_content = """---
-schema_version: "1"
+schema_version: "2"
 steps:
   - id: "1.1"
     description: "Step"
     status: "pending"
+    plan: null
     pr: null
     extra_field: "ignored"
 ---"""
@@ -447,7 +418,7 @@ def test_validate_roadmap_frontmatter_wrong_schema_version() -> None:
 def test_validate_roadmap_frontmatter_missing_step_field() -> None:
     """Validate returns error when step is missing required field."""
     data: dict[str, object] = {
-        "schema_version": "1",
+        "schema_version": "2",
         "steps": [{"id": "1.1", "description": "Step"}],  # missing status
     }
 
@@ -461,7 +432,7 @@ def test_validate_roadmap_frontmatter_missing_step_field() -> None:
 def test_validate_roadmap_frontmatter_steps_not_list() -> None:
     """Validate returns error when steps is not a list."""
     data: dict[str, object] = {
-        "schema_version": "1",
+        "schema_version": "2",
         "steps": "not a list",
     }
 
@@ -475,11 +446,12 @@ def test_validate_roadmap_frontmatter_steps_not_list() -> None:
 def test_update_step_with_explicit_status() -> None:
     """Update step with explicit status sets that status instead of pending."""
     block_content = """---
-schema_version: "1"
+schema_version: "2"
 steps:
   - id: "1.1"
     description: "First step"
     status: "pending"
+    plan: null
     pr: null
 ---"""
 
@@ -495,11 +467,12 @@ steps:
 def test_update_step_status_none_infers_from_pr() -> None:
     """Update step with status=None infers status from resolved PR value."""
     block_content = """---
-schema_version: "1"
+schema_version: "2"
 steps:
   - id: "1.1"
     description: "First step"
     status: "done"
+    plan: null
     pr: "#100"
 ---"""
 

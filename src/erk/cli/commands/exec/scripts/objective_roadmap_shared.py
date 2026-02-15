@@ -1,11 +1,15 @@
 """Shared parser and data types for objective roadmap operations.
 
+Parses objective roadmaps from YAML frontmatter within
+<!-- erk:metadata-block:objective-roadmap --> blocks. Table rendering
+is maintained for human readability but is not parsed.
+
 Used by erk objective check (check_cmd.py) and erk exec update-roadmap-step.
 """
 
 import re
 from dataclasses import dataclass
-from typing import Literal, cast
+from typing import Literal
 
 from erk_shared.gateway.github.metadata.core import extract_raw_metadata_blocks
 
@@ -81,15 +85,11 @@ def _enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPh
 
 
 def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
-    """Parse roadmap from YAML frontmatter or markdown tables.
-
-    Tries frontmatter first (within objective-roadmap metadata block),
-    falls back to table parsing for backward compatibility.
+    """Parse roadmap from YAML frontmatter within objective-roadmap metadata block.
 
     Returns:
         (phases, validation_errors)
     """
-    # Try frontmatter-first parsing
     raw_blocks = extract_raw_metadata_blocks(body)
     roadmap_block = None
     for block in raw_blocks:
@@ -97,162 +97,23 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             roadmap_block = block
             break
 
-    if roadmap_block is not None:
-        # Import here to avoid circular dependency
-        from erk.cli.commands.exec.scripts.objective_roadmap_frontmatter import (
-            group_steps_by_phase,
-            parse_roadmap_frontmatter,
-        )
+    if roadmap_block is None:
+        return ([], ["No objective-roadmap frontmatter block found"])
 
-        steps = parse_roadmap_frontmatter(roadmap_block.body)
-
-        if steps is not None:
-            # Successfully parsed frontmatter
-            phases = group_steps_by_phase(steps)
-            # Extract phase names from markdown headers
-            phases = _enrich_phase_names(body, phases)
-            return (phases, [])
-
-    # Fall back to table parsing for backward compatibility
-    phases: list[RoadmapPhase] = []
-    validation_errors: list[str] = []
-
-    # Find all phase headers: ### Phase N: Name or ### Phase NA: Name
-    phase_pattern = re.compile(
-        r"^###\s+Phase\s+(\d+)([A-Z]?):\s*(.+?)(?:\s+\(\d+\s+PR\))?$", re.MULTILINE
+    # Import here to avoid circular dependency
+    from erk.cli.commands.exec.scripts.objective_roadmap_frontmatter import (
+        group_steps_by_phase,
+        parse_roadmap_frontmatter,
     )
-    phase_matches = list(phase_pattern.finditer(body))
 
-    if not phase_matches:
-        validation_errors.append("No phase headers found (expected '### Phase N: Name')")
-        return phases, validation_errors
+    steps = parse_roadmap_frontmatter(roadmap_block.body)
 
-    for idx, phase_match in enumerate(phase_matches):
-        phase_number = int(phase_match.group(1))
-        phase_suffix = phase_match.group(2)  # "" or "A", "B", etc.
-        phase_name = phase_match.group(3).strip()
+    if steps is None:
+        return ([], ["No objective-roadmap frontmatter block found"])
 
-        # Extract the section after this phase header until the next phase header or end
-        phase_start = phase_match.end()
-        next_match_index = idx + 1
-        if next_match_index < len(phase_matches):
-            phase_end = phase_matches[next_match_index].start()
-        else:
-            phase_end = len(body)
-
-        phase_body = body[phase_start:phase_end]
-
-        # Find the table in this phase section
-        # Try 5-col header first: | Step | Description | Status | Plan | PR |
-        five_col_header = re.compile(
-            r"^\|\s*Step\s*\|\s*Description\s*\|\s*Status\s*\|\s*Plan\s*\|\s*PR\s*\|$",
-            re.MULTILINE | re.IGNORECASE,
-        )
-        four_col_header = re.compile(
-            r"^\|\s*Step\s*\|\s*Description\s*\|\s*Status\s*\|\s*PR\s*\|$",
-            re.MULTILINE | re.IGNORECASE,
-        )
-
-        header_match = five_col_header.search(phase_body)
-        is_five_col = header_match is not None
-        if header_match is None:
-            header_match = four_col_header.search(phase_body)
-
-        if header_match is None:
-            validation_errors.append(
-                f"Phase {phase_number} is missing roadmap table "
-                f"(expected header: | Step | Description | Status | Plan | PR |)"
-            )
-            continue
-
-        # Find table rows after the separator line
-        table_start = header_match.end()
-        sep_cell = r"[\s:-]+"
-        if is_five_col:
-            separator_pattern = re.compile(
-                r"^\|" + r"\|".join([sep_cell] * 5) + r"\|$", re.MULTILINE
-            )
-        else:
-            separator_pattern = re.compile(
-                r"^\|" + r"\|".join([sep_cell] * 4) + r"\|$", re.MULTILINE
-            )
-        separator_match = separator_pattern.search(phase_body[table_start:])
-
-        if not separator_match:
-            validation_errors.append(f"Phase {phase_number} table is missing separator line")
-            continue
-
-        rows_start = table_start + separator_match.end()
-        rows_text = phase_body[rows_start:]
-
-        if is_five_col:
-            row_pattern = re.compile(r"^\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$", re.MULTILINE)
-        else:
-            row_pattern = re.compile(r"^\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$", re.MULTILINE)
-        row_matches = row_pattern.finditer(rows_text)
-
-        steps: list[RoadmapStep] = []
-        for row_match in row_matches:
-            step_id = row_match.group(1).strip()
-            description = row_match.group(2).strip()
-            status_col = row_match.group(3).strip().lower()
-
-            if is_five_col:
-                plan_col = row_match.group(4).strip()
-                pr_col = row_match.group(5).strip()
-            else:
-                # 4-col: migrate "plan #NNN" from PR column to plan field
-                raw_pr = row_match.group(4).strip()
-                if raw_pr.startswith("plan #"):
-                    plan_col = "#" + raw_pr[len("plan #") :]
-                    pr_col = "-"
-                else:
-                    plan_col = "-"
-                    pr_col = raw_pr
-
-            plan_value = plan_col if plan_col and plan_col != "-" else None
-            pr_value = pr_col if pr_col and pr_col != "-" else None
-
-            # Explicit status values take priority
-            status: RoadmapStepStatus
-            if status_col in ("done", "blocked", "skipped", "planning"):
-                status = cast(RoadmapStepStatus, status_col)
-            elif status_col in ("in-progress", "in_progress"):
-                status = cast(RoadmapStepStatus, "in_progress")
-            elif status_col == "pending":
-                status = cast(RoadmapStepStatus, "pending")
-            # Fall back to column inference for "-" or legacy values
-            elif pr_value and pr_value.startswith("#"):
-                status = cast(RoadmapStepStatus, "done")
-            elif plan_value and plan_value.startswith("#"):
-                status = cast(RoadmapStepStatus, "in_progress")
-            else:
-                status = cast(RoadmapStepStatus, "pending")
-
-            steps.append(
-                RoadmapStep(
-                    id=step_id,
-                    description=description,
-                    status=status,
-                    plan=plan_value,
-                    pr=pr_value,
-                )
-            )
-
-        if not steps:
-            validation_errors.append(f"Phase {phase_number} has no table rows")
-            continue
-
-        phases.append(
-            RoadmapPhase(
-                number=phase_number,
-                suffix=phase_suffix,
-                name=phase_name,
-                steps=steps,
-            )
-        )
-
-    return phases, validation_errors
+    phases = group_steps_by_phase(steps)
+    phases = _enrich_phase_names(body, phases)
+    return (phases, [])
 
 
 def compute_summary(phases: list[RoadmapPhase]) -> dict[str, int]:

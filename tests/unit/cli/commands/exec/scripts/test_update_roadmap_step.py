@@ -13,6 +13,38 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 ROADMAP_BODY_5COL = """\
 # Objective: Build Feature X
 
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Set up project structure"
+    status: "done"
+    plan: null
+    pr: "#100"
+  - id: "1.2"
+    description: "Add core types"
+    status: "in_progress"
+    plan: "#200"
+    pr: null
+  - id: "1.3"
+    description: "Add utility functions"
+    status: "pending"
+    plan: null
+    pr: null
+  - id: "2.1"
+    description: "Implement main feature"
+    status: "pending"
+    plan: null
+    pr: null
+  - id: "2.2"
+    description: "Add tests"
+    status: "blocked"
+    plan: null
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
 ## Roadmap
 
 ### Phase 1: Foundation (1 PR)
@@ -288,48 +320,6 @@ def test_update_with_frontmatter_preserves_other_steps() -> None:
     assert "status: done" in updated_body
 
 
-def test_fallback_to_table_when_no_frontmatter() -> None:
-    """When no frontmatter exists, fall back to table-only update."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
-    fake_gh = FakeGitHubIssues(issues={6423: issue})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        update_roadmap_step,
-        ["6423", "--step", "1.3", "--pr", "#888"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
-    )
-
-    assert result.exit_code == 0
-    output = json.loads(result.output)
-    assert output["success"] is True
-
-    updated_body = fake_gh.updated_bodies[0][1]
-    assert "#888" in updated_body
-    assert "erk:metadata-block:objective-roadmap" not in updated_body
-
-
-def test_explicit_status_option_table_only() -> None:
-    """--status flag sets explicit status in table instead of inferring."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
-    fake_gh = FakeGitHubIssues(issues={6423: issue})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        update_roadmap_step,
-        ["6423", "--step", "1.3", "--pr", "#500", "--status", "done"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
-    )
-
-    assert result.exit_code == 0, f"Failed: {result.output}"
-    output = json.loads(result.output)
-    assert output["success"] is True
-
-    updated_body = fake_gh.updated_bodies[0][1]
-    assert "#500" in updated_body
-    assert "| done |" in updated_body
-
-
 def test_explicit_status_option_with_frontmatter() -> None:
     """--status flag sets explicit status in both frontmatter and table."""
     issue = _make_issue(6423, FRONTMATTER_ROADMAP_BODY)
@@ -383,7 +373,8 @@ def test_update_multiple_steps_success() -> None:
 
     assert len(fake_gh.updated_bodies) == 1
     updated_body = fake_gh.updated_bodies[0][1]
-    assert updated_body.count("#6759") == 3
+    # 3 in frontmatter + 3 in rendered table = 6
+    assert updated_body.count("#6759") == 6
 
 
 def test_update_multiple_steps_partial_failure() -> None:
@@ -464,7 +455,8 @@ def test_update_multiple_steps_same_phase() -> None:
         assert step_result["success"] is True
 
     updated_body = fake_gh.updated_bodies[0][1]
-    assert updated_body.count("#555") == 3
+    # 3 in frontmatter + 3 in rendered table = 6
+    assert updated_body.count("#555") == 6
     assert updated_body.count("| done |") >= 3
 
 
@@ -545,8 +537,8 @@ def test_include_body_flag_multiple_steps() -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert "updated_body" in output
-    # Both steps should be reflected in the body
-    assert output["updated_body"].count("#555") == 2
+    # Both steps should be reflected in the body (2 in frontmatter + 2 in table)
+    assert output["updated_body"].count("#555") == 4
 
 
 def test_include_body_not_set_by_default() -> None:

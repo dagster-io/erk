@@ -42,6 +42,43 @@ def _make_issue(
 
 VALID_OBJECTIVE_BODY = """# Objective: Test Feature
 
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Setup infrastructure"
+    status: "done"
+    plan: null
+    pr: "#123"
+  - id: "1.2"
+    description: "Add basic tests"
+    status: "in_progress"
+    plan: "#124"
+    pr: null
+  - id: "1.3"
+    description: "Update docs"
+    status: "pending"
+    plan: null
+    pr: null
+  - id: "2.1"
+    description: "Build main feature"
+    status: "done"
+    plan: null
+    pr: "#125"
+  - id: "2.2"
+    description: "Add integration tests"
+    status: "blocked"
+    plan: null
+    pr: null
+  - id: "2.3"
+    description: "Performance tuning"
+    status: "skipped"
+    plan: null
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
 ## Roadmap
 
 ### Phase 1: Foundation
@@ -156,10 +193,24 @@ def test_done_step_without_pr_fails() -> None:
     'done' if it has a PR. This test uses a body where we can't trigger
     this naturally through inference — we validate the check exists.
     """
-    # In the current parser, 'done' without PR falls through to 'pending'
-    # So this check is a safety net for future changes. Verify the check command
-    # passes when statuses are consistent.
     body = """# Objective: All Done
+
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "First"
+    status: "done"
+    plan: null
+    pr: "#100"
+  - id: "1.2"
+    description: "Second"
+    status: "done"
+    plan: null
+    pr: "#101"
+---
+<!-- /erk:metadata-block:objective-roadmap -->
 
 ## Roadmap
 
@@ -220,19 +271,36 @@ def test_sequential_phase_numbering_passes() -> None:
     """Test that sequential phases pass the numbering check."""
     body = """# Objective: Sequential
 
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Step one"
+    status: "pending"
+    plan: null
+    pr: null
+  - id: "2.1"
+    description: "Step two"
+    status: "pending"
+    plan: null
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
 ## Roadmap
 
 ### Phase 1: First
 
 | Step | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
-| 1.1 | Step one | - | - | - |
+| 1.1 | Step one | pending | - | - |
 
 ### Phase 2: Second
 
 | Step | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
-| 2.1 | Step two | - | - | - |
+| 2.1 | Step two | pending | - | - |
 """
     issue = _make_issue(500, "Objective: Sequential", body)
     fake_gh = FakeGitHubIssues(issues={500: issue})
@@ -252,19 +320,36 @@ def test_non_sequential_phase_numbering_still_passes() -> None:
     """Test that non-sequential but increasing phases pass (gaps are OK)."""
     body = """# Objective: Gaps
 
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Step one"
+    status: "pending"
+    plan: null
+    pr: null
+  - id: "3.1"
+    description: "Step three"
+    status: "pending"
+    plan: null
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
 ## Roadmap
 
 ### Phase 1: First
 
 | Step | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
-| 1.1 | Step one | - | - | - |
+| 1.1 | Step one | pending | - | - |
 
 ### Phase 3: Third
 
 | Step | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
-| 3.1 | Step three | - | - | - |
+| 3.1 | Step three | pending | - | - |
 """
     issue = _make_issue(600, "Objective: Gaps", body)
     fake_gh = FakeGitHubIssues(issues={600: issue})
@@ -284,25 +369,47 @@ def test_sub_phase_numbering_passes() -> None:
     """Test that sub-phases like 1A, 1B, 1C pass the sequential check."""
     body = """# Objective: Sub-phases
 
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1A.1"
+    description: "Step one"
+    status: "pending"
+    plan: null
+    pr: null
+  - id: "1B.1"
+    description: "Step two"
+    status: "pending"
+    plan: null
+    pr: null
+  - id: "2.1"
+    description: "Step three"
+    status: "pending"
+    plan: null
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
 ## Roadmap
 
 ### Phase 1A: First Part
 
 | Step | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
-| 1A.1 | Step one | - | - | - |
+| 1A.1 | Step one | pending | - | - |
 
 ### Phase 1B: Second Part
 
 | Step | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
-| 1B.1 | Step two | - | - | - |
+| 1B.1 | Step two | pending | - | - |
 
 ### Phase 2: Core
 
 | Step | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
-| 2.1 | Step three | - | - | - |
+| 2.1 | Step three | pending | - | - |
 """
     issue = _make_issue(900, "Objective: Sub-phases", body)
     fake_gh = FakeGitHubIssues(issues={900: issue})
@@ -346,6 +453,23 @@ def test_all_steps_complete_json() -> None:
     """Test JSON output when all steps are done (for closing trigger detection)."""
     body = """# Objective: Complete
 
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "First"
+    status: "done"
+    plan: null
+    pr: "#100"
+  - id: "1.2"
+    description: "Second"
+    status: "skipped"
+    plan: null
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
 ## Roadmap
 
 ### Phase 1: Done
@@ -377,6 +501,23 @@ def test_stale_display_status_with_pr_fails() -> None:
     """Test that stale '-' status with PR reference is flagged by Check 6."""
     body = """# Objective: Stale Status
 
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Do thing"
+    status: "done"
+    plan: null
+    pr: "#123"
+  - id: "1.2"
+    description: "Another thing"
+    status: "in_progress"
+    plan: "#124"
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
 ## Roadmap
 
 ### Phase 1: Legacy Format
@@ -405,6 +546,28 @@ def test_stale_display_status_with_pr_fails() -> None:
 def test_explicit_display_status_with_pr_passes() -> None:
     """Test that explicit status values with PR references pass Check 6."""
     body = """# Objective: Correct Format
+
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Do thing"
+    status: "done"
+    plan: null
+    pr: "#123"
+  - id: "1.2"
+    description: "Another thing"
+    status: "in_progress"
+    plan: "#124"
+    pr: null
+  - id: "1.3"
+    description: "Not started"
+    status: "pending"
+    plan: null
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
 
 ## Roadmap
 

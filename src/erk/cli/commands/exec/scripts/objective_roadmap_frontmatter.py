@@ -1,4 +1,4 @@
-"""YAML frontmatter parser and serializer for objective roadmap data.
+"""YAML frontmatter parser and serializer for objective roadmap data (v2 only).
 
 This module provides the content-layer parser for roadmap frontmatter,
 which lives inside <!-- erk:metadata-block:objective-roadmap --> blocks.
@@ -7,6 +7,7 @@ Design:
 - Frontmatter stores a flat list of steps (no phase structure)
 - Phase membership is derived from step ID prefix (e.g., "1.2" → phase 1)
 - Phase names live only in markdown headers, not frontmatter
+- Only schema_version "2" is supported
 """
 
 import re
@@ -26,7 +27,7 @@ from erk.core.frontmatter import parse_markdown_frontmatter
 def validate_roadmap_frontmatter(
     data: Mapping[str, object],
 ) -> tuple[list[RoadmapStep] | None, list[str]]:
-    """Validate parsed frontmatter against the roadmap schema.
+    """Validate parsed frontmatter against the v2 roadmap schema.
 
     Args:
         data: Parsed YAML dictionary.
@@ -43,11 +44,9 @@ def validate_roadmap_frontmatter(
         errors.append("Missing required field: schema_version")
         return None, errors
 
-    if schema_version not in ("1", "2"):
+    if schema_version != "2":
         errors.append(f"Unsupported schema_version: {schema_version}")
         return None, errors
-
-    is_v2 = schema_version == "2"
 
     # Validate steps is a list
     if "steps" not in data:
@@ -101,20 +100,13 @@ def validate_roadmap_frontmatter(
             errors.append(f"Step {i} field 'pr' must be a string or null")
             return None, errors
 
-        # v1 migration: "plan #NNN" in pr field → "#NNN" in plan field
-        plan_value = raw_plan
-        pr_value = raw_pr
-        if not is_v2 and isinstance(raw_pr, str) and raw_pr.startswith("plan #"):
-            plan_value = "#" + raw_pr[len("plan #") :]
-            pr_value = None
-
         steps.append(
             RoadmapStep(
                 id=step_id,
                 description=description,
                 status=cast(RoadmapStepStatus, status),
-                plan=plan_value,
-                pr=pr_value,
+                plan=raw_plan,
+                pr=raw_pr,
             )
         )
 
@@ -133,7 +125,7 @@ def parse_roadmap_frontmatter(block_content: str) -> list[RoadmapStep] | None:
 
     Uses parse_markdown_frontmatter() for YAML parsing and
     validate_roadmap_frontmatter() for typed validation.
-    Returns None on any validation failure (caller falls back to table parsing).
+    Returns None on any validation failure.
     """
     result = parse_markdown_frontmatter(block_content)
 
