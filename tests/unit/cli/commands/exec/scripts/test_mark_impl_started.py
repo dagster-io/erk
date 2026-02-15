@@ -207,7 +207,7 @@ def test_mark_impl_started_update_failed(tmp_path: Path) -> None:
     assert result.exit_code == 0  # Always exits 0
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error_type"] == "update-failed"
+    assert output["error_type"] == "github-api-failed"
     assert "Network error" in output["message"]
 
 
@@ -225,7 +225,7 @@ def test_mark_impl_started_local_state_write_failed(tmp_path: Path) -> None:
         "labels": ["erk-plan"],
     }
     (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref))
-    impl_dir.chmod(0o444)  # Read-only directory
+    impl_dir.chmod(0o555)  # Read+execute only (can read files, cannot create new files)
 
     fake_gh = FakeGitHubIssues(issues={123: make_issue_info(123, make_plan_header_body())})
     runner = CliRunner()

@@ -110,7 +110,7 @@ def mark_impl_started(ctx: click.Context, session_id: str | None) -> None:
             user=user,
             session_id=session_id,
         )
-    except (FileNotFoundError, ValueError) as e:
+    except (FileNotFoundError, PermissionError, ValueError) as e:
         result = MarkImplError(
             success=False,
             error_type="local-state-write-failed",
