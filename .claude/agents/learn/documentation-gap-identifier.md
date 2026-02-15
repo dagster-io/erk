@@ -96,21 +96,28 @@ Ensure completeness by checking that every item from CodeDiffAnalyzer inventory 
 
 Assign a classification to each item:
 
-| Classification    | When to Use                                            |
-| ----------------- | ------------------------------------------------------ |
-| NEW_DOC           | New topic not covered by existing docs                 |
-| UPDATE_EXISTING   | Existing doc covers related topic, needs update        |
-| UPDATE_REFERENCES | Existing doc valid but has phantom file paths          |
-| DELETE_STALE      | Existing doc describes artifacts that no longer exist  |
-| TRIPWIRE          | Cross-cutting concern that applies broadly             |
-| SHOULD_BE_CODE    | Enumerable catalog that should be a code type artifact |
-| SKIP              | Already documented, or doesn't need documentation      |
+| Classification    | When to Use                                                              |
+| ----------------- | ------------------------------------------------------------------------ |
+| NEW_DOC           | New topic not covered by existing docs                                   |
+| UPDATE_EXISTING   | Existing doc covers related topic, needs update                          |
+| UPDATE_REFERENCES | Existing doc valid but has phantom file paths                            |
+| DELETE_STALE      | Existing doc describes artifacts that no longer exist                    |
+| TRIPWIRE          | Cross-cutting concern that applies broadly                               |
+| SHOULD_BE_CODE    | Knowledge that belongs in code (type artifacts, docstrings, or comments) |
+| SKIP              | Already documented, or doesn't need documentation                        |
 
-**Code artifact test:** If the proposed documentation is an enumerable catalog
-(error types, status values, config keys, option sets), it should be a Literal
-type, Enum, or typed constant in source code — not a documentation table.
-Classify as SHOULD_BE_CODE. The learn plan will propose a code change instead
-of documentation content.
+**Cornerstone test:** Apply the knowledge placement hierarchy from learned-docs-core.md:
+
+1. **Enumerable catalog** (error types, status values, config keys, option sets) →
+   should be a Literal type, Enum, or typed constant. Classify as SHOULD_BE_CODE.
+2. **Single-artifact API reference** (method tables, implementation details, or
+   signatures for one class/ABC/module) → should be docstrings on that artifact.
+   Classify as SHOULD_BE_CODE.
+3. **Single-location insight** (behavior of one function or one code block) →
+   should be a code comment. Classify as SHOULD_BE_CODE.
+
+If the insight spans multiple files or connects systems, it belongs in docs/learned/.
+The test is: "Does this knowledge attach to a single code artifact?" If yes → SHOULD_BE_CODE.
 
 ### Prevention Item Classification
 
@@ -170,7 +177,7 @@ Return a structured report:
 | Updates to existing docs | N |
 | Tripwire candidates (score >= 4) | N |
 | Potential tripwires (score 2-3) | N |
-| Code artifact items | N |
+| Cornerstone redirects (SHOULD_BE_CODE) | N |
 | Contradictions found | N |
 
 ## Contradiction Resolutions (HIGH Priority)
