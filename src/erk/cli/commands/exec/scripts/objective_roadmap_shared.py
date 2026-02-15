@@ -5,8 +5,11 @@ Used by erk objective check (check_cmd.py) and erk exec update-roadmap-step.
 
 import re
 from dataclasses import dataclass
+from typing import Literal, cast
 
 from erk_shared.gateway.github.metadata.core import extract_raw_metadata_blocks
+
+RoadmapStepStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
 
 
 @dataclass(frozen=True)
@@ -15,7 +18,7 @@ class RoadmapStep:
 
     id: str
     description: str
-    status: str  # "pending", "done", "in_progress", "blocked", "skipped"
+    status: RoadmapStepStatus
     plan: str | None  # None or "#123" (plan issue number)
     pr: str | None  # None or "#456" (landed PR number)
 
@@ -211,19 +214,20 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             pr_value = pr_col if pr_col and pr_col != "-" else None
 
             # Explicit status values take priority
-            if status_col in ("done", "blocked", "skipped"):
-                status = status_col
+            status: RoadmapStepStatus
+            if status_col in ("done", "blocked", "skipped", "planning"):
+                status = cast(RoadmapStepStatus, status_col)
             elif status_col in ("in-progress", "in_progress"):
-                status = "in_progress"
+                status = cast(RoadmapStepStatus, "in_progress")
             elif status_col == "pending":
-                status = "pending"
+                status = cast(RoadmapStepStatus, "pending")
             # Fall back to column inference for "-" or legacy values
             elif pr_value and pr_value.startswith("#"):
-                status = "done"
+                status = cast(RoadmapStepStatus, "done")
             elif plan_value and plan_value.startswith("#"):
-                status = "in_progress"
+                status = cast(RoadmapStepStatus, "in_progress")
             else:
-                status = "pending"
+                status = cast(RoadmapStepStatus, "pending")
 
             steps.append(
                 RoadmapStep(
@@ -255,6 +259,7 @@ def compute_summary(phases: list[RoadmapPhase]) -> dict[str, int]:
     """Compute summary statistics from phases."""
     total = 0
     pending = 0
+    planning = 0
     done = 0
     in_progress = 0
     blocked = 0
@@ -265,6 +270,8 @@ def compute_summary(phases: list[RoadmapPhase]) -> dict[str, int]:
             total += 1
             if step.status == "pending":
                 pending += 1
+            elif step.status == "planning":
+                planning += 1
             elif step.status == "done":
                 done += 1
             elif step.status == "in_progress":
@@ -277,6 +284,7 @@ def compute_summary(phases: list[RoadmapPhase]) -> dict[str, int]:
     return {
         "total_steps": total,
         "pending": pending,
+        "planning": planning,
         "done": done,
         "in_progress": in_progress,
         "blocked": blocked,

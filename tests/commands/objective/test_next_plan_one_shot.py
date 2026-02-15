@@ -108,6 +108,58 @@ def test_next_plan_one_shot_happy_path() -> None:
         assert inputs["step_id"] == "1.1"
         assert "Implement step 1.1" in inputs["instruction"]
 
+        # Verify objective body was updated: step 1.1 marked as "planning" with draft PR
+        # Note: updated_bodies has 2 entries — one from skeleton plan issue creation
+        # (create_plan_issue updates body with comment_id) and one from objective update
+        objective_updates = [(num, body) for num, body in issues.updated_bodies if num == 42]
+        assert len(objective_updates) == 1
+        _, updated_body = objective_updates[0]
+        assert "planning" in updated_body.lower() or "planning" in updated_body
+
+
+def test_next_plan_one_shot_repeated_invocation_advances_step() -> None:
+    """Test that running --one-shot twice dispatches different steps.
+
+    After first dispatch marks step 1.1 as 'planning', the second
+    invocation should skip it and dispatch step 1.2.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        issues = FakeGitHubIssues(
+            issues={42: _make_objective_issue(42, OBJECTIVE_BODY)},
+        )
+        ctx = _build_one_shot_context(env, issues=issues)
+
+        # First invocation: dispatches step 1.1
+        result1 = runner.invoke(
+            cli,
+            ["objective", "next-plan", "42", "--one-shot"],
+            obj=ctx,
+            catch_exceptions=False,
+        )
+        assert result1.exit_code == 0, f"First invocation failed: {result1.output}"
+
+        github = ctx.github
+        assert isinstance(github, FakeGitHub)
+        assert len(github.triggered_workflows) == 1
+        _, inputs1 = github.triggered_workflows[0]
+        assert inputs1["step_id"] == "1.1"
+
+        # Second invocation: should dispatch step 1.2 (since 1.1 is now "planning")
+        result2 = runner.invoke(
+            cli,
+            ["objective", "next-plan", "42", "--one-shot"],
+            obj=ctx,
+            catch_exceptions=False,
+        )
+        assert result2.exit_code == 0, f"Second invocation failed: {result2.output}"
+
+        assert len(github.triggered_workflows) == 2
+        _, inputs2 = github.triggered_workflows[1]
+        assert inputs2["step_id"] == "1.2"
+
 
 def test_next_plan_one_shot_auto_detects_next_step() -> None:
     """Test that first pending step is auto-detected."""
@@ -250,6 +302,8 @@ def test_next_plan_one_shot_dry_run() -> None:
         assert isinstance(github, FakeGitHub)
         assert len(github.triggered_workflows) == 0
         assert len(github.created_prs) == 0
+        # No objective body update in dry-run mode
+        assert len(issues.updated_bodies) == 0
 
 
 def test_next_plan_one_shot_objective_not_found() -> None:

@@ -121,23 +121,21 @@ def validate_objective(
     consistency_issues: list[str] = []
     for phase in phases:
         for step in phase.steps:
-            # Steps with PR #NNN should be done
+            # Steps with PR #NNN should be done (or planning/skipped)
             if (
                 step.pr
                 and step.pr.startswith("#")
-                and step.status != "done"
-                and step.status != "skipped"
+                and step.status not in ("done", "planning", "skipped")
             ):
                 consistency_issues.append(
                     f"Step {step.id} has PR {step.pr} but status is '{step.status}' "
                     f"(expected 'done')"
                 )
-            # Steps with plan reference should be in_progress
+            # Steps with plan reference should be in_progress (or planning/skipped)
             if (
                 step.plan
                 and step.plan.startswith("#")
-                and step.status != "in_progress"
-                and step.status != "skipped"
+                and step.status not in ("in_progress", "planning", "skipped")
             ):
                 consistency_issues.append(
                     f"Step {step.id} has plan {step.plan} but status is '{step.status}' "

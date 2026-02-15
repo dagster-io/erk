@@ -29,26 +29,6 @@ WELL_FORMED_BODY_5COL = """# Objective: Test
 | 2.2 | Performance | skipped | - | - |
 """
 
-WELL_FORMED_BODY_4COL = """# Objective: Test
-
-## Roadmap
-
-### Phase 1: Foundation
-
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1 | Setup infra | - | #100 |
-| 1.2 | Add tests | - | plan #101 |
-| 1.3 | Update docs | - | - |
-
-### Phase 2: Core
-
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 2.1 | Build feature | blocked | - |
-| 2.2 | Performance | skipped | - |
-"""
-
 
 def test_parse_roadmap_5col_well_formed() -> None:
     """Test parsing a well-formed 5-col roadmap body."""
@@ -91,25 +71,6 @@ def test_parse_roadmap_5col_status_inference() -> None:
     assert steps[2].status == "pending"  # no refs
     assert steps[3].status == "blocked"  # explicit status
     assert steps[4].status == "skipped"  # explicit status
-
-
-def test_parse_roadmap_4col_backward_compat() -> None:
-    """Test that 4-col tables parse correctly with plan migration."""
-    phases, errors = parse_roadmap(WELL_FORMED_BODY_4COL)
-
-    assert len(phases) == 2
-    assert errors == []
-
-    steps = phases[0].steps
-    # "plan #101" in PR column → plan="#101", pr=None
-    assert steps[1].plan == "#101"
-    assert steps[1].pr is None
-    assert steps[1].status == "in_progress"
-
-    # "#100" in PR column stays as pr
-    assert steps[0].plan is None
-    assert steps[0].pr == "#100"
-    assert steps[0].status == "done"
 
 
 def test_parse_roadmap_sub_phases() -> None:
@@ -436,6 +397,88 @@ invalid: yaml: syntax [
     assert phases[0].name == "Fallback Phase"
     assert len(phases[0].steps) == 1
     assert phases[0].steps[0].pr == "#200"
+
+
+def test_parse_roadmap_planning_status_recognized() -> None:
+    """Test that explicit 'planning' status in Status column is recognized."""
+    body = """## Roadmap
+
+### Phase 1: Test
+
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Step one | planning | - | #200 |
+"""
+    phases, errors = parse_roadmap(body)
+
+    assert errors == []
+    assert len(phases) == 1
+    assert len(phases[0].steps) == 1
+    assert phases[0].steps[0].status == "planning"
+    assert phases[0].steps[0].pr == "#200"
+
+
+def test_compute_summary_counts_planning() -> None:
+    """Test that compute_summary counts planning steps."""
+    phases = [
+        RoadmapPhase(
+            number=1,
+            suffix="",
+            name="Test",
+            steps=[
+                RoadmapStep(id="1.1", description="A", status="planning", plan=None, pr="#200"),
+                RoadmapStep(id="1.2", description="B", status="pending", plan=None, pr=None),
+                RoadmapStep(id="1.3", description="C", status="done", plan=None, pr="#1"),
+            ],
+        )
+    ]
+    summary = compute_summary(phases)
+
+    assert summary["total_steps"] == 3
+    assert summary["planning"] == 1
+    assert summary["pending"] == 1
+    assert summary["done"] == 1
+
+
+def test_find_next_step_skips_planning() -> None:
+    """Test that find_next_step skips steps with planning status."""
+    phases = [
+        RoadmapPhase(
+            number=1,
+            suffix="",
+            name="Phase One",
+            steps=[
+                RoadmapStep(
+                    id="1.1", description="Planning", status="planning", plan=None, pr="#200"
+                ),
+                RoadmapStep(id="1.2", description="Pending", status="pending", plan=None, pr=None),
+            ],
+        )
+    ]
+    result = find_next_step(phases)
+
+    assert result is not None
+    assert result["id"] == "1.2"
+
+
+def test_find_next_step_all_planning_returns_none() -> None:
+    """Test that find_next_step returns None when only planning steps remain."""
+    phases = [
+        RoadmapPhase(
+            number=1,
+            suffix="",
+            name="Phase One",
+            steps=[
+                RoadmapStep(id="1.1", description="Done", status="done", plan=None, pr="#1"),
+                RoadmapStep(
+                    id="1.2", description="Planning", status="planning", plan=None, pr="#200"
+                ),
+            ],
+        )
+    ]
+    result = find_next_step(phases)
+
+    assert result is None
 
 
 def test_parse_roadmap_v1_frontmatter_migrates_plan() -> None:

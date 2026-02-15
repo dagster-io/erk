@@ -268,7 +268,7 @@ steps:
     pr: null
 ---"""
 
-    updated = update_step_in_frontmatter(block_content, "1.2", pr="#789", status=None)
+    updated = update_step_in_frontmatter(block_content, "1.2", plan=None, pr="#789", status=None)
 
     assert updated is not None
     # Parse the updated content to verify
@@ -278,11 +278,11 @@ steps:
     # First step unchanged
     assert steps[0].id == "1.1"
     assert steps[0].pr is None
-    # Second step updated (--pr auto-clears plan)
+    # Second step updated (--pr auto-clears plan, status inferred as done)
     assert steps[1].id == "1.2"
     assert steps[1].pr == "#789"
     assert steps[1].plan is None
-    assert steps[1].status == "pending"  # Reset for inference
+    assert steps[1].status == "done"  # Inferred from PR value
 
 
 def test_update_step_in_frontmatter_not_found() -> None:
@@ -296,7 +296,9 @@ steps:
     pr: null
 ---"""
 
-    updated = update_step_in_frontmatter(block_content, "999.999", pr="#123", status=None)
+    updated = update_step_in_frontmatter(
+        block_content, "999.999", plan=None, pr="#123", status=None
+    )
 
     assert updated is None
 
@@ -323,7 +325,7 @@ steps:
     pr: null
 ---"""
 
-    updated = update_step_in_frontmatter(block_content, "1.2", pr="#333", status=None)
+    updated = update_step_in_frontmatter(block_content, "1.2", plan=None, pr="#333", status=None)
 
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)
@@ -355,7 +357,7 @@ steps:
 
 Some markdown content after frontmatter."""
 
-    updated = update_step_in_frontmatter(block_content, "1.1", pr="#999", status=None)
+    updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#999", status=None)
 
     assert updated is not None
     assert "Some markdown content after frontmatter." in updated
@@ -481,7 +483,7 @@ steps:
     pr: null
 ---"""
 
-    updated = update_step_in_frontmatter(block_content, "1.1", pr="#123", status="done")
+    updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#123", status="done")
 
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)
@@ -490,8 +492,8 @@ steps:
     assert steps[0].pr == "#123"
 
 
-def test_update_step_status_none_resets_to_pending() -> None:
-    """Update step with status=None resets to pending for inference."""
+def test_update_step_status_none_infers_from_pr() -> None:
+    """Update step with status=None infers status from resolved PR value."""
     block_content = """---
 schema_version: "1"
 steps:
@@ -501,12 +503,12 @@ steps:
     pr: "#100"
 ---"""
 
-    updated = update_step_in_frontmatter(block_content, "1.1", pr="#200", status=None)
+    updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#200", status=None)
 
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)
     assert steps is not None
-    assert steps[0].status == "pending"
+    assert steps[0].status == "done"  # Inferred from PR value
     assert steps[0].pr == "#200"
 
 
@@ -531,6 +533,97 @@ steps:
     assert steps[0].pr is None
 
 
+def test_update_step_status_inferred_from_pr() -> None:
+    """Update step with status=None and PR set infers 'done' status."""
+    block_content = """---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "First step"
+    status: "pending"
+    plan: null
+    pr: null
+---"""
+
+    updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#999", status=None)
+
+    assert updated is not None
+    steps = parse_roadmap_frontmatter(updated)
+    assert steps is not None
+    assert steps[0].status == "done"
+    assert steps[0].pr == "#999"
+
+
+def test_update_step_status_inferred_from_plan() -> None:
+    """Update step with status=None and plan set infers 'in_progress' status."""
+    block_content = """---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "First step"
+    status: "pending"
+    plan: null
+    pr: null
+---"""
+
+    updated = update_step_in_frontmatter(block_content, "1.1", plan="#6464", pr="", status=None)
+
+    assert updated is not None
+    steps = parse_roadmap_frontmatter(updated)
+    assert steps is not None
+    assert steps[0].status == "in_progress"
+    assert steps[0].plan == "#6464"
+
+
+def test_update_step_preserves_status_when_both_none() -> None:
+    """Update step with status=None and both plan/pr=None preserves existing status."""
+    block_content = """---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "First step"
+    status: "planning"
+    plan: null
+    pr: "#200"
+---"""
+
+    # Both plan and pr are None → preserve existing values
+    updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr=None, status=None)
+
+    assert updated is not None
+    steps = parse_roadmap_frontmatter(updated)
+    assert steps is not None
+    # Status should be inferred from preserved pr="#200" → "done"
+    # Wait — pr is preserved as "#200", which is truthy, so status="done"
+    assert steps[0].status == "done"
+    assert steps[0].pr == "#200"
+
+
+def test_update_step_none_pr_preserves_existing() -> None:
+    """Update step with pr=None preserves existing PR value."""
+    block_content = """---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "First step"
+    status: "in_progress"
+    plan: "#6464"
+    pr: "#200"
+---"""
+
+    # Set plan only, preserve PR
+    updated = update_step_in_frontmatter(
+        block_content, "1.1", plan="#7777", pr=None, status="planning"
+    )
+
+    assert updated is not None
+    steps = parse_roadmap_frontmatter(updated)
+    assert steps is not None
+    assert steps[0].plan == "#7777"
+    assert steps[0].pr == "#200"  # preserved
+    assert steps[0].status == "planning"
+
+
 def test_update_step_pr_auto_clears_plan() -> None:
     """Setting --pr auto-clears plan reference."""
     block_content = """---
@@ -543,7 +636,7 @@ steps:
     pr: null
 ---"""
 
-    updated = update_step_in_frontmatter(block_content, "1.1", pr="#999", status=None)
+    updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#999", status=None)
 
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)
