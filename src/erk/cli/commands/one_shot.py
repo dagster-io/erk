@@ -16,13 +16,9 @@ from erk.cli.commands.one_shot_dispatch import (
     OneShotDispatchParams,
     dispatch_one_shot,
     dry_run_one_shot,
-    generate_branch_name,
 )
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
-
-# Re-export for backward compatibility with tests that import from here
-_generate_branch_name = generate_branch_name
 
 
 @click.command("one-shot", hidden=True)
