@@ -7,7 +7,7 @@ Usage:
     erk exec discover-reviews --pr-number 123
 
     # Use custom reviews directory
-    erk exec discover-reviews --pr-number 123 --reviews-dir .claude/reviews
+    erk exec discover-reviews --pr-number 123 --reviews-dir .erk/reviews
 
 Output:
     JSON with matching reviews, skipped reviews, and validation errors
@@ -98,8 +98,8 @@ def _create_matrix(reviews: list[ParsedReview]) -> dict[str, list[dict[str, str]
 @click.option("--pr-number", required=True, type=int, help="PR number to analyze")
 @click.option(
     "--reviews-dir",
-    default=".claude/reviews",
-    help="Directory containing review definitions (default: .claude/reviews)",
+    default=".erk/reviews",
+    help="Directory containing review definitions (default: .erk/reviews)",
 )
 @click.pass_context
 def discover_reviews(

@@ -50,7 +50,7 @@ def test_is_installed_returns_false_when_review_missing(tmp_path: Path) -> None:
 
 def test_is_installed_returns_true_when_review_exists(tmp_path: Path) -> None:
     """Test is_installed returns True when review file exists."""
-    reviews_dir = tmp_path / ".claude" / "reviews"
+    reviews_dir = tmp_path / ".erk" / "reviews"
     reviews_dir.mkdir(parents=True)
     (reviews_dir / "tripwires.md").write_text("# Tripwires", encoding="utf-8")
 
@@ -111,7 +111,7 @@ def test_uninstall_succeeds_when_not_installed(tmp_path: Path) -> None:
 
 def test_uninstall_removes_review_file(tmp_path: Path) -> None:
     """Test uninstall removes the review file."""
-    reviews_dir = tmp_path / ".claude" / "reviews"
+    reviews_dir = tmp_path / ".erk" / "reviews"
     reviews_dir.mkdir(parents=True)
     review_file = reviews_dir / "tripwires.md"
     review_file.write_text("# Tripwires", encoding="utf-8")
@@ -127,7 +127,7 @@ def test_uninstall_removes_review_file(tmp_path: Path) -> None:
 def test_installation_check_description() -> None:
     """Test installation_check_description is informative."""
     capability = TripwiresReviewDefCapability()
-    assert ".claude/reviews/tripwires.md" in capability.installation_check_description
+    assert ".erk/reviews/tripwires.md" in capability.installation_check_description
 
 
 def test_artifacts_lists_review_file() -> None:
@@ -135,7 +135,7 @@ def test_artifacts_lists_review_file() -> None:
     capability = TripwiresReviewDefCapability()
     artifacts = capability.artifacts
     assert len(artifacts) == 1
-    assert artifacts[0].path == ".claude/reviews/tripwires.md"
+    assert artifacts[0].path == ".erk/reviews/tripwires.md"
     assert artifacts[0].artifact_type == "file"
 
 

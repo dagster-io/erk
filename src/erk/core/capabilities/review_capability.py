@@ -19,7 +19,7 @@ from erk.core.capabilities.base import (
 class ReviewCapability(Capability):
     """Base class for capabilities that install a single code review definition.
 
-    Reviews are installed to .claude/reviews/ in the target project.
+    Reviews are installed to .erk/reviews/ in the target project.
     Subclasses only need to implement review_name and description.
 
     Requires: code-reviews-system capability (checked in preflight)
@@ -44,14 +44,14 @@ class ReviewCapability(Capability):
     @property
     def installation_check_description(self) -> str:
         """Human-readable description of what is_installed() checks."""
-        return f".claude/reviews/{self.review_name}.md file exists"
+        return f".erk/reviews/{self.review_name}.md file exists"
 
     @property
     def artifacts(self) -> list[CapabilityArtifact]:
         """List of artifacts this capability installs."""
         return [
             CapabilityArtifact(
-                path=f".claude/reviews/{self.review_name}.md",
+                path=f".erk/reviews/{self.review_name}.md",
                 artifact_type="file",
             )
         ]
@@ -65,7 +65,7 @@ class ReviewCapability(Capability):
         """Check if the review file exists."""
         if repo_root is None:
             return False
-        return (repo_root / ".claude" / "reviews" / f"{self.review_name}.md").exists()
+        return (repo_root / ".erk" / "reviews" / f"{self.review_name}.md").exists()
 
     def preflight(self, repo_root: Path | None) -> CapabilityResult:
         """Check that code-reviews-system capability is installed."""
@@ -94,20 +94,20 @@ class ReviewCapability(Capability):
                 message="ReviewCapability requires repo_root",
             )
         # Inline import: avoids circular dependency with artifacts module
-        from erk.artifacts.paths import get_bundled_claude_dir
+        from erk.artifacts.paths import get_bundled_erk_dir
         from erk.artifacts.state import add_installed_capability
 
-        review_file = repo_root / ".claude" / "reviews" / f"{self.review_name}.md"
+        review_file = repo_root / ".erk" / "reviews" / f"{self.review_name}.md"
         if review_file.exists():
             # Still record installation even if file exists
             add_installed_capability(repo_root, self.name)
             return CapabilityResult(
                 success=True,
-                message=f".claude/reviews/{self.review_name}.md already exists",
+                message=f".erk/reviews/{self.review_name}.md already exists",
             )
 
-        bundled_claude_dir = get_bundled_claude_dir()
-        source_review = bundled_claude_dir / "reviews" / f"{self.review_name}.md"
+        bundled_erk_dir = get_bundled_erk_dir()
+        source_review = bundled_erk_dir / "reviews" / f"{self.review_name}.md"
 
         if not source_review.exists():
             return CapabilityResult(
@@ -124,7 +124,7 @@ class ReviewCapability(Capability):
 
         return CapabilityResult(
             success=True,
-            message=f"Installed .claude/reviews/{self.review_name}.md",
+            message=f"Installed .erk/reviews/{self.review_name}.md",
         )
 
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
@@ -136,13 +136,13 @@ class ReviewCapability(Capability):
             )
         from erk.artifacts.state import remove_installed_capability
 
-        review_file = repo_root / ".claude" / "reviews" / f"{self.review_name}.md"
+        review_file = repo_root / ".erk" / "reviews" / f"{self.review_name}.md"
         if not review_file.exists():
             # Still remove from installed capabilities
             remove_installed_capability(repo_root, self.name)
             return CapabilityResult(
                 success=True,
-                message=f".claude/reviews/{self.review_name}.md does not exist",
+                message=f".erk/reviews/{self.review_name}.md does not exist",
             )
 
         review_file.unlink()
@@ -150,5 +150,5 @@ class ReviewCapability(Capability):
         remove_installed_capability(repo_root, self.name)
         return CapabilityResult(
             success=True,
-            message=f"Removed .claude/reviews/{self.review_name}.md",
+            message=f"Removed .erk/reviews/{self.review_name}.md",
         )

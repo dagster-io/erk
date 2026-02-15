@@ -6,7 +6,7 @@ read_when:
   - "understanding ReviewCapability pattern"
 tripwires:
   - action: "creating a review capability"
-    warning: "Review definition MUST exist at .claude/reviews/{review_name}.md in erk repo root. At runtime, get_bundled_claude_dir() resolves this location (src/erk/artifacts/paths.py). Missing source file causes install failure."
+    warning: "Review definition MUST exist at .erk/reviews/{review_name}.md in erk repo root. At runtime, get_bundled_erk_dir() resolves this location (src/erk/artifacts/paths.py). Missing source file causes install failure."
   - action: "review capability installation fails"
     warning: "ReviewCapability has automatic preflight check for code-reviews-system workflow. Install will fail if .github/workflows/code-reviews.yml doesn't exist in target repo. Install code-reviews-system capability first."
 last_audited: "2026-02-08"
@@ -15,7 +15,7 @@ audit_result: clean
 
 # Adding Review Capabilities
 
-Review capabilities install code review definition files to `.claude/reviews/` in target projects. They are the thinnest capability type—only two properties required—because `ReviewCapability` base class handles all installation logic.
+Review capabilities install code review definition files to `.erk/reviews/` in target projects. They are the thinnest capability type—only two properties required—because `ReviewCapability` base class handles all installation logic.
 
 ## Why ReviewCapability Exists
 
@@ -37,7 +37,7 @@ Subclasses implement:
 **Why just two properties?** The base class derives everything else:
 
 - CLI name: `f"review-{review_name}"` (e.g., `review-dignified-python`)
-- Artifact path: `.claude/reviews/{review_name}.md`
+- Artifact path: `.erk/reviews/{review_name}.md`
 - Installation check: file existence test
 - Preflight check: `code-reviews-system` workflow detection
 
@@ -45,11 +45,11 @@ See `DignifiedPythonReviewDefCapability` for the canonical minimal implementatio
 
 ## Bundled Source Location Trade-off
 
-<!-- Source: src/erk/artifacts/paths.py, get_bundled_claude_dir -->
+<!-- Source: src/erk/artifacts/paths.py, get_bundled_erk_dir -->
 
-Review definitions are sourced from `.claude/reviews/` in the erk repository. This placement matches the customer layout — reviews are installed to `.claude/reviews/` in target repos, and erk itself stores them in the same location for dogfooding.
+Review definitions are sourced from `.erk/reviews/` in the erk repository. This placement matches the customer layout — reviews are installed to `.erk/reviews/` in target repos, and erk itself stores them in the same location for dogfooding.
 
-At runtime, `get_bundled_claude_dir()` resolves this location — handles both editable installs (erk repo root) and wheel installs (bundled at `erk/data/claude/`).
+At runtime, `get_bundled_erk_dir()` resolves this location — handles both editable installs (erk repo root) and wheel installs (bundled at `erk/data/erk/`).
 
 ## Automatic Dependency Enforcement
 
@@ -110,7 +110,7 @@ The preflight check prevents this, but understanding WHY clarifies the dependenc
 
 | If you're creating...                              | Capability Type     | Target Directory     |
 | -------------------------------------------------- | ------------------- | -------------------- |
-| Code review guidance for Claude                    | `ReviewCapability`  | `.claude/reviews/`   |
+| Code review guidance for Claude                    | `ReviewCapability`  | `.erk/reviews/`   |
 | Agent instruction manual (loaded into context)     | `SkillCapability`   | `.claude/skills/`    |
 | GitHub Actions workflow (with actions/scripts)     | Direct `Capability` | `.github/workflows/` |
 | Multi-file system (e.g., hooks + reminders + docs) | Direct `Capability` | Multiple directories |

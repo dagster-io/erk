@@ -1,6 +1,6 @@
 """Bundled artifact path utilities.
 
-These utilities locate bundled .claude/ and .github/ directories in the erk package.
+These utilities locate bundled .claude/, .erk/, and .github/ directories in the erk package.
 Extracted to a separate module to avoid circular dependencies.
 """
 
@@ -65,6 +65,27 @@ def get_bundled_codex_dir() -> Path:
 
     # Wheel install: data is bundled at erk/data/codex/
     return erk_package_dir / "data" / "codex"
+
+
+@cache
+def get_bundled_erk_dir() -> Path:
+    """Get path to bundled .erk/ directory in installed erk package.
+
+    For wheel installs: .erk/ is bundled as package data at erk/data/erk/
+    via pyproject.toml force-include.
+
+    For editable installs: .erk/ is at the erk repo root (no wheel is built,
+    so erk/data/ doesn't exist).
+    """
+    erk_package_dir = _get_erk_package_dir()
+
+    if _is_editable_install():
+        # Editable: erk package is at src/erk/, repo root is ../..
+        erk_repo_root = erk_package_dir.parent.parent
+        return erk_repo_root / ".erk"
+
+    # Wheel install: data is bundled at erk/data/erk/
+    return erk_package_dir / "data" / "erk"
 
 
 @cache

@@ -8,7 +8,7 @@ Installs:
 - .github/workflows/code-reviews.yml (unified workflow)
 - .github/actions/setup-claude-code/ (Claude Code binary installer)
 - .github/actions/setup-claude-erk/ (erk tool installer)
-- Creates empty .claude/reviews/ directory
+- Creates empty .erk/reviews/ directory
 """
 
 import shutil
@@ -64,16 +64,16 @@ def _get_installable_items() -> tuple[InstallableItem, ...]:
         ),
         InstallableItem(
             source_path="",
-            target_path=".claude/reviews",
+            target_path=".erk/reviews",
             item_type="create_directory",
-            display_name=".claude/reviews/",
+            display_name=".erk/reviews/",
         ),
     )
 
 
 @cache
 def _get_uninstallable_items() -> tuple[InstallableItem, ...]:
-    """Items to remove on uninstall (excludes .claude/reviews/ which may have user content)."""
+    """Items to remove on uninstall (excludes .erk/reviews/ which may have user content)."""
     return tuple(item for item in _get_installable_items() if item.item_type != "create_directory")
 
 
@@ -84,7 +84,7 @@ class CodeReviewsSystemCapability(Capability):
     - .github/workflows/code-reviews.yml (unified workflow)
     - .github/actions/setup-claude-code/ (Claude Code binary installer)
     - .github/actions/setup-claude-erk/ (erk tool installer)
-    - Creates empty .claude/reviews/ directory
+    - Creates empty .erk/reviews/ directory
     """
 
     @property
@@ -119,7 +119,7 @@ class CodeReviewsSystemCapability(Capability):
                 artifact_type="directory",
             ),
             CapabilityArtifact(
-                path=".claude/reviews/",
+                path=".erk/reviews/",
                 artifact_type="directory",
             ),
         ]
@@ -194,7 +194,7 @@ class CodeReviewsSystemCapability(Capability):
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
         """Remove the code-reviews-system workflow and actions.
 
-        Note: .claude/reviews/ is not removed as it may contain user-installed reviews.
+        Note: .erk/reviews/ is not removed as it may contain user-installed reviews.
         """
         if repo_root is None:
             return CapabilityResult(

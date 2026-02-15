@@ -42,14 +42,14 @@ Both templates follow a numbered step structure that orchestrates the reviewing 
 - **PR mode**: Fetch existing summary → get diff → fetch existing comments → post new comments → update summary. The dedup fetch (Step 4) must come before posting (Step 5), and the summary (Step 6) needs to know what was posted vs skipped.
 - **Local mode**: Get diff → output violations → print summary. No state management steps needed.
 
-The review body (user-defined review instructions from the `.claude/reviews/*.md` file) is injected as Step 1 in both modes, ensuring the agent reads the specific review criteria before examining any code.
+The review body (user-defined review instructions from the `.erk/reviews/*.md` file) is injected as Step 1 in both modes, ensuring the agent reads the specific review criteria before examining any code.
 
 ## How Review Definitions Flow Through the System
 
 <!-- Source: src/erk/cli/commands/exec/scripts/run_review.py, run_review -->
 <!-- Source: src/erk/review/models.py, ParsedReview -->
 
-A review definition file (`.claude/reviews/*.md`) contains YAML frontmatter with metadata (`name`, `paths`, `marker`, `model`) and a markdown body with review-specific instructions. The flow:
+A review definition file (`.erk/reviews/*.md`) contains YAML frontmatter with metadata (`name`, `paths`, `marker`, `model`) and a markdown body with review-specific instructions. The flow:
 
 1. `run_review` CLI command parses the review file and resolves the mode (PR vs local, with auto-detection of trunk branch for local mode)
 2. `assemble_review_prompt` injects the review's name, body, and marker into the appropriate template

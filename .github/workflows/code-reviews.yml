@@ -1,5 +1,5 @@
 # Convention-based code reviews
-# Add a new review by dropping a markdown file in .claude/reviews/
+# Add a new review by dropping a markdown file in .erk/reviews/
 name: code-reviews
 
 on:
@@ -36,7 +36,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Run discovery and capture output
-          OUTPUT=$(erk exec discover-reviews --pr-number ${{ github.event.pull_request.number }} --reviews-dir .claude/reviews)
+          OUTPUT=$(erk exec discover-reviews --pr-number ${{ github.event.pull_request.number }} --reviews-dir .erk/reviews)
           echo "Discovery output:"
           echo "$OUTPUT"
 
@@ -104,4 +104,4 @@ jobs:
           erk exec run-review \
             --name "$REVIEW_NAME" \
             --pr-number ${{ github.event.pull_request.number }} \
-            --reviews-dir .claude/reviews
+            --reviews-dir .erk/reviews
