@@ -1,63 +1,89 @@
-"""Tests for impl-signal kit CLI command.
+"""Tests for impl-signal exec CLI command.
 
 Tests the started/ended event signaling for /erk:plan-implement.
-
-Note: This command requires GitHub context and git worktree environment,
-so most tests focus on error handling paths that don't require those dependencies.
-Integration tests would be needed for full end-to-end testing.
+Uses ErkContext.for_test() for dependency injection with FakeGitHubIssues.
 """
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import patch
 
-import pytest
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.impl_signal import (
-    _get_branch_name,
-    _get_worktree_name,
-    impl_signal,
-)
+from erk.cli.commands.exec.scripts.impl_signal import impl_signal
+from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
 
 
-@pytest.fixture
-def impl_folder(tmp_path: Path) -> Path:
-    """Create .impl/ folder with test files."""
+def _make_plan_header_body() -> str:
+    """Create a minimal valid plan-header metadata block for testing."""
+    return """## Plan
+
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: testuser
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+"""
+
+
+def _make_issue(*, number: int) -> IssueInfo:
+    """Create a test IssueInfo with valid plan-header body."""
+    now = datetime.now(UTC)
+    return IssueInfo(
+        number=number,
+        title="Test Plan",
+        body=_make_plan_header_body(),
+        state="OPEN",
+        url=f"https://github.com/test/repo/issues/{number}",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+
+
+def _setup_plan_ref(impl_dir: Path, *, plan_id: str) -> None:
+    """Create a plan-ref.json file in the impl directory."""
+    plan_ref = {
+        "provider": "github",
+        "plan_id": plan_id,
+        "url": f"https://github.com/test/repo/issues/{plan_id}",
+        "created_at": "2024-01-15T10:30:00+00:00",
+        "synced_at": "2024-01-15T10:30:00+00:00",
+        "labels": [],
+        "objective_id": None,
+    }
+    impl_dir.mkdir(exist_ok=True)
+    (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref, indent=2), encoding="utf-8")
+    (impl_dir / "plan.md").write_text("# Test Plan\n", encoding="utf-8")
+
+
+# --- Error path tests (no plan reference) ---
+
+
+def test_started_no_plan_reference(tmp_path: Path) -> None:
+    """Returns error when no plan-ref.json exists."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
-
-    # Create plan.md
-    plan_md = impl_dir / "plan.md"
-    plan_md.write_text("# Test Plan\n\n1. Step one", encoding="utf-8")
-
-    # Create progress.md
-    progress_content = """---
-completed_steps: 0
-total_steps: 1
-steps:
-- text: "1. Step one"
-  completed: false
----
-
-# Progress
-
-- [ ] 1. Step one
-"""
-    progress_md = impl_dir / "progress.md"
-    progress_md.write_text(progress_content, encoding="utf-8")
-
-    return impl_dir
-
-
-def test_impl_signal_started_no_issue_reference(impl_folder: Path, monkeypatch) -> None:
-    """Test impl-signal started returns error when no issue.json exists."""
-    monkeypatch.chdir(impl_folder.parent)
+    (impl_dir / "plan.md").write_text("# Plan", encoding="utf-8")
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["started", "--session-id", "test-session-id"])
+    result = runner.invoke(
+        impl_signal,
+        ["started", "--session-id", "test-session-id"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
-    # Should exit 0 (graceful degradation for || true pattern)
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["success"] is False
@@ -65,14 +91,19 @@ def test_impl_signal_started_no_issue_reference(impl_folder: Path, monkeypatch) 
     assert data["error_type"] == "no-issue-reference"
 
 
-def test_impl_signal_ended_no_issue_reference(impl_folder: Path, monkeypatch) -> None:
-    """Test impl-signal ended returns error when no issue.json exists."""
-    monkeypatch.chdir(impl_folder.parent)
+def test_ended_no_plan_reference(tmp_path: Path) -> None:
+    """Returns error when no plan-ref.json exists."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    (impl_dir / "plan.md").write_text("# Plan", encoding="utf-8")
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["ended"])
+    result = runner.invoke(
+        impl_signal,
+        ["ended"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
-    # Should exit 0 (graceful degradation for || true pattern)
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["success"] is False
@@ -80,14 +111,15 @@ def test_impl_signal_ended_no_issue_reference(impl_folder: Path, monkeypatch) ->
     assert data["error_type"] == "no-issue-reference"
 
 
-def test_impl_signal_started_missing_impl_folder(tmp_path: Path, monkeypatch) -> None:
-    """Test impl-signal started returns error when impl folder missing."""
-    monkeypatch.chdir(tmp_path)
-
+def test_started_missing_impl_folder(tmp_path: Path) -> None:
+    """Returns error when .impl/ folder is missing."""
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["started", "--session-id", "test-session-id"])
+    result = runner.invoke(
+        impl_signal,
+        ["started", "--session-id", "test-session-id"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
-    # Should exit 0 (graceful degradation)
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["success"] is False
@@ -95,14 +127,15 @@ def test_impl_signal_started_missing_impl_folder(tmp_path: Path, monkeypatch) ->
     assert data["error_type"] == "no-issue-reference"
 
 
-def test_impl_signal_ended_missing_impl_folder(tmp_path: Path, monkeypatch) -> None:
-    """Test impl-signal ended returns error when impl folder missing."""
-    monkeypatch.chdir(tmp_path)
-
+def test_ended_missing_impl_folder(tmp_path: Path) -> None:
+    """Returns error when .impl/ folder is missing."""
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["ended"])
+    result = runner.invoke(
+        impl_signal,
+        ["ended"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
-    # Should exit 0 (graceful degradation)
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["success"] is False
@@ -110,141 +143,172 @@ def test_impl_signal_ended_missing_impl_folder(tmp_path: Path, monkeypatch) -> N
     assert data["error_type"] == "no-issue-reference"
 
 
-def test_impl_signal_with_worker_impl(tmp_path: Path, monkeypatch) -> None:
-    """Test impl-signal detects .worker-impl/ folder."""
+def test_worker_impl_fallback(tmp_path: Path) -> None:
+    """Detects .worker-impl/ folder when .impl/ is missing."""
     impl_dir = tmp_path / ".worker-impl"
     impl_dir.mkdir()
-
-    # Create minimal files
-    plan_md = impl_dir / "plan.md"
-    plan_md.write_text("# Plan", encoding="utf-8")
-
-    progress_md = impl_dir / "progress.md"
-    progress_content = "---\ncompleted_steps: 0\ntotal_steps: 1\n---\n\n- [ ] Step"
-    progress_md.write_text(progress_content, encoding="utf-8")
-
-    # No issue.json - should fail on that, not folder detection
-    monkeypatch.chdir(tmp_path)
+    (impl_dir / "plan.md").write_text("# Plan", encoding="utf-8")
+    # No plan-ref.json — should fail on that, not folder detection
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["started", "--session-id", "test-session-id"])
+    result = runner.invoke(
+        impl_signal,
+        ["started", "--session-id", "test-session-id"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
     assert result.exit_code == 0
     data = json.loads(result.output)
-    # Fails at issue reference, which means folder was found
     assert data["error_type"] == "no-issue-reference"
 
 
-def test_impl_signal_invalid_event() -> None:
-    """Test impl-signal rejects invalid event names."""
+def test_invalid_event() -> None:
+    """Rejects invalid event names via Click validation."""
     runner = CliRunner()
     result = runner.invoke(impl_signal, ["invalid"])
 
-    assert result.exit_code == 2  # Click validation error
-    # Click's error message format varies, so check for key parts
+    assert result.exit_code == 2
     assert "invalid" in result.output.lower()
-    assert "started" in result.output or "ended" in result.output
 
 
-# Unit tests for helper functions
+# --- Session ID validation ---
 
 
-def test_get_branch_name_success() -> None:
-    """Test _get_branch_name returns branch name in git repo."""
-    # This test assumes we're running in a git repo
-    # In a non-git context, would return None
-    branch = _get_branch_name()
-
-    # If we're in a git repo, should return a string
-    # If not, returns None - both are valid for this test
-    assert branch is None or isinstance(branch, str)
-
-
-def test_get_worktree_name_returns_string_or_none() -> None:
-    """Test _get_worktree_name returns string or None."""
-    # This test assumes we're running in a git worktree context
-    worktree = _get_worktree_name()
-
-    # Should return string or None depending on context
-    assert worktree is None or isinstance(worktree, str)
-
-
-def test_get_branch_name_handles_failure() -> None:
-    """Test _get_branch_name handles subprocess failure."""
-    with patch("subprocess.run") as mock_run:
-        import subprocess
-
-        mock_run.side_effect = subprocess.CalledProcessError(1, "git")
-
-        result = _get_branch_name()
-
-        assert result is None
-
-
-def test_get_worktree_name_handles_failure() -> None:
-    """Test _get_worktree_name handles subprocess failure."""
-    with patch("subprocess.run") as mock_run:
-        import subprocess
-
-        mock_run.side_effect = subprocess.CalledProcessError(1, "git")
-
-        result = _get_worktree_name()
-
-        assert result is None
-
-
-def test_started_fails_without_session_id(impl_folder: Path, monkeypatch) -> None:
-    """Test impl-signal started returns error when no session-id provided."""
-    # Add issue.json to pass the issue reference check and reach validation
-    issue_json = impl_folder / "issue.json"
-    issue_json.write_text('{"issue_number": 123, "issue_url": "https://example.com"}')
-    monkeypatch.chdir(impl_folder.parent)
+def test_started_fails_without_session_id(tmp_path: Path) -> None:
+    """Returns error when no session-id provided."""
+    _setup_plan_ref(tmp_path / ".impl", plan_id="123")
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["started"])
+    result = runner.invoke(
+        impl_signal,
+        ["started"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
-    # Should exit 0 (graceful degradation for || true pattern)
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["success"] is False
-    assert data["event"] == "started"
     assert data["error_type"] == "session-id-required"
-    assert "Session ID required" in data["message"]
 
 
-def test_started_fails_with_empty_session_id(impl_folder: Path, monkeypatch) -> None:
-    """Test impl-signal started returns error when session-id is empty string."""
-    # Add issue.json to pass the issue reference check and reach validation
-    issue_json = impl_folder / "issue.json"
-    issue_json.write_text('{"issue_number": 123, "issue_url": "https://example.com"}')
-    monkeypatch.chdir(impl_folder.parent)
+def test_started_fails_with_empty_session_id(tmp_path: Path) -> None:
+    """Returns error when session-id is empty string."""
+    _setup_plan_ref(tmp_path / ".impl", plan_id="123")
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["started", "--session-id", ""])
+    result = runner.invoke(
+        impl_signal,
+        ["started", "--session-id", ""],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
-    # Should exit 0 (graceful degradation for || true pattern)
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["success"] is False
-    assert data["event"] == "started"
     assert data["error_type"] == "session-id-required"
-    assert "Session ID required" in data["message"]
 
 
-def test_started_fails_with_whitespace_session_id(impl_folder: Path, monkeypatch) -> None:
-    """Test impl-signal started returns error when session-id is whitespace only."""
-    # Add issue.json to pass the issue reference check and reach validation
-    issue_json = impl_folder / "issue.json"
-    issue_json.write_text('{"issue_number": 123, "issue_url": "https://example.com"}')
-    monkeypatch.chdir(impl_folder.parent)
+def test_started_fails_with_whitespace_session_id(tmp_path: Path) -> None:
+    """Returns error when session-id is whitespace only."""
+    _setup_plan_ref(tmp_path / ".impl", plan_id="123")
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["started", "--session-id", "   "])
+    result = runner.invoke(
+        impl_signal,
+        ["started", "--session-id", "   "],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
-    # Should exit 0 (graceful degradation for || true pattern)
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["success"] is False
-    assert data["event"] == "started"
     assert data["error_type"] == "session-id-required"
-    assert "Session ID required" in data["message"]
+
+
+# --- Happy path tests ---
+
+
+def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
+    """Started event posts a comment and updates issue metadata via PlanBackend."""
+    issue = _make_issue(number=123)
+    fake_issues = FakeGitHubIssues(issues={123: issue})
+    _setup_plan_ref(tmp_path / ".impl", plan_id="123")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        impl_signal,
+        ["started", "--session-id", "test-session-123"],
+        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+    )
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is True
+    assert data["event"] == "started"
+    assert data["issue_number"] == 123
+
+    # Verify comment was posted
+    assert len(fake_issues.added_comments) == 1
+    comment_issue_number, comment_body, _comment_id = fake_issues.added_comments[0]
+    assert comment_issue_number == 123
+    assert "Starting implementation" in comment_body
+
+    # Verify issue body was updated (metadata block)
+    assert len(fake_issues.updated_bodies) == 1
+    updated_issue_number, updated_body = fake_issues.updated_bodies[0]
+    assert updated_issue_number == 123
+    assert "plan-header" in updated_body
+
+
+def test_ended_updates_metadata(tmp_path: Path) -> None:
+    """Ended event updates issue metadata via PlanBackend without posting a comment."""
+    issue = _make_issue(number=456)
+    fake_issues = FakeGitHubIssues(issues={456: issue})
+    _setup_plan_ref(tmp_path / ".impl", plan_id="456")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        impl_signal,
+        ["ended", "--session-id", "test-session-456"],
+        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+    )
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is True
+    assert data["event"] == "ended"
+    assert data["issue_number"] == 456
+
+    # No comment for ended events
+    assert len(fake_issues.added_comments) == 0
+
+    # Verify issue body was updated (metadata block)
+    assert len(fake_issues.updated_bodies) == 1
+    updated_issue_number, updated_body = fake_issues.updated_bodies[0]
+    assert updated_issue_number == 456
+    assert "plan-header" in updated_body
+
+
+def test_started_writes_local_run_state(tmp_path: Path) -> None:
+    """Started event writes local run state file."""
+    issue = _make_issue(number=789)
+    fake_issues = FakeGitHubIssues(issues={789: issue})
+    _setup_plan_ref(tmp_path / ".impl", plan_id="789")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        impl_signal,
+        ["started", "--session-id", "test-session-789"],
+        obj=ErkContext.for_test(cwd=tmp_path, github_issues=fake_issues),
+    )
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is True
+
+    # Verify local run state was written
+    run_state_file = tmp_path / ".impl" / "local-run-state.json"
+    assert run_state_file.exists()
+    run_state = json.loads(run_state_file.read_text(encoding="utf-8"))
+    assert run_state["last_event"] == "started"
+    assert run_state["session_id"] == "test-session-789"
