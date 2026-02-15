@@ -379,7 +379,7 @@ jobs:
           echo "Debug: Got prompt (${#prompt} chars)"
 
           echo "$prompt" | claude --print \
-            --model claude-sonnet-4-20250514 \
+            --model claude-opus-4-6 \
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \

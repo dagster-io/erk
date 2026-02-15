@@ -60,7 +60,7 @@ jobs:
         run: |
           claude --print \
             --verbose \
-            --model claude-haiku-4-5 \
+            --model claude-opus-4-6 \
             --output-format stream-json \
             --dangerously-skip-permissions \
             "/erk:learn $ISSUE_NUMBER gist_url=$GIST_URL"

@@ -28,7 +28,7 @@ on:
         description: "Claude model to use for execution"
         required: false
         type: string
-        default: "claude-sonnet-4-5"
+        default: "claude-opus-4-6"
       objective_issue:
         description: "Objective issue number (when dispatched from next-plan --one-shot)"
         required: false

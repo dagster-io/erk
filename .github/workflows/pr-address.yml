@@ -16,7 +16,7 @@ on:
         description: "Claude model to use"
         required: false
         type: string
-        default: "claude-sonnet-4-5"
+        default: "claude-opus-4-6"
 
 concurrency:
   group: pr-address-${{ github.event.inputs.pr_number }}

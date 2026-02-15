@@ -29,7 +29,7 @@ on:
         description: "Claude model to use for conflict resolution"
         required: false
         type: string
-        default: "claude-sonnet-4-5"
+        default: "claude-opus-4-6"
 
 concurrency:
   group: rebase-${{ github.event.inputs.branch_name }}
