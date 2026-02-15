@@ -145,11 +145,9 @@ def learn_cmd(
         _confirm_and_launch(
             ctx=ctx,
             repo_root=repo_root,
-            interactive=interactive,
+            interactive=True,
             dangerous=dangerous,
-            confirm_prompt=(
-                "Use Claude to learn from preprocessed materials and produce documentation?"
-            ),
+            confirm_prompt="",
             command=f"/erk:learn {issue_number} gist_url={gist_url}",
         )
         return
@@ -226,8 +224,8 @@ def _confirm_and_launch(
     command: str,
 ) -> None:
     """Confirm with user (or auto-launch with -i), then execute interactively."""
-    should_launch = interactive
-    if not interactive:
+    should_launch = interactive or dangerous
+    if not should_launch:
         user_output("")
         should_launch = user_confirm(confirm_prompt, default=True)
 
