@@ -1,7 +1,8 @@
+import {Box, Button, Colors, Icon, Tag} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
+import styles from './PlanDetail.module.css';
 import type {ActionResult, PlanRow} from '../../shared/types.js';
-import './PlanDetail.css';
 
 interface PlanDetailProps {
   plan: PlanRow;
@@ -67,20 +68,28 @@ export function PlanDetail({plan, onClose}: PlanDetailProps) {
   const hasComments = !plan.comments_display.endsWith('/0');
 
   return (
-    <div className="plan-detail">
-      <div className="detail-header">
-        <span className="detail-title">
+    <Box
+      flex={{direction: 'column'}}
+      style={{height: '100%'}}
+      background={Colors.backgroundLighter()}
+    >
+      <Box
+        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+        padding={{horizontal: 16, vertical: 8}}
+        background={Colors.backgroundLighterHover()}
+        border="bottom"
+        style={{flexShrink: 0}}
+      >
+        <span className={styles.title}>
           #{plan.issue_number} {plan.title}
         </span>
-        <button className="detail-close" onClick={onClose}>
-          &times;
-        </button>
-      </div>
-      <div className="detail-content">
+        <Button icon={<Icon name="close" />} onClick={onClose} />
+      </Box>
+      <div className={styles.content}>
         {/* Issue - full width */}
-        <div className="detail-section">
-          <div className="detail-label">Issue</div>
-          <div className="detail-value">
+        <div className={styles.section}>
+          <div className={styles.label}>Issue</div>
+          <div className={styles.value}>
             {plan.issue_url ? (
               <a href={plan.issue_url} target="_blank" rel="noopener noreferrer">
                 #{plan.issue_number} - {plan.full_title}
@@ -92,73 +101,81 @@ export function PlanDetail({plan, onClose}: PlanDetailProps) {
         </div>
 
         {/* Metadata grid */}
-        <div className="detail-grid">
-          <div className="detail-cell">
-            <div className="detail-label">PR</div>
-            <div className="detail-value">
+        <div className={styles.grid}>
+          <div className={styles.cell}>
+            <div className={styles.label}>PR</div>
+            <div className={styles.value}>
               {plan.pr_url ? (
                 <a href={plan.pr_url} target="_blank" rel="noopener noreferrer">
                   {plan.pr_display}
                 </a>
               ) : (
-                <span className="detail-muted">{plan.pr_display || 'None'}</span>
+                <span className={styles.muted}>{plan.pr_display || 'None'}</span>
               )}
               {plan.pr_state && (
-                <span className={`detail-badge pr-state-${plan.pr_state}`}>{plan.pr_state}</span>
+                <Tag
+                  intent={
+                    plan.pr_state === 'open'
+                      ? 'success'
+                      : plan.pr_state === 'merged'
+                        ? 'primary'
+                        : 'danger'
+                  }
+                >
+                  {plan.pr_state}
+                </Tag>
               )}
             </div>
           </div>
 
-          <div className="detail-cell">
-            <div className="detail-label">Checks</div>
-            <div className="detail-value">{plan.checks_display || '-'}</div>
+          <div className={styles.cell}>
+            <div className={styles.label}>Checks</div>
+            <div className={styles.value}>{plan.checks_display || '-'}</div>
           </div>
 
-          <div className="detail-cell">
-            <div className="detail-label">Comments</div>
-            <div className="detail-value">{plan.comments_display || '-'}</div>
+          <div className={styles.cell}>
+            <div className={styles.label}>Comments</div>
+            <div className={styles.value}>{plan.comments_display || '-'}</div>
           </div>
 
-          <div className="detail-cell">
-            <div className="detail-label">Objective</div>
-            <div className="detail-value">
-              {plan.objective_display || <span className="detail-muted">None</span>}
+          <div className={styles.cell}>
+            <div className={styles.label}>Objective</div>
+            <div className={styles.value}>
+              {plan.objective_display || <span className={styles.muted}>None</span>}
             </div>
           </div>
 
-          <div className="detail-cell">
-            <div className="detail-label">Worktree</div>
-            <div className="detail-value">
+          <div className={styles.cell}>
+            <div className={styles.label}>Worktree</div>
+            <div className={styles.value}>
               <code>{plan.worktree_name}</code>
-              {plan.exists_locally ? (
-                <span className="detail-badge local">local</span>
-              ) : (
-                <span className="detail-badge remote">remote only</span>
-              )}
+              <Tag intent={plan.exists_locally ? 'success' : 'none'}>
+                {plan.exists_locally ? 'local' : 'remote only'}
+              </Tag>
             </div>
           </div>
 
-          <div className="detail-cell">
-            <div className="detail-label">Branch</div>
-            <div className="detail-value">
+          <div className={styles.cell}>
+            <div className={styles.label}>Branch</div>
+            <div className={styles.value}>
               {plan.worktree_branch ? (
                 <code>{plan.worktree_branch}</code>
               ) : (
-                <span className="detail-muted">-</span>
+                <span className={styles.muted}>-</span>
               )}
             </div>
           </div>
 
-          <div className="detail-cell">
-            <div className="detail-label">Implementation</div>
-            <div className="detail-value">
+          <div className={styles.cell}>
+            <div className={styles.label}>Implementation</div>
+            <div className={styles.value}>
               L: {plan.local_impl_display || '-'} / R: {plan.remote_impl_display || '-'}
             </div>
           </div>
 
-          <div className="detail-cell">
-            <div className="detail-label">Run</div>
-            <div className="detail-value">
+          <div className={styles.cell}>
+            <div className={styles.label}>Run</div>
+            <div className={styles.value}>
               {plan.run_url ? (
                 <a href={plan.run_url} target="_blank" rel="noopener noreferrer">
                   {plan.run_state_display}
@@ -171,9 +188,9 @@ export function PlanDetail({plan, onClose}: PlanDetailProps) {
         </div>
 
         {/* Actions & Commands side by side */}
-        <div className="detail-commands-actions">
-          <div className="detail-actions">
-            <div className="detail-label">Actions</div>
+        <div className={styles.commandsActions}>
+          <div className={styles.actions}>
+            <div className={styles.label}>Actions</div>
             <ActionButton
               label="Submit to Queue"
               actionKey="submit"
@@ -211,9 +228,9 @@ export function PlanDetail({plan, onClose}: PlanDetailProps) {
             />
           </div>
 
-          <div className="detail-copy-section">
-            <div className="detail-label">Commands</div>
-            <div className="detail-copy-col">
+          <div className={styles.copySection}>
+            <div className={styles.label}>Commands</div>
+            <div className={styles.copyCol}>
               {hasPR && <CodeSnippet code={`erk pr co ${plan.pr_number}`} onCopy={showToast} />}
               <CodeSnippet code={`erk prepare ${plan.issue_number}`} onCopy={showToast} />
               <CodeSnippet
@@ -222,11 +239,11 @@ export function PlanDetail({plan, onClose}: PlanDetailProps) {
               />
               <CodeSnippet code={`erk plan submit ${plan.issue_number}`} onCopy={showToast} />
             </div>
-            {toast && <div className="detail-toast">{toast}</div>}
+            {toast && <div className={styles.toast}>{toast}</div>}
           </div>
         </div>
       </div>
-    </div>
+    </Box>
   );
 }
 
@@ -245,19 +262,22 @@ function ActionButton({
   const isRunning = status?.state === 'running';
 
   return (
-    <div className="action-item">
-      <button
-        className={`detail-action-btn ${status?.state === 'success' ? 'action-success' : ''} ${status?.state === 'error' ? 'action-error' : ''}`}
+    <div className={styles.actionItem}>
+      <Button
+        intent={
+          status?.state === 'success' ? 'success' : status?.state === 'error' ? 'danger' : 'primary'
+        }
         disabled={disabled || isRunning}
         onClick={onClick}
+        style={{width: '100%'}}
       >
         {isRunning ? `${label}...` : label}
-      </button>
+      </Button>
       {status?.state === 'error' && status.message && (
-        <div className="action-error-msg">{status.message}</div>
+        <div className={styles.actionErrorMsg}>{status.message}</div>
       )}
       {status?.state === 'success' && status.message && (
-        <div className="action-success-msg">{status.message}</div>
+        <div className={styles.actionSuccessMsg}>{status.message}</div>
       )}
     </div>
   );
@@ -265,7 +285,7 @@ function ActionButton({
 
 function CodeSnippet({code, onCopy}: {code: string; onCopy: (msg: string) => void}) {
   return (
-    <button className="detail-code-snippet" onClick={() => copyToClipboard(code, onCopy)}>
+    <button className={styles.codeSnippet} onClick={() => copyToClipboard(code, onCopy)}>
       <code>{code}</code>
     </button>
   );

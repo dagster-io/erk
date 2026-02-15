@@ -1,0 +1,148 @@
+.title {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.section {
+  margin-bottom: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: 12px 20px;
+  margin-bottom: 4px;
+}
+
+.cell {
+  min-width: 0;
+}
+
+.label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--color-text-light);
+  margin-bottom: 4px;
+  letter-spacing: 0.05em;
+}
+
+.value {
+  font-size: 13px;
+  color: var(--color-text-default);
+  line-height: 1.4;
+}
+
+.value a {
+  color: var(--color-link-default);
+  text-decoration: none;
+}
+
+.value a:hover {
+  text-decoration: underline;
+}
+
+.value code {
+  background: var(--color-background-lighter-hover);
+  padding: 0 4px;
+  border-radius: 4px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 12px;
+}
+
+.muted {
+  color: var(--color-text-lighter);
+  font-style: italic;
+}
+
+.commandsActions {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: 20px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border-default);
+}
+
+.copySection {
+}
+
+.copyCol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.codeSnippet {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  background: var(--color-background-default);
+  color: var(--color-text-default);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.codeSnippet code {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--color-text-default);
+  background: none;
+  padding: 0;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.codeSnippet:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--color-link-default);
+}
+
+.toast {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--color-accent-green);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.actionItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.actionErrorMsg {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--color-accent-red);
+  max-width: 500px;
+  word-break: break-word;
+}
+
+.actionSuccessMsg {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--color-accent-green);
+  max-width: 500px;
+  word-break: break-word;
+}

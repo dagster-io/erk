@@ -1,9 +1,10 @@
+import {Box, Button, Colors} from '@dagster-io/ui-components';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-markdown';
 import {useEffect, useMemo, useRef, useState} from 'react';
 
+import styles from './PlanReviewPanel.module.css';
 import type {LocalPlanDetail, PlanAnnotation} from '../../shared/types.js';
-import './PlanReviewPanel.css';
 
 interface PlanReviewPanelProps {
   plan: LocalPlanDetail;
@@ -199,15 +200,25 @@ export function PlanReviewPanel({plan}: PlanReviewPanelProps) {
   }
 
   return (
-    <div className="plan-review-panel">
-      <div className="review-header">
-        <div className="review-header-left">
-          <span className="review-title">{plan.title}</span>
-          <span className="review-slug">{plan.slug}</span>
+    <Box
+      flex={{direction: 'column'}}
+      style={{height: '100%'}}
+      background={Colors.backgroundLighter()}
+    >
+      <Box
+        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+        padding={{horizontal: 16, vertical: 8}}
+        background={Colors.backgroundLighterHover()}
+        border="bottom"
+        style={{flexShrink: 0}}
+      >
+        <div className={styles.headerLeft}>
+          <span className={styles.title}>{plan.title}</span>
+          <span className={styles.slug}>{plan.slug}</span>
         </div>
-      </div>
-      <div className="review-body">
-        <div className="line-table">
+      </Box>
+      <div className={styles.body}>
+        <div className={styles.lineTable}>
           {lines.map((_line, i) => {
             const lineNum = i + 1;
             const selected = isLineSelected(lineNum);
@@ -217,74 +228,67 @@ export function PlanReviewPanel({plan}: PlanReviewPanelProps) {
 
             return (
               <div key={lineNum}>
-                <div className={`line-row ${selected ? 'line-selected' : ''}`}>
+                <div className={`${styles.lineRow} ${selected ? styles.lineSelected : ''}`}>
                   <div
-                    className="line-gutter"
+                    className={styles.lineGutter}
                     onMouseDown={(e) => handleGutterMouseDown(lineNum, e.shiftKey)}
                     onMouseEnter={() => handleGutterMouseEnter(lineNum)}
                     title="Click to comment, drag or shift+click for range"
                   >
-                    <span className="line-gutter-plus">+</span>
-                    <span className="line-number">{lineNum}</span>
+                    <span className={styles.lineGutterPlus}>+</span>
+                    <span className={styles.lineNumber}>{lineNum}</span>
                   </div>
-                  <code className="line-content" dangerouslySetInnerHTML={{__html: lineHtml}} />
+                  <code
+                    className={styles.lineContent}
+                    dangerouslySetInnerHTML={{__html: lineHtml}}
+                  />
                 </div>
 
                 {/* Existing annotations that end on this line */}
                 {endAnnotations &&
                   !showFormHere &&
                   endAnnotations.map(({annotation: a, index: idx}) => (
-                    <div key={`ann-${idx}`} className="annotation-block">
-                      <div className="annotation-range">
+                    <div key={`ann-${idx}`} className={styles.annotationBlock}>
+                      <div className={styles.annotationRange}>
                         {a.startLine === a.endLine
                           ? `Line ${a.startLine}`
                           : `Lines ${a.startLine}-${a.endLine}`}
                       </div>
-                      <div className="annotation-text">{a.comment}</div>
-                      <div className="annotation-actions">
-                        <button
-                          className="annotation-btn"
-                          onClick={() => handleEditAnnotation(idx)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="annotation-btn annotation-btn-delete"
-                          onClick={() => handleDeleteAnnotation(idx)}
-                        >
+                      <div className={styles.annotationText}>{a.comment}</div>
+                      <div className={styles.annotationActions}>
+                        <Button onClick={() => handleEditAnnotation(idx)}>Edit</Button>
+                        <Button intent="danger" onClick={() => handleDeleteAnnotation(idx)}>
                           Delete
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}
 
                 {/* Comment form */}
                 {showFormHere && (
-                  <div className="comment-form">
-                    <div className="comment-form-range">
+                  <div className={styles.commentForm}>
+                    <div className={styles.commentFormRange}>
                       {selStart === selEnd
                         ? `Commenting on line ${selStart}`
                         : `Commenting on lines ${selStart}-${selEnd}`}
                     </div>
                     <textarea
-                      className="comment-form-input"
+                      className={styles.commentFormInput}
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       placeholder="Add your comment..."
                       rows={3}
                       autoFocus
                     />
-                    <div className="comment-form-actions">
-                      <button
-                        className="comment-form-save"
+                    <div className={styles.commentFormActions}>
+                      <Button
+                        intent="primary"
                         onClick={handleSaveComment}
                         disabled={commentText.trim() === ''}
                       >
                         {editingIndex !== null ? 'Update' : 'Comment'}
-                      </button>
-                      <button className="comment-form-cancel" onClick={handleCancelComment}>
-                        Cancel
-                      </button>
+                      </Button>
+                      <Button onClick={handleCancelComment}>Cancel</Button>
                     </div>
                   </div>
                 )}
@@ -294,16 +298,22 @@ export function PlanReviewPanel({plan}: PlanReviewPanelProps) {
         </div>
       </div>
       {annotations.length > 0 && (
-        <div className="review-footer">
-          <span className="review-annotation-count">
+        <Box
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+          padding={{horizontal: 16, vertical: 8}}
+          background={Colors.backgroundLighterHover()}
+          border="top"
+          style={{flexShrink: 0}}
+        >
+          <span className={styles.annotationCount}>
             {annotations.length} comment{annotations.length !== 1 ? 's' : ''}
           </span>
-          <button className="review-copy-btn" onClick={handleCopyReview}>
+          <Button onClick={handleCopyReview} style={{position: 'relative'}}>
             <span style={{visibility: copied ? 'hidden' : 'visible'}}>Copy review for Claude</span>
-            {copied && <span className="review-copy-btn-overlay">Copied!</span>}
-          </button>
-        </div>
+            {copied && <span className={styles.copyBtnOverlay}>Copied!</span>}
+          </Button>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }

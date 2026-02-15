@@ -1,0 +1,247 @@
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slug {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--color-text-lighter);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.annotationCount {
+  font-size: 12px;
+  color: var(--color-accent-yellow);
+  font-family: 'Geist Mono', monospace;
+}
+
+.copyBtnOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  position: relative;
+  background: linear-gradient(
+    to right,
+    transparent 64px,
+    var(--color-border-default) 64px,
+    var(--color-border-default) 65px,
+    transparent 65px
+  );
+}
+
+.lineTable {
+  font-family: 'Geist Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 8px 16px 8px 0;
+}
+
+.lineRow {
+  display: flex;
+  border-bottom: 1px solid transparent;
+}
+
+.lineRow:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.lineRow.lineSelected {
+  background: rgba(56, 139, 253, 0.12);
+}
+
+.lineGutter {
+  width: 64px;
+  flex-shrink: 0;
+  padding: 0 8px 0 0;
+  text-align: right;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.lineGutter:hover {
+  background: rgba(200, 160, 50, 0.12);
+}
+
+.lineGutterPlus {
+  display: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-accent-yellow);
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 4px;
+  background: rgba(200, 160, 50, 0.25);
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.lineRow:hover .lineGutterPlus {
+  display: block;
+}
+
+.lineNumber {
+  font-size: 12px;
+  color: var(--color-text-lighter);
+  line-height: 1.5;
+}
+
+.lineContent {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-text-default);
+}
+
+/* Prism token styles — dark theme for markdown */
+.lineContent :global(.token.title) :global(.token.important) {
+  color: var(--color-accent-green);
+  font-weight: 700;
+}
+
+.lineContent :global(.token.bold) {
+  color: var(--color-text-default);
+  font-weight: 700;
+}
+
+.lineContent :global(.token.italic) {
+  color: var(--color-text-default);
+  font-style: italic;
+}
+
+.lineContent :global(.token.code),
+.lineContent :global(.token.code-snippet) {
+  color: var(--color-link-default);
+}
+
+.lineContent :global(.token.strike) {
+  text-decoration: line-through;
+  color: var(--color-text-lighter);
+}
+
+.lineContent :global(.token.url),
+.lineContent :global(.token.url-reference) :global(.token.string) {
+  color: var(--color-link-hover);
+  text-decoration: underline;
+}
+
+.lineContent :global(.token.list.punctuation) {
+  color: var(--color-accent-red);
+}
+
+.lineContent :global(.token.blockquote.punctuation),
+.lineContent :global(.token.hr.punctuation),
+.lineContent :global(.token.punctuation) {
+  color: var(--color-text-light);
+}
+
+.lineContent :global(.token.table-header),
+.lineContent :global(.token.table-data-rows) {
+  color: var(--color-text-default);
+}
+
+/* Annotation blocks */
+.annotationBlock {
+  margin: 8px 0 4px 64px;
+  padding: 8px 12px;
+  background: rgba(200, 160, 50, 0.08);
+  border: 1px solid rgba(200, 160, 50, 0.2);
+  border-radius: 6px;
+  border-left: 3px solid rgba(200, 160, 50, 0.5);
+}
+
+.annotationRange {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--color-text-light);
+  margin-bottom: 4px;
+}
+
+.annotationText {
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-default);
+  white-space: pre-wrap;
+  padding: 4px 0;
+}
+
+.annotationActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* Comment form */
+.commentForm {
+  margin: 8px 0 4px 64px;
+  padding: 8px 12px;
+  background: rgba(200, 160, 50, 0.06);
+  border: 1px solid rgba(200, 160, 50, 0.2);
+  border-radius: 6px;
+  border-left: 3px solid rgba(200, 160, 50, 0.5);
+}
+
+.commentFormRange {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--color-text-lighter);
+  margin-bottom: 6px;
+}
+
+.commentFormInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(200, 160, 50, 0.3);
+  border-radius: 6px;
+  background: var(--color-background-default);
+  color: var(--color-text-default);
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.commentFormInput:focus {
+  outline: none;
+  border-color: rgba(200, 160, 50, 0.6);
+}
+
+.commentFormInput::placeholder {
+  color: var(--color-text-lighter);
+}
+
+.commentFormActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}

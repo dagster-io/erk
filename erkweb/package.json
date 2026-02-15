@@ -14,12 +14,19 @@
     "lint:fix": "eslint --fix ."
   },
   "dependencies": {
+    "@blueprintjs/core": "^5",
+    "@blueprintjs/popover2": "^2",
+    "@blueprintjs/select": "^5",
+    "@dagster-io/ui-components": "^1.4.0",
+    "@tanstack/react-virtual": "^3.0.1",
     "express": "^4.21.0",
     "prismjs": "^1.30.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-is": "^18.3.1",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
+    "styled-components": "^5.3.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -28,6 +35,7 @@
     "@types/prismjs": "^1.26.6",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/styled-components": "^5.1.34",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.0",
     "eslint": "^9.0.0",
