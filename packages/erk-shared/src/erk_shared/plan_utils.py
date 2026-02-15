@@ -187,9 +187,7 @@ def get_title_tag_from_labels(labels: list[str]) -> str:
     Returns:
         Title tag string: "[erk-learn]" or "[erk-plan]"
     """
-    if "erk-learn" in labels:
-        return "[erk-learn]"
-    return "[erk-plan]"
+    return "[erk-learn]" if "erk-learn" in labels else "[erk-plan]"
 
 
 def format_error(brief: str, details: str, actions: list[str]) -> str:

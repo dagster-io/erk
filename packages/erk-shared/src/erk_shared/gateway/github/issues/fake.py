@@ -1,5 +1,6 @@
 """In-memory fake implementation of GitHub issues for testing."""
 
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -261,15 +262,9 @@ class FakeGitHubIssues(GitHubIssues):
 
         # Update the issue title in-place (creates new IssueInfo with updated title)
         old_issue = self._issues[number]
-        self._issues[number] = IssueInfo(
-            number=old_issue.number,
+        self._issues[number] = replace(
+            old_issue,
             title=title,
-            body=old_issue.body,
-            state=old_issue.state,
-            url=old_issue.url,
-            labels=old_issue.labels,
-            assignees=old_issue.assignees,
-            created_at=old_issue.created_at,
             updated_at=datetime.now(UTC),
             author=old_issue.author,
         )
