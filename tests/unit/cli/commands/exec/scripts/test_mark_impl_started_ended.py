@@ -82,13 +82,15 @@ def test_mark_impl_started_local_updates_metadata(tmp_path: Path) -> None:
     impl_dir.mkdir()
     plan_ref_file = impl_dir / "plan-ref.json"
     plan_ref_file.write_text(
-        json.dumps({
-            "plan_id": "123",
-            "provider": "github",
-            "url": "https://github.com/test-owner/test-repo/issues/123",
-            "created_at": "2025-01-01T00:00:00Z",
-            "synced_at": "2025-01-01T00:00:00Z",
-        }),
+        json.dumps(
+            {
+                "plan_id": "123",
+                "provider": "github",
+                "url": "https://github.com/test-owner/test-repo/issues/123",
+                "created_at": "2025-01-01T00:00:00Z",
+                "synced_at": "2025-01-01T00:00:00Z",
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -139,13 +141,15 @@ def test_mark_impl_started_remote_updates_metadata(tmp_path: Path, monkeypatch) 
     impl_dir.mkdir()
     plan_ref_file = impl_dir / "plan-ref.json"
     plan_ref_file.write_text(
-        json.dumps({
-            "plan_id": "456",
-            "provider": "github",
-            "url": "https://github.com/test-owner/test-repo/issues/456",
-            "created_at": "2025-01-01T00:00:00Z",
-            "synced_at": "2025-01-01T00:00:00Z",
-        }),
+        json.dumps(
+            {
+                "plan_id": "456",
+                "provider": "github",
+                "url": "https://github.com/test-owner/test-repo/issues/456",
+                "created_at": "2025-01-01T00:00:00Z",
+                "synced_at": "2025-01-01T00:00:00Z",
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -204,13 +208,15 @@ def test_mark_impl_ended_local_updates_metadata(tmp_path: Path) -> None:
     impl_dir.mkdir()
     plan_ref_file = impl_dir / "plan-ref.json"
     plan_ref_file.write_text(
-        json.dumps({
-            "plan_id": "789",
-            "provider": "github",
-            "url": "https://github.com/test-owner/test-repo/issues/789",
-            "created_at": "2025-01-01T00:00:00Z",
-            "synced_at": "2025-01-01T00:00:00Z",
-        }),
+        json.dumps(
+            {
+                "plan_id": "789",
+                "provider": "github",
+                "url": "https://github.com/test-owner/test-repo/issues/789",
+                "created_at": "2025-01-01T00:00:00Z",
+                "synced_at": "2025-01-01T00:00:00Z",
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -261,13 +267,15 @@ def test_mark_impl_ended_remote_updates_metadata(tmp_path: Path, monkeypatch) ->
     impl_dir.mkdir()
     plan_ref_file = impl_dir / "plan-ref.json"
     plan_ref_file.write_text(
-        json.dumps({
-            "plan_id": "999",
-            "provider": "github",
-            "url": "https://github.com/test-owner/test-repo/issues/999",
-            "created_at": "2025-01-01T00:00:00Z",
-            "synced_at": "2025-01-01T00:00:00Z",
-        }),
+        json.dumps(
+            {
+                "plan_id": "999",
+                "provider": "github",
+                "url": "https://github.com/test-owner/test-repo/issues/999",
+                "created_at": "2025-01-01T00:00:00Z",
+                "synced_at": "2025-01-01T00:00:00Z",
+            }
+        ),
         encoding="utf-8",
     )
 
