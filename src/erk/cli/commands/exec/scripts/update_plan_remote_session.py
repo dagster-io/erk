@@ -29,12 +29,7 @@ from datetime import UTC
 
 import click
 
-from erk_shared.context.helpers import require_issues, require_repo_root, require_time
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.plan_header import (
-    update_plan_header_remote_impl_event,
-)
-from erk_shared.gateway.github.types import BodyText
+from erk_shared.context.helpers import require_plan_backend, require_repo_root, require_time
 
 
 @dataclass(frozen=True)
@@ -106,36 +101,30 @@ def update_plan_remote_session(
     # Get dependencies from context
     repo_root = require_repo_root(ctx)
     time = require_time(ctx)
-
-    # Get GitHub Issues from context
-    github_issues = require_issues(ctx)
-
-    # Fetch current issue
-    issue = github_issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
-        _output_error("issue-not-found", f"Issue #{issue_number} not found")
-        return  # Never reached, but helps type checker
+    backend = require_plan_backend(ctx)
 
     # Generate timestamp
     timestamp = time.now().replace(tzinfo=UTC).isoformat()
 
-    # Update plan header with remote session info (ValueError if block not found)
-    try:
-        updated_body = update_plan_header_remote_impl_event(
-            issue_body=issue.body,
-            run_id=run_id,
-            session_id=session_id,
-            remote_impl_at=timestamp,
-        )
-    except ValueError as e:
-        _output_error("no-plan-header-block", str(e))
-        return  # Never reached, but helps type checker
+    # Build metadata dict
+    plan_id = str(issue_number)
+    metadata: dict[str, object] = {
+        "last_remote_impl_at": timestamp,
+        "last_remote_impl_run_id": run_id,
+        "last_remote_impl_session_id": session_id,
+    }
 
-    # Update issue body (RuntimeError if API fails)
+    # Update metadata via PlanBackend
     try:
-        github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+        backend.update_metadata(repo_root, plan_id, metadata)
     except RuntimeError as e:
-        _output_error("github-api-failed", f"Failed to update issue body: {e}")
+        error_msg = str(e)
+        if "plan-header" in error_msg.lower():
+            _output_error("no-plan-header-block", error_msg)
+        elif f"Issue #{issue_number} not found" in error_msg:
+            _output_error("issue-not-found", f"Issue #{issue_number} not found")
+        else:
+            _output_error("github-api-failed", f"Failed to update metadata: {e}")
         return  # Never reached, but helps type checker
 
     result_success = UpdateSuccess(

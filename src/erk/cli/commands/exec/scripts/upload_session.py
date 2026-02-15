@@ -40,10 +40,8 @@ from typing import Literal
 
 import click
 
-from erk_shared.context.helpers import require_github, require_issues, require_repo_root
+from erk_shared.context.helpers import require_github, require_plan_backend, require_repo_root
 from erk_shared.gateway.github.abc import GistCreateError
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.types import BodyText
 
 
 @click.command(name="upload-session")
@@ -121,33 +119,21 @@ def upload_session(
     if issue_number is not None:
         result["issue_number"] = issue_number
 
-        # Import here to avoid circular imports
-        from erk_shared.gateway.github.metadata.plan_header import (
-            update_plan_header_session_gist,
-        )
-
-        # Get current issue body
-        issues = require_issues(ctx)
-        issue_info = issues.get_issue(repo_root, issue_number)
-        if isinstance(issue_info, IssueNotFound):
-            msg = f"Issue #{issue_number} not found"
-            raise RuntimeError(msg)
-        issue_body = issue_info.body
-
-        # Update with session gist info
+        backend = require_plan_backend(ctx)
+        plan_id = str(issue_number)
         timestamp = datetime.now(UTC).isoformat()
+        metadata: dict[str, object] = {
+            "last_session_gist_url": gist_result.gist_url,
+            "last_session_gist_id": gist_result.gist_id,
+            "last_session_id": session_id,
+            "last_session_at": timestamp,
+            "last_session_source": source,
+        }
+
         try:
-            updated_body = update_plan_header_session_gist(
-                issue_body=issue_body,
-                gist_url=gist_result.gist_url,
-                gist_id=gist_result.gist_id,
-                session_id=session_id,
-                session_at=timestamp,
-                source=source,
-            )
-            issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+            backend.update_metadata(repo_root, plan_id, metadata)
             result["issue_updated"] = True
-        except (ValueError, RuntimeError) as e:
+        except RuntimeError as e:
             # Issue update failed but gist was created - partial success
             result["issue_updated"] = False
             result["issue_update_error"] = str(e)
