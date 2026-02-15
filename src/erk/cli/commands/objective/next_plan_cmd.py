@@ -212,6 +212,7 @@ def _handle_one_shot(
         f"Dispatching step {click.style(target_step.id, bold=True)}: {target_step.description}"
     )
     user_output(f"Phase: {target_phase.name}")
+    user_output(f"Instruction: {instruction}")
 
     params = OneShotDispatchParams(
         instruction=instruction,
