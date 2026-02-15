@@ -76,8 +76,11 @@ def make_issue_info(number: int, body: str) -> IssueInfo:
 # ============================================================================
 
 
-def test_mark_impl_started_local_updates_metadata(tmp_path: Path) -> None:
+def test_mark_impl_started_local_updates_metadata(tmp_path: Path, monkeypatch) -> None:
     """mark-impl-started updates local impl metadata via PlanBackend."""
+    # Ensure we're not in GitHub Actions (CI sets GITHUB_ACTIONS=true)
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+
     # Setup .impl/ folder with plan-ref.json
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -212,8 +215,11 @@ def test_mark_impl_started_no_plan_ref(tmp_path: Path) -> None:
 # ============================================================================
 
 
-def test_mark_impl_ended_local_updates_metadata(tmp_path: Path) -> None:
+def test_mark_impl_ended_local_updates_metadata(tmp_path: Path, monkeypatch) -> None:
     """mark-impl-ended updates local impl metadata via PlanBackend."""
+    # Ensure we're not in GitHub Actions (CI sets GITHUB_ACTIONS=true)
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+
     # Setup .impl/ folder with plan-ref.json
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
