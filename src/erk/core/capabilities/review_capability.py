@@ -1,7 +1,8 @@
 """Base class for review-based capabilities.
 
 ReviewCapability wraps the artifact sync system to install code review definitions
-to external repositories via the capability system.
+to external repositories via the capability system. Reviews are installed to
+.erk/reviews/ in the target project.
 """
 
 from abc import abstractmethod

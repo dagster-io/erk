@@ -35,6 +35,7 @@ class ArtifactSyncConfig:
     """Configuration for artifact sync - enables testing without mocks."""
 
     bundled_claude_dir: Path
+    bundled_erk_dir: Path
     bundled_github_dir: Path
     current_version: str
     installed_capabilities: frozenset[str]
@@ -45,6 +46,7 @@ def create_artifact_sync_config(project_dir: Path) -> ArtifactSyncConfig:
     """Create config with real values for production use."""
     return ArtifactSyncConfig(
         bundled_claude_dir=get_bundled_claude_dir(),
+        bundled_erk_dir=get_bundled_erk_dir(),
         bundled_github_dir=get_bundled_github_dir(),
         current_version=get_current_version(),
         installed_capabilities=load_installed_capabilities(project_dir),
@@ -464,7 +466,8 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     artifacts.extend(_hash_directory_artifacts(actions_dir, action_names, "actions"))
 
     # Hash reviews from source (bundled in .erk/reviews/)
-    reviews_dir = get_bundled_erk_dir() / "reviews"
+    bundled_erk_dir = get_bundled_erk_dir()
+    reviews_dir = bundled_erk_dir / "reviews"
     if reviews_dir.exists():
         for review_name in sorted(_get_bundled_by_type("review", installed_capabilities=None)):
             review_filename = f"{review_name}.md"
@@ -704,7 +707,7 @@ def sync_artifacts(
     # Sync reviews (from bundled .erk/reviews/ to project .erk/reviews/)
     target_reviews_dir = project_dir / ".erk" / "reviews"
     count, synced = _sync_reviews(
-        get_bundled_erk_dir(),
+        config.bundled_erk_dir,
         target_reviews_dir,
         installed_capabilities=config.installed_capabilities,
     )

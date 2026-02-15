@@ -704,8 +704,9 @@ def find_missing_artifacts(project_dir: Path) -> CompletenessCheckResult:
     missing.update(_find_missing_actions(project_actions_dir, bundled_actions_dir))
 
     # Check reviews (in .erk/reviews/, bundled from .erk/reviews/)
+    bundled_erk_dir = get_bundled_erk_dir()
     project_reviews_dir = project_dir / ".erk" / "reviews"
-    bundled_reviews_dir = get_bundled_erk_dir() / "reviews"
+    bundled_reviews_dir = bundled_erk_dir / "reviews"
     missing.update(_find_missing_reviews(project_reviews_dir, bundled_reviews_dir))
 
     # Check hooks in settings.json
