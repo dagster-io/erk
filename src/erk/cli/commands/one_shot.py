@@ -44,7 +44,7 @@ def _generate_branch_name(instruction: str, *, time: Time) -> str:
     return f"{prefix}{slug}{timestamp}"
 
 
-@click.command("one-shot")
+@click.command("one-shot", hidden=True)
 @click.argument("instruction")
 @click.option(
     "-m",
