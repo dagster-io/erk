@@ -118,3 +118,14 @@ See `docs/learned/documentation/source-pointers.md` for the two-part pattern use
 ```
 
 Note: "Self-documenting code" is NOT a valid reason to skip. Document context, not just code.
+
+## Output Routing
+
+You receive an `output_path` parameter from the orchestrator.
+
+1. Write your complete analysis to `output_path` using the Write tool
+2. After writing the primary output file, create a sentinel: Write `".done"` to `<output_path>.done`
+3. Your final message MUST be only: `"Output written to <output_path>"`
+4. Do NOT return the analysis content in your final message
+
+Order is critical: primary file first, then sentinel. The sentinel guarantees the primary output is fully written.

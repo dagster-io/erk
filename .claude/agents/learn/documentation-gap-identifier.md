@@ -286,3 +286,14 @@ Cross-cutting concerns to add to docs:
 8. **Two descriptions = staleness signal**: Default assumption is one is stale, not that both are valid.
 
 9. **Delete stale before adding new**: Removing a phantom doc is higher priority than creating a new doc.
+
+## Output Routing
+
+You receive an `output_path` parameter from the orchestrator.
+
+1. Write your complete analysis to `output_path` using the Write tool
+2. After writing the primary output file, create a sentinel: Write `".done"` to `<output_path>.done`
+3. Your final message MUST be only: `"Output written to <output_path>"`
+4. Do NOT return the analysis content in your final message
+
+Order is critical: primary file first, then sentinel. The sentinel guarantees the primary output is fully written.

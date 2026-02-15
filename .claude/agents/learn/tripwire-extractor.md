@@ -83,3 +83,14 @@ Use the Write tool to create this file. Do NOT use bash heredoc.
 - **Warnings should be actionable**: "Use context.time.sleep() for testability" not "Be careful with sleep"
 - **Target docs must exist or be planned**: Only reference docs that exist in `docs/learned/` or are being created by the learn plan
 - **Prefer fewer, high-quality candidates**: 2-3 precise tripwires are better than 10 vague ones
+
+## Output Routing
+
+You receive an `output_path` parameter from the orchestrator.
+
+1. Write your complete output JSON to `output_path` using the Write tool
+2. After writing the primary output file, create a sentinel: Write `".done"` to `<output_path>.done`
+3. Your final message MUST be only: `"Output written to <output_path>"`
+4. Do NOT return the output content in your final message
+
+Order is critical: primary file first, then sentinel. The sentinel guarantees the primary output is fully written.

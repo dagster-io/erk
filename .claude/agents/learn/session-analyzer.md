@@ -16,12 +16,12 @@ Analyze preprocessed Claude Code session XML to extract documentation-worthy ins
 
 You receive:
 
-- `session_xml_path`: Path to preprocessed XML file (e.g., `.erk/scratch/sessions/.../learn/impl-{id}.xml`)
+- `session_xml_paths`: List of paths to preprocessed XML files for a single session (e.g., `.erk/scratch/sessions/.../learn/impl-{id}.xml` or `.erk/scratch/sessions/.../learn/impl-{id}-part1.xml`, `.../impl-{id}-part2.xml` for chunked sessions). Read all paths and analyze them as a single session.
 - `context`: Brief description of what this plan implemented
 
 ## Analysis Process
 
-1. **Read the session XML** at the provided path
+1. **Read all session XML files** at the provided paths (read each file in the list)
 2. **Extract key elements:**
    - Patterns discovered (code patterns, architectural decisions)
    - External lookups (WebFetch, WebSearch) - what was researched and why
@@ -105,3 +105,14 @@ TYPE: <planning|implementation>
 ```
 
 Focus on actionable insights. Skip trivial file reads or obvious operations.
+
+## Output Routing
+
+You receive an `output_path` parameter from the orchestrator.
+
+1. Write your complete analysis to `output_path` using the Write tool
+2. After writing the primary output file, create a sentinel: Write `".done"` to `<output_path>.done`
+3. Your final message MUST be only: `"Output written to <output_path>"`
+4. Do NOT return the analysis content in your final message
+
+Order is critical: primary file first, then sentinel. The sentinel guarantees the primary output is fully written.

@@ -275,15 +275,19 @@ Tell the user:
 
 ```
 Launching analysis agents in parallel:
-  - Session analyzer (1 per session file)
+  - Session analyzer (1 per session, consolidating multi-part XMLs)
   - Code diff analyzer (PR #<number>)
   - Existing documentation checker
   - PR comment analyzer (PR #<number>)
 ```
 
-**Agent 1: Session Analysis** (for each preprocessed session)
+**Agent 1: Session Analysis** (one agent per session, consolidating parts)
 
-For each XML file in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`:
+Group XML files in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/` by session ID before launching agents. Files are named `{prefix}-{session_id}.xml` or `{prefix}-{session_id}-part{N}.xml`. Group all files sharing the same session ID together.
+
+**Safety cap:** If a session has >4 XML parts (>80K tokens), split into groups of 3-4 parts per agent to avoid overloading a single agent.
+
+For each session (or session group), launch one agent:
 
 <!-- Model: sonnet - Session analysis benefits from nuanced reasoning about patterns and decisions -->
 
@@ -297,16 +301,16 @@ Task(
     Load and follow the agent instructions in `.claude/agents/learn/session-analyzer.md`
 
     Input:
-    - session_xml_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/<filename>.xml
+    - session_xml_paths:
+      - .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/<filename1>.xml
+      - .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/<filename2>.xml
+      (list all XML files for this session)
     - context: <brief description from plan title>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<session-id>.md
-
-    ## Output Routing
-    CRITICAL: Write your complete output to the output_path using the Write tool.
-    Your final message MUST be only: "Output written to <output_path>"
-    Do NOT return the analysis content in your final message.
 )
 ```
+
+Example: `planning-abc-part1.xml`, `planning-abc-part2.xml`, `planning-abc-part3.xml` → 1 agent with 3 input paths instead of 3 separate agents.
 
 **Agent 2: Code Diff Analysis** (if PR exists)
 
@@ -325,11 +329,6 @@ Task(
     - pr_number: <pr-number>
     - issue_number: <issue-number>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md
-
-    ## Output Routing
-    CRITICAL: Write your complete output to the output_path using the Write tool.
-    Your final message MUST be only: "Output written to <output_path>"
-    Do NOT return the analysis content in your final message.
 )
 ```
 
@@ -353,11 +352,6 @@ Task(
     - pr_title: <PR title if available, or empty string>
     - search_hints: <key terms extracted from plan title, comma-separated>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md
-
-    ## Output Routing
-    CRITICAL: Write your complete output to the output_path using the Write tool.
-    Your final message MUST be only: "Output written to <output_path>"
-    Do NOT return the analysis content in your final message.
 )
 ```
 
@@ -380,63 +374,47 @@ Task(
   run_in_background: true,
   description: "Analyze PR comments for docs",
   prompt: |
-    Analyze PR review comments to identify documentation opportunities.
+    Load and follow the agent instructions in `.claude/agents/learn/pr-comment-analyzer.md`
 
-    ## Steps
-    1. Run: `erk exec get-pr-review-comments --pr <pr-number> --include-resolved`
-    2. Run: `erk exec get-pr-discussion-comments --pr <pr-number>`
-    3. Classify and summarize the comments
-
-    ## Classification
-    For each comment, identify documentation opportunities:
-    - **False positives**: Reviewer misunderstood something → document to prevent future confusion
-    - **Clarification requests**: "Why does this..." → document the reasoning
-    - **Suggested alternatives**: Discussed but rejected → document the decision
-    - **Edge case questions**: "What happens if..." → document the behavior
-
-    ## Output
-
-    **CRITICAL:** Write your complete output to the output_path using the Write tool.
-    Your final message to the caller MUST be only: "Output written to <output_path>"
-
-    output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/pr-comments-analysis.md
-
-    Use this format for the content written to the file:
-
-    ### PR Comment Analysis Summary
-    PR #NNNN: N review threads, M discussion comments analyzed.
-
-    ### Documentation Opportunities from PR Review
-    | # | Source | Insight | Documentation Suggestion |
-    |---|--------|---------|--------------------------|
-    | 1 | Thread at abc.py:42 | Reviewer asked about LBYL pattern | Document when LBYL is required |
-    | 2 | Discussion | Clarified retry behavior | Add to API quirks doc |
-
-    ### Key Insights
-    [Bullet list of the most important documentation opportunities]
-
-    If no comments or no documentation opportunities found, write:
-    "No documentation opportunities identified from PR review comments."
+    Input:
+    - pr_number: <pr-number>
+    - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/pr-comments-analysis.md
 )
 ```
 
-#### Wait for Parallel Agents and Verify Output Files
+#### Wait for Parallel Agents via File-Polling
 
-Wait for each background agent to complete:
+**Do NOT use TaskOutput** to wait for agents. Instead, poll for `.done` sentinel files. This avoids pulling agent output into the parent context window.
 
+Build the expected sentinel count dynamically based on how many agents you launched (session analyzers + diff analyzer + docs checker + PR comment analyzer). Then poll:
+
+```bash
+LEARN_AGENTS_DIR=".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents"
+EXPECTED=<number of parallel agents launched>
+TIMEOUT=600
+INTERVAL=5
+ELAPSED=0
+
+while true; do
+  FOUND=$(ls "$LEARN_AGENTS_DIR"/*.done 2>/dev/null | wc -l)
+  if [ "$FOUND" -ge "$EXPECTED" ]; then break; fi
+  ELAPSED=$((ELAPSED + INTERVAL))
+  if [ $ELAPSED -ge $TIMEOUT ]; then
+    echo "TIMEOUT: Only $FOUND of $EXPECTED agents completed"
+    ls -la "$LEARN_AGENTS_DIR/"
+    break
+  fi
+  sleep $INTERVAL
+done
 ```
-TaskOutput(task_id: <agent-task-id>, block: true)
-```
 
-Each agent writes its own output file and returns only a short confirmation. You do NOT need to relay or write the agent output — just confirm the tasks completed.
-
-After all agents finish, verify their output files exist:
+After polling completes, verify output files exist:
 
 ```bash
 ls -la .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/
 ```
 
-Confirm you see the expected files (session-\*.md, diff-analysis.md, existing-docs-check.md, pr-comments-analysis.md) before proceeding. If any files are missing, the agent failed to write its output and must be re-launched.
+Confirm you see the expected files (session-\*.md, diff-analysis.md, existing-docs-check.md, pr-comments-analysis.md) before proceeding. If any primary output files are missing (sentinel exists but primary doesn't), the agent had a write error and must be re-launched.
 
 Tell the user:
 
@@ -449,7 +427,9 @@ Parallel analysis complete. Running sequential synthesis:
 
 #### Synthesize Agent Findings (Agent 5)
 
-Launch the DocumentationGapIdentifier agent to synthesize outputs from the parallel agents:
+Launch the DocumentationGapIdentifier agent to synthesize outputs from the parallel agents.
+
+**IMPORTANT:** Launch this agent in the background and poll for its sentinel file. Do NOT use TaskOutput.
 
 <!-- Model: sonnet - Gap identification with adversarial verification requires reasoning about phantom references -->
 
@@ -457,6 +437,7 @@ Launch the DocumentationGapIdentifier agent to synthesize outputs from the paral
 Task(
   subagent_type: "general-purpose",
   model: "sonnet",
+  run_in_background: true,
   description: "Identify documentation gaps",
   prompt: |
     Load and follow the agent instructions in `.claude/agents/learn/documentation-gap-identifier.md`
@@ -468,15 +449,28 @@ Task(
     - pr_comments_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/pr-comments-analysis.md" (or null if no PR)
     - plan_title: <title from plan issue>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md
-
-    ## Output Routing
-    CRITICAL: Write your complete output to the output_path using the Write tool.
-    Your final message MUST be only: "Output written to <output_path>"
-    Do NOT return the analysis content in your final message.
 )
 ```
 
-**Note:** This agent runs AFTER the parallel agents complete (sequential dependency). It writes its own output file and returns only a short confirmation.
+Poll for the gap-analysis sentinel before launching Agent 6:
+
+```bash
+LEARN_AGENTS_DIR=".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents"
+TIMEOUT=600
+INTERVAL=5
+ELAPSED=0
+
+while true; do
+  if [ -f "$LEARN_AGENTS_DIR/gap-analysis.md.done" ]; then break; fi
+  ELAPSED=$((ELAPSED + INTERVAL))
+  if [ $ELAPSED -ge $TIMEOUT ]; then
+    echo "TIMEOUT: gap-analysis agent did not complete"
+    ls -la "$LEARN_AGENTS_DIR/"
+    break
+  fi
+  sleep $INTERVAL
+done
+```
 
 The DocumentationGapIdentifier agent will:
 
@@ -489,7 +483,7 @@ The DocumentationGapIdentifier agent will:
 
 #### Synthesize Learn Plan (Agent 6)
 
-Launch the PlanSynthesizer agent to transform the gap analysis into a complete learn plan:
+Launch the PlanSynthesizer agent in the background after gap-analysis sentinel exists:
 
 <!-- Model: opus - Creative authoring of narrative context and draft content; quality-critical final output -->
 
@@ -497,6 +491,7 @@ Launch the PlanSynthesizer agent to transform the gap analysis into a complete l
 Task(
   subagent_type: "general-purpose",
   model: "opus",
+  run_in_background: true,
   description: "Synthesize learn plan",
   prompt: |
     Load and follow the agent instructions in `.claude/agents/learn/plan-synthesizer.md`
@@ -509,19 +504,32 @@ Task(
     - gist_url: <gist URL from Step 4>
     - pr_number: <PR number if available, else null>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md
-
-    ## Output Routing
-    CRITICAL: Write your complete output to the output_path using the Write tool.
-    Your final message MUST be only: "Output written to <output_path>"
-    Do NOT return the analysis content in your final message.
 )
 ```
 
-**Note:** This agent runs AFTER DocumentationGapIdentifier completes (sequential dependency). It writes its own output file and returns only a short confirmation.
+Poll for the learn-plan sentinel before launching Agent 7:
+
+```bash
+LEARN_AGENTS_DIR=".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents"
+TIMEOUT=600
+INTERVAL=5
+ELAPSED=0
+
+while true; do
+  if [ -f "$LEARN_AGENTS_DIR/learn-plan.md.done" ]; then break; fi
+  ELAPSED=$((ELAPSED + INTERVAL))
+  if [ $ELAPSED -ge $TIMEOUT ]; then
+    echo "TIMEOUT: plan-synthesizer agent did not complete"
+    ls -la "$LEARN_AGENTS_DIR/"
+    break
+  fi
+  sleep $INTERVAL
+done
+```
 
 #### Extract Tripwire Candidates (Agent 7)
 
-Launch the TripwireExtractor agent to pull structured tripwire data from the plan:
+Launch the TripwireExtractor agent in the background after learn-plan sentinel exists:
 
 <!-- Model: sonnet - Tripwire extraction benefits from understanding the significance of patterns -->
 
@@ -529,6 +537,7 @@ Launch the TripwireExtractor agent to pull structured tripwire data from the pla
 Task(
   subagent_type: "general-purpose",
   model: "sonnet",
+  run_in_background: true,
   description: "Extract tripwire candidates",
   prompt: |
     Load and follow the agent instructions in `.claude/agents/learn/tripwire-extractor.md`
@@ -537,33 +546,46 @@ Task(
     - learn_plan_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md"
     - gap_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md"
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json
-
-    ## Output Routing
-    CRITICAL: Write your complete output to the output_path using the Write tool.
-    Your final message MUST be only: "Output written to <output_path>"
-    Do NOT return the analysis content in your final message.
 )
 ```
 
-**Note:** This agent runs AFTER PlanSynthesizer completes (sequential dependency). It writes its own output file and returns only a short confirmation.
+Poll for the tripwire-candidates sentinel:
+
+```bash
+LEARN_AGENTS_DIR=".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents"
+TIMEOUT=600
+INTERVAL=5
+ELAPSED=0
+
+while true; do
+  if [ -f "$LEARN_AGENTS_DIR/tripwire-candidates.json.done" ]; then break; fi
+  ELAPSED=$((ELAPSED + INTERVAL))
+  if [ $ELAPSED -ge $TIMEOUT ]; then
+    echo "TIMEOUT: tripwire-extractor agent did not complete"
+    ls -la "$LEARN_AGENTS_DIR/"
+    break
+  fi
+  sleep $INTERVAL
+done
+```
 
 #### Agent Dependency Graph
 
 ```
-Parallel Tier (can run simultaneously):
+Parallel Tier (all launched with run_in_background: true, poll for .done sentinels):
   ├─ SessionAnalyzer (per session XML)
   ├─ CodeDiffAnalyzer (if PR exists)
   ├─ ExistingDocsChecker
   └─ PRCommentAnalyzer (if PR exists)
 
-Sequential Tier 1 (depends on Parallel Tier):
-  └─ DocumentationGapIdentifier
+Sequential Tier 1 (launch after all parallel .done sentinels exist):
+  └─ DocumentationGapIdentifier (background, poll for gap-analysis.md.done)
 
-Sequential Tier 2 (depends on Sequential Tier 1):
-  └─ PlanSynthesizer
+Sequential Tier 2 (launch after gap-analysis.md.done exists):
+  └─ PlanSynthesizer (background, poll for learn-plan.md.done)
 
-Sequential Tier 3 (depends on Sequential Tier 2):
-  └─ TripwireExtractor
+Sequential Tier 3 (launch after learn-plan.md.done exists):
+  └─ TripwireExtractor (background, poll for tripwire-candidates.json.done)
 ```
 
 #### Deep Analysis (Manual Fallback)

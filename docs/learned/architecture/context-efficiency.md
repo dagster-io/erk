@@ -57,6 +57,15 @@ Analyze the content at {input_path} and write results to {output_path}.
 
 The `/erk:learn` command orchestrates 7+ analysis agents. Each agent writes to a file path, and downstream agents read from upstream paths — the parent agent never loads the analysis content into its own context.
 
+## File-Polling Synchronization
+
+The self-write pattern eliminates content relay but still requires `TaskOutput` for synchronization — waiting for agents to finish. This pulls the agent's final response (including any confirmation message) into the parent context. While small per-agent, it scales linearly: 10 agents × ~8K tokens each = ~80K tokens of synchronization overhead.
+
+**File-polling** completes the self-write pattern by also removing synchronization overhead. Agents write a `.done` sentinel file after their primary output, and the parent polls for sentinels using a bash loop instead of `TaskOutput`. This keeps agent responses entirely out of the parent context.
+
+See [Parallel Agent Orchestration Pattern](parallel-agent-pattern.md) for implementation details and when to use file-polling vs TaskOutput.
+
 ## Related Documentation
 
 - [Agent Output Routing Strategies](../planning/agent-output-routing-strategies.md) — Decision framework for routing approaches
+- [Parallel Agent Orchestration Pattern](parallel-agent-pattern.md) — File-polling synchronization details

@@ -180,3 +180,14 @@ For each contradiction:
 - **Verify before harmonizing**: When two docs describe the same concept differently, check if both reference real code first
 - **File paths are verifiable claims**: Every `src/` or `packages/` path in a doc is testable. Test it.
 - **Stale > Wrong**: A doc referencing nonexistent code actively misleads. A missing doc merely leaves a gap.
+
+## Output Routing
+
+You receive an `output_path` parameter from the orchestrator.
+
+1. Write your complete analysis to `output_path` using the Write tool
+2. After writing the primary output file, create a sentinel: Write `".done"` to `<output_path>.done`
+3. Your final message MUST be only: `"Output written to <output_path>"`
+4. Do NOT return the analysis content in your final message
+
+Order is critical: primary file first, then sentinel. The sentinel guarantees the primary output is fully written.
