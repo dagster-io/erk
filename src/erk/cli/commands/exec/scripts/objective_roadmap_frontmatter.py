@@ -305,7 +305,7 @@ def update_step_in_frontmatter(
             # Determine status: explicit > infer from resolved values > preserve
             new_status: RoadmapStepStatus
             if status is not None:
-                new_status = cast(RoadmapStepStatus, status)
+                new_status = status
             elif resolved_pr:
                 new_status = cast(RoadmapStepStatus, "done")
             elif resolved_plan:
