@@ -51,10 +51,16 @@ Before classifying feedback, determine if this is a plan review PR:
 
 ### Phase 1: Classify Feedback
 
-Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback with context isolation:
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
 
 ```
-/pr-feedback-classifier [--pr <number> if specified] [--include-resolved if --all was specified]
+Task(
+  subagent_type: "general-purpose",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr <number> if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
 ```
 
 Parse the JSON response. The skill returns:
@@ -224,10 +230,16 @@ Then proceed to the next batch.
 
 ### Phase 4: Final Verification
 
-After all batches complete, re-invoke the classifier to verify all threads are resolved:
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
 
 ```
-/pr-feedback-classifier
+Task(
+  subagent_type: "general-purpose",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr <number> if originally specified]
+           Return the complete JSON output as your final message."
+)
 ```
 
 If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items.
@@ -317,7 +329,7 @@ Store the result as `ORIGINAL_BRANCH`.
 
 ### Plan Review Phase 2: Classify Feedback
 
-Same as standard Phase 1 — invoke `/pr-feedback-classifier [--pr <number> if specified]` to fetch and classify all PR feedback.
+Same as standard Phase 1 — use the Task tool (NOT skill invocation, for `--print` mode isolation) to run the classifier in a subagent (see Phase 1 above for the Task tool pattern). Pass `[--pr <number> if specified]` as arguments.
 
 ### Plan Review Phase 3: Display Batched Plan
 
