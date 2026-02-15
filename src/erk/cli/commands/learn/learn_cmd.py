@@ -138,12 +138,10 @@ def learn_cmd(
     if gist_url is not None:
         user_output(
             click.style(f"Preprocessed learn materials for plan #{issue_number}", bold=True)
+            + f"\n\nGist: {click.style(gist_url, fg='cyan')}"
+            + "\n\nSessions have been preprocessed and uploaded."
+            + "\nClaude will download and analyze from the gist directly."
         )
-        user_output("")
-        user_output(f"Gist: {click.style(gist_url, fg='cyan')}")
-        user_output("")
-        user_output("Sessions have been preprocessed and uploaded.")
-        user_output("Claude will download and analyze from the gist directly.")
         _confirm_and_launch(
             ctx=ctx,
             repo_root=repo_root,
