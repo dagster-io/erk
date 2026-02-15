@@ -12,11 +12,15 @@ You are running autonomously in a CI workflow. Your job is to read an instructio
 
 Read `.impl/task.md` to understand what you need to do.
 
-## Step 2: Load Context
+## Step 2: Read Objective Context (if present)
+
+If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), this plan is for a specific step of an objective. Use `erk exec check-objective $OBJECTIVE_ISSUE` to fetch the full objective context (title, roadmap, progress). The `$STEP_ID` environment variable contains the specific roadmap step ID being planned. Incorporate the objective context into your planning — understand the broader goal and how this step fits into it.
+
+## Step 3: Load Context
 
 Read `AGENTS.md` to understand the project conventions. Follow its documentation-first discovery process: scan `docs/learned/index.md`, grep `docs/learned/` for relevant docs, and load skills as directed by AGENTS.md routing rules.
 
-## Step 3: Explore the Codebase
+## Step 4: Explore the Codebase
 
 Use Explore agents and Grep/Glob to understand the relevant areas of the codebase:
 
@@ -25,7 +29,7 @@ Use Explore agents and Grep/Glob to understand the relevant areas of the codebas
 - Understand existing architecture and patterns
 - Find relevant tests and test patterns
 
-## Step 4: Write the Plan
+## Step 5: Write the Plan
 
 Write a comprehensive implementation plan to `.impl/plan.md`.
 
@@ -39,7 +43,7 @@ The plan MUST be self-contained for a separate Claude session to implement. Incl
 
 Follow the planning conventions in `docs/learned/planning/` if available.
 
-## Step 5: Save Plan to GitHub Issue
+## Step 6: Save Plan to GitHub Issue
 
 Run the following command to save the plan as a GitHub issue:
 
@@ -49,9 +53,11 @@ erk exec plan-save-to-issue --plan-file .impl/plan.md --format json --created-fr
 
 If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` flag.
 
+If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), add `--objective-issue $OBJECTIVE_ISSUE` to the command above to link the plan to its parent objective.
+
 Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `issue_number` and `title` from the output.
 
-## Step 6: Write Plan Result
+## Step 7: Write Plan Result
 
 Write the plan result to `.impl/plan-result.json` with the following format:
 
@@ -59,7 +65,7 @@ Write the plan result to `.impl/plan-result.json` with the following format:
 {"issue_number": <num>, "title": "<title>"}
 ```
 
-Use the `issue_number` and `title` extracted from the Step 5 output.
+Use the `issue_number` and `title` extracted from the Step 6 output.
 
 ## Important Notes
 

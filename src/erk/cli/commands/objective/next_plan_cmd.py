@@ -3,8 +3,43 @@
 import click
 
 from erk.cli.alias import alias
-from erk.core.context import ErkContext
+from erk.cli.commands.exec.scripts.objective_roadmap_shared import (
+    RoadmapPhase,
+    RoadmapStep,
+)
+from erk.cli.commands.implement_shared import normalize_model_name
+from erk.cli.commands.objective.check_cmd import (
+    ObjectiveValidationError,
+    ObjectiveValidationSuccess,
+    validate_objective,
+)
+from erk.cli.commands.one_shot_dispatch import (
+    OneShotDispatchParams,
+    dispatch_one_shot,
+)
+from erk.cli.github_parsing import parse_issue_identifier
+from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
 from erk_shared.context.types import InteractiveAgentConfig
+from erk_shared.output.output import user_output
+
+
+def _find_step_by_id(
+    phases: list[RoadmapPhase], step_id: str
+) -> tuple[RoadmapStep, RoadmapPhase] | None:
+    """Find a step by its ID across all phases.
+
+    Args:
+        phases: List of roadmap phases to search
+        step_id: Step ID to find (e.g., "1.1", "2.3")
+
+    Returns:
+        Tuple of (step, phase) if found, None otherwise
+    """
+    for phase in phases:
+        for step in phase.steps:
+            if step.id == step_id:
+                return step, phase
+    return None
 
 
 @alias("np")
@@ -17,17 +52,76 @@ from erk_shared.context.types import InteractiveAgentConfig
     default=False,
     help="Allow dangerous permissions by passing --allow-dangerously-skip-permissions to Claude",
 )
+@click.option(
+    "--one-shot",
+    "one_shot_mode",
+    is_flag=True,
+    default=False,
+    help="Dispatch via one-shot workflow for fully autonomous execution",
+)
+@click.option(
+    "-m",
+    "--model",
+    type=str,
+    default=None,
+    help="Model to use for one-shot execution (requires --one-shot)",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Show what would happen without executing (requires --one-shot)",
+)
+@click.option(
+    "--step",
+    "step_id",
+    type=str,
+    default=None,
+    help="Specific step ID to dispatch (requires --one-shot)",
+)
 @click.pass_obj
-def next_plan(ctx: ErkContext, issue_ref: str, dangerous: bool) -> None:
+def next_plan(
+    ctx: ErkContext,
+    issue_ref: str,
+    dangerous: bool,
+    one_shot_mode: bool,
+    model: str | None,
+    dry_run: bool,
+    step_id: str | None,
+) -> None:
     """Create an implementation plan from an objective step.
 
     ISSUE_REF is an objective issue number or GitHub URL.
 
-    This command launches Claude in plan mode (--permission-mode plan) to
-    create an implementation plan from an objective step. The permission
-    mode and other settings are configured via [interactive-claude] in
-    ~/.erk/config.toml.
+    By default, launches Claude interactively in plan mode.
+
+    With --one-shot, dispatches via the one-shot CI workflow for
+    fully autonomous planning and implementation.
+
+    \b
+    Examples:
+      erk objective next-plan 42
+      erk objective next-plan 42 --one-shot
+      erk objective next-plan 42 --one-shot --step 1.2
+      erk objective next-plan 42 --one-shot --dry-run
     """
+    # Validate flag dependencies: --model, --dry-run, --step require --one-shot
+    if not one_shot_mode:
+        if model is not None:
+            raise click.ClickException("--model requires --one-shot")
+        if dry_run:
+            raise click.ClickException("--dry-run requires --one-shot")
+        if step_id is not None:
+            raise click.ClickException("--step requires --one-shot")
+
+    if one_shot_mode:
+        _handle_one_shot(ctx, issue_ref=issue_ref, model=model, dry_run=dry_run, step_id=step_id)
+    else:
+        _handle_interactive(ctx, issue_ref=issue_ref, dangerous=dangerous)
+
+
+def _handle_interactive(ctx: ErkContext, *, issue_ref: str, dangerous: bool) -> None:
+    """Launch Claude interactively to create a plan."""
     # Build command with argument
     command = f"/erk:objective-next-plan {issue_ref}"
 
@@ -53,3 +147,79 @@ def next_plan(ctx: ErkContext, issue_ref: str, dangerous: bool) -> None:
         ctx.agent_launcher.launch_interactive(config, command=command)
     except RuntimeError as e:
         raise click.ClickException(str(e)) from e
+
+
+def _handle_one_shot(
+    ctx: ErkContext,
+    *,
+    issue_ref: str,
+    model: str | None,
+    dry_run: bool,
+    step_id: str | None,
+) -> None:
+    """Dispatch objective step via one-shot workflow."""
+    # Parse issue identifier
+    issue_number = parse_issue_identifier(issue_ref)
+
+    # Validate repo context
+    if isinstance(ctx.repo, NoRepoSentinel):
+        raise click.ClickException("Not in a git repository")
+    assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+    repo: RepoContext = ctx.repo
+
+    # Validate objective
+    result = validate_objective(ctx.issues, repo.root, issue_number)
+
+    if isinstance(result, ObjectiveValidationError):
+        raise click.ClickException(result.error)
+
+    assert isinstance(result, ObjectiveValidationSuccess)
+
+    if not result.phases:
+        raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+
+    # Determine target step
+    if step_id is not None:
+        found = _find_step_by_id(result.phases, step_id)
+        if found is None:
+            raise click.ClickException(f"Step '{step_id}' not found in objective #{issue_number}")
+        target_step, target_phase = found
+    else:
+        if result.next_step is None:
+            user_output(
+                click.style("All steps completed!", fg="green")
+                + f" Objective #{issue_number} has no pending steps."
+            )
+            return
+        # Find the actual step and phase objects from next_step dict
+        found = _find_step_by_id(result.phases, result.next_step["id"])
+        if found is None:
+            raise click.ClickException(
+                f"Internal error: next_step '{result.next_step['id']}' not found"
+            )
+        target_step, target_phase = found
+
+    # Normalize model name
+    model = normalize_model_name(model)
+
+    # Build instruction
+    instruction = (
+        f"Implement step {target_step.id} of objective #{issue_number}: "
+        f"{target_step.description} (Phase: {target_phase.name})"
+    )
+
+    user_output(
+        f"Dispatching step {click.style(target_step.id, bold=True)}: {target_step.description}"
+    )
+    user_output(f"Phase: {target_phase.name}")
+
+    params = OneShotDispatchParams(
+        instruction=instruction,
+        model=model,
+        extra_workflow_inputs={
+            "objective_issue": str(issue_number),
+            "step_id": target_step.id,
+        },
+    )
+
+    dispatch_one_shot(ctx, params=params, dry_run=dry_run)
