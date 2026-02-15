@@ -47,7 +47,7 @@ Exit Codes:
 
 import json
 import re
-from typing import get_args
+from typing import cast, get_args
 
 import click
 
@@ -178,7 +178,7 @@ def _replace_step_refs_in_body(
             step_id,
             plan=new_plan,
             pr=new_pr,
-            status=explicit_status,
+            status=cast(RoadmapStepStatus, explicit_status) if explicit_status is not None else None,
         )
 
         if updated_block_content is None:

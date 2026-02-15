@@ -90,6 +90,9 @@ def validate_roadmap_frontmatter(
         if not isinstance(status, str):
             errors.append(f"Step {i} field 'status' must be a string")
             return None, errors
+        if status not in {"pending", "planning", "done", "in_progress", "blocked", "skipped"}:
+            errors.append(f"Step {i} field 'status' must be one of: pending, planning, done, in_progress, blocked, skipped")
+            return None, errors
         if raw_plan is not None and not isinstance(raw_plan, str):
             errors.append(f"Step {i} field 'plan' must be a string or null")
             return None, errors
@@ -251,7 +254,7 @@ def update_step_in_frontmatter(
     *,
     plan: str | None = None,
     pr: str | None = None,
-    status: str | None,
+    status: RoadmapStepStatus | None,
 ) -> str | None:
     """Update a step's plan/PR fields (and optionally status) in frontmatter YAML.
 
@@ -303,9 +306,9 @@ def update_step_in_frontmatter(
             if status is not None:
                 new_status = cast(RoadmapStepStatus, status)
             elif resolved_pr:
-                new_status = "done"
+                new_status = cast(RoadmapStepStatus, "done")
             elif resolved_plan:
-                new_status = "in_progress"
+                new_status = cast(RoadmapStepStatus, "in_progress")
             else:
                 new_status = step.status  # preserve existing status
 

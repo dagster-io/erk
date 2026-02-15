@@ -218,16 +218,16 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             if status_col in ("done", "blocked", "skipped", "planning"):
                 status = cast(RoadmapStepStatus, status_col)
             elif status_col in ("in-progress", "in_progress"):
-                status = "in_progress"
+                status = cast(RoadmapStepStatus, "in_progress")
             elif status_col == "pending":
-                status = "pending"
+                status = cast(RoadmapStepStatus, "pending")
             # Fall back to column inference for "-" or legacy values
             elif pr_value and pr_value.startswith("#"):
-                status = "done"
+                status = cast(RoadmapStepStatus, "done")
             elif plan_value and plan_value.startswith("#"):
-                status = "in_progress"
+                status = cast(RoadmapStepStatus, "in_progress")
             else:
-                status = "pending"
+                status = cast(RoadmapStepStatus, "pending")
 
             steps.append(
                 RoadmapStep(
