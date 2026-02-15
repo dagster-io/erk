@@ -769,3 +769,47 @@ class PlanHeaderSchema(MetadataBlockSchema):
 
 # Backward compatibility alias
 PlanIssueSchema = PlanSchema
+
+
+@dataclass(frozen=True)
+class ObjectiveHeaderSchema(MetadataBlockSchema):
+    """Schema for objective-header blocks.
+
+    Fields:
+        created_at: ISO 8601 timestamp of objective creation
+        created_by: GitHub username of objective creator
+        objective_comment_id: GitHub comment ID containing the objective content (nullable)
+    """
+
+    def validate(self, data: dict[str, Any]) -> None:
+        """Validate objective-header data structure."""
+        required_fields = {"created_at", "created_by"}
+        optional_fields = {"objective_comment_id"}
+
+        # Check required fields exist
+        missing = required_fields - set(data.keys())
+        if missing:
+            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+
+        # Validate required string fields
+        for field in required_fields:
+            if not isinstance(data[field], str):
+                raise ValueError(f"{field} must be a string")
+            if len(data[field]) == 0:
+                raise ValueError(f"{field} must not be empty")
+
+        # Validate optional objective_comment_id field
+        if "objective_comment_id" in data and data["objective_comment_id"] is not None:
+            if not isinstance(data["objective_comment_id"], int):
+                raise ValueError("objective_comment_id must be an integer or null")
+            if data["objective_comment_id"] <= 0:
+                raise ValueError("objective_comment_id must be positive when provided")
+
+        # Check for unexpected fields
+        known_fields = required_fields | optional_fields
+        unknown_fields = set(data.keys()) - known_fields
+        if unknown_fields:
+            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+
+    def get_key(self) -> str:
+        return "objective-header"

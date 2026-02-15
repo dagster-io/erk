@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.update_roadmap_step import update_roadmap_step
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
 ROADMAP_BODY_5COL = """\
 # Objective: Build Feature X
@@ -651,3 +651,152 @@ def test_include_body_on_failure() -> None:
     output = json.loads(result.output)
     assert output["success"] is False
     assert "updated_body" not in output
+
+
+# --- v2 format tests: objective-header with objective_comment_id ---
+
+V2_BODY = """\
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-header -->
+<details>
+<summary><code>objective-header</code></summary>
+
+```yaml
+
+created_at: '2025-01-01T00:00:00+00:00'
+created_by: testuser
+objective_comment_id: 42
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-header -->
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Set up project structure"
+    status: "done"
+    plan: null
+    pr: "#100"
+  - id: "1.2"
+    description: "Add core types"
+    status: "in_progress"
+    plan: "#200"
+    pr: null
+  - id: "1.3"
+    description: "Add utility functions"
+    status: "pending"
+    plan: null
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+V2_COMMENT_BODY = """\
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-body -->
+<details open>
+<summary><strong>Objective</strong></summary>
+
+# Objective: Build Feature X
+
+## Roadmap
+
+### Phase 1: Foundation (1 PR)
+
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Set up project structure | done | - | #100 |
+| 1.2 | Add core types | in-progress | #200 | - |
+| 1.3 | Add utility functions | pending | - | - |
+
+</details>
+<!-- /erk:metadata-block:objective-body -->
+"""
+
+
+def test_v2_update_also_updates_comment_table() -> None:
+    """v2 format: update-roadmap-step updates both body frontmatter and comment table."""
+    issue = _make_issue(6423, V2_BODY)
+    comment = IssueComment(
+        body=V2_COMMENT_BODY,
+        url="https://github.com/test/repo/issues/6423#issuecomment-42",
+        id=42,
+        author="testuser",
+    )
+    fake_gh = FakeGitHubIssues(
+        issues={6423: issue},
+        comments_with_urls={6423: [comment]},
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--plan", "#6464"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Body frontmatter should be updated
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "plan: '#6464'" in updated_body or 'plan: "#6464"' in updated_body
+
+    # Comment table should also be updated
+    assert len(fake_gh.updated_comments) == 1
+    updated_comment = fake_gh.updated_comments[0][1]
+    assert "#6464" in updated_comment
+    assert "| in-progress |" in updated_comment
+
+
+def test_v2_no_comment_update_when_no_header() -> None:
+    """v1 format: when no objective-header, only body is updated (no comment)."""
+    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--plan", "#6464"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Body should be updated
+    assert len(fake_gh.updated_bodies) == 1
+
+    # No comment updates should happen
+    assert len(fake_gh.updated_comments) == 0
+
+
+def test_replace_table_in_text_basic() -> None:
+    """_replace_table_in_text updates a step's plan/PR cells in markdown text."""
+    from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_table_in_text
+
+    text = """\
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Set up project | done | - | #100 |
+| 1.2 | Add core types | pending | - | - |
+"""
+    result = _replace_table_in_text(text, "1.2", new_plan="#200", new_pr=None, explicit_status=None)
+    assert result is not None
+    assert "| in-progress | #200 | - |" in result
+
+
+def test_replace_table_in_text_not_found() -> None:
+    """_replace_table_in_text returns None when step not found."""
+    from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_table_in_text
+
+    text = "| 1.1 | desc | done | - | #100 |"
+    result = _replace_table_in_text(text, "9.9", new_plan="#200", new_pr=None, explicit_status=None)
+    assert result is None

@@ -8,6 +8,7 @@ import yaml
 
 from erk_shared.gateway.github.metadata.schemas import (
     ImplementationStatusSchema,
+    ObjectiveHeaderSchema,
     PlanSchema,
     SubmissionQueuedSchema,
     WorkflowStartedSchema,
@@ -664,3 +665,103 @@ def replace_metadata_block_in_body(
         raise ValueError(f"Metadata block '{key}' not found in body")
 
     return re.sub(pattern, new_block_content, body, flags=re.DOTALL)
+
+
+def create_objective_header_block(
+    *,
+    created_at: str,
+    created_by: str,
+    objective_comment_id: int | None,
+) -> MetadataBlock:
+    """Create an objective-header metadata block with validation.
+
+    Args:
+        created_at: ISO 8601 timestamp of objective creation
+        created_by: GitHub username of objective creator
+        objective_comment_id: GitHub comment ID containing objective content (nullable)
+
+    Returns:
+        MetadataBlock with objective-header schema
+    """
+    schema = ObjectiveHeaderSchema()
+    data: dict[str, Any] = {
+        "created_at": created_at,
+        "created_by": created_by,
+        "objective_comment_id": objective_comment_id,
+    }
+    return create_metadata_block(
+        key=schema.get_key(),
+        data=data,
+        schema=schema,
+    )
+
+
+def render_objective_body_block(content: str) -> str:
+    """Render objective content wrapped in objective-body metadata block.
+
+    Returns markdown like:
+    <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+    <!-- erk:metadata-block:objective-body -->
+    <details open>
+    <summary><strong>Objective</strong></summary>
+
+    {content}
+
+    </details>
+    <!-- /erk:metadata-block:objective-body -->
+    """
+    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-body -->
+<details open>
+<summary><strong>Objective</strong></summary>
+
+{content}
+
+</details>
+<!-- /erk:metadata-block:objective-body -->"""
+
+
+def format_objective_content_comment(content: str) -> str:
+    """Format objective content for the first comment.
+
+    Wraps objective content in collapsible objective-body metadata block.
+
+    Args:
+        content: The full objective markdown content
+
+    Returns:
+        Comment body with objective wrapped in metadata block
+    """
+    return render_objective_body_block(content.strip())
+
+
+def update_objective_header_comment_id(
+    issue_body: str,
+    comment_id: int,
+) -> str:
+    """Update objective_comment_id field in objective-header metadata block.
+
+    Args:
+        issue_body: Current issue body containing objective-header block
+        comment_id: GitHub comment ID containing the objective content
+
+    Returns:
+        Updated issue body with new objective_comment_id field
+
+    Raises:
+        ValueError: If objective-header block not found or invalid
+    """
+    block = find_metadata_block(issue_body, "objective-header")
+    if block is None:
+        raise ValueError("objective-header block not found in issue body")
+
+    updated_data = dict(block.data)
+    updated_data["objective_comment_id"] = comment_id
+
+    schema = ObjectiveHeaderSchema()
+    schema.validate(updated_data)
+
+    new_block = MetadataBlock(key="objective-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    return replace_metadata_block_in_body(issue_body, "objective-header", new_block_content)

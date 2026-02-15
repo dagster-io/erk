@@ -113,6 +113,7 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
             phases = _enrich_phase_names(body, phases)
             return (phases, [])
 
+    # OBJECTIVE_V1_COMPAT: Remove when all objectives use v2
     # Fall back to table parsing for backward compatibility
     phases: list[RoadmapPhase] = []
     validation_errors: list[str] = []

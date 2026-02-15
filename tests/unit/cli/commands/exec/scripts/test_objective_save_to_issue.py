@@ -26,7 +26,7 @@ This objective describes the implementation of a new feature.
 
 
 def test_objective_save_to_issue_success() -> None:
-    """Test successful objective issue creation."""
+    """Test successful objective issue creation with v2 format."""
     fake_gh = FakeGitHubIssues()
     plan_content = """# My Objective
 
@@ -51,6 +51,23 @@ This is a comprehensive objective that includes all the necessary details.
     assert output["success"] is True
     assert output["issue_number"] == 1
     assert output["title"] == "My Objective"
+
+    # v2: body should contain objective-header metadata block (details format)
+    created_body = fake_gh.created_issues[0][1]
+    assert "erk:metadata-block:objective-header" in created_body
+    assert "created_by: testuser" in created_body
+    assert "<details>" in created_body
+
+    # v2: first comment should contain objective content
+    assert len(fake_gh.added_comments) == 1
+    comment_body = fake_gh.added_comments[0][1]
+    assert "erk:metadata-block:objective-body" in comment_body
+    assert "My Objective" in comment_body
+
+    # v2: body should be updated with objective_comment_id
+    assert len(fake_gh.updated_bodies) == 1
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "objective_comment_id: 1000" in updated_body
 
 
 def test_objective_save_to_issue_no_plan() -> None:
@@ -100,6 +117,10 @@ This is a comprehensive test objective that covers the implementation.
     assert "Objective saved to GitHub issue #1" in result.output
     assert "Title: Test Objective" in result.output
     assert "URL: " in result.output
+
+    # v2: verify the metadata pattern was used
+    created_body = fake_gh.created_issues[0][1]
+    assert "erk:metadata-block:objective-header" in created_body
 
 
 # --- Scratch plan priority tests ---
@@ -363,3 +384,62 @@ This objective tests display format idempotency.
         assert result2.exit_code == 0
         assert "already saved objective #1" in result2.output
         assert "Skipping duplicate creation" in result2.output
+
+
+# --- v2 roadmap metadata tests ---
+
+
+OBJECTIVE_WITH_ROADMAP = """# Feature Objective
+
+This objective describes the implementation of a new feature.
+
+## Roadmap
+
+### Phase 1: Foundation (1 PR)
+
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Set up project structure | pending | - | - |
+| 1.2 | Add core types | pending | - | - |
+
+### Phase 2: Implementation (1 PR)
+
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 2.1 | Implement main feature | pending | - | - |
+"""
+
+
+def test_objective_save_to_issue_with_roadmap_creates_frontmatter() -> None:
+    """Test that objective with roadmap creates objective-roadmap metadata block."""
+    fake_gh = FakeGitHubIssues()
+    fake_store = FakeClaudeInstallation.for_test(plans={"roadmap-test": OBJECTIVE_WITH_ROADMAP})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        objective_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Body should contain both header and roadmap metadata blocks
+    created_body = fake_gh.created_issues[0][1]
+    assert "erk:metadata-block:objective-header" in created_body
+    assert "erk:metadata-block:objective-roadmap" in created_body
+    assert "schema_version: '2'" in created_body or 'schema_version: "2"' in created_body
+
+    # Should contain step IDs in frontmatter
+    assert "id: '1.1'" in created_body or 'id: "1.1"' in created_body
+    assert "id: '2.1'" in created_body or 'id: "2.1"' in created_body
+
+    # Comment should contain the objective content
+    comment_body = fake_gh.added_comments[0][1]
+    assert "erk:metadata-block:objective-body" in comment_body
+    assert "Feature Objective" in comment_body

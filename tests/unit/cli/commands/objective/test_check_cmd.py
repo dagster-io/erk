@@ -429,3 +429,106 @@ def test_explicit_display_status_with_pr_passes() -> None:
     assert result.exit_code == 0
     assert "[FAIL]" not in result.output
     assert "No stale display statuses" in result.output
+
+
+# --- v2 format integrity tests ---
+
+V2_BODY_VALID = """\
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-header -->
+<details>
+<summary><code>objective-header</code></summary>
+
+```yaml
+
+created_at: '2025-01-01T00:00:00+00:00'
+created_by: testuser
+objective_comment_id: 42
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-header -->
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Set up project structure"
+    status: "done"
+    plan: null
+    pr: "#100"
+  - id: "1.2"
+    description: "Add core types"
+    status: "pending"
+    plan: null
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+
+V2_BODY_MISSING_COMMENT_ID = """\
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-header -->
+<details>
+<summary><code>objective-header</code></summary>
+
+```yaml
+
+created_at: '2025-01-01T00:00:00+00:00'
+created_by: testuser
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-header -->
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Set up project structure"
+    status: "done"
+    plan: null
+    pr: "#100"
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+
+def test_v2_valid_header_passes_check_7() -> None:
+    """v2 format: objective-header with objective_comment_id passes Check 7."""
+    issue = _make_issue(1200, "Objective: V2 Valid", V2_BODY_VALID)
+    fake_gh = FakeGitHubIssues(issues={1200: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1200"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert "objective-header has objective_comment_id" in result.output
+    assert "[FAIL]" not in result.output
+
+
+def test_v2_missing_comment_id_fails_check_7() -> None:
+    """v2 format: objective-header without objective_comment_id fails Check 7."""
+    issue = _make_issue(1300, "Objective: V2 Missing", V2_BODY_MISSING_COMMENT_ID)
+    fake_gh = FakeGitHubIssues(issues={1300: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1300"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 1
+    assert "objective-header missing objective_comment_id" in result.output

@@ -20,10 +20,12 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext, RepoContext
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.output.output import user_output
 
 ERK_OBJECTIVE_LABEL = "erk-objective"
-# Match stale status in both 4-col and 5-col tables (anchored to line start):
+# OBJECTIVE_V1_COMPAT: Remove when all objectives use v2
+# Match stale status in 4-col and 5-col tables:
 # 4-col: | step | desc | - | #123 |  (only matches exactly 4-col rows)
 # 5-col: | step | desc | - | plan | #456 |
 _STALE_STATUS_4COL = re.compile(
@@ -169,11 +171,22 @@ def validate_objective(
         checks.append((False, f"Phase numbering is not sequential: {phase_labels}"))
 
     # Check 6: No stale display statuses (steps with PRs should have explicit status)
+    # OBJECTIVE_V1_COMPAT: Remove when all objectives use v2
+    # In v2, tables live in comment, not body
     stale_matches = _STALE_STATUS_4COL.findall(issue.body) + _STALE_STATUS_5COL.findall(issue.body)
     if not stale_matches:
         checks.append((True, "No stale display statuses"))
     else:
         checks.append((False, f"Stale '-' status with PR reference: {len(stale_matches)} step(s)"))
+
+    # Check 7: v2 format integrity (if objective-header present, verify objective_comment_id)
+    header_block = find_metadata_block(issue.body, "objective-header")
+    if header_block is not None:
+        comment_id = header_block.data.get("objective_comment_id")
+        if comment_id is not None:
+            checks.append((True, "objective-header has objective_comment_id"))
+        else:
+            checks.append((False, "objective-header missing objective_comment_id"))
 
     summary = compute_summary(phases)
     next_step = find_next_step(phases)
