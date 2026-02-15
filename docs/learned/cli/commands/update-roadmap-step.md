@@ -88,6 +88,51 @@ The command follows erk's discriminated union pattern for error returns:
 
 All error paths exit with code 1 but include typed error fields for programmatic handling. See `update_roadmap_step()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:107-182` for the LBYL guard sequence.
 
+## Body Inclusion: --include-body
+
+The `--include-body` flag causes the command to include the fully-mutated issue body in the JSON output as `updated_body`. This eliminates the need for callers to re-fetch the issue body after step updates.
+
+```bash
+# Get the updated body back in the JSON output
+erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --include-body
+```
+
+**Output with `--include-body` (single step):**
+
+```json
+{
+  "success": true,
+  "issue_number": 6423,
+  "step_id": "1.3",
+  "previous_plan": null,
+  "new_plan": null,
+  "previous_pr": null,
+  "new_pr": "#6500",
+  "url": "https://github.com/owner/repo/issues/6423",
+  "updated_body": "# Objective: Build Feature X\n\n## Roadmap\n..."
+}
+```
+
+**Output with `--include-body` (multiple steps):**
+
+```json
+{
+  "success": true,
+  "issue_number": 6697,
+  "new_plan": null,
+  "new_pr": "#555",
+  "url": "https://github.com/owner/repo/issues/6697",
+  "steps": [...],
+  "updated_body": "# Objective: Build Feature X\n\n## Roadmap\n..."
+}
+```
+
+The `updated_body` field is only included when:
+- `--include-body` is passed
+- The update was successful (all steps for multi-step, the single step for single-step)
+
+On failure paths, the field is omitted regardless of the flag.
+
 ## Parameter Semantics: --plan and --pr
 
 The command uses separate `--plan` and `--pr` flags for the two lifecycle stages:
