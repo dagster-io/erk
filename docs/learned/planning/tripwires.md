@@ -20,8 +20,6 @@ Rules triggered by matching actions in code.
 
 **adding branch_name to plan-header at creation time** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below.
 
-**adding dry_run or printing implementation to PlanBackend** → Read [PlanBackend ABC Methods](plan-backend-methods.md) first. PlanBackend is a Backend ABC (3-place pattern), not a Gateway. See gateway-vs-backend.md for the distinction.
-
 **adding erk-consolidated label to a single-issue replan** → Read [Consolidation Labels](consolidation-labels.md) first. Only multi-plan consolidation gets the erk-consolidated label. Single-issue replans are updates, not consolidations.
 
 **adding new agents to learn workflow** → Read [Learn Workflow](learn-workflow.md) first. Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition.
@@ -141,8 +139,6 @@ Rules triggered by matching actions in code.
 **treating missing PR as an error in the learn pipeline** → Read [Learn Without PR Context](learn-without-pr-context.md) first. No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction.
 
 **updating imports one file at a time during gateway consolidation** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Use LibCST for systematic import updates. Manual editing misses call sites and creates partial migration states. See docs/learned/refactoring/libcst-systematic-imports.md.
-
-**updating plan metadata without checking immutable fields** → Read [PlanBackend ABC Methods](plan-backend-methods.md) first. Three fields are immutable (schema_version, created_at, created_by). update_metadata() uses a blocklist, not a whitelist. New metadata fields are allowed by default.
 
 **using background agents without waiting for completion before dependent operations** → Read [Command-Agent Delegation](agent-delegation.md) first. Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files.
 
