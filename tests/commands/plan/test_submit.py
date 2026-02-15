@@ -9,6 +9,7 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -171,3 +172,119 @@ def test_submit_succeeds_when_parent_branch_tracked() -> None:
 
         # Should NOT fail with untracked branch error
         assert "not tracked by Graphite" not in result.output
+
+
+def test_submit_updates_pr_body_with_workflow_run_link() -> None:
+    """Test that submit updates the PR body with the workflow run link.
+
+    After triggering the workflow, the submit flow fetches the PR details
+    and appends a **Workflow run:** link to the body. This is a best-effort
+    operation that logs a warning on failure.
+
+    Uses the "branch exists with PR" code path to skip branch/PR creation
+    (which requires filesystem I/O) and go directly to workflow trigger.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        # Use a known branch name that matches P789-* pattern
+        existing_branch = "P789-test-workflow-link-01-01-0000"
+
+        issue = IssueInfo(
+            number=789,
+            title="[erk-plan] Test Workflow Link",
+            body="Test plan body",
+            state="OPEN",
+            url="https://github.com/test-owner/test-repo/issues/789",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=datetime(2024, 1, 1, tzinfo=UTC),
+            updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+            author="testuser",
+        )
+        issues = FakeGitHubIssues(issues={789: issue})
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+            # Include existing P789- branch so validation finds it
+            local_branches={env.cwd: ["main", existing_branch]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            # Branch exists on remote (triggers "branch exists" path)
+            remote_branches={env.cwd: ["origin/main", f"origin/{existing_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=[],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        # PR details for PR #42 — used by both get_pr_for_branch() and get_pr()
+        pr_42 = PRDetails(
+            number=42,
+            url="https://github.com/test-owner/test-repo/pull/42",
+            title="Test Workflow Link",
+            body="Initial PR body",
+            state="OPEN",
+            is_draft=True,
+            base_ref_name="main",
+            head_ref_name=existing_branch,
+            is_cross_repository=False,
+            mergeable="UNKNOWN",
+            merge_state_status="UNKNOWN",
+            owner="test-owner",
+            repo="test-repo",
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            polled_run_id="12345",
+            # get_pr_for_branch() uses prs_by_branch; get_pr() uses pr_details
+            prs_by_branch={existing_branch: pr_42},
+            pr_details={42: pr_42},
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=github,
+            issues=issues,
+            use_graphite=True,
+            # Confirm reuse of existing branch when prompted
+            confirm_responses=[True],
+        )
+
+        result = runner.invoke(cli, ["plan", "submit", "789", "--base", "main"], obj=ctx)
+
+        # Verify the submit reached the workflow trigger
+        assert "Skipping branch/PR creation" in result.output
+
+        # Verify the PR body was updated with workflow run link
+        # FakeGitHub.trigger_workflow returns run_id="1234567890"
+        # _build_workflow_run_url constructs: https://github.com/test-owner/test-repo/actions/runs/1234567890
+        workflow_link_updates = [
+            (pr_num, body)
+            for pr_num, body in github.updated_pr_bodies
+            if "**Workflow run:**" in body and "actions/runs/" in body
+        ]
+        assert len(workflow_link_updates) >= 1, (
+            f"Expected at least one PR body update with workflow run link, "
+            f"got updated_pr_bodies: {github.updated_pr_bodies}"
+        )
+
+        # Verify the workflow URL format and correct PR number
+        pr_num, updated_body = workflow_link_updates[0]
+        assert pr_num == 42
+        assert "https://github.com/test-owner/test-repo/actions/runs/1234567890" in updated_body
+
+        assert "Traceback" not in result.output
