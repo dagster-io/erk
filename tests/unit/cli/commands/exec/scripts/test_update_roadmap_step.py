@@ -476,6 +476,8 @@ def test_build_output_multi_step_and_semantics() -> None:
         pr_value=None,
         url="https://github.com/test/repo/issues/6697",
         results=results,
+        include_body=False,
+        updated_body=None,
     )
 
     # AND semantics: success=false because step 1.3 failed
@@ -571,3 +573,79 @@ def test_missing_ref_error() -> None:
     output = json.loads(result.output)
     assert output["success"] is False
     assert output["error"] == "missing_ref"
+
+
+def test_include_body_flag_single_step() -> None:
+    """--include-body includes updated_body in JSON output for single step."""
+    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--pr", "#500", "--include-body"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert "updated_body" in output
+    assert "#500" in output["updated_body"]
+    assert "| done |" in output["updated_body"]
+
+
+def test_include_body_flag_multiple_steps() -> None:
+    """--include-body includes updated_body with all step mutations applied."""
+    issue = _make_issue(6697, ROADMAP_BODY_5COL)
+    fake_gh = FakeGitHubIssues(issues={6697: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6697", "--step", "1.2", "--step", "1.3", "--pr", "#555", "--include-body"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert "updated_body" in output
+    # Both steps should be reflected in the body
+    assert output["updated_body"].count("#555") == 2
+
+
+def test_include_body_not_set_by_default() -> None:
+    """updated_body field is absent when --include-body is not passed."""
+    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--pr", "#500"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert "updated_body" not in output
+
+
+def test_include_body_on_failure() -> None:
+    """updated_body field is absent on failure even with --include-body."""
+    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "9.9", "--pr", "#500", "--include-body"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "updated_body" not in output

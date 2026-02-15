@@ -79,6 +79,8 @@ def _build_output(
     pr_value: str | None,
     url: str,
     results: list[dict[str, object]],
+    include_body: bool,
+    updated_body: str | None,
 ) -> dict[str, object]:
     """Build JSON output dict, using legacy format for single step."""
     # Normalize empty strings to None for JSON output
@@ -86,7 +88,7 @@ def _build_output(
     pr_out = pr_value if pr_value else None
 
     if len(step) != 1:
-        return {
+        output: dict[str, object] = {
             "success": all(r["success"] for r in results),
             "issue_number": issue_number,
             "new_plan": plan_out,
@@ -94,6 +96,9 @@ def _build_output(
             "url": url,
             "steps": results,
         }
+        if include_body and all(r["success"] for r in results) and updated_body is not None:
+            output["updated_body"] = updated_body
+        return output
     single_result = results[0]
     if not single_result["success"]:
         return {
@@ -101,7 +106,7 @@ def _build_output(
             "error": single_result["error"],
             "message": _step_error_message(step[0], issue_number, single_result["error"]),
         }
-    return {
+    output = {
         "success": True,
         "issue_number": issue_number,
         "step_id": step[0],
@@ -111,6 +116,9 @@ def _build_output(
         "new_pr": pr_out,
         "url": url,
     }
+    if include_body and updated_body is not None:
+        output["updated_body"] = updated_body
+    return output
 
 
 def _find_step_refs(body: str, step_id: str) -> tuple[str | None, str | None, bool]:
@@ -296,6 +304,13 @@ def _upgrade_table_header(body: str) -> str:
     type=click.Choice(["done", "pending", "in_progress", "blocked", "skipped"]),
     help="Explicit status to set (default: infer from plan/PR value)",
 )
+@click.option(
+    "--include-body",
+    "include_body",
+    is_flag=True,
+    default=False,
+    help="Include the fully-mutated issue body in JSON output as 'updated_body'",
+)
 @click.pass_context
 def update_roadmap_step(
     ctx: click.Context,
@@ -305,6 +320,7 @@ def update_roadmap_step(
     plan_ref: str | None,
     pr_ref: str | None,
     explicit_status: str | None,
+    include_body: bool,
 ) -> None:
     """Update step plan/PR cells in an objective's roadmap table."""
     # Handle legacy "plan #NNN" in --pr by migrating to --plan
@@ -370,6 +386,8 @@ def update_roadmap_step(
             pr_value=pr_ref,
             url=issue.url,
             results=results,
+            include_body=False,
+            updated_body=None,
         )
         click.echo(json.dumps(output))
         raise SystemExit(0)
@@ -429,6 +447,8 @@ def update_roadmap_step(
             pr_value=pr_ref,
             url=issue.url,
             results=results,
+            include_body=False,
+            updated_body=None,
         )
         click.echo(json.dumps(output))
         raise SystemExit(0)
@@ -444,5 +464,7 @@ def update_roadmap_step(
         pr_value=pr_ref,
         url=issue.url,
         results=results,
+        include_body=include_body,
+        updated_body=updated_body,
     )
     click.echo(json.dumps(output))

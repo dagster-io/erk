@@ -62,15 +62,17 @@ You are updating objective issue #<objective-number> after landing PR #<pr-numbe
 Your tasks:
 
 1. **Analyze which steps the PR completed** by comparing the plan body against the objective roadmap
-2. **Update roadmap steps** using the exec command for each completed step:
+2. **Update roadmap steps** using a SINGLE batched command with ALL completed steps:
+
+**CRITICAL: Pass ALL completed steps as multiple `--step` flags in ONE command. Do NOT run separate commands per step — sequential calls cause race conditions and duplicate API calls.**
 
 ```bash
-erk exec update-roadmap-step <objective-number> --step <step-id> --pr "#<pr-number>"
+erk exec update-roadmap-step <objective-number> --step <step-id-1> --step <step-id-2> ... --pr "#<pr-number>" --include-body
 ```
 
-This handles both frontmatter and table dual-write automatically. Run once per step completed by the PR.
+This handles both frontmatter and table dual-write automatically. The `--include-body` flag returns the fully-mutated body in the JSON output as `updated_body`, which you MUST use for prose reconciliation in step 3 (do NOT re-fetch via `gh issue view`).
 
-3. **Perform prose reconciliation.** Read the objective body (post-mechanical-update) and compare against what the PR actually did. Check each reconcilable section:
+3. **Perform prose reconciliation.** Use the `updated_body` from the step update JSON output (do NOT re-fetch the issue body via `gh issue view`) and compare against what the PR actually did. Check each reconcilable section:
 
 **Reconciliation Checklist:**
 
