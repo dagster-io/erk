@@ -55,7 +55,7 @@ def test_check_passes_with_valid_docs_in_sync(tmp_path: Path) -> None:
     agent_docs, ctx = _make_context(tmp_path)
 
     # Pre-generate index so sync check passes (calls prettier)
-    sync_agent_docs(agent_docs, tmp_path, dry_run=False)
+    sync_agent_docs(agent_docs, tmp_path, dry_run=False, on_progress=lambda _: None)
 
     runner = CliRunner()
     result = runner.invoke(cli, ["docs", "check"], obj=ctx)

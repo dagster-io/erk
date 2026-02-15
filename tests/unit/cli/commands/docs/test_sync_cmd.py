@@ -78,7 +78,7 @@ def test_sync_check_exits_zero_when_in_sync() -> None:
     # Pre-sync so files match
     from erk.agent_docs.operations import sync_agent_docs
 
-    sync_agent_docs(agent_docs, ctx.repo_root, dry_run=False)
+    sync_agent_docs(agent_docs, ctx.repo_root, dry_run=False, on_progress=lambda _: None)
 
     runner = CliRunner()
     result = runner.invoke(cli, ["docs", "sync", "--check"], obj=ctx)

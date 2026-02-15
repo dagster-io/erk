@@ -178,7 +178,7 @@ def test_collect_tripwires_skips_invalid_docs() -> None:
 
 def test_sync_returns_empty_when_no_docs_dir() -> None:
     agent_docs = FakeAgentDocs(files={}, has_docs_dir=False)
-    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False)
+    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False, on_progress=lambda _: None)
 
     assert result.created == ()
     assert result.updated == ()
@@ -187,7 +187,7 @@ def test_sync_returns_empty_when_no_docs_dir() -> None:
 
 def test_sync_creates_root_index() -> None:
     agent_docs = FakeAgentDocs(has_docs_dir=True, files={"doc.md": VALID_DOC})
-    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False)
+    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False, on_progress=lambda _: None)
 
     assert "index.md" in result.created
     assert "index.md" in agent_docs.written_files
@@ -195,7 +195,7 @@ def test_sync_creates_root_index() -> None:
 
 def test_sync_dry_run_does_not_write() -> None:
     agent_docs = FakeAgentDocs(has_docs_dir=True, files={"doc.md": VALID_DOC})
-    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=True)
+    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=True, on_progress=lambda _: None)
 
     assert "index.md" in result.created
     assert agent_docs.written_files == {}
@@ -209,14 +209,14 @@ def test_sync_creates_category_index_for_two_plus_docs() -> None:
             "architecture/doc2.md": VALID_DOC,
         },
     )
-    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False)
+    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False, on_progress=lambda _: None)
 
     assert "architecture/index.md" in result.created
 
 
 def test_sync_skips_category_index_for_single_doc() -> None:
     agent_docs = FakeAgentDocs(has_docs_dir=True, files={"architecture/doc1.md": VALID_DOC})
-    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False)
+    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False, on_progress=lambda _: None)
 
     created_and_updated = result.created + result.updated
     assert "architecture/index.md" not in created_and_updated
@@ -227,7 +227,7 @@ def test_sync_generates_tripwire_files() -> None:
         has_docs_dir=True,
         files={"architecture/patterns.md": VALID_DOC_WITH_TRIPWIRES},
     )
-    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False)
+    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False, on_progress=lambda _: None)
 
     assert result.tripwires_count == 2
     assert "architecture/tripwires.md" in agent_docs.written_files
@@ -239,10 +239,10 @@ def test_sync_reports_unchanged_when_content_matches() -> None:
     agent_docs = FakeAgentDocs(has_docs_dir=True, files={"doc.md": VALID_DOC})
 
     # First sync creates files
-    sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False)
+    sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False, on_progress=lambda _: None)
 
     # Second sync should find them unchanged
-    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False)
+    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False, on_progress=lambda _: None)
     assert len(result.unchanged) > 0
 
 

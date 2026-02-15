@@ -85,7 +85,9 @@ def check_command(ctx: ErkContext) -> None:
     click.echo(click.style("Checking generated files...", fg="cyan"), err=True)
     click.echo(err=True)
 
-    sync_result = sync_agent_docs(ctx.agent_docs, project_root, dry_run=True)
+    sync_result = sync_agent_docs(
+        ctx.agent_docs, project_root, dry_run=True, on_progress=lambda _: None
+    )
 
     # Show out-of-sync files
     if sync_result.created:
