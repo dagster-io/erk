@@ -60,10 +60,10 @@ Fake backends are appropriate only for validating the ABC contract itself across
 
 Assert on fake gateway mutation tracking properties:
 
-| Property                     | What It Tracks                                    |
-| ---------------------------- | ------------------------------------------------- |
-| `fake_issues.added_comments` | List of `(issue_number, body, comment_id)` tuples |
-| `fake_issues.updated_bodies` | List of `(issue_number, body)` tuples             |
+| Property                     | What It Tracks                                                            |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `fake_issues.added_comments` | List of `(issue_number, body, comment_id)` tuples                         |
+| `fake_issues.updated_bodies` | List of `(issue_number, body)` tuples                                     |
 | `fake_issues.created_labels` | List of `(label, description, color)` tuples from `ensure_label_exists()` |
 
 ## Related Documentation
