@@ -253,7 +253,7 @@ def update_step_in_frontmatter(
     block_content: str,
     step_id: str,
     *,
-    plan: str | None = None,
+    plan: str | None,
     pr: str | None,
     status: RoadmapStepStatus | None,
 ) -> str | None:
