@@ -37,6 +37,7 @@
 - **[gateway-removal-pattern.md](gateway-removal-pattern.md)** — Consolidating two gateways into one, Removing deprecated gateway implementations, Refactoring gateway hierarchies
 - **[gateway-signature-migration.md](gateway-signature-migration.md)** — changing gateway method signatures, migrating callers after gateway API changes, updating discriminated union return types across call sites
 - **[gateway-specific-patterns.md](gateway-specific-patterns.md)** — considering mixing discriminated unions with exceptions in gateway methods, designing operations with both expected failures and cleanup steps, reviewing historical gateway error handling experiments
+- **[gateway-vs-backend.md](gateway-vs-backend.md)** — creating a new ABC interface, deciding between gateway and backend patterns, understanding PlanBackend vs Git gateway architecture, choosing the right abstraction pattern for a new service
 - **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
 - **[gist-materials-interchange.md](gist-materials-interchange.md)** — working with learn materials upload/download, debugging gist-based file transfer, implementing new file packing formats
 - **[git-graphite-quirks.md](git-graphite-quirks.md)** — debugging unexpected git/gt behavior, handling rebase/restack edge cases, writing conflict detection logic, troubleshooting detached HEAD states, handling concurrent worktree operations, understanding worktree lock files
