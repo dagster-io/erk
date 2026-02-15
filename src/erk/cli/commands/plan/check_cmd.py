@@ -5,10 +5,9 @@ from pathlib import Path
 
 import click
 
-from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
-from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import find_metadata_block
@@ -135,9 +134,10 @@ def check_plan(ctx: ErkContext, identifier: str) -> None:
     Args:
         identifier: Plan identifier (e.g., "42" or GitHub URL)
     """
-    repo = discover_repo_context(ctx, ctx.cwd)
-    ensure_erk_metadata_dir(repo)  # Ensure erk metadata directories exist
-    repo_root = repo.root  # Use git repository root for GitHub operations
+    if isinstance(ctx.repo, NoRepoSentinel):
+        user_output(click.style("Error: ", fg="red") + "Not in a git repository")
+        raise SystemExit(1)
+    repo_root = ctx.repo.root
 
     # Parse identifier - raises click.ClickException if invalid
     issue_number = parse_issue_identifier(identifier)
