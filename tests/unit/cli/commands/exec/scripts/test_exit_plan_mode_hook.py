@@ -802,6 +802,44 @@ class TestBuildBlockingMessage:
         # Should NOT have the TUI editor warning
         assert "terminal-based editor" not in message
 
+    def test_display_plan_instruction_when_plan_file_path_provided(self) -> None:
+        """Message includes instruction to display plan when plan_file_path is provided."""
+        plan_path = Path("/home/user/.claude/plans/my-plan.md")
+        message = build_blocking_message(
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_id=None,
+            plan_title="My Plan",
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
+        )
+        assert "DISPLAY PLAN" in message
+        assert str(plan_path) in message
+        # Display instruction should appear before PLAN SAVE PROMPT
+        display_pos = message.index("DISPLAY PLAN")
+        save_prompt_pos = message.index("PLAN SAVE PROMPT")
+        assert display_pos < save_prompt_pos
+
+    def test_no_display_plan_instruction_when_no_path(self) -> None:
+        """No display plan instruction when plan_file_path is None."""
+        message = build_blocking_message(
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=None,
+            objective_id=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
+        )
+        assert "DISPLAY PLAN" not in message
+        # Should still have the save prompt
+        assert "PLAN SAVE PROMPT" in message
+
 
 # ============================================================================
 # Integration Tests - Verify I/O Layer Works (minimal mocking)

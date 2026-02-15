@@ -261,7 +261,7 @@ def build_blocking_message(
         session_id: Claude session ID for marker creation commands.
         current_branch: Current git branch name.
         plan_file_path: Path to the plan file, if it exists.
-        objective_issue: Objective issue number, if this plan is part of an objective.
+        objective_id: Objective issue number, if this plan is part of an objective.
         plan_title: Title extracted from plan file, if available.
         worktree_name: Directory name of current worktree.
         pr_number: PR number if exists for current branch.
@@ -301,26 +301,40 @@ def build_blocking_message(
     # Build header for AskUserQuestion (max 12 chars)
     header = abbreviate_for_header(current_branch)
 
-    lines = [
-        "PLAN SAVE PROMPT",
-        "",
-        "A plan exists for this session but has not been saved.",
-        "",
-        "Use AskUserQuestion to ask the user:",
-        f'  question: "{question_text}"',
-        f'  header: "{header}"',
-        "",
-        "IMPORTANT: Present options in this exact order:",
-        '  1. "Save the plan" (Recommended) - Save plan as a GitHub issue and stop. '
-        "Does NOT proceed to implementation.",
-        '  2. "Do not save issue and implement here" - Skip saving, implement directly '
-        "in current worktree (for small PR iterations that don't need issue tracking).",
-        '  3. "Save plan and implement here" - Save to GitHub, then immediately '
-        "implement (full workflow).",
-        '  4. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
-        '  5. "Save and submit for review" - Save plan as GitHub issue, then create a '
-        "review PR for inline feedback. Prints the review PR link.",
-    ]
+    lines: list[str] = []
+
+    # Instruct agent to display the plan so the user can review it
+    if plan_file_path is not None:
+        lines.extend(
+            [
+                "DISPLAY PLAN: Before asking the question below, read the plan file and display",
+                f"its contents to the user with proper markdown formatting: {plan_file_path}",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
+            "PLAN SAVE PROMPT",
+            "",
+            "A plan exists for this session but has not been saved.",
+            "",
+            "Use AskUserQuestion to ask the user:",
+            f'  question: "{question_text}"',
+            f'  header: "{header}"',
+            "",
+            "IMPORTANT: Present options in this exact order:",
+            '  1. "Save the plan" (Recommended) - Save plan as a GitHub issue and stop. '
+            "Does NOT proceed to implementation.",
+            '  2. "Do not save issue and implement here" - Skip saving, implement directly '
+            "in current worktree (for small PR iterations that don't need issue tracking).",
+            '  3. "Save plan and implement here" - Save to GitHub, then immediately '
+            "implement (full workflow).",
+            '  4. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
+            '  5. "Save and submit for review" - Save plan as GitHub issue, then create a '
+            "review PR for inline feedback. Prints the review PR link.",
+        ]
+    )
 
     if current_branch in ("master", "main"):
         lines.extend(
