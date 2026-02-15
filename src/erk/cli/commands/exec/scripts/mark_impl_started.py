@@ -34,18 +34,10 @@ import click
 
 from erk_shared.context.helpers import (
     require_cwd,
+    require_plan_backend,
     require_repo_root,
 )
-from erk_shared.context.helpers import (
-    require_issues as require_github_issues,
-)
 from erk_shared.env import in_github_actions
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.plan_header import (
-    update_plan_header_local_impl_event,
-    update_plan_header_remote_impl,
-)
-from erk_shared.gateway.github.types import BodyText
 from erk_shared.impl_folder import read_plan_ref, write_local_run_state
 
 
@@ -127,9 +119,9 @@ def mark_impl_started(ctx: click.Context, session_id: str | None) -> None:
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(0) from None
 
-    # Get GitHub Issues from context
+    # Get PlanBackend from context
     try:
-        github_issues = require_github_issues(ctx)
+        backend = require_plan_backend(ctx)
     except SystemExit:
         result = MarkImplError(
             success=False,
@@ -139,52 +131,30 @@ def mark_impl_started(ctx: click.Context, session_id: str | None) -> None:
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(0) from None
 
-    # Fetch current issue
-    issue = github_issues.get_issue(repo_root, int(plan_ref.plan_id))
-    if isinstance(issue, IssueNotFound):
-        result = MarkImplError(
-            success=False,
-            error_type="issue-not-found",
-            message=f"Issue #{int(plan_ref.plan_id)} not found",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0)
-
-    # Update impl event based on environment
+    # Update metadata directly via PlanBackend based on environment
     try:
         if in_github_actions():
-            updated_body = update_plan_header_remote_impl(
-                issue_body=issue.body,
-                remote_impl_at=timestamp,
+            backend.update_metadata(
+                repo_root,
+                plan_ref.plan_id,
+                metadata={"last_remote_impl_at": timestamp},
             )
         else:
-            updated_body = update_plan_header_local_impl_event(
-                issue_body=issue.body,
-                local_impl_at=timestamp,
-                event="started",
-                session_id=session_id,
-                user=user,
+            backend.update_metadata(
+                repo_root,
+                plan_ref.plan_id,
+                metadata={
+                    "last_local_impl_at": timestamp,
+                    "last_local_impl_event": "started",
+                    "last_local_impl_session": session_id,
+                    "last_local_impl_user": user,
+                },
             )
-    except ValueError as e:
-        # plan-header block not found (old format issue)
-        result = MarkImplError(
-            success=False,
-            error_type="no-plan-header-block",
-            message=str(e),
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0) from None
-
-    # Update issue body
-    try:
-        github_issues.update_issue_body(
-            repo_root, int(plan_ref.plan_id), BodyText(content=updated_body)
-        )
     except RuntimeError as e:
         result = MarkImplError(
             success=False,
             error_type="github-api-failed",
-            message=f"Failed to update issue body: {e}",
+            message=f"Failed to update plan metadata: {e}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(0) from None

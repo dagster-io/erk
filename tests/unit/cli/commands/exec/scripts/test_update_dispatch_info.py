@@ -1,7 +1,7 @@
 """Unit tests for update_dispatch_info kit CLI command.
 
 Tests GitHub issue plan-header dispatch info updates.
-Uses FakeGitHubIssues for fast, reliable testing without subprocess mocking.
+Uses real GitHubPlanStore with FakeGitHubIssues for testing.
 """
 
 import json
@@ -178,8 +178,8 @@ def test_update_dispatch_info_issue_not_found() -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "issue-not-found"
-    assert "#999" in output["message"]
+    assert output["error"] == "github-api-failed"
+    assert "999" in output["message"]
 
 
 def test_update_dispatch_info_no_plan_header_block() -> None:
@@ -200,7 +200,7 @@ This is an issue created before plan-header blocks were introduced.
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "no-plan-header-block"
+    assert output["error"] == "github-api-failed"
 
 
 def test_update_dispatch_info_github_api_failure() -> None:
