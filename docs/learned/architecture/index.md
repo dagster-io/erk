@@ -68,7 +68,7 @@
 - **[multi-worktree-state.md](multi-worktree-state.md)** — checkout operations in multi-worktree repositories, landing PRs with worktree cleanup, understanding git single-checkout constraint, debugging checkout failures across worktrees
 - **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
 - **[optional-field-propagation.md](optional-field-propagation.md)** — transforming dataclass instances in pipelines, debugging null metadata fields, adding optional fields to dataclasses
-- **[parallel-agent-pattern.md](parallel-agent-pattern.md)** — launching multiple agents concurrently, using Task with run_in_background, collecting results with TaskOutput, running agents in parallel
+- **[parallel-agent-pattern.md](parallel-agent-pattern.md)** — launching multiple agents concurrently, using Task with run_in_background, collecting results with TaskOutput, running agents in parallel, using file-polling or sentinel files for agent synchronization
 - **[parameter-threading-pattern.md](parameter-threading-pattern.md)** — adding parameters to multi-layer commands (skill → command → exec), working with slash commands that call erk exec, debugging "No such option" errors in commands
 - **[pathlib-symlinks.md](pathlib-symlinks.md)** — Writing file validation code, Debugging unexpected path resolution behavior, Working with symlinked configuration files
 - **[permission-modes.md](permission-modes.md)** — Working with interactive agent permissions, Implementing Codex or Claude backend integration, Modifying permission mode configuration
