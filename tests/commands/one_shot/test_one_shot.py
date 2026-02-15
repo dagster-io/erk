@@ -36,10 +36,10 @@ def test_one_shot_happy_path() -> None:
         assert result.exit_code == 0, f"Command failed: {result.output}"
         assert "Done!" in result.output
 
-        # Verify branch was created
+        # Verify branch was created with P<N>- prefix (skeleton plan issue created first)
         assert len(git.created_branches) == 1
         created = git.created_branches[0]
-        assert created[1].startswith("oneshot-")
+        assert created[1].startswith("P")
         assert created[2] == "main"  # start_point is trunk
 
         # Verify push to remote

@@ -45,7 +45,17 @@ Follow the planning conventions in `docs/learned/planning/` if available.
 
 ## Step 6: Save Plan to GitHub Issue
 
-Run the following command to save the plan as a GitHub issue:
+Check the `$PLAN_ISSUE_NUMBER` environment variable:
+
+**If `$PLAN_ISSUE_NUMBER` is set (non-empty):** A skeleton plan issue was pre-created at dispatch time. Update it with the real plan content:
+
+```bash
+erk exec plan-update-issue --issue-number $PLAN_ISSUE_NUMBER --plan-path .impl/plan.md --format json
+```
+
+Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `issue_number`. To get the `title`, extract the first `# ` heading from `.impl/plan.md`.
+
+**If `$PLAN_ISSUE_NUMBER` is not set (empty):** Fall back to creating a new issue (backwards compatible for direct `erk one-shot` calls without pre-created skeleton):
 
 ```bash
 erk exec plan-save-to-issue --plan-file .impl/plan.md --format json --created-from-workflow-run-url "$WORKFLOW_RUN_URL"

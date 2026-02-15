@@ -39,6 +39,11 @@ on:
         required: false
         type: string
         default: ""
+      plan_issue_number:
+        description: "Pre-created plan issue number (for P<N>- branch naming)"
+        required: false
+        type: string
+        default: ""
 
 concurrency:
   group: one-shot-${{ inputs.branch_name }}
@@ -127,6 +132,7 @@ jobs:
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
           STEP_ID: ${{ inputs.step_id }}
+          PLAN_ISSUE_NUMBER: ${{ inputs.plan_issue_number }}
 
       - name: Verify plan outputs exist
         if: steps.plan.outputs.plan_success == 'true'
