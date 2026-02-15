@@ -112,6 +112,7 @@ class PlanDataTable(DataTable):
         """
         self._plan_filters = plan_filters
         self._view_mode = view_mode
+        # Reset column indices before _setup_columns rebuilds them
         self._plan_column_index = 0
         self._objective_column_index = None
         self._pr_column_index = None
