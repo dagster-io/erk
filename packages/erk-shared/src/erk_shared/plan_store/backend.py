@@ -152,6 +152,7 @@ class PlanBackend(PlanStore):
             metadata: New metadata to set
 
         Raises:
+            PlanHeaderNotFoundError: If plan has no plan-header metadata block
             RuntimeError: If provider fails or plan not found
         """
         ...

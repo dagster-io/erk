@@ -72,6 +72,10 @@ class CreatePlanResult:
     url: str
 
 
+class PlanHeaderNotFoundError(RuntimeError):
+    """Raised when a plan exists but has no plan-header metadata block."""
+
+
 @dataclass(frozen=True)
 class PlanNotFound:
     """Result when a plan cannot be found by identifier."""

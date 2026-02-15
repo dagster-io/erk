@@ -38,7 +38,14 @@ from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.plan_store.backend import PlanBackend
-from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanNotFound, PlanQuery, PlanState
+from erk_shared.plan_store.types import (
+    CreatePlanResult,
+    Plan,
+    PlanHeaderNotFoundError,
+    PlanNotFound,
+    PlanQuery,
+    PlanState,
+)
 
 
 def _parse_objective_id(value: object) -> int | None:
@@ -399,7 +406,7 @@ class GitHubPlanStore(PlanBackend):
         # Parse current metadata from issue body
         block = find_metadata_block(issue.body, "plan-header")
         if block is None:
-            raise RuntimeError("plan-header block not found in issue body")
+            raise PlanHeaderNotFoundError("plan-header block not found in issue body")
 
         current_data = dict(block.data)
 

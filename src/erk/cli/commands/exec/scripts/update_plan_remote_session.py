@@ -30,7 +30,7 @@ from datetime import UTC
 import click
 
 from erk_shared.context.helpers import require_plan_backend, require_repo_root, require_time
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PlanHeaderNotFoundError, PlanNotFound
 
 
 @dataclass(frozen=True)
@@ -124,13 +124,10 @@ def update_plan_remote_session(
     # Update metadata via PlanBackend
     try:
         backend.update_metadata(repo_root, plan_id, metadata)
+    except PlanHeaderNotFoundError as e:
+        _output_error("no-plan-header-block", str(e))
     except RuntimeError as e:
-        # Only plan-header errors expected here since we already checked existence
-        error_msg = str(e)
-        if "plan-header" in error_msg.lower():
-            _output_error("no-plan-header-block", error_msg)
-        else:
-            _output_error("github-api-failed", f"Failed to update metadata: {e}")
+        _output_error("github-api-failed", f"Failed to update metadata: {e}")
         return  # Never reached, but helps type checker
 
     result_success = UpdateSuccess(

@@ -7,7 +7,7 @@ import pytest
 
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.plan_store.github import GitHubPlanStore
-from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
+from erk_shared.plan_store.types import PlanHeaderNotFoundError, PlanNotFound, PlanQuery, PlanState
 from tests.test_utils.github_helpers import create_test_issue
 
 
@@ -894,7 +894,7 @@ def test_update_metadata_no_plan_header_block() -> None:
     fake_github = FakeGitHubIssues(issues={42: issue})
     store = GitHubPlanStore(fake_github)
 
-    with pytest.raises(RuntimeError, match="plan-header block not found"):
+    with pytest.raises(PlanHeaderNotFoundError, match="plan-header block not found"):
         store.update_metadata(
             repo_root=Path("/fake/repo"),
             plan_id="42",
