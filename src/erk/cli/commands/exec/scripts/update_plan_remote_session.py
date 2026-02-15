@@ -30,6 +30,7 @@ from datetime import UTC
 import click
 
 from erk_shared.context.helpers import require_plan_backend, require_repo_root, require_time
+from erk_shared.plan_store.types import PlanNotFound
 
 
 @dataclass(frozen=True)
@@ -114,15 +115,20 @@ def update_plan_remote_session(
         "last_remote_impl_session_id": session_id,
     }
 
+    # LBYL: Check plan exists before updating
+    plan_result = backend.get_plan(repo_root, plan_id)
+    if isinstance(plan_result, PlanNotFound):
+        _output_error("issue-not-found", f"Issue #{issue_number} not found")
+        return  # Never reached, but helps type checker
+
     # Update metadata via PlanBackend
     try:
         backend.update_metadata(repo_root, plan_id, metadata)
     except RuntimeError as e:
+        # Only plan-header errors expected here since we already checked existence
         error_msg = str(e)
         if "plan-header" in error_msg.lower():
             _output_error("no-plan-header-block", error_msg)
-        elif f"Issue #{issue_number} not found" in error_msg:
-            _output_error("issue-not-found", f"Issue #{issue_number} not found")
         else:
             _output_error("github-api-failed", f"Failed to update metadata: {e}")
         return  # Never reached, but helps type checker

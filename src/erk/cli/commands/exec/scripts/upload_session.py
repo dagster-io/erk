@@ -34,14 +34,20 @@ Examples:
 """
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC
 from pathlib import Path
 from typing import Literal
 
 import click
 
-from erk_shared.context.helpers import require_github, require_plan_backend, require_repo_root
+from erk_shared.context.helpers import (
+    require_github,
+    require_plan_backend,
+    require_repo_root,
+    require_time,
+)
 from erk_shared.gateway.github.abc import GistCreateError
+from erk_shared.plan_store.types import PlanNotFound
 
 
 @click.command(name="upload-session")
@@ -83,6 +89,7 @@ def upload_session(
     """
     repo_root = require_repo_root(ctx)
     github = require_github(ctx)
+    time = require_time(ctx)
 
     # Read session content
     session_content = session_file.read_text(encoding="utf-8")
@@ -121,7 +128,7 @@ def upload_session(
 
         backend = require_plan_backend(ctx)
         plan_id = str(issue_number)
-        timestamp = datetime.now(UTC).isoformat()
+        timestamp = time.now().replace(tzinfo=UTC).isoformat()
         metadata: dict[str, object] = {
             "last_session_gist_url": gist_result.gist_url,
             "last_session_gist_id": gist_result.gist_id,
@@ -130,12 +137,19 @@ def upload_session(
             "last_session_source": source,
         }
 
-        try:
-            backend.update_metadata(repo_root, plan_id, metadata)
-            result["issue_updated"] = True
-        except RuntimeError as e:
-            # Issue update failed but gist was created - partial success
+        # LBYL: Check plan exists before updating
+        plan_result = backend.get_plan(repo_root, plan_id)
+        if isinstance(plan_result, PlanNotFound):
+            # Issue not found but gist was created - partial success
             result["issue_updated"] = False
-            result["issue_update_error"] = str(e)
+            result["issue_update_error"] = f"Issue #{issue_number} not found"
+        else:
+            try:
+                backend.update_metadata(repo_root, plan_id, metadata)
+                result["issue_updated"] = True
+            except RuntimeError as e:
+                # Issue update failed but gist was created - partial success
+                result["issue_updated"] = False
+                result["issue_update_error"] = str(e)
 
     click.echo(json.dumps(result))
