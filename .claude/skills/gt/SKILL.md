@@ -13,6 +13,35 @@ description:
 
 Graphite (gt) is a CLI tool for managing stacked pull requests - breaking large features into small, incremental changes built on top of each other. This skill provides the mental model, command reference, and workflow patterns needed to work effectively with gt.
 
+## CRITICAL: Always Use `--no-interactive`
+
+**NEVER invoke any `gt` command without `--no-interactive`.** This is a global flag inherited by every gt command — not a per-command option.
+
+Without `--no-interactive`, gt may open prompts, pagers, or editors that hang indefinitely in agent/CI contexts. The `--force` flag does NOT prevent prompts — you must use `--no-interactive` separately.
+
+```bash
+# WRONG - may hang waiting for user input
+gt sync
+gt submit --force
+gt track --parent main
+
+# CORRECT - always pass --no-interactive
+gt sync --no-interactive
+gt submit --no-interactive
+gt track --parent main --no-interactive
+gt restack --no-interactive
+gt create my-branch -m "message" --no-interactive
+```
+
+**What `--interactive` controls (all disabled by `--no-interactive`):**
+
+- Prompts (confirmation dialogs in sync, delete, submit, etc.)
+- Pagers (output paging in log)
+- Editors (commit message editing in create/modify, PR metadata in submit)
+- Interactive selectors (branch selection in checkout, move, track)
+
+**Note:** `gt modify --interactive-rebase` is a separate, unrelated flag that starts a git interactive rebase. It is NOT the same as the global `--interactive`.
+
 ## Core Mental Model
 
 ### Stacks are Linear Chains
@@ -94,6 +123,8 @@ All gt metadata is stored in the shared `.git` directory (accessible across work
 
 ## Essential Commands
 
+**Remember: ALL gt commands below must include `--no-interactive`** (see [CRITICAL: Always Use `--no-interactive`](#critical-always-use---no-interactive) above).
+
 ### Common Workflow Commands
 
 | Command             | Alias   | Purpose                                                               |
@@ -144,23 +175,23 @@ Build a feature in multiple reviewable chunks:
 
 ```bash
 # 1. Start from trunk
-gt checkout main
+gt checkout main --no-interactive
 git pull
 
 # 2. Create first branch
-gt create phase-1 -m "Add API endpoints"
+gt create phase-1 -m "Add API endpoints" --no-interactive
 # ... make changes ...
 git add .
-gt modify -m "Add API endpoints"
+gt modify -m "Add API endpoints" --no-interactive
 
 # 3. Create second branch on top
-gt create phase-2 -m "Update frontend"
+gt create phase-2 -m "Update frontend" --no-interactive
 # ... make changes ...
 git add .
-gt modify -m "Update frontend"
+gt modify -m "Update frontend" --no-interactive
 
 # 4. Submit entire stack
-gt submit --stack
+gt submit --stack --no-interactive
 
 # Result: 2 PRs created
 # PR #101: phase-1 (base: main)
@@ -173,17 +204,17 @@ Update a branch in the middle of a stack:
 
 ```bash
 # Navigate down to target branch
-gt down  # Repeat as needed
+gt down --no-interactive  # Repeat as needed
 
 # Make changes
 # ... edit files ...
 git add .
 
 # Modify (auto-restacks upstack branches)
-gt modify -m "Address review feedback"
+gt modify -m "Address review feedback" --no-interactive
 
 # Resubmit stack
-gt submit --stack
+gt submit --stack --no-interactive
 ```
 
 ### Pattern 3: Adding to Existing Stack
@@ -192,16 +223,13 @@ Insert a new branch in the middle:
 
 ```bash
 # Checkout the parent where you want to insert
-gt checkout phase-1
+gt checkout phase-1 --no-interactive
 
 # Create new branch with --insert
-gt create phase-1.5 --insert -m "Add validation"
-
-# Select which child to move onto new branch
-# Interactive prompt appears
+gt create phase-1.5 --insert -m "Add validation" --no-interactive
 
 # Submit new PR
-gt submit
+gt submit --no-interactive
 ```
 
 ### Pattern 4: Syncing After Merges
@@ -209,12 +237,8 @@ gt submit
 Clean up after PRs merge on GitHub:
 
 ```bash
-# Run sync
-gt sync
-
-# Prompts to delete merged branches
-# Confirms deletion
-y
+# Run sync (--no-interactive auto-confirms branch deletion)
+gt sync --no-interactive
 
 # Result:
 # - Merged branches deleted locally
@@ -228,20 +252,20 @@ Break up a large commit into reviewable pieces:
 
 ```bash
 # Checkout branch with large commit
-gt checkout large-feature
+gt checkout large-feature --no-interactive
 
 # Split into single-commit branches
-gt split
+gt split --no-interactive
 
 # Rename branches meaningfully
-gt rename add-api-endpoints
-gt up
-gt rename add-frontend
-gt up
-gt rename add-tests
+gt rename add-api-endpoints --no-interactive
+gt up --no-interactive
+gt rename add-frontend --no-interactive
+gt up --no-interactive
+gt rename add-tests --no-interactive
 
 # Submit
-gt submit --stack
+gt submit --stack --no-interactive
 ```
 
 ## Common Mistakes to Avoid
