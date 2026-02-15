@@ -213,11 +213,7 @@ class ErkDashApp(App):
         view_config = get_view_config(self._view_mode)
         self._data_cache[view_config.labels] = rows
 
-        # Filter rows by view mode
-        if self._view_mode == ViewMode.LEARN:
-            rows = [r for r in rows if r.is_learn_plan]
-        elif self._view_mode == ViewMode.PLANS:
-            rows = [r for r in rows if not r.is_learn_plan]
+        rows = self._filter_rows_for_view(rows, self._view_mode)
 
         self._all_rows = rows
         self._loading = False
@@ -258,6 +254,25 @@ class ErkDashApp(App):
             self._sort_state.key,
             self._activity_by_issue if self._sort_state.key == SortKey.BRANCH_ACTIVITY else None,
         )
+
+    @staticmethod
+    def _filter_rows_for_view(rows: list[PlanRowData], mode: ViewMode) -> list[PlanRowData]:
+        """Filter rows based on view mode.
+
+        Plans view excludes learn plans; Learn view includes only learn plans.
+
+        Args:
+            rows: Raw rows to filter
+            mode: The active view mode
+
+        Returns:
+            Filtered rows for the given view
+        """
+        if mode == ViewMode.LEARN:
+            return [r for r in rows if r.is_learn_plan]
+        if mode == ViewMode.PLANS:
+            return [r for r in rows if not r.is_learn_plan]
+        return rows
 
     def _notify_with_severity(self, message: str, severity: str | None) -> None:
         """Wrapper for notify that handles optional severity.
@@ -349,12 +364,7 @@ class ErkDashApp(App):
         # Check cache for the new view's labels
         cached_data = self._data_cache.get(view_config.labels)
         if cached_data is not None:
-            # Apply view-mode filter
-            rows = cached_data
-            if mode == ViewMode.LEARN:
-                rows = [r for r in rows if r.is_learn_plan]
-            elif mode == ViewMode.PLANS:
-                rows = [r for r in rows if not r.is_learn_plan]
+            rows = self._filter_rows_for_view(cached_data, mode)
             self._all_rows = rows
             self._rows = self._apply_filter_and_sort(rows)
             if self._table is not None:
@@ -513,7 +523,8 @@ class ErkDashApp(App):
             self._table.populate(self._rows)
 
         if self._status_bar is not None:
-            self._status_bar.set_plan_count(len(self._rows))
+            view_config = get_view_config(self._view_mode)
+            self._status_bar.set_plan_count(len(self._rows), noun=view_config.display_name.lower())
 
     def _exit_filter_mode(self) -> None:
         """Exit filter mode, restore all rows, and focus table."""
@@ -530,7 +541,8 @@ class ErkDashApp(App):
             self._table.focus()
 
         if self._status_bar is not None:
-            self._status_bar.set_plan_count(len(self._rows))
+            view_config = get_view_config(self._view_mode)
+            self._status_bar.set_plan_count(len(self._rows), noun=view_config.display_name.lower())
 
     def action_open_row(self) -> None:
         """Open selected row - PR if available, otherwise issue."""

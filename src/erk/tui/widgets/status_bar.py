@@ -35,7 +35,7 @@ class StatusBar(Static):
         self._message: str | None = None
         self._sort_mode: str | None = None
 
-    def set_plan_count(self, count: int, *, noun: str = "plans") -> None:
+    def set_plan_count(self, count: int, *, noun: str) -> None:
         """Update the plan count display.
 
         Args:

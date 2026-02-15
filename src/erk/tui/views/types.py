@@ -54,6 +54,8 @@ OBJECTIVES_VIEW = ViewConfig(
 
 VIEW_CONFIGS: tuple[ViewConfig, ...] = (PLANS_VIEW, LEARN_VIEW, OBJECTIVES_VIEW)
 
+_VIEW_CONFIG_BY_MODE: dict[ViewMode, ViewConfig] = {config.mode: config for config in VIEW_CONFIGS}
+
 
 def get_view_config(mode: ViewMode) -> ViewConfig:
     """Look up the ViewConfig for a given mode.
@@ -64,9 +66,4 @@ def get_view_config(mode: ViewMode) -> ViewConfig:
     Returns:
         The corresponding ViewConfig
     """
-    for config in VIEW_CONFIGS:
-        if config.mode == mode:
-            return config
-    # This should never happen since ViewMode is an enum
-    # and all modes have configs, but satisfy the type checker
-    return PLANS_VIEW
+    return _VIEW_CONFIG_BY_MODE[mode]

@@ -162,7 +162,7 @@ class TestStatusBar:
     def test_set_plan_count_singular(self) -> None:
         """Status bar shows singular 'plan' for count of 1."""
         bar = StatusBar()
-        bar.set_plan_count(1)
+        bar.set_plan_count(1, noun="plans")
         bar._update_display()
         # Check internal state was set
         assert bar._plan_count == 1
@@ -170,7 +170,7 @@ class TestStatusBar:
     def test_set_plan_count_plural(self) -> None:
         """Status bar shows plural 'plans' for count > 1."""
         bar = StatusBar()
-        bar.set_plan_count(5)
+        bar.set_plan_count(5, noun="plans")
         bar._update_display()
         assert bar._plan_count == 5
 
