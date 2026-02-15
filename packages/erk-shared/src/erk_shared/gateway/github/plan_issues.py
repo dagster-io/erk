@@ -16,13 +16,20 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.github.metadata.core import format_plan_commands_section
+from erk_shared.gateway.github.metadata.core import (
+    create_objective_header_block,
+    format_objective_content_comment,
+    format_plan_commands_section,
+    render_metadata_block,
+    update_objective_header_comment_id,
+)
 from erk_shared.gateway.github.metadata.plan_header import (
     format_plan_content_comment,
     format_plan_header_body,
     update_plan_header_comment_id,
 )
 from erk_shared.gateway.github.types import BodyText
+from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_utils import extract_title_from_plan
 
 # Label configurations
@@ -236,27 +243,63 @@ def create_plan_issue(
     )
 
 
+def _build_objective_roadmap_block(plan_content: str) -> str | None:
+    """Build objective-roadmap metadata block from plan content if it has roadmap data.
+
+    Parses the plan content for roadmap tables/phases and, if found, serializes
+    them as YAML frontmatter inside an objective-roadmap metadata block.
+
+    Args:
+        plan_content: The full objective markdown content
+
+    Returns:
+        Rendered objective-roadmap metadata block string, or None if no roadmap found.
+    """
+    # Lazy import to avoid circular dependency
+    from erk.cli.commands.exec.scripts.objective_roadmap_shared import parse_roadmap
+
+    phases, _errors = parse_roadmap(plan_content)
+    if not phases:
+        return None
+
+    # Lazy import to avoid circular dependency
+    from erk.cli.commands.exec.scripts.objective_roadmap_frontmatter import (
+        serialize_steps_to_frontmatter,
+    )
+
+    # Flatten phases into steps for serialization
+    all_steps = [step for phase in phases for step in phase.steps]
+    frontmatter = serialize_steps_to_frontmatter(all_steps)
+
+    return (
+        "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
+        "<!-- erk:metadata-block:objective-roadmap -->\n"
+        f"{frontmatter}\n"
+        "<!-- /erk:metadata-block:objective-roadmap -->"
+    )
+
+
 def create_objective_issue(
     github_issues: GitHubIssues,
     repo_root: Path,
     plan_content: str,
     *,
+    time: Time,
     title: str | None,
     extra_labels: list[str] | None,
 ) -> CreatePlanIssueResult:
-    """Create objective issue with erk-objective label.
+    """Create objective issue with v2 format: metadata body + content comment.
 
-    Objectives are roadmaps, not implementation plans. They have:
-    - Labels: erk-objective (NOT erk-plan - objectives are not plans)
-    - Plan content directly in body (no metadata block)
-    - No comment (content is in body)
-    - No title suffix
-    - No commands section
+    Objectives use the same pattern as plans:
+    - Body: objective-header metadata block + objective-roadmap block (if roadmap exists)
+    - First comment: objective content wrapped in objective-body metadata block
+    - Labels: erk-objective (NOT erk-plan)
+    - No title suffix, no commands section
 
     Args:
         github_issues: GitHubIssues interface (real, fake, or dry-run)
         repo_root: Repository root directory
-        plan_content: The full plan markdown content
+        plan_content: The full objective markdown content
         title: Optional title (extracted from H1 if None)
         extra_labels: Additional labels beyond erk-objective
 
@@ -266,8 +309,9 @@ def create_objective_issue(
     Note:
         Does NOT raise exceptions. All errors returned in result.
     """
-    # Step 1: Validate authentication (username not used in objective body but validates gh CLI)
-    if github_issues.get_current_username() is None:
+    # Step 1: Get GitHub username
+    username = github_issues.get_current_username()
+    if username is None:
         return CreatePlanIssueResult(
             success=False,
             issue_number=None,
@@ -300,12 +344,26 @@ def create_objective_issue(
             error=label_errors,
         )
 
-    # Step 4: Create issue with plan content directly in body (no metadata)
+    # Step 4: Build issue body with metadata blocks
+    created_at = time.now().replace(tzinfo=UTC).isoformat()
+    header_block = create_objective_header_block(
+        created_at=created_at,
+        created_by=username,
+        objective_comment_id=None,
+    )
+    issue_body = render_metadata_block(header_block)
+
+    # Add roadmap block if plan content has roadmap data
+    roadmap_block_content = _build_objective_roadmap_block(plan_content)
+    if roadmap_block_content is not None:
+        issue_body = issue_body + "\n\n" + roadmap_block_content
+
+    # Step 5: Create issue
     try:
         result = github_issues.create_issue(
             repo_root=repo_root,
             title=title,  # No suffix for objectives
-            body=plan_content.strip(),
+            body=issue_body,
             labels=labels,
         )
     except RuntimeError as e:
@@ -317,7 +375,24 @@ def create_objective_issue(
             error=f"Failed to create GitHub issue: {e}",
         )
 
-    # No comment, no commands section for objectives
+    # Step 6: Add first comment with objective content
+    objective_comment = format_objective_content_comment(plan_content)
+    try:
+        comment_id = github_issues.add_comment(repo_root, result.number, objective_comment)
+    except RuntimeError as e:
+        # Partial success - issue created but comment failed
+        return CreatePlanIssueResult(
+            success=False,
+            issue_number=result.number,
+            issue_url=result.url,
+            title=title,
+            error=f"Issue #{result.number} created but failed to add objective comment: {e}",
+        )
+
+    # Step 7: Update issue body with objective_comment_id
+    updated_body = update_objective_header_comment_id(issue_body, comment_id)
+    github_issues.update_issue_body(repo_root, result.number, BodyText(content=updated_body))
+
     return CreatePlanIssueResult(
         success=True,
         issue_number=result.number,

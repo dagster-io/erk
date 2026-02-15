@@ -55,10 +55,77 @@ from erk.cli.commands.exec.scripts.objective_roadmap_shared import RoadmapStepSt
 from erk_shared.context.helpers import require_issues, require_repo_root
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
+    extract_metadata_value,
     extract_raw_metadata_blocks,
     replace_metadata_block_in_body,
 )
 from erk_shared.gateway.github.types import BodyText
+
+
+def _replace_table_in_text(
+    text: str,
+    step_id: str,
+    *,
+    new_plan: str | None,
+    new_pr: str | None,
+    explicit_status: str | None,
+) -> str | None:
+    """Replace the plan/PR cells for a step in a markdown table.
+
+    This is the table-only replacement used for updating the comment in v2 format,
+    where the markdown table lives in the objective-body comment rather than the body.
+
+    Args:
+        text: Text containing a markdown table with step rows.
+        step_id: Step ID to update (e.g., "1.3").
+        new_plan: New plan value. None=preserve, ""=clear, "#6464"=set.
+        new_pr: New PR value. None=preserve, ""=clear, "#123"=set.
+        explicit_status: Explicit status or None to infer.
+
+    Returns:
+        Updated text, or None if the step row was not found.
+    """
+    # 5-col row: | step_id | description | status | plan | pr |
+    pattern = re.compile(
+        r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$",
+        re.MULTILINE,
+    )
+
+    match = pattern.search(text)
+    if match is None:
+        return None
+
+    existing_plan = match.group(4).strip()
+    existing_pr = match.group(5).strip()
+
+    if new_plan is None:
+        resolved_plan = existing_plan
+    elif new_plan:
+        resolved_plan = new_plan
+    else:
+        resolved_plan = "-"
+
+    if new_pr is None:
+        resolved_pr = existing_pr
+    elif new_pr:
+        resolved_pr = new_pr
+    else:
+        resolved_pr = "-"
+
+    if explicit_status is not None:
+        display_status = explicit_status.replace("_", "-")
+    elif resolved_pr != "-" and resolved_pr:
+        display_status = "done"
+    elif resolved_plan != "-" and resolved_plan:
+        display_status = "in-progress"
+    else:
+        display_status = "pending"
+
+    replacement = (
+        f"|{match.group(1)}|{match.group(2)}| {display_status} | {resolved_plan} | {resolved_pr} |"
+    )
+
+    return text[: match.start()] + replacement + text[match.end() :]
 
 
 def _step_error_message(step_id: str, issue_number: int, error: object) -> str:
@@ -201,7 +268,8 @@ def _replace_step_refs_in_body(
         except ValueError:
             return None
 
-    # Also update the markdown table (either as fallback or to keep in sync)
+    # OBJECTIVE_V1_COMPAT: Remove when all objectives use v2
+    # Also update the markdown table in body (v1 fallback)
     # 5-col row: | step_id | description | status | plan | pr |
     pattern = re.compile(
         r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$",
@@ -422,6 +490,26 @@ def update_roadmap_step(
 
     # Single API call to write all updates
     github.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+
+    # v2 format: also update the markdown table in the objective-body comment
+    objective_comment_id = extract_metadata_value(
+        updated_body, "objective-header", "objective_comment_id"
+    )
+    if objective_comment_id is not None:
+        comment_body = github.get_comment_by_id(repo_root, objective_comment_id)
+        updated_comment = comment_body
+        for step_id_val in step:
+            result_comment = _replace_table_in_text(
+                updated_comment,
+                step_id_val,
+                new_plan=plan_ref,
+                new_pr=pr_ref,
+                explicit_status=explicit_status,
+            )
+            if result_comment is not None:
+                updated_comment = result_comment
+        if updated_comment != comment_body:
+            github.update_comment(repo_root, objective_comment_id, updated_comment)
 
     # Build and emit output
     output = _build_output(
