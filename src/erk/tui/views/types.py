@@ -67,3 +67,31 @@ def get_view_config(mode: ViewMode) -> ViewConfig:
         The corresponding ViewConfig
     """
     return _VIEW_CONFIG_BY_MODE[mode]
+
+
+def get_next_view_mode(current: ViewMode) -> ViewMode:
+    """Get the next view mode by cycling forward through VIEW_CONFIGS.
+
+    Args:
+        current: The currently active view mode
+
+    Returns:
+        The next view mode, wrapping around to the first
+    """
+    modes = [c.mode for c in VIEW_CONFIGS]
+    idx = modes.index(current)
+    return modes[(idx + 1) % len(modes)]
+
+
+def get_previous_view_mode(current: ViewMode) -> ViewMode:
+    """Get the previous view mode by cycling backward through VIEW_CONFIGS.
+
+    Args:
+        current: The currently active view mode
+
+    Returns:
+        The previous view mode, wrapping around to the last
+    """
+    modes = [c.mode for c in VIEW_CONFIGS]
+    idx = modes.index(current)
+    return modes[(idx - 1) % len(modes)]
