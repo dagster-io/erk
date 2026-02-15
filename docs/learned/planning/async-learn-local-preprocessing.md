@@ -7,8 +7,8 @@ read_when:
 tripwires:
   - action: "adding subprocess calls to trigger-async-learn"
     warning: "This command uses direct Python function calls, not subprocess invocations. This is intentional — see the direct-call architecture section below."
-  - action: "preprocessing remote sessions locally"
-    warning: "Remote sessions are already preprocessed. Only local sessions (source_type == 'local') go through local preprocessing."
+  - action: "assuming remote sessions skip local preprocessing"
+    warning: "Since PR #6974, remote sessions go through the same _preprocess_session_direct() pipeline as local sessions. They are downloaded first, then preprocessed identically."
 last_audited: "2026-02-08"
 audit_result: clean
 ---
@@ -42,7 +42,7 @@ The direct-call approach won because `trigger-async-learn` orchestrates 6 tightl
 
 During preprocessing, each session is classified as either `"planning"` or `"impl"` based on whether its session ID matches the `planning_session_id` from the plan's GitHub metadata. This classification becomes the filename prefix (e.g., `planning-abc123.xml` vs `impl-def456.xml`), which downstream learn agents use to weight insights differently — planning sessions contain design rationale, while implementation sessions contain execution details.
 
-**Only local sessions are preprocessed.** Remote sessions (from gists) arrive already preprocessed. The preprocessing loop skips any session where `source_type != "local"`.
+**Both local and remote sessions are preprocessed.** Since PR #6974, remote sessions are downloaded locally (via `_download_remote_session_for_learn()`) and then passed through the same `_preprocess_session_direct()` pipeline as local sessions. The unified loop at trigger_async_learn.py:409-460 handles both source types.
 
 ## Material Assembly Pipeline
 
