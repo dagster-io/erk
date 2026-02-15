@@ -365,6 +365,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -397,6 +398,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="P4535-add-feature",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name="erk-slot-02",
@@ -416,6 +418,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch=None,
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -432,6 +435,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="main",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -451,6 +455,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="master",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -469,6 +474,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -486,6 +492,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch=None,
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -503,6 +510,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -520,6 +528,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -538,6 +547,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=None,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -556,6 +566,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=3679,
             plan_title=None,
             worktree_name=None,
@@ -572,6 +583,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -590,6 +602,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title="Add Feature X",
             worktree_name=None,
@@ -607,6 +620,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="P4224-add-feature",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title="Add Feature X",
             worktree_name="erk-slot-02",
@@ -631,6 +645,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name="erk-slot-02",
@@ -652,6 +667,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch=None,
             plan_file_path=None,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -673,6 +689,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -696,6 +713,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -713,6 +731,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -733,6 +752,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -750,6 +770,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -771,6 +792,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=3679,
             plan_title=None,
             worktree_name=None,
@@ -790,6 +812,7 @@ class TestBuildBlockingMessage:
             session_id="session-123",
             current_branch="feature-branch",
             plan_file_path=plan_path,
+            plan_file_content=None,
             objective_id=None,
             plan_title=None,
             worktree_name=None,
@@ -801,6 +824,48 @@ class TestBuildBlockingMessage:
         assert f"${{EDITOR:-code}} {plan_path}" in message
         # Should NOT have the TUI editor warning
         assert "terminal-based editor" not in message
+
+    def test_includes_plan_file_content_when_provided(self) -> None:
+        """Plan file content is included before the PLAN SAVE PROMPT when provided."""
+        plan_path = Path("/home/user/.claude/plans/my-plan.md")
+        plan_content = "# My Plan\n\n## Changes\n\n- Add feature X\n- Fix bug Y\n"
+        message = build_blocking_message(
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            plan_file_content=plan_content,
+            objective_id=None,
+            plan_title="My Plan",
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
+        )
+        assert "PLAN CONTENTS (display this to the user before asking the question):" in message
+        assert plan_content in message
+        # Plan contents should appear before PLAN SAVE PROMPT
+        plan_contents_pos = message.index("PLAN CONTENTS")
+        save_prompt_pos = message.index("PLAN SAVE PROMPT")
+        assert plan_contents_pos < save_prompt_pos
+
+    def test_excludes_plan_file_content_when_none(self) -> None:
+        """Plan file content section is not included when plan_file_content is None."""
+        plan_path = Path("/home/user/.claude/plans/my-plan.md")
+        message = build_blocking_message(
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            plan_file_content=None,
+            objective_id=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
+        )
+        assert "PLAN CONTENTS" not in message
+        # Should still have the save prompt
+        assert "PLAN SAVE PROMPT" in message
 
 
 # ============================================================================

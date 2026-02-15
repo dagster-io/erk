@@ -131,6 +131,7 @@ class HookInput:
     objective_context_marker_exists: bool
     objective_id: int | None  # Objective issue number if marker exists
     plan_file_path: Path | None  # Path to plan file if exists, None otherwise
+    plan_file_content: str | None  # Full text content of plan file, if it exists
     plan_title: str | None  # Title extracted from plan file for display
     current_branch: str | None
     worktree_name: str | None  # Directory name of current worktree
@@ -150,6 +151,7 @@ class HookInput:
         objective_context_marker_exists: bool = False,
         objective_id: int | None = None,
         plan_file_path: Path | None = None,
+        plan_file_content: str | None = None,
         plan_title: str | None = None,
         current_branch: str | None = "feature-branch",
         worktree_name: str | None = None,
@@ -165,6 +167,7 @@ class HookInput:
         - All marker exists flags: False
         - objective_issue: None
         - plan_file_path: None
+        - plan_file_content: None
         - plan_title: None
         - current_branch: "feature-branch"
         - worktree_name: None
@@ -181,6 +184,7 @@ class HookInput:
             objective_context_marker_exists=objective_context_marker_exists,
             objective_id=objective_id,
             plan_file_path=plan_file_path,
+            plan_file_content=plan_file_content,
             plan_title=plan_title,
             current_branch=current_branch,
             worktree_name=worktree_name,
@@ -246,6 +250,7 @@ def build_blocking_message(
     session_id: str,
     current_branch: str | None,
     plan_file_path: Path | None,
+    plan_file_content: str | None,
     objective_id: int | None,
     plan_title: str | None,
     worktree_name: str | None,
@@ -261,7 +266,8 @@ def build_blocking_message(
         session_id: Claude session ID for marker creation commands.
         current_branch: Current git branch name.
         plan_file_path: Path to the plan file, if it exists.
-        objective_issue: Objective issue number, if this plan is part of an objective.
+        plan_file_content: Full text content of the plan file, if it exists.
+        objective_id: Objective issue number, if this plan is part of an objective.
         plan_title: Title extracted from plan file, if available.
         worktree_name: Directory name of current worktree.
         pr_number: PR number if exists for current branch.
@@ -301,26 +307,41 @@ def build_blocking_message(
     # Build header for AskUserQuestion (max 12 chars)
     header = abbreviate_for_header(current_branch)
 
-    lines = [
-        "PLAN SAVE PROMPT",
-        "",
-        "A plan exists for this session but has not been saved.",
-        "",
-        "Use AskUserQuestion to ask the user:",
-        f'  question: "{question_text}"',
-        f'  header: "{header}"',
-        "",
-        "IMPORTANT: Present options in this exact order:",
-        '  1. "Save the plan" (Recommended) - Save plan as a GitHub issue and stop. '
-        "Does NOT proceed to implementation.",
-        '  2. "Do not save issue and implement here" - Skip saving, implement directly '
-        "in current worktree (for small PR iterations that don't need issue tracking).",
-        '  3. "Save plan and implement here" - Save to GitHub, then immediately '
-        "implement (full workflow).",
-        '  4. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
-        '  5. "Save and submit for review" - Save plan as GitHub issue, then create a '
-        "review PR for inline feedback. Prints the review PR link.",
-    ]
+    lines: list[str] = []
+
+    # Include plan contents so the user can see them
+    if plan_file_content is not None:
+        lines.extend(
+            [
+                "PLAN CONTENTS (display this to the user before asking the question):",
+                "",
+                plan_file_content,
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
+            "PLAN SAVE PROMPT",
+            "",
+            "A plan exists for this session but has not been saved.",
+            "",
+            "Use AskUserQuestion to ask the user:",
+            f'  question: "{question_text}"',
+            f'  header: "{header}"',
+            "",
+            "IMPORTANT: Present options in this exact order:",
+            '  1. "Save the plan" (Recommended) - Save plan as a GitHub issue and stop. '
+            "Does NOT proceed to implementation.",
+            '  2. "Do not save issue and implement here" - Skip saving, implement directly '
+            "in current worktree (for small PR iterations that don't need issue tracking).",
+            '  3. "Save plan and implement here" - Save to GitHub, then immediately '
+            "implement (full workflow).",
+            '  4. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
+            '  5. "Save and submit for review" - Save plan as GitHub issue, then create a '
+            "review PR for inline feedback. Prints the review PR link.",
+        ]
+    )
 
     if current_branch in ("master", "main"):
         lines.extend(
@@ -456,6 +477,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             session_id=hook_input.session_id,
             current_branch=hook_input.current_branch,
             plan_file_path=hook_input.plan_file_path,
+            plan_file_content=hook_input.plan_file_content,
             objective_id=hook_input.objective_id,
             plan_title=hook_input.plan_title,
             worktree_name=hook_input.worktree_name,
@@ -659,9 +681,11 @@ def _gather_inputs(
     if session_id is not None:
         plan_file_path = _find_session_plan(session_id, repo_root, claude_installation)
 
-    # Extract title for display (after finding plan file)
+    # Read plan file content and extract title for display (after finding plan file)
+    plan_file_content: str | None = None
     plan_title: str | None = None
     if plan_file_path is not None:
+        plan_file_content = plan_file_path.read_text(encoding="utf-8")
         plan_title = extract_plan_title(plan_file_path)
 
     # Get current branch (only if we need to show the blocking message)
@@ -700,6 +724,7 @@ def _gather_inputs(
         objective_context_marker_exists=objective_context_marker_exists,
         objective_id=objective_id,
         plan_file_path=plan_file_path,
+        plan_file_content=plan_file_content,
         plan_title=plan_title,
         current_branch=current_branch,
         worktree_name=worktree_name,
