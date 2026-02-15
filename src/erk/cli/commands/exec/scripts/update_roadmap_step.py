@@ -178,7 +178,9 @@ def _replace_step_refs_in_body(
             step_id,
             plan=new_plan,
             pr=new_pr,
-            status=cast(RoadmapStepStatus, explicit_status) if explicit_status is not None else None,
+            status=cast(RoadmapStepStatus, explicit_status)
+            if explicit_status is not None
+            else None,
         )
 
         if updated_block_content is None:

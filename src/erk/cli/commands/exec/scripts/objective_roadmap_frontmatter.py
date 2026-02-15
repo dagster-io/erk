@@ -91,7 +91,8 @@ def validate_roadmap_frontmatter(
             errors.append(f"Step {i} field 'status' must be a string")
             return None, errors
         if status not in {"pending", "planning", "done", "in_progress", "blocked", "skipped"}:
-            errors.append(f"Step {i} field 'status' must be one of: pending, planning, done, in_progress, blocked, skipped")
+            valid_statuses = "pending, planning, done, in_progress, blocked, skipped"
+            errors.append(f"Step {i} field 'status' must be one of: {valid_statuses}")
             return None, errors
         if raw_plan is not None and not isinstance(raw_plan, str):
             errors.append(f"Step {i} field 'plan' must be a string or null")
