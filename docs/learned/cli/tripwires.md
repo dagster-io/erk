@@ -38,6 +38,8 @@ Rules triggered by matching actions in code.
 
 **adding or modifying CLI commands without regenerating reference docs** → Read [Auto-Generated Reference Documentation](auto-generated-reference-docs.md) first. After CLI changes, run 'erk-dev gen-exec-reference-docs' to update auto-generated exec reference documentation. Stale docs confuse users and agents.
 
+**adding sequential yes/no prompts for a single decision** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. Consolidate into one binary choice. Multiple prompts for the same decision create unnecessary cognitive load. See the branch reuse example.
+
 **adding session discovery code before checking for preprocessed materials** → Read [Learn Command Conditional Pipeline](learn-command-conditional-pipeline.md) first. Check gist URL first to avoid misleading output. The learn command checks \_get_learn_materials_gist_url() BEFORE session discovery. If a gist exists, all session discovery is skipped.
 
 **adding user-interactive steps (confirmations, prompts) without CI detection** → Read [CI-Aware Commands](ci-aware-commands.md) first. Commands with user interaction must check `in_github_actions()` and skip prompts in CI. Interactive prompts hang indefinitely in GitHub Actions workflows.
@@ -101,6 +103,8 @@ Rules triggered by matching actions in code.
 **skipping session upload after local implementation** → Read [Plan-Implement Workflow](plan-implement.md) first. Local implementations must upload session via capture-session-info + upload-session. This enables async learn workflow. See session upload section below.
 
 **submitting PRs** → Read [PR Submission Decision Framework](pr-submission.md) first. Before creating PRs, understand the workflow tradeoffs
+
+**testing prompts without matching confirm_responses array length** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. confirm_responses array length must match the number of prompts. Too few causes IndexError; too many indicates a prompt was removed without updating tests.
 
 **using EnsureIdeal for discriminated union narrowing** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method.
 

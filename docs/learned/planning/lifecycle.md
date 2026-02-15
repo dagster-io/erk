@@ -17,13 +17,13 @@ tripwires:
     warning: "Always clean .worker-impl/ with `git rm -rf .worker-impl/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
   - action: "implementing PR body generation with checkout footers"
     warning: "HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``"
-  - action: "calling commands that depend on `.impl/issue.json` metadata"
-    warning: "Verify metadata file exists in worktree; if missing, operations silently return empty values."
+  - action: "calling commands that depend on `.impl/plan-ref.json` metadata"
+    warning: "Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json."
 ---
 
 # Plan Lifecycle
 
-Complete documentation for the erk plan lifecycle from creation through merge.
+Complete documentation for the erk plan lifecycle from creation through merge. The lifecycle is currently GitHub-specific but uses provider-agnostic abstractions (PlanRef, PlanProviderType) designed for future provider generalization.
 
 ## Table of Contents
 
@@ -60,14 +60,14 @@ The erk plan lifecycle manages implementation plans from creation through automa
 
 ### Key File Locations at a Glance
 
-| Location               | Purpose                                           |
-| ---------------------- | ------------------------------------------------- |
-| `~/.claude/plans/*.md` | Local plan storage (sorted by modification time)  |
-| `.impl/plan.md`        | Immutable plan in worktree (local implementation) |
-| `.impl/progress.md`    | Mutable progress tracking                         |
-| `.impl/issue.json`     | GitHub issue reference                            |
-| `.impl/run-info.json`  | GitHub Actions run reference (remote only)        |
-| `.worker-impl/`        | Remote implementation folder (GitHub Actions)     |
+| Location               | Purpose                                                        |
+| ---------------------- | -------------------------------------------------------------- |
+| `~/.claude/plans/*.md` | Local plan storage (sorted by modification time)               |
+| `.impl/plan.md`        | Immutable plan in worktree (local implementation)              |
+| `.impl/progress.md`    | Mutable progress tracking                                      |
+| `.impl/plan-ref.json`  | Plan reference (provider-agnostic, replaces legacy issue.json) |
+| `.impl/run-info.json`  | GitHub Actions run reference (remote only)                     |
+| `.worker-impl/`        | Remote implementation folder (GitHub Actions)                  |
 
 ### Which Phase Am I In?
 
@@ -331,18 +331,21 @@ The submit command creates the `.worker-impl/` folder structure:
 .worker-impl/
 ├── plan.md         # Full plan content from issue
 ├── progress.md     # Initial progress tracking (all unchecked)
-├── issue.json      # GitHub issue reference
+├── plan-ref.json   # Plan reference (provider-agnostic)
 └── README.md       # Documentation for the folder
 ```
 
-**`issue.json` structure:**
+**`plan-ref.json` structure:**
 
 ```json
 {
-  "issue_number": 123,
-  "issue_url": "https://github.com/owner/repo/issues/123",
+  "provider": "github",
+  "plan_id": "123",
+  "url": "https://github.com/owner/repo/issues/123",
   "created_at": "2025-01-15T10:30:00Z",
-  "synced_at": "2025-01-15T10:30:00Z"
+  "synced_at": "2025-01-15T10:30:00Z",
+  "labels": ["erk-plan"],
+  "objective_id": null
 }
 ```
 
@@ -970,11 +973,11 @@ gh run view 1234567890 --json displayTitle -q '.displayTitle' | cut -d: -f1
 
 ---
 
-## `.impl/issue.json` Dependency Contract
+## `.impl/plan-ref.json` Dependency Contract
 
-The `.impl/issue.json` file is a critical worktree setup contract. Several commands depend on it:
+The `.impl/plan-ref.json` file (with legacy fallback to `issue.json`) is a critical worktree setup contract. Several commands depend on it:
 
-### Commands That Read `.impl/issue.json`
+### Commands That Read `.impl/plan-ref.json`
 
 | Command                     | Behavior if Missing                         |
 | --------------------------- | ------------------------------------------- |
@@ -986,7 +989,7 @@ The `.impl/issue.json` file is a critical worktree setup contract. Several comma
 
 The most insidious failure is with `get-closing-text`:
 
-1. Worktree setup skips creating `.impl/issue.json`
+1. Worktree setup skips creating `.impl/plan-ref.json`
 2. Implementation proceeds normally
 3. PR is created without "Closes #N" in commit message
 4. Issue remains open after PR merge
@@ -1001,8 +1004,8 @@ When setting up implementation environments:
 
 ```bash
 # Always verify after setup
-if [ ! -f .impl/issue.json ]; then
-  echo "ERROR: Missing issue.json - issue linking will fail"
+if [ ! -f .impl/plan-ref.json ] && [ ! -f .impl/issue.json ]; then
+  echo "ERROR: Missing plan-ref.json - issue linking will fail"
   exit 1
 fi
 ```

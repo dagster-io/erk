@@ -10,7 +10,7 @@ tripwires:
   - action: "modifying business logic in src/ without adding a test"
     warning: "Bug fixes require regression tests (fails before, passes after). Features require behavior tests."
   - action: "implementing interactive prompts with ctx.console.confirm()"
-    warning: "Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. See tests/commands/submit/test_existing_branch_detection.py for examples."
+    warning: "Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples."
   - action: "accessing FakeGit properties in tests"
     warning: "FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway."
   - action: "asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`"

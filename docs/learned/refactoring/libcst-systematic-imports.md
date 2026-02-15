@@ -13,6 +13,8 @@ tripwires:
     warning: "The libcst-refactor agent (.claude/agents/libcst-refactor.md) contains battle-tested patterns, gotchas, and a script template. Load it first."
   - action: "interleaving file moves and import updates"
     warning: "Move ALL files first (git mv), THEN batch-update ALL imports. Interleaving creates intermediate broken states. See gateway-consolidation-checklist.md."
+  - action: "running targeted edits after replace_all operations in the same file"
+    warning: "During type migrations, complete all rename operations before attempting targeted edits. replace_all operations change strings that later edits expect to find."
 ---
 
 # LibCST Systematic Import Refactoring

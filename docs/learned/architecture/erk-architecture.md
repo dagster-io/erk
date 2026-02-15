@@ -40,6 +40,10 @@ tripwires:
     warning: "Use ctx.branch_manager instead. Branch mutation methods are in GraphiteBranchOps sub-gateway, accessible only through BranchManager. Query methods (is_branch_tracked, get_parent_branch, etc.) remain on ctx.graphite."
   - action: "calling GraphiteBranchManager.create_branch() without explicit checkout"
     warning: "GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch."
+  - action: "validating object fields at every callsite instead of at construction"
+    warning: "Validate at the single construction point (factory/reader function). Callers should trust returned objects without re-validation. This is the construction boundary principle."
+  - action: "adding new file format support without read-then-fallback"
+    warning: "When adding new file formats, implement read-then-fallback: try new format first, fall back to old format transparently. See read_plan_ref() for the canonical pattern."
 ---
 
 # Erk Architecture Patterns
