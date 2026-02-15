@@ -29,16 +29,16 @@ class BundledSkillCapability(SkillCapability):
     """Concrete SkillCapability for skills registered via BUNDLED_SKILLS dict."""
 
     def __init__(self, *, _skill_name: str, _description: str) -> None:
-        self.__skill_name = _skill_name
-        self.__description = _description
+        self._skill_name = _skill_name
+        self._description = _description
 
     @property
     def skill_name(self) -> str:
-        return self.__skill_name
+        return self._skill_name
 
     @property
     def description(self) -> str:
-        return self.__description
+        return self._description
 
 
 def create_bundled_skill_capabilities() -> list[SkillCapability]:

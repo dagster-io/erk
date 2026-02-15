@@ -18,6 +18,7 @@ from erk.capabilities.learned_docs import LearnedDocsCapability
 from erk.capabilities.ruff_format import RuffFormatCapability
 from erk.capabilities.skills.bundled import BUNDLED_SKILLS
 from erk.capabilities.statusline import StatuslineCapability
+from erk.core.capabilities.codex_portable import codex_portable_skills
 from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
 from erk.capabilities.workflows.learn import LearnWorkflowCapability
 from erk.core.capabilities.base import (
@@ -365,8 +366,6 @@ def test_all_skill_capabilities_registered() -> None:
 
 def test_all_codex_portable_skills_have_capability() -> None:
     """Drift prevention: every codex_portable_skills() entry must have a registered capability."""
-    from erk.core.capabilities.codex_portable import codex_portable_skills
-
     for skill_name in codex_portable_skills():
         cap = get_capability(skill_name)
         assert cap is not None, (
