@@ -29,6 +29,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_comment_id,
 )
 from erk_shared.gateway.github.types import BodyText
+from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_utils import extract_title_from_plan
 
 # Label configurations
@@ -283,6 +284,7 @@ def create_objective_issue(
     repo_root: Path,
     plan_content: str,
     *,
+    time: Time,
     title: str | None,
     extra_labels: list[str] | None,
 ) -> CreatePlanIssueResult:
@@ -343,7 +345,7 @@ def create_objective_issue(
         )
 
     # Step 4: Build issue body with metadata blocks
-    created_at = datetime.now(UTC).isoformat()
+    created_at = time.now().replace(tzinfo=UTC).isoformat()
     header_block = create_objective_header_block(
         created_at=created_at,
         created_by=username,

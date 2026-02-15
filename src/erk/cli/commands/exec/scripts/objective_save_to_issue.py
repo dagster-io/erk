@@ -27,6 +27,7 @@ from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
     require_repo_root,
+    require_time,
 )
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
@@ -101,6 +102,7 @@ def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: 
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)
+    time = require_time(ctx)
 
     # Session deduplication check
     # Prevent duplicate objective creation when the agent calls objective-save-to-issue
@@ -160,6 +162,7 @@ def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: 
         github_issues=github,
         repo_root=repo_root,
         plan_content=plan,
+        time=time,
         title=None,
         extra_labels=None,
     )

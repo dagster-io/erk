@@ -10,6 +10,7 @@ from erk_shared.gateway.github.plan_issues import (
     create_objective_issue,
     create_plan_issue,
 )
+from erk_shared.gateway.time.fake import FakeTime
 
 
 class TestCreatePlanIssueSuccess:
@@ -558,6 +559,7 @@ class TestCreateObjectiveIssue:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            time=FakeTime(),
             title=None,
             extra_labels=None,
         )
@@ -583,6 +585,7 @@ class TestCreateObjectiveIssue:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            time=FakeTime(),
             title=None,
             extra_labels=None,
         )
@@ -595,8 +598,8 @@ class TestCreateObjectiveIssue:
         assert "[erk-plan]" not in title
         assert "[erk-objective]" not in title
 
-    def test_objective_has_plan_content_in_body(self, tmp_path: Path) -> None:
-        """Objective issues have plan content directly in body, no metadata."""
+    def test_objective_v2_body_has_metadata_and_content_in_comment(self, tmp_path: Path) -> None:
+        """V2 format: body has metadata block, content is in first comment."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\n## Goal\n\nBuild something great."
 
@@ -604,24 +607,27 @@ class TestCreateObjectiveIssue:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            time=FakeTime(),
             title=None,
             extra_labels=None,
         )
 
         assert result.success is True
 
-        # Body should contain the plan content directly
+        # Body should have metadata block (objective-header)
         _, body, _ = fake_gh.created_issues[0]
-        assert "# My Objective" in body
-        assert "## Goal" in body
-        assert "Build something great." in body
+        assert "objective-header" in body
+        assert "created_by: testuser" in body
 
-        # Body should NOT have metadata block
-        assert "schema_version:" not in body
-        assert "created_at:" not in body
+        # Plan content should be in the first comment, not the body
+        assert len(fake_gh.added_comments) == 1
+        _issue_num, comment_body, _comment_id = fake_gh.added_comments[0]
+        assert "# My Objective" in comment_body
+        assert "## Goal" in comment_body
+        assert "Build something great." in comment_body
 
-    def test_objective_has_no_comment(self, tmp_path: Path) -> None:
-        """Objective issues have no comment (content is in body)."""
+    def test_objective_v2_has_content_comment(self, tmp_path: Path) -> None:
+        """V2 format: objective content is added as first comment."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\nContent..."
 
@@ -629,14 +635,18 @@ class TestCreateObjectiveIssue:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            time=FakeTime(),
             title=None,
             extra_labels=None,
         )
 
         assert result.success is True
 
-        # No comments should be added
-        assert len(fake_gh.added_comments) == 0
+        # V2: content is in the first comment
+        assert len(fake_gh.added_comments) == 1
+        _issue_num, comment_body, _comment_id = fake_gh.added_comments[0]
+        assert "objective-body" in comment_body
+        assert "Content..." in comment_body
 
     def test_objective_has_no_commands_section(self, tmp_path: Path) -> None:
         """Objective issues have no commands section."""
@@ -647,14 +657,18 @@ class TestCreateObjectiveIssue:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            time=FakeTime(),
             title=None,
             extra_labels=None,
         )
 
         assert result.success is True
 
-        # Body should not have been updated (no commands section added)
-        assert len(fake_gh.updated_bodies) == 0
+        # Body is updated (to set objective_comment_id), but should NOT have commands section
+        assert len(fake_gh.updated_bodies) == 1
+        _issue_num, updated_body = fake_gh.updated_bodies[0]
+        assert "## Commands" not in updated_body
+        assert "erk prepare" not in updated_body
 
     def test_objective_with_extra_labels(self, tmp_path: Path) -> None:
         """Objective issues can have extra labels."""
@@ -665,6 +679,7 @@ class TestCreateObjectiveIssue:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            time=FakeTime(),
             title=None,
             extra_labels=["priority-high"],
         )
