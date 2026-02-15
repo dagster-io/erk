@@ -76,9 +76,10 @@ The filtering chain applies in order:
 1. Empty/warmup session detection → skip entirely
 2. Documentation block deduplication (by content hash)
 3. Tool parameter truncation (200 char limit)
-4. Tool result pruning (30 line limit, error lines preserved)
-5. Assistant message deduplication
-6. Agent log discovery and inclusion
+4. Assistant message deduplication
+5. Agent log discovery and inclusion
+
+Tool result pruning (30 line limit, error lines preserved) occurs during XML generation, not as a preprocessing filter step.
 
 Typical compression: **~99%** (e.g., 6.2M → 67k chars). Each session is classified as `planning` or `impl` based on whether its session ID matches the `planning_session_id` from GitHub metadata. This classification becomes the filename prefix, which downstream agents use to weight insights differently.
 

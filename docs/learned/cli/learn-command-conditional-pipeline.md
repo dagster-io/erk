@@ -15,17 +15,17 @@ The `erk learn` command checks for preprocessed materials **before** session dis
 
 ## Pattern: Check Preprocessed Before Discovery
 
-```
-learn_cmd.py:136-151
+<!-- Source: src/erk/cli/commands/learn/learn_cmd.py, learn_cmd -->
 
-1. _get_learn_materials_gist_url() → checks plan header for gist_url
+The `learn_cmd()` function in `src/erk/cli/commands/learn/learn_cmd.py` checks for a gist URL before session discovery:
+
+1. `_get_learn_materials_gist_url()` → checks plan header for gist_url
 2. If gist exists:
    - Display "Preprocessed learn materials available" message
    - Skip ALL session discovery
-   - Launch with gist_url directly via _confirm_and_launch()
+   - Launch with gist_url directly via `_confirm_and_launch()`
 3. If no gist:
    - Existing flow: discover sessions, display, confirm, launch
-```
 
 ## Why This Order Matters
 
@@ -35,19 +35,23 @@ Without the early gist check, the command would:
 2. Display confusing "no sessions found" output
 3. Then somehow still need to use the gist
 
-The gist check at line 136 short-circuits the entire discovery pipeline, providing a cleaner user experience.
+The early `_get_learn_materials_gist_url()` call short-circuits the entire discovery pipeline, providing a cleaner user experience.
 
 ## Implementation Details
 
 ### \_get_learn_materials_gist_url()
 
-At `learn_cmd.py:240-259`. Checks the plan's GitHub issue body for a `learn_materials_gist_url` field in the `plan-header` metadata block. Returns `str | None`.
+<!-- Source: src/erk/cli/commands/learn/learn_cmd.py, _get_learn_materials_gist_url -->
+
+See `_get_learn_materials_gist_url()` in `src/erk/cli/commands/learn/learn_cmd.py`. Checks the plan's GitHub issue body for a `learn_materials_gist_url` field in the `plan-header` metadata block. Returns `str | None`.
 
 Uses LBYL pattern: checks `isinstance(issue, IssueNotFound)` before accessing issue body.
 
 ### \_confirm_and_launch()
 
-Extracted helper at `learn_cmd.py:215-237`. Shared by both the gist-exists path and the session-discovery path. Handles:
+<!-- Source: src/erk/cli/commands/learn/learn_cmd.py, _confirm_and_launch -->
+
+See `_confirm_and_launch()` in `src/erk/cli/commands/learn/learn_cmd.py`. Shared by both the gist-exists path and the session-discovery path. Handles:
 
 - Auto-launch with `-i` (interactive) flag
 - User confirmation prompt

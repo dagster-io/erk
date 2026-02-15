@@ -30,56 +30,35 @@ The raw/display duality follows the [Data Contract](data-contract.md) pattern.
 
 ### 2. Populate in real provider (`packages/erk-shared/.../plan_data_provider/real.py`)
 
-Compute the display string and pass both values:
+Compute the display string and pass both values to the `PlanRowData` constructor:
 
-```python
-created_display = format_relative_time(plan.created_at.isoformat()) or "-"
-# ...
-PlanRowData(
-    created_at=plan.created_at,
-    created_display=created_display,
-)
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, RealPlanDataProvider._build_row_data -->
+
+See `RealPlanDataProvider._build_row_data()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` for the `created_display` and `created_at` field population.
 
 ### 3. Add column and value in table (`src/erk/tui/widgets/plan_table.py`)
 
-Add the column definition and include the value in the row's values list:
+Add the column definition and include the value in the row's values list.
 
-```python
-values: list[str | Text] = [plan_cell, Text(row.title), row.created_display]
-```
+<!-- Source: src/erk/tui/widgets/plan_table.py, PlanDataTable -->
 
-Column positioning is index-based. Check filter gate conditions if the column should be conditionally visible.
+See the `values` list construction in `PlanDataTable` in `src/erk/tui/widgets/plan_table.py`. Column positioning is index-based. Check filter gate conditions if the column should be conditionally visible.
 
 ### 4. Update make_plan_row in fake (`packages/erk-shared/.../plan_data_provider/fake.py`)
 
-Add the parameter with a sentinel default:
+Add the parameter with a sentinel default.
 
-```python
-def make_plan_row(
-    *,
-    created_at: datetime | None = None,
-    # ...
-) -> PlanRowData:
-    # Sentinel pattern: default to a fixed datetime
-    effective_created_at = created_at or datetime(2025, 1, 1, tzinfo=UTC)
-    return PlanRowData(
-        created_at=effective_created_at,
-        # ...
-    )
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py, make_plan_row -->
 
-The sentinel pattern (`created_at or datetime(2025, 1, 1, ...)`) provides a stable default for tests that don't care about the created date.
+See `make_plan_row()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`. Uses the sentinel pattern (`created_at or datetime(2025, 1, 1, ...)`) to provide a stable default for tests that don't care about the created date.
 
 ### 5. Handle serialization (`src/erk/cli/commands/exec/scripts/dash_data.py`)
 
 Add datetime-to-string conversion for JSON serialization:
 
-```python
-for key in ("last_local_impl_at", "last_remote_impl_at", "created_at"):
-    if isinstance(data[key], datetime):
-        data[key] = data[key].isoformat()
-```
+<!-- Source: src/erk/cli/commands/exec/scripts/dash_data.py, _serialize_plan_row -->
+
+See `_serialize_plan_row()` in `src/erk/cli/commands/exec/scripts/dash_data.py`. Converts `datetime` fields (including `created_at`) to ISO format strings for JSON output.
 
 ## Checklist
 

@@ -21,7 +21,7 @@ fake_git = FakeGit()
 fake_github = FakeGitHub()
 ctx = ErkContext.for_test(git=fake_git, github=fake_github)
 result = my_function(ctx)
-assert fake_git.committed_messages == ["expected"]
+assert fake_git.commits[0].message == "expected"
 ```
 
 ## Decision Tree
@@ -49,6 +49,8 @@ Exec scripts that read from `~/.claude/` or `~/.erk/` use `Path.home()` as a pro
 1. `Path.home()` is a stdlib function — no gateway wraps it directly
 2. The ClaudeInstallation gateway handles most `~/.claude/` operations, but exec scripts sometimes need raw path access
 3. Parallel test isolation requires monkeypatch to prevent reading from the real home directory
+
+<!-- Conceptual example: illustrates the pytest monkeypatch API pattern, not copied from a specific test -->
 
 ```python
 # Acceptable: monkeypatch for Path.home() in exec script test
