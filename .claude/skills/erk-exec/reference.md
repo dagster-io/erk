@@ -260,10 +260,10 @@ Discover code reviews matching PR changed files.
 
 **Options:**
 
-| Flag            | Type    | Required | Default           | Description                                                        |
-| --------------- | ------- | -------- | ----------------- | ------------------------------------------------------------------ |
-| `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET    | PR number to analyze                                               |
-| `--reviews-dir` | TEXT    | No       | '.claude/reviews' | Directory containing review definitions (default: .claude/reviews) |
+| Flag            | Type    | Required | Default        | Description                                                     |
+| --------------- | ------- | -------- | -------------- | --------------------------------------------------------------- |
+| `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET | PR number to analyze                                            |
+| `--reviews-dir` | TEXT    | No       | '.erk/reviews' | Directory containing review definitions (default: .erk/reviews) |
 
 ### download-learn-materials
 
@@ -1002,14 +1002,14 @@ Run a code review using Claude.
 
 **Options:**
 
-| Flag            | Type    | Required | Default           | Description                                                        |
-| --------------- | ------- | -------- | ----------------- | ------------------------------------------------------------------ |
-| `--name`        | TEXT    | Yes      | Sentinel.UNSET    | Review filename (without .md)                                      |
-| `--pr-number`   | INTEGER | No       | Sentinel.UNSET    | PR number to review (PR mode)                                      |
-| `--local`       | FLAG    | No       | -                 | Review local changes (local mode)                                  |
-| `--base`        | TEXT    | No       | Sentinel.UNSET    | Base branch for local mode (default: auto-detect)                  |
-| `--reviews-dir` | TEXT    | No       | '.claude/reviews' | Directory containing review definitions (default: .claude/reviews) |
-| `--dry-run`     | FLAG    | No       | -                 | Print assembled prompt without running Claude                      |
+| Flag            | Type    | Required | Default        | Description                                                     |
+| --------------- | ------- | -------- | -------------- | --------------------------------------------------------------- |
+| `--name`        | TEXT    | Yes      | Sentinel.UNSET | Review filename (without .md)                                   |
+| `--pr-number`   | INTEGER | No       | Sentinel.UNSET | PR number to review (PR mode)                                   |
+| `--local`       | FLAG    | No       | -              | Review local changes (local mode)                               |
+| `--base`        | TEXT    | No       | Sentinel.UNSET | Base branch for local mode (default: auto-detect)               |
+| `--reviews-dir` | TEXT    | No       | '.erk/reviews' | Directory containing review definitions (default: .erk/reviews) |
+| `--dry-run`     | FLAG    | No       | -              | Print assembled prompt without running Claude                   |
 
 ### session-id-injector-hook
 

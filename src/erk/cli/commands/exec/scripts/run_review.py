@@ -71,8 +71,8 @@ class RunReviewError:
 @click.option("--base", "base_branch", help="Base branch for local mode (default: auto-detect)")
 @click.option(
     "--reviews-dir",
-    default=".claude/reviews",
-    help="Directory containing review definitions (default: .claude/reviews)",
+    default=".erk/reviews",
+    help="Directory containing review definitions (default: .erk/reviews)",
 )
 @click.option(
     "--dry-run",

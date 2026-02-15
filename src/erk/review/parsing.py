@@ -229,7 +229,7 @@ def discover_review_files(reviews_dir: Path) -> list[Path]:
     """Discover all review definition files in a directory.
 
     Args:
-        reviews_dir: Path to the reviews directory (e.g., .github/reviews/).
+        reviews_dir: Path to the reviews directory (e.g., .erk/reviews/).
 
     Returns:
         List of paths to markdown files, sorted alphabetically.

@@ -85,7 +85,7 @@ packages = ["src/erk"]
 ".github/actions/erk-remote-setup" = "erk/data/github/actions/erk-remote-setup"
 # Convention-based code reviews (reviews directory + generic workflow)
 ".github/workflows/code-reviews.yml" = "erk/data/github/workflows/code-reviews.yml"
-".github/reviews" = "erk/data/github/reviews"
+".erk/reviews" = "erk/data/erk/reviews"
 # CI autofix prompt (used by plan-implement workflow)
 ".github/prompts/ci-autofix.md" = "erk/data/github/prompts/ci-autofix.md"
 

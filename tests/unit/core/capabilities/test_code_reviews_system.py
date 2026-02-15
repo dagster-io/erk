@@ -127,7 +127,7 @@ def test_artifacts_lists_all_items() -> None:
     assert ".github/workflows/code-reviews.yml" in paths
     assert ".github/actions/setup-claude-code/" in paths
     assert ".github/actions/setup-claude-erk/" in paths
-    assert ".claude/reviews/" in paths
+    assert ".erk/reviews/" in paths
 
 
 def test_managed_artifacts_lists_workflow_and_actions() -> None:

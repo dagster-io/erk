@@ -137,7 +137,7 @@ def test_discover_reviews_with_matching_files(tmp_path: Path) -> None:
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
-        reviews_dir = cwd / ".claude" / "reviews"
+        reviews_dir = cwd / ".erk" / "reviews"
         _create_review_file(
             reviews_dir,
             "python-review.md",
@@ -174,7 +174,7 @@ def test_discover_reviews_no_matching_files(tmp_path: Path) -> None:
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
-        reviews_dir = cwd / ".claude" / "reviews"
+        reviews_dir = cwd / ".erk" / "reviews"
         _create_review_file(
             reviews_dir,
             "python-review.md",
@@ -211,7 +211,7 @@ def test_discover_reviews_empty_pr(tmp_path: Path) -> None:
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
-        reviews_dir = cwd / ".claude" / "reviews"
+        reviews_dir = cwd / ".erk" / "reviews"
         _create_review_file(
             reviews_dir,
             "review.md",
@@ -246,7 +246,7 @@ def test_discover_reviews_disabled_reviews(tmp_path: Path) -> None:
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
-        reviews_dir = cwd / ".claude" / "reviews"
+        reviews_dir = cwd / ".erk" / "reviews"
         _create_review_file(
             reviews_dir,
             "disabled-review.md",
@@ -284,7 +284,7 @@ def test_discover_reviews_multiple_reviews_partial_match(tmp_path: Path) -> None
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
-        reviews_dir = cwd / ".claude" / "reviews"
+        reviews_dir = cwd / ".erk" / "reviews"
 
         # Python review
         _create_review_file(
@@ -338,7 +338,7 @@ def test_discover_reviews_matrix_format(tmp_path: Path) -> None:
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
-        reviews_dir = cwd / ".claude" / "reviews"
+        reviews_dir = cwd / ".erk" / "reviews"
         _create_review_file(
             reviews_dir,
             "review-a.md",

@@ -8,7 +8,7 @@ from pathlib import Path
 from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.discovery import _compute_directory_hash, _compute_file_hash, _compute_hook_hash
 from erk.artifacts.models import ArtifactFileState, ArtifactState
-from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_github_dir
+from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_erk_dir, get_bundled_github_dir
 from erk.artifacts.state import load_installed_capabilities, save_artifact_state
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
@@ -311,21 +311,21 @@ def _sync_actions(
 
 
 def _sync_reviews(
-    bundled_github_dir: Path,
+    bundled_erk_dir: Path,
     target_reviews_dir: Path,
     *,
     installed_capabilities: frozenset[str],
 ) -> tuple[int, list[SyncedArtifact]]:
-    """Sync erk-managed reviews to project's .claude/reviews/ directory.
+    """Sync erk-managed reviews to project's .erk/reviews/ directory.
 
-    Reviews are bundled in .github/reviews/ but installed to .claude/reviews/.
+    Reviews are bundled in .erk/reviews/ and installed to .erk/reviews/.
     Only syncs files listed in managed artifacts registry.
     Returns tuple of (file_count, synced_artifacts).
     """
     # Inline import: artifact_health.py imports get_bundled_*_dir from this module
     from erk.artifacts.artifact_health import _get_bundled_by_type
 
-    source_reviews_dir = bundled_github_dir / "reviews"
+    source_reviews_dir = bundled_erk_dir / "reviews"
     if not source_reviews_dir.exists():
         return 0, []
 
@@ -463,8 +463,8 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     action_names = _get_bundled_by_type("action", installed_capabilities=None)
     artifacts.extend(_hash_directory_artifacts(actions_dir, action_names, "actions"))
 
-    # Hash reviews from source (bundled in .github/reviews/, installed to .claude/reviews/)
-    reviews_dir = bundled_github_dir / "reviews"
+    # Hash reviews from source (bundled in .erk/reviews/)
+    reviews_dir = get_bundled_erk_dir() / "reviews"
     if reviews_dir.exists():
         for review_name in sorted(_get_bundled_by_type("review", installed_capabilities=None)):
             review_filename = f"{review_name}.md"
@@ -701,15 +701,15 @@ def sync_artifacts(
         total_copied += count
         all_synced.extend(synced)
 
-        # Sync reviews (from .github/reviews/ to .claude/reviews/)
-        target_reviews_dir = project_dir / ".claude" / "reviews"
-        count, synced = _sync_reviews(
-            config.bundled_github_dir,
-            target_reviews_dir,
-            installed_capabilities=config.installed_capabilities,
-        )
-        total_copied += count
-        all_synced.extend(synced)
+    # Sync reviews (from bundled .erk/reviews/ to project .erk/reviews/)
+    target_reviews_dir = project_dir / ".erk" / "reviews"
+    count, synced = _sync_reviews(
+        get_bundled_erk_dir(),
+        target_reviews_dir,
+        installed_capabilities=config.installed_capabilities,
+    )
+    total_copied += count
+    all_synced.extend(synced)
 
     # Sync hooks in settings.json - update to current erk hook commands
     synced_hooks = _sync_hooks(project_dir)

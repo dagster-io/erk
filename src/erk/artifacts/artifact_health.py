@@ -17,7 +17,7 @@ from erk.artifacts.models import (
     InstalledArtifact,
     OrphanCheckResult,
 )
-from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_github_dir
+from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_erk_dir, get_bundled_github_dir
 from erk.core.capabilities.registry import (
     get_capability,
     get_managed_artifacts,
@@ -292,10 +292,10 @@ def get_artifact_health(
         installed_hash = _compute_path_hash(path, is_directory=True)
         artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 
-    # Check reviews (always file-based, in .claude/reviews/)
+    # Check reviews (always file-based, in .erk/reviews/)
     for name in _get_bundled_by_type("review", installed_capabilities=installed_capabilities):
         key = f"reviews/{name}.md"
-        path = project_claude_dir / "reviews" / f"{name}.md"
+        path = project_dir / ".erk" / "reviews" / f"{name}.md"
         installed_hash = _compute_path_hash(path, is_directory=False)
         artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 
@@ -596,11 +596,11 @@ def _find_missing_reviews(
     """Find erk-managed reviews that exist in bundle but missing locally.
 
     Args:
-        project_reviews_dir: Path to project's .claude/reviews/ directory
-        bundled_reviews_dir: Path to bundled .github/reviews/ in erk package
+        project_reviews_dir: Path to project's .erk/reviews/ directory
+        bundled_reviews_dir: Path to bundled .erk/reviews/ in erk package
 
     Returns:
-        Dict mapping ".claude/reviews" to list of missing review filenames
+        Dict mapping ".erk/reviews" to list of missing review filenames
     """
     if not bundled_reviews_dir.exists():
         return {}
@@ -615,7 +615,7 @@ def _find_missing_reviews(
 
         # If bundled but not local, it's missing
         if bundled_review.exists() and not local_review.exists():
-            folder_key = ".claude/reviews"
+            folder_key = ".erk/reviews"
             if folder_key not in missing:
                 missing[folder_key] = []
             missing[folder_key].append(review_filename)
@@ -703,9 +703,9 @@ def find_missing_artifacts(project_dir: Path) -> CompletenessCheckResult:
     bundled_actions_dir = bundled_github_dir / "actions"
     missing.update(_find_missing_actions(project_actions_dir, bundled_actions_dir))
 
-    # Check reviews (in .claude/reviews/, bundled from .github/reviews/)
-    project_reviews_dir = project_claude_dir / "reviews"
-    bundled_reviews_dir = bundled_github_dir / "reviews"
+    # Check reviews (in .erk/reviews/, bundled from .erk/reviews/)
+    project_reviews_dir = project_dir / ".erk" / "reviews"
+    bundled_reviews_dir = get_bundled_erk_dir() / "reviews"
     missing.update(_find_missing_reviews(project_reviews_dir, bundled_reviews_dir))
 
     # Check hooks in settings.json
