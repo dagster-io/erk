@@ -18,7 +18,6 @@ from erk.capabilities.learned_docs import LearnedDocsCapability
 from erk.capabilities.ruff_format import RuffFormatCapability
 from erk.capabilities.skills.bundled import BUNDLED_SKILLS
 from erk.capabilities.statusline import StatuslineCapability
-from erk.core.capabilities.codex_portable import codex_portable_skills
 from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
 from erk.capabilities.workflows.learn import LearnWorkflowCapability
 from erk.core.capabilities.base import (
@@ -27,6 +26,7 @@ from erk.core.capabilities.base import (
     CapabilityResult,
     CapabilityScope,
 )
+from erk.core.capabilities.codex_portable import codex_portable_skills
 from erk.core.capabilities.detection import is_reminder_installed
 from erk.core.capabilities.registry import (
     get_capability,
