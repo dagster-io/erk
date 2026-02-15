@@ -29,6 +29,16 @@ on:
         required: false
         type: string
         default: "claude-sonnet-4-5"
+      objective_issue:
+        description: "Objective issue number (when dispatched from next-plan --one-shot)"
+        required: false
+        type: string
+        default: ""
+      step_id:
+        description: "Roadmap step ID (when dispatched from next-plan --one-shot)"
+        required: false
+        type: string
+        default: ""
 
 concurrency:
   group: one-shot-${{ inputs.branch_name }}
@@ -85,6 +95,20 @@ jobs:
           mkdir -p .impl
           printf '%s\n' "$INSTRUCTION" > .impl/task.md
           echo "Instruction written to .impl/task.md"
+
+      - name: Write objective context
+        if: inputs.objective_issue != ''
+        env:
+          OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
+          STEP_ID: ${{ inputs.step_id }}
+        run: |
+          cat > .impl/objective-context.json <<EOF
+          {
+            "objective_issue": "$OBJECTIVE_ISSUE",
+            "step_id": "$STEP_ID"
+          }
+          EOF
+          echo "Objective context written: issue #$OBJECTIVE_ISSUE, step $STEP_ID"
 
       - name: Detect trunk branch
         id: trunk
@@ -158,6 +182,21 @@ jobs:
             --pr-number "${{ inputs.pr_number }}" \
             --submitted-by "${{ inputs.submitted_by }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Update objective roadmap step
+        if: >
+          steps.plan.outputs.plan_success == 'true'
+          && steps.read_result.outputs.issue_number != ''
+          && inputs.objective_issue != ''
+          && inputs.step_id != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+        run: |
+          erk exec update-roadmap-step \
+            "${{ inputs.objective_issue }}" \
+            "${{ inputs.step_id }}" \
+            --plan "${{ steps.read_result.outputs.issue_number }}"
 
       - name: Fail workflow if planning failed
         if: steps.plan.outputs.plan_success != 'true'
