@@ -484,6 +484,7 @@ class TestCommentCountsDisplay:
         row = provider._build_row_data(
             plan=plan,
             issue_number=123,
+            author="test-user",
             pr_linkages=pr_linkages,
             workflow_run=None,
             worktree_by_issue={},
@@ -565,6 +566,7 @@ class TestCommentCountsDisplay:
         row = provider._build_row_data(
             plan=plan,
             issue_number=123,
+            author="test-user",
             pr_linkages=pr_linkages,
             workflow_run=None,
             worktree_by_issue={},
@@ -632,6 +634,7 @@ class TestCommentCountsDisplay:
         row = provider._build_row_data(
             plan=plan,
             issue_number=123,
+            author="test-user",
             pr_linkages=pr_linkages,
             workflow_run=None,
             worktree_by_issue={},
@@ -702,6 +705,7 @@ class TestLearnStatusDisplay:
         row = provider._build_row_data(
             plan=plan,
             issue_number=123,
+            author="test-user",
             pr_linkages={},
             workflow_run=None,
             worktree_by_issue={},
@@ -770,6 +774,7 @@ class TestLearnStatusDisplay:
         row = provider._build_row_data(
             plan=plan,
             issue_number=123,
+            author="test-user",
             pr_linkages={},
             workflow_run=None,
             worktree_by_issue={},
@@ -836,6 +841,7 @@ class TestLearnStatusDisplay:
         row = provider._build_row_data(
             plan=plan,
             issue_number=123,
+            author="test-user",
             pr_linkages={},
             workflow_run=None,
             worktree_by_issue={},
@@ -904,6 +910,7 @@ class TestLearnStatusDisplay:
         row = provider._build_row_data(
             plan=plan,
             issue_number=123,
+            author="test-user",
             pr_linkages={},
             workflow_run=None,
             worktree_by_issue={},
@@ -974,6 +981,7 @@ class TestLearnStatusDisplay:
         row = provider._build_row_data(
             plan=plan,
             issue_number=123,
+            author="test-user",
             pr_linkages={},
             workflow_run=None,
             worktree_by_issue={},
@@ -1045,6 +1053,7 @@ class TestLearnStatusDisplay:
         row = provider._build_row_data(
             plan=plan,
             issue_number=123,
+            author="test-user",
             pr_linkages={},
             workflow_run=None,
             worktree_by_issue={},
@@ -1117,6 +1126,7 @@ class TestLearnStatusDisplay:
         row = provider._build_row_data(
             plan=plan,
             issue_number=123,
+            author="test-user",
             pr_linkages={},
             workflow_run=None,
             worktree_by_issue={},
