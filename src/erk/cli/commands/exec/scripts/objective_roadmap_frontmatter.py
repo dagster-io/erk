@@ -252,9 +252,15 @@ def update_step_in_frontmatter(
     block_content: str,
     step_id: str,
     *,
+<<<<<<< HEAD
     plan: str | None = None,
     pr: str | None = None,
     status: RoadmapStepStatus | None,
+=======
+    plan: str | None,
+    pr: str | None,
+    status: str | None,
+>>>>>>> 9b8a42d4f (Remove unused default from pr parameter in update_step_in_frontmatter)
 ) -> str | None:
     """Update a step's plan/PR fields (and optionally status) in frontmatter YAML.
 
