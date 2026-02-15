@@ -1,0 +1,155 @@
+name: one-shot
+run-name: "one-shot:${{ inputs.distinct_id }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      instruction:
+        description: "Task description for autonomous execution"
+        required: true
+        type: string
+      branch_name:
+        description: "Branch to work on (created by CLI command)"
+        required: true
+        type: string
+      pr_number:
+        description: "Draft PR number (created by CLI command)"
+        required: true
+        type: string
+      submitted_by:
+        description: "GitHub username of the person who submitted"
+        required: true
+        type: string
+      distinct_id:
+        description: "Unique identifier for run discovery (base36)"
+        required: true
+        type: string
+      model_name:
+        description: "Claude model to use for execution"
+        required: false
+        type: string
+        default: "claude-sonnet-4-5"
+
+concurrency:
+  group: one-shot-${{ inputs.branch_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      issue_number: ${{ steps.extract_plan.outputs.issue_number }}
+      issue_title: ${{ steps.extract_plan.outputs.issue_title }}
+      base_branch: ${{ steps.trunk.outputs.trunk_branch }}
+    steps:
+      - name: Validate required secrets
+        env:
+          ERK_PAT: ${{ secrets.ERK_QUEUE_GH_PAT }}
+        run: |
+          if [ -z "$ERK_PAT" ]; then
+            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          fetch-depth: 0
+
+      - uses: ./.github/actions/erk-remote-setup
+        with:
+          erk-pat: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+      - name: Checkout implementation branch
+        env:
+          BRANCH_NAME: ${{ inputs.branch_name }}
+          SUBMITTED_BY: ${{ inputs.submitted_by }}
+        run: |
+          git fetch origin "$BRANCH_NAME"
+          git checkout "$BRANCH_NAME"
+          git config user.name "$SUBMITTED_BY"
+          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
+
+      - name: Write instruction to .impl/task.md
+        env:
+          INSTRUCTION: ${{ inputs.instruction }}
+        run: |
+          mkdir -p .impl
+          printf '%s\n' "$INSTRUCTION" > .impl/task.md
+          echo "Instruction written to .impl/task.md"
+
+      - name: Detect trunk branch
+        id: trunk
+        run: |
+          result=$(erk exec detect-trunk-branch)
+          echo "trunk_branch=$(echo "$result" | jq -r '.trunk_branch')" >> $GITHUB_OUTPUT
+
+      - name: Run one-shot planning
+        id: plan
+        run: |
+          set +e
+          claude --print \
+            --model ${{ inputs.model_name }} \
+            --output-format stream-json \
+            --dangerously-skip-permissions \
+            --verbose \
+            "/erk:one-shot-plan"
+          EXIT_CODE=$?
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "plan_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "plan_success=false" >> $GITHUB_OUTPUT
+          fi
+          exit 0
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Extract plan issue info
+        id: extract_plan
+        if: steps.plan.outputs.plan_success == 'true'
+        run: |
+          if [ ! -f .impl/plan-issue.json ]; then
+            echo "::error::Plan succeeded but .impl/plan-issue.json not found"
+            exit 1
+          fi
+          ISSUE_NUMBER=$(jq -r '.issue_number' .impl/plan-issue.json)
+          ISSUE_TITLE=$(jq -r '.title' .impl/plan-issue.json)
+          if [ -z "$ISSUE_NUMBER" ] || [ "$ISSUE_NUMBER" = "null" ]; then
+            echo "::error::Failed to extract issue_number from .impl/plan-issue.json"
+            exit 1
+          fi
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          echo "issue_title=$ISSUE_TITLE" >> $GITHUB_OUTPUT
+          echo "Plan saved as issue #$ISSUE_NUMBER: $ISSUE_TITLE"
+
+      - name: Fail workflow if planning failed
+        if: steps.plan.outputs.plan_success != 'true'
+        run: |
+          echo "One-shot planning failed with exit code: ${{ steps.plan.outputs.exit_code }}"
+          exit 1
+
+  implement:
+    needs: plan
+    if: needs.plan.outputs.issue_number != ''
+    uses: ./.github/workflows/plan-implement.yml
+    with:
+      issue_number: ${{ needs.plan.outputs.issue_number }}
+      issue_title: ${{ needs.plan.outputs.issue_title }}
+      submitted_by: ${{ inputs.submitted_by }}
+      distinct_id: ${{ inputs.distinct_id }}
+      branch_name: ${{ inputs.branch_name }}
+      pr_number: ${{ inputs.pr_number }}
+      model_name: ${{ inputs.model_name }}
+      base_branch: ${{ needs.plan.outputs.base_branch }}
+    secrets: inherit

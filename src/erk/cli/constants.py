@@ -19,6 +19,9 @@ REBASE_WORKFLOW_NAME = "pr-fix-conflicts.yml"
 # GitHub Actions workflow for remote PR comment addressing
 PR_ADDRESS_WORKFLOW_NAME = "pr-address.yml"
 
+# GitHub Actions workflow for one-shot autonomous execution
+ONE_SHOT_WORKFLOW_NAME = "one-shot.yml"
+
 # Workflow command name to actual workflow filename mapping
 # This provides a unified interface via `erk launch <name>`
 WORKFLOW_COMMAND_MAP: dict[str, str] = {
@@ -26,6 +29,7 @@ WORKFLOW_COMMAND_MAP: dict[str, str] = {
     "pr-fix-conflicts": REBASE_WORKFLOW_NAME,  # pr-fix-conflicts.yml
     "pr-address": PR_ADDRESS_WORKFLOW_NAME,  # pr-address.yml
     "learn": "learn.yml",
+    "one-shot": ONE_SHOT_WORKFLOW_NAME,  # one-shot.yml
 }
 
 # Workflow names that trigger the autofix workflow

@@ -37,9 +37,45 @@ on:
         description: "Base branch for the implementation PR (may be stacked, not always trunk)"
         required: true
         type: string
+  workflow_call:
+    inputs:
+      issue_number:
+        description: "GitHub issue number to implement"
+        required: true
+        type: string
+      submitted_by:
+        description: "GitHub username of the person who submitted the issue"
+        required: true
+        type: string
+      distinct_id:
+        description: "Unique identifier for run discovery (base36)"
+        required: false
+        type: string
+        default: "called"
+      issue_title:
+        description: "Issue title for workflow run display"
+        required: true
+        type: string
+      branch_name:
+        description: "Branch name for implementation (created by submit command)"
+        required: true
+        type: string
+      pr_number:
+        description: "PR number for implementation (created by submit command)"
+        required: true
+        type: string
+      model_name:
+        description: "Claude model to use for implementation"
+        required: false
+        type: string
+        default: "claude-sonnet-4-5"
+      base_branch:
+        description: "Base branch for the implementation PR (may be stacked, not always trunk)"
+        required: true
+        type: string
 
 concurrency:
-  group: implement-issue-${{ github.event.inputs.issue_number }}
+  group: implement-issue-${{ inputs.issue_number }}
   cancel-in-progress: true
 
 jobs:
