@@ -58,9 +58,9 @@ This isn't a style guideline — it's an enforced system with three interlocking
 | ---------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------- |
 | Content quality standards (`learned-docs-core.md`)         | Define the One Code Rule and its exceptions                             | At authoring time — agents consult before writing           |
 | Source pointers ([source-pointers.md](source-pointers.md)) | Provide the replacement format with machine-greppable HTML comments     | At authoring time — agents use format when replacing blocks |
-| PR review automation (`.github/reviews/audit-pr-docs.md`)  | Enforce the rule by classifying code blocks and posting inline comments | At PR time — catches violations before merge                |
+| PR review automation (`.erk/reviews/audit-pr-docs.md`)     | Enforce the rule by classifying code blocks and posting inline comments | At PR time — catches violations before merge                |
 
-<!-- Source: .github/reviews/audit-pr-docs.md -->
+<!-- Source: .erk/reviews/audit-pr-docs.md -->
 
 The `audit-pr-docs` review audits the **full document** (not just changed lines) on every PR touching `docs/learned/`. It classifies each code block as VERBATIM, ANTI-PATTERN, CONCEPTUAL, or TEMPLATE, and posts inline comments for verbatim blocks with the exact source location and suggested pointer replacement. This "audit on touch" design means stale code blocks surface when docs are being actively worked on — the cheapest time to fix them.
 

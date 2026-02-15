@@ -85,13 +85,13 @@ Erk prevents verbatim code blocks in `docs/learned/` using three enforcement lay
 
 <!-- Source: .claude/agents/learn/code-diff-analyzer.md:109-117 -->
 <!-- Source: .claude/skills/learned-docs/learned-docs-core.md:49-63 -->
-<!-- Source: .github/reviews/audit-pr-docs.md:50-78 -->
+<!-- Source: .erk/reviews/audit-pr-docs.md:50-78 -->
 
 **Layer 1 - Agent (code-diff-analyzer):** When analyzing PR diffs for documentation needs, detects code blocks and suggests source pointers. See `code-diff-analyzer.md` in `.claude/agents/learn/`.
 
 **Layer 2 - Skill (learned-docs):** When loaded during doc writing, instructs agents to use source pointers instead of verbatim code. See `learned-docs-core.md` in `.claude/skills/learned-docs/`.
 
-**Layer 3 - Automated PR Review (audit-pr-docs):** Scans every PR touching `docs/learned/`, posts inline comments for violations with exact source file and line numbers. See `audit-pr-docs.md` in `.github/reviews/`.
+**Layer 3 - Automated PR Review (audit-pr-docs):** Scans every PR touching `docs/learned/`, posts inline comments for violations with exact source file and line numbers. See `audit-pr-docs.md` in `.erk/reviews/`.
 
 Each layer has distinct failure modes:
 

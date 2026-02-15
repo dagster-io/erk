@@ -45,7 +45,20 @@ For cost-sensitive CI jobs, specify a model via `--model`. Refer to `.github/wor
 | No output captured               | Missing `--print`                        | Add `--print`          |
 | Authentication failed            | Missing `ANTHROPIC_API_KEY`              | Add secret to workflow |
 
+## Exec Script Environment Distinction
+
+Not all Claude usage in workflows is direct `claude` CLI invocation. Exec scripts that internally call Claude via `require_prompt_executor()` need `ANTHROPIC_API_KEY` in their workflow step's environment, even though they don't invoke `claude` directly.
+
+| Usage Type                      | Token Needed                                    | Example                                 |
+| ------------------------------- | ----------------------------------------------- | --------------------------------------- |
+| Direct `claude` CLI             | `CLAUDE_CODE_OAUTH_TOKEN` + `ANTHROPIC_API_KEY` | `claude --print "..."` in workflow step |
+| Exec script with PromptExecutor | `ANTHROPIC_API_KEY`                             | `erk exec generate-pr-address-summary`  |
+| Exec script without Claude      | Neither                                         | `erk exec impl-init`                    |
+
+See [Exec Script Environment Requirements](exec-script-environment-requirements.md) for the complete inventory of scripts requiring API keys and the workflow step checklist.
+
 ## Related Topics
 
 - [CI Prompt Patterns](prompt-patterns.md) - How to structure prompts for CI
 - [Claude CLI Integration](../architecture/claude-cli-integration.md) - General Claude CLI patterns
+- [Exec Script Environment Requirements](exec-script-environment-requirements.md) - Environment variables for exec scripts

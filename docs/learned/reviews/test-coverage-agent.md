@@ -6,7 +6,7 @@ read_when:
   - debugging false positives in test coverage review
 tripwires:
   - action: "flagging code as untested in PR review"
-    warning: "Check if the file is legitimately untestable first. The 5-layer architecture defines which layers need tests — Layers 0-2 (CLI wrappers, type-only files, ABCs) are excluded. See .github/reviews/test-coverage.md for the full detection logic."
+    warning: "Check if the file is legitimately untestable first. The 5-layer architecture defines which layers need tests — Layers 0-2 (CLI wrappers, type-only files, ABCs) are excluded. See .erk/reviews/test-coverage.md for the full detection logic."
   - action: "adding a new untestable file category"
     warning: "New categories must align with the 5-layer test architecture. Only files in Layers 0-2 qualify. If the file contains any business logic (Layer 3+), it requires tests regardless of how thin the logic appears."
 last_audited: "2026-02-08"
@@ -15,7 +15,7 @@ audit_result: edited
 
 # Test Coverage Review Agent
 
-<!-- Source: .github/reviews/test-coverage.md -->
+<!-- Source: .erk/reviews/test-coverage.md -->
 
 This review agent enforces a key design decision: **which source files require tests and which don't**. The answer comes from mapping erk's 5-layer test architecture onto PR diffs — not from line-count heuristics or coverage percentages.
 

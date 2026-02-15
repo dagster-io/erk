@@ -21,7 +21,7 @@ Exception filtering lets the review system distinguish "can't follow the rule du
 
 ## Exception Categories and Rationale
 
-<!-- Source: .github/reviews/dignified-python.md -->
+<!-- Source: .erk/reviews/dignified-python.md -->
 <!-- Source: .claude/skills/dignified-python/references/api-design.md -->
 
 ### ABC and Protocol Methods: Exempt
@@ -36,11 +36,11 @@ Click injects parameters positionally based on decorator order. Keyword-only par
 
 Context objects (`ctx`, `self`, `cls`) can remain positional as the first parameter, followed by `*` for data parameters.
 
-See `.github/reviews/dignified-python.md` and `.claude/skills/dignified-python/references/api-design.md` for the formal exception rules.
+See `.erk/reviews/dignified-python.md` and `.claude/skills/dignified-python/references/api-design.md` for the formal exception rules.
 
 ## Detection Strategy: Declarative Constraints
 
-<!-- Source: .github/reviews/dignified-python.md -->
+<!-- Source: .erk/reviews/dignified-python.md -->
 
 The review system checks exceptions **before flagging**, not after. This prevents false positive noise in PR reviews.
 
@@ -78,5 +78,5 @@ def some_method(
 
 ## Related Documentation
 
-- `.github/reviews/dignified-python.md` - Review implementation and exception rules
+- `.erk/reviews/dignified-python.md` - Review implementation and exception rules
 - `.claude/skills/dignified-python/references/api-design.md` - Keyword-only parameter rationale and patterns

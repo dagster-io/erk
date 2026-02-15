@@ -29,13 +29,13 @@ This classification requires judgment about intent and context — whether a blo
 
 ## Audit-on-Touch: Full Document, Not Just Diff
 
-<!-- Source: .github/reviews/audit-pr-docs.md, Step 2: Identify Changed Doc Files -->
+<!-- Source: .erk/reviews/audit-pr-docs.md, Step 2: Identify Changed Doc Files -->
 
 The review audits the **entire document** whenever any part of it is modified, not just the changed lines from the diff. This is a deliberate design choice: when someone is actively editing a doc is the cheapest time to fix pre-existing problems. A surgical diff-only scan would miss stale code blocks that were already present.
 
 ## Analysis Is Delegated, Not Duplicated
 
-<!-- Source: .github/reviews/audit-pr-docs.md, Step 3: Audit Each Changed Doc -->
+<!-- Source: .erk/reviews/audit-pr-docs.md, Step 3: Audit Each Changed Doc -->
 
 The review spec itself contains no analysis methodology — it delegates entirely to `/local:audit-doc` for the classification framework, verification ordering, and verdict thresholds (KEEP, SIMPLIFY, REPLACE WITH CODE REFS, CONSIDER DELETING). This avoids maintaining parallel analysis logic in two places. The review spec only defines the review-specific mechanics: diff filtering, PR comment format, and activity log structure.
 
@@ -50,7 +50,7 @@ Reviews run on every push to a PR. Without deduplication, each iteration would r
 <!-- Source: src/erk/review/prompt_assembly.py, REVIEW_PROMPT_TEMPLATE -->
 <!-- Source: src/erk/review/parsing.py, discover_matching_reviews -->
 
-`audit-pr-docs` is one of several reviews in `.github/reviews/`. All reviews share the same infrastructure: YAML frontmatter defines scope and model, `discover-reviews` matches changed files to review definitions, and `run-review` assembles the prompt and invokes Claude. Adding a new review requires only dropping a markdown file in `.github/reviews/` — see [convention-based-reviews.md](../ci/convention-based-reviews.md) for the full system.
+`audit-pr-docs` is one of several reviews in `.erk/reviews/`. All reviews share the same infrastructure: YAML frontmatter defines scope and model, `discover-reviews` matches changed files to review definitions, and `run-review` assembles the prompt and invokes Claude. Adding a new review requires only dropping a markdown file in `.erk/reviews/` — see [convention-based-reviews.md](../ci/convention-based-reviews.md) for the full system.
 
 The `audit-pr-docs` review uses `claude-haiku-4-5` because its task is mechanical extraction and classification, not creative analysis. Faster model = faster CI feedback.
 

@@ -32,6 +32,22 @@ The registry in `src/erk/core/capabilities/registry.py` maintains a cached tuple
 
 **Key functions:** `get_capability(name)`, `list_capabilities()`, `list_required_capabilities()`, `get_managed_artifacts()`, `is_capability_managed(name, type)`
 
+#### Registry Splice Pattern
+
+Factory functions can batch-register capabilities using tuple unpacking in `_all_capabilities()`:
+
+```python
+def _all_capabilities() -> tuple[Capability, ...]:
+    return (
+        LearnedDocsCapability(),
+        *create_bundled_skill_capabilities(),  # unpacks list into tuple
+        TripwiresReviewDefCapability(),
+        # ...
+    )
+```
+
+The `*` operator unpacks a list of capabilities into the tuple, keeping the registry declaration clean while allowing factory functions to produce multiple capabilities. See [Bundled Skill Capabilities](../capabilities/bundled-skills.md) for the full pattern.
+
 ### Scopes
 
 | Scope     | Description                                                | Example                                         |

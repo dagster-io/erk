@@ -157,7 +157,7 @@ Check all three:
 
 **Rationale:** Performance isolation matters. Unit tests run on every PR (< 30s), integration tests run selectively (> 2 min). Independent failure modes justify separation.
 
-<!-- Source: .github/reviews/test-coverage.md, early exit conditions -->
+<!-- Source: .erk/reviews/test-coverage.md, early exit conditions -->
 
 ### Example 3: Doc Duplication vs Doc Completeness
 
@@ -173,7 +173,7 @@ Check all three:
 
 **Rationale:** Both check documentation quality on the same files. Combining avoids duplicate file scans and keeps all doc quality checks in one place.
 
-<!-- Source: .github/reviews/audit-pr-docs.md, full file audit pattern -->
+<!-- Source: .erk/reviews/audit-pr-docs.md, full file audit pattern -->
 
 ### Example 4: Python Linting vs Markdown Formatting
 
@@ -276,15 +276,15 @@ on:
 
 Reviews should detect when there's nothing relevant to check and exit early with code 0.
 
-<!-- Source: .github/reviews/test-coverage.md, Step 2 early exit -->
+<!-- Source: .erk/reviews/test-coverage.md, Step 2 early exit -->
 
-**When to use:** Reviews that only care about certain change types (e.g., test coverage only matters if source changed). See the early exit pattern in `.github/reviews/test-coverage.md`.
+**When to use:** Reviews that only care about certain change types (e.g., test coverage only matters if source changed). See the early exit pattern in `.erk/reviews/test-coverage.md`.
 
 **Why it works:** Avoids posting empty or meaningless review comments.
 
 ## Review Configuration Format
 
-All reviews live in `.github/reviews/*.md` and share this frontmatter structure:
+All reviews live in `.erk/reviews/*.md` and share this frontmatter structure:
 
 ```yaml
 ---
@@ -310,7 +310,7 @@ enabled: true
 
 ## Related Documentation
 
-- `.github/reviews/audit-pr-docs.md` — Example documentation quality review
-- `.github/reviews/dignified-python.md` — Example code quality review
-- `.github/reviews/test-coverage.md` — Example coverage review with early exit
+- `.erk/reviews/audit-pr-docs.md` — Example documentation quality review
+- `.erk/reviews/dignified-python.md` — Example code quality review
+- `.erk/reviews/test-coverage.md` — Example coverage review with early exit
 - `docs/learned/ci/review-spec-format.md` — Complete review specification reference

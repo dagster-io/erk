@@ -25,11 +25,11 @@ Stale documentation is worse than no documentation. An agent reading absent docs
 
 Three layers work together to maintain doc quality:
 
-| Layer                              | When it runs                                  | What it catches                                    |
-| ---------------------------------- | --------------------------------------------- | -------------------------------------------------- |
-| `/local:audit-doc`                 | On-demand, deep analysis of one doc           | All harm categories, phantom types, broken paths   |
-| `/local:audit-scan`                | On-demand, heuristic triage of all docs       | Prioritizes which docs need deep audit             |
-| `.github/reviews/audit-pr-docs.md` | Automatically on PRs touching `docs/learned/` | Verbatim code copies, inaccurate claims at PR time |
+| Layer                           | When it runs                                  | What it catches                                    |
+| ------------------------------- | --------------------------------------------- | -------------------------------------------------- |
+| `/local:audit-doc`              | On-demand, deep analysis of one doc           | All harm categories, phantom types, broken paths   |
+| `/local:audit-scan`             | On-demand, heuristic triage of all docs       | Prioritizes which docs need deep audit             |
+| `.erk/reviews/audit-pr-docs.md` | Automatically on PRs touching `docs/learned/` | Verbatim code copies, inaccurate claims at PR time |
 
 The first two clean up the past; the third prevents new problems.
 

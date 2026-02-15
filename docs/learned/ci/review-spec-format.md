@@ -10,7 +10,7 @@ audit_result: clean
 
 # Review Spec Format
 
-Review specifications in `.github/reviews/` follow conventions that evolved to balance agent comprehension, maintenance burden, and historical debugging needs.
+Review specifications in `.erk/reviews/` follow conventions that evolved to balance agent comprehension, maintenance burden, and historical debugging needs.
 
 ## Why Structured Algorithm Steps
 
@@ -23,11 +23,11 @@ Review specs use numbered steps (`## Step 1: [Action]`, `## Step 2: [Next Action
 
 The alternative (prose instructions like "gather context, then analyze, then comment") fails because agents struggle with implicit ordering and error recovery.
 
-<!-- Source: .github/reviews/audit-pr-docs.md, Step 1-6 pattern -->
-<!-- Source: .github/reviews/test-coverage.md, Step 1-6 pattern -->
-<!-- Source: .github/reviews/tripwires.md, Step 1-5 pattern -->
+<!-- Source: .erk/reviews/audit-pr-docs.md, Step 1-6 pattern -->
+<!-- Source: .erk/reviews/test-coverage.md, Step 1-6 pattern -->
+<!-- Source: .erk/reviews/tripwires.md, Step 1-5 pattern -->
 
-See the actual review files in `.github/reviews/` for implemented step structures.
+See the actual review files in `.erk/reviews/` for implemented step structures.
 
 ## Why Classification Taxonomies
 
@@ -72,8 +72,8 @@ Activity logs track review behavior across PR iterations for debugging recurring
 - Specific violations ("src/erk/foo.py in docs/learned/bar.md")
 - Clean runs ("All docs clean, no verbatim copies detected")
 
-<!-- Source: .github/reviews/audit-pr-docs.md, activity log section -->
-<!-- Source: .github/reviews/test-coverage.md, activity log section -->
+<!-- Source: .erk/reviews/audit-pr-docs.md, activity log section -->
+<!-- Source: .erk/reviews/test-coverage.md, activity log section -->
 
 See existing review specs for implemented log formats.
 
@@ -86,7 +86,7 @@ Reviews use pattern matching and line-by-line comparison instead of AST parsing 
 3. **Formatting tolerance** — Matches despite whitespace/comment differences
 4. **Good enough threshold** — False negatives are acceptable (human reviews catch them), false positives are not
 
-<!-- Source: .github/reviews/audit-pr-docs.md, verbatim detection heuristic -->
+<!-- Source: .erk/reviews/audit-pr-docs.md, verbatim detection heuristic -->
 
 The learned docs review demonstrates this: it looks for `from erk` patterns and `class Foo`/`def bar` names rather than importing modules and inspecting ASTs.
 

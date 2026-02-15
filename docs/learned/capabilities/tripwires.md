@@ -12,6 +12,8 @@ read_when:
 
 Rules triggered by matching actions in code.
 
+**adding a new bundled skill to codex_portable_skills()** → Read [Bundled Skill Capabilities](bundled-skills.md) first. New bundled skills must be added to bundled_skills() dict AND verified by drift prevention test
+
 **capability not appearing in hooks or CLI** → Read [Adding New Capabilities](adding-new-capabilities.md) first. Class MUST be imported AND instantiated in registry.py \_all_capabilities() tuple. Missing registration causes silent failures—class exists but is never discovered.
 
 **creating a new capability type with custom installation logic** → Read [Adding New Capabilities](adding-new-capabilities.md) first. Don't subclass Capability directly unless needed. Use SkillCapability or ReminderCapability for 90% of cases—they handle state management automatically.
@@ -19,6 +21,8 @@ Rules triggered by matching actions in code.
 **creating a review capability** → Read [Adding Review Capabilities](adding-reviews.md) first. Review definition MUST exist at .erk/reviews/{review_name}.md in erk repo root. At runtime, get_bundled_erk_dir() resolves this location (src/erk/artifacts/paths.py). Missing source file causes install failure.
 
 **creating a skill capability** → Read [Adding Skill Capabilities](adding-skills.md) first. Bundled content directory must exist or install() silently creates empty skill directory. See silent failure modes below.
+
+**creating a skill with custom install logic** → Read [Bundled Skill Capabilities](bundled-skills.md) first. Skills with custom install logic need dedicated SkillCapability subclass, not bundled factory
 
 **implementing workflow capabilities** → Read [Adding Workflow Capabilities](adding-workflows.md) first. Workflow capabilities extend Capability directly, not a template base class
 
