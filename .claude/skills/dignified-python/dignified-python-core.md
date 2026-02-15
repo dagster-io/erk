@@ -397,6 +397,70 @@ class Registry:
 
 ---
 
+## No Invalid Object Construction
+
+**Never construct objects with invalid states.** Validate at the construction boundary — factory methods, reader functions, parse functions — so that if an object exists, all its fields are valid. Don't allow invalid objects to exist and then guard at every callsite.
+
+### Why
+
+- **Eliminates defensive guards**: Every callsite can trust the object's fields without conversion or None checks
+- **Single validation point**: Validation logic lives in one place, not scattered across N callsites
+- **Type system works for you**: Once constructed, the type tells the full story — `int` means it's numeric, not "might be numeric"
+- **Bugs are caught early**: Invalid data is rejected at parse/read time, not at use time
+
+### Correct Pattern
+
+```python
+@dataclass(frozen=True)
+class PlanRef:
+    plan_id: int          # Always valid — numeric guaranteed
+    url: str
+    provider: str
+
+def read_plan_ref(folder: Path) -> PlanRef | None:
+    """Validate at the boundary. Return None if invalid."""
+    data = json.loads(path.read_text())
+    raw_id = data.get("plan_id")
+    if not isinstance(raw_id, int):
+        return None  # Don't construct with invalid state
+    return PlanRef(plan_id=raw_id, url=data["url"], provider=data["provider"])
+```
+
+### Anti-pattern
+
+```python
+@dataclass(frozen=True)
+class PlanRef:
+    plan_id: str          # Could be "42" or "PROJ-123" — caller must check
+
+    @property
+    def numeric_plan_id(self) -> int | None:
+        """Every callsite must use this instead of plan_id."""
+        if self.plan_id.isdigit():
+            return int(self.plan_id)
+        return None
+
+# Result: N callsites with defensive guards
+issue = plan_ref.numeric_plan_id
+if issue is None:
+    log.warning("Non-numeric plan_id")
+    return
+```
+
+### When This Applies
+
+- Dataclasses read from JSON/TOML/YAML (validate during parsing)
+- Objects constructed from user input (validate before construction)
+- Any case where a field's type is broader than the valid domain (e.g., `str` when only digits are valid → use `int`)
+- Factory methods that transform external data into domain objects
+
+### Decision: Return None vs Raise
+
+- **Return `None`**: When invalid data is expected/normal (e.g., missing optional file, legacy format)
+- **Raise exception**: When invalid data indicates a programming error or corrupt state
+
+---
+
 ## Backwards Compatibility Philosophy
 
 **Default stance: NO backwards compatibility preservation**
