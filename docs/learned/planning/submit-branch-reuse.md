@@ -32,7 +32,7 @@ Found existing local branch(es) for this issue:
 
 New branch would be: P123-feature-01-15-1600
 
-Reuse existing branch 'P123-feature-01-12-1430'? If not, a new branch and PR will be created (old draft PR will be closed). [Y/n]
+<branch reuse confirmation prompt — see src/erk/cli/commands/submit.py:151-153 for current wording>
 ```
 
 ## Detection Logic
