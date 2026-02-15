@@ -175,16 +175,20 @@ def test_pr_sync_syncs_remote_when_already_tracked(tmp_path: Path) -> None:
         assert "parent: main" in result.output
         assert "Syncing with remote" in result.output
         assert "Branch restacked" in result.output
+        assert "Pushing to remote" in result.output
+        assert "Pushed to remote" in result.output
 
-        # Should call sync and restack (but NOT track/squash/submit)
+        # Should call sync and restack (but NOT track/squash)
         assert len(graphite.sync_calls) == 1
         assert graphite.sync_calls[0] == (env.cwd, True, False)  # (repo_root, force, quiet)
         assert len(graphite.restack_calls) == 1
 
-        # Should NOT re-track, re-squash, or re-submit
+        # Should NOT re-track or re-squash
         assert len(graphite.track_branch_calls) == 0
         assert len(graphite.squash_branch_calls) == 0
-        assert len(graphite.submit_stack_calls) == 0
+
+        # Should push restacked branch to remote
+        assert len(graphite.submit_stack_calls) == 1
 
 
 def test_pr_sync_handles_restack_conflict_when_already_tracked(tmp_path: Path) -> None:
