@@ -179,6 +179,8 @@ class TestExecuteCommandClosePlan:
             objective_display="-",
             created_at=datetime(2025, 1, 1, tzinfo=UTC),
             created_display="-",
+            author="test-user",
+            is_learn_plan=False,
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
@@ -247,6 +249,8 @@ class TestExecuteCommandSubmitToQueue:
             objective_display="-",
             created_at=datetime(2025, 1, 1, tzinfo=UTC),
             created_display="-",
+            author="test-user",
+            is_learn_plan=False,
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)

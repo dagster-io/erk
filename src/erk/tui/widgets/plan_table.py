@@ -87,8 +87,8 @@ class PlanDataTable(DataTable):
         Returns:
             Column index (0-based), or None if columns not yet set up.
             The index varies based on show_prs flag:
-            - Without PRs: index 4 (plan, title, obj, lrn, local-wt)
-            - With PRs: index 7 (plan, title, pr, chks, comments, obj, lrn, local-wt)
+            - Without PRs: index 6
+            - With PRs: index 9
         """
         return self._local_wt_column_index
 
@@ -138,6 +138,8 @@ class PlanDataTable(DataTable):
         self.add_column("title", key="title")
         col_index += 1
         self.add_column("created", key="created")
+        col_index += 1
+        self.add_column("author", key="author")
         col_index += 1
 
         # Objectives view uses simplified columns
@@ -230,9 +232,9 @@ class PlanDataTable(DataTable):
         if row.issue_url:
             plan_cell = Text(plan_cell, style="cyan underline")
 
-        # Objectives view: simplified columns (plan, title, created)
+        # Objectives view: simplified columns (plan, title, created, author)
         if self._view_mode == ViewMode.OBJECTIVES:
-            return (plan_cell, Text(row.title), row.created_display)
+            return (plan_cell, Text(row.title), row.created_display, row.author)
 
         # Format worktree
         if row.exists_locally:
@@ -257,7 +259,7 @@ class PlanDataTable(DataTable):
         # Build values list based on columns
         # Wrap title in Text to prevent Rich markup interpretation
         # (e.g., "[erk-learn]" prefix would otherwise be treated as a markup tag)
-        values: list[str | Text] = [plan_cell, Text(row.title), row.created_display]
+        values: list[str | Text] = [plan_cell, Text(row.title), row.created_display, row.author]
         if self._plan_filters.show_prs:
             # Strip Rich markup and colorize if clickable
             pr_display = _strip_rich_markup(row.pr_display)

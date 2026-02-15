@@ -188,6 +188,7 @@ def make_plan_row(
     learn_run_url: str | None = None,
     objective_issue: int | None = None,
     created_at: datetime | None = None,
+    author: str = "test-user",
     is_learn_plan: bool = False,
 ) -> PlanRowData:
     """Create a PlanRowData for testing with sensible defaults.
@@ -317,5 +318,6 @@ def make_plan_row(
         objective_display=objective_display,
         created_at=effective_created_at,
         created_display=created_display,
+        author=author,
         is_learn_plan=is_learn_plan,
     )

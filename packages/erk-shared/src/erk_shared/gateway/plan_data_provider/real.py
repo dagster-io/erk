@@ -150,6 +150,7 @@ class RealPlanDataProvider(PlanDataProvider):
             row = self._build_row_data(
                 plan=plan,
                 issue_number=issue.number,
+                author=issue.author,
                 pr_linkages=plan_data.pr_linkages,
                 workflow_run=workflow_run,
                 worktree_by_issue=worktree_by_issue,
@@ -385,6 +386,7 @@ class RealPlanDataProvider(PlanDataProvider):
         *,
         plan: Plan,
         issue_number: int,
+        author: str,
         pr_linkages: dict[int, list[PullRequestInfo]],
         workflow_run: WorkflowRun | None,
         worktree_by_issue: dict[int, tuple[str, str | None]],
@@ -597,6 +599,7 @@ class RealPlanDataProvider(PlanDataProvider):
             objective_display=objective_display,
             created_at=plan.created_at,
             created_display=created_display,
+            author=author,
             is_learn_plan=is_learn_plan,
         )
 

@@ -39,5 +39,10 @@ def filter_plans(plans: list[PlanRowData], query: str) -> list[PlanRowData]:
         # Check PR number if present
         if plan.pr_number is not None and query_lower in str(plan.pr_number):
             result.append(plan)
+            continue
+
+        # Check author
+        if query_lower in plan.author.lower():
+            result.append(plan)
 
     return result

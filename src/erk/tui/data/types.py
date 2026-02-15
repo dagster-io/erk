@@ -54,6 +54,7 @@ class PlanRowData:
         objective_display: Formatted display string (e.g., "#123" or "-")
         created_at: Creation datetime of the issue
         created_display: Formatted relative time string (e.g., "2d ago")
+        author: GitHub login of the issue creator
     """
 
     issue_number: int
@@ -96,6 +97,7 @@ class PlanRowData:
     objective_display: str
     created_at: datetime
     created_display: str
+    author: str
     is_learn_plan: bool
 
 

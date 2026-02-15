@@ -58,7 +58,7 @@ def test_case_insensitive_title_match() -> None:
         make_plan_row(1, "Add USER Authentication"),
         make_plan_row(2, "Fix Login Bug"),
     ]
-    result = filter_plans(plans, "user")
+    result = filter_plans(plans, "authentication")
     assert len(result) == 1
     assert result[0].issue_number == 1
 
@@ -95,6 +95,19 @@ def test_partial_issue_number_match() -> None:
     assert len(result) == 2
     assert result[0].issue_number == 123
     assert result[1].issue_number == 1234
+
+
+def test_filter_by_author() -> None:
+    """Filters plans by author name."""
+    plans = [
+        make_plan_row(1, "Plan A", author="alice"),
+        make_plan_row(2, "Plan B", author="bob"),
+        make_plan_row(3, "Plan C", author="alice-smith"),
+    ]
+    result = filter_plans(plans, "alice")
+    assert len(result) == 2
+    assert result[0].issue_number == 1
+    assert result[1].issue_number == 3
 
 
 def test_multiple_matches_preserved_order() -> None:

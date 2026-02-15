@@ -66,6 +66,7 @@ def test_serialize_plan_row_datetime_fields() -> None:
         objective_display="-",
         created_at=now,
         created_display="-",
+        author="test-user",
         is_learn_plan=False,
     )
 
@@ -118,6 +119,7 @@ def test_serialize_plan_row_tuple_to_list() -> None:
         objective_display="-",
         created_at=datetime(2025, 1, 1, tzinfo=UTC),
         created_display="-",
+        author="test-user",
         is_learn_plan=False,
     )
 
@@ -192,6 +194,7 @@ def test_serialize_plan_row_all_fields_present() -> None:
         "objective_display",
         "created_at",
         "created_display",
+        "author",
         "is_learn_plan",
     }
     assert set(result.keys()) == expected_fields
@@ -241,6 +244,7 @@ def test_serialize_plan_row_json_roundtrip() -> None:
         objective_display="#100",
         created_at=now,
         created_display="-",
+        author="test-user",
         is_learn_plan=False,
     )
 
