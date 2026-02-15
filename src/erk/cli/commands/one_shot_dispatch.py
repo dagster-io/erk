@@ -12,6 +12,7 @@ import click
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
 from erk_shared.gateway.git.remote_ops.types import PushError
+from erk_shared.gateway.github.plan_issues import create_plan_issue
 from erk_shared.gateway.time.abc import Time
 from erk_shared.naming import format_branch_timestamp_suffix, sanitize_worktree_name
 from erk_shared.output.output import user_output
@@ -37,21 +38,31 @@ class OneShotDispatchResult:
     branch_name: str
 
 
-def generate_branch_name(instruction: str, *, time: Time) -> str:
+def generate_branch_name(
+    instruction: str,
+    *,
+    time: Time,
+    plan_issue_number: int | None,
+) -> str:
     """Generate a branch name from the instruction.
 
-    Format: oneshot-{slug}-{MM-DD-HHMM}
+    Format: P{N}-{slug}-{MM-DD-HHMM} when plan_issue_number is provided,
+    otherwise oneshot-{slug}-{MM-DD-HHMM}.
 
     Args:
         instruction: The task description
         time: Time gateway for deterministic timestamps
+        plan_issue_number: If provided, use P{N}- prefix instead of oneshot-
 
     Returns:
         Branch name string
     """
     slug = sanitize_worktree_name(instruction)
+    if plan_issue_number is not None:
+        prefix = f"P{plan_issue_number}-"
+    else:
+        prefix = "oneshot-"
     # Truncate slug to leave room for prefix and timestamp
-    prefix = "oneshot-"
     max_slug_len = 31 - len(prefix)
     if len(slug) > max_slug_len:
         slug = slug[:max_slug_len].rstrip("-")
@@ -98,15 +109,18 @@ def dispatch_one_shot(
     # Detect trunk branch
     trunk = ctx.git.branch.detect_trunk_branch(repo.root)
 
-    # Generate branch name
-    branch_name = generate_branch_name(params.instruction, time=ctx.time)
-
     # Build PR title
     max_title_len = 60
     suffix = "..." if len(params.instruction) > max_title_len else ""
     pr_title = f"One-shot: {params.instruction[:max_title_len]}{suffix}"
 
     if dry_run:
+        # In dry-run, show preview without creating skeleton issue
+        branch_name = generate_branch_name(
+            params.instruction,
+            time=ctx.time,
+            plan_issue_number=None,
+        )
         user_output(
             click.style("Dry-run mode:", fg="cyan", bold=True) + " No changes will be made\n"
         )
@@ -122,6 +136,36 @@ def dispatch_one_shot(
             for key, value in params.extra_workflow_inputs.items():
                 user_output(f"Extra input: {key}={value}")
         return None
+
+    # Create skeleton plan issue before branch (so we get P<N>- naming)
+    objective_issue_str = params.extra_workflow_inputs.get("objective_issue")
+    objective_id = int(objective_issue_str) if objective_issue_str else None
+
+    skeleton_plan_content = (
+        f"_Skeleton: plan content will be populated by one-shot workflow._\n\n"
+        f"**Instruction:** {params.instruction}"
+    )
+    skeleton_result = create_plan_issue(
+        github_issues=ctx.github.issues,
+        repo_root=repo.root,
+        plan_content=skeleton_plan_content,
+        title=None,
+        extra_labels=None,
+        title_tag=None,
+        source_repo=None,
+        objective_id=objective_id,
+        created_from_session=None,
+        created_from_workflow_run_url=None,
+        learned_from_issue=None,
+    )
+    plan_issue_number = skeleton_result.issue_number
+
+    # Generate branch name (uses P<N>- prefix when plan issue was created)
+    branch_name = generate_branch_name(
+        params.instruction,
+        time=ctx.time,
+        plan_issue_number=plan_issue_number,
+    )
 
     # Save current branch for restoration after workflow trigger
     original_branch = ctx.git.branch.get_current_branch(repo.root)
@@ -171,6 +215,8 @@ def dispatch_one_shot(
         }
         if params.model is not None:
             inputs["model_name"] = params.model
+        if plan_issue_number is not None:
+            inputs["plan_issue_number"] = str(plan_issue_number)
 
         # Merge extra workflow inputs
         inputs.update(params.extra_workflow_inputs)
