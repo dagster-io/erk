@@ -17,8 +17,7 @@ from erk.capabilities.reviews.dignified_code_simplifier import (
 from erk.capabilities.reviews.dignified_python import DignifiedPythonReviewDefCapability
 from erk.capabilities.reviews.tripwires import TripwiresReviewDefCapability
 from erk.capabilities.ruff_format import RuffFormatCapability
-from erk.capabilities.skills.dignified_python import DignifiedPythonCapability
-from erk.capabilities.skills.fake_driven_testing import FakeDrivenTestingCapability
+from erk.capabilities.skills.bundled import create_bundled_skill_capabilities
 from erk.capabilities.statusline import StatuslineCapability
 from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
 from erk.capabilities.workflows.learn import LearnWorkflowCapability
@@ -30,8 +29,7 @@ def _all_capabilities() -> tuple[Capability, ...]:
     """Return all registered capabilities. Cached for performance."""
     return (
         LearnedDocsCapability(),
-        DignifiedPythonCapability(),
-        FakeDrivenTestingCapability(),
+        *create_bundled_skill_capabilities(),
         # Code reviews system and individual review definitions
         CodeReviewsSystemCapability(),
         TripwiresReviewDefCapability(),
