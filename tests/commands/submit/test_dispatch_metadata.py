@@ -74,6 +74,6 @@ def test_submit_warns_when_node_id_not_available(tmp_path: Path) -> None:
 
     # Should succeed but warn about missing node_id
     assert result.exit_code == 0, result.output
-    assert "Could not fetch workflow run node_id" in result.output
+    assert "Failed to update dispatch metadata" in result.output
     # Workflow should still be triggered successfully
     assert "1 issue(s) submitted successfully!" in result.output

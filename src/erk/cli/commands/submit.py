@@ -10,6 +10,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.commands.slot.common import is_placeholder_branch
 from erk.cli.commands.submit_helpers import ensure_trunk_synced
 from erk.cli.constants import (
@@ -34,7 +35,6 @@ from erk_shared.gateway.github.metadata.core import (
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_branch_name,
     extract_plan_header_learned_from_issue,
-    update_plan_header_dispatch,
 )
 from erk_shared.gateway.github.parsing import (
     construct_pr_url,
@@ -42,7 +42,7 @@ from erk_shared.gateway.github.parsing import (
     extract_owner_repo_from_github_url,
 )
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
-from erk_shared.gateway.github.types import BodyText, PRNotFound
+from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL
 from erk_shared.naming import (
     format_branch_timestamp_suffix,
@@ -781,28 +781,21 @@ def _submit_single_issue(
 
     # Write dispatch metadata synchronously to fix race condition with erk dash
     # This ensures the issue body has the run info before we return to the user
-    node_id = ctx.github.get_workflow_run_node_id(repo.root, run_id)
-    if node_id is not None:
-        try:
-            # Fetch fresh issue body and update dispatch metadata
-            fresh_issue = ctx.issues.get_issue(repo.root, issue_number)
-            if isinstance(fresh_issue, IssueNotFound):
-                raise RuntimeError(f"Issue #{issue_number} not found")
-            updated_body = update_plan_header_dispatch(
-                issue_body=fresh_issue.body,
-                run_id=run_id,
-                node_id=node_id,
-                dispatched_at=queued_at,
-            )
-            ctx.issues.update_issue_body(repo.root, issue_number, BodyText(content=updated_body))
-            user_output(click.style("✓", fg="green") + " Dispatch metadata written to issue")
-        except Exception as e:
-            # Log warning but don't block - workflow is already triggered
-            user_output(
-                click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
-            )
-    else:
-        user_output(click.style("Warning: ", fg="yellow") + "Could not fetch workflow run node_id")
+    try:
+        write_dispatch_metadata(
+            issues=ctx.issues,
+            github=ctx.github,
+            repo_root=repo.root,
+            issue_number=issue_number,
+            run_id=run_id,
+            dispatched_at=queued_at,
+        )
+        user_output(click.style("✓", fg="green") + " Dispatch metadata written to issue")
+    except Exception as e:
+        # Log warning but don't block - workflow is already triggered
+        user_output(
+            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+        )
 
     validation_results = {
         "issue_is_open": True,
