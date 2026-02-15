@@ -1,10 +1,6 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(erk:*)",
-      "Read(/tmp/*)",
-      "Write(/tmp/*)"
-    ],
+    "allow": ["Bash(erk:*)", "Read(/tmp/*)", "Write(/tmp/*)"],
     "deny": []
   },
   "hooks": {
