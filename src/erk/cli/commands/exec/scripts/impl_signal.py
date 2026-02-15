@@ -37,20 +37,12 @@ import click
 
 from erk_shared.context.helpers import (
     require_claude_installation,
+    require_cwd,
+    require_plan_backend,
     require_repo_root,
 )
-from erk_shared.context.helpers import (
-    require_issues as require_github_issues,
-)
 from erk_shared.env import in_github_actions
-from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import render_erk_issue_event
-from erk_shared.gateway.github.metadata.plan_header import (
-    update_plan_header_local_impl_event,
-    update_plan_header_remote_impl,
-    update_plan_header_worktree_and_branch,
-)
-from erk_shared.gateway.github.types import BodyText
 from erk_shared.impl_folder import (
     read_plan_ref,
     write_local_run_state,
@@ -118,52 +110,6 @@ def _delete_claude_plan_file(ctx: click.Context, session_id: str, cwd: Path) -> 
     return False
 
 
-def _build_updated_issue_body(
-    *,
-    issue_body: str,
-    timestamp: str,
-    session_id: str,
-    user: str,
-    worktree_name: str,
-    branch_name: str,
-) -> str:
-    """Build the updated issue body with implementation metadata.
-
-    Applies the appropriate plan header update (remote or local) and sets
-    worktree/branch names.
-
-    Args:
-        issue_body: Current issue body text
-        timestamp: ISO timestamp of the event
-        session_id: Claude session ID
-        user: Username running the implementation
-        worktree_name: Name of the worktree
-        branch_name: Name of the git branch
-
-    Returns:
-        Updated issue body with metadata applied
-    """
-    if in_github_actions():
-        updated_body = update_plan_header_remote_impl(
-            issue_body=issue_body,
-            remote_impl_at=timestamp,
-        )
-    else:
-        updated_body = update_plan_header_local_impl_event(
-            issue_body=issue_body,
-            local_impl_at=timestamp,
-            event="started",
-            session_id=session_id,
-            user=user,
-        )
-
-    return update_plan_header_worktree_and_branch(
-        issue_body=updated_body,
-        worktree_name=worktree_name,
-        branch_name=branch_name,
-    )
-
-
 def _get_worktree_name() -> str | None:
     """Get current worktree name from git worktree list."""
     try:
@@ -219,10 +165,17 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
         )
         return
 
-    # Find impl directory (.impl/ or .worker-impl/) - check BEFORE context access
-    impl_dir = Path.cwd() / ".impl"
+    # Get cwd from context
+    try:
+        cwd = require_cwd(ctx)
+    except SystemExit:
+        _output_error(event, "context-not-initialized", "Context not initialized")
+        return
+
+    # Find impl directory (.impl/ or .worker-impl/)
+    impl_dir = cwd / ".impl"
     if not impl_dir.exists():
-        impl_dir = Path.cwd() / ".worker-impl"
+        impl_dir = cwd / ".worker-impl"
 
     # Read plan reference FIRST (doesn't require context)
     plan_ref = read_plan_ref(impl_dir)
@@ -232,8 +185,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
 
     # Delete Claude plan file if session_id provided
     # The plan has been saved to GitHub and snapshotted, so it's safe to delete
-    if session_id is not None:
-        _delete_claude_plan_file(ctx, session_id, Path.cwd())
+    _delete_claude_plan_file(ctx, session_id, cwd)
 
     # Now get context dependencies (after confirming we need them)
     try:
@@ -255,8 +207,6 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
 
     # Capture metadata
     timestamp = datetime.now(UTC).isoformat()
-    # session_id is passed as parameter, not from env var
-    # (erk code never has access to CLAUDE_CODE_SESSION_ID env var)
     user = getpass.getuser()
 
     # Write local state file first (fast, no network)
@@ -272,47 +222,47 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
         _output_error(event, "local-state-write-failed", f"Failed to write local state: {e}")
         return
 
-    # Get GitHub Issues from context
+    # Get PlanBackend from context
     try:
-        github = require_github_issues(ctx)
+        backend = require_plan_backend(ctx)
     except SystemExit:
         _output_error(event, "context-not-initialized", "Context not initialized")
         return
 
-    # Post start comment
-    try:
-        description = f"""**Worktree:** `{worktree_name}`
+    # Build comment body
+    description = f"""**Worktree:** `{worktree_name}`
 **Branch:** `{branch_name}`"""
 
-        comment_body = render_erk_issue_event(
-            title="🚀 Starting implementation",
-            metadata=None,
-            description=description,
-        )
+    comment_body = render_erk_issue_event(
+        title="\U0001f680 Starting implementation",
+        metadata=None,
+        description=description,
+    )
 
-        github.add_comment(repo_root, int(plan_ref.plan_id), comment_body)
-    except RuntimeError as e:
-        _output_error(event, "github-comment-failed", f"Failed to post comment: {e}")
-        return
+    # Build metadata dict
+    metadata: dict[str, object] = {
+        "worktree_name": worktree_name,
+        "branch_name": branch_name,
+    }
+    if in_github_actions():
+        metadata["last_remote_impl_at"] = timestamp
+    else:
+        metadata["last_local_impl_at"] = timestamp
+        metadata["last_local_impl_event"] = "started"
+        metadata["last_local_impl_session"] = session_id
+        metadata["last_local_impl_user"] = user
 
-    # Update issue metadata (non-fatal - comment was already posted)
+    # Post event (comment + metadata update) via PlanBackend
     try:
-        issue = github.get_issue(repo_root, int(plan_ref.plan_id))
-        if not isinstance(issue, IssueNotFound):
-            updated_body = _build_updated_issue_body(
-                issue_body=issue.body,
-                timestamp=timestamp,
-                session_id=session_id,
-                user=user,
-                worktree_name=worktree_name,
-                branch_name=branch_name,
-            )
-            github.update_issue_body(
-                repo_root, int(plan_ref.plan_id), BodyText(content=updated_body)
-            )
-    except ValueError:
-        # Non-fatal - metadata update failed
-        pass
+        backend.post_event(
+            repo_root,
+            plan_ref.plan_id,
+            metadata=metadata,
+            comment=comment_body,
+        )
+    except RuntimeError as e:
+        _output_error(event, "github-api-failed", f"Failed to post event: {e}")
+        return
 
     result = SignalSuccess(
         success=True,
@@ -327,10 +277,17 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
     """Handle 'ended' event - update metadata."""
     event = "ended"
 
-    # Find impl directory - check BEFORE context access
-    impl_dir = Path.cwd() / ".impl"
+    # Get cwd from context
+    try:
+        cwd = require_cwd(ctx)
+    except SystemExit:
+        _output_error(event, "context-not-initialized", "Context not initialized")
+        return
+
+    # Find impl directory
+    impl_dir = cwd / ".impl"
     if not impl_dir.exists():
-        impl_dir = Path.cwd() / ".worker-impl"
+        impl_dir = cwd / ".worker-impl"
 
     # Read plan reference FIRST (doesn't require context)
     plan_ref = read_plan_ref(impl_dir)
@@ -347,8 +304,6 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
 
     # Capture metadata
     timestamp = datetime.now(UTC).isoformat()
-    # session_id is passed as parameter, not from env var
-    # (erk code never has access to CLAUDE_CODE_SESSION_ID env var)
     user = getpass.getuser()
 
     # Write local state file first
@@ -364,37 +319,28 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
         _output_error(event, "local-state-write-failed", f"Failed to write local state: {e}")
         return
 
-    # Get GitHub Issues from context
+    # Get PlanBackend from context
     try:
-        github = require_github_issues(ctx)
+        backend = require_plan_backend(ctx)
     except SystemExit:
         _output_error(event, "context-not-initialized", "Context not initialized")
         return
 
-    # Update issue metadata
+    # Build metadata dict
+    metadata: dict[str, object] = {}
+    if in_github_actions():
+        metadata["last_remote_impl_at"] = timestamp
+    else:
+        metadata["last_local_impl_at"] = timestamp
+        metadata["last_local_impl_event"] = "ended"
+        metadata["last_local_impl_session"] = session_id
+        metadata["last_local_impl_user"] = user
+
+    # Update metadata via PlanBackend (no comment for ended)
     try:
-        issue = github.get_issue(repo_root, int(plan_ref.plan_id))
-        if isinstance(issue, IssueNotFound):
-            _output_error(event, "github-api-failed", f"Issue #{plan_ref.plan_id} not found")
-            return
-
-        if in_github_actions():
-            updated_body = update_plan_header_remote_impl(
-                issue_body=issue.body,
-                remote_impl_at=timestamp,
-            )
-        else:
-            updated_body = update_plan_header_local_impl_event(
-                issue_body=issue.body,
-                local_impl_at=timestamp,
-                event="ended",
-                session_id=session_id,
-                user=user,
-            )
-
-        github.update_issue_body(repo_root, int(plan_ref.plan_id), BodyText(content=updated_body))
-    except ValueError as e:
-        _output_error(event, "github-api-failed", f"Failed to update issue: {e}")
+        backend.update_metadata(repo_root, plan_ref.plan_id, metadata)
+    except RuntimeError as e:
+        _output_error(event, "github-api-failed", f"Failed to update metadata: {e}")
         return
 
     result = SignalSuccess(
