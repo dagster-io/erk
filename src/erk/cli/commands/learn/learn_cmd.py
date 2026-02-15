@@ -136,8 +136,12 @@ def learn_cmd(
     # Check for preprocessed learn materials gist URL before session discovery
     gist_url = _get_learn_materials_gist_url(ctx, repo_root, issue_number)
     if gist_url is not None:
-        msg = f"📦 Preprocessed learn materials available for plan #{issue_number}"
-        user_output(click.style(msg, fg="cyan"))
+        user_output(
+            click.style(f"Preprocessed learn materials for plan #{issue_number}", bold=True)
+            + f"\n\nGist: {click.style(gist_url, fg='cyan')}"
+            + "\n\nSessions have been preprocessed and uploaded."
+            + "\nClaude will download and analyze from the gist directly."
+        )
         _confirm_and_launch(
             ctx=ctx,
             repo_root=repo_root,
