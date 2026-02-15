@@ -35,7 +35,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
 from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
 
@@ -99,10 +99,16 @@ def plan_update_issue(
     if not plan_content:
         _handle_update_error("No plan found in ~/.claude/plans/")
 
+    # Narrow type for type checker (None case handled above)
+    assert plan_content is not None
+
     # Step 2: Get existing issue to verify it exists
     issue = github.get_issue(repo_root, issue_number)
     if isinstance(issue, IssueNotFound):
         _handle_update_error(f"Issue #{issue_number} not found")
+
+    # Narrow type for type checker (IssueNotFound case exits above)
+    assert isinstance(issue, IssueInfo)
 
     # Step 3: Get first comment ID (where plan body lives in Schema v2)
     comments = github.get_issue_comments_with_urls(repo_root, issue_number)
