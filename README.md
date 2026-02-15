@@ -45,7 +45,7 @@ erk pr submit
 erk pr land
 ```
 
-See [The Workflow](docs/concepts/the-workflow.md) for the complete guide.
+See [The Workflow](docs/howto/local-workflow.md) for the complete guide.
 
 ## Documentation
 
