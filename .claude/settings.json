@@ -1,6 +1,10 @@
 {
   "permissions": {
-    "allow": ["Bash(erk:*)", "Read(/tmp/*)", "Write(/tmp/*)"],
+    "allow": [
+      "Bash(erk:*)",
+      "Read(/tmp/*)",
+      "Write(/tmp/*)"
+    ],
     "deny": []
   },
   "hooks": {
@@ -10,27 +14,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/fake-driven-testing-reminder.sh"
+            "command": "command -v erk >/dev/null 2>&1 || exit 0; ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
           }
         ]
       }
     ],
     "PreToolUse": [
-      {
-        "matcher": "ExitPlanMode",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook",
-            "timeout": 30
-          }
-        ]
-      },
       {
         "matcher": "Write|Edit",
         "hooks": [
@@ -38,6 +27,15 @@
             "type": "command",
             "command": "ERK_HOOK_ID=pre-tool-use-hook erk exec pre-tool-use-hook",
             "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v erk >/dev/null 2>&1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
           }
         ]
       }

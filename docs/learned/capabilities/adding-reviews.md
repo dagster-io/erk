@@ -6,7 +6,7 @@ read_when:
   - "understanding ReviewCapability pattern"
 tripwires:
   - action: "creating a review capability"
-    warning: "Review definition MUST exist at .github/reviews/{review_name}.md in erk repo root. At runtime, get_bundled_github_dir() resolves this location (src/erk/artifacts/paths.py). Missing source file causes install failure."
+    warning: "Review definition MUST exist at .claude/reviews/{review_name}.md in erk repo root. At runtime, get_bundled_claude_dir() resolves this location (src/erk/artifacts/paths.py). Missing source file causes install failure."
   - action: "review capability installation fails"
     warning: "ReviewCapability has automatic preflight check for code-reviews-system workflow. Install will fail if .github/workflows/code-reviews.yml doesn't exist in target repo. Install code-reviews-system capability first."
 last_audited: "2026-02-08"
@@ -45,17 +45,11 @@ See `DignifiedPythonReviewDefCapability` for the canonical minimal implementatio
 
 ## Bundled Source Location Trade-off
 
-<!-- Source: src/erk/artifacts/paths.py, get_bundled_github_dir -->
+<!-- Source: src/erk/artifacts/paths.py, get_bundled_claude_dir -->
 
-Review definitions are sourced from `.github/reviews/` in the erk repository (not `.claude/reviews/`). This placement is deliberate:
+Review definitions are sourced from `.claude/reviews/` in the erk repository. This placement matches the customer layout — reviews are installed to `.claude/reviews/` in target repos, and erk itself stores them in the same location for dogfooding.
 
-**Why `.github/` instead of `.claude/`?**
-
-- Reviews are consumed by GitHub Actions workflows (`.github/workflows/code-reviews.yml`)
-- Colocation with the workflow that uses them improves discoverability
-- erk itself uses these reviews for self-review during CI
-
-At runtime, `get_bundled_github_dir()` resolves this location—handles both editable installs (erk repo root) and wheel installs (bundled at `erk/data/github/`).
+At runtime, `get_bundled_claude_dir()` resolves this location — handles both editable installs (erk repo root) and wheel installs (bundled at `erk/data/claude/`).
 
 ## Automatic Dependency Enforcement
 

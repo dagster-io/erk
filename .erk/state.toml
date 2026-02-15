@@ -109,5 +109,6 @@ hash = "416f5ec584633d32"
 installed = [
     "devrun",
     "dignified-python",
+    "explore-docs",
     "tripwires",
 ]

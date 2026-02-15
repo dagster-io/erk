@@ -7,7 +7,7 @@ Usage:
     erk exec discover-reviews --pr-number 123
 
     # Use custom reviews directory
-    erk exec discover-reviews --pr-number 123 --reviews-dir .github/reviews
+    erk exec discover-reviews --pr-number 123 --reviews-dir .claude/reviews
 
 Output:
     JSON with matching reviews, skipped reviews, and validation errors

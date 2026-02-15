@@ -597,7 +597,7 @@ def _find_missing_reviews(
 
     Args:
         project_reviews_dir: Path to project's .claude/reviews/ directory
-        bundled_reviews_dir: Path to bundled .github/reviews/ in erk package
+        bundled_reviews_dir: Path to bundled .claude/reviews/ in erk package
 
     Returns:
         Dict mapping ".claude/reviews" to list of missing review filenames
@@ -703,9 +703,9 @@ def find_missing_artifacts(project_dir: Path) -> CompletenessCheckResult:
     bundled_actions_dir = bundled_github_dir / "actions"
     missing.update(_find_missing_actions(project_actions_dir, bundled_actions_dir))
 
-    # Check reviews (in .claude/reviews/, bundled from .github/reviews/)
+    # Check reviews (in .claude/reviews/, bundled from .claude/reviews/)
     project_reviews_dir = project_claude_dir / "reviews"
-    bundled_reviews_dir = bundled_github_dir / "reviews"
+    bundled_reviews_dir = bundled_claude_dir / "reviews"
     missing.update(_find_missing_reviews(project_reviews_dir, bundled_reviews_dir))
 
     # Check hooks in settings.json

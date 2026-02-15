@@ -94,8 +94,8 @@ class ReviewCapability(Capability):
                 message="ReviewCapability requires repo_root",
             )
         # Inline import: avoids circular dependency with artifacts module
+        from erk.artifacts.paths import get_bundled_claude_dir
         from erk.artifacts.state import add_installed_capability
-        from erk.artifacts.sync import get_bundled_github_dir
 
         review_file = repo_root / ".claude" / "reviews" / f"{self.review_name}.md"
         if review_file.exists():
@@ -106,8 +106,8 @@ class ReviewCapability(Capability):
                 message=f".claude/reviews/{self.review_name}.md already exists",
             )
 
-        bundled_github_dir = get_bundled_github_dir()
-        source_review = bundled_github_dir / "reviews" / f"{self.review_name}.md"
+        bundled_claude_dir = get_bundled_claude_dir()
+        source_review = bundled_claude_dir / "reviews" / f"{self.review_name}.md"
 
         if not source_review.exists():
             return CapabilityResult(
