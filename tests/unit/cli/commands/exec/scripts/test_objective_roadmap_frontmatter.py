@@ -268,9 +268,7 @@ steps:
     pr: null
 ---"""
 
-    updated = update_step_in_frontmatter(
-        block_content, "1.2", plan=None, pr="#789", status=None
-    )
+    updated = update_step_in_frontmatter(block_content, "1.2", plan=None, pr="#789", status=None)
 
     assert updated is not None
     # Parse the updated content to verify
@@ -327,9 +325,7 @@ steps:
     pr: null
 ---"""
 
-    updated = update_step_in_frontmatter(
-        block_content, "1.2", plan=None, pr="#333", status=None
-    )
+    updated = update_step_in_frontmatter(block_content, "1.2", plan=None, pr="#333", status=None)
 
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)
@@ -361,9 +357,7 @@ steps:
 
 Some markdown content after frontmatter."""
 
-    updated = update_step_in_frontmatter(
-        block_content, "1.1", plan=None, pr="#999", status=None
-    )
+    updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#999", status=None)
 
     assert updated is not None
     assert "Some markdown content after frontmatter." in updated
@@ -489,9 +483,7 @@ steps:
     pr: null
 ---"""
 
-    updated = update_step_in_frontmatter(
-        block_content, "1.1", plan=None, pr="#123", status="done"
-    )
+    updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#123", status="done")
 
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)
@@ -511,9 +503,7 @@ steps:
     pr: "#100"
 ---"""
 
-    updated = update_step_in_frontmatter(
-        block_content, "1.1", plan=None, pr="#200", status=None
-    )
+    updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#200", status=None)
 
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)
@@ -555,9 +545,7 @@ steps:
     pr: null
 ---"""
 
-    updated = update_step_in_frontmatter(
-        block_content, "1.1", plan=None, pr="#999", status=None
-    )
+    updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#999", status=None)
 
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)
@@ -648,9 +636,7 @@ steps:
     pr: null
 ---"""
 
-    updated = update_step_in_frontmatter(
-        block_content, "1.1", plan=None, pr="#999", status=None
-    )
+    updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#999", status=None)
 
     assert updated is not None
     steps = parse_roadmap_frontmatter(updated)

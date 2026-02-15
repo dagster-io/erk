@@ -111,9 +111,7 @@ def test_next_plan_one_shot_happy_path() -> None:
         # Verify objective body was updated: step 1.1 marked as "planning" with draft PR
         # Note: updated_bodies has 2 entries — one from skeleton plan issue creation
         # (create_plan_issue updates body with comment_id) and one from objective update
-        objective_updates = [
-            (num, body) for num, body in issues.updated_bodies if num == 42
-        ]
+        objective_updates = [(num, body) for num, body in issues.updated_bodies if num == 42]
         assert len(objective_updates) == 1
         _, updated_body = objective_updates[0]
         assert "planning" in updated_body.lower() or "planning" in updated_body
