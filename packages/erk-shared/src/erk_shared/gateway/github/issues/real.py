@@ -227,6 +227,28 @@ class RealGitHubIssues(GitHubIssues):
         cmd = self._build_gh_command(base_cmd)
         execute_gh_command_with_retry(cmd, repo_root, self._time)
 
+    def update_issue_title(self, repo_root: Path, number: int, title: str) -> None:
+        """Update issue title using gh CLI REST API.
+
+        Uses REST API instead of GraphQL (`gh issue edit`) to avoid hitting
+        GraphQL rate limits. GraphQL and REST have separate quotas.
+
+        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+        on failures (not installed, not authenticated, issue not found).
+        """
+        # GH-API-AUDIT: REST - PATCH issues/{number}
+        base_cmd = [
+            "gh",
+            "api",
+            "--method",
+            "PATCH",
+            f"repos/{{owner}}/{{repo}}/issues/{number}",
+            "-f",
+            f"title={title}",
+        ]
+        cmd = self._build_gh_command(base_cmd)
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
+
     def list_issues(
         self,
         *,

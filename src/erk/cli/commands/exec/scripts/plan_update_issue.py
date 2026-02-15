@@ -37,6 +37,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
+from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
 
 
 @click.command(name="plan-update-issue")
@@ -128,10 +129,25 @@ def plan_update_issue(
             click.echo(json.dumps({"success": False, "error": error_msg}))
         raise SystemExit(1) from e
 
-    # Step 5: Output success
+    # Step 5: Update issue title from plan content
+    new_title = extract_title_from_plan(plan_content)
+    title_tag = get_title_tag_from_labels(issue.labels)
+    full_title = f"{title_tag} {new_title}"
+
+    try:
+        github.update_issue_title(repo_root, issue_number, full_title)
+    except RuntimeError as e:
+        error_msg = f"Failed to update title: {e}"
+        if output_format == "display":
+            click.echo(f"Error: {error_msg}", err=True)
+        else:
+            click.echo(json.dumps({"success": False, "error": error_msg}))
+        raise SystemExit(1) from e
+
+    # Step 6: Output success
     if output_format == "display":
         click.echo(f"Plan updated on issue #{issue_number}")
-        click.echo(f"Title: {issue.title}")
+        click.echo(f"Title: {full_title}")
         click.echo(f"URL: {issue.url}")
         click.echo(f"Comment: {first_comment.url}")
     else:
@@ -143,6 +159,7 @@ def plan_update_issue(
                     "issue_url": issue.url,
                     "comment_id": comment_id,
                     "comment_url": first_comment.url,
+                    "title": full_title,
                 }
             )
         )

@@ -58,6 +58,9 @@ class DryRunGitHubIssues(GitHubIssues):
     def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -> None:
         """No-op for updating issue body in dry-run mode."""
 
+    def update_issue_title(self, repo_root: Path, number: int, title: str) -> None:
+        """No-op for updating issue title in dry-run mode."""
+
     def list_issues(
         self,
         *,

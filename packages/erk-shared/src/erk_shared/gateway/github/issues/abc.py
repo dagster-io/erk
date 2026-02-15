@@ -311,6 +311,20 @@ class GitHubIssues(ABC):
         ...
 
     @abstractmethod
+    def update_issue_title(self, repo_root: Path, number: int, title: str) -> None:
+        """Update the title of an existing issue.
+
+        Args:
+            repo_root: Repository root directory
+            number: Issue number to update
+            title: New issue title
+
+        Raises:
+            RuntimeError: If gh CLI fails or issue not found
+        """
+        ...
+
+    @abstractmethod
     def update_comment(
         self,
         repo_root: Path,
