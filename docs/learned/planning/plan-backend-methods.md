@@ -9,39 +9,54 @@ tripwires:
     warning: "Three fields are immutable (schema_version, created_at, created_by). update_metadata() uses a blocklist, not a whitelist. New metadata fields are allowed by default."
   - action: "adding dry_run or printing implementation to PlanBackend"
     warning: "PlanBackend is a Backend ABC (3-place pattern), not a Gateway. See gateway-vs-backend.md for the distinction."
+  - action: "creating a fake PlanBackend for testing application code"
+    warning: "Fake backends validate the ABC contract only. To test code that uses a backend, inject fake gateways into the real backend. See the Testing Pattern section."
 ---
 
 # PlanBackend ABC Methods
 
+<!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, PlanBackend -->
+
 PlanBackend extends PlanStore with write operations for plan management. It follows the Backend ABC pattern (3-place: abc, real, fake) — see [Gateway vs Backend](../architecture/gateway-vs-backend.md).
 
-## Architecture: Schema v2/v3
+## Architecture: Schema v2
 
 GitHub plan storage separates metadata from content:
 
 - **Issue body**: Contains `plan-header` metadata block (YAML in HTML comments)
 - **First comment**: Contains plan content (the actual plan markdown)
 
-This separation allows metadata updates without touching plan content and vice versa.
+This separation exists so metadata updates (e.g., recording a dispatch timestamp) don't require touching plan content, and vice versa. This avoids merge conflicts when multiple operations target the same plan concurrently.
+
+## PlanStore (Deprecated)
+
+<!-- Source: packages/erk-shared/src/erk_shared/plan_store/store.py, PlanStore -->
+
+PlanStore is a **deprecated** read-only subset of PlanBackend. It is retained only for backward compatibility with existing type annotations. New code should use PlanBackend for full read/write access. See `PlanStore` in `packages/erk-shared/src/erk_shared/plan_store/store.py` for the deprecation notice.
 
 ## Read Operations (from PlanStore)
+
+<!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, PlanBackend -->
 
 | Method                 | Purpose                   | Returns                  |
 | ---------------------- | ------------------------- | ------------------------ |
 | `get_plan()`           | Fetch plan by ID          | `Plan \| PlanNotFound`   |
 | `list_plans()`         | Query plans by criteria   | `list[Plan]`             |
 | `get_provider_name()`  | Get provider identifier   | `str`                    |
+| `close_plan()`         | Close a plan by ID        | `None`                   |
 | `get_metadata_field()` | Get single metadata value | `object \| PlanNotFound` |
 
 ### get_metadata_field() Details
 
-Reads a single field from the `plan-header` metadata block. Uses `find_metadata_block()` to parse the issue body. Returns `None` if the field is unset (vs `PlanNotFound` if the plan doesn't exist).
-
 <!-- Source: packages/erk-shared/src/erk_shared/plan_store/github.py, GitHubPlanStore.get_metadata_field -->
 
-**GitHubPlanStore implementation**: See `GitHubPlanStore.get_metadata_field()` in `packages/erk-shared/src/erk_shared/plan_store/github.py`. Fetches issue, parses plan-header block, returns `block.data.get(field_name)`.
+This method exists separately from `get_plan()` to avoid the cost of fetching plan content when only a single metadata field is needed. Plan content lives in a separate comment and requires an additional API call; `get_metadata_field()` reads only the issue body's `plan-header` block.
+
+Returns `None` if the field is unset (vs `PlanNotFound` if the plan doesn't exist) — callers must distinguish between "field not set" and "plan not found" using type narrowing on the return value.
 
 ## Write Operations (from PlanBackend)
+
+<!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, PlanBackend -->
 
 | Method                  | Purpose                            | Key Detail                             |
 | ----------------------- | ---------------------------------- | -------------------------------------- |
@@ -53,31 +68,55 @@ Reads a single field from the `plan-header` metadata block. Uses `find_metadata_
 
 ### update_metadata() Details
 
-Updates plan-header metadata in the issue body. Uses a **blocklist** of 3 immutable fields (`schema_version`, `created_at`, `created_by`) rather than a whitelist. Any field not in the blocklist can be updated. Validates via `PlanHeaderSchema` after merging.
-
 <!-- Source: packages/erk-shared/src/erk_shared/plan_store/github.py, GitHubPlanStore.update_metadata -->
 
-**GitHubPlanStore implementation**: See `GitHubPlanStore.update_metadata()` in `packages/erk-shared/src/erk_shared/plan_store/github.py`. Fetches issue, parses plan-header block, merges new fields (skipping immutable), validates, re-renders block, updates issue body.
+Uses a **blocklist** of 3 immutable fields (`schema_version`, `created_at`, `created_by`) rather than a whitelist. This design means new metadata fields are allowed by default — adding a new field to `PlanHeaderSchema` automatically makes it settable without updating the write path. Only fields that must never change after creation are protected.
+
+Validates via `PlanHeaderSchema` after merging, so unknown fields are still caught by schema validation.
 
 ### update_plan_content() Details
 
-Updates the plan content in the first comment. Uses **two-tier lookup**: first checks `plan_comment_id` from metadata, then falls back to the first comment on the issue.
-
 <!-- Source: packages/erk-shared/src/erk_shared/plan_store/github.py, GitHubPlanStore.update_plan_content -->
 
-**GitHubPlanStore implementation**: See `GitHubPlanStore.update_plan_content()` in `packages/erk-shared/src/erk_shared/plan_store/github.py`. Extracts `plan_comment_id` from plan-header. If found, updates that comment directly. Otherwise, fetches all comments and updates the first one.
+Uses **two-tier comment lookup** because `plan_comment_id` was added to the metadata schema after plans already existed. Older plans lack this field, so the fallback to the first comment ensures backward compatibility. The two-tier approach:
+
+1. Check `plan_comment_id` from plan-header metadata (direct lookup — O(1) API call)
+2. Fall back to fetching all comments and using the first one (list lookup — slower)
+
+New plans always have `plan_comment_id` set, so the fallback only triggers for legacy plans.
 
 ### post_event() Details
 
-Convenience method combining a comment and metadata update in a single call. Comment is posted first (if provided), then metadata is updated. This ordering ensures the comment exists before metadata references it.
-
 <!-- Source: packages/erk-shared/src/erk_shared/plan_store/github.py, GitHubPlanStore.post_event -->
 
-**GitHubPlanStore implementation**: See `GitHubPlanStore.post_event()` in `packages/erk-shared/src/erk_shared/plan_store/github.py`. Calls `add_comment()` then `update_metadata()` sequentially.
+Convenience method combining a comment and metadata update in a single call. Comment is posted first (if provided), then metadata is updated. This ordering ensures the comment exists before metadata references it (e.g., if metadata stores a `plan_comment_id`).
 
-## FakeLinearPlanBackend Pattern
+## FakeLinearPlanBackend
 
-The fake implementation at `plan_store/fake_linear.py` validates that the ABC contract works across fundamentally different providers. It uses **immutable update semantics** — creating new `LinearIssue` instances via constructor calls rather than mutating in place.
+<!-- Source: packages/erk-shared/src/erk_shared/plan_store/fake_linear.py, FakeLinearPlanBackend -->
+
+The fake implementation at `plan_store/fake_linear.py` validates that the ABC contract works across fundamentally different providers (UUID-based IDs, 5-state workflow, single assignee, metadata in custom_fields). It uses **frozen dataclass replacement** for updates — creating new `LinearIssue` instances rather than mutating in place.
+
+### Testing Pattern
+
+Fake backends exist **only** to validate the ABC contract works across different providers. They are NOT for testing application code that uses a backend.
+
+To test code that uses a PlanBackend, inject fake **gateways** into the **real** backend:
+
+```python
+# CORRECT: Real backend with fake gateway
+fake_issues = FakeGitHubIssues()
+backend = GitHubPlanStore(fake_issues)
+result = backend.create_plan(...)
+```
+
+```python
+# WRONG: Using FakeLinearPlanBackend to test application code
+backend = FakeLinearPlanBackend()
+my_service = PlanService(backend)  # Don't do this
+```
+
+See `PlanBackend` module docstring in `packages/erk-shared/src/erk_shared/plan_store/backend.py` for the canonical example.
 
 ## Related Documentation
 
