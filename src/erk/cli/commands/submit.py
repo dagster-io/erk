@@ -779,6 +779,18 @@ def _submit_single_issue(
     )
     user_output(click.style("✓", fg="green") + " Workflow triggered.")
 
+    # Compute workflow URL once (used for PR body update, queued comment, and result)
+    workflow_url = _build_workflow_run_url(issue.url, run_id)
+
+    # Update PR body with workflow run link (best-effort)
+    try:
+        pr_details = ctx.github.get_pr(repo.root, pr_number)
+        if not isinstance(pr_details, PRNotFound):
+            updated_body = pr_details.body + f"\n\n**Workflow run:** {workflow_url}"
+            ctx.github.update_pr_body(repo.root, pr_number, updated_body)
+    except Exception:
+        pass  # Best-effort: workflow is already triggered
+
     # Write dispatch metadata synchronously to fix race condition with erk dash
     # This ensures the issue body has the run info before we return to the user
     try:
@@ -803,7 +815,6 @@ def _submit_single_issue(
     }
 
     # Create and post queued event comment
-    workflow_url = _build_workflow_run_url(issue.url, run_id)
     try:
         metadata_block = create_submission_queued_block(
             queued_at=queued_at,

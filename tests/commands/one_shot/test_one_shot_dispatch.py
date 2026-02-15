@@ -70,6 +70,12 @@ def test_dispatch_happy_path() -> None:
         assert inputs["instruction"] == "fix the import in config.py"
         assert inputs["plan_issue_number"] == "1"
 
+        # Verify PR body was updated with workflow run link
+        assert len(github.updated_pr_bodies) == 1
+        _pr_num, updated_body = github.updated_pr_bodies[0]
+        assert "**Workflow run:**" in updated_body
+        assert "https://github.com/owner/repo/actions/runs/" in updated_body
+
         # Verify we're back on original branch
         assert git.branch.get_current_branch(env.cwd) == "main"
 
