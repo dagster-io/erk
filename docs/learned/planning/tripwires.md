@@ -36,6 +36,8 @@ Rules triggered by matching actions in code.
 
 **assuming plan content is in the issue body** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. Schema v2 stores plan content in the FIRST COMMENT, not the issue body. The body contains only the plan-header metadata block. See extract_plan_from_comment() for the extraction logic.
 
+**assuming plan content is in the issue body** → Read [Plan Storage Architecture](plan-storage.md) first. Plan content lives in an issue COMMENT, not the issue body. The body contains only metadata blocks. Use plan_comment_id from plan-header to find the content.
+
 **assuming remote sessions skip local preprocessing** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. Since PR #6974, remote sessions go through the same \_preprocess_session_direct() pipeline as local sessions. They are downloaded first, then preprocessed identically.
 
 **automatically removing .impl/ folder** → Read [.worker-impl/ vs .impl/ Cleanup Discipline](worktree-cleanup.md) first. NEVER auto-delete .impl/. It belongs to the user for plan-vs-implementation review. Only .worker-impl/ is auto-cleaned.
@@ -87,6 +89,8 @@ Rules triggered by matching actions in code.
 **grepping only for the error message text** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. Also grep for function names extracted from the error (e.g., 'checkout_footer' from 'Missing checkout footer'). Validator function names are more stable search targets than error message strings.
 
 **implementing PR body generation with checkout footers** → Read [Plan Lifecycle](lifecycle.md) first. HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``
+
+**implementing a plan from .impl/plan.md without verifying file integrity** → Read [Plan File Recovery](plan-recovery.md) first. Check file ends with newline and content is not truncated. If corrupted, recover from GitHub API using plan_comment_id from .impl/plan-ref.json.
 
 **implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](lifecycle.md) first. Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency.
 

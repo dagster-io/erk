@@ -104,6 +104,26 @@ Grep for "SPECULATIVE: feature-name" to find all related code.
 | **To find all code** | `grep -r "SPECULATIVE: feature-name" src/` |
 | **To remove**        | Delete the module and guarded blocks       |
 
+## Early Return for None/Empty Checks
+
+Use early return for None/empty guard clauses instead of nesting main logic inside `if` blocks:
+
+```python
+# CORRECT: Early return
+def process(value: str | None) -> str:
+    if value is None:
+        return ""
+    return value.strip().upper()
+
+# WRONG: Unnecessary nesting
+def process(value: str | None) -> str:
+    if value is not None:
+        return value.strip().upper()
+    return ""
+```
+
+This reduces nesting depth and makes the main logic path clearer.
+
 ## AI-Generated Commit Messages
 
 ### Forbidden Elements

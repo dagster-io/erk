@@ -54,6 +54,8 @@ Rules triggered by matching actions in code.
 
 **modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.
 
+**naming test fixtures or helpers with names that collide with production modules** → Read [Erk Test Reference](testing.md) first. Use distinct test-specific names (e.g., `create_test_context` not `create_context`). Namespace collisions cause confusing import errors.
+
 **passing group-level options when invoking a subcommand in tests** → Read [Command Group Testing](command-group-testing.md) first. Click does NOT propagate group-level options to subcommands by default. Options placed before the subcommand name in the args list are silently ignored.
 
 **passing string values to comments_with_urls parameter of FakeGitHubIssues** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. comments_with_urls requires IssueComment objects, not strings. Strings cause silent empty-list returns. Match the parameter to the ABC getter method your code calls.

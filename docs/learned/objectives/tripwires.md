@@ -30,6 +30,8 @@ Rules triggered by matching actions in code.
 
 **creating documentation for a pattern discovered during an objective before the pattern is proven in a merged PR** → Read [Documentation Capture from Objective Work](research-documentation-integration.md) first. Only document patterns proven in practice. Speculative patterns from in-progress objectives go stale. Wait until the PR lands and the pattern is validated.
 
+**creating or modifying command that mutates objective state** → Read [Post-Mutation Validation](mutation-patterns.md) first. MUST call erk objective check at the end, especially if mutation uses inference.
+
 **creating or modifying roadmap step IDs** → Read [Roadmap Parser](roadmap-parser.md) first. Step IDs should use plain numbers (1.1, 2.1), not letter format (1A.1, 1B.1).
 
 **directly mutating issue body markdown without using either command** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Direct body mutation skips status computation. The surgical command writes computed status atomically; bypassing it leaves status stale. See roadmap-mutation-semantics.md.

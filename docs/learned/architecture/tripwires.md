@@ -34,7 +34,7 @@ Rules triggered by matching actions in code.
 
 **adding file I/O, network calls, or subprocess invocations to a class **init\***\* → Read [Erk Architecture Patterns](erk-architecture.md) first. Load `dignified-python` skill first. Class **init\*\* should be lightweight (just data assignment). Heavy operations belong in static factory methods like `from_config_path()` or `load()`. This enables direct instantiation in tests without I/O setup.
 
-**adding new file format support without read-then-fallback** → Read [Erk Architecture Patterns](erk-architecture.md) first. When adding new file formats, implement read-then-fallback: try new format first, fall back to old format transparently. See read_plan_ref() for the canonical pattern.
+**adding new file format support without read-then-fallback** → Read [Erk Architecture Patterns](erk-architecture.md) first. When adding new file formats, implement read-then-fallback: try new format first, fall back to old format transparently. See read_plan_ref() for file formats and parse_roadmap_frontmatter() for content format detection.
 
 **adding optional fields to pipeline state without defaults** → Read [State Threading Pattern](state-threading-pattern.md) first. New pipeline state fields must have defaults (usually None) to avoid breaking make_initial_state() factories. See optional-field-propagation.md for the pattern.
 
@@ -143,6 +143,8 @@ Rules triggered by matching actions in code.
 **implementing a cleanup operation that modifies metadata based on external API success** → Read [Fail-Open Pattern](fail-open-patterns.md) first. Use fail-open pattern. If critical step fails, do NOT execute dependent steps that modify persistent state.
 
 **implementing a new `erk pr` command** → Read [PR Body Assembly](pr-body-assembly.md) first. Compare feature parity with `submit_pipeline.py`. Check: issue discovery, closing reference preservation, learn plan labels, footer construction, and plan details section. Use shared utilities from `shared.py` (`assemble_pr_body`, `discover_issue_for_footer`).
+
+**implementing format migration** → Read [Format Migration Pattern](format-migration.md) first. DO preserve input format in update operations. ONLY use new format for newly created objects. DO NOT migrate on every write without explicit user request.
 
 **implementing idempotent operations that fail on missing resources** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Use LBYL existence check to return early, making the operation truly idempotent.
 

@@ -29,6 +29,7 @@
 - **[event-progress-pattern.md](event-progress-pattern.md)** — implementing operations that need progress reporting, separating business logic from UI output, building testable CLI operations, using ProgressEvent or CompletionEvent
 - **[fail-open-patterns.md](fail-open-patterns.md)** — implementing cleanup operations, designing resilient workflows, handling optional or non-critical operations
 - **[flatten-subgateway-pattern.md](flatten-subgateway-pattern.md)** — creating or migrating subgateways, exposing subgateway operations through parent gateway, working with gateway hierarchies, implementing property-based subgateway access
+- **[format-migration.md](format-migration.md)** — implementing dual-format support, modifying parsers or serializers, adding format migration
 - **[gateway-abc-implementation.md](gateway-abc-implementation.md)** — adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite), implementing new gateway operations, composing one gateway inside another (e.g., GitHub composing GitHubIssues)
 - **[gateway-decomposition-phases.md](gateway-decomposition-phases.md)** — understanding the gateway decomposition initiative, planning new subgateway extractions, reviewing architectural history
 - **[gateway-error-boundaries.md](gateway-error-boundaries.md)** — implementing gateway error handling, converting gateway operations to discriminated unions, deciding where try/except blocks belong in gateways
@@ -60,6 +61,7 @@
 - **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with plan-ref.json, closing reference lost after erk pr submit
 - **[land-state-threading.md](land-state-threading.md)** — implementing pipelines with immutable state, using dataclasses.replace() for state updates, designing stateful workflows with frozen dataclasses
 - **[lbyl-gateway-pattern.md](lbyl-gateway-pattern.md)** — implementing existence checks before gateway operations, adding LBYL validation to CLI commands, understanding why gateways have separate existence methods
+- **[lbyl-patterns.md](lbyl-patterns.md)** — implementing dual-format parsing, converting EAFP to LBYL, adding format detection
 - **[learn-origin-tracking.md](learn-origin-tracking.md)** — understanding how learn PRs are identified, modifying erk land behavior, working with erk-skip-learn label
 - **[linear-pipelines.md](linear-pipelines.md)** — designing multi-step operations with validation and execution phases, refactoring complex commands into functional pipelines, working with land command or similar staged workflows
 - **[live-display-gateway.md](live-display-gateway.md)** — implementing live-updating terminal displays, working with TUI real-time updates, showing progress indicators

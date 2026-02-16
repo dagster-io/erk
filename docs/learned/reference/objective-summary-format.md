@@ -9,7 +9,7 @@ read_when:
   - parsing objective summary JSON output
 tripwires:
   - action: "adding a new roadmap status value"
-    warning: "Status inference lives in two places that must stay synchronized: the roadmap parser (objective_roadmap_shared.py) and the agent prompt in objective-next-plan.md. Update both or the formats will diverge."
+    warning: "Status inference lives in two places that must stay synchronized: the roadmap parser (roadmap.py in erk_shared/gateway/github/metadata/) and the agent prompt in objective-next-plan.md. Update both or the formats will diverge."
 ---
 
 # Objective Summary Format
@@ -47,9 +47,9 @@ This is flat labeled text, not JSON. The format is optimized for haiku-tier agen
 
 Roadmap step status is inferred from two signals — the explicit status column and the PR column — and this inference logic must stay consistent across all consumers.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
 
-The canonical status inference lives in `parse_roadmap()` in `objective_roadmap_shared.py`. The priority order:
+The canonical status inference lives in `parse_roadmap()` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`. The priority order:
 
 1. **Explicit status column** — `done`, `blocked`, `skipped`, `in-progress`, `pending` are used directly
 2. **Column fallback** — if status is ambiguous, a `#NNN` in the PR column infers `done`, and a `#NNN` in the Plan column infers `in_progress`

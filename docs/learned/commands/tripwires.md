@@ -16,6 +16,8 @@ Rules triggered by matching actions in code.
 
 **creating commands that delegate to subagents** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. NEVER omit Task from allowed-tools if the command delegates to subagents
 
+**invoking a command referenced in objective or plan content** → Read [Command Namespace Distinction](command-namespace-distinction.md) first. Verify command exists: /local:_ and /erk:_ are slash commands in .claude/commands/, erk <group> <command> are CLI commands. Do not confuse the two namespaces.
+
 **modifying collateral finding categories or auto-apply behavior in audit-doc** → Read [Audit-Doc Design Decisions](audit-doc.md) first. CRITICAL: Read this doc first to understand the conceptual vs mechanical finding distinction
 
 **renaming any file in .claude/commands/ or .claude/skills/** → Read [Command Rename Pattern](command-rename-pattern.md) first. Read this doc — renames require a full reference sweep, not just a file move
