@@ -5,11 +5,11 @@ Usage:
     erk exec plan-update-from-feedback <issue-number> --plan-content "..."
 
 Output:
-    JSON with success status, issue number, comment ID, and comment URL
+    JSON with success status and issue number
 
 Exit Codes:
     0: Success
-    1: Error (issue not found, missing label, no plan comment ID, or comment not found)
+    1: Error (issue not found, missing label, or update failed)
 """
 
 import json
@@ -18,14 +18,9 @@ from pathlib import Path
 
 import click
 
-from erk_shared.context.helpers import require_issues as require_github_issues
-from erk_shared.context.helpers import require_repo_root
-from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.plan_header import (
-    extract_plan_header_comment_id,
-    format_plan_content_comment,
-)
+from erk_shared.context.helpers import require_plan_backend, require_repo_root
+from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.plan_store.types import PlanNotFound
 
 
 @dataclass(frozen=True)
@@ -34,8 +29,6 @@ class PlanUpdateFromFeedbackSuccess:
 
     success: bool
     issue_number: int
-    comment_id: int
-    comment_url: str
 
 
 @dataclass(frozen=True)
@@ -57,7 +50,7 @@ class PlanUpdateFromFeedbackException(Exception):
 
 
 def _update_plan_from_feedback_impl(
-    github_issues: GitHubIssues,
+    backend: PlanBackend,
     *,
     repo_root: Path,
     issue_number: int,
@@ -66,7 +59,7 @@ def _update_plan_from_feedback_impl(
     """Update the plan-body comment on a plan issue.
 
     Args:
-        github_issues: GitHub issues gateway
+        backend: PlanBackend for plan operations
         repo_root: Repository root path
         issue_number: Issue number to update
         plan_content: New plan markdown content
@@ -77,59 +70,35 @@ def _update_plan_from_feedback_impl(
     Raises:
         PlanUpdateFromFeedbackException: If validation fails
     """
-    # LBYL: Check if issue exists
-    if not github_issues.issue_exists(repo_root, issue_number):
-        raise PlanUpdateFromFeedbackException(
-            error="issue_not_found",
-            message=f"Issue #{issue_number} not found",
-        )
+    plan_id = str(issue_number)
 
-    issue = github_issues.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
+    # LBYL: Check if plan exists
+    plan_result = backend.get_plan(repo_root, plan_id)
+    if isinstance(plan_result, PlanNotFound):
         raise PlanUpdateFromFeedbackException(
             error="issue_not_found",
             message=f"Issue #{issue_number} not found",
         )
 
     # Validate erk-plan label
-    if "erk-plan" not in issue.labels:
+    if "erk-plan" not in plan_result.labels:
         raise PlanUpdateFromFeedbackException(
             error="missing_erk_plan_label",
             message=f"Issue #{issue_number} does not have the erk-plan label",
         )
 
-    # Extract plan_comment_id from metadata
-    plan_comment_id = extract_plan_header_comment_id(issue.body)
-    if plan_comment_id is None:
+    # Update plan content via PlanBackend
+    try:
+        backend.update_plan_content(repo_root, plan_id, plan_content)
+    except RuntimeError as e:
         raise PlanUpdateFromFeedbackException(
-            error="no_plan_comment_id",
-            message=f"Issue #{issue_number} has no plan_comment_id in metadata",
-        )
-
-    # Fetch comments and find matching one
-    comments = github_issues.get_issue_comments_with_urls(repo_root, issue_number)
-
-    matching_comment = None
-    for comment in comments:
-        if comment.id == plan_comment_id:
-            matching_comment = comment
-            break
-
-    if matching_comment is None:
-        raise PlanUpdateFromFeedbackException(
-            error="comment_not_found",
-            message=f"Comment {plan_comment_id} not found on issue #{issue_number}",
-        )
-
-    # Format and update the comment
-    formatted_body = format_plan_content_comment(plan_content)
-    github_issues.update_comment(repo_root, plan_comment_id, formatted_body)
+            error="update_failed",
+            message=f"Failed to update plan content: {e}",
+        ) from e
 
     return PlanUpdateFromFeedbackSuccess(
         success=True,
         issue_number=issue_number,
-        comment_id=plan_comment_id,
-        comment_url=matching_comment.url,
     )
 
 
@@ -148,7 +117,7 @@ def plan_update_from_feedback(
 
     Requires exactly one of --plan-path or --plan-content.
     """
-    github_issues = require_github_issues(ctx)
+    backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
 
     # Validate mutually exclusive options
@@ -188,7 +157,7 @@ def plan_update_from_feedback(
 
     try:
         result = _update_plan_from_feedback_impl(
-            github_issues,
+            backend,
             repo_root=repo_root,
             issue_number=issue_number,
             plan_content=content,
