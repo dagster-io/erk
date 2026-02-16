@@ -3,6 +3,7 @@
 
 # Documentation Documentation
 
+- **[audit-auto-generated-files.md](audit-auto-generated-files.md)** — auditing docs/learned/ files, file contains AUTO-GENERATED FILE comment, considering edits to tripwires.md files
 - **[audit-methodology.md](audit-methodology.md)** — auditing documentation for quality or staleness, classifying doc content as duplicative vs high-value, understanding why stale documentation harms agents
 - **[canonical-authority-declarations.md](canonical-authority-declarations.md)** — writing a learned doc whose topic overlaps with AGENTS.md or another learned doc, consolidating scattered knowledge about the same topic into one document, resolving conflicts between two docs that describe the same pattern differently
 - **[divio-documentation-system.md](divio-documentation-system.md)** — structuring documentation, deciding what type of doc to write, creating tutorials, how-to guides, or reference material, understanding why docs feel disorganized
@@ -12,6 +13,7 @@
 - **[passive-context-vs-retrieval.md](passive-context-vs-retrieval.md)** — deciding whether to put knowledge in AGENTS.md, a skill, or a hook, diagnosing why an agent isn't using available documentation, adding a new tier of context injection
 - **[simplification-patterns.md](simplification-patterns.md)** — auditing or cleaning up documentation, removing duplication from docs, deciding how to simplify an oversized or redundant doc, replacing code blocks with source pointers
 - **[skill-scope.md](skill-scope.md)** — Creating or modifying skills in .claude/skills/, Deciding where to document a pattern, Reviewing skill content for project-specific leakage
+- **[source-pointer-workflow.md](source-pointer-workflow.md)** — converting verbatim code to source pointers, reducing code duplication in docs, auditing docs with large code blocks
 - **[source-pointers.md](source-pointers.md)** — writing or updating documentation with code references, deciding whether to include a code block in docs, addressing verbatim code violations from audit-pr-docs review
 - **[stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md)** — documenting implementation patterns with code examples, deciding whether to include verbatim code in docs, reviewing docs that contain embedded source code, understanding why erk enforces source pointers over code blocks
 - **[two-option-template.md](two-option-template.md)** — documenting a decision point between two valid approaches, writing comparison documentation for agents, choosing between decision table, prose, or template format for trade-off docs

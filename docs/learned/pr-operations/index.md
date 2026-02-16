@@ -4,9 +4,11 @@
 # Pr Operations Documentation
 
 - **[automated-review-handling.md](automated-review-handling.md)** — investigating automated bot complaints on PRs, handling prettier or linting bot review comments, deciding whether to fix or dismiss automated review feedback
+- **[batch-thread-resolution.md](batch-thread-resolution.md)** — resolving multiple review threads at once, batch resolving PR comments, using erk exec resolve-review-threads
 - **[checkout-footer-syntax.md](checkout-footer-syntax.md)** — building or modifying PR body footer content, debugging erk pr check validation failures, working on the submit pipeline or git-pr-push command
 - **[commit-message-generation.md](commit-message-generation.md)** — understanding how PR descriptions are generated, working with plan context in PR summaries, customizing commit message generation
 - **[draft-pr-handling.md](draft-pr-handling.md)** — creating or working with draft PRs, understanding when to use draft status, converting between draft and ready for review, debugging why CI didn't run on a PR, working with orphaned or duplicate PRs for a plan
+- **[false-positive-detection.md](false-positive-detection.md)** — handling automated review bot comments, dignified-code-simplifier or linter flags code, review comment references code already changed in PR
 - **[plan-embedding-in-pr.md](plan-embedding-in-pr.md)** — embedding plan content in a PR body, debugging missing or malformed plan sections in pull requests, modifying how plan context flows through PR submission
 - **[pr-creation-patterns.md](pr-creation-patterns.md)** — creating a PR programmatically in any workflow, deciding whether to create vs update an existing PR, implementing a new exec script or pipeline step that touches PRs
 - **[pr-submission-workflow.md](pr-submission-workflow.md)** — understanding why two separate git-only PR paths exist, working on the git-pr-push command or the core submit flow, debugging PR creation in environments without Graphite, deciding whether to use the command-level or pipeline-level git path

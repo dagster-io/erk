@@ -50,6 +50,7 @@
 - **[token-optimization-patterns.md](token-optimization-patterns.md)** — designing multi-agent workflows that process multiple documents, experiencing context bloat from fetching large payloads into parent agent, choosing where to place content fetching in an orchestration pipeline, deciding which model tier to use for delegated work
 - **[tripwire-promotion-workflow.md](tripwire-promotion-workflow.md)** — implementing tripwire candidate extraction, promoting tripwire candidates to frontmatter, understanding the learn-to-tripwire pipeline
 - **[tripwire-worthiness-criteria.md](tripwire-worthiness-criteria.md)** — evaluating whether an insight deserves tripwire status, reviewing [TRIPWIRE-CANDIDATE] items from learn workflow, understanding what makes something tripwire-worthy
+- **[when-to-skip-planning.md](when-to-skip-planning.md)** — considering entering plan mode, user rejected ExitPlanMode tool use, command provides explicit step-by-step instructions
 - **[workflow-markers.md](workflow-markers.md)** — building multi-step workflows that need state persistence, using erk exec marker commands, implementing objective-to-plan workflows
 - **[workflow.md](workflow.md)** — using .impl/ folders, understanding plan file structure, implementing plans
 - **[worktree-cleanup.md](worktree-cleanup.md)** — cleaning up .worker-impl/ after plan implementation, debugging leftover .worker-impl/ artifacts in a PR, deciding whether to auto-remove an implementation folder

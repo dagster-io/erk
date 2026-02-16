@@ -84,6 +84,8 @@ Rules triggered by matching actions in code.
 
 **entering Plan Mode in replan or consolidation workflow** → Read [Context Preservation in Replan Workflow](context-preservation-in-replan.md) first. Gather investigation context FIRST (Step 6a). Enter plan mode only after collecting file paths, evidence, and discoveries. Sparse plans are destructive to downstream implementation.
 
+**entering plan mode or using ExitPlanMode tool** → Read [When to Skip Plan Mode](when-to-skip-planning.md) first. Check if current task has explicit step-by-step instructions. If yes, skip planning and proceed directly to execution.
+
 **estimating effort for a plan without checking actual files changed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Run a file inventory first. Plans that skip inventory systematically undercount configuration, test, and documentation changes.
 
 **fetching N large documents into parent agent context** → Read [Token Optimization Patterns](token-optimization-patterns.md) first. Delegate content fetching to child agents. Parent receives only analysis summaries, not raw content. Achieves O(1) parent context instead of O(n). See token-optimization-patterns.md.

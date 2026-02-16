@@ -106,6 +106,39 @@ Constants and default values mentioned in prose are **HIGH VALUE, not DUPLICATIV
 
 **Pointing to volatile code**: Source pointers should target stable interfaces (ABCs, schemas, config models), not implementation details that change frequently.
 
+## Illustrative Path Validation
+
+When auditing docs, distinguish broken references from illustrative examples.
+
+### Broken Reference
+
+Path in prose that should exist but doesn't: "See `src/erk/capabilities/skills/dignified_python.py`"
+
+### Illustrative Example
+
+Path in code template showing a pattern: `packages/erk-shared/src/erk_shared/gateway/command_executor.py` in a transformer template
+
+### Classification
+
+Check context:
+
+- **Prose reference**: Should be verified against filesystem
+- **Code template/example**: Teaching pattern, not reference to existing file
+- **Comment showing format**: Illustrative, not reference
+
+Don't flag illustrative paths as broken references.
+
+## Progressive Verification Strategy
+
+When auditing docs, verify progressively:
+
+1. **File exists**: `ls <path>` to check referenced files exist
+2. **Contents match**: Read file to verify claims about contents
+3. **Behavioral claims accurate**: Test or trace to verify runtime behavior
+4. **Third-party source check**: For reference caches, fetch authoritative docs
+
+Don't assume from doc content alone. Verify each level before proceeding.
+
 ## Related Documentation
 
 - [simplification-patterns.md](simplification-patterns.md) — Three proven patterns for reducing doc duplication

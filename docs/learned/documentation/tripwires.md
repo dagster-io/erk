@@ -40,6 +40,8 @@ Rules triggered by matching actions in code.
 
 **documenting type definitions without verifying they exist** → Read [Documentation Audit Methodology](audit-methodology.md) first. Type references in docs must match actual codebase types — phantom types are the most common audit finding. Verify with grep before committing.
 
+**editing files with AUTO-GENERATED FILE comment** → Read [Auto-Generated File Audit Protocol](audit-auto-generated-files.md) first. Apply STAMP ONLY approach - content edits will be overwritten by `erk docs sync`. Focus verification on source docs.
+
 **justifying erkdesk code inclusion** → Read [Language Scope Auditing](language-scope-auditing.md) first. Rationalizing erkdesk source as "third-party API pattern" because it uses React/Electron
 
 **manually wrapping lines or aligning tables in markdown** → Read [Markdown Authoring and Prettier Interactions](markdown-and-prettier.md) first. Never manually format markdown. Prettier rewrites all formatting on save. Write naturally, then run `make prettier` via devrun.
