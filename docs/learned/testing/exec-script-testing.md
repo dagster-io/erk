@@ -1,6 +1,6 @@
 ---
 title: Exec Script Testing Patterns
-last_audited: "2026-02-03 00:00 PT"
+last_audited: "2026-02-16 00:00 PT"
 audit_result: edited
 read_when:
   - "testing exec CLI commands"
@@ -416,7 +416,7 @@ See [SSH Command Execution](../architecture/ssh-command-execution.md) for when t
 
 When a CLI parameter receives `""` (empty string) to clear a value, normalize to `None` before JSON output. This ensures JSON consumers see `null` rather than `""`, which has different semantics.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _build_output_dict() -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _build_output -->
 
 ```python
 # Normalize empty strings to None for JSON output

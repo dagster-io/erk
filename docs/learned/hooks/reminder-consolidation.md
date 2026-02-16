@@ -1,5 +1,7 @@
 ---
 title: Reminder Consolidation Pattern
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 read_when:
   - "adding a new coding standards reminder to any hook, skill, or AGENTS.md section"
   - "debugging why a reminder appears multiple times in agent context"

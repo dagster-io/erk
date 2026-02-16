@@ -1,5 +1,7 @@
 ---
 title: Batch Exec Commands
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 read_when:
   - implementing batch operations for exec commands
   - designing JSON stdin/stdout interfaces for erk exec

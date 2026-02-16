@@ -1,5 +1,7 @@
 ---
 title: CI Prompt Patterns
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 read_when:
   - Using Claude Code in GitHub Actions workflows
   - Creating multi-line prompts in CI YAML

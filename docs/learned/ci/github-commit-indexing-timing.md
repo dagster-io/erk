@@ -1,5 +1,7 @@
 ---
 title: GitHub Commit Indexing Timing
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 read_when:
   - "working with GitHub commit status API"
   - "debugging 422 'No commit found for SHA' errors"

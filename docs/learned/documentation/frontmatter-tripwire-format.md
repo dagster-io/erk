@@ -1,5 +1,7 @@
 ---
 title: Frontmatter and Tripwire Format
+last_audited: "2026-02-16 00:00 PT"
+audit_result: edited
 read_when:
   - creating new documentation in docs/learned/
   - adding tripwires to existing docs
@@ -106,7 +108,7 @@ Overly broad conditions waste agent context window by loading irrelevant docs. O
 3. Generates root `index.md` and per-category `index.md` (categories need 2+ docs for their own index)
 4. Collects tripwires from valid docs, groups by category directory
 5. Generates per-category `tripwires.md` and the master `tripwires-index.md`
-6. Formats all output through prettier (run twice for idempotency — see `_format_with_prettier()` in `operations.py` for why the double-pass is necessary)
+6. Formats all output through prettier via `agent_docs.format_markdown()`
 
 **Always commit both source docs AND generated files.** Generated files are checked in because agents load them directly — they're not rebuilt at runtime.
 

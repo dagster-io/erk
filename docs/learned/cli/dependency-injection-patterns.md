@@ -5,7 +5,7 @@ read_when:
   - "testing exec scripts that use gateways"
   - "understanding exec script architecture"
   - "migrating exec scripts from subprocess to gateways"
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-16 00:00 PT"
 audit_result: clean
 tripwires:
   - action: "implementing business logic with gateways"

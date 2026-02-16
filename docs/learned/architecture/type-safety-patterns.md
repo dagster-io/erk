@@ -1,5 +1,7 @@
 ---
 title: Type Safety Patterns
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 read_when:
   - "designing flexible collection types"
   - "working with union types in Python"

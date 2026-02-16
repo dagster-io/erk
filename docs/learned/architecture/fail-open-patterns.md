@@ -1,7 +1,7 @@
 ---
 title: Fail-Open Pattern
-last_audited: "2026-02-07 00:00 PT"
-audit_result: clean
+last_audited: "2026-02-16 00:00 PT"
+audit_result: edited
 read_when:
   - "implementing cleanup operations"
   - "designing resilient workflows"
@@ -135,7 +135,7 @@ For complex workflows involving multiple failure modes, combine fail-open with *
 
 <!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_direct -->
 
-**Example**: The `trigger-async-learn` command needs PR review comments. See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py` starting at line 212.
+**Example**: The `trigger-async-learn` command needs PR review comments. See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`.
 
 **Two layers**:
 
