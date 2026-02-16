@@ -123,8 +123,8 @@ def test_update_pending_step_with_plan() -> None:
     assert "status: in_progress" in updated_body
 
 
-def test_update_step_with_pr() -> None:
-    """Update a step with a PR reference (auto-clears plan)."""
+def test_update_step_with_pr_requires_plan() -> None:
+    """Setting --pr without --plan returns an error."""
     issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
@@ -137,13 +137,8 @@ def test_update_step_with_pr() -> None:
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
-    assert output["success"] is True
-    assert output["previous_plan"] == "#200"
-    assert output["new_pr"] == "#500"
-
-    updated_body = fake_gh.updated_bodies[0][1]
-    assert "#500" in updated_body
-    assert "status: done" in updated_body
+    assert output["success"] is False
+    assert output["error"] == "plan_required_with_pr"
 
 
 def test_clear_pr_reference() -> None:
@@ -194,7 +189,7 @@ def test_issue_not_found() -> None:
 
     result = runner.invoke(
         update_roadmap_step,
-        ["999", "--step", "1.1", "--pr", "#123"],
+        ["999", "--step", "1.1", "--pr", "#123", "--plan", ""],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -213,7 +208,7 @@ def test_no_roadmap_table() -> None:
 
     result = runner.invoke(
         update_roadmap_step,
-        ["6423", "--step", "1.1", "--pr", "#123"],
+        ["6423", "--step", "1.1", "--pr", "#123", "--plan", ""],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -254,7 +249,7 @@ def test_update_with_frontmatter() -> None:
 
     result = runner.invoke(
         update_roadmap_step,
-        ["6423", "--step", "1.3", "--pr", "#999"],
+        ["6423", "--step", "1.3", "--pr", "#999", "--plan", ""],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -276,7 +271,7 @@ def test_update_with_frontmatter_preserves_other_steps() -> None:
 
     result = runner.invoke(
         update_roadmap_step,
-        ["6423", "--step", "1.2", "--pr", "#777"],
+        ["6423", "--step", "1.2", "--pr", "#777", "--plan", ""],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -297,7 +292,7 @@ def test_explicit_status_option_with_frontmatter() -> None:
 
     result = runner.invoke(
         update_roadmap_step,
-        ["6423", "--step", "1.3", "--pr", "#500", "--status", "done"],
+        ["6423", "--step", "1.3", "--pr", "#500", "--plan", "", "--status", "done"],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -409,7 +404,7 @@ def test_update_multiple_steps_same_phase() -> None:
 
     result = runner.invoke(
         update_roadmap_step,
-        ["6697", "--step", "1.1", "--step", "1.2", "--step", "1.3", "--pr", "#555"],
+        ["6697", "--step", "1.1", "--step", "1.2", "--step", "1.3", "--pr", "#555", "--plan", ""],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -474,7 +469,7 @@ def test_include_body_flag_single_step() -> None:
 
     result = runner.invoke(
         update_roadmap_step,
-        ["6423", "--step", "1.3", "--pr", "#500", "--include-body"],
+        ["6423", "--step", "1.3", "--pr", "#500", "--plan", "", "--include-body"],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -494,7 +489,7 @@ def test_include_body_flag_multiple_steps() -> None:
 
     result = runner.invoke(
         update_roadmap_step,
-        ["6697", "--step", "1.2", "--step", "1.3", "--pr", "#555", "--include-body"],
+        ["6697", "--step", "1.2", "--step", "1.3", "--pr", "#555", "--plan", "", "--include-body"],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -514,7 +509,7 @@ def test_include_body_not_set_by_default() -> None:
 
     result = runner.invoke(
         update_roadmap_step,
-        ["6423", "--step", "1.3", "--pr", "#500"],
+        ["6423", "--step", "1.3", "--pr", "#500", "--plan", ""],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -524,8 +519,8 @@ def test_include_body_not_set_by_default() -> None:
     assert "updated_body" not in output
 
 
-def test_none_plan_auto_clears_when_pr_set() -> None:
-    """_replace_step_refs_in_body with new_plan=None auto-clears plan when PR is set."""
+def test_none_plan_preserves_when_pr_set() -> None:
+    """_replace_step_refs_in_body with new_plan=None preserves plan when PR is set."""
     from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_step_refs_in_body
 
     # Step 1.2 has plan=#200
@@ -534,7 +529,9 @@ def test_none_plan_auto_clears_when_pr_set() -> None:
     )
 
     assert result is not None
-    # Plan should be auto-cleared (null) because PR is being set
+    # Plan should be preserved (#200 still present) because new_plan=None means preserve
+    assert "#200" in result
+    assert "#500" in result
     assert "status: done" in result
 
 
@@ -589,7 +586,7 @@ def test_planning_status_via_explicit_status() -> None:
 
     result = runner.invoke(
         update_roadmap_step,
-        ["6423", "--step", "1.3", "--pr", "#200", "--status", "planning"],
+        ["6423", "--step", "1.3", "--pr", "#200", "--plan", "", "--status", "planning"],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -610,7 +607,7 @@ def test_include_body_on_failure() -> None:
 
     result = runner.invoke(
         update_roadmap_step,
-        ["6423", "--step", "9.9", "--pr", "#500", "--include-body"],
+        ["6423", "--step", "9.9", "--pr", "#500", "--plan", "", "--include-body"],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -758,8 +755,8 @@ def test_v2_update_also_updates_comment_table() -> None:
     assert "| in-progress |" in updated_comment
 
 
-def test_v2_pr_auto_clears_plan_in_all_stores() -> None:
-    """v2 format: setting PR without plan clears plan in frontmatter, body table, and comment."""
+def test_v2_pr_without_plan_returns_error() -> None:
+    """v2 format: setting PR without plan returns error requiring --plan."""
     issue = _make_issue(6423, V2_BODY)
     comment = IssueComment(
         body=V2_COMMENT_BODY,
@@ -773,7 +770,7 @@ def test_v2_pr_auto_clears_plan_in_all_stores() -> None:
     )
     runner = CliRunner()
 
-    # Step 1.2 has plan=#200. Setting only --pr should auto-clear plan.
+    # Step 1.2 has plan=#200. Setting only --pr should now error.
     result = runner.invoke(
         update_roadmap_step,
         ["6423", "--step", "1.2", "--pr", "#777"],
@@ -782,18 +779,8 @@ def test_v2_pr_auto_clears_plan_in_all_stores() -> None:
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
-    assert output["success"] is True
-    assert output["previous_plan"] == "#200"
-
-    # Frontmatter: plan should be auto-cleared (null) by update_step_in_frontmatter
-    updated_body = fake_gh.updated_bodies[0][1]
-    assert "pr: '#777'" in updated_body or 'pr: "#777"' in updated_body
-
-    # Comment table: plan column should be auto-cleared to "-"
-    assert len(fake_gh.updated_comments) == 1
-    updated_comment = fake_gh.updated_comments[0][1]
-    assert "| - | #777 |" in updated_comment
-    assert "| done |" in updated_comment
+    assert output["success"] is False
+    assert output["error"] == "plan_required_with_pr"
 
 
 def test_v2_no_comment_update_when_no_header() -> None:
@@ -843,8 +830,8 @@ def test_replace_table_in_text_not_found() -> None:
     assert result is None
 
 
-def test_replace_table_in_text_auto_clears_plan_when_pr_set() -> None:
-    """_replace_table_in_text auto-clears plan when PR is explicitly set."""
+def test_replace_table_in_text_preserves_plan_when_pr_set() -> None:
+    """_replace_table_in_text preserves plan when PR is explicitly set and plan is None."""
     from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_table_in_text
 
     text = """\
@@ -854,7 +841,7 @@ def test_replace_table_in_text_auto_clears_plan_when_pr_set() -> None:
 """
     result = _replace_table_in_text(text, "1.1", new_plan=None, new_pr="#500", explicit_status=None)
     assert result is not None
-    assert "| - | #500 |" in result
+    assert "| #200 | #500 |" in result
     assert "| done |" in result
 
 
@@ -870,3 +857,74 @@ def test_replace_table_in_text_preserves_plan_when_no_pr() -> None:
     result = _replace_table_in_text(text, "1.1", new_plan=None, new_pr=None, explicit_status=None)
     assert result is not None
     assert "#200" in result
+
+
+def test_update_step_with_pr_and_plan_preserved() -> None:
+    """Pass --pr and --plan together: both present in result, status done."""
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.2", "--pr", "#500", "--plan", "#200"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["previous_plan"] == "#200"
+    assert output["new_plan"] == "#200"
+    assert output["new_pr"] == "#500"
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "#500" in updated_body
+    assert "#200" in updated_body
+    assert "status: done" in updated_body
+
+
+def test_update_step_with_pr_and_plan_cleared() -> None:
+    """Pass --pr and --plan '' together: plan cleared, PR set, status done."""
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.2", "--pr", "#500", "--plan", ""],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["previous_plan"] == "#200"
+    assert output["new_plan"] is None
+    assert output["new_pr"] == "#500"
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "#500" in updated_body
+    assert "status: done" in updated_body
+
+
+def test_pr_without_plan_returns_error() -> None:
+    """Pass only --pr without --plan: returns error response."""
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.3", "--pr", "#500"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["error"] == "plan_required_with_pr"
+    assert "--plan" in output["message"]
+
+    # No body updates should have occurred
+    assert len(fake_gh.updated_bodies) == 0

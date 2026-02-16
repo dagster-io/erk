@@ -88,6 +88,7 @@ Quick reference for all `erk exec` subcommands.
 | `update-dispatch-info`            | Update dispatch info in GitHub issue plan-header metadata.                 |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).        |
 | `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.         |
+| `update-pr-description`           | Update PR title and body with AI-generated description.                    |
 | `update-roadmap-step`             | Update step plan/PR cells in an objective's roadmap table.                 |
 | `upload-learn-materials`          | Upload learn materials directory to a gist.                                |
 | `upload-session`                  | Upload a session JSONL to GitHub Gist and update plan header.              |
@@ -1174,6 +1175,19 @@ Update plan-header metadata with remote session artifact location.
 | `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | GitHub issue number to update |
 | `--run-id`       | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions run ID         |
 | `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID        |
+
+### update-pr-description
+
+Update PR title and body with AI-generated description.
+
+**Usage:** `erk exec update-pr-description`
+
+**Options:**
+
+| Flag           | Type | Required | Default | Description                           |
+| -------------- | ---- | -------- | ------- | ------------------------------------- |
+| `--debug`      | FLAG | No       | -       | Show diagnostic output                |
+| `--session-id` | TEXT | No       | -       | Session ID for scratch file isolation |
 
 ### update-roadmap-step
 

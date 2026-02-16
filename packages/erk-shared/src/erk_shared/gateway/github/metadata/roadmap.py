@@ -314,18 +314,10 @@ def update_step_in_frontmatter(
                 resolved_pr = None
 
             # Resolve plan: None=preserve, ""=clear, "#6464"=set
-            # Auto-clear: when pr is explicitly set (non-None, non-empty)
-            # and plan is not explicitly provided, clear plan.
-            if plan is not None:
-                if plan:
-                    resolved_plan = plan
-                else:
-                    resolved_plan = None
-            elif pr is not None and pr:
-                # Setting --pr auto-clears plan (only when pr is explicitly provided)
-                resolved_plan = None
-            else:
+            if plan is None:
                 resolved_plan = step.plan
+            else:
+                resolved_plan = plan or None
 
             # Determine status: explicit > infer from resolved values > preserve
             new_status: RoadmapStepStatus
