@@ -691,6 +691,38 @@ class TestCreateObjectiveIssue:
         assert "erk-objective" in labels
         assert "priority-high" in labels
 
+    def test_objective_with_roadmap_uses_details_format(self, tmp_path: Path) -> None:
+        """Objective with roadmap phases produces <details> wrapped roadmap block."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = (
+            "# My Objective\n\n"
+            "## Roadmap\n\n"
+            "### Phase 1: Foundation\n\n"
+            "| Step | Description | Status | Plan | PR |\n"
+            "|------|-------------|--------|------|-----|\n"
+            "| 1.1 | Set up structure | pending | - | - |\n"
+            "| 1.2 | Add types | pending | - | - |\n"
+        )
+
+        result = create_objective_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            time=FakeTime(),
+            title=None,
+            extra_labels=None,
+        )
+
+        assert result.success is True
+
+        # The updated body should contain the roadmap block in <details> format
+        _, updated_body = fake_gh.updated_bodies[0]
+        assert "objective-roadmap" in updated_body
+        assert "<details>" in updated_body
+        assert "<summary><code>objective-roadmap</code></summary>" in updated_body
+        assert "```yaml" in updated_body
+        assert "schema_version: '2'" in updated_body
+
 
 class TestCreatePlanIssueCommandsSection:
     """Test that commands section is added correctly."""
