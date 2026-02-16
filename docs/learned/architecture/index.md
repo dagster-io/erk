@@ -9,6 +9,7 @@
 - **[branch-manager-abstraction.md](branch-manager-abstraction.md)** — working with branch operations (create, delete, checkout, submit), implementing commands that manipulate branches, understanding the Graphite vs Git mode difference, debugging branch-related operations
 - **[branch-manager-decision-tree.md](branch-manager-decision-tree.md)** — deciding between ctx.branch_manager and ctx.git.branch for branch creation, implementing branch operations in erk code, working with placeholder branches or worktree pool slots
 - **[bundled-artifacts.md](bundled-artifacts.md)** — understanding artifact syncing, working with managed artifacts, debugging erk sync
+- **[callback-progress-pattern.md](callback-progress-pattern.md)** — adding progress reporting to operations functions, choosing between callback and event-based progress, implementing synchronous progress feedback
 - **[capability-system.md](capability-system.md)** — creating new erk init capabilities, understanding how erk init works, adding installable features, working with capability tracking in state.toml, understanding how erk doctor filters artifacts by installed capabilities
 - **[claude-cli-error-reporting.md](claude-cli-error-reporting.md)** — handling Claude CLI errors, interpreting PromptResult.error, working with ErrorEvent, NoOutputEvent, NoTurnsEvent, ProcessErrorEvent
 - **[claude-cli-integration.md](claude-cli-integration.md)** — Invoking Claude from Python, Spawning Claude CLI from Python code, Understanding non-interactive vs interactive modes
