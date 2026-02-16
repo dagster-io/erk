@@ -33,6 +33,8 @@ def test_capability_remove_removes_capability() -> None:
         skill_dir = env.cwd / ".claude" / "skills" / "learned-docs"
         skill_dir.mkdir(parents=True)
         (skill_dir / "SKILL.md").write_text("# Skill", encoding="utf-8")
+        agents_dir = env.cwd / ".claude" / "agents" / "learn"
+        agents_dir.mkdir(parents=True, exist_ok=True)
 
         # Verify capability is installed
         assert (env.cwd / "docs" / "learned").exists()
@@ -43,9 +45,10 @@ def test_capability_remove_removes_capability() -> None:
         assert "learned-docs" in result.output
         assert "Removed" in result.output
 
-        # Verify capability was removed
-        assert not (env.cwd / "docs" / "learned").exists()
+        # Verify artifacts were removed but docs/learned/ preserved
+        assert (env.cwd / "docs" / "learned").exists()
         assert not (env.cwd / ".claude" / "skills" / "learned-docs").exists()
+        assert not (env.cwd / ".claude" / "agents" / "learn").exists()
 
 
 def test_capability_remove_not_installed() -> None:
@@ -140,6 +143,8 @@ def test_capability_remove_multiple() -> None:
         docs_dir.mkdir(parents=True)
         skill_dir = env.cwd / ".claude" / "skills" / "learned-docs"
         skill_dir.mkdir(parents=True)
+        learn_agents_dir = env.cwd / ".claude" / "agents" / "learn"
+        learn_agents_dir.mkdir(parents=True, exist_ok=True)
 
         # Pre-create devrun-agent capability
         agent_file = env.cwd / ".claude" / "agents" / "devrun.md"
@@ -154,8 +159,9 @@ def test_capability_remove_multiple() -> None:
         assert "learned-docs" in result.output
         assert "devrun-agent" in result.output
 
-        # Verify both were removed
-        assert not (env.cwd / "docs" / "learned").exists()
+        # Verify artifacts were removed but docs/learned/ preserved
+        assert (env.cwd / "docs" / "learned").exists()
+        assert not (env.cwd / ".claude" / "skills" / "learned-docs").exists()
         assert not (env.cwd / ".claude" / "agents" / "devrun.md").exists()
 
 

@@ -166,9 +166,11 @@ def test_capability_check_shows_artifacts_when_installed() -> None:
     """Test that check with name shows artifact details when installed."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        # Create docs/learned/ with README to make capability appear installed
+        # Create all three directories to make capability appear installed
         (env.cwd / "docs" / "learned").mkdir(parents=True)
         (env.cwd / "docs" / "learned" / "README.md").write_text("# Test", encoding="utf-8")
+        (env.cwd / ".claude" / "skills" / "learned-docs").mkdir(parents=True)
+        (env.cwd / ".claude" / "agents" / "learn").mkdir(parents=True)
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(
@@ -247,4 +249,5 @@ def test_capability_check_shows_installation_check_description() -> None:
 
         assert result.exit_code == 0, result.output
         # Should show the installation check description
-        assert "Checks for: docs/learned/ directory exists" in result.output
+        assert "docs/learned/" in result.output
+        assert ".claude/agents/learn/" in result.output

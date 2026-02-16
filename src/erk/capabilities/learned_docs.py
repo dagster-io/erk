@@ -179,7 +179,10 @@ class LearnedDocsCapability(Capability):
 
     @property
     def installation_check_description(self) -> str:
-        return "docs/learned/ directory exists"
+        return (
+            "docs/learned/, .claude/skills/learned-docs/,"
+            " and .claude/agents/learn/ directories exist"
+        )
 
     @property
     def artifacts(self) -> list[CapabilityArtifact]:
@@ -205,9 +208,13 @@ class LearnedDocsCapability(Capability):
         ]
 
     def is_installed(self, repo_root: Path | None) -> bool:
-        """Check if docs/learned/ directory exists."""
+        """Check if all three learned-docs directories exist."""
         assert repo_root is not None, "LearnedDocsCapability requires repo_root"
-        return (repo_root / "docs" / "learned").exists()
+        return (
+            (repo_root / "docs" / "learned").exists()
+            and (repo_root / ".claude" / "skills" / "learned-docs").exists()
+            and (repo_root / ".claude" / "agents" / "learn").exists()
+        )
 
     def install(self, repo_root: Path | None) -> CapabilityResult:
         """Create docs/learned/ directory, learned-docs skill, learn command, and learn agent."""
@@ -294,11 +301,7 @@ class LearnedDocsCapability(Capability):
             learn_cmd_file.unlink()
             removed.append(".claude/commands/erk/learn.md")
 
-        # Remove docs/learned directory
-        docs_dir = repo_root / "docs" / "learned"
-        if docs_dir.exists():
-            shutil.rmtree(docs_dir)
-            removed.append("docs/learned/")
+        # Preserve docs/learned/ - it contains user-created documentation
 
         if not removed:
             return CapabilityResult(
@@ -308,5 +311,5 @@ class LearnedDocsCapability(Capability):
 
         return CapabilityResult(
             success=True,
-            message=f"Removed {', '.join(removed)}",
+            message=f"Removed {', '.join(removed)} (docs/learned/ preserved)",
         )
