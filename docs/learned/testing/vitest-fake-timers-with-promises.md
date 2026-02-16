@@ -4,8 +4,8 @@ read_when:
   - "testing React components that use setInterval or setTimeout with async operations"
   - "debugging Vitest tests that hang when advancing fake timers"
   - "choosing between synchronous and async timer advancement in Vitest"
-last_audited: "2026-02-08 13:55 PT"
-audit_result: edited
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 category: testing
 tripwires:
   - action: "using vi.advanceTimersByTime() in a test with Promise-based code"

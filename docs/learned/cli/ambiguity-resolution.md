@@ -4,6 +4,8 @@ read_when:
   - "implementing CLI commands that accept identifiers with multiple possible matches"
   - "designing CLI behavior for ambiguous input"
   - "displaying tables of options without interactive selection"
+last_audited: "2026-02-16 00:00 PT"
+audit_result: edited
 ---
 
 # Ambiguity Resolution Pattern
@@ -165,4 +167,3 @@ if len(matches) > 1:
 
 - [GitHub URL Parsing](../architecture/github-parsing.md) - Input parsing patterns
 - [Output Styling](output-styling.md) - Console output conventions
-- [List Formatting](list-formatting.md) - Table display patterns

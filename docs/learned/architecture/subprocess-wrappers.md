@@ -1,6 +1,6 @@
 ---
 title: Subprocess Wrappers
-last_audited: "2026-02-03 03:56 PT"
+last_audited: "2026-02-16 00:00 PT"
 audit_result: edited
 read_when:
   - "using subprocess wrappers"
@@ -268,15 +268,9 @@ Some subprocess operations should fail gracefully while others should fail fast.
 
 Use when the operation is **optional** and the caller should decide how to handle absence:
 
-See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py:212-257`.
+<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_direct -->
 
-```python
-# Signature and return type (see source for full implementation):
-def _get_pr_for_plan_direct(
-    *, github_issues, github, repo_root: Path, issue_number: int,
-) -> dict[str, object] | None:
-    # Returns None on ANY failure: missing issue, metadata, branch, or PR
-```
+See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`. Returns `dict[str, object] | None` — `None` on any failure (missing issue, metadata, branch, or PR).
 
 **Characteristics:**
 
@@ -294,15 +288,7 @@ def _get_pr_for_plan_direct(
 
 Use when the operation is **critical** and failure should be explicit:
 
-See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py:60-122`.
-
-```python
-# Signature (see source for full implementation):
-def get_pr_for_plan(
-    *, ctx: ErkContext, repo_root: Path, issue_number: int,
-) -> int:
-    # Raises ValueError on ANY failure; attempts branch_name recovery via pattern matching
-```
+See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the full implementation. It is a Click command that raises `SystemExit(1)` with JSON error output on any failure, and attempts branch_name recovery via pattern matching.
 
 **Characteristics:**
 

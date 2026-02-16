@@ -3,6 +3,8 @@ title: Workflow Capability Pattern
 read_when:
   - creating GitHub workflow capabilities
   - adding CI review workflows
+last_audited: "2026-02-16 00:00 PT"
+audit_result: edited
 ---
 
 # Workflow Capability Pattern
@@ -19,16 +21,16 @@ A workflow capability typically installs:
 
 ## Reference Implementation
 
-`DignifiedReviewCapability` in `src/erk/core/capabilities/dignified_review.py` demonstrates the pattern.
+`ErkImplWorkflowCapability` in `src/erk/capabilities/workflows/erk_impl.py` demonstrates the pattern. It installs `.github/workflows/plan-implement.yml` along with shared actions (`setup-claude-code`, `setup-claude-erk`).
 
 **Key implementation points:**
 
-1. **Artifacts property** - List both workflow and prompt files
+1. **Artifacts property** - List workflow file and shared action directories
 2. **is_installed()** - Check if the workflow file exists
-3. **preflight()** - Verify dependencies (e.g., required skill installed)
-4. **install()** - Copy workflow and prompt from bundled source
+3. **preflight()** - Verify dependencies (e.g., required actions available)
+4. **install()** - Copy workflow and actions from bundled source
 
-The `get_bundled_github_dir()` function from `src/erk/artifacts/sync.py` provides the path to bundled `.github/` artifacts.
+The `get_bundled_github_dir()` function from `src/erk/artifacts/paths.py` provides the path to bundled `.github/` artifacts.
 
 ## Dependencies Pattern
 
@@ -44,7 +46,7 @@ Install the action if missing during `install()`. Use this when the workflow sho
 
 ## Checklist for New Workflow Capabilities
 
-1. Create capability class in `src/erk/core/capabilities/`
+1. Create capability class in `src/erk/capabilities/workflows/`
 2. Ensure workflow file exists in `.github/workflows/`
 3. Ensure prompt file exists in `.github/prompts/`
 4. Register in `registry.py` `_all_capabilities()` tuple

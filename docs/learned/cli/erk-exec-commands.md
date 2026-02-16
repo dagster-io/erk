@@ -8,6 +8,8 @@ tripwires:
     warning: "Check syntax with `erk exec <command> -h` first, or load erk-exec skill for workflow guidance."
   - action: "using erk exec commands in scripts"
     warning: "Some erk exec subcommands don't support `--format json`. Always check with `erk exec <command> -h` first."
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # erk exec Commands

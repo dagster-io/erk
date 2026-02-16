@@ -9,6 +9,8 @@ tripwires:
     warning: "Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime."
   - action: "using _render() as a method name in Textual widgets"
     warning: "Textual's LSP reserves _render(). Use _refresh_display() instead (see ViewBar)."
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # TUI View Switching

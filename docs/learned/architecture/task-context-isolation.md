@@ -7,7 +7,7 @@ read_when:
   - "need to reduce context window usage"
   - "returning structured data from subagents"
   - "choosing between context: fork vs manual Task delegation"
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-16 00:00 PT"
 audit_result: clean
 ---
 

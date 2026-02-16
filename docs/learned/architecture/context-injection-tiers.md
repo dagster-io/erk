@@ -8,6 +8,8 @@ read_when:
 tripwires:
   - action: "designing a new hook or reminder system"
     warning: "Consider the three-tier context architecture and consolidation patterns. Read docs/learned/architecture/context-injection-tiers.md first."
+last_audited: "2026-02-16 00:00 PT"
+audit_result: edited
 ---
 
 # Context Injection Architecture
@@ -162,7 +164,7 @@ For the full consolidation pattern, see [Reminder Consolidation](../hooks/remind
 
 **Capability-gated reminders:** PreToolUse hooks can check for capability marker files before injecting reminders. This enables gradual rollout and easy disablement.
 
-**Example:** The `.erk/capabilities/dignified-python-pretooluse` marker enables Python editing reminders. If the marker doesn't exist, the hook exits silently without injecting content.
+**Example:** The `dignified-python` reminder capability (tracked via `state.toml`) enables Python editing reminders. If the capability is not installed, the hook exits silently without injecting content.
 
 **Matchers:** PreToolUse hooks use regex patterns to target specific tools. `"matcher": "Write|Edit"` fires before both Write and Edit tool calls.
 
