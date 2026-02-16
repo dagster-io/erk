@@ -251,8 +251,7 @@ class PlanDataTable(DataTable):
         # Objectives view: plan, title, progress, next, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
             display_title = row.title
-            if display_title.startswith("Objective: "):
-                display_title = display_title[len("Objective: ") :]
+            display_title = display_title.removeprefix("Objective: ")
             return (
                 plan_cell,
                 Text(display_title),
