@@ -61,7 +61,7 @@ For each comment, determine:
 ### Actionability
 
 - **Actionable**: Code changes requested, violations to fix, missing tests, documentation updates requested
-- **Informational**: Bot status updates, CI results, Graphite stack comments, acknowledgments, automated review summaries
+- **Informational**: CI status updates, CI results, Graphite stack comments, acknowledgments, PR description summaries
 
 ### Complexity (for actionable items)
 
