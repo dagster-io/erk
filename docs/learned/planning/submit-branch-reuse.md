@@ -1,5 +1,7 @@
 ---
 title: Branch Reuse in Plan Submit
+last_audited: "2026-02-16 02:45 PT"
+audit_result: edited
 read_when:
   - "implementing erk plan submit"
   - "handling duplicate branches"
@@ -32,7 +34,7 @@ Found existing local branch(es) for this issue:
 
 New branch would be: P123-feature-01-15-1600
 
-<branch reuse confirmation prompt — see src/erk/cli/commands/submit.py:151-153 for current wording>
+<branch reuse confirmation prompt — see _prompt_existing_branch_action() in src/erk/cli/commands/submit.py for current wording>
 ```
 
 ## Detection Logic
