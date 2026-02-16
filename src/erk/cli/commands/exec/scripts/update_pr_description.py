@@ -55,9 +55,7 @@ def update_pr_description(ctx: click.Context, *, debug: bool, session_id: str | 
     _execute_update_description(erk_ctx, debug=debug, session_id=session_id)
 
 
-def _execute_update_description(
-    ctx: ErkContext, *, debug: bool, session_id: str | None
-) -> None:
+def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str | None) -> None:
     """Execute the update-description pipeline."""
     # Verify Claude is available
     require_claude_available(ctx)
