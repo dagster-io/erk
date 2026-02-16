@@ -11,7 +11,7 @@ from erk.cli.commands.objective.view_cmd import view_objective
 from erk.cli.help_formatter import ErkCommandGroup
 
 
-@click.group("objective", cls=ErkCommandGroup)
+@click.group("objective", cls=ErkCommandGroup, grouped=False)
 def objective_group() -> None:
     """Manage objectives (multi-PR coordination issues)."""
     pass
