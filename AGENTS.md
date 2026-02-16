@@ -1,6 +1,8 @@
 <!-- AGENT NOTICE: This file is loaded automatically. Read FULLY before writing code. -->
 <!-- Priority: This is a ROUTING FILE. Load skills and docs as directed for complete guidance. -->
 
+> **Note:** Lines starting with `@` reference files to include. Some tools expand these inline automatically; others should read the referenced file directly.
+
 # Erk - Plan-Oriented Agentic Engineering
 
 ## What is Erk?
@@ -73,36 +75,33 @@ This file routes to skills and docs; it doesn't contain everything.
 
 @docs/learned/index.md
 
-## Claude Environment Manipulation
+## Planning Workflow
 
-### Session ID Access
+Erk's plan-oriented workflow works across agent backends with different mechanisms.
 
-**In skills/commands**: Use `${CLAUDE_SESSION_ID}` string substitution (supported since Claude Code 2.1.9):
+### Claude Code Users
 
-```bash
-# Skills can use this substitution directly
-erk exec marker create --session-id "${CLAUDE_SESSION_ID}" ...
-```
+Load the `erk-planning` skill for detailed guidance. Key commands:
 
-**In hooks**: Hooks receive session ID via **stdin JSON**, not environment variables. When generating commands for Claude from hooks, interpolate the actual value:
+- `/erk:plan-save` — save plan to GitHub issue
+- `/erk:plan-implement` — implement from a saved plan
+- Plan mode and hooks handle lifecycle automatically
 
-```python
-# Hook code interpolating session ID for Claude
-f"erk exec marker create --session-id {session_id} ..."
-```
+### Codex Users
 
-### Hook → Claude Communication
+Without built-in plan mode, follow this explicit protocol:
 
-- Hook stdout becomes system reminders in Claude's context
-- Exit codes block or allow tool calls
+1. For complex tasks (3+ files, unclear scope), create a plan first
+2. Write the plan to a markdown file
+3. Run: `erk plan create --file <path-to-plan.md>`
+4. To implement: `erk implement <issue-number>`
+   Load the `erk-planning` skill (`$erk-planning`) for detailed workflow guidance.
 
-### Modified Plan Mode Behavior
+### All Backends
 
-Erk modifies plan mode to add a save-or-implement decision:
-
-1. Claude is prompted: "Save the plan to GitHub, or implement now?"
-2. **Save**: Claude runs `/erk:plan-save` to create a GitHub issue
-3. **Implement now**: Claude proceeds to implementation
+- `erk plan list` — view open plans
+- `erk implement <issue>` — implement a plan in a worktree
+- `erk plan submit <issue>` — submit for remote implementation
 
 ---
 
@@ -136,30 +135,12 @@ These rules diverge from standard Python conventions. Your training data will su
 - **No backwards compatibility**: Break and migrate immediately, no legacy shims
 - **Max 4 indentation levels**: Extract helpers to reduce nesting
 
-### devrun Agent Restrictions
-
-**FORBIDDEN prompts:**
-
-- "fix any errors that arise"
-- "make the tests pass"
-- Any prompt implying devrun should modify files
-
-**REQUIRED pattern:**
-
-- "Run [command] and report results"
-- "Execute [command] and parse output"
-
-devrun is READ-ONLY. It runs commands and reports. Parent agent handles all fixes.
-
 ## Skill Loading Behavior
 
 Skills persist for the entire session. Once loaded, they remain in context.
 
 - DO NOT reload skills already loaded in this session
-- Hook reminders fire as safety nets, not commands
-- Check if loaded: Look for `<command-message>The "{name}" skill is loading</command-message>` earlier in conversation
-
-**Just-in-time context injection**: The `dignified-python` core rules are automatically injected via PreToolUse hook when editing `.py` files. This provides a pointed reminder at the exact moment Python code is being written, complementing the ambient quick reference above.
+- Check skill documentation for backend-specific invocation patterns
 
 ## Documentation-First Discovery
 

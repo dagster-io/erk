@@ -2,10 +2,10 @@ from pathlib import Path
 
 
 def test_each_agents_md_has_claude_md_reference() -> None:
-    """Verify that every AGENTS.md has a peer CLAUDE.md that contains '@AGENTS.md'.
+    """Verify that every AGENTS.md has a peer CLAUDE.md that starts with '@AGENTS.md'.
 
     This follows the AGENTS.md standard where AGENTS.md is the primary file and
-    CLAUDE.md is a reference file containing @AGENTS.md for backwards compatibility.
+    CLAUDE.md starts with @AGENTS.md (may include additional Claude-specific content).
 
     See: https://code.claude.com/docs/en/claude-code-on-the-web
     """
@@ -29,9 +29,10 @@ def test_each_agents_md_has_claude_md_reference() -> None:
             f"{claude_file.relative_to(repo_root)} exists but is not a regular file"
         )
 
-        # Verify it contains @AGENTS.md
+        # Verify first line is @AGENTS.md
         content = claude_file.read_text(encoding="utf-8")
-        assert content.strip() == "@AGENTS.md", (
-            f"{claude_file.relative_to(repo_root)} content is '{content.strip()}', "
+        first_line = content.strip().split("\n")[0].strip()
+        assert first_line == "@AGENTS.md", (
+            f"{claude_file.relative_to(repo_root)} first line is '{first_line}', "
             "expected '@AGENTS.md'"
         )
