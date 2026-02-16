@@ -13,6 +13,7 @@ from erk.artifacts.artifact_health import (
 )
 from erk.artifacts.discovery import discover_artifacts
 from erk.artifacts.models import InstalledArtifact
+from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_erk_dir, get_bundled_github_dir
 from erk.artifacts.staleness import check_staleness
 from erk.artifacts.state import load_artifact_state
 
@@ -145,7 +146,12 @@ def _display_verbose_status(project_dir: Path, show_hashes: bool) -> bool:
     saved_files = dict(state.files) if state else {}
 
     # For artifact check command, show all artifacts (no filtering)
-    health_result = get_artifact_health(project_dir, saved_files, installed_capabilities=None)
+    health_result = get_artifact_health(
+        project_dir,
+        saved_files,
+        installed_capabilities=None,
+        bundled_claude_dir=get_bundled_claude_dir(),
+    )
 
     if health_result.skipped_reason is not None:
         return False
@@ -203,8 +209,19 @@ def check_cmd(verbose: int) -> None:
     project_dir = Path.cwd()
 
     staleness_result = check_staleness(project_dir)
-    orphan_result = find_orphaned_artifacts(project_dir)
-    missing_result = find_missing_artifacts(project_dir)
+    bundled_claude_dir = get_bundled_claude_dir()
+    bundled_github_dir = get_bundled_github_dir()
+    orphan_result = find_orphaned_artifacts(
+        project_dir,
+        bundled_claude_dir=bundled_claude_dir,
+        bundled_github_dir=bundled_github_dir,
+    )
+    missing_result = find_missing_artifacts(
+        project_dir,
+        bundled_claude_dir=bundled_claude_dir,
+        bundled_github_dir=bundled_github_dir,
+        bundled_erk_dir=get_bundled_erk_dir(),
+    )
 
     has_errors = False
     show_per_artifact = verbose >= 1

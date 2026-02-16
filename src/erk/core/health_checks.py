@@ -15,6 +15,7 @@ from erk.artifacts.artifact_health import (
 )
 from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.models import ArtifactFileState
+from erk.artifacts.paths import get_bundled_claude_dir
 from erk.artifacts.state import load_artifact_state, load_installed_capabilities
 from erk.core.claude_settings import (
     ERK_PERMISSION,
@@ -1445,7 +1446,10 @@ def check_managed_artifacts(repo_root: Path) -> CheckResult:
 
     # Get artifact health
     result = get_artifact_health(
-        repo_root, saved_files, installed_capabilities=installed_capabilities
+        repo_root,
+        saved_files,
+        installed_capabilities=installed_capabilities,
+        bundled_claude_dir=get_bundled_claude_dir(),
     )
 
     # Handle skipped cases from get_artifact_health

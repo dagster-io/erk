@@ -30,14 +30,6 @@ def test_get_artifact_health_tracks_nested_commands(tmp_path: Path, monkeypatch)
     (project_nested / "impl-execute.md").write_text("# Nested Command", encoding="utf-8")
 
     monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_claude_dir",
-        lambda: bundled_claude,
-    )
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_github_dir",
-        lambda: tmp_path / "bundled" / ".github",
-    )
-    monkeypatch.setattr(
         "erk.artifacts.artifact_health.get_current_version",
         lambda: "1.0.0",
     )
@@ -46,7 +38,12 @@ def test_get_artifact_health_tracks_nested_commands(tmp_path: Path, monkeypatch)
     saved_files: dict[str, ArtifactFileState] = {}
 
     # Pass installed_capabilities=None to check all artifacts
-    result = get_artifact_health(tmp_path / "project", saved_files, installed_capabilities=None)
+    result = get_artifact_health(
+        tmp_path / "project",
+        saved_files,
+        installed_capabilities=None,
+        bundled_claude_dir=bundled_claude,
+    )
 
     # Extract command artifact names
     cmd_artifacts = [a for a in result.artifacts if a.name.startswith("commands/erk/")]
