@@ -39,7 +39,7 @@ def _serialize_plan_row(row: PlanRowData) -> dict[str, Any]:
     (log_entries) to lists for JSON compatibility.
     """
     data = dataclasses.asdict(row)
-    for key in ("last_local_impl_at", "last_remote_impl_at", "created_at"):
+    for key in ("last_local_impl_at", "last_remote_impl_at", "updated_at", "created_at"):
         if isinstance(data[key], datetime):
             data[key] = data[key].isoformat()
     # Convert log_entries tuple of tuples to list of lists

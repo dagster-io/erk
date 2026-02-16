@@ -33,6 +33,11 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_review_pr,
     extract_plan_header_worktree_name,
 )
+from erk_shared.gateway.github.metadata.roadmap import (
+    compute_summary,
+    find_next_step,
+    parse_roadmap,
+)
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
@@ -552,6 +557,28 @@ class RealPlanDataProvider(PlanDataProvider):
         # Format objective display
         objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
 
+        # Parse roadmap for objective-specific fields
+        objective_done_steps = 0
+        objective_total_steps = 0
+        objective_progress_display = "-"
+        objective_next_step_display = "-"
+        if plan.body:
+            phases, _errors = parse_roadmap(plan.body)
+            if phases:
+                summary = compute_summary(phases)
+                objective_done_steps = summary["done"]
+                objective_total_steps = summary["total_steps"]
+                objective_progress_display = f"{objective_done_steps}/{objective_total_steps}"
+                next_step = find_next_step(phases)
+                if next_step is not None:
+                    step_text = f"{next_step['id']} {next_step['description']}"
+                    if len(step_text) > 60:
+                        step_text = step_text[:57] + "..."
+                    objective_next_step_display = step_text
+
+        # Format updated_at display
+        updated_display = format_relative_time(plan.updated_at.isoformat()) or "-"
+
         # Format created_at display
         created_display = format_relative_time(plan.created_at.isoformat()) or "-"
 
@@ -597,6 +624,12 @@ class RealPlanDataProvider(PlanDataProvider):
             learn_display_icon=learn_display_icon,
             objective_issue=objective_issue,
             objective_display=objective_display,
+            objective_done_steps=objective_done_steps,
+            objective_total_steps=objective_total_steps,
+            objective_progress_display=objective_progress_display,
+            objective_next_step_display=objective_next_step_display,
+            updated_at=plan.updated_at,
+            updated_display=updated_display,
             created_at=plan.created_at,
             created_display=created_display,
             author=author,
