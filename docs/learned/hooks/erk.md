@@ -25,9 +25,7 @@ Hooks are configured in `.claude/settings.json`. Most hook logic lives in `src/e
 
 ```
 .claude/
-├── settings.json                              # Hook configuration
-└── hooks/
-    └── fake-driven-testing-reminder.sh        # Simple shell reminder
+└── settings.json                              # Hook configuration
 src/erk/
 ├── hooks/
 │   └── decorators.py                          # logged_hook, hook_command, HookContext

@@ -294,15 +294,7 @@ def _get_pr_for_plan_direct(
 
 Use when the operation is **critical** and failure should be explicit:
 
-See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py`.
-
-```python
-# Signature (see source for full implementation):
-def get_pr_for_plan(
-    *, ctx: ErkContext, repo_root: Path, issue_number: int,
-) -> int:
-    # Raises ValueError on ANY failure; attempts branch_name recovery via pattern matching
-```
+See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the full implementation. It is a Click command that raises `SystemExit(1)` with JSON error output on any failure, and attempts branch_name recovery via pattern matching.
 
 **Characteristics:**
 
