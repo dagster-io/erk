@@ -55,3 +55,7 @@ Rules triggered by matching actions in code.
 **using surgical update for complete table rewrites** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Surgical updates only change one cell. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr).
 
 **writing regex patterns to match roadmap table rows without ^ and $ anchors** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. All roadmap table row regex patterns MUST use ^...$ anchors with re.MULTILINE. Without anchors, patterns can match partial lines or span rows.
+
+**writing test assertions for v2 objectives** → Read [V2 Objective Format Structure](v2-format-structure.md) first. V2 body contains only YAML frontmatter (no markdown tables). Markdown tables live in V2_COMMENT_BODY. Target assertions to the correct location based on format.
+
+**writing validation checks using .startswith() or similar guard clauses** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. Ensure ELSE branch explicitly fails validation rather than silently skipping. Pattern `if value.startswith('#'):` should be `if not value.startswith('#'): errors.append(...)` in validation contexts.

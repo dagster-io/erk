@@ -70,6 +70,19 @@ The pipeline-level path includes a guard that blocks PR creation when the parent
 
 **Why this only applies to the pipeline path:** The command-level path (`/erk:git-pr-push`) is designed for standalone PRs. It doesn't check parent branches because it's explicitly for non-stacked use cases. The pipeline path handles both stacked and standalone PRs, so it must guard against the stacked case.
 
+## Expected Push Failures After PR Submission
+
+When `erk pr submit` runs, it creates a remote commit ("WIP: Prepare for PR submission"). If the agent continues working locally before pushing, `git push` will fail with non-fast-forward error.
+
+**This is expected behavior.**
+
+**Resolution**: Use the `sync-divergence` skill:
+
+1. Load skill: invoke `erk:sync-divergence`
+2. Follow workflow: fetch -> diagnose -> rebase -> track -> restack -> submit
+
+See the `sync-divergence` skill for the complete resolution workflow.
+
 ## Anti-Patterns
 
 **Merging the two paths into one:** The execution contexts are fundamentally different (shell agent vs Python process). Past attempts to unify them with a `--no-stack` flag failed because the behavioral differences are too numerous.

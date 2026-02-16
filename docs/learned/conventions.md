@@ -104,6 +104,17 @@ Grep for "SPECULATIVE: feature-name" to find all related code.
 | **To find all code** | `grep -r "SPECULATIVE: feature-name" src/` |
 | **To remove**        | Delete the module and guarded blocks       |
 
+## Truthiness Simplification
+
+When checking optional values for truthiness, `if x is not None and x:` is redundant. Use just `if x:`.
+
+Both `None` and empty string `""` are falsy in Python. If you want to distinguish between them, use explicit checks:
+
+- `if x is not None:` — true for any non-None value including empty string
+- `if x:` — true only for truthy values (non-empty strings, non-zero numbers, etc.)
+
+For parameters like `new_pr: str | None` where `None` means "preserve existing", `""` means "clear", and `"#123"` means "set value": use `if new_pr:` to check for the "set value" case, since both `None` and `""` are falsy.
+
 ## AI-Generated Commit Messages
 
 ### Forbidden Elements

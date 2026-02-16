@@ -11,6 +11,8 @@ tripwires:
     warning: "The update-roadmap-step command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty."
   - action: "expecting status to auto-update after manual PR edits"
     warning: "Only the update-roadmap-step command writes computed status. Manual GitHub edits or direct body mutations leave status at its current value — you must explicitly set status to '-' to enable inference on next parse."
+  - action: "implementing functions that update roadmap data in frontmatter, body table, or comment table"
+    warning: "Audit ALL write paths for semantic consistency. Auto-clear/auto-infer/auto-compute logic must be replicated across all locations. The frontmatter and table updaters must implement identical semantics for operations like auto-clearing plan when PR is set."
 ---
 
 # Roadmap Mutation Semantics
@@ -90,6 +92,28 @@ The command is designed for **normal workflow integration** (skills, hooks, scri
 ## LBYL Pattern in Update Command
 
 The command follows erk's LBYL discipline throughout, using discriminated union checks before each operation. See the `update_roadmap_step()` function in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:107-182` for the full pattern. For the general approach, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+
+## Dual-Write Consistency Pattern
+
+A single logical operation (e.g., "set PR reference for step 1.2") may touch multiple data stores:
+
+- YAML frontmatter in issue body
+- Markdown table in issue body (v1 format)
+- Markdown table in comment body (v2 format)
+
+If one updater implements auto-clear logic (e.g., "clear plan when PR is set") but others preserve existing values, the stores diverge. This has caused bugs twice: status auto-inference divergence and plan auto-clear divergence (PR #7151).
+
+### Audit Checklist
+
+Before merging any PR that modifies roadmap update logic:
+
+1. Identify all functions that write to the same logical data
+2. Verify each function handles the same edge cases identically
+3. Write integration tests that verify all stores produce identical output for the same operation
+
+### Source
+
+See `update_step_in_frontmatter()` in `erk_shared/gateway/github/metadata/roadmap.py` and `_replace_table_in_text()` / `_replace_step_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py` for the canonical implementation of auto-clear semantics.
 
 ## Cross-Document Knowledge
 

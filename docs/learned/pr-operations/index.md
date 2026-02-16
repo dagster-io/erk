@@ -4,8 +4,10 @@
 # Pr Operations Documentation
 
 - **[automated-review-handling.md](automated-review-handling.md)** — investigating automated bot complaints on PRs, handling prettier or linting bot review comments, deciding whether to fix or dismiss automated review feedback
+- **[batch-review-workflow.md](batch-review-workflow.md)** — addressing PR review comments, using pr-address or pr-preview-address commands, resolving multiple review threads
 - **[checkout-footer-syntax.md](checkout-footer-syntax.md)** — building or modifying PR body footer content, debugging erk pr check validation failures, working on the submit pipeline or git-pr-push command
 - **[commit-message-generation.md](commit-message-generation.md)** — understanding how PR descriptions are generated, working with plan context in PR summaries, customizing commit message generation
+- **[discussion-comment-pattern.md](discussion-comment-pattern.md)** — completing PR review address workflow, after resolving inline review threads
 - **[draft-pr-handling.md](draft-pr-handling.md)** — creating or working with draft PRs, understanding when to use draft status, converting between draft and ready for review, debugging why CI didn't run on a PR, working with orphaned or duplicate PRs for a plan
 - **[plan-embedding-in-pr.md](plan-embedding-in-pr.md)** — embedding plan content in a PR body, debugging missing or malformed plan sections in pull requests, modifying how plan context flows through PR submission
 - **[pr-creation-patterns.md](pr-creation-patterns.md)** — creating a PR programmatically in any workflow, deciding whether to create vs update an existing PR, implementing a new exec script or pipeline step that touches PRs

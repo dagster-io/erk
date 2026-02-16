@@ -149,7 +149,25 @@ The command uses separate `--plan` and `--pr` flags for the two lifecycle stages
 
 Setting `--pr` automatically clears the plan column. The legacy `--pr "plan #NNN"` syntax is still accepted and automatically migrated to `--plan "#NNN"`.
 
-See [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md) for the write-time vs parse-time distinction.
+### Auto-Clear Semantics Across All Stores
+
+When `--pr` is explicitly set without `--plan`, the plan column is automatically cleared in all three stores:
+
+1. **Frontmatter YAML**: `plan: null`
+2. **Body table**: Plan column set to `-`
+3. **Comment table**: Plan column set to `-`
+
+This ensures consistency across all stores and prevents divergence where the frontmatter shows "no plan" but the table shows a stale plan reference.
+
+```bash
+# Step 1.2 currently has plan=#200
+erk exec update-roadmap-step 7132 --step 1.2 --pr "#7147"
+# Result: plan auto-cleared in all stores, PR set to #7147
+```
+
+When a PR is submitted for a step, the plan that led to that PR is considered complete. Clearing the plan column prevents confusion about whether the plan is still active.
+
+See `_replace_table_in_text()` and `_replace_step_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py` for the implementation. See [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md) for the dual-write consistency pattern and write-time vs parse-time distinction.
 
 ## Output Format
 
