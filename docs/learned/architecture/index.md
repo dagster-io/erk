@@ -100,5 +100,6 @@
 - **[task-context-isolation.md](task-context-isolation.md)** — fetching large JSON responses from APIs, parsing PR review comments or GitHub issues, analyzing verbose API responses that pollute context, need to reduce context window usage, returning structured data from subagents, choosing between context: fork vs manual Task delegation
 - **[type-safety-patterns.md](type-safety-patterns.md)** — designing flexible collection types, working with union types in Python, handling mixed-type lists
 - **[typescript-multi-config.md](typescript-multi-config.md)** — setting up TypeScript type checking for multi-config projects, encountering TypeScript errors in subdirectories with separate configs, working with erkdesk TypeScript configuration, running tsc --noEmit from project root
+- **[validation-patterns.md](validation-patterns.md)** — adding format validation to frontmatter fields, implementing regex-based validation, working with validate_agent_doc_frontmatter or similar validators
 - **[workflow-capability-pattern.md](workflow-capability-pattern.md)** — creating GitHub workflow capabilities, adding CI review workflows
 - **[worktree-metadata.md](worktree-metadata.md)** — storing per-worktree data, working with worktrees.toml, associating metadata with worktrees, implementing subdirectory navigation, preserving relative path on worktree switch
