@@ -1,6 +1,6 @@
 ---
 title: Pre-Destruction Data Capture Pattern
-last_audited: "2026-02-15"
+last_audited: "2026-02-15 18:50 PT"
 audit_result: clean
 read_when:
   - "implementing operations that destroy or transform data"

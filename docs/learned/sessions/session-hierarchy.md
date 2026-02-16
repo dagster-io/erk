@@ -1,6 +1,6 @@
 ---
 title: Session Hierarchy
-last_audited: "2026-02-15"
+last_audited: "2026-02-15 18:50 PT"
 audit_result: edited
 read_when:
   - "understanding Claude Code session structure"

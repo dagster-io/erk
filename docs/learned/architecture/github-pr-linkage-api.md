@@ -1,6 +1,6 @@
 ---
 title: GitHub Issue-PR Linkage API Patterns
-last_audited: "2026-02-15"
+last_audited: "2026-02-15 18:50 PT"
 audit_result: edited
 read_when:
   - "querying PRs linked to an issue"

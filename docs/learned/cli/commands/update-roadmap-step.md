@@ -1,6 +1,6 @@
 ---
 title: Update Roadmap Step Command
-last_audited: "2026-02-15"
+last_audited: "2026-02-15 18:50 PT"
 audit_result: edited
 read_when:
   - working with objective roadmap tables, updating step PR references, implementing plan-save workflow

@@ -4,7 +4,7 @@ read_when:
   - "using .impl/ folders"
   - "understanding plan file structure"
   - "implementing plans"
-last_audited: "2026-02-15"
+last_audited: "2026-02-15 18:50 PT"
 audit_result: edited
 ---
 

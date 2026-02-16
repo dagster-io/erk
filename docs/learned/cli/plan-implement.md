@@ -1,6 +1,6 @@
 ---
 title: Plan-Implement Workflow
-last_audited: "2026-02-15"
+last_audited: "2026-02-15 18:50 PT"
 audit_result: clean
 read_when:
   - "understanding the /erk:plan-implement command"
