@@ -83,6 +83,18 @@ def _format_step_status(status: str, *, plan: str | None) -> str:
     return "[dim]⏳ pending[/dim]"
 
 
+def _extract_repo_base_url(issue_url: str) -> str:
+    """Extract the repository base URL from a GitHub issue URL.
+
+    Args:
+        issue_url: Full issue URL (e.g., ``"https://github.com/owner/repo/issues/123"``)
+
+    Returns:
+        Repository base URL (e.g., ``"https://github.com/owner/repo"``)
+    """
+    return issue_url.rsplit("/issues/", 1)[0]
+
+
 def _format_timestamp(dt_value: datetime, *, label: str) -> str:
     """Format a timestamp with relative time.
 
@@ -156,8 +168,7 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
     user_output(_format_timestamp(issue.updated_at, label="Updated"))
 
     # Derive repo base URL for linkifying references
-    # e.g. "https://github.com/owner/repo/issues/123" → "https://github.com/owner/repo"
-    repo_base_url = issue.url.rsplit("/issues/", 1)[0]
+    repo_base_url = _extract_repo_base_url(issue.url)
 
     # Display roadmap if phases exist
     if phases:
@@ -181,10 +192,10 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
                     cell_len(Text.from_markup(status_markup).plain),
                 )
                 max_desc_width = max(max_desc_width, cell_len(step.description))
-                plan_text = "-" if step.plan is None else step.plan
-                max_plan_width = max(max_plan_width, cell_len(plan_text))
-                pr_text = "-" if step.pr is None else step.pr
-                max_pr_width = max(max_pr_width, cell_len(pr_text))
+                max_plan_width = max(
+                    max_plan_width, cell_len("-" if step.plan is None else step.plan)
+                )
+                max_pr_width = max(max_pr_width, cell_len("-" if step.pr is None else step.pr))
 
         for phase in phases:
             # Count done steps in this phase
