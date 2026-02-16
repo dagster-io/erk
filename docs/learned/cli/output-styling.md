@@ -263,6 +263,40 @@ This allows shell scripts to parse JSON from stdout without interference from pr
 - [Output Abstraction](#output-abstraction) - When to use `user_output()` vs `machine_output()`
 - [Emoji Conventions](#emoji-conventions) - Standard emoji meanings
 
+## Progress Callbacks
+
+For operations using the callback progress pattern, bind the callback to CLI output at the command layer.
+
+### Binding Pattern
+
+Use a lambda to convert progress strings to styled CLI output. See `sync.py` in `src/erk/cli/commands/docs/` for the reference implementation.
+
+The lambda should:
+
+- Apply cyan styling for consistency with other progress output
+- Route to stderr (`err=True`) to avoid interfering with machine-readable stdout
+
+For silent operation (validation, testing), pass a no-op lambda (`lambda _: None`).
+
+### Progress Granularity Guidelines
+
+Choose progress granularity based on the number of items being processed:
+
+| Item Count | Strategy         | Example                                         |
+| ---------- | ---------------- | ----------------------------------------------- |
+| <10        | Per-item         | "Processing file 1/5..."                        |
+| 10-100     | Milestone-based  | "Scanning...", "Generating...", "Finalizing..." |
+| >100       | Percentage/count | "Processing... 45% (450/1000)"                  |
+
+Per-file progress for large operations creates visual noise and can slow execution. Milestone-based progress at operation boundaries provides adequate feedback without overwhelming the user.
+
+Example: `erk docs sync` processes ~55 files but reports only 6 milestones (one per pipeline stage).
+
+### Related Patterns
+
+- [Callback Progress Pattern](../architecture/callback-progress-pattern.md) - Operations layer pattern
+- [Async Progress Output Patterns](#async-progress-output-patterns) - Full async progress conventions
+
 ## Spacing Guidelines
 
 - Use empty `click.echo()` for vertical spacing between sections

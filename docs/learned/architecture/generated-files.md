@@ -122,6 +122,21 @@ To add a tripwire about path-based worktree detection:
 
 3. **Regenerate**: `erk docs sync`
 
+## Progress Reporting
+
+The `sync_agent_docs()` function supports progress reporting through a callback parameter. When provided, the callback is invoked at 6 milestone points:
+
+1. **Scanning docs** - Before document discovery
+2. **Generating root index** - Before root index generation
+3. **Generating category indexes** - Before category index loop
+4. **Collecting tripwires** - Before tripwire collection
+5. **Generating tripwire files** - Before tripwire file loop
+6. **Generating tripwires index** - Before final index generation
+
+This coarse-grained approach (6 messages for ~55 files) provides adequate user feedback without overwhelming output. The CLI binds this to styled progress output; validation commands like `erk docs check` pass a no-op lambda to suppress output.
+
+See [Callback Progress Pattern](callback-progress-pattern.md) for the implementation pattern.
+
 ## Adding New Generated File Types
 
 To add a new generated file type, follow the existing pattern in `sync_agent_docs()`:
