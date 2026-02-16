@@ -91,7 +91,7 @@ Instructions:
    - If neither label: include warning but proceed
 3. Create objective context marker:
    erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <issue-number> objective-context
-4. Run: erk objective check <issue-number> --json-output
+4. Run: erk objective check <issue-number> --json-output --allow-legacy
 5. Return a compact structured summary in this exact format:
 
 OBJECTIVE: #<number> — <title>
