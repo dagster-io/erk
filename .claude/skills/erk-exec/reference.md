@@ -54,6 +54,7 @@ Quick reference for all `erk exec` subcommands.
 | `marker delete`                   | Delete a marker file.                                                      |
 | `marker exists`                   | Check if a marker file exists.                                             |
 | `marker read`                     | Read content from a marker file.                                           |
+| `normalize-tripwire-candidates`   | Normalize agent-produced tripwire candidate JSON in-place.                 |
 | `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.                |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                       |
 | `objective-update-context`        | Fetch all context for objective update in a single call.                   |
@@ -707,6 +708,18 @@ Read content from a marker file.
 | Flag           | Type | Required | Default | Description                              |
 | -------------- | ---- | -------- | ------- | ---------------------------------------- |
 | `--session-id` | TEXT | No       | -       | Session ID for marker storage (required) |
+
+### normalize-tripwire-candidates
+
+Normalize agent-produced tripwire candidate JSON in-place.
+
+**Usage:** `erk exec normalize-tripwire-candidates`
+
+**Options:**
+
+| Flag                | Type | Required | Default        | Description                      |
+| ------------------- | ---- | -------- | -------------- | -------------------------------- |
+| `--candidates-file` | TEXT | Yes      | Sentinel.UNSET | Path to tripwire-candidates.json |
 
 ### objective-render-roadmap
 
