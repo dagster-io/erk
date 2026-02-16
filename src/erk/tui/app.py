@@ -168,8 +168,12 @@ class ErkDashApp(App):
         # Track fetch timing
         start_time = time.monotonic()
 
-        # Use view-specific labels for the current view
-        view_config = get_view_config(self._view_mode)
+        # Snapshot view mode at fetch start to avoid race conditions.
+        # If the user switches tabs during the fetch, self._view_mode changes
+        # but fetched_mode retains the original value so results are cached
+        # under the correct key and stale results don't overwrite the display.
+        fetched_mode = self._view_mode
+        view_config = get_view_config(fetched_mode)
         active_filters = PlanFilters(
             labels=view_config.labels,
             state=self._plan_filters.state,
@@ -202,13 +206,15 @@ class ErkDashApp(App):
         update_time = datetime.now().strftime("%H:%M:%S")
 
         # Update UI directly since we're in async context
-        self._update_table(rows, update_time, duration)
+        self._update_table(rows, update_time, duration, fetched_mode=fetched_mode)
 
     def _update_table(
         self,
         rows: list[PlanRowData],
-        update_time: str | None = None,
-        duration: float | None = None,
+        update_time: str | None,
+        duration: float | None,
+        *,
+        fetched_mode: ViewMode,
     ) -> None:
         """Update table with new data.
 
@@ -216,10 +222,17 @@ class ErkDashApp(App):
             rows: Plan data to display
             update_time: Formatted time of this update
             duration: Duration of the fetch in seconds
+            fetched_mode: The view mode that was active when the fetch started.
+                Data is cached under that mode's labels and the display is only
+                updated if it still matches the current view.
         """
-        # Cache the fetched data for the current view's labels
-        view_config = get_view_config(self._view_mode)
-        self._data_cache[view_config.labels] = rows
+        # Cache under the FETCHED view's labels (always correct)
+        fetched_config = get_view_config(fetched_mode)
+        self._data_cache[fetched_config.labels] = rows
+
+        # If user switched tabs during fetch, don't touch the display
+        if fetched_mode != self._view_mode:
+            return
 
         rows = self._filter_rows_for_view(rows, self._view_mode)
 
@@ -235,7 +248,8 @@ class ErkDashApp(App):
             self._table.populate(self._rows)
 
         if self._status_bar is not None:
-            noun = view_config.display_name.lower()
+            current_config = get_view_config(self._view_mode)
+            noun = current_config.display_name.lower()
             self._status_bar.set_plan_count(len(self._rows), noun=noun)
             self._status_bar.set_sort_mode(self._sort_state.display_label)
             if update_time is not None:
