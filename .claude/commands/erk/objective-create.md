@@ -260,9 +260,19 @@ Continue iterating until the user approves.
 
 Once approved:
 
-1. **Write the objective to the session's plan file:**
-   - Get the plan file path from the session context
-   - Write the approved objective content to that file
+1. **Write the objective to scratch storage:**
+
+   ```bash
+   mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/
+   ```
+
+   Write the approved objective content to:
+
+   ```
+   .erk/scratch/sessions/${CLAUDE_SESSION_ID}/objective-body.md
+   ```
+
+   This is the Priority 1 lookup path for `objective-save-to-issue --session-id`.
 
 2. **Create the GitHub issue with validation:**
 

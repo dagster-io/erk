@@ -153,7 +153,7 @@ def objective_save_to_issue(
     # Priority 1: Check scratch directory for session-scoped plan
     if session_id is not None:
         scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
-        scratch_plan_path = scratch_dir / "plan.md"
+        scratch_plan_path = scratch_dir / "objective-body.md"
         if scratch_plan_path.exists():
             plan = scratch_plan_path.read_text(encoding="utf-8")
 

@@ -164,7 +164,7 @@ This objective is from Claude plans directory and should NOT be used.
         # Create scratch plan file
         scratch_dir = Path(td) / ".erk" / "scratch" / "sessions" / test_session_id
         scratch_dir.mkdir(parents=True)
-        scratch_plan_file = scratch_dir / "plan.md"
+        scratch_plan_file = scratch_dir / "objective-body.md"
         scratch_plan_file.write_text(scratch_plan_content, encoding="utf-8")
 
         result = runner.invoke(
@@ -213,10 +213,10 @@ This objective is from Claude plans directory as fallback.
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-        # Create empty scratch directory (no plan.md)
+        # Create empty scratch directory (no objective-body.md)
         scratch_dir = Path(td) / ".erk" / "scratch" / "sessions" / test_session_id
         scratch_dir.mkdir(parents=True)
-        # No plan.md file created
+        # No objective-body.md file created
 
         result = runner.invoke(
             objective_save_to_issue,
