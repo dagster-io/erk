@@ -1,0 +1,16 @@
+/* Make nav section headers more prominent */
+.md-nav__item--nested > .md-nav__link {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  color: var(--md-default-fg-color--light);
+}
+
+/* Ensure child items remain normal weight */
+.md-nav--secondary .md-nav__link {
+  font-weight: 400;
+  text-transform: none;
+  font-size: 0.64rem;
+  letter-spacing: normal;
+}
