@@ -25,7 +25,7 @@ Erk uses deterministic regex parsing to extract structured data from objective r
 - **`erk objective check`** — parse and validate a roadmap, returning human-readable or structured JSON output
 - **`erk exec update-roadmap-step`** — surgically update a specific step's PR column
 
-Both commands share the parser in `objective_roadmap_shared.py`.
+Both commands share the parser in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`.
 
 ## Check Command
 
@@ -109,9 +109,19 @@ The parser accepts both formats but emits a validation warning for letter-format
 
 `find_next_step()` returns the first step with `pending` status in phase order. This is used by `erk objective check --json-output` to populate the `next_step` field, and by `erk objective next-plan` to determine which step to implement next.
 
+## Dual-Format Support
+
+The parser supports both legacy `---` frontmatter and modern `<details>` + YAML code block formats for roadmap metadata:
+
+1. Check if content starts with `<details>`
+2. If yes, parse via `parse_metadata_block_body()`
+3. If no, parse via legacy frontmatter parser
+
+See the LBYL pattern in `parse_roadmap_frontmatter()`.
+
 ## Implementation Reference
 
-- Shared parser: `src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py`
+- Shared parser: `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
 - Check command: `src/erk/cli/commands/objective/check_cmd.py`
 - Update command: `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`
 
