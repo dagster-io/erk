@@ -146,14 +146,14 @@ def dispatch_one_shot(
     objective_id = int(objective_issue_str) if objective_issue_str else None
 
     skeleton_plan_content = (
-        f"_Skeleton: plan content will be populated by one-shot workflow._\n\n"
+        f"_One-shot: plan content will be populated by one-shot workflow._\n\n"
         f"**Instruction:** {params.instruction}"
     )
     skeleton_result = create_plan_issue(
         github_issues=ctx.github.issues,
         repo_root=repo.root,
         plan_content=skeleton_plan_content,
-        title=None,
+        title=f"One-shot: {params.instruction[:max_title_len]}{suffix}",
         extra_labels=None,
         title_tag=None,
         source_repo=None,
