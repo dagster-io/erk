@@ -54,6 +54,7 @@ Quick reference for all `erk exec` subcommands.
 | `marker delete`                   | Delete a marker file.                                                      |
 | `marker exists`                   | Check if a marker file exists.                                             |
 | `marker read`                     | Read content from a marker file.                                           |
+| `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.                |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                       |
 | `objective-update-context`        | Fetch all context for objective update in a single call.                   |
 | `plan-create-review-branch`       | Create a plan review branch and push to remote.                            |
@@ -707,6 +708,12 @@ Read content from a marker file.
 | -------------- | ---- | -------- | ------- | ---------------------------------------- |
 | `--session-id` | TEXT | No       | -       | Session ID for marker storage (required) |
 
+### objective-render-roadmap
+
+Render a complete roadmap section from JSON input on stdin.
+
+**Usage:** `erk exec objective-render-roadmap`
+
 ### objective-save-to-issue
 
 Save plan as objective GitHub issue.
@@ -715,10 +722,11 @@ Save plan as objective GitHub issue.
 
 **Options:**
 
-| Flag           | Type   | Required | Default | Description                                               |
-| -------------- | ------ | -------- | ------- | --------------------------------------------------------- |
-| `--format`     | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text) |
-| `--session-id` | TEXT   | No       | -       | Session ID for scoped plan lookup                         |
+| Flag           | Type   | Required | Default | Description                                                           |
+| -------------- | ------ | -------- | ------- | --------------------------------------------------------------------- |
+| `--format`     | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text)             |
+| `--session-id` | TEXT   | No       | -       | Session ID for scoped plan lookup                                     |
+| `--validate`   | FLAG   | No       | -       | Run objective validation after creation and include results in output |
 
 ### objective-update-context
 

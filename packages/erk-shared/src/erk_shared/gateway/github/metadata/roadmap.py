@@ -228,39 +228,35 @@ def group_steps_by_phase(steps: list[RoadmapStep]) -> list[RoadmapPhase]:
     Returns:
         List of RoadmapPhase objects grouped by ID prefix
     """
-    # Group steps by phase identifier (everything before the last dot)
-    phase_map: dict[str, list[RoadmapStep]] = {}
+    # Group steps by parsed phase key (number, suffix) to merge equivalent phases.
+    # Raw phase_id strings like "1" and "1.2" both resolve to phase (1, ""),
+    # so we group by the resolved key rather than the raw string.
+    phase_map: dict[tuple[int, str], list[RoadmapStep]] = {}
 
     for step in steps:
         # Extract phase identifier from step ID
         # "1.1" → "1", "2A.1" → "2A", "1.2.3" → "1.2"
+        # "1", "2", "A" (no dot) → default to phase (1, "")
         if "." not in step.id:
-            # Malformed step ID, skip it
-            continue
+            phase_key = (1, "")
+        else:
+            phase_id = step.id.rsplit(".", 1)[0]
+            match = re.match(r"^(\d+)([A-Z]*)", phase_id)
+            if match:
+                phase_key = (int(match.group(1)), match.group(2))
+            else:
+                # Non-numeric phase ID (e.g., "A") — assign to phase 1
+                phase_key = (1, "")
 
-        phase_id = step.id.rsplit(".", 1)[0]
+        if phase_key not in phase_map:
+            phase_map[phase_key] = []
 
-        if phase_id not in phase_map:
-            phase_map[phase_id] = []
-
-        phase_map[phase_id].append(step)
+        phase_map[phase_key].append(step)
 
     # Convert to RoadmapPhase objects
     phases: list[RoadmapPhase] = []
 
-    for phase_id, phase_steps in phase_map.items():
-        # Parse phase number and suffix from phase_id
-        # "1" → (1, ""), "2A" → (2, "A"), "1.2" → error (nested phase)
-        match = re.match(r"^(\d+)([A-Z]?)$", phase_id)
-
-        if not match:
-            # Malformed phase ID, skip it
-            continue
-
-        phase_number = int(match.group(1))
-        phase_suffix = match.group(2)
-
-        # Use placeholder name (caller must fill in from markdown)
+    for (phase_number, phase_suffix), phase_steps in phase_map.items():
         phase_name = f"Phase {phase_number}{phase_suffix}"
 
         phases.append(

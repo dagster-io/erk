@@ -12,6 +12,7 @@ This command extracts a plan and creates a GitHub issue with:
 Options:
     --session-id ID: Session ID for scoped plan lookup
     --format: json (default) or display
+    --validate: Run objective validation after creation
 
 Exit Codes:
     0: Success - objective issue created
@@ -20,9 +21,15 @@ Exit Codes:
 
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import click
 
+from erk.cli.commands.objective.check_cmd import (
+    ObjectiveValidationError,
+    ObjectiveValidationSuccess,
+    validate_objective,
+)
 from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
@@ -91,8 +98,16 @@ def _get_existing_saved_objective(session_id: str, repo_root: Path) -> int | Non
     default=None,
     help="Session ID for scoped plan lookup",
 )
+@click.option(
+    "--validate",
+    "run_validate",
+    is_flag=True,
+    help="Run objective validation after creation and include results in output",
+)
 @click.pass_context
-def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: str | None) -> None:
+def objective_save_to_issue(
+    ctx: click.Context, output_format: str, session_id: str | None, *, run_validate: bool
+) -> None:
     """Save plan as objective GitHub issue.
 
     Creates a GitHub issue with only the erk-objective label (NOT erk-plan).
@@ -182,18 +197,49 @@ def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: 
     if session_id is not None:
         _create_objective_saved_issue_marker(session_id, repo_root, result.issue_number)
 
+    # Optional validation
+    validation_data: dict[str, Any] | None = None
+    if run_validate:
+        validation_result = validate_objective(github, repo_root, result.issue_number)
+        if isinstance(validation_result, ObjectiveValidationError):
+            validation_data = {
+                "passed": False,
+                "error": validation_result.error,
+                "checks": [],
+            }
+        elif isinstance(validation_result, ObjectiveValidationSuccess):
+            validation_data = {
+                "passed": validation_result.passed,
+                "checks": [
+                    {"passed": passed, "description": desc}
+                    for passed, desc in validation_result.checks
+                ],
+                "errors": validation_result.validation_errors,
+            }
+
     if output_format == "display":
         click.echo(f"Objective saved to GitHub issue #{result.issue_number}")
         click.echo(f"Title: {result.title}")
         click.echo(f"URL: {result.issue_url}")
+        if validation_data is not None:
+            if validation_data["passed"]:
+                click.echo("Validation: passed")
+            else:
+                click.echo("Validation: FAILED")
+                checks = validation_data.get("checks", [])
+                if isinstance(checks, list):
+                    for check_item in checks:
+                        if isinstance(check_item, dict):
+                            check_dict = cast(dict[str, object], check_item)
+                            if not check_dict.get("passed"):
+                                click.echo(f"  - {check_dict.get('description')}")
     else:
-        click.echo(
-            json.dumps(
-                {
-                    "success": True,
-                    "issue_number": result.issue_number,
-                    "issue_url": result.issue_url,
-                    "title": result.title,
-                }
-            )
-        )
+        output_data: dict[str, object] = {
+            "success": True,
+            "issue_number": result.issue_number,
+            "issue_url": result.issue_url,
+            "title": result.title,
+        }
+        if validation_data is not None:
+            output_data["validation"] = validation_data
+        click.echo(json.dumps(output_data))
