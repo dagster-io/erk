@@ -143,8 +143,9 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
     v2_result = parse_v2_roadmap(issue.body)
     if v2_result is None:
         raise UserFacingCliError(
-            f"Issue #{issue_number} uses legacy objective format."
-            " Recreate it using /erk:objective-create."
+            "This objective uses a legacy format that is no longer supported. "
+            "To migrate, open Claude Code and use /erk:objective-create to "
+            "recreate this objective with the same content."
         )
     phases, _validation_errors = v2_result
 

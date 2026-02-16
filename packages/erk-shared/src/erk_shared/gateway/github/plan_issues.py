@@ -18,6 +18,7 @@ from pathlib import Path
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.core import (
     create_objective_header_block,
+    extract_raw_metadata_blocks,
     format_objective_content_comment,
     format_plan_commands_section,
     render_metadata_block,
@@ -29,7 +30,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_comment_id,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
-    parse_roadmap,
+    parse_roadmap_frontmatter,
     render_roadmap_block_inner,
 )
 from erk_shared.gateway.github.types import BodyText
@@ -248,24 +249,35 @@ def create_plan_issue(
 
 
 def _build_objective_roadmap_block(plan_content: str) -> str | None:
-    """Build objective-roadmap metadata block from plan content if it has roadmap data.
+    """Extract existing objective-roadmap metadata block from plan content.
 
-    Parses the plan content for roadmap tables/phases and, if found, serializes
-    them as YAML frontmatter inside an objective-roadmap metadata block.
+    Looks for a pre-existing ``objective-roadmap`` metadata block in
+    ``<details>`` format. The objective-create skill is responsible for
+    producing this block in the plan content.
 
     Args:
         plan_content: The full objective markdown content
 
     Returns:
-        Rendered objective-roadmap metadata block string, or None if no roadmap found.
+        Rendered objective-roadmap metadata block string, or None if no
+        valid v2 roadmap block found.
     """
-    phases, _errors = parse_roadmap(plan_content)
-    if not phases:
+    raw_blocks = extract_raw_metadata_blocks(plan_content)
+    roadmap_block = next((block for block in raw_blocks if block.key == "objective-roadmap"), None)
+
+    if roadmap_block is None:
         return None
 
-    # Flatten phases into steps for serialization
-    all_steps = [step for phase in phases for step in phase.steps]
-    inner = render_roadmap_block_inner(all_steps)
+    if not roadmap_block.body.strip().startswith("<details>"):
+        return None
+
+    # Validate the block parses correctly
+    steps = parse_roadmap_frontmatter(roadmap_block.body)
+    if steps is None:
+        return None
+
+    # Re-render to normalize format
+    inner = render_roadmap_block_inner(steps)
 
     return (
         "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"

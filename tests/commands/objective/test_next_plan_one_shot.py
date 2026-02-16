@@ -14,6 +14,36 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 OBJECTIVE_BODY = """# Objective: Add caching
 
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+
+schema_version: '2'
+steps:
+  - id: '1.1'
+    description: Setup infra
+    status: pending
+    plan: null
+    pr: null
+  - id: '1.2'
+    description: Add tests
+    status: pending
+    plan: null
+    pr: null
+  - id: '2.1'
+    description: Build feature
+    status: pending
+    plan: null
+    pr: null
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+
 ## Roadmap
 
 ### Phase 1: Foundation
@@ -31,6 +61,31 @@ OBJECTIVE_BODY = """# Objective: Add caching
 """
 
 OBJECTIVE_ALL_DONE_BODY = """# Objective: Done
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+
+schema_version: '2'
+steps:
+  - id: '1.1'
+    description: Setup infra
+    status: done
+    plan: null
+    pr: '#100'
+  - id: '1.2'
+    description: Add tests
+    status: done
+    plan: null
+    pr: '#101'
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
 
 ## Roadmap
 
@@ -172,6 +227,31 @@ def test_next_plan_one_shot_auto_detects_next_step() -> None:
 
         # First step is done, second is pending
         body = """# Objective: Test
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+
+schema_version: '2'
+steps:
+  - id: '1.1'
+    description: Setup infra
+    status: done
+    plan: null
+    pr: '#100'
+  - id: '1.2'
+    description: Add tests
+    status: pending
+    plan: null
+    pr: null
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
 
 ## Roadmap
 

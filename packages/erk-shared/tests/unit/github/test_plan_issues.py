@@ -31,6 +31,7 @@ class TestCreatePlanIssueSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -68,6 +69,7 @@ class TestCreatePlanIssueSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -98,6 +100,7 @@ class TestCreatePlanIssueSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -121,6 +124,7 @@ class TestCreatePlanIssueSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -143,6 +147,7 @@ class TestCreatePlanIssueSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -165,6 +170,7 @@ class TestCreatePlanIssueSuccess:
             source_repo="owner/impl-repo",
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -191,6 +197,7 @@ class TestCreatePlanIssueSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -220,6 +227,7 @@ class TestCreatePlanIssueTitleExtraction:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -240,6 +248,7 @@ class TestCreatePlanIssueTitleExtraction:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -260,6 +269,7 @@ class TestCreatePlanIssueTitleExtraction:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -284,6 +294,7 @@ class TestCreatePlanIssueErrors:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -315,6 +326,7 @@ class TestCreatePlanIssueErrors:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -343,6 +355,7 @@ class TestCreatePlanIssueErrors:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -376,6 +389,7 @@ class TestCreatePlanIssuePartialSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -406,6 +420,7 @@ class TestCreatePlanIssuePartialSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -431,6 +446,7 @@ class TestCreatePlanIssueLabelManagement:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -457,6 +473,7 @@ class TestCreatePlanIssueLabelManagement:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -482,6 +499,7 @@ class TestCreatePlanIssueLabelManagement:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -504,6 +522,7 @@ class TestCreatePlanIssueLabelManagement:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -702,6 +721,31 @@ class TestCreateObjectiveIssue:
             "|------|-------------|--------|------|-----|\n"
             "| 1.1 | Set up structure | pending | - | - |\n"
             "| 1.2 | Add types | pending | - | - |\n"
+            "\n"
+            "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
+            "<!-- erk:metadata-block:objective-roadmap -->\n"
+            "<details>\n"
+            "<summary><code>objective-roadmap</code></summary>\n"
+            "\n"
+            "```yaml\n"
+            "\n"
+            "schema_version: '2'\n"
+            "steps:\n"
+            "  - id: '1.1'\n"
+            "    description: Set up structure\n"
+            "    status: pending\n"
+            "    plan: null\n"
+            "    pr: null\n"
+            "  - id: '1.2'\n"
+            "    description: Add types\n"
+            "    status: pending\n"
+            "    plan: null\n"
+            "    pr: null\n"
+            "\n"
+            "```\n"
+            "\n"
+            "</details>\n"
+            "<!-- /erk:metadata-block:objective-roadmap -->\n"
         )
 
         result = create_objective_issue(
@@ -742,6 +786,7 @@ class TestCreatePlanIssueCommandsSection:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -773,6 +818,7 @@ class TestCreatePlanIssueCommandsSection:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 
@@ -803,6 +849,7 @@ class TestCreatePlanIssueCommandsSection:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            created_from_workflow_run_url=None,
             learned_from_issue=None,
         )
 

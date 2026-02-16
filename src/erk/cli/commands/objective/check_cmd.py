@@ -1,7 +1,6 @@
 """Validate an objective's format and roadmap consistency."""
 
 import json
-import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -14,7 +13,6 @@ from erk.core.context import ErkContext, RepoContext
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
-    extract_raw_metadata_blocks,
     find_metadata_block,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
@@ -27,14 +25,6 @@ from erk_shared.gateway.github.metadata.roadmap import (
 from erk_shared.output.output import user_output
 
 ERK_OBJECTIVE_LABEL = "erk-objective"
-# OBJECTIVE_V1_COMPAT: Remove when all objectives use v2
-# Match stale status in 4-col and 5-col tables:
-# 4-col: | step | desc | - | #123 |  (only matches exactly 4-col rows)
-# 5-col: | step | desc | - | plan | #456 |
-_STALE_STATUS_4COL = re.compile(
-    r"^\|[^|]+\|[^|]+\|\s*-\s*\|\s*(?:#\d+|plan #\d+)\s*\|$", re.MULTILINE
-)
-_STALE_STATUS_5COL = re.compile(r"^\|[^|]+\|[^|]+\|\s*-\s*\|[^|]*\|\s*#\d+\s*\|$", re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -74,20 +64,17 @@ def validate_objective(
     github_issues: GitHubIssues,
     repo_root: Path,
     issue_number: int,
-    *,
-    allow_legacy: bool,
 ) -> ObjectiveValidationResult:
     """Validate an objective programmatically.
 
     Checks:
     1. Issue exists and has erk-objective label
-    2. Roadmap parses successfully
+    2. Roadmap parses successfully (v2 format required)
     3. Status/PR consistency (done steps should have PRs)
     4. No orphaned statuses (done without PR reference)
     5. Phase numbering is sequential
-    6. No stale display statuses (steps with PRs should have explicit status, not '-')
-    7. v2 format integrity (objective-header has objective_comment_id)
-    8. Roadmap uses <details> format (unless allow_legacy is True)
+    6. v2 format integrity (objective-header has objective_comment_id)
+    7. Plan/PR references use # prefix
 
     This function does not produce output or raise SystemExit.
 
@@ -177,16 +164,7 @@ def validate_objective(
         phase_labels = [f"{n}{s}" for n, s in phase_keys]
         checks.append((False, f"Phase numbering is not sequential: {phase_labels}"))
 
-    # Check 6: No stale display statuses (steps with PRs should have explicit status)
-    # OBJECTIVE_V1_COMPAT: Remove when all objectives use v2
-    # In v2, tables live in comment, not body
-    stale_matches = _STALE_STATUS_4COL.findall(issue.body) + _STALE_STATUS_5COL.findall(issue.body)
-    if not stale_matches:
-        checks.append((True, "No stale display statuses"))
-    else:
-        checks.append((False, f"Stale '-' status with PR reference: {len(stale_matches)} step(s)"))
-
-    # Check 7: v2 format integrity (if objective-header present, verify objective_comment_id)
+    # Check 6: v2 format integrity (if objective-header present, verify objective_comment_id)
     header_block = find_metadata_block(issue.body, "objective-header")
     if header_block is not None:
         comment_id = header_block.data.get("objective_comment_id")
@@ -195,27 +173,7 @@ def validate_objective(
         else:
             checks.append((False, "objective-header missing objective_comment_id"))
 
-    # Check 8: Roadmap block uses <details> format (not legacy --- frontmatter)
-    raw_blocks = extract_raw_metadata_blocks(issue.body)
-    roadmap_block = None
-    for block in raw_blocks:
-        if block.key == "objective-roadmap":
-            roadmap_block = block
-            break
-
-    if roadmap_block is not None:
-        body_stripped = roadmap_block.body.strip()
-        uses_details = body_stripped.startswith("<details>")
-        if uses_details:
-            checks.append((True, "Roadmap block uses <details> format"))
-        elif allow_legacy:
-            checks.append((True, "Roadmap block uses legacy format (--allow-legacy)"))
-        else:
-            checks.append(
-                (False, "Roadmap block uses legacy --- format (run update-roadmap-step to migrate)")
-            )
-
-    # Check 9: Plan/PR references use # prefix (e.g., "#7146" not "7146")
+    # Check 7: Plan/PR references use # prefix (e.g., "#7146" not "7146")
     invalid_refs: list[str] = []
     for phase in phases:
         for step in phase.steps:
@@ -250,13 +208,8 @@ def validate_objective(
 @click.option(
     "--json-output", "json_mode", is_flag=True, help="Output structured JSON (for programmatic use)"
 )
-@click.option(
-    "--allow-legacy", is_flag=True, help="Allow legacy --- frontmatter format in roadmap blocks"
-)
 @click.pass_obj
-def check_objective(
-    ctx: ErkContext, objective_ref: str, *, json_mode: bool, allow_legacy: bool
-) -> None:
+def check_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> None:
     """Validate an objective's format and roadmap consistency.
 
     OBJECTIVE_REF can be an issue number (42) or a full GitHub URL.
@@ -272,7 +225,7 @@ def check_objective(
         repo = discover_repo_context(ctx, ctx.cwd)
     issue_number = parse_issue_identifier(objective_ref)
 
-    result = validate_objective(ctx.issues, repo.root, issue_number, allow_legacy=allow_legacy)
+    result = validate_objective(ctx.issues, repo.root, issue_number)
 
     if json_mode:
         _output_json(result, issue_number)

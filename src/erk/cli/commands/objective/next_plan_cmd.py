@@ -232,7 +232,7 @@ def _handle_one_shot(
     repo: RepoContext = ctx.repo
 
     # Validate objective
-    result = validate_objective(ctx.issues, repo.root, issue_number, allow_legacy=True)
+    result = validate_objective(ctx.issues, repo.root, issue_number)
 
     if isinstance(result, ObjectiveValidationError):
         raise click.ClickException(result.error)
