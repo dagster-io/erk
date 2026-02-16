@@ -42,6 +42,24 @@ def _format_field(label: str, value: str) -> str:
     return f"{styled_label} {value}"
 
 
+def _format_ref_link(ref: str | None, repo_base_url: str) -> str:
+    """Convert a GitHub reference like ``#6871`` into a clickable Rich link.
+
+    Args:
+        ref: Issue/PR reference (e.g., ``"#6871"``) or ``None``.
+        repo_base_url: Repository URL without trailing slash
+            (e.g., ``"https://github.com/owner/repo"``).
+
+    Returns:
+        Rich markup string with ``[link=...]`` wrapper, or ``"-"`` when
+        *ref* is ``None``.
+    """
+    if ref is None:
+        return "-"
+    issue_number = ref.lstrip("#")
+    return f"[link={repo_base_url}/issues/{issue_number}]{escape(ref)}[/link]"
+
+
 def _format_step_status(status: str, *, plan: str | None) -> str:
     """Format step status indicator with emoji and Rich markup.
 
@@ -137,6 +155,10 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
     user_output(_format_timestamp(issue.created_at, label="Created"))
     user_output(_format_timestamp(issue.updated_at, label="Updated"))
 
+    # Derive repo base URL for linkifying references
+    # e.g. "https://github.com/owner/repo/issues/123" → "https://github.com/owner/repo"
+    repo_base_url = issue.url.rsplit("/issues/", 1)[0]
+
     # Display roadmap if phases exist
     if phases:
         user_output("")
@@ -178,7 +200,8 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
 
             # Display steps as a Rich table for proper alignment
             table = Table(
-                show_header=False,
+                show_header=True,
+                header_style="bold",
                 box=None,
                 pad_edge=False,
                 padding=(0, 1),
@@ -194,8 +217,8 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
                     escape(step.id),
                     _format_step_status(step.status, plan=step.plan),
                     escape(step.description),
-                    "-" if step.plan is None else escape(step.plan),
-                    "-" if step.pr is None else escape(step.pr),
+                    _format_ref_link(step.plan, repo_base_url),
+                    _format_ref_link(step.pr, repo_base_url),
                 )
 
             console.print(table)
