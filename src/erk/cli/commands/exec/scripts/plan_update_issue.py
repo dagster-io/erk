@@ -5,8 +5,8 @@ Usage:
 
 This command updates the plan content comment on an existing GitHub issue:
 1. Find plan file (from session scratch, --plan-path, or ~/.claude/plans/)
-2. Get the first comment ID from the issue (where plan body lives)
-3. Update that comment with new plan content
+2. Update plan content via PlanBackend
+3. Update issue title from plan H1 heading
 
 Options:
     --issue-number N: GitHub issue number to update (required)
@@ -19,7 +19,7 @@ Output:
 
 Exit Codes:
     0: Success - plan comment updated
-    1: Error - issue not found, no plan found, no comments, etc.
+    1: Error - issue not found, no plan found, etc.
 """
 
 import json
@@ -30,13 +30,11 @@ import click
 from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
+    require_issues,
+    require_plan_backend,
     require_repo_root,
 )
-from erk_shared.context.helpers import (
-    require_issues as require_github_issues,
-)
-from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
-from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
+from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
 
 
@@ -85,7 +83,8 @@ def plan_update_issue(
         raise SystemExit(1)
 
     # Get dependencies from context
-    github = require_github_issues(ctx)
+    backend = require_plan_backend(ctx)
+    github = require_issues(ctx)
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)
@@ -102,33 +101,24 @@ def plan_update_issue(
     # Narrow type for type checker (None case handled above)
     assert plan_content is not None
 
-    # Step 2: Get existing issue to verify it exists
-    issue = github.get_issue(repo_root, issue_number)
-    if isinstance(issue, IssueNotFound):
+    # Step 2: Check plan exists via PlanBackend
+    plan_id = str(issue_number)
+    plan_result = backend.get_plan(repo_root, plan_id)
+    if isinstance(plan_result, PlanNotFound):
         _handle_update_error(f"Issue #{issue_number} not found")
 
-    # Narrow type for type checker (IssueNotFound case exits above)
-    assert isinstance(issue, IssueInfo)
+    # Narrow type for type checker (PlanNotFound case exits above)
+    assert not isinstance(plan_result, PlanNotFound)
 
-    # Step 3: Get first comment ID (where plan body lives in Schema v2)
-    comments = github.get_issue_comments_with_urls(repo_root, issue_number)
-    if not comments:
-        _handle_update_error(f"Issue #{issue_number} has no comments - cannot update plan content")
-
-    first_comment = comments[0]
-    comment_id = first_comment.id
-
-    # Step 4: Format plan content and update comment
-    formatted_plan = format_plan_content_comment(plan_content.strip())
-
+    # Step 3: Update plan content via PlanBackend
     try:
-        github.update_comment(repo_root, comment_id, formatted_plan)
+        backend.update_plan_content(repo_root, plan_id, plan_content.strip())
     except RuntimeError as e:
         _handle_update_error(f"Failed to update comment: {e}", cause=e)
 
-    # Step 5: Update issue title from plan content
+    # Step 4: Update issue title from plan content
     new_title = extract_title_from_plan(plan_content)
-    title_tag = get_title_tag_from_labels(issue.labels)
+    title_tag = get_title_tag_from_labels(plan_result.labels)
     full_title = f"{title_tag} {new_title}"
 
     try:
@@ -136,21 +126,18 @@ def plan_update_issue(
     except RuntimeError as e:
         _handle_update_error(f"Failed to update title: {e}", cause=e)
 
-    # Step 6: Output success
+    # Step 5: Output success
     if output_format == "display":
         click.echo(f"Plan updated on issue #{issue_number}")
         click.echo(f"Title: {full_title}")
-        click.echo(f"URL: {issue.url}")
-        click.echo(f"Comment: {first_comment.url}")
+        click.echo(f"URL: {plan_result.url}")
     else:
         click.echo(
             json.dumps(
                 {
                     "success": True,
                     "issue_number": issue_number,
-                    "issue_url": issue.url,
-                    "comment_id": comment_id,
-                    "comment_url": first_comment.url,
+                    "issue_url": plan_result.url,
                     "title": full_title,
                 }
             )

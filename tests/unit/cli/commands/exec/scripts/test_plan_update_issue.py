@@ -71,8 +71,6 @@ def test_plan_update_issue_success() -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["issue_number"] == 42
-    assert output["comment_id"] == 12345
-    assert "issuecomment-12345" in output["comment_url"]
 
     assert output["title"] == "[erk-plan] Updated Plan"
 
@@ -115,7 +113,6 @@ def test_plan_update_issue_display_format() -> None:
     assert "Plan updated on issue #99" in result.output
     assert "Title: [erk-plan] Display Test" in result.output
     assert "URL: " in result.output
-    assert "Comment: " in result.output
 
 
 def test_plan_update_issue_no_plan_found() -> None:
@@ -168,68 +165,6 @@ def test_plan_update_issue_issue_not_found() -> None:
     output = json.loads(result.output)
     assert output["success"] is False
     assert "999" in output["error"]
-
-
-def test_plan_update_issue_no_comments() -> None:
-    """Test error when issue has no comments."""
-    issue = _make_issue(42, "Test [erk-plan]", "body")
-    # Issue exists but has no comments
-    fake_gh = FakeGitHubIssues(
-        issues={42: issue},
-        comments_with_urls={42: []},  # Empty comments list
-    )
-    plan_content = """# Test
-
-- Step"""
-    fake_store = FakeClaudeInstallation.for_test(plans={"test": plan_content})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        plan_update_issue,
-        ["--issue-number", "42", "--format", "json"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            claude_installation=fake_store,
-        ),
-    )
-
-    assert result.exit_code == 1
-    output = json.loads(result.output)
-    assert output["success"] is False
-    assert "no comments" in output["error"]
-
-
-def test_plan_update_issue_updates_first_comment_only() -> None:
-    """Test that only the first comment is updated (where plan body lives)."""
-    issue = _make_issue(42, "Test [erk-plan]", "body")
-    comment1 = _make_comment(111, "plan content - first")
-    comment2 = _make_comment(222, "second comment")
-    comment3 = _make_comment(333, "third comment")
-    fake_gh = FakeGitHubIssues(
-        issues={42: issue},
-        comments_with_urls={42: [comment1, comment2, comment3]},
-    )
-    plan_content = """# Updated
-
-- New"""
-    fake_store = FakeClaudeInstallation.for_test(plans={"test": plan_content})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        plan_update_issue,
-        ["--issue-number", "42", "--format", "json"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            claude_installation=fake_store,
-        ),
-    )
-
-    assert result.exit_code == 0
-
-    # Verify only the FIRST comment was updated
-    assert len(fake_gh.updated_comments) == 1
-    updated_comment_id, _ = fake_gh.updated_comments[0]
-    assert updated_comment_id == 111  # First comment ID
 
 
 def test_plan_update_issue_formats_plan_content() -> None:

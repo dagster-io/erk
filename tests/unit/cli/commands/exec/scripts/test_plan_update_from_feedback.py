@@ -58,8 +58,6 @@ def test_success_with_plan_content(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["issue_number"] == issue_number
-    assert output["comment_id"] == comment_id
-    assert output["comment_url"] == comment.url
 
     # Verify comment was updated
     assert len(fake_gh.updated_comments) == 1
@@ -106,51 +104,11 @@ def test_success_with_plan_path(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["issue_number"] == issue_number
-    assert output["comment_id"] == comment_id
 
     # Verify comment was updated with file content
     assert len(fake_gh.updated_comments) == 1
     _, updated_body = fake_gh.updated_comments[0]
     assert "Plan from file" in updated_body
-
-
-def test_correct_comment_updated_when_multiple_comments(tmp_path: Path) -> None:
-    """Test that the correct comment is updated when multiple comments exist."""
-    issue_number = 1234
-    target_comment_id = 222222222
-    repo_root = tmp_path / "repo"
-
-    body = make_plan_header_body(plan_comment_id=target_comment_id)
-    issue = make_issue_info(issue_number, body, title="Plan: Multi-comment", labels=None)
-
-    comment_1 = make_issue_comment(111111111, "Some other comment")
-    comment_2 = make_issue_comment(target_comment_id, make_plan_comment_body_v2("Original"))
-    comment_3 = make_issue_comment(333333333, "Another comment")
-
-    fake_gh = FakeGitHubIssues(
-        issues={issue_number: issue},
-        comments_with_urls={issue_number: [comment_1, comment_2, comment_3]},
-    )
-
-    runner = CliRunner()
-    result = runner.invoke(
-        plan_update_from_feedback,
-        [str(issue_number), "--plan-content", "## Updated"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            repo_root=repo_root,
-        ),
-    )
-
-    assert result.exit_code == 0
-    output = json.loads(result.output)
-    assert output["comment_id"] == target_comment_id
-    assert output["comment_url"] == comment_2.url
-
-    # Only the target comment should be updated
-    assert len(fake_gh.updated_comments) == 1
-    updated_id, _ = fake_gh.updated_comments[0]
-    assert updated_id == target_comment_id
 
 
 def test_updated_comment_contains_plan_body_markers(tmp_path: Path) -> None:
@@ -215,12 +173,17 @@ def test_error_issue_not_found(tmp_path: Path) -> None:
 def test_error_missing_erk_plan_label(tmp_path: Path) -> None:
     """Test error when issue doesn't have erk-plan label."""
     issue_number = 1234
+    comment_id = 123456789
     repo_root = tmp_path / "repo"
 
-    body = make_plan_header_body(plan_comment_id=123456789)
+    body = make_plan_header_body(plan_comment_id=comment_id)
     issue = make_issue_info(issue_number, body, title="Not a plan", labels=["bug", "enhancement"])
+    comment = make_issue_comment(comment_id, make_plan_comment_body_v2("Original"))
 
-    fake_gh = FakeGitHubIssues(issues={issue_number: issue})
+    fake_gh = FakeGitHubIssues(
+        issues={issue_number: issue},
+        comments_with_urls={issue_number: [comment]},
+    )
     runner = CliRunner()
 
     result = runner.invoke(
@@ -237,67 +200,6 @@ def test_error_missing_erk_plan_label(tmp_path: Path) -> None:
     assert output["success"] is False
     assert output["error"] == "missing_erk_plan_label"
     assert "#1234" in output["message"]
-
-
-def test_error_no_plan_comment_id(tmp_path: Path) -> None:
-    """Test error when issue has no plan_comment_id in metadata."""
-    issue_number = 1234
-    repo_root = tmp_path / "repo"
-
-    body = make_plan_header_body(plan_comment_id=None)
-    issue = make_issue_info(issue_number, body, title="Plan: No comment ID", labels=None)
-
-    fake_gh = FakeGitHubIssues(issues={issue_number: issue})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        plan_update_from_feedback,
-        [str(issue_number), "--plan-content", "content"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            repo_root=repo_root,
-        ),
-    )
-
-    assert result.exit_code == 1
-    output = json.loads(result.output)
-    assert output["success"] is False
-    assert output["error"] == "no_plan_comment_id"
-    assert "plan_comment_id" in output["message"]
-
-
-def test_error_comment_not_found(tmp_path: Path) -> None:
-    """Test error when plan_comment_id points to nonexistent comment."""
-    issue_number = 1234
-    missing_comment_id = 999999999
-    repo_root = tmp_path / "repo"
-
-    body = make_plan_header_body(plan_comment_id=missing_comment_id)
-    issue = make_issue_info(issue_number, body, title="Plan: Missing comment", labels=None)
-
-    # Comment with different ID
-    other_comment = make_issue_comment(111111111, "Some other comment")
-
-    fake_gh = FakeGitHubIssues(
-        issues={issue_number: issue},
-        comments_with_urls={issue_number: [other_comment]},
-    )
-    runner = CliRunner()
-
-    result = runner.invoke(
-        plan_update_from_feedback,
-        [str(issue_number), "--plan-content", "content"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            repo_root=repo_root,
-        ),
-    )
-
-    assert result.exit_code == 1
-    output = json.loads(result.output)
-    assert output["success"] is False
-    assert output["error"] == "comment_not_found"
-    assert str(missing_comment_id) in output["message"]
 
 
 def test_error_both_plan_path_and_content(tmp_path: Path) -> None:
