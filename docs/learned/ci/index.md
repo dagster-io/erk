@@ -36,4 +36,5 @@
 - **[review-spec-format.md](review-spec-format.md)** — creating a new code review, understanding why review specs follow certain patterns, debugging review behavior or structure
 - **[review-types-taxonomy.md](review-types-taxonomy.md)** — creating a new review workflow, deciding whether to extend an existing review or create a new one, understanding review scope boundaries
 - **[workflow-gating-patterns.md](workflow-gating-patterns.md)** — adding conditional execution to GitHub Actions workflows, implementing label-based CI skipping, understanding why CI was skipped on a PR
+- **[workflow-model-policy.md](workflow-model-policy.md)** — creating or modifying GitHub Actions workflows that invoke Claude, choosing which Claude model to use in a workflow, understanding why all workflows default to Opus
 - **[workflow-naming-conventions.md](workflow-naming-conventions.md)** — creating new GitHub Actions workflows launchable via erk launch, understanding the relationship between CLI names and workflow files

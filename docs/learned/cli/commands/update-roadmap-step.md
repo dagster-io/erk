@@ -237,9 +237,9 @@ When updating a 4-col table, the command upgrades the header to 5-col automatica
 
 ### Shared Parsing Logic
 
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
 
-Both `update-roadmap-step` and `erk objective check` use `parse_roadmap()` from `objective_roadmap_shared.py`. The shared module defines `RoadmapStep` and `RoadmapPhase` dataclasses — the canonical representation of parsed roadmap state.
+Both `update-roadmap-step` and `erk objective check` use `parse_roadmap()` from `erk_shared.gateway.github.metadata.roadmap`. The shared module defines `RoadmapStep` and `RoadmapPhase` dataclasses — the canonical representation of parsed roadmap state.
 
 ## Anti-Pattern: Manual Table Surgery
 

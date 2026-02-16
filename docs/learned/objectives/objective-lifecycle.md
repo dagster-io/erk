@@ -8,6 +8,8 @@ read_when:
 tripwires:
   - action: "adding a new roadmap mutation site without updating this document"
     warning: "All roadmap mutation sites must be documented in objective-lifecycle.md"
+  - action: "updating roadmap step in only one location (frontmatter or table)"
+    warning: "Must update both frontmatter AND markdown table during the dual-write migration period. Use update-roadmap-step which handles both atomically."
 ---
 
 # Objective Lifecycle
@@ -32,9 +34,26 @@ Created → Active → Complete → Closed
 ```
 
 - **Created**: Objective exists with roadmap, no steps done
-- **Active**: At least one step in progress or done
+- **Active**: At least one step in progress, planning, or done
 - **Complete**: All steps are done or skipped (terminal step statuses)
 - **Closed**: Issue is closed (manually or automatically)
+
+### Step-Level States
+
+Individual roadmap steps follow this lifecycle:
+
+```
+pending → planning → in_progress → done
+                                  → skipped
+          → blocked (from any non-terminal state)
+```
+
+- **pending**: Work not started
+- **planning**: Step dispatched for autonomous planning (draft PR created via `erk objective next-plan`)
+- **in_progress**: Active implementation underway
+- **done**: PR landed
+- **blocked**: External dependency prevents progress
+- **skipped**: Step determined unnecessary
 
 ## Creation
 
@@ -104,7 +123,7 @@ steps:
 
 ## Reading
 
-All roadmap reads go through `parse_roadmap(body: str)` in `objective_roadmap_shared.py`.
+All roadmap reads go through `parse_roadmap(body: str)` in `erk_shared.gateway.github.metadata.roadmap`.
 
 ### Parsing Flow
 
@@ -146,7 +165,7 @@ When parsing markdown tables, status is inferred from PR column if status column
 | `plan #456`  | `in_progress`   |
 | `-` or empty | `pending`       |
 
-Explicit status values (`done`, `in_progress`, `blocked`, `skipped`) override inference.
+Explicit status values (`done`, `in_progress`, `planning`, `blocked`, `skipped`) override inference.
 
 ### Frontmatter Mode
 
@@ -417,14 +436,14 @@ Read-only consumers automatically gain frontmatter support via `parse_roadmap()`
 
 ## Implementation References
 
-| File                                 | Purpose                        |
-| ------------------------------------ | ------------------------------ |
-| `objective_roadmap_shared.py`        | Core parser: `parse_roadmap()` |
-| `objective_roadmap_frontmatter.py`   | Frontmatter parser/serializer  |
-| `update_roadmap_step.py`             | Surgical PR cell update        |
-| `objective-update-with-landed-pr.md` | Full-body update agent         |
-| `objective_update_context.py`        | Context fetch for updates      |
-| `check_cmd.py`                       | Objective validation           |
+| File                                            | Purpose                        |
+| ----------------------------------------------- | ------------------------------ |
+| `erk_shared/gateway/github/metadata/roadmap.py` | Core parser: `parse_roadmap()` |
+| `erk_shared/core/frontmatter.py`                | Frontmatter parser/serializer  |
+| `update_roadmap_step.py`                        | Surgical PR cell update        |
+| `objective-update-with-landed-pr.md`            | Full-body update agent         |
+| `objective_update_context.py`                   | Context fetch for updates      |
+| `check_cmd.py`                                  | Objective validation           |
 
 ## See Also
 

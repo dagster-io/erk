@@ -28,9 +28,13 @@ The two-tier design lets normal workflow rely on PR inference (Tier 2) while res
 
 ## Tier 1: Explicit Status Values
 
-When the Status column contains a recognized value, it takes absolute priority regardless of the PR column. The recognized values are: `done`, `in-progress`, `in_progress`, `pending`, `blocked`, `skipped`.
+When the Status column contains a recognized value, it takes absolute priority regardless of the PR column. The recognized values are: `done`, `in-progress`, `in_progress`, `pending`, `planning`, `blocked`, `skipped`.
 
 Both `in-progress` (hyphenated, human-friendly in markdown) and `in_progress` (underscore, Python-friendly) are accepted and normalized to `in_progress` internally. This matters because the `update-roadmap-step` command writes `in-progress` for readability, but all downstream code uses `in_progress`.
+
+### The "planning" Status
+
+The `planning` status indicates a step has been dispatched for autonomous planning and implementation (via `erk objective next-plan`). It is set when a draft PR is created from an objective step, before the work transitions to `in_progress`. The transition path is: `pending` → `planning` (draft PR created) → `in_progress` (work begins) → `done` (PR landed). The `planning` status is treated as a non-terminal active state by the check command — steps with `planning` status are not flagged for PR/status consistency issues (see `check_cmd.py:137,147`).
 
 ## Tier 2: PR-Based Inference
 
@@ -42,9 +46,9 @@ When the Status column is `-` or empty (or any unrecognized value), the parser f
 | `#456`       | `-` or empty | in_progress     | A plan issue means work is underway     |
 | `-` or empty | `-` or empty | pending         | No references means work hasn't started |
 
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
 
-See the status resolution logic in `parse_roadmap()` in `src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py`.
+See the status resolution logic in `parse_roadmap()` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`.
 
 ## Resolution Examples
 

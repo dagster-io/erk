@@ -79,7 +79,7 @@ The graduated command typically keeps `--json-output` for programmatic callers w
 
 ## Historical Context: PR #6328
 
-PR #6328 demonstrated the pattern at scale by migrating objective roadmap operations from inline `gh api` calls to exec commands. The shared parsing logic was extracted to `objective_roadmap_shared.py`, enabling both the query command (`objective-roadmap-check`) and the mutation command (`update-roadmap-step`) to share roadmap parsing without duplication.
+PR #6328 demonstrated the pattern at scale by migrating objective roadmap operations from inline `gh api` calls to exec commands. The shared parsing logic was extracted to a shared module (now `erk_shared.gateway.github.metadata.roadmap`), enabling both the query command (`objective-roadmap-check`) and the mutation command (`update-roadmap-step`) to share roadmap parsing without duplication.
 
 ## Related Documentation
 

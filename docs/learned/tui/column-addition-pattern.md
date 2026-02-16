@@ -70,6 +70,16 @@ See `_serialize_plan_row()` in `src/erk/cli/commands/exec/scripts/dash_data.py`.
 | 4    | `plan_data_provider/fake.py` | Update `make_plan_row()`  |
 | 5    | `dash_data.py`               | Handle serialization      |
 
+## Additional Worked Example: author Column (PR #7109)
+
+The `author` field follows the same 5-step pattern. Unlike `created_at`, `author` has no display field (the raw string is used directly):
+
+1. **types.py**: Added `author: str` (non-nullable, sourced from GitHub API `issue.author`)
+2. **real.py**: Populated from `issue.author` in `_build_row_data()`
+3. **plan_table.py**: Added column to both Plans/Learn and Objectives views
+4. **fake.py**: Added `author` parameter to `make_plan_row()` with default `"test-user"`
+5. **dash_data.py**: No special serialization needed (plain string)
+
 ## Related Documentation
 
 - [Data Contract](data-contract.md) — Display-vs-raw field duality pattern
