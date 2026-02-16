@@ -13,7 +13,7 @@ here to eliminate the circular dependency between erk_shared and erk.
 
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal, cast
 
 import yaml
@@ -341,13 +341,7 @@ def update_step_in_frontmatter(
                 new_status = step.status  # preserve existing status
 
             updated_steps.append(
-                RoadmapStep(
-                    id=step.id,
-                    description=step.description,
-                    status=new_status,
-                    plan=resolved_plan,
-                    pr=resolved_pr,
-                )
+                replace(step, status=new_status, plan=resolved_plan, pr=resolved_pr)
             )
             found = True
         else:
@@ -410,14 +404,7 @@ def _enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPh
         key = (phase.number, phase.suffix)
         if key in phase_name_map:
             # Replace placeholder name with actual name from markdown
-            enriched_phases.append(
-                RoadmapPhase(
-                    number=phase.number,
-                    suffix=phase.suffix,
-                    name=phase_name_map[key],
-                    steps=phase.steps,
-                )
-            )
+            enriched_phases.append(replace(phase, name=phase_name_map[key]))
         else:
             # Keep placeholder name if no markdown header found
             enriched_phases.append(phase)
