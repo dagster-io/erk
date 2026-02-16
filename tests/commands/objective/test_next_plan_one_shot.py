@@ -106,7 +106,10 @@ def test_next_plan_one_shot_happy_path() -> None:
         assert workflow == "one-shot.yml"
         assert inputs["objective_issue"] == "42"
         assert inputs["step_id"] == "1.1"
-        assert "Implement step 1.1" in inputs["instruction"]
+        assert inputs["instruction"] == (
+            "/erk:objective-next-plan 42\n"
+            "Implement step 1.1 of objective #42: Setup infra (Phase: Foundation)"
+        )
 
         # Verify objective body was updated: step 1.1 marked as "planning" with draft PR
         # Note: updated_bodies has 2 entries — one from skeleton plan issue creation
