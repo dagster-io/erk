@@ -263,10 +263,12 @@ def _build_objective_roadmap_block(plan_content: str) -> str | None:
         valid v2 roadmap block found.
     """
     raw_blocks = extract_raw_metadata_blocks(plan_content)
-    roadmap_block = next((block for block in raw_blocks if block.key == "objective-roadmap"), None)
+    matching_blocks = [block for block in raw_blocks if block.key == "objective-roadmap"]
 
-    if roadmap_block is None:
+    if not matching_blocks:
         return None
+
+    roadmap_block = matching_blocks[0]
 
     if not roadmap_block.body.strip().startswith("<details>"):
         return None
