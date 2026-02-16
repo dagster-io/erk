@@ -3,6 +3,11 @@
 from datetime import datetime
 
 import click
+from rich.cells import cell_len
+from rich.console import Console
+from rich.markup import escape
+from rich.table import Table
+from rich.text import Text
 
 from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
@@ -37,28 +42,57 @@ def _format_field(label: str, value: str) -> str:
     return f"{styled_label} {value}"
 
 
-def _format_step_status(status: str, *, plan: str | None, pr: str | None) -> str:
-    """Format step status indicator with emoji and color.
+def _format_ref_link(ref: str | None, repo_base_url: str) -> str:
+    """Convert a GitHub reference like ``#6871`` into a clickable Rich link.
+
+    Args:
+        ref: Issue/PR reference (e.g., ``"#6871"``) or ``None``.
+        repo_base_url: Repository URL without trailing slash
+            (e.g., ``"https://github.com/owner/repo"``).
+
+    Returns:
+        Rich markup string with ``[link=...]`` wrapper, or ``"-"`` when
+        *ref* is ``None``.
+    """
+    if ref is None:
+        return "-"
+    issue_number = ref.lstrip("#")
+    return f"[link={repo_base_url}/issues/{issue_number}]{escape(ref)}[/link]"
+
+
+def _format_step_status(status: str, *, plan: str | None) -> str:
+    """Format step status indicator with emoji and Rich markup.
 
     Args:
         status: Step status ("done", "in_progress", "pending", "blocked", "skipped")
         plan: Plan reference (e.g., "#6464") or None
-        pr: PR reference (e.g., "#123") or None
 
     Returns:
-        Formatted status string with emoji
+        Rich markup string with emoji and color
     """
     if status == "done":
-        return click.style("✅ done", fg="green")
+        return "[green]✅ done[/green]"
     if status == "in_progress":
-        ref_text = f" plan {plan}" if plan else ""
-        return click.style(f"🔄 in_progress{ref_text}", fg="yellow")
+        ref_text = f" plan {escape(plan)}" if plan else ""
+        return f"[yellow]🔄 in_progress{ref_text}[/yellow]"
     if status == "blocked":
-        return click.style("🚫 blocked", fg="red")
+        return "[red]🚫 blocked[/red]"
     if status == "skipped":
-        return click.style("⏭ skipped", dim=True)
+        return "[dim]⏭ skipped[/dim]"
     # Default: pending
-    return click.style("⏳ pending", dim=True)
+    return "[dim]⏳ pending[/dim]"
+
+
+def _extract_repo_base_url(issue_url: str) -> str:
+    """Extract the repository base URL from a GitHub issue URL.
+
+    Args:
+        issue_url: Full issue URL (e.g., ``"https://github.com/owner/repo/issues/123"``)
+
+    Returns:
+        Repository base URL (e.g., ``"https://github.com/owner/repo"``)
+    """
+    return issue_url.rsplit("/issues/", 1)[0]
 
 
 def _format_timestamp(dt_value: datetime, *, label: str) -> str:
@@ -133,10 +167,35 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
     user_output(_format_timestamp(issue.created_at, label="Created"))
     user_output(_format_timestamp(issue.updated_at, label="Updated"))
 
+    # Derive repo base URL for linkifying references
+    repo_base_url = _extract_repo_base_url(issue.url)
+
     # Display roadmap if phases exist
     if phases:
         user_output("")
         user_output(click.style("─── Roadmap ───", bold=True))
+
+        console = Console(stderr=True, force_terminal=True)
+
+        # Pre-compute max column widths across all phases for global alignment
+        max_id_width = 0
+        max_status_width = 0
+        max_desc_width = 0
+        max_plan_width = 0
+        max_pr_width = 0
+        for phase in phases:
+            for step in phase.steps:
+                max_id_width = max(max_id_width, cell_len(step.id))
+                status_markup = _format_step_status(step.status, plan=step.plan)
+                max_status_width = max(
+                    max_status_width,
+                    cell_len(Text.from_markup(status_markup).plain),
+                )
+                max_desc_width = max(max_desc_width, cell_len(step.description))
+                max_plan_width = max(
+                    max_plan_width, cell_len("-" if step.plan is None else step.plan)
+                )
+                max_pr_width = max(max_pr_width, cell_len("-" if step.pr is None else step.pr))
 
         for phase in phases:
             # Count done steps in this phase
@@ -150,18 +209,30 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
             phase_header = f"{phase_id}: {phase.name} ({done_count}/{total_count} steps done)"
             user_output(click.style(phase_header, bold=True))
 
-            # Display steps
-            for step in phase.steps:
-                status_display = _format_step_status(step.status, plan=step.plan, pr=step.pr)
+            # Display steps as a Rich table for proper alignment
+            table = Table(
+                show_header=True,
+                header_style="bold",
+                box=None,
+                pad_edge=False,
+                padding=(0, 1),
+            )
+            table.add_column("step", style="cyan", no_wrap=True, min_width=max_id_width)
+            table.add_column("status", no_wrap=True, min_width=max_status_width)
+            table.add_column("description", min_width=max_desc_width)
+            table.add_column("plan", no_wrap=True, min_width=max_plan_width)
+            table.add_column("pr", no_wrap=True, min_width=max_pr_width)
 
-                # Show plan and PR as separate columns
-                plan_col = "-" if step.plan is None else step.plan
-                pr_col = "-" if step.pr is None else step.pr
-                step_line = (
-                    f"  {step.id:5} {status_display:30}"
-                    f" {step.description:50} {plan_col:10} {pr_col}"
+            for step in phase.steps:
+                table.add_row(
+                    escape(step.id),
+                    _format_step_status(step.status, plan=step.plan),
+                    escape(step.description),
+                    _format_ref_link(step.plan, repo_base_url),
+                    _format_ref_link(step.pr, repo_base_url),
                 )
-                user_output(step_line)
+
+            console.print(table)
 
             user_output("")
 
