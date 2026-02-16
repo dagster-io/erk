@@ -8,9 +8,9 @@ tripwires:
   - action: "creating a skill capability"
     warning: "Bundled content directory must exist or install() silently creates empty skill directory. See silent failure modes below."
   - action: "skill not appearing in erk init capability list"
-    warning: "MUST import class AND add instance to registry.py _all_capabilities() tuple. Import alone is not sufficient."
-last_audited: "2026-02-08 00:00 PT"
-audit_result: clean
+    warning: "For bundled skills, add entry to bundled_skills() dict in src/erk/capabilities/skills/bundled.py. For custom capabilities, import AND instantiate in registry.py _all_capabilities() tuple."
+last_audited: "2026-02-16 02:45 PT"
+audit_result: edited
 ---
 
 # Adding Skill Capabilities
@@ -42,50 +42,42 @@ For the 90% case (one skill, standard install), `SkillCapability` is correct.
 
 ## Implementation: Four-Step Pattern
 
-### 1. Create Capability Class
+### 1. Register in Bundled Skills Dict
 
-<!-- Source: src/erk/capabilities/skills/dignified_python.py, DignifiedPythonCapability -->
+<!-- Source: src/erk/capabilities/skills/bundled.py, bundled_skills -->
 
-Create `src/erk/capabilities/skills/{name}.py`:
+For simple skills (name + description only), add an entry to the `bundled_skills()` dict in `src/erk/capabilities/skills/bundled.py`:
 
 ```python
-from erk.core.capabilities.skill_capability import SkillCapability
-
-class MySkillCapability(SkillCapability):
-    """Brief description for CLI display."""
-
-    @property
-    def skill_name(self) -> str:
-        return "my-skill"  # Directory name under .claude/skills/
-
-    @property
-    def description(self) -> str:
-        return "Brief description for CLI display"
+@cache
+def bundled_skills() -> dict[str, str]:
+    return {
+        "dignified-python": "Python coding standards (LBYL, modern types, ABCs)",
+        "my-skill": "Brief description for CLI display",  # Add here
+        # ...
+    }
 ```
 
-**That's it.** No `install()`, no `is_installed()`, no `uninstall()`. Base class provides everything.
+**That's it.** The `BundledSkillCapability` class and `create_bundled_skill_capabilities()` factory handle instantiation. Registry picks them up via `*create_bundled_skill_capabilities()` spread in `_all_capabilities()`.
 
-### 2. Register in Registry
+**When you need custom logic**: Create a dedicated capability class (like `LearnedDocsCapability`) that subclasses `SkillCapability` directly and register it individually in `registry.py`.
+
+### 2. No Manual Registry Step Needed
 
 <!-- Source: src/erk/core/capabilities/registry.py, _all_capabilities -->
 
-Two steps required in `registry.py`:
+Bundled skills are automatically registered via the factory spread:
 
 ```python
-# Step 1: Import the class
-from erk.capabilities.skills.my_skill import MySkillCapability
-
-# Step 2: Instantiate in tuple
 @cache
 def _all_capabilities() -> tuple[Capability, ...]:
     return (
-        DignifiedPythonCapability(),
-        MySkillCapability(),  # Add here
+        *create_bundled_skill_capabilities(),  # All bundled skills auto-registered
         # ...
     )
 ```
 
-**Why both steps?** Import verifies module loads cleanly. Instantiation makes the capability discoverable to `list_capabilities()`. Forgetting instantiation causes silent failure—class exists but is invisible to CLI and hooks.
+Adding to the `bundled_skills()` dict is sufficient — no import or instantiation needed in `registry.py`.
 
 ### 3. Bundle Skill Content
 
@@ -118,12 +110,12 @@ erk init capability list my-skill  # Should show "Installed: Yes"
 
 ## Silent Failure Modes
 
-| Symptom                                             | Root Cause                                   | Fix                                                                            |
-| --------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------ |
-| Capability not in `erk init capability list`        | Missing from `_all_capabilities()` tuple     | Add instantiation to registry.py                                               |
-| Empty skill directory created                       | Bundled content directory doesn't exist      | Check `.claude/skills/{skill_name}/` exists in erk repo                        |
-| Install succeeds but `is_installed()` returns False | State file corruption or race condition      | Base class calls `add_installed_capability()`—check `.erk/state.toml` manually |
-| Skill content out of date after edits               | Using wheel install, content frozen at build | Use editable install (`uv pip install -e .`) for development                   |
+| Symptom                                             | Root Cause                                                          | Fix                                                                            |
+| --------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Capability not in `erk init capability list`        | Missing from `bundled_skills()` dict or `_all_capabilities()` tuple | Add to `bundled_skills()` in `bundled.py` (simple) or registry.py (custom)     |
+| Empty skill directory created                       | Bundled content directory doesn't exist                             | Check `.claude/skills/{skill_name}/` exists in erk repo                        |
+| Install succeeds but `is_installed()` returns False | State file corruption or race condition                             | Base class calls `add_installed_capability()`—check `.erk/state.toml` manually |
+| Skill content out of date after edits               | Using wheel install, content frozen at build                        | Use editable install (`uv pip install -e .`) for development                   |
 
 ## How `skill_name` Property Works
 
