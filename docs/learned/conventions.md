@@ -164,3 +164,25 @@ In this case, use a slots-based class with underscore-prefixed internal fields. 
 - Constructor uses clean names (`session_id=`), not underscore-prefixed (`_session_id=`)
 - Internal slots use underscores (`_session_id`) to avoid shadowing properties
 - Immutability is by convention (underscore prefix signals "don't mutate"), not runtime enforcement
+
+## Sentinel Values in Migrations
+
+When migrating from partial to complete data format, use distinguishable sentinel values.
+
+### Example
+
+Migrating `last_audited` from date-only to datetime:
+
+- Old format: `2025-02-15`
+- New format: `2025-02-15 14:30 PT`
+- Migration sentinel: `2025-02-15 00:00 PT`
+
+The `00:00 PT` sentinel distinguishes "migrated from old format" from "explicitly audited at midnight".
+
+### Pattern
+
+Choose sentinel values that:
+
+1. Are valid in the new format
+2. Are distinguishable from realistic values
+3. Convey the migration status

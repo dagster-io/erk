@@ -87,6 +87,23 @@ The `audit-pr-docs` review automatically runs on every PR touching `docs/learned
 
 This enforcement connects to the broader audit system: `/local:audit-doc` performs deep single-document analysis, `/local:audit-scan` triages which docs need audit, and `audit-pr-docs` prevents new problems at PR time. See [audit-methodology.md](audit-methodology.md) for the full classification framework.
 
+## Line Number References
+
+### When to Remove
+
+**Prose line references**: `see line 578` - remove, use function name instead.
+
+Line numbers drift with every edit. Function names are stable anchors.
+
+### When to Keep
+
+**Source pointer comments**: Keep for grep-ability if code is stable and function is unique.
+
+### Conversion Examples
+
+- `list_cmd.py:578-629` -> `_run_watch_loop() in list_cmd.py`
+- `submit.py:151-153` -> `_prompt_existing_branch_action() in submit.py`
+
 ## Related Documentation
 
 - [stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md) — The deeper case for why pointers beat embedded code
