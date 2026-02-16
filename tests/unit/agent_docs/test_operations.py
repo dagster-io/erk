@@ -234,6 +234,27 @@ def test_sync_generates_tripwire_files() -> None:
     assert "tripwires-index.md" in agent_docs.written_files
 
 
+def test_sync_invokes_on_progress_callback() -> None:
+    """Verify on_progress is called with expected progress messages at each phase."""
+    agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
+        files={"architecture/patterns.md": VALID_DOC_WITH_TRIPWIRES},
+    )
+    progress_messages: list[str] = []
+    sync_agent_docs(
+        agent_docs, PROJECT_ROOT, dry_run=False, on_progress=progress_messages.append
+    )
+
+    assert progress_messages == [
+        "Scanning docs...",
+        "Generating root index...",
+        "Generating category indexes...",
+        "Collecting tripwires...",
+        "Generating tripwire files...",
+        "Generating tripwires index...",
+    ]
+
+
 def test_sync_reports_unchanged_when_content_matches() -> None:
     """If index content already matches, report as unchanged."""
     agent_docs = FakeAgentDocs(has_docs_dir=True, files={"doc.md": VALID_DOC})
