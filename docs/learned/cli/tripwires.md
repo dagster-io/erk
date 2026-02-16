@@ -110,6 +110,8 @@ Rules triggered by matching actions in code.
 
 **using Path.cwd() or Path.home() in exec scripts** → Read [Exec Script Patterns](exec-script-patterns.md) first. Use context injection via require_cwd(ctx) for testability
 
+**using Python format strings with :N width specifiers for CLI output containing emoji** → Read [CLI Output Styling Guide](output-styling.md) first. Use Rich tables instead — emoji have variable terminal widths (typically 2 cells) which break fixed-width alignment. See the Rich Tables for Variable-Width Characters section below.
+
 **using blocking operations (user confirmation, editor launch) in CI-executed code paths** → Read [CI-Aware Commands](ci-aware-commands.md) first. Check `in_github_actions()` before any blocking operation. CI has no terminal for user input.
 
 **using click.confirm() after user_output()** → Read [CLI Output Styling Guide](output-styling.md) first. Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed.
