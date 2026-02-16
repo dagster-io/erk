@@ -1,5 +1,7 @@
 ---
 title: Claude Code in Docker CI
+last_audited: "2026-02-16 03:30 PT"
+audit_result: edited
 read_when:
   - Running Claude Code in GitHub Actions containers
   - Debugging permission errors in CI Docker containers
@@ -10,7 +12,7 @@ read_when:
 
 ## Overview
 
-This document covers the container-based approach for running Claude Code in GitHub Actions. For the container-less alternative, see [containerless-ci.md](containerless-ci.md).
+> **Historical document.** Erk has migrated to container-less CI (see [containerless-ci.md](containerless-ci.md)). The Docker-based approach described here is no longer used in any active workflows. This document is retained as reference for the root user restriction and Claude Code CI flags, which remain relevant regardless of CI approach.
 
 **Pros:** Consistent environment, tools pre-installed, faster execution after image pull.
 
@@ -113,12 +115,7 @@ The `--allowedTools` flag provides granular control:
 
 ## Affected Workflows
 
-Workflows using the container-based approach require:
-
-1. The `ghcr.io/dagster-io/erk-ci:latest` image with ci-user
-2. The temp directory permission fix step
-
-See [containerless-ci.md](containerless-ci.md) for workflows using the alternative native installation approach.
+> **No active workflows use the container-based approach.** All erk CI workflows have migrated to the containerless pattern described in [containerless-ci.md](containerless-ci.md). The `build-ci-image.yml` workflow has been removed.
 
 ## Alternative Approaches
 

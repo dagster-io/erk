@@ -1,9 +1,11 @@
 ---
+title: GitHub Actions Label Filtering Reference
+last_audited: "2026-02-16 03:30 PT"
+audit_result: clean
 read_when:
   - debugging why label-based CI gating isn't working
   - implementing label-based workflow conditions
   - confused about .*.name syntax vs array filtering
-title: GitHub Actions Label Filtering Reference
 tripwires:
   - action: GitHub Actions cannot interpolate Python constants
     warning: label strings must be hardcoded in YAML

@@ -1,5 +1,7 @@
 ---
 title: Context Fork Feature
+last_audited: "2026-02-16 03:30 PT"
+audit_result: clean
 read_when:
   - "creating skills that need context isolation"
   - "creating commands that need context isolation"
