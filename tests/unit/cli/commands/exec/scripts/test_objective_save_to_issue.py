@@ -407,6 +407,36 @@ This objective describes the implementation of a new feature.
 | Step | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 2.1 | Implement main feature | pending | - | - |
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+
+schema_version: '2'
+steps:
+  - id: '1.1'
+    description: Set up project structure
+    status: pending
+    plan: null
+    pr: null
+  - id: '1.2'
+    description: Add core types
+    status: pending
+    plan: null
+    pr: null
+  - id: '2.1'
+    description: Implement main feature
+    status: pending
+    plan: null
+    pr: null
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
 """
 
 

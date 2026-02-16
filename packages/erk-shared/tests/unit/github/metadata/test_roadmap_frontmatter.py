@@ -5,68 +5,46 @@ from erk_shared.gateway.github.metadata.roadmap import (
     group_steps_by_phase,
     parse_roadmap_frontmatter,
     render_roadmap_block_inner,
-    serialize_steps_to_frontmatter,
     update_step_in_frontmatter,
     validate_roadmap_frontmatter,
 )
 
 
-def test_parse_valid_v1_frontmatter() -> None:
-    """Parse valid v1 YAML frontmatter returns correct steps with plan migration."""
-    block_content = """---
-schema_version: "1"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "pending"
-    pr: null
-  - id: "1.2"
-    description: "Second step"
-    status: "done"
-    pr: "#123"
-  - id: "1.3"
-    description: "Third step"
-    status: "in_progress"
-    pr: "plan #456"
----"""
-
-    steps = parse_roadmap_frontmatter(block_content)
-
-    assert steps is not None
-    assert len(steps) == 3
-    assert steps[0].id == "1.1"
-    assert steps[0].plan is None
-    assert steps[0].pr is None
-    assert steps[1].id == "1.2"
-    assert steps[1].plan is None
-    assert steps[1].pr == "#123"
-    # v1 migration: "plan #456" → plan="#456", pr=None
-    assert steps[2].id == "1.3"
-    assert steps[2].plan == "#456"
-    assert steps[2].pr is None
+def _details_block(yaml_content: str) -> str:
+    """Wrap YAML content in <details> format for parse_roadmap_frontmatter."""
+    return (
+        "<details>\n"
+        "<summary><code>objective-roadmap</code></summary>\n"
+        "\n"
+        "```yaml\n"
+        f"{yaml_content}\n"
+        "```\n"
+        "\n"
+        "</details>"
+    )
 
 
-def test_parse_valid_v2_frontmatter() -> None:
-    """Parse valid v2 YAML frontmatter with separate plan and pr fields."""
-    block_content = """---
-schema_version: "2"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "pending"
-    plan: null
-    pr: null
-  - id: "1.2"
-    description: "Second step"
-    status: "in_progress"
-    plan: "#456"
-    pr: null
-  - id: "1.3"
-    description: "Third step"
-    status: "done"
-    plan: null
-    pr: "#789"
----"""
+def test_parse_v2_details_frontmatter() -> None:
+    """Parse valid v2 <details> frontmatter with separate plan and pr fields."""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First step\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null\n"
+        "- id: '1.2'\n"
+        "  description: Second step\n"
+        "  status: in_progress\n"
+        "  plan: '#456'\n"
+        "  pr: null\n"
+        "- id: '1.3'\n"
+        "  description: Third step\n"
+        "  status: done\n"
+        "  plan: null\n"
+        "  pr: '#789'"
+    )
 
     steps = parse_roadmap_frontmatter(block_content)
 
@@ -80,6 +58,23 @@ steps:
     assert steps[2].pr == "#789"
 
 
+def test_parse_legacy_format_returns_none() -> None:
+    """Parse returns None for legacy --- frontmatter format."""
+    block_content = """---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Step"
+    status: "pending"
+    plan: null
+    pr: null
+---"""
+
+    steps = parse_roadmap_frontmatter(block_content)
+
+    assert steps is None
+
+
 def test_parse_no_frontmatter() -> None:
     """Parse returns None when no frontmatter markers found."""
     block_content = """Some content without frontmatter markers"""
@@ -91,9 +86,7 @@ def test_parse_no_frontmatter() -> None:
 
 def test_parse_invalid_yaml() -> None:
     """Parse returns None when YAML is malformed."""
-    block_content = """---
-invalid: yaml: content: [
----"""
+    block_content = _details_block("invalid: yaml: content: [")
 
     steps = parse_roadmap_frontmatter(block_content)
 
@@ -102,13 +95,9 @@ invalid: yaml: content: [
 
 def test_parse_missing_schema_version() -> None:
     """Parse returns None when schema_version field is missing."""
-    block_content = """---
-steps:
-  - id: "1.1"
-    description: "Step"
-    status: "pending"
-    pr: null
----"""
+    block_content = _details_block(
+        "steps:\n- id: '1.1'\n  description: Step\n  status: pending\n  pr: null"
+    )
 
     steps = parse_roadmap_frontmatter(block_content)
 
@@ -116,15 +105,15 @@ steps:
 
 
 def test_parse_wrong_schema_version() -> None:
-    """Parse returns None when schema_version is not '1' or '2'."""
-    block_content = """---
-schema_version: "99"
-steps:
-  - id: "1.1"
-    description: "Step"
-    status: "pending"
-    pr: null
----"""
+    """Parse returns None when schema_version is not '2'."""
+    block_content = _details_block(
+        "schema_version: '99'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: Step\n"
+        "  status: pending\n"
+        "  pr: null"
+    )
 
     steps = parse_roadmap_frontmatter(block_content)
 
@@ -133,10 +122,7 @@ steps:
 
 def test_parse_steps_not_list() -> None:
     """Parse returns None when steps is not a list."""
-    block_content = """---
-schema_version: "1"
-steps: "not a list"
----"""
+    block_content = _details_block("schema_version: '2'\nsteps: not a list")
 
     steps = parse_roadmap_frontmatter(block_content)
 
@@ -145,30 +131,30 @@ steps: "not a list"
 
 def test_parse_missing_required_field() -> None:
     """Parse returns None when step is missing required field."""
-    block_content = """---
-schema_version: "1"
-steps:
-  - id: "1.1"
-    description: "Step"
-    # missing status field
-    pr: null
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: Step\n"
+        "  # missing status field\n"
+        "  pr: null"
+    )
 
     steps = parse_roadmap_frontmatter(block_content)
 
     assert steps is None
 
 
-def test_serialize_roundtrip() -> None:
-    """Serialize then parse returns same step data."""
+def test_render_roundtrip() -> None:
+    """Render then parse returns same step data."""
     original_steps = [
         RoadmapStep(id="1.1", description="First", status="pending", plan=None, pr=None),
         RoadmapStep(id="1.2", description="Second", status="done", plan=None, pr="#456"),
         RoadmapStep(id="1.3", description="Third", status="in_progress", plan="#789", pr=None),
     ]
 
-    frontmatter = serialize_steps_to_frontmatter(original_steps)
-    parsed_steps = parse_roadmap_frontmatter(frontmatter)
+    rendered = render_roadmap_block_inner(original_steps)
+    parsed_steps = parse_roadmap_frontmatter(rendered)
 
     assert parsed_steps is not None
     assert len(parsed_steps) == 3
@@ -181,17 +167,6 @@ def test_serialize_roundtrip() -> None:
     assert parsed_steps[2].id == "1.3"
     assert parsed_steps[2].plan == "#789"
     assert parsed_steps[2].pr is None
-
-
-def test_serialize_writes_v2() -> None:
-    """Serialize always writes schema_version 2."""
-    steps = [
-        RoadmapStep(id="1.1", description="Step", status="pending", plan=None, pr=None),
-    ]
-
-    frontmatter = serialize_steps_to_frontmatter(steps)
-
-    assert "schema_version: '2'" in frontmatter or 'schema_version: "2"' in frontmatter
 
 
 def test_group_steps_by_phase() -> None:
@@ -256,23 +231,24 @@ def test_group_steps_sorts_phases() -> None:
 
 def test_update_step_in_frontmatter() -> None:
     """Update step PR field returns updated frontmatter."""
-    block_content = """---
-schema_version: "1"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "pending"
-    pr: null
-  - id: "1.2"
-    description: "Second step"
-    status: "pending"
-    pr: null
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First step\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null\n"
+        "- id: '1.2'\n"
+        "  description: Second step\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null"
+    )
 
     updated = update_step_in_frontmatter(block_content, "1.2", plan=None, pr="#789", status=None)
 
     assert updated is not None
-    # Parse the updated content to verify
     steps = parse_roadmap_frontmatter(updated)
     assert steps is not None
     assert len(steps) == 2
@@ -283,19 +259,20 @@ steps:
     assert steps[1].id == "1.2"
     assert steps[1].pr == "#789"
     assert steps[1].plan is None
-    assert steps[1].status == "done"  # Inferred from PR value
+    assert steps[1].status == "done"
 
 
 def test_update_step_in_frontmatter_not_found() -> None:
     """Update step returns None when step ID not found."""
-    block_content = """---
-schema_version: "1"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "pending"
-    pr: null
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First step\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null"
+    )
 
     updated = update_step_in_frontmatter(
         block_content, "999.999", plan=None, pr="#123", status=None
@@ -306,25 +283,25 @@ steps:
 
 def test_update_step_preserves_other_steps() -> None:
     """Update step leaves non-target steps unchanged."""
-    block_content = """---
-schema_version: "2"
-steps:
-  - id: "1.1"
-    description: "First"
-    status: "done"
-    plan: null
-    pr: "#111"
-  - id: "1.2"
-    description: "Second"
-    status: "pending"
-    plan: null
-    pr: null
-  - id: "1.3"
-    description: "Third"
-    status: "in_progress"
-    plan: "#222"
-    pr: null
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First\n"
+        "  status: done\n"
+        "  plan: null\n"
+        "  pr: '#111'\n"
+        "- id: '1.2'\n"
+        "  description: Second\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null\n"
+        "- id: '1.3'\n"
+        "  description: Third\n"
+        "  status: in_progress\n"
+        "  plan: '#222'\n"
+        "  pr: null"
+    )
 
     updated = update_step_in_frontmatter(block_content, "1.2", plan=None, pr="#333", status=None)
 
@@ -345,40 +322,18 @@ steps:
     assert steps[2].plan == "#222"
 
 
-def test_update_step_with_trailing_content() -> None:
-    """Update step preserves non-frontmatter content after YAML."""
-    block_content = """---
-schema_version: "1"
-steps:
-  - id: "1.1"
-    description: "Step"
-    status: "pending"
-    pr: null
----
-
-Some markdown content after frontmatter."""
-
-    updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#999", status=None)
-
-    assert updated is not None
-    assert "Some markdown content after frontmatter." in updated
-    # Verify frontmatter is still valid
-    steps = parse_roadmap_frontmatter(updated)
-    assert steps is not None
-    assert steps[0].pr == "#999"
-
-
 def test_parse_handles_extra_fields() -> None:
     """Parse ignores extra fields in step data (forward compatibility)."""
-    block_content = """---
-schema_version: "1"
-steps:
-  - id: "1.1"
-    description: "Step"
-    status: "pending"
-    pr: null
-    extra_field: "ignored"
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: Step\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null\n"
+        "  extra_field: ignored"
+    )
 
     steps = parse_roadmap_frontmatter(block_content)
 
@@ -445,10 +400,24 @@ def test_validate_roadmap_frontmatter_wrong_schema_version() -> None:
     assert "99" in errors[0]
 
 
+def test_validate_roadmap_frontmatter_v1_rejected() -> None:
+    """Validate returns error for schema_version '1' (no longer supported)."""
+    data: dict[str, object] = {
+        "schema_version": "1",
+        "steps": [{"id": "1.1", "description": "Step", "status": "pending"}],
+    }
+
+    steps, errors = validate_roadmap_frontmatter(data)
+
+    assert steps is None
+    assert len(errors) == 1
+    assert "1" in errors[0]
+
+
 def test_validate_roadmap_frontmatter_missing_step_field() -> None:
     """Validate returns error when step is missing required field."""
     data: dict[str, object] = {
-        "schema_version": "1",
+        "schema_version": "2",
         "steps": [{"id": "1.1", "description": "Step"}],  # missing status
     }
 
@@ -462,7 +431,7 @@ def test_validate_roadmap_frontmatter_missing_step_field() -> None:
 def test_validate_roadmap_frontmatter_steps_not_list() -> None:
     """Validate returns error when steps is not a list."""
     data: dict[str, object] = {
-        "schema_version": "1",
+        "schema_version": "2",
         "steps": "not a list",
     }
 
@@ -475,14 +444,15 @@ def test_validate_roadmap_frontmatter_steps_not_list() -> None:
 
 def test_update_step_with_explicit_status() -> None:
     """Update step with explicit status sets that status instead of pending."""
-    block_content = """---
-schema_version: "1"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "pending"
-    pr: null
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First step\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null"
+    )
 
     updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#123", status="done")
 
@@ -495,14 +465,15 @@ steps:
 
 def test_update_step_status_none_infers_from_pr() -> None:
     """Update step with status=None infers status from resolved PR value."""
-    block_content = """---
-schema_version: "1"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "done"
-    pr: "#100"
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First step\n"
+        "  status: done\n"
+        "  plan: null\n"
+        "  pr: '#100'"
+    )
 
     updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#200", status=None)
 
@@ -515,15 +486,15 @@ steps:
 
 def test_update_step_with_plan() -> None:
     """Update step with explicit plan reference."""
-    block_content = """---
-schema_version: "2"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "pending"
-    plan: null
-    pr: null
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First step\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null"
+    )
 
     updated = update_step_in_frontmatter(block_content, "1.1", plan="#6464", pr="", status=None)
 
@@ -536,15 +507,15 @@ steps:
 
 def test_update_step_status_inferred_from_pr() -> None:
     """Update step with status=None and PR set infers 'done' status."""
-    block_content = """---
-schema_version: "2"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "pending"
-    plan: null
-    pr: null
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First step\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null"
+    )
 
     updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#999", status=None)
 
@@ -557,15 +528,15 @@ steps:
 
 def test_update_step_status_inferred_from_plan() -> None:
     """Update step with status=None and plan set infers 'in_progress' status."""
-    block_content = """---
-schema_version: "2"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "pending"
-    plan: null
-    pr: null
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First step\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null"
+    )
 
     updated = update_step_in_frontmatter(block_content, "1.1", plan="#6464", pr="", status=None)
 
@@ -578,15 +549,15 @@ steps:
 
 def test_update_step_preserves_status_when_both_none() -> None:
     """Update step with status=None and both plan/pr=None preserves existing status."""
-    block_content = """---
-schema_version: "2"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "planning"
-    plan: null
-    pr: "#200"
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First step\n"
+        "  status: planning\n"
+        "  plan: null\n"
+        "  pr: '#200'"
+    )
 
     # Both plan and pr are None → preserve existing values
     updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr=None, status=None)
@@ -595,22 +566,21 @@ steps:
     steps = parse_roadmap_frontmatter(updated)
     assert steps is not None
     # Status should be inferred from preserved pr="#200" → "done"
-    # Wait — pr is preserved as "#200", which is truthy, so status="done"
     assert steps[0].status == "done"
     assert steps[0].pr == "#200"
 
 
 def test_update_step_none_pr_preserves_existing() -> None:
     """Update step with pr=None preserves existing PR value."""
-    block_content = """---
-schema_version: "2"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "in_progress"
-    plan: "#6464"
-    pr: "#200"
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First step\n"
+        "  status: in_progress\n"
+        "  plan: '#6464'\n"
+        "  pr: '#200'"
+    )
 
     # Set plan only, preserve PR
     updated = update_step_in_frontmatter(
@@ -627,15 +597,15 @@ steps:
 
 def test_update_step_pr_auto_clears_plan() -> None:
     """Setting --pr auto-clears plan reference."""
-    block_content = """---
-schema_version: "2"
-steps:
-  - id: "1.1"
-    description: "First step"
-    status: "in_progress"
-    plan: "#6464"
-    pr: null
----"""
+    block_content = _details_block(
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First step\n"
+        "  status: in_progress\n"
+        "  plan: '#6464'\n"
+        "  pr: null"
+    )
 
     updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#999", status=None)
 
@@ -707,31 +677,6 @@ def test_render_roadmap_block_inner() -> None:
     assert len(parsed) == 2
     assert parsed[0].id == "1.1"
     assert parsed[1].pr == "#456"
-
-
-def test_render_roundtrip_via_update_legacy() -> None:
-    """update_step_in_frontmatter preserves legacy format on legacy input."""
-    block_content = """---
-schema_version: "2"
-steps:
-  - id: "1.1"
-    description: "Step one"
-    status: "pending"
-    plan: null
-    pr: null
----"""
-
-    updated = update_step_in_frontmatter(block_content, "1.1", plan="#100", pr="", status=None)
-
-    assert updated is not None
-    # Legacy input stays legacy
-    assert updated.startswith("---\n")
-    assert "<details>" not in updated
-
-    steps = parse_roadmap_frontmatter(updated)
-    assert steps is not None
-    assert steps[0].plan == "#100"
-    assert steps[0].status == "in_progress"
 
 
 def test_render_roundtrip_via_update_details() -> None:

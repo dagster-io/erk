@@ -10,8 +10,48 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
-ROADMAP_BODY_5COL = """\
+ROADMAP_BODY_V2 = """\
 # Objective: Build Feature X
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+
+schema_version: '2'
+steps:
+  - id: '1.1'
+    description: Set up project structure
+    status: done
+    plan: null
+    pr: '#100'
+  - id: '1.2'
+    description: Add core types
+    status: in_progress
+    plan: '#200'
+    pr: null
+  - id: '1.3'
+    description: Add utility functions
+    status: pending
+    plan: null
+    pr: null
+  - id: '2.1'
+    description: Implement main feature
+    status: pending
+    plan: null
+    pr: null
+  - id: '2.2'
+    description: Add tests
+    status: blocked
+    plan: null
+    pr: null
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
 
 ## Roadmap
 
@@ -57,7 +97,7 @@ def _make_issue(number: int, body: str) -> IssueInfo:
 
 def test_update_pending_step_with_plan() -> None:
     """Update a pending step with a plan reference using --plan."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -76,16 +116,16 @@ def test_update_pending_step_with_plan() -> None:
     assert output["new_plan"] == "#6464"
     assert output["url"] == "https://github.com/test/repo/issues/6423"
 
-    # Verify the body was updated with 5-col format
+    # Verify the body was updated with frontmatter
     assert len(fake_gh.updated_bodies) == 1
     updated_body = fake_gh.updated_bodies[0][1]
     assert "#6464" in updated_body
-    assert "| in-progress |" in updated_body
+    assert "status: in_progress" in updated_body
 
 
 def test_update_step_with_pr() -> None:
     """Update a step with a PR reference (auto-clears plan)."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -103,12 +143,12 @@ def test_update_step_with_pr() -> None:
 
     updated_body = fake_gh.updated_bodies[0][1]
     assert "#500" in updated_body
-    assert "| done |" in updated_body
+    assert "status: done" in updated_body
 
 
 def test_clear_pr_reference() -> None:
     """Clear a step's PR reference by passing empty string."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -125,12 +165,12 @@ def test_clear_pr_reference() -> None:
     assert output["new_pr"] is None
 
     updated_body = fake_gh.updated_bodies[0][1]
-    assert "| pending |" in updated_body
+    assert "status: pending" in updated_body
 
 
 def test_step_not_found() -> None:
     """Error when step ID doesn't exist in roadmap."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -185,7 +225,7 @@ def test_no_roadmap_table() -> None:
 
 def test_update_step_in_phase_2() -> None:
     """Update a step in a later phase."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -206,46 +246,9 @@ def test_update_step_in_phase_2() -> None:
     assert "#300" in updated_body
 
 
-FRONTMATTER_ROADMAP_BODY = """\
-# Objective: Build Feature X
-
-<!-- erk:metadata-block:objective-roadmap -->
----
-schema_version: "2"
-steps:
-  - id: "1.1"
-    description: "Set up project structure"
-    status: "done"
-    plan: null
-    pr: "#100"
-  - id: "1.2"
-    description: "Add core types"
-    status: "in_progress"
-    plan: "#200"
-    pr: null
-  - id: "1.3"
-    description: "Add utility functions"
-    status: "pending"
-    plan: null
-    pr: null
----
-<!-- /erk:metadata-block:objective-roadmap -->
-
-## Roadmap
-
-### Phase 1: Foundation (1 PR)
-
-| Step | Description | Status | Plan | PR |
-|------|-------------|--------|------|-----|
-| 1.1 | Set up project structure | done | - | #100 |
-| 1.2 | Add core types | in-progress | #200 | - |
-| 1.3 | Add utility functions | pending | - | - |
-"""
-
-
 def test_update_with_frontmatter() -> None:
-    """Update step when frontmatter is present updates both YAML and table."""
-    issue = _make_issue(6423, FRONTMATTER_ROADMAP_BODY)
+    """Update step when frontmatter is present updates YAML."""
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -263,13 +266,11 @@ def test_update_with_frontmatter() -> None:
     updated_body = fake_gh.updated_bodies[0][1]
     # Frontmatter should contain the new PR
     assert "pr: '#999'" in updated_body or 'pr: "#999"' in updated_body
-    # Table should also be updated
-    assert "| 1.3 " in updated_body
 
 
 def test_update_with_frontmatter_preserves_other_steps() -> None:
     """Update with frontmatter preserves other steps' data."""
-    issue = _make_issue(6423, FRONTMATTER_ROADMAP_BODY)
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -288,51 +289,9 @@ def test_update_with_frontmatter_preserves_other_steps() -> None:
     assert "status: done" in updated_body
 
 
-def test_fallback_to_table_when_no_frontmatter() -> None:
-    """When no frontmatter exists, fall back to table-only update."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
-    fake_gh = FakeGitHubIssues(issues={6423: issue})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        update_roadmap_step,
-        ["6423", "--step", "1.3", "--pr", "#888"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
-    )
-
-    assert result.exit_code == 0
-    output = json.loads(result.output)
-    assert output["success"] is True
-
-    updated_body = fake_gh.updated_bodies[0][1]
-    assert "#888" in updated_body
-    assert "erk:metadata-block:objective-roadmap" not in updated_body
-
-
-def test_explicit_status_option_table_only() -> None:
-    """--status flag sets explicit status in table instead of inferring."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
-    fake_gh = FakeGitHubIssues(issues={6423: issue})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        update_roadmap_step,
-        ["6423", "--step", "1.3", "--pr", "#500", "--status", "done"],
-        obj=ErkContext.for_test(github_issues=fake_gh),
-    )
-
-    assert result.exit_code == 0, f"Failed: {result.output}"
-    output = json.loads(result.output)
-    assert output["success"] is True
-
-    updated_body = fake_gh.updated_bodies[0][1]
-    assert "#500" in updated_body
-    assert "| done |" in updated_body
-
-
 def test_explicit_status_option_with_frontmatter() -> None:
-    """--status flag sets explicit status in both frontmatter and table."""
-    issue = _make_issue(6423, FRONTMATTER_ROADMAP_BODY)
+    """--status flag sets explicit status in frontmatter."""
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -348,12 +307,11 @@ def test_explicit_status_option_with_frontmatter() -> None:
 
     updated_body = fake_gh.updated_bodies[0][1]
     assert "status: done" in updated_body
-    assert "| done |" in updated_body
 
 
 def test_update_multiple_steps_success() -> None:
     """Update multiple steps in a single operation — all succeed."""
-    issue = _make_issue(6697, ROADMAP_BODY_5COL)
+    issue = _make_issue(6697, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6697: issue})
     runner = CliRunner()
 
@@ -388,7 +346,7 @@ def test_update_multiple_steps_success() -> None:
 
 def test_update_multiple_steps_partial_failure() -> None:
     """Multi-step update rejected upfront when any step is missing."""
-    issue = _make_issue(6697, ROADMAP_BODY_5COL)
+    issue = _make_issue(6697, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6697: issue})
     runner = CliRunner()
 
@@ -445,7 +403,7 @@ def test_build_output_multi_step_and_semantics() -> None:
 
 def test_update_multiple_steps_same_phase() -> None:
     """Update multiple steps within the same phase."""
-    issue = _make_issue(6697, ROADMAP_BODY_5COL)
+    issue = _make_issue(6697, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6697: issue})
     runner = CliRunner()
 
@@ -465,12 +423,11 @@ def test_update_multiple_steps_same_phase() -> None:
 
     updated_body = fake_gh.updated_bodies[0][1]
     assert updated_body.count("#555") == 3
-    assert updated_body.count("| done |") >= 3
 
 
 def test_single_step_maintains_legacy_output_format() -> None:
     """Single --step usage maintains backward-compatible output format."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -493,7 +450,7 @@ def test_single_step_maintains_legacy_output_format() -> None:
 
 def test_missing_ref_error() -> None:
     """Error when neither --plan nor --pr is provided."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -511,7 +468,7 @@ def test_missing_ref_error() -> None:
 
 def test_include_body_flag_single_step() -> None:
     """--include-body includes updated_body in JSON output for single step."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -526,12 +483,12 @@ def test_include_body_flag_single_step() -> None:
     assert output["success"] is True
     assert "updated_body" in output
     assert "#500" in output["updated_body"]
-    assert "| done |" in output["updated_body"]
+    assert "status: done" in output["updated_body"]
 
 
 def test_include_body_flag_multiple_steps() -> None:
     """--include-body includes updated_body with all step mutations applied."""
-    issue = _make_issue(6697, ROADMAP_BODY_5COL)
+    issue = _make_issue(6697, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6697: issue})
     runner = CliRunner()
 
@@ -551,7 +508,7 @@ def test_include_body_flag_multiple_steps() -> None:
 
 def test_include_body_not_set_by_default() -> None:
     """updated_body field is absent when --include-body is not passed."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -571,26 +528,23 @@ def test_none_plan_auto_clears_when_pr_set() -> None:
     """_replace_step_refs_in_body with new_plan=None auto-clears plan when PR is set."""
     from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_step_refs_in_body
 
-    body = ROADMAP_BODY_5COL
     # Step 1.2 has plan=#200
     result = _replace_step_refs_in_body(
-        body, "1.2", new_plan=None, new_pr="#500", explicit_status=None
+        ROADMAP_BODY_V2, "1.2", new_plan=None, new_pr="#500", explicit_status=None
     )
 
     assert result is not None
-    # Plan should be auto-cleared (not preserved) because PR is being set
-    assert "| - | #500 |" in result
-    assert "| done |" in result
+    # Plan should be auto-cleared (null) because PR is being set
+    assert "status: done" in result
 
 
 def test_none_plan_preserves_when_no_pr() -> None:
     """_replace_step_refs_in_body with new_plan=None preserves plan when PR not set."""
     from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_step_refs_in_body
 
-    body = ROADMAP_BODY_5COL
     # Step 1.2 has plan=#200
     result = _replace_step_refs_in_body(
-        body, "1.2", new_plan=None, new_pr=None, explicit_status=None
+        ROADMAP_BODY_V2, "1.2", new_plan=None, new_pr=None, explicit_status=None
     )
 
     assert result is not None
@@ -602,35 +556,34 @@ def test_none_pr_preserves_existing_value() -> None:
     """_replace_step_refs_in_body with new_pr=None preserves existing PR."""
     from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_step_refs_in_body
 
-    body = ROADMAP_BODY_5COL
     # Step 1.1 has pr=#100
     result = _replace_step_refs_in_body(
-        body, "1.1", new_plan=None, new_pr=None, explicit_status="planning"
+        ROADMAP_BODY_V2, "1.1", new_plan=None, new_pr=None, explicit_status="planning"
     )
 
     assert result is not None
     # PR should be preserved
     assert "#100" in result
-    assert "| planning |" in result
+    assert "status: planning" in result
 
 
 def test_empty_string_clears_value() -> None:
-    """_replace_step_refs_in_body with empty string clears to '-'."""
+    """_replace_step_refs_in_body with empty string clears to null."""
     from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_step_refs_in_body
 
-    body = ROADMAP_BODY_5COL
-    # Step 1.2 has plan=#200, pr=-
-    result = _replace_step_refs_in_body(body, "1.2", new_plan="", new_pr=None, explicit_status=None)
+    # Step 1.2 has plan=#200, pr=null
+    result = _replace_step_refs_in_body(
+        ROADMAP_BODY_V2, "1.2", new_plan="", new_pr=None, explicit_status=None
+    )
 
     assert result is not None
-    # Plan should be cleared, PR preserved (was already "-")
-    # After clearing plan and preserving pr="-", status should be pending
-    assert "| pending |" in result
+    # After clearing plan and preserving pr=null, status should be pending
+    assert "status: pending" in result
 
 
 def test_planning_status_via_explicit_status() -> None:
     """update-roadmap-step with --status planning sets planning status."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -645,13 +598,13 @@ def test_planning_status_via_explicit_status() -> None:
     assert output["success"] is True
 
     updated_body = fake_gh.updated_bodies[0][1]
-    assert "| planning |" in updated_body
+    assert "status: planning" in updated_body
     assert "#200" in updated_body
 
 
 def test_include_body_on_failure() -> None:
     """updated_body field is absent on failure even with --include-body."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
@@ -665,6 +618,35 @@ def test_include_body_on_failure() -> None:
     output = json.loads(result.output)
     assert output["success"] is False
     assert "updated_body" not in output
+
+
+def test_no_metadata_block_returns_no_roadmap() -> None:
+    """When issue body has no metadata block, returns no_roadmap error."""
+    body_without_metadata = """\
+# Objective: Build Feature X
+
+## Roadmap
+
+### Phase 1: Foundation (1 PR)
+
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Set up project structure | done | - | #100 |
+"""
+    issue = _make_issue(6423, body_without_metadata)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.1", "--plan", "#6464"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["error"] == "no_roadmap"
 
 
 # --- v2 format tests: objective-header with objective_comment_id ---
@@ -688,25 +670,32 @@ objective_comment_id: 42
 
 <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:objective-roadmap -->
----
-schema_version: "2"
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+
+schema_version: '2'
 steps:
-  - id: "1.1"
-    description: "Set up project structure"
-    status: "done"
+  - id: '1.1'
+    description: Set up project structure
+    status: done
     plan: null
-    pr: "#100"
-  - id: "1.2"
-    description: "Add core types"
-    status: "in_progress"
-    plan: "#200"
+    pr: '#100'
+  - id: '1.2'
+    description: Add core types
+    status: in_progress
+    plan: '#200'
     pr: null
-  - id: "1.3"
-    description: "Add utility functions"
-    status: "pending"
+  - id: '1.3'
+    description: Add utility functions
+    status: pending
     plan: null
     pr: null
----
+
+```
+
+</details>
 <!-- /erk:metadata-block:objective-roadmap -->
 """
 
@@ -808,8 +797,8 @@ def test_v2_pr_auto_clears_plan_in_all_stores() -> None:
 
 
 def test_v2_no_comment_update_when_no_header() -> None:
-    """v1 format: when no objective-header, only body is updated (no comment)."""
-    issue = _make_issue(6423, ROADMAP_BODY_5COL)
+    """When no objective-header exists, only body is updated (no comment)."""
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 

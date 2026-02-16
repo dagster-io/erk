@@ -91,9 +91,20 @@ How would you like the objective structured?
 
 Write a structured objective proposal and show it to the user. Use the appropriate template based on their structure choice:
 
+**IMPORTANT: Machine-Readable Roadmap Metadata Block**
+
+After the human-readable roadmap tables, you MUST include a machine-readable YAML metadata block. This block is required for erk tooling to track step statuses, plan references, and PR references. Without it, the objective will fail validation.
+
+The metadata block must:
+
+- List ALL steps from ALL phases in a single flat list
+- Use `schema_version: '2'`
+- Set all steps to `status: pending` initially
+- Set `plan: null` and `pr: null` initially
+
 #### Steelthread Template (Recommended)
 
-```markdown
+````markdown
 # Objective: [Clear, Concise Title]
 
 [1-2 sentence summary of the transformation]
@@ -115,8 +126,8 @@ Minimal vertical slice proving the concept works end-to-end.
 
 | Step | Description                  | Status  | Plan | PR  |
 | ---- | ---------------------------- | ------- | ---- | --- |
-| 1.1  | [Minimal infrastructure]     | pending |      |     |
-| 1.2  | [Wire into one command/path] | pending |      |     |
+| 1.1  | [Minimal infrastructure]     | pending | -    | -   |
+| 1.2  | [Wire into one command/path] | pending | -    | -   |
 
 **Test:** [End-to-end acceptance test for steelthread]
 
@@ -124,10 +135,10 @@ Minimal vertical slice proving the concept works end-to-end.
 
 Fill out remaining functionality.
 
-| Step | Description                    | Status  | PR  |
-| ---- | ------------------------------ | ------- | --- | --- |
-| 2.1  | [Extend to remaining commands] | pending |     |     |
-| 2.2  | [Full test coverage]           | pending |     |     |
+| Step | Description                    | Status  | Plan | PR  |
+| ---- | ------------------------------ | ------- | ---- | --- |
+| 2.1  | [Extend to remaining commands] | pending | -    | -   |
+| 2.2  | [Full test coverage]           | pending | -    | -   |
 
 **Test:** [Full acceptance criteria]
 
@@ -135,11 +146,49 @@ Fill out remaining functionality.
 
 [Description]
 
-| Step | Description | Status  | PR  |
-| ---- | ----------- | ------- | --- | --- |
-| 3.1  | ...         | pending |     |     |
+| Step | Description | Status  | Plan | PR  |
+| ---- | ----------- | ------- | ---- | --- |
+| 3.1  | ...         | pending | -    | -   |
 
 **Test:** [Verification criteria]
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: [Minimal infrastructure]
+    status: pending
+    plan: null
+    pr: null
+  - id: "1.2"
+    description: [Wire into one command/path]
+    status: pending
+    plan: null
+    pr: null
+  - id: "2.1"
+    description: [Extend to remaining commands]
+    status: pending
+    plan: null
+    pr: null
+  - id: "2.2"
+    description: [Full test coverage]
+    status: pending
+    plan: null
+    pr: null
+  - id: "3.1"
+    description: ...
+    status: pending
+    plan: null
+    pr: null
+```
+````
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
 
 ## Implementation Context
 
@@ -153,7 +202,8 @@ Fill out remaining functionality.
 
 - Skills to load: [relevant skills]
 - Docs to reference: [relevant docs]
-```
+
+````
 
 #### Linear Template
 
@@ -176,9 +226,9 @@ Fill out remaining functionality.
 
 [Description - this phase establishes infrastructure needed by subsequent phases]
 
-| Step | Description | Status  | PR  |
-| ---- | ----------- | ------- | --- | --- |
-| 1.1  | ...         | pending |     |     |
+| Step | Description | Status  | Plan | PR  |
+| ---- | ----------- | ------- | ---- | --- |
+| 1.1  | ...         | pending | -    | -   |
 
 **Test:** [Verification criteria]
 
@@ -186,11 +236,33 @@ Fill out remaining functionality.
 
 [Description - uses Phase 1 infrastructure]
 
-| Step | Description | Status  | PR  |
-| ---- | ----------- | ------- | --- | --- |
-| 2.1  | ...         | pending |     |     |
+| Step | Description | Status  | Plan | PR  |
+| ---- | ----------- | ------- | ---- | --- |
+| 2.1  | ...         | pending | -    | -   |
 
 **Test:** [Verification criteria]
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '2'
+steps:
+- id: '1.1'
+  description: ...
+  status: pending
+  plan: null
+  pr: null
+- id: '2.1'
+  description: ...
+  status: pending
+  plan: null
+  pr: null
+````
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
 
 ## Implementation Context
 
@@ -204,7 +276,8 @@ Fill out remaining functionality.
 
 - Skills to load: [relevant skills]
 - Docs to reference: [relevant docs]
-```
+
+````
 
 #### Single Template
 
@@ -238,7 +311,7 @@ Fill out remaining functionality.
 
 - Skills to load: [relevant skills]
 - Docs to reference: [relevant docs]
-```
+````
 
 **Key structuring principles:**
 

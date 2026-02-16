@@ -266,91 +266,36 @@ def _replace_step_refs_in_body(
             roadmap_block = block
             break
 
-    if roadmap_block is not None:
-        # Pass None through to frontmatter API (preserves existing value).
-        # Non-None values (including "") are forwarded as-is.
-        updated_block_content = update_step_in_frontmatter(
-            roadmap_block.body,
-            step_id,
-            plan=new_plan,
-            pr=new_pr,
-            status=cast(RoadmapStepStatus, explicit_status)
-            if explicit_status is not None
-            else None,
-        )
-
-        if updated_block_content is None:
-            return None
-
-        new_block_with_markers = (
-            f"<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
-            f"<!-- erk:metadata-block:objective-roadmap -->\n"
-            f"{updated_block_content}\n"
-            f"<!-- /erk:metadata-block:objective-roadmap -->"
-        )
-        try:
-            body = replace_metadata_block_in_body(
-                body,
-                "objective-roadmap",
-                new_block_with_markers,
-            )
-        except ValueError:
-            return None
-
-    # OBJECTIVE_V1_COMPAT: Remove when all objectives use v2
-    # Also update the markdown table in body (v1 fallback)
-    # 5-col row: | step_id | description | status | plan | pr |
-    pattern = re.compile(
-        r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$",
-        re.MULTILINE,
-    )
-
-    match = pattern.search(body)
-    if match is None:
-        # If we updated frontmatter but can't find table row, still return body
-        if roadmap_block is not None:
-            return body
+    if roadmap_block is None:
         return None
 
-    # Resolve None → preserve existing value from matched row
-    existing_plan = match.group(4).strip()
-    existing_pr = match.group(5).strip()
-
-    if new_plan is None:
-        if new_pr:
-            resolved_plan = "-"  # Auto-clear plan when PR is explicitly set
-        else:
-            resolved_plan = existing_plan
-    elif new_plan:
-        resolved_plan = new_plan
-    else:
-        resolved_plan = "-"
-
-    if new_pr is None:
-        resolved_pr = existing_pr
-    elif new_pr:
-        resolved_pr = new_pr
-    else:
-        resolved_pr = "-"
-
-    # Determine display status
-    if explicit_status is not None:
-        display_status = explicit_status.replace("_", "-")
-    elif resolved_pr != "-" and resolved_pr:
-        display_status = "done"
-    elif resolved_plan != "-" and resolved_plan:
-        display_status = "in-progress"
-    else:
-        display_status = "pending"
-
-    plan_display = resolved_plan
-    pr_display = resolved_pr
-
-    replacement = (
-        f"|{match.group(1)}|{match.group(2)}| {display_status} | {plan_display} | {pr_display} |"
+    # Pass None through to frontmatter API (preserves existing value).
+    # Non-None values (including "") are forwarded as-is.
+    updated_block_content = update_step_in_frontmatter(
+        roadmap_block.body,
+        step_id,
+        plan=new_plan,
+        pr=new_pr,
+        status=cast(RoadmapStepStatus, explicit_status) if explicit_status is not None else None,
     )
 
-    body = body[: match.start()] + replacement + body[match.end() :]
+    if updated_block_content is None:
+        return None
+
+    new_block_with_markers = (
+        f"<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
+        f"<!-- erk:metadata-block:objective-roadmap -->\n"
+        f"{updated_block_content}\n"
+        f"<!-- /erk:metadata-block:objective-roadmap -->"
+    )
+    try:
+        body = replace_metadata_block_in_body(
+            body,
+            "objective-roadmap",
+            new_block_with_markers,
+        )
+    except ValueError:
+        return None
 
     return body
 

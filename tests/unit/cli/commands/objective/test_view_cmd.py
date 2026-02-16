@@ -215,7 +215,7 @@ def test_view_objective_empty_roadmap() -> None:
         )
 
         assert result.exit_code == 1
-        assert "legacy objective format" in result.output
+        assert "legacy format" in result.output
 
 
 def test_view_objective_displays_summary() -> None:
@@ -361,7 +361,7 @@ def test_view_objective_legacy_format_rejected() -> None:
         )
 
         assert result.exit_code == 1
-        assert "legacy objective format" in result.output
+        assert "legacy format" in result.output
         assert "erk:objective-create" in result.output
 
 
@@ -380,4 +380,4 @@ def test_view_objective_v1_schema_rejected() -> None:
         )
 
         assert result.exit_code == 1
-        assert "legacy objective format" in result.output
+        assert "legacy format" in result.output
