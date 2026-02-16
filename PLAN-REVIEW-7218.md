@@ -55,31 +55,58 @@ prompt: |
     Your final message MUST be only: "Output written to <output_path>"
 ```
 
-### 2. Add normalization in validate_candidates_json
+### 2. Create `erk exec normalize-tripwire-candidates` command
 
-**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py`
+**New file:** `src/erk/cli/commands/exec/scripts/normalize_tripwire_candidates.py`
 
-Add a `_normalize_candidates_json` function called at the start of `validate_candidates_json` that handles common drift:
+Create a standalone exec command that normalizes agent-produced tripwire JSON before it reaches `store-tripwire-candidates`. This keeps `validate_candidates_json` strict (validation only) and puts the lossy normalization in its own exec script.
+
+```bash
+erk exec normalize-tripwire-candidates --candidates-file <path>
+```
+
+The command reads the JSON file, normalizes it in-place, and writes back. Normalization rules:
 
 - **Root key normalization**: If `candidates` key missing but `tripwire_candidates` exists, rename it
 - **Field mapping**: For each candidate object, map `description` → `warning` and `title`/`name` → `action` if the canonical fields are missing
-- **Extra field stripping**: Silently ignore extra fields (already happens since we only `.get()` the three we need)
-- Log a warning when normalization kicks in so we can track drift frequency
+- **Extra field stripping**: Only keep `action`, `warning`, `target_doc_path` per candidate
+- Output JSON result: `{"success": true, "normalized": true/false, "count": N}` (normalized=true if any fixes were applied)
 
-### 3. Add tests for normalization
+The `learn.md` command calls this between the tripwire extractor agent and `store-tripwire-candidates`:
 
-**File:** `tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py`
+```bash
+erk exec normalize-tripwire-candidates \
+    --candidates-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json
+
+erk exec store-tripwire-candidates \
+    --issue <issue> \
+    --candidates-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json
+```
+
+### 3. Add tests for the normalize command
+
+**New file:** `tests/unit/cli/commands/exec/scripts/test_normalize_tripwire_candidates.py`
 
 Add test cases for:
 - `tripwire_candidates` root key gets normalized to `candidates`
 - `description` field gets mapped to `warning`
+- `title` field gets mapped to `action`
 - Mixed schema (some fields canonical, some drifted)
+- Already-correct JSON passes through unchanged (`normalized: false`)
+- Extra fields are stripped
+
+### 4. Update learn.md to call normalize before store
+
+**File:** `.claude/commands/erk/learn.md` (Step 8)
+
+Add the `normalize-tripwire-candidates` call before `store-tripwire-candidates`.
 
 ## Files to Modify
 
 1. `.claude/commands/erk/learn.md` (~line 528-546) - Inline schema in prompt
-2. `packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py` - Add normalization
-3. `tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py` - Add normalization tests
+2. `.claude/commands/erk/learn.md` (Step 8) - Add normalize call before store
+3. `src/erk/cli/commands/exec/scripts/normalize_tripwire_candidates.py` - New exec command
+4. `tests/unit/cli/commands/exec/scripts/test_normalize_tripwire_candidates.py` - Tests for normalize command
 
 ## Verification
 
