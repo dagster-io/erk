@@ -31,7 +31,8 @@ def test_each_agents_md_has_claude_md_reference() -> None:
 
         # Verify first line is @AGENTS.md
         content = claude_file.read_text(encoding="utf-8")
-        assert content.strip().split("\n")[0].strip() == "@AGENTS.md", (
+        first_line = content.strip().split("\n")[0].strip()
+        assert first_line == "@AGENTS.md", (
             f"{claude_file.relative_to(repo_root)} first line is "
-            f"'{content.strip().split(chr(10))[0].strip()}', expected '@AGENTS.md'"
+            f"'{first_line}', expected '@AGENTS.md'"
         )
