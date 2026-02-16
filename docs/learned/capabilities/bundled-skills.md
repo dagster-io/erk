@@ -29,17 +29,9 @@ Instead of creating individual `SkillCapability` subclasses for each simple skil
 
 ### Components
 
-**`bundled_skills()` function** -- cached dict mapping skill names to descriptions:
+<!-- Source: src/erk/capabilities/skills/bundled.py, bundled_skills -->
 
-```python
-@cache
-def bundled_skills() -> dict[str, str]:
-    return {
-        "dignified-python": "Python coding standards...",
-        "fake-driven-testing": "5-layer test architecture...",
-        # ... 11 total entries
-    }
-```
+**`bundled_skills()` function** -- cached dict mapping skill names to descriptions. See `bundled_skills()` in `src/erk/capabilities/skills/bundled.py` for the current entries.
 
 **`BundledSkillCapability` class** -- generic SkillCapability that takes name and description as constructor parameters rather than requiring a subclass for each skill.
 
@@ -47,19 +39,9 @@ def bundled_skills() -> dict[str, str]:
 
 ### Registry Splice Pattern
 
-The factory output is unpacked into the capabilities tuple in `src/erk/core/capabilities/registry.py`:
+<!-- Source: src/erk/core/capabilities/registry.py, _all_capabilities -->
 
-```python
-def _all_capabilities() -> tuple[Capability, ...]:
-    return (
-        LearnedDocsCapability(),
-        *create_bundled_skill_capabilities(),  # tuple unpacking
-        TripwiresReviewDefCapability(),
-        # ...
-    )
-```
-
-The `*` operator unpacks the list into individual tuple items, keeping the registry declaration clean.
+The factory output is unpacked into the capabilities tuple using `*create_bundled_skill_capabilities()` in `_all_capabilities()`. See `_all_capabilities()` in `src/erk/core/capabilities/registry.py` for the full declaration. The `*` operator unpacks the list into individual tuple items, keeping the registry declaration clean.
 
 ### Import-Time Safety
 

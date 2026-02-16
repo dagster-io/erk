@@ -21,6 +21,9 @@ When an exec script calls `require_prompt_executor()`, its workflow step **must*
 
 ## Scripts Requiring ANTHROPIC_API_KEY
 
+> **Note:** This table may be incomplete. To find the current list, run:
+> `grep -rl 'require_prompt_executor' src/erk/cli/commands/exec/scripts/`
+
 | Script                               | Command Name                      | Uses                        |
 | ------------------------------------ | --------------------------------- | --------------------------- |
 | `generate_pr_address_summary.py`     | `generate-pr-address-summary`     | `require_prompt_executor()` |
@@ -82,13 +85,11 @@ Each `require_*` helper checks `ctx.obj` is initialized and returns a typed depe
 
 ## Workflows Using ANTHROPIC_API_KEY
 
-- `.github/workflows/pr-address.yml`
-- `.github/workflows/plan-implement.yml`
-- `.github/workflows/code-reviews.yml`
-- `.github/workflows/pr-fix-conflicts.yml`
-- `.github/workflows/ci.yml`
-- `.github/workflows/learn.yml`
-- `.github/workflows/one-shot.yml`
+To find the current list of workflows using this key:
+
+```bash
+grep -rl 'ANTHROPIC_API_KEY' .github/workflows/
+```
 
 ## Related Topics
 
