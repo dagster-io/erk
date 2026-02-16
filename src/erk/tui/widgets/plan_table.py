@@ -1,5 +1,9 @@
 """Plan table widget for TUI dashboard."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, cast
+
 from rich.text import Text
 from textual.events import Click
 from textual.message import Message
@@ -7,6 +11,9 @@ from textual.widgets import DataTable
 
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.views.types import ViewMode
+
+if TYPE_CHECKING:
+    from erk.tui.app import ErkDashApp
 
 
 class PlanDataTable(DataTable):
@@ -94,11 +101,11 @@ class PlanDataTable(DataTable):
 
     def action_cursor_left(self) -> None:
         """Delegate left arrow to app's previous_view action."""
-        self.app.action_previous_view()
+        cast("ErkDashApp", self.app).action_previous_view()
 
     def action_cursor_right(self) -> None:
         """Delegate right arrow to app's next_view action."""
-        self.app.action_next_view()
+        cast("ErkDashApp", self.app).action_next_view()
 
     def reconfigure(self, *, plan_filters: PlanFilters, view_mode: ViewMode) -> None:
         """Reconfigure the table for a new view mode.
