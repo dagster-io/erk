@@ -188,8 +188,10 @@ def test_render_activation_script_refreshes_workspace_packages() -> None:
     assert "-e packages/erk-shared" in script
     assert "-e packages/erk-statusline" in script
     # Refresh line should come after the venv creation conditional
-    venv_creation_index = script.index("uv sync")
-    refresh_index = script.index("uv pip install --no-deps")
+    venv_creation_index = script.find("uv sync")
+    refresh_index = script.find("uv pip install --no-deps")
+    assert venv_creation_index != -1
+    assert refresh_index != -1
     assert venv_creation_index < refresh_index
 
 
