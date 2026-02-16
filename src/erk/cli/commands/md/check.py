@@ -15,6 +15,10 @@ import click
 from erk_shared.output.output import user_output
 
 
+def _first_line(content: str) -> str:
+    return content.strip().split("\n")[0].strip()
+
+
 @click.command(name="check")
 def check_command() -> None:
     """Validate AGENTS.md standard compliance in the repository.
@@ -64,7 +68,7 @@ def check_command() -> None:
 
         # Check CLAUDE.md content - must start with @AGENTS.md as first line
         content = claude_path.read_text(encoding="utf-8")
-        if content.strip().split("\n")[0].strip() != "@AGENTS.md":
+        if _first_line(content) != "@AGENTS.md":
             invalid_content.append(claude_path)
 
     # Check that all AGENTS.md files have peer CLAUDE.md
@@ -111,7 +115,7 @@ def check_command() -> None:
             rel_path = path.relative_to(repo_root_path)
             content = path.read_text(encoding="utf-8")
             styled_path = click.style(str(rel_path), fg="cyan")
-            actual = content.strip().split("\n")[0].strip()
+            actual = _first_line(content)
             user_output(f"  • {styled_path}: First line is '{actual}', expected '@AGENTS.md'")
         user_output()
 
