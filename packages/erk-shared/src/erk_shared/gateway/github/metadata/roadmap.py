@@ -467,6 +467,41 @@ def _enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPh
     return enriched_phases
 
 
+def parse_v2_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]] | None:
+    """Parse roadmap strictly from v2 ``<details>`` format.
+
+    Unlike :func:`parse_roadmap`, this function does **not** fall back to
+    legacy table parsing.  It returns ``None`` when the body does not
+    contain a v2-format ``objective-roadmap`` metadata block, signalling
+    the caller that the objective uses a legacy format.
+
+    Returns:
+        ``(phases, validation_errors)`` on success, or ``None`` when the
+        body is not in v2 format.
+    """
+    raw_blocks = extract_raw_metadata_blocks(body)
+    roadmap_block = next((block for block in raw_blocks if block.key == "objective-roadmap"), None)
+
+    if roadmap_block is None:
+        return None
+
+    if not roadmap_block.body.strip().startswith("<details>"):
+        return None
+
+    data = parse_metadata_block_body(roadmap_block.body)
+
+    if data.get("schema_version") != "2":
+        return None
+
+    steps, errors = validate_roadmap_frontmatter(data)
+    if steps is None:
+        return None
+
+    phases = group_steps_by_phase(steps)
+    phases = _enrich_phase_names(body, phases)
+    return (phases, errors)
+
+
 def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
     """Parse roadmap from YAML frontmatter or markdown tables.
 
