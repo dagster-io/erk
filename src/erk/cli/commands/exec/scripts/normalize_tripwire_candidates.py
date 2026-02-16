@@ -18,6 +18,7 @@ Exit Codes:
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Any
 
 import click
 
@@ -73,12 +74,12 @@ def normalize_candidates_data(data: dict) -> tuple[dict, bool]:
     if not isinstance(candidates_raw, list):
         return data, changed
 
-    normalized_candidates: list[dict[str, str]] = []
+    normalized_candidates: list[dict[str, Any]] = []
     for entry in candidates_raw:
         if not isinstance(entry, dict):
             continue
 
-        normalized_entry: dict[str, str] = {}
+        normalized_entry: dict[str, Any] = {}
 
         # Copy canonical fields first
         for field in CANONICAL_FIELDS:
