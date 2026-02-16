@@ -2,7 +2,7 @@
 
 This command validates that repositories follow the AGENTS.md standard where:
 - AGENTS.md is the primary context file
-- CLAUDE.md contains '@AGENTS.md' reference for backwards compatibility
+- CLAUDE.md starts with '@AGENTS.md' reference (may include additional content)
 
 See: https://code.claude.com/docs/en/claude-code-on-the-web
 """
@@ -15,13 +15,17 @@ import click
 from erk_shared.output.output import user_output
 
 
+def _first_line(content: str) -> str:
+    return content.strip().split("\n")[0].strip()
+
+
 @click.command(name="check")
 def check_command() -> None:
     """Validate AGENTS.md standard compliance in the repository.
 
     Checks that:
     - Every CLAUDE.md file has a peer AGENTS.md file
-    - Every CLAUDE.md file contains '@AGENTS.md' reference
+    - Every CLAUDE.md file starts with '@AGENTS.md' as its first line
 
     Exit codes:
     - 0: All checks passed
@@ -62,9 +66,9 @@ def check_command() -> None:
             missing_agents.append(claude_path.parent)
             continue
 
-        # Check CLAUDE.md content
+        # Check CLAUDE.md content - must start with @AGENTS.md as first line
         content = claude_path.read_text(encoding="utf-8")
-        if content.strip() != "@AGENTS.md":
+        if _first_line(content) != "@AGENTS.md":
             invalid_content.append(claude_path)
 
     # Check that all AGENTS.md files have peer CLAUDE.md
@@ -111,7 +115,8 @@ def check_command() -> None:
             rel_path = path.relative_to(repo_root_path)
             content = path.read_text(encoding="utf-8")
             styled_path = click.style(str(rel_path), fg="cyan")
-            user_output(f"  • {styled_path}: Content is '{content.strip()}', expected '@AGENTS.md'")
+            actual = _first_line(content)
+            user_output(f"  • {styled_path}: First line is '{actual}', expected '@AGENTS.md'")
         user_output()
 
     user_output("Fix these issues and run again.")
