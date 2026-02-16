@@ -613,6 +613,77 @@ def test_legacy_format_roadmap_fails_check_8() -> None:
     assert "legacy --- format" in result.output
 
 
+def test_plan_ref_missing_hash_prefix_fails() -> None:
+    """Test that plan reference without '#' prefix is flagged by Check 9."""
+    body = """# Objective: Bad Ref
+
+## Roadmap
+
+### Phase 1: Work
+
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | First step | in-progress | 7146 | - |
+| 1.2 | Second step | done | - | #100 |
+"""
+    issue = _make_issue(1700, "Objective: Bad Ref", body)
+    fake_gh = FakeGitHubIssues(issues={1700: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1700"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 1
+    assert "[FAIL]" in result.output
+    assert "missing '#' prefix" in result.output
+
+
+def test_pr_ref_missing_hash_prefix_fails() -> None:
+    """Test that PR reference without '#' prefix is flagged by Check 9."""
+    body = """# Objective: Bad PR Ref
+
+## Roadmap
+
+### Phase 1: Work
+
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | First step | done | - | 100 |
+"""
+    issue = _make_issue(1800, "Objective: Bad PR Ref", body)
+    fake_gh = FakeGitHubIssues(issues={1800: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1800"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 1
+    assert "[FAIL]" in result.output
+    assert "missing '#' prefix" in result.output
+
+
+def test_valid_hash_prefix_refs_pass() -> None:
+    """Test that properly prefixed plan/PR references pass Check 9."""
+    issue = _make_issue(1900, "Objective: Good Refs", VALID_OBJECTIVE_BODY)
+    fake_gh = FakeGitHubIssues(issues={1900: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1900"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0
+    assert "Plan/PR references use '#' prefix" in result.output
+
+
 def test_legacy_format_roadmap_passes_with_allow_legacy() -> None:
     """Roadmap block using legacy --- format passes with --allow-legacy."""
     issue = _make_issue(1600, "Objective: Legacy Allowed", V2_BODY_VALID)

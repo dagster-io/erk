@@ -215,6 +215,20 @@ def validate_objective(
                 (False, "Roadmap block uses legacy --- format (run update-roadmap-step to migrate)")
             )
 
+    # Check 9: Plan/PR references use # prefix (e.g., "#7146" not "7146")
+    invalid_refs: list[str] = []
+    for phase in phases:
+        for step in phase.steps:
+            if step.plan and not step.plan.startswith("#"):
+                invalid_refs.append(f"Step {step.id} plan '{step.plan}' missing '#' prefix")
+            if step.pr and not step.pr.startswith("#"):
+                invalid_refs.append(f"Step {step.id} PR '{step.pr}' missing '#' prefix")
+
+    if not invalid_refs:
+        checks.append((True, "Plan/PR references use '#' prefix"))
+    else:
+        checks.append((False, f"Invalid reference format: {invalid_refs[0]}"))
+
     summary = compute_summary(phases)
     next_step = find_next_step(phases)
     failed_count = sum(1 for passed, _ in checks if not passed)

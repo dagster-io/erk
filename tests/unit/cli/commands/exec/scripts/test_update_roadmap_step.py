@@ -567,8 +567,8 @@ def test_include_body_not_set_by_default() -> None:
     assert "updated_body" not in output
 
 
-def test_none_plan_preserves_existing_value() -> None:
-    """_replace_step_refs_in_body with new_plan=None preserves existing plan."""
+def test_none_plan_auto_clears_when_pr_set() -> None:
+    """_replace_step_refs_in_body with new_plan=None auto-clears plan when PR is set."""
     from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_step_refs_in_body
 
     body = ROADMAP_BODY_5COL
@@ -578,10 +578,24 @@ def test_none_plan_preserves_existing_value() -> None:
     )
 
     assert result is not None
-    # Plan should be preserved (not cleared)
+    # Plan should be auto-cleared (not preserved) because PR is being set
+    assert "| - | #500 |" in result
+    assert "| done |" in result
+
+
+def test_none_plan_preserves_when_no_pr() -> None:
+    """_replace_step_refs_in_body with new_plan=None preserves plan when PR not set."""
+    from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_step_refs_in_body
+
+    body = ROADMAP_BODY_5COL
+    # Step 1.2 has plan=#200
+    result = _replace_step_refs_in_body(
+        body, "1.2", new_plan=None, new_pr=None, explicit_status=None
+    )
+
+    assert result is not None
+    # Plan should be preserved because PR is not being set
     assert "#200" in result
-    # PR should be updated
-    assert "#500" in result
 
 
 def test_none_pr_preserves_existing_value() -> None:
@@ -755,6 +769,44 @@ def test_v2_update_also_updates_comment_table() -> None:
     assert "| in-progress |" in updated_comment
 
 
+def test_v2_pr_auto_clears_plan_in_all_stores() -> None:
+    """v2 format: setting PR without plan clears plan in frontmatter, body table, and comment."""
+    issue = _make_issue(6423, V2_BODY)
+    comment = IssueComment(
+        body=V2_COMMENT_BODY,
+        url="https://github.com/test/repo/issues/6423#issuecomment-42",
+        id=42,
+        author="testuser",
+    )
+    fake_gh = FakeGitHubIssues(
+        issues={6423: issue},
+        comments_with_urls={6423: [comment]},
+    )
+    runner = CliRunner()
+
+    # Step 1.2 has plan=#200. Setting only --pr should auto-clear plan.
+    result = runner.invoke(
+        update_roadmap_step,
+        ["6423", "--step", "1.2", "--pr", "#777"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["previous_plan"] == "#200"
+
+    # Frontmatter: plan should be auto-cleared (null) by update_step_in_frontmatter
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "pr: '#777'" in updated_body or 'pr: "#777"' in updated_body
+
+    # Comment table: plan column should be auto-cleared to "-"
+    assert len(fake_gh.updated_comments) == 1
+    updated_comment = fake_gh.updated_comments[0][1]
+    assert "| - | #777 |" in updated_comment
+    assert "| done |" in updated_comment
+
+
 def test_v2_no_comment_update_when_no_header() -> None:
     """v1 format: when no objective-header, only body is updated (no comment)."""
     issue = _make_issue(6423, ROADMAP_BODY_5COL)
@@ -800,3 +852,32 @@ def test_replace_table_in_text_not_found() -> None:
     text = "| 1.1 | desc | done | - | #100 |"
     result = _replace_table_in_text(text, "9.9", new_plan="#200", new_pr=None, explicit_status=None)
     assert result is None
+
+
+def test_replace_table_in_text_auto_clears_plan_when_pr_set() -> None:
+    """_replace_table_in_text auto-clears plan when PR is explicitly set."""
+    from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_table_in_text
+
+    text = """\
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Set up project | in-progress | #200 | - |
+"""
+    result = _replace_table_in_text(text, "1.1", new_plan=None, new_pr="#500", explicit_status=None)
+    assert result is not None
+    assert "| - | #500 |" in result
+    assert "| done |" in result
+
+
+def test_replace_table_in_text_preserves_plan_when_no_pr() -> None:
+    """_replace_table_in_text preserves plan when PR is not set."""
+    from erk.cli.commands.exec.scripts.update_roadmap_step import _replace_table_in_text
+
+    text = """\
+| Step | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 1.1 | Set up project | in-progress | #200 | - |
+"""
+    result = _replace_table_in_text(text, "1.1", new_plan=None, new_pr=None, explicit_status=None)
+    assert result is not None
+    assert "#200" in result
