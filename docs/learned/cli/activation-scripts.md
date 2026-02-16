@@ -1,5 +1,7 @@
 ---
 title: Activation Scripts
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - "working with worktree environment setup"
   - "understanding .erk/activate.sh scripts"

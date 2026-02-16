@@ -1,6 +1,6 @@
 ---
 title: Customizing erk-impl Workflow via Composite Actions
-last_audited: "2026-02-16 04:53 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 read_when:
   - customizing erk-impl workflow for a specific repository

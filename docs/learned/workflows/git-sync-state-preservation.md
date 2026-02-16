@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "running gt sync without committing or stashing working tree changes"
     warning: "gt sync performs a rebase which can silently lose uncommitted changes. Always commit or stash before sync, and verify working tree state after."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Git Sync State Preservation

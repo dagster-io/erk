@@ -6,7 +6,7 @@ read_when:
   - adding installable features
   - working with capability tracking in state.toml
   - understanding how erk doctor filters artifacts by installed capabilities
-last_audited: "2026-02-05 12:52 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
 

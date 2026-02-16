@@ -4,6 +4,8 @@ read_when:
   - "working with .impl/ or .worker-impl/ folders"
   - "understanding remote implementation workflow"
   - "debugging plan visibility in PRs"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Implementation Folder Lifecycle
@@ -14,7 +16,7 @@ The erk system uses two distinct folders for implementation plans, each with dif
 
 | Property   | Value                                                |
 | ---------- | ---------------------------------------------------- |
-| Created by | `create-worker-impl-from-issue` command              |
+| Created by | Remote implementation workflow                       |
 | Purpose    | Make plan visible in PR immediately                  |
 | Contains   | plan.md, issue.json, progress.md, README.md          |
 | Lifecycle  | Created before remote impl, deleted after completion |

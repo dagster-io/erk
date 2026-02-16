@@ -1,14 +1,22 @@
 ---
-title: erk pr summarize Command
-last_audited: "2026-02-15 18:50 PT"
-audit_result: clean
+title: erk pr summarize Command (DEPRECATED - replaced by erk pr rewrite)
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 read_when:
-  - "generating AI commit messages for existing commits"
-  - "amending commit messages with plan context"
-  - "understanding pr summarize vs pr submit"
+  - "historical reference for pr summarize command"
+  - "understanding pr summarize replacement by pr rewrite"
+deprecated: true
+deprecated_by: "erk pr rewrite"
+deprecated_in: "PR #6935"
 ---
 
-# erk pr summarize Command
+# erk pr summarize Command (DEPRECATED)
+
+**Note: This command was replaced by `erk pr rewrite` in PR #6935. See [PR Rewrite Command](../pr-rewrite.md) for the current implementation.**
+
+This document is preserved for historical reference.
+
+---
 
 Generates an AI-powered commit message and amends the current commit. This is the local-only variant of `erk pr submit` - it updates your commit message without creating or updating a PR.
 

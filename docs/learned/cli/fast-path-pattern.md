@@ -1,5 +1,7 @@
 ---
 title: Fast Path Pattern for CLI Commands
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 read_when:
   - "implementing CLI commands that can skip expensive operations"
   - "adding fast path optimization to existing commands"
@@ -53,5 +55,4 @@ See `erk pr auto-restack` for a concrete example:
 
 ## Related Documentation
 
-- [Event-Based Progress Pattern](event-progress-pattern.md) - Progress reporting
-- [Auto-Restack Command Usage](../erk/auto-restack.md) - Fast path example
+- [Event-Based Progress Pattern](../architecture/event-progress-pattern.md) - Progress reporting

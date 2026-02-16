@@ -9,6 +9,8 @@ tripwires:
     warning: "Validation is split between parse_roadmap() (structural) and validate_objective() (semantic). Read this doc to understand which level your change belongs in."
   - action: "adding a new validation check"
     warning: "Structural checks go in parse_roadmap() and return warnings alongside data. Semantic checks go in validate_objective() and produce pass/fail results. Don't mix levels."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Roadmap Validation Architecture

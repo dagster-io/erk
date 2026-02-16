@@ -1,5 +1,7 @@
 ---
 title: PR Rewrite Command
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - "using or modifying erk pr rewrite"
   - "understanding the PR rewrite pipeline phases"

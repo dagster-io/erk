@@ -9,7 +9,7 @@ tripwires:
     warning: "Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first."
   - action: "using monkeypatch or unittest.mock in hook tests"
     warning: "Use ErkContext.for_test() with CliRunner instead of mocking. See docs/learned/testing/hook-testing.md."
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
 

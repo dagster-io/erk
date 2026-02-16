@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "investigating an automated reviewer complaint"
     warning: "Determine if the tool is the authority for that concern. For formatting, prettier is the authority — if prettier passes, dismiss the bot. For type errors, ty is the authority."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Automated Review Handling

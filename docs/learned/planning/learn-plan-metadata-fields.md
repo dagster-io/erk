@@ -1,6 +1,6 @@
 ---
 title: Learn Plan Metadata Preservation
-last_audited: "2026-02-16 04:53 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 read_when:
   - "working with learn plan metadata"

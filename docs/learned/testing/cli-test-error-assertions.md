@@ -4,7 +4,7 @@ read_when:
   - "writing CLI tests with error assertions"
   - "testing error messages in Click commands"
   - "asserting on CLI output"
-last_audited: "2026-02-16 00:00 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
 

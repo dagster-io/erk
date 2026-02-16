@@ -5,6 +5,8 @@ read_when:
   - "writing tests for erk-dev commands"
   - "getting context injection errors in erk-dev tests"
   - "testing ErkDevContext-based commands"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # erk-dev Testing Patterns

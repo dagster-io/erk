@@ -11,8 +11,8 @@ tripwires:
     warning: "Missing sessions must never cause hard failure. Degrade through the fallback hierarchy: planning → implementation → gist → local scan → skip."
   - action: "constructing session file paths manually"
     warning: "Use ClaudeInstallation ABC methods, not manual path construction. Storage layout is an implementation detail that may change."
-last_audited: "2026-02-08 00:00 PT"
-audit_result: clean
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Session File Lifecycle and Persistence
@@ -71,9 +71,9 @@ See `find_sessions_for_plan()` in `packages/erk-shared/src/erk_shared/sessions/d
 
 ### The local fallback decision
 
-<!-- Source: src/erk/cli/commands/exec/scripts/get_learn_sessions.py, _discover_sessions -->
+<!-- Source: src/erk/cli/commands/exec/scripts/get_learn_sessions.py -->
 
-Local fallback scanning (via `_discover_sessions()` in `src/erk/cli/commands/exec/scripts/get_learn_sessions.py`) only triggers when **no** GitHub-tracked sessions are readable on disk. This is intentional: local scan results have no confirmed relationship to the plan, so mixing them with plan-tracked sessions would dilute signal. They're a last resort, not a supplement.
+Local fallback scanning (implemented in `src/erk/cli/commands/exec/scripts/get_learn_sessions.py`) only triggers when **no** GitHub-tracked sessions are readable on disk. This is intentional: local scan results have no confirmed relationship to the plan, so mixing them with plan-tracked sessions would dilute signal. They're a last resort, not a supplement.
 
 ## Graceful Degradation Hierarchy
 

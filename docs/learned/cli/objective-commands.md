@@ -4,7 +4,7 @@ read_when:
   - "working with erk objective commands"
   - "implementing objective check or close functionality"
   - "understanding objective validation patterns"
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 tripwires:
   - action: "displaying user-provided text in Rich CLI tables without escaping"

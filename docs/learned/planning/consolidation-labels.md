@@ -10,6 +10,8 @@ tripwires:
     warning: "Filter out erk-consolidated issues before consolidation. These are outputs of previous consolidation and should not be re-consolidated."
   - action: "adding erk-consolidated label to a single-issue replan"
     warning: "Only multi-plan consolidation gets the erk-consolidated label. Single-issue replans are updates, not consolidations."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Consolidation Labels

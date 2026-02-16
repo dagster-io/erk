@@ -15,8 +15,8 @@ tripwires:
     warning: "All roadmap table row regex patterns MUST use ^...$ anchors with re.MULTILINE. Without anchors, patterns can match partial lines or span rows."
   - action: "using None/empty string interchangeably in update-roadmap-step parameters"
     warning: "None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values."
-last_audited: "2026-02-16 00:00 PT"
-audit_result: clean
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Roadmap Mutation Patterns
@@ -105,15 +105,14 @@ See `prompt_objective_update()` in `src/erk/cli/commands/objective_helpers.py` f
 
 All regex patterns that match roadmap table rows MUST use `^...$` anchors with `re.MULTILINE`. Without anchors, patterns can match partial lines or span multiple rows, causing incorrect mutations.
 
-<!-- Source: src/erk/cli/commands/objective/check_cmd.py:29-32 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py:107-110 -->
 
 ```python
 # CORRECT - anchored with ^ and $, uses re.MULTILINE
-_STALE_STATUS_4COL = re.compile(
-    r"^\|[^|]+\|[^|]+\|\s*-\s*\|\s*(?:#\d+|plan #\d+)\s*\|$", re.MULTILINE
-)
-_STALE_STATUS_5COL = re.compile(
-    r"^\|[^|]+\|[^|]+\|\s*-\s*\|[^|]*\|\s*#\d+\s*\|$", re.MULTILINE
+# Example from update_roadmap_step.py
+pattern = re.compile(
+    r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$",
+    re.MULTILINE,
 )
 ```
 

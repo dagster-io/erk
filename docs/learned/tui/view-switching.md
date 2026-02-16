@@ -9,8 +9,8 @@ tripwires:
     warning: "Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime."
   - action: "using _render() as a method name in Textual widgets"
     warning: "Textual's LSP reserves _render(). Use _refresh_display() instead (see ViewBar)."
-last_audited: "2026-02-16 00:00 PT"
-audit_result: clean
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # TUI View Switching
@@ -102,4 +102,5 @@ Renders `1:Plans  2:Learn  3:Objectives` with the active view in bold white and 
 ## Related Documentation
 
 - [TUI Data Contract](data-contract.md) — PlanRowData fields including `is_learn_plan`
-- [TUI Architecture](architecture.md) — Overall TUI layer structure
+
+See also TUI category documentation for overall architecture and layer structure.

@@ -1,5 +1,7 @@
 ---
 title: PR Analysis Pattern
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - "analyzing PR changes for documentation"
   - "building workflows that inspect PRs"

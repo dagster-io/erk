@@ -8,6 +8,8 @@ tripwires:
   - action: "using `--output-format stream-json` with `--print` in Claude CLI"
     warning: "Must also include `--verbose`. Without it, the command fails with 'stream-json requires --verbose'."
     pattern: "--output-format\\s+stream-json"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Claude CLI Integration from Python

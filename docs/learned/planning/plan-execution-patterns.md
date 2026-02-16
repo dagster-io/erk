@@ -1,5 +1,7 @@
 ---
 title: Plan Execution Patterns
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - "implementing a plan from a GitHub issue"
   - "understanding branch naming and worktree isolation"

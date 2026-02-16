@@ -1,5 +1,7 @@
 ---
 title: Workflow Markers
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - "building multi-step workflows that need state persistence"
   - "using erk exec marker commands"

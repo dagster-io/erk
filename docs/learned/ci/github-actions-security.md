@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "interpolating ${{ }} expressions directly into shell command arguments"
     warning: "Use environment variables instead. Direct interpolation allows shell injection. Read [GitHub Actions Security Patterns](ci/github-actions-security.md) first."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # GitHub Actions Security Patterns

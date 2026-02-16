@@ -4,7 +4,7 @@ read_when:
   - "writing integration tests that interact with filesystem"
   - "testing time-dependent operations"
   - "handling mtime resolution in tests"
-last_audited: "2026-02-16 00:00 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
 

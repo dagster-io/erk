@@ -4,6 +4,8 @@ read_when:
   - "processing issues with erk-raw-session label"
   - "extracting documentation from landed PR sessions"
   - "understanding raw session issue format"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Raw Session Issue Processing

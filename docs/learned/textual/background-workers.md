@@ -4,6 +4,8 @@ read_when:
   - "running subprocess in TUI without blocking"
   - "streaming output to Textual widgets"
   - "using run_worker for async operations"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Textual Background Workers

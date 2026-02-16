@@ -5,6 +5,8 @@ read_when:
   - "finding subagent_type for agent sessions"
   - "correlating agent sessions to their Task invocation"
   - "displaying agent metadata in session show"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Agent Type Extraction
@@ -88,4 +90,5 @@ The `toolUseResult.agentId` is **explicit structured metadata** - no text parsin
 
 ## Implementation Reference
 
-- **Extraction:** `src/erk/cli/commands/cc/session/show_cmd.py:extract_agent_types()`
+- **Agent info extraction:** `src/erk/cli/commands/cc/session/show_cmd.py` (uses `extract_agent_info_from_jsonl()` from `erk_shared.learn.extraction.session_schema`)
+- **Low-level schema parsing:** `packages/erk-shared/src/erk_shared/learn/extraction/session_schema.py`

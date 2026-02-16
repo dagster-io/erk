@@ -14,7 +14,7 @@ tripwires:
     warning: "The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways."
   - action: "constructing PlanFilters without copying all fields from existing filters"
     warning: "All fields must be explicitly copied in _load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures."
-last_audited: "2026-02-08 13:55 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: edited
 ---
 
@@ -232,6 +232,7 @@ If the field is a display field, also add the raw counterpart (or vice versa) fo
 
 ## Related Documentation
 
-- [TUI Architecture Overview](architecture.md) — Overall TUI structure and layer boundaries
 - [TUI Action Command Inventory](action-inventory.md) — Commands that consume PlanRowData fields
 - [Erk Desktop Dashboard](../desktop-dash/) — Alternate frontend consuming this data contract
+
+See also TUI category documentation for overall architecture and layer boundaries.

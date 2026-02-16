@@ -11,7 +11,7 @@ tripwires:
   - action: "Add branches-ignore for ephemeral branch patterns"
     warning: "Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing"
     score: 4
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: edited
 ---
 
@@ -62,7 +62,7 @@ This skips the job for push events (the empty array case), preventing CI from ru
 
 ## Combining Draft and Label Checks
 
-<!-- Source: .github/workflows/ci.yml, lines 20, 34, 45, 56, 67, 84, 95, 115, 127 -->
+<!-- Source: .github/workflows/ci.yml, lines 22, 36, 46, 57, 68, 85, 96, 116, 128 -->
 
 The pattern `github.event.pull_request.draft != true && !contains(...)` appears on every gated job. Both checks are necessary because they gate different states:
 
@@ -78,7 +78,7 @@ A PR can be:
 
 ## The ready_for_review Trigger
 
-<!-- Source: .github/workflows/ci.yml, lines 5-6 -->
+<!-- Source: .github/workflows/ci.yml, lines 6-7 -->
 
 The trigger list includes `ready_for_review` to complement the draft exclusion:
 
@@ -92,7 +92,7 @@ Without this trigger, marking a draft PR as ready wouldn't start CI until the ne
 
 ## When Job-Level Conditions Aren't Enough
 
-<!-- Source: .github/workflows/ci.yml, autofix job steps 166-228 -->
+<!-- Source: .github/workflows/ci.yml, autofix job steps 165-227 -->
 
 The autofix job demonstrates why some checks must happen at step-level despite job-level gating:
 
@@ -136,7 +136,7 @@ This pattern separates "should this workflow run?" (event-based, job-level) from
 
 ## Autofix Safety Pattern
 
-<!-- Source: .github/workflows/ci.yml, autofix job condition lines 151-162 -->
+<!-- Source: .github/workflows/ci.yml, autofix job condition lines 152-163 -->
 
 The autofix job combines event type checks with label/draft checks:
 

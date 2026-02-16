@@ -11,7 +11,7 @@ tripwires:
     warning: "Use worktree-scoped scratch storage for session-specific data."
   - action: "analyzing sessions larger than 100k characters"
     warning: "Use `erk exec preprocess-session` first. Achieves ~99% token reduction (e.g., 6.2M -> 67k chars). Critical for fitting large sessions in agent context windows."
-last_audited: "2026-02-16 00:00 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
 

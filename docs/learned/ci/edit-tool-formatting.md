@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "using Edit tool on Python files"
     warning: "Edit tool preserves exact indentation without auto-formatting. Always run 'make format' after editing Python code."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Edit Tool Formatting Behavior

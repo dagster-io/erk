@@ -4,7 +4,7 @@ read_when:
   - "understanding slot pool design"
   - "implementing slot-related features"
   - "debugging slot assignment issues"
-last_audited: "2026-02-16 04:53 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
 

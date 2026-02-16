@@ -5,8 +5,8 @@ read_when:
   - Considering Linear as an alternative to GitHub Issues
   - Building a Linear gateway for erk
   - Understanding how other tools (Cursor, Devin) integrate with Linear
-last_audited: "2026-02-05 20:38 PT"
-audit_result: edited
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Linear Agent-Native Primitives

@@ -1,6 +1,6 @@
 ---
 title: Reminder Consolidation Pattern
-last_audited: "2026-02-16 00:00 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 read_when:
   - "adding a new coding standards reminder to any hook, skill, or AGENTS.md section"

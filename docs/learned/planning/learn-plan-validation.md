@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "creating erk-learn plan for an issue that already has erk-learn label"
     warning: "Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention)."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Learn Plan Validation

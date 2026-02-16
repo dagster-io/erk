@@ -9,6 +9,8 @@ tripwires:
     warning: "Bash tool truncates output at ~10KB with no error. Use Write tool to save agent output to scratch storage, then pass the file path to dependent agents."
   - action: "launching a dependent agent that reads a file written by a prior agent"
     warning: "Verify the file exists (ls) before launching. Write tool silently fails if the parent directory is missing, and the dependent agent wastes its entire context discovering the file isn't there."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Agent Orchestration Safety Patterns
