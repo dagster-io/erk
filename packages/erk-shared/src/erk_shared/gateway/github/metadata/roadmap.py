@@ -167,12 +167,10 @@ def parse_roadmap_frontmatter(block_content: str) -> list[RoadmapStep] | None:
     Returns None on any validation failure (caller falls back to table parsing).
     """
     # Try <details> + code block format first
-    try:
+    if block_content.strip().startswith("<details>"):
         data = parse_metadata_block_body(block_content)
         steps, _errors = validate_roadmap_frontmatter(data)
         return steps
-    except ValueError:
-        pass
 
     # Fall back to legacy --- frontmatter format
     result = parse_markdown_frontmatter(block_content)
