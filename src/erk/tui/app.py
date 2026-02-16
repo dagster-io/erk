@@ -211,8 +211,8 @@ class ErkDashApp(App):
     def _update_table(
         self,
         rows: list[PlanRowData],
-        update_time: str | None = None,
-        duration: float | None = None,
+        update_time: str | None,
+        duration: float | None,
         *,
         fetched_mode: ViewMode,
     ) -> None:
