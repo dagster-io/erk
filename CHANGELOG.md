@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- as-of: 941896b47 -->
+
+### Changed
+
+- Refresh workspace packages automatically on activation to keep CLI current across worktree switches (0393f9f)
+
+### Fixed
+
+- Fix plan reference loss when updating objective roadmap steps with PR numbers (456902a)
+- Fix `learned-docs` capability installation check to require all three directories and preserve user documentation on uninstall (5dc1e52)
+
 ## [0.7.4] - 2026-02-16 05:33 PT
 
 ### Major Changes
