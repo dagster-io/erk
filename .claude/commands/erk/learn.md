@@ -538,25 +538,6 @@ Task(
     - gap_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md"
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json
 
-    ## CRITICAL: Output JSON Schema
-
-    Your output MUST be valid JSON matching this EXACT structure:
-
-    {
-      "candidates": [
-        {
-          "action": "the action pattern to detect (gerund form, e.g., 'editing CI template files')",
-          "warning": "concise warning message (e.g., 'Verify CLI flag names match shared_options.py definitions')",
-          "target_doc_path": "relative path within docs/learned/ (e.g., 'ci/template-validation.md')"
-        }
-      ]
-    }
-
-    - Root key MUST be "candidates" (NOT "tripwire_candidates")
-    - Each candidate MUST have exactly 3 fields: action, warning, target_doc_path
-    - Do NOT include fields like title, description, trigger_pattern, source_files, priority
-    - If no candidates found, use: {"candidates": []}
-
     ## Output Routing
     CRITICAL: Write your complete output to the output_path using the Write tool.
     Your final message MUST be only: "Output written to <output_path>"
@@ -773,20 +754,17 @@ Learn plan saved to GitHub issue #<issue_number>
 Raw materials: <gist-url>
 ```
 
-### Step 8: Normalize and Store Tripwire Candidates on Learn Plan Issue
+### Step 8: Store Tripwire Candidates on Learn Plan Issue
 
-**If plan was valid and saved**, first normalize agent-produced tripwire JSON to fix common schema drift, then store as a metadata comment:
+**If plan was valid and saved**, store tripwire candidates as a metadata comment:
 
 ```bash
-erk exec normalize-tripwire-candidates \
-    --candidates-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json
-
 erk exec store-tripwire-candidates \
     --issue <new-learn-plan-issue-number> \
     --candidates-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json
 ```
 
-This stores the tripwire candidates as a machine-readable metadata block comment on the learn plan issue, enabling `erk land` to read them directly without regex parsing.
+This stores the tripwire candidates as a machine-readable metadata block comment on the learn plan issue, enabling `erk land` to read them directly without regex parsing. The store command automatically normalizes common schema drift (wrong root keys, field aliases, extra fields) before validation.
 
 Parse the JSON output. If `count` is 0, no comment was added (no candidates found by the extractor). This is normal and not an error.
 

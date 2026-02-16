@@ -9,6 +9,7 @@ from erk_shared.gateway.github.metadata.tripwire_candidates import (
     TripwireCandidate,
     extract_tripwire_candidates_from_comments,
     render_tripwire_candidates_comment,
+    validate_candidates_data,
     validate_candidates_json,
 )
 from erk_shared.gateway.github.metadata.types import MetadataBlock
@@ -155,3 +156,30 @@ def test_validate_candidates_json_empty_candidates(tmp_path: Path) -> None:
 
     results = validate_candidates_json(str(json_file))
     assert results == []
+
+
+def test_validate_candidates_data_with_dict() -> None:
+    """Validate candidates from a dict directly."""
+    data = {
+        "candidates": [
+            {
+                "action": "doing X",
+                "warning": "Do Y.",
+                "target_doc_path": "foo.md",
+            },
+            {
+                "action": "doing A",
+                "warning": "Do B.",
+                "target_doc_path": "bar.md",
+            },
+        ]
+    }
+
+    results = validate_candidates_data(data)
+    assert len(results) == 2
+    assert results[0] == TripwireCandidate(
+        action="doing X", warning="Do Y.", target_doc_path="foo.md"
+    )
+    assert results[1] == TripwireCandidate(
+        action="doing A", warning="Do B.", target_doc_path="bar.md"
+    )

@@ -113,31 +113,21 @@ def extract_tripwire_candidates_from_comments(
     return []
 
 
-def validate_candidates_json(json_path: str) -> list[TripwireCandidate]:
-    """Read and validate a tripwire candidates JSON file.
+def validate_candidates_data(data: dict) -> list[TripwireCandidate]:
+    """Validate a parsed tripwire candidates dict.
 
-    Reads JSON from a file path and validates the structure matches
-    the expected format: {"candidates": [{"action": ..., "warning": ..., "target_doc_path": ...}]}
+    Validates the structure matches the expected format:
+    {"candidates": [{"action": ..., "warning": ..., "target_doc_path": ...}]}
 
     Args:
-        json_path: Path to the JSON file.
+        data: Parsed JSON dict with a "candidates" key.
 
     Returns:
         List of validated TripwireCandidate objects.
 
     Raises:
-        ValueError: If the file content is invalid or missing required fields.
-        FileNotFoundError: If the file does not exist.
+        ValueError: If the structure is invalid or missing required fields.
     """
-    import pathlib
-
-    path = pathlib.Path(json_path)
-    if not path.is_file():
-        raise FileNotFoundError(f"Candidates file not found: {json_path}")
-
-    raw = path.read_text(encoding="utf-8")
-    data = json.loads(raw)
-
     if not isinstance(data, dict):
         raise ValueError(f"Expected JSON object, got {type(data).__name__}")
 
@@ -167,3 +157,31 @@ def validate_candidates_json(json_path: str) -> list[TripwireCandidate]:
         )
 
     return results
+
+
+def validate_candidates_json(json_path: str) -> list[TripwireCandidate]:
+    """Read and validate a tripwire candidates JSON file.
+
+    Reads JSON from a file path and validates the structure matches
+    the expected format: {"candidates": [{"action": ..., "warning": ..., "target_doc_path": ...}]}
+
+    Args:
+        json_path: Path to the JSON file.
+
+    Returns:
+        List of validated TripwireCandidate objects.
+
+    Raises:
+        ValueError: If the file content is invalid or missing required fields.
+        FileNotFoundError: If the file does not exist.
+    """
+    import pathlib
+
+    path = pathlib.Path(json_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"Candidates file not found: {json_path}")
+
+    raw = path.read_text(encoding="utf-8")
+    data = json.loads(raw)
+
+    return validate_candidates_data(data)
