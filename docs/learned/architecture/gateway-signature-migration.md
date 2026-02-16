@@ -4,6 +4,8 @@ read_when:
   - "changing gateway method signatures"
   - "migrating callers after gateway API changes"
   - "updating discriminated union return types across call sites"
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 tripwires:
   - action: "changing a gateway method signature"
     warning: "Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors."

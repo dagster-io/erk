@@ -1,5 +1,7 @@
 ---
 title: Slash Command to Exec Migration
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 read_when:
   - "adding business logic to a slash command"
   - "deciding whether to call gh/git directly from a slash command or extract to exec"

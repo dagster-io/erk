@@ -20,7 +20,7 @@ tripwires:
     warning: "PlanList and ActionToolbar receive data via props — they don't call window.erkdesk directly. IPC verification belongs in App.test.tsx where the actual fetch-state-props flow lives."
   - action: "creating inline PlanRow test data with all fields"
     warning: "Use the makePlan() factory with Partial<PlanRow> overrides. PlanRow has 18+ fields; inline objects go stale when the type changes. See any test file for the pattern."
-last_audited: "2026-02-08 13:55 PT"
+last_audited: "2026-02-16 00:00 PT"
 audit_result: clean
 ---
 

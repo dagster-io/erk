@@ -9,8 +9,8 @@ tripwires:
     warning: "Broken hooks fail silently (exit 0, no output) — indistinguishable from correct no-fire behavior. Structure as pure functions + thin orchestrator. Read docs/learned/testing/hook-testing.md first."
   - action: "reproducing stdin JSON parsing or file detection logic in a new hook"
     warning: "Reuse the canonical pure functions in pre_tool_use_hook.py. Writing from scratch reintroduces edge cases already solved (empty stdin, missing keys, wrong types)."
-last_audited: "2026-02-08 00:00 PT"
-audit_result: edited
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # PreToolUse Hook Design Patterns
