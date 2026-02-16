@@ -40,6 +40,8 @@ Rules triggered by matching actions in code.
 
 **adding re-exports to gateway implementation modules** → Read [Re-Export Pattern](re-export-pattern.md) first. Only re-export types that genuinely improve public API. Add # noqa: F401 - re-exported for <reason> comment.
 
+**adding regex validation inline in a validation function** → Read [Validation Patterns](validation-patterns.md) first. Compile regex patterns at module level as named constants (e.g., PATTERN_NAME = re.compile(r'...')). This improves performance by compiling once and improves clarity by naming the pattern.
+
 **adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file** [pattern: `subprocess\.run\(|run_subprocess_with_context\(`] → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must add integration tests in tests/integration/test*real*\*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior.
 
 **amending a commit when Graphite is enabled** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in sync_cmd and branch_manager.
