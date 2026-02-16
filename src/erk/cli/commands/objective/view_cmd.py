@@ -5,17 +5,17 @@ from datetime import datetime
 import click
 
 from erk.cli.alias import alias
-from erk.cli.commands.exec.scripts.objective_roadmap_shared import (
-    compute_summary,
-    find_next_step,
-    parse_roadmap,
-)
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import UserFacingCliError
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.roadmap import (
+    compute_summary,
+    find_next_step,
+    parse_roadmap,
+)
 from erk_shared.output.output import user_output
 
 

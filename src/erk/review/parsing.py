@@ -10,13 +10,13 @@ from pathlib import Path
 
 import pathspec
 
-from erk.core.frontmatter import parse_markdown_frontmatter
 from erk.review.models import (
     DiscoveryResult,
     ParsedReview,
     ReviewFrontmatter,
     ReviewValidationResult,
 )
+from erk_shared.core.frontmatter import parse_markdown_frontmatter
 
 MARKER_PATTERN = re.compile(r"^<!--\s+.+\s+-->$")
 

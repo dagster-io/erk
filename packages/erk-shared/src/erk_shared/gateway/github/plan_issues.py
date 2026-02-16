@@ -28,6 +28,10 @@ from erk_shared.gateway.github.metadata.plan_header import (
     format_plan_header_body,
     update_plan_header_comment_id,
 )
+from erk_shared.gateway.github.metadata.roadmap import (
+    parse_roadmap,
+    serialize_steps_to_frontmatter,
+)
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_utils import extract_title_from_plan
@@ -255,17 +259,9 @@ def _build_objective_roadmap_block(plan_content: str) -> str | None:
     Returns:
         Rendered objective-roadmap metadata block string, or None if no roadmap found.
     """
-    # Lazy import to avoid circular dependency
-    from erk.cli.commands.exec.scripts.objective_roadmap_shared import parse_roadmap
-
     phases, _errors = parse_roadmap(plan_content)
     if not phases:
         return None
-
-    # Lazy import to avoid circular dependency
-    from erk.cli.commands.exec.scripts.objective_roadmap_frontmatter import (
-        serialize_steps_to_frontmatter,
-    )
 
     # Flatten phases into steps for serialization
     all_steps = [step for phase in phases for step in phase.steps]

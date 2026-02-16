@@ -725,6 +725,8 @@ def format_objective_content_comment(content: str) -> str:
     """Format objective content for the first comment.
 
     Wraps objective content in collapsible objective-body metadata block.
+    If the content contains roadmap tables, wraps them with HTML comment
+    markers for reliable table detection by update-roadmap-step.
 
     Args:
         content: The full objective markdown content
@@ -732,7 +734,10 @@ def format_objective_content_comment(content: str) -> str:
     Returns:
         Comment body with objective wrapped in metadata block
     """
-    return render_objective_body_block(content.strip())
+    from erk_shared.gateway.github.metadata.roadmap import wrap_roadmap_tables_with_markers
+
+    marked_content = wrap_roadmap_tables_with_markers(content.strip())
+    return render_objective_body_block(marked_content)
 
 
 def update_objective_header_comment_id(
