@@ -20,13 +20,16 @@ The `erk_shared` package (`packages/erk-shared/`) contains reusable code that ca
 
 ```
 packages/erk-shared/src/erk_shared/
-├── context/       # Context helpers for dependency injection
-├── gateway/       # Gateway abstractions (git, shell)
-├── github/        # GitHub integration
-├── graphite/      # Graphite integration
-├── scratch/       # Scratch storage and markers
-├── extraction/    # Extraction utilities
-└── output/        # Output formatting
+├── context/                      # Context helpers for dependency injection
+├── core/                         # Core utilities (frontmatter parsing, etc.)
+├── gateway/                      # Gateway abstractions (git, shell)
+│   └── github/
+│       └── metadata/             # GitHub metadata parsing (roadmap, etc.)
+├── github/                       # GitHub integration
+├── graphite/                     # Graphite integration
+├── scratch/                      # Scratch storage and markers
+├── extraction/                   # Extraction utilities
+└── output/                       # Output formatting
 ```
 
 ## Import Rules

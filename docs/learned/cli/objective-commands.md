@@ -101,6 +101,21 @@ All objective commands use the `register_with_aliases()` pattern, which register
 
 **Why aliases matter**: Objective commands are used in rapid iteration workflows. Typing `erk objective np` is faster than `erk objective next-plan`, reducing friction without sacrificing discoverability (the full name remains canonical).
 
+## view_objective() Command
+
+<!-- Source: src/erk/cli/commands/objective/view_cmd.py, view_objective -->
+
+The `view_objective()` command renders a roadmap using Rich tables for proper emoji alignment.
+
+**Key implementation details:**
+
+- Uses pre-computed column widths for global alignment across phases (grep for `max_id_width`, `max_status_width`, `min_width`)
+- Clickable links for issue/PR references via `_format_ref_link()` pattern
+- Status indicators use Rich markup (see [output-styling.md](output-styling.md) for migration pattern)
+- Console outputs to stderr with `Console(stderr=True, force_terminal=True)`
+
+**Reference:** See [CLI Output Styling Guide](output-styling.md) for the full Rich table pattern details, particularly the sections on variable-width characters and pre-computed column widths.
+
 ## Related Documentation
 
 - [CLI Output Styling Guide](output-styling.md) - Rich table formatting and markup escaping

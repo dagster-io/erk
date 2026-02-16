@@ -13,6 +13,8 @@ tripwires:
     warning: "Direct body mutation skips status computation. The surgical command writes computed status atomically; bypassing it leaves status stale. See roadmap-mutation-semantics.md."
   - action: "writing regex patterns to match roadmap table rows without ^ and $ anchors"
     warning: "All roadmap table row regex patterns MUST use ^...$ anchors with re.MULTILINE. Without anchors, patterns can match partial lines or span rows."
+  - action: "using None/empty string interchangeably in update-roadmap-step parameters"
+    warning: "None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values."
 ---
 
 # Roadmap Mutation Patterns
