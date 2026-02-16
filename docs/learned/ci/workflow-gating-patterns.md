@@ -8,6 +8,9 @@ tripwires:
   - action: "Use !contains() pattern for label-based gating"
     warning: "Negation is critical — contains() without ! skips all push events"
     score: 5
+  - action: "Add branches-ignore for ephemeral branch patterns"
+    warning: "Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing"
+    score: 4
 last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
@@ -154,16 +157,44 @@ The guard pattern `(event != X || check_that_only_works_for_X)` creates safe eva
 
 **Why `always()`**: Autofix must evaluate its condition even when upstream jobs fail (that's the point — fix the failures). Without `always()`, a failed format job would prevent autofix from even considering whether to run.
 
+## Branch-Name Filtering for Plan-Review Branches
+
+<!-- Source: .github/workflows/ci.yml, on: push: branches-ignore -->
+
+Plan-review branches (`plan-review-*`) contain only a single markdown file for GitHub's inline review UI. CI is meaningless for them.
+
+The label-based gating (`!contains(..., 'erk-plan-review')`) only works for `pull_request` events. On `push` events, `github.event.pull_request` is empty, so the label check can't gate the workflow — jobs run unconditionally.
+
+**Solution**: Add `branches-ignore` to the push trigger:
+
+```yaml
+on:
+  push:
+    branches-ignore:
+      - "plan-review-*"
+```
+
+This prevents the workflow from even being queued for push events on plan-review branches. GitHub evaluates `branches-ignore` before runner allocation (zero cost).
+
+**Defense-in-depth**: Plan-review branches now have three gating layers:
+
+1. **Branch-name filtering** (`branches-ignore`) — blocks push events at trigger level
+2. **Label-based job conditions** (`!contains(...)`) — blocks pull_request events at job level
+3. **Step-level API queries** — blocks push events at step level in the autofix job
+
+The first layer is the most efficient since it prevents the workflow from being queued entirely.
+
 ## Decision Table: Which Layer to Use
 
-| What you're checking                            | Use this layer                | Why                                                   |
-| ----------------------------------------------- | ----------------------------- | ----------------------------------------------------- |
-| Event type (PR opened, push, workflow_dispatch) | Trigger filtering (`on:`)     | No point queuing workflow for irrelevant events       |
-| PR draft state                                  | Job-level `if:`               | Fast path — no runner allocation for drafts           |
-| PR labels (pull_request events)                 | Job-level `if:`               | Fast path — no runner allocation for plan reviews     |
-| PR labels (push events)                         | Step-level API query          | Required path — PR context doesn't exist at job level |
-| File existence after checkout                   | Step-level check → job output | Can't know until checkout completes                   |
-| Upstream job failure                            | Downstream job `if:`          | Use `needs.job.result` or job outputs                 |
+| What you're checking                            | Use this layer                        | Why                                                   |
+| ----------------------------------------------- | ------------------------------------- | ----------------------------------------------------- |
+| Known ephemeral branch patterns (push events)   | Trigger filtering (`branches-ignore`) | Prevents workflow from queuing — zero cost            |
+| Event type (PR opened, push, workflow_dispatch) | Trigger filtering (`on:`)             | No point queuing workflow for irrelevant events       |
+| PR draft state                                  | Job-level `if:`                       | Fast path — no runner allocation for drafts           |
+| PR labels (pull_request events)                 | Job-level `if:`                       | Fast path — no runner allocation for plan reviews     |
+| PR labels (push events)                         | Step-level API query                  | Required path — PR context doesn't exist at job level |
+| File existence after checkout                   | Step-level check → job output         | Can't know until checkout completes                   |
+| Upstream job failure                            | Downstream job `if:`                  | Use `needs.job.result` or job outputs                 |
 
 ## Why Both Job-Level and Step-Level Label Checks
 
