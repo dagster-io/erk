@@ -4,6 +4,8 @@ read_when:
   - "working with erk metadata in GitHub issues"
   - "parsing or extracting data from issue comments"
   - "creating new event types for issue tracking"
+last_audited: "2026-02-16 08:00 PT"
+audit_result: clean
 ---
 
 # Metadata Blocks Reference

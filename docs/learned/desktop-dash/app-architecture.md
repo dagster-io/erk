@@ -13,6 +13,8 @@ tripwires:
     warning: "lastLoadedUrlRef prevents redundant IPC calls. Always check if the URL actually changed before calling loadWebViewURL."
   - action: "adding state to child components"
     warning: "PlanList, ActionToolbar, and LogPanel are fully controlled (stateless). All state lives in App.tsx. Pass props down, callbacks up."
+last_audited: "2026-02-16 08:00 PT"
+audit_result: clean
 ---
 
 # erkdesk App Architecture

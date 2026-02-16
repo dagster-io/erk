@@ -7,8 +7,8 @@ read_when:
 tripwires:
   - action: "working with session-specific data"
     warning: 'Multiple sessions can run in parallel. NEVER use "most recent by mtime" for session data lookup - always scope by session ID.'
-last_audited: "2026-02-05 00:00 PT"
-audit_result: clean
+last_audited: "2026-02-16 08:00 PT"
+audit_result: edited
 ---
 
 # Parallel Session Awareness
@@ -59,9 +59,7 @@ Plans created in Plan Mode are logged to session logs with a `slug` field. To fi
 2. Look for entries with `slug` field matching the session ID
 3. Return the slug to construct the plan path
 
-**CLI command**: Use `erk exec find-plan-slug --session-id <id>` for plan lookup.
-
-**Source**: See `session_plan_extractor.py` for the canonical implementation.
+The plan lookup implementation lives in `ClaudeInstallation.find_plan_for_session()` in the `erk-shared` package.
 
 ### Pattern 2: Session-Scoped Scratch Files
 
@@ -73,7 +71,9 @@ Key implementation details:
 - Create directory at `repo_root / ".erk" / "scratch" / "sessions" / session_id`
 - Files stored here are automatically session-scoped
 
-**Source**: See `erk_shared/scratch.py` for scratch directory utilities.
+<!-- Source: packages/erk-shared/src/erk_shared/scratch/scratch.py -->
+
+**Source**: See `erk_shared.scratch.scratch` for scratch directory utilities.
 
 ### Pattern 3: Agent Log Correlation
 
@@ -102,7 +102,9 @@ When you know the working directory, compute the project directory name directly
 - Replace `.` with `-`
 - Example: `/Users/foo/code/app` → `-Users-foo-code-app`
 
-**Source**: See `erk_shared/extraction/session_discovery.py` for `encode_path_to_project_folder()` implementation.
+<!-- Source: src/erk/cli/commands/exec/scripts/find_project_dir.py, encode_path_to_project_folder -->
+
+**Source**: See `find_project_dir.py` for the `encode_path_to_project_folder()` implementation.
 
 **When to use cwd_hint:**
 
@@ -112,7 +114,7 @@ When you know the working directory, compute the project directory name directly
 - ❌ **Historical analysis**: Working directory may be unknown for old sessions
 - ❌ **Cross-project searches**: Deliberately searching all projects
 
-**CLI command**: Use `erk exec find-project-dir --cwd <path>` for O(1) project directory lookup.
+**CLI command**: Use `erk exec find-project-dir --path <path>` for O(1) project directory lookup.
 
 **Performance comparison:**
 

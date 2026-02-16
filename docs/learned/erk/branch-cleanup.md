@@ -4,6 +4,8 @@ read_when:
   - "cleaning up branches"
   - "removing dormant worktrees"
   - "managing branch lifecycle"
+last_audited: "2026-02-16 08:00 PT"
+audit_result: clean
 ---
 
 # Branch Cleanup Guide

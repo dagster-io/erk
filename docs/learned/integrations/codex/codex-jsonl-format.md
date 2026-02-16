@@ -14,7 +14,7 @@ tripwires:
     warning: "Codex uses Rust #[serde(flatten)] — item type-specific fields appear as siblings of id and type within the item object, not in a nested sub-object."
   - action: "reusing ClaudePromptExecutor parsing logic for Codex"
     warning: "The two formats share almost nothing structurally. A CodexPromptExecutor needs its own parser — don't parameterize the existing Claude parser."
-last_audited: "2026-02-08 13:55 PT"
+last_audited: "2026-02-16 08:00 PT"
 audit_result: clean
 ---
 

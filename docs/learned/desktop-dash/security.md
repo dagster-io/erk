@@ -12,6 +12,8 @@ tripwires:
     warning: "GitHub tokens must NEVER reach the renderer or main process. All GitHub API calls happen in the Python backend via CLI shelling."
   - action: "making GitHub API calls from the Electron main process"
     warning: "Token isolation depends on CLI shelling. If the main process calls GitHub directly, tokens must transit through Electron, breaking the three-layer security model."
+last_audited: "2026-02-16 08:00 PT"
+audit_result: clean
 ---
 
 # erkdesk Security Architecture
