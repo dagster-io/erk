@@ -117,7 +117,10 @@ def _replace_table_in_text(
     existing_pr = match.group(5).strip()
 
     if new_plan is None:
-        resolved_plan = existing_plan
+        if new_pr is not None and new_pr:
+            resolved_plan = "-"  # Auto-clear plan when PR is explicitly set
+        else:
+            resolved_plan = existing_plan
     elif new_plan:
         resolved_plan = new_plan
     else:
@@ -314,7 +317,10 @@ def _replace_step_refs_in_body(
     existing_pr = match.group(5).strip()
 
     if new_plan is None:
-        resolved_plan = existing_plan
+        if new_pr is not None and new_pr:
+            resolved_plan = "-"  # Auto-clear plan when PR is explicitly set
+        else:
+            resolved_plan = existing_plan
     elif new_plan:
         resolved_plan = new_plan
     else:
