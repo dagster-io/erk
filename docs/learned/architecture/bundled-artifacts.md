@@ -56,6 +56,8 @@ Configured in `pyproject.toml` via `force-include`.
 
 `src/erk/artifacts/sync.py` provides `sync_artifacts()` (main sync entry point). `src/erk/artifacts/artifact_health.py` provides health checking functions (`find_orphaned_artifacts()`, `find_missing_artifacts()`, `get_artifact_health()`) with four status types: `up-to-date`, `changed-upstream`, `locally-modified`, `not-installed`.
 
+These health functions accept bundled paths as keyword-only parameters (e.g., `bundled_claude_dir`, `bundled_github_dir`) rather than calling `get_bundled_*_dir()` internally. Call sites (CLI commands, health checks) resolve paths at the boundary and pass them in. See [Parameter Injection Pattern](../testing/parameter-injection-pattern.md) for details.
+
 ## Related Topics
 
 - [Capability System Architecture](capability-system.md) - Optional features installed via capabilities

@@ -525,8 +525,18 @@ When function signatures change (e.g., adding a column to a table, adding a new 
 
 Updating the implementation and the directly-tested function, but missing test helpers, builders, or parametrized test data that also construct instances of the changed type.
 
+## Dependency Customization Preference
+
+Prefer **parameter injection** over monkeypatch for dependency customization in tests:
+
+- **Parameter injection**: Pass test values as keyword-only parameters to functions. No monkeypatch needed, explicit dependencies, cleaner test code.
+- **Monkeypatch**: Fallback when parameter injection isn't feasible (e.g., CLI integration tests that exercise the full Click boundary).
+
+See [Parameter Injection Pattern](parameter-injection-pattern.md) for the complete guide.
+
 ## Related
 
 - **Testing philosophy**: Load `fake-driven-testing` skill
 - **Rebase conflicts**: [rebase-conflicts.md](rebase-conflicts.md)
 - **Gateway implementation**: [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md)
+- **Parameter injection**: [Parameter Injection Pattern](parameter-injection-pattern.md)
