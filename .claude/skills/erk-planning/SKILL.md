@@ -145,40 +145,6 @@ The `plan-update-issue` command finds plan content from:
 | `/erk:replan`           | Analyze and recreate obsolete plan      |
 | `erk implement <issue>` | Implement a saved plan                  |
 
-## Codex Planning Workflow
-
-Codex CLI lacks built-in plan mode, hooks, and slash commands. Use this explicit protocol instead.
-
-### When to Plan vs Implement Directly
-
-- **Plan first**: Tasks touching 3+ files, unclear scope, architectural decisions
-- **Implement directly**: Single-file fixes, typos, simple additions
-
-### Step-by-Step Plan Creation (Codex)
-
-1. Analyze the task and relevant codebase areas
-2. Write a plan to a markdown file with:
-   - Summary of what needs to change and why
-   - Implementation steps with specific file paths
-   - Verification criteria
-3. Save the plan: `erk plan create --file <path>`
-4. This creates a GitHub issue tracking the plan
-
-### Implementing a Plan (Codex)
-
-1. `erk implement <issue-number>` — sets up worktree and launches Codex
-2. Follow the plan steps in the issue
-3. Create PR when implementation is complete
-
-### Key Differences from Claude Code
-
-| Aspect           | Claude Code                             | Codex                                     |
-| ---------------- | --------------------------------------- | ----------------------------------------- |
-| Plan creation    | `EnterPlanMode` tool → `/erk:plan-save` | Write markdown → `erk plan create --file` |
-| Plan update      | `/local:plan-update <issue>`            | Edit file → `erk exec plan-update-issue`  |
-| Session tracking | `CLAUDE_SESSION_ID` automatic           | Not available (use `--plan-path` flag)    |
-| Lifecycle hooks  | Automatic via PreToolUse/PostToolUse    | None (follow AGENTS.md guidance)          |
-
 ## Resources
 
 ### references/
