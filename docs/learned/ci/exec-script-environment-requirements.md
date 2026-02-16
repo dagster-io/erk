@@ -30,6 +30,7 @@ When an exec script calls `require_prompt_executor()`, its workflow step **must*
 | `rebase_with_conflict_resolution.py` | `rebase-with-conflict-resolution` | `require_prompt_executor()` |
 | `ci_update_pr_body.py`               | `ci-update-pr-body`               | `require_prompt_executor()` |
 | `run_review.py`                      | `run-review`                      | `require_prompt_executor()` |
+| `generate_pr_summary.py`            | `generate-pr-summary`             | `require_prompt_executor()` |
 
 ## Workflow Step Checklist
 
