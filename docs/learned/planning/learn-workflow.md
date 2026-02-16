@@ -282,7 +282,7 @@ The learn workflow detects CI environments to skip interactive prompts:
 **In CI mode:**
 
 - User confirmations are skipped
-- Auto-proceeds to save learn plan issue
+- Auto-selects "Done" at the post-learn decision menu (does not auto-submit)
 - No blocking prompts that would hang the workflow
 
 **In interactive mode:**
