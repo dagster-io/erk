@@ -1,5 +1,7 @@
 ---
 title: LiveDisplay Gateway
+last_audited: "2026-02-16 02:45 PT"
+audit_result: edited
 read_when:
   - "implementing live-updating terminal displays"
   - "working with TUI real-time updates"
@@ -25,7 +27,7 @@ Rich's `Live` display requires careful lifecycle management (start → update lo
 
 <!-- Source: src/erk/cli/commands/plan/list_cmd.py, _run_watch_loop -->
 
-The canonical usage pattern appears in `_run_watch_loop()` at `src/erk/cli/commands/plan/list_cmd.py:578-629`. This demonstrates the ONLY correct way to use LiveDisplay:
+The canonical usage pattern appears in `_run_watch_loop()` in `src/erk/cli/commands/plan/list_cmd.py`. This demonstrates the ONLY correct way to use LiveDisplay:
 
 1. **Start once** before entering the loop
 2. **Update repeatedly** inside the loop (every tick)
@@ -65,7 +67,7 @@ finally:
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/live_display/real.py, RealLiveDisplay.__init__ -->
 
-`RealLiveDisplay.__init__()` hardcodes `stderr=True` in the Console constructor (line 13). This matches erk's convention:
+`RealLiveDisplay.__init__()` hardcodes `stderr=True` in the Console constructor. This matches erk's convention:
 
 - **stdout**: Machine-readable output (JSON, CSV, issue numbers for shell piping)
 - **stderr**: Human-readable output (tables, progress indicators, error messages)

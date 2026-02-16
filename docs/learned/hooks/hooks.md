@@ -1,6 +1,6 @@
 ---
 title: Claude Code Hooks Guide
-last_audited: "2026-02-03 15:30 PT"
+last_audited: "2026-02-16 02:45 PT"
 audit_result: edited
 read_when:
   - "creating hooks"
@@ -45,7 +45,7 @@ Hooks are automated triggers that execute commands or evaluate prompts at specif
 
 ### Hook Types
 
-Claude Code supports two hook types:
+Claude Code supports three hook types:
 
 #### Command-Based Hooks
 
@@ -68,15 +68,17 @@ Execute shell commands and capture their output.
 
 #### Prompt-Based Hooks
 
-Use Claude Haiku to evaluate a prompt and return structured decisions.
+Use a fast Claude model to evaluate a prompt and return structured decisions.
 
 ```json
 {
   "type": "prompt",
-  "prompt": "Should I allow this operation? Return JSON with decision.",
+  "prompt": "Should I allow this operation? $ARGUMENTS",
   "timeout": 60
 }
 ```
+
+The LLM responds with `{"ok": true}` to allow or `{"ok": false, "reason": "..."}` to block.
 
 **Use cases**:
 
@@ -85,22 +87,40 @@ Use Claude Haiku to evaluate a prompt and return structured decisions.
 - Dynamic decision-making based on context
 - LLM-powered policy enforcement
 
+#### Agent-Based Hooks
+
+Spawn a subagent with tool access (Read, Grep, Glob) to verify conditions.
+
+```json
+{
+  "type": "agent",
+  "prompt": "Verify all unit tests pass. $ARGUMENTS",
+  "timeout": 120
+}
+```
+
+Same response format as prompt hooks: `{"ok": true/false, "reason": "..."}`. Agent hooks can inspect files and code before making decisions.
+
 ### Lifecycle Events
 
-Claude Code provides 10 lifecycle events for hook execution:
+Claude Code provides 14 lifecycle events for hook execution:
 
-| Event                 | When It Fires                    | Common Use Cases                           |
-| --------------------- | -------------------------------- | ------------------------------------------ |
-| **UserPromptSubmit**  | Before processing user input     | Context reminders, input validation        |
-| **PreToolUse**        | Before executing any tool        | Parameter validation, tool-specific checks |
-| **PermissionRequest** | Before showing permission dialog | Auto-approve/deny, audit logging           |
-| **PostToolUse**       | After tool execution completes   | Result validation, side effects            |
-| **Notification**      | When system notifications appear | Custom notification handling               |
-| **Stop**              | When main agent execution stops  | Cleanup, status updates                    |
-| **SubagentStop**      | When subagent (Task tool) stops  | Subagent-specific cleanup                  |
-| **PreCompact**        | Before context compaction        | Save state, checkpoint progress            |
-| **SessionStart**      | At session initialization        | Environment setup, credential loading      |
-| **SessionEnd**        | When session terminates          | Cleanup, final reporting                   |
+| Event                  | When It Fires                             | Common Use Cases                           |
+| ---------------------- | ----------------------------------------- | ------------------------------------------ |
+| **SessionStart**       | At session initialization                 | Environment setup, credential loading      |
+| **UserPromptSubmit**   | Before processing user input              | Context reminders, input validation        |
+| **PreToolUse**         | Before executing any tool                 | Parameter validation, tool-specific checks |
+| **PermissionRequest**  | Before showing permission dialog          | Auto-approve/deny, audit logging           |
+| **PostToolUse**        | After tool execution completes            | Result validation, side effects            |
+| **PostToolUseFailure** | After tool execution fails                | Error logging, corrective feedback         |
+| **Notification**       | When system notifications appear          | Custom notification handling               |
+| **SubagentStart**      | When subagent (Task tool) starts          | Context injection into subagents           |
+| **SubagentStop**       | When subagent (Task tool) stops           | Subagent-specific cleanup                  |
+| **Stop**               | When main agent execution stops           | Cleanup, status updates                    |
+| **TeammateIdle**       | When agent team teammate is about to idle | Quality gates for teammates                |
+| **TaskCompleted**      | When a task is being marked complete      | Completion criteria enforcement            |
+| **PreCompact**         | Before context compaction                 | Save state, checkpoint progress            |
+| **SessionEnd**         | When session terminates                   | Cleanup, final reporting                   |
 
 **Most commonly used**: `UserPromptSubmit` (reminders), `PreToolUse` (validation), `SessionStart` (setup)
 
@@ -301,39 +321,19 @@ if __name__ == "__main__":
 
 The output message becomes Claude's instruction for what to do instead.
 
-#### Prompt-Based Hook Output
+#### Prompt-Based and Agent-Based Hook Output
 
-Return JSON with decision fields:
-
-```json
-{
-  "decision": "allow", // "allow", "deny", "block", or omit
-  "message": "Operation approved",
-  "updatedInput": {
-    // Optional: modify tool parameters
-    "newParameter": "newValue"
-  }
-}
-```
-
-**Decisions**:
-
-- `allow` - Permit operation, show message
-- `deny` - Refuse operation silently
-- `block` - Refuse operation with error message
-- No decision field - Show message only (no control)
-
-**Example (PreToolUse parameter modification)**:
+The LLM/agent responds with JSON:
 
 ```json
 {
-  "decision": "allow",
-  "message": "Added safety flag to command",
-  "updatedInput": {
-    "command": "rm --interactive file.txt"
-  }
+  "ok": true | false,
+  "reason": "Explanation (required when ok is false)"
 }
 ```
+
+- `ok: true` — allow the action to proceed
+- `ok: false` — block the action; `reason` is shown to Claude
 
 ### Exit Code Decision Patterns
 
@@ -549,6 +549,6 @@ This includes:
 ## Additional Resources
 
 - **Project-Specific Supplement**: [erk.md](erk.md)
-- **Official Claude Code Hooks**: https://code.claude.com/docs/en/hooks
-- **Official Hooks Guide**: https://code.claude.com/docs/en/hooks-guide.md
+- **Official Claude Code Hooks Reference**: https://code.claude.com/docs/en/hooks
+- **Official Hooks Guide**: https://code.claude.com/docs/en/hooks-guide
 - **Project Glossary**: `glossary.md`
