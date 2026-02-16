@@ -3,6 +3,8 @@ title: Workflow Capability Pattern
 read_when:
   - creating GitHub workflow capabilities
   - adding CI review workflows
+last_audited: "2026-02-16 00:00 PT"
+audit_result: edited
 ---
 
 # Workflow Capability Pattern
@@ -19,7 +21,7 @@ A workflow capability typically installs:
 
 ## Reference Implementation
 
-`DignifiedReviewCapability` in `src/erk/core/capabilities/dignified_review.py` demonstrates the pattern.
+`ReviewCapability` in `src/erk/core/capabilities/review_capability.py` demonstrates the pattern.
 
 **Key implementation points:**
 

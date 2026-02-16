@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "writing a system reminder longer than 5 lines"
     warning: "Long reminders get skimmed or ignored. Apply the three-property test: concise (2-3 sentences or 4-5 bullets), specific (exact step/file/action references), verifiable (agent can self-check completion). Read replan-context-reminders.md."
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # System Reminder Composition Patterns

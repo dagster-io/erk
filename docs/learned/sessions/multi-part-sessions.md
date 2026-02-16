@@ -5,6 +5,8 @@ read_when:
   - "preprocessing long sessions"
   - "session files split across multiple parts"
   - "concatenating session data"
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # Multi-Part Sessions

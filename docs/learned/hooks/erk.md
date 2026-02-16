@@ -1,6 +1,6 @@
 ---
 title: Erk Hooks
-last_audited: "2026-02-03 00:00 PT"
+last_audited: "2026-02-16 00:00 PT"
 audit_result: edited
 read_when:
   - "working with erk-specific hooks"
@@ -71,17 +71,7 @@ Reminders are opt-in via capability marker files in `.erk/capabilities/`.
 
 **Location**: `src/erk/cli/commands/exec/scripts/user_prompt_hook.py`
 
-### 2. fake-driven-testing-reminder
-
-**Event**: `UserPromptSubmit` | **Matcher**: `*` (all prompts)
-
-**Invocation**: `.claude/hooks/fake-driven-testing-reminder.sh`
-
-**Purpose**: Simple shell script reminder to load/abide by fake-driven-testing rules.
-
-**Location**: `.claude/hooks/fake-driven-testing-reminder.sh`
-
-### 3. pre-tool-use-hook (dignified-python reminder)
+### 2. pre-tool-use-hook (dignified-python reminder)
 
 **Event**: `PreToolUse` | **Matcher**: `Write|Edit`
 
@@ -97,7 +87,7 @@ Reminders are opt-in via capability marker files in `.erk/capabilities/`.
 
 **Location**: `src/erk/cli/commands/exec/scripts/pre_tool_use_hook.py`
 
-### 4. exit-plan-mode-hook
+### 3. exit-plan-mode-hook
 
 **Event**: `PreToolUse` | **Matcher**: `ExitPlanMode`
 
@@ -134,7 +124,7 @@ The exit-plan-mode hook uses marker files in `.erk/scratch/sessions/<session-id>
 
 See [Session Deduplication](../planning/session-deduplication.md) for the full deduplication pattern.
 
-### 5. PostToolUse ruff formatter
+### 4. PostToolUse ruff formatter
 
 **Event**: `PostToolUse` | **Matcher**: `Write|Edit`
 

@@ -1,6 +1,6 @@
 ---
 title: Subprocess Wrappers
-last_audited: "2026-02-03 03:56 PT"
+last_audited: "2026-02-16 00:00 PT"
 audit_result: edited
 read_when:
   - "using subprocess wrappers"
@@ -268,7 +268,7 @@ Some subprocess operations should fail gracefully while others should fail fast.
 
 Use when the operation is **optional** and the caller should decide how to handle absence:
 
-See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py:212-257`.
+See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`.
 
 ```python
 # Signature and return type (see source for full implementation):
@@ -294,7 +294,7 @@ def _get_pr_for_plan_direct(
 
 Use when the operation is **critical** and failure should be explicit:
 
-See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py:60-122`.
+See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py`.
 
 ```python
 # Signature (see source for full implementation):

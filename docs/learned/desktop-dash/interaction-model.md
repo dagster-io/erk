@@ -12,6 +12,8 @@ tripwires:
     warning: "Erkdesk uses discoverability-first design. Toolbar buttons and (future) context menus are primary. Keyboard shortcuts are secondary convenience, not required paths."
   - action: "designing notification features"
     warning: "Notification/badge system is planned but NOT implemented. Don't assume infrastructure exists for state-diff detection, OS notifications, or row badges."
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # Desktop Dashboard Interaction Model

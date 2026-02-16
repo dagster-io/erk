@@ -8,6 +8,8 @@ read_when:
 tripwire:
   trigger: "Before force pushing after git push rejection"
   action: "Read [Git Force Push Decision Tree](git-force-push-decision-tree.md) first. Check incoming commits with `git log HEAD..origin/branch`. Force push ONLY if no incoming commits exist. Unreviewed incoming commits cause permanent data loss."
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # Git Force Push Decision Tree

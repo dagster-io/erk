@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "reading or extracting data from agent session files"
     warning: 'Agent session files use `agent-` prefix and require dedicated reading logic. Check `session_id.startswith("agent-")` and route to `_read_agent_session_entries()`. Using generic `_iter_session_entries()` skips agent files silently.'
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # Agent Session Files

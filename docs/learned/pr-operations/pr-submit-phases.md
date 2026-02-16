@@ -5,6 +5,8 @@ read_when:
   - "debugging PR submission issues"
   - "working with AI-generated PR descriptions"
   - "understanding plan context integration in PRs"
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # PR Submit Workflow Phases

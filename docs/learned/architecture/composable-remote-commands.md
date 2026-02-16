@@ -11,6 +11,8 @@ tripwires:
     warning: "Always start_codespace() before executing remote commands"
   - action: "duplicating environment setup in remote commands"
     warning: "build_codespace_ssh_command() bootstraps the environment - don't duplicate setup"
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # Composable Remote Commands Pattern

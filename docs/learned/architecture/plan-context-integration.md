@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "using PlanContextProvider"
     warning: "Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case."
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # Plan Context Integration

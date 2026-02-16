@@ -5,6 +5,8 @@ read_when:
   - "customizing post-init setup"
   - "customizing CI workflow"
   - "understanding prompt hooks vs claude hooks"
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # Prompt Hooks Guide

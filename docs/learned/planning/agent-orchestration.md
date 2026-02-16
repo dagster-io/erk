@@ -10,6 +10,8 @@ tripwires:
     warning: "If agents analyze independent data sources, run them in parallel. Only use sequential execution when one agent's output is another's input."
   - action: "assigning opus to a mechanical extraction agent"
     warning: "Model escalation: haiku/sonnet for extraction and rule-based work, opus only for creative authoring. See the model escalation decision table."
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # Multi-Tier Agent Orchestration

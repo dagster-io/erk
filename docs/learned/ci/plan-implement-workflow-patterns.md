@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "running `git reset --hard` in workflows after staging cleanup"
     warning: "Verify all cleanup changes are committed BEFORE reset; staged changes without commit will be silently discarded."
+last_audited: "2026-02-16 00:00 PT"
+audit_result: edited
 ---
 
 # erk-impl Workflow Patterns
@@ -120,5 +122,4 @@ Critical ordering dependencies in erk-impl:
 
 ## Related Documentation
 
-- [erk-impl Change Detection](erk-impl-change-detection.md) - Detecting what changed during implementation
 - [GitHub Actions Output Patterns](github-actions-output-patterns.md) - Multi-line outputs and step communication
