@@ -796,8 +796,8 @@ Present a decision menu to the user for next actions.
 
 **CI Detection**: Reuse the CI check from Step 6:
 
-- If CI_MODE: Auto-select option 1 (submit) and proceed to Step 11
-- If not interactive: Auto-select option 1 (submit) and proceed to Step 11
+- If CI_MODE: Auto-select "Done" and proceed to Step 11
+- If not interactive: Auto-select "Done" and proceed to Step 11
 
 **Check for other open learn plans** (for consolidation option):
 
