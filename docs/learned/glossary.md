@@ -1,6 +1,6 @@
 ---
 title: Erk Glossary
-last_audited: "2026-02-03 00:00 PT"
+last_audited: "2026-02-15 00:00 PT"
 audit_result: edited
 read_when:
   - "understanding project terminology"
@@ -543,74 +543,17 @@ See `packages/erk-shared/src/erk_shared/context/context.py` for the canonical de
 
 ### PRDetails
 
-A frozen dataclass containing comprehensive PR information from a single GitHub API call.
+A frozen dataclass containing comprehensive PR information from a single GitHub API call. Implements the "Fetch Once, Use Everywhere" pattern.
 
-**Location**: `packages/erk-shared/src/erk_shared/github/types.py`
-
-**Purpose**: Implements the "Fetch Once, Use Everywhere" pattern - fetch all commonly-needed PR fields in one API call to reduce rate limit consumption.
-
-**Fields**:
-
-| Category     | Fields                                                                  |
-| ------------ | ----------------------------------------------------------------------- |
-| Identity     | `number`, `url`                                                         |
-| Content      | `title`, `body`                                                         |
-| State        | `state` ("OPEN"/"MERGED"/"CLOSED"), `is_draft`                          |
-| Structure    | `base_ref_name`, `head_ref_name`, `is_cross_repository`                 |
-| Mergeability | `mergeable` ("MERGEABLE"/"CONFLICTING"/"UNKNOWN"), `merge_state_status` |
-| Metadata     | `owner`, `repo`, `labels`                                               |
-
-**Design Pattern**:
-
-When multiple call sites need different PR fields, create a comprehensive type that fetches everything once:
-
-```python
-# Instead of multiple narrow fetches:
-title = github.get_pr_title(pr_number)
-state = github.get_pr_state(pr_number)
-base = github.get_pr_base(pr_number)
-
-# Use one comprehensive fetch:
-pr = github.get_pr(owner, repo, pr_number)
-# pr.title, pr.state, pr.base_ref_name all available
-```
+**Location**: `packages/erk-shared/src/erk_shared/gateway/github/types.py`
 
 **Related**: [GitHub Interface Patterns](architecture/github-interface-patterns.md)
 
 ### PRNotFound
 
-A sentinel class returned when a PR lookup fails to find a PR.
+A sentinel class returned when a PR lookup fails, preserving lookup context (branch name, PR number). Uses `isinstance` check (LBYL) instead of exceptions.
 
-**Location**: `packages/erk-shared/src/erk_shared/github/types.py`
-
-**Purpose**: Provides LBYL-style error handling for PR lookups. Instead of returning `None` (which loses context) or raising an exception (which violates LBYL), methods return this sentinel that can preserve lookup context.
-
-**Fields**:
-
-| Field       | Type          | Description                    |
-| ----------- | ------------- | ------------------------------ |
-| `branch`    | `str \| None` | Branch name that was looked up |
-| `pr_number` | `int \| None` | PR number that was looked up   |
-
-**Usage Pattern**:
-
-```python
-from erk_shared.gateway.github.types import PRNotFound
-
-pr = github.get_pr_for_branch(repo_root, branch)
-if isinstance(pr, PRNotFound):
-    # No PR exists for this branch
-    click.echo(f"No PR found for branch: {pr.branch}")
-else:
-    # pr is PRDetails
-    click.echo(f"Found PR #{pr.number}")
-```
-
-**Why Sentinel, Not None?**:
-
-1. **Type safety**: `PRDetails | PRNotFound` is explicit about possible returns
-2. **Context preservation**: Can inspect which branch/PR was looked up
-3. **LBYL compliance**: Explicit isinstance check, not try/except
+**Location**: `packages/erk-shared/src/erk_shared/gateway/github/types.py`
 
 **Related**: [Not-Found Sentinel Pattern](architecture/not-found-sentinel.md)
 
@@ -618,7 +561,7 @@ else:
 
 A boolean field on `PullRequestInfo` indicating whether a PR will automatically close its linked issue when merged.
 
-**Location**: `packages/erk-shared/src/erk_shared/github/types.py`
+**Location**: `packages/erk-shared/src/erk_shared/gateway/github/types.py`
 
 **Source**: Derived from GitHub's `CrossReferencedEvent.willCloseTarget` GraphQL field.
 
@@ -681,54 +624,11 @@ yield CompletionEvent(MyResult(success=True, data=data))
 
 ### ExecutorEvent
 
-A union type of frozen dataclasses representing events from Claude CLI streaming execution.
+A discriminated union of frozen dataclasses representing events from Claude CLI streaming execution. Consumed via pattern matching.
 
 **Location**: `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
 
-**Purpose**: Typed events enabling pattern matching for Claude CLI output processing.
-
-**Event Types**:
-
-| Event                | Field(s)          | Description                                       |
-| -------------------- | ----------------- | ------------------------------------------------- |
-| `TextEvent`          | `content: str`    | Text content from Claude                          |
-| `ToolEvent`          | `summary: str`    | Tool usage summary                                |
-| `SpinnerUpdateEvent` | `status: str`     | Status update for spinner display                 |
-| `PrUrlEvent`         | `url: str`        | Pull request URL                                  |
-| `PrNumberEvent`      | `number: int`     | Pull request number (proper int)                  |
-| `PrTitleEvent`       | `title: str`      | Pull request title                                |
-| `IssueNumberEvent`   | `number: int`     | GitHub issue number (proper int)                  |
-| `ErrorEvent`         | `message: str`    | Error with non-zero exit code                     |
-| `NoOutputEvent`      | `diagnostic: str` | Claude CLI produced no output                     |
-| `NoTurnsEvent`       | `diagnostic: str` | Claude completed with num_turns=0 (hook blocking) |
-| `ProcessErrorEvent`  | `message: str`    | Failed to start or timeout                        |
-
-**Union Type**:
-
-```python
-ExecutorEvent = (
-    TextEvent | ToolEvent | SpinnerUpdateEvent |
-    PrUrlEvent | PrNumberEvent | PrTitleEvent | IssueNumberEvent |
-    ErrorEvent | NoOutputEvent | NoTurnsEvent | ProcessErrorEvent
-)
-```
-
-**Example (consuming)**:
-
-```python
-for event in executor.execute_command_streaming(...):
-    match event:
-        case TextEvent(content=text):
-            print(text)
-        case ToolEvent(summary=summary):
-            print(f"  > {summary}")
-        case PrNumberEvent(number=num):
-            pr_number = num  # Already int, no conversion needed
-        case ErrorEvent(message=msg):
-            handle_error(msg)
-```
-
-**Related**: [Claude CLI Integration](architecture/claude-cli-integration.md)
+**Related**: [Prompt Executor Gateway](architecture/prompt-executor-gateway.md), [Claude CLI Integration](architecture/claude-cli-integration.md)
 
 ---
 
@@ -754,89 +654,21 @@ all_children = list(set(graphite_children) | set(github_children))
 
 ### Gateway
 
-An ABC (Abstract Base Class) defining gateways for external systems.
+An ABC (Abstract Base Class) defining an interface for an external system (Git, GitHub, Graphite, etc.). Each gateway has a 5-file implementation pattern: `abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py`.
 
-**Pattern**:
-
-```python
-class Git(ABC):
-    @abstractmethod
-    def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
-        ...
-```
-
-**Examples**:
-
-- `Git` - Git operations
-- `GitHub` - GitHub API operations
-- `Graphite` - Graphite CLI operations
-- `Shell` - Shell detection and tool availability
-- `Completion` - Shell completion generation
-- `ScriptWriter` - Activation script generation
-- `Console` - TTY detection, user feedback, and confirmation prompts
-
-**Purpose**: Abstraction enabling testing with fakes.
-
-**Related**: [Gateway Inventory](architecture/gateway-inventory.md)
+**Related**: [Gateway ABC Implementation](architecture/gateway-abc-implementation.md), [Gateway Inventory](architecture/gateway-inventory.md)
 
 ### Real Implementation
 
-Production implementation of a gateway interface that executes actual commands.
-
-**Naming**: `Real<Interface>` (e.g., `RealGit`)
-
-**Pattern**:
-
-```python
-class RealGit(Git):
-    def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
-        result = subprocess.run(["git", "worktree", "list", ...])
-        return parse_worktrees(result.stdout)
-```
-
-**Usage**: Instantiated in `create_context()` for production.
+Production implementation of a gateway (`Real<Interface>`, e.g., `RealGit`). Instantiated in `create_context()`.
 
 ### Fake Implementation
 
-In-memory implementation of a gateway interface for testing.
-
-**Naming**: `Fake<Interface>` (e.g., `FakeGit`)
-
-**Location**: `tests/fakes/<interface>.py`
-
-**Pattern**:
-
-```python
-class FakeGit(Git):
-    def __init__(self, *, worktrees: list[WorktreeInfo] | None = None):
-        self._worktrees = worktrees or []
-
-    def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
-        return self._worktrees
-```
-
-**Key Rule**: All state via constructor, NO public setup methods.
-
-**Purpose**: Fast, deterministic tests without filesystem I/O.
+In-memory test implementation (`Fake<Interface>`, e.g., `FakeGit`). All state via constructor, no public setup methods. Located in `tests/fakes/`.
 
 ### Dry Run Wrapper
 
-A wrapper around a real implementation that prints messages instead of executing destructive operations.
-
-**Naming**: `DryRun<Interface>` (e.g., `DryRunGit`)
-
-**Pattern**:
-
-```python
-class DryRunGit(Git):
-    def __init__(self, wrapped: Git) -> None:
-        self._wrapped = wrapped
-
-    def remove_worktree(self, repo_root: Path, path: Path, force: bool) -> None:
-        click.echo(f"[DRY RUN] Would remove worktree: {path}")
-```
-
-**Usage**: Wrapped around real implementations when `--dry-run` flag is used.
+Wraps real implementation, prints messages instead of executing destructive operations (`DryRun<Interface>`, e.g., `DryRunGit`). Used when `--dry-run` flag is passed.
 
 ---
 
@@ -1191,48 +1023,25 @@ An execution pattern where subprocess output is streamed to the UI in real-time 
 
 ### PromptExecutor
 
-The core ABC for launching Claude CLI in various modes (interactive, streaming, command, prompt). Consolidated from the old `ClaudeExecutor` and gateway `PromptExecutor` in PR #6587.
+The core ABC for launching Claude CLI in various modes (interactive, streaming, command, prompt).
 
 **Location**: `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
 
-**Methods**:
-
-- `execute_interactive()` - Replace process with Claude (uses `os.execvp()`)
-- `execute_command()` - Run slash command, return CommandResult with metadata
-- `execute_command_streaming()` - Stream events in real-time (Iterator[ExecutorEvent])
-- `execute_prompt()` - Single-shot prompt execution, return PromptResult
-
-**Related**: [PromptExecutor Patterns](architecture/prompt-executor-patterns.md)
+**Related**: [Prompt Executor Gateway](architecture/prompt-executor-gateway.md)
 
 ### ClaudePromptExecutor
 
-The real implementation of PromptExecutor that launches the actual Claude CLI binary.
+The real implementation of PromptExecutor. Launches the actual Claude CLI binary.
 
 **Location**: `src/erk/core/prompt_executor.py`
 
-**Key features**:
-
-- Background thread for stderr accumulation during streaming
-- Metadata extraction from JSONL events (PR numbers, issue numbers, titles)
-- Hook interaction detection (zero turns)
-- Process error handling
-
-**Related**: [PromptExecutor Patterns](architecture/prompt-executor-patterns.md)
-
 ### FakePromptExecutor
 
-The test fake for PromptExecutor that simulates Claude execution without subprocess calls.
+The test fake for PromptExecutor. Constructor injection for all behaviors, tracks all calls.
 
 **Location**: `tests/fakes/prompt_executor.py`
 
-**Key features**:
-
-- Constructor injection for predetermined behavior
-- Tracks all calls (`interactive_calls`, `executed_commands`, `prompt_calls`)
-- Simulates PR metadata, tool events, failures, hook blocking
-- No subprocess overhead in tests
-
-**Related**: [Fake API Migration Pattern](testing/fake-api-migration-pattern.md)
+**Related**: [Prompt Executor Gateway](architecture/prompt-executor-gateway.md)
 
 ### Capability Marker
 

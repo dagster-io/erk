@@ -1,5 +1,7 @@
 ---
 title: erk pr summarize Command
+last_audited: "2026-02-15"
+audit_result: clean
 read_when:
   - "generating AI commit messages for existing commits"
   - "amending commit messages with plan context"
