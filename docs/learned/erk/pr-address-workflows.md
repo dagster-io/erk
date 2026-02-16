@@ -152,7 +152,31 @@ After the remote workflow completes, it posts (or updates) a summary comment on 
 
 The comment uses the marker `<!-- erk:pr-address-run -->` to find and update existing comments.
 
+## Remote Workflow Implementation Notes
+
+### Classifier Isolation
+
+The remote workflow uses `claude --print` for non-interactive execution. Due to `context: fork` limitations in this mode (see `docs/learned/claude-code/context-fork-feature.md`), the pr-feedback-classifier MUST be invoked via explicit Task tool delegation, not skill invocation.
+
+See `.claude/commands/erk/pr-address.md` (grep for "Phase 1: Classify Feedback") for the Task tool pattern. The same pattern is used in Phase 4 verification.
+
+This ensures all 5 phases execute reliably:
+
+1. Classify Feedback (via Task tool)
+2. Batch Changes
+3. Commit and Push
+4. Final Verification (via Task tool)
+5. Summary
+
+### Why This Matters
+
+Without proper isolation, the classifier's "Output ONLY JSON" instruction would contaminate the parent context, causing the workflow to terminate after Phase 1 with no commits, no resolved threads, and a deceptive "success" status.
+
+**Evidence:** PR #7096 fixed this issue.
+
 ## Related Topics
 
 - [PR Sync Workflow](pr-sync-workflow.md) - Syncing PR title/body from commits
 - [PR Submit Phases](../pr-operations/pr-submit-phases.md) - PR creation workflow
+- [CI Workflow Verification Patterns](../ci/workflow-verification-patterns.md) - Verifying CI outputs
+- [Task Context Isolation Pattern](../architecture/task-context-isolation.md) - CI context constraints

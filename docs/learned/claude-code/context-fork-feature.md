@@ -8,6 +8,8 @@ read_when:
 tripwires:
   - action: "creating a skill or command with context: fork without explicit task instructions"
     warning: "Skills/commands with context: fork need actionable task prompts. Guidelines-only content returns empty output."
+  - action: "invoking skills with context: fork in commands that run via claude --print in CI"
+    warning: "context: fork does NOT create subagent isolation in --print mode. Skill content loads inline and terminal instructions (e.g., 'Output ONLY JSON') contaminate the parent, causing premature termination. Use explicit Task tool delegation instead."
 ---
 
 # Context Fork Feature
@@ -35,6 +37,33 @@ Do NOT use when:
 1. **Guidelines only** — If the content is "here's how to approach X" without explicit steps, the subagent will return empty/unhelpful output. Subagents execute tasks, not follow ambient guidelines.
 2. **Dynamic prompts** — If you need to build prompts with runtime values from conversation, use manual Task delegation instead
 3. **Needs conversation context** — If the skill must reference prior messages or user preferences
+
+## Execution Mode Limitations
+
+### context: fork Behavior by Execution Mode
+
+| Mode                               | Fork Creates Isolation? | Behavior                                              |
+| ---------------------------------- | ----------------------- | ----------------------------------------------------- |
+| Interactive (`/command`)           | Yes                     | True subagent with separate session ID                |
+| Non-interactive (`claude --print`) | **No**                  | Content loads inline, instructions contaminate parent |
+
+### The Problem in CI Contexts
+
+When commands run via `claude --print` in GitHub Actions workflows, `context: fork` does not create true subagent isolation. The skill content loads directly into the parent context. If the skill contains terminal output instructions like "Output ONLY JSON", those instructions become the parent's instructions, causing it to:
+
+1. Output the structured data as requested
+2. Stop execution immediately (following the "only" directive)
+3. Abandon remaining workflow phases
+
+This failure mode is deceptive: the workflow reports success (exit 0), but no actual work is done.
+
+### Prevention
+
+For commands that run in CI/workflows, use explicit Task tool delegation instead of relying on `context: fork`. See `docs/learned/architecture/task-context-isolation.md` for the pattern.
+
+The original `context: fork` recommendation ("Prefer context: fork for fetch-and-classify patterns") remains valid **in interactive mode**. Use Task delegation for CI/workflow contexts.
+
+**Evidence:** PR #7096 fixed pr-address workflow that was terminating after Phase 1 classification despite reporting success in GitHub Actions.
 
 ## The Empty Output Trap
 
@@ -85,11 +114,6 @@ The extension made commands first-class: same frontmatter options as skills (inc
 - Commands can now delegate to subagents without manual Task calls
 - Batch operations (like scanning docs) can be command-driven
 - No need to create a skill if the operation is single-purpose
-
-<!-- Source: .claude/commands/local/audit-doc.md, frontmatter -->
-<!-- Source: .claude/commands/local/audit-scan.md, parallel batch scoring -->
-
-See `/local:audit-doc` and `/local:audit-scan` for commands using `context: fork` with `agent: general-purpose` for isolated analysis.
 
 ## Fork vs Manual Task: The Real Trade-Off
 

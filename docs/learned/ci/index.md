@@ -11,6 +11,7 @@
 - **[composite-action-patterns.md](composite-action-patterns.md)** — creating reusable GitHub Actions setup steps, using erk-remote-setup composite action, understanding GitHub Actions composite patterns
 - **[containerless-ci.md](containerless-ci.md)** — Setting up Claude Code in GitHub Actions without containers, Comparing container vs container-less CI approaches, Choosing between container and container-less CI approaches
 - **[convention-based-reviews.md](convention-based-reviews.md)** — adding a new code review to CI, understanding how code reviews work, modifying code review behavior
+- **[debugging-remote-workflows.md](debugging-remote-workflows.md)** — remote workflow succeeded but produced no changes, investigating why a GitHub Actions Claude workflow failed silently, debugging multi-phase command execution in CI
 - **[edit-tool-formatting.md](edit-tool-formatting.md)** — using the Edit tool to modify Python code, encountering formatting issues after edits, CI failing on formatting checks after using Edit tool
 - **[formatter-tools.md](formatter-tools.md)** — formatting code, choosing a formatter, fixing format errors
 - **[formatting-workflow.md](formatting-workflow.md)** — unsure whether to run make format or make prettier, encountering CI formatting failures, working with multiple file types in a PR, setting up CI iteration workflow
@@ -36,3 +37,4 @@
 - **[review-types-taxonomy.md](review-types-taxonomy.md)** — creating a new review workflow, deciding whether to extend an existing review or create a new one, understanding review scope boundaries
 - **[workflow-gating-patterns.md](workflow-gating-patterns.md)** — adding conditional execution to GitHub Actions workflows, implementing label-based CI skipping, understanding why CI was skipped on a PR
 - **[workflow-naming-conventions.md](workflow-naming-conventions.md)** — creating new GitHub Actions workflows launchable via erk launch, understanding the relationship between CLI names and workflow files
+- **[workflow-verification-patterns.md](workflow-verification-patterns.md)** — debugging GitHub Actions workflows that succeeded but did nothing, verifying remote Claude workflows actually completed work, investigating why commits or changes didn't appear after workflow success
