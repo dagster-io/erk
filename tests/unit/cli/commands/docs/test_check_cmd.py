@@ -86,7 +86,7 @@ def test_check_passes_with_valid_docs_in_sync() -> None:
     # Pre-sync so generated files match
     from erk.agent_docs.operations import sync_agent_docs
 
-    sync_agent_docs(agent_docs, ctx.repo_root, dry_run=False)
+    sync_agent_docs(agent_docs, ctx.repo_root, dry_run=False, on_progress=lambda _: None)
 
     runner = CliRunner()
     result = runner.invoke(cli, ["docs", "check"], obj=ctx)

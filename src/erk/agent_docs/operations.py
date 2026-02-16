@@ -6,7 +6,7 @@ files with frontmatter metadata.
 
 import re
 from collections import defaultdict
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any, cast, get_args
 
@@ -738,7 +738,13 @@ def _update_generated_file(
     updated.append(rel_path)
 
 
-def sync_agent_docs(agent_docs: AgentDocs, project_root: Path, *, dry_run: bool) -> SyncResult:
+def sync_agent_docs(
+    agent_docs: AgentDocs,
+    project_root: Path,
+    *,
+    dry_run: bool,
+    on_progress: Callable[[str], None],
+) -> SyncResult:
     """Sync agent documentation index files from frontmatter.
 
     Generates index.md files for the root docs/learned/ directory and
@@ -749,6 +755,7 @@ def sync_agent_docs(agent_docs: AgentDocs, project_root: Path, *, dry_run: bool)
         agent_docs: Gateway for accessing docs/learned/ files.
         project_root: Path to the project root.
         dry_run: If True, don't write files, just report what would change.
+        on_progress: Callback for progress messages.
 
     Returns:
         SyncResult with lists of created, updated, and unchanged files.
@@ -763,6 +770,7 @@ def sync_agent_docs(agent_docs: AgentDocs, project_root: Path, *, dry_run: bool)
             tripwires_by_category=(),
         )
 
+    on_progress("Scanning docs...")
     uncategorized, categories, invalid_count = collect_valid_docs(agent_docs, project_root)
 
     created: list[str] = []
@@ -770,6 +778,7 @@ def sync_agent_docs(agent_docs: AgentDocs, project_root: Path, *, dry_run: bool)
     unchanged: list[str] = []
 
     # Generate root index
+    on_progress("Generating root index...")
     root_content = generate_root_index(uncategorized, categories)
     _update_index_file(
         agent_docs,
@@ -783,6 +792,7 @@ def sync_agent_docs(agent_docs: AgentDocs, project_root: Path, *, dry_run: bool)
     )
 
     # Generate category indexes (only for categories with 2+ docs)
+    on_progress("Generating category indexes...")
     for category in categories:
         if len(category.docs) < 2:
             continue
@@ -800,12 +810,14 @@ def sync_agent_docs(agent_docs: AgentDocs, project_root: Path, *, dry_run: bool)
         )
 
     # Collect and generate per-category tripwire files
+    on_progress("Collecting tripwires...")
     tripwires = collect_tripwires(agent_docs, project_root)
     tripwires_count = len(tripwires)
 
     tripwires_by_category = group_tripwires_by_category(tripwires)
     category_stats: list[CategoryTripwireStats] = []
 
+    on_progress("Generating tripwire files...")
     for category_name, category_tripwires in sorted(tripwires_by_category.items()):
         # Generate tripwires file for this category
         tripwires_content = generate_category_tripwires_doc(category_name, category_tripwires)
@@ -829,6 +841,7 @@ def sync_agent_docs(agent_docs: AgentDocs, project_root: Path, *, dry_run: bool)
         )
 
     # Generate tripwires index (only if there are tripwires)
+    on_progress("Generating tripwires index...")
     if tripwires_by_category:
         tripwires_index_content = generate_tripwires_index(tripwires_by_category)
         _update_generated_file(

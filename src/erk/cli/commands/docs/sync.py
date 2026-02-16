@@ -45,7 +45,12 @@ def sync_command(ctx: ErkContext, *, dry_run: bool, check: bool) -> None:
         raise SystemExit(0)
 
     # Sync index files
-    sync_result = sync_agent_docs(ctx.agent_docs, project_root, dry_run=effective_dry_run)
+    sync_result = sync_agent_docs(
+        ctx.agent_docs,
+        project_root,
+        dry_run=effective_dry_run,
+        on_progress=lambda msg: click.echo(click.style(msg, fg="cyan"), err=True),
+    )
 
     # Report results
     if effective_dry_run:
