@@ -283,7 +283,7 @@ After all review comments have been addressed, update the PR to reflect the full
 Run:
 
 ```bash
-erk pr update-description --session-id "${CLAUDE_SESSION_ID}"
+erk exec update-pr-description --session-id "${CLAUDE_SESSION_ID}"
 ```
 
 This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.

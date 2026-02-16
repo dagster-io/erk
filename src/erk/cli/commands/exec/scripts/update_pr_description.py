@@ -1,11 +1,19 @@
 """Update PR title and body using AI-generated description.
 
-This command generates an AI-powered PR title and body from the full diff
+This exec command generates an AI-powered PR title and body from the full diff
 between the current branch and its parent, then updates the PR on GitHub.
 
 Unlike `erk pr submit`, this does NOT amend the local commit or push changes.
 It only updates the PR's title and body, preserving existing header and footer
 metadata.
+
+Usage:
+    erk exec update-pr-description
+    erk exec update-pr-description --session-id "abc123"
+
+Exit Codes:
+    0: Success
+    1: Error (no PR, Claude unavailable, diff extraction failure)
 """
 
 import uuid
@@ -27,34 +35,29 @@ from erk.cli.commands.pr.shared import (
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContextProvider
+from erk_shared.context.helpers import require_context
 from erk_shared.gateway.github.pr_footer import extract_header_from_body
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 
 
-@click.command("update-description")
+@click.command(name="update-pr-description")
 @click.option("--debug", is_flag=True, help="Show diagnostic output")
 @click.option("--session-id", default=None, help="Session ID for scratch file isolation")
-@click.pass_obj
-def pr_update_description(ctx: ErkContext, *, debug: bool, session_id: str | None) -> None:
+@click.pass_context
+def update_pr_description(ctx: click.Context, *, debug: bool, session_id: str | None) -> None:
     """Update PR title and body with AI-generated description.
 
     Analyzes the full diff between the current branch and its parent,
     generates a descriptive title and body using Claude, and updates the
     PR on GitHub. Preserves existing header and footer metadata.
-
-    Examples:
-
-    \b
-      # Update PR description
-      erk pr update-description
-
-      # With session ID for scratch isolation
-      erk pr update-description --session-id "abc123"
     """
-    _execute_update_description(ctx, debug=debug, session_id=session_id)
+    erk_ctx = require_context(ctx)
+    _execute_update_description(erk_ctx, debug=debug, session_id=session_id)
 
 
-def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str | None) -> None:
+def _execute_update_description(
+    ctx: ErkContext, *, debug: bool, session_id: str | None
+) -> None:
     """Execute the update-description pipeline."""
     # Verify Claude is available
     require_claude_available(ctx)
