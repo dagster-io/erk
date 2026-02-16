@@ -4,6 +4,7 @@
 # Ci Documentation
 
 - **[autofix-job-needs.md](autofix-job-needs.md)** — modifying the autofix job's needs list in ci.yml, adding a new CI job that might block autofix, understanding why autofix runs independently of tests
+- **[automated-reviews.md](automated-reviews.md)** — understanding PR review automation, interpreting bot feedback
 - **[ci-iteration.md](ci-iteration.md)** — running CI commands in workflows, delegating pytest, ty, ruff commands, understanding devrun agent restrictions
 - **[claude-code-docker.md](claude-code-docker.md)** — Running Claude Code in GitHub Actions containers, Debugging permission errors in CI Docker containers, Choosing between container and container-less CI approaches
 - **[claude-commands-prettier.md](claude-commands-prettier.md)** — Creating slash commands in .claude/commands/, Modifying existing .claude/ markdown files, Getting Prettier formatting errors in CI

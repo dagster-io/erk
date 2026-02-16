@@ -15,6 +15,8 @@ tripwires:
     warning: "FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway."
   - action: "asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`"
     warning: "Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper."
+  - action: "naming test fixtures or helpers with names that collide with production modules"
+    warning: "Use distinct test-specific names (e.g., `create_test_context` not `create_context`). Namespace collisions cause confusing import errors."
 ---
 
 # Erk Test Reference
@@ -34,6 +36,10 @@ If existing tests pass after your change, either:
 2. You need to add a new test for the specific scenario
 
 **Anti-pattern:** Fixing a bug without a regression test. This allows the bug to be reintroduced later.
+
+### Documentation-Only Changes
+
+Pure documentation changes (docs/learned/ files, AGENTS.md updates) do not require test changes. Only code changes in `src/` or `packages/` require corresponding tests.
 
 ## Running Tests
 

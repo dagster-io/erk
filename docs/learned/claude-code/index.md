@@ -6,3 +6,4 @@
 - **[agent-commands.md](agent-commands.md)** — creating Claude Code agent commands, implementing conversation-context extraction, building commands that search conversation history
 - **[context-fork-feature.md](context-fork-feature.md)** — creating skills that need context isolation, creating commands that need context isolation, choosing between context: fork vs manual Task delegation, understanding when NOT to use context isolation
 - **[skill-composition-patterns.md](skill-composition-patterns.md)** — creating skills that invoke other skills, designing skill hierarchies, understanding skill loading chains
+- **[tool-limitations.md](tool-limitations.md)** — reading large files, file content appears truncated, plan appears incomplete after Read tool

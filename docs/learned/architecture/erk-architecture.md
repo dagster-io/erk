@@ -43,7 +43,7 @@ tripwires:
   - action: "validating object fields at every callsite instead of at construction"
     warning: "Validate at the single construction point (factory/reader function). Callers should trust returned objects without re-validation. This is the construction boundary principle."
   - action: "adding new file format support without read-then-fallback"
-    warning: "When adding new file formats, implement read-then-fallback: try new format first, fall back to old format transparently. See read_plan_ref() for the canonical pattern."
+    warning: "When adding new file formats, implement read-then-fallback: try new format first, fall back to old format transparently. See read_plan_ref() for file formats and parse_roadmap_frontmatter() for content format detection."
 ---
 
 # Erk Architecture Patterns
