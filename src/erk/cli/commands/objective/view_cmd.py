@@ -3,9 +3,11 @@
 from datetime import datetime
 
 import click
+from rich.cells import cell_len
 from rich.console import Console
-from rich.markup import escape as escape_markup
+from rich.markup import escape
 from rich.table import Table
+from rich.text import Text
 
 from erk.cli.alias import alias
 from erk.cli.commands.exec.scripts.objective_roadmap_shared import (
@@ -53,7 +55,7 @@ def _format_step_status(status: str, *, plan: str | None) -> str:
     if status == "done":
         return "[green]✅ done[/green]"
     if status == "in_progress":
-        ref_text = f" plan {escape_markup(plan)}" if plan else ""
+        ref_text = f" plan {escape(plan)}" if plan else ""
         return f"[yellow]🔄 in_progress{ref_text}[/yellow]"
     if status == "blocked":
         return "[red]🚫 blocked[/red]"
@@ -142,6 +144,26 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
 
         console = Console(stderr=True, force_terminal=True)
 
+        # Pre-compute max column widths across all phases for global alignment
+        max_id_width = 0
+        max_status_width = 0
+        max_desc_width = 0
+        max_plan_width = 0
+        max_pr_width = 0
+        for phase in phases:
+            for step in phase.steps:
+                max_id_width = max(max_id_width, cell_len(step.id))
+                status_markup = _format_step_status(step.status, plan=step.plan)
+                max_status_width = max(
+                    max_status_width,
+                    cell_len(Text.from_markup(status_markup).plain),
+                )
+                max_desc_width = max(max_desc_width, cell_len(step.description))
+                plan_text = "-" if step.plan is None else step.plan
+                max_plan_width = max(max_plan_width, cell_len(plan_text))
+                pr_text = "-" if step.pr is None else step.pr
+                max_pr_width = max(max_pr_width, cell_len(pr_text))
+
         for phase in phases:
             # Count done steps in this phase
             done_count = sum(1 for step in phase.steps if step.status == "done")
@@ -161,19 +183,19 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
                 pad_edge=False,
                 padding=(0, 1),
             )
-            table.add_column("step", style="cyan", no_wrap=True)
-            table.add_column("status", no_wrap=True)
-            table.add_column("description")
-            table.add_column("plan", no_wrap=True)
-            table.add_column("pr", no_wrap=True)
+            table.add_column("step", style="cyan", no_wrap=True, min_width=max_id_width)
+            table.add_column("status", no_wrap=True, min_width=max_status_width)
+            table.add_column("description", min_width=max_desc_width)
+            table.add_column("plan", no_wrap=True, min_width=max_plan_width)
+            table.add_column("pr", no_wrap=True, min_width=max_pr_width)
 
             for step in phase.steps:
                 table.add_row(
-                    escape_markup(step.id),
+                    escape(step.id),
                     _format_step_status(step.status, plan=step.plan),
-                    escape_markup(step.description),
-                    "-" if step.plan is None else escape_markup(step.plan),
-                    "-" if step.pr is None else escape_markup(step.pr),
+                    escape(step.description),
+                    "-" if step.plan is None else escape(step.plan),
+                    "-" if step.pr is None else escape(step.pr),
                 )
 
             console.print(table)
