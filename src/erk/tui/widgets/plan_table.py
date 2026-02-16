@@ -145,11 +145,11 @@ class PlanDataTable(DataTable):
         self.add_column("title", key="title")
         col_index += 1
 
-        # Objectives view: plan, title, progress, next, updated, author
+        # Objectives view: plan, title, prog, next step, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
-            self.add_column("progress", key="progress")
+            self.add_column("prog", key="progress")
             col_index += 1
-            self.add_column("next", key="next_step")
+            self.add_column("next step", key="next_step")
             col_index += 1
             self.add_column("updated", key="updated")
             col_index += 1

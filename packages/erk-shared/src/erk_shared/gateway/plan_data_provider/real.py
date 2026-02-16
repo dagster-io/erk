@@ -572,8 +572,8 @@ class RealPlanDataProvider(PlanDataProvider):
                 next_step = find_next_step(phases)
                 if next_step is not None:
                     step_text = f"{next_step['id']} {next_step['description']}"
-                    if len(step_text) > 30:
-                        step_text = step_text[:27] + "..."
+                    if len(step_text) > 40:
+                        step_text = step_text[:37] + "..."
                     objective_next_step_display = step_text
 
         # Format updated_at display
