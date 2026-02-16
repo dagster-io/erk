@@ -72,6 +72,8 @@ Rules triggered by matching actions in code.
 
 **calling gh api directly in an exec script for plan metadata updates** → Read [PlanBackend Migration Pattern](plan-backend-migration.md) first. Use `require_plan_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers.
 
+**calling global getters inside business logic functions** → Read [Dependency Injection Boundaries](dependency-injection-boundaries.md) first. Consider parameter injection instead - call getters at boundaries, pass values to core functions
+
 **calling graphite.track_branch() with a remote ref like origin/main** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Graphite's `gt track` only accepts local branch names, not remote refs. Use BranchManager.create_branch() which normalizes refs automatically, or strip `origin/` prefix before calling track_branch().
 
 **calling gt commands without --no-interactive flag** [pattern: `\bgt\s+(sync|submit|restack|create|modify)`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Always use `--no-interactive` with gt commands (gt sync, gt submit, gt restack, etc.). Without this flag, gt may prompt for user input and hang indefinitely. Note: `--force` does NOT prevent prompts - you must use `--no-interactive` separately.

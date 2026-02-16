@@ -11,6 +11,8 @@ tripwires:
   - action: "using monkeypatch to stub Path.home() or subprocess.run()"
     warning: "These are the two most common monkeypatch targets. Both have established gateway replacements — ClaudeInstallation/ErkInstallation for paths, specific gateways for subprocess."
     pattern: "monkeypatch\\.setattr.*Path\\.home|monkeypatch.*subprocess\\.run"
+  - action: "moving imports between modules that are monkeypatched in tests"
+    warning: "Grep for all monkeypatch references to the moved function and retarget them to the new import location. Tests fail with AttributeError when patches target stale import locations."
 last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
