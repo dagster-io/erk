@@ -314,13 +314,10 @@ def update_step_in_frontmatter(
                 resolved_pr = None
 
             # Resolve plan: None=preserve, ""=clear, "#6464"=set
-            if plan is not None:
-                if plan:
-                    resolved_plan = plan
-                else:
-                    resolved_plan = None
-            else:
+            if plan is None:
                 resolved_plan = step.plan
+            else:
+                resolved_plan = plan or None
 
             # Determine status: explicit > infer from resolved values > preserve
             new_status: RoadmapStepStatus

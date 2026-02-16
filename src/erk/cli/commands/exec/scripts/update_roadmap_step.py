@@ -351,7 +351,7 @@ def update_roadmap_step(
         raise SystemExit(0)
 
     # Require --plan when --pr is set to prevent accidental plan loss
-    if pr_ref is not None and pr_ref and plan_ref is None:
+    if pr_ref and plan_ref is None:
         click.echo(
             json.dumps(
                 {
