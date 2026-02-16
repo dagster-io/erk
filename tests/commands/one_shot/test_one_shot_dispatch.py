@@ -220,5 +220,5 @@ def test_dispatch_creates_skeleton_plan_issue() -> None:
         assert len(issues.added_comments) == 1
         issue_number, comment_body, _comment_id = issues.added_comments[0]
         assert issue_number == 1
-        assert "Skeleton" in comment_body
+        assert "One-shot" in comment_body
         assert "add user authentication" in comment_body
