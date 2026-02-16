@@ -1792,6 +1792,108 @@ class TestViewSwitching:
             assert view_bar._active_view == ViewMode.LEARN
 
     @pytest.mark.asyncio
+    async def test_right_arrow_cycles_to_next_view(self) -> None:
+        """Right arrow key cycles from Plans to Learn."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A"),
+                make_plan_row(2, "Learn Plan", is_learn_plan=True),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            assert app._view_mode == ViewMode.PLANS
+
+            await pilot.press("right")
+            await pilot.pause()
+
+            assert app._view_mode == ViewMode.LEARN
+
+    @pytest.mark.asyncio
+    async def test_left_arrow_cycles_to_previous_view(self) -> None:
+        """Left arrow key cycles from Plans to Objectives (wraps)."""
+        objective_plans = [make_plan_row(10, "Objective A")]
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(1, "Plan A")],
+            plans_by_labels={
+                ("erk-objective",): objective_plans,
+            },
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            assert app._view_mode == ViewMode.PLANS
+
+            await pilot.press("left")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert app._view_mode == ViewMode.OBJECTIVES
+
+    @pytest.mark.asyncio
+    async def test_right_arrow_wraps_from_last_to_first(self) -> None:
+        """Right arrow wraps from Objectives back to Plans."""
+        objective_plans = [make_plan_row(10, "Objective A")]
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(1, "Plan A")],
+            plans_by_labels={
+                ("erk-objective",): objective_plans,
+            },
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            assert app._view_mode == ViewMode.PLANS
+
+            # Plans -> Learn -> Objectives
+            await pilot.press("right")
+            await pilot.pause()
+            await pilot.press("right")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert app._view_mode == ViewMode.OBJECTIVES
+
+            # Objectives -> Plans (wrap)
+            await pilot.press("right")
+            await pilot.pause()
+
+            assert app._view_mode == ViewMode.PLANS
+
+    @pytest.mark.asyncio
+    async def test_left_arrow_wraps_from_first_to_last(self) -> None:
+        """Left arrow from Learn goes to Plans."""
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Plan A"),
+                make_plan_row(2, "Learn Plan", is_learn_plan=True),
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            # Go to Learn first
+            await pilot.press("2")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.LEARN
+
+            # Left arrow goes to Plans
+            await pilot.press("left")
+            await pilot.pause()
+
+            assert app._view_mode == ViewMode.PLANS
+
+    @pytest.mark.asyncio
     async def test_data_cache_avoids_refetch(self) -> None:
         """Switching back to a cached view does not refetch."""
         provider = FakePlanDataProvider(

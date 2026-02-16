@@ -24,7 +24,12 @@ from erk.tui.screens.issue_body_screen import IssueBodyScreen
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk.tui.sorting.logic import sort_plans
 from erk.tui.sorting.types import BranchActivity, SortKey, SortState
-from erk.tui.views.types import ViewMode, get_view_config
+from erk.tui.views.types import (
+    ViewMode,
+    get_next_view_mode,
+    get_previous_view_mode,
+    get_view_config,
+)
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 from erk.tui.widgets.view_bar import ViewBar
@@ -77,6 +82,8 @@ class ErkDashApp(App):
         Binding("1", "switch_view_plans", "Plans", show=False),
         Binding("2", "switch_view_learn", "Learn", show=False),
         Binding("3", "switch_view_objectives", "Objectives", show=False),
+        Binding("right", "next_view", "Next View", show=False, priority=True),
+        Binding("left", "previous_view", "Previous View", show=False, priority=True),
     ]
 
     def get_system_commands(self, screen: Screen) -> Iterator[SystemCommand]:
@@ -388,6 +395,14 @@ class ErkDashApp(App):
     def action_switch_view_objectives(self) -> None:
         """Switch to Objectives view."""
         self._switch_view(ViewMode.OBJECTIVES)
+
+    def action_next_view(self) -> None:
+        """Cycle to the next view (right arrow)."""
+        self._switch_view(get_next_view_mode(self._view_mode))
+
+    def action_previous_view(self) -> None:
+        """Cycle to the previous view (left arrow)."""
+        self._switch_view(get_previous_view_mode(self._view_mode))
 
     def action_toggle_sort(self) -> None:
         """Toggle between sort modes."""
