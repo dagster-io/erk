@@ -137,19 +137,15 @@ class PlanDataTable(DataTable):
         """Add columns based on current filter settings and view mode.
 
         Tracks the column index for local-wt to enable click detection.
-        Objectives view uses simplified columns (plan, title, created only).
+        Objectives view uses enriched columns (plan, title, progress, next, updated, author).
         """
         col_index = 0
         self.add_column("plan", key="plan")
         col_index += 1
         self.add_column("title", key="title")
         col_index += 1
-        self.add_column("created", key="created")
-        col_index += 1
-        self.add_column("author", key="author")
-        col_index += 1
 
-        # Objectives view uses enriched columns
+        # Objectives view: plan, title, progress, next, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
             self.add_column("progress", key="progress")
             col_index += 1
@@ -157,7 +153,14 @@ class PlanDataTable(DataTable):
             col_index += 1
             self.add_column("updated", key="updated")
             col_index += 1
+            self.add_column("author", key="author")
+            col_index += 1
             return
+
+        self.add_column("created", key="created")
+        col_index += 1
+        self.add_column("author", key="author")
+        col_index += 1
 
         if self._plan_filters.show_prs:
             self.add_column("pr", key="pr")
