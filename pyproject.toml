@@ -123,3 +123,6 @@ asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
     "ignore:codecs.open\\(\\) is deprecated:DeprecationWarning:frontmatter",
 ]
+markers = [
+    "integration: marks tests as integration tests (require external tools like prettier, git, gh)",
+]
