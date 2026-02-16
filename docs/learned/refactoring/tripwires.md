@@ -12,6 +12,8 @@ read_when:
 
 Rules triggered by matching actions in code.
 
+**changing function signature without grepping for call sites first** → Read [Signature Refactoring Workflow](signature-refactoring-workflow.md) first. Always grep for all call sites before signature changes - use Grep to find `function_name(`
+
 **interleaving file moves and import updates** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. Move ALL files first (git mv), THEN batch-update ALL imports. Interleaving creates intermediate broken states. See gateway-consolidation-checklist.md.
 
 **manually updating imports across 10+ files** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. Use LibCST via the libcst-refactor agent or a one-off script. Manual editing misses call sites and creates partial migration states.

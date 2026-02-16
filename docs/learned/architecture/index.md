@@ -22,6 +22,7 @@
 - **[context-efficiency.md](context-efficiency.md)** — orchestrating multi-agent workflows, parent agent reading large agent output via TaskOutput, designing agent output routing to minimize context usage
 - **[context-injection-tiers.md](context-injection-tiers.md)** — designing a new hook or reminder system, understanding how coding standard reminders work, deciding where to inject context for agent compliance, choosing between ambient, per-prompt, and just-in-time injection
 - **[defense-in-depth-enforcement.md](defense-in-depth-enforcement.md)** — designing multi-layer validation or enforcement systems, implementing critical rules across multiple components, understanding why erk uses redundant enforcement mechanisms
+- **[dependency-injection-boundaries.md](dependency-injection-boundaries.md)** — deciding where to call configuration getters, structuring functions for testability, understanding the call site pattern
 - **[discriminated-union-error-handling.md](discriminated-union-error-handling.md)** — designing return types for operations that may fail, implementing T | ErrorType patterns, handling errors without exceptions
 - **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir, detecting root worktree, detecting worktree location, adding composing template methods to ABC
 - **[erk-shared-package.md](erk-shared-package.md)** — deciding where to put new utilities, moving code between packages
