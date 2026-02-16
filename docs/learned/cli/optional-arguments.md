@@ -4,6 +4,8 @@ read_when:
   - "making a CLI argument optional"
   - "inferring CLI arguments from context"
   - "implementing branch-based argument defaults"
+last_audited: "2026-02-16 08:00 PT"
+audit_result: clean
 ---
 
 # CLI Optional Arguments with Inference

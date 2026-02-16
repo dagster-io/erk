@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "adding a column to PlanDataTable without updating make_plan_row"
     warning: "Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist."
+last_audited: "2026-02-16 08:00 PT"
+audit_result: clean
 ---
 
 # Column Addition Pattern

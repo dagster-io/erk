@@ -8,7 +8,7 @@ read_when:
 tripwires:
   - action: "running tsc --noEmit from root in multi-config TypeScript project"
     warning: "tsc --noEmit from root breaks subdirectory configs. Use tsc -p <path> --noEmit for each tsconfig.json separately."
-last_audited: "2026-02-07 21:48 PT"
+last_audited: "2026-02-16 08:00 PT"
 audit_result: clean
 ---
 

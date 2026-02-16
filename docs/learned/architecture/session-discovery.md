@@ -6,6 +6,8 @@ read_when:
   - "understanding dual-source discovery patterns"
   - "working with gist-based session storage"
   - "downloading remote sessions for learn workflow"
+last_audited: "2026-02-16 08:00 PT"
+audit_result: clean
 ---
 
 # Session Discovery Architecture

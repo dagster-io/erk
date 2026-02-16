@@ -5,6 +5,8 @@ read_when:
   - "separating business logic from UI output"
   - "building testable CLI operations"
   - "using ProgressEvent or CompletionEvent"
+last_audited: "2026-02-16 08:00 PT"
+audit_result: edited
 ---
 
 # Event-Based Progress Pattern
@@ -34,9 +36,11 @@ Choose event generators over callbacks when:
 
 ## Source Files
 
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/gt/events.py, ProgressEvent, CompletionEvent -->
+
 Event types are defined in `packages/erk-shared/src/erk_shared/gateway/gt/events.py`.
 
-For implementation examples, see operations in `packages/erk/src/erk/operations/`.
+For implementation examples, see operations in `packages/erk-shared/src/erk_shared/gateway/gt/operations/`.
 
 ## Core Event Types
 
@@ -66,7 +70,9 @@ The CLI layer iterates through events:
 - For `ProgressEvent`: Render to stderr with styling
 - For `CompletionEvent`: Extract result, handle success or raise error
 
-The `render_events()` helper in `erk.cli.output` handles common rendering patterns.
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/gt/cli.py, render_events -->
+
+The `render_events()` helper in `erk_shared.gateway.gt.cli` handles common rendering patterns.
 
 ### Testing
 
@@ -130,7 +136,7 @@ The CLI command orchestrates all phases:
 3. Run Phase 2, render events, extract result (or fail)
 4. Run Phase 3 with Phase 2 result, render events, return final result
 
-See operations like `submit_pr` in the codebase for concrete examples of this pattern.
+See operations like `execute_quick_submit` and `execute_land_pr` in `packages/erk-shared/src/erk_shared/gateway/gt/operations/` for concrete examples of this pattern.
 
 ## Related Documentation
 

@@ -10,6 +10,8 @@ tripwires:
     warning: "All roadmap mutation sites must be documented in objective-lifecycle.md"
   - action: "updating roadmap step in only one location (frontmatter or table)"
     warning: "Must update both frontmatter AND markdown table during the dual-write migration period. Use update-roadmap-step which handles both atomically."
+last_audited: "2026-02-16 08:00 PT"
+audit_result: edited
 ---
 
 # Objective Lifecycle
@@ -122,6 +124,8 @@ steps:
 ```
 
 ## Reading
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
 
 All roadmap reads go through `parse_roadmap(body: str)` in `erk_shared.gateway.github.metadata.roadmap`.
 
@@ -277,7 +281,7 @@ schema_version: "1"
 steps:
   - id: "1.1" # Required: step identifier
     description: "..." # Required: human-readable description
-    status: "pending" # Required: pending|done|in_progress|blocked|skipped
+    status: "pending" # Required: pending|planning|done|in_progress|blocked|skipped
     pr: null # Optional: null or string like "#123" or "plan #456"
 ---
 ```

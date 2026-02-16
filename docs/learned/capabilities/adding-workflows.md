@@ -4,7 +4,7 @@ read_when:
   - "adding workflow capabilities"
   - "creating GitHub Actions workflow capabilities"
   - "understanding workflow capability pattern"
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-16 08:00 PT"
 audit_result: clean
 tripwires:
   - action: "implementing workflow capabilities"
