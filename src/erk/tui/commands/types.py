@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 
 from erk.tui.data.types import PlanRowData
+from erk.tui.views.types import ViewMode
 
 
 class CommandCategory(Enum):
@@ -24,9 +25,11 @@ class CommandContext:
 
     Attributes:
         row: The plan row data for the selected plan
+        view_mode: The active view mode (plans, learn, objectives)
     """
 
     row: PlanRowData
+    view_mode: ViewMode
 
 
 @dataclass(frozen=True)

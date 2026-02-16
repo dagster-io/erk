@@ -2,9 +2,11 @@
 
 This module defines all available commands and their availability predicates.
 Commands are organized by category: Actions, Opens, Copies.
+Plan commands appear only in Plans/Learn views; objective commands appear only in Objectives view.
 """
 
 from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
+from erk.tui.views.types import ViewMode
 
 CATEGORY_EMOJI: dict[CommandCategory, str] = {
     CommandCategory.ACTION: "⚡",
@@ -13,8 +15,20 @@ CATEGORY_EMOJI: dict[CommandCategory, str] = {
 }
 
 
-# === Display Name Generators ===
-# These functions generate context-aware display names for the command palette.
+# === View Mode Predicates ===
+
+
+def _is_plan_view(ctx: CommandContext) -> bool:
+    """True when not in Objectives view (i.e., Plans or Learn)."""
+    return ctx.view_mode != ViewMode.OBJECTIVES
+
+
+def _is_objectives_view(ctx: CommandContext) -> bool:
+    """True when in Objectives view."""
+    return ctx.view_mode == ViewMode.OBJECTIVES
+
+
+# === Display Name Generators (Plan Commands) ===
 
 
 def _display_close_plan(ctx: CommandContext) -> str:
@@ -100,6 +114,41 @@ def _display_copy_replan(ctx: CommandContext) -> str:
     return f"erk plan replan {ctx.row.issue_number}"
 
 
+# === Display Name Generators (Objective Commands) ===
+
+
+def _display_one_shot_next_plan(ctx: CommandContext) -> str:
+    """Display name for one_shot_next_plan command."""
+    return f"erk objective next-plan {ctx.row.issue_number} --one-shot"
+
+
+def _display_check_objective(ctx: CommandContext) -> str:
+    """Display name for check_objective command."""
+    return f"erk objective check {ctx.row.issue_number}"
+
+
+def _display_close_objective(ctx: CommandContext) -> str:
+    """Display name for close_objective command."""
+    return f"erk objective close {ctx.row.issue_number} --force"
+
+
+def _display_open_objective(ctx: CommandContext) -> str:
+    """Display name for open_objective command."""
+    if ctx.row.issue_url:
+        return ctx.row.issue_url
+    return "Objective"
+
+
+def _display_copy_next_plan(ctx: CommandContext) -> str:
+    """Display name for copy_next_plan command."""
+    return f"erk objective next-plan {ctx.row.issue_number}"
+
+
+def _display_copy_view(ctx: CommandContext) -> str:
+    """Display name for copy_view command."""
+    return f"erk objective view {ctx.row.issue_number}"
+
+
 def get_all_commands() -> list[CommandDefinition]:
     """Return all command definitions.
 
@@ -108,18 +157,21 @@ def get_all_commands() -> list[CommandDefinition]:
     2. Opens (browser navigation)
     3. Copies (clipboard operations)
 
+    Plan commands are filtered out in Objectives view; objective commands
+    are filtered out in Plans/Learn views.
+
     Returns:
         List of all available command definitions
     """
     return [
-        # === ACTIONS ===
+        # === PLAN ACTIONS ===
         CommandDefinition(
             id="close_plan",
             name="Close Plan",
             description="close",
             category=CommandCategory.ACTION,
             shortcut=None,
-            is_available=lambda _: True,
+            is_available=lambda ctx: _is_plan_view(ctx),
             get_display_name=_display_close_plan,
         ),
         CommandDefinition(
@@ -128,7 +180,7 @@ def get_all_commands() -> list[CommandDefinition]:
             description="submit",
             category=CommandCategory.ACTION,
             shortcut="s",
-            is_available=lambda ctx: ctx.row.issue_url is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.issue_url is not None,
             get_display_name=_display_submit_to_queue,
         ),
         CommandDefinition(
@@ -138,7 +190,8 @@ def get_all_commands() -> list[CommandDefinition]:
             category=CommandCategory.ACTION,
             shortcut=None,
             is_available=lambda ctx: (
-                ctx.row.pr_number is not None
+                _is_plan_view(ctx)
+                and ctx.row.pr_number is not None
                 and ctx.row.pr_state == "OPEN"
                 and ctx.row.run_url is not None
             ),
@@ -150,7 +203,7 @@ def get_all_commands() -> list[CommandDefinition]:
             description="fix-conflicts",
             category=CommandCategory.ACTION,
             shortcut="5",
-            is_available=lambda ctx: ctx.row.pr_number is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
             get_display_name=_display_fix_conflicts_remote,
         ),
         CommandDefinition(
@@ -159,17 +212,45 @@ def get_all_commands() -> list[CommandDefinition]:
             description="address",
             category=CommandCategory.ACTION,
             shortcut=None,
-            is_available=lambda ctx: ctx.row.pr_number is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
             get_display_name=_display_address_remote,
         ),
-        # === OPENS ===
+        # === OBJECTIVE ACTIONS ===
+        CommandDefinition(
+            id="one_shot_next_plan",
+            name="Next Plan (One-Shot)",
+            description="next-plan (one-shot)",
+            category=CommandCategory.ACTION,
+            shortcut="s",
+            is_available=lambda ctx: _is_objectives_view(ctx),
+            get_display_name=_display_one_shot_next_plan,
+        ),
+        CommandDefinition(
+            id="check_objective",
+            name="Check Objective",
+            description="check",
+            category=CommandCategory.ACTION,
+            shortcut="5",
+            is_available=lambda ctx: _is_objectives_view(ctx),
+            get_display_name=_display_check_objective,
+        ),
+        CommandDefinition(
+            id="close_objective",
+            name="Close Objective",
+            description="close",
+            category=CommandCategory.ACTION,
+            shortcut=None,
+            is_available=lambda ctx: _is_objectives_view(ctx),
+            get_display_name=_display_close_objective,
+        ),
+        # === PLAN OPENS ===
         CommandDefinition(
             id="open_issue",
             name="Issue",
             description="plan",
             category=CommandCategory.OPEN,
             shortcut="i",
-            is_available=lambda ctx: ctx.row.issue_url is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.issue_url is not None,
             get_display_name=_display_open_issue,
         ),
         CommandDefinition(
@@ -178,7 +259,7 @@ def get_all_commands() -> list[CommandDefinition]:
             description="pr",
             category=CommandCategory.OPEN,
             shortcut="p",
-            is_available=lambda ctx: ctx.row.pr_url is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_url is not None,
             get_display_name=_display_open_pr,
         ),
         CommandDefinition(
@@ -187,17 +268,27 @@ def get_all_commands() -> list[CommandDefinition]:
             description="run",
             category=CommandCategory.OPEN,
             shortcut="r",
-            is_available=lambda ctx: ctx.row.run_url is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.run_url is not None,
             get_display_name=_display_open_run,
         ),
-        # === COPIES ===
+        # === OBJECTIVE OPENS ===
+        CommandDefinition(
+            id="open_objective",
+            name="Objective",
+            description="objective",
+            category=CommandCategory.OPEN,
+            shortcut="i",
+            is_available=lambda ctx: _is_objectives_view(ctx) and ctx.row.issue_url is not None,
+            get_display_name=_display_open_objective,
+        ),
+        # === PLAN COPIES ===
         CommandDefinition(
             id="copy_checkout",
             name="erk br co <branch>",
             description="checkout",
             category=CommandCategory.COPY,
             shortcut="c",
-            is_available=lambda ctx: ctx.row.worktree_branch is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.worktree_branch is not None,
             get_display_name=_display_copy_checkout,
         ),
         CommandDefinition(
@@ -206,7 +297,7 @@ def get_all_commands() -> list[CommandDefinition]:
             description="sync",
             category=CommandCategory.COPY,
             shortcut="e",
-            is_available=lambda ctx: ctx.row.pr_number is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
             get_display_name=_display_copy_pr_checkout,
         ),
         CommandDefinition(
@@ -215,7 +306,7 @@ def get_all_commands() -> list[CommandDefinition]:
             description="prepare",
             category=CommandCategory.COPY,
             shortcut="1",
-            is_available=lambda _: True,
+            is_available=lambda ctx: _is_plan_view(ctx),
             get_display_name=_display_copy_prepare,
         ),
         CommandDefinition(
@@ -224,7 +315,7 @@ def get_all_commands() -> list[CommandDefinition]:
             description="implement",
             category=CommandCategory.COPY,
             shortcut="4",
-            is_available=lambda _: True,
+            is_available=lambda ctx: _is_plan_view(ctx),
             get_display_name=_display_copy_prepare_activate,
         ),
         CommandDefinition(
@@ -233,7 +324,7 @@ def get_all_commands() -> list[CommandDefinition]:
             description="submit",
             category=CommandCategory.COPY,
             shortcut="3",
-            is_available=lambda _: True,
+            is_available=lambda ctx: _is_plan_view(ctx),
             get_display_name=_display_copy_submit,
         ),
         CommandDefinition(
@@ -242,8 +333,27 @@ def get_all_commands() -> list[CommandDefinition]:
             description="replan",
             category=CommandCategory.COPY,
             shortcut="6",
-            is_available=lambda ctx: ctx.row.issue_url is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.issue_url is not None,
             get_display_name=_display_copy_replan,
+        ),
+        # === OBJECTIVE COPIES ===
+        CommandDefinition(
+            id="copy_next_plan",
+            name="erk objective next-plan",
+            description="next-plan",
+            category=CommandCategory.COPY,
+            shortcut="1",
+            is_available=lambda ctx: _is_objectives_view(ctx),
+            get_display_name=_display_copy_next_plan,
+        ),
+        CommandDefinition(
+            id="copy_view",
+            name="erk objective view",
+            description="view",
+            category=CommandCategory.COPY,
+            shortcut="3",
+            is_available=lambda ctx: _is_objectives_view(ctx),
+            get_display_name=_display_copy_view,
         ),
     ]
 

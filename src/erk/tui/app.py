@@ -485,6 +485,40 @@ class ErkDashApp(App):
                 timeout=5,
             )
 
+    def _push_streaming_detail(
+        self,
+        *,
+        row: PlanRowData,
+        command: list[str],
+        title: str,
+        timeout: float,
+    ) -> None:
+        """Push a detail screen and run a streaming command after refresh."""
+        executor = RealCommandExecutor(
+            browser_launch=self._provider.browser.launch,
+            clipboard_copy=self._provider.clipboard.copy,
+            close_plan_fn=self._provider.close_plan,
+            notify_fn=self._notify_with_severity,
+            refresh_fn=self.action_refresh,
+            submit_to_queue_fn=self._provider.submit_to_queue,
+        )
+        detail_screen = PlanDetailScreen(
+            row=row,
+            clipboard=self._provider.clipboard,
+            browser=self._provider.browser,
+            executor=executor,
+            repo_root=self._provider.repo_root,
+        )
+        self.push_screen(detail_screen)
+        detail_screen.call_after_refresh(
+            lambda: detail_screen.run_streaming_command(
+                command,
+                cwd=self._provider.repo_root,
+                title=title,
+                timeout=timeout,
+            )
+        )
+
     def action_show_detail(self) -> None:
         """Show plan detail modal for selected row."""
         row = self._get_selected_row()
@@ -870,6 +904,52 @@ class ErkDashApp(App):
             cmd = f"/erk:replan {row.issue_number}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
+
+        # === OBJECTIVE COMMANDS ===
+        elif command_id == "copy_next_plan":
+            cmd = f"erk objective next-plan {row.issue_number}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_view":
+            cmd = f"erk objective view {row.issue_number}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
+        elif command_id == "open_objective":
+            if row.issue_url:
+                self._provider.browser.launch(row.issue_url)
+                self.notify(f"Opened objective #{row.issue_number}")
+
+        elif command_id == "one_shot_next_plan":
+            self._push_streaming_detail(
+                row=row,
+                command=[
+                    "erk",
+                    "objective",
+                    "next-plan",
+                    str(row.issue_number),
+                    "--one-shot",
+                ],
+                title=f"Next Plan (One-Shot) #{row.issue_number}",
+                timeout=600.0,
+            )
+
+        elif command_id == "check_objective":
+            self._push_streaming_detail(
+                row=row,
+                command=["erk", "objective", "check", str(row.issue_number)],
+                title=f"Check Objective #{row.issue_number}",
+                timeout=30.0,
+            )
+
+        elif command_id == "close_objective":
+            self._push_streaming_detail(
+                row=row,
+                command=["erk", "objective", "close", str(row.issue_number), "--force"],
+                title=f"Close Objective #{row.issue_number}",
+                timeout=30.0,
+            )
 
     @on(PlanDataTable.RowSelected)
     def on_row_selected(self, event: PlanDataTable.RowSelected) -> None:
