@@ -1,6 +1,6 @@
 ---
-last_audited: "2026-02-08 13:55 PT"
-audit_result: edited
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 title: Interactive Agent Configuration
 read_when:
   - "implementing erk commands that launch Claude or Codex interactively"

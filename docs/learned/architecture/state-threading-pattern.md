@@ -1,5 +1,7 @@
 ---
 title: State Threading Pattern
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 read_when:
   - "designing linear pipelines with immutable state"
   - "understanding SubmitState or pipeline architecture"

@@ -1,12 +1,12 @@
 ---
 title: GitHub API Rate Limits
+last_audited: "2026-02-16 00:00 PT"
+audit_result: edited
 read_when:
   - "using gh CLI commands programmatically"
   - "encountering GraphQL rate limit errors"
   - "choosing between REST and GraphQL API"
   - "implementing GitHub API calls in gateways"
-last_audited: "2026-02-16 00:00 PT"
-audit_result: clean
 tripwires:
   - action: "using gh issue create in production code"
     warning: "Use REST API via `gh api repos/{owner}/{repo}/issues -X POST` instead. `gh issue create` uses GraphQL which has separate (often exhausted) rate limits."
@@ -175,4 +175,4 @@ Erk has a [retry mechanism](github-api-retry-mechanism.md) for transient network
 
 ## Implementation Reference
 
-See `packages/erk-shared/src/erk_shared/github/issues/real.py` for examples of REST API usage in erk's GitHub gateway.
+See `packages/erk-shared/src/erk_shared/gateway/github/issues/real.py` for examples of REST API usage in erk's GitHub gateway.

@@ -11,8 +11,8 @@ tripwires:
     warning: "Entries must describe user-visible behavior, not internal implementation. Ask: 'Does an erk user see different behavior?'"
   - action: "modifying CHANGELOG.md directly instead of using /local:changelog-update"
     warning: "Always use /local:changelog-update to sync with commits. Manual edits bypass the categorization agent and marker system."
-last_audited: "2026-02-08 13:55 PT"
-audit_result: edited
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 ---
 
 # Changelog Standards and Format

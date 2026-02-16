@@ -1,6 +1,6 @@
 ---
 title: Forge Vite Setup
-last_audited: "2026-02-08 13:55 PT"
+last_audited: "2026-02-16 00:00 PT"
 audit_result: clean
 read_when:
   - "debugging Vite build errors in erkdesk"

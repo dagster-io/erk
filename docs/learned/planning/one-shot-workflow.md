@@ -1,5 +1,7 @@
 ---
 title: One-Shot Workflow
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 read_when:
   - "working with erk one-shot dispatch"
   - "understanding how plans are autonomously created and implemented"

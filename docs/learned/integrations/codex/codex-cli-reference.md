@@ -1,6 +1,6 @@
 ---
 title: Codex CLI Reference for Erk Integration
-last_audited: "2026-02-16 02:45 PT"
+last_audited: "2026-02-16 00:00 PT"
 audit_result: clean
 read_when:
   - "implementing Codex backend support in erk"

@@ -6,7 +6,7 @@ read_when:
   - "understanding ~/.claude/projects/ structure"
   - "debugging session lookup issues"
   - "implementing features that depend on project directory resolution"
-last_audited: "2026-02-03 04:00 PT"
+last_audited: "2026-02-16 00:00 PT"
 audit_result: edited
 ---
 
@@ -170,7 +170,7 @@ See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implemen
 
 **Why walk-up?** This enables running erk commands from subdirectories of a Claude project. If you start Claude Code in `/Users/dev/myrepo` but later `cd` into `/Users/dev/myrepo/src/components`, the walk-up search finds the parent project.
 
-**Implementation:** See `RealClaudeCodeSessionStore._get_project_dir()` in `packages/erk-shared/src/erk_shared/gateway/claude_code_session_store/real.py`
+**Implementation:** See `RealClaudeInstallation._get_project_dir()` in `packages/erk-shared/src/erk_shared/gateway/claude_installation/real.py`
 
 ### cwd_hint Optimization Pattern
 

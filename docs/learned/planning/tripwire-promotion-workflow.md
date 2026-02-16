@@ -1,5 +1,7 @@
 ---
 title: Tripwire Promotion Workflow
+last_audited: "2026-02-16 00:00 PT"
+audit_result: edited
 read_when:
   - "implementing tripwire candidate extraction"
   - "promoting tripwire candidates to frontmatter"
@@ -23,7 +25,7 @@ How tripwire candidates flow from learn sessions to active tripwires.
 
 ### TripwireCandidate Dataclass
 
-Location: `packages/erk-shared/src/erk_shared/github/metadata/tripwire_candidates.py`
+Location: `packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py`
 
 Fields:
 

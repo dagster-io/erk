@@ -125,9 +125,7 @@ steps:
 
 ## Reading
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
-
-All roadmap reads go through `parse_roadmap(body: str)` in `erk_shared.gateway.github.metadata.roadmap`.
+All roadmap reads go through `parse_roadmap(body: str)` in `erk_shared.gateway.github.metadata.roadmap` (`packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`).
 
 ### Parsing Flow
 
@@ -440,14 +438,13 @@ Read-only consumers automatically gain frontmatter support via `parse_roadmap()`
 
 ## Implementation References
 
-| File                                            | Purpose                        |
-| ----------------------------------------------- | ------------------------------ |
-| `erk_shared/gateway/github/metadata/roadmap.py` | Core parser: `parse_roadmap()` |
-| `erk_shared/core/frontmatter.py`                | Frontmatter parser/serializer  |
-| `update_roadmap_step.py`                        | Surgical PR cell update        |
-| `objective-update-with-landed-pr.md`            | Full-body update agent         |
-| `objective_update_context.py`                   | Context fetch for updates      |
-| `check_cmd.py`                                  | Objective validation           |
+| File                                                                    | Purpose                        |
+| ----------------------------------------------------------------------- | ------------------------------ |
+| `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` | Core parser: `parse_roadmap()` |
+| `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`              | Surgical PR cell update        |
+| `.claude/commands/erk/objective-update-with-landed-pr.md`               | Full-body update agent         |
+| `src/erk/cli/commands/exec/scripts/objective_update_context.py`         | Context fetch for updates      |
+| `src/erk/cli/commands/objective/check_cmd.py`                           | Objective validation           |
 
 ## See Also
 

@@ -1,5 +1,7 @@
 ---
 title: CI Environment Detection for Learn Workflow
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 read_when:
   - "running /erk:learn in CI"
   - "understanding CI vs interactive mode differences"
