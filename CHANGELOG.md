@@ -7,37 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: 575a0d704 -->
+## [0.7.4] - 2026-02-16 05:33 PT
 
 ### Major Changes
 
-- **Objective v2 format**: Objectives now use structured machine-parseable metadata blocks (objective-header and objective-roadmap) instead of fragile regex table parsing. Note: existing objectives must be recreated via `erk objective create` to migrate to v2 format (d32958089, #7095)
-- **View switching in `erk dash` TUI**: The dashboard now supports Plans, Learn, and Objectives views toggled via 1/2/3 keys, with cached data for instant switching (3d6f6b565, #7086)
-- **Autonomous one-shot objective dispatch**: `erk one-shot` enables fully autonomous remote planning and implementation — an agent creates a plan, implements it, and submits a PR without user intervention. New in this release, `erk objective next-plan --one-shot` extends this to objective roadmap steps, auto-detecting the next pending step and dispatching it through the same pipeline (c48d5e74a, #7037)
-- **V2-only objective format enforcement**: All legacy v1 format support removed. Legacy objectives show a migration error directing users to recreate via `erk objective create` (5cf38ad9e, #7175)
+- **Objective v2 format**: Objectives now use structured machine-parseable metadata blocks (objective-header and objective-roadmap) instead of fragile regex table parsing. Note: existing objectives must be recreated via `erk objective create` to migrate to v2 format
+- **View switching in `erk dash` TUI**: The dashboard now supports Plans, Learn, and Objectives views toggled via 1/2/3 keys, with cached data for instant switching
+- **Autonomous one-shot objective dispatch**: `erk one-shot` enables fully autonomous remote planning and implementation — an agent creates a plan, implements it, and submits a PR without user intervention. New in this release, `erk objective next-plan --one-shot` extends this to objective roadmap steps, auto-detecting the next pending step and dispatching it through the same pipeline
+- **V2-only objective format enforcement**: All legacy v1 format support removed. Legacy objectives show a migration error directing users to recreate via `erk objective create`
 
 ### Added
 
-- Add left/right arrow key bindings for cycling through dashboard views (117afcc6a, #7105)
-- Add author column and author-based filtering to `erk dash` TUI (34d1383ce, #7101)
-- Add progress logging to `erk docs sync` (629eb5993, #7085)
-- Add workflow run URL to PR body after `erk one-shot` and `erk plan submit` (4f64070f2, #7072)
-- Display plan text in exit plan mode hook before save/implement decision (e7fc39bfc, #7045)
-- Display one-shot instruction text in `erk objective next-plan --one-shot` output (a7c21c663, #7050)
+- Add left/right arrow key bindings for cycling through dashboard views
+- Add author column and author-based filtering to `erk dash` TUI
+- Add progress logging to `erk docs sync`
+- Add workflow run URL to PR body after `erk one-shot` and `erk plan submit`
+- Display plan text in exit plan mode hook before save/implement decision
+- Display one-shot instruction text in `erk objective next-plan --one-shot` output
 
 ### Changed
 
-- Improve one-shot plan issue titles to use `One-shot: {instruction}` format (775dc2a7e, #7176)
-- Update all GitHub workflow default models to `claude-opus-4-6` (7e8a02325, #7108)
-- Improve `erk objective view` roadmap alignment using Rich tables (97eebfaaf, #7090)
+- Improve one-shot plan issue titles to use `One-shot: {instruction}` format
+- Update all GitHub workflow default models to `claude-opus-4-6`
+- Improve `erk objective view` roadmap alignment using Rich tables
 
 ### Fixed
 
-- Fix TUI dashboard race condition when switching tabs during data fetch (229810ddf, #7174)
-- Fix rebase script comparing branch against itself instead of target branch (7d3c3ee1d, #7183)
-- Fix table plan column not cleared when PR is set in objective roadmap (fc859c59e, #7151)
-- Fix `erk pr sync` missing push step after restacking (c0c904750, #7074)
-- Fix missing `ANTHROPIC_API_KEY` in pr-address workflow summary step (c6df4f283, #7063)
+- Fix TUI dashboard race condition when switching tabs during data fetch
+- Fix rebase script comparing branch against itself instead of target branch
+- Fix table plan column not cleared when PR is set in objective roadmap
+- Fix `erk pr sync` missing push step after restacking
+- Fix missing `ANTHROPIC_API_KEY` in pr-address workflow summary step
 
 ## [0.7.3] - 2026-02-15 03:30 PT
 
