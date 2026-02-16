@@ -12,6 +12,7 @@
 - **[containerless-ci.md](containerless-ci.md)** — Setting up Claude Code in GitHub Actions without containers, Comparing container vs container-less CI approaches, Choosing between container and container-less CI approaches
 - **[convention-based-reviews.md](convention-based-reviews.md)** — adding a new code review to CI, understanding how code reviews work, modifying code review behavior
 - **[edit-tool-formatting.md](edit-tool-formatting.md)** — using the Edit tool to modify Python code, encountering formatting issues after edits, CI failing on formatting checks after using Edit tool
+- **[exec-script-environment-requirements.md](exec-script-environment-requirements.md)** — adding or modifying exec scripts that call Claude, debugging missing API key errors in CI workflows, adding new workflow steps that run exec scripts
 - **[formatter-tools.md](formatter-tools.md)** — formatting code, choosing a formatter, fixing format errors
 - **[formatting-workflow.md](formatting-workflow.md)** — unsure whether to run make format or make prettier, encountering CI formatting failures, working with multiple file types in a PR, setting up CI iteration workflow
 - **[git-force-push-decision-tree.md](git-force-push-decision-tree.md)** — encountering 'git push' rejected with 'fetch first' error, dealing with divergent branches after rebase or squash, deciding whether force push is safe, debugging PR update workflows

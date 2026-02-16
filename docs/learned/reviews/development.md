@@ -2,13 +2,13 @@
 title: Review Development Guide
 read_when:
   - creating a new code review for CI
-  - adding a new review spec to .github/reviews/
+  - adding a new review spec to .erk/reviews/
   - understanding the end-to-end review creation process
 tripwires:
   - action: "creating a new review without checking if existing reviews can be extended"
     warning: "Before creating a new review, check if an existing review type can handle the new checks. See the review types taxonomy for the decision framework."
   - action: "creating a separate GitHub Actions workflow file for a new review"
-    warning: "Reviews use convention-based discovery from a single workflow. Drop a markdown file in .github/reviews/ — do NOT create a new .yml workflow."
+    warning: "Reviews use convention-based discovery from a single workflow. Drop a markdown file in .erk/reviews/ — do NOT create a new .yml workflow."
 ---
 
 # Review Development Guide
@@ -21,7 +21,7 @@ Early reviews each had their own `.github/workflows/review-<name>.yml`. This cre
 
 <!-- Source: .github/workflows/code-reviews.yml -->
 
-The current system uses one workflow (`code-reviews.yml`) that discovers all `*.md` files in `.github/reviews/`, parses their frontmatter, matches their `paths` patterns against PR changed files, and runs matching reviews as parallel matrix jobs. Adding a review means dropping a markdown file — the workflow handles discovery, path matching, prompt assembly, and Claude invocation automatically.
+The current system uses one workflow (`code-reviews.yml`) that discovers all `*.md` files in `.erk/reviews/`, parses their frontmatter, matches their `paths` patterns against PR changed files, and runs matching reviews as parallel matrix jobs. Adding a review means dropping a markdown file — the workflow handles discovery, path matching, prompt assembly, and Claude invocation automatically.
 
 <!-- Source: src/erk/review/parsing.py, discover_matching_reviews -->
 <!-- Source: src/erk/review/prompt_assembly.py, assemble_review_prompt -->
@@ -32,7 +32,7 @@ Creating a new review touches up to five places. Understanding why each exists p
 
 | Place                            | What goes here                                        | Why it's separate                                                  |
 | -------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------ |
-| `.github/reviews/<name>.md`      | Review spec (frontmatter + step-by-step instructions) | Convention-based discovery reads this directory                    |
+| `.erk/reviews/<name>.md`         | Review spec (frontmatter + step-by-step instructions) | Convention-based discovery reads this directory                    |
 | Review spec frontmatter          | `paths`, `marker`, `model`, `allowed_tools`           | Controls when the review triggers and what tools the agent can use |
 | Review spec body                 | Numbered steps the agent executes                     | Each review has unique analysis logic                              |
 | `docs/learned/reviews/<name>.md` | Cross-cutting insights about this review              | Only if the review has non-obvious behavior worth documenting      |
@@ -131,7 +131,7 @@ Push a branch with changes that should trigger the review. Verify:
 
 **WRONG**: Creating `.github/workflows/review-my-check.yml`
 
-The convention-based system exists precisely to avoid per-review workflow files. Drop a markdown file in `.github/reviews/` and the single `code-reviews.yml` workflow handles the rest.
+The convention-based system exists precisely to avoid per-review workflow files. Drop a markdown file in `.erk/reviews/` and the single `code-reviews.yml` workflow handles the rest.
 
 ### Assuming Write Access
 
@@ -151,4 +151,4 @@ Agents need action verbs and specific objects, not abstract phase names.
 
 - [Review Types Taxonomy](../ci/review-types-taxonomy.md) — Decision framework for extend-vs-create
 - [Review Spec Format](../ci/review-spec-format.md) — Design rationale behind spec structure
-- Existing review specs in `.github/reviews/` — Reference implementations
+- Existing review specs in `.erk/reviews/` — Reference implementations

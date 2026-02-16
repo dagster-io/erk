@@ -13,23 +13,23 @@ audit_result: clean
 
 # Convention-Based Code Reviews
 
-Code reviews run automatically on PRs by dropping a markdown file in `.github/reviews/`.
+Code reviews run automatically on PRs by dropping a markdown file in `.erk/reviews/`.
 
 ## Overview
 
 The system consists of:
 
-1. **Review definitions** in `.github/reviews/*.md` - YAML frontmatter + prompt content
+1. **Review definitions** in `.erk/reviews/*.md` - YAML frontmatter + prompt content
 2. **Discovery** via `erk exec discover-reviews` - finds reviews matching changed files
 3. **Execution** via `erk exec run-review` - assembles prompt and invokes Claude
 4. **Workflow** in `.github/workflows/code-reviews.yml` - orchestrates discovery and parallel execution
 
 ## Adding a New Code Review
 
-Create a markdown file in `.github/reviews/`:
+Create a markdown file in `.erk/reviews/`:
 
 ```bash
-touch .github/reviews/my-review.md
+touch .erk/reviews/my-review.md
 ```
 
 Add YAML frontmatter and review content:
@@ -114,7 +114,7 @@ This allows:
 `erk exec discover-reviews --pr-number <N>`:
 
 1. Lists changed files in the PR via GitHub API
-2. Loads all `.github/reviews/*.md` files
+2. Loads all `.erk/reviews/*.md` files
 3. For each review, checks if any changed file matches any path pattern
 4. Returns matching reviews as a JSON matrix for GitHub Actions
 
@@ -134,7 +134,7 @@ Example output:
 
 `erk exec run-review --name <review-name> --pr-number <N>`:
 
-1. Loads the review definition from `.github/reviews/<name>.md`
+1. Loads the review definition from `.erk/reviews/<name>.md`
 2. Assembles the prompt with standard boilerplate (repository context, PR info)
 3. Invokes Claude with the assembled prompt
 

@@ -81,7 +81,7 @@ Stability hierarchy (most stable → least stable):
 
 ## Automated Enforcement
 
-<!-- Source: .github/reviews/audit-pr-docs.md -->
+<!-- Source: .erk/reviews/audit-pr-docs.md -->
 
 The `audit-pr-docs` review automatically runs on every PR touching `docs/learned/`. It audits the full document (not just changed lines), classifies code blocks as VERBATIM or permitted, and posts inline comments with the exact source path and suggested pointer format. When you receive one of these comments, convert the code block to a source pointer using the two-part format above.
 

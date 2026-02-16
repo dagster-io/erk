@@ -25,9 +25,9 @@ This is a practical problem because `erkdesk/` contains substantial TypeScript s
 
 ## The Blind Spot: Non-Python Code Blocks
 
-<!-- Source: .github/reviews/audit-pr-docs.md, Step 2-4 -->
+<!-- Source: .erk/reviews/audit-pr-docs.md, Step 2-4 -->
 
-The audit tooling (`.github/reviews/audit-pr-docs.md` review + `/local:audit-doc`) is methodologically language-agnostic — it extracts code references and matches against source files regardless of language. But effectiveness varies in practice:
+The audit tooling (`.erk/reviews/audit-pr-docs.md` review + `/local:audit-doc`) is methodologically language-agnostic — it extracts code references and matches against source files regardless of language. But effectiveness varies in practice:
 
 | Language   | Source Location | Audit Effectiveness | Why                                                           |
 | ---------- | --------------- | ------------------- | ------------------------------------------------------------- |
