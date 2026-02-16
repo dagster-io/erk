@@ -756,7 +756,7 @@ Raw materials: <gist-url>
 
 ### Step 8: Store Tripwire Candidates on Learn Plan Issue
 
-**If plan was valid and saved**, store structured tripwire candidates as a metadata comment:
+**If plan was valid and saved**, store tripwire candidates as a metadata comment:
 
 ```bash
 erk exec store-tripwire-candidates \
@@ -764,7 +764,7 @@ erk exec store-tripwire-candidates \
     --candidates-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/tripwire-candidates.json
 ```
 
-This stores the tripwire candidates as a machine-readable metadata block comment on the learn plan issue, enabling `erk land` to read them directly without regex parsing.
+This stores the tripwire candidates as a machine-readable metadata block comment on the learn plan issue, enabling `erk land` to read them directly without regex parsing. The store command automatically normalizes common schema drift (wrong root keys, field aliases, extra fields) before validation.
 
 Parse the JSON output. If `count` is 0, no comment was added (no candidates found by the extractor). This is normal and not an error.
 

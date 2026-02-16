@@ -21,6 +21,13 @@ def _write_candidates_file(tmp_path: Path, candidates: list[dict[str, str]]) -> 
     return json_file
 
 
+def _write_raw_json(tmp_path: Path, data: dict) -> Path:
+    """Write raw JSON data to a file and return its path."""
+    json_file = tmp_path / "tripwire-candidates.json"
+    json_file.write_text(json.dumps(data), encoding="utf-8")
+    return json_file
+
+
 def _make_issue(number: int) -> IssueInfo:
     """Create a minimal issue for testing."""
     now = datetime.now(UTC)
@@ -161,3 +168,98 @@ def test_store_invalid_structure(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 1
+
+
+def test_store_normalizes_root_key_drift(tmp_path: Path) -> None:
+    """Store normalizes tripwire_candidates root key to candidates."""
+    candidates_file = _write_raw_json(
+        tmp_path,
+        {
+            "tripwire_candidates": [
+                {
+                    "action": "calling foo()",
+                    "warning": "Use bar() instead.",
+                    "target_doc_path": "architecture/foo.md",
+                },
+            ]
+        },
+    )
+
+    fake_issues = FakeGitHubIssues(issues={42: _make_issue(42)})
+    ctx = ErkContext.for_test(github_issues=fake_issues, repo_root=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        ["--issue", "42", "--candidates-file", str(candidates_file)],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["count"] == 1
+
+
+def test_store_normalizes_field_aliases(tmp_path: Path) -> None:
+    """Store normalizes description->warning and title->action."""
+    candidates_file = _write_raw_json(
+        tmp_path,
+        {
+            "candidates": [
+                {
+                    "title": "editing CI files",
+                    "description": "Check template paths first.",
+                    "target_doc_path": "ci/templates.md",
+                },
+            ]
+        },
+    )
+
+    fake_issues = FakeGitHubIssues(issues={42: _make_issue(42)})
+    ctx = ErkContext.for_test(github_issues=fake_issues, repo_root=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        ["--issue", "42", "--candidates-file", str(candidates_file)],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["count"] == 1
+
+
+def test_store_strips_extra_fields(tmp_path: Path) -> None:
+    """Store strips extra fields like priority and source_files."""
+    candidates_file = _write_raw_json(
+        tmp_path,
+        {
+            "candidates": [
+                {
+                    "action": "calling foo()",
+                    "warning": "Use bar() instead.",
+                    "target_doc_path": "architecture/foo.md",
+                    "priority": "high",
+                    "source_files": ["foo.py"],
+                },
+            ]
+        },
+    )
+
+    fake_issues = FakeGitHubIssues(issues={42: _make_issue(42)})
+    ctx = ErkContext.for_test(github_issues=fake_issues, repo_root=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        ["--issue", "42", "--candidates-file", str(candidates_file)],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["count"] == 1
