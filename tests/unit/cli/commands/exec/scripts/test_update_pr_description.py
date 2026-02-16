@@ -1,6 +1,6 @@
-"""Tests for erk pr update-description command.
+"""Tests for erk exec update-pr-description command.
 
-These tests verify the CLI layer behavior of the update-description command.
+These tests verify the CLI layer behavior of the update-pr-description exec command.
 The command generates an AI-powered PR title/body and updates the PR on GitHub,
 preserving existing header and footer metadata.
 """
@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 
 from click.testing import CliRunner
 
-from erk.cli.commands.pr import pr_group
+from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
@@ -84,7 +84,7 @@ def _make_standard_fakes(
     prompt_error: str | None = None,
     available: bool = True,
 ) -> tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]:
-    """Create standard fakes for update-description tests."""
+    """Create standard fakes for update-pr-description tests."""
     git = FakeGit(
         git_common_dirs={env.cwd: env.git_dir},
         repository_roots={env.cwd: env.git_dir},
@@ -150,7 +150,7 @@ def test_fails_when_claude_not_available() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["update-description"], obj=ctx)
+        result = runner.invoke(update_pr_description, [], obj=ctx)
 
         assert result.exit_code != 0
         assert "Claude CLI not found" in result.output
@@ -173,7 +173,7 @@ def test_fails_when_not_on_branch() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["update-description"], obj=ctx)
+        result = runner.invoke(update_pr_description, [], obj=ctx)
 
         assert result.exit_code != 0
         assert "Not on a branch" in result.output
@@ -220,14 +220,14 @@ def test_fails_when_no_pr() -> None:
             env, git=git, graphite=graphite, github=github, prompt_executor=executor
         )
 
-        result = runner.invoke(pr_group, ["update-description"], obj=ctx)
+        result = runner.invoke(update_pr_description, [], obj=ctx)
 
         assert result.exit_code != 0
         assert "No pull request found" in result.output
 
 
 def test_success_updates_pr() -> None:
-    """Test successful update-description generates title/body and updates PR."""
+    """Test successful update-pr-description generates title/body and updates PR."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git, graphite, github, executor = _make_standard_fakes(env)
@@ -236,7 +236,7 @@ def test_success_updates_pr() -> None:
             env, git=git, graphite=graphite, github=github, prompt_executor=executor
         )
 
-        result = runner.invoke(pr_group, ["update-description"], obj=ctx)
+        result = runner.invoke(update_pr_description, [], obj=ctx)
 
         assert result.exit_code == 0
         assert "PR #42 updated" in result.output
@@ -270,7 +270,7 @@ def test_preserves_header_and_footer() -> None:
             env, git=git, graphite=graphite, github=github, prompt_executor=executor
         )
 
-        result = runner.invoke(pr_group, ["update-description"], obj=ctx)
+        result = runner.invoke(update_pr_description, [], obj=ctx)
 
         assert result.exit_code == 0
 
@@ -281,7 +281,7 @@ def test_preserves_header_and_footer() -> None:
 
 
 def test_uses_graphite_parent() -> None:
-    """Test that update-description uses Graphite parent branch, not trunk.
+    """Test that update-pr-description uses Graphite parent branch, not trunk.
 
     Stack: main (trunk) -> branch-1 -> branch-2 (current)
     Expected: Diff computed against branch-1, not main
@@ -340,7 +340,7 @@ def test_uses_graphite_parent() -> None:
             env, git=git, graphite=graphite, github=github, prompt_executor=executor
         )
 
-        result = runner.invoke(pr_group, ["update-description"], obj=ctx)
+        result = runner.invoke(update_pr_description, [], obj=ctx)
 
         assert result.exit_code == 0
 
@@ -379,7 +379,7 @@ def test_embeds_plan_context() -> None:
             env, git=git, graphite=graphite, github=github, prompt_executor=executor
         )
 
-        result = runner.invoke(pr_group, ["update-description"], obj=ctx)
+        result = runner.invoke(update_pr_description, [], obj=ctx)
 
         assert result.exit_code == 0
         assert "Incorporating plan from issue #123" in result.output
