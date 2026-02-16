@@ -183,7 +183,6 @@ jobs:
           && steps.read_result.outputs.issue_number != ''
           && inputs.objective_issue != ''
           && inputs.step_id != ''
-        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
@@ -192,7 +191,7 @@ jobs:
         run: |
           erk exec update-roadmap-step \
             "$OBJECTIVE_ISSUE" \
-            "$STEP_ID" \
+            --step "$STEP_ID" \
             --plan "$PLAN_NUMBER"
 
       - name: Fail workflow if planning failed
