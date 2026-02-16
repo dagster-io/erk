@@ -1,5 +1,7 @@
 ---
 title: Integration Test Speed Anti-Patterns
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "integration test is slow"
   - "test takes too long"

@@ -15,8 +15,8 @@ tripwires:
     warning: "Use get_workflow_runs_by_node_ids for batch queries (GraphQL O(1) vs REST O(N)). See the REST vs GraphQL decision table."
   - action: "adding a new workflow_dispatch workflow without run-name"
     warning: "Every erk workflow must use run-name with distinct_id for trigger_workflow discovery. Pattern: run-name: '<context>:${{ inputs.distinct_id }}'"
-last_audited: "2026-02-08 13:54 PT"
-audit_result: edited
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 ---
 
 # GitHub Actions API Interaction Patterns

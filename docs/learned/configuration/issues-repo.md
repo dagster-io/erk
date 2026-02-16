@@ -1,5 +1,7 @@
 ---
 title: External Issues Repository Configuration
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "configuring plans to be stored in a separate repository"
   - "setting up plans.repo in config.toml"

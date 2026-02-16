@@ -1,5 +1,7 @@
 ---
 title: Configuration Layers
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "understanding the configuration system"
   - "deciding where to put a configuration setting"

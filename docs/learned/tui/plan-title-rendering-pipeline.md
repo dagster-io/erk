@@ -1,5 +1,7 @@
 ---
 title: TUI Plan Title Rendering Pipeline
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "debugging why plan titles display incorrectly"
   - "troubleshooting missing prefixes in TUI"

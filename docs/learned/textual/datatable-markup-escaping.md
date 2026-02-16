@@ -1,5 +1,7 @@
 ---
 title: DataTable Rich Markup Escaping
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "adding cell values to Textual DataTable"
   - "displaying user data in DataTable cells"

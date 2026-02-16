@@ -1,5 +1,7 @@
 ---
 title: erk pr sync-divergence Command
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "resolving branch divergence from remote"
   - "fixing gt submit 'Branch has been updated remotely' errors"

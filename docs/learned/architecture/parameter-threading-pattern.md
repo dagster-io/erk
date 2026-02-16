@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "adding a parameter to an erk exec script without updating the calling slash command"
     warning: "3-layer parameter threading: When adding a parameter, update all three layers: skill SKILL.md argument-hint, slash command .md, and erk exec script. Verify all invocations thread the parameter through."
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-16 04:53 PT"
 audit_result: clean
 ---
 

@@ -6,8 +6,8 @@ read_when:
   - "understanding ~/.claude/projects/ structure"
   - "debugging session lookup issues"
   - "implementing features that depend on project directory resolution"
-last_audited: "2026-02-16 00:00 PT"
-audit_result: edited
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 ---
 
 # Claude Code Session Layout
