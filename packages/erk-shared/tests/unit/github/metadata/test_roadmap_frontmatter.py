@@ -346,7 +346,7 @@ steps:
 
 
 def test_update_step_with_trailing_content() -> None:
-    """Update step from legacy format outputs new <details> format (no trailing content)."""
+    """Update step preserves non-frontmatter content after YAML."""
     block_content = """---
 schema_version: "1"
 steps:
@@ -361,10 +361,8 @@ Some markdown content after frontmatter."""
     updated = update_step_in_frontmatter(block_content, "1.1", plan=None, pr="#999", status=None)
 
     assert updated is not None
-    # New format is self-contained — trailing content is not preserved
-    assert "<details>" in updated
-    assert "</details>" in updated
-    # Verify the new format is still parseable
+    assert "Some markdown content after frontmatter." in updated
+    # Verify frontmatter is still valid
     steps = parse_roadmap_frontmatter(updated)
     assert steps is not None
     assert steps[0].pr == "#999"
@@ -711,9 +709,8 @@ def test_render_roadmap_block_inner() -> None:
     assert parsed[1].pr == "#456"
 
 
-def test_render_roundtrip_via_update() -> None:
-    """update_step_in_frontmatter output is parseable by parse_roadmap_frontmatter."""
-    # Start with legacy format
+def test_render_roundtrip_via_update_legacy() -> None:
+    """update_step_in_frontmatter preserves legacy format on legacy input."""
     block_content = """---
 schema_version: "2"
 steps:
@@ -727,19 +724,51 @@ steps:
     updated = update_step_in_frontmatter(block_content, "1.1", plan="#100", pr="", status=None)
 
     assert updated is not None
-    # Output should be in <details> format
-    assert "<details>" in updated
-    assert "</details>" in updated
+    # Legacy input stays legacy
+    assert updated.startswith("---\n")
+    assert "<details>" not in updated
 
-    # Should be parseable
     steps = parse_roadmap_frontmatter(updated)
     assert steps is not None
     assert steps[0].plan == "#100"
     assert steps[0].status == "in_progress"
 
-    # A second update should also work (input is now <details> format)
+
+def test_render_roundtrip_via_update_details() -> None:
+    """update_step_in_frontmatter preserves <details> format on <details> input."""
+    block_content = (
+        "<details>\n"
+        "<summary><code>objective-roadmap</code></summary>\n"
+        "\n"
+        "```yaml\n"
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: Step one\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null\n"
+        "```\n"
+        "\n"
+        "</details>"
+    )
+
+    updated = update_step_in_frontmatter(block_content, "1.1", plan="#100", pr="", status=None)
+
+    assert updated is not None
+    assert "<details>" in updated
+    assert "</details>" in updated
+    assert "---" not in updated
+
+    steps = parse_roadmap_frontmatter(updated)
+    assert steps is not None
+    assert steps[0].plan == "#100"
+    assert steps[0].status == "in_progress"
+
+    # Second update also stays <details>
     updated2 = update_step_in_frontmatter(updated, "1.1", plan=None, pr="#200", status=None)
     assert updated2 is not None
+    assert "<details>" in updated2
     steps2 = parse_roadmap_frontmatter(updated2)
     assert steps2 is not None
     assert steps2[0].pr == "#200"

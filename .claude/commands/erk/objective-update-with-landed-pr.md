@@ -163,8 +163,8 @@ BODY_EOF
 erk objective check <issue-number> --json-output
 ```
 
-   - If any checks fail, report failures and attempt to fix the issue body
-   - This catches inference errors (e.g., wrong status derivation, inconsistent PR/plan cells)
+- If any checks fail, report failures and attempt to fix the issue body
+- This catches inference errors (e.g., wrong status derivation, inconsistent PR/plan cells)
 
 8. **Check closing triggers:**
 

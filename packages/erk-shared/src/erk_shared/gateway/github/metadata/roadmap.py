@@ -409,7 +409,19 @@ def update_step_in_frontmatter(
     if not found:
         return None
 
-    return render_roadmap_block_inner(updated_steps)
+    # Preserve input format: <details> stays <details>, legacy stays legacy
+    if block_content.strip().startswith("<details>"):
+        return render_roadmap_block_inner(updated_steps)
+
+    # Legacy format: serialize and preserve any trailing content after frontmatter
+    frontmatter_str = serialize_steps_to_frontmatter(updated_steps)
+    frontmatter_pattern = r"^---\s*\n.*?\n---\s*\n?"
+    remainder = re.sub(
+        frontmatter_pattern, "", block_content, count=1, flags=re.DOTALL | re.MULTILINE
+    )
+    if remainder:
+        return f"{frontmatter_str}\n\n{remainder}"
+    return frontmatter_str
 
 
 # ---------------------------------------------------------------------------
