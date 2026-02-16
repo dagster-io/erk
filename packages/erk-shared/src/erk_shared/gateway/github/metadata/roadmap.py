@@ -413,10 +413,12 @@ def parse_v2_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]] | None:
         body is not in v2 format.
     """
     raw_blocks = extract_raw_metadata_blocks(body)
-    roadmap_block = next((block for block in raw_blocks if block.key == "objective-roadmap"), None)
+    matching_blocks = [block for block in raw_blocks if block.key == "objective-roadmap"]
 
-    if roadmap_block is None:
+    if not matching_blocks:
         return None
+
+    roadmap_block = matching_blocks[0]
 
     if not roadmap_block.body.strip().startswith("<details>"):
         return None
@@ -449,9 +451,10 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
         (phases, validation_errors)
     """
     raw_blocks = extract_raw_metadata_blocks(body)
-    roadmap_block = next((block for block in raw_blocks if block.key == "objective-roadmap"), None)
+    matching_blocks = [block for block in raw_blocks if block.key == "objective-roadmap"]
 
-    if roadmap_block is not None:
+    if matching_blocks:
+        roadmap_block = matching_blocks[0]
         try:
             steps = parse_roadmap_frontmatter(roadmap_block.body)
         except ValueError:
