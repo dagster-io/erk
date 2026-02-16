@@ -1,5 +1,7 @@
 ---
 title: GitHub Interface Patterns
+last_audited: "2026-02-16 00:00 PT"
+audit_result: edited
 read_when:
   - "calling GitHub API from erk"
   - "working with gh api command"
@@ -77,7 +79,9 @@ The REST API returns field names that differ from GraphQL and internal conventio
 
 ## Implementation in erk
 
-The `RealGitHub.get_pr()` method in `packages/erk-shared/src/erk_shared/github/real.py` implements this pattern, returning a `PRDetails` dataclass with all commonly-needed fields.
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub.get_pr -->
+
+The `RealGitHub.get_pr()` method in `packages/erk-shared/src/erk_shared/gateway/github/real.py` implements this pattern, returning a `PRDetails` dataclass with all commonly-needed fields.
 
 ```python
 from erk_shared.gateway.github.types import PRDetails

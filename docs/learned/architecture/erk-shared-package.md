@@ -1,5 +1,7 @@
 ---
 title: erk_shared Package
+last_audited: "2026-02-16 00:00 PT"
+audit_result: edited
 read_when:
   - "deciding where to put new utilities"
   - "moving code between packages"
@@ -20,16 +22,19 @@ The `erk_shared` package (`packages/erk-shared/`) contains reusable code that ca
 
 ```
 packages/erk-shared/src/erk_shared/
-├── context/                      # Context helpers for dependency injection
-├── core/                         # Core utilities (frontmatter parsing, etc.)
-├── gateway/                      # Gateway abstractions (git, shell)
-│   └── github/
-│       └── metadata/             # GitHub metadata parsing (roadmap, etc.)
-├── github/                       # GitHub integration
-├── graphite/                     # Graphite integration
-├── scratch/                      # Scratch storage and markers
-├── extraction/                   # Extraction utilities
-└── output/                       # Output formatting
+├── config/        # Configuration management
+├── context/       # Context helpers for dependency injection
+├── core/          # Core abstractions (PromptExecutor ABC)
+├── gateway/       # Gateway abstractions (git, github, shell, etc.)
+├── hooks/         # Hook utilities
+├── learn/         # Learn workflow utilities
+├── output/        # Output formatting
+├── plan_store/    # Plan storage
+├── printing/      # Printing utilities
+├── scratch/       # Scratch storage and markers
+├── sessions/      # Session management
+├── shell_utils/   # Shell integration utilities
+└── stack/         # Stack management
 ```
 
 ## Import Rules

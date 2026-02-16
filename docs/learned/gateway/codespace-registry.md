@@ -1,5 +1,7 @@
 ---
 title: CodespaceRegistry Gateway — Read-Only ABC with Standalone Mutations
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 read_when:
   - "working with GitHub Codespace registration or lookup"
   - "adding a gateway that separates read-only ABC from mutation functions"

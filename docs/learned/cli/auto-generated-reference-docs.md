@@ -1,5 +1,7 @@
 ---
 title: Auto-Generated Reference Documentation
+last_audited: "2026-02-16 00:00 PT"
+audit_result: clean
 read_when:
   - "adding or modifying CLI commands"
   - "changing erk exec command structure"

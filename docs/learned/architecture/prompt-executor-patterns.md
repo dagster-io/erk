@@ -1,12 +1,11 @@
 ---
 title: PromptExecutor Pattern Documentation
-last_audited: "2026-02-03 03:56 PT"
+last_audited: "2026-02-16 00:00 PT"
 audit_result: edited
 read_when:
   - "launching Claude from CLI commands"
   - "deciding which PromptExecutor method to use"
   - "testing code that executes Claude CLI"
-  - "choosing between ClaudePromptExecutor and RealPromptExecutor"
 ---
 
 # PromptExecutor Pattern Documentation
@@ -138,74 +137,11 @@ Key points from that function:
 
 - **ABC**: `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
 - **Real**: `src/erk/core/prompt_executor.py` (ClaudePromptExecutor)
-- **Fake**: `tests/fakes/prompt_executor.py`
+- **Fake**: `tests/fakes/prompt_executor.py` and `packages/erk-shared/src/erk_shared/core/fakes.py`
 
-## Executor Comparison: Core vs Gateway PromptExecutor
+## Error Handling: Streaming stderr
 
-**IMPORTANT:** Erk has two distinct `PromptExecutor` implementations in different packages. Always use fully-qualified names to avoid confusion:
-
-- **`erk_shared.core.prompt_executor.PromptExecutor`** - Core ABC (this doc's focus)
-- **`erk_shared.gateway.prompt_executor.abc.PromptExecutor`** - Gateway ABC (different abstraction)
-
-### Core PromptExecutor (erk_shared.core)
-
-**Purpose:** Launch Claude CLI directly for CLI commands and interactive sessions.
-
-**Implementations:**
-
-- **ABC**: `erk_shared.core.prompt_executor.PromptExecutor`
-- **Real**: `erk.core.prompt_executor.ClaudePromptExecutor`
-- **Fake**: `tests.fakes.prompt_executor.FakePromptExecutor`
-
-**Methods:** 4 execution modes (interactive, streaming, command, prompt)
-
-**Use cases:** CLI commands, interactive sessions, real-time progress
-
-### Gateway PromptExecutor (erk_shared.gateway)
-
-**Purpose:** Provide single-shot prompt execution through the gateway layer.
-
-**Implementations:**
-
-- **ABC**: `erk_shared.gateway.prompt_executor.abc.PromptExecutor`
-- **Real**: `erk_shared.gateway.prompt_executor.real.RealPromptExecutor`
-- **Fake**: `erk_shared.gateway.prompt_executor.fake.FakePromptExecutor`
-
-**Methods:** 1 execution mode (execute_prompt only)
-
-**Use cases:** Programmatic prompts, retry logic, lightweight operations
-
-### Comparison Table
-
-| Aspect                 | Core (ClaudePromptExecutor)                         | Gateway (RealPromptExecutor)                                         |
-| ---------------------- | --------------------------------------------------- | -------------------------------------------------------------------- |
-| **Location**           | `src/erk/core/prompt_executor.py`                   | `packages/erk-shared/src/erk_shared/gateway/prompt_executor/real.py` |
-| **Scope**              | Full-featured: interactive, streaming, commands     | Single-shot prompts only                                             |
-| **Methods**            | 4 methods (interactive, streaming, command, prompt) | 1 method (execute_prompt)                                            |
-| **Retry logic**        | No built-in retry                                   | Automatic retry on empty output                                      |
-| **Error accumulation** | Background thread for stderr                        | Simple capture                                                       |
-| **Dependencies**       | Console gateway                                     | Time gateway (for retry delays)                                      |
-| **Use case**           | CLI commands launching Claude                       | Programmatic single prompts                                          |
-
-### When to Use Each
-
-**Use Core PromptExecutor (ClaudePromptExecutor) when:**
-
-- Launching Claude interactively (`execute_interactive`)
-- Need real-time streaming events (`execute_command_streaming`)
-- Executing slash commands with metadata extraction (`execute_command`)
-- Running in a CLI context with terminal output
-
-**Use Gateway PromptExecutor (RealPromptExecutor) when:**
-
-- Simple single-shot prompts for automation
-- Need automatic retry on transient failures
-- Lightweight operations (no streaming, no metadata)
-- Testability with FakeTime is important
-
-### Error Handling Differences
-
-Core PromptExecutor (ClaudePromptExecutor) uses a background thread to accumulate stderr while streaming stdout:
+ClaudePromptExecutor uses a background thread to accumulate stderr while streaming stdout:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -226,8 +162,6 @@ This is necessary because:
 1. Reading stdout blocks until EOF
 2. Stderr could fill its buffer and cause deadlock
 3. The thread accumulates stderr parts for the final error message
-
-Gateway PromptExecutor (RealPromptExecutor) uses simple `capture_output=True` since there's no streaming.
 
 ## Multi-Backend Design
 

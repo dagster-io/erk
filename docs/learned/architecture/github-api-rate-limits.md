@@ -1,5 +1,7 @@
 ---
 title: GitHub API Rate Limits
+last_audited: "2026-02-16 00:00 PT"
+audit_result: edited
 read_when:
   - "using gh CLI commands programmatically"
   - "encountering GraphQL rate limit errors"
@@ -175,4 +177,4 @@ Erk has a [retry mechanism](github-api-retry-mechanism.md) for transient network
 
 ## Implementation Reference
 
-See `packages/erk-shared/src/erk_shared/github/issues/real.py` for examples of REST API usage in erk's GitHub gateway.
+See `packages/erk-shared/src/erk_shared/gateway/github/issues/real.py` for examples of REST API usage in erk's GitHub gateway.
