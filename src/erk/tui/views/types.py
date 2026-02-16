@@ -79,6 +79,8 @@ def get_next_view_mode(current: ViewMode) -> ViewMode:
         The next view mode, wrapping around to the first
     """
     modes = [c.mode for c in VIEW_CONFIGS]
+    if current not in modes:
+        return current
     idx = modes.index(current)
     return modes[(idx + 1) % len(modes)]
 
@@ -93,5 +95,7 @@ def get_previous_view_mode(current: ViewMode) -> ViewMode:
         The previous view mode, wrapping around to the last
     """
     modes = [c.mode for c in VIEW_CONFIGS]
+    if current not in modes:
+        return current
     idx = modes.index(current)
     return modes[(idx - 1) % len(modes)]
