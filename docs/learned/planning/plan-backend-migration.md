@@ -9,7 +9,7 @@ tripwires:
     warning: "Always check isinstance(result, PlanNotFound) before calling update_metadata()"
   - action: "catching PlanHeaderNotFoundError"
     warning: "PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter"
-last_audited: "2026-02-16 08:00 PT"
+last_audited: "2026-02-16 14:30 PT"
 audit_result: clean
 ---
 

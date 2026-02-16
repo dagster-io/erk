@@ -17,6 +17,8 @@ tripwires:
     warning: 'Use `printf "%b"` instead of `echo -e` for reliable escape sequence handling. GitHub Actions uses dash/sh (POSIX standard), not bash, so `echo -e` behavior differs from local development.'
   - action: "GitHub Actions workflow needs to perform operations like gist creation, or session uploads fail in CI"
     warning: "GitHub Actions GITHUB_TOKEN has restricted scope by default. Check token capabilities or use personal access token (PAT) for elevated permissions like gist creation."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # GitHub CLI PR Comment Patterns

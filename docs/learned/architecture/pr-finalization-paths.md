@@ -4,6 +4,8 @@ read_when:
   - "debugging PR body content or issue closing"
   - "understanding local vs remote PR submission"
   - "working with 'Closes #N' in PRs"
+last_audited: "2026-02-16 14:10 PT"
+audit_result: clean
 ---
 
 # PR Finalization Paths

@@ -4,7 +4,7 @@ read_when:
   - "cleaning up branches"
   - "removing dormant worktrees"
   - "managing branch lifecycle"
-last_audited: "2026-02-16 08:00 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
 

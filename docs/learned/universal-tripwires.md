@@ -24,6 +24,8 @@ tripwires:
     warning: "For PRs with 300+ files, gh pr diff fails with HTTP 406. Use REST API with pagination instead. See github-cli-limits.md."
   - action: "passing session IDs via environment variables"
     warning: "Use CLI flags (--session-id) for context propagation, not environment variables. Erk code never has access to CLAUDE_CODE_SESSION_ID."
+last_audited: "2026-02-16 14:25 PT"
+audit_result: clean
 ---
 
 # Universal Tripwires

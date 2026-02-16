@@ -8,7 +8,7 @@ tripwires:
   - action: "returning pre-rendered display strings from backend APIs"
     warning: "Return raw state fields instead. Derive display state in frontend pure functions for testability and reusability."
     score: 8
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-16 14:15 PT"
 audit_result: clean
 ---
 

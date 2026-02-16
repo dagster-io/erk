@@ -4,6 +4,8 @@ read_when:
   - "designing data transformation pipelines"
   - "deciding when to enrich vs filter data"
   - "troubleshooting lost metadata in pipelines"
+last_audited: "2026-02-16 14:10 PT"
+audit_result: clean
 ---
 
 # Pipeline Transformation Patterns

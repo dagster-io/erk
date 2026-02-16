@@ -4,6 +4,8 @@ read_when:
   - Validating @ references in markdown files
   - Validating import paths in configuration
   - Any path validation where source files may be symlinks
+last_audited: "2026-02-16 14:15 PT"
+audit_result: clean
 ---
 
 # Symlink-Aware Validation Pattern

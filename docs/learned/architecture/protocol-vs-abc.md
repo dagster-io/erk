@@ -7,8 +7,8 @@ read_when:
 tripwires:
   - action: "creating Protocol with bare attributes for frozen dataclasses"
     warning: "Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors."
-last_audited: "2026-02-05 15:14 PT"
-audit_result: edited
+last_audited: "2026-02-16 14:15 PT"
+audit_result: clean
 ---
 
 # Protocol vs ABC: Interface Design Guide

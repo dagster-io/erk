@@ -11,8 +11,8 @@ tripwires:
     warning: "Define shared TypedDict in packages/erk-shared/ for type-safe schema. Both producer and consumer import from the same schema definition."
   - action: "filtering session sources without logging which sessions were skipped and why"
     warning: "Silent filtering makes debugging impossible. Log to stderr when skipping sessions, include the reason (empty/warmup/filtered)."
-last_audited: "2026-02-08 00:00 PT"
-audit_result: clean
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Exec Script Schema Patterns
@@ -38,13 +38,22 @@ Define the JSON schema as a TypedDict in `packages/erk-shared/`, not in either t
 
 ## Consumer Pattern: cast() for Type-Aware Access
 
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, cast() pattern -->
-
 After parsing JSON, use `cast()` to narrow the dict type. This enables autocomplete and type checking for all subsequent field access. Import the TypedDict, parse JSON with `json.loads()`, then `cast()` the result to the TypedDict type. All subsequent key access gets type checking.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, cast() pattern -->
+**Example pattern:**
 
-See `trigger_async_learn()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py` for the full pattern.
+```python
+from typing import cast
+from erk_shared.learn.extraction.get_learn_sessions_result import GetLearnSessionsResultDict
+
+# Parse JSON and cast to TypedDict
+sessions = cast(GetLearnSessionsResultDict, json.loads(result))
+
+# Now type checker knows about all fields
+session_sources = sessions["session_sources"]  # Type-safe access
+```
+
+**Note:** Not all exec scripts currently follow this pattern. `trigger_async_learn.py` in `src/erk/cli/commands/exec/scripts/` accesses dict fields directly without cast(). This is a prescriptive pattern for new code and refactoring opportunities.
 
 ## LBYL Guards: Type → Value → Presence
 

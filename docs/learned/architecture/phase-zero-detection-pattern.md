@@ -8,7 +8,7 @@ tripwires:
   - action: "detecting mode after Phase 0 has already executed"
     warning: "Late detection wastes work and creates scattered conditionals across all phases"
     score: 5
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-16 14:10 PT"
 audit_result: clean
 ---
 

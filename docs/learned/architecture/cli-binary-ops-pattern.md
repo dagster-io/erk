@@ -4,7 +4,7 @@ read_when:
   - "wrapping external CLI binary"
   - "testing subprocess calls"
   - "creating fake for external tool"
-last_audited: "2026-02-16 08:00 PT"
+last_audited: "2026-02-16 14:00 PT"
 audit_result: clean
 ---
 

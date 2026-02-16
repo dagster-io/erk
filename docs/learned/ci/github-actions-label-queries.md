@@ -9,6 +9,8 @@ tripwires:
     action: "Label checks in push event workflows"
     warning: "Job-level label access via github.event.pull_request.labels is ONLY available in pull_request events, NOT push events. For push events, you must use step-level GitHub API queries with gh cli or REST API."
     context: "The asymmetry exists because push events don't have github.event.pull_request in their context. Defense-in-depth: Keep job-level checks for pull_request events (fast path), add step-level API queries for push events (required path)."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # GitHub Actions Label Queries

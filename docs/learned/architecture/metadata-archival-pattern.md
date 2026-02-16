@@ -8,8 +8,8 @@ tripwires:
   - action: "archiving value to 'last_' variant BEFORE clearing"
     warning: "Order matters — clear-then-archive loses the value silently"
     score: 6
-last_audited: "2026-02-07 20:55 PT"
-audit_result: edited
+last_audited: "2026-02-16 14:05 PT"
+audit_result: clean
 ---
 
 # Archive-on-Clear Metadata Pattern

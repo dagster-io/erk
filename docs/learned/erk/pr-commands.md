@@ -8,6 +8,8 @@ tripwires:
     warning: "Use build_pr_body_footer() from the gateway layer. Manual construction risks format drift from the validator regex."
   - action: "using issue number in checkout footer instead of PR number"
     warning: "Checkout footer requires the PR number (from gh pr create output), NOT the plan issue number from .impl/issue.json."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # PR Checkout Footer Validation Pattern

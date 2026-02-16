@@ -8,6 +8,8 @@ tripwires:
   - action: "relying solely on agent-level enforcement for critical rules"
     warning: "Add skill-level and PR-level enforcement layers. Only workflow/CI enforcement is truly reliable."
     score: 7
+last_audited: "2026-02-16 14:00 PT"
+audit_result: clean
 ---
 
 # Defense-in-Depth Enforcement

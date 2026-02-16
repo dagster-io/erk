@@ -9,6 +9,8 @@ tripwires:
     warning: "Commands are defined once in the registry. Use a second Provider subclass with its own _get_context() to serve the same commands from a new context."
   - action: "duplicating execute_palette_command logic between ErkDashApp and PlanDetailScreen"
     warning: "This duplication is a known trade-off. Both ErkDashApp.execute_palette_command() and PlanDetailScreen.execute_command() implement the same command_id switch because they dispatch to different APIs (provider methods vs executor methods). See the asymmetries section below."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Dual Provider Pattern for Context-Agnostic Commands

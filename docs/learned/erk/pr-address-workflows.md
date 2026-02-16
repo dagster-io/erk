@@ -5,6 +5,8 @@ read_when:
   - "choosing between local and remote PR addressing"
   - "understanding erk launch pr-address"
   - "understanding /erk:pr-address command"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # PR Address Workflows

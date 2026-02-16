@@ -11,7 +11,7 @@ tripwires:
     warning: "NEVER duplicate secret validation across workflows — use erk-remote-setup's consolidated validation."
   - action: "Include cache keys for downloaded binaries"
     warning: "NEVER skip cache keys for downloaded binaries — cache saves 10-20s per workflow run."
-last_audited: "2026-02-08 13:55 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
 

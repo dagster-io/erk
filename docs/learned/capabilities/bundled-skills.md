@@ -9,6 +9,8 @@ tripwires:
     warning: "New bundled skills must be added to bundled_skills() dict AND verified by drift prevention test"
   - action: "creating a skill with custom install logic"
     warning: "Skills with custom install logic need dedicated SkillCapability subclass, not bundled factory"
+last_audited: "2026-02-16 14:25 PT"
+audit_result: clean
 ---
 
 # Bundled Skill Capabilities
