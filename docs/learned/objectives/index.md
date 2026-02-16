@@ -12,3 +12,4 @@
 - **[roadmap-parser.md](roadmap-parser.md)** — understanding how roadmap steps are parsed, working with objective roadmap check or update commands, debugging roadmap parsing issues, using erk objective check or erk exec update-roadmap-step
 - **[roadmap-status-system.md](roadmap-status-system.md)** — understanding how objective roadmap status is determined, working with roadmap step status values, debugging unexpected status in an objective roadmap
 - **[roadmap-validation.md](roadmap-validation.md)** — debugging roadmap validation errors or check failures, adding new validation rules to objective check or update commands, understanding why validation is split across parser and check command
+- **[v2-format-structure.md](v2-format-structure.md)** — writing tests for v2 objectives, implementing updates to v2 objective data, debugging v2 format divergence issues

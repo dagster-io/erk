@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "running gt sync without verifying clean working tree"
     warning: "gt sync performs a rebase that can lose uncommitted changes. Commit or stash first. See docs/learned/workflows/git-sync-state-preservation.md"
+  - action: "running git rebase, git cherry-pick, or git reset"
+    warning: "Always run `gt track --no-interactive` immediately after raw git operations that change commit SHAs. Without this, `gt restack` will fail with 'diverged from tracking' errors because Graphite's cache (.graphite_cache_persist) still references old SHAs."
 ---
 
 # Graphite Stack Troubleshooting
@@ -53,6 +55,22 @@ Common failures and recovery patterns for Graphite stack operations.
 
 1. `gt sync` to refresh stack state from remote
 2. If branches persist: `gt untrack <branch>` to remove them
+
+### Graphite Cache Staleness After Raw Git Operations
+
+**Symptom**: After running `git rebase`, `gt restack` fails with "diverged from tracking" error.
+
+**Root cause**: Raw git operations that rewrite history (rebase, cherry-pick, reset) change commit SHAs but Graphite's internal cache (`.graphite_cache_persist`) still references old SHAs.
+
+**Recovery**:
+
+```bash
+git rebase origin/branch-name  # Changes commit SHAs
+gt track --no-interactive      # MUST run to update Graphite cache
+gt restack --no-interactive    # Now safe to restack
+```
+
+This pattern was discovered during sync-divergence resolution. See the `sync-divergence` skill for the complete workflow.
 
 ## Prevention
 

@@ -144,6 +144,8 @@ Rules triggered by matching actions in code.
 
 **implementing a new `erk pr` command** → Read [PR Body Assembly](pr-body-assembly.md) first. Compare feature parity with `submit_pipeline.py`. Check: issue discovery, closing reference preservation, learn plan labels, footer construction, and plan details section. Use shared utilities from `shared.py` (`assemble_pr_body`, `discover_issue_for_footer`).
 
+**implementing functions that update roadmap data in frontmatter, body table, or comment table** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. Audit ALL write paths for semantic consistency. Auto-clear/auto-infer/auto-compute logic must be replicated across all locations. The frontmatter and table updaters must implement identical semantics for operations like auto-clearing plan when PR is set.
+
 **implementing idempotent operations that fail on missing resources** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Use LBYL existence check to return early, making the operation truly idempotent.
 
 **implementing mtime-based cache invalidation** → Read [Graphite Cache Invalidation](graphite-cache-invalidation.md) first. Use triple-check guard pattern: (cache exists) AND (mtime exists) AND (mtime matches). Partial checks cause stale data bugs.

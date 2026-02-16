@@ -11,6 +11,8 @@ tripwires:
     warning: "Structural validation (phase headers, table format) belongs in objective_roadmap_shared.py. check_cmd.py handles semantic validation only."
   - action: "raising exceptions from validate_objective()"
     warning: "validate_objective() returns discriminated unions, never raises. Only CLI presentation functions (_output_json, _output_human) raise SystemExit."
+  - action: "writing validation checks using .startswith() or similar guard clauses"
+    warning: "Ensure ELSE branch explicitly fails validation rather than silently skipping. Pattern `if value.startswith('#'):` should be `if not value.startswith('#'): errors.append(...)` in validation contexts."
 ---
 
 # Objective Check Command — Semantic Validation
@@ -40,6 +42,7 @@ This separation exists because structural parsing is shared across consumers —
 | Status/PR consistency | Catches stale status after manual table edits (someone adds a PR reference but forgets to update the Status column) |
 | No orphaned done      | Catches typos where someone marks a step done but forgets to add the PR number                                      |
 | Sequential phases     | Catches copy-paste errors (duplicate phase numbers, out-of-order phases)                                            |
+| Plan/PR `#` prefix    | Catches unprefixed references that don't auto-link in GitHub and can cause silent validation skips                  |
 
 The status/PR consistency check is particularly important because the [two-tier status system](roadmap-status-system.md) allows both explicit and inferred status. When a human manually edits a table, they can create contradictions that the parser silently accepts — for example, a step with PR `#123` but explicit status `pending`. The parser respects the explicit status (by design), but the check command flags the contradiction.
 
@@ -60,6 +63,24 @@ This matters because callers need different responses for "issue doesn't exist" 
 The original `erk exec objective-roadmap-check` exec script defaulted to JSON output. When it was promoted to `erk objective check` as a proper Click subcommand, the default switched to human-readable `[PASS]/[FAIL]` output, with JSON available via `--json-output`. This matches the convention that CLI commands default to human output and require explicit flags for machine-readable formats.
 
 ## Anti-Patterns
+
+**WRONG: Using guard clauses that silently skip invalid data in validation contexts.**
+Guard clauses like `if step.plan.startswith("#")` that silently skip non-conforming values can mask data corruption. In validation contexts, convert guard-and-skip patterns to explicit validation failures:
+
+```python
+# BAD: silently skips invalid data
+if step.plan and step.plan.startswith("#"):
+    # validate...
+
+# GOOD: explicitly fails on invalid data
+if step.plan:
+    if not step.plan.startswith("#"):
+        errors.append(f"Step {step.id} plan '{step.plan}' missing '#' prefix")
+    else:
+        # validate...
+```
+
+This anti-pattern was discovered in Check 3. See Check 9 in `src/erk/cli/commands/objective/check_cmd.py` for the corrected pattern.
 
 **WRONG: Adding structural validation to check_cmd.py.**
 Structural checks (missing table headers, malformed separator lines) belong in the shared parser so all consumers — `check`, `update-roadmap-step`, and any future commands — benefit from them. Adding structural checks to `check_cmd.py` means the update command silently accepts structurally invalid content.

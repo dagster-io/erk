@@ -29,14 +29,15 @@ This separation matters because the update command needs structural parsing but 
 
 ## Structural vs Semantic: Decision Table
 
-| Question                                | Level                | Why                                                 |
-| --------------------------------------- | -------------------- | --------------------------------------------------- |
-| Can we find phase headers?              | Structural           | Without phases, no data can be extracted            |
-| Does the table have the right columns?  | Structural           | Column structure determines if rows can be parsed   |
-| Are step IDs in preferred format?       | Structural (warning) | Doesn't block parsing, just flags for humans        |
-| Does a "done" step have a PR reference? | Semantic             | Requires cross-field reasoning about data integrity |
-| Are status and PR columns consistent?   | Semantic             | Requires understanding the status inference rules   |
-| Is phase numbering sequential?          | Semantic             | Requires comparing across phases                    |
+| Question                                  | Level                | Why                                                           |
+| ----------------------------------------- | -------------------- | ------------------------------------------------------------- |
+| Can we find phase headers?                | Structural           | Without phases, no data can be extracted                      |
+| Does the table have the right columns?    | Structural           | Column structure determines if rows can be parsed             |
+| Are step IDs in preferred format?         | Structural (warning) | Doesn't block parsing, just flags for humans                  |
+| Does a "done" step have a PR reference?   | Semantic             | Requires cross-field reasoning about data integrity           |
+| Are status and PR columns consistent?     | Semantic             | Requires understanding the status inference rules             |
+| Is phase numbering sequential?            | Semantic             | Requires comparing across phases                              |
+| Are plan/PR references prefixed with `#`? | Semantic             | Prevents invalid refs that don't auto-link in GitHub markdown |
 
 ## The Consistency Invariants
 
@@ -47,6 +48,8 @@ The semantic checks in `validate_objective()` enforce invariants that connect th
 2. **Status implies PR**: A step with status `done` must have a PR reference. "Done" without evidence of what was done is an orphaned status.
 
 3. **Phase ordering**: Phases must be sequentially numbered. This catches copy-paste errors in roadmap editing (e.g., two `Phase 2` sections).
+
+4. **Reference format**: All plan and PR references must use the `#` prefix (e.g., `#7146` not `7146`). Unprefixed numbers bypass validation checks that use guard clauses like `if step.plan.startswith("#")` and don't auto-link in GitHub markdown.
 
 These invariants interact with the status inference system documented in [Roadmap Status System](roadmap-status-system.md). The update command avoids violating invariant #1 by resetting the status cell to `-` when changing the PR cell, letting inference derive the correct status.
 
