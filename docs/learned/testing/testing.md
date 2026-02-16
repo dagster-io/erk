@@ -15,6 +15,10 @@ tripwires:
     warning: "FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway."
   - action: "asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`"
     warning: "Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper."
+  - action: "unpacking FakeGitHubIssues.added_comments as a 2-tuple"
+    warning: "added_comments is a 3-tuple: (issue_number, body, comment_id). Read FakeGitHubIssues source before writing assertions."
+  - action: "changing data format (v1→v2) without updating all tests in the same commit"
+    warning: "Format changes silently break tests written for the old format. Update ALL tests in the same commit and run full test suite before marking PR ready."
 ---
 
 # Erk Test Reference
@@ -524,6 +528,42 @@ When function signatures change (e.g., adding a column to a table, adding a new 
 ### Common Mistake
 
 Updating the implementation and the directly-tested function, but missing test helpers, builders, or parametrized test data that also construct instances of the changed type.
+
+## FakeGitHubIssues Data Structures
+
+When writing tests that verify issue/comment creation, verify tuple structures by reading the fake source. Do not assume.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py, FakeGitHubIssues -->
+
+### Tuple Formats
+
+| Property         | Structure | Fields                             |
+| ---------------- | --------- | ---------------------------------- |
+| `created_issues` | 3-tuple   | `(title, body, labels)`            |
+| `added_comments` | 3-tuple   | `(issue_number, body, comment_id)` |
+| `updated_bodies` | 2-tuple   | `(issue_number, body)`             |
+
+### Why This Matters
+
+Agents frequently guess the `added_comments` structure as 2-tuple `(issue_number, body)`, causing `ValueError: too many values to unpack`. Always read `FakeGitHubIssues` source before writing assertions.
+
+## Test Migration: erk to erk_shared
+
+When code moves from `erk` to `erk_shared`, tests follow.
+
+### Directory Mapping
+
+| erk Location                                                       | erk_shared Location                                               |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `tests/unit/cli/commands/exec/scripts/test_objective_roadmap_*.py` | `packages/erk-shared/tests/unit/github/metadata/test_roadmap*.py` |
+| `tests/unit/core/test_frontmatter.py`                              | `packages/erk-shared/tests/unit/core/test_frontmatter.py`         |
+
+### Migration Checklist
+
+1. Move test file to corresponding erk_shared location
+2. Update imports from `erk.` to `erk_shared.`
+3. Update any file path references in test data
+4. Verify tests pass in new location
 
 ## Related
 

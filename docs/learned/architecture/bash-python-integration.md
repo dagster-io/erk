@@ -10,6 +10,8 @@ tripwires:
     pattern: "<<\\s*EOF\\b"
   - action: "using bash heredocs for large agent outputs"
     warning: "heredocs fail silently with special characters; prefer the Write tool"
+  - action: "piping JSON to erk exec commands via echo"
+    warning: "Use heredoc syntax: cat <<'JSONEOF' | erk exec ... instead of echo '[...]' | erk exec .... Bash interprets backslashes in double-quoted echo strings, corrupting JSON escape sequences."
 last_audited: "2026-02-07 19:35 PT"
 audit_result: clean
 ---

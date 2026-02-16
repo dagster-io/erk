@@ -32,6 +32,8 @@ Rules triggered by matching actions in code.
 
 **adding a subgateway property to a gateway ABC** → Read [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) first. Must implement property in 5 places: ABC with TYPE_CHECKING import guard, Real with concrete instance, Fake with linked state, DryRun wrapping inner subgateway, Printing wrapping with script_mode/dry_run.
 
+**adding an inline import without documenting the circular dependency justification** → Read [Inline Import Exception Pattern](inline-import-exception.md) first. Inline imports are only acceptable for breaking circular dependencies within the same package. Document the reasoning in a PR comment prefixed with 'False positive: ...' so reviewers understand.
+
 **adding file I/O, network calls, or subprocess invocations to a class **init\***\* → Read [Erk Architecture Patterns](erk-architecture.md) first. Load `dignified-python` skill first. Class **init\*\* should be lightweight (just data assignment). Heavy operations belong in static factory methods like `from_config_path()` or `load()`. This enables direct instantiation in tests without I/O setup.
 
 **adding new file format support without read-then-fallback** → Read [Erk Architecture Patterns](erk-architecture.md) first. When adding new file formats, implement read-then-fallback: try new format first, fall back to old format transparently. See read_plan_ref() for the canonical pattern.
@@ -148,6 +150,8 @@ Rules triggered by matching actions in code.
 
 **implementing mtime-based cache invalidation** → Read [Graphite Cache Invalidation](graphite-cache-invalidation.md) first. Use triple-check guard pattern: (cache exists) AND (mtime exists) AND (mtime matches). Partial checks cause stale data bugs.
 
+**importing from erk package in erk_shared code** → Read [Circular Dependency Resolution](circular-dependency-resolution.md) first. STOP. erk_shared NEVER imports from erk. Move shared utilities to erk_shared instead. Verify with: grep -r 'from erk\.' packages/erk-shared/src/
+
 **importing time module or calling time.sleep() or datetime.now()** [pattern: `\bimport time\b|time\.sleep\(|datetime\.now\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Use context.time.sleep() and context.time.now() for testability. Direct time.sleep() makes tests slow and datetime.now() makes tests non-deterministic.
 
 **injecting Time dependency into gateway real.py for lock-waiting or retry logic** → Read [Erk Architecture Patterns](erk-architecture.md) first. Accept optional Time in **init** with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/gateway/git/lock.py for pattern.
@@ -175,6 +179,8 @@ Rules triggered by matching actions in code.
 **passing dry_run boolean flags through business logic function parameters** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands.
 
 **passing variables to gh api graphql as JSON blob** [pattern: `gh\s+api\s+graphql`] → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work.
+
+**piping JSON to erk exec commands via echo** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. Use heredoc syntax: cat <<'JSONEOF' | erk exec ... instead of echo '[...]' | erk exec .... Bash interprets backslashes in double-quoted echo strings, corrupting JSON escape sequences.
 
 **reading agent output with TaskOutput then writing it to a file with Write** → Read [Context Efficiency Patterns](context-efficiency.md) first. This is the 'content relay' anti-pattern — it causes 2x context duplication. Instead, have agents accept an output_path parameter and write directly. See /erk:learn for the canonical implementation.
 
@@ -233,6 +239,8 @@ Rules triggered by matching actions in code.
 **using git pull or git pull --rebase on a Graphite-managed branch** [pattern: `git\s+pull`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Use /erk:sync-divergence instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push.
 
 **using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code** [pattern: `os\.environ.*CLAUDE_CODE_SESSION_ID`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables.
+
+**using regex to find roadmap tables without checking for markers first** → Read [Roadmap Table Markers](roadmap-table-markers.md) first. Use extract_roadmap_table_section() to search within markers when present. Fall back to full-text regex only when markers are absent (v1 backward compatibility).
 
 **using run_ssh_command() for interactive commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. Interactive commands need exec_ssh_interactive(), not run_ssh_command()
 

@@ -21,7 +21,12 @@ The `erk_shared` package (`packages/erk-shared/`) contains reusable code that ca
 ```
 packages/erk-shared/src/erk_shared/
 ├── context/       # Context helpers for dependency injection
+├── core/          # Core utilities (frontmatter parsing)
 ├── gateway/       # Gateway abstractions (git, shell)
+│   └── github/
+│       └── metadata/
+│           ├── core.py        # Metadata block extraction/replacement
+│           └── roadmap.py     # Roadmap parsing, serialization, markers
 ├── github/        # GitHub integration
 ├── graphite/      # Graphite integration
 ├── scratch/       # Scratch storage and markers

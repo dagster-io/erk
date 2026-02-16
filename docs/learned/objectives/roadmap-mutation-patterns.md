@@ -44,7 +44,7 @@ The split isn't about capability (the full-body approach _could_ do single-cell 
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
 
-The surgical command finds a step row by ID using regex and replaces **only** the status, plan, and PR cells in a single operation. See `_replace_step_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`.
+The surgical command finds a step row by ID using regex and replaces **only** the status, plan, and PR cells in a single operation. See `_replace_step_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`. Note: imports for roadmap parsing utilities now come from `erk_shared.gateway.github.metadata.roadmap`.
 
 **Why it writes status, plan, and PR cells:** The command could leave status as `-` and let parse-time inference determine it later. Instead, it computes a display status (`done`, `in-progress`, `pending`) from the plan/PR values and writes it directly. Setting `--pr` automatically clears the plan column, and vice versa. This makes the table human-readable in GitHub's UI without requiring a parse pass. For the full rationale, see [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md).
 

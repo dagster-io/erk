@@ -25,10 +25,12 @@
 - **[monkeypatch-elimination-checklist.md](monkeypatch-elimination-checklist.md)** — migrating tests from monkeypatch to gateways, eliminating subprocess mocks or @patch decorators, encountering monkeypatch in existing tests and deciding whether to refactor
 - **[monkeypatch-vs-fakes-decision.md](monkeypatch-vs-fakes-decision.md)** — choosing between monkeypatch and fakes for a test, deciding how to test code that uses Path.home(), unsure whether to create a gateway or use monkeypatch
 - **[rebase-conflicts.md](rebase-conflicts.md)** — fixing merge conflicts in erk tests, ErkContext API changes during rebase, env_helpers conflicts
+- **[roadmap-marker-testing.md](roadmap-marker-testing.md)** — writing tests for HTML comment marker wrapping or extraction, adding test coverage for roadmap table manipulation, understanding the test coverage model for marker-bounded content
 - **[session-log-fixtures.md](session-log-fixtures.md)** — creating JSONL fixtures for session log tests, testing session plan extraction, writing integration tests for session parsing
 - **[session-store-testing.md](session-store-testing.md)** — testing code that reads session data, using FakeClaudeCodeSessionStore, mocking session ID lookup
 - **[submit-pipeline-tests.md](submit-pipeline-tests.md)** — adding tests for a new submit pipeline step, writing \_make_state helpers for pipeline step tests, deciding what to test at the step level vs the runner level
 - **[subprocess-testing.md](subprocess-testing.md)** — testing code that uses subprocess, creating fakes for process execution, avoiding subprocess mocks in tests
+- **[test-coverage-review-standards.md](test-coverage-review-standards.md)** — reviewing test coverage for a PR, evaluating whether tests are sufficient beyond just file existence, writing review comments about test coverage
 - **[testing.md](testing.md)** — writing tests for erk, using erk fakes, running erk test commands
 - **[vitest-fake-timers-with-promises.md](vitest-fake-timers-with-promises.md)** — testing React components that use setInterval or setTimeout with async operations, debugging Vitest tests that hang when advancing fake timers, choosing between synchronous and async timer advancement in Vitest
 - **[vitest-jsdom-stubs.md](vitest-jsdom-stubs.md)** — writing React component tests with Vitest + jsdom, encountering "X is not a function" errors in jsdom test runs, adding a new browser API stub to the test setup
