@@ -51,13 +51,20 @@ from typing import cast, get_args
 
 import click
 
-from erk.cli.commands.exec.scripts.objective_roadmap_shared import RoadmapStepStatus, parse_roadmap
 from erk_shared.context.helpers import require_issues, require_repo_root
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_metadata_value,
     extract_raw_metadata_blocks,
     replace_metadata_block_in_body,
+)
+from erk_shared.gateway.github.metadata.roadmap import (
+    ROADMAP_TABLE_MARKER_END,
+    ROADMAP_TABLE_MARKER_START,
+    RoadmapStepStatus,
+    extract_roadmap_table_section,
+    parse_roadmap,
+    update_step_in_frontmatter,
 )
 from erk_shared.gateway.github.types import BodyText
 
@@ -75,6 +82,9 @@ def _replace_table_in_text(
     This is the table-only replacement used for updating the comment in v2 format,
     where the markdown table lives in the objective-body comment rather than the body.
 
+    If ``<!-- erk:roadmap-table -->`` markers are present, searches only within
+    the bounded section. Falls back to full-text regex for v1 compatibility.
+
     Args:
         text: Text containing a markdown table with step rows.
         step_id: Step ID to update (e.g., "1.3").
@@ -85,13 +95,21 @@ def _replace_table_in_text(
     Returns:
         Updated text, or None if the step row was not found.
     """
+    # If markers exist, search only within the bounded section
+    marker_section = extract_roadmap_table_section(text)
+    if marker_section is not None:
+        section_content, section_start, section_end = marker_section
+        search_text = section_content
+    else:
+        search_text = text
+
     # 5-col row: | step_id | description | status | plan | pr |
     pattern = re.compile(
         r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$",
         re.MULTILINE,
     )
 
-    match = pattern.search(text)
+    match = pattern.search(search_text)
     if match is None:
         return None
 
@@ -125,7 +143,20 @@ def _replace_table_in_text(
         f"|{match.group(1)}|{match.group(2)}| {display_status} | {resolved_plan} | {resolved_pr} |"
     )
 
-    return text[: match.start()] + replacement + text[match.end() :]
+    updated_section = search_text[: match.start()] + replacement + search_text[match.end() :]
+
+    # If we searched within markers, reconstruct the full text
+    if marker_section is not None:
+        _section_content, section_start, section_end = marker_section
+        return (
+            text[:section_start]
+            + ROADMAP_TABLE_MARKER_START
+            + updated_section
+            + ROADMAP_TABLE_MARKER_END
+            + text[section_end:]
+        )
+
+    return updated_section
 
 
 def _step_error_message(step_id: str, issue_number: int, error: object) -> str:
@@ -233,11 +264,6 @@ def _replace_step_refs_in_body(
             break
 
     if roadmap_block is not None:
-        # Import here to avoid circular dependency
-        from erk.cli.commands.exec.scripts.objective_roadmap_frontmatter import (
-            update_step_in_frontmatter,
-        )
-
         # Pass None through to frontmatter API (preserves existing value).
         # Non-None values (including "") are forwarded as-is.
         updated_block_content = update_step_in_frontmatter(

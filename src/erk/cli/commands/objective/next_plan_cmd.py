@@ -5,10 +5,6 @@ from pathlib import Path
 import click
 
 from erk.cli.alias import alias
-from erk.cli.commands.exec.scripts.objective_roadmap_shared import (
-    RoadmapPhase,
-    RoadmapStep,
-)
 from erk.cli.commands.exec.scripts.update_roadmap_step import (
     _replace_step_refs_in_body,
     _replace_table_in_text,
@@ -29,6 +25,10 @@ from erk_shared.context.types import InteractiveAgentConfig
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import extract_metadata_value
+from erk_shared.gateway.github.metadata.roadmap import (
+    RoadmapPhase,
+    RoadmapStep,
+)
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.output.output import user_output
 

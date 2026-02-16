@@ -1,6 +1,6 @@
-"""Unit tests for objective_roadmap_shared module."""
+"""Unit tests for roadmap parsing and utility functions."""
 
-from erk.cli.commands.exec.scripts.objective_roadmap_shared import (
+from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
     RoadmapStep,
     compute_summary,

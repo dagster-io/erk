@@ -22,7 +22,7 @@ from erk.agent_docs.models import (
     Tripwire,
     TripwiresIndexValidationResult,
 )
-from erk.core.frontmatter import parse_markdown_frontmatter
+from erk_shared.core.frontmatter import parse_markdown_frontmatter
 from erk_shared.gateway.agent_docs.abc import AgentDocs
 
 AGENT_DOCS_DIR = "docs/learned"

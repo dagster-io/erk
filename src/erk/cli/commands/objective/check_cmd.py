@@ -8,19 +8,19 @@ from pathlib import Path
 import click
 
 from erk.cli.alias import alias
-from erk.cli.commands.exec.scripts.objective_roadmap_shared import (
-    RoadmapPhase,
-    compute_summary,
-    find_next_step,
-    parse_roadmap,
-    serialize_phases,
-)
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext, RepoContext
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.gateway.github.metadata.roadmap import (
+    RoadmapPhase,
+    compute_summary,
+    find_next_step,
+    parse_roadmap,
+    serialize_phases,
+)
 from erk_shared.output.output import user_output
 
 ERK_OBJECTIVE_LABEL = "erk-objective"

@@ -1,13 +1,13 @@
-"""Tests for objective roadmap frontmatter parser and serializer."""
+"""Tests for roadmap frontmatter parser and serializer."""
 
-from erk.cli.commands.exec.scripts.objective_roadmap_frontmatter import (
+from erk_shared.gateway.github.metadata.roadmap import (
+    RoadmapStep,
     group_steps_by_phase,
     parse_roadmap_frontmatter,
     serialize_steps_to_frontmatter,
     update_step_in_frontmatter,
     validate_roadmap_frontmatter,
 )
-from erk.cli.commands.exec.scripts.objective_roadmap_shared import RoadmapStep
 
 
 def test_parse_valid_v1_frontmatter() -> None:

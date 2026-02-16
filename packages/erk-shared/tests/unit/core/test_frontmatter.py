@@ -1,6 +1,6 @@
 """Tests for shared frontmatter parsing module."""
 
-from erk.core.frontmatter import FrontmatterParseResult, parse_markdown_frontmatter
+from erk_shared.core.frontmatter import FrontmatterParseResult, parse_markdown_frontmatter
 
 
 def test_valid_frontmatter() -> None:
