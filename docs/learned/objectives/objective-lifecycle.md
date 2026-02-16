@@ -436,14 +436,14 @@ Read-only consumers automatically gain frontmatter support via `parse_roadmap()`
 
 ## Implementation References
 
-| File                                 | Purpose                        |
-| ------------------------------------ | ------------------------------ |
+| File                                            | Purpose                        |
+| ----------------------------------------------- | ------------------------------ |
 | `erk_shared/gateway/github/metadata/roadmap.py` | Core parser: `parse_roadmap()` |
-| `erk_shared/core/frontmatter.py`     | Frontmatter parser/serializer  |
-| `update_roadmap_step.py`             | Surgical PR cell update        |
-| `objective-update-with-landed-pr.md` | Full-body update agent         |
-| `objective_update_context.py`        | Context fetch for updates      |
-| `check_cmd.py`                       | Objective validation           |
+| `erk_shared/core/frontmatter.py`                | Frontmatter parser/serializer  |
+| `update_roadmap_step.py`                        | Surgical PR cell update        |
+| `objective-update-with-landed-pr.md`            | Full-body update agent         |
+| `objective_update_context.py`                   | Context fetch for updates      |
+| `check_cmd.py`                                  | Objective validation           |
 
 ## See Also
 

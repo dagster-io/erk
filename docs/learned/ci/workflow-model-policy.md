@@ -15,14 +15,14 @@ All erk GitHub Actions workflows that invoke Claude MUST default to `claude-opus
 
 ## Affected Workflows
 
-| Workflow | Model Parameter | Default |
-| --- | --- | --- |
-| `ci.yml` | Direct reference | `claude-opus-4-6` |
-| `learn.yml` | Direct reference | `claude-opus-4-6` |
-| `one-shot.yml` | `model_name` input | `claude-opus-4-6` |
-| `plan-implement.yml` | `model_name` input (dual) | `claude-opus-4-6` |
-| `pr-address.yml` | `model_name` input | `claude-opus-4-6` |
-| `pr-fix-conflicts.yml` | `model_name` input | `claude-opus-4-6` |
+| Workflow               | Model Parameter           | Default           |
+| ---------------------- | ------------------------- | ----------------- |
+| `ci.yml`               | Direct reference          | `claude-opus-4-6` |
+| `learn.yml`            | Direct reference          | `claude-opus-4-6` |
+| `one-shot.yml`         | `model_name` input        | `claude-opus-4-6` |
+| `plan-implement.yml`   | `model_name` input (dual) | `claude-opus-4-6` |
+| `pr-address.yml`       | `model_name` input        | `claude-opus-4-6` |
+| `pr-fix-conflicts.yml` | `model_name` input        | `claude-opus-4-6` |
 
 Workflows without Claude invocation (`docs.yml`, `code-reviews.yml`) are not affected.
 
@@ -30,13 +30,13 @@ Workflows without Claude invocation (`docs.yml`, `code-reviews.yml`) are not aff
 
 The `.erk/reviews/` directory contains review configurations that intentionally use cost-optimized models:
 
-| Review Config | Model | Rationale |
-| --- | --- | --- |
-| `audit-pr-docs.md` | `claude-opus-4-6` | Complex doc analysis needs Opus |
-| `dignified-python.md` | `claude-haiku-4-5` | Pattern matching is lightweight |
-| `tripwires.md` | `claude-sonnet-4-5` | Balanced cost vs reasoning |
-| `test-coverage.md` | `claude-haiku-4-5` | Coverage checks are mechanical |
-| `dignified-code-simplifier.md` | `claude-haiku-4-5` | Simplification is lightweight |
+| Review Config                  | Model               | Rationale                       |
+| ------------------------------ | ------------------- | ------------------------------- |
+| `audit-pr-docs.md`             | `claude-opus-4-6`   | Complex doc analysis needs Opus |
+| `dignified-python.md`          | `claude-haiku-4-5`  | Pattern matching is lightweight |
+| `tripwires.md`                 | `claude-sonnet-4-5` | Balanced cost vs reasoning      |
+| `test-coverage.md`             | `claude-haiku-4-5`  | Coverage checks are mechanical  |
+| `dignified-code-simplifier.md` | `claude-haiku-4-5`  | Simplification is lightweight   |
 
 Review models are chosen per-review based on task complexity, not standardized to Opus.
 

@@ -85,8 +85,8 @@ The `PlanRowData` frozen dataclass (`src/erk/tui/data/types.py`) contains 38 fie
 
 | Field             | Type       | Nullable | Description                                       |
 | ----------------- | ---------- | -------- | ------------------------------------------------- |
-| `author`          | `str`      | No       | GitHub login of the issue creator (from API)       |
-| `created_at`      | `datetime` | No       | Creation datetime of the issue                     |
+| `author`          | `str`      | No       | GitHub login of the issue creator (from API)      |
+| `created_at`      | `datetime` | No       | Creation datetime of the issue                    |
 | `created_display` | `str`      | No       | Formatted relative time string (e.g., `"2d ago"`) |
 
 ### Body Content (1 field)

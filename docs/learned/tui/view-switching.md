@@ -23,19 +23,19 @@ The TUI supports three views — Plans, Learn, and Objectives — with instant s
 
 **ViewConfig** frozen dataclass holds per-view configuration:
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `mode` | `ViewMode` | Which view this config describes |
-| `display_name` | `str` | Human-readable name (e.g., "Plans") |
-| `labels` | `tuple[str, ...]` | GitHub labels for API queries |
-| `key_hint` | `str` | Keyboard shortcut (e.g., "1") |
+| Field          | Type              | Description                         |
+| -------------- | ----------------- | ----------------------------------- |
+| `mode`         | `ViewMode`        | Which view this config describes    |
+| `display_name` | `str`             | Human-readable name (e.g., "Plans") |
+| `labels`       | `tuple[str, ...]` | GitHub labels for API queries       |
+| `key_hint`     | `str`             | Keyboard shortcut (e.g., "1")       |
 
 **VIEW_CONFIGS** tuple defines all three views:
 
-| View | Labels | Key |
-| --- | --- | --- |
-| Plans | `("erk-plan",)` | `1` |
-| Learn | `("erk-plan",)` | `2` |
+| View       | Labels               | Key |
+| ---------- | -------------------- | --- |
+| Plans      | `("erk-plan",)`      | `1` |
+| Learn      | `("erk-plan",)`      | `2` |
 | Objectives | `("erk-objective",)` | `3` |
 
 Plans and Learn share the same API label — this is intentional for the two-tier filtering strategy.

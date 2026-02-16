@@ -30,9 +30,9 @@ Objectives use a two-part storage strategy where metadata lives in the issue bod
 
 Block names use the entity type as prefix:
 
-| Entity | Block Names |
-| --- | --- |
-| Plan | `plan-header`, `plan-body` |
+| Entity    | Block Names                                               |
+| --------- | --------------------------------------------------------- |
+| Plan      | `plan-header`, `plan-body`                                |
 | Objective | `objective-header`, `objective-roadmap`, `objective-body` |
 
 This convention is enforced by the schemas in `erk_shared.gateway.github.metadata.schemas`.
@@ -57,10 +57,10 @@ The two-step creation (issue then comment) is necessary because the comment ID i
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py -->
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `created_at` | `str` | ISO 8601 timestamp |
-| `created_by` | `str` | GitHub username |
+| Field                  | Type          | Description                                                                       |
+| ---------------------- | ------------- | --------------------------------------------------------------------------------- |
+| `created_at`           | `str`         | ISO 8601 timestamp                                                                |
+| `created_by`           | `str`         | GitHub username                                                                   |
 | `objective_comment_id` | `int \| None` | Comment ID containing objective-body (null during creation, backfilled in step 7) |
 
 ## Rendering

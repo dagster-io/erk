@@ -30,14 +30,14 @@ def validate(value):
 
 ### Examples in the Codebase
 
-| File | Constant | Pattern |
-| --- | --- | --- |
-| `src/erk/agent_docs/operations.py:30` | `LAST_AUDITED_PATTERN` | `YYYY-MM-DD HH:MM PT` format |
-| `src/erk/review/parsing.py:21` | `MARKER_PATTERN` | HTML comment markers |
-| `src/erk/cli/commands/exec/scripts/get_embedded_prompt.py:45` | `_PLACEHOLDER_PATTERN` | Template `{{ placeholder }}` |
-| `packages/erk-shared/src/erk_shared/naming.py:16` | `_SAFE_COMPONENT_RE` | Safe path component chars |
-| `packages/erk-shared/src/erk_shared/naming.py:25` | `_TIMESTAMP_SUFFIX_PATTERN` | Timestamp branch suffixes |
-| `packages/erk-shared/src/erk_shared/gateway/pr/diff_extraction.py:34` | `_DIFF_FILE_PATH_PATTERN` | Git diff file paths |
+| File                                                                  | Constant                    | Pattern                      |
+| --------------------------------------------------------------------- | --------------------------- | ---------------------------- |
+| `src/erk/agent_docs/operations.py:30`                                 | `LAST_AUDITED_PATTERN`      | `YYYY-MM-DD HH:MM PT` format |
+| `src/erk/review/parsing.py:21`                                        | `MARKER_PATTERN`            | HTML comment markers         |
+| `src/erk/cli/commands/exec/scripts/get_embedded_prompt.py:45`         | `_PLACEHOLDER_PATTERN`      | Template `{{ placeholder }}` |
+| `packages/erk-shared/src/erk_shared/naming.py:16`                     | `_SAFE_COMPONENT_RE`        | Safe path component chars    |
+| `packages/erk-shared/src/erk_shared/naming.py:25`                     | `_TIMESTAMP_SUFFIX_PATTERN` | Timestamp branch suffixes    |
+| `packages/erk-shared/src/erk_shared/gateway/pr/diff_extraction.py:34` | `_DIFF_FILE_PATH_PATTERN`   | Git diff file paths          |
 
 ### Naming Convention
 

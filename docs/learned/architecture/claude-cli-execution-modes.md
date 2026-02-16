@@ -15,10 +15,10 @@ Claude Code commands with `context: fork` metadata behave differently depending 
 
 ## The Behavioral Difference
 
-| Mode | `context: fork` Behavior | Isolation |
-| --- | --- | --- |
-| Interactive | Creates a fresh subagent context | True isolation |
-| `--print` | Loads command inline into parent context | No isolation |
+| Mode        | `context: fork` Behavior                 | Isolation      |
+| ----------- | ---------------------------------------- | -------------- |
+| Interactive | Creates a fresh subagent context         | True isolation |
+| `--print`   | Loads command inline into parent context | No isolation   |
 
 In interactive mode, `context: fork` works as expected — the skill/command runs in a separate agent with its own context. In `--print` mode, the fork metadata is present but the command content is loaded inline, meaning terminal instructions from one phase can contaminate the parent context.
 
@@ -37,12 +37,12 @@ This pattern wraps a skill invocation inside a Task tool call, ensuring the skil
 
 ## When Each Pattern Applies
 
-| Scenario | Use | Why |
-| --- | --- | --- |
-| Read-only analysis in interactive mode | `context: fork` | Simple, efficient |
-| Multi-phase commands that modify state | Task tool | Needs isolation in all modes |
-| Commands that must work in both modes | Task tool | `--print` safety |
-| Preview-only commands (no side effects) | Either | No state to contaminate |
+| Scenario                                | Use             | Why                          |
+| --------------------------------------- | --------------- | ---------------------------- |
+| Read-only analysis in interactive mode  | `context: fork` | Simple, efficient            |
+| Multi-phase commands that modify state  | Task tool       | Needs isolation in all modes |
+| Commands that must work in both modes   | Task tool       | `--print` safety             |
+| Preview-only commands (no side effects) | Either          | No state to contaminate      |
 
 ## Worked Example: pr-address vs pr-preview-address
 

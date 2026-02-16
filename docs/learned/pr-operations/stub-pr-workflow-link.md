@@ -15,17 +15,18 @@ PR bodies in one-shot workflows go through a three-tier lifecycle: stub creation
 
 ## Three-Tier PR Body Lifecycle
 
-| Stage | Content | When | Who |
-| --- | --- | --- | --- |
-| 1. Stub | Minimal placeholder | PR creation | `gt create` / GitHub API |
-| 2. Workflow link | Instruction + workflow run URL | After dispatch | `one_shot_dispatch.py` |
-| 3. AI summary | Full description with context | After implementation | `erk pr submit` |
+| Stage            | Content                        | When                 | Who                      |
+| ---------------- | ------------------------------ | -------------------- | ------------------------ |
+| 1. Stub          | Minimal placeholder            | PR creation          | `gt create` / GitHub API |
+| 2. Workflow link | Instruction + workflow run URL | After dispatch       | `one_shot_dispatch.py`   |
+| 3. AI summary    | Full description with context  | After implementation | `erk pr submit`          |
 
 ## Workflow Link Implementation
 
 <!-- Source: src/erk/cli/commands/one_shot_dispatch.py:236-247 -->
 
 After dispatching a one-shot workflow, `one_shot_dispatch.py` updates the stub PR body with:
+
 - The original instruction text
 - A link to the GitHub Actions workflow run
 
