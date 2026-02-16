@@ -122,11 +122,11 @@ To create a new category: create the directory, add docs with valid frontmatter,
 
 ## Common Mistakes
 
-| Symptom                                            | Cause                                            | Fix                                                     |
-| -------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------- |
-| Tripwire missing from generated files              | Plain string instead of `{action, warning}` dict | Restructure as `{action: "...", warning: "..."}`        |
-| Doc missing from index                             | No `read_when` field or empty list               | Add at least one condition                              |
-| Validation error: `tripwires[N] must be an object` | Tripwire item is a string                        | Convert to structured dict format                       |
-| "Invalid YAML" parse error                         | Unquoted colons or special characters            | Quote strings: `"working with: patterns"`               |
-| Prettier cycling between sync and CI               | Single-pass formatting                           | Already fixed — `_format_with_prettier` runs two passes |
-| Doc shows in wrong category tripwires              | Doc is in wrong directory for its content        | Move to correct category directory, re-sync             |
+| Symptom                                            | Cause                                            | Fix                                                            |
+| -------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------- |
+| Tripwire missing from generated files              | Plain string instead of `{action, warning}` dict | Restructure as `{action: "...", warning: "..."}`               |
+| Doc missing from index                             | No `read_when` field or empty list               | Add at least one condition                                     |
+| Validation error: `tripwires[N] must be an object` | Tripwire item is a string                        | Convert to structured dict format                              |
+| "Invalid YAML" parse error                         | Unquoted colons or special characters            | Quote strings: `"working with: patterns"`                      |
+| Prettier cycling between sync and CI               | Single-pass formatting                           | Already fixed — `agent_docs.format_markdown()` runs two passes |
+| Doc shows in wrong category tripwires              | Doc is in wrong directory for its content        | Move to correct category directory, re-sync                    |

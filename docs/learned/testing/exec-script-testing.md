@@ -418,11 +418,9 @@ When a CLI parameter receives `""` (empty string) to clear a value, normalize to
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _build_output -->
 
-```python
-# Normalize empty strings to None for JSON output
-plan_out = plan_value if plan_value else None
-pr_out = pr_value if pr_value else None
-```
+The pattern converts each value using a falsy check: if the string is empty (or falsy), substitute `None`; otherwise keep the original value. Apply this to each field that may receive `""` before building the JSON output dict.
+
+<!-- See source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py:183-185 -->
 
 **Why normalize?** Empty string (`""`) and absent (`None`/`null`) have different meanings in JSON:
 
