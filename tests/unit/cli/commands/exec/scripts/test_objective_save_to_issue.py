@@ -473,3 +473,73 @@ def test_objective_save_to_issue_with_roadmap_creates_frontmatter() -> None:
     comment_body = fake_gh.added_comments[0][1]
     assert "erk:metadata-block:objective-body" in comment_body
     assert "Feature Objective" in comment_body
+
+
+# --- --validate flag tests ---
+
+
+def test_objective_save_to_issue_validate_flag_json() -> None:
+    """Test --validate flag includes validation results in JSON output."""
+    fake_gh = FakeGitHubIssues()
+    fake_store = FakeClaudeInstallation.for_test(plans={"validate-test": OBJECTIVE_WITH_ROADMAP})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        objective_save_to_issue,
+        ["--format", "json", "--validate"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["issue_number"] == 1
+    assert "validation" in output
+    assert isinstance(output["validation"]["passed"], bool)
+    assert isinstance(output["validation"]["checks"], list)
+
+
+def test_objective_save_to_issue_validate_flag_display() -> None:
+    """Test --validate flag shows validation result in display format."""
+    fake_gh = FakeGitHubIssues()
+    fake_store = FakeClaudeInstallation.for_test(plans={"validate-display": OBJECTIVE_WITH_ROADMAP})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        objective_save_to_issue,
+        ["--format", "display", "--validate"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert "Objective saved to GitHub issue #1" in result.output
+    assert "Validation:" in result.output
+
+
+def test_objective_save_to_issue_without_validate_flag_no_validation() -> None:
+    """Test that without --validate flag, no validation field in JSON output."""
+    fake_gh = FakeGitHubIssues()
+    fake_store = FakeClaudeInstallation.for_test(
+        plans={"no-validate": OBJECTIVE_WITH_ROADMAP},
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        objective_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert "validation" not in output

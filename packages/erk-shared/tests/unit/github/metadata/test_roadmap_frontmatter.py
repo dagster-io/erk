@@ -229,6 +229,64 @@ def test_group_steps_sorts_phases() -> None:
     assert phases[2].suffix == ""
 
 
+def test_group_steps_undotted_ids() -> None:
+    """Steps with non-dotted IDs (e.g., '1', '2') are grouped into phase 1."""
+    steps = [
+        RoadmapStep(id="1", description="First", status="pending", plan=None, pr=None),
+        RoadmapStep(id="2", description="Second", status="pending", plan=None, pr=None),
+    ]
+
+    phases = group_steps_by_phase(steps)
+
+    assert len(phases) == 1
+    assert phases[0].number == 1
+    assert phases[0].suffix == ""
+    assert len(phases[0].steps) == 2
+    assert phases[0].steps[0].id == "1"
+    assert phases[0].steps[1].id == "2"
+
+
+def test_group_steps_mixed_dotted_and_undotted() -> None:
+    """Non-dotted and dotted IDs with phase 1 prefix merge together."""
+    steps = [
+        RoadmapStep(id="1", description="Undotted", status="pending", plan=None, pr=None),
+        RoadmapStep(id="1.1", description="Dotted", status="pending", plan=None, pr=None),
+    ]
+
+    phases = group_steps_by_phase(steps)
+
+    assert len(phases) == 1
+    assert phases[0].number == 1
+    assert len(phases[0].steps) == 2
+
+
+def test_group_steps_multi_dot_ids() -> None:
+    """Step '1.2.3' groups into phase 1 (leading number extracted from '1.2')."""
+    steps = [
+        RoadmapStep(id="1.2.3", description="Nested", status="pending", plan=None, pr=None),
+        RoadmapStep(id="1.1", description="Normal", status="pending", plan=None, pr=None),
+    ]
+
+    phases = group_steps_by_phase(steps)
+
+    assert len(phases) == 1
+    assert phases[0].number == 1
+    assert len(phases[0].steps) == 2
+
+
+def test_group_steps_letter_ids() -> None:
+    """Pure letter IDs like 'A' go to phase 1."""
+    steps = [
+        RoadmapStep(id="A", description="Letter step", status="pending", plan=None, pr=None),
+    ]
+
+    phases = group_steps_by_phase(steps)
+
+    assert len(phases) == 1
+    assert phases[0].number == 1
+    assert phases[0].steps[0].id == "A"
+
+
 def test_update_step_in_frontmatter() -> None:
     """Update step PR field returns updated frontmatter."""
     block_content = _details_block(
