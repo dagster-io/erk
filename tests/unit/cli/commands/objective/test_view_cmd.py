@@ -34,7 +34,56 @@ def _make_issue(
     )
 
 
-OBJECTIVE_WITH_ROADMAP = """# Objective: Test Feature
+OBJECTIVE_WITH_ROADMAP = """\
+# Objective: Test Feature
+
+## Roadmap
+
+### Phase 1: Foundation
+
+### Phase 2A: Core Implementation
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '2'
+steps:
+- id: '1.1'
+  description: Setup infrastructure
+  status: done
+  plan: null
+  pr: '#123'
+- id: '1.2'
+  description: Add basic tests
+  status: in_progress
+  plan: '#124'
+  pr: null
+- id: '1.3'
+  description: Update docs
+  status: pending
+  plan: null
+  pr: null
+- id: 2A.1
+  description: Build main feature
+  status: done
+  plan: null
+  pr: '#125'
+- id: 2A.2
+  description: Add integration tests
+  status: blocked
+  plan: null
+  pr: null
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+OBJECTIVE_LEGACY_TABLE = """\
+# Objective: Legacy Feature
 
 ## Roadmap
 
@@ -43,15 +92,22 @@ OBJECTIVE_WITH_ROADMAP = """# Objective: Test Feature
 | Step | Description | Status | Plan | PR |
 |------|-------------|--------|------|-----|
 | 1.1 | Setup infrastructure | done | - | #123 |
-| 1.2 | Add basic tests | in-progress | #124 | - |
-| 1.3 | Update docs | pending | - | - |
+"""
 
-### Phase 2A: Core Implementation
+OBJECTIVE_V1_SCHEMA = """\
+# Objective: V1 Schema
 
-| Step | Description | Status | Plan | PR |
-|------|-------------|--------|------|-----|
-| 2A.1 | Build main feature | done | - | #125 |
-| 2A.2 | Add integration tests | blocked | - | - |
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: '1'
+steps:
+- id: '1.1'
+  description: First step
+  status: pending
+  pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
 """
 
 OBJECTIVE_EMPTY_ROADMAP = """# Objective: Empty
@@ -145,7 +201,7 @@ def test_view_objective_missing_label() -> None:
 
 
 def test_view_objective_empty_roadmap() -> None:
-    """Test view with empty roadmap (no phases parsed)."""
+    """Test view with empty roadmap rejects as legacy format."""
     issue = _make_issue(400, "Objective: Empty", OBJECTIVE_EMPTY_ROADMAP)
     fake_gh = FakeGitHubIssues(issues={400: issue})
     runner = CliRunner()
@@ -158,10 +214,8 @@ def test_view_objective_empty_roadmap() -> None:
             obj=test_ctx,
         )
 
-        assert result.exit_code == 0, f"Failed: {result.output}"
-        assert "Objective: Empty" in result.output
-        assert "Roadmap" in result.output
-        assert "No roadmap data found" in result.output
+        assert result.exit_code == 1
+        assert "legacy objective format" in result.output
 
 
 def test_view_objective_displays_summary() -> None:
@@ -290,3 +344,40 @@ def test_view_objective_plan_pr_columns() -> None:
         assert "#123" in output
         # Step 1.2 has plan #124 but no PR
         assert "#124" in output
+
+
+def test_view_objective_legacy_format_rejected() -> None:
+    """Test that table-only objective body is rejected as legacy format."""
+    issue = _make_issue(1000, "Objective: Legacy", OBJECTIVE_LEGACY_TABLE)
+    fake_gh = FakeGitHubIssues(issues={1000: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["1000"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 1
+        assert "legacy objective format" in result.output
+        assert "erk:objective-create" in result.output
+
+
+def test_view_objective_v1_schema_rejected() -> None:
+    """Test that metadata block with schema_version 1 is rejected."""
+    issue = _make_issue(1100, "Objective: V1", OBJECTIVE_V1_SCHEMA)
+    fake_gh = FakeGitHubIssues(issues={1100: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh)
+        result = runner.invoke(
+            view_objective,
+            ["1100"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 1
+        assert "legacy objective format" in result.output

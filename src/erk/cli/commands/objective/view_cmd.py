@@ -19,7 +19,7 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.roadmap import (
     compute_summary,
     find_next_step,
-    parse_roadmap,
+    parse_v2_roadmap,
 )
 from erk_shared.output.output import user_output
 
@@ -139,8 +139,14 @@ def view_objective(ctx: ErkContext, objective_ref: str) -> None:
             f"Issue #{issue_number} is not an objective (missing erk-objective label)"
         )
 
-    # Parse roadmap from issue body
-    phases, _validation_errors = parse_roadmap(issue.body)
+    # Parse roadmap from issue body (v2 format only)
+    v2_result = parse_v2_roadmap(issue.body)
+    if v2_result is None:
+        raise UserFacingCliError(
+            f"Issue #{issue_number} uses legacy objective format."
+            " Recreate it using /erk:objective-create."
+        )
+    phases, _validation_errors = v2_result
 
     # Compute summary statistics
     summary = compute_summary(phases)
