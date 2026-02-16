@@ -7,6 +7,8 @@ from erk.tui.views.types import (
     VIEW_CONFIGS,
     ViewConfig,
     ViewMode,
+    get_next_view_mode,
+    get_previous_view_mode,
     get_view_config,
 )
 
@@ -87,3 +89,35 @@ class TestGetViewConfig:
         config = get_view_config(ViewMode.OBJECTIVES)
         assert config.mode == ViewMode.OBJECTIVES
         assert config.display_name == "Objectives"
+
+
+class TestGetNextViewMode:
+    """Tests for get_next_view_mode function."""
+
+    def test_plans_to_learn(self) -> None:
+        """Next after PLANS is LEARN."""
+        assert get_next_view_mode(ViewMode.PLANS) == ViewMode.LEARN
+
+    def test_learn_to_objectives(self) -> None:
+        """Next after LEARN is OBJECTIVES."""
+        assert get_next_view_mode(ViewMode.LEARN) == ViewMode.OBJECTIVES
+
+    def test_objectives_wraps_to_plans(self) -> None:
+        """Next after OBJECTIVES wraps to PLANS."""
+        assert get_next_view_mode(ViewMode.OBJECTIVES) == ViewMode.PLANS
+
+
+class TestGetPreviousViewMode:
+    """Tests for get_previous_view_mode function."""
+
+    def test_plans_wraps_to_objectives(self) -> None:
+        """Previous before PLANS wraps to OBJECTIVES."""
+        assert get_previous_view_mode(ViewMode.PLANS) == ViewMode.OBJECTIVES
+
+    def test_learn_to_plans(self) -> None:
+        """Previous before LEARN is PLANS."""
+        assert get_previous_view_mode(ViewMode.LEARN) == ViewMode.PLANS
+
+    def test_objectives_to_learn(self) -> None:
+        """Previous before OBJECTIVES is LEARN."""
+        assert get_previous_view_mode(ViewMode.OBJECTIVES) == ViewMode.LEARN

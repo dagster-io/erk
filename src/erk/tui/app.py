@@ -82,8 +82,8 @@ class ErkDashApp(App):
         Binding("1", "switch_view_plans", "Plans", show=False),
         Binding("2", "switch_view_learn", "Learn", show=False),
         Binding("3", "switch_view_objectives", "Objectives", show=False),
-        Binding("right", "next_view", "Next View", show=False),
-        Binding("left", "previous_view", "Previous View", show=False),
+        Binding("right", "next_view", "Next View", show=False, priority=True),
+        Binding("left", "previous_view", "Previous View", show=False, priority=True),
     ]
 
     def get_system_commands(self, screen: Screen) -> Iterator[SystemCommand]:
