@@ -1,5 +1,7 @@
 ---
 title: Update Roadmap Step Command
+last_audited: "2026-02-15"
+audit_result: edited
 read_when:
   - working with objective roadmap tables, updating step PR references, implementing plan-save workflow
 tripwires:
@@ -70,19 +72,20 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr ""
 
 Output is structured JSON with `success`, `issue_number`, `step_id`, `previous_pr`, `new_pr`, and `url` fields.
 
-````bash
+```bash
 # Update multiple steps with same plan (single API call)
 erk exec update-roadmap-step 6697 --step 5.1 --step 5.2 --step 5.3 --plan "#6759"
+```
 
-The command follows erk's discriminated union pattern for error returns:
+The command always exits 0. Check the JSON `success` field for pass/fail:
 
-| Exit Code | Scenario                 | JSON `error` Field   |
-| --------- | ------------------------ | -------------------- |
-| 0         | Success                  | N/A                  |
-| 1         | Issue doesn't exist      | `issue_not_found`    |
-| 1         | No roadmap table in body | `no_roadmap`         |
-| 1         | Step ID not in roadmap   | `step_not_found`     |
-| 1         | Regex replacement failed | `replacement_failed` |
+| Scenario                 | Exit Code | JSON `success` | JSON Error Type      |
+| ------------------------ | --------- | -------------- | -------------------- |
+| Success                  | 0         | `true`         | N/A                  |
+| Issue doesn't exist      | 0         | `false`        | `issue_not_found`    |
+| No roadmap table in body | 0         | `false`        | `no_roadmap`         |
+| Step ID not in roadmap   | 0         | `false`        | `step_not_found`     |
+| Regex replacement failed | 0         | `false`        | `replacement_failed` |
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, update_roadmap_step -->
 
@@ -128,6 +131,7 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --include-body
 ```
 
 The `updated_body` field is only included when:
+
 - `--include-body` is passed
 - The update was successful (all steps for multi-step, the single step for single-step)
 
@@ -162,7 +166,7 @@ When updating a single step, the command maintains backward-compatible output:
   "new_pr": "plan #6464",
   "url": "https://github.com/owner/repo/issues/6423"
 }
-````
+```
 
 ### Multiple Steps (New Format)
 

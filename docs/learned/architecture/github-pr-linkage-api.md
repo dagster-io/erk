@@ -1,5 +1,7 @@
 ---
 title: GitHub Issue-PR Linkage API Patterns
+last_audited: "2026-02-15"
+audit_result: edited
 read_when:
   - "querying PRs linked to an issue"
   - "understanding how GitHub tracks issue-PR relationships"
@@ -100,9 +102,8 @@ The `erk plan submit` command must include "Closes #N" in the **initial** PR bod
 
 Erk uses `CrossReferencedEvent` to query issue-PR linkages:
 
-- **Query location**: `packages/erk-shared/src/erk_shared/github/real.py`
-- **Method**: `get_prs_linked_to_issues()` for batch queries (dash)
-- **Method**: `get_prs_referencing_issue()` for single-issue queries (plan list)
+- **Batch queries (dash)**: `get_prs_linked_to_issues()` in `packages/erk-shared/src/erk_shared/gateway/github/real.py`
+- **Single-issue queries (plan list)**: `get_prs_referencing_issue()` in `packages/erk-shared/src/erk_shared/gateway/github/issues/real.py`
 - **Field mapping**: GraphQL `willCloseTarget` → `PullRequestInfo.will_close_target`
 
 ## Debugging PR Linkages

@@ -1,6 +1,6 @@
 ---
 title: Gateway ABC Implementation Checklist
-last_audited: "2026-02-04 05:48 PT"
+last_audited: "2026-02-15"
 audit_result: clean
 read_when:
   - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
