@@ -1,5 +1,7 @@
 ---
 title: Exec Command Patterns
+last_audited: "2026-02-16 03:30 PT"
+audit_result: edited
 read_when:
   - "writing exec scripts with PR/issue output"
   - "building diagnostic messages"
@@ -74,22 +76,9 @@ Structure body generation as pure functions:
 - Return formatted string
 - Easy to unit test with various inputs
 
-**Example signature:**
+<!-- Source: src/erk/cli/commands/exec/scripts/handle_no_changes.py, _build_pr_body -->
 
-```python
-def _build_pr_body(
-    *,
-    issue_number: int,
-    behind_count: int,
-    base_branch: str,
-    recent_commits: str | None,
-    run_url: str | None,
-) -> str:
-```
-
-## Implementation Reference
-
-See `src/erk/cli/commands/exec/scripts/handle_no_changes.py` for the canonical implementation of these patterns.
+See `_build_pr_body()` in `src/erk/cli/commands/exec/scripts/handle_no_changes.py` for the canonical implementation — a pure function accepting all data as keyword parameters and returning a formatted string.
 
 ## Graceful Degradation for Optional Parameters
 
@@ -132,22 +121,9 @@ Some exec commands accept input from either a file or stdin. This pattern enable
 
 ### Pattern: --plan-file Option
 
-```python
-@click.command(name="validate-plan-content")
-@click.option(
-    "--plan-file",
-    type=click.Path(exists=True, path_type=Path),
-    help="Path to plan file. If not provided, reads from stdin.",
-)
-def validate_plan_content(*, plan_file: Path | None) -> None:
-    # Read from file or stdin
-    if plan_file:
-        content = plan_file.read_text(encoding="utf-8")
-    else:
-        content = sys.stdin.read()
+<!-- Source: src/erk/cli/commands/exec/scripts/validate_plan_content.py, validate_plan_content -->
 
-    # Process content...
-```
+See `validate_plan_content()` in `src/erk/cli/commands/exec/scripts/validate_plan_content.py`. It accepts an optional `--plan-file` Click path option (with `exists=True`), falling back to `sys.stdin.read()` when no file is provided.
 
 ### Usage Examples
 
