@@ -24,9 +24,9 @@ Usage:
     # Single step — plan reference
     erk exec update-roadmap-step 6423 --step 1.3 --plan "#6464"
 
-    # Single step — landed PR (auto-clears plan)
-    erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500"
-    erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --status done
+    # Single step — landed PR (requires --plan to prevent accidental loss)
+    erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --plan "#6464"
+    erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --plan "" --status done
 
     # Clear both
     erk exec update-roadmap-step 6423 --step 1.3 --pr ""
@@ -117,10 +117,7 @@ def _replace_table_in_text(
     existing_pr = match.group(5).strip()
 
     if new_plan is None:
-        if new_pr:
-            resolved_plan = "-"  # Auto-clear plan when PR is explicitly set
-        else:
-            resolved_plan = existing_plan
+        resolved_plan = existing_plan  # Always preserve when not explicitly passed
     elif new_plan:
         resolved_plan = new_plan
     else:
@@ -348,6 +345,23 @@ def update_roadmap_step(
                     "success": False,
                     "error": "missing_ref",
                     "message": "At least one of --plan or --pr is required",
+                }
+            )
+        )
+        raise SystemExit(0)
+
+    # Require --plan when --pr is set to prevent accidental plan loss
+    if pr_ref is not None and pr_ref and plan_ref is None:
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "plan_required_with_pr",
+                    "message": (
+                        "--plan is required when --pr is set"
+                        " (use --plan '' to explicitly clear,"
+                        " or --plan '#NNN' to preserve)"
+                    ),
                 }
             )
         )
