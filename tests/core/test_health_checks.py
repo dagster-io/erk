@@ -558,11 +558,7 @@ def test_check_managed_artifacts_in_erk_repo(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_github_dir",
-        lambda: tmp_path / "bundled" / ".github",
-    )
+    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = check_managed_artifacts(tmp_path)
 
@@ -598,11 +594,8 @@ def test_check_managed_artifacts_produces_type_summary(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_github_dir",
-        lambda: tmp_path / "bundled" / ".github",
-    )
+    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
+
     monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
 
     result = check_managed_artifacts(project_dir)
@@ -639,11 +632,8 @@ def test_check_managed_artifacts_some_not_installed(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_github_dir",
-        lambda: tmp_path / "bundled" / ".github",
-    )
+    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
+
     monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
 
     result = check_managed_artifacts(project_dir)
@@ -686,11 +676,8 @@ def test_check_managed_artifacts_shows_type_summary(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_github_dir",
-        lambda: tmp_path / "bundled" / ".github",
-    )
+    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
+
     monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
     # Mock installed capabilities to include the skill capability
     monkeypatch.setattr(
@@ -742,12 +729,8 @@ def test_check_managed_artifacts_actions_optional_without_workflows(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_claude
-    )
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_github_dir", lambda: bundled_github
-    )
+    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_claude)
+
     monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
     # Mock installed capabilities to include the workflow capability (which includes actions)
     monkeypatch.setattr(
@@ -809,12 +792,8 @@ def test_check_managed_artifacts_actions_required_with_workflows(
     project_workflows.mkdir(parents=True)
     (project_workflows / "plan-implement.yml").write_text("name: plan-implement", encoding="utf-8")
 
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_claude
-    )
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_github_dir", lambda: bundled_github
-    )
+    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_claude)
+
     monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
     # Mock installed capabilities to include the workflow capability
     monkeypatch.setattr(
@@ -880,11 +859,8 @@ hash = "{content_hash}"
 '''
     (state_dir / "state.toml").write_text(state_toml, encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_github_dir",
-        lambda: tmp_path / "bundled" / ".github",
-    )
+    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
+
     monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
 
     result = check_managed_artifacts(project_dir)
@@ -965,11 +941,8 @@ hash = "{exit_plan_hash}"
 '''
     (state_dir / "state.toml").write_text(state_toml, encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_github_dir",
-        lambda: tmp_path / "bundled" / ".github",
-    )
+    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
+
     monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
 
     result = check_managed_artifacts(project_dir)
@@ -1005,11 +978,8 @@ def test_check_managed_artifacts_verbose_status_explanations(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_github_dir",
-        lambda: tmp_path / "bundled" / ".github",
-    )
+    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
+
     monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
 
     result = check_managed_artifacts(project_dir)

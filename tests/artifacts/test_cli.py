@@ -277,7 +277,7 @@ class TestCheckCommand:
 
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
                 with patch(
-                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
+                    "erk.cli.commands.artifact.check.get_bundled_claude_dir",
                     return_value=Path("/nonexistent"),
                 ):
                     result = runner.invoke(check_cmd)
@@ -356,7 +356,7 @@ class TestCheckCommand:
 
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
                 with patch(
-                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
+                    "erk.cli.commands.artifact.check.get_bundled_claude_dir",
                     return_value=Path("/nonexistent"),
                 ):
                     result = runner.invoke(check_cmd)
@@ -423,7 +423,7 @@ class TestCheckCommand:
 
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
                 with patch(
-                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
+                    "erk.cli.commands.artifact.check.get_bundled_claude_dir",
                     return_value=bundled_dir,
                 ):
                     result = runner.invoke(check_cmd)
@@ -471,11 +471,11 @@ class TestCheckCommand:
 
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
                 with patch(
-                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
+                    "erk.cli.commands.artifact.check.get_bundled_claude_dir",
                     return_value=bundled_dir,
                 ):
                     with patch(
-                        "erk.artifacts.artifact_health.get_bundled_github_dir",
+                        "erk.cli.commands.artifact.check.get_bundled_github_dir",
                         return_value=bundled_github,
                     ):
                         result = runner.invoke(check_cmd)
@@ -595,11 +595,11 @@ class TestCheckVerboseShowsBothArtifactTypes:
 
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
                 with patch(
-                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
+                    "erk.cli.commands.artifact.check.get_bundled_claude_dir",
                     return_value=bundled_dir,
                 ):
                     with patch(
-                        "erk.artifacts.artifact_health.get_bundled_github_dir",
+                        "erk.cli.commands.artifact.check.get_bundled_github_dir",
                         return_value=bundled_github,
                     ):
                         result = runner.invoke(check_cmd, ["-v"])
@@ -640,11 +640,11 @@ class TestCheckVerboseShowsBothArtifactTypes:
 
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
                 with patch(
-                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
+                    "erk.cli.commands.artifact.check.get_bundled_claude_dir",
                     return_value=bundled_dir,
                 ):
                     with patch(
-                        "erk.artifacts.artifact_health.get_bundled_github_dir",
+                        "erk.cli.commands.artifact.check.get_bundled_github_dir",
                         return_value=bundled_github,
                     ):
                         result = runner.invoke(check_cmd, ["-v"])
