@@ -17,7 +17,7 @@ This document captures the design thinking around extending the roadmap table fo
 
 ## Current State: 5-Column Format (Canonical)
 
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, RoadmapStep -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, RoadmapStep -->
 
 The `RoadmapStep` dataclass has five fields (`id`, `description`, `status`, `plan`, `pr`). The `plan` and `pr` fields are separate: `plan` holds a plan issue reference (`"#6464"`), while `pr` holds a landed PR reference (`"#123"`). Both are `str | None`.
 
@@ -60,7 +60,7 @@ The original plan added three more columns: **Type** (task/milestone/research), 
 
 ## Status Inference: A Design Quirk Worth Preserving
 
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
 
 The parser has a dual-path status resolution: explicit status values in the Status column take priority, but if the Status column contains `-` (legacy format), status is inferred from the plan/PR columns (`#NNN` in PR = done, `#NNN` in Plan = in_progress, both empty = pending). This backward compatibility exists because early roadmaps used `-` in the Status column and relied entirely on column-based inference. Any format extension must preserve this fallback to avoid breaking existing objectives.
 

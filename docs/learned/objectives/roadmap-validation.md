@@ -17,7 +17,7 @@ tripwires:
 
 Roadmap validation is deliberately split across two layers because they serve different purposes and have different failure modes:
 
-<!-- Source: objective_roadmap_shared.py, parse_roadmap -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
 
 **Structural validation** (in `parse_roadmap()`) answers: "Can we extract data from this markdown?" It runs during every roadmap operation — parsing, updating, checking — and returns warnings alongside whatever data it could extract. Parsing is lenient: it continues past malformed phases and collects errors rather than aborting.
 
@@ -70,9 +70,9 @@ This is why `validate_objective()` returns `ObjectiveValidationError` (couldn't 
 
 ## Implementation Reference
 
-<!-- Source: objective_roadmap_shared.py, parse_roadmap -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
 
-- Structural validation: `parse_roadmap()` in `objective_roadmap_shared.py`
+- Structural validation: `parse_roadmap()` in `erk_shared.gateway.github.metadata.roadmap`
 
 <!-- Source: check_cmd.py, validate_objective -->
 

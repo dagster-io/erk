@@ -26,6 +26,8 @@ Rules triggered by matching actions in code.
 
 **investigating an automated reviewer complaint** → Read [Automated Review Handling](automated-review-handling.md) first. Determine if the tool is the authority for that concern. For formatting, prettier is the authority — if prettier passes, dismiss the bot. For type errors, ty is the authority.
 
+**silently catching exceptions in PR body updates** → Read [Stub PR Workflow Link](stub-pr-workflow-link.md) first. Use best-effort pattern: try/except with logger.warning(), not silent pass. See one_shot_dispatch.py for the canonical example.
+
 **using gh pr create directly in Python code** → Read [Git-Only PR Submission Path](pr-submission-workflow.md) first. The pipeline uses ctx.github.create_pr() (REST API gateway), not gh pr create. The command-level path uses gh CLI directly because it runs in shell context. See pr-submission-workflow.md.
 
 **using gh pr ready instead of the gateway's mark_pr_ready method** → Read [Draft PR Handling](draft-pr-handling.md) first. mark_pr_ready uses REST API to preserve GraphQL quota. Don't shell out to gh pr ready directly.

@@ -13,6 +13,8 @@ tripwires:
     warning: "Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear."
   - action: "writing multi-line error messages in Ensure method calls"
     warning: "Use implicit string concatenation with \\n at end of first string. Line 1 is the primary error, line 2+ is remediation context. Do NOT use \\n\\n (double newline) — Ensure handles spacing."
+  - action: "using Python format strings with :N width specifiers for CLI output containing emoji"
+    warning: "Use Rich tables instead — emoji have variable terminal widths (typically 2 cells) which break fixed-width alignment. See the Rich Tables for Variable-Width Characters section below."
 ---
 
 # CLI Output Styling Guide
@@ -262,6 +264,40 @@ This allows shell scripts to parse JSON from stdout without interference from pr
 
 - [Output Abstraction](#output-abstraction) - When to use `user_output()` vs `machine_output()`
 - [Emoji Conventions](#emoji-conventions) - Standard emoji meanings
+
+## Progress Callbacks
+
+For operations using the callback progress pattern, bind the callback to CLI output at the command layer.
+
+### Binding Pattern
+
+Use a lambda to convert progress strings to styled CLI output. See `sync.py` in `src/erk/cli/commands/docs/` for the reference implementation.
+
+The lambda should:
+
+- Apply cyan styling for consistency with other progress output
+- Route to stderr (`err=True`) to avoid interfering with machine-readable stdout
+
+For silent operation (validation, testing), pass a no-op lambda (`lambda _: None`).
+
+### Progress Granularity Guidelines
+
+Choose progress granularity based on the number of items being processed:
+
+| Item Count | Strategy         | Example                                         |
+| ---------- | ---------------- | ----------------------------------------------- |
+| <10        | Per-item         | "Processing file 1/5..."                        |
+| 10-100     | Milestone-based  | "Scanning...", "Generating...", "Finalizing..." |
+| >100       | Percentage/count | "Processing... 45% (450/1000)"                  |
+
+Per-file progress for large operations creates visual noise and can slow execution. Milestone-based progress at operation boundaries provides adequate feedback without overwhelming the user.
+
+Example: `erk docs sync` processes ~55 files but reports only 6 milestones (one per pipeline stage).
+
+### Related Patterns
+
+- [Callback Progress Pattern](../architecture/callback-progress-pattern.md) - Operations layer pattern
+- [Async Progress Output Patterns](#async-progress-output-patterns) - Full async progress conventions
 
 ## Spacing Guidelines
 
@@ -825,6 +861,91 @@ Escape user data that may contain:
 ### Reference Implementation
 
 See `src/erk/tui/widgets/clickable_link.py` for `escape_markup()` usage patterns.
+
+## Rich Tables for Variable-Width Characters
+
+### Problem Statement
+
+Python format strings assume fixed character width, but emoji have variable terminal widths. A format string like `f"{text:30}"` counts characters, not terminal cells. Emoji typically consume 2 terminal cells:
+
+- Checkmark emoji = 2 cells
+- Cycle arrows emoji = 2 cells
+- Hourglass emoji = 2 cells
+- ASCII characters = 1 cell
+
+This causes columns to appear misaligned whenever emoji are present. The misalignment is silent — code runs without errors but output looks wrong.
+
+### Solution: Rich Tables with cell_len()
+
+Rich tables use `cell_len()` from `rich.cells` to calculate actual terminal width. Import the necessary components and let Rich handle alignment automatically.
+
+**Import:** `from rich.cells import cell_len`
+
+When manually calculating column widths (e.g., for pre-computed widths), use `cell_len(string)` instead of `len(string)`. This ensures emoji-containing strings are measured correctly.
+
+### Pre-Computed Column Widths Pattern
+
+When rendering multiple Rich tables in sequence (e.g., one per phase), each table calculates its own column widths independently. This results in misalignment between tables. Pre-compute maximum column widths across ALL data before rendering any tables.
+
+<!-- Source: src/erk/cli/commands/objective/view_cmd.py, view_objective -->
+
+**Pattern:** Calculate max widths by iterating all data before creating tables, then pass `min_width` to each column. See `view_objective()` in `src/erk/cli/commands/objective/view_cmd.py` for the complete implementation (grep for `max_id_width`, `max_status_width`, or `min_width`).
+
+### When to Use
+
+- Any CLI output with emoji or unicode characters requiring column alignment
+- Multiple tables that should visually align as a single logical table
+- Status indicators, progress displays, or any output with variable-width symbols
+
+## Migrating from click.style() to Rich Markup
+
+When migrating CLI output to Rich tables, status indicators need Rich markup format instead of click-styled strings.
+
+### Mapping Table
+
+| click.style() call               | Rich Markup equivalent    |
+| -------------------------------- | ------------------------- |
+| `click.style(text, fg="green")`  | `[green]{text}[/green]`   |
+| `click.style(text, fg="yellow")` | `[yellow]{text}[/yellow]` |
+| `click.style(text, dim=True)`    | `[dim]{text}[/dim]`       |
+
+### Function Signature Changes
+
+Functions that previously returned click-styled strings now return Rich markup strings. The return type stays `str`, but the content format changes.
+
+<!-- Source: src/erk/cli/commands/objective/view_cmd.py, _format_step_status -->
+
+See `_format_step_status()` in `src/erk/cli/commands/objective/view_cmd.py` for an example migration from click.style() to Rich markup.
+
+### Escaping User Content
+
+Use `escape()` from `rich.markup` for user-provided content that may contain brackets. Unescaped brackets like `[foo]` are interpreted as Rich style tags and disappear from output.
+
+**Pattern:** Import `escape` from `rich.markup`, then wrap user content: `f"[yellow]status {escape(user_text)}[/yellow]"`
+
+## Rich Markup Approach for Clickable Links
+
+When using Rich tables, use Rich's link markup instead of raw OSC 8 escape sequences.
+
+**Pattern:** `[link=URL]display text[/link]`
+
+**Advantages over raw OSC 8:**
+
+- Rich handles terminal compatibility automatically
+- More readable than escape codes
+- Consistent with Rich's styling approach elsewhere
+
+<!-- Source: src/erk/cli/commands/objective/view_cmd.py, _format_ref_link -->
+
+**Helper function pattern:** Create functions that convert GitHub refs (e.g., `#6871`) to clickable Rich markup. See `_format_ref_link()` and `_extract_repo_base_url()` in `src/erk/cli/commands/objective/view_cmd.py` for the implementation pattern.
+
+**When to choose Rich markup over raw OSC 8:**
+
+- Output is rendered via Rich Console or Table
+- Need consistent styling with other Rich components
+- Want automatic terminal capability detection
+
+**When to use raw OSC 8 instead:** Output goes through `click.echo()` or `user_output()` where Rich rendering is not involved.
 
 ## See Also
 

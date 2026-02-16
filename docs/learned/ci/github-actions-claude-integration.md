@@ -34,7 +34,7 @@ Workflows require `ANTHROPIC_API_KEY` and `GH_TOKEN` (or `GITHUB_TOKEN`). Some w
 
 ## Model Selection
 
-For cost-sensitive CI jobs, specify a model via `--model`. Refer to `.github/workflows/` for current pinned model IDs used in each workflow.
+All Claude-invoking workflows default to `claude-opus-4-6`. See [Workflow Model Policy](workflow-model-policy.md) for the standardization rationale, affected workflows, and the distinction between workflow models and review models.
 
 ## Common Errors
 

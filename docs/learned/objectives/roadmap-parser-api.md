@@ -1,7 +1,7 @@
 ---
 title: Roadmap Shared Parser Architecture
 read_when:
-  - "adding a new consumer of objective_roadmap_shared.py"
+  - "adding a new consumer of roadmap.py in erk_shared"
   - "extending the roadmap data model with new fields"
   - "understanding why the shared parser exists separately from its consumers"
 tripwires:
@@ -10,7 +10,7 @@ tripwires:
   - action: "accessing step_id on a RoadmapStep"
     warning: "The field is named 'id', not 'step_id'. This is a common mistake — check the actual dataclass definition."
   - action: "importing parse_roadmap into a new consumer"
-    warning: "The shared module lives in exec/scripts/ for historical reasons but is consumed by both exec scripts and CLI commands. If adding a third consumer, consider whether the module should move to a shared location."
+    warning: "The shared module lives in erk_shared.gateway.github.metadata.roadmap and is consumed by both exec scripts and CLI commands. Import from this shared location."
 last_audited: "2026-02-08 10:24 PT"
 audit_result: edited
 ---
@@ -21,9 +21,9 @@ The roadmap parser is a shared module consumed by two commands with fundamentall
 
 ## Why a Shared Module?
 
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py -->
 
-The `objective_roadmap_shared.py` module exists because two commands need the same parsing logic but use different subsets of it. Both `check_cmd.py` (erk objective check) and `update_roadmap_step.py` consume the shared parser, but differ in scope: `check_cmd` uses all 4 functions and both data types for full validation workflow, while `update_roadmap_step` only imports `parse_roadmap` for validation before surgical regex edits.
+The `roadmap.py` module in `erk_shared.gateway.github.metadata` exists because two commands need the same parsing logic but use different subsets of it. Both `check_cmd.py` (erk objective check) and `update_roadmap_step.py` consume the shared parser, but differ in scope: `check_cmd` uses all 4 functions and both data types for full validation workflow, while `update_roadmap_step` only imports `parse_roadmap` for validation before surgical regex edits.
 
 <!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective -->
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
@@ -44,9 +44,9 @@ The `RoadmapStep.id` field is named `id`, not `step_id`. Every consumer accesses
 
 `parse_roadmap` returns `(phases, validation_errors)` where validation_errors are warning strings, not exceptions. The parser extracts whatever it can and reports problems alongside results. This matters because a partially-parsed roadmap is more useful than a crashed parse — `check_cmd` displays both the parsed phases and the warnings.
 
-## Module Location Anomaly
+## Module Location History
 
-The shared module lives in `src/erk/cli/commands/exec/scripts/` — the exec scripts directory — even though `check_cmd.py` in `src/erk/cli/commands/objective/` imports from it. This is a historical artifact: the parser was originally created for exec scripts and gained a second consumer later. The cross-package import works but is architecturally unusual. If a third consumer appears, consider promoting the module to a more neutral location.
+The shared module now lives in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`. It was originally located in `src/erk/cli/commands/exec/scripts/` when created for exec scripts, then moved to the shared package as it gained multiple consumers across both exec scripts and CLI commands.
 
 ## Undocumented Helpers
 
@@ -66,9 +66,9 @@ def replace_metadata_block_in_body(body: str, key: str, new_block_content: str) 
 
 Replaces an entire metadata block's content in the body. Finds the block by key and substitutes the content between the HTML comment markers. Used during roadmap mutations to replace the frontmatter block after updating step data.
 
-### `_enrich_phase_names()` (from objective_roadmap_shared.py)
+### `_enrich_phase_names()` (from roadmap.py)
 
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, _enrich_phase_names -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, _enrich_phase_names -->
 
 ```python
 def _enrich_phase_names(body: str, phases: list[RoadmapPhase]) -> list[RoadmapPhase]

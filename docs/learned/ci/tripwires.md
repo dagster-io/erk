@@ -52,6 +52,8 @@ Rules triggered by matching actions in code.
 
 **creating a new review without checking taxonomy** → Read [Review Types Taxonomy](review-types-taxonomy.md) first. Consult this taxonomy first. Creating overlapping reviews wastes CI resources and confuses PR status checks.
 
+**creating workflows that invoke Claude without specifying model** → Read [Workflow Model Policy](workflow-model-policy.md) first. All workflows MUST default to claude-opus-4-6. See workflow-model-policy.md for the standardization rationale.
+
 **editing markdown files in docs/** → Read [Markdown Formatting in CI Workflows](markdown-formatting.md) first. Run `make prettier` via devrun after markdown edits. Multi-line edits trigger Prettier failures. Never manually format - use the command.
 
 **implementing change detection without baseline capture** → Read [erk-impl Change Detection](plan-implement-change-detection.md) first. Read this doc first. Always capture baseline state BEFORE mutation, then compare AFTER.

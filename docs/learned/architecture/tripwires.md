@@ -40,6 +40,8 @@ Rules triggered by matching actions in code.
 
 **adding re-exports to gateway implementation modules** → Read [Re-Export Pattern](re-export-pattern.md) first. Only re-export types that genuinely improve public API. Add # noqa: F401 - re-exported for <reason> comment.
 
+**adding regex validation inline instead of module-level compilation** → Read [Validation Patterns](validation-patterns.md) first. Compile regex patterns at module level as named constants. See LAST_AUDITED_PATTERN in operations.py:30 for the canonical example.
+
 **adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file** [pattern: `subprocess\.run\(|run_subprocess_with_context\(`] → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must add integration tests in tests/integration/test*real*\*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior.
 
 **amending a commit when Graphite is enabled** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in sync_cmd and branch_manager.
@@ -251,3 +253,5 @@ Rules triggered by matching actions in code.
 **writing LiveDisplay output to stdout** → Read [LiveDisplay Gateway](live-display-gateway.md) first. RealLiveDisplay writes to stderr by default (matches erk's user_output convention) — stdout is reserved for structured data
 
 **writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has >3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+
+**writing multi-phase commands without testing in --print mode** → Read [Claude CLI Execution Modes](claude-cli-execution-modes.md) first. context: fork creates true isolation in interactive mode but loads inline in --print mode. Use Task tool for guaranteed isolation in all modes.

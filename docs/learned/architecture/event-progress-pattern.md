@@ -15,6 +15,23 @@ Operations yield events instead of using `click.echo()` directly. This enables:
 2. **Testable progress assertions** - Tests can verify exact progress sequence
 3. **Flexible rendering** - CLI, JSON, or silent modes without code changes
 
+## When to Use This Pattern
+
+Choose event generators over callbacks when:
+
+| Criteria                    | Event Generator | Callback |
+| --------------------------- | --------------- | -------- |
+| Operation complexity        | Complex         | Simple   |
+| Multiple event types needed | Yes             | No       |
+| Structured progress data    | Yes             | No       |
+| Multiple consumers          | Possible        | Single   |
+| Async operation support     | Yes             | Limited  |
+| Test assertion on progress  | Detailed        | Basic    |
+
+**Choose event generators** for operations like PR submission with multiple phases, structured status updates, and potential JSON/UI rendering.
+
+**Choose callbacks** for synchronous operations with string-based milestone updates (like `erk docs sync`). See [Callback Progress Pattern](callback-progress-pattern.md).
+
 ## Source Files
 
 Event types are defined in `packages/erk-shared/src/erk_shared/gateway/gt/events.py`.
@@ -117,5 +134,6 @@ See operations like `submit_pr` in the codebase for concrete examples of this pa
 
 ## Related Documentation
 
+- [Callback Progress Pattern](callback-progress-pattern.md) - Simpler alternative for synchronous operations
 - [Pre-Destruction Data Capture](pre-destruction-capture.md) - Capturing data before mutations
 - [Erk Architecture Patterns](erk-architecture.md) - Dependency injection context
