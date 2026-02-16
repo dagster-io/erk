@@ -871,6 +871,104 @@ class ErkDashApp(App):
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
+        # === OBJECTIVE COMMANDS ===
+        elif command_id == "copy_next_plan":
+            cmd = f"erk objective next-plan {row.issue_number}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_view":
+            cmd = f"erk objective view {row.issue_number}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
+        elif command_id == "open_objective":
+            if row.issue_url:
+                self._provider.browser.launch(row.issue_url)
+                self.notify(f"Opened objective #{row.issue_number}")
+
+        elif command_id == "one_shot_next_plan":
+            executor = RealCommandExecutor(
+                browser_launch=self._provider.browser.launch,
+                clipboard_copy=self._provider.clipboard.copy,
+                close_plan_fn=self._provider.close_plan,
+                notify_fn=self._notify_with_severity,
+                refresh_fn=self.action_refresh,
+                submit_to_queue_fn=self._provider.submit_to_queue,
+            )
+            detail_screen = PlanDetailScreen(
+                row=row,
+                clipboard=self._provider.clipboard,
+                browser=self._provider.browser,
+                executor=executor,
+                repo_root=self._provider.repo_root,
+            )
+            self.push_screen(detail_screen)
+            detail_screen.call_after_refresh(
+                lambda: detail_screen.run_streaming_command(
+                    [
+                        "erk",
+                        "objective",
+                        "next-plan",
+                        str(row.issue_number),
+                        "--one-shot",
+                    ],
+                    cwd=self._provider.repo_root,
+                    title=f"Next Plan (One-Shot) #{row.issue_number}",
+                    timeout=600.0,
+                )
+            )
+
+        elif command_id == "check_objective":
+            executor = RealCommandExecutor(
+                browser_launch=self._provider.browser.launch,
+                clipboard_copy=self._provider.clipboard.copy,
+                close_plan_fn=self._provider.close_plan,
+                notify_fn=self._notify_with_severity,
+                refresh_fn=self.action_refresh,
+                submit_to_queue_fn=self._provider.submit_to_queue,
+            )
+            detail_screen = PlanDetailScreen(
+                row=row,
+                clipboard=self._provider.clipboard,
+                browser=self._provider.browser,
+                executor=executor,
+                repo_root=self._provider.repo_root,
+            )
+            self.push_screen(detail_screen)
+            detail_screen.call_after_refresh(
+                lambda: detail_screen.run_streaming_command(
+                    ["erk", "objective", "check", str(row.issue_number)],
+                    cwd=self._provider.repo_root,
+                    title=f"Check Objective #{row.issue_number}",
+                )
+            )
+
+        elif command_id == "close_objective":
+            executor = RealCommandExecutor(
+                browser_launch=self._provider.browser.launch,
+                clipboard_copy=self._provider.clipboard.copy,
+                close_plan_fn=self._provider.close_plan,
+                notify_fn=self._notify_with_severity,
+                refresh_fn=self.action_refresh,
+                submit_to_queue_fn=self._provider.submit_to_queue,
+            )
+            detail_screen = PlanDetailScreen(
+                row=row,
+                clipboard=self._provider.clipboard,
+                browser=self._provider.browser,
+                executor=executor,
+                repo_root=self._provider.repo_root,
+            )
+            self.push_screen(detail_screen)
+            detail_screen.call_after_refresh(
+                lambda: detail_screen.run_streaming_command(
+                    ["erk", "objective", "close", str(row.issue_number), "--force"],
+                    cwd=self._provider.repo_root,
+                    title=f"Close Objective #{row.issue_number}",
+                )
+            )
+
     @on(PlanDataTable.RowSelected)
     def on_row_selected(self, event: PlanDataTable.RowSelected) -> None:
         """Handle Enter/double-click on row - show plan details."""

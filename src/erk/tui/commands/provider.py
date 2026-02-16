@@ -10,6 +10,7 @@ from textual.command import DiscoveryHit, Hit, Hits, Provider
 
 from erk.tui.commands.registry import CATEGORY_EMOJI, get_available_commands, get_display_name
 from erk.tui.commands.types import CommandContext
+from erk.tui.views.types import ViewMode
 
 if TYPE_CHECKING:
     from erk.tui.app import ErkDashApp, PlanDetailScreen
@@ -90,7 +91,7 @@ class MainListCommandProvider(Provider):
         row = self._app._get_selected_row()
         if row is None:
             return None
-        return CommandContext(row=row)
+        return CommandContext(row=row, view_mode=self._app._view_mode)
 
     async def discover(self) -> Hits:
         """Show available commands when palette opens.
@@ -174,9 +175,10 @@ class PlanCommandProvider(Provider):
         """Build command context from current screen state.
 
         Returns:
-            CommandContext with the selected plan's row data
+            CommandContext with the selected plan's row data.
+            Always uses PLANS view mode since detail modal is plan context.
         """
-        return CommandContext(row=self._detail_screen._row)
+        return CommandContext(row=self._detail_screen._row, view_mode=ViewMode.PLANS)
 
     async def discover(self) -> Hits:
         """Show available commands when palette opens.
