@@ -34,6 +34,13 @@ class InteractiveClaudeConfigSchema(BaseModel):
     Each field's cli_key uses dotted notation: interactive_claude.<subkey>.
     """
 
+    backend: str = Field(
+        description="Agent backend to use (only 'claude' currently supported)",
+        json_schema_extra={
+            "level": ConfigLevel.GLOBAL_ONLY,
+            "cli_key": "interactive_claude.backend",
+        },
+    )
     verbose: bool = Field(
         description="Show verbose output in interactive Claude sessions",
         json_schema_extra={

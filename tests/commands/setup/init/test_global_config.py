@@ -178,3 +178,165 @@ def test_init_creates_global_config_even_when_repo_already_erkified() -> None:
         assert erk_installation.config_exists()
         loaded = erk_installation.load_config()
         assert loaded.erk_root == erk_root.resolve()
+
+
+def test_init_detects_both_backends_defaults_claude() -> None:
+    """Both claude and codex installed, defaults to claude without prompting."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        shell_ops = FakeShell(
+            installed_tools={"claude": "/usr/bin/claude", "codex": "/usr/bin/codex"}
+        )
+        erk_installation = FakeErkInstallation(config=None)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            shell=shell_ops,
+            erk_installation=erk_installation,
+            global_config=None,
+        )
+
+        # Input: erk_root, decline hooks (no backend prompt)
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+
+        assert result.exit_code == 0, result.output
+        assert "Detected: claude" in result.output
+        assert "Detected: codex" in result.output
+        loaded = erk_installation.load_config()
+        assert loaded.interactive_agent.backend == "claude"
+
+
+def test_init_detects_only_codex_defaults_claude() -> None:
+    """Only codex installed, still defaults to claude."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        shell_ops = FakeShell(installed_tools={"codex": "/usr/bin/codex"})
+        erk_installation = FakeErkInstallation(config=None)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            shell=shell_ops,
+            erk_installation=erk_installation,
+            global_config=None,
+        )
+
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+
+        assert result.exit_code == 0, result.output
+        assert "Detected: codex" in result.output
+        assert "Backend: claude" in result.output
+        loaded = erk_installation.load_config()
+        assert loaded.interactive_agent.backend == "claude"
+
+
+def test_init_detects_only_claude_uses_it() -> None:
+    """Only claude installed, defaults to claude."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        shell_ops = FakeShell(installed_tools={"claude": "/usr/bin/claude"})
+        erk_installation = FakeErkInstallation(config=None)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            shell=shell_ops,
+            erk_installation=erk_installation,
+            global_config=None,
+        )
+
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+
+        assert result.exit_code == 0, result.output
+        assert "Detected: claude" in result.output
+        assert "Backend: claude" in result.output
+        loaded = erk_installation.load_config()
+        assert loaded.interactive_agent.backend == "claude"
+
+
+def test_init_detects_no_backends_defaults_claude() -> None:
+    """Neither backend installed, defaults to claude with warning."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        shell_ops = FakeShell(installed_tools={})
+        erk_installation = FakeErkInstallation(config=None)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            shell=shell_ops,
+            erk_installation=erk_installation,
+            global_config=None,
+        )
+
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+
+        assert result.exit_code == 0, result.output
+        assert "No agent backends detected" in result.output
+        assert "Defaulting to claude" in result.output
+        loaded = erk_installation.load_config()
+        assert loaded.interactive_agent.backend == "claude"
+
+
+def test_init_backend_persisted_in_config() -> None:
+    """Verify backend is saved to config as claude regardless of detected backends."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        shell_ops = FakeShell(installed_tools={"codex": "/usr/bin/codex"})
+        erk_installation = FakeErkInstallation(config=None)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            shell=shell_ops,
+            erk_installation=erk_installation,
+            global_config=None,
+        )
+
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+
+        assert result.exit_code == 0, result.output
+        # Verify backend was persisted as claude (always default)
+        assert len(erk_installation.saved_configs) == 1
+        saved = erk_installation.saved_configs[0]
+        assert saved.interactive_agent.backend == "claude"
+
+
+def test_init_shows_config_switch_hint() -> None:
+    """Verify init output contains hint about switching backend via config."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        shell_ops = FakeShell(installed_tools={"claude": "/usr/bin/claude"})
+        erk_installation = FakeErkInstallation(config=None)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            shell=shell_ops,
+            erk_installation=erk_installation,
+            global_config=None,
+        )
+
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+
+        assert result.exit_code == 0, result.output
+        assert "erk config set interactive_claude.backend" in result.output
