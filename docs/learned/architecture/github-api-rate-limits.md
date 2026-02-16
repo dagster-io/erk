@@ -7,8 +7,6 @@ read_when:
   - "encountering GraphQL rate limit errors"
   - "choosing between REST and GraphQL API"
   - "implementing GitHub API calls in gateways"
-last_audited: "2026-02-16 00:00 PT"
-audit_result: clean
 tripwires:
   - action: "using gh issue create in production code"
     warning: "Use REST API via `gh api repos/{owner}/{repo}/issues -X POST` instead. `gh issue create` uses GraphQL which has separate (often exhausted) rate limits."
