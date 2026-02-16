@@ -480,11 +480,7 @@ def parse_v2_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]] | None:
         body is not in v2 format.
     """
     raw_blocks = extract_raw_metadata_blocks(body)
-    roadmap_block = None
-    for block in raw_blocks:
-        if block.key == "objective-roadmap":
-            roadmap_block = block
-            break
+    roadmap_block = next((block for block in raw_blocks if block.key == "objective-roadmap"), None)
 
     if roadmap_block is None:
         return None
