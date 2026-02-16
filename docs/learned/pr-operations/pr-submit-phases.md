@@ -140,3 +140,4 @@ The internal implementation was refactored in PR #6300 from a monolithic functio
 - [Commit Message Generation](commit-message-generation.md) - AI generation details
 - [Plan Lifecycle](../planning/lifecycle.md) - How plans link to PRs
 - [Graphite Integration](../erk/graphite-integration.md) - Stack metadata
+- [Stub PR Workflow Link](stub-pr-workflow-link.md) - Three-tier PR body lifecycle in one-shot workflows

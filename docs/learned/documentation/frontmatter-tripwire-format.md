@@ -31,13 +31,13 @@ Without frontmatter, a doc is invisible to automated discovery. Agents would onl
 
 The canonical schema is defined in `AgentDocFrontmatter` in `src/erk/agent_docs/models.py` and enforced by `validate_agent_doc_frontmatter()` in `src/erk/agent_docs/operations.py`.
 
-| Field          | Required | Type                              | Notes                                                                  |
-| -------------- | -------- | --------------------------------- | ---------------------------------------------------------------------- |
-| `title`        | Yes      | string                            | Used in navigation and indexes                                         |
-| `read_when`    | Yes      | list of strings                   | Must be non-empty. Each item is a condition phrase for agent discovery |
-| `tripwires`    | No       | list of `{action, warning}` dicts | Both keys required per item                                            |
-| `last_audited` | No       | string                            | Free-form date string                                                  |
-| `audit_result` | No       | `"clean"` or `"edited"`           | Literal type check                                                     |
+| Field          | Required | Type                              | Notes                                                                   |
+| -------------- | -------- | --------------------------------- | ----------------------------------------------------------------------- |
+| `title`        | Yes      | string                            | Used in navigation and indexes                                          |
+| `read_when`    | Yes      | list of strings                   | Must be non-empty. Each item is a condition phrase for agent discovery  |
+| `tripwires`    | No       | list of `{action, warning}` dicts | Both keys required per item                                             |
+| `last_audited` | No       | string                            | `YYYY-MM-DD HH:MM PT` format (validated by regex in `operations.py:30`) |
+| `audit_result` | No       | `"clean"` or `"edited"`           | Literal type check                                                      |
 
 ## The Two-Field Tripwire Format
 

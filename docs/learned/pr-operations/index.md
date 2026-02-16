@@ -12,4 +12,5 @@
 - **[pr-submission-workflow.md](pr-submission-workflow.md)** — understanding why two separate git-only PR paths exist, working on the git-pr-push command or the core submit flow, debugging PR creation in environments without Graphite, deciding whether to use the command-level or pipeline-level git path
 - **[pr-submit-phases.md](pr-submit-phases.md)** — understanding the erk pr submit workflow, debugging PR submission issues, working with AI-generated PR descriptions, understanding plan context integration in PRs
 - **[pr-validation-rules.md](pr-validation-rules.md)** — debugging 'erk pr check' failures, building or modifying PR submission pipelines, generating PR bodies with checkout footers or closing references
+- **[stub-pr-workflow-link.md](stub-pr-workflow-link.md)** — understanding the PR body lifecycle in one-shot workflows, working with stub PR creation or workflow run links, debugging missing workflow run links in PR descriptions
 - **[template-synchronization.md](template-synchronization.md)** — modifying commit message prompts, encountering test_file_sync.py failures, editing commit-message-prompt.md in any location

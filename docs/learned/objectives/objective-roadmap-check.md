@@ -8,7 +8,7 @@ tripwires:
   - action: "manually parsing objective roadmap markdown"
     warning: "Use `erk objective check`. It handles structural parsing, status inference, and semantic validation."
   - action: "adding structural validation to check_cmd.py"
-    warning: "Structural validation (phase headers, table format) belongs in objective_roadmap_shared.py. check_cmd.py handles semantic validation only."
+    warning: "Structural validation (phase headers, table format) belongs in erk_shared/gateway/github/metadata/roadmap.py. check_cmd.py handles semantic validation only."
   - action: "raising exceptions from validate_objective()"
     warning: "validate_objective() returns discriminated unions, never raises. Only CLI presentation functions (_output_json, _output_human) raise SystemExit."
 ---
@@ -18,9 +18,9 @@ tripwires:
 ## Why Semantic Validation Is Separate from Parsing
 
 <!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective -->
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
 
-The roadmap parser in `objective_roadmap_shared.py` handles **structural** validation: can the markdown be parsed into phases and steps? The check command's `validate_objective()` in `check_cmd.py` adds a **semantic** layer: is the parsed roadmap internally consistent?
+The roadmap parser in `erk_shared.gateway.github.metadata.roadmap` handles **structural** validation: can the markdown be parsed into phases and steps? The check command's `validate_objective()` in `check_cmd.py` adds a **semantic** layer: is the parsed roadmap internally consistent?
 
 This separation exists because structural parsing is shared across consumers — both `erk objective check` and `erk exec update-roadmap-step` call `parse_roadmap()`. Semantic checks only make sense for read-only validation. Mixing them would force every mutation command to validate consistency before operating, coupling mutation to validation rules and adding unnecessary overhead.
 

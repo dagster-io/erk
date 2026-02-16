@@ -1038,6 +1038,30 @@ if parent is not None:  # Already tracked
 | Restack         | Active  | Parent may have changed      |
 | Squash          | Active  | Additional commits may exist |
 
+## Best-Effort Operations
+
+For operations where failure is informational rather than critical, use the best-effort pattern: `try/except` with `logger.warning()`, not silent `pass`.
+
+```python
+# CORRECT: Best-effort with logging
+try:
+    github.update_pr_body(pr_number, updated_body)
+except Exception:
+    logger.warning("Failed to update PR body with workflow link")
+
+# WRONG: Silent failure hides bugs
+try:
+    github.update_pr_body(pr_number, updated_body)
+except Exception:
+    pass
+```
+
+**When to use:** The operation enhances but doesn't block the workflow (e.g., adding a workflow run link to a stub PR body). The primary workflow should continue regardless.
+
+**When NOT to use:** The operation is required for correctness (e.g., creating the issue, pushing the branch). Use standard error handling instead.
+
+See [Stub PR Workflow Link](../pr-operations/stub-pr-workflow-link.md) for a real-world example of this pattern.
+
 ## Design Principles
 
 These patterns reflect erk's core design principles:

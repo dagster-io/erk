@@ -25,7 +25,7 @@ Erk uses deterministic regex parsing to extract structured data from objective r
 - **`erk objective check`** — parse and validate a roadmap, returning human-readable or structured JSON output
 - **`erk exec update-roadmap-step`** — surgically update a specific step's PR column
 
-Both commands share the parser in `objective_roadmap_shared.py`.
+Both commands share the parser in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`.
 
 ## Check Command
 
@@ -111,7 +111,7 @@ The parser accepts both formats but emits a validation warning for letter-format
 
 ## Implementation Reference
 
-- Shared parser: `src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py`
+- Shared parser: `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
 - Check command: `src/erk/cli/commands/objective/check_cmd.py`
 - Update command: `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`
 

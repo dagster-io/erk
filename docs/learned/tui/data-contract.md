@@ -12,6 +12,8 @@ tripwires:
     warning: "The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break."
   - action: "putting PlanDataProvider ABC in src/erk/tui/"
     warning: "The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways."
+  - action: "constructing PlanFilters without copying all fields from existing filters"
+    warning: "All fields must be explicitly copied in _load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures."
 last_audited: "2026-02-08 13:55 PT"
 audit_result: edited
 ---
@@ -78,6 +80,14 @@ The `PlanRowData` frozen dataclass (`src/erk/tui/data/types.py`) contains 38 fie
 | `title`      | `str` | No       | Plan title, may be truncated for display |
 | `full_title` | `str` | No       | Complete untruncated plan title          |
 | `pr_title`   | `str` | Yes      | PR title if linked                       |
+
+### Metadata Fields (3 fields)
+
+| Field             | Type       | Nullable | Description                                       |
+| ----------------- | ---------- | -------- | ------------------------------------------------- |
+| `author`          | `str`      | No       | GitHub login of the issue creator (from API)      |
+| `created_at`      | `datetime` | No       | Creation datetime of the issue                    |
+| `created_display` | `str`      | No       | Formatted relative time string (e.g., `"2d ago"`) |
 
 ### Body Content (1 field)
 

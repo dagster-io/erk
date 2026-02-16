@@ -44,6 +44,19 @@ fake_gh = FakeGitHubIssues(
 
 `get_comment_by_id()` searches `comments_with_urls` first, then falls back to dynamically-added comments (from `add_comment()` calls). It never reads the `comments` store.
 
+## PR Body Update Assertions
+
+`FakeGitHub` tracks PR body updates in `updated_pr_bodies: list[tuple[int, str]]`. Tests assert against this list to verify PR body mutations:
+
+```python
+# Verify PR body was updated with expected content
+assert len(github.updated_pr_bodies) == 1
+_pr_num, updated_body = github.updated_pr_bodies[0]
+assert "**Workflow run:**" in updated_body
+```
+
+The tuple `(pr_number, body)` pattern is used consistently for all PR body mutation assertions.
+
 ## Instance of a Broader Pattern
 
 This dual-store design appears elsewhere in erk's fakes. FakeGitHub has an analogous pitfall with `prs` vs `pr_details` for branch lookups — both must be configured for `get_pr_for_branch()` to work. See the FakeGitHub section in [testing.md](testing.md) for that variant.
