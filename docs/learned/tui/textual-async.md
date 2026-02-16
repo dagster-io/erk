@@ -1,5 +1,7 @@
 ---
 title: Textual Async Best Practices
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "overriding Screen actions"
   - "working with async/await in Textual"

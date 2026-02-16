@@ -1,5 +1,7 @@
 ---
 title: Learn Command Conditional Pipeline
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "modifying the erk learn command flow"
   - "adding session discovery logic to learn workflow"

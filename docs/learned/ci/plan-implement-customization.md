@@ -1,5 +1,7 @@
 ---
 title: Customizing erk-impl Workflow via Composite Actions
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - customizing erk-impl workflow for a specific repository
   - installing system dependencies in erk-impl CI

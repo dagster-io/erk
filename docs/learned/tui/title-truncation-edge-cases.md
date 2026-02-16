@@ -1,5 +1,7 @@
 ---
 title: Title Truncation Edge Cases
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "implementing title truncation in TUI"
   - "troubleshooting truncated titles showing only prefix"

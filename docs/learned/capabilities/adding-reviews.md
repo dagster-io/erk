@@ -9,7 +9,7 @@ tripwires:
     warning: "Review definition MUST exist at .erk/reviews/{review_name}.md in erk repo root. At runtime, get_bundled_erk_dir() resolves this location (src/erk/artifacts/paths.py). Missing source file causes install failure."
   - action: "review capability installation fails"
     warning: "ReviewCapability has automatic preflight check for code-reviews-system workflow. Install will fail if .github/workflows/code-reviews.yml doesn't exist in target repo. Install code-reviews-system capability first."
-last_audited: "2026-02-08 00:00 PT"
+last_audited: "2026-02-16 04:53 PT"
 audit_result: clean
 ---
 

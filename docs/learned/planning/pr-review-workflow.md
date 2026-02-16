@@ -1,5 +1,7 @@
 ---
 title: PR-Based Plan Review Workflow
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - creating or managing plan review PRs
   - addressing feedback on plan content via PR comments

@@ -1,5 +1,7 @@
 ---
 title: CLI Options Validation
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "adding new CLI options or flags"
   - "implementing option validation logic"

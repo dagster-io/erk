@@ -1,7 +1,7 @@
 ---
 title: CLI Command Organization
-last_audited: "2026-02-03 15:25 PT"
-audit_result: edited
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "organizing CLI commands"
   - "understanding command structure"

@@ -1,5 +1,7 @@
 ---
 title: Documentation Guide
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "navigating erk documentation"
   - "finding where documentation lives"

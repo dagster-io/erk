@@ -1,5 +1,7 @@
 ---
 title: Graphite Branch Setup Before PR Submission
+last_audited: "2026-02-16 04:53 PT"
+audit_result: clean
 read_when:
   - "submitting a PR with Graphite"
   - "encountering no_parent error"
