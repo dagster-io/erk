@@ -89,7 +89,7 @@ The command follows erk's discriminated union pattern for error returns:
 
 <!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, update_roadmap_step -->
 
-All error paths exit with code 0 but include typed error fields for programmatic handling. See `update_roadmap_step()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py:107-182` for the LBYL guard sequence.
+All error paths exit with code 0 but include typed error fields for programmatic handling. See `update_roadmap_step()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py` for the LBYL guard sequence.
 
 ## Body Inclusion: --include-body
 
