@@ -6,6 +6,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     compute_summary,
     find_next_step,
     parse_roadmap,
+    parse_v2_roadmap,
     serialize_phases,
 )
 
@@ -518,3 +519,158 @@ steps:
     # "#999" stays as pr
     assert phases[0].steps[1].plan is None
     assert phases[0].steps[1].pr == "#999"
+
+
+# ---------------------------------------------------------------------------
+# parse_v2_roadmap tests
+# ---------------------------------------------------------------------------
+
+V2_ROADMAP_BODY = """\
+## Objective
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '2'
+steps:
+- id: '1.1'
+  description: Setup infra
+  status: done
+  plan: null
+  pr: '#100'
+- id: '1.2'
+  description: Add tests
+  status: in_progress
+  plan: '#101'
+  pr: null
+- id: '2.1'
+  description: Build feature
+  status: pending
+  plan: null
+  pr: null
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+
+## Roadmap
+
+### Phase 1: Foundation
+
+### Phase 2: Core
+"""
+
+
+def test_parse_v2_roadmap_success() -> None:
+    """Full v2 body with phases returns (phases, errors)."""
+    result = parse_v2_roadmap(V2_ROADMAP_BODY)
+
+    assert result is not None
+    phases, errors = result
+    assert errors == []
+    assert len(phases) == 2
+
+    assert phases[0].number == 1
+    assert phases[0].suffix == ""
+    assert phases[0].name == "Foundation"
+    assert len(phases[0].steps) == 2
+    assert phases[0].steps[0].id == "1.1"
+    assert phases[0].steps[0].status == "done"
+    assert phases[0].steps[0].pr == "#100"
+    assert phases[0].steps[1].id == "1.2"
+    assert phases[0].steps[1].plan == "#101"
+
+    assert phases[1].number == 2
+    assert phases[1].name == "Core"
+    assert len(phases[1].steps) == 1
+    assert phases[1].steps[0].id == "2.1"
+    assert phases[1].steps[0].status == "pending"
+
+
+def test_parse_v2_roadmap_no_metadata_block() -> None:
+    """Body with no objective-roadmap block returns None."""
+    body = "# Objective\n\nJust some text, no metadata blocks."
+
+    result = parse_v2_roadmap(body)
+
+    assert result is None
+
+
+def test_parse_v2_roadmap_no_details_format() -> None:
+    """Has metadata block but uses legacy frontmatter (not <details>) returns None."""
+    body = """\
+## Objective
+
+<!-- erk:metadata-block:objective-roadmap -->
+---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Step one"
+    status: "pending"
+    plan: null
+    pr: null
+---
+<!-- /erk:metadata-block:objective-roadmap -->
+
+### Phase 1: Test
+"""
+
+    result = parse_v2_roadmap(body)
+
+    assert result is None
+
+
+def test_parse_v2_roadmap_wrong_schema_version() -> None:
+    """Has <details> block but schema_version '1' returns None."""
+    body = """\
+## Objective
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '1'
+steps:
+- id: '1.1'
+  description: Step one
+  status: pending
+  plan: null
+  pr: null
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+    result = parse_v2_roadmap(body)
+
+    assert result is None
+
+
+def test_parse_v2_roadmap_validation_failure() -> None:
+    """Has v2 format but invalid step data (missing required field) returns None."""
+    body = """\
+## Objective
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '2'
+steps:
+- id: '1.1'
+  description: Step one
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+    result = parse_v2_roadmap(body)
+
+    assert result is None
