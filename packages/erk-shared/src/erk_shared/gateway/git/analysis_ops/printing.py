@@ -19,6 +19,10 @@ class PrintingGitAnalysisOps(PrintingBase, GitAnalysisOps):
         """Query operation (read-only, no printing)."""
         return self._wrapped.count_commits_ahead(cwd, base_branch)
 
+    def count_commits_behind(self, cwd: Path, target_branch: str) -> int:
+        """Query operation (read-only, no printing)."""
+        return self._wrapped.count_commits_behind(cwd, target_branch)
+
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
         """Query operation (read-only, no printing)."""
         return self._wrapped.get_merge_base(repo_root, ref1, ref2)
