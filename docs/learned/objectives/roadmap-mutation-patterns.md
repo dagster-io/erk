@@ -105,20 +105,11 @@ See `prompt_objective_update()` in `src/erk/cli/commands/objective_helpers.py` f
 
 All regex patterns that match roadmap table rows MUST use `^...$` anchors with `re.MULTILINE`. Without anchors, patterns can match partial lines or span multiple rows, causing incorrect mutations.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py:107-110 -->
-
-```python
-# CORRECT - anchored with ^ and $, uses re.MULTILINE
-# Example from update_roadmap_step.py
-pattern = re.compile(
-    r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$",
-    re.MULTILINE,
-)
-```
+The canonical example is `_replace_step_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py` (around line 107), which builds a compiled regex anchored with `^...$` and `re.MULTILINE` to match a single 5-column row by step ID. Each cell is captured as a non-greedy group so only the target row's status/plan/PR cells are replaced.
 
 **Why anchoring matters**: Without `^` and `$` anchors, a pattern like `\|[^|]+\|` could match across row boundaries. The `re.MULTILINE` flag makes `^` and `$` match at line starts/ends rather than just string starts/ends.
 
-**Pattern**: Every regex that operates on markdown table rows should follow this template: `r"^<row pattern>$"` with `re.MULTILINE`.
+**Pattern**: Every regex that operates on markdown table rows should follow: anchored `^...$` with `re.MULTILINE`.
 
 ## Related Documentation
 
