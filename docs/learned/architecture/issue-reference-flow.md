@@ -5,6 +5,8 @@ read_when:
   - "debugging 'Closes #N' in PR body"
   - "working with plan-ref.json"
   - "closing reference lost after erk pr submit"
+last_audited: "2026-02-16 14:05 PT"
+audit_result: clean
 ---
 
 # Issue Reference Flow

@@ -6,11 +6,13 @@ read_when:
   - "debugging unexpected status in an objective roadmap"
 tripwires:
   - action: "inferring status from PR column when explicit status is set"
-    warning: "Explicit status values (done, in-progress, pending, blocked, skipped) always take priority over PR-based inference. Only '-' or empty values trigger PR-based inference."
+    warning: "Explicit status values (done, in_progress, pending, blocked, skipped, planning) always take priority over PR-based inference. Only '-' or empty values trigger PR-based inference."
   - action: "treating status as a single-source value"
     warning: "Status resolution uses a two-tier system: explicit values first, then PR-based inference. Always check both the Status and PR columns."
   - action: "expecting status to auto-update when PR column is edited manually"
     warning: "Only the update-roadmap-step command writes computed status. Manual PR edits leave status unchanged — set status to '-' to re-enable inference."
+last_audited: "2026-02-16 14:25 PT"
+audit_result: edited
 ---
 
 # Roadmap Status System
@@ -28,9 +30,9 @@ The two-tier design lets normal workflow rely on PR inference (Tier 2) while res
 
 ## Tier 1: Explicit Status Values
 
-When the Status column contains a recognized value, it takes absolute priority regardless of the PR column. The recognized values are: `done`, `in-progress`, `in_progress`, `pending`, `planning`, `blocked`, `skipped`.
+When the Status column contains a recognized value, it takes absolute priority regardless of the PR column. The recognized values are: `done`, `in_progress`, `pending`, `planning`, `blocked`, `skipped`.
 
-Both `in-progress` (hyphenated, human-friendly in markdown) and `in_progress` (underscore, Python-friendly) are accepted and normalized to `in_progress` internally. This matters because the `update-roadmap-step` command writes `in-progress` for readability, but all downstream code uses `in_progress`.
+The parser expects `in_progress` (underscore) in the YAML frontmatter. The `update-roadmap-step` command writes `in-progress` (hyphenated) for display in markdown tables, but the frontmatter uses `in_progress` consistently.
 
 ### The "planning" Status
 

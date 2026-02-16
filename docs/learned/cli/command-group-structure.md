@@ -1,7 +1,7 @@
 ---
 title: CLI Command Group Structure
-last_audited: "2026-02-03 00:00 PT"
-audit_result: edited
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - "creating a new command group"
   - "adding commands to an existing group"

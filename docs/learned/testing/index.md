@@ -26,7 +26,7 @@
 - **[monkeypatch-vs-fakes-decision.md](monkeypatch-vs-fakes-decision.md)** — choosing between monkeypatch and fakes for a test, deciding how to test code that uses Path.home(), unsure whether to create a gateway or use monkeypatch
 - **[rebase-conflicts.md](rebase-conflicts.md)** — fixing merge conflicts in erk tests, ErkContext API changes during rebase, env_helpers conflicts
 - **[session-log-fixtures.md](session-log-fixtures.md)** — creating JSONL fixtures for session log tests, testing session plan extraction, writing integration tests for session parsing
-- **[session-store-testing.md](session-store-testing.md)** — testing code that reads session data, using FakeClaudeCodeSessionStore, mocking session ID lookup
+- **[session-store-testing.md](session-store-testing.md)** — testing code that reads session data, using FakeClaudeInstallation, mocking session ID lookup
 - **[submit-pipeline-tests.md](submit-pipeline-tests.md)** — adding tests for a new submit pipeline step, writing \_make_state helpers for pipeline step tests, deciding what to test at the step level vs the runner level
 - **[subprocess-testing.md](subprocess-testing.md)** — testing code that uses subprocess, creating fakes for process execution, avoiding subprocess mocks in tests
 - **[testing.md](testing.md)** — writing tests for erk, using erk fakes, running erk test commands

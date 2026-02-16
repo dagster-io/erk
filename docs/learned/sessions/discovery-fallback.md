@@ -9,6 +9,8 @@ tripwires:
     warning: "These commands do not exist. Use 'erk exec list-sessions' for general enumeration or 'erk exec get-learn-sessions' for plan-specific discovery."
   - action: "assuming a session ID from metadata corresponds to a file on disk"
     warning: "Claude Code manages session lifecycle; old sessions may be cleaned up. Always use LBYL discovery before reading."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Session Discovery and Fallback Patterns

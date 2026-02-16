@@ -1,6 +1,6 @@
 ---
 title: Session ID Availability and Propagation
-last_audited: "2026-02-16 04:53 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 read_when:
   - "adding session ID to a new exec script or hook"

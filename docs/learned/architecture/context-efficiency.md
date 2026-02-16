@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "reading agent output with TaskOutput then writing it to a file with Write"
     warning: "This is the 'content relay' anti-pattern — it causes 2x context duplication. Instead, have agents accept an output_path parameter and write directly. See /erk:learn for the canonical implementation."
+last_audited: "2026-02-16 14:00 PT"
+audit_result: clean
 ---
 
 # Context Efficiency Patterns

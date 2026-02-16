@@ -11,6 +11,8 @@ tripwires:
       clamping
   - action: using this pattern
     warning: always clamp at the main process trust boundary, not only in the renderer
+last_audited: "2026-02-16 14:25 PT"
+audit_result: clean
 ---
 
 # Defensive Bounds Handling

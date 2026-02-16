@@ -4,6 +4,8 @@ read_when:
   - "evaluating whether an insight deserves tripwire status"
   - "reviewing [TRIPWIRE-CANDIDATE] items from learn workflow"
   - "understanding what makes something tripwire-worthy"
+last_audited: "2026-02-16 14:25 PT"
+audit_result: clean
 ---
 
 # Tripwire Worthiness Criteria

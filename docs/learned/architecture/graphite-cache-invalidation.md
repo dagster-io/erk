@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "implementing mtime-based cache invalidation"
     warning: "Use triple-check guard pattern: (cache exists) AND (mtime exists) AND (mtime matches). Partial checks cause stale data bugs."
+last_audited: "2026-02-16 14:05 PT"
+audit_result: clean
 ---
 
 # Graphite Cache Invalidation

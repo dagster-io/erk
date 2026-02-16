@@ -9,6 +9,8 @@ tripwires:
     warning: "Ensure workflow step has ANTHROPIC_API_KEY in environment. See exec-script-environment-requirements.md"
   - action: "adding new Claude-dependent exec scripts to workflows"
     warning: "Check workflow environment: ANTHROPIC_API_KEY, GH_TOKEN, CLAUDE_CODE_OAUTH_TOKEN"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 ---
 
 # Exec Script Environment Requirements

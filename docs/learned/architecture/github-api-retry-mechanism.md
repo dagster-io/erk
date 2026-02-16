@@ -10,7 +10,7 @@ tripwires:
     warning: "Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability."
   - action: "checking isinstance after RetriesExhausted without type narrowing"
     warning: "After checking `isinstance(result, RetriesExhausted)`, the else branch is type-narrowed to the success type. Use `assert isinstance(result, T)` if needed for clarity."
-last_audited: "2026-02-05 13:14 PT"
+last_audited: "2026-02-16 14:05 PT"
 audit_result: clean
 ---
 

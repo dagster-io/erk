@@ -4,7 +4,7 @@ read_when:
   - "working with Textual TUI framework"
   - "debugging DataTable, App, or CSS issues in Textual"
   - "writing tests for Textual applications"
-last_audited: "2026-02-05 20:38 PT"
+last_audited: "2026-02-16 14:30 PT"
 audit_result: edited
 ---
 
