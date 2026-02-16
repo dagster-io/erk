@@ -154,6 +154,9 @@ class StatefulFakeGitHubIssues(GitHubIssues):
     def add_reaction_to_comment(self, repo_root: Path, comment_id: int, reaction: str) -> None:
         raise NotImplementedError
 
+    def update_issue_title(self, repo_root: Path, number: int, title: str) -> None:
+        raise NotImplementedError
+
     def update_comment(self, repo_root: Path, comment_id: int, body: str) -> None:
         raise NotImplementedError
 

@@ -1023,3 +1023,63 @@ def test_label_exists_after_ensure_label_exists() -> None:
 
     # Now it exists
     assert issues.label_exists(sentinel_path(), "new-label") is True
+
+
+# ============================================================================
+# update_issue_title() tests
+# ============================================================================
+
+
+def test_update_issue_title_updates_title() -> None:
+    """Test update_issue_title changes the issue title."""
+    pre_configured = {42: create_test_issue(42, "Old Title", "Body")}
+    issues = FakeGitHubIssues(issues=pre_configured)
+
+    issues.update_issue_title(sentinel_path(), 42, "New Title")
+
+    updated_issue = issues.get_issue(sentinel_path(), 42)
+    assert updated_issue.title == "New Title"
+    assert updated_issue.body == "Body"  # Body unchanged
+    assert updated_issue.number == 42  # Number unchanged
+
+
+def test_update_issue_title_tracks_mutation() -> None:
+    """Test update_issue_title records mutation for test assertions."""
+    pre_configured = {42: create_test_issue(42, "Old Title", "Body")}
+    issues = FakeGitHubIssues(issues=pre_configured)
+
+    issues.update_issue_title(sentinel_path(), 42, "New Title")
+
+    assert issues.updated_titles == [(42, "New Title")]
+
+
+def test_update_issue_title_missing_issue_raises() -> None:
+    """Test update_issue_title raises RuntimeError for non-existent issue."""
+    issues = FakeGitHubIssues()
+
+    with pytest.raises(RuntimeError, match="Issue #999 not found"):
+        issues.update_issue_title(sentinel_path(), 999, "Title")
+
+
+def test_update_issue_title_updates_timestamp() -> None:
+    """Test update_issue_title updates the updated_at timestamp."""
+    creation_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+    pre_configured = {
+        42: create_test_issue(
+            42, "Old Title", "Body", created_at=creation_time, updated_at=creation_time
+        )
+    }
+    issues = FakeGitHubIssues(issues=pre_configured)
+
+    issues.update_issue_title(sentinel_path(), 42, "New Title")
+
+    updated_issue = issues.get_issue(sentinel_path(), 42)
+    assert updated_issue.created_at == creation_time  # Creation time unchanged
+    assert updated_issue.updated_at > creation_time  # Update time advanced
+
+
+def test_updated_titles_empty_initially() -> None:
+    """Test updated_titles property is empty list on new instance."""
+    issues = FakeGitHubIssues()
+
+    assert issues.updated_titles == []

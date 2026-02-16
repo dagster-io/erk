@@ -1,5 +1,6 @@
 """In-memory fake implementation of GitHub issues for testing."""
 
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -70,6 +71,7 @@ class FakeGitHubIssues(GitHubIssues):
         self._closed_issues: list[int] = []
         self._added_reactions: list[tuple[int, str]] = []
         self._updated_bodies: list[tuple[int, str]] = []
+        self._updated_titles: list[tuple[int, str]] = []  # (issue_number, title)
         self._updated_comments: list[tuple[int, str]] = []  # (comment_id, body)
         self._next_comment_id = 1000  # Start at 1000 to distinguish from issue numbers
 
@@ -128,6 +130,14 @@ class FakeGitHubIssues(GitHubIssues):
         Returns list of (issue_number, body) tuples.
         """
         return self._updated_bodies
+
+    @property
+    def updated_titles(self) -> list[tuple[int, str]]:
+        """Read-only access to updated issue titles for test assertions.
+
+        Returns list of (issue_number, title) tuples.
+        """
+        return self._updated_titles
 
     @property
     def updated_comments(self) -> list[tuple[int, str]]:
@@ -236,6 +246,28 @@ class FakeGitHubIssues(GitHubIssues):
             author=old_issue.author,
         )
         self._issues[number] = updated_issue
+
+    def update_issue_title(self, repo_root: Path, number: int, title: str) -> None:
+        """Update issue title in fake storage and track mutation.
+
+        Raises:
+            RuntimeError: If issue number not found (simulates gh CLI error)
+        """
+        if number not in self._issues:
+            msg = f"Issue #{number} not found"
+            raise RuntimeError(msg)
+
+        # Track the update for test assertions
+        self._updated_titles.append((number, title))
+
+        # Update the issue title in-place (creates new IssueInfo with updated title)
+        old_issue = self._issues[number]
+        self._issues[number] = replace(
+            old_issue,
+            title=title,
+            updated_at=datetime.now(UTC),
+            author=old_issue.author,
+        )
 
     def list_issues(
         self,

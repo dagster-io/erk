@@ -35,8 +35,9 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
 from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
+from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
 
 
 @click.command(name="plan-update-issue")
@@ -72,6 +73,17 @@ def plan_update_issue(
     session_id: str | None,
 ) -> None:
     """Update an existing GitHub issue's plan comment with new content."""
+
+    def _handle_update_error(error_msg: str, cause: Exception | None = None) -> None:
+        """Output error message and exit with code 1."""
+        if output_format == "display":
+            click.echo(f"Error: {error_msg}", err=True)
+        else:
+            click.echo(json.dumps({"success": False, "error": error_msg}))
+        if cause is not None:
+            raise SystemExit(1) from cause
+        raise SystemExit(1)
+
     # Get dependencies from context
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
@@ -85,32 +97,23 @@ def plan_update_issue(
         plan_content = claude_installation.get_latest_plan(cwd, session_id=session_id)
 
     if not plan_content:
-        error_msg = "No plan found in ~/.claude/plans/"
-        if output_format == "display":
-            click.echo(f"Error: {error_msg}", err=True)
-        else:
-            click.echo(json.dumps({"success": False, "error": error_msg}))
-        raise SystemExit(1)
+        _handle_update_error("No plan found in ~/.claude/plans/")
+
+    # Narrow type for type checker (None case handled above)
+    assert plan_content is not None
 
     # Step 2: Get existing issue to verify it exists
     issue = github.get_issue(repo_root, issue_number)
     if isinstance(issue, IssueNotFound):
-        error_msg = f"Issue #{issue_number} not found"
-        if output_format == "display":
-            click.echo(f"Error: {error_msg}", err=True)
-        else:
-            click.echo(json.dumps({"success": False, "error": error_msg}))
-        raise SystemExit(1)
+        _handle_update_error(f"Issue #{issue_number} not found")
+
+    # Narrow type for type checker (IssueNotFound case exits above)
+    assert isinstance(issue, IssueInfo)
 
     # Step 3: Get first comment ID (where plan body lives in Schema v2)
     comments = github.get_issue_comments_with_urls(repo_root, issue_number)
     if not comments:
-        error_msg = f"Issue #{issue_number} has no comments - cannot update plan content"
-        if output_format == "display":
-            click.echo(f"Error: {error_msg}", err=True)
-        else:
-            click.echo(json.dumps({"success": False, "error": error_msg}))
-        raise SystemExit(1)
+        _handle_update_error(f"Issue #{issue_number} has no comments - cannot update plan content")
 
     first_comment = comments[0]
     comment_id = first_comment.id
@@ -121,17 +124,22 @@ def plan_update_issue(
     try:
         github.update_comment(repo_root, comment_id, formatted_plan)
     except RuntimeError as e:
-        error_msg = f"Failed to update comment: {e}"
-        if output_format == "display":
-            click.echo(f"Error: {error_msg}", err=True)
-        else:
-            click.echo(json.dumps({"success": False, "error": error_msg}))
-        raise SystemExit(1) from e
+        _handle_update_error(f"Failed to update comment: {e}", cause=e)
 
-    # Step 5: Output success
+    # Step 5: Update issue title from plan content
+    new_title = extract_title_from_plan(plan_content)
+    title_tag = get_title_tag_from_labels(issue.labels)
+    full_title = f"{title_tag} {new_title}"
+
+    try:
+        github.update_issue_title(repo_root, issue_number, full_title)
+    except RuntimeError as e:
+        _handle_update_error(f"Failed to update title: {e}", cause=e)
+
+    # Step 6: Output success
     if output_format == "display":
         click.echo(f"Plan updated on issue #{issue_number}")
-        click.echo(f"Title: {issue.title}")
+        click.echo(f"Title: {full_title}")
         click.echo(f"URL: {issue.url}")
         click.echo(f"Comment: {first_comment.url}")
     else:
@@ -143,6 +151,7 @@ def plan_update_issue(
                     "issue_url": issue.url,
                     "comment_id": comment_id,
                     "comment_url": first_comment.url,
+                    "title": full_title,
                 }
             )
         )

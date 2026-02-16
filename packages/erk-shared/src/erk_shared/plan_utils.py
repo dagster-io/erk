@@ -175,6 +175,21 @@ def extract_title_from_plan(plan: str) -> str:
     return "Implementation Plan"
 
 
+def get_title_tag_from_labels(labels: list[str]) -> str:
+    """Return the appropriate title tag based on issue labels.
+
+    Returns "[erk-learn]" if the issue has the "erk-learn" label,
+    otherwise returns "[erk-plan]".
+
+    Args:
+        labels: List of label names on the issue
+
+    Returns:
+        Title tag string: "[erk-learn]" or "[erk-plan]"
+    """
+    return "[erk-learn]" if "erk-learn" in labels else "[erk-plan]"
+
+
 def format_error(brief: str, details: str, actions: list[str]) -> str:
     """Format a consistent error message with brief, details, and suggested actions.
 
