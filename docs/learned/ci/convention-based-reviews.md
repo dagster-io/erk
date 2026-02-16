@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "using fnmatch for gitignore-style glob patterns"
     warning: "Use pathspec library instead. fnmatch doesn't support ** recursive globs. Example: pathspec.PathSpec.from_lines('gitignore', patterns)"
-last_audited: "2026-02-05 15:20 PT"
+last_audited: "2026-02-15 18:50 PT"
 audit_result: clean
 ---
 

@@ -4,7 +4,7 @@ read_when:
   - "using .impl/ folders"
   - "understanding plan file structure"
   - "implementing plans"
-last_audited: "2026-02-05 12:35 PT"
+last_audited: "2026-02-15 18:50 PT"
 audit_result: edited
 ---
 
@@ -314,7 +314,7 @@ The workflow uses a **dual-check** approach to detect implementation changes:
 2. **Post-implementation**: Checks both uncommitted changes AND new commits
 3. **Result**: Changes exist if either channel has changes
 
-This dual-check prevents false negatives when agents commit their work without leaving uncommitted changes. See [erk-impl Change Detection](../ci/erk-impl-change-detection.md) for details.
+This dual-check prevents false negatives when agents commit their work without leaving uncommitted changes. See [Plan-Implement Change Detection](../ci/plan-implement-change-detection.md) for details.
 
 ### Submitting for Remote Implementation
 

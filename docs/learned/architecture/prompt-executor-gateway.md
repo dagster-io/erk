@@ -1,4 +1,6 @@
 ---
+last_audited: "2026-02-15 18:50 PT"
+audit_result: edited
 read_when:
   - executing LLM prompts from Python code
   - testing code that uses Claude CLI
@@ -67,37 +69,16 @@ The fake uses **constructor injection** to configure all behaviors. No setters, 
 
 ### Simulating Failures
 
-The fake distinguishes between failure types because callers handle them differently:
+The fake distinguishes between failure types because callers handle them differently. Each failure mode is configured via a constructor parameter:
 
-**Process errors** (Claude CLI not found, permission denied):
+| Constructor Parameter     | Event Yielded       | Simulates                            |
+| ------------------------- | ------------------- | ------------------------------------ |
+| `simulated_process_error` | `ProcessErrorEvent` | Popen failure (CLI not found, perms) |
+| `simulated_no_output`     | `NoOutputEvent`     | Process ran, empty stdout            |
+| `simulated_zero_turns`    | `NoTurnsEvent`      | Hook rejection (zero turns)          |
+| `command_should_fail`     | `ErrorEvent`        | Non-zero exit code                   |
 
-```python
-FakePromptExecutor(simulated_process_error="Permission denied")
-# Yields ProcessErrorEvent - simulates Popen failure
-```
-
-**No output** (Claude ran but produced nothing):
-
-```python
-FakePromptExecutor(simulated_no_output=True)
-# Yields NoOutputEvent - simulates empty stdout
-```
-
-**Hook blocking** (command completed without turns):
-
-```python
-FakePromptExecutor(simulated_zero_turns=True)
-# Yields NoTurnsEvent - simulates hook rejection
-```
-
-**Command failure** (non-zero exit code):
-
-```python
-FakePromptExecutor(command_should_fail=True)
-# Yields ErrorEvent - simulates Claude execution failure
-```
-
-**Why distinguish?** Each failure mode triggers different error messages and recovery logic. The fake enables testing all branches without subprocess manipulation.
+**Why distinguish?** Each failure mode triggers different error messages and recovery logic. The fake enables testing all branches without subprocess manipulation. See `FakePromptExecutor.__init__()` in `tests/fakes/prompt_executor.py` for the full parameter list.
 
 ### Precedence Rules
 
@@ -114,18 +95,9 @@ See `test_fake_prompt_executor_process_error_takes_precedence()` in `tests/unit/
 
 ### Call Tracking
 
-The fake records all calls for assertion:
+The fake records all calls via tracking properties: `.prompt_calls`, `.interactive_calls`, `.passthrough_calls`, `.executed_commands`. **All tracking properties return copies** to prevent test pollution — modifying the returned list does not affect the fake's internal state.
 
-```python
-executor = FakePromptExecutor()
-executor.execute_prompt("Generate title", model="haiku", dangerous=True)
-
-assert len(executor.prompt_calls) == 1
-assert executor.prompt_calls[0] == ("Generate title", None, True)
-#                                    prompt           system_prompt  dangerous
-```
-
-**All tracking properties return copies** to prevent test pollution. Modifying `executor.prompt_calls` does not affect the fake's internal state.
+See `tests/unit/fakes/test_fake_prompt_executor.py` for call tracking assertion patterns.
 
 ## Interactive Execution Asymmetry
 

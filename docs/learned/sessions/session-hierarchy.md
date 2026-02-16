@@ -1,5 +1,7 @@
 ---
 title: Session Hierarchy
+last_audited: "2026-02-15 18:50 PT"
+audit_result: edited
 read_when:
   - "understanding Claude Code session structure"
   - "working with parent and agent sessions"
@@ -202,7 +204,7 @@ Both follow this pattern: glob for candidate files, read first entry, check `ses
 
 ## Implementation References
 
-- **Session store:** `erk_shared/extraction/claude_code_session_store/`
-- **Parent ID extraction:** `real.py:_extract_parent_session_id()`
-- **Agent type extraction:** `show_cmd.py:extract_agent_types()`
+- **Session store:** `packages/erk-shared/src/erk_shared/gateway/claude_installation/`
+- **Parent ID extraction:** `erk_shared/gateway/claude_installation/real.py:_extract_parent_session_id()`
+- **Agent info extraction:** `erk_shared/learn/extraction/session_schema.py:extract_agent_info_from_jsonl()`
 - **Session-scoped discovery:** `preprocess_session.py:discover_agent_logs()`

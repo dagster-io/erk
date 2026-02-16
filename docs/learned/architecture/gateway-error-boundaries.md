@@ -1,5 +1,7 @@
 ---
 title: Gateway Error Boundaries
+last_audited: "2026-02-15 18:50 PT"
+audit_result: clean
 read_when:
   - "implementing gateway error handling"
   - "converting gateway operations to discriminated unions"
