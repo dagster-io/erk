@@ -109,11 +109,42 @@ def test_learned_docs_is_installed_false_when_missing(tmp_path: Path) -> None:
     assert cap.is_installed(tmp_path) is False
 
 
-def test_learned_docs_is_installed_true_when_exists(tmp_path: Path) -> None:
-    """Test that is_installed returns True when docs/learned/ exists."""
+def test_learned_docs_is_installed_true_when_all_three_dirs_exist(tmp_path: Path) -> None:
+    """Test that is_installed returns True when all three directories exist."""
     (tmp_path / "docs" / "learned").mkdir(parents=True)
+    (tmp_path / ".claude" / "skills" / "learned-docs").mkdir(parents=True)
+    (tmp_path / ".claude" / "agents" / "learn").mkdir(parents=True)
     cap = LearnedDocsCapability()
     assert cap.is_installed(tmp_path) is True
+
+
+def test_learned_docs_is_installed_false_when_only_docs_learned(tmp_path: Path) -> None:
+    """Test that is_installed returns False when only docs/learned/ exists."""
+    (tmp_path / "docs" / "learned").mkdir(parents=True)
+    cap = LearnedDocsCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_learned_docs_is_installed_false_when_only_skill(tmp_path: Path) -> None:
+    """Test that is_installed returns False when only the skill directory exists."""
+    (tmp_path / ".claude" / "skills" / "learned-docs").mkdir(parents=True)
+    cap = LearnedDocsCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_learned_docs_is_installed_false_when_only_agents(tmp_path: Path) -> None:
+    """Test that is_installed returns False when only the agents directory exists."""
+    (tmp_path / ".claude" / "agents" / "learn").mkdir(parents=True)
+    cap = LearnedDocsCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_learned_docs_is_installed_false_when_two_of_three(tmp_path: Path) -> None:
+    """Test that is_installed returns False when only two of three directories exist."""
+    (tmp_path / "docs" / "learned").mkdir(parents=True)
+    (tmp_path / ".claude" / "skills" / "learned-docs").mkdir(parents=True)
+    cap = LearnedDocsCapability()
+    assert cap.is_installed(tmp_path) is False
 
 
 def test_learned_docs_install_creates_directory(tmp_path: Path) -> None:
@@ -194,7 +225,10 @@ def test_learned_docs_install_when_docs_exists_but_not_learned(tmp_path: Path) -
 def test_learned_docs_installation_check_description() -> None:
     """Test that LearnedDocsCapability has an installation check description."""
     cap = LearnedDocsCapability()
-    assert "docs/learned" in cap.installation_check_description
+    desc = cap.installation_check_description
+    assert "docs/learned/" in desc
+    assert ".claude/skills/learned-docs/" in desc
+    assert ".claude/agents/learn/" in desc
 
 
 def test_learned_docs_artifacts() -> None:
@@ -224,6 +258,46 @@ def test_learned_docs_artifacts() -> None:
             assert artifact.artifact_type == "directory"
         else:
             assert artifact.artifact_type == "file"
+
+
+# =============================================================================
+# Tests for LearnedDocsCapability Uninstall
+# =============================================================================
+
+
+def test_learned_docs_uninstall_preserves_docs_learned(tmp_path: Path) -> None:
+    """Test that uninstall preserves docs/learned/ directory."""
+    cap = LearnedDocsCapability()
+    cap.install(tmp_path)
+
+    result = cap.uninstall(tmp_path)
+
+    assert result.success is True
+    assert "preserved" in result.message
+    assert (tmp_path / "docs" / "learned").exists()
+
+
+def test_learned_docs_uninstall_removes_skill_and_agents(tmp_path: Path) -> None:
+    """Test that uninstall removes skill, agents, and command but not docs."""
+    cap = LearnedDocsCapability()
+    cap.install(tmp_path)
+
+    result = cap.uninstall(tmp_path)
+
+    assert result.success is True
+    assert not (tmp_path / ".claude" / "skills" / "learned-docs").exists()
+    assert not (tmp_path / ".claude" / "agents" / "learn").exists()
+    assert not (tmp_path / ".claude" / "commands" / "erk" / "learn.md").exists()
+    assert (tmp_path / "docs" / "learned").exists()
+
+
+def test_learned_docs_uninstall_when_not_installed(tmp_path: Path) -> None:
+    """Test that uninstall succeeds when nothing is installed."""
+    cap = LearnedDocsCapability()
+    result = cap.uninstall(tmp_path)
+
+    assert result.success is True
+    assert "not installed" in result.message
 
 
 # =============================================================================

@@ -75,8 +75,9 @@ packages = ["src/erk"]
 ".claude/skills/dignified-code-simplifier" = "erk/data/codex/skills/dignified-code-simplifier"
 ".claude/skills/pr-operations" = "erk/data/codex/skills/pr-operations"
 ".claude/skills/pr-feedback-classifier" = "erk/data/codex/skills/pr-feedback-classifier"
-# Agents: devrun only
+# Agents: devrun and learn
 ".claude/agents/devrun.md" = "erk/data/claude/agents/devrun.md"
+".claude/agents/learn" = "erk/data/claude/agents/learn"
 # Workflows: erk-managed GitHub workflows
 ".github/workflows/plan-implement.yml" = "erk/data/github/workflows/plan-implement.yml"
 # Actions: composite GitHub actions (needed by workflows)
