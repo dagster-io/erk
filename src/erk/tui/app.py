@@ -485,6 +485,40 @@ class ErkDashApp(App):
                 timeout=5,
             )
 
+    def _push_streaming_detail(
+        self,
+        *,
+        row: PlanRowData,
+        command: list[str],
+        title: str,
+        timeout: float,
+    ) -> None:
+        """Push a detail screen and run a streaming command after refresh."""
+        executor = RealCommandExecutor(
+            browser_launch=self._provider.browser.launch,
+            clipboard_copy=self._provider.clipboard.copy,
+            close_plan_fn=self._provider.close_plan,
+            notify_fn=self._notify_with_severity,
+            refresh_fn=self.action_refresh,
+            submit_to_queue_fn=self._provider.submit_to_queue,
+        )
+        detail_screen = PlanDetailScreen(
+            row=row,
+            clipboard=self._provider.clipboard,
+            browser=self._provider.browser,
+            executor=executor,
+            repo_root=self._provider.repo_root,
+        )
+        self.push_screen(detail_screen)
+        detail_screen.call_after_refresh(
+            lambda: detail_screen.run_streaming_command(
+                command,
+                cwd=self._provider.repo_root,
+                title=title,
+                timeout=timeout,
+            )
+        )
+
     def action_show_detail(self) -> None:
         """Show plan detail modal for selected row."""
         row = self._get_selected_row()
@@ -888,85 +922,33 @@ class ErkDashApp(App):
                 self.notify(f"Opened objective #{row.issue_number}")
 
         elif command_id == "one_shot_next_plan":
-            executor = RealCommandExecutor(
-                browser_launch=self._provider.browser.launch,
-                clipboard_copy=self._provider.clipboard.copy,
-                close_plan_fn=self._provider.close_plan,
-                notify_fn=self._notify_with_severity,
-                refresh_fn=self.action_refresh,
-                submit_to_queue_fn=self._provider.submit_to_queue,
-            )
-            detail_screen = PlanDetailScreen(
+            self._push_streaming_detail(
                 row=row,
-                clipboard=self._provider.clipboard,
-                browser=self._provider.browser,
-                executor=executor,
-                repo_root=self._provider.repo_root,
-            )
-            self.push_screen(detail_screen)
-            detail_screen.call_after_refresh(
-                lambda: detail_screen.run_streaming_command(
-                    [
-                        "erk",
-                        "objective",
-                        "next-plan",
-                        str(row.issue_number),
-                        "--one-shot",
-                    ],
-                    cwd=self._provider.repo_root,
-                    title=f"Next Plan (One-Shot) #{row.issue_number}",
-                    timeout=600.0,
-                )
+                command=[
+                    "erk",
+                    "objective",
+                    "next-plan",
+                    str(row.issue_number),
+                    "--one-shot",
+                ],
+                title=f"Next Plan (One-Shot) #{row.issue_number}",
+                timeout=600.0,
             )
 
         elif command_id == "check_objective":
-            executor = RealCommandExecutor(
-                browser_launch=self._provider.browser.launch,
-                clipboard_copy=self._provider.clipboard.copy,
-                close_plan_fn=self._provider.close_plan,
-                notify_fn=self._notify_with_severity,
-                refresh_fn=self.action_refresh,
-                submit_to_queue_fn=self._provider.submit_to_queue,
-            )
-            detail_screen = PlanDetailScreen(
+            self._push_streaming_detail(
                 row=row,
-                clipboard=self._provider.clipboard,
-                browser=self._provider.browser,
-                executor=executor,
-                repo_root=self._provider.repo_root,
-            )
-            self.push_screen(detail_screen)
-            detail_screen.call_after_refresh(
-                lambda: detail_screen.run_streaming_command(
-                    ["erk", "objective", "check", str(row.issue_number)],
-                    cwd=self._provider.repo_root,
-                    title=f"Check Objective #{row.issue_number}",
-                )
+                command=["erk", "objective", "check", str(row.issue_number)],
+                title=f"Check Objective #{row.issue_number}",
+                timeout=30.0,
             )
 
         elif command_id == "close_objective":
-            executor = RealCommandExecutor(
-                browser_launch=self._provider.browser.launch,
-                clipboard_copy=self._provider.clipboard.copy,
-                close_plan_fn=self._provider.close_plan,
-                notify_fn=self._notify_with_severity,
-                refresh_fn=self.action_refresh,
-                submit_to_queue_fn=self._provider.submit_to_queue,
-            )
-            detail_screen = PlanDetailScreen(
+            self._push_streaming_detail(
                 row=row,
-                clipboard=self._provider.clipboard,
-                browser=self._provider.browser,
-                executor=executor,
-                repo_root=self._provider.repo_root,
-            )
-            self.push_screen(detail_screen)
-            detail_screen.call_after_refresh(
-                lambda: detail_screen.run_streaming_command(
-                    ["erk", "objective", "close", str(row.issue_number), "--force"],
-                    cwd=self._provider.repo_root,
-                    title=f"Close Objective #{row.issue_number}",
-                )
+                command=["erk", "objective", "close", str(row.issue_number), "--force"],
+                title=f"Close Objective #{row.issue_number}",
+                timeout=30.0,
             )
 
     @on(PlanDataTable.RowSelected)
