@@ -268,15 +268,9 @@ Some subprocess operations should fail gracefully while others should fail fast.
 
 Use when the operation is **optional** and the caller should decide how to handle absence:
 
-See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`.
+<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_direct -->
 
-```python
-# Signature and return type (see source for full implementation):
-def _get_pr_for_plan_direct(
-    *, github_issues, github, repo_root: Path, issue_number: int,
-) -> dict[str, object] | None:
-    # Returns None on ANY failure: missing issue, metadata, branch, or PR
-```
+See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`. Returns `dict[str, object] | None` — `None` on any failure (missing issue, metadata, branch, or PR).
 
 **Characteristics:**
 
