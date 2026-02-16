@@ -34,6 +34,27 @@ Enter plan mode only when you can answer:
 - What test patterns exist for this area?
 - Are there documented pitfalls or tripwires?
 
+## Parallel Exploration for Multi-Issue PRs
+
+When addressing multiple independent review comments or investigating multiple unrelated questions, launch parallel Explore agents rather than investigating sequentially.
+
+### Pattern
+
+1. Identify independent issues (no shared context required between them)
+2. Launch parallel Explore agents — one per issue
+3. Read key files after exploration to validate findings
+4. Consolidate findings before writing plan
+
+### Example
+
+PR #7095 Batch 2: circular dependency analysis and table parsing investigation ran in parallel, then findings were consolidated into a single plan. Each agent specialized in one problem domain.
+
+### Benefits
+
+- Faster context gathering (wall-clock time)
+- Avoids sequential bottleneck when issues don't share context
+- Each agent specializes in one domain, producing more focused results
+
 ## When to Skip the Explore Phase
 
 - The task is well-understood and affects a small, known set of files

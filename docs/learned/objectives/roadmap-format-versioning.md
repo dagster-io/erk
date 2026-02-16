@@ -17,7 +17,7 @@ This document captures the design thinking around extending the roadmap table fo
 
 ## Current State: 5-Column Format (Canonical)
 
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, RoadmapStep -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, RoadmapStep -->
 
 The `RoadmapStep` dataclass has five fields (`id`, `description`, `status`, `plan`, `pr`). The `plan` and `pr` fields are separate: `plan` holds a plan issue reference (`"#6464"`), while `pr` holds a landed PR reference (`"#123"`). Both are `str | None`.
 
@@ -54,13 +54,21 @@ Key design choices:
 - **Auto-upgrade on write**: When `_replace_step_refs_in_body()` edits a 4-col table, it upgrades the header to 5-col
 - **Frontmatter schema v2**: The YAML frontmatter uses `schema_version: "2"` with separate `plan` and `pr` fields. v1 frontmatter with `pr: "plan #NNN"` is auto-migrated during parsing
 
+## v1 to v2 Frontmatter Migration
+
+v1 format stored plan references in the PR column: `plan #NNN`. v2 format uses a dedicated `plan` field in frontmatter.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, validate_roadmap_frontmatter -->
+
+Migration logic in `validate_roadmap_frontmatter()` detects the `plan #NNN` pattern in the `pr` field and extracts it to the `plan` field automatically during parsing. Schema version `"2"` uses separate `plan` and `pr` fields in the YAML frontmatter.
+
 ## Historical: Planned 7-Column Extension (Never Built)
 
 The original plan added three more columns: **Type** (task/milestone/research), **Issue** (GitHub issue reference), and **Depends On** (step ID dependencies). This was never implemented. If revisited, follow the same header-based detection pattern established by the 4→5 migration.
 
 ## Status Inference: A Design Quirk Worth Preserving
 
-<!-- Source: src/erk/cli/commands/exec/scripts/objective_roadmap_shared.py, parse_roadmap -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
 
 The parser has a dual-path status resolution: explicit status values in the Status column take priority, but if the Status column contains `-` (legacy format), status is inferred from the plan/PR columns (`#NNN` in PR = done, `#NNN` in Plan = in_progress, both empty = pending). This backward compatibility exists because early roadmaps used `-` in the Status column and relied entirely on column-based inference. Any format extension must preserve this fallback to avoid breaking existing objectives.
 

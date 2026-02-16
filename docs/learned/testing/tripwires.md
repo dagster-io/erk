@@ -28,6 +28,8 @@ Rules triggered by matching actions in code.
 
 **asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`** → Read [Erk Test Reference](testing.md) first. Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper.
 
+**changing data format (v1→v2) without updating all tests in the same commit** → Read [Erk Test Reference](testing.md) first. Format changes silently break tests written for the old format. Update ALL tests in the same commit and run full test suite before marking PR ready.
+
 **choosing between monkeypatch and fakes for a test** → Read [Monkeypatch vs Fakes Decision Guide](monkeypatch-vs-fakes-decision.md) first. Read monkeypatch-vs-fakes-decision.md first. Default to gateway fakes. Monkeypatch is only appropriate for process-level globals like Path.home() in exec scripts.
 
 **creating a FakePlanBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeGitHubIssues injected into GitHubPlanStore. Fake backends are only for validating ABC contract across providers.
@@ -79,6 +81,8 @@ Rules triggered by matching actions in code.
 **tracking mutations before checking error configuration in a fake method** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics.
 
 **tracking only the primary argument in a mutation tuple, omitting flags or options** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. Track ALL call parameters in tuples (e.g., (branch, force) not just branch). Lost context leads to undertested behavior.
+
+**unpacking FakeGitHubIssues.added_comments as a 2-tuple** → Read [Erk Test Reference](testing.md) first. added_comments is a 3-tuple: (issue_number, body, comment_id). Read FakeGitHubIssues source before writing assertions.
 
 **using Path.home() directly in production code** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
 

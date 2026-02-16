@@ -6,6 +6,7 @@
 - **[branch-cleanup.md](branch-cleanup.md)** — cleaning up branches, removing dormant worktrees, managing branch lifecycle
 - **[codespace-machine-types.md](codespace-machine-types.md)** — creating or configuring codespaces, choosing a machine type for codespace setup, debugging codespace creation failures
 - **[codespace-remote-execution.md](codespace-remote-execution.md)** — modifying the codespace environment bootstrap sequence, debugging why a remote erk command fails before reaching the actual command, deciding whether a new remote command needs build_codespace_ssh_command
+- **[git-workflow.md](git-workflow.md)** — pushing branches managed by Graphite, resolving divergence after rebase on Graphite-managed branches, deciding between git push and gt submit
 - **[graphite-branch-setup.md](graphite-branch-setup.md)** — submitting a PR with Graphite, encountering no_parent error, setting up branch tracking for gt
 - **[graphite-stack-troubleshooting.md](graphite-stack-troubleshooting.md)** — debugging Graphite stack operation failures, recovering from gt sync or gt submit errors, fixing stack ordering or parent tracking issues
 - **[issue-pr-linkage-storage.md](issue-pr-linkage-storage.md)** — understanding how plans link to PRs, debugging why a PR isn't linked to its issue, working with .impl/issue.json, creating PRs that close issues

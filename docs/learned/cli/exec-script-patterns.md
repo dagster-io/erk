@@ -166,6 +166,24 @@ The `success` field discriminates the union. Callers check `success` first, then
 
 See the co-located `AGENTS.md` for the full template.
 
+## Marker-Bounded Search Pattern
+
+When searching for content that may appear multiple times in issue bodies (like markdown tables), use HTML comment markers to bound the search region rather than matching on content alone.
+
+### Pattern
+
+1. Check for markers first (e.g., `extract_roadmap_table_section(text)`)
+2. If markers found: search only within the bounded section
+3. If markers absent: fall back to full-text search (backward compatibility)
+
+### Why This Matters
+
+Without markers, regex patterns can match the wrong table in an issue body that contains multiple similar-looking tables. Markers provide 100% reliable detection when present, while maintaining backward compatibility when absent.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_table_in_text -->
+
+See `_replace_table_in_text()` in `update_roadmap_step.py` and [roadmap-table-markers.md](../architecture/roadmap-table-markers.md) for the canonical implementation.
+
 ## See Also
 
 - [CLI Dependency Injection Patterns](../cli/dependency-injection-patterns.md) — deep dive on why context injection exists
