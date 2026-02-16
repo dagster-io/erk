@@ -4,6 +4,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapStep,
     group_steps_by_phase,
     parse_roadmap_frontmatter,
+    render_roadmap_block_inner,
     serialize_steps_to_frontmatter,
     update_step_in_frontmatter,
     validate_roadmap_frontmatter,
@@ -644,3 +645,132 @@ steps:
     # Plan should be auto-cleared when PR is set
     assert steps[0].plan is None
     assert steps[0].pr == "#999"
+
+
+def test_parse_roadmap_frontmatter_details_format() -> None:
+    """Parse the <details> + code block format used by new roadmap blocks."""
+    block_content = (
+        "<details>\n"
+        "<summary><code>objective-roadmap</code></summary>\n"
+        "\n"
+        "```yaml\n"
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: First step\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null\n"
+        "- id: '1.2'\n"
+        "  description: Second step\n"
+        "  status: done\n"
+        "  plan: null\n"
+        "  pr: '#123'\n"
+        "```\n"
+        "\n"
+        "</details>"
+    )
+
+    steps = parse_roadmap_frontmatter(block_content)
+
+    assert steps is not None
+    assert len(steps) == 2
+    assert steps[0].id == "1.1"
+    assert steps[0].status == "pending"
+    assert steps[0].plan is None
+    assert steps[0].pr is None
+    assert steps[1].id == "1.2"
+    assert steps[1].status == "done"
+    assert steps[1].pr == "#123"
+
+
+def test_render_roadmap_block_inner() -> None:
+    """Render roadmap block inner produces <details> + code block format."""
+    steps = [
+        RoadmapStep(id="1.1", description="First", status="pending", plan=None, pr=None),
+        RoadmapStep(id="1.2", description="Second", status="done", plan=None, pr="#456"),
+    ]
+
+    result = render_roadmap_block_inner(steps)
+
+    assert result.startswith("<details>\n")
+    assert "<summary><code>objective-roadmap</code></summary>" in result
+    assert "```yaml" in result
+    assert "```\n" in result
+    assert result.endswith("</details>")
+    assert "schema_version: '2'" in result
+    assert "id: '1.1'" in result or 'id: "1.1"' in result
+
+    # Verify the rendered output is parseable
+    parsed = parse_roadmap_frontmatter(result)
+    assert parsed is not None
+    assert len(parsed) == 2
+    assert parsed[0].id == "1.1"
+    assert parsed[1].pr == "#456"
+
+
+def test_render_roundtrip_via_update_legacy() -> None:
+    """update_step_in_frontmatter preserves legacy format on legacy input."""
+    block_content = """---
+schema_version: "2"
+steps:
+  - id: "1.1"
+    description: "Step one"
+    status: "pending"
+    plan: null
+    pr: null
+---"""
+
+    updated = update_step_in_frontmatter(block_content, "1.1", plan="#100", pr="", status=None)
+
+    assert updated is not None
+    # Legacy input stays legacy
+    assert updated.startswith("---\n")
+    assert "<details>" not in updated
+
+    steps = parse_roadmap_frontmatter(updated)
+    assert steps is not None
+    assert steps[0].plan == "#100"
+    assert steps[0].status == "in_progress"
+
+
+def test_render_roundtrip_via_update_details() -> None:
+    """update_step_in_frontmatter preserves <details> format on <details> input."""
+    block_content = (
+        "<details>\n"
+        "<summary><code>objective-roadmap</code></summary>\n"
+        "\n"
+        "```yaml\n"
+        "schema_version: '2'\n"
+        "steps:\n"
+        "- id: '1.1'\n"
+        "  description: Step one\n"
+        "  status: pending\n"
+        "  plan: null\n"
+        "  pr: null\n"
+        "```\n"
+        "\n"
+        "</details>"
+    )
+
+    updated = update_step_in_frontmatter(block_content, "1.1", plan="#100", pr="", status=None)
+
+    assert updated is not None
+    assert "<details>" in updated
+    assert "</details>" in updated
+    assert "---" not in updated
+
+    steps = parse_roadmap_frontmatter(updated)
+    assert steps is not None
+    assert steps[0].plan == "#100"
+    assert steps[0].status == "in_progress"
+
+    # Second update also stays <details>
+    updated2 = update_step_in_frontmatter(updated, "1.1", plan=None, pr="#200", status=None)
+    assert updated2 is not None
+    assert "<details>" in updated2
+    steps2 = parse_roadmap_frontmatter(updated2)
+    assert steps2 is not None
+    assert steps2[0].pr == "#200"
+    assert steps2[0].plan is None
+    assert steps2[0].status == "done"

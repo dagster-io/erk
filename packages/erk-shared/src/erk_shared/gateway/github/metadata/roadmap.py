@@ -19,7 +19,10 @@ from typing import Literal, cast
 import yaml
 
 from erk_shared.core.frontmatter import parse_markdown_frontmatter
-from erk_shared.gateway.github.metadata.core import extract_raw_metadata_blocks
+from erk_shared.gateway.github.metadata.core import (
+    extract_raw_metadata_blocks,
+    parse_metadata_block_body,
+)
 
 RoadmapStepStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
 
@@ -149,19 +152,27 @@ def validate_roadmap_frontmatter(
 
 
 def parse_roadmap_frontmatter(block_content: str) -> list[RoadmapStep] | None:
-    """Parse YAML frontmatter from objective-roadmap metadata block content.
+    """Parse YAML from objective-roadmap metadata block content.
+
+    Tries ``<details>`` + code block format first (matching other metadata
+    blocks), then falls back to legacy ``---`` frontmatter format.
 
     Args:
         block_content: Raw content from inside the metadata block
                       (between the HTML comment markers)
 
     Returns:
-        Flat list of steps if valid frontmatter found, None otherwise
+        Flat list of steps if valid YAML found, None otherwise
 
-    Uses parse_markdown_frontmatter() for YAML parsing and
-    validate_roadmap_frontmatter() for typed validation.
     Returns None on any validation failure (caller falls back to table parsing).
     """
+    # Try <details> + code block format first
+    if block_content.strip().startswith("<details>"):
+        data = parse_metadata_block_body(block_content)
+        steps, _errors = validate_roadmap_frontmatter(data)
+        return steps
+
+    # Fall back to legacy --- frontmatter format
     result = parse_markdown_frontmatter(block_content)
 
     if not result.is_valid:
@@ -206,6 +217,52 @@ def serialize_steps_to_frontmatter(steps: list[RoadmapStep]) -> str:
     yaml_content = yaml_content.rstrip("\n")
 
     return f"---\n{yaml_content}\n---"
+
+
+def render_roadmap_block_inner(steps: list[RoadmapStep]) -> str:
+    """Render roadmap steps as <details> wrapped YAML code block.
+
+    This produces the same format as other metadata blocks (plan-header,
+    objective-header), making roadmap blocks collapsible and well-formatted
+    on GitHub.
+
+    Args:
+        steps: Flat list of roadmap steps to render.
+
+    Returns:
+        Inner content for an objective-roadmap metadata block, wrapped in
+        ``<details>`` with a YAML code block.
+    """
+    data = {
+        "schema_version": "2",
+        "steps": [
+            {
+                "id": s.id,
+                "description": s.description,
+                "status": s.status,
+                "plan": s.plan,
+                "pr": s.pr,
+            }
+            for s in steps
+        ],
+    }
+    yaml_content = yaml.safe_dump(
+        data,
+        default_flow_style=False,
+        allow_unicode=True,
+        sort_keys=False,
+    )
+    yaml_content = yaml_content.rstrip("\n")
+    return (
+        "<details>\n"
+        "<summary><code>objective-roadmap</code></summary>\n"
+        "\n"
+        "```yaml\n"
+        f"{yaml_content}\n"
+        "```\n"
+        "\n"
+        "</details>"
+    )
 
 
 def group_steps_by_phase(steps: list[RoadmapStep]) -> list[RoadmapPhase]:
@@ -350,21 +407,19 @@ def update_step_in_frontmatter(
     if not found:
         return None
 
-    # Serialize back to frontmatter
-    frontmatter_str = serialize_steps_to_frontmatter(updated_steps)
+    # Preserve input format: <details> stays <details>, legacy stays legacy
+    if block_content.strip().startswith("<details>"):
+        return render_roadmap_block_inner(updated_steps)
 
-    # Extract non-frontmatter content from original block
-    # (there might be markdown after the frontmatter)
+    # Legacy format: serialize and preserve any trailing content after frontmatter
+    frontmatter_str = serialize_steps_to_frontmatter(updated_steps)
     frontmatter_pattern = r"^---\s*\n.*?\n---\s*\n?"
     remainder = re.sub(
         frontmatter_pattern, "", block_content, count=1, flags=re.DOTALL | re.MULTILINE
     )
-
-    # Reconstruct block content
     if remainder:
         return f"{frontmatter_str}\n\n{remainder}"
-    else:
-        return frontmatter_str
+    return frontmatter_str
 
 
 # ---------------------------------------------------------------------------

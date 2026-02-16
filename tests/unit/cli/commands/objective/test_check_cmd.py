@@ -324,7 +324,7 @@ def test_validate_objective_returns_success_type() -> None:
     issue = _make_issue(700, "Objective: Test", VALID_OBJECTIVE_BODY)
     fake_gh = FakeGitHubIssues(issues={700: issue})
 
-    result = validate_objective(fake_gh, Path("/fake/repo"), 700)
+    result = validate_objective(fake_gh, Path("/fake/repo"), 700, allow_legacy=True)
 
     assert isinstance(result, ObjectiveValidationSuccess)
     assert result.passed is True
@@ -336,7 +336,7 @@ def test_validate_objective_returns_error_for_missing_issue() -> None:
     """Test that validate_objective returns error type for missing issue."""
     fake_gh = FakeGitHubIssues()
 
-    result = validate_objective(fake_gh, Path("/fake/repo"), 999)
+    result = validate_objective(fake_gh, Path("/fake/repo"), 999, allow_legacy=True)
 
     assert isinstance(result, ObjectiveValidationError)
     assert "999" in result.error
@@ -509,7 +509,7 @@ def test_v2_valid_header_passes_check_7() -> None:
 
     result = runner.invoke(
         check_objective,
-        ["1200"],
+        ["1200", "--allow-legacy"],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
@@ -526,9 +526,105 @@ def test_v2_missing_comment_id_fails_check_7() -> None:
 
     result = runner.invoke(
         check_objective,
-        ["1300"],
+        ["1300", "--allow-legacy"],
         obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     assert result.exit_code == 1
     assert "objective-header missing objective_comment_id" in result.output
+
+
+# --- Check 8: Roadmap block format tests ---
+
+
+V2_BODY_DETAILS_FORMAT = """\
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-header -->
+<details>
+<summary><code>objective-header</code></summary>
+
+```yaml
+
+created_at: '2025-01-01T00:00:00+00:00'
+created_by: testuser
+objective_comment_id: 42
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-header -->
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '2'
+steps:
+- id: '1.1'
+  description: Set up project structure
+  status: done
+  plan: null
+  pr: '#100'
+- id: '1.2'
+  description: Add core types
+  status: pending
+  plan: null
+  pr: null
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+
+def test_details_format_roadmap_passes_check_8() -> None:
+    """Roadmap block using <details> format passes Check 8."""
+    issue = _make_issue(1400, "Objective: Details Format", V2_BODY_DETAILS_FORMAT)
+    fake_gh = FakeGitHubIssues(issues={1400: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1400"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert "Roadmap block uses <details> format" in result.output
+    assert "[FAIL]" not in result.output
+
+
+def test_legacy_format_roadmap_fails_check_8() -> None:
+    """Roadmap block using legacy --- format fails Check 8 by default."""
+    issue = _make_issue(1500, "Objective: Legacy Format", V2_BODY_VALID)
+    fake_gh = FakeGitHubIssues(issues={1500: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1500"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 1
+    assert "[FAIL]" in result.output
+    assert "legacy --- format" in result.output
+
+
+def test_legacy_format_roadmap_passes_with_allow_legacy() -> None:
+    """Roadmap block using legacy --- format passes with --allow-legacy."""
+    issue = _make_issue(1600, "Objective: Legacy Allowed", V2_BODY_VALID)
+    fake_gh = FakeGitHubIssues(issues={1600: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1600", "--allow-legacy"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert "legacy format (--allow-legacy)" in result.output
+    assert "[FAIL]" not in result.output

@@ -13,7 +13,10 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext, RepoContext
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.gateway.github.metadata.core import (
+    extract_raw_metadata_blocks,
+    find_metadata_block,
+)
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
     compute_summary,
@@ -71,6 +74,8 @@ def validate_objective(
     github_issues: GitHubIssues,
     repo_root: Path,
     issue_number: int,
+    *,
+    allow_legacy: bool,
 ) -> ObjectiveValidationResult:
     """Validate an objective programmatically.
 
@@ -81,6 +86,8 @@ def validate_objective(
     4. No orphaned statuses (done without PR reference)
     5. Phase numbering is sequential
     6. No stale display statuses (steps with PRs should have explicit status, not '-')
+    7. v2 format integrity (objective-header has objective_comment_id)
+    8. Roadmap uses <details> format (unless allow_legacy is True)
 
     This function does not produce output or raise SystemExit.
 
@@ -188,6 +195,26 @@ def validate_objective(
         else:
             checks.append((False, "objective-header missing objective_comment_id"))
 
+    # Check 8: Roadmap block uses <details> format (not legacy --- frontmatter)
+    raw_blocks = extract_raw_metadata_blocks(issue.body)
+    roadmap_block = None
+    for block in raw_blocks:
+        if block.key == "objective-roadmap":
+            roadmap_block = block
+            break
+
+    if roadmap_block is not None:
+        body_stripped = roadmap_block.body.strip()
+        uses_details = body_stripped.startswith("<details>")
+        if uses_details:
+            checks.append((True, "Roadmap block uses <details> format"))
+        elif allow_legacy:
+            checks.append((True, "Roadmap block uses legacy format (--allow-legacy)"))
+        else:
+            checks.append(
+                (False, "Roadmap block uses legacy --- format (run update-roadmap-step to migrate)")
+            )
+
     summary = compute_summary(phases)
     next_step = find_next_step(phases)
     failed_count = sum(1 for passed, _ in checks if not passed)
@@ -209,8 +236,13 @@ def validate_objective(
 @click.option(
     "--json-output", "json_mode", is_flag=True, help="Output structured JSON (for programmatic use)"
 )
+@click.option(
+    "--allow-legacy", is_flag=True, help="Allow legacy --- frontmatter format in roadmap blocks"
+)
 @click.pass_obj
-def check_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> None:
+def check_objective(
+    ctx: ErkContext, objective_ref: str, *, json_mode: bool, allow_legacy: bool
+) -> None:
     """Validate an objective's format and roadmap consistency.
 
     OBJECTIVE_REF can be an issue number (42) or a full GitHub URL.
@@ -226,7 +258,7 @@ def check_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> 
         repo = discover_repo_context(ctx, ctx.cwd)
     issue_number = parse_issue_identifier(objective_ref)
 
-    result = validate_objective(ctx.issues, repo.root, issue_number)
+    result = validate_objective(ctx.issues, repo.root, issue_number, allow_legacy=allow_legacy)
 
     if json_mode:
         _output_json(result, issue_number)

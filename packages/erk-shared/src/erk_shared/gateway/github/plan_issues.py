@@ -30,7 +30,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap,
-    serialize_steps_to_frontmatter,
+    render_roadmap_block_inner,
 )
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
@@ -265,12 +265,12 @@ def _build_objective_roadmap_block(plan_content: str) -> str | None:
 
     # Flatten phases into steps for serialization
     all_steps = [step for phase in phases for step in phase.steps]
-    frontmatter = serialize_steps_to_frontmatter(all_steps)
+    inner = render_roadmap_block_inner(all_steps)
 
     return (
         "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->\n"
         "<!-- erk:metadata-block:objective-roadmap -->\n"
-        f"{frontmatter}\n"
+        f"{inner}\n"
         "<!-- /erk:metadata-block:objective-roadmap -->"
     )
 

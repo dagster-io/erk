@@ -157,9 +157,14 @@ BODY_EOF
 )"
 ```
 
-7. **Self-validate by counting steps from the body you just composed:**
-   - Count total steps, done (have PR), skipped, pending, blocked, in_progress (have plan PR)
-   - **DO NOT** re-fetch from GitHub — use the body you just wrote
+7. **Validate the objective after mutation:**
+
+```bash
+erk objective check <issue-number> --json-output
+```
+
+- If any checks fail, report failures and attempt to fix the issue body
+- This catches inference errors (e.g., wrong status derivation, inconsistent PR/plan cells)
 
 8. **Check closing triggers:**
 
