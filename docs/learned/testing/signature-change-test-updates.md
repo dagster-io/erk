@@ -1,4 +1,5 @@
 ---
+title: Two-Phase Test Refactoring Strategy
 description: Strategy for updating tests when changing function signatures
 read_when:
   - adding parameters to functions
@@ -8,7 +9,7 @@ tripwires:
   - action: "changing function signatures"
     warning: "Grep ALL call sites before changing signatures. Convert direct callers to injection, retarget CLI test patches."
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # Two-Phase Test Refactoring Strategy

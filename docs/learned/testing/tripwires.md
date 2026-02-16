@@ -20,13 +20,19 @@ Rules triggered by matching actions in code.
 
 **adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
 
+**adding defaults to test helper functions** → Read [Test Helper Default Values](test-helper-defaults.md) first. Verify default doesn't overlap with common test data patterns. Use distinct values like 'helper-default-author' not 'test-user'.
+
 **adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
+
+**adding required parameters to functions called by tests** → Read [Parameter Injection Testing Pattern](parameter-injection-pattern.md) first. Grep ALL call sites in src/ and tests/ before implementation. Convert direct callers to parameter injection, retarget CLI test patches to import location.
 
 **allowing `import X as Y` because it's a common convention (e.g., `import pandas as pd`)** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits ALL gratuitous import aliases. The only exception is resolving genuine name collisions between two modules.
 
 **asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
 
 **asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`** → Read [Erk Test Reference](testing.md) first. Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper.
+
+**changing function signatures** → Read [Two-Phase Test Refactoring Strategy](signature-change-test-updates.md) first. Grep ALL call sites before changing signatures. Convert direct callers to injection, retarget CLI test patches.
 
 **choosing between monkeypatch and fakes for a test** → Read [Monkeypatch vs Fakes Decision Guide](monkeypatch-vs-fakes-decision.md) first. Read monkeypatch-vs-fakes-decision.md first. Default to gateway fakes. Monkeypatch is only appropriate for process-level globals like Path.home() in exec scripts.
 
@@ -57,6 +63,10 @@ Rules triggered by matching actions in code.
 **passing group-level options when invoking a subcommand in tests** → Read [Command Group Testing](command-group-testing.md) first. Click does NOT propagate group-level options to subcommands by default. Options placed before the subcommand name in the args list are silently ignored.
 
 **passing string values to comments_with_urls parameter of FakeGitHubIssues** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. comments_with_urls requires IssueComment objects, not strings. Strings cause silent empty-list returns. Match the parameter to the ABC getter method your code calls.
+
+**removing imports from a module** → Read [Import Location for Test Patches](import-location-patching.md) first. Grep test files for monkeypatch statements targeting this module. All patches must be converted to parameter injection or retargeted.
+
+**removing imports from a module** → Read [Parameter Injection Testing Pattern](parameter-injection-pattern.md) first. Grep test files for monkeypatch statements targeting that module. All patches must be converted to parameter injection or retargeted.
 
 **resetting mocks in afterEach instead of beforeEach** → Read [Vitest Mock Reset Discipline for Shared Global Mocks](window-mock-patterns.md) first. Use beforeEach for mock resets, not afterEach. If a test throws before afterEach runs, the mock remains contaminated for the next test.
 

@@ -1,4 +1,5 @@
 ---
+title: When to Skip Plan Mode
 description: When to skip plan creation and execute directly
 read_when:
   - considering entering plan mode
@@ -8,7 +9,7 @@ tripwires:
   - action: "entering plan mode or using ExitPlanMode tool"
     warning: "Check if current task has explicit step-by-step instructions. If yes, skip planning and proceed directly to execution."
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # When to Skip Plan Mode

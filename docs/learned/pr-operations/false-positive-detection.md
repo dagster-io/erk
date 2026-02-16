@@ -1,4 +1,5 @@
 ---
+title: False Positive Detection in Automated Reviews
 description: Workflow for identifying and handling automated reviewer false positives
 read_when:
   - handling automated review bot comments
@@ -8,7 +9,7 @@ tripwires:
   - action: "making code changes based on automated review bot comments"
     warning: "Read full function context to verify it's not a false positive. Check if fix is already in PR or if pattern is intentional (test factories)."
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # False Positive Detection in Automated Reviews

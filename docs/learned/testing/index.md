@@ -19,16 +19,21 @@
 - **[gateway-fake-testing-exemplar.md](gateway-fake-testing-exemplar.md)** — writing tests for gateway fakes that return discriminated unions, deciding whether mutation tracking should occur on error paths, implementing a new fake gateway method with error injection
 - **[hook-testing.md](hook-testing.md)** — writing tests for any hook (PreToolUse, UserPromptSubmit, ExitPlanMode), creating a new hook implementation, testing hooks that read from stdin or check capabilities
 - **[import-conflict-resolution.md](import-conflict-resolution.md)** — resolving merge conflicts during rebase, fixing import conflicts after consolidation, rebasing after shared module changes
+- **[import-location-patching.md](import-location-patching.md)** — test patches failing after module refactoring, AttributeError in monkeypatch statements, function moved between modules
 - **[integration-test-speed.md](integration-test-speed.md)** — integration test is slow, test takes too long, pytest --durations shows slow test
 - **[integration-testing-patterns.md](integration-testing-patterns.md)** — writing integration tests that interact with filesystem, testing time-dependent operations, handling mtime resolution in tests
 - **[mock-elimination.md](mock-elimination.md)** — refactoring tests to remove unittest.mock, replacing patch() calls with fakes, improving test maintainability
 - **[monkeypatch-elimination-checklist.md](monkeypatch-elimination-checklist.md)** — migrating tests from monkeypatch to gateways, eliminating subprocess mocks or @patch decorators, encountering monkeypatch in existing tests and deciding whether to refactor
 - **[monkeypatch-vs-fakes-decision.md](monkeypatch-vs-fakes-decision.md)** — choosing between monkeypatch and fakes for a test, deciding how to test code that uses Path.home(), unsure whether to create a gateway or use monkeypatch
+- **[parameter-injection-pattern.md](parameter-injection-pattern.md)** — adding parameters to functions for testability, refactoring functions to accept dependencies as parameters, encountering monkeypatch AttributeError after import removal
 - **[rebase-conflicts.md](rebase-conflicts.md)** — fixing merge conflicts in erk tests, ErkContext API changes during rebase, env_helpers conflicts
 - **[session-log-fixtures.md](session-log-fixtures.md)** — creating JSONL fixtures for session log tests, testing session plan extraction, writing integration tests for session parsing
 - **[session-store-testing.md](session-store-testing.md)** — testing code that reads session data, using FakeClaudeCodeSessionStore, mocking session ID lookup
+- **[signature-change-test-updates.md](signature-change-test-updates.md)** — adding parameters to functions, refactoring function signatures, test failures after signature changes
 - **[submit-pipeline-tests.md](submit-pipeline-tests.md)** — adding tests for a new submit pipeline step, writing \_make_state helpers for pipeline step tests, deciding what to test at the step level vs the runner level
 - **[subprocess-testing.md](subprocess-testing.md)** — testing code that uses subprocess, creating fakes for process execution, avoiding subprocess mocks in tests
+- **[test-factory-exemptions.md](test-factory-exemptions.md)** — bot flags default in make*\* or create*\* function, applying coding standards to test helpers
+- **[test-helper-defaults.md](test-helper-defaults.md)** — adding defaults to test helper functions, test failures after adding new filterable fields, query matching multiple fields unexpectedly
 - **[testing.md](testing.md)** — writing tests for erk, using erk fakes, running erk test commands
 - **[vitest-fake-timers-with-promises.md](vitest-fake-timers-with-promises.md)** — testing React components that use setInterval or setTimeout with async operations, debugging Vitest tests that hang when advancing fake timers, choosing between synchronous and async timer advancement in Vitest
 - **[vitest-jsdom-stubs.md](vitest-jsdom-stubs.md)** — writing React component tests with Vitest + jsdom, encountering "X is not a function" errors in jsdom test runs, adding a new browser API stub to the test setup

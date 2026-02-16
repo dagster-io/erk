@@ -1,11 +1,12 @@
 ---
+title: Filter Extension Pattern
 description: Four-step pattern for adding a filterable field to TUI
 read_when:
   - adding a new filterable field to erk dash
   - extending filter_plans() function
   - search filter needs to match additional fields
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # Filter Extension Pattern

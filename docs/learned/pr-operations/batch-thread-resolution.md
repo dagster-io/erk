@@ -1,11 +1,12 @@
 ---
+title: Batch Thread Resolution
 description: Resolving multiple PR review threads in a single API call
 read_when:
   - resolving multiple review threads at once
   - batch resolving PR comments
   - using erk exec resolve-review-threads
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # Batch Thread Resolution

@@ -1,10 +1,11 @@
 ---
+title: Test Factory Function Exemptions
 description: Test factory functions are exempt from production code rules
 read_when:
   - bot flags default in make_* or create_* function
   - applying coding standards to test helpers
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # Test Factory Function Exemptions

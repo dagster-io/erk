@@ -1,11 +1,12 @@
 ---
+title: Batch File Editing Threshold
 description: When to use sed/Bash for bulk file changes vs Edit tool
 read_when:
   - more than 30 files need identical changes
   - mechanical find-replace across many files
   - batch format updates
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # Batch File Editing Threshold

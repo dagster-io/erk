@@ -1,11 +1,12 @@
 ---
+title: Validation Layer Placement
 description: Where different types of validation belong in the codebase
 read_when:
   - adding format validation
   - deciding where to enforce constraints
   - validation logic placement
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # Validation Layer Placement

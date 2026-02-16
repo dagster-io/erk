@@ -1,4 +1,5 @@
 ---
+title: Import Location for Test Patches
 description: Patches must target import location, not definition site
 read_when:
   - test patches failing after module refactoring
@@ -8,7 +9,7 @@ tripwires:
   - action: "removing imports from a module"
     warning: "Grep test files for monkeypatch statements targeting this module. All patches must be converted to parameter injection or retargeted."
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # Import Location for Test Patches

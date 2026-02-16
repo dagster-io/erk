@@ -1,4 +1,5 @@
 ---
+title: Parameter Injection Testing Pattern
 description: Converting tests from monkeypatch to parameter injection for testability
 read_when:
   - adding parameters to functions for testability
@@ -10,7 +11,7 @@ tripwires:
   - action: "removing imports from a module"
     warning: "Grep test files for monkeypatch statements targeting that module. All patches must be converted to parameter injection or retargeted."
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # Parameter Injection Testing Pattern

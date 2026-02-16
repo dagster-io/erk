@@ -1,11 +1,12 @@
 ---
+title: Plan Data Provider Design
 description: When to add fields to Plan vs pass as parameters to _build_row_data()
 read_when:
   - adding new fields to TUI data pipeline
   - deciding where data belongs in Plan architecture
   - working with PlanRowData and RealPlanDataProvider
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # Plan Data Provider Design

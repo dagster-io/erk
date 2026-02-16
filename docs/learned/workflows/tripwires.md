@@ -18,6 +18,8 @@ Rules triggered by matching actions in code.
 
 **modifying one-shot branch naming convention** → Read [One-Shot Workflow](one-shot-workflow.md) first. Branch format is `oneshot-{slug}-{MM-DD-HHMM}` (no plan issue) or `P{N}-{slug}-{MM-DD-HHMM}` (when plan_issue_number is provided). The workflow and CLI both depend on these prefixes for identification.
 
+**resolving rebase conflicts with a merged PR** → Read [Rebase Conflict Resolution Strategy](rebase-conflict-resolution.md) first. Prefer HEAD's reviewed implementation (git checkout --ours). The merged code has passed review.
+
 **running gt sync without committing or stashing working tree changes** → Read [Git Sync State Preservation](git-sync-state-preservation.md) first. gt sync performs a rebase which can silently lose uncommitted changes. Always commit or stash before sync, and verify working tree state after.
 
 **writing a commit message manually for multi-file changes** → Read [Skill-Based Commit Message Generation](commit-messages.md) first. Load the erk-diff-analysis skill first. It produces component-aware, strategically framed messages that become both the commit and PR body.

@@ -1,4 +1,5 @@
 ---
+title: Rebase Conflict Resolution Strategy
 description: When to use git checkout --ours vs manual resolution in rebases
 read_when:
   - resolving rebase conflicts
@@ -8,7 +9,7 @@ tripwires:
   - action: "resolving rebase conflicts with a merged PR"
     warning: "Prefer HEAD's reviewed implementation (git checkout --ours). The merged code has passed review."
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # Rebase Conflict Resolution Strategy

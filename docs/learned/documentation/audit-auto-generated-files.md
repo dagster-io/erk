@@ -1,4 +1,5 @@
 ---
+title: Auto-Generated File Audit Protocol
 description: Audit protocol for files with AUTO-GENERATED FILE comment
 read_when:
   - auditing docs/learned/ files
@@ -8,7 +9,7 @@ tripwires:
   - action: "editing files with AUTO-GENERATED FILE comment"
     warning: "Apply STAMP ONLY approach - content edits will be overwritten by `erk docs sync`. Focus verification on source docs."
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # Auto-Generated File Audit Protocol

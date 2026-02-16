@@ -1,11 +1,12 @@
 ---
+title: Source Pointer Conversion Workflow
 description: Pattern for converting code blocks to source pointers in documentation
 read_when:
   - converting verbatim code to source pointers
   - reducing code duplication in docs
   - auditing docs with large code blocks
 last_audited: "2026-02-16 00:00 PT"
-audit_result: new
+audit_result: clean
 ---
 
 # Source Pointer Conversion Workflow
