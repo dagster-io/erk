@@ -46,17 +46,7 @@ For the 90% case (one skill, standard install), `SkillCapability` is correct.
 
 <!-- Source: src/erk/capabilities/skills/bundled.py, bundled_skills -->
 
-For simple skills (name + description only), add an entry to the `bundled_skills()` dict in `src/erk/capabilities/skills/bundled.py`:
-
-```python
-@cache
-def bundled_skills() -> dict[str, str]:
-    return {
-        "dignified-python": "Python coding standards (LBYL, modern types, ABCs)",
-        "my-skill": "Brief description for CLI display",  # Add here
-        # ...
-    }
-```
+For simple skills (name + description only), add an entry to the `bundled_skills()` dict. See `bundled_skills()` in `src/erk/capabilities/skills/bundled.py` — it's a `dict[str, str]` mapping skill name to description. Add your entry as `"my-skill": "Brief description for CLI display"`.
 
 **That's it.** The `BundledSkillCapability` class and `create_bundled_skill_capabilities()` factory handle instantiation. Registry picks them up via `*create_bundled_skill_capabilities()` spread in `_all_capabilities()`.
 
@@ -66,16 +56,7 @@ def bundled_skills() -> dict[str, str]:
 
 <!-- Source: src/erk/core/capabilities/registry.py, _all_capabilities -->
 
-Bundled skills are automatically registered via the factory spread:
-
-```python
-@cache
-def _all_capabilities() -> tuple[Capability, ...]:
-    return (
-        *create_bundled_skill_capabilities(),  # All bundled skills auto-registered
-        # ...
-    )
-```
+Bundled skills are automatically registered via the factory spread. See `_all_capabilities()` in `src/erk/core/capabilities/registry.py` — it includes `*create_bundled_skill_capabilities()` which picks up all entries from the `bundled_skills()` dict.
 
 Adding to the `bundled_skills()` dict is sufficient — no import or instantiation needed in `registry.py`.
 
