@@ -14,7 +14,7 @@ from erk.tui.app import (
     _build_github_url,
 )
 from erk.tui.data.types import PlanFilters
-from erk.tui.views.types import ViewMode
+from erk.tui.views.types import ViewMode, get_view_config
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 from erk.tui.widgets.view_bar import ViewBar
@@ -1920,3 +1920,140 @@ class TestViewSwitching:
             # The Plans view uses the same erk-plan labels as Learn view,
             # so cache is shared. No additional fetch needed.
             assert provider.fetch_count == count_after_initial
+
+    @pytest.mark.asyncio
+    async def test_stale_fetch_does_not_update_display(self) -> None:
+        """Late-arriving fetch from previous tab caches data but does not update display.
+
+        Simulates the race condition: _update_table receives data fetched for
+        Plans view while the user has already switched to Objectives view.
+        The data should be cached under Plans labels but the Objectives display
+        should remain unchanged.
+        """
+        objective_plans = [
+            make_plan_row(10, "Objective A"),
+            make_plan_row(20, "Objective B"),
+        ]
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(1, "Plan A")],
+            plans_by_labels={
+                ("erk-objective",): objective_plans,
+            },
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            # Initial state: Plans view with 1 row
+            assert app._view_mode == ViewMode.PLANS
+            assert len(app._rows) == 1
+            assert app._rows[0].issue_number == 1
+
+            # Switch to Objectives view
+            await pilot.press("3")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert app._view_mode == ViewMode.OBJECTIVES
+            assert len(app._rows) == 2
+            displayed_issues = {r.issue_number for r in app._rows}
+            assert displayed_issues == {10, 20}
+
+            # Simulate a stale fetch arriving: data fetched for Plans view
+            # but user already switched to Objectives
+            stale_plans = [make_plan_row(99, "Stale Plan")]
+            app._update_table(
+                stale_plans,
+                "12:00:00",
+                0.5,
+                fetched_mode=ViewMode.PLANS,
+            )
+
+            # Display should NOT have changed - still showing Objectives
+            assert app._view_mode == ViewMode.OBJECTIVES
+            assert len(app._rows) == 2
+            assert {r.issue_number for r in app._rows} == {10, 20}
+
+            # But the stale data should be cached under Plans labels
+            plans_labels = get_view_config(ViewMode.PLANS).labels
+            assert plans_labels in app._data_cache
+            assert len(app._data_cache[plans_labels]) == 1
+            assert app._data_cache[plans_labels][0].issue_number == 99
+
+    @pytest.mark.asyncio
+    async def test_right_arrow_cycles_to_next_view(self) -> None:
+        """Right arrow cycles through views: PLANS → LEARN → OBJECTIVES → PLANS."""
+        objective_plans = [
+            make_plan_row(10, "Objective A"),
+        ]
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Regular Plan"),
+                make_plan_row(2, "Learn Plan", is_learn_plan=True),
+            ],
+            plans_by_labels={
+                ("erk-objective",): objective_plans,
+            },
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            assert app._view_mode == ViewMode.PLANS
+
+            # Right arrow: PLANS → LEARN
+            await pilot.press("right")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.LEARN
+
+            # Right arrow: LEARN → OBJECTIVES
+            await pilot.press("right")
+            await pilot.pause()
+            await pilot.pause()
+            assert app._view_mode == ViewMode.OBJECTIVES
+
+            # Right arrow: OBJECTIVES → PLANS (wrap-around)
+            await pilot.press("right")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.PLANS
+
+    @pytest.mark.asyncio
+    async def test_left_arrow_cycles_to_previous_view(self) -> None:
+        """Left arrow cycles through views: PLANS → OBJECTIVES → LEARN → PLANS."""
+        objective_plans = [
+            make_plan_row(10, "Objective A"),
+        ]
+        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row(1, "Regular Plan"),
+                make_plan_row(2, "Learn Plan", is_learn_plan=True),
+            ],
+            plans_by_labels={
+                ("erk-objective",): objective_plans,
+            },
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            assert app._view_mode == ViewMode.PLANS
+
+            # Left arrow: PLANS → OBJECTIVES (wrap-around)
+            await pilot.press("left")
+            await pilot.pause()
+            await pilot.pause()
+            assert app._view_mode == ViewMode.OBJECTIVES
+
+            # Left arrow: OBJECTIVES → LEARN
+            await pilot.press("left")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.LEARN
+
+            # Left arrow: LEARN → PLANS
+            await pilot.press("left")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.PLANS

@@ -93,12 +93,12 @@ class PlanDataTable(DataTable):
         return self._local_wt_column_index
 
     def action_cursor_left(self) -> None:
-        """Disable left arrow navigation (row mode only)."""
-        pass
+        """Delegate left arrow to app's previous_view action."""
+        self.app.action_previous_view()
 
     def action_cursor_right(self) -> None:
-        """Disable right arrow navigation (row mode only)."""
-        pass
+        """Delegate right arrow to app's next_view action."""
+        self.app.action_next_view()
 
     def reconfigure(self, *, plan_filters: PlanFilters, view_mode: ViewMode) -> None:
         """Reconfigure the table for a new view mode.
