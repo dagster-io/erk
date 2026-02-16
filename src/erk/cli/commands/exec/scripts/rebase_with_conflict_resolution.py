@@ -215,14 +215,8 @@ def _rebase_with_conflict_resolution_impl(
             message=f"Failed to fetch origin/{target_branch}: {e}",
         )
 
-    # Check if behind using ahead_behind
-    try:
-        _ahead, behind = git.branch.get_ahead_behind(cwd, branch_name)
-    except Exception:
-        return RebaseError(
-            error="fetch-failed",
-            message="Failed to determine commits behind target branch",
-        )
+    # Check if behind the target branch
+    behind = git.analysis.count_commits_behind(cwd, f"origin/{target_branch}")
 
     if behind == 0:
         return RebaseSuccess(

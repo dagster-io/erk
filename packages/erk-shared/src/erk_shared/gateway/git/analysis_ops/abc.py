@@ -48,6 +48,21 @@ class GitAnalysisOps(ABC):
         ...
 
     @abstractmethod
+    def count_commits_behind(self, cwd: Path, target_branch: str) -> int:
+        """Count commits in target_branch that are not in HEAD.
+
+        Uses `git rev-list --count HEAD..{target_branch}`.
+
+        Args:
+            cwd: Working directory
+            target_branch: Branch to compare against
+
+        Returns:
+            Number of commits behind, or 0 on error
+        """
+        ...
+
+    @abstractmethod
     def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
         """Get diff between branch and HEAD.
 

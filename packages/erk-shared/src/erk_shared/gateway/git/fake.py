@@ -137,6 +137,7 @@ class FakeGit(Git):
         diff_to_branch: dict[tuple[Path, str], str] | None = None,
         merge_conflicts: dict[tuple[str, str], bool] | None = None,
         commits_ahead: dict[tuple[Path, str], int] | None = None,
+        commits_behind: dict[tuple[Path, str], int] | None = None,
         remote_urls: dict[tuple[Path, str], str] | None = None,
         add_all_raises: Exception | None = None,
         fetch_branch_raises: Exception | None = None,
@@ -193,6 +194,7 @@ class FakeGit(Git):
             diff_to_branch: Mapping of (cwd, branch) -> diff output
             merge_conflicts: Mapping of (base_branch, head_branch) -> has conflicts bool
             commits_ahead: Mapping of (cwd, base_branch) -> commit count
+            commits_behind: Mapping of (cwd, target_branch) -> commit count
             remote_urls: Mapping of (repo_root, remote_name) -> remote URL
             add_all_raises: Exception to raise when add_all() is called
             fetch_branch_raises: Exception to raise when fetch_branch() is called
@@ -247,6 +249,7 @@ class FakeGit(Git):
         self._diff_to_branch = diff_to_branch or {}
         self._merge_conflicts = merge_conflicts or {}
         self._commits_ahead = commits_ahead or {}
+        self._commits_behind: dict[tuple[Path, str], int] = commits_behind or {}
         self._remote_urls = remote_urls or {}
         self._add_all_raises = add_all_raises
         self._fetch_branch_raises = fetch_branch_raises
@@ -303,6 +306,7 @@ class FakeGit(Git):
         self._analysis_gateway = FakeGitAnalysisOps()
         self._analysis_gateway.link_state(
             commits_ahead=self._commits_ahead,
+            commits_behind=self._commits_behind,
             merge_bases=self._merge_bases,
             diffs=self._diff_to_branch,
         )

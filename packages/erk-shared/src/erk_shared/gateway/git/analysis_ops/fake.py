@@ -15,6 +15,7 @@ class FakeGitAnalysisOps(GitAnalysisOps):
         self,
         *,
         commits_ahead: dict[tuple[Path, str], int] | None = None,
+        commits_behind: dict[tuple[Path, str], int] | None = None,
         merge_bases: dict[tuple[str, str], str] | None = None,
         diffs: dict[tuple[Path, str], str] | None = None,
     ) -> None:
@@ -22,11 +23,15 @@ class FakeGitAnalysisOps(GitAnalysisOps):
 
         Args:
             commits_ahead: Mapping of (cwd, base_branch) -> commit count
+            commits_behind: Mapping of (cwd, target_branch) -> commit count
             merge_bases: Mapping of (ref1, ref2) -> merge base SHA
             diffs: Mapping of (cwd, branch) -> diff string
         """
         self._commits_ahead: dict[tuple[Path, str], int] = (
             commits_ahead if commits_ahead is not None else {}
+        )
+        self._commits_behind: dict[tuple[Path, str], int] = (
+            commits_behind if commits_behind is not None else {}
         )
         self._merge_bases: dict[tuple[str, str], str] = (
             merge_bases if merge_bases is not None else {}
@@ -40,6 +45,10 @@ class FakeGitAnalysisOps(GitAnalysisOps):
     def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
         """Count commits in HEAD that are not in base_branch."""
         return self._commits_ahead.get((cwd, base_branch), 0)
+
+    def count_commits_behind(self, cwd: Path, target_branch: str) -> int:
+        """Count commits in target_branch that are not in HEAD."""
+        return self._commits_behind.get((cwd, target_branch), 0)
 
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
         """Get the merge base commit SHA between two refs.
@@ -64,6 +73,7 @@ class FakeGitAnalysisOps(GitAnalysisOps):
         self,
         *,
         commits_ahead: dict[tuple[Path, str], int],
+        commits_behind: dict[tuple[Path, str], int],
         merge_bases: dict[tuple[str, str], str],
         diffs: dict[tuple[Path, str], str],
     ) -> None:
@@ -71,9 +81,11 @@ class FakeGitAnalysisOps(GitAnalysisOps):
 
         Args:
             commits_ahead: FakeGit's commits ahead mapping
+            commits_behind: FakeGit's commits behind mapping
             merge_bases: FakeGit's merge bases mapping
             diffs: FakeGit's diffs mapping
         """
         self._commits_ahead = commits_ahead
+        self._commits_behind = commits_behind
         self._merge_bases = merge_bases
         self._diffs = diffs

@@ -30,6 +30,22 @@ class RealGitAnalysisOps(GitAnalysisOps):
             return 0
         return int(count_str)
 
+    def count_commits_behind(self, cwd: Path, target_branch: str) -> int:
+        """Count commits in target_branch that are not in HEAD."""
+        result = subprocess.run(
+            ["git", "rev-list", "--count", f"HEAD..{target_branch}"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return 0
+        count_str = result.stdout.strip()
+        if not count_str:
+            return 0
+        return int(count_str)
+
     def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
         """Get the merge base commit SHA between two refs."""
         result = subprocess.run(

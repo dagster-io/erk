@@ -59,7 +59,7 @@ def test_build_summary_prompt_with_conflicts() -> None:
 def test_rebase_already_up_to_date(tmp_path: Path) -> None:
     """Test when branch is already up-to-date (0 commits behind)."""
     fake_git = FakeGit(
-        ahead_behind={(tmp_path, "feature-branch"): (2, 0)},  # 2 ahead, 0 behind
+        commits_behind={(tmp_path, "origin/main"): 0},
     )
     fake_claude = FakePromptExecutor()
 
@@ -84,7 +84,7 @@ def test_rebase_already_up_to_date(tmp_path: Path) -> None:
 def test_rebase_success_no_conflicts(tmp_path: Path) -> None:
     """Test successful rebase with no conflicts."""
     fake_git = FakeGit(
-        ahead_behind={(tmp_path, "feature-branch"): (0, 3)},  # 0 ahead, 3 behind
+        commits_behind={(tmp_path, "origin/main"): 3},
         rebase_onto_result=RebaseResult(success=True, conflict_files=()),
         rebase_in_progress=False,
     )
@@ -127,7 +127,7 @@ def test_rebase_with_conflicts_resolved_by_claude(tmp_path: Path) -> None:
         return call_count == 1
 
     fake_git = FakeGit(
-        ahead_behind={(tmp_path, "feature-branch"): (0, 2)},
+        commits_behind={(tmp_path, "origin/main"): 2},
         rebase_onto_result=RebaseResult(success=False, conflict_files=("src/config.py",)),
         conflicted_files=["src/config.py"],
         rebase_in_progress=dynamic_rebase_in_progress,
@@ -155,7 +155,7 @@ def test_rebase_with_conflicts_resolved_by_claude(tmp_path: Path) -> None:
 def test_rebase_fails_after_max_attempts(tmp_path: Path) -> None:
     """Test that rebase fails after exhausting max attempts."""
     fake_git = FakeGit(
-        ahead_behind={(tmp_path, "feature-branch"): (0, 2)},
+        commits_behind={(tmp_path, "origin/main"): 2},
         rebase_onto_result=RebaseResult(success=False, conflict_files=("src/config.py",)),
         rebase_in_progress=True,  # Stays in progress (Claude can't resolve)
         conflicted_files=["src/config.py"],
@@ -207,7 +207,7 @@ def test_rebase_fetch_failure(tmp_path: Path) -> None:
 def test_rebase_push_failure(tmp_path: Path) -> None:
     """Test error handling when push fails."""
     fake_git = FakeGit(
-        ahead_behind={(tmp_path, "feature-branch"): (0, 2)},
+        commits_behind={(tmp_path, "origin/main"): 2},
         rebase_onto_result=RebaseResult(success=True, conflict_files=()),
         rebase_in_progress=False,
         push_to_remote_error=PushError(message="Push rejected"),
@@ -245,7 +245,7 @@ def test_cli_context_not_initialized() -> None:
 def test_cli_already_up_to_date(tmp_path: Path) -> None:
     """Test CLI output when branch is already up-to-date."""
     fake_git = FakeGit(
-        ahead_behind={(tmp_path, "feature-branch"): (0, 0)},
+        commits_behind={(tmp_path, "origin/main"): 0},
     )
     fake_claude = FakePromptExecutor()
 
@@ -271,7 +271,7 @@ def test_cli_already_up_to_date(tmp_path: Path) -> None:
 def test_cli_successful_rebase_generates_summary(tmp_path: Path) -> None:
     """Test CLI calls Claude to generate summary after successful rebase."""
     fake_git = FakeGit(
-        ahead_behind={(tmp_path, "feature-branch"): (0, 3)},
+        commits_behind={(tmp_path, "origin/main"): 3},
         rebase_onto_result=RebaseResult(success=True, conflict_files=()),
         rebase_in_progress=False,
     )
@@ -342,7 +342,7 @@ def test_conflict_resolution_uses_correct_prompt(tmp_path: Path) -> None:
         return call_count == 1
 
     fake_git = FakeGit(
-        ahead_behind={(tmp_path, "feature-branch"): (0, 2)},
+        commits_behind={(tmp_path, "origin/main"): 2},
         rebase_onto_result=RebaseResult(success=False, conflict_files=("src/config.py",)),
         conflicted_files=["src/config.py"],
         rebase_in_progress=dynamic_rebase_in_progress,
@@ -370,7 +370,7 @@ def test_conflict_resolution_uses_correct_prompt(tmp_path: Path) -> None:
 def test_model_parameter_passed_correctly(tmp_path: Path) -> None:
     """Test that the model parameter is passed to Claude calls."""
     fake_git = FakeGit(
-        ahead_behind={(tmp_path, "feature-branch"): (0, 2)},
+        commits_behind={(tmp_path, "origin/main"): 2},
         rebase_onto_result=RebaseResult(success=True, conflict_files=()),
         rebase_in_progress=False,
     )
@@ -406,7 +406,7 @@ def test_model_parameter_passed_correctly(tmp_path: Path) -> None:
 def test_max_attempts_parameter(tmp_path: Path) -> None:
     """Test that max-attempts parameter limits retry count."""
     fake_git = FakeGit(
-        ahead_behind={(tmp_path, "feature-branch"): (0, 2)},
+        commits_behind={(tmp_path, "origin/main"): 2},
         rebase_onto_result=RebaseResult(success=False, conflict_files=("src/config.py",)),
         rebase_in_progress=True,  # Stays in progress
         conflicted_files=["src/config.py"],
