@@ -190,6 +190,8 @@ Rules triggered by matching actions in code.
 
 **running tsc --noEmit from root in multi-config TypeScript project** → Read [TypeScript Multi-Config Project Checking](typescript-multi-config.md) first. tsc --noEmit from root breaks subdirectory configs. Use tsc -p <path> --noEmit for each tsconfig.json separately.
 
+**setting PR reference without understanding auto-clear semantics** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. Setting --pr auto-clears the plan column when --plan is not explicitly provided. Read roadmap-mutation-semantics.md for the None/empty/value semantics.
+
 **skipping fallback strategies when the selected item might disappear** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Always provide fallback behavior when selected item not found in refreshed data (reset to 0, preserve index clamped, or clear selection).
 
 **suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.

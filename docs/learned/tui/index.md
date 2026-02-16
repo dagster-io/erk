@@ -6,6 +6,7 @@
 - **[action-inventory.md](action-inventory.md)** — adding a new command to the TUI or desktop dashboard, understanding how command availability is determined, choosing which execution pattern a new command should use
 - **[adding-commands.md](adding-commands.md)** — adding a new command to the TUI command palette, implementing TUI actions with streaming output, understanding the dual-handler pattern for TUI commands
 - **[architecture.md](architecture.md)** — understanding TUI structure, implementing TUI components, working with TUI data providers
+- **[async-state-snapshot.md](async-state-snapshot.md)** — adding async data fetching to the TUI, reading self.\_view_mode during async operations, debugging stale data appearing in the wrong tab
 - **[column-addition-pattern.md](column-addition-pattern.md)** — adding a column to the plan table, adding a field to PlanRowData, modifying plan_table.py column layout
 - **[command-execution.md](command-execution.md)** — executing commands in TUI, choosing between sync and streaming execution, implementing command runners
 - **[command-palette.md](command-palette.md)** — implementing command palette in Textual TUI, hiding system commands from command palette, get_system_commands method, removing Keys Quit Screenshot Theme from palette, adding emoji prefixes to command palette entries, using CommandCategory for command categorization

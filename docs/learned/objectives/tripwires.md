@@ -24,6 +24,8 @@ Rules triggered by matching actions in code.
 
 **adding structural validation to check_cmd.py** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. Structural validation (phase headers, table format) belongs in roadmap.py (packages/erk-shared). check_cmd.py handles semantic validation only.
 
+**assuming phase names are stored in YAML frontmatter** → Read [Phase Name Enrichment](phase-name-enrichment.md) first. Phase names come from markdown headers, not frontmatter. Read this doc.
+
 **creating a learned doc that rephrases an objective's action comment lessons** → Read [Documentation Capture from Objective Work](research-documentation-integration.md) first. Objectives already capture lessons in action comments. Only create a learned doc when the insight is reusable beyond this specific objective.
 
 **creating a new roadmap data type without using frozen dataclass** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. RoadmapStep and RoadmapPhase are frozen dataclasses. New roadmap types must follow this pattern.
@@ -42,7 +44,11 @@ Rules triggered by matching actions in code.
 
 **inferring status from PR column when explicit status is set** → Read [Roadmap Status System](roadmap-status-system.md) first. Explicit status values (done, in_progress, pending, blocked, skipped, planning) always take priority over PR-based inference. Only '-' or empty values trigger PR-based inference.
 
+**looking for phase names in RoadmapStep fields** → Read [Phase Name Enrichment](phase-name-enrichment.md) first. Steps are stored flat. Phase membership is derived from step ID prefix. Phase names come from markdown headers via \_enrich_phase_names().
+
 **manually parsing objective roadmap markdown** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. Use `erk objective check`. It handles structural parsing, status inference, and semantic validation.
+
+**manually writing roadmap YAML or metadata blocks in objective-create** → Read [Objective Create Workflow](objective-create-workflow.md) first. Use erk exec objective-render-roadmap to generate the roadmap block. The skill template must produce valid JSON input for this command.
 
 **modifying roadmap validation without understanding the two-level architecture** → Read [Roadmap Validation Architecture](roadmap-validation.md) first. Validation is split between parse_roadmap() (structural) and validate_objective() (semantic). Read this doc to understand which level your change belongs in.
 
@@ -52,14 +58,18 @@ Rules triggered by matching actions in code.
 
 **treating status as a single-source value** → Read [Roadmap Status System](roadmap-status-system.md) first. Status resolution uses a two-tier system: explicit values first, then PR-based inference. Always check both the Status and PR columns.
 
-**updating roadmap step in only one location (frontmatter or table)** → Read [Objective Lifecycle](objective-lifecycle.md) first. Must update both frontmatter AND markdown table during the dual-write migration period. Use update-roadmap-step which handles both atomically.
+**updating roadmap step without using update-roadmap-step** → Read [Objective Lifecycle](objective-lifecycle.md) first. Use update-roadmap-step which atomically updates YAML frontmatter in the issue body and the markdown table in the objective-body comment.
 
 **using None/empty string interchangeably in update-roadmap-step parameters** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values.
 
 **using full-body update for single-cell changes** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-roadmap-step) to preserve other cells and avoid race conditions.
 
+**using parse_roadmap() when strict v2 validation is needed** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. Use parse_v2_roadmap() for commands that should reject legacy format. parse_roadmap() returns a legacy error string; parse_v2_roadmap() returns None for non-v2 content.
+
 **using plan-\* metadata block names for objective data** → Read [Objective v2 Storage Format](objective-storage-format.md) first. Metadata block names must match their entity type: plan-header/plan-body for plans, objective-header/objective-roadmap/objective-body for objectives.
 
 **using surgical update for complete table rewrites** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Surgical updates only change one cell. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr).
+
+**writing objective content directly to issue body** → Read [Objective Create Workflow](objective-create-workflow.md) first. Issue body holds only metadata blocks. Full content goes in the first comment (objective-body block). See the 3-layer storage model.
 
 **writing regex patterns to match roadmap table rows without ^ and $ anchors** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. All roadmap table row regex patterns MUST use ^...$ anchors with re.MULTILINE. Without anchors, patterns can match partial lines or span rows.

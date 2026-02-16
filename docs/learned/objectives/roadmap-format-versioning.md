@@ -30,9 +30,9 @@ The canonical table format:
 | 1.2  | Add tests   | in-progress | #6464 | -    |
 ```
 
-## Legacy 4-Column Format (Backward Compatible)
+## Legacy 4-Column Format (Historical)
 
-The parser still handles the old 4-column format where plan and PR shared a single column:
+The old 4-column format where plan and PR shared a single column is no longer actively parsed by `parse_roadmap()`. The parser now requires v2 YAML frontmatter and returns a legacy format error for non-v2 content.
 
 ```markdown
 | Step | Description | Status | PR         |
@@ -41,7 +41,7 @@ The parser still handles the old 4-column format where plan and PR shared a sing
 | 1.2  | Add tests   | -      | plan #6464 |
 ```
 
-During parsing, 4-column `plan #NNN` values are automatically migrated to the `plan` field. The surgical update command (`_replace_step_refs_in_body()`) auto-upgrades 4-column table headers to 5-column on write.
+The surgical update command (`_replace_step_refs_in_body()`) still handles both 4-column and 5-column table formats in the rendered markdown table (objective-body comment), but the source of truth is always YAML frontmatter.
 
 ## Migration Strategy: Header-Based Detection
 
@@ -49,20 +49,20 @@ The parser uses **header-based format detection** — it checks for the 5-column
 
 Key design choices:
 
-- **5-col header tried first**: `| Step | Description | Status | Plan | PR |`
-- **4-col fallback**: `| Step | Description | Status | PR |`
-- **Auto-upgrade on write**: When `_replace_step_refs_in_body()` edits a 4-col table, it upgrades the header to 5-col
-- **Frontmatter schema v2**: The YAML frontmatter uses `schema_version: "2"` with separate `plan` and `pr` fields. v1 frontmatter with `pr: "plan #NNN"` is auto-migrated during parsing
+- **5-col header canonical**: `| Step | Description | Status | Plan | PR |`
+- **4-col handled on write**: When editing a 4-col table in the rendered view, the table is auto-upgraded to 5-col
+- **Frontmatter schema v2**: The YAML frontmatter uses `schema_version: "2"` with separate `plan` and `pr` fields
+- **v2-only parsing**: `parse_roadmap()` returns a legacy format error for non-v2 content (no table-parsing fallback)
 
 ## Historical: Planned 7-Column Extension (Never Built)
 
 The original plan added three more columns: **Type** (task/milestone/research), **Issue** (GitHub issue reference), and **Depends On** (step ID dependencies). This was never implemented. If revisited, follow the same header-based detection pattern established by the 4→5 migration.
 
-## Status Inference: A Design Quirk Worth Preserving
+## Status Inference: Write-Time Only
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_step_in_frontmatter -->
 
-The parser has a dual-path status resolution: explicit status values in the Status column take priority, but if the Status column contains `-` (legacy format), status is inferred from the plan/PR columns (`#NNN` in PR = done, `#NNN` in Plan = in_progress, both empty = pending). This backward compatibility exists because early roadmaps used `-` in the Status column and relied entirely on column-based inference. Any format extension must preserve this fallback to avoid breaking existing objectives.
+Status inference exists only at **write time** in `update_step_in_frontmatter()`: when no explicit status is provided, it infers `done` from a PR reference, `in_progress` from a plan reference, or preserves the existing status. The parser (`parse_roadmap()`) reads the explicit `status` field from YAML frontmatter with no inference — what's stored is what's returned.
 
 ## Related Documentation
 

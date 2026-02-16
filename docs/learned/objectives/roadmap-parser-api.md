@@ -11,6 +11,8 @@ tripwires:
     warning: "The field is named 'id', not 'step_id'. This is a common mistake — check the actual dataclass definition."
   - action: "importing parse_roadmap into a new consumer"
     warning: "The shared module lives in erk_shared.gateway.github.metadata.roadmap and is consumed by both exec scripts and CLI commands. Import from this shared location."
+  - action: "using parse_roadmap() when strict v2 validation is needed"
+    warning: "Use parse_v2_roadmap() for commands that should reject legacy format. parse_roadmap() returns a legacy error string; parse_v2_roadmap() returns None for non-v2 content."
 last_audited: "2026-02-08 10:24 PT"
 audit_result: edited
 ---
@@ -78,7 +80,19 @@ Extracts phase names from markdown headers (e.g., `### Phase 1: Planning`) and r
 
 ### Separate plan and pr fields on RoadmapStep
 
-`RoadmapStep` has separate `plan` and `pr` fields (both `str | None`). The `plan` field holds a plan issue reference (e.g., `"#6464"`), while `pr` holds a landed PR reference (e.g., `"#123"`). This replaces the old convention where `pr` held both formats (`"plan #456"` vs `"#123"`). The parser handles backward compatibility: 4-column tables with `plan #NNN` in the PR column are automatically migrated to separate fields during parsing.
+`RoadmapStep` has separate `plan` and `pr` fields (both `str | None`). The `plan` field holds a plan issue reference (e.g., `"#6464"`), while `pr` holds a landed PR reference (e.g., `"#123"`). This replaces the old convention where `pr` held both formats (`"plan #456"` vs `"#123"`). The parser reads these as separate YAML fields from v2 frontmatter — no table-based migration occurs during parsing.
+
+## Dual-Parser Pattern
+
+The module exposes two parsing entry points:
+
+### `parse_roadmap(body)` — Lenient Parser
+
+Returns `(phases, validation_errors)`. Always returns a tuple. For v2 YAML frontmatter, parses and returns phases. For non-v2 content, returns `([], [legacy_format_error])`. This is the standard parser used by most consumers.
+
+### `parse_v2_roadmap(body)` — Strict v2 Parser
+
+Returns `(phases, validation_errors) | None`. Returns `None` when the body is not in v2 format (no metadata block, no `<details>` wrapper, or non-v2 schema version). Use this when the caller needs to distinguish "not v2 format" from "v2 format with errors" — for example, commands that should reject legacy format explicitly rather than receiving an error string.
 
 ## Relationship to Sibling Docs
 

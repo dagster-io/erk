@@ -99,8 +99,25 @@ Objectives view uses simplified columns (plan, title, created, author only). Pla
 
 Renders `1:Plans  2:Learn  3:Objectives` with the active view in bold white and inactive views dimmed. Uses `_refresh_display()` (not `_render()` — Textual's LSP conflicts with that name).
 
+## Arrow Key View Cycling
+
+Left/right arrow keys cycle through views. This is delegated from `PlanDataTable` to the app:
+
+<!-- Source: src/erk/tui/widgets/plan_table.py:102-108 -->
+
+`PlanDataTable` overrides `action_cursor_left` and `action_cursor_right` to delegate to `ErkDashApp.action_previous_view()` and `action_next_view()` respectively. See `src/erk/tui/widgets/plan_table.py:102-108` for the implementation.
+
+The app uses `get_next_view_mode()` and `get_previous_view_mode()` from `src/erk/tui/views/types.py` which cycle through `VIEW_CONFIGS` with wrapping (last -> first, first -> last).
+
+## Race Condition Prevention
+
+When a fetch is in progress and the user switches tabs, the fetched data could be applied to the wrong view. The `fetched_mode` guard prevents this — see [Async State Snapshot](async-state-snapshot.md) for the full pattern.
+
+In brief: `_load_data()` snapshots `self._view_mode` at fetch start, and `_update_table()` only updates the display if the current view still matches the snapshot.
+
 ## Related Documentation
 
+- [Async State Snapshot](async-state-snapshot.md) — Race condition prevention for async fetches
 - [TUI Data Contract](data-contract.md) — PlanRowData fields including `is_learn_plan`
 
 See also TUI category documentation for overall architecture and layer structure.

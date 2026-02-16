@@ -13,7 +13,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 
 | Category                                    | Tripwires | Load When Working In                          |
 | ------------------------------------------- | --------- | --------------------------------------------- |
-| [architecture](architecture/tripwires.md)   | 122       | `src/erk/gateway/`, gateways, subprocess      |
+| [architecture](architecture/tripwires.md)   | 123       | `src/erk/gateway/`, gateways, subprocess      |
 | [capabilities](capabilities/tripwires.md)   | 11        | Claude Code capabilities, tool use            |
 | [changelog](changelog/tripwires.md)         | 3         | `changelog/` code                             |
 | [checklists](checklists/tripwires.md)       | 1         | `checklists/` code                            |
@@ -29,7 +29,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [gateway](gateway/tripwires.md)             | 5         | `gateway/` code                               |
 | [hooks](hooks/tripwires.md)                 | 4         | `.claude/hooks/`, hook development            |
 | [integrations](integrations/tripwires.md)   | 18        | `integrations/` code                          |
-| [objectives](objectives/tripwires.md)       | 26        | `objectives/` code                            |
+| [objectives](objectives/tripwires.md)       | 31        | `objectives/` code                            |
 | [planning](planning/tripwires.md)           | 78        | `.impl/`, `.worker-impl/`, planning workflows |
 | [pr-operations](pr-operations/tripwires.md) | 14        | `pr-operations/` code                         |
 | [refactoring](refactoring/tripwires.md)     | 4         | `refactoring/` code                           |
@@ -37,8 +37,8 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [review](review/tripwires.md)               | 3         | `review/` code                                |
 | [reviews](reviews/tripwires.md)             | 4         | `reviews/` code                               |
 | [sessions](sessions/tripwires.md)           | 10        | `~/.claude/projects/`, session analysis       |
-| [testing](testing/tripwires.md)             | 43        | `tests/`                                      |
+| [testing](testing/tripwires.md)             | 44        | `tests/`                                      |
 | [textual](textual/tripwires.md)             | 1         | Textual framework code                        |
-| [tui](tui/tripwires.md)                     | 15        | `src/erk/tui/`                                |
+| [tui](tui/tripwires.md)                     | 17        | `src/erk/tui/`                                |
 | [uncategorized](uncategorized/tripwires.md) | 14        | `uncategorized/` code                         |
 | [workflows](workflows/tripwires.md)         | 5         | `workflows/` code                             |

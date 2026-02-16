@@ -11,6 +11,8 @@ tripwires:
     warning: "The update-roadmap-step command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty."
   - action: "expecting status to auto-update after manual PR edits"
     warning: "Only the update-roadmap-step command writes computed status. Manual GitHub edits or direct body mutations leave status at its current value — you must explicitly set status to '-' to enable inference on next parse."
+  - action: "setting PR reference without understanding auto-clear semantics"
+    warning: "Setting --pr auto-clears the plan column when --plan is not explicitly provided. Read roadmap-mutation-semantics.md for the None/empty/value semantics."
 ---
 
 # Roadmap Mutation Semantics
@@ -41,6 +43,31 @@ When you run `erk exec update-roadmap-step 6423 --step 1.3 --plan "#6464"`, the 
 | `--plan "#456"` | `in-progress`  | `#456`            | `-`             |
 | `--pr ""`       | `pending`      | `-`               | `-`             |
 
+### None vs Empty-String vs Value Semantics
+
+The `update_step_in_frontmatter()` function uses a three-way convention for its `plan` and `pr` parameters:
+
+| Value    | Meaning                             |
+| -------- | ----------------------------------- |
+| `None`   | Preserve existing value (no change) |
+| `""`     | Clear the field (set to `None`)     |
+| `"#123"` | Set to the specified value          |
+
+This allows callers to update one field without affecting the other. For example, `--pr "#123"` without `--plan` preserves the existing plan value — unless auto-clear applies (see below).
+
+### Auto-Clear: Setting --pr Clears Plan
+
+When `--pr` is explicitly set (non-None, non-empty) and `--plan` is NOT provided, the plan field is automatically cleared. This reflects the workflow semantics: once a PR lands, the plan reference is no longer relevant.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_step_in_frontmatter lines 316-328 -->
+
+| Flags Provided          | Plan Result    | PR Result |
+| ----------------------- | -------------- | --------- |
+| `--pr "#123"`           | Cleared (auto) | `"#123"`  |
+| `--pr "#123" --plan ""` | Cleared        | `"#123"`  |
+| `--plan "#456"`         | `"#456"`       | Preserved |
+| `--pr "" --plan ""`     | Cleared        | Cleared   |
+
 ### Why Both Cells Are Written
 
 The command could have written PR and left status as `-` (relying on parse-time inference), but that creates a worse user experience:
@@ -57,7 +84,18 @@ By writing computed status directly, the table is always human-readable.
 
 See `_replace_step_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`. The function uses regex to find the target row and replaces status, plan, and PR cells in a single operation. It supports both 4-col (legacy) and 5-col table formats, upgrading 4-col headers to 5-col on write.
 
-## Parse: Status Inference at Read Time
+### Status Inference Is Write-Time Only
+
+Status is computed by `update_step_in_frontmatter()` at mutation time. There is no read-time inference in the v2 YAML path — `parse_roadmap()` reads the `status` field directly from YAML. The inference logic (explicit > infer from PR/plan > preserve) runs only during writes:
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, update_step_in_frontmatter lines 330-339 -->
+
+1. **Explicit status provided** → use it directly
+2. **PR is set** → status = `"done"`
+3. **Plan is set** → status = `"in_progress"`
+4. **Neither** → preserve existing status
+
+## Parse: Status Inference at Read Time (Legacy Tables Only)
 
 The parser (`parse_roadmap()`) uses a two-tier status resolution system: explicit status values take priority, with PR-based inference only when status is `-` or empty. For the complete specification, see [Roadmap Status System](../objectives/roadmap-status-system.md).
 
