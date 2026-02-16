@@ -149,8 +149,14 @@ class PlanDataTable(DataTable):
         self.add_column("author", key="author")
         col_index += 1
 
-        # Objectives view uses simplified columns
+        # Objectives view uses enriched columns
         if self._view_mode == ViewMode.OBJECTIVES:
+            self.add_column("progress", key="progress")
+            col_index += 1
+            self.add_column("next", key="next_step")
+            col_index += 1
+            self.add_column("updated", key="updated")
+            col_index += 1
             return
 
         if self._plan_filters.show_prs:
@@ -239,9 +245,19 @@ class PlanDataTable(DataTable):
         if row.issue_url:
             plan_cell = Text(plan_cell, style="cyan underline")
 
-        # Objectives view: simplified columns (plan, title, created, author)
+        # Objectives view: plan, title, progress, next, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
-            return (plan_cell, Text(row.title), row.created_display, row.author)
+            display_title = row.title
+            if display_title.startswith("Objective: "):
+                display_title = display_title[len("Objective: ") :]
+            return (
+                plan_cell,
+                Text(display_title),
+                row.objective_progress_display,
+                Text(row.objective_next_step_display),
+                row.updated_display,
+                row.author,
+            )
 
         # Format worktree
         if row.exists_locally:

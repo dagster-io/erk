@@ -348,8 +348,8 @@ class TestLocalWtColumnIndex:
 class TestObjectivesViewRowConversion:
     """Tests for row conversion in Objectives view."""
 
-    def test_objectives_view_has_simplified_columns(self) -> None:
-        """Objectives view produces only plan, title, created, author columns."""
+    def test_objectives_view_has_enriched_columns(self) -> None:
+        """Objectives view produces plan, title, progress, next, updated, author."""
         filters = PlanFilters.default()
         table = PlanDataTable(filters)
         table._view_mode = ViewMode.OBJECTIVES
@@ -357,9 +357,54 @@ class TestObjectivesViewRowConversion:
 
         values = table._row_to_values(row)
 
-        # Objectives view: plan, title, created, author
-        assert len(values) == 4
+        # Objectives view: plan, title, progress, next, updated, author
+        assert len(values) == 6
         assert _text_to_str(values[0]) == "#42"
         assert _text_to_str(values[1]) == "Objective Plan"
-        assert values[2] == "-"  # created_display
-        assert values[3] == "test-user"  # author
+        assert values[2] == "-"  # progress_display
+        assert _text_to_str(values[3]) == "-"  # next_step_display
+        assert values[4] == "-"  # updated_display
+        assert values[5] == "test-user"  # author
+
+    def test_objectives_view_strips_title_prefix(self) -> None:
+        """Objectives view strips 'Objective: ' prefix from title."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters)
+        table._view_mode = ViewMode.OBJECTIVES
+        row = make_plan_row(42, "Objective: Enrich Dashboard")
+
+        values = table._row_to_values(row)
+
+        assert _text_to_str(values[1]) == "Enrich Dashboard"
+
+    def test_objectives_view_preserves_non_prefixed_title(self) -> None:
+        """Objectives view preserves titles without the prefix."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters)
+        table._view_mode = ViewMode.OBJECTIVES
+        row = make_plan_row(42, "My Plan Title")
+
+        values = table._row_to_values(row)
+
+        assert _text_to_str(values[1]) == "My Plan Title"
+
+    def test_objectives_view_shows_progress_and_next(self) -> None:
+        """Objectives view shows progress and next step from row data."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters)
+        table._view_mode = ViewMode.OBJECTIVES
+        row = make_plan_row(
+            42,
+            "Objective: Build Feature",
+            objective_done_steps=3,
+            objective_total_steps=7,
+            objective_progress_display="3/7",
+            objective_next_step_display="1.3 Add tests",
+            updated_display="2h ago",
+        )
+
+        values = table._row_to_values(row)
+
+        assert values[2] == "3/7"  # progress
+        assert _text_to_str(values[3]) == "1.3 Add tests"  # next step
+        assert values[4] == "2h ago"  # updated
