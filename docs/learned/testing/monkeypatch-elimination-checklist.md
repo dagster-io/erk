@@ -11,7 +11,7 @@ tripwires:
   - action: "using monkeypatch to stub Path.home() or subprocess.run()"
     warning: "These are the two most common monkeypatch targets. Both have established gateway replacements — ClaudeInstallation/ErkInstallation for paths, specific gateways for subprocess."
     pattern: "monkeypatch\\.setattr.*Path\\.home|monkeypatch.*subprocess\\.run"
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

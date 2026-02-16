@@ -10,7 +10,7 @@ tripwires:
     warning: "Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes."
   - action: "running pytest, ty, ruff, prettier, make, or gt directly via Bash"
     warning: "Use Task(subagent_type='devrun') instead. A UserPromptSubmit hook enforces this on every turn."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

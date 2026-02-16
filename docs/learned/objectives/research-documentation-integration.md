@@ -9,7 +9,7 @@ tripwires:
     warning: "Only document patterns proven in practice. Speculative patterns from in-progress objectives go stale. Wait until the PR lands and the pattern is validated."
   - action: "creating a learned doc that rephrases an objective's action comment lessons"
     warning: "Objectives already capture lessons in action comments. Only create a learned doc when the insight is reusable beyond this specific objective."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

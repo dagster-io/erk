@@ -9,7 +9,7 @@ tripwires:
     warning: "Agent behavior is non-deterministic. Critical operations need a deterministic workflow step as the final safety net."
   - action: "staging git changes (git add/git rm) without an immediate commit before a git reset --hard"
     warning: "git reset --hard silently discards staged changes. Commit and push cleanup BEFORE any reset step."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

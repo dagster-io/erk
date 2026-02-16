@@ -12,7 +12,7 @@ tripwires:
     warning: "Track ALL call parameters in tuples (e.g., (branch, force) not just branch). Lost context leads to undertested behavior."
   - action: "creating a fake that uses __init__ when frozen dataclass would work"
     warning: "FakeBranchManager uses frozen dataclass because its state is simple and declarative. FakeGitHub uses __init__ because it has 30+ constructor params. Choose based on complexity."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

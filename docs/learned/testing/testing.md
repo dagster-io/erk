@@ -1,6 +1,6 @@
 ---
 title: Erk Test Reference
-last_audited: "2026-02-13"
+last_audited: "2026-02-13 00:00 PT"
 audit_result: clean
 read_when:
   - "writing tests for erk"

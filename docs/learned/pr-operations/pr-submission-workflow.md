@@ -10,7 +10,7 @@ tripwires:
     warning: "Two git-only paths already exist (command-level and pipeline-level). Understand why both exist before adding a third. See pr-submission-workflow.md."
   - action: "using gh pr create directly in Python code"
     warning: "The pipeline uses ctx.github.create_pr() (REST API gateway), not gh pr create. The command-level path uses gh CLI directly because it runs in shell context. See pr-submission-workflow.md."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

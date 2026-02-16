@@ -9,7 +9,7 @@ tripwires:
     warning: "Every command needs an is_available predicate based on PlanRowData field presence. Commands without predicates appear when they can't execute."
   - action: "adding an ACTION command that executes instantly"
     warning: "ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

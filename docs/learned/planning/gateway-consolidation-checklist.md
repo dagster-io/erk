@@ -1,6 +1,6 @@
 ---
 title: Gateway Consolidation Checklist
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 read_when:
   - "moving a gateway package into the gateway/ directory"

@@ -9,7 +9,7 @@ tripwires:
     warning: "WebView IPC channels (bounds, URL) must be fire-and-forget (send/on), never request-response (invoke/handle) — invoke serializes high-frequency updates and causes visible lag"
   - action: "setting WebContentsView initial bounds"
     warning: "the WebContentsView starts at zero bounds intentionally; do not set initial bounds in createWindow — see defensive-bounds-handling.md"
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

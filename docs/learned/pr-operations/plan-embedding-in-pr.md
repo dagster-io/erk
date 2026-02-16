@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "adding plan HTML to the pr_body variable instead of pr_body_for_github"
     warning: "Plan embedding uses <details> HTML which must never enter git commit messages. Append only to pr_body_for_github. See pr-body-formatting.md for the two-target pattern."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

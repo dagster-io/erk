@@ -11,7 +11,7 @@ tripwires:
     warning: "the right pane div is a positioning placeholder only — it renders no content, the WebContentsView overlays it"
   - action: "implementing split pane cleanup"
     warning: "cleanup lives in the main process window-close handler, not in the SplitPane component"
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

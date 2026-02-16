@@ -1,6 +1,6 @@
 ---
 title: Branch Name Inference
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 tripwires:
   - action: "changing branch naming convention (P{issue}- prefix)"

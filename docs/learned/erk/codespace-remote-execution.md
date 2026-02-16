@@ -11,7 +11,7 @@ tripwires:
     warning: "This affects ALL remote commands. The bootstrap runs on every SSH invocation, so added steps must be idempotent and fast."
   - action: "embedding single quotes in a remote erk command argument"
     warning: "The bootstrap wraps the entire command in single quotes. Single quotes in arguments will break the shell string."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

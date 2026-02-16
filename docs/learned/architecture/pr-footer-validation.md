@@ -1,6 +1,6 @@
 ---
 title: PR Footer Format Validation
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 tripwires:
   - action: "modifying PR footer format"

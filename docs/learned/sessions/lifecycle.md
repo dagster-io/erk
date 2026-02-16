@@ -11,7 +11,7 @@ tripwires:
     warning: "Missing sessions must never cause hard failure. Degrade through the fallback hierarchy: planning → implementation → gist → local scan → skip."
   - action: "constructing session file paths manually"
     warning: "Use ClaudeInstallation ABC methods, not manual path construction. Storage layout is an implementation detail that may change."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

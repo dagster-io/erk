@@ -1,6 +1,6 @@
 ---
 title: Admin Command Testing Patterns
-last_audited: "2026-02-11"
+last_audited: "2026-02-11 00:00 PT"
 audit_result: clean
 read_when:
   - "writing tests for admin CLI commands"

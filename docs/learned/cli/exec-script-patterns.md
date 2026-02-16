@@ -10,7 +10,7 @@ tripwires:
     warning: "Gateway ABCs use submodule paths: `erk_shared.gateway.{service}.{resource}.abc`"
   - action: "using Path.cwd() or Path.home() in exec scripts"
     warning: "Use context injection via require_cwd(ctx) for testability"
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

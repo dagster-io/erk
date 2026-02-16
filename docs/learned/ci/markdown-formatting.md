@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "editing markdown files in docs/"
     warning: "Run `make prettier` via devrun after markdown edits. Multi-line edits trigger Prettier failures. Never manually format - use the command."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

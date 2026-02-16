@@ -7,7 +7,7 @@ read_when:
   - "removing Keys Quit Screenshot Theme from palette"
   - "adding emoji prefixes to command palette entries"
   - "using CommandCategory for command categorization"
-last_audited: "2026-02-05"
+last_audited: "2026-02-05 00:00 PT"
 audit_result: edited
 ---
 

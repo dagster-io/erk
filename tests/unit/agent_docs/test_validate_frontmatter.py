@@ -84,6 +84,59 @@ def test_last_audited_rejects_non_string() -> None:
     assert "Field 'last_audited' must be a string" in errors[0]
 
 
+def test_last_audited_rejects_date_only_format() -> None:
+    data: dict[str, object] = {
+        "title": "My Doc",
+        "read_when": ["editing code"],
+        "last_audited": "2026-02-08",
+    }
+    result, errors = validate_agent_doc_frontmatter(data)
+
+    assert result is None
+    assert len(errors) == 1
+    assert "must match format 'YYYY-MM-DD HH:MM PT'" in errors[0]
+    assert "'2026-02-08'" in errors[0]
+
+
+def test_last_audited_accepts_valid_datetime_format() -> None:
+    data: dict[str, object] = {
+        "title": "My Doc",
+        "read_when": ["editing code"],
+        "last_audited": "2026-02-08 14:30 PT",
+    }
+    result, errors = validate_agent_doc_frontmatter(data)
+
+    assert result is not None
+    assert errors == []
+    assert result.last_audited == "2026-02-08 14:30 PT"
+
+
+def test_last_audited_rejects_wrong_timezone() -> None:
+    data: dict[str, object] = {
+        "title": "My Doc",
+        "read_when": ["editing code"],
+        "last_audited": "2026-02-08 14:30 EST",
+    }
+    result, errors = validate_agent_doc_frontmatter(data)
+
+    assert result is None
+    assert len(errors) == 1
+    assert "must match format 'YYYY-MM-DD HH:MM PT'" in errors[0]
+
+
+def test_last_audited_rejects_seconds() -> None:
+    data: dict[str, object] = {
+        "title": "My Doc",
+        "read_when": ["editing code"],
+        "last_audited": "2026-02-08 14:30:00 PT",
+    }
+    result, errors = validate_agent_doc_frontmatter(data)
+
+    assert result is None
+    assert len(errors) == 1
+    assert "must match format 'YYYY-MM-DD HH:MM PT'" in errors[0]
+
+
 def test_multiple_audit_errors_reported() -> None:
     data: dict[str, object] = {
         "title": "My Doc",

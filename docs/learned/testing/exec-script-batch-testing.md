@@ -11,7 +11,7 @@ tripwires:
   - action: "Use stateful failure injection (_should_fail_next flags) in fake gateways"
     warning: "Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below."
     score: 6
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

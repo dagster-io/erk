@@ -1,6 +1,6 @@
 ---
 audit_result: edited
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 read_when:
   - adding new IPC methods to erkdesk
   - debugging communication between renderer and main process

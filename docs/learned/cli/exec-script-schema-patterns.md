@@ -11,7 +11,7 @@ tripwires:
     warning: "Define shared TypedDict in packages/erk-shared/ for type-safe schema. Both producer and consumer import from the same schema definition."
   - action: "filtering session sources without logging which sessions were skipped and why"
     warning: "Silent filtering makes debugging impossible. Log to stderr when skipping sessions, include the reason (empty/warmup/filtered)."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

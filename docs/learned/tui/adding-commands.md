@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "generating TUI commands that depend on optional PlanRowData fields"
     warning: "Implement three-layer validation: registry predicate, handler guard, app-level helper. Never rely on registry predicate alone."
-last_audited: "2026-02-05"
+last_audited: "2026-02-05 00:00 PT"
 audit_result: edited
 ---
 

@@ -11,7 +11,7 @@ tripwires:
   - action: "Render status indicators from backend-provided display strings"
     warning: "Status indicators must derive from raw state fields via pure functions, not pre-rendered strings. See state-derivation-pattern.md."
     score: 8
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

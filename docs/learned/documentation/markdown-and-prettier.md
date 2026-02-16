@@ -9,7 +9,7 @@ tripwires:
     warning: "Never manually format markdown. Prettier rewrites all formatting on save. Write naturally, then run `make prettier` via devrun."
   - action: "adding prettier-ignore to docs/learned/"
     warning: "prettier-ignore is almost never needed in docs. If Prettier is mangling your content, the structure may need rethinking rather than suppression."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: Discriminated Union Error Handling
-last_audited: "2026-02-07"
+last_audited: "2026-02-07 00:00 PT"
 audit_result: clean
 read_when:
   - "designing return types for operations that may fail"

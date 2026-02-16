@@ -1,6 +1,6 @@
 ---
 title: GitHub API Diagnostics
-last_audited: "2026-02-07"
+last_audited: "2026-02-07 00:00 PT"
 audit_result: clean
 read_when:
   - debugging GitHub API failures

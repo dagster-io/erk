@@ -4,7 +4,7 @@ read_when:
   - "testing code that uses subprocess"
   - "creating fakes for process execution"
   - "avoiding subprocess mocks in tests"
-last_audited: "2026-02-05"
+last_audited: "2026-02-05 00:00 PT"
 audit_result: edited
 ---
 

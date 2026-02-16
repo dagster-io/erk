@@ -9,7 +9,7 @@ tripwires:
     warning: "Authority without substance misleads. Only declare canonical authority if the doc is the comprehensive deep-dive, not a summary. If AGENTS.md has the abbreviated version and this doc has the full treatment, that's the right split."
   - action: "two learned docs claiming canonical authority over the same topic"
     warning: "Contradicts the purpose. Consolidate into one doc, or differentiate scope explicitly (e.g., 'canonical for hook patterns' vs 'canonical for command patterns')."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

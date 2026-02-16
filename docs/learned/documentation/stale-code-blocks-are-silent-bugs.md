@@ -10,7 +10,7 @@ tripwires:
     warning: "Verbatim source in docs silently goes stale. Use a source pointer instead — see source-pointers.md."
   - action: "adding a code block longer than a few lines to a learned doc"
     warning: "Check if this falls under the One Code Rule exceptions (data formats, third-party APIs, anti-patterns, I/O examples). If not, use a source pointer."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

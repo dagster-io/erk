@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "working with session-specific data"
     warning: 'Multiple sessions can run in parallel. NEVER use "most recent by mtime" for session data lookup - always scope by session ID.'
-last_audited: "2026-02-05"
+last_audited: "2026-02-05 00:00 PT"
 audit_result: clean
 ---
 

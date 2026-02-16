@@ -10,7 +10,7 @@ tripwires:
     warning: "Use source pointers instead of duplication. See simplification-patterns.md for the three simplification patterns."
   - action: "restructuring or deleting doc content"
     warning: "Run 'erk docs sync' after structural changes to regenerate indexes and fix broken cross-references."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

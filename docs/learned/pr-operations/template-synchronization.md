@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "editing commit-message-prompt.md in either location"
     warning: "Update BOTH copies: .claude/skills/erk-diff-analysis/references/commit-message-prompt.md AND packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md. CI enforces byte-equality."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 
