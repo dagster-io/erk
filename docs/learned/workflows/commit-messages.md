@@ -9,7 +9,7 @@ tripwires:
     warning: "Load the erk-diff-analysis skill first. It produces component-aware, strategically framed messages that become both the commit and PR body."
   - action: "loading erk-diff-analysis skill more than once per session"
     warning: "Skills persist for the entire session. Check conversation history for 'erk-diff-analysis' before reloading."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

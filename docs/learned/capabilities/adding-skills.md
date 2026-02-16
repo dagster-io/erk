@@ -9,7 +9,7 @@ tripwires:
     warning: "Bundled content directory must exist or install() silently creates empty skill directory. See silent failure modes below."
   - action: "skill not appearing in erk init capability list"
     warning: "MUST import class AND add instance to registry.py _all_capabilities() tuple. Import alone is not sufficient."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

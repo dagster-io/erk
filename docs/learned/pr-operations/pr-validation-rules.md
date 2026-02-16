@@ -9,7 +9,7 @@ tripwires:
     warning: "Checkout footers require the PR number (from create_pr return value), NOT the issue number. Issue numbers go in `Closes` references. See pr-validation-rules.md."
   - action: "adding Closes reference in a PR body update instead of initial creation"
     warning: "GitHub sets willCloseTarget at PR creation time. The Closes reference must be in the initial create_pr body, not a subsequent update. See checkout-footer-syntax.md."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

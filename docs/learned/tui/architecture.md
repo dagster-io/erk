@@ -4,7 +4,7 @@ read_when:
   - "understanding TUI structure"
   - "implementing TUI components"
   - "working with TUI data providers"
-last_audited: "2026-02-05"
+last_audited: "2026-02-05 00:00 PT"
 audit_result: edited
 ---
 

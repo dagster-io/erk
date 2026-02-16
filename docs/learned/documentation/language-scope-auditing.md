@@ -4,7 +4,7 @@ read_when:
   - writing documentation that includes non-Python code examples
   - documenting erkdesk or desktop-dash patterns in docs/learned/
   - reviewing learned-docs for verbatim code across languages
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 tripwires:
   - action: "adding TypeScript/Bash code from erkdesk"

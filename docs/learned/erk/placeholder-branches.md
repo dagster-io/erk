@@ -9,7 +9,7 @@ tripwires:
     warning: "Placeholder branches must bypass BranchManager. Use ctx.git.branch.create_branch() to avoid Graphite tracking. See branch-manager-decision-tree.md for the full decision framework."
   - action: "deleting a placeholder branch with ctx.branch_manager.delete_branch()"
     warning: "Placeholder branch deletion must also bypass BranchManager. Use ctx.git.branch.delete_branch() directly."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

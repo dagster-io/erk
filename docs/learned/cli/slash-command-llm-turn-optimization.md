@@ -10,7 +10,7 @@ tripwires:
     warning: "Extract 3+ mechanical sequential calls into an exec script. Each tool call costs a full LLM round-trip."
   - action: "creating exec scripts for operations requiring LLM reasoning between steps"
     warning: "Keep conditional logic in slash commands. Only bundle mechanical API calls where all input params are known upfront."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

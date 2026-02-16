@@ -8,7 +8,7 @@ read_when:
 tripwires:
   - action: "using CLAUDE_SESSION_ID in hooks or Python code"
     warning: "CLAUDE_SESSION_ID is NOT an environment variable — it is a string substitution performed by Claude Code's skill/command loader. Treating it as an env var in hooks or Python code will silently produce an empty string."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

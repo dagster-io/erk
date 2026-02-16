@@ -4,7 +4,7 @@ read_when:
   - "displaying streaming command output in TUI"
   - "executing long-running commands with progress"
   - "cross-thread UI updates in Textual"
-last_audited: "2026-02-05"
+last_audited: "2026-02-05 00:00 PT"
 audit_result: edited
 ---
 

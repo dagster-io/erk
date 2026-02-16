@@ -5,7 +5,7 @@ read_when:
   - "extracting metadata from stream-json"
   - "working with session_id"
   - "implementing stream-json parser"
-last_audited: "2026-02-05"
+last_audited: "2026-02-05 00:00 PT"
 audit_result: edited
 ---
 

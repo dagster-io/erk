@@ -27,6 +27,8 @@ from erk_shared.gateway.agent_docs.abc import AgentDocs
 
 AGENT_DOCS_DIR = "docs/learned"
 
+LAST_AUDITED_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2} PT$")
+
 # Category descriptions for root index generation.
 # Format: "Explore when [doing X]. Add docs here for [type of content]."
 # To add a new category, add an entry here and run `erk docs sync`.
@@ -213,6 +215,11 @@ def validate_agent_doc_frontmatter(
     if last_audited_data is not None:
         if not isinstance(last_audited_data, str):
             errors.append("Field 'last_audited' must be a string")
+        elif not LAST_AUDITED_PATTERN.match(last_audited_data):
+            errors.append(
+                "Field 'last_audited' must match format"
+                f" 'YYYY-MM-DD HH:MM PT', got '{last_audited_data}'"
+            )
         else:
             last_audited = last_audited_data
 

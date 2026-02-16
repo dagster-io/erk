@@ -4,7 +4,7 @@ read_when:
   - "choosing between git-pr-push and pr-submit commands"
   - "understanding PR submission workflows"
   - "deciding whether to use Graphite or plain git"
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 tripwires:
   - action: "submitting PRs"

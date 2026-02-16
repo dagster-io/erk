@@ -9,7 +9,7 @@ tripwires:
     warning: "This command uses direct Python function calls, not subprocess invocations. This is intentional — see the direct-call architecture section below."
   - action: "assuming remote sessions skip local preprocessing"
     warning: "Since PR #6974, remote sessions go through the same _preprocess_session_direct() pipeline as local sessions. They are downloaded first, then preprocessed identically."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

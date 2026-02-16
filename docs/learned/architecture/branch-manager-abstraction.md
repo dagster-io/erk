@@ -14,7 +14,7 @@ tripwires:
     warning: "GraphiteBranchManager.create_branch() restores the original branch after Graphite tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch."
   - action: "calling delete_branch() without passing the force parameter through"
     warning: "The force flag controls -D (force) vs -d (safe) git delete. Dropping it silently changes behavior. Always flow force=force through all layers."
-last_audited: "2026-02-07"
+last_audited: "2026-02-07 00:00 PT"
 audit_result: clean
 ---
 

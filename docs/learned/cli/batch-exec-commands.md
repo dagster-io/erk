@@ -14,7 +14,7 @@ tripwires:
   - action: "Return non-zero exit codes for batch command failures"
     warning: "Always exit 0, encode errors in JSON output with per-item success fields."
     score: 6
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

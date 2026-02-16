@@ -5,7 +5,7 @@ read_when:
   - "adding ModalScreen dialogs"
   - "implementing keyboard bindings"
   - "writing Textual CSS styles"
-last_audited: "2026-02-05"
+last_audited: "2026-02-05 00:00 PT"
 audit_result: edited
 ---
 

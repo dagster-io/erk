@@ -14,7 +14,7 @@ tripwires:
     warning: "Do NOT run pnpm commands from the repo root — always cd into erkdesk/ first"
   - action: "modifying CI job dependencies"
     warning: "Do NOT add erkdesk-tests to the autofix job's needs list in CI"
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

@@ -11,7 +11,7 @@ tripwires:
     warning: "Include at least one situation→decision→reasoning example. Abstract criteria are hard to apply without concrete illustrations."
   - action: "creating a two-option doc where every matrix row favors the same option"
     warning: "That's a best-practice doc, not a decision doc. Don't create false balance."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

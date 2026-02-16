@@ -4,7 +4,7 @@ read_when:
   - Writing file validation code
   - Debugging unexpected path resolution behavior
   - Working with symlinked configuration files
-last_audited: "2026-02-03"
+last_audited: "2026-02-03 00:00 PT"
 audit_result: edited
 ---
 

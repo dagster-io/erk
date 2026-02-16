@@ -1,6 +1,6 @@
 ---
 title: Gateway Removal Pattern
-last_audited: "2026-02-07"
+last_audited: "2026-02-07 00:00 PT"
 audit_result: clean
 tripwires:
   - action: "deleting a gateway after consolidating into another"

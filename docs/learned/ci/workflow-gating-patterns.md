@@ -8,7 +8,7 @@ tripwires:
   - action: "Use !contains() pattern for label-based gating"
     warning: "Negation is critical — contains() without ! skips all push events"
     score: 5
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

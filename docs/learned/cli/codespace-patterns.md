@@ -1,6 +1,6 @@
 ---
 title: Codespace Patterns
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 read_when:
   - implementing CLI commands that use codespaces

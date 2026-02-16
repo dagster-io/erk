@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "running gh pr create"
     warning: "Query for existing PRs first via `gh pr list --head <branch> --state all`. Prevents duplicate PR creation and workflow breaks."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

@@ -9,7 +9,7 @@ tripwires:
     warning: "Use a source pointer instead. See source-pointers.md for the two-part format (HTML comment + prose reference)."
   - action: "using line numbers in source pointers"
     warning: "Prefer name-based identifiers (ClassName.method) over line numbers. Names survive refactoring; line numbers go stale silently."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

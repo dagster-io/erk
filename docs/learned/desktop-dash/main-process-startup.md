@@ -15,7 +15,7 @@ tripwires:
     warning: "WebContentsView starts at zero bounds — renderer must report bounds before it becomes visible"
   - action: "choosing subprocess patterns for IPC"
     warning: "Use execFile for request/response IPC, spawn for streaming IPC — do not mix the patterns"
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

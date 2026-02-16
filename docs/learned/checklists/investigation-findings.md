@@ -4,7 +4,7 @@ read_when:
   - "before entering Plan Mode in replan workflow"
   - "verifying context preservation in consolidated plans"
   - "creating comprehensive implementation plans from investigation findings"
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 tripwires:
   - action: "entering Plan Mode in replan or consolidation workflow"

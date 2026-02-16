@@ -5,7 +5,7 @@ read_when:
   - "debugging why a duplicate PR or issue was created"
   - "fixing erk pr check validation failures"
   - "understanding the PR number vs issue number distinction"
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 tripwires:
   - action: "using issue number from .impl/issue.json in a checkout footer"

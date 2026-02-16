@@ -1,5 +1,5 @@
 ---
-last_audited: "2026-02-03"
+last_audited: "2026-02-03 00:00 PT"
 audit_result: edited
 title: Erk Architecture Patterns
 read_when:

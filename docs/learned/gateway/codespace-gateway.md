@@ -12,7 +12,7 @@ tripwires:
     warning: "Codespace operations are all-or-nothing remote execution. Dry-run and printing don't apply."
   - action: "adding -t flag to run_ssh_command or omitting it from exec_ssh_interactive"
     warning: "The -t flag controls TTY allocation. Interactive needs it (rendering); non-interactive breaks with it (buffering). See the two execution modes section."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 

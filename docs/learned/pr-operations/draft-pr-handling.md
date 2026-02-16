@@ -11,7 +11,7 @@ tripwires:
     warning: "All automated erk PR creation uses draft mode. This gates CI costs and prevents premature review. See draft-pr-handling.md."
   - action: "using gh pr ready instead of the gateway's mark_pr_ready method"
     warning: "mark_pr_ready uses REST API to preserve GraphQL quota. Don't shell out to gh pr ready directly."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

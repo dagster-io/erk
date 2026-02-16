@@ -1,6 +1,6 @@
 ---
 title: CLI Testing Patterns
-last_audited: "2026-02-03"
+last_audited: "2026-02-03 00:00 PT"
 audit_result: edited
 read_when:
   - "writing tests for erk CLI commands"

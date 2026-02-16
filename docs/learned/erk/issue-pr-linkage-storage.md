@@ -5,7 +5,7 @@ read_when:
   - "debugging why a PR isn't linked to its issue"
   - "working with .impl/issue.json"
   - "creating PRs that close issues"
-last_audited: "2026-02-05"
+last_audited: "2026-02-05 00:00 PT"
 audit_result: edited
 ---
 

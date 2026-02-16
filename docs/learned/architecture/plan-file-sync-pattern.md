@@ -8,7 +8,7 @@ tripwires:
   - action: "editing local plan files without syncing to GitHub"
     warning: "Sync is NOT automatic — GitHub issue will show stale content without explicit sync"
     score: 4
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

@@ -9,7 +9,7 @@ tripwires:
     warning: "Check if the file is legitimately untestable first. The 5-layer architecture defines which layers need tests — Layers 0-2 (CLI wrappers, type-only files, ABCs) are excluded. See .github/reviews/test-coverage.md for the full detection logic."
   - action: "adding a new untestable file category"
     warning: "New categories must align with the 5-layer test architecture. Only files in Layers 0-2 qualify. If the file contains any business logic (Layer 3+), it requires tests regardless of how thin the logic appears."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

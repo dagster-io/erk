@@ -10,7 +10,7 @@ tripwires:
     warning: "Generic references force re-discovery. Include the full path, line numbers, and evidence. See the five dimensions below."
   - action: "writing verification criteria like 'documentation is complete'"
     warning: "Vague verification is unverifiable. Criteria must be testable with grep, file inspection, or running code."
-last_audited: "2026-02-08"
+last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
 ---
 

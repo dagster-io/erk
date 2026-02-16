@@ -4,7 +4,7 @@ read_when:
   - "understanding how learn PRs are identified"
   - "modifying erk land behavior"
   - "working with erk-skip-learn label"
-last_audited: "2026-02-03"
+last_audited: "2026-02-03 00:00 PT"
 audit_result: edited
 ---
 
