@@ -241,9 +241,7 @@ def test_sync_invokes_on_progress_callback() -> None:
         files={"architecture/patterns.md": VALID_DOC_WITH_TRIPWIRES},
     )
     progress_messages: list[str] = []
-    sync_agent_docs(
-        agent_docs, PROJECT_ROOT, dry_run=False, on_progress=progress_messages.append
-    )
+    sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False, on_progress=progress_messages.append)
 
     assert progress_messages == [
         "Scanning docs...",
