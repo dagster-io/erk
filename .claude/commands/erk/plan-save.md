@@ -15,7 +15,7 @@ Save the current session's plan to GitHub as an issue with session context.
 /erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
 ```
 
-When creating a plan from an objective (via `/erk:objective-next-plan`), the exit-plan-mode hook will automatically suggest the command with the correct `--objective-issue` flag.
+When creating a plan from an objective (via `/erk:objective-implement`), the exit-plan-mode hook will automatically suggest the command with the correct `--objective-issue` flag.
 
 ## Issue Structure
 
@@ -107,12 +107,12 @@ Update the objective's roadmap table to show that a plan has been created for th
 step_id=$(erk exec marker read --session-id "${CLAUDE_SESSION_ID}" roadmap-step)
 ```
 
-If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-next-plan`.
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-implement`.
 
 2. **Update the roadmap table** using the dedicated command:
 
 ```bash
-erk exec update-roadmap-step <objective-issue> --step "$step_id" --plan "#<issue_number>"
+erk exec update-objective-node <objective-issue> --node "$step_id" --plan "#<issue_number>"
 ```
 
 This atomically fetches the issue body, finds the matching step row, updates the Plan cell, sets the Status cell to `in-progress`, and writes the updated body back.

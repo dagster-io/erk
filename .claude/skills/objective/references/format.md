@@ -572,6 +572,6 @@ Returns JSON with:
 
 ### Updating Roadmap Steps
 
-Use `erk exec update-roadmap-step` for surgical updates to a single step's Plan, PR, and Status cells. This command handles the correct status computation and table formatting automatically.
+Use `erk exec update-objective-node` for surgical updates to a single step's Plan, PR, and Status cells. This command handles the correct status computation and table formatting automatically.
 
 For multi-step updates or structural changes, agents can also rewrite the full objective body via `erk exec update-issue-body`.

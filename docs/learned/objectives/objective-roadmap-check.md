@@ -24,7 +24,7 @@ tripwires:
 
 The roadmap parser in `erk_shared.gateway.github.metadata.roadmap` (`packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`) handles **structural** validation: can the markdown be parsed into phases and steps? The check command's `validate_objective()` in `check_cmd.py` adds a **semantic** layer: is the parsed roadmap internally consistent?
 
-This separation exists because structural parsing is shared across consumers — both `erk objective check` and `erk exec update-roadmap-step` call `parse_roadmap()`. Semantic checks only make sense for read-only validation. Mixing them would force every mutation command to validate consistency before operating, coupling mutation to validation rules and adding unnecessary overhead.
+This separation exists because structural parsing is shared across consumers — both `erk objective check` and `erk exec update-objective-node` call `parse_roadmap()`. Semantic checks only make sense for read-only validation. Mixing them would force every mutation command to validate consistency before operating, coupling mutation to validation rules and adding unnecessary overhead.
 
 ## Two-Layer Validation Architecture
 
@@ -64,7 +64,7 @@ The original `erk exec objective-roadmap-check` exec script defaulted to JSON ou
 ## Anti-Patterns
 
 **WRONG: Adding structural validation to check_cmd.py.**
-Structural checks (missing table headers, malformed separator lines) belong in the shared parser so all consumers — `check`, `update-roadmap-step`, and any future commands — benefit from them. Adding structural checks to `check_cmd.py` means the update command silently accepts structurally invalid content.
+Structural checks (missing table headers, malformed separator lines) belong in the shared parser so all consumers — `check`, `update-objective-node`, and any future commands — benefit from them. Adding structural checks to `check_cmd.py` means the update command silently accepts structurally invalid content.
 
 **WRONG: Raising exceptions from `validate_objective()`.**
 The function returns result types, never raises. This enables programmatic callers to inspect results without catching exceptions, and keeps the decision of "what to do with failures" in the presentation layer where it belongs.

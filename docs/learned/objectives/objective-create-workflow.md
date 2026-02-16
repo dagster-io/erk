@@ -57,11 +57,11 @@ Assembles the GitHub issue in a 7-step flow:
 
 ## Storage Model
 
-| Layer           | Location      | Content                                                               | Mutability                         |
-| --------------- | ------------- | --------------------------------------------------------------------- | ---------------------------------- |
-| Metadata header | Issue body    | `objective-header` YAML (created_at, created_by, comment_id)          | Rare                               |
-| Roadmap         | Issue body    | `objective-roadmap` YAML (steps with status/plan/pr)                  | Frequent (via update-roadmap-step) |
-| Content         | First comment | `objective-body` (exploration notes, context, rendered roadmap table) | After PR landing (reconciliation)  |
+| Layer           | Location      | Content                                                               | Mutability                           |
+| --------------- | ------------- | --------------------------------------------------------------------- | ------------------------------------ |
+| Metadata header | Issue body    | `objective-header` YAML (created_at, created_by, comment_id)          | Rare                                 |
+| Roadmap         | Issue body    | `objective-roadmap` YAML (steps with status/plan/pr)                  | Frequent (via update-objective-node) |
+| Content         | First comment | `objective-body` (exploration notes, context, rendered roadmap table) | After PR landing (reconciliation)    |
 
 The `_build_objective_roadmap_block()` function extracts pre-existing metadata blocks from the plan content, validates v2 format, and re-renders to normalize structure. The skill MUST produce valid v2 YAML blocks.
 

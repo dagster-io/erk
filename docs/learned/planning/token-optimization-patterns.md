@@ -58,9 +58,9 @@ A subtle failure mode: creating the consolidated output before all background ag
 3. Child fetches, parses, and formats data
 4. Parent consumes structured result directly
 
-<!-- Source: .claude/commands/erk/objective-next-plan.md, Step 2 -->
+<!-- Source: .claude/commands/erk/objective-implement.md, Step 2 -->
 
-The `/erk:objective-next-plan` command demonstrates this. Step 2 delegates objective data fetching (issue metadata, roadmap parsing, status mapping, step recommendation) to a haiku-tier general-purpose agent. The parent never makes the 3+ sequential fetches itself — it receives a single structured summary.
+The `/erk:objective-implement` command demonstrates this. Step 2 delegates objective data fetching (issue metadata, roadmap parsing, status mapping, step recommendation) to a haiku-tier general-purpose agent. The parent never makes the 3+ sequential fetches itself — it receives a single structured summary.
 
 <!-- Source: docs/learned/reference/objective-summary-format.md -->
 
@@ -85,7 +85,7 @@ The output contract is specified in `objective-summary-format.md`, which defines
 | Codebase investigation, analysis   | Default (sonnet) | Needs reasoning for status assessment |
 | Plan synthesis, creative decisions | Parent agent     | Highest-quality reasoning required    |
 
-**Anti-pattern**: Using opus or sonnet for data fetching and formatting. The `/erk:objective-next-plan` command explicitly uses haiku for this reason — the work is mechanical and doesn't benefit from more capable models.
+**Anti-pattern**: Using opus or sonnet for data fetching and formatting. The `/erk:objective-implement` command explicitly uses haiku for this reason — the work is mechanical and doesn't benefit from more capable models.
 
 ## Anti-Patterns
 

@@ -16,14 +16,14 @@ tripwires:
 ## Permission Mode Override Pattern
 
 <!-- Source: packages/erk-shared/src/erk_shared/context/types.py, InteractiveAgentConfig.with_overrides -->
-<!-- Source: src/erk/cli/commands/objective/next_plan_cmd.py, next_plan -->
+<!-- Source: src/erk/cli/commands/objective/implement_cmd.py, implement -->
 
 The `with_overrides()` method on `InteractiveAgentConfig` allows selective override of config values:
 
 - Pass a value (e.g., `"plan"`) to force that mode
 - Pass `None` to preserve the config file value
 
-The `next-plan` command forces `permission_mode_override="plan"` to ensure the agent explores and plans rather than immediately executing. The `--dangerous` flag conditionally overrides `allow_dangerous_override`, allowing users to opt into skipping permission prompts.
+The `implement` command forces `permission_mode_override="plan"` to ensure the agent explores and plans rather than immediately executing. The `--dangerous` flag conditionally overrides `allow_dangerous_override`, allowing users to opt into skipping permission prompts.
 
 ## Validation Check Design
 
@@ -97,9 +97,9 @@ All objective commands use the `register_with_aliases()` pattern, which register
 | `check`     | `ch`  | Prefix of "check", avoids collision with "close" |
 | `close`     | `c`   | First letter, unambiguous (check uses "ch")      |
 | `list`      | `ls`  | Unix convention (ls for list)                    |
-| `next-plan` | `np`  | First letters of both words                      |
+| `implement` | `impl` | First letters of "implement"                     |
 
-**Why aliases matter**: Objective commands are used in rapid iteration workflows. Typing `erk objective np` is faster than `erk objective next-plan`, reducing friction without sacrificing discoverability (the full name remains canonical).
+**Why aliases matter**: Objective commands are used in rapid iteration workflows. Typing `erk objective impl` is faster than `erk objective implement`, reducing friction without sacrificing discoverability (the full name remains canonical).
 
 ## view_objective() Command
 

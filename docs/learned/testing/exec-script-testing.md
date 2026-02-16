@@ -329,41 +329,13 @@ Methods with `NoReturn` type annotation never return. Testing them directly woul
 
 ### Example: Testing exec_ssh_interactive
 
-**From:** `tests/unit/cli/commands/codespace/run/objective/test_next_plan_cmd.py`
+<!-- Source: tests/unit/cli/commands/codespace/run/objective/test_implement_cmd.py, test_run_implement_starts_codespace_and_runs_command -->
 
-```python
-from erk.cli.cli import cli
-from erk.core.context import context_for_test
-from erk_shared.gateway.codespace.fake import FakeCodespace
-from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
+See `test_run_implement_starts_codespace_and_runs_command()` in `tests/unit/cli/commands/codespace/run/objective/test_implement_cmd.py` for the full pattern. The test demonstrates:
 
-def test_run_next_plan_starts_codespace_and_runs_command() -> None:
-    """run objective next-plan starts the codespace and runs the command."""
-    runner = CliRunner()
-
-    cs = _make_codespace("mybox")
-    fake_codespace = FakeCodespace()
-    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    ctx = context_for_test(codespace=fake_codespace, codespace_registry=codespace_registry)
-
-    result = runner.invoke(
-        cli,
-        ["codespace", "run", "objective", "next-plan", "42"],
-        obj=ctx,
-        catch_exceptions=False,
-    )
-
-    # Verify start_codespace was called
-    assert fake_codespace.started_codespaces == ["user-mybox-abc123"]
-
-    # Verify exec_ssh_interactive was called with correct parameters
-    assert fake_codespace.exec_called is True
-    assert len(fake_codespace.ssh_calls) == 1
-    call = fake_codespace.ssh_calls[0]
-    assert call.gh_name == "user-mybox-abc123"
-    assert "erk objective next-plan 42" in call.remote_command
-    assert call.interactive is True
-```
+1. Creating `FakeCodespace` and `FakeCodespaceRegistry` with constructor injection
+2. Invoking the CLI command via `CliRunner`
+3. Asserting on `fake_codespace.started_codespaces` and `fake_codespace.ssh_calls` for mutation tracking
 
 **Key points:**
 
@@ -385,7 +357,7 @@ In real code, nothing after `exec_ssh_interactive()` executes:
 
 ```python
 # Command implementation
-def next_plan(ctx: ErkContext, issue_ref: str) -> None:
+def implement(ctx: ErkContext, issue_ref: str) -> None:
     codespace.exec_ssh_interactive(gh_name, remote_command)
     # THIS LINE NEVER RUNS - process was replaced
     print("Done")  # Dead code
@@ -416,11 +388,11 @@ See [SSH Command Execution](../architecture/ssh-command-execution.md) for when t
 
 When a CLI parameter receives `""` (empty string) to clear a value, normalize to `None` before JSON output. This ensures JSON consumers see `null` rather than `""`, which has different semantics.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _build_output -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, _build_output -->
 
 The pattern converts each value using a falsy check: if the string is empty (or falsy), substitute `None`; otherwise keep the original value. Apply this to each field that may receive `""` before building the JSON output dict.
 
-<!-- See source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py:183-185 -->
+<!-- See source: src/erk/cli/commands/exec/scripts/update_objective_node.py:168 -->
 
 **Why normalize?** Empty string (`""`) and absent (`None`/`null`) have different meanings in JSON:
 

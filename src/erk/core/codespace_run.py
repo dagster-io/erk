@@ -13,7 +13,7 @@ def build_codespace_ssh_command(erk_command: str) -> str:
     2. Runs the given erk command in the foreground, streaming output
 
     Args:
-        erk_command: The erk CLI command to run remotely (e.g., "erk objective next-plan 42")
+        erk_command: The erk CLI command to run remotely (e.g., "erk objective implement 42")
 
     Returns:
         A shell string suitable for passing to codespace SSH

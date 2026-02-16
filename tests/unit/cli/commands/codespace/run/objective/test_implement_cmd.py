@@ -1,4 +1,4 @@
-"""Unit tests for codespace run objective next-plan command."""
+"""Unit tests for codespace run objective implement command."""
 
 from datetime import datetime
 
@@ -19,8 +19,8 @@ def _make_codespace(name: str) -> RegisteredCodespace:
     )
 
 
-def test_run_next_plan_starts_codespace_and_runs_command() -> None:
-    """run objective next-plan starts the codespace and runs the command."""
+def test_run_implement_starts_codespace_and_runs_command() -> None:
+    """run objective implement starts the codespace and runs the command."""
     runner = CliRunner()
 
     cs = _make_codespace("mybox")
@@ -30,14 +30,14 @@ def test_run_next_plan_starts_codespace_and_runs_command() -> None:
 
     result = runner.invoke(
         cli,
-        ["codespace", "run", "objective", "next-plan", "42"],
+        ["codespace", "run", "objective", "implement", "42"],
         obj=ctx,
         catch_exceptions=False,
     )
 
     assert result.exit_code == 0
     assert "Starting codespace 'mybox'" in result.output
-    assert "Running 'erk objective next-plan 42' on 'mybox'" in result.output
+    assert "Running 'erk objective implement 42' on 'mybox'" in result.output
 
     # Verify start_codespace was called
     assert fake_codespace.started_codespaces == ["user-mybox-abc123"]
@@ -47,12 +47,12 @@ def test_run_next_plan_starts_codespace_and_runs_command() -> None:
     assert len(fake_codespace.ssh_calls) == 1
     call = fake_codespace.ssh_calls[0]
     assert call.gh_name == "user-mybox-abc123"
-    assert "erk objective next-plan 42" in call.remote_command
+    assert "erk objective implement 42" in call.remote_command
     assert call.interactive is True
 
 
-def test_run_next_plan_with_explicit_codespace() -> None:
-    """run objective next-plan -c box2 uses the specified codespace."""
+def test_run_implement_with_explicit_codespace() -> None:
+    """run objective implement -c box2 uses the specified codespace."""
     runner = CliRunner()
 
     cs1 = _make_codespace("box1")
@@ -63,7 +63,7 @@ def test_run_next_plan_with_explicit_codespace() -> None:
 
     result = runner.invoke(
         cli,
-        ["codespace", "run", "objective", "next-plan", "42", "-c", "box2"],
+        ["codespace", "run", "objective", "implement", "42", "-c", "box2"],
         obj=ctx,
         catch_exceptions=False,
     )
@@ -73,8 +73,8 @@ def test_run_next_plan_with_explicit_codespace() -> None:
     assert fake_codespace.ssh_calls[0].gh_name == "user-box2-abc123"
 
 
-def test_run_next_plan_fails_when_no_codespace() -> None:
-    """run objective next-plan fails when no codespace is configured."""
+def test_run_implement_fails_when_no_codespace() -> None:
+    """run objective implement fails when no codespace is configured."""
     runner = CliRunner()
 
     codespace_registry = FakeCodespaceRegistry()
@@ -82,7 +82,7 @@ def test_run_next_plan_fails_when_no_codespace() -> None:
 
     result = runner.invoke(
         cli,
-        ["codespace", "run", "objective", "next-plan", "42"],
+        ["codespace", "run", "objective", "implement", "42"],
         obj=ctx,
         catch_exceptions=False,
     )
@@ -91,8 +91,8 @@ def test_run_next_plan_fails_when_no_codespace() -> None:
     assert "No default codespace set" in result.output
 
 
-def test_run_next_plan_with_dangerous_flag() -> None:
-    """run objective next-plan -d includes -d flag in remote command."""
+def test_run_implement_with_dangerous_flag() -> None:
+    """run objective implement -d includes -d flag in remote command."""
     runner = CliRunner()
 
     cs = _make_codespace("mybox")
@@ -102,22 +102,22 @@ def test_run_next_plan_with_dangerous_flag() -> None:
 
     result = runner.invoke(
         cli,
-        ["codespace", "run", "objective", "next-plan", "-d", "42"],
+        ["codespace", "run", "objective", "implement", "-d", "42"],
         obj=ctx,
         catch_exceptions=False,
     )
 
     assert result.exit_code == 0
-    assert "Running 'erk objective next-plan -d 42' on 'mybox'" in result.output
+    assert "Running 'erk objective implement -d 42' on 'mybox'" in result.output
 
     # Verify the remote command includes -d flag
     assert len(fake_codespace.ssh_calls) == 1
     call = fake_codespace.ssh_calls[0]
-    assert "erk objective next-plan -d 42" in call.remote_command
+    assert "erk objective implement -d 42" in call.remote_command
 
 
-def test_run_next_plan_without_dangerous_flag() -> None:
-    """run objective next-plan without -d does not include -d in remote command."""
+def test_run_implement_without_dangerous_flag() -> None:
+    """run objective implement without -d does not include -d in remote command."""
     runner = CliRunner()
 
     cs = _make_codespace("mybox")
@@ -127,16 +127,16 @@ def test_run_next_plan_without_dangerous_flag() -> None:
 
     result = runner.invoke(
         cli,
-        ["codespace", "run", "objective", "next-plan", "42"],
+        ["codespace", "run", "objective", "implement", "42"],
         obj=ctx,
         catch_exceptions=False,
     )
 
     assert result.exit_code == 0
-    assert "Running 'erk objective next-plan 42' on 'mybox'" in result.output
+    assert "Running 'erk objective implement 42' on 'mybox'" in result.output
 
     # Verify the remote command does not include -d flag
     assert len(fake_codespace.ssh_calls) == 1
     call = fake_codespace.ssh_calls[0]
-    assert "erk objective next-plan 42" in call.remote_command
+    assert "erk objective implement 42" in call.remote_command
     assert "-d" not in call.remote_command

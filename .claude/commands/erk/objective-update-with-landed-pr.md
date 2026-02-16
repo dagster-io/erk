@@ -58,12 +58,12 @@ Your tasks:
 
 1. **Read `matched_steps` from the context blob.** These are the steps this plan completed — no analysis needed. If `matched_steps` is empty, the plan may not have been linked to specific steps; fall back to comparing the plan body against the roadmap to identify which steps were completed.
 
-2. **Update roadmap steps** using a SINGLE batched command:
+**CRITICAL: Pass ALL completed steps as multiple `--node` flags in ONE command. Do NOT run separate commands per step — sequential calls cause race conditions and duplicate API calls.**
 
-**CRITICAL: Pass ALL completed steps as multiple `--step` flags in ONE command.**
+Before running update-objective-node, extract the existing plan reference for each completed step from the objective roadmap YAML (available in the context blob). Pass `--plan "#<plan-number>"` to preserve it, or `--plan ""` if the step had no plan.
 
 ```bash
-erk exec update-roadmap-step <objective-number> --step <step-id-1> --step <step-id-2> ... --pr "#<pr-number>" --plan "#<plan-number>" --status done --include-body
+erk exec update-objective-node <objective-number> --node <step-id-1> --node <step-id-2> ... --pr "#<pr-number>" --plan "#<plan-number>" --status done --include-body
 ```
 
 Preserve the existing plan reference for each step (available in `roadmap.phases`). The `--include-body` flag returns the fully-mutated body as `updated_body` — use this for prose reconciliation (do NOT re-fetch via `gh issue view`).

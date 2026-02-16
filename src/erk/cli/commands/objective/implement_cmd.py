@@ -1,12 +1,12 @@
-"""Launch Claude to create a plan from an objective step."""
+"""Create an implementation plan from an objective node."""
 
 from pathlib import Path
 
 import click
 
 from erk.cli.alias import alias
-from erk.cli.commands.exec.scripts.update_roadmap_step import (
-    _replace_step_refs_in_body,
+from erk.cli.commands.exec.scripts.update_objective_node import (
+    _replace_node_refs_in_body,
     _replace_table_in_text,
 )
 from erk.cli.commands.implement_shared import normalize_model_name
@@ -25,60 +25,67 @@ from erk_shared.context.types import InteractiveAgentConfig
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import extract_metadata_value
+from erk_shared.gateway.github.metadata.dependency_graph import (
+    ObjectiveNode,
+    graph_from_phases,
+)
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapPhase,
-    RoadmapStep,
 )
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.output.output import user_output
 
 
-def _find_step_by_id(
-    phases: list[RoadmapPhase], step_id: str
-) -> tuple[RoadmapStep, RoadmapPhase] | None:
-    """Find a step by its ID across all phases.
+def _find_node_in_phases(
+    phases: list[RoadmapPhase], node_id: str
+) -> tuple[ObjectiveNode, str] | None:
+    """Find a node by ID and return it with its phase name.
 
     Args:
         phases: List of roadmap phases to search
-        step_id: Step ID to find (e.g., "1.1", "2.3")
+        node_id: Node ID to find (e.g., "1.1", "2.3")
 
     Returns:
-        Tuple of (step, phase) if found, None otherwise
+        Tuple of (ObjectiveNode, phase_name) if found, None otherwise
     """
+    graph = graph_from_phases(phases)
+    node_by_id = {node.id: node for node in graph.nodes}
+    node = node_by_id.get(node_id)
+    if node is None:
+        return None
     for phase in phases:
-        for step in phase.steps:
-            if step.id == step_id:
-                return step, phase
+        if any(step.id == node_id for step in phase.steps):
+            return node, phase.name
     return None
 
 
-def _update_objective_step(
+def _update_objective_node(
     issues: GitHubIssues,
     repo_root: Path,
     *,
     issue_number: int,
-    step_id: str,
+    node_id: str,
     pr_number: int,
 ) -> None:
-    """Mark a step as 'planning' with the draft PR in the objective roadmap.
+    """Mark a node as 'planning' with the draft PR in the objective roadmap.
 
-    Fetches the current issue body, updates the step's status to 'planning'
+    Fetches the current issue body, updates the node's status to 'planning'
     and sets the PR column to the draft PR number, then writes back.
 
     Args:
         issues: GitHub issues gateway
         repo_root: Repository root path
         issue_number: Objective issue number
-        step_id: Step ID to update (e.g., "1.1")
+        node_id: Node ID to update (e.g., "1.1")
         pr_number: Draft PR number from one-shot dispatch
     """
     issue = issues.get_issue(repo_root, issue_number)
     if isinstance(issue, IssueNotFound):
         return
 
-    updated_body = _replace_step_refs_in_body(
+    updated_body = _replace_node_refs_in_body(
         issue.body,
-        step_id,
+        node_id,
         new_plan=None,
         new_pr=f"#{pr_number}",
         explicit_status="planning",
@@ -97,7 +104,7 @@ def _update_objective_step(
         comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
         updated_comment = _replace_table_in_text(
             comment_body,
-            step_id,
+            node_id,
             new_plan=None,
             new_pr=f"#{pr_number}",
             explicit_status="planning",
@@ -106,8 +113,8 @@ def _update_objective_step(
             issues.update_comment(repo_root, objective_comment_id, updated_comment)
 
 
-@alias("np")
-@click.command("next-plan")
+@alias("impl")
+@click.command("implement")
 @click.argument("issue_ref")
 @click.option(
     "-d",
@@ -137,57 +144,60 @@ def _update_objective_step(
     help="Show what would happen without executing (requires --one-shot)",
 )
 @click.option(
-    "--step",
-    "step_id",
+    "--node",
+    "node_id",
     type=str,
     default=None,
-    help="Specific step ID to dispatch (requires --one-shot)",
+    help="Specific node ID to implement (e.g., --node 2.1)",
 )
 @click.pass_obj
-def next_plan(
+def implement_objective(
     ctx: ErkContext,
     issue_ref: str,
     dangerous: bool,
     one_shot_mode: bool,
     model: str | None,
     dry_run: bool,
-    step_id: str | None,
+    node_id: str | None,
 ) -> None:
-    """Create an implementation plan from an objective step.
+    """Create an implementation plan from an objective node.
 
     ISSUE_REF is an objective issue number or GitHub URL.
 
-    By default, launches Claude interactively in plan mode.
+    By default, launches Claude interactively in plan mode to implement
+    the next unblocked node.
 
     With --one-shot, dispatches via the one-shot CI workflow for
     fully autonomous planning and implementation.
 
     \b
     Examples:
-      erk objective next-plan 42
-      erk objective next-plan 42 --one-shot
-      erk objective next-plan 42 --one-shot --step 1.2
-      erk objective next-plan 42 --one-shot --dry-run
+      erk objective implement 42
+      erk objective implement 42 --node 2.1
+      erk objective implement 42 --one-shot
+      erk objective implement 42 --one-shot --node 1.2
+      erk objective implement 42 --one-shot --dry-run
     """
-    # Validate flag dependencies: --model, --dry-run, --step require --one-shot
+    # Validate flag dependencies: --model, --dry-run require --one-shot
     if not one_shot_mode:
         if model is not None:
             raise click.ClickException("--model requires --one-shot")
         if dry_run:
             raise click.ClickException("--dry-run requires --one-shot")
-        if step_id is not None:
-            raise click.ClickException("--step requires --one-shot")
 
     if one_shot_mode:
-        _handle_one_shot(ctx, issue_ref=issue_ref, model=model, dry_run=dry_run, step_id=step_id)
+        _handle_one_shot(ctx, issue_ref=issue_ref, model=model, dry_run=dry_run, node_id=node_id)
     else:
-        _handle_interactive(ctx, issue_ref=issue_ref, dangerous=dangerous)
+        _handle_interactive(ctx, issue_ref=issue_ref, dangerous=dangerous, node_id=node_id)
 
 
-def _handle_interactive(ctx: ErkContext, *, issue_ref: str, dangerous: bool) -> None:
+def _handle_interactive(
+    ctx: ErkContext, *, issue_ref: str, dangerous: bool, node_id: str | None
+) -> None:
     """Launch Claude interactively to create a plan."""
     # Build command with argument
-    command = f"/erk:objective-next-plan {issue_ref}"
+    node_suffix = f" --node {node_id}" if node_id is not None else ""
+    command = f"/erk:objective-implement {issue_ref}{node_suffix}"
 
     # Get interactive Claude config with plan mode override
     if ctx.global_config is None:
@@ -219,9 +229,9 @@ def _handle_one_shot(
     issue_ref: str,
     model: str | None,
     dry_run: bool,
-    step_id: str | None,
+    node_id: str | None,
 ) -> None:
-    """Dispatch objective step via one-shot workflow."""
+    """Dispatch objective node via one-shot workflow."""
     # Parse issue identifier
     issue_number = parse_issue_identifier(issue_ref)
 
@@ -242,41 +252,40 @@ def _handle_one_shot(
     if not result.phases:
         raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
 
-    # Determine target step
-    if step_id is not None:
-        found = _find_step_by_id(result.phases, step_id)
+    if node_id is not None:
+        found = _find_node_in_phases(result.phases, node_id)
         if found is None:
-            raise click.ClickException(f"Step '{step_id}' not found in objective #{issue_number}")
-        target_step, target_phase = found
+            raise click.ClickException(f"Node '{node_id}' not found in objective #{issue_number}")
+        target_node, phase_name = found
     else:
+        # Use next_step from validation (finds first pending step by position)
         if result.next_step is None:
             user_output(
                 click.style("All steps completed!", fg="green")
                 + f" Objective #{issue_number} has no pending steps."
             )
             return
-        # Find the actual step and phase objects from next_step dict
-        found = _find_step_by_id(result.phases, result.next_step["id"])
+        found = _find_node_in_phases(result.phases, result.next_step["id"])
         if found is None:
             raise click.ClickException(
                 f"Internal error: next_step '{result.next_step['id']}' not found"
             )
-        target_step, target_phase = found
+        target_node, phase_name = found
 
     # Normalize model name
     model = normalize_model_name(model)
 
     # Build instruction
     instruction = (
-        f"/erk:objective-next-plan {issue_number}\n"
-        f"Implement step {target_step.id} of objective #{issue_number}: "
-        f"{target_step.description} (Phase: {target_phase.name})"
+        f"/erk:objective-implement {issue_number}\n"
+        f"Implement step {target_node.id} of objective #{issue_number}: "
+        f"{target_node.description} (Phase: {phase_name})"
     )
 
     user_output(
-        f"Dispatching step {click.style(target_step.id, bold=True)}: {target_step.description}"
+        f"Dispatching node {click.style(target_node.id, bold=True)}: {target_node.description}"
     )
-    user_output(f"Phase: {target_phase.name}")
+    user_output(f"Phase: {phase_name}")
     user_output(f"Instruction: {instruction}")
 
     params = OneShotDispatchParams(
@@ -284,18 +293,18 @@ def _handle_one_shot(
         model=model,
         extra_workflow_inputs={
             "objective_issue": str(issue_number),
-            "step_id": target_step.id,
+            "step_id": target_node.id,
         },
     )
 
     dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run)
 
-    # After successful dispatch, immediately mark step as "planning" with draft PR
+    # After successful dispatch, immediately mark node as "planning" with draft PR
     if dispatch_result is not None:
-        _update_objective_step(
+        _update_objective_node(
             ctx.issues,
             repo.root,
             issue_number=issue_number,
-            step_id=target_step.id,
+            node_id=target_node.id,
             pr_number=dispatch_result.pr_number,
         )

@@ -194,9 +194,9 @@ config = ic_config.with_overrides(
 - `-d` present: `allow_dangerous_override=True` — enables it
 - `-d` absent: `allow_dangerous_override=None` — preserves config value
 
-<!-- Source: src/erk/cli/commands/objective/next_plan_cmd.py, next_plan -->
+<!-- Source: src/erk/cli/commands/objective/implement_cmd.py, implement -->
 
-See `next_plan()` in `src/erk/cli/commands/objective/next_plan_cmd.py` for the canonical example of this pattern with a `-d` flag.
+See `implement()` in `src/erk/cli/commands/objective/implement_cmd.py` for the canonical example of this pattern with a `-d` flag.
 
 ## Cross-Layer Naming: CLI Key vs Attribute
 
@@ -221,7 +221,7 @@ Every erk command that launches an interactive agent session follows the same th
 2. **Apply overrides** — via `with_overrides()` for command-specific requirements (e.g., plan commands always force `permission_mode_override="plan"`)
 3. **Launch** — via `ctx.agent_launcher.launch_interactive(config, command=...)` which uses `os.execvp()` to replace the process
 
-This pattern is implemented identically across `next_plan_cmd.py` and `replan_cmd.py`. The `AgentLauncher` ABC enables testing without actually exec'ing a process.
+This pattern is implemented identically across `implement_cmd.py` and `replan_cmd.py`. The `AgentLauncher` ABC enables testing without actually exec'ing a process.
 
 ## Testing Considerations
 

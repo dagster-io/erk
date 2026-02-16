@@ -6,7 +6,7 @@ read_when:
   - "understanding how roadmap steps are parsed"
   - "working with objective roadmap check or update commands"
   - "debugging roadmap parsing issues"
-  - "using erk objective check or erk exec update-roadmap-step"
+  - "using erk objective check or erk exec update-objective-node"
 tripwires:
   - action: "implementing roadmap parsing functionality"
     warning: "The parser is regex-based, not LLM-based. Do not reference LLM inference."
@@ -23,7 +23,7 @@ This document describes how erk parses and mutates objective roadmap tables usin
 Erk uses deterministic regex parsing to extract structured data from objective roadmap markdown tables. Two commands expose this functionality:
 
 - **`erk objective check`** — parse and validate a roadmap, returning human-readable or structured JSON output
-- **`erk exec update-roadmap-step`** — surgically update a specific step's PR column
+- **`erk exec update-objective-node`** — surgically update a specific step's PR column
 
 Both commands share the parser in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`.
 
@@ -55,12 +55,12 @@ The parser emits warnings (not errors) for:
 ## Update Command
 
 ```bash
-erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --pr <PR_REF>
+erk exec update-objective-node <ISSUE_NUMBER> --node <STEP_ID> --pr <PR_REF>
 ```
 
 | Flag     | Required | Example             | Description            |
 | -------- | -------- | ------------------- | ---------------------- |
-| `--step` | yes      | `2.1`               | Step ID to update      |
+| `--node` | yes      | `2.1`               | Step ID to update      |
 | `--pr`   | yes      | `#123`, `plan #456` | New PR reference value |
 
 The command:
@@ -107,7 +107,7 @@ The parser accepts both formats but emits a validation warning for letter-format
 
 ## Next Step Discovery
 
-`find_next_step()` returns the first step with `pending` status in phase order. This is used by `erk objective check --json-output` to populate the `next_step` field, and by `erk objective next-plan` to determine which step to implement next.
+`find_next_step()` returns the first step with `pending` status in phase order. This is used by `erk objective check --json-output` to populate the `next_step` field, and by `erk objective implement` to determine which step to implement next.
 
 ## Implementation Reference
 

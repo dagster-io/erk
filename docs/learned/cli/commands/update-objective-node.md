@@ -1,28 +1,28 @@
 ---
-title: Update Roadmap Step Command
+title: Update Objective Node Command
 last_audited: "2026-02-15 18:50 PT"
 audit_result: edited
 read_when:
   - working with objective roadmap tables, updating step PR references, implementing plan-save workflow
 tripwires:
   - action: "parsing roadmap tables to update PR cells"
-    warning: "Use the update-roadmap-step command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers."
+    warning: "Use the update-objective-node command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers."
   - action: "expecting status to auto-update after manual PR edits"
-    warning: "Only the update-roadmap-step command writes computed status. Manual edits require explicitly setting status to '-' to enable inference on next parse."
+    warning: "Only the update-objective-node command writes computed status. Manual edits require explicitly setting status to '-' to enable inference on next parse."
 ---
 
-# Update Roadmap Step Command
+# Update Objective Node Command
 
 ## Why This Command Exists
 
-The alternative to `erk exec update-roadmap-step` is inline markdown table manipulation: fetch body → parse table → find row by step ID → regex-replace PR cell → update body. That's ~15 lines of fragile ad-hoc code duplicated across every caller (skills, hooks, scripts).
+The alternative to `erk exec update-objective-node` is inline markdown table manipulation: fetch body -> parse table -> find row by step ID -> regex-replace PR cell -> update body. That's ~15 lines of fragile ad-hoc code duplicated across every caller (skills, hooks, scripts).
 
 **Why encoding this once wins:**
 
-1. **No duplicated table parsing** — regex patterns and step lookup logic live in one place
-2. **Atomic mental model** — "update step 1.3's PR to X" instead of "parse, find, replace, validate"
-3. **Testable edge cases** — step not found, no roadmap, clearing PR all have test coverage
-4. **Format resilience** — roadmap table structure changes propagate once, not to N call sites
+1. **No duplicated table parsing** -- regex patterns and step lookup logic live in one place
+2. **Atomic mental model** -- "update step 1.3's PR to X" instead of "parse, find, replace, validate"
+3. **Testable edge cases** -- step not found, no roadmap, clearing PR all have test coverage
+4. **Format resilience** -- roadmap table structure changes propagate once, not to N call sites
 
 The command is infrastructure for workflow integration, not an interactive tool.
 
@@ -46,14 +46,14 @@ This differs from parse-time inference (which only fires when status is `-` or e
 ## Usage Pattern
 
 ```bash
-# Single step — plan reference
-erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --plan <PLAN_REF>
+# Single step -- plan reference
+erk exec update-objective-node <ISSUE_NUMBER> --node <STEP_ID> --plan <PLAN_REF>
 
-# Single step — landed PR (--plan is required with --pr)
-erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --pr <PR_REF> --plan <PLAN_REF>
+# Single step -- landed PR (--plan is required with --pr)
+erk exec update-objective-node <ISSUE_NUMBER> --node <STEP_ID> --pr <PR_REF> --plan <PLAN_REF>
 
 # Multiple steps
-erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --step <STEP_ID> ... --plan <PLAN_REF>
+erk exec update-objective-node <ISSUE_NUMBER> --node <STEP_ID> --node <STEP_ID> ... --plan <PLAN_REF>
 ```
 
 ### Examples
@@ -62,23 +62,23 @@ erk exec update-roadmap-step <ISSUE_NUMBER> --step <STEP_ID> --step <STEP_ID> ..
 
 ```bash
 # Set step to plan phase
-erk exec update-roadmap-step 6423 --step 1.3 --plan "#6464"
+erk exec update-objective-node 6423 --node 1.3 --plan "#6464"
 
 # Link PR (infers in-progress status)
-erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --plan "#6464"
+erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "#6464"
 
 # Mark step as done with landed PR
-erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --plan "#6464" --status done
+erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "#6464" --status done
 
 # Clear PR reference (resets to pending)
-erk exec update-roadmap-step 6423 --step 1.3 --pr ""
+erk exec update-objective-node 6423 --node 1.3 --pr ""
 ```
 
-Output is structured JSON with `success`, `issue_number`, `step_id`, `previous_pr`, `new_pr`, and `url` fields.
+Output is structured JSON with `success`, `issue_number`, `node_id`, `previous_pr`, `new_pr`, and `url` fields.
 
 ```bash
 # Update multiple steps with same plan (single API call)
-erk exec update-roadmap-step 6697 --step 5.1 --step 5.2 --step 5.3 --plan "#6759"
+erk exec update-objective-node 6697 --node 5.1 --node 5.2 --node 5.3 --plan "#6759"
 ```
 
 The command follows erk's discriminated union pattern for error returns:
@@ -88,12 +88,12 @@ The command follows erk's discriminated union pattern for error returns:
 | 0         | Success                  | N/A                  |
 | 0         | Issue doesn't exist      | `issue_not_found`    |
 | 0         | No roadmap table in body | `no_roadmap`         |
-| 0         | Step ID not in roadmap   | `step_not_found`     |
+| 0         | Step ID not in roadmap   | `node_not_found`     |
 | 0         | Regex replacement failed | `replacement_failed` |
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, update_roadmap_step -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, update_objective_node -->
 
-All error paths exit with code 0 but include typed error fields for programmatic handling. See `update_roadmap_step()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py` for the LBYL guard sequence.
+All error paths exit with code 0 but include typed error fields for programmatic handling. See `update_objective_node()` in `src/erk/cli/commands/exec/scripts/update_objective_node.py` for the LBYL guard sequence.
 
 ## Body Inclusion: --include-body
 
@@ -101,7 +101,7 @@ The `--include-body` flag causes the command to include the fully-mutated issue 
 
 ```bash
 # Get the updated body back in the JSON output
-erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --plan "#6464" --include-body
+erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "#6464" --include-body
 ```
 
 **Output with `--include-body` (single step):**
@@ -110,7 +110,7 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --plan "#6464" --inclu
 {
   "success": true,
   "issue_number": 6423,
-  "step_id": "1.3",
+  "node_id": "1.3",
   "previous_plan": null,
   "new_plan": null,
   "previous_pr": null,
@@ -129,7 +129,7 @@ erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --plan "#6464" --inclu
   "new_plan": null,
   "new_pr": "#555",
   "url": "https://github.com/owner/repo/issues/6697",
-  "steps": [...],
+  "nodes": [...],
   "updated_body": "# Objective: Build Feature X\n\n## Roadmap\n..."
 }
 ```
@@ -166,7 +166,7 @@ When updating a single step, the command maintains backward-compatible output:
 {
   "success": true,
   "issue_number": 6423,
-  "step_id": "1.3",
+  "node_id": "1.3",
   "previous_pr": "",
   "new_pr": "plan #6464",
   "url": "https://github.com/owner/repo/issues/6423"
@@ -175,7 +175,7 @@ When updating a single step, the command maintains backward-compatible output:
 
 ### Multiple Steps (New Format)
 
-When updating multiple steps, the output includes a `steps` array with per-step results:
+When updating multiple steps, the output includes a `nodes` array with per-step results:
 
 **All steps successful:**
 
@@ -185,10 +185,10 @@ When updating multiple steps, the output includes a `steps` array with per-step 
   "issue_number": 6697,
   "new_pr": "plan #6759",
   "url": "https://github.com/owner/repo/issues/6697",
-  "steps": [
-    { "step_id": "5.1", "success": true, "previous_pr": null },
-    { "step_id": "5.2", "success": true, "previous_pr": null },
-    { "step_id": "5.3", "success": true, "previous_pr": null }
+  "nodes": [
+    { "node_id": "5.1", "success": true, "previous_pr": null },
+    { "node_id": "5.2", "success": true, "previous_pr": null },
+    { "node_id": "5.3", "success": true, "previous_pr": null }
   ]
 }
 ```
@@ -201,10 +201,10 @@ When updating multiple steps, the output includes a `steps` array with per-step 
   "issue_number": 6697,
   "new_pr": "plan #6759",
   "url": "https://github.com/owner/repo/issues/6697",
-  "steps": [
-    { "step_id": "5.1", "success": true, "previous_pr": null },
-    { "step_id": "9.9", "success": false, "error": "step_not_found" },
-    { "step_id": "5.3", "success": true, "previous_pr": null }
+  "nodes": [
+    { "node_id": "5.1", "success": true, "previous_pr": null },
+    { "node_id": "9.9", "success": false, "error": "node_not_found" },
+    { "node_id": "5.3", "success": true, "previous_pr": null }
   ]
 }
 ```
@@ -220,7 +220,7 @@ The command always exits 0. Check the JSON `success` field for pass/fail:
 | All steps updated                | 0         | `true`         | N/A                  |
 | Issue not found                  | 0         | `false`        | `issue_not_found`    |
 | No roadmap table in issue body   | 0         | `false`        | `no_roadmap`         |
-| Any step ID not found in roadmap | 0         | `false`        | `step_not_found`     |
+| Any step ID not found in roadmap | 0         | `false`        | `node_not_found`     |
 | Replacement failed (regex error) | 0         | `false`        | `replacement_failed` |
 
 Callers should always parse the JSON output and check `success` rather than relying on exit codes.
@@ -229,22 +229,22 @@ Callers should always parse the JSON output and check `success` rather than rely
 
 ### Table Structure Assumptions
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, _replace_node_refs_in_body -->
 
-The regex in `_replace_step_refs_in_body()` supports both four-column (legacy) and five-column tables:
+The regex in `_replace_node_refs_in_body()` supports both four-column (legacy) and five-column tables:
 
 ```
 | step_id | description | status | plan | pr |   (5-col, canonical)
 | step_id | description | status | pr |           (4-col, legacy)
 ```
 
-When updating a 4-col table, the command upgrades the header to 5-col automatically. Step lookup works across all phases (the parser flattens phases into a single step list). See `_find_step_refs()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`.
+When updating a 4-col table, the command upgrades the header to 5-col automatically. Step lookup works across all phases (the parser flattens phases into a single step list). See `_find_node_refs()` in `src/erk/cli/commands/exec/scripts/update_objective_node.py`.
 
 ### Shared Parsing Logic
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
 
-Both `update-roadmap-step` and `erk objective check` use `parse_roadmap()` from `erk_shared.gateway.github.metadata.roadmap`. The shared module defines `RoadmapStep` and `RoadmapPhase` dataclasses — the canonical representation of parsed roadmap state.
+Both `update-objective-node` and `erk objective check` use `parse_roadmap()` from `erk_shared.gateway.github.metadata.roadmap`. The shared module defines `RoadmapStep` and `RoadmapPhase` dataclasses -- the canonical representation of parsed roadmap state.
 
 ## Anti-Pattern: Manual Table Surgery
 
@@ -262,13 +262,13 @@ github.update_issue_body(...)
 **DO** call the command:
 
 ```python
-subprocess.run(["erk", "exec", "update-roadmap-step", str(issue), "--step", "1.3", "--pr", "#123", "--plan", "#456"])
+subprocess.run(["erk", "exec", "update-objective-node", str(issue), "--node", "1.3", "--pr", "#123", "--plan", "#456"])
 ```
 
-The command is designed for programmatic invocation — JSON output is machine-parsable.
+The command is designed for programmatic invocation -- JSON output is machine-parsable.
 
 ## Related Documentation
 
-- [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md) — write-time vs parse-time status computation
-- [Roadmap Status System](../../objectives/roadmap-status-system.md) — two-tier status resolution rules
-- [Roadmap Parser](../../objectives/roadmap-parser.md) — parsing and validation logic
+- [Roadmap Mutation Semantics](../../architecture/roadmap-mutation-semantics.md) -- write-time vs parse-time status computation
+- [Roadmap Status System](../../objectives/roadmap-status-system.md) -- two-tier status resolution rules
+- [Roadmap Parser](../../objectives/roadmap-parser.md) -- parsing and validation logic

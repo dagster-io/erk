@@ -10,7 +10,7 @@ tripwires:
   - action: "treating status as a single-source value"
     warning: "Status resolution uses a two-tier system: explicit values first, then PR-based inference. Always check both the Status and PR columns."
   - action: "expecting status to auto-update when PR column is edited manually"
-    warning: "Only the update-roadmap-step command writes computed status. Manual PR edits leave status unchanged — set status to '-' to re-enable inference."
+    warning: "Only the update-objective-node command writes computed status. Manual PR edits leave status unchanged — set status to '-' to re-enable inference."
 last_audited: "2026-02-17 16:00 PT"
 audit_result: edited
 ---
@@ -32,11 +32,11 @@ The two-tier design lets normal workflow rely on PR inference (Tier 2) while res
 
 When the Status column contains a recognized value, it takes absolute priority regardless of the PR column. The recognized values are: `done`, `in_progress`, `pending`, `planning`, `blocked`, `skipped`.
 
-The parser expects `in_progress` (underscore) in the YAML frontmatter. The `update-roadmap-step` command writes `in-progress` (hyphenated) for display in markdown tables, but the frontmatter uses `in_progress` consistently.
+The parser expects `in_progress` (underscore) in the YAML frontmatter. The `update-objective-node` command writes `in-progress` (hyphenated) for display in markdown tables, but the frontmatter uses `in_progress` consistently.
 
 ### The "planning" Status
 
-The `planning` status indicates a step has been dispatched for autonomous planning and implementation (via `erk objective next-plan`). It is set when a draft PR is created from an objective step, before the work transitions to `in_progress`. The transition path is: `pending` → `planning` (draft PR created) → `in_progress` (work begins) → `done` (PR landed). The `planning` status is treated as a non-terminal active state by the check command — steps with `planning` status are not flagged for PR/status consistency issues (see `check_cmd.py:137,147`).
+The `planning` status indicates a step has been dispatched for autonomous planning and implementation (via `erk objective implement`). It is set when a draft PR is created from an objective step, before the work transitions to `in_progress`. The transition path is: `pending` → `planning` (draft PR created) → `in_progress` (work begins) → `done` (PR landed). The `planning` status is treated as a non-terminal active state by the check command — steps with `planning` status are not flagged for PR/status consistency issues (see `check_cmd.py:137,147`).
 
 ## Tier 2: PR-Based Inference
 
@@ -67,9 +67,9 @@ See the status resolution logic in `parse_roadmap()` in `packages/erk-shared/src
 
 The most important cross-cutting insight: **mutation writes both cells, but parsing only infers from one**. This asymmetry is intentional.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, _replace_node_refs_in_body -->
 
-The `update-roadmap-step` command computes display status from the plan/PR values and writes both the Status and PR cells atomically. PR reference alone infers `in_progress` (not `done`); callers that know the PR is merged must pass `--status done` explicitly. This prevents premature "done" status when a PR exists but hasn't been confirmed as merged. But `parse_roadmap()` only falls through to PR inference when the Status cell is `-` or empty.
+The `update-objective-node` command computes display status from the plan/PR values and writes both the Status and PR cells atomically. PR reference alone infers `in_progress` (not `done`); callers that know the PR is merged must pass `--status done` explicitly. This prevents premature "done" status when a PR exists but hasn't been confirmed as merged. But `parse_roadmap()` only falls through to PR inference when the Status cell is `-` or empty.
 
 This creates a subtle trap: if you update the PR cell **without using the command** (e.g., manual GitHub edit or direct body mutation), the Status cell retains its old value and the parser will respect that stale explicit value. To re-enable inference after manual edits, set the Status cell to `-`.
 
@@ -83,7 +83,7 @@ The `erk objective check` command validates status/PR consistency after parsing.
 
 | Situation                             | Approach                                | Why                                             |
 | ------------------------------------- | --------------------------------------- | ----------------------------------------------- |
-| Normal workflow (plan-save, PR lands) | Use `update-roadmap-step`               | Writes both cells atomically, always consistent |
+| Normal workflow (plan-save, PR lands) | Use `update-objective-node`             | Writes both cells atomically, always consistent |
 | Step blocked by external dependency   | Set Status to `blocked` manually        | No PR column value can express "blocked"        |
 | Step no longer needed                 | Set Status to `skipped` manually        | No PR column value can express "skipped"        |
 | Intentional hold despite existing PR  | Set Status to `pending` manually        | Overrides the PR inference deliberately         |

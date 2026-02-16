@@ -1,45 +1,45 @@
-"""Update step plan/PR cells in an objective's roadmap table.
+"""Update node plan/PR cells in an objective's roadmap table.
 
 Why this command exists (instead of using update-issue-body directly):
 
-    The alternative is "fetch body → parse markdown table → find step row →
-    surgically edit the Plan/PR cells → write entire body back". That's ~15
+    The alternative is "fetch body -> parse markdown table -> find node row ->
+    surgically edit the Plan/PR cells -> write entire body back". That's ~15
     lines of fragile ad-hoc Python that every caller (skills, hooks, scripts)
     must duplicate. The roadmap table has a specific structure
-    (| step_id | description | status | plan | pr |) and the update has
+    (| node_id | description | status | plan | pr |) and the update has
     specific semantics:
 
-    1. Find the row by step ID across all phases
+    1. Find the row by node ID across all phases
     2. Compute display status from the plan/PR values
     3. Write status, plan, and PR cells atomically so the table is
        always human-readable without requiring a parse pass
 
     Encoding this once in a tested CLI command means:
     - No duplicated table-parsing logic across callers
-    - Testable edge cases (step not found, no roadmap, clearing PR)
-    - Atomic mental model: "update step 1.3's plan/PR to X"
+    - Testable edge cases (node not found, no roadmap, clearing PR)
+    - Atomic mental model: "update node 1.3's plan/PR to X"
     - Resilient to roadmap format changes (one command updates, not N sites)
 
 Usage:
-    # Single step — plan reference
-    erk exec update-roadmap-step 6423 --step 1.3 --plan "#6464"
+    # Single node -- plan reference
+    erk exec update-objective-node 6423 --node 1.3 --plan "#6464"
 
-    # Single step — landed PR (requires --plan to prevent accidental loss)
-    erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --plan "#6464"
-    erk exec update-roadmap-step 6423 --step 1.3 --pr "#6500" --plan "" --status done
+    # Single node -- landed PR (requires --plan to prevent accidental loss)
+    erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "#6464"
+    erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --plan "" --status done
 
     # Clear both
-    erk exec update-roadmap-step 6423 --step 1.3 --pr ""
+    erk exec update-objective-node 6423 --node 1.3 --pr ""
 
-    # Multiple steps
-    erk exec update-roadmap-step 6697 --step 5.1 --step 5.2 --step 5.3 --plan "#6759"
+    # Multiple nodes
+    erk exec update-objective-node 6697 --node 5.1 --node 5.2 --node 5.3 --plan "#6759"
 
 Output:
-    Single step: JSON with {success, issue_number, step_id,
+    Single node: JSON with {success, issue_number, node_id,
         previous_plan, new_plan, previous_pr, new_pr, url}
-    Multiple steps: JSON with {success, issue_number, new_plan, new_pr,
-        url, steps: [...]}
-        Each step result: {step_id, success, previous_plan, previous_pr, error}
+    Multiple nodes: JSON with {success, issue_number, new_plan, new_pr,
+        url, nodes: [...]}
+        Each node result: {node_id, success, previous_plan, previous_pr, error}
 
 Exit Codes:
     0: Always. Check JSON "success" field for pass/fail.
@@ -71,13 +71,13 @@ from erk_shared.gateway.github.types import BodyText
 
 def _replace_table_in_text(
     text: str,
-    step_id: str,
+    node_id: str,
     *,
     new_plan: str | None,
     new_pr: str | None,
     explicit_status: str | None,
 ) -> str | None:
-    """Replace the plan/PR cells for a step in a markdown table.
+    """Replace the plan/PR cells for a node in a markdown table.
 
     This is the table-only replacement used for updating the comment in v2 format,
     where the markdown table lives in the objective-body comment rather than the body.
@@ -86,14 +86,14 @@ def _replace_table_in_text(
     the bounded section. Falls back to full-text regex for v1 compatibility.
 
     Args:
-        text: Text containing a markdown table with step rows.
-        step_id: Step ID to update (e.g., "1.3").
+        text: Text containing a markdown table with node rows.
+        node_id: Node ID to update (e.g., "1.3").
         new_plan: New plan value. None=preserve, ""=clear, "#6464"=set.
         new_pr: New PR value. None=preserve, ""=clear, "#123"=set.
         explicit_status: Explicit status or None to infer.
 
     Returns:
-        Updated text, or None if the step row was not found.
+        Updated text, or None if the node row was not found.
     """
     # If markers exist, search only within the bounded section
     marker_section = extract_roadmap_table_section(text)
@@ -103,9 +103,9 @@ def _replace_table_in_text(
     else:
         search_text = text
 
-    # 5-col row: | step_id | description | status | plan | pr |
+    # 5-col row: | node_id | description | status | plan | pr |
     pattern = re.compile(
-        r"^\|(\s*" + re.escape(step_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$",
+        r"^\|(\s*" + re.escape(node_id) + r"\s*)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|$",
         re.MULTILINE,
     )
 
@@ -159,16 +159,16 @@ def _replace_table_in_text(
     return updated_section
 
 
-def _step_error_message(step_id: str, issue_number: int, error: object) -> str:
-    if error == "step_not_found":
-        return f"Step '{step_id}' not found in issue #{issue_number}"
-    return f"Failed to replace cells for step '{step_id}'"
+def _node_error_message(node_id: str, issue_number: int, error: object) -> str:
+    if error == "node_not_found":
+        return f"Node '{node_id}' not found in issue #{issue_number}"
+    return f"Failed to replace cells for node '{node_id}'"
 
 
 def _build_output(
     *,
     issue_number: int,
-    step: tuple[str, ...],
+    node: tuple[str, ...],
     plan_value: str | None,
     pr_value: str | None,
     url: str,
@@ -176,19 +176,19 @@ def _build_output(
     include_body: bool,
     updated_body: str | None,
 ) -> dict[str, object]:
-    """Build JSON output dict, using legacy format for single step."""
+    """Build JSON output dict, using legacy format for single node."""
     # Normalize empty strings to None for JSON output
     plan_out = plan_value if plan_value else None
     pr_out = pr_value if pr_value else None
 
-    if len(step) != 1:
+    if len(node) != 1:
         output: dict[str, object] = {
             "success": all(r["success"] for r in results),
             "issue_number": issue_number,
             "new_plan": plan_out,
             "new_pr": pr_out,
             "url": url,
-            "steps": results,
+            "nodes": results,
         }
         if include_body and all(r["success"] for r in results) and updated_body is not None:
             output["updated_body"] = updated_body
@@ -198,12 +198,12 @@ def _build_output(
         return {
             "success": False,
             "error": single_result["error"],
-            "message": _step_error_message(step[0], issue_number, single_result["error"]),
+            "message": _node_error_message(node[0], issue_number, single_result["error"]),
         }
     output = {
         "success": True,
         "issue_number": issue_number,
-        "step_id": step[0],
+        "node_id": node[0],
         "previous_plan": single_result.get("previous_plan"),
         "new_plan": plan_out,
         "previous_pr": single_result.get("previous_pr"),
@@ -215,8 +215,8 @@ def _build_output(
     return output
 
 
-def _find_step_refs(body: str, step_id: str) -> tuple[str | None, str | None, bool]:
-    """Find the current plan and PR values for a step in the roadmap body.
+def _find_node_refs(body: str, node_id: str) -> tuple[str | None, str | None, bool]:
+    """Find the current plan and PR values for a node in the roadmap body.
 
     Returns:
         (previous_plan, previous_pr, found)
@@ -224,20 +224,20 @@ def _find_step_refs(body: str, step_id: str) -> tuple[str | None, str | None, bo
     phases, _ = parse_roadmap(body)
     for phase in phases:
         for step in phase.steps:
-            if step.id == step_id:
+            if step.id == node_id:
                 return step.plan, step.pr, True
     return None, None, False
 
 
-def _replace_step_refs_in_body(
+def _replace_node_refs_in_body(
     body: str,
-    step_id: str,
+    node_id: str,
     *,
     new_plan: str | None,
     new_pr: str | None,
     explicit_status: str | None,
 ) -> str | None:
-    """Replace the plan/PR cells for a step in the raw markdown body.
+    """Replace the plan/PR cells for a node in the raw markdown body.
 
     Checks for frontmatter first within objective-roadmap metadata block.
     Falls back to regex table replacement for backward compatibility.
@@ -247,13 +247,13 @@ def _replace_step_refs_in_body(
 
     Args:
         body: Full issue body text.
-        step_id: Step ID to update (e.g., "1.3").
+        node_id: Node ID to update (e.g., "1.3").
         new_plan: New plan value. None=preserve existing, ""=clear, "#6464"=set.
         new_pr: New PR value. None=preserve existing, ""=clear, "#123"=set.
         explicit_status: If provided, use this status instead of inferring.
 
     Returns:
-        Updated body string, or None if the step row was not found.
+        Updated body string, or None if the node row was not found.
     """
     # Check for frontmatter-aware path
     raw_blocks = extract_raw_metadata_blocks(body)
@@ -270,7 +270,7 @@ def _replace_step_refs_in_body(
     # Non-None values (including "") are forwarded as-is.
     updated_block_content = update_step_in_frontmatter(
         roadmap_block.body,
-        step_id,
+        node_id,
         plan=new_plan,
         pr=new_pr,
         status=cast(RoadmapStepStatus, explicit_status) if explicit_status is not None else None,
@@ -297,9 +297,9 @@ def _replace_step_refs_in_body(
     return body
 
 
-@click.command(name="update-roadmap-step")
+@click.command(name="update-objective-node")
 @click.argument("issue_number", type=int)
-@click.option("--step", required=True, multiple=True, help="Step ID(s) to update (e.g., '1.3')")
+@click.option("--node", required=True, multiple=True, help="Node ID(s) to update (e.g., '1.3')")
 @click.option(
     "--plan",
     "plan_ref",
@@ -326,17 +326,17 @@ def _replace_step_refs_in_body(
     help="Include the fully-mutated issue body in JSON output as 'updated_body'",
 )
 @click.pass_context
-def update_roadmap_step(
+def update_objective_node(
     ctx: click.Context,
     issue_number: int,
     *,
-    step: tuple[str, ...],
+    node: tuple[str, ...],
     plan_ref: str | None,
     pr_ref: str | None,
     explicit_status: str | None,
     include_body: bool,
 ) -> None:
-    """Update step plan/PR cells in an objective's roadmap table."""
+    """Update node plan/PR cells in an objective's roadmap table."""
     # Require at least one of --plan or --pr
     if plan_ref is None and pr_ref is None:
         click.echo(
@@ -398,16 +398,16 @@ def update_roadmap_step(
         )
         raise SystemExit(0)
 
-    # Validate all steps exist before processing any
-    all_step_ids = {s.id for phase in phases for s in phase.steps}
-    missing_steps = [s for s in step if s not in all_step_ids]
-    if missing_steps:
+    # Validate all nodes exist before processing any
+    all_node_ids = {s.id for phase in phases for s in phase.steps}
+    missing_nodes = [n for n in node if n not in all_node_ids]
+    if missing_nodes:
         results = [
-            {"step_id": s, "success": False, "error": "step_not_found"} for s in missing_steps
+            {"node_id": n, "success": False, "error": "node_not_found"} for n in missing_nodes
         ]
         output = _build_output(
             issue_number=issue_number,
-            step=step,
+            node=node,
             plan_value=plan_ref,
             pr_value=pr_ref,
             url=issue.url,
@@ -418,27 +418,27 @@ def update_roadmap_step(
         click.echo(json.dumps(output))
         raise SystemExit(0)
 
-    # Process multiple steps with single API call
+    # Process multiple nodes with single API call
     results: list[dict[str, object]] = []
     updated_body = issue.body
     any_failure = False
 
-    for step_id in step:
-        previous_plan, previous_pr, found = _find_step_refs(updated_body, step_id)
+    for node_id in node:
+        previous_plan, previous_pr, found = _find_node_refs(updated_body, node_id)
         if not found:
             results.append(
                 {
-                    "step_id": step_id,
+                    "node_id": node_id,
                     "success": False,
-                    "error": "step_not_found",
+                    "error": "node_not_found",
                 }
             )
             any_failure = True
             continue
 
-        new_body = _replace_step_refs_in_body(
+        new_body = _replace_node_refs_in_body(
             updated_body,
-            step_id,
+            node_id,
             new_plan=plan_ref,
             new_pr=pr_ref,
             explicit_status=explicit_status,
@@ -446,7 +446,7 @@ def update_roadmap_step(
         if new_body is None:
             results.append(
                 {
-                    "step_id": step_id,
+                    "node_id": node_id,
                     "success": False,
                     "error": "replacement_failed",
                 }
@@ -457,18 +457,18 @@ def update_roadmap_step(
         updated_body = new_body
         results.append(
             {
-                "step_id": step_id,
+                "node_id": node_id,
                 "success": True,
                 "previous_plan": previous_plan,
                 "previous_pr": previous_pr,
             }
         )
 
-    # Exit early if all steps failed
+    # Exit early if all nodes failed
     if any_failure and not any(r["success"] for r in results):
         output = _build_output(
             issue_number=issue_number,
-            step=step,
+            node=node,
             plan_value=plan_ref,
             pr_value=pr_ref,
             url=issue.url,
@@ -489,10 +489,10 @@ def update_roadmap_step(
     if objective_comment_id is not None:
         comment_body = github.get_comment_by_id(repo_root, objective_comment_id)
         updated_comment = comment_body
-        for step_id_val in step:
+        for node_id_val in node:
             result_comment = _replace_table_in_text(
                 updated_comment,
-                step_id_val,
+                node_id_val,
                 new_plan=plan_ref,
                 new_pr=pr_ref,
                 explicit_status=explicit_status,
@@ -505,7 +505,7 @@ def update_roadmap_step(
     # Build and emit output
     output = _build_output(
         issue_number=issue_number,
-        step=step,
+        node=node,
         plan_value=plan_ref,
         pr_value=pr_ref,
         url=issue.url,

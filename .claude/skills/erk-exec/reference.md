@@ -88,9 +88,9 @@ Quick reference for all `erk exec` subcommands.
 | `tripwires-reminder-hook`         | Output tripwires reminder for UserPromptSubmit hook.                       |
 | `update-dispatch-info`            | Update dispatch info in GitHub issue plan-header metadata.                 |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).        |
+| `update-objective-node`           | Update node plan/PR cells in an objective's roadmap table.                 |
 | `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.         |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                    |
-| `update-roadmap-step`             | Update step plan/PR cells in an objective's roadmap table.                 |
 | `upload-learn-materials`          | Upload learn materials directory to a gist.                                |
 | `upload-session`                  | Upload a session JSONL to GitHub Gist and update plan header.              |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.        |
@@ -1169,6 +1169,28 @@ Update an issue's body using REST API (avoids GraphQL rate limits).
 | `--body`      | TEXT | No       | Sentinel.UNSET | New body content    |
 | `--body-file` | PATH | No       | Sentinel.UNSET | Read body from file |
 
+### update-objective-node
+
+Update node plan/PR cells in an objective's roadmap table.
+
+**Usage:** `erk exec update-objective-node` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag             | Type   | Required | Default        | Description                                                           |
+| ---------------- | ------ | -------- | -------------- | --------------------------------------------------------------------- |
+| `--node`         | TEXT   | Yes      | Sentinel.UNSET | Node ID(s) to update (e.g., '1.3')                                    |
+| `--plan`         | TEXT   | No       | Sentinel.UNSET | Plan issue reference (e.g., '#6464')                                  |
+| `--pr`           | TEXT   | No       | Sentinel.UNSET | PR reference (e.g., '#456', or '' to clear)                           |
+| `--status`       | CHOICE | No       | -              | Explicit status to set (default: infer from plan/PR value)            |
+| `--include-body` | FLAG   | No       | -              | Include the fully-mutated issue body in JSON output as 'updated_body' |
+
 ### update-plan-remote-session
 
 Update plan-header metadata with remote session artifact location.
@@ -1195,28 +1217,6 @@ Update PR title and body with AI-generated description.
 | -------------- | ---- | -------- | ------- | ------------------------------------- |
 | `--debug`      | FLAG | No       | -       | Show diagnostic output                |
 | `--session-id` | TEXT | No       | -       | Session ID for scratch file isolation |
-
-### update-roadmap-step
-
-Update step plan/PR cells in an objective's roadmap table.
-
-**Usage:** `erk exec update-roadmap-step` <issue_number>
-
-**Arguments:**
-
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
-
-**Options:**
-
-| Flag             | Type   | Required | Default        | Description                                                           |
-| ---------------- | ------ | -------- | -------------- | --------------------------------------------------------------------- |
-| `--step`         | TEXT   | Yes      | Sentinel.UNSET | Step ID(s) to update (e.g., '1.3')                                    |
-| `--plan`         | TEXT   | No       | Sentinel.UNSET | Plan issue reference (e.g., '#6464')                                  |
-| `--pr`           | TEXT   | No       | Sentinel.UNSET | PR reference (e.g., '#456', or '' to clear)                           |
-| `--status`       | CHOICE | No       | -              | Explicit status to set (default: infer from plan/PR value)            |
-| `--include-body` | FLAG   | No       | -              | Include the fully-mutated issue body in JSON output as 'updated_body' |
 
 ### upload-learn-materials
 

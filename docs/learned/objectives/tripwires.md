@@ -36,7 +36,7 @@ Rules triggered by matching actions in code.
 
 **directly mutating issue body markdown without using either command** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Direct body mutation skips status computation. The surgical command writes computed status atomically; bypassing it leaves status stale. See roadmap-mutation-semantics.md.
 
-**expecting status to auto-update when PR column is edited manually** → Read [Roadmap Status System](roadmap-status-system.md) first. Only the update-roadmap-step command writes computed status. Manual PR edits leave status unchanged — set status to '-' to re-enable inference.
+**expecting status to auto-update when PR column is edited manually** → Read [Roadmap Status System](roadmap-status-system.md) first. Only the update-objective-node command writes computed status. Manual PR edits leave status unchanged — set status to '-' to re-enable inference.
 
 **implementing roadmap parsing functionality** → Read [Roadmap Parser](roadmap-parser.md) first. The parser is regex-based, not LLM-based. Do not reference LLM inference.
 
@@ -58,11 +58,11 @@ Rules triggered by matching actions in code.
 
 **treating status as a single-source value** → Read [Roadmap Status System](roadmap-status-system.md) first. Status resolution uses a two-tier system: explicit values first, then PR-based inference. Always check both the Status and PR columns.
 
-**updating roadmap step without using update-roadmap-step** → Read [Objective Lifecycle](objective-lifecycle.md) first. Use update-roadmap-step which atomically updates YAML frontmatter in the issue body and the markdown table in the objective-body comment.
+**updating roadmap step in only one location (frontmatter or table)** → Read [Objective Lifecycle](objective-lifecycle.md) first. Must update both frontmatter AND markdown table during the dual-write migration period. Use update-objective-node which handles both atomically.
 
-**using None/empty string interchangeably in update-roadmap-step parameters** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values.
+**using None/empty string interchangeably in update-objective-node parameters** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values.
 
-**using full-body update for single-cell changes** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-roadmap-step) to preserve other cells and avoid race conditions.
+**using full-body update for single-cell changes** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-objective-node) to preserve other cells and avoid race conditions.
 
 **using parse_roadmap() when strict v2 validation is needed** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. Use parse_v2_roadmap() for commands that should reject legacy format. parse_roadmap() returns a legacy error string; parse_v2_roadmap() returns None for non-v2 content.
 

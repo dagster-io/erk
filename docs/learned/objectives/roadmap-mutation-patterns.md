@@ -6,14 +6,14 @@ read_when:
   - "understanding race condition risks in roadmap table mutations"
 tripwires:
   - action: "using full-body update for single-cell changes"
-    warning: "Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-roadmap-step) to preserve other cells and avoid race conditions."
+    warning: "Full-body updates replace the entire table. For single-cell PR updates, use surgical update (update-objective-node) to preserve other cells and avoid race conditions."
   - action: "using surgical update for complete table rewrites"
     warning: "Surgical updates only change one cell. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (objective-update-with-landed-pr)."
   - action: "directly mutating issue body markdown without using either command"
     warning: "Direct body mutation skips status computation. The surgical command writes computed status atomically; bypassing it leaves status stale. See roadmap-mutation-semantics.md."
   - action: "writing regex patterns to match roadmap table rows without ^ and $ anchors"
     warning: "All roadmap table row regex patterns MUST use ^...$ anchors with re.MULTILINE. Without anchors, patterns can match partial lines or span rows."
-  - action: "using None/empty string interchangeably in update-roadmap-step parameters"
+  - action: "using None/empty string interchangeably in update-objective-node parameters"
     warning: "None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: edited
@@ -44,11 +44,11 @@ The split isn't about capability (the full-body approach _could_ do single-cell 
 | Restructuring roadmap       | Full-body | Need full control over layout, ordering, and section content |
 | Batch status updates        | Full-body | Multiple steps changing simultaneously                       |
 
-## Surgical Update: `update-roadmap-step`
+## Surgical Update: `update-objective-node`
 
-<!-- Source: src/erk/cli/commands/exec/scripts/update_roadmap_step.py, _replace_step_refs_in_body -->
+<!-- Source: src/erk/cli/commands/exec/scripts/update_objective_node.py, _replace_node_refs_in_body -->
 
-The surgical command finds a step row by ID using regex and replaces **only** the status, plan, and PR cells in a single operation. See `_replace_step_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py`.
+The surgical command finds a step row by ID using regex and replaces **only** the status, plan, and PR cells in a single operation. See `_replace_node_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_objective_node.py`.
 
 **Why it writes status, plan, and PR cells:** The command could leave status as `-` and let parse-time inference determine it later. Instead, it computes a display status (`done`, `in-progress`, `pending`) from the plan/PR values and writes it directly. Setting `--pr` automatically clears the plan column, and vice versa. This makes the table human-readable in GitHub's UI without requiring a parse pass. For the full rationale, see [Roadmap Mutation Semantics](../architecture/roadmap-mutation-semantics.md).
 
@@ -85,8 +85,8 @@ Both patterns are triggered by upstream workflow commands, not invoked directly 
 
 | Upstream Command | Triggers                     | Via                                                             |
 | ---------------- | ---------------------------- | --------------------------------------------------------------- |
-| `erk plan save`  | Surgical update to link plan | Skill calls `update-roadmap-step` with plan reference           |
-| `erk pr submit`  | Surgical update to link PR   | Skill calls `update-roadmap-step` with PR reference             |
+| `erk plan save`  | Surgical update to link plan | Skill calls `update-objective-node` with plan reference         |
+| `erk pr submit`  | Surgical update to link PR   | Skill calls `update-objective-node` with PR reference           |
 | `erk land`       | Full-body update after merge | Helpers in `objective_helpers.py` detect objective, prompt user |
 
 <!-- Source: src/erk/cli/commands/objective_helpers.py, prompt_objective_update -->
@@ -95,7 +95,7 @@ See `prompt_objective_update()` in `src/erk/cli/commands/objective_helpers.py` f
 
 ## Anti-Patterns
 
-**WRONG: Calling `update-roadmap-step` after landing a PR.** The surgical command only updates PR and status cells. After landing, you often need to update descriptions, restructure phases, or add completion notes. Use the full-body workflow.
+**WRONG: Calling `update-objective-node` after landing a PR.** The surgical command only updates PR and status cells. After landing, you often need to update descriptions, restructure phases, or add completion notes. Use the full-body workflow.
 
 **WRONG: Using full-body rewrite to link a plan to a step.** The full-body approach fetches, parses, and regenerates the entire body — unnecessary for a single cell change and risks overwriting concurrent edits. Use the surgical command.
 
@@ -105,7 +105,7 @@ See `prompt_objective_update()` in `src/erk/cli/commands/objective_helpers.py` f
 
 All regex patterns that match roadmap table rows MUST use `^...$` anchors with `re.MULTILINE`. Without anchors, patterns can match partial lines or span multiple rows, causing incorrect mutations.
 
-The canonical example is `_replace_step_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_roadmap_step.py` (around line 107), which builds a compiled regex anchored with `^...$` and `re.MULTILINE` to match a single 5-column row by step ID. Each cell is captured as a non-greedy group so only the target row's status/plan/PR cells are replaced.
+The canonical example is `_replace_node_refs_in_body()` in `src/erk/cli/commands/exec/scripts/update_objective_node.py`, which builds a compiled regex anchored with `^...$` and `re.MULTILINE` to match a single 5-column row by step ID. Each cell is captured as a non-greedy group so only the target row's status/plan/PR cells are replaced.
 
 **Why anchoring matters**: Without `^` and `$` anchors, a pattern like `\|[^|]+\|` could match across row boundaries. The `re.MULTILINE` flag makes `^` and `$` match at line starts/ends rather than just string starts/ends.
 

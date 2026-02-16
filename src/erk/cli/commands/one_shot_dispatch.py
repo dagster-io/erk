@@ -1,7 +1,7 @@
 """Shared dispatch logic for one-shot autonomous execution.
 
 Extracts the branch-create/push/PR/workflow-trigger sequence into reusable
-pieces so both `erk one-shot` and `erk objective next-plan --one-shot` can
+pieces so both `erk one-shot` and `erk objective implement --one-shot` can
 dispatch tasks through the same CI workflow.
 """
 

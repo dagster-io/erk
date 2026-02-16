@@ -63,7 +63,7 @@ The slash command becomes a thin orchestration layer that calls `erk exec`, pars
 
 <!-- Source: .claude/commands/erk/plan-save.md, Steps 2-4 -->
 
-See `.claude/commands/erk/plan-save.md` for a multi-step orchestration example: it chains `plan-save-to-issue`, `get-plan-metadata`, and `update-roadmap-step` calls with error handling between steps.
+See `.claude/commands/erk/plan-save.md` for a multi-step orchestration example: it chains `plan-save-to-issue`, `get-plan-metadata`, and `update-objective-node` calls with error handling between steps.
 
 <!-- Source: .claude/commands/local/quick-submit.md -->
 
@@ -81,7 +81,7 @@ The graduated command typically keeps `--json-output` for programmatic callers w
 
 ## Historical Context: PR #6328
 
-PR #6328 demonstrated the pattern at scale by migrating objective roadmap operations from inline `gh api` calls to exec commands. The shared parsing logic was extracted to a shared module (now `erk_shared.gateway.github.metadata.roadmap`), enabling both the query command (`objective-roadmap-check`) and the mutation command (`update-roadmap-step`) to share roadmap parsing without duplication.
+PR #6328 demonstrated the pattern at scale by migrating objective roadmap operations from inline `gh api` calls to exec commands. The shared parsing logic was extracted to a shared module (now `erk_shared.gateway.github.metadata.roadmap`), enabling both the query command (`objective-roadmap-check`) and the mutation command (`update-objective-node`) to share roadmap parsing without duplication.
 
 ## Related Documentation
 
