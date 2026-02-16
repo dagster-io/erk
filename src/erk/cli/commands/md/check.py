@@ -64,8 +64,7 @@ def check_command() -> None:
 
         # Check CLAUDE.md content - must start with @AGENTS.md as first line
         content = claude_path.read_text(encoding="utf-8")
-        first_line = content.strip().split("\n")[0].strip()
-        if first_line != "@AGENTS.md":
+        if content.strip().split("\n")[0].strip() != "@AGENTS.md":
             invalid_content.append(claude_path)
 
     # Check that all AGENTS.md files have peer CLAUDE.md
@@ -112,8 +111,8 @@ def check_command() -> None:
             rel_path = path.relative_to(repo_root_path)
             content = path.read_text(encoding="utf-8")
             styled_path = click.style(str(rel_path), fg="cyan")
-            first_line = content.strip().split("\n")[0].strip()
-            user_output(f"  • {styled_path}: First line is '{first_line}', expected '@AGENTS.md'")
+            actual = content.strip().split("\n")[0].strip()
+            user_output(f"  • {styled_path}: First line is '{actual}', expected '@AGENTS.md'")
         user_output()
 
     user_output("Fix these issues and run again.")
