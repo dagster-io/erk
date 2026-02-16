@@ -268,6 +268,7 @@ def _handle_one_shot(
 
     # Build instruction
     instruction = (
+        f"/erk:objective-next-plan {issue_number}\n"
         f"Implement step {target_step.id} of objective #{issue_number}: "
         f"{target_step.description} (Phase: {target_phase.name})"
     )
