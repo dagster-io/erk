@@ -175,6 +175,24 @@ def test_render_activation_script_without_subpath() -> None:
     assert "Try to preserve relative directory position" not in script
 
 
+def test_render_activation_script_refreshes_workspace_packages() -> None:
+    """Activation script includes unconditional workspace package refresh."""
+    script = render_activation_script(
+        worktree_path=Path("/path/to/worktree"),
+        target_subpath=None,
+        post_cd_commands=None,
+        final_message='echo "Activated worktree: $(pwd)"',
+        comment="work activate-script",
+    )
+    assert "uv pip install --no-deps --quiet" in script
+    assert "-e packages/erk-shared" in script
+    assert "-e packages/erk-statusline" in script
+    # Refresh line should come after the venv creation conditional
+    venv_creation_index = script.index("uv sync")
+    refresh_index = script.index("uv pip install --no-deps")
+    assert venv_creation_index < refresh_index
+
+
 def test_render_activation_script_with_subpath() -> None:
     """Activation script with target_subpath includes fallback logic."""
     script = render_activation_script(

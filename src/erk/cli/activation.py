@@ -189,6 +189,8 @@ if [ ! -d {venv_dir} ]; then
   echo 'Creating virtual environment with uv sync...'
   uv sync
 fi
+# Refresh workspace packages (no-deps = skip external packages)
+uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
 if [ -f {venv_activate} ]; then
   . {venv_activate}
   __py_ver=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
