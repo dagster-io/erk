@@ -1,5 +1,7 @@
 ---
 title: Review Development Guide
+last_audited: "2026-02-16 03:30 PT"
+audit_result: clean
 read_when:
   - creating a new code review for CI
   - adding a new review spec to .erk/reviews/
