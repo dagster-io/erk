@@ -4,7 +4,7 @@ read_when:
   - "writing command availability predicates"
   - "understanding what data is available for TUI commands"
   - "checking which PlanRowData fields are nullable"
-last_audited: "2026-02-07 18:35 PT"
+last_audited: "2026-02-16 14:20 PT"
 audit_result: edited
 ---
 
@@ -93,10 +93,25 @@ Quick reference of `PlanRowData` fields for writing command availability predica
 
 ### Objective Info
 
-| Field               | Type          | Description                                          | Nullable?             |
-| ------------------- | ------------- | ---------------------------------------------------- | --------------------- |
-| `objective_issue`   | `int \| None` | Objective issue number (linking plans to objectives) | Yes                   |
-| `objective_display` | `str`         | Formatted display string (e.g., "#123" or "-")       | Never (dash possible) |
+| Field                         | Type          | Description                                          | Nullable?             |
+| ----------------------------- | ------------- | ---------------------------------------------------- | --------------------- |
+| `objective_issue`             | `int \| None` | Objective issue number (linking plans to objectives) | Yes                   |
+| `objective_display`           | `str`         | Formatted display string (e.g., "#123" or "-")       | Never (dash possible) |
+| `objective_done_steps`        | `int`         | Count of done steps in objective roadmap             | Never (0 if no obj)   |
+| `objective_total_steps`       | `int`         | Total steps in objective roadmap                     | Never (0 if no obj)   |
+| `objective_progress_display`  | `str`         | Progress display (e.g., "3/7" or "-")                | Never (dash possible) |
+| `objective_next_step_display` | `str`         | Next pending step (e.g., "1.3 Add tests" or "-")     | Never (dash possible) |
+
+### Metadata
+
+| Field             | Type       | Description                                           | Nullable? |
+| ----------------- | ---------- | ----------------------------------------------------- | --------- |
+| `updated_at`      | `datetime` | Last update datetime of the issue                     | Never     |
+| `updated_display` | `str`      | Formatted relative time (e.g., "2h ago")              | Never     |
+| `created_at`      | `datetime` | Creation datetime of the issue                        | Never     |
+| `created_display` | `str`      | Formatted relative time (e.g., "2d ago")              | Never     |
+| `author`          | `str`      | GitHub login of the issue creator                     | Never     |
+| `is_learn_plan`   | `bool`     | Whether this is a learn plan (has [erk-learn] prefix) | Never     |
 
 ## Common Availability Patterns
 
@@ -155,6 +170,12 @@ Many pieces of data have both a raw value and a display value:
 | `full_title`                                   | (is raw)                             | Full title for modals   |
 | `learn_status`                                 | `learn_display`/`learn_display_icon` | Learn workflow state    |
 | `objective_issue`                              | `objective_display`                  | Objective link          |
+| `objective_done_steps`/`objective_total_steps` | `objective_progress_display`         | Objective progress      |
+| (none)                                         | `objective_next_step_display`        | Next objective step     |
+| `updated_at`                                   | `updated_display`                    | Last update time        |
+| `created_at`                                   | `created_display`                    | Creation time           |
+| `author`                                       | (used directly in display)           | Issue creator           |
+| `is_learn_plan`                                | (boolean flag)                       | Learn plan indicator    |
 
 **Rule:** Use raw fields in predicates (for `None` checks), display fields for rendering.
 

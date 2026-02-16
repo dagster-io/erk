@@ -1,7 +1,7 @@
 ---
 title: Claude CLI Progress Feedback Pattern
-last_audited: "2026-02-03 15:00 PT"
-audit_result: edited
+last_audited: "2026-02-16 14:00 PT"
+audit_result: clean
 read_when:
   - "adding progress output to Claude operations"
   - "wrapping Claude CLI with user feedback"

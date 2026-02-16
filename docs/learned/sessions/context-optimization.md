@@ -5,6 +5,8 @@ read_when:
   - "troubleshooting context limits"
   - "reducing context waste"
 tripwire: false
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Context Window Optimization
@@ -30,7 +32,7 @@ erk exec preprocess-session <session.jsonl> --stdout | grep -o 'file_path">[^<]*
 
 ### 2. Skill Loading Overhead
 
-Skills like `dignified-python-313` and `fake-driven-testing` add ~15-20K tokens per load.
+Skills like `dignified-python` and `fake-driven-testing` add ~15-20K tokens per load.
 
 **Optimization:**
 

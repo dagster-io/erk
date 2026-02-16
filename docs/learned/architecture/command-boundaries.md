@@ -4,6 +4,8 @@ read_when:
   - Choosing between agent vs CLI command
   - Deciding when to use .claude/commands/ vs src/erk/cli/
   - Understanding when AI capabilities are needed
+last_audited: "2026-02-16 14:00 PT"
+audit_result: clean
 ---
 
 # Agent Command vs CLI Command Boundaries

@@ -1,7 +1,7 @@
 ---
 title: CLI Options Validation
-last_audited: "2026-02-16 04:53 PT"
-audit_result: clean
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 read_when:
   - "adding new CLI options or flags"
   - "implementing option validation logic"
@@ -31,9 +31,9 @@ For constraints that Click already models, use Click's type system:
 | Choose from set | `click.Choice(["json", "yaml"])` | `@click.option("--format", type=click.Choice(["json", "yaml"]))` |
 | Integer range   | `click.IntRange(min=1, max=100)` | `@click.option("--timeout", type=click.IntRange(1, 3600))`       |
 
-<!-- Source: src/erk/cli/commands/land_cmd.py:386 -->
+<!-- Source: src/erk/cli/commands/land_cmd.py:391 -->
 
-See the `click.prompt()` call with `type=click.IntRange(1, 3)` in `src/erk/cli/commands/land_cmd.py` for a real example validating menu choices.
+See the `click.prompt()` call with `type=click.IntRange(1, 4)` in `src/erk/cli/commands/land_cmd.py` for a real example validating menu choices.
 
 ## Runtime Validation: Use Ensure Methods
 
@@ -106,4 +106,4 @@ def test_invalid_timeout_rejected():
 ## Related Documentation
 
 - [CLI Error Handling Anti-Patterns](error-handling-antipatterns.md) - When to use UserFacingCliError vs RuntimeError
-- [CLI Development](cli-development.md) - General CLI development patterns
+- [CLI Command Organization](command-organization.md) - Command structure and organization patterns

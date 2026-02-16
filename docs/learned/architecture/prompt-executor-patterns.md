@@ -1,7 +1,7 @@
 ---
 title: PromptExecutor Pattern Documentation
-last_audited: "2026-02-16 00:00 PT"
-audit_result: edited
+last_audited: "2026-02-16 14:10 PT"
+audit_result: clean
 read_when:
   - "launching Claude from CLI commands"
   - "deciding which PromptExecutor method to use"

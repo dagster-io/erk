@@ -1,7 +1,7 @@
 ---
 title: Exec Command Patterns
-last_audited: "2026-02-16 03:30 PT"
-audit_result: edited
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - "writing exec scripts with PR/issue output"
   - "building diagnostic messages"

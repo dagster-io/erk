@@ -4,6 +4,8 @@ read_when:
   - "adding progress reporting to operations functions"
   - "choosing between callback and event-based progress"
   - "implementing synchronous progress feedback"
+last_audited: "2026-02-16 14:00 PT"
+audit_result: clean
 ---
 
 # Callback Progress Pattern

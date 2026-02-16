@@ -9,6 +9,8 @@ tripwires:
     warning: "Always LBYL-check for an existing PR before creating. Duplicate PRs cause confusion and orphaned state. See pr-creation-patterns.md."
   - action: "using raw gh pr view or gh pr create in Python code"
     warning: "Use the typed GitHub gateway (get_pr_for_branch, create_pr) instead of shelling out. The gateway returns PRDetails | PRNotFound for LBYL handling."
+last_audited: "2026-02-16 14:25 PT"
+audit_result: clean
 ---
 
 # PR Creation Decision Logic

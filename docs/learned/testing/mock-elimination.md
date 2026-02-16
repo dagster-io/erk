@@ -4,8 +4,8 @@ read_when:
   - "refactoring tests to remove unittest.mock"
   - "replacing patch() calls with fakes"
   - "improving test maintainability"
-last_audited: "2026-02-16 08:00 PT"
-audit_result: clean
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
 ---
 
 # Eliminating Mocks with Fakes
@@ -40,13 +40,13 @@ def test_something(mock_fn):
 
 Common fakes in this codebase:
 
-| Fake                         | Replaces                 |
-| ---------------------------- | ------------------------ |
-| `FakeGit`                    | Git operations           |
-| `FakeGitHub`                 | GitHub PR operations     |
-| `FakeGitHubIssues`           | GitHub issue operations  |
-| `FakeGraphite`               | Graphite operations      |
-| `FakeClaudeCodeSessionStore` | Session store operations |
+| Fake                     | Replaces                        |
+| ------------------------ | ------------------------------- |
+| `FakeGit`                | Git operations                  |
+| `FakeGitHub`             | GitHub PR operations            |
+| `FakeGitHubIssues`       | GitHub issue operations         |
+| `FakeGraphite`           | Graphite operations             |
+| `FakeClaudeInstallation` | Session and settings operations |
 
 ### Step 3: Refactor Source Code (if needed)
 
@@ -76,10 +76,12 @@ with patch("module._get_session_id_from_file", return_value="session-id"):
     result = runner.invoke(command, obj=ctx)
 
 # After: Fake
-fake_store = FakeClaudeCodeSessionStore(current_session_id="session-id")
+fake_installation = FakeClaudeInstallation.for_test(
+    projects={Path.cwd(): FakeProject(sessions={"session-id": FakeSessionData(content="", size_bytes=0, modified_at=0.0)})}
+)
 result = runner.invoke(
     command,
-    obj=ErkContext.for_test(session_store=fake_store),
+    obj=ErkContext.for_test(claude_installation=fake_installation),
 )
 ```
 
@@ -124,10 +126,10 @@ effective_session_id = session_id or session_store.get_current_session_id()
 
 # Test code
 def test_uses_session_store_for_current_session_id(tmp_path: Path) -> None:
-    fake_store = FakeClaudeCodeSessionStore(current_session_id="store-session-id")
+    fake_installation = FakeClaudeInstallation.for_test()
     result = runner.invoke(
         command,
-        obj=ErkContext.for_test(session_store=fake_store, cwd=tmp_path),
+        obj=ErkContext.for_test(claude_installation=fake_installation, cwd=tmp_path),
     )
 ```
 
@@ -148,6 +150,5 @@ Keep mocks when:
 
 ## Related Topics
 
-- [Kit CLI Testing Patterns](kit-cli-testing.md) - General patterns for testing kit CLI commands
-- [Testing with FakeClaudeCodeSessionStore](session-store-testing.md) - Session store fake details
+- [Testing with FakeClaudeInstallation](session-store-testing.md) - Session store fake details
 - [fake-driven-testing skill](/.claude/skills/fake-driven-testing/) - Complete 5-layer testing strategy

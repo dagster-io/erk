@@ -1,7 +1,7 @@
 ---
 title: GitHub Actions Output Patterns
-last_audited: "2026-02-08 13:55 PT"
-audit_result: edited
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
 read_when:
   - "setting outputs in GitHub Actions workflows"
   - "passing data between workflow steps"

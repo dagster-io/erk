@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "silently catching exceptions in PR body updates"
     warning: "Use best-effort pattern: try/except with logger.warning(), not silent pass. See one_shot_dispatch.py for the canonical example."
+last_audited: "2026-02-16 14:25 PT"
+audit_result: clean
 ---
 
 # Stub PR Workflow Link

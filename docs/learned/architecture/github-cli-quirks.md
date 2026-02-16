@@ -8,6 +8,8 @@ tripwires:
   - action: "using gh gist create with --filename flag"
     warning: "--filename only works with stdin input (-), not file paths."
     pattern: "gh\\s+gist\\s+create.*--filename"
+last_audited: "2026-02-16 14:05 PT"
+audit_result: clean
 ---
 
 # GitHub CLI Quirks and Edge Cases
