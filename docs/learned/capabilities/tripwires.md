@@ -32,4 +32,4 @@ Rules triggered by matching actions in code.
 
 **review capability installation fails** → Read [Adding Review Capabilities](adding-reviews.md) first. ReviewCapability has automatic preflight check for code-reviews-system workflow. Install will fail if .github/workflows/code-reviews.yml doesn't exist in target repo. Install code-reviews-system capability first.
 
-**skill not appearing in erk init capability list** → Read [Adding Skill Capabilities](adding-skills.md) first. MUST import class AND add instance to registry.py \_all_capabilities() tuple. Import alone is not sufficient.
+**skill not appearing in erk init capability list** → Read [Adding Skill Capabilities](adding-skills.md) first. For bundled skills, add entry to bundled_skills() dict in src/erk/capabilities/skills/bundled.py. For custom capabilities, import AND instantiate in registry.py \_all_capabilities() tuple.
