@@ -104,14 +104,17 @@ steps:
 - id: "1.1"
   description: "Add user model"
   status: "pending"
+  plan: null
   pr: null
 - id: "1.2"
   description: "Add JWT library"
   status: "pending"
+  plan: null
   pr: null
 - id: "2.1"
   description: "Implement login"
   status: "pending"
+  plan: null
   pr: null
 
 ---
@@ -248,7 +251,8 @@ steps:
   - id: "1.1" # Required: step identifier
     description: "..." # Required: human-readable description
     status: "pending" # Required: pending|planning|done|in_progress|blocked|skipped
-    pr: null # Optional: null or string like "#123" or "plan #456"
+    plan: null # Optional: null or string like "#6464" (plan issue number)
+    pr: null # Optional: null or string like "#123" (landed PR number)
 ---
 ```
 
